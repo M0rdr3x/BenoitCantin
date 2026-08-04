@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Futurax">
+ <defs><linearGradient id="g" x1="14" y1="13" x2="83" y2="84"><stop stop-color="#65F6D6"/><stop offset="1" stop-color="#5B7CFF"/></linearGradient></defs>
+ <circle cx="48" cy="48" r="42" fill="#07131B" stroke="url(#g)" stroke-width="2"/>
+ <circle cx="48" cy="48" r="25" fill="none" stroke="url(#g)" stroke-width="4" stroke-dasharray="5 5"/>
+ <path d="M28 48h34M52 35l13 13-13 13" fill="none" stroke="#E8FFFB" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+ <path d="M21 31c5-8 12-14 20-17M75 65c-5 8-12 14-20 17" fill="none" stroke="#9BFCE8" stroke-width="2" stroke-linecap="round"/>
+</svg>

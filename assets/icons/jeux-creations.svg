@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Jeux et créations numériques">
+ <defs><linearGradient id="g" x1="15" y1="12" x2="82" y2="84"><stop stop-color="#FFCB73"/><stop offset=".48" stop-color="#FF7DC8"/><stop offset="1" stop-color="#7D7BFF"/></linearGradient></defs>
+ <circle cx="48" cy="48" r="42" fill="#15101D" stroke="url(#g)" stroke-width="2"/>
+ <path d="M30 35h36l8 27a8 8 0 0 1-13 8l-7-6H42l-7 6a8 8 0 0 1-13-8z" fill="none" stroke="url(#g)" stroke-width="4" stroke-linejoin="round"/>
+ <path d="M35 48v13M28.5 54.5h13M60 51h.1M67 58h.1" stroke="#FFF5E8" stroke-width="4" stroke-linecap="round"/>
+</svg>

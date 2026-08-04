@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Projet Nova">
+ <defs><linearGradient id="g" x1="14" y1="12" x2="83" y2="84"><stop stop-color="#33D8E8"/><stop offset="1" stop-color="#2A7FFF"/></linearGradient></defs>
+ <circle cx="48" cy="48" r="42" fill="#041528" stroke="url(#g)" stroke-width="2"/>
+ <path d="M22 66V30l26 25 26-25v36" fill="none" stroke="url(#g)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+ <path d="M29 69h38" stroke="#E9FDFF" stroke-width="3" stroke-linecap="round"/>
+</svg>
