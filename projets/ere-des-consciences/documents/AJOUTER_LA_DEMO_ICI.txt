@@ -1,0 +1,10 @@
+Placez ici le fichier du roman avec exactement ce nom :
+
+La_Cendre_du_Jugement_DEMO.pdf
+
+Puis, dans projets/ere-des-consciences/index.html :
+- retirez aria-disabled="true"
+- retirez data-disabled-download
+- remplacez le texte du bouton par « Télécharger la démo PDF »
+
+Le lien est déjà configuré vers documents/La_Cendre_du_Jugement_DEMO.pdf.
