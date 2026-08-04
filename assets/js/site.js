@@ -22,4 +22,12 @@
   document.querySelectorAll('[data-disabled-download]').forEach((link) => {
     link.addEventListener('click', (event) => event.preventDefault());
   });
+
+  document.querySelectorAll('[data-pending-form]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.alert('Ce formulaire sera activé après la configuration de Formspree. Aucune donnée n’a été transmise.');
+    }, true);
+  });
 })();
