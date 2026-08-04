@@ -1,31 +1,34 @@
 # Administration des formulaires
 
-## Formulaire général
+## Destination administrative
 
-Nom Netlify : `contact-general`
+Les formulaires seront configurés avec Formspree pour transmettre les avis à `kingtyrano@gmail.com`. Cette adresse ne doit pas être intégrée inutilement dans les pages publiques.
 
-## Registre des Consciences
+## Formulaires prévus
 
-Nom Netlify : `registre-des-consciences`
+- Contact général : `contact-general`
+- Registre des Consciences : `registre-des-consciences`
 
-### Principe éditorial
+Les envois sont temporairement désactivés dans la version GitHub Pages jusqu’à la configuration de Formspree.
+
+## Principe éditorial du Registre
 
 Le participant transmet des renseignements **sur lui-même**. Il ne remet pas un personnage inventé. Benoit Cantin transforme les fondations humaines et psychologiques du fan en personnage fictif original.
 
-### Cycle de vie d'une soumission
+## Cycle de vie d’une soumission
 
-1. Réception dans Netlify Forms.
-2. Vérification du consentement et, s'il y a lieu, de l'autorisation parentale.
+1. Réception dans Formspree et notification à l’adresse administrative.
+2. Vérification du consentement et, s’il y a lieu, de l’autorisation parentale.
 3. Évaluation créative.
-4. Si non retenue : appliquer la politique de conservation validée.
-5. Si retenue : créer une fiche de travail sans coordonnées inutiles.
-6. Après création du personnage et lorsque la source personnelle n'est plus nécessaire : supprimer la soumission originale et la photographie.
+4. Si la proposition n’est pas retenue, appliquer la politique de conservation validée.
+5. Si elle est retenue, créer une fiche de travail sans coordonnées inutiles.
+6. Après création du personnage et lorsque la source personnelle n’est plus nécessaire, supprimer la soumission originale, le courriel, les pièces jointes et toute copie locale.
 7. Conserver seulement les éléments narratifs fictifs nécessaires au roman, selon les modalités juridiques validées.
 
-### Sécurité
+## Sécurité
 
-- Utiliser un mot de passe unique et l'authentification multifacteur sur Netlify.
-- Limiter l'accès au tableau de bord.
+- Utiliser un mot de passe unique et l’authentification multifacteur sur Formspree et Gmail.
+- Limiter l’accès aux comptes administratifs.
+- Ne jamais placer les réponses ou les photographies dans GitHub.
 - Ne pas télécharger les photos sur un ordinateur partagé.
-- Ne pas envoyer les réponses complètes par courriel non chiffré.
 - Documenter chaque suppression.

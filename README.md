@@ -2,6 +2,12 @@
 
 Site statique professionnel préparé pour le domaine **benoitcantin.ca**.
 
+## Architecture par univers — version 3
+
+Le site est maintenant organisé par grands univers. Les créations reliées restent ensemble : par exemple, les romans, le jeu de table et le Registre des Consciences sont regroupés sous L’ère des consciences. Les autres univers disposent de la même structure évolutive, sans inventer de projets non confirmés.
+
+Consultez `ARCHITECTURE_DES_UNIVERS.md` pour la cartographie complète.
+
 ## Ce qui est construit
 
 - Nom corrigé partout : **Benoit Cantin**, sans accent.
@@ -18,7 +24,7 @@ Site statique professionnel préparé pour le domaine **benoitcantin.ca**.
 - Liens Facebook du roman et de Projet Nova.
 - Questionnaire Web complet du Registre des Consciences, basé sur le PDF officiel.
 - Version PDF du questionnaire téléchargeable.
-- Formulaires préparés pour Netlify Forms.
+- Formulaires préparés visuellement; leur transmission est temporairement désactivée jusqu’à la configuration de Formspree.
 - Pages de confidentialité, avis légal, contact, erreur 404 et remerciement.
 
 ## Important : démo du roman manquante
@@ -27,31 +33,28 @@ Le fichier `La_Cendre_du_Jugement_DEMO.pdf` n'était pas dans les fichiers reçu
 
 Instructions : `projets/ere-des-consciences/documents/AJOUTER_LA_DEMO_ICI.txt`.
 
-## Mise en ligne recommandée : Netlify
+## Ordre de mise en ligne retenu
 
-Netlify est recommandé parce que les formulaires sont déjà configurés avec `data-netlify="true"`.
+1. Terminer l’architecture et le contenu du site.
+2. Mettre à jour le dépôt GitHub.
+3. Activer GitHub Pages pour obtenir une adresse de prévisualisation publique.
+4. Configurer le domaine `benoitcantin.ca` chez Namecheap.
+5. Configurer Formspree pour transmettre les formulaires à `kingtyrano@gmail.com`.
+6. Tester les formulaires, les courriels, les téléchargements et les pages mobiles.
 
-1. Créer un compte Netlify.
-2. Glisser le dossier complet du site dans Netlify Drop, ou connecter un dépôt GitHub.
-3. Vérifier que les formulaires `contact-general` et `registre-des-consciences` apparaissent dans **Forms**.
-4. Tester une soumission de chaque formulaire.
-5. Ajouter le domaine `benoitcantin.ca` dans **Domain management**.
-6. Configurer les enregistrements DNS demandés par Netlify.
-7. Activer HTTPS.
-
-Le fichier `CNAME` contient déjà `benoitcantin.ca`. Si un autre domaine est choisi, modifiez aussi `robots.txt` et `sitemap.xml`.
+Le fichier `.nojekyll` est inclus pour servir le site statique directement avec GitHub Pages. Le fichier `CNAME` doit être absent pendant la prévisualisation GitHub Pages. Au moment de configurer Namecheap, renommez `CNAME_APRES_NAMECHEAP.txt` en `CNAME`.
 
 ## Gestion privée des participations
 
-Les réponses du Registre sont accessibles seulement dans le tableau de bord privé Netlify du propriétaire du site.
+Après la configuration de Formspree, les réponses devront être transmises uniquement à l’adresse administrative et conservées hors du dépôt GitHub.
 
 Procédure recommandée :
 
-1. Ouvrir **Netlify > Forms > registre-des-consciences**.
-2. Examiner uniquement les renseignements nécessaires.
-3. Documenter la sélection hors ligne dans un registre administratif privé.
-4. Quand le personnage est créé et que les données sources ne sont plus nécessaires, supprimer définitivement la soumission et toute photo associée.
-5. Traiter rapidement toute demande de correction ou de retrait reçue avant l'intégration définitive.
+1. Examiner uniquement les renseignements nécessaires dans Formspree et dans le courriel administratif.
+2. Ne jamais enregistrer une soumission, une photo ou une donnée personnelle dans le dépôt public.
+3. Documenter la sélection dans un registre administratif privé et protégé.
+4. Quand le personnage est créé et que les données sources ne sont plus nécessaires, supprimer la soumission dans Formspree, le courriel, les pièces jointes et toute copie locale.
+5. Traiter rapidement toute demande de correction ou de retrait reçue avant l’intégration définitive.
 
 ## Gestion des identités visuelles
 
