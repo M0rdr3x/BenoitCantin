@@ -1,0 +1,21 @@
+.portal-return-benoit {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 9999;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px;
+  background: rgba(3,13,27,.9);
+  color: #fff;
+  font: 800 13px/1.2 Inter, Arial, sans-serif;
+  text-decoration: none;
+  box-shadow: 0 12px 30px rgba(0,0,0,.28);
+  backdrop-filter: blur(12px);
+}
+.portal-return-benoit:hover { background:#0b2038; color:#fff; }
+.portal-return-benoit img { width:26px; height:26px; }
+@media(max-width:600px){.portal-return-benoit{left:10px;right:10px;bottom:10px;justify-content:center}}
