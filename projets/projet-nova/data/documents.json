@@ -1,0 +1,170 @@
+{
+  "resume": {
+    "slug": "resume",
+    "section": "Accueil",
+    "type": "Document public indicatif",
+    "title": "Résumé officiel — 1 page",
+    "description": "Résumé court pour comprendre rapidement les objectifs, les priorités et la démarche du Projet Nova.",
+    "featured": true,
+    "updated": "2026-07-05",
+    "format": "PDF",
+    "pdf": "documents/01_Resume_Officiel_1_Page_Projet_Nova.pdf",
+    "formats": [
+      "PDF"
+    ]
+  },
+  "depliant": {
+    "slug": "depliant",
+    "section": "Accueil",
+    "type": "Document public indicatif",
+    "title": "Dépliant public — 4 pages",
+    "description": "Présentation publique concise, conçue pour partager les repères essentiels du Projet Nova.",
+    "featured": false,
+    "updated": "2026-07-05",
+    "format": "PDF",
+    "pdf": "documents/02_Depliant_Public_4_Pages_Projet_Nova.pdf",
+    "formats": [
+      "PDF"
+    ]
+  },
+  "livre-court": {
+    "slug": "livre-court",
+    "section": "Livre Nova",
+    "type": "Document public indicatif",
+    "title": "Livre Nova — version courte",
+    "description": "Version accessible du Livre Nova pour comprendre la vision générale sans lire le document complet.",
+    "featured": true,
+    "updated": "2026-07-05",
+    "format": "PDF",
+    "pdf": "documents/03_Livre_Nova_Version_Courte.pdf",
+    "formats": [
+      "PDF"
+    ]
+  },
+  "livre-complet": {
+    "slug": "livre-complet",
+    "section": "Livre Nova",
+    "type": "Document public indicatif",
+    "title": "Livre Nova complet",
+    "description": "Document complet de référence présentant la vision, l’architecture et les fondements du Projet Nova.",
+    "featured": false,
+    "updated": "2026-07-05",
+    "format": "PDF",
+    "pdf": "documents/04_Livre_Nova_Complet.pdf",
+    "formats": [
+      "PDF"
+    ]
+  },
+  "manifeste": {
+    "slug": "manifeste",
+    "section": "Programme",
+    "type": "Document public indicatif",
+    "title": "Manifeste officiel",
+    "description": "Texte de référence qui expose la mission, l’appel public et les engagements fondamentaux du Projet Nova.",
+    "featured": false,
+    "updated": "2026-07-05",
+    "format": "PDF",
+    "pdf": "documents/05_Manifeste_Officiel_Projet_Nova.pdf",
+    "formats": [
+      "PDF"
+    ]
+  },
+  "faq-citoyenne": {
+    "slug": "faq-citoyenne",
+    "section": "Programme",
+    "type": "Document public indicatif",
+    "title": "FAQ citoyenne officielle",
+    "description": "Réponses structurées aux questions citoyennes les plus fréquentes sur la démarche Nova.",
+    "featured": false,
+    "updated": "2026-07-05",
+    "format": "PDF",
+    "pdf": "documents/06_FAQ_Citoyenne_Officielle_Projet_Nova.pdf",
+    "formats": [
+      "PDF"
+    ]
+  },
+  "programme": {
+    "slug": "programme",
+    "section": "Programme",
+    "type": "Document public indicatif",
+    "title": "Programme public complet",
+    "description": "Orientations publiques, propositions et mesures structurées du Projet Nova.",
+    "featured": true,
+    "updated": "2026-07-05",
+    "format": "PDF",
+    "pdf": "documents/07_Programme_Electoral_Complet_Projet_Nova.pdf",
+    "formats": [
+      "PDF"
+    ]
+  },
+  "code-conduite": {
+    "slug": "code-conduite",
+    "section": "Gouvernance",
+    "type": "Document public indicatif",
+    "title": "Code de conduite et gouvernance",
+    "description": "Cadre d’intégrité, de conduite, de transparence et de gouvernance interne du Projet Nova.",
+    "featured": false,
+    "updated": "2026-07-05",
+    "format": "PDF",
+    "pdf": "documents/08_Code_de_Conduite_Gouvernance_Nova.pdf",
+    "formats": [
+      "PDF"
+    ]
+  },
+  "dossier-presse": {
+    "slug": "dossier-presse",
+    "section": "Médias / Presse",
+    "type": "Document public indicatif",
+    "title": "Dossier de presse",
+    "description": "Document de référence pour les médias, partenaires, observateurs et relais d’information.",
+    "featured": false,
+    "updated": "2026-07-05",
+    "format": "PDF",
+    "pdf": "documents/09_Dossier_de_Presse_Projet_Nova.pdf",
+    "formats": [
+      "PDF"
+    ]
+  },
+  "formulaire-soutien": {
+    "slug": "formulaire-soutien",
+    "section": "Recrutement",
+    "type": "Document public indicatif",
+    "title": "Formulaire de soutien / préadhésion",
+    "description": "Version PDF du formulaire de soutien et de préadhésion, sans contribution financière.",
+    "featured": false,
+    "updated": "2026-07-05",
+    "format": "PDF",
+    "pdf": "documents/10_Formulaire_Soutien_Preadhesion_Projet_Nova.pdf",
+    "formats": [
+      "PDF"
+    ]
+  },
+  "charte-visuelle": {
+    "slug": "charte-visuelle",
+    "section": "Identité",
+    "type": "Document public indicatif",
+    "title": "Charte visuelle",
+    "description": "Repères visuels publics du Projet Nova.",
+    "featured": false,
+    "updated": "2026-07-05",
+    "format": "PDF",
+    "pdf": "documents/11_Charte_Visuelle_Projet_Nova.pdf",
+    "formats": [
+      "PDF"
+    ]
+  },
+  "resume-executif": {
+    "slug": "resume-executif",
+    "section": "Synthèse",
+    "type": "Document public indicatif",
+    "title": "Résumé exécutif du Système Nova",
+    "description": "Résumé exécutif du cadre général Nova, publié à titre indicatif et préparatoire.",
+    "featured": false,
+    "updated": "2026-07-05",
+    "format": "PDF",
+    "pdf": "documents/12_Resume_Executif_Officiel_Systeme_Nova.pdf",
+    "formats": [
+      "PDF"
+    ]
+  }
+}
