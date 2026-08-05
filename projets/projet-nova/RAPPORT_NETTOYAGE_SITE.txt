@@ -1,0 +1,7 @@
+Correction effectuée :
+- Conservation de la bannière officielle assets/banniere-nova.jpg
+- Publication limitée aux 12 documents publics demandés
+- Suppression des autres PDF du dossier /documents/
+- Visionneuse PDF intégrée restaurée
+- Bouton de téléchargement séparé, sans téléchargement automatique
+- Pages Accueil, Livre Nova, Programme, Gouvernance, Presse et Recrutement alignées sur la matrice demandée

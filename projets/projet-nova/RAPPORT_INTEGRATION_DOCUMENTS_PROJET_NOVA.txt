@@ -1,0 +1,26 @@
+RAPPORT D'INTÉGRATION - DOCUMENTS PROJET NOVA
+Date: 2026-06-29
+
+Actions appliquées:
+- Remplacement du dossier /documents par les 13 PDF publics corrigés fournis dans documents.7z.
+- Mise à jour de assets/documents.js pour refléter uniquement la bibliothèque publique corrigée.
+- Synchronisation des inventaires JSON hérités avec la même bibliothèque officielle.
+- Redirection des anciens liens internes de visionneuse vers les documents publics corrigés les plus proches.
+- Suppression des anciens PDF contenant des références ancien sigle du dossier public /documents.
+
+Documents publics intégrés:
+- 00 | Index des documents publics | documents/00_Index_Documents_Publics_Site_Web_Projet_Nova.pdf
+- 01 | Résumé officiel — 1 page | documents/01_Resume_Officiel_1_Page_Projet_Nova.pdf
+- 02 | Dépliant public — 4 pages | documents/02_Depliant_Public_4_Pages_Projet_Nova.pdf
+- 03 | Livre Nova — version courte | documents/03_Livre_Nova_Version_Courte.pdf
+- 04 | Livre Nova complet | documents/04_Livre_Nova_Complet.pdf
+- 05 | Manifeste officiel | documents/05_Manifeste_Officiel_Projet_Nova.pdf
+- 06 | FAQ citoyenne officielle | documents/06_FAQ_Citoyenne_Officielle_Projet_Nova.pdf
+- 07 | Programme électoral complet | documents/07_Programme_Electoral_Complet_Projet_Nova.pdf
+- 08 | Code de conduite et gouvernance | documents/08_Code_de_Conduite_Gouvernance_Nova.pdf
+- 09 | Dossier de presse officiel | documents/09_Dossier_de_Presse_Projet_Nova.pdf
+- 10 | Formulaire de soutien / préadhésion | documents/10_Formulaire_Soutien_Preadhesion_Projet_Nova.pdf
+- 11 | Charte visuelle officielle | documents/11_Charte_Visuelle_Projet_Nova.pdf
+- 12 | Résumé exécutif officiel du Système Nova | documents/12_Resume_Executif_Officiel_Systeme_Nova.pdf
+
+Note: les pages institutionnelles qui présentaient les anciens documents techniques pointent maintenant vers les documents publics corrigés, afin d'éviter toute référence publique résiduelle à ancien sigle.

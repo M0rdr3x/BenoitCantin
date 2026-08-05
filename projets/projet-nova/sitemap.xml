@@ -1,17 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://www.benoitcantin.com/</loc></url>
-  <url><loc>https://www.benoitcantin.com/univers.html</loc></url>
-  <url><loc>https://www.benoitcantin.com/a-propos.html</loc></url>
-  <url><loc>https://www.benoitcantin.com/contact.html</loc></url>
-  <url><loc>https://www.benoitcantin.com/projets/ere-des-consciences/index.html</loc></url>
-  <url><loc>https://www.benoitcantin.com/projets/ere-des-consciences/romans/index.html</loc></url>
-  <url><loc>https://www.benoitcantin.com/projets/ere-des-consciences/romans/lire-demo.html</loc></url>
-  <url><loc>https://www.benoitcantin.com/projets/ere-des-consciences/jeu-de-table/index.html</loc></url>
-  <url><loc>https://www.benoitcantin.com/projets/ere-des-consciences/registre/index.html</loc></url>
-  <url><loc>https://www.benoitcantin.com/projets/lumina/index.html</loc></url>
-  <url><loc>https://www.benoitcantin.com/projets/futurax/index.html</loc></url>
-  <url><loc>https://www.benoitcantin.com/projets/chroniques-des-mondes-fractures/index.html</loc></url>
   <url><loc>https://www.benoitcantin.com/projets/projet-nova/index.html</loc></url>
   <url><loc>https://www.benoitcantin.com/projets/projet-nova/comprendre-nova.html</loc></url>
   <url><loc>https://www.benoitcantin.com/projets/projet-nova/programme.html</loc></url>
@@ -22,7 +10,16 @@
   <url><loc>https://www.benoitcantin.com/projets/projet-nova/registre-rencontres.html</loc></url>
   <url><loc>https://www.benoitcantin.com/projets/projet-nova/registre-conformite.html</loc></url>
   <url><loc>https://www.benoitcantin.com/projets/projet-nova/equipe.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/projet-nova/propositions.html</loc></url>
   <url><loc>https://www.benoitcantin.com/projets/projet-nova/presse.html</loc></url>
   <url><loc>https://www.benoitcantin.com/projets/projet-nova/faq.html</loc></url>
   <url><loc>https://www.benoitcantin.com/projets/projet-nova/contact.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/projet-nova/avis-legal.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/projet-nova/confidentialite.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/projet-nova/accessibilite.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/projet-nova/actualites.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/projet-nova/manifeste.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/projet-nova/livre-nova.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/projet-nova/transition.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/projet-nova/code-conduite.html</loc></url>
 </urlset>

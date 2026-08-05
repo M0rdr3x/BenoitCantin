@@ -1,0 +1,10 @@
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.gz
+*.docx
+*.doc
+__MACOSX/
+.DS_Store
