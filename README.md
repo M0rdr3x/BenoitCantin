@@ -1,6 +1,6 @@
 # Portail personnel de Benoit Cantin
 
-Site statique professionnel préparé pour le domaine **benoitcantin.ca**.
+Site statique professionnel préparé pour le domaine **www.benoitcantin.com**.
 
 ## Architecture par univers — version 3
 
@@ -38,7 +38,7 @@ Instructions : `projets/ere-des-consciences/documents/AJOUTER_LA_DEMO_ICI.txt`.
 1. Terminer l’architecture et le contenu du site.
 2. Mettre à jour le dépôt GitHub.
 3. Activer GitHub Pages pour obtenir une adresse de prévisualisation publique.
-4. Configurer le domaine `benoitcantin.ca` chez Namecheap.
+4. Configurer le domaine `www.benoitcantin.com` chez Namecheap.
 5. Configurer Formspree pour transmettre les formulaires à `kingtyrano@gmail.com`.
 6. Tester les formulaires, les courriels, les téléchargements et les pages mobiles.
 

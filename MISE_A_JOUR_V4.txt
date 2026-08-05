@@ -1,0 +1,35 @@
+MISE À JOUR V4 — BENOITCANTIN.COM
+=====================================
+
+Cette mise à jour corrige :
+- les proportions de la page d'accueil et de la constellation;
+- la taille et le centrage des icônes;
+- la section des projets et les panneaux de présentation;
+- la lecture en ligne et le téléchargement de La Cendre du Jugement;
+- l'intégration complète du site Projet Nova dans /projets/projet-nova/;
+- les chemins CSS, JavaScript, images, documents et liens de Projet Nova;
+- les anciens liens partinova.ca, remplacés par le sous-site de benoitcantin.com;
+- la navigation de retour vers le portail Benoit Cantin;
+- les mises en page ordinateur, tablette et mobile;
+- le cache des feuilles de style et scripts.
+
+IMPORTANT
+---------
+Le fichier La_Cendre_du_Jugement_DEMO.pdf est déjà présent dans votre dépôt GitHub.
+Cette archive ne le remplace pas : elle active simplement les liens vers ce fichier.
+
+Formspree n'est pas encore activé, car les identifiants de formulaires Formspree ne sont pas encore fournis. Les formulaires seront reliés lors de l'étape suivante.
+
+VÉRIFICATIONS TECHNIQUES EFFECTUÉES
+-----------------------------------
+- 54 pages HTML analysées.
+- Plus de 2 300 références locales vérifiées.
+- Aucun lien local manquant dans le paquet de mise à jour.
+- Aucun identifiant HTML dupliqué.
+- JavaScript principal, Registre et Projet Nova validés syntaxiquement.
+- Chemins du sous-site Nova corrigés pour un fonctionnement dans /projets/projet-nova/.
+- Domaine, sitemap, robots.txt et balises canoniques corrigés pour www.benoitcantin.com.
+
+APRÈS LE TÉLÉVERSEMENT
+----------------------
+Attendez la fin du déploiement GitHub Pages, puis rechargez le site avec Ctrl+F5 afin de vider le cache.

@@ -6,7 +6,7 @@ Téléversez le contenu de l’archive de mise à jour à la racine du dépôt `
 
 ## Fichier à supprimer avant GitHub Pages
 
-Supprimez temporairement le fichier `CNAME` déjà présent dans le dépôt. Sans cette suppression, GitHub peut rediriger la prévisualisation vers `benoitcantin.ca` avant que Namecheap soit configuré.
+Supprimez temporairement le fichier `CNAME` déjà présent dans le dépôt. Sans cette suppression, GitHub peut rediriger la prévisualisation vers `www.benoitcantin.com` avant que Namecheap soit configuré.
 
 Le fichier `CNAME_APRES_NAMECHEAP.txt` contient la valeur à réutiliser plus tard.
 
