@@ -1,0 +1,15 @@
+Projet Nova — déploiement GitHub Pages
+
+1. Dézipper ce dossier.
+2. Ouvrir le dossier projet_nova_site_AAA_professionnel_v11.
+3. Téléverser le CONTENU du dossier dans le dépôt GitHub partinova/projetnova.
+4. Ne pas téléverser le ZIP lui-même dans le dépôt.
+5. Garder uniquement les PDF publics dans /documents/.
+6. Après le commit, attendre quelques minutes puis rafraîchir www.partinova.ca.
+
+Formulaires :
+- contact.html
+- propositions.html
+- recrutement.html
+
+Chaque formulaire utilise FormSubmit et le courriel officiel : officiellenovaparti@gmail.com.

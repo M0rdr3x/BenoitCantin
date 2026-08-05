@@ -927,7 +927,7 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(36,196,223,.5);outli
   overflow:hidden;
   background-image:
     linear-gradient(180deg, rgba(2,10,23,.88) 0%, rgba(3,16,33,.68) 30%, rgba(3,16,33,.52) 56%, rgba(3,16,33,.72) 82%, rgba(3,16,33,.88) 100%),
-    url("header-bg-nova.webp"),
+    url("assets/header-bg-nova.webp"),
     linear-gradient(135deg,#041120 0%,#0a2341 48%,#0b2a4d 100%) !important;
   background-size:cover, cover, cover !important;
   background-position:center center, center 70%, center center !important;

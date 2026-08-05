@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /documents/00_
+Disallow: /corpus_interne_corrige_pdf/
+Disallow: /rapport/
+Sitemap: https://www.benoitcantin.com/projets/projet-nova/sitemap.xml

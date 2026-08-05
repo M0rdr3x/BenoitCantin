@@ -1,0 +1,11 @@
+Rapport de validation — Projet Nova AAA v11
+
+Pages HTML : 31
+PDF publics : 13
+Liens locaux brisés : 0
+Documents manquants dans la bibliothèque : 0
+Références publiques interdites DOC/DOCX/ZIP/7Z/RAR : 0
+
+Détails liens brisés : Aucun
+Détails documents manquants : Aucun
+Détails références interdites : Aucune
