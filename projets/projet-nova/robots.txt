@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /admin/
-Sitemap: https://benoitcantin.ca/sitemap.xml
+Disallow: /Admin/
+Sitemap: https://www.benoitcantin.com/sitemap.xml
