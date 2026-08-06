@@ -74,9 +74,14 @@
 })();
 
 
-// Finition AAA : comportement mobile et formulaires
+// Formspree : sécurité de transmission et retour visuel
 (function(){
-  function onReady(fn){document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);}
+  function onReady(fn){
+    document.readyState !== 'loading'
+      ? fn()
+      : document.addEventListener('DOMContentLoaded', fn);
+  }
+
   onReady(function(){
     document.querySelectorAll('[data-main-nav] a').forEach(function(a){
       a.addEventListener('click', function(){
@@ -84,16 +89,32 @@
         const toggle=document.querySelector('[data-menu-toggle]');
         if(nav && nav.classList.contains('open')){
           nav.classList.remove('open');
-          if(toggle) toggle.setAttribute('aria-expanded','false');
+          if(toggle)toggle.setAttribute('aria-expanded','false');
         }
       });
     });
+
     document.querySelectorAll('form.nova-online-form').forEach(function(form){
+      form.action='https://formspree.io/f/xkolwjdg';
+      form.method='POST';
+      form.acceptCharset='UTF-8';
+
+      ['_template','_next','_captcha','_autoresponse','_cc','_replyto']
+        .forEach(function(name){
+          form.querySelectorAll('[name="'+name+'"]').forEach(function(field){
+            field.remove();
+          });
+        });
+
       form.addEventListener('submit', function(){
-        const emailField=form.querySelector('input[type="email"][name="email"], input[type="email"]');
-        const email=emailField ? emailField.value.trim() : '';
-        form.querySelectorAll('input[name="_replyto"], input[data-copy-replyto]').forEach(function(i){i.value=email;});
-        form.querySelectorAll('input[name="_cc"], input[data-copy-cc]').forEach(function(i){i.value=email;});
+        const button=form.querySelector('button[type="submit"], input[type="submit"]');
+        if(button){
+          button.disabled=true;
+          button.setAttribute('aria-disabled','true');
+          if(button.tagName==='BUTTON'){
+            button.textContent='Transmission en cours…';
+          }
+        }
       });
     });
   });
