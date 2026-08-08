@@ -72,3 +72,16 @@
     margin-inline:auto;
   }
 }
+
+/* Correctif v3 — visuels officiels des jeux */
+.sinjira-image-card .sinjira-game-poster{
+  width:100%;
+  height:auto;
+  max-height:none;
+  aspect-ratio:auto;
+  object-fit:contain;
+  object-position:center;
+  display:block;
+  border-radius:18px;
+  background:#05070c;
+}
