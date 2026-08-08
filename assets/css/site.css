@@ -1121,3 +1121,7 @@ body { overflow-x: hidden; }
   .home-page .node-3 { right: 10%; bottom: 8%; }
   .home-page .node-4 { left: 10%; bottom: 8%; }
 }
+
+/* SINJIRA rebrand v7 */
+.project-card img[src*="sinjira-emblem"], .orbit-node img[src*="sinjira-emblem"]{object-fit:cover}
+.franchise-label{display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#ff8a70}
