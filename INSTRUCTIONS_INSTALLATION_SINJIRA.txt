@@ -1,0 +1,25 @@
+INSTALLATION - REBRANDING SINJIRA
+
+1. Décompresser l’archive.
+2. Ouvrir le dépôt GitHub M0rdr3x/BenoitCantin.
+3. Add file -> Upload files.
+4. Glisser TOUT le contenu extrait en conservant l’arborescence.
+5. Autoriser le remplacement des fichiers existants.
+6. Commit recommandé :
+   Rebranding complet de la franchise vers SINJIRA
+7. Attendre GitHub Actions / Pages avec une coche verte.
+8. Recharger avec Ctrl+F5.
+
+Pages prioritaires à tester :
+https://www.benoitcantin.com/
+https://www.benoitcantin.com/univers.html
+https://www.benoitcantin.com/contact.html
+https://www.benoitcantin.com/projets/sinjira/
+https://www.benoitcantin.com/projets/sinjira/romans/
+https://www.benoitcantin.com/projets/sinjira/jeux/
+https://www.benoitcantin.com/projets/sinjira/jeux/fracture-du-reseau-mere/
+https://www.benoitcantin.com/projets/sinjira/jeux/reseau-mere-resistance/
+https://www.benoitcantin.com/projets/sinjira/registre/
+
+Tester aussi une ancienne URL pour vérifier la redirection :
+https://www.benoitcantin.com/projets/ere-des-consciences/

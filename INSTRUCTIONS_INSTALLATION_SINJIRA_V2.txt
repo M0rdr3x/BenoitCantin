@@ -1,0 +1,50 @@
+MISE À JOUR VISUELLE COMPLÈTE — SINJIRA V2
+
+Cette archive contient le rebranding SINJIRA complet + les nouveaux visuels officiels fournis.
+
+Facebook officiel SINJIRA :
+https://www.facebook.com/Sinjira.Univers
+
+Visuels remplacés :
+- bannière principale SINJIRA
+- emblème / icône SINJIRA
+- affiche générale SINJIRA
+- Registre des Consciences
+- Réseau-Mère : Résistance
+- promotion de la version démo
+- couverture du Livre I : La Cendre du Jugement
+- icône Fracture du Réseau-Mère optimisée à partir du visuel officiel déjà fourni
+
+Pages principales mises à jour :
+- index.html
+- univers.html
+- contact.html
+- projets/sinjira/index.html
+- projets/sinjira/romans/index.html
+- projets/sinjira/registre/index.html
+- projets/sinjira/registre/merci.html
+- projets/sinjira/jeux/index.html
+- projets/sinjira/jeux/fracture-du-reseau-mere/index.html
+- projets/sinjira/jeux/reseau-mere-resistance/index.html
+
+INSTALLATION GITHUB
+1. Décompresser cette archive.
+2. Ouvrir le dépôt M0rdr3x/BenoitCantin.
+3. Add file -> Upload files.
+4. Glisser TOUT le contenu extrait à la racine du dépôt.
+5. Conserver exactement l’arborescence des dossiers.
+6. Accepter le remplacement des fichiers existants.
+7. Message de commit recommandé :
+   Remplacement complet des visuels SINJIRA et mise à jour Facebook
+8. Attendre la coche verte dans GitHub Actions.
+9. Faire Ctrl+F5 sur le site.
+
+Pages à tester :
+https://www.benoitcantin.com/
+https://www.benoitcantin.com/univers.html
+https://www.benoitcantin.com/contact.html
+https://www.benoitcantin.com/projets/sinjira/
+https://www.benoitcantin.com/projets/sinjira/romans/
+https://www.benoitcantin.com/projets/sinjira/registre/
+https://www.benoitcantin.com/projets/sinjira/jeux/
+https://www.benoitcantin.com/projets/sinjira/jeux/reseau-mere-resistance/

@@ -1,0 +1,19 @@
+{
+  "missing_links": [
+    [
+      "404.html",
+      "/index.html"
+    ]
+  ],
+  "missing_count": 1,
+  "brand_remnants": [
+    "INSTRUCTIONS_INSTALLATION.txt",
+    "INSTRUCTIONS_INSTALLATION_SINJIRA.txt",
+    "MIGRATION_SINJIRA.md",
+    "README.md",
+    "netlify.toml",
+    "projets/sinjira/romans/index.html",
+    "projets/sinjira/romans/lire-demo.html"
+  ],
+  "js_errors": []
+}

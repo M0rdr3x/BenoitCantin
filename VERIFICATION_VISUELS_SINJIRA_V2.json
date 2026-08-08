@@ -1,0 +1,26 @@
+{
+  "version": "SINJIRA visual replacement v2",
+  "facebook_officiel": "https://www.facebook.com/Sinjira.Univers",
+  "visuals": {
+    "banniere": "assets/media/sinjira-banner.webp",
+    "embleme": "assets/media/sinjira-emblem.webp",
+    "affiche_franchise": "assets/media/sinjira-poster.webp",
+    "registre": "assets/media/sinjira-registre.webp",
+    "reseau_mere_resistance": "assets/media/sinjira-reseau-mere-resistance.webp",
+    "demo_promo": "assets/media/sinjira-demo-promo.webp",
+    "livre_1": "assets/media/sinjira-livre-1-cover.webp"
+  },
+  "checks": {
+    "old_facebook_link_removed": true,
+    "new_facebook_link_present": true,
+    "sinjira_banner_present": true,
+    "sinjira_emblem_present": true,
+    "sinjira_poster_present": true,
+    "registre_visual_present": true,
+    "resistance_visual_present": true,
+    "demo_visual_present": true,
+    "cover_visual_present": true,
+    "home_points_to_sinjira": true,
+    "contact_has_sinjira": true
+  }
+}
