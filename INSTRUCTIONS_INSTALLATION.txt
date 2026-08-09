@@ -1,0 +1,34 @@
+SINJIRA — FRACTURE DU RÉSEAU-MÈRE
+MISE À JOUR V4 : FICHE JOUEUR DIRECTEMENT SUR LE SITE
+
+Cette mise à jour place la fiche joueur officielle dans le bon dossier du jeu :
+
+projets/sinjira/jeux/fracture-du-reseau-mere/documents/
+  SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf
+
+NOUVEAUTÉS
+- Bouton « Utiliser la fiche joueur » sur la page Fracture du Réseau-Mère.
+- Page dédiée fiche-joueur.html.
+- PDF affiché directement dans le site.
+- Bouton plein écran.
+- Bouton de téléchargement.
+- Accès direct depuis la page générale des jeux.
+- Présentation adaptée aux ordinateurs, tablettes et téléphones.
+
+INSTALLATION GITHUB
+1. Décompresser l’archive.
+2. Ouvrir M0rdr3x/BenoitCantin.
+3. Add file -> Upload files.
+4. Glisser tout le dossier « projets » à la racine du dépôt.
+5. Accepter les remplacements.
+6. Commit recommandé :
+   Ajout de la fiche joueur interactive de Fracture du Réseau-Mère
+7. Attendre le déploiement GitHub Pages.
+8. Faire Ctrl+Shift+R.
+
+PAGES À TESTER
+https://www.benoitcantin.com/projets/sinjira/jeux/fracture-du-reseau-mere/
+https://www.benoitcantin.com/projets/sinjira/jeux/fracture-du-reseau-mere/fiche-joueur.html
+
+PDF DIRECT
+https://www.benoitcantin.com/projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf

@@ -1,0 +1,22 @@
+SINJIRA — FRACTURE DU RÉSEAU-MÈRE
+CORRECTIF V5 — MODE INVITÉ SANS STOCKAGE
+
+Objectif :
+- Le joueur écrit directement dans les champs du PDF remplissable.
+- Le site n’enregistre aucune saisie.
+- Aucune donnée n’est envoyée à Formspree ou à une base de données.
+- Si le joueur veut conserver sa partie, il télécharge la fiche remplie depuis le lecteur PDF.
+- La fermeture de la page peut faire perdre toute modification non téléchargée.
+
+Le PDF lui-même n’a pas été modifié.
+
+Compte joueur :
+Une zone « Compte joueur SINJIRA — À venir » a été ajoutée, mais aucun compte n’est encore actif.
+Pour de vrais comptes synchronisés entre appareils, GitHub Pages doit être relié à un service
+d’authentification et de base de données (par exemple Supabase ou Firebase).
+
+INSTALLATION
+Téléverser le dossier projets à la racine du dépôt GitHub et accepter les remplacements.
+
+Commit recommandé :
+Mode invité sans stockage pour la fiche joueur Fracture du Réseau-Mère

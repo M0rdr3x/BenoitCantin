@@ -1,0 +1,24 @@
+{
+  "checks": {
+    "official_pdf": true,
+    "web_sheet": true,
+    "account_signup": true,
+    "account_login": true,
+    "dashboard": true,
+    "sql_migration": true,
+    "report_function": true,
+    "contribution_function": true,
+    "admin_function": true,
+    "admin_page": true
+  },
+  "javascript_syntax": {
+    "sinjira-supabase-config.js": true,
+    "sinjira-supabase.js": true,
+    "sinjira-account.js": true,
+    "sinjira-player-sheet.js": true,
+    "sinjira-admin.js": true
+  },
+  "pdf_field_count_used": 64,
+  "backend": "Supabase Auth + Postgres/RLS + Edge Functions",
+  "email": "Resend"
+}
