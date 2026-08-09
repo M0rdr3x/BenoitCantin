@@ -7,7 +7,7 @@
   <meta name="description" content="Section officielle du jeu Fracture du Réseau-Mère, rattaché à l’univers de SINJIRA." />
   <link rel="icon" href="../../../../assets/icons/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="../../../../assets/css/site.css?v=7.2-sinjira" />
-  <link rel="stylesheet" href="../jeux.css?v=2.0" />
+  <link rel="stylesheet" href="../jeux.css?v=2.4" />
 </head>
 <body class="project-page games-page game-detail-page" style="--project-accent:#ff7059;--project-accent-2:#d88cff">
   <a class="skip-link" href="#contenu">Aller au contenu</a>
@@ -22,7 +22,7 @@
         <a href="../../index.html">SINJIRA</a>
         <a href="../../romans/index.html">Romans</a>
         <a aria-current="page" href="../index.html">Jeux</a>
-        <a class="nav-cta" href="../../registre/index.html">Registre</a>
+        <a href="../../registre/index.html">Registre</a><a href="../../../../compte/bibliotheque.html">Bibliothèque</a><a class="nav-cta" href="../../../../compte/index.html">Compte SINJIRA</a>
       </nav>
     </div>
   </header>
@@ -43,7 +43,11 @@
           <div class="project-tag-list">
             <span class="tag">Même univers</span>
             <span class="tag">Page indépendante</span>
-            <span class="tag">Documentation évolutive</span>
+            <span class="tag">Fiche joueur remplissable</span>
+          </div>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="fiche-web.html">Jouer avec la fiche web</a>
+            <a class="btn btn-secondary" href="fiche-joueur.html">Utiliser le PDF direct</a>
           </div>
         </div>
         <div class="game-image-panel">
@@ -60,6 +64,53 @@
         <a href="../../registre/index.html">Registre des Consciences</a>
       </div>
     </nav>
+
+    <section class="section section-tight">
+      <div class="container player-tool-panel">
+        <div class="player-tool-copy">
+          <span class="eyebrow">Outil de partie</span>
+          <span class="status-badge">Disponible maintenant</span>
+          <h2>Fiche joueur interactive</h2>
+          <p>
+            Utilisez cette fiche pendant la partie. Elle permet d’inscrire le nom ou pseudo,
+            le numéro de joueur, le code de partie, les cartes reçues, les rapports, les preuves,
+            les soupçons, l’accusation finale et les notes privées.
+          </p>
+          <p class="player-tool-note">
+            L’identité demeure secrète jusqu’à la fin. La fiche est un PDF remplissable au
+            format Lettre 8,5 × 11 po. En mode invité, aucune saisie n’est envoyée ou enregistrée
+            par le site. Le joueur télécharge sa propre copie seulement s’il souhaite la conserver.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="fiche-joueur.html">Remplir la fiche sur le site</a>
+            <a class="btn btn-secondary" href="documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf" target="_blank" rel="noopener">Plein écran</a>
+            <a class="btn btn-secondary" href="documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf" download>Télécharger une copie</a>
+          </div>
+        </div>
+        <div class="player-sheet-preview" aria-hidden="true">
+          <span class="player-sheet-preview-title">SINJIRA</span>
+          <strong>FRACTURE DU<br>RÉSEAU-MÈRE</strong>
+          <span>FICHE JOUEUR</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight">
+      <div class="container game-facts-layout">
+        <article class="content-card highlight-card">
+          <span class="eyebrow">Fiche joueur</span>
+          <h2>Deux façons de jouer</h2>
+          <p><strong>Fiche web :</strong> mêmes champs que la fiche officielle, avec rapport PDF, envoi par courriel, sauvegarde facultative dans un compte et contribution volontaire.</p>
+          <div class="hero-actions"><a class="btn btn-primary" href="fiche-web.html">Ouvrir la fiche web</a></div>
+        </article>
+        <aside class="content-card">
+          <span class="eyebrow">PDF direct</span>
+          <h2>Mode sans compte</h2>
+          <p>Écrivez directement dans le PDF remplissable. Le site n’enregistre rien; téléchargez votre copie si vous souhaitez la conserver.</p>
+          <div class="hero-actions"><a class="btn btn-secondary" href="fiche-joueur.html">Ouvrir le lecteur PDF</a></div>
+        </aside>
+      </div>
+    </section>
 
     <section class="section section-tight">
       <div class="container game-facts-layout">
@@ -92,7 +143,12 @@
         <article class="game-info-card"><span class="game-info-number">01</span><h3>Présentation</h3><p>Résumé officiel du concept et de sa place dans la saga.</p></article>
         <article class="game-info-card"><span class="game-info-number">02</span><h3>Règles et mécaniques</h3><p>Section à remplir quand les documents officiels seront disponibles.</p></article>
         <article class="game-info-card"><span class="game-info-number">03</span><h3>Prototype et avancement</h3><p>Étapes de développement, tests et versions à venir.</p></article>
-        <article class="game-info-card"><span class="game-info-number">04</span><h3>Documents et médias</h3><p>Images, guides, annonces et téléchargements associés au projet.</p></article>
+        <article class="game-info-card game-info-card--active">
+  <span class="game-info-number">04</span>
+  <h3>Documents de partie</h3>
+  <p>La fiche joueur officielle est disponible en version remplissable pour jouer directement depuis le site.</p>
+  <a class="game-inline-link" href="fiche-joueur.html">Ouvrir la fiche joueur →</a>
+</article>
       </div>
     </section>
 
@@ -129,6 +185,6 @@
       <div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Tous droits réservés.</span></div>
     </div>
   </footer>
-  <script defer src="../../../../assets/js/site.js?v=7.2-sinjira"></script>
+  <script defer src="../../../../assets/js/site.js?v=7.4-sinjira"></script>
 </body>
 </html>
