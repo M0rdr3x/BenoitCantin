@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Créer un compte | Compte SINJIRA</title>
+  <link rel="icon" href="../assets/icons/sinjira-favicon.png" type="image/png">
+  <link rel="stylesheet" href="../assets/css/site.css?v=7.5-player">
+  <link rel="stylesheet" href="../assets/css/sinjira-player-account.css?v=1.0">
+</head>
+<body class="account-page" data-account-page="signup">
+<header class="site-header">
+  <div class="container nav-shell">
+    <a class="brand" href="../projets/sinjira/index.html">
+      <img src="../assets/media/sinjira-emblem.webp" alt="" width="47" height="47" style="border-radius:50%">
+      <span class="brand-text"><strong>SINJIRA</strong><span>Compte universel</span></span>
+    </a>
+    <nav class="main-nav"><a href="connexion.html">Connexion</a></nav>
+  </div>
+</header>
+<main>
+  <section class="account-hero">
+    <div class="account-shell account-layout">
+      <article class="account-card">
+        <span class="eyebrow">Compte SINJIRA</span>
+        <h1>Créer votre compte</h1>
+        <p>La sauvegarde est volontaire. Vos parties privées ne sont jamais versées au programme d’analyse sans une action séparée de votre part.</p>
+        <p class="account-state" data-backend-state></p>
+        <form class="account-form" data-signup-form>
+          <div class="field"><label for="signup-pseudo">Pseudo joueur *</label><input id="signup-pseudo" name="pseudo" maxlength="60" required></div>
+          <div class="field"><label for="signup-name">Nom affiché</label><input id="signup-name" name="display_name" maxlength="100"></div>
+          <div class="field"><label for="signup-email">Courriel *</label><input id="signup-email" name="email" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="signup-password">Mot de passe *</label><input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="10" required><small>Minimum 10 caractères.</small></div>
+          <div class="field"><label for="signup-confirm">Confirmer le mot de passe *</label><input id="signup-confirm" name="password_confirm" type="password" autocomplete="new-password" minlength="10" required></div>
+          <label class="account-check">
+            <input type="checkbox" required>
+            <span>J’accepte la <a href="confidentialite-joueur.html" target="_blank">politique de confidentialité des comptes joueurs</a>.</span>
+          </label>
+          <div class="notice">
+            <strong>Programme Contributeur SINJIRA — facultatif</strong>
+            <p>Vous pourrez aider à améliorer le jeu et les futures extensions en partageant volontairement certaines données de partie dissociées de votre profil.</p>
+          </div>
+          <label class="account-check">
+            <input name="initial_contributor_opt_in" type="checkbox" value="yes">
+            <span>Je souhaite activer le Programme Contributeur. Le partage restera volontaire pour chaque partie.</span>
+          </label>
+          <label class="account-check">
+            <input name="share_free_text" type="checkbox" value="yes">
+            <span>J’autorise aussi le partage de mes commentaires libres lorsque je choisis de contribuer.</span>
+          </label>
+          <button class="btn btn-primary" type="submit">Créer mon compte</button>
+        </form>
+        <div class="account-status" data-account-status hidden></div>
+      </article>
+      <aside class="account-card">
+        <h2>Vos choix restent séparés</h2>
+        <p><strong>Sauvegarde privée :</strong> uniquement dans votre compte.</p>
+        <p><strong>Contribution :</strong> seulement si vous activez le programme puis partagez une partie volontairement.</p>
+        <p><strong>Mode invité :</strong> aucune sauvegarde serveur.</p>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© <span data-year></span> Benoit Cantin.</span>
+      <span>Compte SINJIRA</span>
+    </div>
+  </div>
+</footer>
+<script defer src="../assets/js/site.js?v=7.5-player"></script>
+<script type="module" src="../assets/js/sinjira-account.js?v=1.0"></script>
+</body>
+</html>
