@@ -1,0 +1,22 @@
+project_id = "VOTRE_PROJECT_REF"
+
+[functions.send-game-report]
+verify_jwt = false
+
+[functions.get-document-url]
+verify_jwt = false
+
+[functions.submit-game-contribution]
+verify_jwt = true
+
+[functions.revoke-my-contributions]
+verify_jwt = true
+
+[functions.delete-player-account]
+verify_jwt = true
+
+[functions.admin-analytics]
+verify_jwt = true
+
+[functions.admin-console]
+verify_jwt = true
