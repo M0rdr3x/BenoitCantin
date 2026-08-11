@@ -15,6 +15,47 @@
     });
   }
 
+  // Constellation du portail : l'image centrale représente Benoit Cantin
+  // au repos, puis prévisualise chaque univers au survol ou au focus clavier.
+  const core = document.querySelector('[data-core-preview]');
+  if (core) {
+    const coreImage = core.querySelector('img');
+    const nodes = [...document.querySelectorAll('.cosmos-card .orbit-node[data-core-src]')];
+    const defaultSrc = core.dataset.defaultSrc || coreImage?.getAttribute('src') || '';
+    const defaultAlt = core.dataset.defaultAlt || coreImage?.getAttribute('alt') || 'Benoit Cantin';
+
+    const showCore = (node) => {
+      if (!coreImage || !node) return;
+      const src = node.dataset.coreSrc;
+      if (!src) return;
+      core.classList.add('is-project-preview');
+      coreImage.classList.add('is-changing');
+      window.setTimeout(() => {
+        coreImage.src = src;
+        coreImage.alt = node.dataset.coreAlt || node.getAttribute('aria-label') || '';
+        coreImage.classList.remove('is-changing');
+      }, 90);
+    };
+
+    const resetCore = () => {
+      if (!coreImage) return;
+      core.classList.remove('is-project-preview');
+      coreImage.classList.add('is-changing');
+      window.setTimeout(() => {
+        coreImage.src = defaultSrc;
+        coreImage.alt = defaultAlt;
+        coreImage.classList.remove('is-changing');
+      }, 90);
+    };
+
+    nodes.forEach((node) => {
+      node.addEventListener('pointerenter', () => showCore(node));
+      node.addEventListener('pointerleave', resetCore);
+      node.addEventListener('focus', () => showCore(node));
+      node.addEventListener('blur', resetCore);
+    });
+  }
+
   document.querySelectorAll('[data-year]').forEach((node) => {
     node.textContent = new Date().getFullYear();
   });

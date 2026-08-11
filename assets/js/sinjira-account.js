@@ -47,19 +47,35 @@ async function loadImageFile(file){
   }finally{setTimeout(()=>URL.revokeObjectURL(url),0)}
 }
 async function prepareAvatarBlob(file){
-  const allowed=['image/jpeg','image/png','image/webp'];
-  if(!allowed.includes(file.type)) throw new Error('Utilisez une image JPG, PNG ou WebP.');
   if(file.size>8*1024*1024) throw new Error('La photo doit faire 8 Mo ou moins.');
-  const image=await loadImageFile(file);
+  if(file.type && !file.type.startsWith('image/')) throw new Error('Choisissez un fichier image.');
+  let image;
+  try{
+    image=await loadImageFile(file);
+  }catch(_){
+    throw new Error('Ce format d’image n’est pas lisible par votre navigateur. Essayez une autre image ou convertissez-la en JPG, PNG, WebP ou AVIF.');
+  }
   if(image.naturalWidth<160||image.naturalHeight<160) throw new Error('Choisissez une photo d’au moins 160 × 160 px.');
   const side=Math.min(image.naturalWidth,image.naturalHeight);
   const sx=(image.naturalWidth-side)/2, sy=(image.naturalHeight-side)/2;
   const canvas=document.createElement('canvas'); canvas.width=512; canvas.height=512;
   const ctx=canvas.getContext('2d',{alpha:false});
+  ctx.fillStyle='#0b1020';
+  ctx.fillRect(0,0,512,512);
   ctx.drawImage(image,sx,sy,side,side,0,0,512,512);
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',0.88));
   if(!blob) throw new Error('Impossible d’optimiser cette photo.');
   return blob;
+}
+
+
+async function initAdminNavigation(){
+  if(!isSinjiraBackendConfigured()) return;
+  const {data:{user},error:userError}=await getSupabase().auth.getUser();
+  if(userError||!user) return;
+  const {data:isAdmin,error}=await getSupabase().rpc('is_sinjira_admin',{p_user_id:user.id});
+  if(error||!isAdmin) return;
+  document.querySelectorAll('[data-admin-nav],[data-admin-entry]').forEach(node=>{node.hidden=false});
 }
 
 
@@ -174,7 +190,12 @@ async function profilePage(){
     save.disabled=true;choose.disabled=true;avatarState.textContent='Téléversement de la photo…';
     const path=`${user.id}/avatar.webp`;
     const {error:uploadError}=await getSupabase().storage.from(SINJIRA_CONFIG.avatarBucket||'sinjira-avatars').upload(path,selectedFile,{upsert:true,contentType:'image/webp',cacheControl:'3600'});
-    if(uploadError){setStatus(status,uploadError.message,'error');save.disabled=false;choose.disabled=false;return}
+    if(uploadError){
+      const msg=/row-level security|RLS/i.test(uploadError.message||'')
+        ? 'La sécurité du stockage a refusé le téléversement. Rechargez la page pour renouveler votre session puis réessayez.'
+        : (uploadError.message||'Téléversement impossible.');
+      setStatus(status,msg,'error');save.disabled=false;choose.disabled=false;return
+    }
     const {error:updateError}=await getSupabase().from('profiles').update({avatar_path:path}).eq('user_id',user.id);
     if(updateError){setStatus(status,updateError.message,'error');save.disabled=false;choose.disabled=false;return}
     p.avatar_path=path;preview.src=`${avatarPublicUrl(path)}?v=${Date.now()}`;preview.dataset.avatarPath=path;selectedFile=null;input.value='';save.hidden=true;save.disabled=false;choose.disabled=false;remove.hidden=false;avatarState.textContent='Photo de profil enregistrée.';setStatus(status,'Photo de profil mise à jour.','success');
@@ -222,6 +243,7 @@ async function settings(){
 }
 document.querySelectorAll('[data-logout]').forEach(b=>b.addEventListener('click',signOut));
 backendNotice();
+initAdminNavigation().catch(()=>{});
 (async()=>{try{
   if(page==='signup')await signup();else if(page==='login')await login();else if(page==='forgot')await forgot();else if(page==='reset')await reset();
   else if(page==='dashboard')await dashboard();else if(page==='games')await games();else if(page==='profile')await profilePage();else if(page==='contributions')await contributions();else if(page==='settings')await settings();
