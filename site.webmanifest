@@ -1,0 +1,11 @@
+{
+  "name": "Projet Nova",
+  "short_name": "Nova",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#041528",
+  "theme_color": "#041528",
+  "icons": [
+    {"src": "assets/favicon.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}

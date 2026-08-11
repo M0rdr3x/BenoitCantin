@@ -1,0 +1,7 @@
+Projet Nova - Site professionnel corrigé
+
+1. Dézipper ce dossier.
+2. Envoyer le contenu du dossier projet_nova_site_professionnel_corrige dans GitHub.
+3. Ne pas téléverser le ZIP lui-même.
+4. Le site utilise uniquement des PDF publics dans /documents.
+5. La visionneuse centrale est visionneuse.html.
