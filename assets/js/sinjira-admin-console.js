@@ -2,10 +2,26 @@ import {getSupabase,requireUser,escapeHtml,setStatus} from './sinjira-supabase.j
 
 const status=document.querySelector('[data-admin-status]');
 let projects=[];
+
+async function requireSinjiraAdmin(){
+  const s=getSupabase();
+  const {data:{user},error:userError}=await s.auth.getUser();
+  if(userError||!user){
+    location.replace('/compte/connexion.html?next=/admin/sinjira/');
+    throw new Error('AUTH_REQUIRED');
+  }
+  const {data:isAdmin,error}=await s.rpc('is_sinjira_admin',{p_user_id:user.id});
+  if(error||!isAdmin){
+    location.replace('/compte/index.html');
+    throw new Error('ADMIN_REQUIRED');
+  }
+  return user;
+}
+
 function adminAvatarUrl(path){
-  if(!path) return '../../assets/media/sinjira-emblem.webp';
+  if(!path) return '/assets/media/sinjira-emblem.webp';
   const {data}=getSupabase().storage.from('sinjira-avatars').getPublicUrl(path);
-  return data?.publicUrl||'../../assets/media/sinjira-emblem.webp';
+  return data?.publicUrl||'/assets/media/sinjira-emblem.webp';
 }
 
 async function call(action,extra={}){
@@ -135,4 +151,4 @@ async function analytics(){
   const d=(await call('analytics')).analytics||{},box=document.querySelector('[data-admin-analytics]');
   box.innerHTML=Object.entries(d).map(([g,a])=>`<article class="admin-analytics-card"><h3>${escapeHtml(g)}</h3><dl><div><dt>Contributions</dt><dd>${a.count}</dd></div><div><dt>Joueurs moyens</dt><dd>${a.average_players??'—'}</dd></div><div><dt>Durée moyenne</dt><dd>${a.average_duration?`${a.average_duration} min`:'—'}</dd></div><div><dt>Note moyenne</dt><dd>${a.average_rating??'—'}</dd></div></dl></article>`).join('')||'<p>Aucune contribution.</p>';
 }
-(async()=>{await requireUser('/compte/connexion.html');tabs();bindProject();bindUpload();bindPlaytest();bindExtension();try{await dashboard();await loadProjects();await Promise.all([loadDocs(),loadRequests(),loadUsers(),loadPlaytests(),loadExtensions(),loadGameReports(),analytics()]);setStatus(status,'Administration SINJIRA chargée.','success')}catch(x){setStatus(status,x.message,'error')}})();
+(async()=>{try{await requireSinjiraAdmin();tabs();bindProject();bindUpload();bindPlaytest();bindExtension();await dashboard();await loadProjects();await Promise.all([loadDocs(),loadRequests(),loadUsers(),loadPlaytests(),loadExtensions(),loadGameReports(),analytics()]);setStatus(status,'Administration SINJIRA chargée.','success')}catch(x){if(x?.message!=='AUTH_REQUIRED'&&x?.message!=='ADMIN_REQUIRED')setStatus(status,x.message||'Erreur de chargement de l’administration.','error')}})();
