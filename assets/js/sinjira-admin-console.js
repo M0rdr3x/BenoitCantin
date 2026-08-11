@@ -7,7 +7,7 @@ async function requireSinjiraAdmin(){
   const s=getSupabase();
   const {data:{user},error:userError}=await s.auth.getUser();
   if(userError||!user){
-    location.replace('/compte/connexion.html?next=/admin/sinjira/');
+    location.replace('/compte/connexion.html?next=/Admin/sinjira/');
     throw new Error('AUTH_REQUIRED');
   }
   const {data:isAdmin,error}=await s.rpc('is_sinjira_admin',{p_user_id:user.id});
