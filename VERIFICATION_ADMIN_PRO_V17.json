@@ -1,0 +1,16 @@
+{
+  "admin_page_present": true,
+  "admin_uses_absolute_assets": true,
+  "all_account_pages_point_uppercase": true,
+  "admin_guard_present": true,
+  "projects": true,
+  "documents": true,
+  "players": true,
+  "access": true,
+  "playtests": true,
+  "reports": true,
+  "analytics": true,
+  "extensions": true,
+  "syntax_sinjira-account.js": true,
+  "syntax_sinjira-admin-console.js": true
+}
