@@ -1,4 +1,4 @@
-project_id = "VOTRE_PROJECT_REF"
+project_id = "gpvivleexywljowcqkru"
 
 [functions.send-game-report]
 verify_jwt = false
@@ -19,4 +19,13 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.admin-console]
+verify_jwt = true
+
+[functions.send-player-sheet]
+verify_jwt = true
+
+[functions.submit-fracture-endgame]
+verify_jwt = true
+
+[functions.admin-reports]
 verify_jwt = true
