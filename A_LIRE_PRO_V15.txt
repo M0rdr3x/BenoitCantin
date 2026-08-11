@@ -1,0 +1,42 @@
+BENOITCANTIN — CORRECTIF PRO V15
+================================
+
+CORRECTIONS
+1. Constellation de la page d'accueil
+   - au repos : le centre affiche le sceau personnel BC de Benoit Cantin;
+   - survol/focus SINJIRA : le centre affiche SINJIRA;
+   - survol/focus Lumina : le centre affiche Lumina;
+   - survol/focus Futurax : le centre affiche Futurax;
+   - survol/focus Chroniques : le centre affiche Chroniques;
+   - survol/focus Projet Nova : le centre affiche Projet Nova.
+
+2. Photos de profil
+   - le sélecteur accepte maintenant toutes les images proposées par l'appareil;
+   - toute image lisible par le navigateur est recadrée automatiquement au centre;
+   - résultat toujours optimisé à 512 × 512 px WebP;
+   - maximum 8 Mo avant conversion.
+
+3. Erreur RLS lors de l'enregistrement de la photo
+   - corrigée dans Supabase;
+   - la politique SELECT manquante a été ajoutée au bucket sinjira-avatars;
+   - cela complète INSERT + UPDATE nécessaires à l'option upsert.
+
+4. Menu administrateur
+   - un lien « Administration » est maintenant présent dans le volet du Compte SINJIRA;
+   - il reste caché pour les joueurs ordinaires;
+   - il est affiché automatiquement lorsque le RPC sécurisé confirme le rôle administrateur;
+   - kingtyrano@gmail.com / AbyssTime reste le compte propriétaire administrateur.
+
+INSTALLATION
+1. Décompresser ce ZIP.
+2. Dans GitHub M0rdr3x/BenoitCantin : Add file -> Upload files.
+3. Téléverser tout le contenu à la racine.
+4. Accepter les remplacements.
+5. Commit conseillé :
+   PRO V15 - constellation interactive, avatars et menu administrateur
+6. Attendre GitHub Pages.
+7. Faire Ctrl+Shift+R.
+
+BACKEND
+Le correctif RLS est DÉJÀ appliqué dans Supabase.
+Le SQL fourni dans supabase/migrations est une copie de référence.

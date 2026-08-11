@@ -1,0 +1,22 @@
+{
+  "home_default_is_personal_bc": true,
+  "home_all_5_project_previews": true,
+  "site_js_hover_logic": true,
+  "avatar_accepts_image_wildcard": true,
+  "avatar_output_512": true,
+  "avatar_no_hardcoded_jpg_png_webp_only": true,
+  "admin_rpc_visibility": true,
+  "admin_link_in_dashboard": true,
+  "migration_select_policy": true,
+  "admin_nav_index.html": true,
+  "admin_nav_bibliotheque.html": true,
+  "admin_nav_documents.html": true,
+  "admin_nav_mes-parties.html": true,
+  "admin_nav_playtests.html": true,
+  "admin_nav_profil.html": true,
+  "admin_nav_contributions.html": true,
+  "admin_nav_parametres.html": true,
+  "admin_nav_projet.html": true,
+  "js_syntax_site.js": true,
+  "js_syntax_sinjira-account.js": true
+}
