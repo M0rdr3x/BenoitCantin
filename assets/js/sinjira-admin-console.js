@@ -8,6 +8,11 @@ async function call(action,extra={}){
   if(error||!data?.ok)throw new Error(data?.error||error?.message||'Erreur administration');
   return data;
 }
+async function callReports(action,extra={}){
+  const {data,error}=await getSupabase().functions.invoke('admin-reports',{body:{action,...extra}});
+  if(error||!data?.ok)throw new Error(data?.error||error?.message||'Erreur rapports administrateur');
+  return data;
+}
 function tabs(){
   document.querySelectorAll('[data-admin-tab]').forEach(b=>b.addEventListener('click',()=>{
     document.querySelectorAll('[data-admin-tab]').forEach(x=>x.removeAttribute('aria-current'));b.setAttribute('aria-current','page');
@@ -15,8 +20,18 @@ function tabs(){
   }));
 }
 async function dashboard(){
-  const {dashboard:d}=await call('dashboard');
-  const map={'[data-admin-users]':d.users,'[data-admin-projects]':d.projects,'[data-admin-docs]':d.approved_documents,'[data-admin-requests]':d.pending_requests,'[data-admin-playtests]':d.open_playtests,'[data-admin-contributions]':d.contributions};
+  const [{dashboard:d},{dashboard:r}]=await Promise.all([call('dashboard'),callReports('dashboard')]);
+  const map={
+    '[data-admin-users]':d.users,
+    '[data-admin-projects]':d.projects,
+    '[data-admin-docs]':d.approved_documents,
+    '[data-admin-requests]':d.pending_requests,
+    '[data-admin-playtests]':d.open_playtests,
+    '[data-admin-contributions]':d.contributions,
+    '[data-admin-reports]':r.game_reports,
+    '[data-admin-active-parties]':r.active_parties,
+    '[data-admin-finished-parties]':r.finished_parties
+  };
   Object.entries(map).forEach(([s,v])=>{const n=document.querySelector(s);if(n)n.textContent=String(v??0)});
 }
 async function loadProjects(){
@@ -81,8 +96,38 @@ async function loadExtensions(){
 function bindExtension(){
   const f=document.querySelector('[data-extension-form]');f.addEventListener('submit',async e=>{e.preventDefault();const o=Object.fromEntries(new FormData(f).entries());o.is_public=f.elements.is_public.checked;try{await call('save_extension',{extension:o});setStatus(status,'Extension enregistrée.','success');f.reset();await loadExtensions()}catch(x){setStatus(status,x.message,'error')}})
 }
+function reportModeLabel(v){return v==='solo'?'Solo':v==='duo'?'Duo':v==='multiplayer'?'Multijoueur':(v||'—')}
+function reportDate(v){try{return new Date(v).toLocaleString('fr-CA',{dateStyle:'medium',timeStyle:'short'})}catch{return v||'—'}}
+async function loadGameReports(){
+  const d=await callReports('list_game_reports'),rows=d.reports||[],s=d.summary||{},box=document.querySelector('[data-admin-report-list]'),filter=document.querySelector('[data-report-filter]');
+  const counts={
+    '[data-report-total]':s.count||0,
+    '[data-report-resistance]':s.resistance_wins||0,
+    '[data-report-network]':s.network_wins||0,
+    '[data-report-ties]':s.ties||0
+  };
+  Object.entries(counts).forEach(([sel,val])=>{const n=document.querySelector(sel);if(n)n.textContent=String(val)});
+  const render=()=>{
+    const visible=filter?.value?rows.filter(r=>r.play_mode===filter.value):rows;
+    box.innerHTML=visible.map(r=>{
+      const f=r.fields||{},who=r.owner?.pseudo||r.owner?.display_name||r.owner?.email||'Compte joueur';
+      return `<article class="admin-management-row" style="align-items:flex-start">
+        <div style="min-width:0">
+          <strong>${escapeHtml(r.party_code||'Partie')}</strong>
+          <span>${escapeHtml(reportDate(r.submitted_at))} · ${escapeHtml(reportModeLabel(r.play_mode))} · ${escapeHtml(String(r.human_player_count??'—'))} joueur(s) humain(s) · ${escapeHtml(String(r.round_count??'—'))} rondes</span>
+          <p style="margin:.7rem 0 .2rem"><b>Gagnant :</b> ${escapeHtml(f.winner_final||'—')} · <b>Résistance :</b> ${escapeHtml(String(f.total_resistance??'—'))} · <b>Réseau-Mère :</b> ${escapeHtml(String(f.total_network??'—'))}</p>
+          <p style="margin:.2rem 0;color:var(--muted)"><b>Rondes :</b> R ${escapeHtml(String(f.rounds_resistance??'—'))} · RM ${escapeHtml(String(f.rounds_network??'—'))} · égalités ${escapeHtml(String(f.rounds_tied??'—'))} · départage ${escapeHtml(f.tiebreak_required||'—')}</p>
+          <p style="margin:.2rem 0;color:var(--muted)"><b>Transmis par :</b> ${escapeHtml(who)}${r.owner?.email&&who!==r.owner.email?` · ${escapeHtml(r.owner.email)}`:''}</p>
+        </div>
+      </article>`;
+    }).join('')||'<p>Aucun rapport de fin de partie transmis pour ce filtre.</p>';
+  };
+  if(filter&&!filter.dataset.bound){filter.dataset.bound='1';filter.addEventListener('change',render)}
+  render();
+}
+
 async function analytics(){
   const d=(await call('analytics')).analytics||{},box=document.querySelector('[data-admin-analytics]');
   box.innerHTML=Object.entries(d).map(([g,a])=>`<article class="admin-analytics-card"><h3>${escapeHtml(g)}</h3><dl><div><dt>Contributions</dt><dd>${a.count}</dd></div><div><dt>Joueurs moyens</dt><dd>${a.average_players??'—'}</dd></div><div><dt>Durée moyenne</dt><dd>${a.average_duration?`${a.average_duration} min`:'—'}</dd></div><div><dt>Note moyenne</dt><dd>${a.average_rating??'—'}</dd></div></dl></article>`).join('')||'<p>Aucune contribution.</p>';
 }
-(async()=>{await requireUser('/compte/connexion.html');tabs();bindProject();bindUpload();bindPlaytest();bindExtension();try{await dashboard();await loadProjects();await Promise.all([loadDocs(),loadRequests(),loadUsers(),loadPlaytests(),loadExtensions(),analytics()]);setStatus(status,'Administration SINJIRA chargée.','success')}catch(x){setStatus(status,x.message,'error')}})();
+(async()=>{await requireUser('/compte/connexion.html');tabs();bindProject();bindUpload();bindPlaytest();bindExtension();try{await dashboard();await loadProjects();await Promise.all([loadDocs(),loadRequests(),loadUsers(),loadPlaytests(),loadExtensions(),loadGameReports(),analytics()]);setStatus(status,'Administration SINJIRA chargée.','success')}catch(x){setStatus(status,x.message,'error')}})();

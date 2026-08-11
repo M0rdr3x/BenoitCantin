@@ -175,6 +175,7 @@ async function loadSession() {
       .select('fields')
       .eq('session_id', currentSessionId)
       .eq('user_id', user.id)
+      .eq('sheet_key', 'self')
       .maybeSingle(),
     supabase
       .from('session_feedback')
@@ -248,8 +249,10 @@ async function saveSession({ finish = false } = {}) {
     .upsert({
       session_id: currentSessionId,
       user_id: user.id,
+      sheet_key: 'self',
+      sheet_label: 'Fiche joueur',
       fields: sheetData
-    }, { onConflict: 'session_id' });
+    }, { onConflict: 'session_id,sheet_key' });
 
   if (sheetError) {
     setStatus(STATUS, sheetError.message, 'error');
