@@ -1,0 +1,14 @@
+{
+  "lowercase_admin_exists": true,
+  "uppercase_redirect_exists": true,
+  "projects_panel": true,
+  "documents_panel": true,
+  "players_panel": true,
+  "access_panel": true,
+  "playtests_panel": true,
+  "reports_panel": true,
+  "analytics_panel": true,
+  "extensions_panel": true,
+  "admin_guard": true,
+  "javascript_syntax_ok": true
+}
