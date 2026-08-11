@@ -1,0 +1,46 @@
+
+.fracture-online-main{width:min(1240px,calc(100% - 28px));margin:0 auto;padding:34px 0 90px}
+.fracture-online-hero,.fracture-online-card,.fracture-rule-section,.fracture-private-notice{border:1px solid rgba(150,165,210,.16);background:rgba(12,16,31,.94);border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.24)}
+.fracture-online-hero{padding:clamp(24px,5vw,52px);margin-bottom:20px}
+.fracture-online-hero h1{margin:.35rem 0 1rem}.fracture-online-hero p{max-width:920px;color:#b9c1d8}
+.fracture-lead{font-size:1.08rem}
+.fracture-summary-grid,.fracture-data-panel,.fracture-lobby-grid,.fracture-mode-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.fracture-data-panel>div{padding:26px;border:1px solid rgba(150,165,210,.14);border-radius:20px;background:rgba(255,255,255,.025)}
+.fracture-clean-list{display:grid;gap:8px;padding-left:1.2rem;color:#c6cde0}
+.fracture-step-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.fracture-step-grid article{padding:20px;border:1px solid rgba(150,165,210,.14);border-radius:18px;background:rgba(255,255,255,.025)}
+.fracture-step-grid article>strong{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:12px;background:rgba(255,112,89,.12);color:#ff8c79}
+.fracture-step-grid h3{margin:.8rem 0 .35rem}.fracture-step-grid p{color:#b9c1d8;margin:0}
+.fracture-rule-nav{display:flex;gap:8px;overflow:auto;padding:10px;margin:0 0 20px;border:1px solid rgba(150,165,210,.14);border-radius:16px;background:rgba(8,11,23,.9);position:sticky;top:8px;z-index:20}
+.fracture-rule-nav a{white-space:nowrap;text-decoration:none;color:#d8def0;padding:9px 12px;border-radius:10px}.fracture-rule-nav a:hover{background:rgba(255,255,255,.06)}
+.fracture-rule-section{padding:clamp(22px,4vw,38px);margin:18px 0;scroll-margin-top:90px}
+.fracture-rule-section>h2{margin:.3rem 0 1rem}
+.fracture-table-wrap{overflow:auto}.fracture-rule-table{width:100%;border-collapse:collapse;min-width:720px}.fracture-rule-table th,.fracture-rule-table td{padding:11px 12px;border:1px solid rgba(150,165,210,.16);vertical-align:top}.fracture-rule-table th{background:#080a11}.fracture-rule-table td{color:#c9d0e3}.fracture-rule-table.compact{text-align:center}
+.fracture-rule-callout{margin-top:18px;padding:18px 20px;border-left:4px solid #ff7059;border-radius:14px;background:rgba(255,112,89,.07)}
+.fracture-rule-steps{display:grid;gap:10px;counter-reset:item;padding:0;list-style:none}.fracture-rule-steps li{padding:15px 17px;border:1px solid rgba(150,165,210,.14);border-radius:14px;background:rgba(255,255,255,.02);color:#c8cfe2}
+.fracture-mode-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.fracture-mode-grid article{padding:18px;border:1px solid rgba(150,165,210,.14);border-radius:16px;background:rgba(255,255,255,.025)}
+.fracture-status{margin:14px 0;padding:13px 15px;border-radius:13px;border:1px solid rgba(150,165,210,.2);background:rgba(255,255,255,.035)}
+.fracture-status[data-type="success"]{border-color:rgba(93,232,193,.4);background:rgba(40,140,115,.08)}
+.fracture-status[data-type="error"]{border-color:rgba(255,112,89,.45);background:rgba(170,45,35,.08)}
+.fracture-account-state{display:inline-flex;margin-top:14px;padding:8px 11px;border:1px solid rgba(150,165,210,.18);border-radius:999px;color:#c7cede}
+.fracture-online-card{padding:clamp(20px,4vw,32px);margin:18px 0}.fracture-online-card h2{margin-top:.3rem}
+.fracture-control{display:grid;gap:7px;margin:12px 0;font-weight:800}.fracture-control input,.fracture-control select,.fracture-control textarea,.fracture-sheet input,.fracture-sheet select,.fracture-sheet textarea{width:100%;box-sizing:border-box;background:#090c17;color:#eef2ff;border:1px solid rgba(150,165,210,.22);border-radius:10px;padding:10px 11px;font:inherit}
+.fracture-live-math{margin:14px 0;padding:14px;border-radius:14px;background:rgba(255,255,255,.03);color:#c3cadd}
+.fracture-muted{color:#aeb7cf;font-size:.92rem}
+.fracture-party-list{display:grid;gap:10px}.fracture-party-row{display:flex;gap:18px;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid rgba(150,165,210,.14);border-radius:14px;background:rgba(255,255,255,.025)}.fracture-party-row span{display:block;color:#aeb7cf;font-size:.88rem;margin-top:4px}
+.fracture-party-facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.fracture-party-facts span{padding:7px 10px;border:1px solid rgba(150,165,210,.16);border-radius:999px;color:#c7cede;background:rgba(255,255,255,.025)}
+.fracture-private-notice{padding:18px 20px;margin:18px 0;border-color:rgba(91,230,195,.22);background:rgba(45,130,110,.06)}.fracture-private-notice p{margin:.35rem 0 0;color:#b8c1d8}
+.fracture-sheet{padding:clamp(18px,3vw,28px);margin:18px 0;border:1px solid rgba(150,165,210,.15);border-radius:20px;background:rgba(12,16,31,.94)}
+.fracture-sheet-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:14px}.fracture-sheet-head h2{margin:.25rem 0}.fracture-save-state{font-size:.84rem;color:#91f8ee}
+.fracture-sheet-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0 18px}
+.fracture-sheet-table-wrap{overflow:auto}.fracture-sheet-table{width:100%;border-collapse:collapse;min-width:900px}.fracture-sheet-table th,.fracture-sheet-table td{border:1px solid rgba(150,165,210,.16);padding:7px;text-align:center}.fracture-sheet-table th{background:#080a11;font-size:.8rem}.fracture-sheet-table td:first-child{font-weight:900;width:52px}.fracture-sheet-table input,.fracture-sheet-table select{min-width:95px}
+.fracture-proof{width:22px!important;height:22px}.fracture-accusations{display:grid;grid-template-columns:repeat(7,minmax(70px,1fr));gap:8px;margin-top:12px}.fracture-accusations input{min-width:0}
+.fracture-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.fracture-tabs button{border:1px solid rgba(150,165,210,.18);border-radius:11px;background:#0a0d19;color:#eef2ff;padding:9px 13px;font:inherit;font-weight:800;cursor:pointer}.fracture-tabs button[aria-selected="true"]{border-color:rgba(255,112,89,.45);color:#ff8c79;background:rgba(255,112,89,.08)}
+.fracture-tab-panel[hidden]{display:none}
+.fracture-solo-table{min-width:980px}.fracture-solo-table textarea{min-width:210px;min-height:70px}
+.fracture-endgame-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}.fracture-endgame-summary label{display:grid;gap:6px;font-weight:800}
+.fracture-endgame-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.fracture-warning{padding:14px 16px;border:1px solid rgba(255,170,80,.25);border-radius:14px;background:rgba(180,100,25,.07);color:#d7c3a7}
+@media(max-width:900px){.fracture-summary-grid,.fracture-data-panel,.fracture-lobby-grid,.fracture-mode-grid{grid-template-columns:1fr}.fracture-step-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fracture-sheet-meta,.fracture-endgame-summary{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.fracture-step-grid,.fracture-sheet-meta,.fracture-endgame-summary{grid-template-columns:1fr}.fracture-party-row{align-items:flex-start;flex-direction:column}.fracture-accusations{grid-template-columns:repeat(3,1fr)}}
+@media print{header,.site-header,.site-footer,.fracture-rule-nav,.hero-actions{display:none!important}.fracture-online-main{width:100%;padding:0}.fracture-rule-section{box-shadow:none;break-inside:avoid;background:#fff;color:#111;border-color:#bbb}.fracture-rule-section *{color:#111!important}.fracture-rule-table th{background:#ddd;color:#111}}

@@ -1,0 +1,25 @@
+.fracture-tool-main{width:min(1280px,calc(100% - 28px));margin:0 auto;padding:34px 0 96px}
+.fracture-tool-hero,.fracture-panel{border:1px solid rgba(150,165,210,.17);background:rgba(12,16,31,.92);border-radius:24px;box-shadow:0 22px 70px rgba(0,0,0,.28)}
+.fracture-tool-hero{padding:clamp(24px,5vw,52px);margin-bottom:22px}.fracture-tool-hero h1{margin:.4rem 0 1rem}.fracture-tool-hero p{max-width:900px;color:#b9c1d8}
+.fracture-privacy{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:22px}.fracture-privacy>div{padding:16px;border-radius:16px;background:rgba(255,255,255,.035);border:1px solid rgba(150,165,210,.13)}.fracture-privacy strong{display:block;margin-bottom:6px}.fracture-privacy span{font-size:.9rem;color:#b9c1d8}
+.fracture-panel{padding:clamp(20px,4vw,34px);margin:18px 0}.fracture-panel h2{margin-top:0}.fracture-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.fracture-status{margin:14px 0;padding:12px 14px;border-radius:12px;border:1px solid rgba(150,165,210,.18);background:rgba(255,255,255,.03)}.fracture-status[data-type="success"]{border-color:rgba(93,232,193,.35)}.fracture-status[data-type="error"]{border-color:rgba(255,112,89,.45)}
+.fracture-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.fracture-field{display:grid;gap:7px}.fracture-field label{font-weight:800;font-size:.9rem}.fracture-field input,.fracture-field select,.fracture-field textarea{width:100%;box-sizing:border-box;background:#0a0d19;color:#eef2ff;border:1px solid rgba(150,165,210,.22);border-radius:11px;padding:11px 12px;font:inherit}.fracture-field textarea{min-height:110px;resize:vertical}
+.fracture-table-wrap{overflow:auto}.fracture-table{width:100%;border-collapse:collapse;min-width:780px}.fracture-table th,.fracture-table td{border:1px solid rgba(150,165,210,.18);padding:8px;text-align:center}.fracture-table th{background:#080a11;color:#fff;font-size:.84rem}.fracture-table td:first-child{font-weight:900;width:56px}.fracture-table input[type="text"],.fracture-table input[type="number"]{width:100%;box-sizing:border-box;background:#0a0d19;color:#fff;border:1px solid rgba(150,165,210,.18);border-radius:8px;padding:8px}.fracture-table input[type="checkbox"]{width:20px;height:20px}
+.accusation-fields{display:grid;grid-template-columns:repeat(7,minmax(70px,1fr));gap:10px}.accusation-fields input{width:100%;box-sizing:border-box;background:#0a0d19;color:#fff;border:1px solid rgba(150,165,210,.2);border-radius:10px;padding:10px}
+.fracture-player-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:18px}.fracture-player-card{padding:18px;border-radius:18px;border:1px solid rgba(150,165,210,.16);background:rgba(255,255,255,.025)}.fracture-player-card h3{margin:.2rem 0 .8rem}.fracture-player-card input{width:100%;box-sizing:border-box;margin-bottom:10px;background:#090c17;color:#fff;border:1px solid rgba(150,165,210,.2);border-radius:9px;padding:9px}.fracture-note{color:#b9c1d8;font-size:.92rem}.fracture-divider{height:1px;background:rgba(150,165,210,.15);margin:22px 0}.fracture-callout{padding:16px 18px;border-left:4px solid #ff7059;border-radius:12px;background:rgba(255,112,89,.08)}
+@media(max-width:900px){.fracture-privacy,.fracture-player-list,.fracture-grid{grid-template-columns:1fr 1fr}.accusation-fields{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:640px){.fracture-privacy,.fracture-player-list,.fracture-grid{grid-template-columns:1fr}.accusation-fields{grid-template-columns:repeat(2,1fr)}}
+
+/* v1.1 - mode solo et fiches privées séparées */
+.fracture-player-card--solo{grid-column:1/-1;max-width:760px}
+.fracture-solo-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.fracture-solo-tabs button{border:1px solid rgba(150,165,210,.18);border-radius:12px;background:#0a0d19;color:#eef2ff;padding:10px 14px;font:inherit;font-weight:800;cursor:pointer}
+.fracture-solo-tabs button[aria-selected="true"]{background:rgba(255,112,89,.14);border-color:rgba(255,112,89,.42);color:#ff8b79}
+.fracture-solo-sheet[hidden]{display:none}
+.fracture-mode-badge{display:inline-flex;padding:6px 10px;border:1px solid rgba(255,112,89,.35);border-radius:999px;color:#ff8b79;font-weight:850;font-size:.82rem}
+.fracture-readonly{opacity:.82}
+
+/* V8 - dossiers privés à 2 joueurs */
+.fracture-subcard{margin-top:14px;padding:16px;border:1px solid rgba(180,200,255,.14);border-radius:16px;background:rgba(255,255,255,.025)}
+.fracture-subcard--invisible{border-color:rgba(255,112,89,.25);background:rgba(120,35,28,.08)}
+.fracture-subcard>strong{display:block;margin-bottom:6px}
