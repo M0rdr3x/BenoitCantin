@@ -1,10 +1,13 @@
 <!DOCTYPE html><html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Administration | SINJIRA</title><link rel="stylesheet" href="../../assets/css/site.css?v=7.6-sinjira-admin"><link rel="stylesheet" href="../../assets/css/sinjira-player-account.css?v=2.0"></head><body class="admin-sinjira-page">
 <header class="site-header"><div class="container nav-shell"><a class="brand" href="../../compte/index.html"><img src="../../assets/media/sinjira-emblem.webp" alt="" width="47" height="47" style="border-radius:50%"><span class="brand-text"><strong>SINJIRA</strong><span>Administration</span></span></a><nav class="main-nav"><a href="../../compte/index.html">Compte SINJIRA</a><a href="../../projets/sinjira/index.html">Site public</a></nav></div></header>
 <main class="admin-console-layout">
-<section><span class="eyebrow">Administration privée</span><h1>Portail SINJIRA</h1><p>Gestion des projets, documents approuvés, joueurs, accès, playtests, contributions et futures extensions.</p><div class="account-status" data-admin-status hidden></div><div class="admin-stat-grid"><div class="account-stat"><span>Comptes</span><strong data-admin-users>0</strong></div><div class="account-stat"><span>Projets</span><strong data-admin-projects>0</strong></div><div class="account-stat"><span>Documents approuvés</span><strong data-admin-docs>0</strong></div><div class="account-stat"><span>Demandes</span><strong data-admin-requests>0</strong></div><div class="account-stat"><span>Playtests ouverts</span><strong data-admin-playtests>0</strong></div><div class="account-stat"><span>Contributions</span><strong data-admin-contributions>0</strong></div></div></section>
+<section><span class="eyebrow">Administration privée · propriétaire uniquement</span><h1>Portail SINJIRA</h1><p>Gestion complète de SINJIRA : projets, documents, joueurs, accès testeur, playtests, rapports de parties, statistiques et futures extensions. Le rôle administrateur est verrouillé sur le compte propriétaire AbyssTime.</p><div class="account-status" data-admin-status hidden></div><div class="admin-stat-grid"><div class="account-stat"><span>Comptes</span><strong data-admin-users>0</strong></div><div class="account-stat"><span>Projets</span><strong data-admin-projects>0</strong></div><div class="account-stat"><span>Documents approuvés</span><strong data-admin-docs>0</strong></div><div class="account-stat"><span>Demandes</span><strong data-admin-requests>0</strong></div><div class="account-stat"><span>Playtests ouverts</span><strong data-admin-playtests>0</strong></div><div class="account-stat"><span>Contributions</span><strong data-admin-contributions>0</strong></div>
+<div class="account-stat"><span>Rapports reçus</span><strong data-admin-reports>0</strong></div>
+<div class="account-stat"><span>Parties en cours</span><strong data-admin-active-parties>0</strong></div>
+<div class="account-stat"><span>Parties terminées</span><strong data-admin-finished-parties>0</strong></div></div></section>
 
 <nav class="admin-console-tabs" aria-label="Administration">
-<button type="button" data-admin-tab="projects" aria-current="page">Projets</button><button type="button" data-admin-tab="documents">Documents</button><button type="button" data-admin-tab="players">Joueurs</button><button type="button" data-admin-tab="access">Accès</button><button type="button" data-admin-tab="playtests">Playtests</button><button type="button" data-admin-tab="analytics">Statistiques</button><button type="button" data-admin-tab="extensions">Extensions</button>
+<button type="button" data-admin-tab="projects" aria-current="page">Projets</button><button type="button" data-admin-tab="documents">Documents</button><button type="button" data-admin-tab="players">Joueurs</button><button type="button" data-admin-tab="access">Accès</button><button type="button" data-admin-tab="playtests">Playtests</button><button type="button" data-admin-tab="reports">Rapports de parties</button><button type="button" data-admin-tab="analytics">Statistiques</button><button type="button" data-admin-tab="extensions">Extensions</button>
 </nav>
 
 <section class="admin-panel" data-admin-panel="projects"><div class="account-layout">
@@ -30,9 +33,38 @@
 <article class="account-card"><h2>Créer un playtest</h2><form class="account-form" data-playtest-form><div class="field"><label>Projet</label><select name="project_id" data-project-select required></select></div><div class="field"><label>Titre</label><input name="title" required></div><div class="field"><label>Description</label><textarea name="description"></textarea></div><div class="field"><label>Statut</label><select name="status"><option value="draft">Brouillon</option><option value="open">Candidatures ouvertes</option><option value="active">En cours</option><option value="closed">Fermé</option><option value="archived">Archivé</option></select></div><div class="field"><label>Accès requis</label><select name="required_access"><option value="account">Compte</option><option value="player">Joueur approuvé</option><option value="tester" selected>Testeur</option></select></div><div class="field"><label>Début</label><input name="starts_at" type="datetime-local"></div><div class="field"><label>Fin</label><input name="ends_at" type="datetime-local"></div><div class="field"><label>Maximum participants</label><input name="max_participants" type="number" min="1"></div><button class="btn btn-primary" type="submit">Enregistrer le playtest</button></form></article>
 <aside class="account-card"><h2>Playtests / candidatures</h2><div class="admin-management-list" data-admin-playtest-list></div></aside></div></section>
 
+<section class="admin-panel" data-admin-panel="reports" hidden>
+<article class="account-card">
+  <span class="eyebrow">Administration privée · fin de partie uniquement</span>
+  <h2>Rapports reçus — Fracture du Réseau-Mère</h2>
+  <p>Cette section comptabilise uniquement les <strong>Feuilles de fin de partie volontairement transmises à SINJIRA</strong>. Les fiches privées des joueurs, leurs cartes, soupçons et notes personnelles ne sont jamais chargés dans cette page.</p>
+
+  <div class="admin-stat-grid" style="margin:20px 0">
+    <div class="account-stat"><span>Rapports</span><strong data-report-total>0</strong></div>
+    <div class="account-stat"><span>Victoires Résistance</span><strong data-report-resistance>0</strong></div>
+    <div class="account-stat"><span>Victoires Réseau-Mère</span><strong data-report-network>0</strong></div>
+    <div class="account-stat"><span>Égalités / départages</span><strong data-report-ties>0</strong></div>
+  </div>
+
+  <div class="documents-toolbar" style="margin-top:18px">
+    <div>
+      <strong>Historique des rapports transmis</strong>
+      <div style="color:var(--muted);font-size:.86rem;margin-top:4px">Code de partie, format, scores finaux et résultat.</div>
+    </div>
+    <select data-report-filter aria-label="Filtrer les rapports">
+      <option value="">Tous les modes</option>
+      <option value="solo">Solo</option>
+      <option value="duo">Duo</option>
+      <option value="multiplayer">Multijoueur</option>
+    </select>
+  </div>
+  <div class="admin-management-list" data-admin-report-list></div>
+</article>
+</section>
+
 <section class="admin-panel" data-admin-panel="analytics" hidden><article class="account-card"><span class="eyebrow">Contributions volontaires</span><h2>Statistiques d’amélioration</h2><p>Ces données proviennent uniquement des parties volontairement partagées avec SINJIRA.</p><div class="admin-analytics-grid" data-admin-analytics></div></article></section>
 
 <section class="admin-panel" data-admin-panel="extensions" hidden><div class="account-layout">
 <article class="account-card"><h2>Planifier une extension</h2><form class="account-form" data-extension-form><div class="field"><label>Projet</label><select name="project_id" data-project-select required></select></div><div class="field"><label>Titre</label><input name="title" required></div><div class="field"><label>Description / hypothèse</label><textarea name="description"></textarea></div><div class="field"><label>Statut</label><select name="status"><option value="idea">Idée</option><option value="research">Recherche</option><option value="design">Conception</option><option value="testing">Test</option><option value="approved">Approuvée</option><option value="released">Publiée</option><option value="archived">Archivée</option></select></div><label class="account-check"><input name="is_public" type="checkbox"><span>Rendre cette extension publique lorsqu’elle est approuvée/publiée.</span></label><button class="btn btn-primary" type="submit">Enregistrer</button></form><h2 style="margin-top:30px">Extensions suivies</h2><div class="admin-management-list" data-admin-extension-list></div></article>
 <aside class="account-card"><h2>Signaux des joueurs</h2><p>Idées d’extensions, mécaniques préférées et points à clarifier, seulement lorsque ces commentaires ont été partagés volontairement.</p><div class="admin-management-list" data-extension-signals></div></aside></div></section>
-</main><script type="module" src="../../assets/js/sinjira-admin-console.js?v=2.0"></script></body></html>
+</main><script type="module" src="../../assets/js/sinjira-admin-console.js?v=3.0"></script></body></html>
