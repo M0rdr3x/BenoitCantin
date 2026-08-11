@@ -25,9 +25,43 @@ async function consent(user){
   return data||{participate:false,share_free_text:false};
 }
 function sessionUrl(s){
-  if(s.game_slug==='fracture-du-reseau-mere') return `/projets/sinjira/jeux/fracture-du-reseau-mere/fiche-web.html?session=${encodeURIComponent(s.id)}`;
+  if(s.game_slug==='fracture-du-reseau-mere'){
+    return s.party_code
+      ? `/projets/sinjira/jeux/fracture-du-reseau-mere/partie.html?code=${encodeURIComponent(s.party_code)}`
+      : '/projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html';
+  }
   return s.projects?.public_path||'/compte/bibliotheque.html';
 }
+function avatarPublicUrl(path){
+  if(!path) return '../assets/media/sinjira-emblem.webp';
+  const {data}=getSupabase().storage.from(SINJIRA_CONFIG.avatarBucket||'sinjira-avatars').getPublicUrl(path);
+  return data?.publicUrl||'../assets/media/sinjira-emblem.webp';
+}
+async function loadImageFile(file){
+  const url=URL.createObjectURL(file);
+  try{
+    const image=new Image();
+    image.decoding='async';
+    await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(new Error('Image illisible.'));image.src=url});
+    return image;
+  }finally{setTimeout(()=>URL.revokeObjectURL(url),0)}
+}
+async function prepareAvatarBlob(file){
+  const allowed=['image/jpeg','image/png','image/webp'];
+  if(!allowed.includes(file.type)) throw new Error('Utilisez une image JPG, PNG ou WebP.');
+  if(file.size>8*1024*1024) throw new Error('La photo doit faire 8 Mo ou moins.');
+  const image=await loadImageFile(file);
+  if(image.naturalWidth<160||image.naturalHeight<160) throw new Error('Choisissez une photo d’au moins 160 × 160 px.');
+  const side=Math.min(image.naturalWidth,image.naturalHeight);
+  const sx=(image.naturalWidth-side)/2, sy=(image.naturalHeight-side)/2;
+  const canvas=document.createElement('canvas'); canvas.width=512; canvas.height=512;
+  const ctx=canvas.getContext('2d',{alpha:false});
+  ctx.drawImage(image,sx,sy,side,side,0,0,512,512);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',0.88));
+  if(!blob) throw new Error('Impossible d’optimiser cette photo.');
+  return blob;
+}
+
 
 async function signup(){
   const form=document.querySelector('[data-signup-form]'); if(!form)return;
@@ -90,8 +124,9 @@ async function dashboard(){
   const user=await requireUser(),s=getSupabase(),p=await profile(user),c=await consent(user);
   document.querySelectorAll('[data-player-name]').forEach(n=>n.textContent=p.pseudo||p.display_name||user.email||'Joueur SINJIRA');
   document.querySelectorAll('[data-player-email]').forEach(n=>n.textContent=user.email||'—');
+  document.querySelectorAll('[data-dashboard-avatar]').forEach(n=>{n.src=avatarPublicUrl(p.avatar_path);n.alt=`Photo de profil de ${p.pseudo||p.display_name||'joueur'}`});
   const [rs,rp,rd,rr]=await Promise.all([
-    s.from('game_sessions').select('id,title,status,updated_at,game_slug,projects(name,public_path)').eq('user_id',user.id).order('updated_at',{ascending:false}).limit(6),
+    s.from('game_sessions').select('id,title,status,updated_at,game_slug,party_code,projects(name,public_path)').eq('user_id',user.id).order('updated_at',{ascending:false}).limit(6),
     s.from('projects').select('id,slug,name,status').order('sort_order'),
     s.from('documents').select('id').eq('status','approved'),
     s.from('access_requests').select('id').eq('user_id',user.id).eq('status','pending')
@@ -117,6 +152,42 @@ async function games(){
 async function profilePage(){
   const user=await requireUser(),p=await profile(user),form=document.querySelector('[data-profile-form]');if(!form)return;
   form.elements.pseudo.value=p.pseudo||'';form.elements.display_name.value=p.display_name||'';form.elements.email.value=user.email||'';
+  const input=document.querySelector('[data-avatar-input]'),preview=document.querySelector('[data-profile-avatar]'),choose=document.querySelector('[data-avatar-choose]'),save=document.querySelector('[data-avatar-save]'),remove=document.querySelector('[data-avatar-remove]'),avatarState=document.querySelector('[data-avatar-state]');
+  let selectedFile=null;
+  const currentPath=()=>preview.dataset.avatarPath||'';
+  const showStored=()=>{
+    preview.src=avatarPublicUrl(p.avatar_path);preview.dataset.avatarPath=p.avatar_path||'';
+    preview.alt=`Photo de profil de ${p.pseudo||p.display_name||'joueur'}`;
+    remove.hidden=!p.avatar_path;save.hidden=true;selectedFile=null;
+  };
+  showStored();
+  choose?.addEventListener('click',()=>input?.click());
+  input?.addEventListener('change',async()=>{
+    const file=input.files?.[0];if(!file)return;
+    try{
+      const blob=await prepareAvatarBlob(file);selectedFile=blob;
+      preview.src=URL.createObjectURL(blob);save.hidden=false;avatarState.textContent='Aperçu prêt. Cliquez sur « Enregistrer la photo ».';
+    }catch(e){setStatus(status,e.message||'Photo invalide.','error');input.value=''}
+  });
+  save?.addEventListener('click',async()=>{
+    if(!selectedFile)return;
+    save.disabled=true;choose.disabled=true;avatarState.textContent='Téléversement de la photo…';
+    const path=`${user.id}/avatar.webp`;
+    const {error:uploadError}=await getSupabase().storage.from(SINJIRA_CONFIG.avatarBucket||'sinjira-avatars').upload(path,selectedFile,{upsert:true,contentType:'image/webp',cacheControl:'3600'});
+    if(uploadError){setStatus(status,uploadError.message,'error');save.disabled=false;choose.disabled=false;return}
+    const {error:updateError}=await getSupabase().from('profiles').update({avatar_path:path}).eq('user_id',user.id);
+    if(updateError){setStatus(status,updateError.message,'error');save.disabled=false;choose.disabled=false;return}
+    p.avatar_path=path;preview.src=`${avatarPublicUrl(path)}?v=${Date.now()}`;preview.dataset.avatarPath=path;selectedFile=null;input.value='';save.hidden=true;save.disabled=false;choose.disabled=false;remove.hidden=false;avatarState.textContent='Photo de profil enregistrée.';setStatus(status,'Photo de profil mise à jour.','success');
+  });
+  remove?.addEventListener('click',async()=>{
+    if(!p.avatar_path||!confirm('Retirer votre photo de profil?'))return;
+    remove.disabled=true;
+    const {error:storageError}=await getSupabase().storage.from(SINJIRA_CONFIG.avatarBucket||'sinjira-avatars').remove([p.avatar_path]);
+    if(storageError){setStatus(status,storageError.message,'error');remove.disabled=false;return}
+    const {error:updateError}=await getSupabase().from('profiles').update({avatar_path:null}).eq('user_id',user.id);
+    if(updateError){setStatus(status,updateError.message,'error');remove.disabled=false;return}
+    p.avatar_path=null;remove.disabled=false;showStored();avatarState.textContent='Photo retirée. Vous pouvez en ajouter une nouvelle.';setStatus(status,'Photo de profil retirée.','success');
+  });
   form.addEventListener('submit',async e=>{e.preventDefault();const d=new FormData(form);const {error}=await getSupabase().from('profiles').update({pseudo:String(d.get('pseudo')||'').trim(),display_name:String(d.get('display_name')||'').trim()}).eq('user_id',user.id);setStatus(status,error?error.message:'Profil mis à jour.',error?'error':'success')});
 }
 async function contributions(){

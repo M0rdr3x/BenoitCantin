@@ -2,6 +2,11 @@ import {getSupabase,requireUser,escapeHtml,setStatus} from './sinjira-supabase.j
 
 const status=document.querySelector('[data-admin-status]');
 let projects=[];
+function adminAvatarUrl(path){
+  if(!path) return '../../assets/media/sinjira-emblem.webp';
+  const {data}=getSupabase().storage.from('sinjira-avatars').getPublicUrl(path);
+  return data?.publicUrl||'../../assets/media/sinjira-emblem.webp';
+}
 
 async function call(action,extra={}){
   const {data,error}=await getSupabase().functions.invoke('admin-console',{body:{action,...extra}});
@@ -76,8 +81,8 @@ async function loadRequests(){
   box.querySelectorAll('[data-request]').forEach(b=>b.addEventListener('click',async()=>{try{await call('review_access_request',{request_id:b.dataset.request,decision:b.dataset.decision});await loadRequests();await dashboard()}catch(x){setStatus(status,x.message,'error')}}));
 }
 async function loadUsers(){
-  const users=(await call('list_users')).users||[],box=document.querySelector('[data-admin-user-list]');
-  box.innerHTML=users.map(u=>`<article class="admin-user-card"><div><strong>${escapeHtml(u.pseudo||u.display_name||u.email||'Joueur')}</strong><span>${escapeHtml(u.email||'')}</span></div><div class="role-stack">${(u.access||[]).map(a=>`<span class="role-chip">${escapeHtml(a.projects?.name||'Projet')}: ${escapeHtml(a.access_level)}</span>`).join('')}</div><div class="admin-access-form"><select data-user-project="${u.id}">${projects.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}</select><select data-user-level="${u.id}"><option value="player">Joueur approuvé</option><option value="tester">Testeur</option></select><button class="btn btn-secondary btn-small" data-grant="${u.id}">Accorder</button></div></article>`).join('');
+  const {data,error}=await getSupabase().functions.invoke('admin-users',{body:{action:'list_users'}});if(error||!data?.ok)throw new Error(data?.error||error?.message||'Impossible de charger les joueurs');const users=data.users||[],box=document.querySelector('[data-admin-user-list]');
+  box.innerHTML=users.map(u=>`<article class="admin-user-card"><div class="admin-user-identity"><img class="admin-user-avatar" src="${escapeHtml(adminAvatarUrl(u.avatar_path))}" alt=""><div><strong>${escapeHtml(u.pseudo||u.display_name||u.email||'Joueur')}</strong><span>${escapeHtml(u.email||'')}</span>${u.is_admin?'<span class="role-chip role-chip--admin">Administrateur propriétaire</span>':''}</div></div><div class="role-stack">${(u.access||[]).map(a=>`<span class="role-chip">${escapeHtml(a.projects?.name||'Projet')}: ${escapeHtml(a.access_level)}</span>`).join('')}</div><div class="admin-access-form"><select data-user-project="${u.id}">${projects.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}</select><select data-user-level="${u.id}"><option value="player">Joueur approuvé</option><option value="tester">Testeur</option></select><button class="btn btn-secondary btn-small" data-grant="${u.id}">Accorder</button></div></article>`).join('');
   box.querySelectorAll('[data-grant]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.grant;try{await call('grant_access',{user_id:id,project_id:box.querySelector(`[data-user-project="${id}"]`).value,access_level:box.querySelector(`[data-user-level="${id}"]`).value});setStatus(status,'Accès accordé.','success');await loadUsers()}catch(x){setStatus(status,x.message,'error')}}));
 }
 async function loadPlaytests(){

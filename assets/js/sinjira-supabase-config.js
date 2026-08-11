@@ -4,7 +4,8 @@ export const SINJIRA_CONFIG = Object.freeze({
   supabasePublishableKey: 'sb_publishable_NVG-HUspfsZt2ESeEVTQ5Q_viDhOGNZ',
   siteUrl: 'https://www.benoitcantin.com',
   contributionConsentVersion: 'sinjira-gameplay-v3-endgame-only',
-  privateDocumentBucket: 'sinjira-private-documents'
+  privateDocumentBucket: 'sinjira-private-documents',
+  avatarBucket: 'sinjira-avatars'
 });
 export function isSinjiraBackendConfigured() {
   return SINJIRA_CONFIG.supabaseUrl.startsWith('https://')
