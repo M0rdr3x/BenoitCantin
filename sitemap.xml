@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.benoitcantin.com/</loc></url>
+  <url><loc>https://www.benoitcantin.com/univers.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/a-propos.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/contact.html</loc></url>
   <url><loc>https://www.benoitcantin.com/projets/sinjira/index.html</loc></url>
   <url><loc>https://www.benoitcantin.com/projets/sinjira/romans/index.html</loc></url>
   <url><loc>https://www.benoitcantin.com/projets/sinjira/romans/lire-demo.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/sinjira/jeux/index.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/sinjira/jeux/fracture-du-reseau-mere/index.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/sinjira/jeux/fracture-du-reseau-mere/regles.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/sinjira/registre/index.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/lumina/index.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/futurax/index.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/chroniques-des-mondes-fractures/index.html</loc></url>
+  <url><loc>https://www.benoitcantin.com/projets/projet-nova/index.html</loc></url>
 </urlset>

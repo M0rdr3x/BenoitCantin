@@ -1,0 +1,36 @@
+BENOITCANTIN — MISE À JOUR PRO V14
+===================================
+
+Cette version a été créée à partir du ZIP COMPLET du site fourni.
+
+CORRECTIONS PRINCIPALES
+- correction de /admin/sinjira/ (problème de casse Admin/admin);
+- correction de la page 404 et de ses ressources;
+- photos de profil pour tous les Comptes SINJIRA;
+- affichage de la photo dans Mon espace et dans la liste administrateur;
+- reprise correcte des parties Fracture par code de partie;
+- nettoyage de deux anciennes copies de pages dans Projet Nova;
+- robots.txt et sitemap.xml actualisés;
+- vérification complète des liens, ressources CSS et JavaScript.
+
+SUPABASE DÉJÀ FAIT
+- colonne avatar_path;
+- bucket sinjira-avatars;
+- 3 politiques de stockage des avatars;
+- fonction admin-users déployée;
+- 1 seul administrateur confirmé : kingtyrano@gmail.com / AbyssTime.
+
+INSTALLATION GITHUB
+1. Décompresser le ZIP.
+2. Ouvrir le dépôt GitHub M0rdr3x/BenoitCantin.
+3. Add file -> Upload files.
+4. Téléverser le contenu à la RACINE du dépôt.
+5. Accepter les remplacements.
+6. Commit conseillé :
+   Audit professionnel V14 - admin, profils et corrections
+7. Attendre GitHub Pages.
+8. Faire Ctrl+Shift+R.
+
+IMPORTANT
+Le dossier lowercase `admin/` doit impérativement être téléversé.
+Ne conservez pas uniquement le dossier `Admin/`, car GitHub Pages est sensible à la casse.

@@ -1,0 +1,56 @@
+{
+  "checks": {
+    "html_file_count": 86,
+    "html_reference_count": 2666,
+    "broken_html_refs": 0,
+    "html_quality_issue_count": 1,
+    "broken_css_refs": 0,
+    "javascript_all_valid": true,
+    "javascript_checked": 16,
+    "admin_lowercase_exists": true,
+    "admin_uppercase_redirect_exists": true,
+    "404_uses_root_absolute_assets": true,
+    "profile_avatar_ui": true,
+    "avatar_migration_exists": true,
+    "admin_users_function_exists": true,
+    "fracture_continue_uses_party_code": true,
+    "demo_pdf_exists": true,
+    "stale_brand_active_count": 0,
+    "robots_blocks_admin_and_account": true,
+    "cname": "www.benoitcantin.com"
+  },
+  "broken_html_refs": [],
+  "html_quality_issues": [
+    {
+      "file": "compte/inscription.html",
+      "title": true,
+      "viewport": true,
+      "lang": "fr-CA",
+      "img_missing_alt": 0,
+      "blank_no_noopener": [
+        "confidentialite-joueur.html"
+      ],
+      "duplicate_ids": []
+    }
+  ],
+  "broken_css_refs": [],
+  "javascript_checks": {
+    "assets/js/sinjira-admin-console.js": true,
+    "assets/js/site.js": true,
+    "assets/js/sinjira-fracture-player.js": true,
+    "assets/js/sinjira-admin.js": true,
+    "assets/js/sinjira-fracture-online.js": true,
+    "assets/js/sinjira-account.js": true,
+    "assets/js/sinjira-library.js": true,
+    "assets/js/sinjira-fracture-solo.js": true,
+    "assets/js/sinjira-fracture-endgame.js": true,
+    "assets/js/sinjira-supabase.js": true,
+    "assets/js/sinjira-supabase-config.js": true,
+    "assets/js/sinjira-fracture-setup.js": true,
+    "assets/js/sinjira-player-sheet.js": true,
+    "assets/js/registre.js": true,
+    "projets/projet-nova/assets/documents.js": true,
+    "projets/projet-nova/assets/script.js": true
+  },
+  "stale_brand_active_files": []
+}

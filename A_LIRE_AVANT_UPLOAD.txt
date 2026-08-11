@@ -1,0 +1,3 @@
+Ce ZIP contient seulement les fichiers corrigés/ajoutés de la V14.
+Décompressez-le et téléversez son contenu à la racine du dépôt GitHub.
+Le dossier `admin/` en minuscules est indispensable.
