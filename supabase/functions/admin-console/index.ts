@@ -114,9 +114,11 @@ Deno.serve(async(req)=>{
         service.from('profiles').select('*'),service.from('project_access').select('*,projects(name,slug)')
       ]);
       const pmap=new Map((profiles||[]).map((p:any)=>[p.user_id,p]));
+      const adminIds=new Set((await service.from('internal_admin_users').select('user_id')).data?.map((a:any)=>a.user_id)||[]);
       return json({ok:true,users:(authData.users||[]).map((u:any)=>({
         id:u.id,email:u.email,created_at:u.created_at,last_sign_in_at:u.last_sign_in_at,
-        pseudo:pmap.get(u.id)?.pseudo||'',display_name:pmap.get(u.id)?.display_name||'',
+        pseudo:pmap.get(u.id)?.pseudo||'',display_name:pmap.get(u.id)?.display_name||'',avatar_path:pmap.get(u.id)?.avatar_path||null,
+        is_admin:adminIds.has(u.id),
         access:(access||[]).filter((a:any)=>a.user_id===u.id)
       }))});
     }
