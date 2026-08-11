@@ -1125,3 +1125,41 @@ body { overflow-x: hidden; }
 /* SINJIRA rebrand v7 */
 .project-card img[src*="sinjira-emblem"], .orbit-node img[src*="sinjira-emblem"]{object-fit:cover}
 .franchise-label{display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#ff8a70}
+
+
+/* PRO V15 — constellation interactive du portail */
+.identity-core {
+  position: relative;
+  overflow: hidden;
+  transition: border-color .22s ease, box-shadow .22s ease, transform .22s ease;
+}
+.identity-core img {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  border-radius: 28px;
+  transition: opacity .16s ease, transform .22s ease, filter .22s ease;
+}
+.identity-core img.is-changing {
+  opacity: .18;
+  transform: scale(.92);
+}
+.identity-core.is-project-preview {
+  border-color: rgba(145,248,238,.58);
+  box-shadow: 0 0 88px rgba(123,140,255,.30), inset 0 0 48px rgba(145,248,238,.10);
+  transform: scale(1.025);
+}
+.identity-core.is-project-preview img {
+  transform: scale(1.03);
+}
+.orbit-node {
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.orbit-node:hover,
+.orbit-node:focus-visible {
+  transform: translateY(-4px) scale(1.055);
+  border-color: rgba(145,248,238,.55);
+  background: rgba(16,23,44,.98);
+  box-shadow: 0 20px 46px rgba(0,0,0,.36), 0 0 28px rgba(123,140,255,.18);
+  outline: none;
+}
