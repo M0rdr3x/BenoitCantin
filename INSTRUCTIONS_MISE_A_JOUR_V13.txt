@@ -1,0 +1,55 @@
+SINJIRA — MISE À JOUR COMPLÈTE V13
+=====================================
+
+Cette archive contient toutes les mises à jour incluses dans la V12, PLUS le verrouillage définitif du rôle administrateur.
+
+INCLUS
+------
+1. Fracture du Réseau-Mère
+   - règles et présentation officielles;
+   - espace de jeu en ligne;
+   - Solo / Duo / multijoueur;
+   - sauvegardes privées par compte joueur;
+   - seule la Feuille de fin de partie peut être transmise à SINJIRA.
+
+2. Roman — SINJIRA, Livre I : La Cendre du Jugement
+   - PDF démo officiel;
+   - lecture directe sur le site;
+   - ouverture plein écran;
+   - téléchargement du PDF.
+
+3. Administration SINJIRA
+   - panneau privé /admin/sinjira/;
+   - demandes testeur;
+   - joueurs;
+   - projets;
+   - documents;
+   - playtests;
+   - rapports de parties;
+   - statistiques;
+   - extensions.
+
+4. ADMINISTRATEUR UNIQUE
+   - compte propriétaire : kingtyrano@gmail.com
+   - pseudo : AbyssTime
+   - aucun autre compte joueur ne peut devenir administrateur;
+   - le backend refuse toute tentative d’ajouter un autre administrateur;
+   - les utilisateurs ordinaires n’ont aucun droit direct d’écriture dans internal_admin_users;
+   - le test d’administration vérifie aussi que le compte correspond à kingtyrano@gmail.com.
+
+IMPORTANT
+---------
+Le verrouillage administrateur a DÉJÀ été appliqué dans Supabase.
+Le fichier SQL inclus dans supabase/migrations est une copie de référence.
+
+INSTALLATION GITHUB
+-------------------
+1. Décompresser cette archive.
+2. Ouvrir M0rdr3x/BenoitCantin.
+3. Add file -> Upload files.
+4. Téléverser TOUT le contenu à la racine.
+5. Accepter les remplacements.
+6. Commit conseillé :
+   Mise à jour SINJIRA V13 - administrateur unique et mise à jour complète
+7. Attendre GitHub Pages.
+8. Faire Ctrl+Shift+R.

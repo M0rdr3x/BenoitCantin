@@ -1,0 +1,10 @@
+FRACTURE V8 - LOGIQUE DES FICHES
+
+1 humain : 1 fiche solo avec Vous + Invisibles 2 et 3.
+2 humains : chaque humain reçoit 2 fiches privées : sa fiche personnelle + sa propre fiche du Joueur invisible 3.
+3 humains : chaque humain reçoit 1 fiche personnelle.
+
+Le fichier à lancer est :
+projets/sinjira/jeux/fracture-du-reseau-mere/preparer-partie.html
+
+La Feuille de fin de partie reste le seul document transmissible au Programme Contributeur SINJIRA.

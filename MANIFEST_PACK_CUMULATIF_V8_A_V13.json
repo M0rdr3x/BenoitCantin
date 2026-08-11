@@ -1,0 +1,27 @@
+{
+  "name": "SINJIRA PACK CUMULATIF V8 A V13",
+  "merge_order": [
+    "V8",
+    "V9",
+    "V10",
+    "V11",
+    "V12",
+    "V13"
+  ],
+  "precedence": "newest_version_wins",
+  "admin_owner": {
+    "email": "kingtyrano@gmail.com",
+    "pseudo": "AbyssTime",
+    "single_admin_locked": true
+  },
+  "versions": {
+    "V8": "Compte universel + Fracture Solo/Duo/fiches + backend de base",
+    "V9": "Fracture officiel 1-20 joueurs + jeu en ligne + fin de partie uniquement",
+    "V10": "Icône officielle + administration + demandes testeur",
+    "V11": "Démo roman intégrée + téléchargement",
+    "V12": "Rapports de parties administrateur",
+    "V13": "Administrateur unique verrouillé"
+  },
+  "source_file_count": 160,
+  "final_file_count": 124
+}

@@ -1,0 +1,28 @@
+SINJIRA — Correctif icône + administration testeur V10
+
+DÉJÀ FAIT DANS SUPABASE
+- Le compte kingtyrano@gmail.com est maintenant administrateur SINJIRA.
+- La demande testeur actuellement en attente est conservée.
+- Le backend admin-console sait déjà lister, approuver et refuser les demandes.
+- Une approbation crée automatiquement l'accès testeur correspondant au projet.
+
+À TÉLÉVERSER SUR GITHUB
+Décompressez cette archive à la racine de M0rdr3x/BenoitCantin et acceptez les remplacements.
+
+Fichiers concernés :
+- index.html
+- assets/media/sinjira-emblem.webp
+- compte/index.html
+- admin/sinjira/index.html
+- assets/js/sinjira-admin-console.js
+
+RÉSULTAT
+1. Le cercle central BC de la constellation de l'accueil est remplacé par l'icône officielle SINJIRA fournie.
+2. Dans le Compte SINJIRA, l'administrateur voit un bloc privé :
+   « Administration SINJIRA — Demandes testeur à traiter ».
+3. Le panneau /admin/sinjira/ contient l'onglet « Accès » avec les demandes reçues.
+4. Approuver une demande transforme le joueur en testeur approuvé pour le projet.
+5. Refuser une demande la ferme sans accorder l'accès.
+
+Commit conseillé :
+Ajout administration testeur et icône SINJIRA officielle

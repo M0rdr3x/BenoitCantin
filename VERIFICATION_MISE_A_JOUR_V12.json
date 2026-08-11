@@ -1,0 +1,14 @@
+{
+  "demo_pdf_exact_uploaded_file": true,
+  "demo_pdf_nonempty": true,
+  "reader_embeds_new_pdf": true,
+  "reader_has_download": true,
+  "romans_page_links_reader": true,
+  "admin_reports_tab": true,
+  "admin_reports_list": true,
+  "admin_reports_function_called": true,
+  "account_admin_block": true,
+  "account_admin_reports_count": true,
+  "fracture_online_included": true,
+  "official_sinjira_icon_included": true
+}

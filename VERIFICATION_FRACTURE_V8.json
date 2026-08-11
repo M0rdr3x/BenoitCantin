@@ -1,0 +1,11 @@
+{
+  "version": "8.0",
+  "solo": "1 humain -> 1 fiche regroupant principal + invisibles 2 et 3",
+  "two_humans": "2 humains -> chacun 1 fiche personnelle + 1 fiche privée indépendante du Joueur invisible 3",
+  "three_humans": "3 humains -> 1 fiche personnelle chacun",
+  "effective_players": 3,
+  "player_sheets_private": true,
+  "endgame_only_contribution": true,
+  "multi_sheet_storage": "player_sheets unique(session_id,sheet_key)",
+  "party_grouping": "game_sessions.party_code"
+}

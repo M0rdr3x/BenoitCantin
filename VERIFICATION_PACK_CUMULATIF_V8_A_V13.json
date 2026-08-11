@@ -1,0 +1,48 @@
+{
+  "all_required_files": true,
+  "all_checked_javascript_valid": true,
+  "security": {
+    "single_admin_email_in_lock": true,
+    "admin_trigger_present": true,
+    "admin_table_revoked_from_authenticated": true,
+    "safe_admin_activation_script": true,
+    "private_player_docs_not_used_by_admin_reports": true
+  },
+  "all_security_checks": true,
+  "file_checks": {
+    "index.html": true,
+    "assets/media/sinjira-emblem.webp": true,
+    "assets/media/sinjira-fracture-du-reseau-mere-officiel.png": true,
+    "assets/js/sinjira-supabase-config.js": true,
+    "assets/js/sinjira-supabase.js": true,
+    "assets/js/sinjira-account.js": true,
+    "assets/js/sinjira-library.js": true,
+    "assets/js/sinjira-fracture-online.js": true,
+    "assets/js/sinjira-admin-console.js": true,
+    "compte/index.html": true,
+    "compte/bibliotheque.html": true,
+    "compte/documents.html": true,
+    "admin/sinjira/index.html": true,
+    "projets/sinjira/jeux/fracture-du-reseau-mere/index.html": true,
+    "projets/sinjira/jeux/fracture-du-reseau-mere/regles.html": true,
+    "projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html": true,
+    "projets/sinjira/jeux/fracture-du-reseau-mere/partie.html": true,
+    "projets/sinjira/jeux/fracture-du-reseau-mere/fin-de-partie.html": true,
+    "projets/sinjira/romans/index.html": true,
+    "projets/sinjira/romans/lire-demo.html": true,
+    "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf": true,
+    "supabase/functions/admin-console/index.ts": true,
+    "supabase/functions/admin-reports/index.ts": true,
+    "supabase/functions/submit-fracture-endgame/index.ts": true,
+    "supabase/migrations/20260810_fracture_online_1_20.sql": true,
+    "supabase/migrations/20260810_lock_sinjira_admin_owner.sql": true
+  },
+  "javascript_checks": {
+    "assets/js/sinjira-account.js": true,
+    "assets/js/sinjira-library.js": true,
+    "assets/js/sinjira-fracture-online.js": true,
+    "assets/js/sinjira-admin-console.js": true,
+    "assets/js/sinjira-player-sheet.js": true
+  },
+  "final_file_count": 125
+}

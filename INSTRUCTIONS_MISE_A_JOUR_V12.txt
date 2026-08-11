@@ -1,0 +1,49 @@
+SINJIRA — MISE À JOUR COMPLÈTE V12
+=====================================
+
+Cette archive regroupe TOUT ce qui doit être téléversé sur GitHub pour les mises à jour SINJIRA préparées jusqu'ici.
+
+1. Fracture du Réseau-Mère — espace de jeu en ligne
+   - règles et présentation officielles;
+   - parties 1 à 20 joueurs;
+   - Solo / Duo / multijoueur;
+   - sauvegardes privées par compte joueur;
+   - seule la Feuille de fin de partie peut être transmise à SINJIRA.
+
+2. Administration SINJIRA
+   - compte kingtyrano@gmail.com / pseudo AbyssTime déjà reconnu comme administrateur dans Supabase;
+   - panneau privé /admin/sinjira/;
+   - demandes testeur avec Approuver / Refuser;
+   - joueurs, projets, documents, playtests, statistiques et extensions;
+   - nouvel onglet « Rapports de parties »;
+   - compteurs des rapports reçus et parties en cours/terminées;
+   - les fiches privées des joueurs ne sont PAS affichées à l’administrateur.
+
+3. Icône officielle SINJIRA
+   - icône officielle fournie utilisée sur le portail.
+
+4. Roman — SINJIRA, Livre I : La Cendre du Jugement
+   - PDF officiel fourni placé à :
+     projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf
+   - page Romans corrigée;
+   - lecture directe dans le site avec lecteur PDF intégré;
+   - bouton d’ouverture plein écran;
+   - bouton de téléchargement.
+
+INSTALLATION GITHUB
+-------------------
+1. Décompresser cette archive.
+2. Ouvrir le dépôt GitHub M0rdr3x/BenoitCantin.
+3. Add file -> Upload files.
+4. Glisser TOUT le contenu décompressé à la racine du dépôt.
+5. Accepter les remplacements.
+6. Commit conseillé :
+   Mise à jour SINJIRA V12 - demo roman, administration et rapports
+7. Attendre GitHub Pages.
+8. Faire Ctrl+Shift+R.
+
+BACKEND DÉJÀ FAIT
+-----------------
+- Le compte kingtyrano@gmail.com (AbyssTime) est administrateur SINJIRA.
+- La fonction Supabase privée « admin-reports » est déjà déployée.
+- Le panneau Rapports ne reçoit que les feuilles de fin de partie volontairement transmises.

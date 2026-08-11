@@ -1,0 +1,50 @@
+SINJIRA — MISE À JOUR COMPLÈTE V11
+=====================================
+
+Cette archive regroupe TOUTES les mises à jour GitHub encore à publier :
+
+1. Fracture du Réseau-Mère — espace de jeu en ligne V9
+   - description et règles officielles;
+   - création / jonction de parties;
+   - sauvegardes privées par Compte SINJIRA;
+   - Solo, Duo et 3 à 20 joueurs;
+   - seule la Feuille de fin de partie peut être transmise à SINJIRA.
+
+2. Compte administrateur + demandes testeur V10
+   - panneau /admin/sinjira/;
+   - demandes testeur visibles dans l'administration;
+   - approbation / refus;
+   - accès testeur accordé automatiquement après approbation;
+   - bloc Administration visible uniquement pour l'administrateur.
+
+3. Icône officielle SINJIRA V10
+   - le cercle central BC de la constellation de l'accueil est remplacé
+     par l'icône officielle SINJIRA fournie.
+
+4. Roman SINJIRA — La Cendre du Jugement V11
+   - PDF officiel placé dans :
+     projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf
+   - page Romans mise à jour;
+   - bouton Lire la démo sur le site;
+   - vrai lecteur PDF intégré à lire-demo.html;
+   - bouton Plein écran;
+   - bouton Télécharger.
+
+INSTALLATION
+------------
+1. Décompresser cette archive.
+2. Ouvrir le dépôt GitHub : M0rdr3x/BenoitCantin
+3. Add file -> Upload files.
+4. Glisser TOUT le contenu décompressé à la racine du dépôt.
+5. Accepter les remplacements de fichiers.
+6. Commit conseillé :
+   Mise à jour SINJIRA complète - Fracture, administration et demo du roman
+7. Attendre le déploiement GitHub Pages.
+8. Faire Ctrl+Shift+R (ou vider le cache du navigateur).
+
+IMPORTANT
+---------
+- Ne téléversez pas le ZIP lui-même : téléversez son CONTENU décompressé.
+- Les changements Supabase nécessaires aux comptes, aux demandes testeur et
+  à Fracture ont déjà été appliqués côté backend.
+- Le PDF du roman est le fichier officiel fourni par Benoit Cantin.

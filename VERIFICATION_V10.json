@@ -1,0 +1,11 @@
+{
+  "home_core_uses_sinjira_emblem": true,
+  "official_uploaded_icon_used": true,
+  "admin_page_present": true,
+  "admin_requests_panel_present": true,
+  "approve_button_logic_present": true,
+  "refuse_button_logic_present": true,
+  "account_admin_entry_present": true,
+  "account_admin_pending_count_present": true,
+  "normal_users_admin_entry_hidden": true
+}

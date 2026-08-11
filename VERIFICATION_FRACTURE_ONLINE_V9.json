@@ -1,0 +1,11 @@
+{
+  "javascript_syntax_ok": true,
+  "rules_1_to_20": true,
+  "solo_supported": true,
+  "duo_separate_invisible3": true,
+  "multiplayer_20": true,
+  "only_endgame_edge_function": true,
+  "private_documents_rls": true,
+  "endgame_owner_only_submit": true,
+  "express_6_rounds": true
+}

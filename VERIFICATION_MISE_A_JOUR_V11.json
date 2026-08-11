@@ -1,0 +1,12 @@
+{
+  "official_pdf_exact_copy": true,
+  "reader_uses_new_sinjira_pdf": true,
+  "reader_is_embedded_not_redirect": true,
+  "novel_page_has_read_button": true,
+  "novel_page_has_download": true,
+  "fracture_online_included": true,
+  "fracture_rules_included": true,
+  "admin_console_included": true,
+  "official_icon_included": true,
+  "account_admin_entry_included": true
+}

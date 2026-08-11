@@ -1,0 +1,8 @@
+{
+  "contains_all_v12_site_files": true,
+  "demo_pdf_present": true,
+  "admin_lock_migration_present": true,
+  "admin_ui_owner_only_notice": true,
+  "reports_admin_present": true,
+  "sinjira_icon_present": true
+}
