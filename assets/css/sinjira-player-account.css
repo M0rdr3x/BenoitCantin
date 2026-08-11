@@ -465,3 +465,21 @@
   .admin-management-row{align-items:flex-start;flex-direction:column}
 }
 @media(max-width:600px){.documents-toolbar,.document-row{align-items:flex-start;flex-direction:column}.document-row-meta{justify-content:flex-start}}
+
+
+/* V14 — profils avec photo et administration */
+.account-profile-hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center}
+.account-dashboard-avatar{width:112px;height:112px;border-radius:28px;overflow:hidden;border:1px solid rgba(155,176,230,.24);background:#070a13;box-shadow:0 18px 46px rgba(0,0,0,.28)}
+.account-dashboard-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.profile-editor-grid{display:grid;grid-template-columns:minmax(230px,.62fr) minmax(0,1fr);gap:26px;align-items:start}
+.profile-avatar-editor{padding:18px;border:1px solid var(--account-line);border-radius:20px;background:rgba(255,255,255,.025)}
+.profile-avatar-editor h2{margin:.1rem 0 1rem}
+.profile-avatar-frame{width:168px;height:168px;margin:0 auto 14px;border-radius:36px;overflow:hidden;border:1px solid rgba(145,248,238,.25);background:#070a13;box-shadow:0 20px 55px rgba(0,0,0,.32)}
+.profile-avatar-frame img{width:100%;height:100%;object-fit:cover;display:block}
+.profile-avatar-help{font-size:.88rem;color:var(--muted);line-height:1.55}
+.profile-avatar-actions{gap:8px}.profile-avatar-actions .btn{flex:1 1 140px}
+.profile-avatar-state{display:block;margin-top:11px;color:var(--muted);font-size:.82rem}
+.admin-user-identity{display:flex;gap:14px;align-items:center;min-width:0}
+.admin-user-avatar{width:64px;height:64px;border-radius:18px;object-fit:cover;border:1px solid rgba(155,176,230,.22);background:#070a13;flex:0 0 auto}
+.role-chip--admin{margin-top:7px;border-color:rgba(255,113,94,.30);color:#ff9a88;background:rgba(160,60,45,.12)}
+@media(max-width:760px){.profile-editor-grid{grid-template-columns:1fr}.account-profile-hero{grid-template-columns:1fr}.account-dashboard-avatar{width:92px;height:92px}.profile-avatar-frame{width:150px;height:150px}}
