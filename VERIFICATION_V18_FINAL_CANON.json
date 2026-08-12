@@ -1,0 +1,18 @@
+{
+  "supabase/functions/_shared/sinjira-canon-context.ts": true,
+  "supabase/functions/submit-character-questionnaire/index.ts": true,
+  "supabase/functions/admin-sinjira-v18/index.ts": true,
+  "assets/js/sinjira-admin-v18.js": true,
+  "Admin/sinjira/index.html": true,
+  "supabase/migrations/20260812_sinjira_v18_canon_context_schema.sql": true,
+  "syntax:assets/js/sinjira-admin-v18.js": true,
+  "syntax:assets/js/sinjira-reader.js": true,
+  "syntax:assets/js/sinjira-character-registry.js": true,
+  "syntax:assets/js/sinjira-account-v18.js": true,
+  "private_docs_not_copied_to_site": true,
+  "admin_canon_tab": true,
+  "roman1_retcon_guard": true,
+  "canon_confirmation_guard": true,
+  "ai_uses_private_canon": true,
+  "secret_author_not_in_public_guide": true
+}

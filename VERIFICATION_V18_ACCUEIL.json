@@ -1,0 +1,11 @@
+{
+  "only_three_orbit_nodes": true,
+  "sinjira_romans_node": true,
+  "sinjira_games_node": true,
+  "nova_node": true,
+  "bc_default_center": true,
+  "lumina_removed_from_home": true,
+  "futurax_removed_from_home": true,
+  "chroniques_removed_from_home": true,
+  "three_project_cards": true
+}

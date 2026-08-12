@@ -1,0 +1,49 @@
+BENOITCANTIN — ADMINISTRATION PRO V17
+=====================================
+
+CAUSE CONFIRMÉE DANS LE DÉPÔT GITHUB
+- `Admin/sinjira/index.html` existe.
+- `admin/sinjira/index.html` n'existe pas.
+- Le Compte SINJIRA pointe actuellement vers `../admin/sinjira/`.
+- GitHub Pages distingue les majuscules/minuscules.
+
+CORRECTION V17
+Cette version ne tente plus de maintenir deux dossiers qui diffèrent seulement par la casse.
+Elle STANDARDISE l'administration sur le dossier déjà présent dans GitHub :
+
+    /Admin/sinjira/
+
+Les menus du Compte SINJIRA pointent maintenant vers cette adresse.
+
+FONCTIONS ADMIN CONSERVÉES
+- tableau de bord;
+- projets;
+- documents protégés;
+- comptes joueurs;
+- accès joueur/testeur;
+- demandes testeur;
+- playtests;
+- rapports de parties;
+- statistiques;
+- contributions;
+- extensions.
+
+SÉCURITÉ
+- vérification de session;
+- vérification RPC `is_sinjira_admin`;
+- les utilisateurs non administrateurs sont renvoyés vers leur compte;
+- le rôle administrateur reste réservé au propriétaire.
+
+INSTALLATION
+1. Décompresser ce ZIP.
+2. Add file -> Upload files dans M0rdr3x/BenoitCantin.
+3. Téléverser `Admin`, `assets`, `compte` et `administration.html` à la racine.
+4. Accepter les remplacements.
+5. Commit :
+   PRO V17 - standardise et restaure administration SINJIRA
+6. Attendre GitHub Pages.
+7. Ouvrir :
+   https://www.benoitcantin.com/Admin/sinjira/
+8. Ctrl+Shift+R.
+
+À partir de V17, utilise `/Admin/sinjira/` comme URL canonique de l'administration.

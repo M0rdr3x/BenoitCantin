@@ -1,0 +1,34 @@
+BENOITCANTIN — V18 / ACCUEIL SIMPLIFIÉ
+========================================
+
+Cette étape de la V18 simplifie la constellation principale.
+
+NOUVELLE CONSTELLATION
+- Centre au repos : sceau personnel BC de Benoit Cantin.
+- Point 1 : SINJIRA · Romans
+  -> /projets/sinjira/romans/
+- Point 2 : SINJIRA · Jeux
+  -> /projets/sinjira/jeux/
+- Point 3 : Projet Nova
+  -> /projets/projet-nova/
+
+Au survol ou au focus :
+- Romans affiche la couverture du Livre I dans le centre;
+- Jeux affiche le visuel officiel de Fracture du Réseau-Mère;
+- Projet Nova affiche son logo;
+- en quittant le point, le sceau BC revient.
+
+Lumina, Futurax et Chroniques ne sont plus présentés sur la page d'accueil.
+Leurs fichiers ne sont PAS supprimés du dépôt.
+
+La grille principale est elle aussi réduite à :
+1. Romans SINJIRA
+2. Jeux SINJIRA
+3. Projet Nova
+
+IMPORTANT
+Ce ZIP est un correctif de l'accueil V18, pas encore le pack V18 complet
+(lecteurs, commentaires, personnages des fans, Bible des personnages et administration globale).
+
+INSTALLATION
+Remplacer seulement le fichier index.html à la racine du dépôt.

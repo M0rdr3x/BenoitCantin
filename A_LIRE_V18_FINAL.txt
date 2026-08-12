@@ -1,0 +1,42 @@
+SINJIRA — V18 FINAL / INSTALLATION GITHUB
+============================================
+
+Ce ZIP est le pack complet du site V18.
+
+1. Décompresser le ZIP.
+2. Dans GitHub M0rdr3x/BenoitCantin : Add file -> Upload files.
+3. Téléverser TOUT le contenu à la racine.
+4. Accepter les remplacements.
+5. Ne pas supprimer Projet Nova.
+6. Commit conseillé :
+   SINJIRA V18 FINAL - lecteurs, personnages, IA et administration globale
+7. Attendre GitHub Pages puis Ctrl+Shift+R.
+
+BACKEND
+Le fichier de migration est :
+supabase/migrations/20260812_sinjira_v18_readers_characters.sql
+
+Fonctions :
+- submit-character-questionnaire
+- admin-sinjira-v18
+
+IA
+Pour activer la génération automatique, ajouter le secret serveur OPENAI_API_KEY.
+Sans cette clé, le questionnaire est quand même enregistré et le personnage reste en attente de traitement.
+
+SÉCURITÉ
+- les commentaires doivent être approuvés;
+- les questionnaires sont privés;
+- les personnages sont visibles uniquement dans le compte associé;
+- l’IA reçoit une version filtrée des réponses;
+- les données sources peuvent être supprimées définitivement après création;
+- seul le compte administrateur propriétaire peut utiliser l’administration.
+
+
+CANON PRIVÉ
+-----------
+La Bible maîtresse CANON v1.0 et le Dossier narratif CANON v1.0 ont servi à configurer les garde-fous de continuité.
+Ils NE sont PAS inclus dans le ZIP GitHub public, car ils contiennent des éléments SECRET AUTEUR.
+Le contexte privé correspondant est déjà enregistré dans Supabase et protégé des comptes joueurs.
+
+L’administration V18 contient maintenant un onglet « Canon SINJIRA » réservé à l’administrateur.
