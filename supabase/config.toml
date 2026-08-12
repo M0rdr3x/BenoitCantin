@@ -32,3 +32,9 @@ verify_jwt = true
 
 [functions.admin-users]
 verify_jwt = true
+
+[functions.submit-character-questionnaire]
+verify_jwt = true
+
+[functions.admin-sinjira-v18]
+verify_jwt = true
