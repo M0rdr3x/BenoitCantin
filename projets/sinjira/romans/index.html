@@ -15,8 +15,8 @@
 <meta content="website" property="og:type"/>
 <meta content="https://www.benoitcantin.com/assets/media/sinjira-livre-1-cover.webp" property="og:image"/>
 <meta content="https://www.benoitcantin.com/projets/sinjira/romans/index.html" property="og:url"/>
-</head>
-<body class="project-page" style="--project-accent:#ff7059;--project-accent-2:#d88cff">
+<link rel="stylesheet" href="../../../assets/css/sinjira-reader-character.css?v=18.0"></head>
+<body data-reader-page="novel" data-novel-slug="la-cendre-du-jugement" class="project-page" style="--project-accent:#ff7059;--project-accent-2:#d88cff">
 <a class="skip-link" href="#contenu">Aller au contenu</a>
 <header class="site-header">
   <div class="container nav-shell">
@@ -29,7 +29,7 @@
       <a href="../index.html">SINJIRA</a>
       <a aria-current="page" href="index.html">Romans</a>
       <a href="../jeux/index.html">Jeux</a>
-      <a class="nav-cta" href="../registre/index.html">Registre</a>
+      <a class="nav-cta" href="../personnages/index.html">Personnages</a>
     </nav>
   </div>
 </header>
@@ -50,7 +50,7 @@
     <a href="../index.html">Vue d'ensemble</a>
     <a aria-current="page" href="index.html">Romans</a>
     <a href="../jeux/index.html">Jeux</a>
-    <a href="../registre/index.html">Registre des Consciences</a>
+    <a href="../personnages/index.html">Personnages des fans</a>
   </div>
 </nav>
 
@@ -113,6 +113,23 @@
     </article>
   </div>
 </section>
+
+<section class="section section-tight" id="commentaires">
+  <div class="container">
+    <article class="reader-comment-shell" style="padding:clamp(22px,4vw,36px)">
+      <span class="eyebrow">Communauté des lecteurs</span>
+      <h2>Commentaires sur La Cendre du Jugement</h2>
+      <p>Les commentaires sont liés au Compte SINJIRA et passent par une modération avant publication.</p>
+      <div class="reader-comments" data-novel-comments><p>Chargement des commentaires…</p></div>
+      <div data-comment-account></div>
+      <form class="reader-comment-form" data-comment-form hidden>
+        <label>Votre commentaire<textarea name="body" maxlength="3000" required placeholder="Partagez votre impression sans divulguer de renseignements personnels."></textarea></label>
+        <button class="btn btn-primary" type="submit">Envoyer pour modération</button>
+      </form>
+      <div class="account-status" data-reader-status hidden></div>
+    </article>
+  </div>
+</section>
 </main>
 
 <footer class="site-footer">
@@ -122,12 +139,12 @@
         <img alt="" height="58" src="../../../assets/media/sinjira-emblem.webp" width="58"/>
         <div><h2>SINJIRA</h2><p>Franchise originale de Benoit Cantin.</p></div>
       </div>
-      <div class="footer-col"><h3>SINJIRA</h3><a href="../index.html">Vue d'ensemble</a><a href="../jeux/index.html">Jeux</a><a href="../registre/index.html">Registre</a></div>
+      <div class="footer-col"><h3>SINJIRA</h3><a href="../index.html">Vue d'ensemble</a><a href="../jeux/index.html">Jeux</a><a href="../personnages/index.html">Personnages</a></div>
       <div class="footer-col"><h3>Portail</h3><a href="../../../univers.html">Tous les univers</a><a href="../../../contact.html">Contact</a></div>
     </div>
     <div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Tous droits réservés.</span></div>
   </div>
 </footer>
 <script defer src="../../../assets/js/site.js?v=7.2-sinjira"></script>
-</body>
+<script type="module" src="../../../assets/js/sinjira-reader.js?v=18.0"></script></body>
 </html>
