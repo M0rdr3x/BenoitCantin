@@ -1,0 +1,83 @@
+/* SINJIRA V20.1 — visuels officiels des deux réseaux + deux accès dans la constellation.
+   Fichier volontairement indépendant pour ne pas mélanger ces ajustements avec les CSS V18/V19/V20 existants. */
+
+/* Pages Communauté et Réseau personnage */
+.v20-community-hero-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(260px,390px);
+  gap:clamp(26px,5vw,64px);
+  align-items:center;
+}
+.v20-community-hero-copy{min-width:0}
+.v20-community-poster{
+  margin:0;
+  justify-self:end;
+  width:min(100%,390px);
+}
+.v20-community-poster img{
+  display:block;
+  width:100%;
+  aspect-ratio:4/5;
+  object-fit:cover;
+  border-radius:24px;
+  background:#070914;
+  box-shadow:0 30px 78px rgba(0,0,0,.42);
+}
+.v20-community-poster.real img{
+  border:1px solid rgba(145,248,238,.28);
+  box-shadow:0 30px 78px rgba(0,0,0,.42),0 0 36px rgba(145,248,238,.07);
+}
+.v20-community-poster.character img{
+  border:1px solid rgba(255,103,87,.31);
+  box-shadow:0 30px 78px rgba(0,0,0,.42),0 0 38px rgba(255,80,60,.08);
+}
+.v20-community-poster figcaption{
+  margin-top:10px;
+  text-align:center;
+  color:var(--muted);
+  font-size:.78rem;
+  letter-spacing:.04em;
+}
+
+/* Accueil : constellation à six portes. */
+@media (min-width:901px){
+  .home-page .v20-six-portals{
+    min-height:clamp(620px,46vw,700px);
+  }
+  .home-page .v20-six-portals .node-1{left:7%;top:27%}
+  .home-page .v20-six-portals .node-2{right:7%;top:27%}
+  .home-page .v20-six-portals .node-community{left:8%;bottom:22%}
+  .home-page .v20-six-portals .node-character-network{right:8%;bottom:22%}
+  .home-page .v20-six-portals .node-3{left:50%;right:auto;bottom:1%;transform:translateX(-50%)}
+  .home-page .v20-six-portals .node-3:hover,
+  .home-page .v20-six-portals .node-3:focus-visible{transform:translateX(-50%) translateY(-5px) scale(1.035)}
+  .home-page .v20-six-portals .cosmos-label{bottom:-42px}
+}
+
+/* Les cartes de la constellation affichent les affiches 4:5 sans déformation. */
+.home-page .v20-six-portals .node-community img,
+.home-page .v20-six-portals .node-character-network img{
+  object-position:center 36%;
+}
+
+@media (max-width:980px){
+  .v20-community-hero-grid{grid-template-columns:1fr}
+  .v20-community-poster{justify-self:start;width:min(100%,430px)}
+}
+
+/* V19 transforme déjà la constellation en grille sous 900 px.
+   Ces règles ne changent que le rendu des nouvelles affiches dans cette grille. */
+@media (max-width:900px){
+  .home-page .v20-six-portals .node-community,
+  .home-page .v20-six-portals .node-character-network{
+    position:relative!important;
+    inset:auto!important;
+    transform:none!important;
+  }
+  .home-page .v20-six-portals .node-community:hover,
+  .home-page .v20-six-portals .node-community:focus-visible,
+  .home-page .v20-six-portals .node-character-network:hover,
+  .home-page .v20-six-portals .node-character-network:focus-visible{
+    transform:translateY(-2px)!important;
+  }
+}
