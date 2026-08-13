@@ -48,7 +48,7 @@
     .sinjira-reader-frame{height:calc(100vh - 190px);min-height:560px}
   }
 </style>
-</head>
+<link rel="manifest" href="/manifest.webmanifest"><link rel="stylesheet" href="/assets/css/v19-pro.css?v=19.0"></head>
 <body data-reader-page="demo" data-novel-slug="la-cendre-du-jugement" class="project-page">
 <a class="skip-link" href="#lecteur">Aller au lecteur</a>
 
@@ -60,7 +60,7 @@
     </a>
     <nav class="main-nav">
       <a href="../index.html">SINJIRA</a>
-      <a aria-current="page" href="index.html">Romans</a>
+      <a aria-current="page" href="index.html">Littérature</a>
       <a href="../jeux/index.html">Jeux</a>
       <a href="../../../index.html">Benoit Cantin</a>
     </nav>
@@ -82,27 +82,8 @@
     </div>
   </div>
 
-  <div class="sinjira-reader-frame-shell">
-    <object
-      class="sinjira-reader-frame"
-      data="../documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf#page=1&amp;zoom=page-width&amp;view=FitH"
-      type="application/pdf"
-      aria-label="Lecteur PDF de SINJIRA — La Cendre du Jugement">
-      <iframe
-        class="sinjira-reader-frame"
-        title="Démo de SINJIRA — La Cendre du Jugement"
-        src="../documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf#page=1&amp;zoom=page-width&amp;view=FitH">
-      </iframe>
-      <div class="sinjira-reader-fallback">
-        <p>Votre navigateur ne peut pas afficher le PDF directement dans cette page.</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="../documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf" target="_blank" rel="noopener">Ouvrir le PDF</a>
-          <a class="btn btn-secondary" download href="../documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf">Télécharger</a>
-        </div>
-      </div>
-    </object>
-  </div>
-
+  <div class="container" style="margin-top:16px"><div class="v19-reader-progress" data-reader-controls><button class="btn btn-secondary btn-small" type="button" data-reader-prev>← Page précédente</button><label>Page <input type="number" min="1" max="83" value="1" data-reader-page-number> / 83</label><button class="btn btn-secondary btn-small" type="button" data-reader-next>Page suivante →</button><button class="btn btn-primary btn-small" type="button" data-reader-bookmark>Sauvegarder ma page</button><div class="v19-progress-track" aria-hidden="true"><span data-reader-progress-bar></span></div><span class="v19-reader-resume" data-reader-resume></span></div></div>
+  <div class="sinjira-reader-frame-shell"><iframe class="sinjira-reader-frame" data-pdf-reader title="Démo de SINJIRA — La Cendre du Jugement" src="../documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf#page=1&zoom=page-width&view=FitH"></iframe></div>
   <div class="sinjira-reader-note">
     <strong>Édition démo — extrait promotionnel.</strong>
     Cette démo présente le prologue et les trois premiers chapitres du roman.
@@ -111,5 +92,5 @@
 </main>
 
 <script defer src="../../../assets/js/site.js?v=7.2-sinjira"></script>
-<script type="module" src="../../../assets/js/sinjira-reader.js?v=18.0"></script></body>
+<script type="module" src="../../../assets/js/sinjira-reader.js?v=19.0"></script><div class="v19-offline-badge" aria-live="polite">Mode hors ligne</div><script type="module" src="/assets/js/v19-session.js?v=19.0"></script></body>
 </html>
