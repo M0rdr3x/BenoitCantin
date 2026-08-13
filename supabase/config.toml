@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.admin-sinjira-v18]
 verify_jwt = true
+
+[functions.admin-social-v20]
+verify_jwt = true
