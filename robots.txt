@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
-Disallow: /admin/
-Disallow: /Admin/
 Disallow: /compte/
+Disallow: /Admin/
+Disallow: /admin/
+Disallow: /supabase/
 Sitemap: https://www.benoitcantin.com/sitemap.xml

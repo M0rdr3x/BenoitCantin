@@ -1,0 +1,20 @@
+NETTOYAGE V19 — fichiers obsolètes/parasitaires
+
+Le ZIP V19 propre ne contient plus ces fichiers. Si vous faites seulement un upload par-dessus GitHub, GitHub ne supprimera pas les anciens fichiers automatiquement. Vous pouvez les supprimer manuellement :
+
+/projets/sinjira/jeux/fracture-du-reseau-mere/documents/1
+/supabase/1
+/supabase/functions/1
+/supabase/functions/_shared/1
+/supabase/functions/admin-analytics/1
+/supabase/functions/admin-console/1
+/supabase/functions/admin-reports/1
+/supabase/functions/delete-player-account/1
+/supabase/functions/get-document-url/1
+/supabase/functions/revoke-my-contributions/1
+/supabase/functions/send-game-report/1
+/supabase/functions/send-player-sheet/1
+/supabase/functions/submit-fracture-endgame/1
+/supabase/functions/submit-game-contribution/1
+/supabase/migrations/1
+/supabase/functions/submit-game-contribution/submit-game-contribution/index.ts

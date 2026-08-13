@@ -1,0 +1,24 @@
+BENOITCANTIN — V18 FINAL REV2
+================================
+
+PACK COMPLET PRÊT POUR GITHUB
+
+1. Décompresser le ZIP.
+2. Dans le dépôt GitHub M0rdr3x/BenoitCantin : Add file -> Upload files.
+3. Téléverser tout le contenu à la racine du dépôt.
+4. Accepter les remplacements.
+5. Commit conseillé :
+   V18 FINAL REV2 - Littérature, Jeux, Registre, Compte accueil et mode manuel
+6. Attendre GitHub Pages puis faire Ctrl+Shift+R.
+
+À VÉRIFIER APRÈS DÉPLOIEMENT
+- accueil : 4 points (Nova, Littérature, Jeux, Registre);
+- bloc Compte SINJIRA;
+- /projets/sinjira/registre/;
+- nouveau visuel Littérature;
+- nouveau visuel Jeux;
+- formulaire Registre envoyé vers Formspree;
+- administration à /Admin/sinjira/.
+
+SUPABASE
+Le site public fonctionne avec les changements HTML/JS. Pour bénéficier aussi de la création manuelle directe depuis l’administration et du verrou `manual_only`, redéployer les fonctions Supabase incluses dans `supabase/functions/` selon votre procédure Supabase actuelle.

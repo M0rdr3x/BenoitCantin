@@ -1,0 +1,21 @@
+{
+  "checks": {
+    "syntax:assets/js/site.js": true,
+    "syntax:assets/js/v19-session.js": true,
+    "syntax:assets/js/sinjira-reader.js": true,
+    "syntax:assets/js/sinjira-account.js": true,
+    "syntax:assets/js/sinjira-account-v18.js": true,
+    "syntax:assets/js/sinjira-admin-v18.js": true,
+    "html_pages": 92,
+    "internal_refs": 2911,
+    "missing_internal_refs": 0,
+    "no_missing_internal_refs": true,
+    "parasitic_files_removed": true,
+    "optimized_game_images": true,
+    "home_four_nodes": true,
+    "pwa_files": true,
+    "v19_migration": true,
+    "canon_v11": true
+  },
+  "missing": []
+}

@@ -8,7 +8,7 @@
 <meta content="Portail personnel de Benoit Cantin : SINJIRA — Littérature, Jeux et Registre des Consciences — ainsi que Projet Nova." name="description"/>
 <link href="assets/icons/favicon.svg" rel="icon" type="image/svg+xml"/>
 <link href="assets/css/site.css?v=8.0-v18" rel="stylesheet"/><link href="assets/css/home-v18-rev2.css?v=18.2" rel="stylesheet"/>
-<link href="https://www.benoitcantin.com/" rel="canonical"/><meta content="#070914" name="theme-color"/><meta content="Accueil | Benoit Cantin" property="og:title"/><meta content="Portail personnel de Benoit Cantin : SINJIRA — Littérature, Jeux et Registre des Consciences — ainsi que Projet Nova." property="og:description"/><meta content="website" property="og:type"/><meta content="https://www.benoitcantin.com/" property="og:url"/></head>
+<link href="https://www.benoitcantin.com/" rel="canonical"/><meta content="#070914" name="theme-color"/><meta content="Accueil | Benoit Cantin" property="og:title"/><meta content="Portail personnel de Benoit Cantin : SINJIRA — Littérature, Jeux et Registre des Consciences — ainsi que Projet Nova." property="og:description"/><meta content="website" property="og:type"/><meta content="https://www.benoitcantin.com/" property="og:url"/><link rel="manifest" href="/manifest.webmanifest"><link rel="stylesheet" href="/assets/css/v19-pro.css?v=19.0"></head>
 <body class="home-page">
 <a class="skip-link" href="#contenu">Aller au contenu</a>
 <header class="site-header">
@@ -23,7 +23,7 @@
 <a href="projets/sinjira/index.html">SINJIRA</a>
 <a href="projets/projet-nova/index.html">Projet Nova</a>
 <a href="a-propos.html">À propos</a>
-<a href="compte/index.html">Compte SINJIRA</a>
+<a href="compte/index.html" data-sinjira-session-nav>Compte SINJIRA</a>
 <a class="nav-cta" href="contact.html">Contact</a>
 </nav>
 </div>
@@ -33,7 +33,7 @@
 <div class="container hero-grid">
 <div class="hero-copy">
 <span class="eyebrow">Portail personnel</span>
-<h1>Je bâtis <span class="gradient">plusieurs mondes.</span></h1>
+<h1>Je bâtis <span class="gradient">des univers à explorer.</span></h1>
 <p>Romans, jeux, intelligences créatives, prototypes numériques et vision citoyenne : chaque grand univers possède sa propre identité, et toutes les créations qui lui appartiennent restent regroupées sous la même bannière.</p>
 <div class="hero-actions">
 <a class="btn btn-primary" href="projets/sinjira/romans/index.html">Découvrir SINJIRA – Littérature <span aria-hidden="true">→</span></a>
@@ -54,7 +54,7 @@
 <section class="section section-tight home-account-section"><div class="container"><article class="home-account-card" data-home-account>
 <div class="home-account-copy"><span class="eyebrow">Compte SINJIRA</span><h2>Un compte pour lire, jouer et participer.</h2><p>Le Compte SINJIRA réunit votre profil, vos documents, vos personnages du Registre, vos commentaires lecteurs et vos parties sauvegardées.</p></div>
 <div class="home-account-panel"><div data-home-account-guest><h3>Accéder à votre espace</h3><p>Connectez-vous ou créez gratuitement votre Compte SINJIRA.</p><div class="hero-actions"><a class="btn btn-primary" href="compte/connexion.html">Se connecter</a><a class="btn btn-secondary" href="compte/inscription.html">Créer un compte</a></div></div>
-<div data-home-account-member hidden><div class="home-account-userline"><img class="home-account-avatar" data-home-account-avatar src="assets/media/sinjira-emblem.webp" alt="Photo du compte SINJIRA"><div><strong data-home-account-name>Compte SINJIRA</strong><span data-home-account-email></span></div></div><div class="home-account-links"><a class="btn btn-secondary" href="compte/profil.html">Mon profil</a><a class="btn btn-secondary" href="compte/documents.html">Mes documents</a><a class="btn btn-secondary" href="compte/mes-personnages.html">Mes personnages</a><a class="btn btn-secondary" href="compte/mes-parties.html">Mes parties</a><a class="btn btn-primary home-account-admin" data-home-account-admin hidden href="Admin/sinjira/">Administration SINJIRA</a><button class="btn btn-ghost" data-home-account-logout type="button">Déconnexion</button></div></div><p class="home-account-note">Les droits administrateur sont vérifiés côté Supabase; le lien n’est affiché qu’aux comptes autorisés.</p></div>
+<div data-home-account-member hidden><div class="home-account-userline"><img class="home-account-avatar" data-home-account-avatar src="assets/media/sinjira-emblem.webp" alt="Photo du compte SINJIRA"><div><strong data-home-account-name>Compte SINJIRA</strong><span data-home-account-email></span></div></div><div class="home-account-links"><a class="btn btn-secondary" href="compte/profil.html">Mon profil</a><a class="btn btn-secondary" href="compte/documents.html">Mes documents</a><a class="btn btn-secondary" href="compte/mes-lectures.html">Mes lectures</a><a class="btn btn-secondary" href="compte/mes-personnages.html">Mes personnages</a><a class="btn btn-secondary" href="compte/mes-parties.html">Mes parties</a><a class="btn btn-primary home-account-admin" data-home-account-admin hidden href="Admin/sinjira/">Administration SINJIRA</a><button class="btn btn-ghost" data-home-account-logout type="button">Déconnexion</button></div></div><p class="home-account-note">Les droits administrateur sont vérifiés côté Supabase; le lien n’est affiché qu’aux comptes autorisés.</p></div>
 </article></div></section>
 <section class="identity-strip">
 <div class="container">
@@ -111,5 +111,5 @@
 </div>
 </footer>
 <script defer="" src="assets/js/site.js?v=8.0-v18"></script><script type="module" src="assets/js/home-sinjira-account.js?v=18.2"></script>
-</body>
+<div class="v19-offline-badge" aria-live="polite">Mode hors ligne</div><script type="module" src="/assets/js/v19-session.js?v=19.0"></script></body>
 </html>

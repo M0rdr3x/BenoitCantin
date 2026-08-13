@@ -1,0 +1,18 @@
+{
+  "name": "Benoit Cantin — SINJIRA",
+  "short_name": "SINJIRA",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#070914",
+  "theme_color": "#070914",
+  "lang": "fr-CA",
+  "icons": [
+    {
+      "src": "/assets/icons/sinjira-favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

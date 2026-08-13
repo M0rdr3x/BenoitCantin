@@ -1,0 +1,19 @@
+BENOITCANTIN — V19 PRO / INSTALLATION
+====================================
+
+1. Sauvegardez votre dépôt actuel.
+2. Décompressez BenoitCantin-V19-PRO-GitHub.zip.
+3. GitHub -> Add file -> Upload files.
+4. Téléversez le contenu à la RACINE du dépôt et acceptez les remplacements.
+5. Commit conseillé : V19 PRO - qualité, lecture, commentaires, sauvegardes et administration
+6. Attendez GitHub Pages puis Ctrl+Shift+R.
+
+IMPORTANT — SUPPRESSION
+Un upload GitHub ne supprime pas les anciens fichiers. Consultez DELETE_THESE_V19.txt pour enlever les fichiers parasites restés dans le dépôt.
+
+BACKEND SUPABASE
+Pour activer les fonctions V19 (progression serveur, spoilers modifiables, timeline, journal admin), appliquez :
+  supabase/migrations/20260812_sinjira_v19_pro.sql
+puis redéployez les Edge Functions modifiées.
+
+Le site public reste utilisable même si cette étape backend est faite ensuite; les nouveautés dépendant de ces colonnes attendront la migration.
