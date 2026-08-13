@@ -24,12 +24,12 @@ insert into public.projects(slug,name,type,status,visibility,description,cover_u
 values
 ('fracture-du-reseau-mere','Fracture du Réseau-Mère','game','active','account',
  'Jeu SINJIRA avec fiche joueur web, sauvegardes, rapports et programme de contribution.',
- '/assets/media/sinjira-fracture-du-reseau-mere-officiel.png',
+ '/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp',
  '/projets/sinjira/jeux/fracture-du-reseau-mere/index.html',
  '/projets/sinjira/jeux/fracture-du-reseau-mere/fiche-web.html',true,10),
 ('reseau-mere-resistance','Réseau-Mère : Résistance','game','development','account',
  'Second jeu officiel de SINJIRA. Son espace joueur accueillera les documents et outils approuvés au fil du développement.',
- '/assets/media/sinjira-reseau-mere-resistance-officiel.png',
+ '/assets/media/sinjira-reseau-mere-resistance-officiel.webp',
  '/projets/sinjira/jeux/reseau-mere-resistance/index.html',null,true,20)
 on conflict (slug) do update set
 name=excluded.name,type=excluded.type,status=excluded.status,visibility=excluded.visibility,
