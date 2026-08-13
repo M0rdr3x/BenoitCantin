@@ -2,7 +2,7 @@ import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabe
 
 const page=document.body.dataset.libraryPage||'',status=document.querySelector('[data-library-status]');
 let user=null;
-function cover(p){if(p.cover_url)return p.cover_url;if(p.slug==='fracture-du-reseau-mere')return '/assets/media/sinjira-fracture-du-reseau-mere-officiel.png';if(p.slug==='reseau-mere-resistance')return '/assets/media/sinjira-reseau-mere-resistance-officiel.png';return '/assets/media/sinjira-emblem.webp'}
+function cover(p){if(p.cover_url)return p.cover_url;if(p.slug==='fracture-du-reseau-mere')return '/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp';if(p.slug==='reseau-mere-resistance')return '/assets/media/sinjira-reseau-mere-resistance-officiel.webp';return '/assets/media/sinjira-emblem.webp'}
 async function openDoc(id){
   setStatus(status,'Préparation du document sécurisé…','info');
   const {data,error}=await getSupabase().functions.invoke('get-document-url',{body:{document_id:id}});
