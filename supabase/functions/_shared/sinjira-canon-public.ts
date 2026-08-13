@@ -1,5 +1,5 @@
 export const SINJIRA_CANON_PUBLIC_GUIDE = `
-Référence de continuité : SINJIRA — Bible maîtresse CANON v1.0.
+Référence de continuité : SINJIRA — Bible maîtresse CANON v1.1.
 Règles de préséance :
 1. Un manuscrit officiel finalisé prime sur toute autre source.
 2. La Bible maîtresse vient ensuite.
