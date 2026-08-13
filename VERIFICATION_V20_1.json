@@ -1,0 +1,53 @@
+{
+  "required_files": {
+    "index.html": true,
+    "compte/communaute.html": true,
+    "compte/reseau-personnage.html": true,
+    "assets/css/v20-community-portals.css": true,
+    "assets/media/sinjira-communaute.webp": true,
+    "assets/media/sinjira-reseau-personnage.webp": true
+  },
+  "home_orbit_links": [
+    {
+      "label": "Projet Nova",
+      "href": "projets/projet-nova/index.html",
+      "img": "assets/media/nova-logo.webp"
+    },
+    {
+      "label": "SINJIRA – Littérature",
+      "href": "projets/sinjira/romans/index.html",
+      "img": "assets/media/sinjira-litterature.webp"
+    },
+    {
+      "label": "SINJIRA – Jeux",
+      "href": "projets/sinjira/jeux/index.html",
+      "img": "assets/media/sinjira-jeux.webp"
+    },
+    {
+      "label": "SINJIRA – Communauté",
+      "href": "compte/communaute.html",
+      "img": "assets/media/sinjira-communaute.webp"
+    },
+    {
+      "label": "SINJIRA – Réseau personnage",
+      "href": "compte/reseau-personnage.html",
+      "img": "assets/media/sinjira-reseau-personnage.webp"
+    },
+    {
+      "label": "SINJIRA – Registre des Consciences",
+      "href": "projets/sinjira/registre/index.html",
+      "img": "assets/media/sinjira-registre.webp"
+    }
+  ],
+  "home_orbit_count": 6,
+  "home_has_new_css": true,
+  "compte/communaute.html": {
+    "poster": "../assets/media/sinjira-communaute.webp",
+    "css": true
+  },
+  "compte/reseau-personnage.html": {
+    "poster": "../assets/media/sinjira-reseau-personnage.webp",
+    "css": true
+  },
+  "missing_local_refs": []
+}

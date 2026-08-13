@@ -1,0 +1,23 @@
+SINJIRA V20.1 — VISUELS COMMUNAUTÉ + RÉSEAU PERSONNAGE
+
+Ce paquet contient UNIQUEMENT les fichiers à ajouter/remplacer dans GitHub.
+Décompressez le ZIP et téléversez son contenu à la RACINE du dépôt en conservant les dossiers.
+
+FICHIERS À REMPLACER :
+- index.html
+- compte/communaute.html
+- compte/reseau-personnage.html
+
+FICHIERS À AJOUTER :
+- assets/css/v20-community-portals.css
+- assets/media/sinjira-communaute.webp
+- assets/media/sinjira-reseau-personnage.webp
+
+MODIFICATIONS :
+- Le visuel officiel SINJIRA – Communauté est ajouté à sa page.
+- Le visuel officiel SINJIRA – Réseau personnage est ajouté à sa page.
+- La constellation de l'accueil possède maintenant 6 portes :
+  Projet Nova / Littérature / Jeux / Communauté / Réseau personnage / Registre.
+- Les deux nouveaux liens changent également le visuel central BC au survol, comme les autres portes.
+- Le résumé Compte SINJIRA de l'accueil est aligné sur V20 : Ma bibliothèque + Réseau personnage.
+- Aucun fichier Supabase n'est requis pour cette mise à jour visuelle.
