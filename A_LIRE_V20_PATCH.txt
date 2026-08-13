@@ -1,0 +1,38 @@
+SINJIRA — V20 ÉCOSYSTÈME SOCIAL — PATCH GITHUB
+================================================
+
+CE ZIP CONTIENT UNIQUEMENT LES FICHIERS NOUVEAUX OU MODIFIÉS DEPUIS V19.
+Il ne contient pas une copie complète du site.
+
+CHANGEMENTS
+- « Mes personnages » devient « Mon personnage ».
+- 1 Compte SINJIRA = 1 demande de Registre = 1 personnage maximum.
+- Le questionnaire du Registre se verrouille dès qu'une demande ou un personnage existe.
+- Deux réseaux sociaux totalement distincts :
+  1) Communauté SINJIRA = compte réel / pseudo de compte.
+  2) Réseau personnage = rôle-play uniquement avec le personnage SINJIRA approuvé.
+- Deux messageries distinctes : compte réel et personnage.
+- Règles de bienséance obligatoires avant publication ou messagerie.
+- Blocage, signalement et modération.
+- Administration : nouvel onglet Modération sociale.
+- « Ma bibliothèque » explique maintenant clairement les ressources privées; « Documents » n'est plus un item principal du menu.
+- « Mes achats » est préparé pour la future boutique.
+
+INSTALLATION GITHUB
+1. Décompresser ce ZIP.
+2. Dans M0rdr3x/BenoitCantin : Add file -> Upload files.
+3. Glisser TOUS les fichiers et dossiers du patch à la RACINE du dépôt.
+4. Accepter les remplacements.
+5. Commit conseillé :
+   V20 - personnage unique, communaute et messageries separees
+
+BACKEND SUPABASE
+La migration et les Edge Functions sont incluses dans /supabase.
+Si elles ne sont pas déployées automatiquement, appliquer :
+- supabase/migrations/20260812_sinjira_v20_social_identity.sql
+- redeployer submit-character-questionnaire
+- redeployer admin-sinjira-v18
+- deployer admin-social-v20
+
+RÈGLE IMPORTANTE
+Les messages privés ne sont pas listés librement dans l'administration. Un message n'est montré à la modération que lorsqu'un utilisateur le signale et qu'un snapshot du message est joint au signalement.
