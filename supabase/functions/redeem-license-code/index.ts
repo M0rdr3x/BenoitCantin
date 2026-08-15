@@ -1,4 +1,35 @@
-import {corsHeaders,json} from '../_shared/cors.ts';
-import {requiredUser,serviceClient} from '../_shared/auth.ts';
-async function digest(code:string,pepper:string){const normalized=code.toUpperCase().replace(/\s+/g,'').trim();const raw=new TextEncoder().encode(`${pepper}:${normalized}`);const h=await crypto.subtle.digest('SHA-256',raw);return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')}
-Deno.serve(async req=>{if(req.method==='OPTIONS')return new Response('ok',{headers:corsHeaders});if(req.method!=='POST')return json({ok:false,error:'Méthode non autorisée.'},405);try{const user=await requiredUser(req),pepper=Deno.env.get('SINJIRA_LICENSE_PEPPER');if(!pepper)throw new Error('Configuration licence manquante');const {code}=await req.json();const value=String(code||'').trim();if(value.length<12)return json({ok:false,error:'Code invalide.'},400);const s=serviceClient();const hash=await digest(value,pepper);const {data,error}=await s.rpc('redeem_sinjira_activation',{p_code_hash:hash,p_user_id:user.id});if(error){const msg=String(error.message||'');if(msg.includes('CODE_INVALID_OR_USED'))return json({ok:false,error:'Ce code ne peut pas être activé. Vérifiez le code ou contactez le support.'},409);throw error}return json({ok:true,entitlement:data?.[0]||null});}catch(e){console.error(e);if(e?.message==='AUTH_REQUIRED')return json({ok:false,error:'Connexion requise.'},401);return json({ok:false,error:'Activation impossible.'},500)}});
+import { corsHeaders, json } from '../_shared/cors.ts';
+import { optionalUser, serviceClient } from '../_shared/auth.ts';
+
+const ranks:Record<string,number>={public:1,account:10,player:20,tester:30,admin:100};
+
+Deno.serve(async(req)=>{
+  if(req.method==='OPTIONS')return new Response('ok',{headers:corsHeaders});
+  if(req.method!=='POST')return json({ok:false,error:'Méthode non autorisée.'},405);
+  try{
+    const {document_id}=await req.json();
+    if(!document_id)return json({ok:false,error:'Document manquant.'},400);
+    const service=serviceClient(),user=await optionalUser(req);
+    const {data:doc,error}=await service.from('documents').select('*,projects(id,visibility,status)').eq('id',document_id).maybeSingle();
+    if(error||!doc||doc.status!=='approved')return json({ok:false,error:'Document introuvable ou non approuvé.'},404);
+
+    let userRank=0;
+    if(user){
+      const {data:isAdmin}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
+      if(isAdmin)userRank=100;
+      else{
+        const {data:accessRank}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
+        userRank=Number(accessRank||0);
+      }
+    }else if(doc.projects?.visibility==='public')userRank=1;
+
+    if(userRank<(ranks[doc.access_level]||999))return json({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
+
+    if(doc.external_url)return json({ok:true,url:doc.external_url,protected:false,expires_in:null});
+    if(!doc.storage_bucket||!doc.storage_path)return json({ok:false,error:'Fichier non configuré.'},500);
+
+    const {data:signed,error:signedError}=await service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
+    if(signedError||!signed?.signedUrl)return json({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
+    return json({ok:true,url:signed.signedUrl,protected:true,expires_in:600});
+  }catch(e){console.error(e);return json({ok:false,error:'Erreur lors de l’accès au document.'},500)}
+});
