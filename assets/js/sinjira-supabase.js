@@ -28,7 +28,34 @@ export function isSinjiraOwner(user){return String(user?.email||'').trim().toLow
 export async function signOut(){ if(isSinjiraBackendConfigured()) await getSupabase().auth.signOut(); location.href='/compte/connexion.html'; }
 export function escapeHtml(v=''){return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
 export function formatDate(v){if(!v)return '—';return new Intl.DateTimeFormat('fr-CA',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}
-export function setStatus(node,msg,type='info'){if(!node)return;node.textContent=msg;node.dataset.statusType=type;node.hidden=false}
+
+export function friendlyBackendMessage(message,fallback='Une opération serveur n’a pas pu être terminée.'){
+  const raw=String(message||'').trim();
+  if(!raw)return fallback;
+  if(/PGRST20[25]|Could not find the (?:table|function)|relation .* does not exist|schema cache/i.test(raw))return 'Le serveur SINJIRA™ doit encore être synchronisé pour cette fonction.';
+  if(/JWT|token.*expired|session.*expired|invalid claim/i.test(raw))return 'Votre session a expiré. Reconnectez-vous puis réessayez.';
+  if(/Failed to fetch|NetworkError|FunctionsFetchError|Load failed/i.test(raw))return 'Communication avec le serveur SINJIRA™ impossible pour le moment.';
+  if(/row-level security|permission denied|42501|not authorized|forbidden/i.test(raw))return 'Votre compte n’a pas l’autorisation nécessaire pour cette opération.';
+  if(/duplicate key|23505/i.test(raw))return 'Cette information existe déjà dans votre compte.';
+  if(/foreign key|23503/i.test(raw))return 'Cette opération dépend d’un élément qui n’est plus disponible.';
+  if(/null value|23502|check constraint|23514|syntax error|SQLSTATE|column .* does not exist/i.test(raw))return 'Le serveur a refusé cette opération. Le diagnostic administrateur permet d’identifier le composant à synchroniser.';
+  return raw.length>240?fallback:raw;
+}
+export function setStatus(node,msg,type='info'){
+  if(!node)return;
+  const raw=String(msg||'');
+  const friendly=friendlyBackendMessage(raw,raw||'Une opération n’a pas pu être terminée.');
+  if(friendly!==raw&&raw)console.warn('[SINJIRA backend]',raw);
+  node.textContent=friendly;
+  node.dataset.statusType=type;
+  node.hidden=false;
+}
 export function roleLabel(v){return ({public:'Public',account:'Compte joueur',player:'Joueur approuvé',tester:'Testeur approuvé',admin:'Administration'})[v]||v||'—'}
 export function projectStatusLabel(v){return ({draft:'Brouillon',development:'En développement',testing:'En test',active:'Disponible',archived:'Archivé'})[v]||v||'—'}
 export { SINJIRA_CONFIG, isSinjiraBackendConfigured };
+
+// L'administration possède un diagnostic de santé indépendant de la console principale.
+// Le chargement est conditionnel afin de ne rien ajouter aux pages publiques.
+if(typeof location!=='undefined'&&/^\/admin\/sinjira(?:\/|$)/i.test(location.pathname)){
+  queueMicrotask(()=>import('./v24-admin-health.js?v=24.3.5').catch(err=>console.warn('[SINJIRA admin health loader]',err)));
+}

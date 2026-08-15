@@ -1,4 +1,4 @@
-/* SINJIRA™ V24.3.3 — stabilité visuelle et navigation. */
+/* SINJIRA™ V24.3.3+ — stabilité visuelle et navigation. */
 
 /* Les pages de compte sont longues : le bandeau principal ne doit pas recouvrir
    le contenu pendant le défilement ni apparaître au milieu des captures plein écran. */
@@ -69,7 +69,12 @@
 /* Administration : les onglets restent lisibles sur petit écran sans masquer la page. */
 .admin-console-tabs{scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .admin-console-tabs::-webkit-scrollbar{display:none}
+.v19-health-grid{display:grid;gap:10px;margin-top:18px}
+.v19-health-card{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 16px;border:1px solid var(--account-line,rgba(190,205,255,.16));border-radius:14px;background:rgba(255,255,255,.025)}
+.v19-health-card>div{min-width:0}.v19-health-card strong{display:block}.v19-health-card span:not(.v24-badge){display:block;color:var(--muted);font-size:.84rem;margin-top:3px}
+.v19-health-card .v24-badge{flex:0 0 auto}
 @media (max-width:900px){
   .admin-console-tabs{position:relative;top:auto}
   .admin-console-layout{width:min(100% - 22px,1480px);padding-top:20px}
 }
+@media (max-width:560px){.v19-health-card{align-items:flex-start;flex-direction:column}}
