@@ -85,24 +85,30 @@ async function signup(){
     e.preventDefault();
     if(!isSinjiraBackendConfigured()){setStatus(status,'Supabase doit d’abord être configuré.','error');return}
     const d=new FormData(form), pw=String(d.get('password')||''), pw2=String(d.get('password_confirm')||'');
-    if(pw.length<10){setStatus(status,'Utilisez un mot de passe d’au moins 10 caractères.','error');return}
+    if(pw.length<12){setStatus(status,'Utilisez un mot de passe d’au moins 12 caractères.','error');return}
     if(pw!==pw2){setStatus(status,'Les mots de passe ne correspondent pas.','error');return}
     const contributor=d.get('initial_contributor_opt_in')==='yes';
+    const fillCharacter=d.get('fill_character_now')==='yes';
+    const languages=String(d.get('languages')||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,12);
+    const quickQuestionnaire=fillCharacter?{
+      sociability:String(d.get('q_sociability')||''),decision_style:String(d.get('q_decision')||''),danger_style:String(d.get('q_danger')||''),social_group:String(d.get('q_social_group')||''),conflict_style:String(d.get('q_conflict')||''),trust_style:String(d.get('q_trust')||''),natural_role:String(d.get('q_role')||''),pressure_style:String(d.get('q_pressure')||''),core_value:String(d.get('q_value')||''),main_strength:String(d.get('q_strength')||''),main_weakness:String(d.get('q_weakness')||''),archetype:String(d.get('q_archetype')||''),notes:String(d.get('q_notes')||'')
+    }:null;
+    const metadata={
+      pseudo:String(d.get('pseudo')||'').trim(),display_name:String(d.get('display_name')||'').trim(),
+      birth_date:String(d.get('birth_date')||''),gender:String(d.get('gender')||''),languages,
+      residence_city:String(d.get('residence_city')||'').trim(),residence_region:String(d.get('residence_region')||'').trim(),residence_country:String(d.get('residence_country')||'').trim(),
+      origin_city:String(d.get('origin_city')||'').trim(),origin_region:String(d.get('origin_region')||'').trim(),origin_country:String(d.get('origin_country')||'').trim(),
+      relationship_status:String(d.get('relationship_status')||''),relationship_since:String(d.get('relationship_since')||''),relationship_partner_label:String(d.get('relationship_partner_label')||'').trim(),
+      fill_character_now:fillCharacter,quick_character_questionnaire:quickQuestionnaire,
+      initial_contributor_opt_in:contributor,initial_share_free_text:contributor&&d.get('share_free_text')==='yes'
+    };
     const {data,error}=await getSupabase().auth.signUp({
       email:String(d.get('email')||'').trim(),password:pw,
-      options:{
-        emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}/compte/index.html`,
-        data:{
-          pseudo:String(d.get('pseudo')||'').trim(),
-          display_name:String(d.get('display_name')||'').trim(),
-          initial_contributor_opt_in:contributor,
-          initial_share_free_text:contributor&&d.get('share_free_text')==='yes'
-        }
-      }
+      options:{emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}/compte/index.html`,data:metadata}
     });
     if(error){setStatus(status,error.message,'error');return}
     if(data.session){location.href=nextDestination();return}
-    setStatus(status,'Compte créé. Vérifiez votre courriel pour confirmer votre adresse.','success');form.reset();
+    setStatus(status,fillCharacter?'Compte créé. Vérifiez votre courriel. Votre questionnaire rapide a été conservé comme brouillon privé dans le compte.':'Compte créé. Vérifiez votre courriel pour confirmer votre adresse.','success');form.reset();
   });
 }
 async function login(){
@@ -227,13 +233,28 @@ async function contributions(){
 async function settings(){
   const user=await requireUser(),s=getSupabase();
   document.querySelector('[data-export-data]')?.addEventListener('click',async()=>{
-    const [a,b,c,d,e,f,g]=await Promise.all([
-      s.from('profiles').select('*').eq('user_id',user.id),s.from('game_sessions').select('*').eq('user_id',user.id),
-      s.from('player_sheets').select('*').eq('user_id',user.id),s.from('session_feedback').select('*').eq('user_id',user.id),
-      s.from('access_requests').select('*').eq('user_id',user.id),s.from('project_access').select('*').eq('user_id',user.id),
-      s.from('research_consents').select('*').eq('user_id',user.id)
-    ]);
-    const blob=new Blob([JSON.stringify({profile:a.data,sessions:b.data,sheets:c.data,feedback:d.data,requests:e.data,access:f.data,consent:g.data},null,2)],{type:'application/json'});
+    const queries={
+      profile:s.from('profiles').select('*').eq('user_id',user.id),
+      private_profile:s.from('private_profiles').select('*').eq('user_id',user.id),
+      relationships:s.from('family_relationships').select('*').eq('owner_user_id',user.id),
+      privacy:s.from('privacy_settings').select('*').eq('user_id',user.id),
+      notifications:s.from('notification_preferences').select('*').eq('user_id',user.id),
+      questionnaire_draft:s.from('character_questionnaire_drafts').select('*').eq('user_id',user.id),
+      sessions:s.from('game_sessions').select('*').eq('user_id',user.id),
+      sheets:s.from('player_sheets').select('*').eq('user_id',user.id),
+      feedback:s.from('session_feedback').select('*').eq('user_id',user.id),
+      requests:s.from('access_requests').select('*').eq('user_id',user.id),
+      access:s.from('project_access').select('*').eq('user_id',user.id),
+      consent:s.from('research_consents').select('*').eq('user_id',user.id),
+      market:s.from('market_listings').select('*').eq('seller_user_id',user.id),
+      tokens:s.from('token_ledger').select('*').eq('user_id',user.id),
+      parallel_responses:s.from('parallel_responses').select('*').eq('user_id',user.id),
+      parallel_state:s.from('parallel_character_state').select('*').eq('user_id',user.id),
+      entitlements:s.from('user_entitlements').select('*,products(slug,name)').eq('user_id',user.id)
+    };
+    const entries=await Promise.all(Object.entries(queries).map(async([k,q])=>{try{const r=await q;return [k,r.data||[]]}catch{return [k,[]]}}));
+    const payload=Object.fromEntries(entries);payload.exported_at=new Date().toISOString();payload.format='SINJIRA_USER_EXPORT_V24';
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`sinjira-mes-donnees-${new Date().toISOString().slice(0,10)}.json`;link.click();URL.revokeObjectURL(url);
   });
   document.querySelector('[data-delete-account]')?.addEventListener('click',async()=>{
