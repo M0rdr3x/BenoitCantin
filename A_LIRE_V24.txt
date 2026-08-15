@@ -1,0 +1,9 @@
+SINJIRA™ V24 — PACK SITE PRÊT À TÉLÉVERSER
+
+1) Ce pack remplace le contenu du dépôt GitHub actuel.
+2) Ne téléversez pas le PDF intégral corrigé du Livre I dans GitHub Pages.
+3) La nouvelle couverture et la nouvelle démo corrigée sont déjà intégrées.
+4) La V23 est incluse : admin minuscule, Registre Supabase-first, portrait AbyssTime, etc.
+5) Les nouveaux modules V24 visibles sont intégrés, mais les fonctions financières, vidéo et IA restent désactivées jusqu'à leur mise en service sécurisée.
+6) Pour les nouveaux champs de compte et modules V24, appliquez la migration Supabase 20260814_sinjira_v24_foundation.sql.
+7) Lire V24_DEPLOIEMENT.md avant la mise en production.
