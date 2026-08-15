@@ -1,0 +1,158 @@
+/* SINJIRA™ / Benoit Cantin — correctifs visuels V24.3.2 */
+
+/* Navigation des pages Compte : plus compacte, sans cacher le contenu. */
+.account-page .site-header .nav-shell{
+  min-height:64px;
+}
+.account-page .site-header .brand img{
+  width:40px;
+  height:40px;
+}
+.account-page .site-header .main-nav a{
+  padding:8px 10px;
+  font-size:.86rem;
+}
+.account-page .account-nav-scroll{
+  position:relative;
+  z-index:12;
+}
+.account-page .account-nav{
+  gap:5px;
+  padding:9px;
+  margin-bottom:22px;
+  border-radius:15px;
+}
+.account-page .account-nav a,
+.account-page .account-nav button{
+  padding:8px 10px;
+  border-radius:10px;
+  font-size:.86rem;
+  white-space:nowrap;
+}
+
+/* À partir des écrans intermédiaires, une seule rangée défilante évite un menu de deux lignes. */
+@media(max-width:1180px){
+  .account-page .account-nav-scroll{
+    overflow-x:auto!important;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .account-page .account-nav-scroll::-webkit-scrollbar{display:none}
+  .account-page .account-nav{
+    flex-wrap:nowrap!important;
+    min-width:max-content!important;
+  }
+}
+
+/* Constellation de l'accueil : espace réservé et positions stables. */
+.home-page .v20-six-portals{
+  isolation:isolate;
+}
+.home-page .v20-six-portals .cosmos-label{
+  display:none!important; /* texte redondant qui entrait en collision avec le Registre */
+}
+.home-page .v20-six-portals .orbit-node span{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+  max-width:210px;
+  text-align:center;
+  white-space:nowrap;
+}
+.home-page .v20-six-portals .node-3 span{
+  top:auto;
+  bottom:calc(100% + 9px);
+}
+
+@media(min-width:1181px){
+  .home-page .hero-grid{
+    grid-template-columns:minmax(420px,.9fr) minmax(560px,1.1fr);
+    gap:clamp(28px,3.5vw,52px);
+  }
+  .home-page .v20-six-portals{
+    min-height:660px;
+    max-width:700px;
+  }
+  .home-page .v20-six-portals .node-5{left:50%;top:1%;transform:translateX(-50%)}
+  .home-page .v20-six-portals .node-5:hover,
+  .home-page .v20-six-portals .node-5:focus-visible{transform:translateX(-50%) translateY(-5px) scale(1.035)}
+  .home-page .v20-six-portals .node-1{left:3%;top:27%}
+  .home-page .v20-six-portals .node-2{right:3%;top:27%}
+  .home-page .v20-six-portals .node-community{left:5%;bottom:22%}
+  .home-page .v20-six-portals .node-character-network{right:5%;bottom:22%}
+  .home-page .v20-six-portals .node-3{left:50%;right:auto;bottom:2%;transform:translateX(-50%)}
+  .home-page .v20-six-portals .node-3:hover,
+  .home-page .v20-six-portals .node-3:focus-visible{transform:translateX(-50%) translateY(-5px) scale(1.035)}
+}
+
+/* Tablettes / petits portables : le texte et la constellation sont empilés plutôt que comprimés. */
+@media(min-width:901px) and (max-width:1180px){
+  .home-page .hero-grid{
+    grid-template-columns:1fr!important;
+    gap:34px;
+  }
+  .home-page .hero-copy{
+    max-width:780px;
+  }
+  .home-page .v20-six-portals{
+    width:min(100%,760px);
+    min-height:660px;
+    margin-inline:auto;
+  }
+  .home-page .v20-six-portals .node-5{left:50%;top:1%;transform:translateX(-50%)}
+  .home-page .v20-six-portals .node-1{left:5%;top:27%}
+  .home-page .v20-six-portals .node-2{right:5%;top:27%}
+  .home-page .v20-six-portals .node-community{left:7%;bottom:23%}
+  .home-page .v20-six-portals .node-character-network{right:7%;bottom:23%}
+  .home-page .v20-six-portals .node-3{left:50%;right:auto;bottom:2%;transform:translateX(-50%)}
+  .home-page .v20-six-portals .node-5:hover,
+  .home-page .v20-six-portals .node-5:focus-visible,
+  .home-page .v20-six-portals .node-3:hover,
+  .home-page .v20-six-portals .node-3:focus-visible{transform:translateX(-50%) translateY(-5px) scale(1.035)}
+}
+
+/* Mobile : grille propre, étiquettes sous chaque carte, aucune superposition. */
+@media(max-width:900px){
+  .home-page .v20-six-portals{
+    min-height:auto!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:42px 18px;
+    padding:20px 0 10px;
+  }
+  .home-page .v20-six-portals .orbit,
+  .home-page .v20-six-portals .identity-core{
+    display:none!important;
+  }
+  .home-page .v20-six-portals .orbit-node{
+    position:relative!important;
+    inset:auto!important;
+    transform:none!important;
+    margin:auto;
+  }
+  .home-page .v20-six-portals .orbit-node:hover,
+  .home-page .v20-six-portals .orbit-node:focus-visible{
+    transform:translateY(-2px)!important;
+  }
+  .home-page .v20-six-portals .orbit-node span,
+  .home-page .v20-six-portals .node-3 span{
+    top:calc(100% + 8px)!important;
+    bottom:auto!important;
+    white-space:normal;
+    width:150px;
+  }
+}
+@media(max-width:520px){
+  .home-page .v20-six-portals{grid-template-columns:1fr;gap:48px}
+  .home-page .v20-six-portals .orbit-node span,
+  .home-page .v20-six-portals .node-3 span{width:190px}
+}
+
+/* Les messages de disponibilité serveur restent visibles et ne passent pas sous un menu. */
+.v2432-server-notice{
+  margin:14px 0;
+  padding:13px 15px;
+  border:1px solid rgba(255,189,122,.28);
+  border-radius:13px;
+  background:rgba(255,189,122,.07);
+  color:#f0e1cf;
+}

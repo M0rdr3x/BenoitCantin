@@ -1,6 +1,6 @@
-const CACHE='benoitcantin-v24-3-1-public-1';
+const CACHE='benoitcantin-v24-3-2-public-1';
 const CORE=[
-  '/','/offline.html','/assets/css/site.css','/assets/css/v19-pro.css','/assets/css/v24-platform.css','/assets/js/site.js','/assets/js/v24-3-1-runtime.js',
+  '/','/offline.html','/assets/css/site.css','/assets/css/v19-pro.css','/assets/css/v24-platform.css','/assets/css/v24-3-2-fixes.css','/assets/js/site.js','/assets/js/v24-3-1-runtime.js','/assets/js/v24-3-2-runtime.js',
   '/assets/icons/benoit-sigil.svg','/assets/media/sinjira-emblem.webp','/assets/media/sinjira-livre-1-cover-480.webp',
   '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/'
 ];

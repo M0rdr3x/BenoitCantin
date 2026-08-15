@@ -74,12 +74,21 @@
     }, true);
   });
 
-  // Correctifs cumulatifs V24.3.1 : questionnaire unique, accès Fracture et compatibilité.
+  // Correctifs cumulatifs V24.3.1 : questionnaire unique et accès Fracture.
   if (!document.querySelector('script[data-v2431-runtime]')) {
     const runtime = document.createElement('script');
     runtime.type = 'module';
-    runtime.src = '/assets/js/v24-3-1-runtime.js?v=24.3.1';
+    runtime.src = '/assets/js/v24-3-1-runtime.js?v=24.3.2';
     runtime.dataset.v2431Runtime = '';
+    document.head.appendChild(runtime);
+  }
+
+  // V24.3.2 : corrections visuelles, routage admin et diagnostics Supabase.
+  if (!document.querySelector('script[data-v2432-runtime]')) {
+    const runtime = document.createElement('script');
+    runtime.type = 'module';
+    runtime.src = '/assets/js/v24-3-2-runtime.js?v=24.3.2';
+    runtime.dataset.v2432Runtime = '';
     document.head.appendChild(runtime);
   }
 })();
