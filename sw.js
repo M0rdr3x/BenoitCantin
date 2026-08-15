@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-public-1';
+const CACHE='benoitcantin-v24-3-public-1';
 const CORE=[
   '/','/offline.html','/assets/css/site.css','/assets/css/v19-pro.css','/assets/css/v24-platform.css','/assets/js/site.js',
   '/assets/icons/benoit-sigil.svg','/assets/media/sinjira-emblem.webp','/assets/media/sinjira-livre-1-cover-480.webp',

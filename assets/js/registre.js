@@ -39,7 +39,7 @@
 
   function updateMinorSection() {
     const group = getAgeGroup();
-    const minor = group && !group.startsWith('J’ai 18 ans');
+    const minor = group.startsWith('12 à 17');
     minorSection?.classList.toggle('hidden', !minor);
     adultMessage?.classList.toggle('hidden', minor);
     minorSection?.querySelectorAll('input').forEach((input) => {
@@ -64,16 +64,30 @@
     }
 
     if (step.dataset.step === '1') {
+      const ageGroup = getAgeGroup();
+      if (ageGroup.startsWith('moins de 12')) {
+        errorSummary.classList.add('visible');
+        errorSummary.textContent = 'Le Registre ne peut pas accepter directement une participation d’une personne de moins de 12 ans.';
+        form.querySelector('input[name="groupe_age"]:checked')?.focus();
+        return false;
+      }
       const originality = [...form.querySelectorAll('input[name="originalite"]')];
       if (originality.some((item) => !item.checked)) {
         errorSummary.classList.add('visible');
-        errorSummary.textContent = 'Veuillez confirmer toutes les déclarations d’originalité avant de continuer.';
+        errorSummary.textContent = 'Veuillez confirmer les deux déclarations d’originalité avant de continuer.';
         originality.find((item) => !item.checked)?.focus();
         return false;
       }
     }
 
     if (step.dataset.step === String(steps.length)) {
+      const understandings = [...form.querySelectorAll('input[name="character_understanding"]')];
+      if (understandings.some((item) => !item.checked)) {
+        errorSummary.classList.add('visible');
+        errorSummary.textContent = 'Veuillez confirmer les trois points sur le libre arbitre du personnage.';
+        understandings.find((item) => !item.checked)?.focus();
+        return false;
+      }
       const consents = [...form.querySelectorAll('input[name="consentements"]')];
       if (consents.some((item) => !item.checked)) {
         errorSummary.classList.add('visible');
