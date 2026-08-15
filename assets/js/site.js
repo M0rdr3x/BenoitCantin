@@ -73,4 +73,13 @@
       window.alert('Ce formulaire n’est pas encore configuré. Aucune donnée n’a été transmise.');
     }, true);
   });
+
+  // Correctifs cumulatifs V24.3.1 : questionnaire unique, accès Fracture et compatibilité.
+  if (!document.querySelector('script[data-v2431-runtime]')) {
+    const runtime = document.createElement('script');
+    runtime.type = 'module';
+    runtime.src = '/assets/js/v24-3-1-runtime.js?v=24.3.1';
+    runtime.dataset.v2431Runtime = '';
+    document.head.appendChild(runtime);
+  }
 })();
