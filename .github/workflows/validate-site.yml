@@ -1,0 +1,29 @@
+name: Validation du site SINJIRA
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Configurer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Vérifier les routes, fichiers, secrets et JavaScript
+        run: python scripts/validate_site.py

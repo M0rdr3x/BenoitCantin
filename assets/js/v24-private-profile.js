@@ -30,10 +30,13 @@ function fillForm(data){
   }
 }
 
-function migrationMissing(error){
+function serverMissing(error){
   const text=String(error?.message||'');
   const code=String(error?.code||'');
   return code==='PGRST205'||/private_profiles|relation .* does not exist|schema cache/i.test(text);
+}
+function setFormReady(ready){
+  for(const el of form.elements){if(el.type==='submit'||el.tagName==='BUTTON')el.disabled=!ready}
 }
 
 if(form){
@@ -43,23 +46,20 @@ if(form){
   let serverReady=!error;
 
   if(error){
-    if(migrationMissing(error)){
-      fillForm(metadataFallback(user));
-      setStatus(status,'Vos renseignements d’inscription sont affichés temporairement depuis votre Compte SINJIRA™. Le coffre privé sera modifiable dès que la migration serveur V24 sera appliquée dans Supabase.','error');
-    }else{
-      setStatus(status,'Impossible de charger le coffre privé pour le moment. Réessayez plus tard.','error');
-    }
+    fillForm(metadataFallback(user));
+    setFormReady(false);
+    setStatus(status,serverMissing(error)?'Les renseignements déjà fournis lors de votre inscription sont affichés en lecture seule. Le coffre privé sera modifiable dès que le serveur SINJIRA™ sera synchronisé.':'Impossible de charger le coffre privé pour le moment. Vos renseignements d’inscription restent liés à votre compte.','info');
   }else{
     fillForm(data||metadataFallback(user));
+    setFormReady(true);
   }
 
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(!serverReady){
-      setStatus(status,'Enregistrement temporairement bloqué : la table privée V24 n’est pas encore disponible dans Supabase. Les données affichées ne seront pas perdues si elles proviennent de votre inscription.','error');
+      setStatus(status,'Enregistrement temporairement indisponible. Les valeurs provenant de votre inscription restent conservées dans votre compte.','info');
       return;
     }
-
     const d=new FormData(form);
     const languages=String(d.get('languages')||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,12);
     const payload={
@@ -78,7 +78,7 @@ if(form){
       relationship_partner_label:String(d.get('relationship_partner_label')||'').trim()||null
     };
     const {error:saveError}=await s.from('private_profiles').upsert(payload,{onConflict:'user_id'});
-    if(saveError&&migrationMissing(saveError))serverReady=false;
-    setStatus(status,saveError?'Impossible d’enregistrer le coffre privé tant que la migration Supabase n’est pas appliquée.':'Informations privées enregistrées.',saveError?'error':'success');
+    if(saveError&&serverMissing(saveError)){serverReady=false;setFormReady(false)}
+    setStatus(status,saveError?'Impossible d’enregistrer le coffre privé pour le moment.':'Informations privées enregistrées.',saveError?'error':'success');
   });
 }
