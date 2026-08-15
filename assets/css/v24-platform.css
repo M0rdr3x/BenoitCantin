@@ -43,3 +43,15 @@
 @media(max-width:850px){.v24-hero-grid,.v24-two-col,.v24-three-col,.v24-account-grid{grid-template-columns:1fr}.v24-portal-grid{grid-template-columns:1fr}.v24-section-head{display:block}.v24-provenance{grid-template-columns:repeat(2,minmax(0,1fr))}.v24-market-grid{grid-template-columns:1fr}.v24-fieldset .field-row{grid-template-columns:1fr}.v24-cover{width:min(78vw,360px)}}
 @media(max-width:560px){.v24-shell{width:min(100% - 22px,1180px)}.v24-provenance{grid-template-columns:1fr}.v24-panel,.v24-portal-card{border-radius:16px}.v24-hero{padding-top:38px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* V24.1 — questionnaire hybride et compte propriétaire */
+.v24-scale-legend{padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.04);color:var(--v24-text-soft)}
+.v24-scale-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.v24-scale{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:12px;align-items:center;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(255,255,255,.025)}
+.v24-scale>span{display:flex;justify-content:space-between;gap:12px;color:#e8ebf3}.v24-scale>span b{font-weight:700;text-align:right}.v24-scale select{margin:0}
+.v24-choice-block{margin-top:16px}.v24-choice-block h3{font-size:1rem;margin:0 0 10px}
+.v24-choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.v24-choice-grid label{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.02)}.v24-choice-grid input{width:auto;margin:0}
+.v24-owner-access{border-color:rgba(126,226,168,.38);box-shadow:inset 0 0 0 1px rgba(126,226,168,.06)}
+@media(min-width:901px){.account-nav-scroll{overflow:visible!important}.account-nav{min-width:0!important;display:flex!important;flex-wrap:wrap!important;justify-content:flex-start}.account-nav a,.account-nav button{flex:0 0 auto}}
+@media(max-width:900px){.account-nav-scroll{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.account-nav-scroll::-webkit-scrollbar{display:none}.account-nav{min-width:max-content}}
+@media(max-width:760px){.v24-scale-grid,.v24-choice-grid{grid-template-columns:1fr}.v24-scale{grid-template-columns:minmax(0,1fr) 82px}}

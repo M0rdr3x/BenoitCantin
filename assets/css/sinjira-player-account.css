@@ -415,7 +415,7 @@
 
 
 /* v2 — Compte SINJIRA universel */
-.account-nav-scroll{overflow-x:auto}.account-nav{min-width:max-content}
+.account-nav-scroll{overflow-x:visible}.account-nav{min-width:0}
 .account-welcome-strip{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px 18px;border:1px solid var(--account-line);border-radius:18px;background:rgba(255,255,255,.025)}
 .account-welcome-strip strong{margin-right:auto}
 .account-dashboard-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,.6fr);gap:22px}
@@ -483,3 +483,10 @@
 .admin-user-avatar{width:64px;height:64px;border-radius:18px;object-fit:cover;border:1px solid rgba(155,176,230,.22);background:#070a13;flex:0 0 auto}
 .role-chip--admin{margin-top:7px;border-color:rgba(255,113,94,.30);color:#ff9a88;background:rgba(160,60,45,.12)}
 @media(max-width:760px){.profile-editor-grid{grid-template-columns:1fr}.account-profile-hero{grid-template-columns:1fr}.account-dashboard-avatar{width:92px;height:92px}.profile-avatar-frame{width:150px;height:150px}}
+
+/* V24.1 — navigation compte : pas de barre de défilement visible sur grand écran */
+@media(max-width:900px){
+  .account-nav-scroll{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .account-nav-scroll::-webkit-scrollbar{display:none}
+  .account-nav{flex-wrap:nowrap;min-width:max-content}
+}
