@@ -23,6 +23,8 @@ export async function requireUser(redirect='/compte/connexion.html') {
   }
   return user;
 }
+
+export function isSinjiraOwner(user){return String(user?.email||'').trim().toLowerCase()==='kingtyrano@gmail.com'}
 export async function signOut(){ if(isSinjiraBackendConfigured()) await getSupabase().auth.signOut(); location.href='/compte/connexion.html'; }
 export function escapeHtml(v=''){return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
 export function formatDate(v){if(!v)return '—';return new Intl.DateTimeFormat('fr-CA',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}

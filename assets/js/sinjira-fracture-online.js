@@ -5,6 +5,7 @@ const status=document.querySelector('[data-fracture-status]');
 const AGENTS={3:1,4:1,5:2,6:2,7:2,8:3,9:3,10:3,11:4,12:4,13:4,14:5,15:5,16:5,17:6,18:6,19:6,20:7};
 
 function show(msg,type='info'){if(!status)return;status.hidden=false;status.textContent=msg;status.dataset.type=type}
+function friendlyError(err,fallback){const m=String(err?.message||'');if(/party_code.*ambiguous|ambiguous.*party_code/i.test(m))return 'Le correctif Supabase V24.1 de Fracture Online doit être appliqué.';return m||fallback}
 function codeFromUrl(){return (new URLSearchParams(location.search).get('code')||'').trim().toUpperCase()}
 function effective(h){return h<=2?3:h}
 function modeFor(h){return h===1?'solo':h===2?'duo':'multiplayer'}
@@ -45,7 +46,7 @@ async function lobby(){
       const {data,error}=await getSupabase().rpc('create_fracture_party',{p_human_player_count:h,p_round_count:r,p_duo_first_player_seat:first});
       if(error)throw error;const row=Array.isArray(data)?data[0]:data;
       location.href=`partie.html?code=${encodeURIComponent(row.party_code)}`;
-    }catch(err){show(err.message||'Création impossible.','error')}
+    }catch(err){show(friendlyError(err,'Création impossible.'),'error')}
   });
   const join=document.querySelector('[data-join-party]');
   join.addEventListener('submit',async e=>{
@@ -54,7 +55,7 @@ async function lobby(){
       const {data,error}=await getSupabase().rpc('join_fracture_party',{p_party_code:code,p_seat_number:seat});
       if(error)throw error;const row=Array.isArray(data)?data[0]:data;
       location.href=`partie.html?code=${encodeURIComponent(row.party_code)}`;
-    }catch(err){show(err.message||'Impossible de rejoindre la partie.','error')}
+    }catch(err){show(friendlyError(err,'Impossible de rejoindre la partie.'),'error')}
   });
   const {data:mine,error}=await getSupabase().from('fracture_party_members').select('party_id,seat_number,joined_at').eq('user_id',user.id).order('joined_at',{ascending:false}).limit(12);
   if(!error&&mine?.length){
