@@ -1,0 +1,75 @@
+/* SINJIRA™ V24.3.3 — stabilité visuelle et navigation. */
+
+/* Les pages de compte sont longues : le bandeau principal ne doit pas recouvrir
+   le contenu pendant le défilement ni apparaître au milieu des captures plein écran. */
+.account-page .site-header,
+.admin-sinjira-page .site-header{
+  position:relative;
+  top:auto;
+}
+
+/* Navigation compte : compacte sur grand écran, une seule ligne défilante sur
+   les écrans intermédiaires, sans barre de défilement visible. */
+.account-nav-scroll{max-width:100%}
+.account-nav{gap:5px;padding:10px 12px;margin-bottom:22px}
+.account-nav a,.account-nav button{padding:8px 11px;font-size:.88rem;line-height:1.2}
+@media (min-width:1181px){
+  .account-nav{display:flex;flex-wrap:wrap;min-width:0}
+}
+@media (max-width:1180px){
+  .account-nav-scroll{overflow-x:auto!important;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain}
+  .account-nav-scroll::-webkit-scrollbar{display:none}
+  .account-nav{display:flex!important;flex-wrap:nowrap!important;min-width:max-content!important}
+  .account-nav a,.account-nav button{white-space:nowrap}
+}
+
+/* Accueil : la constellation reste dans sa colonne et aucun libellé global ne
+   chevauche la porte du Registre. */
+.home-page .v20-six-portals{padding-bottom:64px}
+.home-page .v20-six-portals .cosmos-label{display:none!important}
+.home-page .v20-six-portals .orbit-node{z-index:2}
+.home-page .v20-six-portals .identity-core{z-index:1}
+.home-page .v20-six-portals .orbit-node span{z-index:4}
+@media (min-width:1181px){
+  .home-page .hero-grid{grid-template-columns:minmax(360px,.82fr) minmax(600px,1.18fr);gap:clamp(28px,4vw,56px)}
+  .home-page .v20-six-portals{min-height:660px;max-width:760px}
+  .home-page .v20-six-portals .node-5{left:50%;top:0;transform:translateX(-50%)}
+  .home-page .v20-six-portals .node-5:hover,.home-page .v20-six-portals .node-5:focus-visible{transform:translateX(-50%) translateY(-5px) scale(1.035)}
+  .home-page .v20-six-portals .node-1{left:2%;top:27%}
+  .home-page .v20-six-portals .node-2{right:2%;top:27%}
+  .home-page .v20-six-portals .node-community{left:5%;bottom:20%}
+  .home-page .v20-six-portals .node-character-network{right:5%;bottom:20%}
+  .home-page .v20-six-portals .node-3{left:50%;right:auto;bottom:0;transform:translateX(-50%)}
+  .home-page .v20-six-portals .node-3:hover,.home-page .v20-six-portals .node-3:focus-visible{transform:translateX(-50%) translateY(-5px) scale(1.035)}
+}
+@media (min-width:901px) and (max-width:1180px){
+  .home-page .hero-grid{grid-template-columns:1fr}
+  .home-page .hero-copy{max-width:780px}
+  .home-page .v20-six-portals{width:min(100%,780px);margin:16px auto 0;min-height:650px}
+}
+@media (max-width:900px){
+  .home-page .v20-six-portals{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;min-height:0!important;padding:18px 0 26px}
+  .home-page .v20-six-portals .orbit,.home-page .v20-six-portals .identity-core{display:none}
+  .home-page .v20-six-portals .orbit-node{position:relative!important;inset:auto!important;transform:none!important;width:100%!important;height:auto!important;min-height:176px;padding:16px;display:flex;flex-direction:column;gap:12px;border-radius:22px}
+  .home-page .v20-six-portals .orbit-node img{width:96px!important;height:96px!important;flex:0 0 auto}
+  .home-page .v20-six-portals .orbit-node span{position:static!important;transform:none!important;opacity:1!important;max-width:100%!important;width:auto!important;text-align:center;background:transparent;border:0;padding:0;font-size:.84rem}
+  .home-page .v20-six-portals .orbit-node:hover,.home-page .v20-six-portals .orbit-node:focus-visible{transform:translateY(-2px)!important}
+}
+@media (max-width:560px){
+  .home-page .v20-six-portals{grid-template-columns:1fr}
+  .home-page .v20-six-portals .orbit-node{min-height:148px;flex-direction:row;justify-content:flex-start;text-align:left}
+  .home-page .v20-six-portals .orbit-node span{text-align:left}
+}
+
+/* États d'attente serveur : cohérents et lisibles, sans jargon de migration
+   destiné aux visiteurs. */
+.v2433-server-note{padding:13px 15px;border:1px solid rgba(255,189,122,.25);border-radius:13px;background:rgba(255,189,122,.07);color:#f0dfca}
+.v2433-server-note strong{color:#fff}
+
+/* Administration : les onglets restent lisibles sur petit écran sans masquer la page. */
+.admin-console-tabs{scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.admin-console-tabs::-webkit-scrollbar{display:none}
+@media (max-width:900px){
+  .admin-console-tabs{position:relative;top:auto}
+  .admin-console-layout{width:min(100% - 22px,1480px);padding-top:20px}
+}
