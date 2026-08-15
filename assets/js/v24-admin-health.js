@@ -1,5 +1,13 @@
 import {getSupabase,getCurrentUser,isSinjiraOwner,escapeHtml} from './sinjira-supabase.js';
 
+if(!document.querySelector('link[data-v2435-admin-fixes]')){
+  const css=document.createElement('link');
+  css.rel='stylesheet';
+  css.href='/assets/css/v24-3-3-fixes.css?v=24.3.5';
+  css.dataset.v2435AdminFixes='';
+  document.head.appendChild(css);
+}
+
 const box=document.querySelector('[data-admin-health]');
 if(box){
   const s=getSupabase();
