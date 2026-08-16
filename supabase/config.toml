@@ -41,3 +41,9 @@ verify_jwt = true
 
 [functions.admin-social-v20]
 verify_jwt = true
+
+[functions.admin-license-codes]
+verify_jwt = true
+
+[functions.redeem-license-code]
+verify_jwt = true

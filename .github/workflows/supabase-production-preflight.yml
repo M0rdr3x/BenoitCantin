@@ -1,0 +1,47 @@
+name: Supabase production preflight
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/supabase-production-preflight.yml
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_ID: gpvivleexywljowcqkru
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Vérifier les secrets requis
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo "SUPABASE_ACCESS_TOKEN manquant"; exit 2; }
+          test -n "$SUPABASE_DB_PASSWORD" || { echo "SUPABASE_DB_PASSWORD manquant"; exit 2; }
+
+      - name: Lier le projet de production
+        shell: bash
+        run: supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Comparer l'historique des migrations
+        shell: bash
+        run: supabase migration list
+
+      - name: Prévisualiser les migrations sans modifier la production
+        shell: bash
+        run: supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD"
