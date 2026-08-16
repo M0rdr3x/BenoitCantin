@@ -21,7 +21,7 @@ Le connecteur GitHub utilisé par l'assistant ne peut ni lire ni créer ces deux
 
 ## 2. Secrets Edge Functions
 
-Le workflow V24.4.5 garantit automatiquement la présence d'un `SINJIRA_LICENSE_PEPPER` stable. S'il est absent, une valeur cryptographiquement aléatoire est créée directement dans les secrets Supabase et sa valeur n'est jamais affichée. S'il existe déjà, elle est conservée afin de ne jamais invalider les anciens codes d'activation.
+Le workflow V24.4.6 garantit automatiquement la présence d'un `SINJIRA_LICENSE_PEPPER` stable. S'il est absent, une valeur cryptographiquement aléatoire est créée directement dans les secrets Supabase et sa valeur n'est jamais affichée. S'il existe déjà, elle est conservée afin de ne jamais invalider les anciens codes d'activation.
 
 Le workflow configure aussi :
 
@@ -35,17 +35,18 @@ Secrets externes facultatifs :
 - `OPENAI_API_KEY` : facultatif. SINJIRA™ doit continuer de fonctionner avec l'IA externe désactivée.
 - variable GitHub facultative `OPENAI_CHARACTER_MODEL` : modèle à utiliser uniquement si l'IA de personnage est volontairement activée.
 
-## 3. Migrations : format corrigé V24.4.5
+## 3. Migrations : historique normalisé
 
-Les migrations ont maintenant des timestamps Supabase **uniques sur 14 chiffres** (`YYYYMMDDHHMMSS`). Cette correction est nécessaire parce que Supabase identifie une migration par son timestamp.
+Les migrations utilisent des timestamps Supabase **uniques sur 14 chiffres** (`YYYYMMDDHHMMSS`). Supabase identifie une migration par son timestamp : il ne faut donc jamais réintroduire plusieurs fichiers avec le même préfixe temporel.
 
-Les trois migrations Fracture les plus récentes sont :
+Les migrations Fracture les plus récentes sont :
 
 1. `20260816090000_fracture_web_engine_v24_4.sql`
 2. `20260816100000_fracture_web_engine_v24_4_1_hotfix.sql`
 3. `20260816110000_fracture_web_engine_v24_4_2_privacy.sql`
+4. `20260816120000_sinjira_v24_4_6_fracture_vote_hardening.sql`
 
-Le contenu SQL n'a pas été modifié lors du renommage; seul l'identifiant chronologique du fichier a été corrigé pour éviter les collisions de migration.
+La V24.4.6 rend notamment l'accusation finale **immuable après sa première soumission côté serveur** et porte le marqueur serveur attendu à `24.4.6`.
 
 ## 4. Premier passage : prévisualisation uniquement
 
@@ -76,13 +77,29 @@ Le workflow :
 7. relit l'historique des migrations;
 8. refait un `db push --dry-run` final pour confirmer qu'aucune migration n'est encore en attente.
 
-Le marqueur serveur attendu après synchronisation est **`24.4.2`**.
+Le marqueur serveur attendu après synchronisation est **`24.4.6`**.
 
 ## 6. Compatibilité des clés serveur
 
-Le code partagé des Edge Functions accepte maintenant en priorité les clés Supabase modernes via `SUPABASE_SECRET_KEYS`, avec repli sur la clé legacy `SUPABASE_SERVICE_ROLE_KEY`. Aucun secret serveur n'est exposé au navigateur.
+Le code partagé des Edge Functions accepte en priorité les clés Supabase modernes via `SUPABASE_SECRET_KEYS`, avec repli sur la clé legacy `SUPABASE_SERVICE_ROLE_KEY`. Aucun secret serveur n'est exposé au navigateur.
 
-## 7. Validation après déploiement
+## 7. Validation profonde avant production
+
+`scripts/validate_supabase.py` contrôle désormais notamment :
+
+- format et unicité des timestamps de migration;
+- présence des RPC critiques;
+- cohérence entre les tables utilisées par le JavaScript/TypeScript et les migrations;
+- cohérence entre les RPC appelées et les fonctions SQL définies;
+- cohérence entre les Edge Functions invoquées, leurs dossiers et `config.toml`;
+- activation de RLS sur les tables applicatives créées;
+- `SET search_path` sur les fonctions `SECURITY DEFINER` détectées;
+- absence de fichiers `.env` suivis;
+- absence de clé serveur dans le frontend;
+- CORS de production;
+- liste contrôlée des rares Edge Functions avec `verify_jwt=false`.
+
+## 8. Validation après déploiement
 
 Ouvrir **Administration → État du système**. Les composants essentiels doivent être `NORMAL`. Les tables internes du moteur Fracture peuvent rester inaccessibles directement au navigateur : leur état est vérifié par `fracture_engine_health()`.
 
@@ -100,7 +117,7 @@ Tester dans cet ordre :
 - reprise de session après actualisation;
 - accusation finale et résultat automatique;
 - téléchargement du rapport de partie;
-- envoi du rapport par courriel seulement si `RESEND_API_KEY` est configuré;
+- envoi du rapport par courriel seulement pour un compte authentifié et seulement si `RESEND_API_KEY` est configuré;
 - Communauté, Monde parallèle, Marché et autres modules exposés par le compte.
 
 ## Blocage qui ne peut pas être automatisé depuis le dépôt
@@ -110,4 +127,4 @@ Les deux seules informations de connexion que le dépôt ne peut pas fabriquer s
 - `SUPABASE_ACCESS_TOKEN`
 - `SUPABASE_DB_PASSWORD`
 
-Elles doivent être ajoutées une fois dans GitHub Actions par le propriétaire. Après cela, le workflow V24.4.5 peut effectuer le prévol puis la synchronisation complète sans révéler ces valeurs.
+Elles doivent être ajoutées une fois dans GitHub Actions par le propriétaire. Après cela, le workflow peut effectuer le prévol puis la synchronisation complète sans révéler ces valeurs.

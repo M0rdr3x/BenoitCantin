@@ -16,15 +16,16 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Récupérer le dépôt
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Configurer Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Configurer Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
+          package-manager-cache: false
       - name: Vérifier les routes, fichiers, secrets et JavaScript
         run: python scripts/validate_site.py
       - name: Vérifier la structure Supabase

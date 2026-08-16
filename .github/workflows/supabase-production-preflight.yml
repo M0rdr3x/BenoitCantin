@@ -35,23 +35,27 @@ jobs:
       OPTIONAL_OPENAI_CHARACTER_MODEL: ${{ vars.OPENAI_CHARACTER_MODEL }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Configurer Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Installer Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
+          github-token: ${{ github.token }}
 
       - name: Vérifier le dépôt Supabase
         shell: bash
         run: |
           set -euo pipefail
           python scripts/validate_supabase.py
+          supabase --version
 
       - name: Détecter les secrets de connexion Supabase
         id: auth
@@ -78,6 +82,17 @@ jobs:
         run: |
           set -euo pipefail
           supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Auditer les fonctions SQL déjà en production
+        if: ${{ steps.auth.outputs.ready == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db lint --linked --schema public --level error --fail-on error | tee /tmp/sinjira-db-lint-before.txt
+          echo '### Lint SQL production avant synchronisation' >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/sinjira-db-lint-before.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comparer l'historique des migrations
         if: ${{ steps.auth.outputs.ready == 'true' }}
@@ -107,6 +122,17 @@ jobs:
         run: |
           set -euo pipefail
           supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Auditer les fonctions SQL après migrations
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db lint --linked --schema public --level error --fail-on error | tee /tmp/sinjira-db-lint-after.txt
+          echo '### Lint SQL production après migrations' >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/sinjira-db-lint-after.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Garantir les secrets Edge Functions indispensables
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
