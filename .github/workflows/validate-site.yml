@@ -48,3 +48,5 @@ jobs:
         run: python scripts/validate_youth_safety.py
       - name: Vérifier l’identité exacte des personnages sociaux
         run: python scripts/validate_character_identity_rls.py
+      - name: Vérifier le Monde parallèle canonique
+        run: python scripts/validate_parallel_world.py
