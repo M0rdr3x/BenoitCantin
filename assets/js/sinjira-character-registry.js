@@ -2,6 +2,9 @@ import {getSupabase,getCurrentUser,isSinjiraOwner} from './sinjira-supabase.js';
 
 const form=document.querySelector('[data-character-form]');
 const state=document.querySelector('[data-character-submit-status]');
+const ALLOWED_PHOTO_TYPES=new Map([
+ ['image/jpeg','jpg'],['image/png','png'],['image/webp','webp'],['image/avif','avif'],['image/gif','gif']
+]);
 let currentUser=null,currentProfile=null;
 
 function setState(msg,type='info'){if(!state)return;state.textContent=msg;state.dataset.statusType=type}
@@ -9,16 +12,26 @@ function serialize(formEl){const out={};for(const [k,v] of new FormData(formEl).
 function rows(v){return Array.isArray(v)?v:[]}
 function installChoiceLimits(){form?.querySelectorAll('[data-max-select]').forEach(group=>{const max=Number(group.dataset.maxSelect||0);if(!max)return;group.addEventListener('change',e=>{if(!(e.target instanceof HTMLInputElement)||e.target.type!=='checkbox')return;const checked=[...group.querySelectorAll('input[type="checkbox"]:checked')];if(checked.length>max){e.target.checked=false;setState(`Choisissez au maximum ${max} réponses dans cette section.`,'error')}})})}
 function applyAnswers(payload){if(!payload||typeof payload!=='object')return;for(const [name,value] of Object.entries(payload)){const nodes=[...form.querySelectorAll(`[name="${CSS.escape(name)}"]`)];if(!nodes.length)continue;const values=Array.isArray(value)?value.map(String):[String(value??'')];for(const node of nodes){if(node.type==='file'||node.readOnly)continue;if(node.type==='checkbox'||node.type==='radio')node.checked=values.includes(String(node.value));else if(values.length)node.value=values[0]}}form.dispatchEvent(new Event('change',{bubbles:true}))}
-async function uploadPhoto(user){const input=form.querySelector('input[type="file"][name="photo"]'),file=input?.files?.[0];if(!file)return null;if(file.size>10*1024*1024)throw new Error('La photo doit faire 10 Mo ou moins.');if(file.type&&!file.type.startsWith('image/'))throw new Error('Le fichier joint doit être une image.');const ext=(file.name.split('.').pop()||'img').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,8)||'img';const path=`${user.id}/${crypto.randomUUID()}.${ext}`;const {error}=await getSupabase().storage.from('sinjira-character-sources').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:false});if(error)throw error;return path}
+async function uploadPhoto(user){
+ const input=form.querySelector('input[type="file"][name="photo"]'),file=input?.files?.[0];if(!file)return null;
+ if(file.size>10*1024*1024)throw new Error('La photo doit faire 10 Mo ou moins.');
+ const type=String(file.type||'').toLowerCase();
+ if(!ALLOWED_PHOTO_TYPES.has(type))throw new Error('Format de photo non pris en charge. Utilisez JPG, PNG, WebP, AVIF ou GIF.');
+ const ext=ALLOWED_PHOTO_TYPES.get(type);
+ const path=`${user.id}/${crypto.randomUUID()}.${ext}`;
+ const {error}=await getSupabase().storage.from('sinjira-character-sources').upload(path,file,{contentType:type,upsert:false,cacheControl:'3600'});
+ if(error)throw error;return path;
+}
 async function cleanupUploadedPhoto(path){if(!path)return;try{const {error}=await getSupabase().storage.from('sinjira-character-sources').remove([path]);if(error)console.warn('[SINJIRA registre] nettoyage photo temporaire',error)}catch(e){console.warn('[SINJIRA registre] nettoyage photo temporaire impossible',e)}}
-async function submitToSinjira(user,{updateExisting=false}={}){let photo_path=null;try{photo_path=await uploadPhoto(user);const answers=serialize(form);const {data,error}=await getSupabase().functions.invoke('submit-character-questionnaire',{body:{answers,photo_path,manual_only:true,update_existing:updateExisting}});if(error||!data?.ok)throw new Error(data?.error||error?.message||'Le dossier n’a pas pu être enregistré dans SINJIRA™.');return data}catch(e){await cleanupUploadedPhoto(photo_path);throw e}}
-async function tryOwnerRepair(user){if(!isSinjiraOwner(user))return;try{await getSupabase().rpc('ensure_sinjira_owner_character')}catch(e){console.info('Owner repair RPC not installed yet.',e?.message||e)}}
-function successMessage(result,owner){
- if(result.updated_existing){return result.participant_email_sent?'Questionnaire d’AbyssTime mis à jour. Une copie a aussi été envoyée au courriel du compte.':'Questionnaire d’AbyssTime mis à jour dans SINJIRA™. Le personnage existant est conservé.'}
- if(result.participant_email_sent&&result.notification_sent)return 'Participation enregistrée. Une copie a été envoyée au courriel du compte et Benoit Cantin a reçu l’avis administrateur.';
- if(result.participant_email_sent)return 'Participation enregistrée dans SINJIRA™. Une copie a été envoyée au courriel de votre compte.';
- if(result.notification_sent)return 'Participation enregistrée dans SINJIRA™ et avis administrateur envoyé. La copie courriel du participant n’a pas pu être envoyée, mais le dossier est bien conservé.';
- return 'Participation enregistrée dans SINJIRA™. Le dossier est visible dans l’administration. Le service courriel est actuellement indisponible ou non configuré.';
+async function submitToSinjira(user,{updateExisting=false}={}){let photo_path=null;try{photo_path=await uploadPhoto(user);const answers=serialize(form);const {data,error}=await getSupabase().functions.invoke('submit-character-questionnaire',{body:{answers,photo_path,manual_only:true,update_existing:updateExisting}});if(error||!data?.ok||data?.persisted!==true)throw new Error(data?.error||error?.message||'Le serveur n’a pas confirmé la sauvegarde du dossier.');return data}catch(e){await cleanupUploadedPhoto(photo_path);throw e}}
+async function tryOwnerRepair(user){if(!isSinjiraOwner(user))return;try{await getSupabase().rpc('ensure_sinjira_owner_character')}catch(e){console.info('Owner repair RPC unavailable.',e?.message||e)}}
+function successMessage(result){
+ const dossier=result.submission_id?` Dossier ${result.submission_id}.`:'';
+ if(result.updated_existing){return result.participant_email_sent?`Questionnaire d’AbyssTime mis à jour et sauvegardé.${dossier} Une copie a été envoyée au courriel du compte.`:`Questionnaire d’AbyssTime mis à jour et sauvegardé.${dossier} Le personnage existant est conservé.`}
+ if(result.participant_email_sent&&result.admin_email_sent)return `Participation sauvegardée dans SINJIRA™.${dossier} Une copie a été envoyée au participant et l’avis administrateur a été transmis.`;
+ if(result.participant_email_sent)return `Participation sauvegardée dans SINJIRA™.${dossier} Une copie a été envoyée au courriel du compte. L’avis administrateur externe n’a pas été envoyé, mais la notification interne reste enregistrée.`;
+ if(result.admin_email_sent)return `Participation sauvegardée dans SINJIRA™.${dossier} L’avis administrateur a été envoyé. La copie courriel du participant n’a pas pu être transmise; cela n’affecte pas la sauvegarde.`;
+ return `Participation sauvegardée dans SINJIRA™.${dossier} La notification interne reste disponible dans l’administration; le service courriel est indisponible ou non configuré.`;
 }
 
 async function init(){
@@ -60,9 +73,9 @@ async function init(){
    try{
      const result=await submitToSinjira(currentUser,{updateExisting:owner});
      localStorage.removeItem('registre-consciences-draft-v1');
-     setState(successMessage(result,owner),'success');
+     setState(successMessage(result),'success');
      form.querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=true);
-   }catch(err){setState(err.message||'Transmission impossible. Aucune participation n’a été confirmée.','error');submit.disabled=false}
+   }catch(err){setState(err.message||'Transmission impossible. Aucune sauvegarde n’a été confirmée.','error');submit.disabled=false}
  });
 }
 init().catch(e=>setState(e.message||'Erreur de liaison au compte.','error'));
