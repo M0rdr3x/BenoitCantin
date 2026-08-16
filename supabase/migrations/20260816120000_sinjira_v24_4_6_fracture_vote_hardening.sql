@@ -1,5 +1,5 @@
 -- SINJIRA™ V24.4.6 — durcissement du moteur Fracture
--- Objectifs : rendre l'accusation finale immuable après soumission et exposer un marqueur serveur précis.
+-- Objectifs : rendre l'accusation finale immuable après soumission et exposer un diagnostic serveur précis.
 
 create or replace function public.get_sinjira_server_version()
 returns text
@@ -11,6 +11,8 @@ as $$ select '24.4.6'::text; $$;
 revoke all on function public.get_sinjira_server_version() from public,anon;
 grant execute on function public.get_sinjira_server_version() to authenticated,service_role;
 
+-- Diagnostic non secret : vérifie la présence des tables et RPC nécessaires au moteur,
+-- sans lire de cartes, d'identités ni de contenu de partie.
 create or replace function public.fracture_engine_health()
 returns jsonb
 language sql
@@ -19,7 +21,22 @@ security definer
 set search_path=public
 as $$
   select jsonb_build_object(
-    'ok',true,
+    'ok',
+      to_regclass('public.fracture_engine_games') is not null and
+      to_regclass('public.fracture_engine_seats') is not null and
+      to_regclass('public.fracture_engine_cards') is not null and
+      to_regclass('public.fracture_engine_actions') is not null and
+      to_regclass('public.fracture_engine_rounds') is not null and
+      to_regclass('public.fracture_engine_votes') is not null and
+      to_regclass('public.fracture_engine_events') is not null and
+      to_regprocedure('public.create_fracture_party(integer,integer,integer)') is not null and
+      to_regprocedure('public.join_fracture_party(text,integer)') is not null and
+      to_regprocedure('public.fracture_engine_get_state(text)') is not null and
+      to_regprocedure('public.fracture_engine_start(text)') is not null and
+      to_regprocedure('public.fracture_engine_submit_keep(text,bigint[])') is not null and
+      to_regprocedure('public.fracture_engine_pick(text,bigint)') is not null and
+      to_regprocedure('public.fracture_engine_submit_report(text,text,integer,bigint)') is not null and
+      to_regprocedure('public.fracture_engine_submit_accusation(text,integer[])') is not null,
     'engine_version','24.4.6',
     'tables',jsonb_build_object(
       'games',to_regclass('public.fracture_engine_games') is not null,
@@ -29,6 +46,16 @@ as $$
       'rounds',to_regclass('public.fracture_engine_rounds') is not null,
       'votes',to_regclass('public.fracture_engine_votes') is not null,
       'events',to_regclass('public.fracture_engine_events') is not null
+    ),
+    'functions',jsonb_build_object(
+      'create_party',to_regprocedure('public.create_fracture_party(integer,integer,integer)') is not null,
+      'join_party',to_regprocedure('public.join_fracture_party(text,integer)') is not null,
+      'get_state',to_regprocedure('public.fracture_engine_get_state(text)') is not null,
+      'start',to_regprocedure('public.fracture_engine_start(text)') is not null,
+      'submit_keep',to_regprocedure('public.fracture_engine_submit_keep(text,bigint[])') is not null,
+      'pick',to_regprocedure('public.fracture_engine_pick(text,bigint)') is not null,
+      'submit_report',to_regprocedure('public.fracture_engine_submit_report(text,text,integer,bigint)') is not null,
+      'submit_accusation',to_regprocedure('public.fracture_engine_submit_accusation(text,integer[])') is not null
     )
   );
 $$;
