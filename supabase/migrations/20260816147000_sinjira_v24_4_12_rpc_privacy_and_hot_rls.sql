@@ -12,7 +12,7 @@ security definer
 set search_path=public,auth
 as $$ select public.sinjira_age_band(auth.uid()); $$;
 revoke all on function public.sinjira_my_age_band() from public,anon;
-grant execute on function public.sinjira_my_age_band() to authenticated;
+grant execute on function public.sinjira_my_age_band() to anon,authenticated;
 
 revoke execute on function public.sinjira_age_band(uuid) from authenticated;
 grant execute on function public.sinjira_age_band(uuid) to service_role;
@@ -286,19 +286,22 @@ with check (owner_user_id=(select auth.uid()) and public.sinjira_mfa_access_allo
 
 drop policy if exists parallel_stories_public on public.parallel_story_installments;
 create policy parallel_stories_public on public.parallel_story_installments
-for select to authenticated
+for select to anon,authenticated
 using (
   published_at is not null and (
     (story_kind='collective' and audience='all')
-    or (story_kind='collective' and audience=public.sinjira_my_age_band())
-    or (story_kind='individual' and exists(select 1 from public.sinjira_characters c where c.id=parallel_story_installments.character_id and c.user_id=(select auth.uid())))
+    or (story_kind='collective' and (select auth.uid()) is not null and audience=public.sinjira_my_age_band())
+    or (story_kind='individual' and (select auth.uid()) is not null and exists(select 1 from public.sinjira_characters c where c.id=parallel_story_installments.character_id and c.user_id=(select auth.uid())))
   )
 );
 
 drop policy if exists parallel_cycles_public_read on public.parallel_world_cycles;
 create policy parallel_cycles_public_read on public.parallel_world_cycles
-for select to authenticated
-using ((published_at is not null or status='open') and (audience='all' or audience=public.sinjira_my_age_band()));
+for select to anon,authenticated
+using (
+  (published_at is not null or status='open')
+  and (audience='all' or ((select auth.uid()) is not null and audience=public.sinjira_my_age_band()))
+);
 
 -- ---------------------------------------------------------------------------
 -- COMMENTAIRES ROMANS : grants minimaux. La RPC publique reste volontairement
