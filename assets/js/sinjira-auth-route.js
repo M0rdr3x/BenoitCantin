@@ -40,6 +40,23 @@
     history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
   }
 
+  function enforcePasswordPolicy(event) {
+    const form = event.target?.closest?.('[data-reset-form]');
+    if (!form) return;
+    const password = String(form.elements?.password?.value || '');
+    const confirm = String(form.elements?.password_confirm?.value || '');
+    if (password.length >= 12 && password === confirm) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const status = document.querySelector('[data-account-status]');
+    if (status) {
+      status.textContent = 'Les mots de passe doivent correspondre et contenir au moins 12 caractères.';
+      status.dataset.statusType = 'error';
+      status.hidden = false;
+    }
+  }
+
   window.SINJIRA_AUTH_ROUTE = Object.freeze({ safeLocalDestination, next });
   sanitizeCurrentNext();
+  document.addEventListener('submit', enforcePasswordPolicy, true);
 })();
