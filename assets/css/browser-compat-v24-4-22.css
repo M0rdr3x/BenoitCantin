@@ -1,0 +1,137 @@
+/* SINJIRA V24.4.22 — couche de compatibilité progressive.
+   Elle privilégie les moteurs modernes tout en conservant une mise en page lisible
+   quand certaines fonctions CSS récentes ne sont pas disponibles. */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+/* Fallbacks pour les navigateurs qui ignorent min()/margin-inline. */
+.container {
+  width: calc(100% - 40px);
+  max-width: 1180px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.narrow {
+  width: calc(100% - 40px);
+  max-width: 850px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Safari historique a longtemps conservé les variantes -webkit-. */
+body::before {
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, .45) 52%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, .45) 52%, transparent 100%);
+}
+
+.site-header {
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+.manifesto-panel,
+.feature-panel,
+.content-card,
+.notice,
+.form-shell,
+.admin-card {
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+/* Si le flou d'arrière-plan n'existe pas, le contraste reste suffisant. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .site-header {
+    background: rgba(7, 9, 20, .96);
+  }
+
+  .manifesto-panel,
+  .feature-panel,
+  .content-card,
+  .notice,
+  .form-shell,
+  .admin-card {
+    background: #11172b;
+  }
+}
+
+/* Valeurs de repli lorsque clamp() ou text-wrap ne sont pas compris. */
+.hero h1,
+.page-hero h1 {
+  font-size: 3.25rem;
+}
+
+.section-head h2 {
+  font-size: 2.15rem;
+}
+
+@supports (font-size: clamp(1rem, 2vw, 2rem)) {
+  .hero h1,
+  .page-hero h1 {
+    font-size: clamp(3.25rem, 8vw, 7rem);
+  }
+
+  .section-head h2 {
+    font-size: clamp(2.15rem, 5vw, 4.3rem);
+  }
+}
+
+/* Les interfaces tactiles ne doivent pas dépendre d'un état hover. */
+@media (hover: none) {
+  .btn:hover,
+  .project-card:hover,
+  .home-project:hover {
+    transform: none;
+  }
+}
+
+/* Empêche le zoom forcé des champs sur iPhone tout en conservant la lisibilité. */
+@media (max-width: 760px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Encoche / barre d'accueil iOS : les navigateurs non compatibles ignorent env(). */
+@supports (padding-left: env(safe-area-inset-left)) {
+  .site-header,
+  .site-footer {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .site-footer {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Les moteurs sans ES modules conservent le portail public utilisable. */
+.sinjira-legacy-browser .orbit-node {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
