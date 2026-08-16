@@ -6,12 +6,14 @@ on:
     paths:
       - 'supabase/**'
       - 'scripts/validate_supabase.py'
+      - 'scripts/validate_edge_function_inventory.py'
       - '.github/workflows/supabase-production-preflight.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'supabase/**'
       - 'scripts/validate_supabase.py'
+      - 'scripts/validate_edge_function_inventory.py'
       - '.github/workflows/supabase-production-preflight.yml'
   workflow_dispatch:
     inputs:
@@ -61,6 +63,7 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/validate_supabase.py
+          python scripts/validate_edge_function_inventory.py
           supabase --version
 
       - name: Détecter les secrets de connexion Supabase
@@ -80,6 +83,47 @@ jobs:
             exit 2
           fi
           echo "CI non destructive : aucune écriture Supabase n'est tentée et l'absence de secrets n'échoue pas la validation." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Auditer l’inventaire Edge Functions de production
+        if: ${{ steps.auth.outputs.ready == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase functions list --project-ref "$PROJECT_ID" | tee /tmp/sinjira-functions-before.txt
+
+          missing=0
+          while IFS= read -r name; do
+            [ -z "$name" ] && continue
+            if ! grep -Fq "$name" /tmp/sinjira-functions-before.txt; then
+              echo "Edge Function canonique absente de production: $name"
+              missing=1
+            fi
+          done < <(find supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name '_*' -printf '%f\n' | sort)
+
+          retired=(
+            admin-reader
+            generate-sinjira-character
+            admin-literary
+            validate-phone-v22
+            guardian-create-youth-v22
+            create-youth-account
+          )
+          retired_found=0
+          for name in "${retired[@]}"; do
+            if grep -Fq "$name" /tmp/sinjira-functions-before.txt; then
+              echo "Edge Function héritée encore déployée: $name"
+              retired_found=1
+            fi
+          done
+
+          {
+            echo '### Inventaire Edge Functions production'
+            if [ "$missing" -eq 0 ]; then echo '- Toutes les fonctions canoniques du dépôt sont présentes.'; else echo '- Des fonctions canoniques sont absentes.'; fi
+            if [ "$retired_found" -eq 0 ]; then echo '- Aucun des six anciens slugs connus n’est déployé.'; else echo '- Dérive détectée : au moins une ancienne fonction est encore déployée.'; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          test "$missing" -eq 0
+          test "$retired_found" -eq 0
 
       - name: Lier le projet de production
         if: ${{ steps.auth.outputs.ready == 'true' }}
@@ -213,7 +257,17 @@ jobs:
             [ -z "$name" ] && continue
             if ! grep -Fq "$name" /tmp/sinjira-functions.txt; then echo "Edge Function manquante après déploiement: $name"; missing=1; fi
           done < <(find supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name '_*' -printf '%f\n' | sort)
+
+          retired=(admin-reader generate-sinjira-character admin-literary validate-phone-v22 guardian-create-youth-v22 create-youth-account)
+          retired_found=0
+          for name in "${retired[@]}"; do
+            if grep -Fq "$name" /tmp/sinjira-functions.txt; then
+              echo "Edge Function héritée encore déployée après synchronisation: $name"
+              retired_found=1
+            fi
+          done
           test "$missing" -eq 0
+          test "$retired_found" -eq 0
 
       - name: Vérifier l'historique et le dry-run après déploiement
         id: final_verify
