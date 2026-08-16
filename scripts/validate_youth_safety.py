@@ -18,7 +18,7 @@ def all_sql()->str:
 
 
 def latest_policy(sql:str,name:str)->str:
-    matches=list(re.finditer(rf'create\s+policy\s+{re.escape(name)}\b.*?(?=\n\s*(?:drop\s+policy|create\s+policy|create\s+(?:or\s+replace\s+)?function|alter\s+table|$))',sql,re.I|re.S))
+    matches=list(re.finditer(rf'create\s+policy\s+{re.escape(name)}\b.*?(?=\n\s*(?:drop\s+policy|create\s+policy|create\s+(?:or\s+replace\s+)?function|alter\s+table|revoke|grant|$))',sql,re.I|re.S))
     return matches[-1].group(0) if matches else ''
 
 
@@ -37,16 +37,16 @@ def main()->int:
     low=re.sub(r'\s+',' ',sql.lower())
     sql_compact=compact(sql)
     signup=read(SIGNUP)
-    signup_low=signup.lower()
     signup_compact=compact(signup)
     html=read(HTML)
     relations_js=read(RELATIONS_JS) if RELATIONS_JS.exists() else ''
+    relations_compact=compact(relations_js)
 
     required_functions=[
-        'sinjira_age_band','sinjira_can_social_interact','sinjira_social_compatible',
+        'sinjira_age_band','sinjira_my_age_band','sinjira_can_social_interact','sinjira_social_compatible',
         'sinjira_parent_can_supervise','get_guardian_youth_contacts',
-        'create_guardian_signup_invite','sinjira_mfa_access_allowed',
-        'sinjira_phone_factor_verified','enforce_sinjira_account_safety_age',
+        'create_guardian_signup_invite','redeem_guardian_signup_invite','revoke_guardian_link',
+        'sinjira_mfa_access_allowed','sinjira_phone_factor_verified','enforce_sinjira_account_safety_age',
         'handle_new_sinjira_user'
     ]
     for name in required_functions:
@@ -62,6 +62,12 @@ def main()->int:
     if 'account_safety_profiles' not in age:
         errors.append('sinjira_age_band ne lit pas account_safety_profiles.')
 
+    mine=function_block(sql,'sinjira_my_age_band').lower()
+    if 'sinjira_age_band(auth.uid())' not in compact(mine):
+        errors.append('sinjira_my_age_band ne retourne pas exclusivement la cohorte du compte courant.')
+    if 'revokeexecuteonfunctionpublic.sinjira_age_band(uuid)fromauthenticated' not in sql_compact:
+        errors.append('La RPC paramétrée sinjira_age_band(uuid) reste exposée aux membres authentifiés.')
+
     social=function_block(sql,'sinjira_can_social_interact').lower()
     social_compact=compact(social)
     if not social:
@@ -73,9 +79,8 @@ def main()->int:
                 break
         if "p_a=p_bthenpublic.sinjira_age_band(p_a)in('adult','youth')" not in social_compact:
             errors.append('Un compte youth_pending/under12/unverified pourrait être traité comme socialement actif avec lui-même.')
-        for forbidden in ["youth_pending","under12","unverified"]:
-            if re.search(rf"in\s*\([^)]*'{forbidden}'",social,re.I):
-                errors.append(f'Cohorte interdite autorisée par la compatibilité sociale: {forbidden}')
+        if "auth.uid()<>p_aandauth.uid()<>p_bthenfalse" not in social_compact:
+            errors.append('sinjira_can_social_interact permet encore de tester deux UUID tiers sans implication du compte courant.')
 
     policy_names=[
         'real_messages_insert','char_messages_insert','real_messages_read','char_messages_read',
@@ -90,11 +95,11 @@ def main()->int:
             errors.append(f'Politique {name} n’utilise pas la règle canonique de cohorte.')
 
     for name in ['real_posts_insert','char_posts_insert']:
-        block=latest_policy(sql,name).lower()
+        block=compact(latest_policy(sql,name))
         if not block:
             errors.append(f'Politique de publication absente: {name}')
-        elif "sinjira_age_band(auth.uid()) in ('youth','adult')" not in re.sub(r'\s+',' ',block):
-            errors.append(f'Politique {name} n’exclut pas explicitement youth_pending/under12/unverified.')
+        elif "sinjira_my_age_band()in('youth','adult')" not in block:
+            errors.append(f'Politique {name} n’exclut pas explicitement youth_pending/under12/unverified via la RPC self-only.')
 
     parent=function_block(sql,'sinjira_parent_can_supervise').lower()
     parent_compact=compact(parent)
@@ -119,6 +124,15 @@ def main()->int:
         if marker not in invite_compact:
             errors.append('Création du code parental sans vérification adulte/MFA ou format de code attendu.')
             break
+    redeem=compact(function_block(sql,'redeem_guardian_signup_invite'))
+    for marker in ["youth_pending","invalid_or_expired_guardian_code","adult_guardian_required","used_at=now()","minor_user_id=uid"]:
+        if marker not in redeem:
+            errors.append(f'Consommation post-inscription du code parental incomplète: {marker}')
+    revoke=compact(function_block(sql,'revoke_guardian_link'))
+    if 'uidnotin(r.guardian_user_id,r.minor_user_id)' not in revoke or "status='revoked'" not in revoke:
+        errors.append('Révocation du lien parental non limitée aux deux parties du lien.')
+    if 'revokeinsert,update,delete,truncate,references,triggeronpublic.guardian_linksfromauthenticated' not in sql_compact:
+        errors.append('guardian_links reste directement modifiable par le navigateur.')
     if "interval'7days'" not in sql_compact and "interval'7day'" not in sql_compact:
         errors.append('Expiration du code parental à 7 jours absente.')
     if 'used_at is null' not in low or 'minor_user_id' not in low:
@@ -127,19 +141,12 @@ def main()->int:
     new_user=function_block(sql,'handle_new_sinjira_user')
     new_user_compact=compact(new_user)
     for marker in [
-        "years<12thenraiseexception'sinjira_minimum_age_12'",
-        "years<14then",
-        "guardian_authorization_required_under_14",
-        "invalid_or_expired_guardian_code",
-        "guardian_links",
-        "birth_date",
-        "date_of_birth",
-        "gender",
-        "sex"
+        "years<12thenraiseexception'sinjira_minimum_age_12'","years<14then",
+        "guardian_authorization_required_under_14","invalid_or_expired_guardian_code",
+        "guardian_links","birth_date","date_of_birth","gender","sex"
     ]:
         if marker not in new_user_compact:
             errors.append(f'Pont d’inscription serveur incomplet: {marker}')
-    # Vérifie structurellement que le lien créé avec un code parental valide est vérifié.
     verified_guardian=re.search(
         r'insert\s+into\s+public\.guardian_links\s*\([^)]*status[^)]*\)\s*values\s*\([^;]*[\'\"]verified[\'\"]',
         new_user,re.I|re.S
@@ -166,14 +173,7 @@ def main()->int:
             errors.append('Surface d’écriture account_safety_profiles trop large ou non explicitement restreinte.')
             break
 
-    # Frontend d’inscription : vérification sans dépendre de la casse/camelCase.
-    for marker in [
-        'if(age<12)', 'if(age<14&&!guardiancode)', "['femme','homme'].includes(gender.toLowerCase())",
-        'birth_date:birthdate','date_of_birth:birthdate','gender,','sex:legacysex','guardian_code:guardiancode'
-    ]:
-        # La validation sexe peut être écrite avec le tableau en casse métier; on la traite séparément ci-dessous.
-        if marker=="['femme','homme'].includes(gender.toLowerCase())":
-            continue
+    for marker in ['if(age<12)','if(age<14&&!guardiancode)','birth_date:birthdate','date_of_birth:birthdate','gender,','sex:legacysex','guardian_code:guardiancode']:
         if marker not in signup_compact:
             errors.append(f'Validation/pont inscription absent: {marker}')
     if not re.search(r"\[\s*['\"]Femme['\"]\s*,\s*['\"]Homme['\"]\s*\]\.includes\(gender\)",signup):
@@ -188,8 +188,11 @@ def main()->int:
     if 'data-guardian-code' not in html or 'Code d’autorisation parentale' not in html:
         errors.append('Champ de code parental absent du formulaire d’inscription.')
 
-    if 'create_guardian_signup_invite' not in relations_js:
-        errors.append('Interface Relations & famille sans génération de code parental.')
+    for marker in ["rpc('sinjira_my_age_band')","rpc('create_guardian_signup_invite')","rpc('redeem_guardian_signup_invite')","rpc('revoke_guardian_link')"]:
+        if marker not in relations_compact:
+            errors.append(f'Interface Relations & famille incomplète: {marker}')
+    if "rpc('sinjira_age_band'" in relations_compact:
+        errors.append('Interface Relations & famille appelle encore la RPC paramétrée sinjira_age_band(uuid).')
     if 'guardian_signup_invites' not in relations_js or 'guardian_links' not in relations_js:
         errors.append('Interface parentale sans état des codes/liens vérifiés.')
     if 'aucun contenu privé' not in relations_js.lower():
@@ -199,7 +202,7 @@ def main()->int:
         print(f'ECHEC sécurité jeunesse canonique: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK jeunesse: 12+, 12–13 avec autorisation parentale, youth_pending verrouillé, youth/adult isolés, MFA parentale et supervision sans contenu privé.')
+    print('OK jeunesse: 12+, 12–13 avec autorisation parentale, youth_pending vérifiable après inscription, cohortes isolées, RPC self-only et supervision révocable sans contenu privé.')
     return 0
 
 if __name__=='__main__':
