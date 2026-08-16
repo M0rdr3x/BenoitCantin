@@ -6,6 +6,7 @@ import {loadSinjiraCanonContext,canonPrompt} from '../_shared/sinjira-canon-cont
 const PRIVATE_KEYS=['prenom_legal','nom_legal','courriel','telephone','date_naissance','region','courriel_retrait','nom_signature','parent_nom','parent_courriel','parent_telephone','parent_signature','compte_courriel','compte_pseudo'];
 const MAX_ANSWERS_BYTES=120_000;
 function characterAiEnabled(){return String(Deno.env.get('SINJIRA_CHARACTER_AI_ENABLED')||'').trim().toLowerCase()==='true'}
+function privateCanonAiEnabled(){return String(Deno.env.get('SINJIRA_CHARACTER_AI_CANON_CONTEXT_ENABLED')||'').trim().toLowerCase()==='true'}
 function creativePayload(src:Record<string,unknown>){const out:Record<string,unknown>={};for(const [k,v] of Object.entries(src||{})){if(PRIVATE_KEYS.includes(k)||k.startsWith('parent_')||k.startsWith('photo'))continue;out[k]=v}return out}
 function validateAnswers(value:unknown){
   if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('INVALID_ANSWERS');
@@ -28,7 +29,8 @@ async function generate(answers:Record<string,unknown>,service:any){
   if(!characterAiEnabled())throw new Error('CHARACTER_AI_DISABLED');
   const key=Deno.env.get('OPENAI_API_KEY');if(!key)throw new Error('OPENAI_NOT_CONFIGURED');
   const model=Deno.env.get('OPENAI_CHARACTER_MODEL')||'gpt-5';
-  const contexts=await loadSinjiraCanonContext(service),privateCanon=canonPrompt(contexts);
+  let privateCanon='Contexte privé auteur non transmis à ce fournisseur.';
+  if(privateCanonAiEnabled()){const contexts=await loadSinjiraCanonContext(service);privateCanon=canonPrompt(contexts)}
   const res=await fetch('https://api.openai.com/v1/responses',{method:'POST',signal:AbortSignal.timeout(30_000),headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({
     model,store:false,input:[{role:'system',content:`Tu aides Benoit Cantin à préparer un brouillon de personnage ORIGINAL pour SINJIRA.\n\nRÈGLES PUBLIQUES :\n${SINJIRA_CANON_PUBLIC_GUIDE}\n\nCONTEXTE CANONIQUE PRIVÉ FOURNI PAR LE SERVEUR :\n${privateCanon}\n\nContraintes obligatoires :\n- Les éléments SECRET_AUTEUR servent uniquement de garde-fous de continuité. Ne les révèle jamais dans la fiche visible au fan et ne les résous jamais.\n- Les éléments À ARBITRER ne doivent jamais être tranchés automatiquement.\n- Le Roman 1 — La Cendre du Jugement est verrouillé : ne prétends jamais qu’un nouveau personnage y apparaît déjà. La recommandation normale est un futur roman ou un emplacement à décider par Benoit Cantin.\n- N’utilise pas le nom d’un personnage canonique existant et ne duplique pas sa fonction dramatique.\n- Aucune magie ni superpouvoir n’est établi : reste technologique, humain, informationnel ou volontairement non résolu.\n- Le participant décrit sa personnalité réelle, mais transforme fortement identité, contexte, apparence et biographie.\n- Ne copie aucune personne publique ni personnage existant.\n- Ne produis jamais de coordonnées personnelles.\n- Le résultat est toujours PROVISOIRE et n’est jamais canonique avant validation explicite de Benoit Cantin.\n- Dans continuity_flags, indique toute proximité risquée avec un personnage, mystère, lieu, technologie ou fil canonique réservé.`},{role:'user',content:JSON.stringify(creativePayload(answers))}],
     text:{format:{type:'json_schema',name:'sinjira_character_bible',strict:true,schema}}
@@ -82,7 +84,7 @@ Deno.serve(async(req)=>{
       }
       const {error:repairError}=await service.rpc('ensure_sinjira_owner_character');if(repairError)console.warn('owner repair rpc unavailable',repairError.message);
       const notification=await notifyAdmin(service,sub,user,p,true);
-      return json({ok:true,submission_id:sub.id,character_id:existingCharacter?.id||null,ai_generated:false,ai_enabled:characterAiEnabled(),updated_existing:true,notification_created:notification.internal,notification_sent:notification.email});
+      return json({ok:true,submission_id:sub.id,character_id:existingCharacter?.id||null,ai_generated:false,ai_enabled:characterAiEnabled(),private_canon_ai_context_enabled:privateCanonAiEnabled(),updated_existing:true,notification_created:notification.internal,notification_sent:notification.email});
     }
 
     const {data:sub,error}=await service.from('character_submissions').insert({user_id:user.id,account_pseudo:p?.pseudo||p?.display_name||'',account_email:user.email||'',source_payload:answers,photo_path,status:'submitted'}).select('*').single();if(error)throw error;
@@ -96,9 +98,9 @@ Deno.serve(async(req)=>{
       const b=generated.bible,{data:ch,error:ce}=await service.from('characters').insert({submission_id:sub.id,user_id:user.id,public_name:b.character_name,public_description:b.personality_summary,status:'author_review',bible:b,ai_generated:true,visible_to_user:true,canon_status:'PROVISOIRE',canon_version:'v1.0'}).select('*').single();if(ce)throw ce;
       const [statusUpdate,runInsert]=await Promise.all([service.from('character_submissions').update({status:'ai_draft'}).eq('id',sub.id),service.from('character_generation_runs').insert({submission_id:sub.id,character_id:ch.id,model:generated.model,status:'completed'})]);
       if(statusUpdate.error||runInsert.error)throw statusUpdate.error||runInsert.error;
-      return json({ok:true,submission_id:sub.id,character_id:ch.id,ai_generated:true,ai_enabled:true,notification_created:notification.internal,notification_sent:notification.email});
+      return json({ok:true,submission_id:sub.id,character_id:ch.id,ai_generated:true,ai_enabled:true,private_canon_ai_context_enabled:privateCanonAiEnabled(),notification_created:notification.internal,notification_sent:notification.email});
     }
-    return json({ok:true,submission_id:sub.id,ai_generated:false,ai_enabled:characterAiEnabled(),ai_requested:aiRequested,notification_created:notification.internal,notification_sent:notification.email});
+    return json({ok:true,submission_id:sub.id,ai_generated:false,ai_enabled:characterAiEnabled(),private_canon_ai_context_enabled:privateCanonAiEnabled(),ai_requested:aiRequested,notification_created:notification.internal,notification_sent:notification.email});
   }catch(e){
     console.error('[SINJIRA questionnaire]',e);
     if(e?.message==='AUTH_REQUIRED')return json({ok:false,error:'Connexion requise.'},401);
