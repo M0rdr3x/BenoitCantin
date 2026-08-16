@@ -1,6 +1,6 @@
 import {getSupabase,requireUser,escapeHtml,formatDate,isSinjiraOwner} from './sinjira-supabase.js';
 
-const UI_VERSION='24.4.16';
+const UI_VERSION='24.4.20';
 const box=document.querySelector('[data-my-character]');
 const status=document.querySelector('[data-character-status]');
 const labels={submitted:'Questionnaire reçu',ai_draft:'Brouillon IA',author_review:'En préparation',approved:'Approuvé',assigned:'Roman attribué',future:'Futur roman',published:'Publié',refused:'Refusé',archived:'Archivé'};
@@ -67,8 +67,11 @@ function renderOwnerFallback(message='AbyssTime est reconnu par votre Compte SIN
 }
 
 async function ensureOwnerCharacter(owner){
-  if(!owner)return;
-  try{await getSupabase().rpc('ensure_sinjira_owner_character')}catch(error){console.warn('[SINJIRA personnage] réparation propriétaire non disponible',error)}
+  if(!owner)return null;
+  const {data,error}=await getSupabase().rpc('ensure_sinjira_owner_character');
+  if(error)throw error;
+  if(!data?.ok)throw new Error(data?.code||'OWNER_CHARACTER_REPAIR_FAILED');
+  return data;
 }
 
 async function loadCharacter(user){
@@ -103,13 +106,13 @@ async function loadCharacter(user){
     const user=await requireUser('/compte/connexion.html');
     const owner=isSinjiraOwner(user);
     if(owner)renderOwnerFallback('Vérification de la fiche persistante d’AbyssTime…');
-    await ensureOwnerCharacter(owner);
+    const repair=await ensureOwnerCharacter(owner);
 
     const {submission,character}=await loadCharacter(user);
     if(character){
       renderCharacter(character,submission);
       setStatus(owner
-        ?`AbyssTime est synchronisé avec votre fiche persistante SINJIRA™ (interface ${UI_VERSION}).`
+        ?`AbyssTime est synchronisé avec sa fiche persistante, son profil social et le Monde parallèle (interface ${UI_VERSION}${repair?.repair_version?` · serveur ${repair.repair_version}`:''}).`
         :'Votre personnage est synchronisé avec votre Compte SINJIRA™.','success');
       return;
     }
