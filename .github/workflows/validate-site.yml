@@ -46,3 +46,5 @@ jobs:
         run: python scripts/validate_owner_account.py
       - name: Vérifier la séparation jeunesse / adulte
         run: python scripts/validate_youth_safety.py
+      - name: Vérifier l’identité exacte des personnages sociaux
+        run: python scripts/validate_character_identity_rls.py
