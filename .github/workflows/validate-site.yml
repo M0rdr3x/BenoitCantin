@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: validate-site-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -17,6 +21,23 @@ jobs:
     steps:
       - name: Récupérer le dépôt
         uses: actions/checkout@v6
+
+      - name: Afficher le contexte exact de cette validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Branche/ref : ${GITHUB_REF_NAME}"
+          echo "SHA testé   : ${GITHUB_SHA}"
+          echo "Événement   : ${GITHUB_EVENT_NAME}"
+          {
+            echo "### Contexte exact de cette validation"
+            echo "- Événement : \`${GITHUB_EVENT_NAME}\`"
+            echo "- Branche/ref : \`${GITHUB_REF_NAME}\`"
+            echo "- SHA testé : \`${GITHUB_SHA}\`"
+            echo
+            echo "> **Important :** un ancien run GitHub reste attaché au SHA qu’il a testé. Le bouton **Re-run jobs** relance ce même SHA; il ne reteste pas automatiquement le \`main\` actuel."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Configurer Python
         uses: actions/setup-python@v6
         with:
@@ -46,7 +67,7 @@ jobs:
         run: python scripts/validate_fracture_engine.py
       - name: Vérifier le compte propriétaire AbyssTime
         run: python scripts/validate_owner_account.py
-      - name: Vérifier la séparation jeunesse / adulte
+      - name: Vérifier la séparation jeunesse / adulte — contrat canonique actuel
         run: python scripts/validate_youth_safety.py
       - name: Vérifier l’identité exacte des personnages sociaux
         run: python scripts/validate_character_identity_rls.py
