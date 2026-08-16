@@ -1,4 +1,4 @@
-/* V18 FINAL REV2 — accueil focalisé SINJIRA + Projet Nova */
+/* V18 FINAL REV2 + V24.4.11 — accueil focalisé SINJIRA™ + Projet Nova */
 .home-page .project-grid-compact{grid-template-columns:repeat(4,minmax(0,1fr))}
 .home-page .node-3{left:50%;right:auto;bottom:2%;transform:translateX(-50%)}
 .home-page .node-3:hover,.home-page .node-3:focus-visible{transform:translateX(-50%) translateY(-5px) scale(1.035)}
@@ -10,6 +10,29 @@
 .home-account-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.home-account-links .btn{justify-content:center;text-align:center}.home-account-admin{grid-column:1/-1}.home-account-note{margin-top:12px;color:var(--muted);font-size:.82rem}
 .sinjira-category-hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,390px);gap:clamp(26px,5vw,64px);align-items:center}.sinjira-category-poster{margin:0;justify-self:end}.sinjira-category-poster img{display:block;width:min(100%,390px);max-height:520px;object-fit:cover;border-radius:24px;border:1px solid rgba(255,112,89,.22);box-shadow:0 28px 70px rgba(0,0,0,.34)}
 .registry-account-inline{display:grid;grid-template-columns:1fr 1fr;gap:12px}.registry-account-inline .wide{grid-column:1/-1}.registry-account-inline input[readonly]{opacity:.9;cursor:default}
+
+/* V24.4.11 — deux portes principales, centrées et symétriques. */
+.home-page .v24-home-two-portals{min-height:clamp(500px,39vw,610px);isolation:isolate}
+.home-page .v24-home-two-portals .node-sinjira-home{left:7%;top:50%;transform:translateY(-50%)}
+.home-page .v24-home-two-portals .node-nova-home{right:7%;top:50%;transform:translateY(-50%)}
+.home-page .v24-home-two-portals .node-sinjira-home:hover,
+.home-page .v24-home-two-portals .node-sinjira-home:focus-visible,
+.home-page .v24-home-two-portals .node-nova-home:hover,
+.home-page .v24-home-two-portals .node-nova-home:focus-visible{transform:translateY(calc(-50% - 5px)) scale(1.04)}
+.home-page .v24-home-two-portals .orbit-logo{width:clamp(76px,7.4vw,108px);height:clamp(76px,7.4vw,108px);object-fit:contain}
+.home-page .v24-home-two-portals .cosmos-label{bottom:18px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 36px);text-align:center}
+.home-page .v24-home-projects-two{grid-template-columns:repeat(2,minmax(0,1fr));max-width:980px;margin-inline:auto}
+.home-page .v24-home-projects-two .project-card{min-height:100%;padding:clamp(24px,3vw,34px)}
+.home-page .v24-home-projects-two .project-icon-logo{width:clamp(86px,8vw,118px);height:clamp(86px,8vw,118px);object-fit:contain}
+
 @media(max-width:980px){.home-page .project-grid-compact{grid-template-columns:repeat(2,minmax(0,1fr))}.home-account-card,.sinjira-category-hero-grid{grid-template-columns:1fr}.sinjira-category-poster{justify-self:start}.sinjira-category-poster img{width:min(100%,420px)}}
+@media(max-width:900px){
+  .home-page .v24-home-two-portals{min-height:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:clamp(22px,5vw,34px)}
+  .home-page .v24-home-two-portals .orbit,.home-page .v24-home-two-portals .cosmos-label{display:none}
+  .home-page .v24-home-two-portals .identity-core{grid-column:1/-1;position:relative!important;inset:auto!important;transform:none!important;margin:0 auto 8px}
+  .home-page .v24-home-two-portals .node-sinjira-home,.home-page .v24-home-two-portals .node-nova-home{position:relative!important;inset:auto!important;transform:none!important;min-height:150px}
+  .home-page .v24-home-two-portals .node-sinjira-home:hover,.home-page .v24-home-two-portals .node-sinjira-home:focus-visible,.home-page .v24-home-two-portals .node-nova-home:hover,.home-page .v24-home-two-portals .node-nova-home:focus-visible{transform:translateY(-2px)!important}
+}
 @media(max-width:700px){.home-page .node-3{left:50%;bottom:2%}.home-page .cosmos-label{bottom:-44px}.home-account-links,.registry-account-inline{grid-template-columns:1fr}.home-account-admin,.registry-account-inline .wide{grid-column:auto}}
+@media(max-width:560px){.home-page .v24-home-two-portals,.home-page .v24-home-projects-two{grid-template-columns:1fr}.home-page .v24-home-two-portals .identity-core{grid-column:auto}.home-page .v24-home-two-portals .node-sinjira-home,.home-page .v24-home-two-portals .node-nova-home{min-height:132px}}
 @media(max-width:520px){.home-page .project-grid-compact{grid-template-columns:1fr}.home-account-card{padding:20px}.home-account-links{grid-template-columns:1fr}}
