@@ -13,6 +13,13 @@ async function uploadPhoto(user){const input=form.querySelector('input[type="fil
 async function cleanupUploadedPhoto(path){if(!path)return;try{const {error}=await getSupabase().storage.from('sinjira-character-sources').remove([path]);if(error)console.warn('[SINJIRA registre] nettoyage photo temporaire',error)}catch(e){console.warn('[SINJIRA registre] nettoyage photo temporaire impossible',e)}}
 async function submitToSinjira(user,{updateExisting=false}={}){let photo_path=null;try{photo_path=await uploadPhoto(user);const answers=serialize(form);const {data,error}=await getSupabase().functions.invoke('submit-character-questionnaire',{body:{answers,photo_path,manual_only:true,update_existing:updateExisting}});if(error||!data?.ok)throw new Error(data?.error||error?.message||'Le dossier n’a pas pu être enregistré dans SINJIRA™.');return data}catch(e){await cleanupUploadedPhoto(photo_path);throw e}}
 async function tryOwnerRepair(user){if(!isSinjiraOwner(user))return;try{await getSupabase().rpc('ensure_sinjira_owner_character')}catch(e){console.info('Owner repair RPC not installed yet.',e?.message||e)}}
+function successMessage(result,owner){
+ if(result.updated_existing){return result.participant_email_sent?'Questionnaire d’AbyssTime mis à jour. Une copie a aussi été envoyée au courriel du compte.':'Questionnaire d’AbyssTime mis à jour dans SINJIRA™. Le personnage existant est conservé.'}
+ if(result.participant_email_sent&&result.notification_sent)return 'Participation enregistrée. Une copie a été envoyée au courriel du compte et Benoit Cantin a reçu l’avis administrateur.';
+ if(result.participant_email_sent)return 'Participation enregistrée dans SINJIRA™. Une copie a été envoyée au courriel de votre compte.';
+ if(result.notification_sent)return 'Participation enregistrée dans SINJIRA™ et avis administrateur envoyé. La copie courriel du participant n’a pas pu être envoyée, mais le dossier est bien conservé.';
+ return 'Participation enregistrée dans SINJIRA™. Le dossier est visible dans l’administration. Le service courriel est actuellement indisponible ou non configuré.';
+}
 
 async function init(){
  if(!form)return;installChoiceLimits();
@@ -37,7 +44,7 @@ async function init(){
 
  if(owner){
    if(existingSubmission?.source_payload)applyAnswers(existingSubmission.source_payload);
-   setState(existingCharacter?`AbyssTime est déjà associé à ce compte. Vous pouvez mettre à jour ce questionnaire sans créer un deuxième personnage.`:`Compte propriétaire reconnu. Vous pouvez transmettre ou mettre à jour le dossier source d’AbyssTime.`,'success');
+   setState(existingCharacter?'AbyssTime est déjà associé à ce compte. Vous pouvez mettre à jour ce questionnaire sans créer un deuxième personnage.':'Compte propriétaire reconnu. Vous pouvez transmettre ou mettre à jour le dossier source d’AbyssTime.','success');
  }else if(existingSubmission||existingCharacter){
    submit.disabled=true;
    form.querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=true);
@@ -53,7 +60,7 @@ async function init(){
    try{
      const result=await submitToSinjira(currentUser,{updateExisting:owner});
      localStorage.removeItem('registre-consciences-draft-v1');
-     setState(result.updated_existing?'Questionnaire d’AbyssTime mis à jour dans SINJIRA™. Le personnage existant est conservé.':result.notification_sent?'Participation enregistrée dans SINJIRA™ et avis courriel envoyé à Benoit Cantin.':'Participation enregistrée dans SINJIRA™. Elle est visible dans l’administration; aucun courriel externe n’est nécessaire pour conserver le dossier.','success');
+     setState(successMessage(result,owner),'success');
      form.querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=true);
    }catch(err){setState(err.message||'Transmission impossible. Aucune participation n’a été confirmée.','error');submit.disabled=false}
  });
