@@ -1,25 +1,31 @@
 <!DOCTYPE html>
 <html lang="fr-CA">
 <head>
-<meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
 <title>Partie en ligne | Fracture du Réseau-Mère | SINJIRA™</title>
-<meta content="Partie 100 % numérique de Fracture du Réseau-Mère avec moteur serveur, identité privée clairement affichée, cartes de faction lisibles et synchronisation multijoueur." name="description"/>
-<link href="../../../../assets/icons/sinjira-favicon.png" rel="icon" type="image/png"/>
-<link href="../../../../assets/css/site.css?v=24.4.15" rel="stylesheet"/>
-<link href="../../../../assets/css/fracture-online.css?v=24.4.15" rel="stylesheet"/>
-<link href="../../../../assets/css/fracture-engine.css?v=24.4.15" rel="stylesheet"/>
+<meta content="Partie 100 % numérique de Fracture du Réseau-Mère avec moteur serveur, carte d’identité privée clairement affichée, identités adverses masquées et sélections stables." name="description"/>
+<meta content="noindex,nofollow,noarchive" name="robots"/>
+<link href="/assets/icons/sinjira-favicon.png" rel="icon" type="image/png"/>
+<link href="/assets/css/site.css?v=24.4.22" rel="stylesheet"/>
+<link href="/assets/css/browser-compat-v24-4-22.css?v=24.4.22" rel="stylesheet" data-sinjira-browser-compat/>
+<link href="/assets/css/fracture-online.css?v=24.4.15" rel="stylesheet"/>
+<link href="/assets/css/fracture-engine.css?v=24.4.15" rel="stylesheet"/>
+<link href="/assets/css/fracture-ui-v24-4-23.css?v=24.4.23" rel="stylesheet"/>
 <link href="/manifest.webmanifest" rel="manifest"/>
-<link href="/assets/css/v19-pro.css?v=24.4.15" rel="stylesheet"/>
+<link href="/assets/css/v19-pro.css?v=24.4.20" rel="stylesheet"/>
 <link href="/assets/media/fracture-card-back.webp" rel="preload" as="image" type="image/webp"/>
 </head>
-<body class="project-page fracture-online-page" data-fracture-page="engine">
+<body class="project-page fracture-online-page" data-fracture-page="engine" data-fracture-ui-version="24.4.23">
+<a class="skip-link" href="#contenu">Aller au contenu</a>
 <header class="site-header"><div class="container nav-shell">
-<a class="brand" href="/"><img alt="" height="47" src="../../../../assets/media/sinjira-emblem.webp" style="border-radius:50%" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Fracture du Réseau-Mère</span></span></a>
-<nav class="main-nav"><a href="index.html">Présentation</a><a href="regles.html">Règles</a><a aria-current="page" href="jouer.html">Jouer</a><a href="../../../../compte/index.html">Compte SINJIRA™</a></nav>
+<a class="brand" href="/"><img alt="" height="47" src="/assets/media/sinjira-emblem.webp" style="border-radius:50%" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Fracture du Réseau-Mère</span></span></a>
+<button aria-expanded="false" aria-label="Ouvrir le menu" class="menu-toggle" data-menu-toggle type="button"><span></span></button>
+<nav class="main-nav" data-main-nav aria-label="Navigation Fracture"><a href="index.html">Présentation</a><a href="regles.html">Règles</a><a aria-current="page" href="jouer.html">Jouer</a><a href="/compte/">Compte SINJIRA™</a></nav>
 </div></header>
-<main class="fracture-online-main">
+<main class="fracture-online-main" id="contenu">
 <section class="fracture-online-hero">
-<span class="eyebrow">Interface de jeu V24.4.15 · moteur serveur V24.4.6</span>
+<span class="eyebrow">Interface de jeu V24.4.23 · moteur serveur V24.4.6</span>
 <h1 data-party-heading>Partie Fracture</h1>
 <p data-party-summary>Connexion au moteur de jeu…</p>
 <div class="fracture-party-facts" data-party-facts></div>
@@ -27,13 +33,15 @@
 </section>
 <div class="fracture-status" data-fracture-status hidden></div>
 <section class="fracture-private-notice">
-<strong>Identités et cartes privées</strong>
-<p>Votre faction est affichée clairement dans votre zone privée. Les cartes révélées indiquent explicitement « Résistance » ou « Réseau-Mère ». Les cartes du centre utilisent le dos officiel Fracture et ne révèlent aucune information avant leur sélection. Les autres joueurs ne doivent jamais recevoir votre identité privée avant la fin de la partie.</p>
+<strong>Identité secrète et cartes privées</strong>
+<p>Votre propre faction apparaît dans une carte d’identité secrète clairement marquée « Résistance » ou « Réseau-Mère ». Pendant la partie, aucune identité n’est affichée dans la liste des autres sièges. Toutes les identités ne sont révélées qu’à l’écran final. Les cartes du centre utilisent le dos officiel Fracture et ne révèlent rien avant leur sélection.</p>
 </section>
 <div data-engine-root><section class="fracture-online-card engine-panel"><p>Chargement de la partie…</p></section></div>
 </main>
 <footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Fracture du Réseau-Mère — moteur Web SINJIRA™.</span></div></div></footer>
-<script defer src="../../../../assets/js/site.js?v=24.4.15"></script>
-<script type="module" src="../../../../assets/js/sinjira-fracture-engine.js?v=24.4.15"></script>
-<div aria-live="polite" class="v19-offline-badge">Mode hors ligne</div><script src="/assets/js/v19-session.js?v=24.4.15" type="module"></script>
-</body></html>
+<script defer src="/assets/js/site.js?v=24.4.22"></script>
+<script type="module" src="/assets/js/sinjira-fracture-engine.js?v=24.4.23"></script>
+<div aria-live="polite" class="v19-offline-badge">Mode hors ligne</div>
+<script src="/assets/js/v19-session.js?v=24.4.20" type="module"></script>
+</body>
+</html>
