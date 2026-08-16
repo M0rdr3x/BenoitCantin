@@ -1,7 +1,7 @@
-const CACHE='benoitcantin-v24-4-2-public-1';
+const CACHE='benoitcantin-v24-4-3-public-1';
 const CORE=[
   '/','/offline.html','/assets/css/site.css','/assets/css/v19-pro.css','/assets/css/v24-platform.css','/assets/css/v24-3-2-fixes.css','/assets/css/v24-3-3-fixes.css','/assets/css/fracture-engine.css',
-  '/assets/js/site.js','/assets/js/v24-3-1-runtime.js','/assets/js/v24-3-2-runtime.js','/assets/js/v24-3-3-runtime.js','/assets/js/v24-3-6-runtime.js','/assets/js/sinjira-fracture-engine.js','/assets/js/sinjira-fracture-result.js',
+  '/assets/js/site.js','/assets/js/v24-3-1-runtime.js','/assets/js/v24-3-2-runtime.js','/assets/js/v24-3-3-runtime.js','/assets/js/v24-3-6-runtime.js','/assets/js/sinjira-fracture-lobby.js','/assets/js/sinjira-fracture-engine.js','/assets/js/sinjira-fracture-result.js',
   '/assets/icons/benoit-sigil.svg','/assets/media/sinjira-emblem.webp','/assets/media/sinjira-livre-1-cover-480.webp',
   '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/','/projets/sinjira/jeux/fracture-du-reseau-mere/'
 ];

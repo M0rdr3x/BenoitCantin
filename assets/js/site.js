@@ -64,16 +64,15 @@
   });
 
   if (!document.querySelector('script[data-v2431-runtime]')) {
-    const runtime = document.createElement('script');runtime.type = 'module';runtime.src = '/assets/js/v24-3-1-runtime.js?v=24.4.0';runtime.dataset.v2431Runtime = '';document.head.appendChild(runtime);
+    const runtime = document.createElement('script');runtime.type = 'module';runtime.src = '/assets/js/v24-3-1-runtime.js?v=24.4.3';runtime.dataset.v2431Runtime = '';document.head.appendChild(runtime);
   }
   if (!document.querySelector('script[data-v2432-runtime]')) {
-    const runtime = document.createElement('script');runtime.type = 'module';runtime.src = '/assets/js/v24-3-2-runtime.js?v=24.4.0';runtime.dataset.v2432Runtime = '';document.head.appendChild(runtime);
+    const runtime = document.createElement('script');runtime.type = 'module';runtime.src = '/assets/js/v24-3-2-runtime.js?v=24.4.3';runtime.dataset.v2432Runtime = '';document.head.appendChild(runtime);
   }
   if (!document.querySelector('script[data-v2433-runtime]')) {
-    const runtime = document.createElement('script');runtime.type = 'module';runtime.src = '/assets/js/v24-3-3-runtime.js?v=24.4.0';runtime.dataset.v2433Runtime = '';document.head.appendChild(runtime);
+    const runtime = document.createElement('script');runtime.type = 'module';runtime.src = '/assets/js/v24-3-3-runtime.js?v=24.4.3';runtime.dataset.v2433Runtime = '';document.head.appendChild(runtime);
   }
-  // V24.4 : contrôle du vrai moteur Fracture côté Supabase avant d'activer le salon.
   if (!document.querySelector('script[data-v2436-runtime]')) {
-    const runtime = document.createElement('script');runtime.type = 'module';runtime.src = '/assets/js/v24-3-6-runtime.js?v=24.4.0';runtime.dataset.v2436Runtime = '';document.head.appendChild(runtime);
+    const runtime = document.createElement('script');runtime.type = 'module';runtime.src = '/assets/js/v24-3-6-runtime.js?v=24.4.3';runtime.dataset.v2436Runtime = '';document.head.appendChild(runtime);
   }
 })();
