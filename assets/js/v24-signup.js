@@ -2,6 +2,9 @@ import {getSupabase,SINJIRA_CONFIG,isSinjiraBackendConfigured,setStatus} from '.
 
 const form=document.querySelector('[data-signup-form]');
 const status=document.querySelector('[data-account-status]');
+const birthInput=form?.querySelector('[data-signup-birth-date]');
+const guardianWrap=form?.querySelector('[data-guardian-code-wrap]');
+const guardianInput=form?.querySelector('[data-guardian-code]');
 
 function ageOn(dateString){
   const dob=new Date(`${dateString}T00:00:00`);
@@ -18,18 +21,21 @@ function nextDestination(def='/compte/index.html'){
   if(!value||!value.startsWith('/')||value.startsWith('//')||value.includes('\\')||/[\u0000-\u001f\u007f]/.test(value))return def;
   try{const url=new URL(value,location.origin);return url.origin===location.origin?`${url.pathname}${url.search}${url.hash}`:def}catch{return def}
 }
-function normalizeGenderControl(){
-  const select=form?.elements?.gender;
-  if(!(select instanceof HTMLSelectElement))return;
-  const allowed=new Set(['','Femme','Homme']);
-  [...select.options].forEach(option=>{if(!allowed.has(String(option.value||option.textContent||'').trim()))option.remove()});
-  select.required=true;
-  const label=select.closest('.field')?.querySelector('label');
-  if(label)label.textContent='Sexe *';
+function normalizeGuardianCode(value=''){return String(value).trim().toUpperCase().replace(/\s+/g,'')}
+function syncYouthControls(){
+  if(!guardianWrap||!guardianInput)return;
+  const age=ageOn(String(birthInput?.value||''));
+  const youth=Number.isInteger(age)&&age>=12&&age<18;
+  guardianWrap.hidden=!youth;
+  guardianInput.required=Number.isInteger(age)&&age>=12&&age<14;
+  guardianInput.setAttribute('aria-required',guardianInput.required?'true':'false');
+  if(!youth)guardianInput.value='';
 }
+birthInput?.addEventListener('change',syncYouthControls);
+birthInput?.addEventListener('input',syncYouthControls);
+syncYouthControls();
 
 if(form){
-  normalizeGenderControl();
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(!isSinjiraBackendConfigured()){
@@ -42,6 +48,7 @@ if(form){
     const confirm=String(d.get('password_confirm')||'');
     const birthDate=String(d.get('birth_date')||'');
     const gender=String(d.get('gender')||'').trim();
+    const guardianCode=normalizeGuardianCode(d.get('guardian_code')||'');
     const age=ageOn(birthDate);
     if(password.length<12){setStatus(status,'Utilisez un mot de passe d’au moins 12 caractères.','error');return}
     if(password!==confirm){setStatus(status,'Les mots de passe ne correspondent pas.','error');return}
@@ -49,15 +56,20 @@ if(form){
     if(age<12){setStatus(status,'Les Comptes SINJIRA™ sont réservés aux personnes de 12 ans et plus.','error');return}
     if(age>120){setStatus(status,'La date de naissance indiquée n’est pas valide.','error');return}
     if(!['Femme','Homme'].includes(gender)){setStatus(status,'Choisissez Femme ou Homme pour ce profil.','error');return}
+    if(age<14&&!guardianCode){setStatus(status,'Pour un compte de 12 ou 13 ans, un code d’autorisation créé par un parent ou tuteur adulte est obligatoire.','error');return}
     const minor=age<18;
     const languages=String(d.get('languages')||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,12);
     const wantsQuestionnaire=d.get('wants_character_questionnaire')==='yes';
     const contributor=d.get('initial_contributor_opt_in')==='yes';
+    const legacySex=gender==='Femme'?'female':'male';
     const metadata={
       pseudo:String(d.get('pseudo')||'').trim(),
       display_name:String(d.get('display_name')||'').trim(),
       birth_date:birthDate,
+      date_of_birth:birthDate,
       gender,
+      sex:legacySex,
+      guardian_code:guardianCode,
       languages,
       residence_city:String(d.get('residence_city')||'').trim(),
       residence_region:String(d.get('residence_region')||'').trim(),
@@ -79,9 +91,16 @@ if(form){
       email,password,
       options:{emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}${destination}`,data:metadata}
     });
-    if(error){setStatus(status,'Création du compte impossible. Vérifiez les renseignements ou utilisez une autre adresse courriel.','error');return}
+    if(error){
+      const raw=String(error.message||'');
+      if(/GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14|INVALID_OR_EXPIRED_GUARDIAN_CODE|ADULT_GUARDIAN_REQUIRED/i.test(raw)){
+        setStatus(status,'Le code d’autorisation parentale est absent, expiré ou invalide. Demandez au parent ou tuteur d’en générer un nouveau depuis son Compte SINJIRA™.','error');
+      }else setStatus(status,'Création du compte impossible. Vérifiez les renseignements ou utilisez une autre adresse courriel.','error');
+      return;
+    }
     if(data.session){location.assign(destination);return}
-    setStatus(status,wantsQuestionnaire?'Compte créé. Confirmez votre adresse courriel; le lien de confirmation vous mènera ensuite au questionnaire complet du Registre.':'Compte créé. Vérifiez votre courriel pour confirmer votre adresse.','success');
-    form.reset();
+    const youthNote=age>=14&&age<18&&!guardianCode?' Les fonctions sociales resteront protégées jusqu’à la vérification d’un parent ou tuteur.':'';
+    setStatus(status,(wantsQuestionnaire?'Compte créé. Confirmez votre adresse courriel; le lien de confirmation vous mènera ensuite au questionnaire complet du Registre.':'Compte créé. Vérifiez votre courriel pour confirmer votre adresse.')+youthNote,'success');
+    form.reset();syncYouthControls();
   });
 }
