@@ -4,8 +4,10 @@ import re
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase'/'migrations'/'20260816149000_sinjira_v24_4_12_parallel_character_convergence.sql'
+OWNER_REPAIR_MIG=ROOT/'supabase'/'migrations'/'20260816194000_sinjira_v24_4_20_owner_character_resilience.sql'
 JS=ROOT/'assets'/'js'/'v24-parallel.js'
 HTML=ROOT/'compte'/'monde-parallele.html'
+UI_VERSION='24.4.20'
 
 
 def compact(value:str)->str:
@@ -15,16 +17,20 @@ def compact(value:str)->str:
 def main()->int:
     errors=[]
     if not MIG.exists(): errors.append('Migration de convergence Monde parallèle absente.')
+    if not OWNER_REPAIR_MIG.exists(): errors.append('Migration de résilience propriétaire V24.4.20 absente.')
     if not JS.exists(): errors.append('Client Monde parallèle absent.')
     if not HTML.exists(): errors.append('Page compte Monde parallèle absente.')
     if errors:
+        print(f'ECHEC Monde parallèle canonique: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
 
     sql=MIG.read_text('utf-8',errors='ignore')
+    owner_sql=OWNER_REPAIR_MIG.read_text('utf-8',errors='ignore')
     js=JS.read_text('utf-8',errors='ignore')
     html=HTML.read_text('utf-8',errors='ignore')
     low=compact(sql)
+    owner_low=compact(owner_sql)
     js_low=compact(js)
 
     affected=[
@@ -57,6 +63,19 @@ def main()->int:
     if "'provisoire','legacy-v22'" not in low:
         errors.append('La migration V22 ne garantit pas une importation PROVISOIRE.')
 
+    # V24.4.20 renforce la résilience du propriétaire : un lien parallèle supprimé
+    # accidentellement doit être recréé par la même réparation qu'utilisent les pages compte.
+    for marker in [
+      'insertintopublic.parallel_character_state(character_id,user_id)',
+      'insertintopublic.parallel_world_memberships(',
+      'main_canon_eligible=true',
+      'parallel_world_only=false',
+      "'repair_version','24.4.20'",
+      'sinjira_owner_character_health'
+    ]:
+        if marker not in owner_low:
+            errors.append(f'Résilience propriétaire V24.4.20 absente: {marker}')
+
     stale=['parallel_missions','parallel_responses','parallel_cycles']
     for name in stale:
         if name in js:
@@ -68,17 +87,25 @@ def main()->int:
         errors.append('Les réponses individuelles ne sont pas enregistrées avec response_kind=solo.')
     if "onconflict:'cycle_id,user_id'" not in js_low:
         errors.append('Upsert mensuel non verrouillé sur cycle_id,user_id.')
+    if 'ensure_sinjira_owner_character' not in js:
+        errors.append('Le Monde parallèle ne déclenche plus la réparation propriétaire lorsque nécessaire.')
 
     if 'data-parallel-history' not in html:
         errors.append('Historique narratif absent de la page Monde parallèle.')
-    if '?v=24.4.12' not in html:
-        errors.append('Cache-busting V24.4.12 absent de la page Monde parallèle.')
+    if f'?v={UI_VERSION}' not in html:
+        errors.append(f'Cache-busting {UI_VERSION} absent de la page Monde parallèle.')
+    if f'Univers persistant V{UI_VERSION}' not in html:
+        errors.append(f'Version visible Monde parallèle différente de V{UI_VERSION}.')
 
     if errors:
         print(f'ECHEC Monde parallèle canonique: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK Monde parallèle: public.characters canonique, adhésion à l’approbation, pionniers 1–40, Chronique et cycles V24 vérifiés.')
+    print(
+        'OK Monde parallèle: public.characters canonique, adhésion à l’approbation, '
+        'pionniers 1–40, Chronique/cycles V24 et résilience propriétaire '
+        f'{UI_VERSION} vérifiés.'
+    )
     return 0
 
 if __name__=='__main__':
