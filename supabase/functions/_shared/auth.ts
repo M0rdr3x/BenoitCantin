@@ -1,4 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.112.3';
 
 function serverSecretKey() {
   const modern = Deno.env.get('SUPABASE_SECRET_KEYS');
