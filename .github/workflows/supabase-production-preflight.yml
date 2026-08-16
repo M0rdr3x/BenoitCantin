@@ -214,3 +214,19 @@ jobs:
           echo >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/sinjira-dry-run-after.txt >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: ÉTAT PRODUCTION
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '## ÉTAT PRODUCTION' >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.auth.outputs.ready }}" != "true" ]; then
+            echo '⛔ NON SYNCHRONISÉ : les secrets de connexion Supabase ne sont pas disponibles au workflow. Aucune lecture distante ni écriture de production n’a eu lieu.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo '🟡 PRÉVOL SEULEMENT : la production a été auditée et le dry-run a été exécuté, mais aucune migration ni Edge Function n’a été appliquée. Pour écrire en production, lancer manuellement ce workflow avec apply=true.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ inputs.apply }}" != "true" ]; then
+            echo '🟡 PRÉVOL MANUEL SEULEMENT : aucune modification de production, car apply=false.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '✅ SYNCHRONISATION DEMANDÉE : migrations, secrets opérationnels et Edge Functions ont été appliqués si toutes les étapes précédentes sont vertes. Vérifier ensuite le diagnostic propriétaire dans /admin/sinjira/.' >> "$GITHUB_STEP_SUMMARY"
+          fi
