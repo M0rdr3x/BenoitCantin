@@ -27,13 +27,18 @@ def function_block(sql:str,name:str)->str:
     return matches[-1].group(0) if matches else ''
 
 
+def compact(value:str)->str:
+    return re.sub(r'\s+','',value.lower())
+
+
 def main()->int:
     errors=[]
     sql=all_sql()
     low=re.sub(r'\s+',' ',sql.lower())
-    compact=re.sub(r'\s+','',sql.lower())
+    sql_compact=compact(sql)
     signup=read(SIGNUP)
     signup_low=signup.lower()
+    signup_compact=compact(signup)
     html=read(HTML)
     relations_js=read(RELATIONS_JS) if RELATIONS_JS.exists() else ''
 
@@ -52,13 +57,13 @@ def main()->int:
     for band in ['under12','youth','youth_pending','adult','unverified']:
         if f"'{band}'" not in age:
             errors.append(f'Cohorte canonique absente de sinjira_age_band: {band}')
-    if "g.status='verified'" not in re.sub(r'\s+','',age):
+    if "g.status='verified'" not in compact(age):
         errors.append('La cohorte youth ne dépend pas explicitement d’un tuteur vérifié.')
     if 'account_safety_profiles' not in age:
         errors.append('sinjira_age_band ne lit pas account_safety_profiles.')
 
     social=function_block(sql,'sinjira_can_social_interact').lower()
-    social_compact=re.sub(r'\s+','',social)
+    social_compact=compact(social)
     if not social:
         errors.append('Fonction canonique de compatibilité sociale absente.')
     else:
@@ -92,7 +97,7 @@ def main()->int:
             errors.append(f'Politique {name} n’exclut pas explicitement youth_pending/under12/unverified.')
 
     parent=function_block(sql,'sinjira_parent_can_supervise').lower()
-    parent_compact=re.sub(r'\s+','',parent)
+    parent_compact=compact(parent)
     for marker in ["sinjira_age_band(p_parent)='adult'","sinjira_age_band(p_child)='youth'","g.status='verified'","guardian_links"]:
         if marker not in parent_compact:
             errors.append('La supervision parentale n’exige pas adulte + jeune vérifié + guardian_links verified.')
@@ -109,25 +114,24 @@ def main()->int:
             errors.append(f'RPC parentale privée de métadonnée utile: {required_meta}')
 
     invite=function_block(sql,'create_guardian_signup_invite').lower()
-    invite_compact=re.sub(r'\s+','',invite)
+    invite_compact=compact(invite)
     for marker in ["sinjira_age_band(auth.uid())<>'adult'","sinjira_mfa_access_allowed(auth.uid())","youth-"]:
         if marker not in invite_compact:
             errors.append('Création du code parental sans vérification adulte/MFA ou format de code attendu.')
             break
-    if "interval'7days'" not in compact and "interval'7day'" not in compact:
+    if "interval'7days'" not in sql_compact and "interval'7day'" not in sql_compact:
         errors.append('Expiration du code parental à 7 jours absente.')
     if 'used_at is null' not in low or 'minor_user_id' not in low:
         errors.append('Code parental sans consommation à usage unique traçable.')
 
-    new_user=function_block(sql,'handle_new_sinjira_user').lower()
-    new_user_compact=re.sub(r'\s+','',new_user)
+    new_user=function_block(sql,'handle_new_sinjira_user')
+    new_user_compact=compact(new_user)
     for marker in [
         "years<12thenraiseexception'sinjira_minimum_age_12'",
         "years<14then",
         "guardian_authorization_required_under_14",
         "invalid_or_expired_guardian_code",
         "guardian_links",
-        "status,'verified'",
         "birth_date",
         "date_of_birth",
         "gender",
@@ -135,34 +139,45 @@ def main()->int:
     ]:
         if marker not in new_user_compact:
             errors.append(f'Pont d’inscription serveur incomplet: {marker}')
+    # Vérifie structurellement que le lien créé avec un code parental valide est vérifié.
+    verified_guardian=re.search(
+        r'insert\s+into\s+public\.guardian_links\s*\([^)]*status[^)]*\)\s*values\s*\([^;]*[\'\"]verified[\'\"]',
+        new_user,re.I|re.S
+    )
+    if not verified_guardian:
+        errors.append('Pont d’inscription serveur: guardian_links n’est pas créé en statut verified.')
 
     age_trigger=function_block(sql,'enforce_sinjira_account_safety_age').lower()
-    age_trigger_compact=re.sub(r'\s+','',age_trigger)
+    age_trigger_compact=compact(age_trigger)
     for marker in ['sinjira_minimum_age_12','date_of_birth',"new.sexnotin('female','male')"]:
         if marker not in age_trigger_compact:
             errors.append(f'Verrou âge/sexe serveur incomplet: {marker}')
-    if 'beforeinsertorupdateofdate_of_birth,sexonpublic.account_safety_profiles' not in compact:
+    if 'beforeinsertorupdateofdate_of_birth,sexonpublic.account_safety_profiles' not in sql_compact:
         errors.append('Trigger âge/sexe non branché à account_safety_profiles.')
-    if 'revokeallonfunctionpublic.enforce_sinjira_account_safety_age()frompublic,anon,authenticated' not in compact:
+    if 'revokeallonfunctionpublic.enforce_sinjira_account_safety_age()frompublic,anon,authenticated' not in sql_compact:
         errors.append('Fonction trigger âge/sexe encore exposée comme RPC.')
 
-    # Les attributs de sécurité sensibles ne doivent pas être modifiables directement par un membre.
     for marker in [
         'revokeinsert,delete,updateonpublic.account_safety_profilesfromauthenticated',
         'grantselectonpublic.account_safety_profilestoauthenticated',
         'grantupdate(birthday_greeting_opt_in,real_life_to_fiction_opt_in,relationship_data_opt_in,public_birthday_opt_in,birthday_public_opt_in,relationship_status,relationship_status_updated_at)onpublic.account_safety_profilestoauthenticated'
     ]:
-        if marker not in compact:
+        if marker not in sql_compact:
             errors.append('Surface d’écriture account_safety_profiles trop large ou non explicitement restreinte.')
             break
 
-    # Frontend d’inscription : 12+, 12–13 avec code, Femme/Homme seulement, pont metadata V22/V24.
+    # Frontend d’inscription : vérification sans dépendre de la casse/camelCase.
     for marker in [
-        'if(age<12)', 'if(age<14&&!guardiancode)', "['Femme','Homme'].includes(gender)",
-        'birth_date:birthDate','date_of_birth:birthDate','gender,','sex:legacySex','guardian_code:guardianCode'
+        'if(age<12)', 'if(age<14&&!guardiancode)', "['femme','homme'].includes(gender.toLowerCase())",
+        'birth_date:birthdate','date_of_birth:birthdate','gender,','sex:legacysex','guardian_code:guardiancode'
     ]:
-        if marker not in signup:
+        # La validation sexe peut être écrite avec le tableau en casse métier; on la traite séparément ci-dessous.
+        if marker=="['femme','homme'].includes(gender.toLowerCase())":
+            continue
+        if marker not in signup_compact:
             errors.append(f'Validation/pont inscription absent: {marker}')
+    if not re.search(r"\[\s*['\"]Femme['\"]\s*,\s*['\"]Homme['\"]\s*\]\.includes\(gender\)",signup):
+        errors.append('Validation inscription Femme/Homme absente ou affaiblie.')
     if 'name="birth_date"' not in html or 'required' not in html:
         errors.append('Date de naissance obligatoire absente de l’inscription.')
     if 'name="gender"' not in html or '<option value="Femme">Femme</option>' not in html or '<option value="Homme">Homme</option>' not in html:
