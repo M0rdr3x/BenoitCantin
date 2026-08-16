@@ -7,13 +7,14 @@ MIG=ROOT/'supabase'/'migrations'
 LOBBY=ROOT/'assets'/'js'/'sinjira-fracture-lobby.js'
 ENGINE=ROOT/'assets'/'js'/'sinjira-fracture-engine.js'
 ENGINE_CSS=ROOT/'assets'/'css'/'fracture-engine.css'
+UI_FIX_CSS=ROOT/'assets'/'css'/'fracture-ui-v24-4-23.css'
 PARTY_HTML=ROOT/'projets'/'sinjira'/'jeux'/'fracture-du-reseau-mere'/'partie.html'
 CARD_BACK=ROOT/'assets'/'media'/'fracture-card-back.webp'
 GATEWAY=ROOT/'supabase'/'functions'/'fracture-engine-gateway'/'index.ts'
 REPORT_FUNCTION=ROOT/'supabase'/'functions'/'send-game-report'/'index.ts'
 CONFIG=ROOT/'supabase'/'config.toml'
 ENGINE_VERSION='24.4.6'
-UI_VERSION='24.4.15'
+UI_VERSION='24.4.23'
 PRIVACY_VERSION='24.4.15'
 
 
@@ -36,6 +37,7 @@ def main()->int:
  lobby=read(LOBBY)
  engine=read(ENGINE)
  css=read(ENGINE_CSS)
+ ui_css=read(UI_FIX_CSS)
  party=read(PARTY_HTML)
  gateway=read(GATEWAY)
  report_fn=read(REPORT_FUNCTION)
@@ -87,16 +89,30 @@ def main()->int:
   for rpc in ['create_fracture_party','join_fracture_party','fracture_engine_get_state','fracture_engine_start','fracture_engine_submit_keep','fracture_engine_pick','fracture_engine_submit_report','fracture_engine_submit_accusation']:
    if rpc not in health: errors.append(f'Diagnostic moteur ne vérifie plus la RPC critique: {rpc}')
 
- # V24.4.15 visual / information contract.
+ # V24.4.23 visual / information / interaction contract.
  if not ENGINE.exists():
   errors.append('Interface moteur Fracture absente.')
  else:
   compact_engine=re.sub(r'\s+','',engine)
-  for marker in ["label:'Résistance'","label:'Réseau-Mère'",'functionidentityHtml(','engine-card__faction','engine-card__points']:
+  for marker in [
+   "constUI_VERSION='24.4.23';",
+   "label:'Résistance'",
+   "label:'Réseau-Mère'",
+   'functionidentityHtml(',
+   'data-private-identity-card',
+   'engine-card__faction',
+   'engine-card__points',
+   'getKeepSelection(state,cards)',
+   'getReportValues(state)',
+   'getVoteSelection(state,others)',
+   'signature===lastRenderedStateSignature',
+   'render(state,{force:true})',
+   'isEditingControl()'
+  ]:
    if marker not in compact_engine:
     errors.append(f'Interface Fracture V{UI_VERSION} incomplète: {marker}')
-  if 'revealAll?seat.identity:null' not in compact_engine:
-   errors.append('Défense visuelle: l’identité des autres sièges pourrait être affichée avant la fin.')
+  if 'constvisibleIdentity=revealAll?seat.identity:null;' not in compact_engine:
+   errors.append('Avant la fin, la liste des sièges pourrait encore afficher une identité.')
   if 'seatsHtml(state,{revealAll:true})' not in compact_engine:
    errors.append('La révélation finale des identités n’est plus explicite.')
   for marker in ['fracture_engine_get_state_safe','fracture_engine_privacy_health','fracture-engine-gateway']:
@@ -109,8 +125,20 @@ def main()->int:
   errors.append('Le CSS Fracture n’utilise pas le dos de carte officiel.')
  if 'engine-identity--r' not in css or 'engine-identity--rm' not in css:
   errors.append('Les deux identités n’ont plus de présentation visuelle distincte.')
+ if not ui_css:
+  errors.append('La couche UI Fracture V24.4.23 est absente.')
+ else:
+  for marker in ['.engine-identity__privacy','.engine-form select:focus','.engine-identity--unknown','font-size:16px']:
+   if marker not in ui_css:
+    errors.append(f'CSS Fracture V{UI_VERSION} incomplet: {marker}')
  if f'v={UI_VERSION}' not in party or f'V{UI_VERSION}' not in party:
   errors.append(f'partie.html n’annonce pas correctement l’interface V{UI_VERSION}.')
+ if 'browser-compat-v24-4-22.css' not in party or 'data-sinjira-browser-compat' not in party:
+  errors.append('partie.html ne charge plus la couche de compatibilité Chromium/Firefox/WebKit.')
+ if 'data-menu-toggle' not in party or 'data-main-nav' not in party:
+  errors.append('partie.html a perdu le menu mobile compatible avec le runtime du site.')
+ if 'noindex,nofollow,noarchive' not in party:
+  errors.append('La page privée de partie n’est plus explicitement noindex/noarchive.')
 
  if not CARD_BACK.exists():
   errors.append('Dos de carte officiel Fracture absent.')
@@ -155,7 +183,7 @@ def main()->int:
   print(f'ECHEC Fracture: {len(errors)} problème(s).')
   for e in errors: print('- '+e)
   return 1
- print(f'OK Fracture: moteur {ENGINE_VERSION}, interface {UI_VERSION}, dos officiel, factions lisibles, identité privée, passerelle d’action, état serveur assaini, RLS, confidentialité des soupçons, vote final immuable et contrôle de licence vérifiés.')
+ print(f'OK Fracture: moteur {ENGINE_VERSION}, interface {UI_VERSION}, carte identité privée, identités adverses masquées, sélections persistantes, dos officiel, passerelle d’action, état serveur assaini, RLS, vote final immuable et contrôle de licence vérifiés.')
  return 0
 
 if __name__=='__main__': raise SystemExit(main())
