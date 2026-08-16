@@ -188,7 +188,8 @@ def main()->int:
     if 'data-guardian-code' not in html or 'Code d’autorisation parentale' not in html:
         errors.append('Champ de code parental absent du formulaire d’inscription.')
 
-    for marker in ["rpc('sinjira_my_age_band')","rpc('create_guardian_signup_invite')","rpc('redeem_guardian_signup_invite')","rpc('revoke_guardian_link')"]:
+    # Vérifie la présence de l'appel RPC, indépendamment des arguments qui suivent le nom.
+    for marker in ["rpc('sinjira_my_age_band'","rpc('create_guardian_signup_invite'","rpc('redeem_guardian_signup_invite'","rpc('revoke_guardian_link'"]:
         if marker not in relations_compact:
             errors.append(f'Interface Relations & famille incomplète: {marker}')
     if "rpc('sinjira_age_band'" in relations_compact:
