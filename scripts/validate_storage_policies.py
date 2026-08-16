@@ -13,36 +13,33 @@ REQUIRED_AVATAR_POLICIES={
 }
 
 
+def policy_block(sql:str,policy:str)->str:
+    rx=re.compile(rf'create\s+policy\s+"{re.escape(policy)}"\s+on\s+storage\.objects.*?;',re.I|re.S)
+    matches=list(rx.finditer(sql))
+    return matches[-1].group(0) if matches else ''
+
+
 def main()->int:
     errors=[]
     sql='\n'.join(p.read_text('utf-8',errors='ignore') for p in sorted(MIGRATIONS.glob('*.sql')))
-    lower=sql.lower()
+    normalized_all=re.sub(r'\s+','',sql.lower())
 
-    if "'sinjira-avatars'" not in lower:
-        errors.append("Bucket sinjira-avatars absent des migrations.")
-    if "public=true" not in re.sub(r'\s+','',lower):
+    if "'sinjira-avatars'" not in normalized_all:
+        errors.append('Bucket sinjira-avatars absent des migrations.')
+    if 'public=true' not in normalized_all:
         errors.append("Le bucket avatar n'est pas explicitement public; avatarPublicUrl() dépend de ce contrat.")
 
     for command,policy in REQUIRED_AVATAR_POLICIES.items():
-        policy_rx=re.compile(
-            rf'create\s+policy\s+"{re.escape(policy)}"\s+on\s+storage\.objects.*?for\s+{command}\s+to\s+authenticated',
-            re.I|re.S,
-        )
-        matches=list(policy_rx.finditer(sql))
-        if not matches:
-            errors.append(f"Politique avatar {command.upper()} absente: {policy}")
+        block=policy_block(sql,policy)
+        if not block:
+            errors.append(f'Politique avatar {command.upper()} absente: {policy}')
             continue
-        block=matches[-1].group(0)
-        if "bucket_id='sinjira-avatars'" not in re.sub(r'\s+','',block.lower()) and "bucket_id = 'sinjira-avatars'" not in block.lower():
-            errors.append(f"Politique avatar {command.upper()} non limitée au bucket sinjira-avatars.")
-
-    # Chaque politique doit limiter le premier segment du chemin à auth.uid().
-    for policy in REQUIRED_AVATAR_POLICIES.values():
-        start=lower.rfind(f'create policy "{policy}"')
-        if start<0: continue
-        block=lower[start:start+900]
-        normalized=re.sub(r'\s+','',block)
-        if "(storage.foldername(name))[1]=auth.uid()::text" not in normalized:
+        normalized=re.sub(r'\s+','',block.lower())
+        if f'for{command}toauthenticated' not in normalized:
+            errors.append(f'Politique avatar {policy} n’est pas limitée à {command.upper()} authenticated.')
+        if "bucket_id='sinjira-avatars'" not in normalized:
+            errors.append(f'Politique avatar {command.upper()} non limitée au bucket sinjira-avatars.')
+        if '(storage.foldername(name))[1]=auth.uid()::text' not in normalized:
             errors.append(f"Politique avatar non cloisonnée au dossier de l'utilisateur: {policy}")
 
     account=(ROOT/'assets/js/sinjira-account.js').read_text('utf-8',errors='ignore')
@@ -50,7 +47,7 @@ def main()->int:
         errors.append('Le redimensionnement avatar 512 × 512 n’est plus garanti côté navigateur.')
     if "canvas.toBlob(resolve,'image/webp'" not in account:
         errors.append('La conversion WebP des avatars n’est plus garantie.')
-    if "Math.min(image.naturalWidth,image.naturalHeight)" not in account:
+    if 'Math.min(image.naturalWidth,image.naturalHeight)' not in account:
         errors.append('Le recadrage carré centré des avatars n’est plus détecté.')
 
     if errors:
