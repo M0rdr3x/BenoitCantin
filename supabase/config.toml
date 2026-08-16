@@ -47,3 +47,6 @@ verify_jwt = true
 
 [functions.redeem-license-code]
 verify_jwt = true
+
+[functions.fracture-engine-gateway]
+verify_jwt = true

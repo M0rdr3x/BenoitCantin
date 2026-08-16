@@ -2,6 +2,8 @@ import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
+const FUNCTION_VERSION='24.4.15';
+const MAX_REQUEST_BYTES=220_000;
 const TEMPLATE_URL =
   Deno.env.get('REPORT_TEMPLATE_URL') ||
   'https://www.benoitcantin.com/projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf';
@@ -98,7 +100,12 @@ async function recordDelivery(userId: string, sessionId: unknown, delivery: 'dow
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return json({ ok: false, error: 'Méthode non autorisée.' }, 405);
+  if (req.method !== 'POST') return json({ ok: false, error: 'Méthode non autorisée.', function_version: FUNCTION_VERSION }, 405);
+
+  const declaredLength=Number(req.headers.get('content-length')||0);
+  if(declaredLength>MAX_REQUEST_BYTES){
+    return json({ok:false,error:'Requête trop volumineuse.',function_version:FUNCTION_VERSION},413);
+  }
 
   try {
     const body = await req.json();
@@ -110,18 +117,18 @@ Deno.serve(async (req) => {
 
     if (mode === 'download') {
       if (user) await recordDelivery(user.id, body?.session_id, 'download');
-      return json({ ok: true, filename, pdf_base64: toBase64(pdfBytes) });
+      return json({ ok: true, filename, pdf_base64: toBase64(pdfBytes), function_version: FUNCTION_VERSION });
     }
 
     // L'envoi de courriel est réservé à un compte authentifié et uniquement à son adresse.
-    // Cela évite qu'une fonction publique de génération PDF devienne un relais de spam.
+    // Cette règle empêche la fonction publique de devenir un relais de spam.
     if (!user?.email) {
-      return json({ ok: false, error: 'Connexion requise pour l’envoi par courriel.' }, 401);
+      return json({ ok: false, error: 'Connexion requise pour l’envoi par courriel.', function_version: FUNCTION_VERSION }, 401);
     }
 
     const resendKey = Deno.env.get('RESEND_API_KEY');
     const from = Deno.env.get('REPORT_FROM_EMAIL') || 'SINJIRA <no-reply@benoitcantin.com>';
-    if (!resendKey) return json({ ok: false, error: 'Service courriel non configuré.' }, 503);
+    if (!resendKey) return json({ ok: false, error: 'Service courriel non configuré.', function_version: FUNCTION_VERSION }, 503);
 
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -147,13 +154,13 @@ Deno.serve(async (req) => {
     if (!resendResponse.ok) {
       const details = await resendResponse.text();
       console.error('Resend:', details);
-      return json({ ok: false, error: 'Le courriel n’a pas pu être envoyé.' }, 502);
+      return json({ ok: false, error: 'Le courriel n’a pas pu être envoyé.', function_version: FUNCTION_VERSION }, 502);
     }
 
     await recordDelivery(user.id, body?.session_id, 'email');
-    return json({ ok: true, emailed: true });
+    return json({ ok: true, emailed: true, function_version: FUNCTION_VERSION });
   } catch (error) {
     console.error(error);
-    return json({ ok: false, error: 'Erreur lors de la génération du rapport.' }, 500);
+    return json({ ok: false, error: 'Erreur lors de la génération du rapport.', function_version: FUNCTION_VERSION }, 500);
   }
 });
