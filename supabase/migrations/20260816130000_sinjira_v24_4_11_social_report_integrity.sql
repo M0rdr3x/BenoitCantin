@@ -38,6 +38,13 @@ begin
     raise exception 'INVALID_REPORT_REASON';
   end if;
 
+  -- Les champs de revue sont exclusivement administratifs. Même si un client modifié
+  -- les envoie dans l'INSERT, le serveur repart toujours d'un signalement ouvert neuf.
+  new.status:='open';
+  new.reviewed_at:=null;
+  new.reviewed_by:=null;
+  new.created_at:=now();
+
   if new.network='real' and new.target_type='post' then
     select p.user_id,p.body,p.created_at
       into target_user,target_body,target_created
