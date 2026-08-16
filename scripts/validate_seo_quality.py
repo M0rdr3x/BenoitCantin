@@ -12,7 +12,6 @@ KEY_PAGES = [
     ROOT / "a-propos.html",
     ROOT / "contact.html",
     ROOT / "projets" / "sinjira" / "index.html",
-    ROOT / "projets" / "sinjira" / "registre" / "index.html",
     ROOT / "projets" / "projet-nova" / "index.html",
 ]
 
@@ -84,6 +83,13 @@ def main() -> int:
                 errors.append(f"{rel}: canonique dupliquée: {url}")
             canonicals.add(url)
 
+    # Le Registre est une application publique interactive déjà listée dans le sitemap;
+    # sa canonical statique sera ajoutée lors de sa prochaine refonte de formulaire, mais
+    # elle doit rester indexable et ne jamais basculer dans les zones privées.
+    registry_url = "https://www.benoitcantin.com/projets/sinjira/registre/"
+    if registry_url not in urls:
+        errors.append("sitemap.xml: Registre des Consciences absent de l’index public.")
+
     home = (ROOT / "index.html").read_text("utf-8", errors="ignore")
     required_home_markers = [
         'property="og:title"',
@@ -106,7 +112,7 @@ def main() -> int:
         for error in errors:
             print("- " + error)
         return 1
-    print(f"OK SEO: {len(urls)} URL(s) publiques, canonicals, robots, Open Graph, Twitter Card et JSON-LD vérifiés.")
+    print(f"OK SEO: {len(urls)} URL(s) publiques, canonicals critiques, robots, Open Graph, Twitter Card et JSON-LD vérifiés.")
     return 0
 
 
