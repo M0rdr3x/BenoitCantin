@@ -47,6 +47,8 @@ jobs:
         with:
           node-version: '22'
           package-manager-cache: false
+      - name: Vérifier la compatibilité multi-navigateurs
+        run: python scripts/validate_browser_compat.py
       - name: Vérifier l’accessibilité des parcours critiques
         run: python scripts/validate_accessibility.py
       - name: Vérifier les budgets de performance
