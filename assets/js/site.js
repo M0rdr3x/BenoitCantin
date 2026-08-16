@@ -15,15 +15,12 @@
     });
   }
 
-  // Constellation du portail : l'image centrale représente Benoit Cantin
-  // au repos, puis prévisualise chaque univers au survol ou au focus clavier.
   const core = document.querySelector('[data-core-preview]');
   if (core) {
     const coreImage = core.querySelector('img');
     const nodes = [...document.querySelectorAll('.cosmos-card .orbit-node[data-core-src]')];
     const defaultSrc = core.dataset.defaultSrc || coreImage?.getAttribute('src') || '';
     const defaultAlt = core.dataset.defaultAlt || coreImage?.getAttribute('alt') || 'Benoit Cantin';
-
     const showCore = (node) => {
       if (!coreImage || !node) return;
       const src = node.dataset.coreSrc;
@@ -36,7 +33,6 @@
         coreImage.classList.remove('is-changing');
       }, 90);
     };
-
     const resetCore = () => {
       if (!coreImage) return;
       core.classList.remove('is-project-preview');
@@ -47,7 +43,6 @@
         coreImage.classList.remove('is-changing');
       }, 90);
     };
-
     nodes.forEach((node) => {
       node.addEventListener('pointerenter', () => showCore(node));
       node.addEventListener('pointerleave', resetCore);
@@ -56,14 +51,8 @@
     });
   }
 
-  document.querySelectorAll('[data-year]').forEach((node) => {
-    node.textContent = new Date().getFullYear();
-  });
-
-  document.querySelectorAll('[data-disabled-download]').forEach((link) => {
-    link.addEventListener('click', (event) => event.preventDefault());
-  });
-
+  document.querySelectorAll('[data-year]').forEach((node) => { node.textContent = new Date().getFullYear(); });
+  document.querySelectorAll('[data-disabled-download]').forEach((link) => { link.addEventListener('click', (event) => event.preventDefault()); });
   document.querySelectorAll('[data-pending-form]').forEach((form) => {
     const action = form.getAttribute('action') || '';
     if (action.startsWith('https://formspree.io/f/')) return;
@@ -74,40 +63,17 @@
     }, true);
   });
 
-  // Correctifs cumulatifs V24.3.1 : questionnaire unique et accès Fracture.
   if (!document.querySelector('script[data-v2431-runtime]')) {
-    const runtime = document.createElement('script');
-    runtime.type = 'module';
-    runtime.src = '/assets/js/v24-3-1-runtime.js?v=24.3.6';
-    runtime.dataset.v2431Runtime = '';
-    document.head.appendChild(runtime);
+    const runtime = document.createElement('script');runtime.type = 'module';runtime.src = '/assets/js/v24-3-1-runtime.js?v=24.4.0';runtime.dataset.v2431Runtime = '';document.head.appendChild(runtime);
   }
-
-  // V24.3.2 : corrections visuelles, routage admin et diagnostics Supabase.
   if (!document.querySelector('script[data-v2432-runtime]')) {
-    const runtime = document.createElement('script');
-    runtime.type = 'module';
-    runtime.src = '/assets/js/v24-3-2-runtime.js?v=24.3.6';
-    runtime.dataset.v2432Runtime = '';
-    document.head.appendChild(runtime);
+    const runtime = document.createElement('script');runtime.type = 'module';runtime.src = '/assets/js/v24-3-2-runtime.js?v=24.4.0';runtime.dataset.v2432Runtime = '';document.head.appendChild(runtime);
   }
-
-  // V24.3.3 : stabilité responsive, messages serveur cohérents et état propriétaire.
   if (!document.querySelector('script[data-v2433-runtime]')) {
-    const runtime = document.createElement('script');
-    runtime.type = 'module';
-    runtime.src = '/assets/js/v24-3-3-runtime.js?v=24.3.6';
-    runtime.dataset.v2433Runtime = '';
-    document.head.appendChild(runtime);
+    const runtime = document.createElement('script');runtime.type = 'module';runtime.src = '/assets/js/v24-3-3-runtime.js?v=24.4.0';runtime.dataset.v2433Runtime = '';document.head.appendChild(runtime);
   }
-
-  // V24.3.6 : la disponibilité de Fracture dépend de la vraie version Supabase
-  // et non d'un simple déverrouillage visuel du compte propriétaire.
+  // V24.4 : contrôle du vrai moteur Fracture côté Supabase avant d'activer le salon.
   if (!document.querySelector('script[data-v2436-runtime]')) {
-    const runtime = document.createElement('script');
-    runtime.type = 'module';
-    runtime.src = '/assets/js/v24-3-6-runtime.js?v=24.3.6';
-    runtime.dataset.v2436Runtime = '';
-    document.head.appendChild(runtime);
+    const runtime = document.createElement('script');runtime.type = 'module';runtime.src = '/assets/js/v24-3-6-runtime.js?v=24.4.0';runtime.dataset.v2436Runtime = '';document.head.appendChild(runtime);
   }
 })();
