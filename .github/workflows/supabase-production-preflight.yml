@@ -7,6 +7,12 @@ on:
       - 'supabase/**'
       - 'scripts/validate_supabase.py'
       - '.github/workflows/supabase-production-preflight.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'supabase/**'
+      - 'scripts/validate_supabase.py'
+      - '.github/workflows/supabase-production-preflight.yml'
   workflow_dispatch:
     inputs:
       apply:
@@ -19,7 +25,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: supabase-production
+  group: supabase-production-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -73,7 +79,7 @@ jobs:
             echo "Le lancement manuel exige les deux secrets GitHub Actions."
             exit 2
           fi
-          echo "Push main : aucune écriture Supabase n'est tentée et l'absence de secrets n'échoue pas la CI."
+          echo "CI non destructive : aucune écriture Supabase n'est tentée et l'absence de secrets n'échoue pas la validation." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Lier le projet de production
         if: ${{ steps.auth.outputs.ready == 'true' }}
@@ -81,6 +87,36 @@ jobs:
         run: |
           set -euo pipefail
           supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Exporter l'historique exact des migrations de production
+        if: ${{ steps.auth.outputs.ready == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          cp -a supabase "$tmp/supabase"
+          rm -rf "$tmp/supabase/migrations"
+          mkdir -p "$tmp/supabase/migrations"
+          (
+            cd "$tmp"
+            supabase migration fetch --linked
+          )
+          rm -rf /tmp/supabase-production-migrations
+          mkdir -p /tmp/supabase-production-migrations
+          cp -a "$tmp/supabase/migrations/." /tmp/supabase-production-migrations/
+          find /tmp/supabase-production-migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort | tee /tmp/supabase-production-migrations/MANIFEST.txt
+          count="$(find /tmp/supabase-production-migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
+          echo "Historique distant exporté en lecture seule : $count migration(s)." >> "$GITHUB_STEP_SUMMARY"
+          test "$count" -gt 0
+
+      - name: Publier l'historique distant comme artefact de prévol
+        if: ${{ steps.auth.outputs.ready == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-production-migrations-${{ github.run_id }}
+          path: /tmp/supabase-production-migrations
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Auditer les fonctions SQL déjà en production
         if: ${{ steps.auth.outputs.ready == 'true' }}
@@ -202,6 +238,8 @@ jobs:
           echo '## ÉTAT PRODUCTION' >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ steps.auth.outputs.ready }}" != "true" ]; then
             echo '⛔ NON SYNCHRONISÉ : les secrets de connexion Supabase ne sont pas disponibles au workflow. Aucune écriture de production n’a eu lieu.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo '🟡 PRÉVOL PR : historique distant exporté, production auditée et dry-run exécuté; aucune écriture de production.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
             echo '🟡 PRÉVOL SEULEMENT : production auditée + dry-run; aucune migration ni Edge Function appliquée.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ inputs.apply }}" != "true" ]; then
