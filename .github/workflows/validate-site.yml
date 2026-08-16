@@ -36,3 +36,5 @@ jobs:
         run: python scripts/validate_pwa.py
       - name: Vérifier la structure Supabase
         run: python scripts/validate_supabase.py
+      - name: Vérifier les avatars 512 × 512 et leurs politiques Storage
+        run: python scripts/validate_storage_policies.py
