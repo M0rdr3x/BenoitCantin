@@ -1,11 +1,15 @@
 {
-  "name": "Projet Nova",
-  "short_name": "Nova",
-  "start_url": "/index.html",
+  "name": "SINJIRA™ — Benoit Cantin",
+  "short_name": "SINJIRA™",
+  "description": "Portail officiel SINJIRA™ de Benoit Cantin.",
+  "start_url": "/projets/sinjira/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#041528",
-  "theme_color": "#041528",
+  "background_color": "#070914",
+  "theme_color": "#070914",
+  "lang": "fr-CA",
   "icons": [
-    {"src": "assets/favicon.png", "sizes": "512x512", "type": "image/png"}
+    {"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"},
+    {"src":"/android-chrome-512x512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
   ]
 }
