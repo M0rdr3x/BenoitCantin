@@ -40,3 +40,5 @@ jobs:
         run: python scripts/validate_storage_policies.py
       - name: Vérifier la console administrateur complète
         run: python scripts/validate_admin_console.py
+      - name: Vérifier le moteur Fracture Online
+        run: python scripts/validate_fracture_engine.py
