@@ -1,0 +1,123 @@
+name: Retirer les Edge Functions Supabase héritées
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/retire-legacy-edge-functions.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: retire-legacy-edge-functions-production
+  cancel-in-progress: false
+
+jobs:
+  retire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_ID: gpvivleexywljowcqkru
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+          github-token: ${{ github.token }}
+
+      - name: Vérifier l'autorisation de maintenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+            echo 'SUPABASE_ACCESS_TOKEN absent : aucun retrait ne sera tenté.'
+            exit 2
+          fi
+
+      - name: Retirer uniquement les fonctions héritées hors dépôt
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          canonical=(
+            admin-analytics
+            admin-console
+            admin-license-codes
+            admin-reports
+            admin-sinjira-v18
+            admin-social-v20
+            admin-users
+            delete-player-account
+            fracture-engine-gateway
+            get-document-url
+            redeem-license-code
+            revoke-my-contributions
+            send-game-report
+            send-player-sheet
+            submit-character-questionnaire
+            submit-fracture-endgame
+            submit-game-contribution
+          )
+          retired=(
+            admin-reader
+            generate-sinjira-character
+            admin-literary
+            validate-phone-v22
+            guardian-create-youth-v22
+            create-youth-account
+          )
+
+          before="$(supabase functions list --project-ref "$PROJECT_ID")"
+          printf '%s\n' "$before" | tee /tmp/functions-before.txt
+
+          missing=0
+          for fn in "${canonical[@]}"; do
+            if ! grep -Fq "$fn" /tmp/functions-before.txt; then
+              echo "REFUS DU NETTOYAGE : fonction canonique absente avant retrait : $fn"
+              missing=1
+            fi
+          done
+          test "$missing" -eq 0
+
+          for fn in "${retired[@]}"; do
+            if [ -d "supabase/functions/$fn" ]; then
+              echo "REFUS DU NETTOYAGE : $fn existe encore dans le dépôt."
+              exit 3
+            fi
+            if grep -Fq "$fn" /tmp/functions-before.txt; then
+              echo "Retrait de la fonction héritée : $fn"
+              printf 'y\n' | supabase functions delete "$fn" --project-ref "$PROJECT_ID"
+            else
+              echo "Déjà absente : $fn"
+            fi
+          done
+
+          after="$(supabase functions list --project-ref "$PROJECT_ID")"
+          printf '%s\n' "$after" | tee /tmp/functions-after.txt
+
+          for fn in "${canonical[@]}"; do
+            grep -Fq "$fn" /tmp/functions-after.txt || {
+              echo "Fonction canonique manquante après nettoyage : $fn"
+              exit 4
+            }
+          done
+          for fn in "${retired[@]}"; do
+            if grep -Fq "$fn" /tmp/functions-after.txt; then
+              echo "Fonction héritée encore présente après nettoyage : $fn"
+              exit 5
+            fi
+          done
+
+          {
+            echo '## Nettoyage Edge Functions production'
+            echo '- 17 fonctions canoniques présentes avant et après le nettoyage.'
+            echo '- 6 fonctions héritées non suivies retirées (ou déjà absentes).'
+            echo '- Aucune fonction présente dans `supabase/functions/` n’a été supprimée.'
+          } >> "$GITHUB_STEP_SUMMARY"
