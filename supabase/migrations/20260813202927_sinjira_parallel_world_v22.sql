@@ -18,6 +18,7 @@ create table if not exists public.parallel_world_cycles(
   closes_at timestamptz not null,
   published_at timestamptz,
   status text not null default 'draft' check(status in ('draft','open','closed','published','archived')),
+  audience text not null default 'all' check(audience in ('all','adult','youth')),
   created_at timestamptz not null default now()
 );
 create table if not exists public.parallel_groups(
@@ -25,6 +26,7 @@ create table if not exists public.parallel_groups(
   name text not null,
   owner_user_id uuid not null references auth.users(id) on delete cascade,
   status text not null default 'active' check(status in ('active','closed')),
+  audience text not null default 'adult' check(audience in ('adult','youth')),
   created_at timestamptz not null default now()
 );
 create table if not exists public.parallel_group_members(
@@ -54,6 +56,7 @@ create table if not exists public.parallel_story_installments(
   title text not null,
   content text not null,
   published_at timestamptz,
+  audience text not null default 'all' check(audience in ('all','adult','youth')),
   created_at timestamptz not null default now(),
   check((story_kind='collective' and character_id is null) or (story_kind='individual' and character_id is not null))
 );
