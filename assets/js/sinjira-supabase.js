@@ -57,5 +57,5 @@ export { SINJIRA_CONFIG, isSinjiraBackendConfigured };
 // L'administration possède un diagnostic de santé indépendant de la console principale.
 // Le chargement est conditionnel afin de ne rien ajouter aux pages publiques.
 if(typeof location!=='undefined'&&/^\/admin\/sinjira(?:\/|$)/i.test(location.pathname)){
-  queueMicrotask(()=>import('./v24-admin-health.js?v=24.3.5').catch(err=>console.warn('[SINJIRA admin health loader]',err)));
+  queueMicrotask(()=>import('./v24-admin-health.js?v=24.3.6').catch(err=>console.warn('[SINJIRA admin health loader]',err)));
 }
