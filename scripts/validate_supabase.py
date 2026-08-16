@@ -9,7 +9,7 @@ FUN=ROOT/'supabase'/'functions'
 CONFIG=ROOT/'supabase'/'config.toml'
 FRONTEND=ROOT/'assets'/'js'/'sinjira-supabase-config.js'
 WORKFLOW=ROOT/'.github'/'workflows'/'supabase-production-preflight.yml'
-EXPECTED='24.4.12'
+EXPECTED='24.4.13'
 PROJECT='gpvivleexywljowcqkru'
 
 def read(p:Path)->str:return p.read_text('utf-8',errors='ignore')
@@ -43,7 +43,7 @@ def main()->int:
       'is_sinjira_owner','ensure_sinjira_owner_character','has_sinjira_product',
       'create_guardian_signup_invite','sinjira_age_band','sinjira_can_social_interact',
       'fracture_engine_health','fracture_engine_get_state','fracture_engine_start','fracture_engine_submit_accusation',
-      'create_fracture_party','join_fracture_party'
+      'create_fracture_party','join_fracture_party','is_fracture_party_member','sinjira_content_allowed','sinjira_cycle_allowed'
     }
     for name in sorted(required_funcs-funcs):fail(errors,f'RPC critique absente: {name}')
 
@@ -74,7 +74,7 @@ def main()->int:
         t=read(registry)
         for needle in ("persisted:true","version:VERSION","admin_notification_created","admin_email_sent","participant_email_sent","body?.health===true"):
             if needle not in t:fail(errors,f'Contrat Registre incomplet: {needle}')
-        if "const VERSION='24.4.12'" not in t:fail(errors,'Version Edge Registre différente de 24.4.12.')
+        if f"const VERSION='{EXPECTED}'" not in t:fail(errors,f'Version Edge Registre différente de {EXPECTED}.')
 
     config=read(CONFIG) if CONFIG.exists() else ''
     if f'project_id = "{PROJECT}"' not in config:fail(errors,'config.toml pointe vers le mauvais projet.')
