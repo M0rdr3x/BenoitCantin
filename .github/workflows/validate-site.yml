@@ -28,6 +28,8 @@ jobs:
           package-manager-cache: false
       - name: Vérifier les routes, fichiers, secrets et JavaScript
         run: python scripts/validate_site.py
+      - name: Vérifier le focus professionnel de l’accueil
+        run: python scripts/validate_home_focus.py
       - name: Vérifier les flux d’authentification
         run: python scripts/validate_auth.py
       - name: Vérifier PWA, SEO et cache hors ligne
