@@ -7,11 +7,13 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ID = "gpvivleexywljowcqkru"
+EXPECTED_SERVER_VERSION = "24.4.6"
 MIGRATIONS = ROOT / "supabase" / "migrations"
 FUNCTIONS = ROOT / "supabase" / "functions"
 CONFIG = ROOT / "supabase" / "config.toml"
 FRONTEND_CONFIG = ROOT / "assets" / "js" / "sinjira-supabase-config.js"
 WORKFLOW = ROOT / ".github" / "workflows" / "supabase-production-preflight.yml"
+CORS = FUNCTIONS / "_shared" / "cors.ts"
 
 DEFAULT_EDGE_ENV = {
     "SUPABASE_URL",
@@ -26,9 +28,34 @@ DEFAULT_EDGE_ENV = {
     "DENO_DEPLOYMENT_ID",
 }
 
+# Ces deux fonctions ont volontairement verify_jwt=false : elles effectuent leur propre
+# contrôle. send-game-report autorise seulement la génération PDF anonyme; le courriel
+# exige un utilisateur authentifié. get-document-url vérifie lui-même le niveau d'accès.
+ALLOWED_VERIFY_JWT_FALSE = {"send-game-report", "get-document-url"}
+
 
 def read(path: Path) -> str:
     return path.read_text("utf-8", errors="ignore")
+
+
+def source_files() -> list[Path]:
+    paths: list[Path] = []
+    for root in (ROOT / "assets" / "js", FUNCTIONS):
+        if root.exists():
+            paths.extend(p for p in root.rglob("*") if p.is_file() and p.suffix.lower() in {".js", ".ts"})
+    return paths
+
+
+def find_created_relations(sql: str) -> tuple[set[str], set[str]]:
+    table_rx = re.compile(
+        r"\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?([a-z_][a-z0-9_]*)",
+        re.I,
+    )
+    view_rx = re.compile(
+        r"\bcreate\s+(?:or\s+replace\s+)?(?:materialized\s+)?view\s+(?:public\.)?([a-z_][a-z0-9_]*)",
+        re.I,
+    )
+    return {m.lower() for m in table_rx.findall(sql)}, {m.lower() for m in view_rx.findall(sql)}
 
 
 def main() -> int:
@@ -37,7 +64,7 @@ def main() -> int:
 
     if not MIGRATIONS.exists():
         errors.append("Dossier supabase/migrations absent.")
-        migrations = []
+        migrations: list[Path] = []
     else:
         migrations = sorted(MIGRATIONS.glob("*.sql"))
 
@@ -58,17 +85,31 @@ def main() -> int:
     if versions != sorted(versions):
         errors.append("Les migrations ne sont pas ordonnées chronologiquement par leur timestamp.")
 
-    sql = "\n".join(read(path) for path in migrations)
-    for required in (
+    sql_parts = [read(path) for path in migrations]
+    sql = "\n".join(sql_parts)
+    sql_lower = sql.lower()
+
+    required_rpcs = {
         "get_sinjira_server_version",
         "fracture_engine_health",
         "fracture_engine_get_state",
+        "fracture_engine_start",
+        "fracture_engine_submit_keep",
+        "fracture_engine_pick",
+        "fracture_engine_submit_report",
+        "fracture_engine_submit_accusation",
+        "create_fracture_party",
+        "join_fracture_party",
         "is_sinjira_admin",
         "ensure_sinjira_owner_character",
         "has_sinjira_product",
-    ):
-        if required.lower() not in sql.lower():
+    }
+    for required in sorted(required_rpcs):
+        if required.lower() not in sql_lower:
             errors.append(f"RPC critique absente des migrations: {required}")
+
+    if f"select '{EXPECTED_SERVER_VERSION}'::text" not in sql_lower:
+        errors.append(f"Marqueur serveur attendu {EXPECTED_SERVER_VERSION} absent des migrations.")
 
     config_text = read(CONFIG) if CONFIG.exists() else ""
     if f'project_id = "{PROJECT_ID}"' not in config_text:
@@ -86,6 +127,10 @@ def main() -> int:
     for required in ("SUPABASE_ACCESS_TOKEN", "SUPABASE_DB_PASSWORD", PROJECT_ID):
         if required not in workflow:
             errors.append(f"Workflow Supabase incomplet: {required} absent.")
+    if "migration repair" in workflow.lower():
+        errors.append("Le workflow de production ne doit jamais réparer automatiquement l'historique des migrations.")
+    if "db push --linked --dry-run" not in workflow:
+        errors.append("Le workflow de production doit effectuer un dry-run avant application.")
 
     function_dirs = sorted(
         p.name for p in FUNCTIONS.iterdir()
@@ -99,12 +144,96 @@ def main() -> int:
     if stale_config:
         errors.append("Entrées config.toml sans dossier Edge Function: " + ", ".join(stale_config))
 
+    false_jwt = set()
+    for name, value in re.findall(
+        r"\[functions\.([^\]]+)\]\s*\n\s*verify_jwt\s*=\s*(true|false)",
+        config_text,
+        re.I,
+    ):
+        if value.lower() == "false":
+            false_jwt.add(name)
+    unexpected_false = sorted(false_jwt - ALLOWED_VERIFY_JWT_FALSE)
+    missing_false = sorted(ALLOWED_VERIFY_JWT_FALSE - false_jwt)
+    if unexpected_false:
+        errors.append("Edge Functions verify_jwt=false non autorisées: " + ", ".join(unexpected_false))
+    if missing_false:
+        warnings.append("Fonctions attendues avec authentification interne différentes de la configuration: " + ", ".join(missing_false))
+
+    sources = source_files()
+    source_text = "\n".join(read(path) for path in sources)
+
     custom_env: set[str] = set()
-    if FUNCTIONS.exists():
-        env_re = re.compile(r"Deno\.env\.get\(['\"]([A-Z0-9_]+)['\"]\)")
-        for path in FUNCTIONS.rglob("*.ts"):
+    env_re = re.compile(r"Deno\.env\.get\(['\"]([A-Z0-9_]+)['\"]\)")
+    for path in sources:
+        if path.suffix.lower() == ".ts":
             custom_env.update(env_re.findall(read(path)))
     custom_env -= DEFAULT_EDGE_ENV
+
+    # Contrat navigateur / Edge Functions -> schéma SQL.
+    tables, views = find_created_relations(sql)
+    defined_relations = tables | views
+    storage_buckets = set(re.findall(r"\.storage\.from\(\s*['\"]([a-zA-Z0-9_-]+)['\"]", source_text))
+    from_calls = set(re.findall(r"\.from\(\s*['\"]([a-zA-Z_][a-zA-Z0-9_]*)['\"]", source_text))
+    database_calls = {name.lower() for name in from_calls if name not in storage_buckets}
+    missing_relations = sorted(database_calls - defined_relations)
+    if missing_relations:
+        errors.append("Relations Supabase utilisées par le code mais absentes des migrations: " + ", ".join(missing_relations))
+
+    defined_rpcs = set(re.findall(
+        r"\bcreate\s+(?:or\s+replace\s+)?function\s+(?:public\.)?([a-z_][a-z0-9_]*)\s*\(",
+        sql,
+        re.I,
+    ))
+    defined_rpcs = {name.lower() for name in defined_rpcs}
+    called_rpcs = {name.lower() for name in re.findall(r"\.rpc\(\s*['\"]([a-zA-Z_][a-zA-Z0-9_]*)['\"]", source_text)}
+    missing_rpcs = sorted(called_rpcs - defined_rpcs)
+    if missing_rpcs:
+        errors.append("RPC appelées par le code mais absentes des migrations: " + ", ".join(missing_rpcs))
+
+    invoked_edges = set(re.findall(r"\.functions\.invoke\(\s*['\"]([a-zA-Z0-9_-]+)['\"]", source_text))
+    missing_edges = sorted(invoked_edges - set(function_dirs))
+    if missing_edges:
+        errors.append("Edge Functions invoquées mais absentes du dépôt: " + ", ".join(missing_edges))
+
+    # Toute table applicative créée par les migrations doit avoir RLS activé quelque part
+    # dans l'historique. Les Edge Functions service-role peuvent ensuite contourner RLS
+    # explicitement, mais le navigateur ne doit jamais dépendre d'une table sans RLS.
+    rls_enabled = set(re.findall(
+        r"\balter\s+table\s+(?:if\s+exists\s+)?(?:public\.)?([a-z_][a-z0-9_]*)\s+enable\s+row\s+level\s+security",
+        sql,
+        re.I,
+    ))
+    rls_enabled = {name.lower() for name in rls_enabled}
+    missing_rls = sorted(tables - rls_enabled)
+    if missing_rls:
+        errors.append("Tables applicatives sans activation RLS détectée: " + ", ".join(missing_rls))
+
+    # SECURITY DEFINER doit toujours verrouiller search_path. Ce contrôle est volontairement
+    # conservateur : il analyse chaque bloc CREATE FUNCTION terminé par $$;.
+    function_blocks = re.findall(
+        r"(create\s+(?:or\s+replace\s+)?function\s+.*?\$\$;)",
+        sql,
+        re.I | re.S,
+    )
+    insecure_definers: list[str] = []
+    for block in function_blocks:
+        if "security definer" not in block.lower():
+            continue
+        if "set search_path" in block.lower():
+            continue
+        match = re.search(r"function\s+(?:public\.)?([a-z_][a-z0-9_]*)", block, re.I)
+        insecure_definers.append(match.group(1) if match else "fonction_inconnue")
+    if insecure_definers:
+        errors.append("SECURITY DEFINER sans SET search_path explicite: " + ", ".join(sorted(set(insecure_definers))))
+
+    if CORS.exists():
+        cors_text = read(CORS)
+        if "https://www.benoitcantin.com" not in cors_text:
+            errors.append("CORS Edge Functions: origine de production SINJIRA absente.")
+        if "Access-Control-Allow-Origin': '*'" in cors_text or 'Access-Control-Allow-Origin": "*"' in cors_text:
+            errors.append("CORS Edge Functions trop permissif: origine * détectée.")
+    else:
+        errors.append("Fichier CORS partagé des Edge Functions absent.")
 
     tracked_env = [
         p.relative_to(ROOT).as_posix()
@@ -115,8 +244,12 @@ def main() -> int:
         errors.append("Fichier(s) .env suivi(s) dans le dépôt: " + ", ".join(tracked_env))
 
     print(
-        f"Validation Supabase: {len(migrations)} migrations, "
-        f"{len(function_dirs)} Edge Functions, {len(custom_env)} variable(s) personnalisée(s)."
+        f"Validation Supabase profonde: {len(migrations)} migrations, "
+        f"{len(tables)} tables, {len(defined_rpcs)} RPC, {len(function_dirs)} Edge Functions."
+    )
+    print(
+        f"Contrats code: {len(database_calls)} relation(s), {len(called_rpcs)} RPC appelée(s), "
+        f"{len(invoked_edges)} Edge Function(s) invoquée(s)."
     )
     if custom_env:
         print("Variables Edge personnalisées détectées: " + ", ".join(sorted(custom_env)))
@@ -129,7 +262,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK: structure Supabase cohérente pour le déploiement.")
+    print("OK: structure, contrats et garde-fous Supabase cohérents pour le déploiement.")
     return 0
 
 
