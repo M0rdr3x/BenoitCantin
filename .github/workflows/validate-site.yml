@@ -42,3 +42,5 @@ jobs:
         run: python scripts/validate_admin_console.py
       - name: Vérifier le moteur Fracture Online
         run: python scripts/validate_fracture_engine.py
+      - name: Vérifier le compte propriétaire AbyssTime
+        run: python scripts/validate_owner_account.py
