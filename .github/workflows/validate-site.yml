@@ -44,3 +44,5 @@ jobs:
         run: python scripts/validate_fracture_engine.py
       - name: Vérifier le compte propriétaire AbyssTime
         run: python scripts/validate_owner_account.py
+      - name: Vérifier la séparation jeunesse / adulte
+        run: python scripts/validate_youth_safety.py
