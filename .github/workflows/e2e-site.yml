@@ -17,7 +17,7 @@ concurrency:
 jobs:
   browser-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Récupérer le dépôt
         uses: actions/checkout@v6
@@ -47,6 +47,16 @@ jobs:
         env:
           BASE_URL: http://127.0.0.1:4173/
         run: python tests/e2e/test_public_site.py
+
+      - name: Auditer l’accueil en profil mobile Lighthouse
+        run: |
+          npx --yes lighthouse http://127.0.0.1:4173/ \
+            --quiet \
+            --output=json \
+            --output-path=/tmp/lighthouse-mobile.json \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"
+          python scripts/check_lighthouse.py /tmp/lighthouse-mobile.json
 
       - name: Tester le site public réellement déployé
         if: github.event_name != 'pull_request'
