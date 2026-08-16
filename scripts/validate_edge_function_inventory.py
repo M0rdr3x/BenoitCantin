@@ -35,8 +35,6 @@ RETIRED = {
     "create-youth-account",
 }
 
-# Ces deux fonctions ont volontairement verify_jwt=false. Elles doivent donc
-# conserver leurs garde-fous applicatifs spécifiques dans leur code.
 CUSTOM_AUTH = {
     "get-document-url": (
         "optionalUser",
@@ -52,15 +50,31 @@ CUSTOM_AUTH = {
     ),
 }
 
+TEXT_SUFFIXES = {".ts", ".js", ".json", ".toml", ".md", ".html"}
+
+
+def text_files(path: Path):
+    if not path.exists():
+        return
+    for file in sorted(path.rglob("*")):
+        if file.is_file() and file.suffix in TEXT_SUFFIXES:
+            yield file
+
 
 def read_tree_text(path: Path) -> str:
-    parts: list[str] = []
-    if not path.exists():
-        return ""
-    for file in sorted(path.rglob("*")):
-        if file.is_file() and file.suffix in {".ts", ".js", ".json", ".toml", ".md", ".html"}:
-            parts.append(file.read_text("utf-8", errors="ignore"))
-    return "\n".join(parts)
+    return "\n".join(
+        file.read_text("utf-8", errors="ignore")
+        for file in text_files(path) or []
+    )
+
+
+def find_references(paths: list[Path], needle: str) -> list[str]:
+    hits: list[str] = []
+    for root in paths:
+        for file in text_files(root) or []:
+            if needle in file.read_text("utf-8", errors="ignore"):
+                hits.append(str(file.relative_to(ROOT)))
+    return sorted(set(hits))
 
 
 def main() -> int:
@@ -108,25 +122,18 @@ def main() -> int:
         verify = cfg.get("verify_jwt") if isinstance(cfg, dict) else None
         expected = slug not in CUSTOM_AUTH
         if verify is not expected:
-            errors.append(
-                f"{slug}: verify_jwt={verify!r}, attendu {expected!r}."
-            )
+            errors.append(f"{slug}: verify_jwt={verify!r}, attendu {expected!r}.")
 
         entry = FUNCTIONS / slug / "index.ts"
         if not entry.exists():
             errors.append(f"{slug}: index.ts absent.")
 
-    # Les fonctions sans vérification JWT plateforme doivent prouver leurs
-    # protections applicatives dans leur source canonique.
     for slug, markers in CUSTOM_AUTH.items():
         source = read_tree_text(FUNCTIONS / slug)
         for marker in markers:
             if marker not in source:
-                errors.append(
-                    f"{slug}: garde-fou custom auth/access manquant: {marker}."
-                )
+                errors.append(f"{slug}: garde-fou custom auth/access manquant: {marker}.")
 
-    # Aucune route/frontend canonique ne doit réintroduire les anciens slugs.
     searchable_roots = [
         ROOT / "assets",
         ROOT / "compte",
@@ -134,10 +141,12 @@ def main() -> int:
         ROOT / "admin",
         ROOT / "supabase" / "functions",
     ]
-    public_source = "\n".join(read_tree_text(root) for root in searchable_roots)
     for slug in sorted(RETIRED):
-        if slug in public_source:
-            errors.append(f"Référence à une Edge Function retirée: {slug}.")
+        hits = find_references(searchable_roots, slug)
+        if hits:
+            errors.append(
+                f"Référence à une Edge Function retirée: {slug} — " + ", ".join(hits)
+            )
 
     if errors:
         print(f"ECHEC inventaire Edge Functions: {len(errors)} problème(s).")
