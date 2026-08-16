@@ -31,3 +31,22 @@ create or replace function public.get_sinjira_server_version()
 returns text language sql stable security definer set search_path=public as $$ select '24.4.2'::text; $$;
 revoke all on function public.get_sinjira_server_version() from public,anon;
 grant execute on function public.get_sinjira_server_version() to authenticated,service_role;
+
+create or replace function public.fracture_engine_health()
+returns jsonb language sql stable security definer set search_path=public as $$
+  select jsonb_build_object(
+    'ok',true,
+    'engine_version','24.4.2',
+    'tables',jsonb_build_object(
+      'games',to_regclass('public.fracture_engine_games') is not null,
+      'seats',to_regclass('public.fracture_engine_seats') is not null,
+      'cards',to_regclass('public.fracture_engine_cards') is not null,
+      'actions',to_regclass('public.fracture_engine_actions') is not null,
+      'rounds',to_regclass('public.fracture_engine_rounds') is not null,
+      'votes',to_regclass('public.fracture_engine_votes') is not null,
+      'events',to_regclass('public.fracture_engine_events') is not null
+    )
+  );
+$$;
+revoke all on function public.fracture_engine_health() from public,anon;
+grant execute on function public.fracture_engine_health() to authenticated,service_role;
