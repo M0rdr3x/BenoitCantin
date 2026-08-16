@@ -1,12 +1,12 @@
-# SINJIRA™ — activer la synchronisation Supabase production
+# SINJIRA™ — synchronisation Supabase production
 
-Le dépôt contient un workflow manuel sécurisé :
+Le dépôt utilise un workflow manuel sécurisé :
 
 `.github/workflows/supabase-production-preflight.yml`
 
-Projet de production verrouillé dans le workflow : `gpvivleexywljowcqkru`.
+Projet de production verrouillé : `gpvivleexywljowcqkru`.
 
-## 1. Secrets GitHub Actions requis
+## 1. Secrets GitHub Actions indispensables
 
 Dans le dépôt GitHub : **Settings → Secrets and variables → Actions → New repository secret**.
 
@@ -17,63 +17,97 @@ Créer exactement :
 
 Ne jamais mettre ces valeurs dans un fichier du dépôt, dans le JavaScript du navigateur, dans une migration SQL ou dans une conversation.
 
-## 2. Secret Supabase requis pour les licences
+Le connecteur GitHub utilisé par l'assistant ne peut ni lire ni créer ces deux secrets à votre place.
 
-Les Edge Functions de codes d’activation utilisent aussi :
+## 2. Secrets Edge Functions
 
-- `SINJIRA_LICENSE_PEPPER`
+Le workflow V24.4.5 garantit automatiquement la présence d'un `SINJIRA_LICENSE_PEPPER` stable. S'il est absent, une valeur cryptographiquement aléatoire est créée directement dans les secrets Supabase et sa valeur n'est jamais affichée. S'il existe déjà, elle est conservée afin de ne jamais invalider les anciens codes d'activation.
 
-Ce secret doit être défini dans les secrets Edge Functions de Supabase. Il doit être long, aléatoire et stable. Le changer après émission de codes rendrait les anciens codes impossibles à vérifier.
+Le workflow configure aussi :
 
-## 3. Premier passage : prévisualisation uniquement
+- `REPORT_FROM_EMAIL=SINJIRA <no-reply@benoitcantin.com>`
+- `CHARACTER_REPORT_TO_EMAIL=kingtyrano@gmail.com`
+- `FRACTURE_REPORT_TO_EMAIL=kingtyrano@gmail.com`
+
+Secrets externes facultatifs :
+
+- `RESEND_API_KEY` : active l'envoi de rapports/courriels. Sans cette clé, les téléchargements restent disponibles mais l'envoi de courriel est désactivé.
+- `OPENAI_API_KEY` : facultatif. SINJIRA™ doit continuer de fonctionner avec l'IA externe désactivée.
+- variable GitHub facultative `OPENAI_CHARACTER_MODEL` : modèle à utiliser uniquement si l'IA de personnage est volontairement activée.
+
+## 3. Migrations : format corrigé V24.4.5
+
+Les migrations ont maintenant des timestamps Supabase **uniques sur 14 chiffres** (`YYYYMMDDHHMMSS`). Cette correction est nécessaire parce que Supabase identifie une migration par son timestamp.
+
+Les trois migrations Fracture les plus récentes sont :
+
+1. `20260816090000_fracture_web_engine_v24_4.sql`
+2. `20260816100000_fracture_web_engine_v24_4_1_hotfix.sql`
+3. `20260816110000_fracture_web_engine_v24_4_2_privacy.sql`
+
+Le contenu SQL n'a pas été modifié lors du renommage; seul l'identifiant chronologique du fichier a été corrigé pour éviter les collisions de migration.
+
+## 4. Premier passage : prévisualisation uniquement
 
 Dans **Actions → Synchroniser Supabase production → Run workflow** :
 
 1. laisser `apply = false`;
 2. lancer le workflow;
-3. vérifier `migration list`;
-4. vérifier le résultat de `supabase db push --dry-run`;
-5. ne rien appliquer si l’historique distant ne correspond pas aux migrations attendues.
+3. le workflow valide d'abord la structure Supabase du dépôt;
+4. il lie le projet de production;
+5. il affiche `migration list`;
+6. il exécute `supabase db push --dry-run`;
+7. il ne modifie ni la base, ni les secrets, ni les Edge Functions.
 
-## 4. Synchronisation réelle
+Si l'historique distant diffère de l'historique local, **ne pas lancer `apply = true`**. Il faut d'abord réconcilier l'historique distant avec les migrations réellement déjà présentes en production. Le workflow ne fait jamais de `migration repair` automatique, afin d'éviter de marquer par erreur une migration comme appliquée.
 
-Si le dry-run est cohérent, relancer le même workflow avec `apply = true`.
+## 5. Synchronisation réelle
+
+Lorsque le dry-run est cohérent, relancer le workflow avec `apply = true`.
 
 Le workflow :
 
-1. lie le projet de production;
-2. relit l’historique des migrations;
-3. exécute un dry-run;
-4. applique les migrations manquantes avec `supabase db push`;
-5. déploie les Edge Functions du dépôt;
-6. relit l’historique après déploiement.
-
-Les migrations Fracture Web les plus récentes doivent se terminer par :
-
-1. `20260816_fracture_web_engine_v24_4.sql`
-2. `20260816_fracture_web_engine_v24_4_1_hotfix.sql`
-3. `20260816_fracture_web_engine_v24_4_2_privacy.sql`
+1. applique les migrations manquantes;
+2. crée ou conserve le secret de licence stable;
+3. configure les paramètres serveur de courriel;
+4. synchronise les secrets externes optionnels présents dans GitHub;
+5. déploie **toutes** les Edge Functions du dépôt via l'API Supabase;
+6. vérifie qu'aucune Edge Function du dépôt ne manque côté production;
+7. relit l'historique des migrations;
+8. refait un `db push --dry-run` final pour confirmer qu'aucune migration n'est encore en attente.
 
 Le marqueur serveur attendu après synchronisation est **`24.4.2`**.
 
-## 5. Validation après déploiement
+## 6. Compatibilité des clés serveur
 
-Ouvrir **Administration → État du système**. Les composants essentiels doivent être `NORMAL`. Les lignes `PROTÉGÉ` peuvent être normales lorsqu’une table est volontairement inaccessible directement au navigateur.
+Le code partagé des Edge Functions accepte maintenant en priorité les clés Supabase modernes via `SUPABASE_SECRET_KEYS`, avec repli sur la clé legacy `SUPABASE_SERVICE_ROLE_KEY`. Aucun secret serveur n'est exposé au navigateur.
+
+## 7. Validation après déploiement
+
+Ouvrir **Administration → État du système**. Les composants essentiels doivent être `NORMAL`. Les tables internes du moteur Fracture peuvent rester inaccessibles directement au navigateur : leur état est vérifié par `fracture_engine_health()`.
 
 Tester dans cet ordre :
 
+- connexion / inscription / récupération de mot de passe;
 - AbyssTime / propriétaire;
-- coffre privé;
-- personnage et fiche sociale;
-- licences et codes d’activation;
-- questionnaire;
-- **Fracture Solo** : créer une partie à 1 humain, démarrer, vérifier les deux sièges moteur et terminer une ronde;
-- **Fracture Duo** : deux comptes humains, vérifier que le siège 3 est joué par le moteur;
-- **Fracture multijoueur** : créer/join avec un code `FRM-XXXXXX`;
-- reprise de session après actualisation/fermeture du navigateur;
+- profil privé, avatar et relations;
+- personnage, questionnaire et Registre;
+- bibliothèque et droits d'accès;
+- licences et codes d'activation;
+- **Fracture Solo** : 1 humain + 2 sièges moteur;
+- **Fracture Duo** : 2 humains + siège 3 moteur;
+- **Fracture multijoueur** : création et entrée par code;
+- reprise de session après actualisation;
 - accusation finale et résultat automatique;
-- rapports de fin de partie.
+- téléchargement du rapport de partie;
+- envoi du rapport par courriel seulement si `RESEND_API_KEY` est configuré;
+- Communauté, Monde parallèle, Marché et autres modules exposés par le compte.
 
-## Blocage actuel connu
+## Blocage qui ne peut pas être automatisé depuis le dépôt
 
-Le dernier prévol GitHub a confirmé que `SUPABASE_ACCESS_TOKEN` et `SUPABASE_DB_PASSWORD` ne sont pas encore présents dans les GitHub Actions secrets. Tant qu’ils sont absents, le workflow s’arrête volontairement **avant toute modification de Supabase production**.
+Les deux seules informations de connexion que le dépôt ne peut pas fabriquer sont :
+
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_DB_PASSWORD`
+
+Elles doivent être ajoutées une fois dans GitHub Actions par le propriétaire. Après cela, le workflow V24.4.5 peut effectuer le prévol puis la synchronisation complète sans révéler ces valeurs.

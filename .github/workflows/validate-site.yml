@@ -27,3 +27,5 @@ jobs:
           node-version: '22'
       - name: Vérifier les routes, fichiers, secrets et JavaScript
         run: python scripts/validate_site.py
+      - name: Vérifier la structure Supabase
+        run: python scripts/validate_supabase.py
