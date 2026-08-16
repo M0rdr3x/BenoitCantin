@@ -86,8 +86,10 @@ def main() -> int:
         fail(errors, "Client Fracture introuvable.")
 
     # La liste publique des commentaires est volontairement une RPC SECURITY DEFINER:
-    # elle évite d'ouvrir les tables de modération. Le contrat exige que la définition
-    # canonique continue de ne retourner que le contenu approuvé et non masqué/signalé.
+    # elle évite d'ouvrir les tables de modération. Le schéma canonique utilise le
+    # statut unique (pending/approved/...) plutôt que des colonnes is_hidden/is_reported.
+    # Le contrat exige donc: roman identifiable, commentaires activés, statut approved
+    # et limite dure afin de contenir la surface publique et le coût de la requête.
     comment_defs = re.findall(
         r"create\s+(?:or\s+replace\s+)?function\s+public\.list_sinjira_novel_comments\s*\([^)]*\).*?\$\$.*?\$\$\s*;",
         all_sql,
@@ -97,9 +99,14 @@ def main() -> int:
         fail(errors, "RPC publique de commentaires introuvable.")
     else:
         comment = compact(comment_defs[-1])
-        for marker in ("c.status='approved'", "c.is_hidden=false", "c.is_reported=false"):
+        for marker in (
+            "c.status='approved'",
+            "n.comments_enabled=true",
+            "n.slug=trim(p_novel_slug)",
+            "limit250",
+        ):
             if compact(marker) not in comment:
-                fail(errors, f"Filtre de modération manquant dans list_sinjira_novel_comments: {marker}.")
+                fail(errors, f"Garde publique manquante dans list_sinjira_novel_comments: {marker}.")
 
     if errors:
         print(f"ECHEC contrat sécurité: {len(errors)} problème(s).")
