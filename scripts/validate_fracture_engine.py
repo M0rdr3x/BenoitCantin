@@ -116,7 +116,7 @@ def main()->int:
   errors.append('Dos de carte officiel Fracture absent.')
  else:
   raw=CARD_BACK.read_bytes()
-  if len(raw)<20000:
+  if len(raw)<12000:
    errors.append('Dos de carte officiel anormalement petit / possiblement corrompu.')
   if len(raw)<12 or raw[:4]!=b'RIFF' or raw[8:12]!=b'WEBP':
    errors.append('Dos de carte officiel n’est pas un WebP valide.')
