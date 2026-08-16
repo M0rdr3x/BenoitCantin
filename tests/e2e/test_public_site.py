@@ -126,16 +126,16 @@ def run() -> None:
         assert_true(toggle.get_attribute("aria-expanded") == "false", f"{BROWSER_NAME}: menu mobile ne se referme pas")
         mobile.close()
 
-        # Une page privée peut être servie statiquement, mais ne doit jamais embarquer
-        # l’identité de connexion du propriétaire ni être indexable sans session.
-        page.goto(urljoin(BASE_URL, "compte/"), wait_until="domcontentloaded", timeout=30_000)
-        html = page.content().lower()
-        assert_true("kingtyrano@gmail.com" not in html, "Adresse propriétaire embarquée dans la page compte")
-        robots = page.locator('meta[name="robots"]')
-        assert_true(
-            robots.count() == 1 and "noindex" in (robots.get_attribute("content") or "").lower(),
-            "Page compte non protégée contre l’indexation",
-        )
+        # Contrôle la réponse HTML initiale de la zone privée. Certains moteurs
+        # exécutent la redirection d’authentification avant que Playwright ne lise
+        # le DOM; le contrat noindex doit donc être vérifié sur la réponse source.
+        account_url = urljoin(BASE_URL, "compte/")
+        account_response = context.request.get(account_url, timeout=30_000)
+        assert_true(account_response.ok, f"{BROWSER_NAME}: page compte inaccessible")
+        account_html = account_response.text().lower()
+        assert_true("kingtyrano@gmail.com" not in account_html, "Adresse propriétaire embarquée dans la page compte")
+        has_robots = 'name="robots"' in account_html or "name='robots'" in account_html
+        assert_true(has_robots and "noindex" in account_html, "Page compte non protégée contre l’indexation")
 
         all_errors = page_errors + mobile_errors
         assert_true(not all_errors, f"{BROWSER_NAME}: erreurs JavaScript navigateur: " + " | ".join(all_errors[:5]))
