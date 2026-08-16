@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       apply:
-        description: "Appliquer réellement les migrations et déployer les Edge Functions"
+        description: "Appliquer réellement les migrations, secrets opérationnels et Edge Functions"
         required: true
         type: boolean
         default: false
@@ -12,52 +12,159 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: supabase-production
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_ID: gpvivleexywljowcqkru
+      OPTIONAL_RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      OPTIONAL_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPTIONAL_OPENAI_CHARACTER_MODEL: ${{ vars.OPENAI_CHARACTER_MODEL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Installer Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Vérifier les secrets requis
+      - name: Vérifier le dépôt Supabase
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_supabase.py
+
+      - name: Vérifier les secrets GitHub requis
         shell: bash
         run: |
           set -euo pipefail
           test -n "$SUPABASE_ACCESS_TOKEN" || { echo "SUPABASE_ACCESS_TOKEN manquant"; exit 2; }
           test -n "$SUPABASE_DB_PASSWORD" || { echo "SUPABASE_DB_PASSWORD manquant"; exit 2; }
+          echo "Secrets de connexion Supabase présents." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Lier le projet de production
         shell: bash
-        run: supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
 
       - name: Comparer l'historique des migrations
         shell: bash
-        run: supabase migration list
+        run: |
+          set -euo pipefail
+          supabase migration list --linked --password "$SUPABASE_DB_PASSWORD" | tee /tmp/sinjira-migrations-before.txt
+          echo '### Historique Supabase avant synchronisation' >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/sinjira-migrations-before.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Prévisualiser les migrations sans modifier la production
         shell: bash
-        run: supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD"
+        run: |
+          set -euo pipefail
+          supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD" | tee /tmp/sinjira-dry-run.txt
+          echo '### Dry-run base de données' >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/sinjira-dry-run.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Appliquer les migrations de production
         if: ${{ inputs.apply == true }}
         shell: bash
-        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
+        run: |
+          set -euo pipefail
+          supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
 
-      - name: Déployer les Edge Functions du dépôt
+      - name: Garantir les secrets Edge Functions indispensables
         if: ${{ inputs.apply == true }}
         shell: bash
-        run: supabase functions deploy --project-ref "$PROJECT_ID"
+        run: |
+          set -euo pipefail
+          secrets="$(supabase secrets list --project-ref "$PROJECT_ID")"
 
-      - name: Vérifier l'historique après déploiement
+          if ! grep -Eq '(^|[[:space:]])SINJIRA_LICENSE_PEPPER([[:space:]]|$)' <<< "$secrets"; then
+            pepper="$(openssl rand -hex 32)"
+            supabase secrets set "SINJIRA_LICENSE_PEPPER=$pepper" --project-ref "$PROJECT_ID"
+            unset pepper
+            echo "SINJIRA_LICENSE_PEPPER créé une seule fois dans Supabase (valeur non affichée)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "SINJIRA_LICENSE_PEPPER déjà présent; conservation de la valeur existante." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          supabase secrets set \
+            "REPORT_FROM_EMAIL=SINJIRA <no-reply@benoitcantin.com>" \
+            "CHARACTER_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
+            "FRACTURE_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
+            --project-ref "$PROJECT_ID"
+
+          if [ -n "${OPTIONAL_RESEND_API_KEY:-}" ]; then
+            supabase secrets set "RESEND_API_KEY=$OPTIONAL_RESEND_API_KEY" --project-ref "$PROJECT_ID"
+          fi
+          if [ -n "${OPTIONAL_OPENAI_API_KEY:-}" ]; then
+            supabase secrets set "OPENAI_API_KEY=$OPTIONAL_OPENAI_API_KEY" --project-ref "$PROJECT_ID"
+          fi
+          if [ -n "${OPTIONAL_OPENAI_CHARACTER_MODEL:-}" ]; then
+            supabase secrets set "OPENAI_CHARACTER_MODEL=$OPTIONAL_OPENAI_CHARACTER_MODEL" --project-ref "$PROJECT_ID"
+          fi
+
+          secrets_after="$(supabase secrets list --project-ref "$PROJECT_ID")"
+          if grep -Eq '(^|[[:space:]])RESEND_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then
+            echo "Courriel transactionnel: secret RESEND_API_KEY présent." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Courriel transactionnel: RESEND_API_KEY absent; les fonctions de téléchargement restent disponibles, mais l'envoi de courriel restera désactivé." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if grep -Eq '(^|[[:space:]])OPENAI_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then
+            echo "IA optionnelle: OPENAI_API_KEY présent." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "IA optionnelle: OPENAI_API_KEY absent; SINJIRA continue de fonctionner en mode IA désactivée." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Déployer toutes les Edge Functions du dépôt
         if: ${{ inputs.apply == true }}
         shell: bash
-        run: supabase migration list
+        run: |
+          set -euo pipefail
+          supabase functions deploy --project-ref "$PROJECT_ID" --use-api
+
+      - name: Vérifier les Edge Functions déployées
+        if: ${{ inputs.apply == true }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase functions list --project-ref "$PROJECT_ID" | tee /tmp/sinjira-functions.txt
+          missing=0
+          while IFS= read -r name; do
+            [ -z "$name" ] && continue
+            if ! grep -Fq "$name" /tmp/sinjira-functions.txt; then
+              echo "Edge Function manquante après déploiement: $name"
+              missing=1
+            fi
+          done < <(find supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name '_*' -printf '%f\n' | sort)
+          test "$missing" -eq 0
+
+      - name: Vérifier l'historique et le dry-run après déploiement
+        if: ${{ inputs.apply == true }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase migration list --linked --password "$SUPABASE_DB_PASSWORD" | tee /tmp/sinjira-migrations-after.txt
+          supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD" | tee /tmp/sinjira-dry-run-after.txt
+          echo '### Vérification finale Supabase' >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/sinjira-migrations-after.txt >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/sinjira-dry-run-after.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
