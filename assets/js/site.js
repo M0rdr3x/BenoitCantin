@@ -1,143 +1,246 @@
-(() => {
-  const toggle = document.querySelector('[data-menu-toggle]');
-  const nav = document.querySelector('[data-main-nav]');
+(function () {
+  'use strict';
+
+  var doc = document;
+  var root = doc.documentElement;
+
+  function hasClass(node, className) {
+    return node && (' ' + (node.className || '') + ' ').indexOf(' ' + className + ' ') !== -1;
+  }
+
+  function addClass(node, className) {
+    if (!node || hasClass(node, className)) return;
+    node.className = ((node.className || '') + ' ' + className).replace(/^\s+|\s+$/g, '');
+  }
+
+  function removeClass(node, className) {
+    if (!node) return;
+    node.className = (' ' + (node.className || '') + ' ')
+      .replace(' ' + className + ' ', ' ')
+      .replace(/^\s+|\s+$/g, '');
+  }
+
+  function closestAnchor(node, boundary) {
+    while (node && node !== boundary) {
+      if (String(node.tagName || '').toLowerCase() === 'a') return node;
+      node = node.parentNode;
+    }
+    return null;
+  }
+
+  function appendCompatStylesheet() {
+    if (doc.querySelector('link[data-sinjira-browser-compat]')) return;
+    var link = doc.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/assets/css/browser-compat-v24-4-22.css?v=24.4.22';
+    link.setAttribute('data-sinjira-browser-compat', '');
+    doc.head.appendChild(link);
+  }
+
+  appendCompatStylesheet();
+
+  var toggle = doc.querySelector('[data-menu-toggle]');
+  var nav = doc.querySelector('[data-main-nav]');
   if (toggle && nav) {
-    toggle.addEventListener('click', () => {
-      const open = toggle.getAttribute('aria-expanded') === 'true';
-      toggle.setAttribute('aria-expanded', String(!open));
-      nav.classList.toggle('open', !open);
+    toggle.addEventListener('click', function () {
+      var open = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+      if (open) removeClass(nav, 'open');
+      else addClass(nav, 'open');
     });
-    nav.addEventListener('click', (event) => {
-      if (event.target.closest('a')) {
+
+    nav.addEventListener('click', function (event) {
+      if (closestAnchor(event.target, nav)) {
         toggle.setAttribute('aria-expanded', 'false');
-        nav.classList.remove('open');
+        removeClass(nav, 'open');
       }
     });
   }
 
-  const core = document.querySelector('[data-core-preview]');
+  var core = doc.querySelector('[data-core-preview]');
   if (core) {
-    const coreImage = core.querySelector('img');
-    const nodes = [...document.querySelectorAll('.orbit-node[data-core-src]')];
-    const defaultSrc = core.dataset.defaultSrc || coreImage?.getAttribute('src') || '';
-    const defaultAlt = core.dataset.defaultAlt || coreImage?.getAttribute('alt') || 'Benoit Cantin';
-    let changeTimer = null;
+    var coreImage = core.querySelector('img');
+    var nodeList = doc.querySelectorAll('.orbit-node[data-core-src]');
+    var nodes = Array.prototype.slice.call(nodeList);
+    var defaultSrc = core.getAttribute('data-default-src') || (coreImage ? coreImage.getAttribute('src') : '') || '';
+    var defaultAlt = core.getAttribute('data-default-alt') || (coreImage ? coreImage.getAttribute('alt') : '') || 'Benoit Cantin';
+    var changeTimer = null;
 
-    const swap = (src, alt, active) => {
+    function swap(src, alt, active) {
       if (!coreImage || !src) return;
       if (changeTimer) window.clearTimeout(changeTimer);
-      core.classList.toggle('is-project-preview', Boolean(active));
-      coreImage.classList.add('is-changing');
-      changeTimer = window.setTimeout(() => {
+      if (active) addClass(core, 'is-project-preview');
+      else removeClass(core, 'is-project-preview');
+      addClass(coreImage, 'is-changing');
+      changeTimer = window.setTimeout(function () {
         coreImage.src = src;
         coreImage.alt = alt || '';
-        coreImage.classList.remove('is-changing');
+        removeClass(coreImage, 'is-changing');
       }, 80);
-    };
+    }
 
-    const showCore = (node) => swap(
-      node?.dataset.coreSrc,
-      node?.dataset.coreAlt || node?.getAttribute('aria-label') || '',
-      true
-    );
-    const resetCore = () => swap(defaultSrc, defaultAlt, false);
+    function showCore(node) {
+      swap(
+        node ? node.getAttribute('data-core-src') : '',
+        (node && (node.getAttribute('data-core-alt') || node.getAttribute('aria-label'))) || '',
+        true
+      );
+    }
 
-    nodes.forEach((node) => {
-      node.addEventListener('pointerenter', () => showCore(node));
-      node.addEventListener('pointerleave', resetCore);
-      node.addEventListener('focus', () => showCore(node));
-      node.addEventListener('blur', resetCore);
+    function resetCore() {
+      swap(defaultSrc, defaultAlt, false);
+    }
+
+    var supportsPointer = 'onpointerenter' in window;
+    for (var i = 0; i < nodes.length; i += 1) {
+      (function (node) {
+        node.addEventListener(supportsPointer ? 'pointerenter' : 'mouseenter', function () { showCore(node); });
+        node.addEventListener(supportsPointer ? 'pointerleave' : 'mouseleave', resetCore);
+        node.addEventListener('focus', function () { showCore(node); });
+        node.addEventListener('blur', resetCore);
+      }(nodes[i]));
+    }
+  }
+
+  var yearNodes = doc.querySelectorAll('[data-year]');
+  for (var y = 0; y < yearNodes.length; y += 1) {
+    yearNodes[y].textContent = new Date().getFullYear();
+  }
+
+  var disabledDownloads = doc.querySelectorAll('[data-disabled-download]');
+  for (var d = 0; d < disabledDownloads.length; d += 1) {
+    disabledDownloads[d].addEventListener('click', function (event) {
+      event.preventDefault();
     });
   }
 
-  document.querySelectorAll('[data-year]').forEach((node) => {
-    node.textContent = new Date().getFullYear();
-  });
-
-  document.querySelectorAll('[data-disabled-download]').forEach((link) => {
-    link.addEventListener('click', (event) => event.preventDefault());
-  });
-
-  document.querySelectorAll('[data-pending-form]').forEach((form) => {
-    const action = form.getAttribute('action') || '';
-    if (action.startsWith('https://formspree.io/f/')) return;
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      window.alert('Ce formulaire n’est pas encore configuré. Aucune donnée n’a été transmise.');
-    }, true);
-  });
-
-  const runtimes = [
-    ['v2431Runtime','/assets/js/v24-3-1-runtime.js?v=24.4.12'],
-    ['v2432Runtime','/assets/js/v24-3-2-runtime.js?v=24.4.12'],
-    ['v2433Runtime','/assets/js/v24-3-3-runtime.js?v=24.4.12'],
-    ['v2436Runtime','/assets/js/v24-3-6-runtime.js?v=24.4.12']
-  ];
-  for (const [key, src] of runtimes) {
-    const selector = `script[data-${key.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())}]`;
-    if (document.querySelector(selector)) continue;
-    const runtime = document.createElement('script');
-    runtime.type = 'module';
-    runtime.src = src;
-    runtime.dataset[key] = '';
-    document.head.appendChild(runtime);
+  var pendingForms = doc.querySelectorAll('[data-pending-form]');
+  for (var f = 0; f < pendingForms.length; f += 1) {
+    (function (form) {
+      var action = form.getAttribute('action') || '';
+      if (action.indexOf('https://formspree.io/f/') === 0) return;
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+        window.alert('Ce formulaire n’est pas encore configuré. Aucune donnée n’a été transmise.');
+      }, true);
+    }(pendingForms[f]));
   }
 
-  // V24.4.21 — diagnostic local et respectueux de la vie privée.
-  // Aucun message, stack trace, URL avec query-string ou contenu utilisateur n’est transmis.
-  const RUNTIME_VERSION = '24.4.21';
-  const requestId = globalThis.crypto?.randomUUID?.()
-    || `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-  const storageKey = 'sinjira-runtime-errors';
-  document.documentElement.dataset.runtimeRequestId = requestId;
+  var moduleProbe = doc.createElement('script');
+  var supportsModules = 'noModule' in moduleProbe;
+  if (supportsModules) {
+    var runtimes = [
+      ['v2431Runtime', '/assets/js/v24-3-1-runtime.js?v=24.4.12'],
+      ['v2432Runtime', '/assets/js/v24-3-2-runtime.js?v=24.4.12'],
+      ['v2433Runtime', '/assets/js/v24-3-3-runtime.js?v=24.4.12'],
+      ['v2436Runtime', '/assets/js/v24-3-6-runtime.js?v=24.4.12']
+    ];
 
-  const safeSource = (source) => {
+    function runtimeSelector(key) {
+      return 'script[data-' + key.replace(/[A-Z]/g, function (match) {
+        return '-' + match.toLowerCase();
+      }) + ']';
+    }
+
+    for (var r = 0; r < runtimes.length; r += 1) {
+      var key = runtimes[r][0];
+      var src = runtimes[r][1];
+      if (doc.querySelector(runtimeSelector(key))) continue;
+      var runtime = doc.createElement('script');
+      runtime.type = 'module';
+      runtime.src = src;
+      runtime.setAttribute('data-' + key.replace(/[A-Z]/g, function (match) {
+        return '-' + match.toLowerCase();
+      }), '');
+      doc.head.appendChild(runtime);
+    }
+  } else {
+    addClass(root, 'sinjira-legacy-browser');
+  }
+
+  // V24.4.22 — diagnostic local, privé et compatible avec des moteurs plus anciens.
+  // Aucun message utilisateur, stack trace, query-string ni contenu de formulaire n’est transmis.
+  var RUNTIME_VERSION = '24.4.22';
+  var cryptoObject = window.crypto || window.msCrypto;
+  var requestId = cryptoObject && typeof cryptoObject.randomUUID === 'function'
+    ? cryptoObject.randomUUID()
+    : 's-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+  var storageKey = 'sinjira-runtime-errors';
+  root.setAttribute('data-runtime-request-id', requestId);
+
+  function safeSource(source) {
     if (!source) return '';
     try {
-      const url = new URL(String(source), window.location.href);
-      return url.pathname.slice(0, 160);
-    } catch {
+      if (typeof window.URL === 'function') {
+        return new window.URL(String(source), window.location.href).pathname.slice(0, 160);
+      }
+      var parser = doc.createElement('a');
+      parser.href = String(source);
+      return (parser.pathname || '').slice(0, 160);
+    } catch (error) {
       return '';
     }
-  };
+  }
 
-  const readErrors = () => {
+  function readErrors() {
     try {
-      const parsed = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
+      var parsed = JSON.parse(window.sessionStorage.getItem(storageKey) || '[]');
       return Array.isArray(parsed) ? parsed.slice(-7) : [];
-    } catch {
+    } catch (error) {
       return [];
     }
-  };
+  }
 
-  const recordError = (category, source = '') => {
-    const entry = {
+  function recordError(category, source) {
+    var entry = {
       version: RUNTIME_VERSION,
-      requestId,
-      category,
-      source: safeSource(source),
+      requestId: requestId,
+      category: category,
+      source: safeSource(source || ''),
       at: new Date().toISOString()
     };
-    const recent = [...readErrors(), entry].slice(-8);
+    var recent = readErrors();
+    recent.push(entry);
+    recent = recent.slice(-8);
     try {
-      sessionStorage.setItem(storageKey, JSON.stringify(recent));
-    } catch {
+      window.sessionStorage.setItem(storageKey, JSON.stringify(recent));
+    } catch (error) {
       // Le diagnostic reste facultatif si le stockage de session est bloqué.
     }
-    console.warn('[SINJIRA runtime]', {requestId, category, source: entry.source});
-  };
+    if (window.console && typeof window.console.warn === 'function') {
+      window.console.warn('[SINJIRA runtime]', {
+        requestId: requestId,
+        category: category,
+        source: entry.source
+      });
+    }
+  }
 
-  window.addEventListener('error', (event) => {
-    recordError('runtime-error', event?.filename || '');
+  window.addEventListener('error', function (event) {
+    recordError('runtime-error', event && event.filename ? event.filename : '');
   });
-  window.addEventListener('unhandledrejection', () => {
+  window.addEventListener('unhandledrejection', function () {
     recordError('unhandled-rejection');
   });
 
-  window.__SINJIRA_RUNTIME__ = Object.freeze({
+  var runtimeApi = {
     version: RUNTIME_VERSION,
-    requestId,
-    recentErrors: () => readErrors().map((entry) => ({...entry}))
-  });
-})();
+    requestId: requestId,
+    recentErrors: function () {
+      var source = readErrors();
+      var copy = [];
+      for (var i = 0; i < source.length; i += 1) {
+        copy.push({
+          version: source[i].version,
+          requestId: source[i].requestId,
+          category: source[i].category,
+          source: source[i].source,
+          at: source[i].at
+        });
+      }
+      return copy;
+    }
+  };
+  window.__SINJIRA_RUNTIME__ = Object.freeze ? Object.freeze(runtimeApi) : runtimeApi;
+}());
