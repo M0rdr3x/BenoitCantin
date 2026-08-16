@@ -31,11 +31,14 @@ if(form){
     const password=String(d.get('password')||'');
     const confirm=String(d.get('password_confirm')||'');
     const birthDate=String(d.get('birth_date')||'');
+    const gender=String(d.get('gender')||'').trim();
     const age=ageOn(birthDate);
     if(password.length<12){setStatus(status,'Utilisez un mot de passe d’au moins 12 caractères.','error');return}
     if(password!==confirm){setStatus(status,'Les mots de passe ne correspondent pas.','error');return}
     if(age===null){setStatus(status,'Indiquez une date de naissance valide.','error');return}
     if(age<12){setStatus(status,'Les Comptes SINJIRA™ sont réservés aux personnes de 12 ans et plus.','error');return}
+    if(age>120){setStatus(status,'La date de naissance indiquée n’est pas valide.','error');return}
+    if(!['Femme','Homme'].includes(gender)){setStatus(status,'Choisissez Femme ou Homme pour ce profil.','error');return}
     const minor=age<18;
     const languages=String(d.get('languages')||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,12);
     const wantsQuestionnaire=d.get('wants_character_questionnaire')==='yes';
@@ -44,7 +47,7 @@ if(form){
       pseudo:String(d.get('pseudo')||'').trim(),
       display_name:String(d.get('display_name')||'').trim(),
       birth_date:birthDate,
-      gender:String(d.get('gender')||''),
+      gender,
       languages,
       residence_city:String(d.get('residence_city')||'').trim(),
       residence_region:String(d.get('residence_region')||'').trim(),
