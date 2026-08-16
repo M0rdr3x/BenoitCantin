@@ -1,5 +1,29 @@
 -- SINJIRA™ V24.4.12 — élimination des WARN RLS restants.
 -- Auth initialisé une seule fois et politiques SELECT redondantes consolidées.
+--
+-- V24.4.21 reconstruction à froid : la production utilise déjà ce helper
+-- avant cette politique. On le recrée ici avec sa définition production exacte
+-- afin que l'ordre historique soit autonome sur une base vide.
+create or replace function public.sinjira_cycle_allowed(p_cycle_id uuid, p_user_id uuid default auth.uid())
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, auth
+as $$
+  select case
+    when p_cycle_id is null or p_user_id is null then false
+    when coalesce(auth.jwt()->>'role','')<>'service_role' and auth.uid() is not null and p_user_id<>auth.uid() then false
+    else exists(
+      select 1 from public.parallel_world_cycles c
+      where c.id=p_cycle_id and (
+        c.audience='all' or
+        (c.audience='adult' and public.sinjira_age_band(p_user_id)='adult') or
+        (c.audience='youth' and public.sinjira_age_band(p_user_id)='youth')
+      )
+    )
+  end;
+$$;
 
 -- Bibliothèque historique.
 drop policy if exists reader_library_own on public.reader_library;
