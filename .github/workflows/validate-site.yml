@@ -28,5 +28,7 @@ jobs:
           package-manager-cache: false
       - name: Vérifier les routes, fichiers, secrets et JavaScript
         run: python scripts/validate_site.py
+      - name: Vérifier PWA, SEO et cache hors ligne
+        run: python scripts/validate_pwa.py
       - name: Vérifier la structure Supabase
         run: python scripts/validate_supabase.py
