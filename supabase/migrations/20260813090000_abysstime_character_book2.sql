@@ -1,13 +1,21 @@
 -- SINJIRA V23 — compte propriétaire + personnage AbyssTime
--- À appliquer dans Supabase après le déploiement des fichiers du site.
+-- Migration historique rendue reconstruisible à froid en V24.4.21.
+-- En production, le compte propriétaire existait déjà lors de l’application initiale.
+-- Sur une base locale vide, son absence doit être un no-op : la réparation canonique
+-- V24.4.20 prendra le relais dès que le compte réel existera.
 
 do $$
 declare
   v_user uuid;
 begin
-  select id into v_user from auth.users where lower(email)=lower('kingtyrano@gmail.com') limit 1;
+  select id into v_user
+  from auth.users
+  where lower(email)=lower('kingtyrano@gmail.com')
+  limit 1;
+
   if v_user is null then
-    raise exception 'Compte kingtyrano@gmail.com introuvable dans auth.users';
+    raise notice 'Compte propriétaire absent sur cette base : initialisation AbyssTime différée.';
+    return;
   end if;
 
   insert into public.internal_admin_users(user_id)
