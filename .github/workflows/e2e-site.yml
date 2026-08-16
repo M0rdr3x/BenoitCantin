@@ -16,8 +16,13 @@ concurrency:
 
 jobs:
   browser-smoke:
+    name: Navigation ${{ matrix.browser }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
     steps:
       - name: Récupérer le dépôt
         uses: actions/checkout@v6
@@ -27,10 +32,10 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Installer Playwright et Chromium
+      - name: Installer Playwright et ${{ matrix.browser }}
         run: |
           python -m pip install --disable-pip-version-check playwright
-          python -m playwright install --with-deps chromium
+          python -m playwright install --with-deps "${{ matrix.browser }}"
 
       - name: Démarrer le site statique local
         run: |
@@ -43,10 +48,53 @@ jobs:
           cat /tmp/sinjira-http.log
           exit 1
 
-      - name: Tester la version exacte du dépôt
+      - name: Tester la version exacte du dépôt avec ${{ matrix.browser }}
         env:
           BASE_URL: http://127.0.0.1:4173/
+          BROWSER: ${{ matrix.browser }}
         run: python tests/e2e/test_public_site.py
+
+      - name: Tester le site public déployé avec ${{ matrix.browser }}
+        if: github.event_name != 'pull_request'
+        env:
+          BASE_URL: https://www.benoitcantin.com/
+          BROWSER: ${{ matrix.browser }}
+        run: python tests/e2e/test_public_site.py
+
+      - name: Arrêter le serveur local
+        if: always()
+        run: |
+          if [ -f /tmp/sinjira-http.pid ]; then kill "$(cat /tmp/sinjira-http.pid)" || true; fi
+
+  lighthouse-mobile:
+    name: Lighthouse mobile Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Configurer Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Démarrer le site statique local
+        run: |
+          python -m http.server 4173 --bind 127.0.0.1 > /tmp/sinjira-http.log 2>&1 &
+          echo $! > /tmp/sinjira-http.pid
+          for i in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/sinjira-http.log
+          exit 1
 
       - name: Auditer l’accueil en profil mobile Lighthouse
         run: |
@@ -57,12 +105,6 @@ jobs:
             --only-categories=performance,accessibility,best-practices,seo \
             --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"
           python scripts/check_lighthouse.py /tmp/lighthouse-mobile.json
-
-      - name: Tester le site public réellement déployé
-        if: github.event_name != 'pull_request'
-        env:
-          BASE_URL: https://www.benoitcantin.com/
-        run: python tests/e2e/test_public_site.py
 
       - name: Arrêter le serveur local
         if: always()
