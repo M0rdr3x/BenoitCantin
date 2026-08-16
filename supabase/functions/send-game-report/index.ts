@@ -39,10 +39,6 @@ function sanitizeSheet(input: Record<string, unknown>) {
   return output;
 }
 
-function validEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254;
-}
-
 function toBase64(bytes: Uint8Array) {
   let binary = '';
   const chunk = 0x8000;
@@ -82,6 +78,24 @@ async function buildPdf(sheet: Record<string, string | boolean>) {
   return await pdf.save();
 }
 
+async function recordDelivery(userId: string, sessionId: unknown, delivery: 'download' | 'email') {
+  if (!sessionId) return;
+  const service = serviceClient();
+  const { data: ownedSession } = await service
+    .from('game_sessions')
+    .select('id')
+    .eq('id', String(sessionId))
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (!ownedSession?.id) return;
+  const { error } = await service.from('player_reports').insert({
+    user_id: userId,
+    session_id: ownedSession.id,
+    delivery
+  });
+  if (error) console.warn('[SINJIRA report] journalisation non bloquante:', error.message);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ ok: false, error: 'Méthode non autorisée.' }, 405);
@@ -92,28 +106,17 @@ Deno.serve(async (req) => {
     const user = await optionalUser(req);
     const sheet = sanitizeSheet(body?.sheet_data || {});
     const pdfBytes = await buildPdf(sheet);
-
     const filename = `SINJIRA_Fracture_Rapport_${new Date().toISOString().slice(0, 10)}.pdf`;
 
     if (mode === 'download') {
-      if (user && body?.session_id) {
-        const service = serviceClient();
-        await service.from('player_reports').insert({
-          user_id: user.id,
-          session_id: body.session_id,
-          delivery: 'download'
-        });
-      }
-      return json({
-        ok: true,
-        filename,
-        pdf_base64: toBase64(pdfBytes)
-      });
+      if (user) await recordDelivery(user.id, body?.session_id, 'download');
+      return json({ ok: true, filename, pdf_base64: toBase64(pdfBytes) });
     }
 
-    const recipient = user?.email || String(body?.email || '').trim();
-    if (!recipient || !validEmail(recipient)) {
-      return json({ ok: false, error: 'Adresse courriel invalide.' }, 400);
+    // L'envoi de courriel est réservé à un compte authentifié et uniquement à son adresse.
+    // Cela évite qu'une fonction publique de génération PDF devienne un relais de spam.
+    if (!user?.email) {
+      return json({ ok: false, error: 'Connexion requise pour l’envoi par courriel.' }, 401);
     }
 
     const resendKey = Deno.env.get('RESEND_API_KEY');
@@ -128,20 +131,16 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from,
-        to: [recipient],
+        to: [user.email],
         subject: 'SINJIRA — Rapport de fin de partie — Fracture du Réseau-Mère',
         html: `
           <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto">
             <h1>SINJIRA</h1>
             <h2>Fracture du Réseau-Mère</h2>
             <p>Voici la copie de votre fiche joueur telle qu’elle a été générée au moment de votre demande.</p>
-            <p>Si vous jouiez en mode invité, cette partie n’a pas été ajoutée à une sauvegarde SINJIRA.</p>
             <p>— SINJIRA</p>
           </div>`,
-        attachments: [{
-          filename,
-          content: toBase64(pdfBytes)
-        }]
+        attachments: [{ filename, content: toBase64(pdfBytes) }]
       })
     });
 
@@ -151,15 +150,7 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: 'Le courriel n’a pas pu être envoyé.' }, 502);
     }
 
-    if (user && body?.session_id) {
-      const service = serviceClient();
-      await service.from('player_reports').insert({
-        user_id: user.id,
-        session_id: body.session_id,
-        delivery: 'email'
-      });
-    }
-
+    await recordDelivery(user.id, body?.session_id, 'email');
     return json({ ok: true, emailed: true });
   } catch (error) {
     console.error(error);
