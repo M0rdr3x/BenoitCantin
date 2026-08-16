@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -68,11 +69,20 @@ def read_tree_text(path: Path) -> str:
     )
 
 
-def find_references(paths: list[Path], needle: str) -> list[str]:
+def find_edge_calls(paths: list[Path], slug: str) -> list[str]:
+    # Cherche uniquement de vrais points d'appel, pas des attributs d'interface
+    # comme data-admin-reader-comments qui peuvent contenir le même texte.
+    escaped = re.escape(slug)
+    patterns = (
+        re.compile(rf"functions\s*\.\s*invoke\s*\(\s*['\"]{escaped}['\"]"),
+        re.compile(rf"/functions/v1/{escaped}(?:['\"/?#]|$)"),
+        re.compile(rf"functions/{escaped}/index\.(?:ts|js)"),
+    )
     hits: list[str] = []
     for root in paths:
         for file in text_files(root) or []:
-            if needle in file.read_text("utf-8", errors="ignore"):
+            text = file.read_text("utf-8", errors="ignore")
+            if any(pattern.search(text) for pattern in patterns):
                 hits.append(str(file.relative_to(ROOT)))
     return sorted(set(hits))
 
@@ -142,10 +152,10 @@ def main() -> int:
         ROOT / "supabase" / "functions",
     ]
     for slug in sorted(RETIRED):
-        hits = find_references(searchable_roots, slug)
+        hits = find_edge_calls(searchable_roots, slug)
         if hits:
             errors.append(
-                f"Référence à une Edge Function retirée: {slug} — " + ", ".join(hits)
+                f"Appel à une Edge Function retirée: {slug} — " + ", ".join(hits)
             )
 
     if errors:
@@ -156,7 +166,7 @@ def main() -> int:
 
     print(
         "OK inventaire Edge Functions: 17 fonctions canoniques, configuration JWT cohérente, "
-        "garde-fous des 2 fonctions publiques vérifiés et aucun ancien slug référencé."
+        "garde-fous des 2 fonctions publiques vérifiés et aucun ancien appel Edge référencé."
     )
     return 0
 
