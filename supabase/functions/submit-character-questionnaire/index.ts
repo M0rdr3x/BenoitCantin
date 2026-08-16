@@ -3,9 +3,9 @@ import {requiredUser,serviceClient} from '../_shared/auth.ts';
 import {SINJIRA_CANON_PUBLIC_GUIDE} from '../_shared/sinjira-canon-public.ts';
 import {loadSinjiraCanonContext,canonPrompt} from '../_shared/sinjira-canon-context.ts';
 
-const VERSION='24.4.12';
+const VERSION='24.4.13';
 const PRIVATE_KEYS=['prenom_legal','nom_legal','courriel','telephone','date_naissance','region','courriel_retrait','nom_signature','parent_nom','parent_courriel','parent_telephone','parent_signature','compte_courriel','compte_pseudo'];
-const escapeHtml=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]||c));
+const escapeHtml=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]||c));
 const labelize=(k:string)=>k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
 function creativePayload(src:Record<string,unknown>){const out:Record<string,unknown>={};for(const [k,v] of Object.entries(src||{})){if(PRIVATE_KEYS.includes(k)||k.startsWith('parent_')||k.startsWith('photo'))continue;out[k]=v}return out}
 function participantSummary(src:Record<string,unknown>){const safe=creativePayload(src);const rows=Object.entries(safe).filter(([,v])=>v!==''&&v!=null).map(([k,v])=>{const text=Array.isArray(v)?v.join(', '):String(v);return `<tr><th style="text-align:left;vertical-align:top;padding:7px 10px;border-bottom:1px solid #ddd">${escapeHtml(labelize(k))}</th><td style="padding:7px 10px;border-bottom:1px solid #ddd">${escapeHtml(text)}</td></tr>`});return rows.length?`<table style="border-collapse:collapse;width:100%;max-width:760px">${rows.join('')}</table>`:'<p>Aucune réponse créative à afficher.</p>'}
