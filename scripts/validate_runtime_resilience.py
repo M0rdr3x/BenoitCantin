@@ -21,7 +21,7 @@ def main() -> int:
     errors = []
     site_js = (ROOT / "assets" / "js" / "site.js").read_text("utf-8", errors="ignore")
     for marker in (
-        "RUNTIME_VERSION = '24.4.21'",
+        "RUNTIME_VERSION = '24.4.22'",
         "randomUUID",
         "window.addEventListener('error'",
         "window.addEventListener('unhandledrejection'",
@@ -30,7 +30,7 @@ def main() -> int:
         "requestId",
     ):
         require(site_js, marker, "assets/js/site.js", errors)
-    if "fetch(" in site_js.split("RUNTIME_VERSION = '24.4.21'", 1)[-1]:
+    if "fetch(" in site_js.split("RUNTIME_VERSION = '24.4.22'", 1)[-1]:
         errors.append("assets/js/site.js: le collecteur d’erreurs ne doit pas transmettre automatiquement les erreurs.")
 
     questionnaire = (ROOT / "supabase" / "functions" / "submit-character-questionnaire" / "index.ts").read_text("utf-8", errors="ignore")
