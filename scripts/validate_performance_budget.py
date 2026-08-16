@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 from pathlib import Path
+from urllib.parse import urlparse
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
-LIMITS = {
-    ".js": 550_000,
-    ".css": 550_000,
-    ".html": 650_000,
-    ".webp": 1_500_000,
-    ".avif": 1_500_000,
-    ".png": 3_000_000,
-    ".jpg": 3_000_000,
-    ".jpeg": 3_000_000,
-}
+TEXT_LIMITS = {".js": 550_000, ".css": 550_000, ".html": 650_000}
+IMAGE_LIMIT = 1_500_000
 EXCLUDED_DIRS = {".git", "node_modules", ".venv", "dist", "build"}
+CRITICAL_PAGES = [
+    ROOT / "index.html",
+    ROOT / "projets" / "sinjira" / "index.html",
+    ROOT / "projets" / "sinjira" / "registre" / "index.html",
+    ROOT / "projets" / "projet-nova" / "index.html",
+]
 
 
 def iter_files():
@@ -23,13 +22,44 @@ def iter_files():
         yield path
 
 
+def resolve_asset(page: Path, value: str) -> Path | None:
+    parsed = urlparse(value)
+    if parsed.scheme or parsed.netloc or value.startswith("data:"):
+        return None
+    clean = parsed.path
+    if clean.startswith("/"):
+        return ROOT / clean.lstrip("/")
+    return (page.parent / clean).resolve()
+
+
 def main() -> int:
     errors = []
+
+    # Les budgets texte s’appliquent à tout le runtime versionné.
     for path in iter_files():
-        limit = LIMITS.get(path.suffix.lower())
+        limit = TEXT_LIMITS.get(path.suffix.lower())
         if limit and path.stat().st_size > limit:
             errors.append(
                 f"{path.relative_to(ROOT)}: {path.stat().st_size:,} octets dépasse le budget de {limit:,}."
+            )
+
+    # Pour les images, on contrôle les actifs réellement chargés par les pages
+    # critiques plutôt que des archives/documentations qui ne pénalisent pas le web.
+    image_refs = set()
+    for page in CRITICAL_PAGES:
+        if not page.exists():
+            continue
+        html = page.read_text("utf-8", errors="ignore")
+        for value in re.findall(r"<img\b[^>]*\bsrc=[\"']([^\"']+)", html, flags=re.I):
+            asset = resolve_asset(page, value)
+            if asset and asset.suffix.lower() in {".webp", ".avif", ".png", ".jpg", ".jpeg"}:
+                image_refs.add(asset)
+    for asset in sorted(image_refs):
+        if not asset.exists():
+            errors.append(f"Actif image critique absent: {asset.relative_to(ROOT)}")
+        elif asset.stat().st_size > IMAGE_LIMIT:
+            errors.append(
+                f"{asset.relative_to(ROOT)}: {asset.stat().st_size:,} octets dépasse le budget image critique de {IMAGE_LIMIT:,}."
             )
 
     home = (ROOT / "index.html").read_text("utf-8", errors="ignore")
@@ -40,7 +70,6 @@ def main() -> int:
     if stylesheet_count > 8:
         errors.append(f"index.html: {stylesheet_count} feuilles de style; budget maximal 8.")
 
-    # Les trois cartes situées sous le premier écran doivent être différées.
     cards = re.findall(r'<a class="home-project".*?</a>', home, flags=re.I | re.S)
     if len(cards) != 3:
         errors.append(f"index.html: 3 cartes principales attendues, trouvé {len(cards)}.")
@@ -61,7 +90,7 @@ def main() -> int:
         for error in errors:
             print("- " + error)
         return 1
-    print("OK performance: poids des actifs, budget de dépendances et chargement différé de l’accueil sont sous contrôle.")
+    print(f"OK performance: {len(image_refs)} image(s) critiques, budgets texte et chargement différé de l’accueil sont sous contrôle.")
     return 0
 
 
