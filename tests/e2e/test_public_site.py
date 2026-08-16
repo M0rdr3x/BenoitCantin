@@ -22,6 +22,8 @@ EXPECTED_DOORS = {
     "/projets/sinjira/registre/",
     "/projets/projet-nova/",
 }
+NOVA_ENDPOINT = "https://formspree.io/f/xkolwjdg"
+PERSONAL_ENDPOINT = "https://formspree.io/f/xdenkzrv"
 
 
 def assert_true(value, message):
@@ -82,6 +84,21 @@ def run() -> None:
             f"{BROWSER_NAME}: CSS Grid indisponible dans le moteur testé",
         )
 
+        # Le formulaire de contact contient encore un petit runtime inline : on le
+        # teste dans chaque moteur pour éviter une régression Safari/Firefox.
+        page.goto(urljoin(BASE_URL, "contact.html"), wait_until="domcontentloaded", timeout=30_000)
+        project = page.locator("#contact-project")
+        form = page.locator("#contact-general")
+        route = page.locator("#contact-route")
+        project.select_option("Projet Nova")
+        assert_true(form.get_attribute("action") == NOVA_ENDPOINT, f"{BROWSER_NAME}: routage Nova incorrect")
+        assert_true("Projet Nova" in route.inner_text(), f"{BROWSER_NAME}: confirmation Nova absente")
+        project.select_option("SINJIRA")
+        assert_true(form.get_attribute("action") == PERSONAL_ENDPOINT, f"{BROWSER_NAME}: routage SINJIRA incorrect")
+        assert_true("Benoit Cantin" in route.inner_text(), f"{BROWSER_NAME}: confirmation SINJIRA absente")
+        contact_html = page.content().lower()
+        assert_true("kingtyrano@gmail.com" not in contact_html, "Adresse privée embarquée dans le formulaire de contact")
+
         mobile = browser.new_context(
             locale="fr-CA",
             viewport={"width": 390, "height": 844},
@@ -126,7 +143,7 @@ def run() -> None:
         browser.close()
         print(
             f"OK E2E {BROWSER_NAME}: {len(PUBLIC_ROUTES)} routes publiques, "
-            f"accueil desktop/mobile, compatibilité CSS/runtime et frontière compte vérifiés sur {BASE_URL}"
+            f"accueil desktop/mobile, contact, compatibilité CSS/runtime et frontière compte vérifiés sur {BASE_URL}"
         )
 
 
