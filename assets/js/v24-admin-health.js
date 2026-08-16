@@ -1,6 +1,6 @@
 import {getSupabase,getCurrentUser,isSinjiraOwner,escapeHtml} from './sinjira-supabase.js';
 
-const PLATFORM_VERSION='24.4.12';
+const PLATFORM_VERSION='24.4.13';
 const FRACTURE_ENGINE_VERSION='24.4.6';
 
 if(!document.querySelector('link[data-v244-admin-fixes]')){
