@@ -17,6 +17,9 @@ SECRET_PATTERNS = [
 ]
 SKIP_SCHEMES = {'http', 'https', 'mailto', 'tel', 'javascript', 'data', 'blob'}
 ACTIVE_SINJIRA_PREFIXES = ('projets/sinjira/', 'compte/', 'admin/')
+# Ces deux fichiers gardent volontairement la casse legacy /Admin/ uniquement pour
+# protéger/réécrire d'anciens favoris et caches. Ils ne constituent pas des liens actifs.
+LEGACY_ADMIN_COMPAT_FILES = {'sw.js', 'assets/js/v24-3-3-runtime.js'}
 
 
 class Parser(HTMLParser):
@@ -156,7 +159,7 @@ def main() -> int:
                     errors.append(f'Secret potentiel dans {rel}')
             if active_sinjira(rel) and 'formspree' in text.lower():
                 errors.append(f'Formspree encore référencé dans une zone SINJIRA active: {rel}')
-            if not rel.startswith('Admin/') and re.search(r"[\'\"]\/Admin\/", text):
+            if rel not in LEGACY_ADMIN_COMPAT_FILES and not rel.startswith('Admin/') and re.search(r"[\'\"]\/Admin\/", text):
                 errors.append(f'Lien interne legacy /Admin/ dans {rel}')
 
     for page in htmls:
