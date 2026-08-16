@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>Jouer en ligne | Fracture du Réseau-Mère | SINJIRA™</title>
-<meta content="Créer ou rejoindre une partie en ligne de Fracture du Réseau-Mère avec sauvegardes privées dans le Compte SINJIRA™." name="description"/>
+<meta content="Créer ou rejoindre une partie 100 % numérique de Fracture du Réseau-Mère pour 1 à 20 joueurs." name="description"/>
 <link href="../../../../assets/icons/sinjira-favicon.png" rel="icon" type="image/png"/>
-<link href="../../../../assets/css/site.css?v=24.3.6" rel="stylesheet"/>
-<link href="../../../../assets/css/fracture-online.css?v=24.3.6" rel="stylesheet"/>
-<link href="/manifest.webmanifest" rel="manifest"/><link href="/assets/css/v19-pro.css?v=24.3.6" rel="stylesheet"/></head>
+<link href="../../../../assets/css/site.css?v=24.4.0" rel="stylesheet"/>
+<link href="../../../../assets/css/fracture-online.css?v=24.4.0" rel="stylesheet"/>
+<link href="/manifest.webmanifest" rel="manifest"/><link href="/assets/css/v19-pro.css?v=24.4.0" rel="stylesheet"/>
+</head>
 <body class="project-page fracture-online-page" data-fracture-page="lobby">
 <header class="site-header"><div class="container nav-shell">
 <a class="brand" href="/"><img alt="" height="47" src="../../../../assets/media/sinjira-emblem.webp" style="border-radius:50%" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Fracture du Réseau-Mère</span></span></a>
@@ -17,66 +18,44 @@
 <section class="fracture-online-hero">
 <span class="eyebrow">Espace joueur en ligne</span>
 <h1>Créer ou rejoindre une partie</h1>
-<p>Un Compte SINJIRA™ est nécessaire. Chaque joueur doit avoir son propre droit d’accès Fracture : licence physique activée, licence numérique, ou accès propriétaire. Les fiches de joueur restent privées.</p>
-<div class="fracture-account-state" data-account-state="">Vérification du compte…</div>
+<p>Le mode Web V24.4 joue entièrement dans le navigateur. Le serveur distribue les identités et les cartes, protège les informations secrètes, valide les actions et calcule les scores.</p>
+<div class="fracture-account-state" data-account-state>Vérification du compte…</div>
 </section>
 <section class="fracture-online-card" data-v2431-fracture-mode>
-<strong>Mode Web V24.3.6</strong>
-<p>Cette version gère le salon, les joueurs, les fiches privées synchronisées, la reprise de session et la fin de partie. Le moteur 100 % numérique qui distribuera les cartes, protégera les mains cachées et validera automatiquement chaque action sera ajouté dans une étape suivante.</p>
+<strong>Mode Web V24.4 — moteur numérique complet</strong>
+<p><b>Solo :</b> vous jouez le siège 1; les sièges invisibles 2 et 3 sont contrôlés automatiquement par le moteur tactique. <b>Duo :</b> les deux humains jouent les sièges 1 et 2; le siège invisible 3 est contrôlé automatiquement. De 3 à 20 humains, chaque siège est contrôlé par son propre joueur.</p>
+<p>Le moteur tactique des sièges invisibles fonctionne côté serveur et ne requiert aucune API d’IA générative payante.</p>
 </section>
-<div class="v24-callout" data-fracture-access-status>Vérification du serveur Fracture…</div>
-<div class="fracture-status" data-fracture-status="" hidden=""></div>
-<section class="fracture-lobby-grid" data-lobby-auth="" hidden="">
+<div class="v24-callout" data-fracture-access-status>Vérification du moteur Fracture…</div>
+<div class="fracture-status" data-fracture-status hidden></div>
+<section class="fracture-lobby-grid" data-lobby-auth hidden>
 <article class="fracture-online-card">
-<span class="eyebrow">Créer</span>
-<h2>Nouvelle partie</h2>
-<form data-create-party="">
-<label class="fracture-control">Nombre de joueurs humains
-        <input max="20" min="1" name="human_player_count" required="" type="number" value="3"/>
-</label>
-<label class="fracture-control" data-round-format-wrap="">Format
-        <select name="round_count">
-<option value="10">Standard — 10 rondes</option>
-<option value="6">Express — 6 rondes (13 à 20 seulement)</option>
-</select>
-</label>
-<label class="fracture-control" data-duo-first="" hidden="">En Duo, qui est Premier joueur à la ronde 1?
-        <select name="duo_first_player_seat"><option value="1">Joueur 1</option><option value="2">Joueur 2</option></select>
-</label>
-<div class="fracture-live-math" data-create-summary=""></div>
+<span class="eyebrow">Créer</span><h2>Nouvelle partie</h2>
+<form data-create-party>
+<label class="fracture-control">Nombre de joueurs humains<input max="20" min="1" name="human_player_count" required type="number" value="1"/></label>
+<label class="fracture-control" data-round-format-wrap>Format<select name="round_count"><option value="10">Standard — 10 rondes</option><option value="6">Express — 6 rondes (13 à 20 seulement)</option></select></label>
+<label class="fracture-control" data-duo-first hidden>Premier joueur à la ronde 1<select name="duo_first_player_seat"><option value="1">Joueur 1</option><option value="2">Joueur 2</option></select></label>
+<div class="fracture-live-math" data-create-summary></div>
 <button class="btn btn-primary" type="submit">Créer la partie</button>
 </form>
 </article>
 <article class="fracture-online-card">
-<span class="eyebrow">Rejoindre</span>
-<h2>Partie existante</h2>
-<form data-join-party="">
-<label class="fracture-control">Code de partie
-        <input autocomplete="off" maxlength="10" name="party_code" placeholder="FRM-ABC123" required=""/>
-</label>
-<label class="fracture-control">Numéro de siège — facultatif
-        <input max="20" min="1" name="seat_number" placeholder="Premier siège libre" type="number"/>
-</label>
-<p class="fracture-muted">Si vous laissez le siège vide, le système vous attribue le premier siège humain disponible.</p>
+<span class="eyebrow">Rejoindre</span><h2>Partie existante</h2>
+<form data-join-party>
+<label class="fracture-control">Code de partie<input autocomplete="off" maxlength="10" name="party_code" placeholder="FRM-ABC123" required/></label>
+<label class="fracture-control">Numéro de siège — facultatif<input max="20" min="1" name="seat_number" placeholder="Premier siège libre" type="number"/></label>
+<p class="fracture-muted">Si vous laissez le siège vide, le serveur attribue le premier siège humain disponible.</p>
 <button class="btn btn-primary" type="submit">Rejoindre</button>
 </form>
 </article>
 </section>
-<section class="fracture-online-card" data-lobby-guest="" hidden="">
-<h2>Connexion requise</h2>
-<p>Connectez-vous pour vérifier votre licence et retrouver vos sauvegardes.</p>
-<div class="hero-actions">
-<a class="btn btn-primary" href="../../../../compte/connexion.html?next=/projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html">Connexion</a>
-<a class="btn btn-secondary" href="../../../../compte/inscription.html?next=/projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html">Créer un compte</a>
-<a class="btn btn-secondary" href="../../../../compte/licences.html">Mes licences</a>
-<a class="btn btn-secondary" href="regles.html">Lire les règles</a>
-</div>
+<section class="fracture-online-card" data-lobby-guest hidden>
+<h2>Connexion requise</h2><p>Connectez-vous pour vérifier votre licence et retrouver vos parties.</p>
+<div class="hero-actions"><a class="btn btn-primary" href="../../../../compte/connexion.html?next=/projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html">Connexion</a><a class="btn btn-secondary" href="../../../../compte/inscription.html?next=/projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html">Créer un compte</a><a class="btn btn-secondary" href="../../../../compte/licences.html">Mes licences</a><a class="btn btn-secondary" href="regles.html">Lire les règles</a></div>
 </section>
-<section class="fracture-online-card" data-my-parties="" hidden="">
-<span class="eyebrow">Sauvegardes</span><h2>Mes parties Fracture</h2>
-<div class="fracture-party-list" data-my-parties-list=""></div>
-</section>
+<section class="fracture-online-card" data-my-parties hidden><span class="eyebrow">Sauvegardes</span><h2>Mes parties Fracture</h2><div class="fracture-party-list" data-my-parties-list></div></section>
 </main>
-<script defer="" src="../../../../assets/js/site.js?v=24.3.6"></script>
-<script src="../../../../assets/js/sinjira-fracture-online.js?v=24.3.6" type="module"></script>
-<div aria-live="polite" class="v19-offline-badge">Mode hors ligne</div><script src="/assets/js/v19-session.js?v=24.3.6" type="module"></script></body></html>
+<script defer src="../../../../assets/js/site.js?v=24.4.0"></script>
+<script src="../../../../assets/js/sinjira-fracture-online.js?v=24.4.0" type="module"></script>
+<div aria-live="polite" class="v19-offline-badge">Mode hors ligne</div><script src="/assets/js/v19-session.js?v=24.4.0" type="module"></script>
+</body></html>
