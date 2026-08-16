@@ -47,6 +47,14 @@ jobs:
         with:
           node-version: '22'
           package-manager-cache: false
+      - name: Vérifier l’accessibilité des parcours critiques
+        run: python scripts/validate_accessibility.py
+      - name: Vérifier les budgets de performance
+        run: python scripts/validate_performance_budget.py
+      - name: Vérifier SEO, indexation et données structurées
+        run: python scripts/validate_seo_quality.py
+      - name: Vérifier résilience runtime et protections anti-abus
+        run: python scripts/validate_runtime_resilience.py
       - name: Vérifier les routes, fichiers, secrets et JavaScript
         run: python scripts/validate_site.py
       - name: Vérifier le focus professionnel de l’accueil

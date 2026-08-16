@@ -83,4 +83,61 @@
     runtime.dataset[key] = '';
     document.head.appendChild(runtime);
   }
+
+  // V24.4.21 — diagnostic local et respectueux de la vie privée.
+  // Aucun message, stack trace, URL avec query-string ou contenu utilisateur n’est transmis.
+  const RUNTIME_VERSION = '24.4.21';
+  const requestId = globalThis.crypto?.randomUUID?.()
+    || `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  const storageKey = 'sinjira-runtime-errors';
+  document.documentElement.dataset.runtimeRequestId = requestId;
+
+  const safeSource = (source) => {
+    if (!source) return '';
+    try {
+      const url = new URL(String(source), window.location.href);
+      return url.pathname.slice(0, 160);
+    } catch {
+      return '';
+    }
+  };
+
+  const readErrors = () => {
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
+      return Array.isArray(parsed) ? parsed.slice(-7) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const recordError = (category, source = '') => {
+    const entry = {
+      version: RUNTIME_VERSION,
+      requestId,
+      category,
+      source: safeSource(source),
+      at: new Date().toISOString()
+    };
+    const recent = [...readErrors(), entry].slice(-8);
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(recent));
+    } catch {
+      // Le diagnostic reste facultatif si le stockage de session est bloqué.
+    }
+    console.warn('[SINJIRA runtime]', {requestId, category, source: entry.source});
+  };
+
+  window.addEventListener('error', (event) => {
+    recordError('runtime-error', event?.filename || '');
+  });
+  window.addEventListener('unhandledrejection', () => {
+    recordError('unhandled-rejection');
+  });
+
+  window.__SINJIRA_RUNTIME__ = Object.freeze({
+    version: RUNTIME_VERSION,
+    requestId,
+    recentErrors: () => readErrors().map((entry) => ({...entry}))
+  });
 })();

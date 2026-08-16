@@ -1,5 +1,54 @@
 -- SINJIRA™ V24.4.12 — optimisation RLS des parcours cœur
 -- Même autorisation fonctionnelle, moins de politiques permissives concurrentes et auth.uid() initialisé une seule fois.
+--
+-- V24.4.21 reconstruction à froid : la production possède déjà ces helpers
+-- dans le schéma private, mais leur création historique n'était pas rejouable
+-- avant les politiques ci-dessous. On rétablit ici leur définition production
+-- exacte avant leur première utilisation.
+create schema if not exists private;
+
+grant usage on schema private to anon, authenticated, service_role;
+
+create or replace function private.is_sinjira_admin(p_user_id uuid default auth.uid())
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, private
+as $$
+  select exists(select 1 from public.internal_admin_users where user_id=p_user_id)
+$$;
+
+create or replace function private.project_access_rank(p_project_id uuid, p_user_id uuid default auth.uid())
+returns integer
+language sql
+stable
+security definer
+set search_path = public, private
+as $$
+  select case
+    when private.is_sinjira_admin(p_user_id) then 100
+    when exists(
+      select 1 from public.project_access pa
+      where pa.project_id=p_project_id and pa.user_id=p_user_id
+        and (pa.expires_at is null or pa.expires_at>now()) and pa.access_level='tester'
+    ) then 30
+    when exists(
+      select 1 from public.project_access pa
+      where pa.project_id=p_project_id and pa.user_id=p_user_id
+        and (pa.expires_at is null or pa.expires_at>now()) and pa.access_level='player'
+    ) then 20
+    when p_user_id is not null and exists(
+      select 1 from public.projects p
+      where p.id=p_project_id and p.visibility in('public','account')
+    ) then 10
+    when exists(
+      select 1 from public.projects p
+      where p.id=p_project_id and p.visibility='public'
+    ) then 1
+    else 0
+  end
+$$;
 
 -- PROJETS : conserver la lecture publique, fusionner lecture membre + admin.
 drop policy if exists admin_read_all_projects on public.projects;
@@ -142,7 +191,8 @@ create policy endgame_read_authorized on public.endgame_sheets for select to aut
 using ((select auth.uid())=user_id or public.is_sinjira_admin((select auth.uid())));
 create policy endgame_insert_own on public.endgame_sheets for insert to authenticated with check ((select auth.uid())=user_id);
 create policy endgame_update_own on public.endgame_sheets for update to authenticated using ((select auth.uid())=user_id) with check ((select auth.uid())=user_id);
-create policy endgame_delete_own on public.endgame_sheets for delete to authenticated using ((select auth.uid())=user_id);
+create policy endgame_delete_own on public.endgame_sheets for delete to authenticated
+using ((select auth.uid())=user_id);
 
 -- DOCUMENTS PRIVÉS FRACTURE.
 drop policy if exists "fracture docs own read" on public.fracture_player_documents;

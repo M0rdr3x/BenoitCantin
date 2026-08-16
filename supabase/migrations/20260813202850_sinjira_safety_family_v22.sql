@@ -59,7 +59,7 @@ create table if not exists public.memorial_requests(
 );
 create table if not exists public.memorial_records(
   user_id uuid primary key references auth.users(id) on delete cascade,
-  character_id uuid references public.sinjira_characters(id) on delete set null,
+  character_id uuid references public.characters(id) on delete set null,
   display_name text not null,
   memorial_year integer not null,
   date_of_death date,
