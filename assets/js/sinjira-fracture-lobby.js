@@ -19,8 +19,10 @@ async function verifyRuntime(){
     if(accessStatus){accessStatus.textContent=friendlyBackendMessage(engineError.message,'Le moteur Fracture n’est pas disponible.');accessStatus.dataset.statusType='error'}
     return false;
   }
-  const tables=engine?.tables||{};
-  const missing=Object.entries(tables).filter(([,ok])=>ok!==true).map(([name])=>name);
+  const tables=engine?.tables||{},functions=engine?.functions||{};
+  const missingTables=Object.entries(tables).filter(([,ok])=>ok!==true).map(([name])=>`table:${name}`);
+  const missingFunctions=Object.entries(functions).filter(([,ok])=>ok!==true).map(([name])=>`rpc:${name}`);
+  const missing=[...missingTables,...missingFunctions];
   if(engine?.ok!==true||missing.length){
     setFormsEnabled(false);
     if(accessStatus){accessStatus.textContent=`Moteur Fracture incomplet${missing.length?` : ${missing.join(', ')}`:''}. Synchronisation Supabase requise.`;accessStatus.dataset.statusType='error'}
@@ -37,7 +39,7 @@ async function verifyRuntime(){
     return false;
   }
   setFormsEnabled(true);
-  if(accessStatus){accessStatus.textContent=`Moteur Fracture ${engine.engine_version||'serveur'} opérationnel · droit d’accès confirmé.`;accessStatus.dataset.statusType='success'}
+  if(accessStatus){accessStatus.textContent=`Moteur Fracture ${engine.engine_version||'serveur'} opérationnel · tables et RPC critiques confirmées · droit d’accès confirmé.`;accessStatus.dataset.statusType='success'}
   return true;
 }
 async function boot(){
