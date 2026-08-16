@@ -1,0 +1,28 @@
+:root{--home-orbit-size:min(48vw,520px);--home-node:clamp(112px,11vw,150px)}
+.home-page .hero{padding:clamp(46px,7vw,92px) 0 36px;overflow:hidden}
+.home-page .hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,.9fr);gap:clamp(36px,6vw,86px);align-items:center}
+.home-page .hero-copy{max-width:720px}
+.home-page .hero-copy h1{font-size:clamp(2.7rem,6vw,5.6rem);line-height:.98;letter-spacing:-.055em;margin:.45rem 0 1.1rem}
+.home-page .hero-copy>p{max-width:66ch;font-size:clamp(1rem,1.4vw,1.16rem);line-height:1.75;color:var(--muted)}
+.home-cosmos{position:relative;width:var(--home-orbit-size);aspect-ratio:1;margin-inline:auto;isolation:isolate}
+.home-cosmos::before,.home-cosmos::after{content:"";position:absolute;inset:8%;border:1px solid rgba(255,255,255,.11);border-radius:50%;box-shadow:0 0 80px rgba(137,85,255,.12) inset;pointer-events:none}
+.home-cosmos::after{inset:22%;border-color:rgba(255,255,255,.07)}
+.home-cosmos .identity-core{position:absolute;inset:50% auto auto 50%;translate:-50% -50%;width:clamp(150px,15vw,205px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,rgba(89,69,164,.22),rgba(6,9,20,.88) 70%);border:1px solid rgba(255,255,255,.15);box-shadow:0 28px 90px rgba(0,0,0,.45),0 0 50px rgba(119,83,255,.15);z-index:3;transition:.26s ease}
+.home-cosmos .identity-core img{width:72%;height:72%;object-fit:contain;transition:.26s ease}
+.home-cosmos .orbit-node{position:absolute;width:var(--home-node);min-height:var(--home-node);padding:14px 10px;border-radius:24px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:9px;text-align:center;text-decoration:none;background:linear-gradient(145deg,rgba(20,24,41,.94),rgba(7,10,21,.92));border:1px solid rgba(255,255,255,.12);box-shadow:0 18px 50px rgba(0,0,0,.33);z-index:4;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.home-cosmos .orbit-node:hover,.home-cosmos .orbit-node:focus-visible{transform:translateY(-5px) scale(1.035);border-color:rgba(190,169,255,.55);box-shadow:0 24px 70px rgba(0,0,0,.42),0 0 30px rgba(116,84,255,.16);outline:none}
+.home-cosmos .orbit-node img{width:72px;height:72px;object-fit:contain;border-radius:16px}
+.home-cosmos .orbit-node span{font-size:.86rem;font-weight:800;line-height:1.15;color:#fff}
+.home-cosmos .node-sinjira{left:50%;top:0;translate:-50% 0}
+.home-cosmos .node-registre{left:1%;bottom:6%}
+.home-cosmos .node-nova{right:1%;bottom:6%}
+.home-cosmos .cosmos-label{position:absolute;left:50%;bottom:-5px;translate:-50% 0;width:86%;text-align:center;color:var(--muted);font-size:.82rem;letter-spacing:.06em;text-transform:uppercase}
+.home-projects{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.home-project{position:relative;display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;padding:26px;border:1px solid rgba(255,255,255,.1);border-radius:26px;background:linear-gradient(145deg,rgba(18,22,38,.84),rgba(7,10,19,.92));text-decoration:none;overflow:hidden;min-height:180px}
+.home-project::after{content:"";position:absolute;inset:auto -10% -80% 30%;height:190px;background:radial-gradient(circle,var(--card-glow,rgba(120,90,255,.2)),transparent 66%);pointer-events:none}
+.home-project img{width:96px;height:96px;object-fit:contain;border-radius:20px;background:rgba(255,255,255,.035);padding:8px}
+.home-project h3{margin:.18rem 0 .45rem;font-size:1.35rem;color:#fff}.home-project p{margin:0;color:var(--muted);line-height:1.6}.home-project .arrow{display:inline-block;margin-top:.8rem;font-weight:800;color:#fff}
+.home-focus-note{margin-top:18px;color:var(--muted);font-size:.92rem}
+@media(max-width:980px){.home-page .hero-grid{grid-template-columns:1fr}.home-cosmos{--home-orbit-size:min(82vw,500px)}.home-projects{grid-template-columns:1fr}}
+@media(max-width:620px){.home-page .hero{padding-top:28px}.home-cosmos{--home-orbit-size:min(94vw,440px);--home-node:104px}.home-cosmos .orbit-node{padding:10px 7px;border-radius:20px}.home-cosmos .orbit-node img{width:58px;height:58px}.home-cosmos .orbit-node span{font-size:.72rem}.home-cosmos .identity-core{width:135px}.home-cosmos .node-registre{left:0;bottom:8%}.home-cosmos .node-nova{right:0;bottom:8%}.home-project{grid-template-columns:1fr;text-align:center}.home-project img{margin:auto}}
+@media(max-width:420px){.home-cosmos{--home-node:94px}.home-cosmos .orbit-node img{width:50px;height:50px}.home-cosmos .orbit-node span{font-size:.68rem}.home-cosmos .identity-core{width:118px}}
