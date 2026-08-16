@@ -13,8 +13,10 @@ function ageOn(dateString){
   return age;
 }
 function nextDestination(def='/compte/index.html'){
+  if(window.SINJIRA_AUTH_ROUTE?.next)return window.SINJIRA_AUTH_ROUTE.next(def);
   const value=new URLSearchParams(location.search).get('next');
-  return value&&value.startsWith('/')?value:def;
+  if(!value||!value.startsWith('/')||value.startsWith('//')||value.includes('\\')||/[\u0000-\u001f\u007f]/.test(value))return def;
+  try{const url=new URL(value,location.origin);return url.origin===location.origin?`${url.pathname}${url.search}${url.hash}`:def}catch{return def}
 }
 
 if(form){
@@ -65,7 +67,7 @@ if(form){
       options:{emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}${destination}`,data:metadata}
     });
     if(error){setStatus(status,'Création du compte impossible. Vérifiez les renseignements ou utilisez une autre adresse courriel.','error');return}
-    if(data.session){location.href=destination;return}
+    if(data.session){location.assign(destination);return}
     setStatus(status,wantsQuestionnaire?'Compte créé. Confirmez votre adresse courriel; le lien de confirmation vous mènera ensuite au questionnaire complet du Registre.':'Compte créé. Vérifiez votre courriel pour confirmer votre adresse.','success');
     form.reset();
   });
