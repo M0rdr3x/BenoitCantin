@@ -40,11 +40,15 @@ RETIRED = {
 CUSTOM_AUTH = {
     "get-document-url": (
         "optionalUser",
-        "document_requires_account",
+        "project_access_rank",
+        "doc.status!=='approved'",
+        "createSignedUrl",
     ),
     "send-game-report": (
-        "requiredUser",
-        "user.email",
+        "optionalUser",
+        "!user?.email",
+        "to: [user.email]",
+        "MAX_REQUEST_BYTES",
     ),
 }
 
