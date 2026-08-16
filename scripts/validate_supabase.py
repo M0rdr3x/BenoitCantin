@@ -7,7 +7,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ID = "gpvivleexywljowcqkru"
-EXPECTED_SERVER_VERSION = "24.4.6"
+EXPECTED_SERVER_VERSION = "24.4.11"
 MIGRATIONS = ROOT / "supabase" / "migrations"
 FUNCTIONS = ROOT / "supabase" / "functions"
 CONFIG = ROOT / "supabase" / "config.toml"
@@ -91,6 +91,7 @@ def main() -> int:
 
     required_rpcs = {
         "get_sinjira_server_version",
+        "get_sinjira_runtime_health",
         "fracture_engine_health",
         "fracture_engine_get_state",
         "fracture_engine_start",
@@ -131,6 +132,10 @@ def main() -> int:
         errors.append("Le workflow de production ne doit jamais réparer automatiquement l'historique des migrations.")
     if "db push --linked --dry-run" not in workflow:
         errors.append("Le workflow de production doit effectuer un dry-run avant application.")
+    if "inputs.apply == true" not in workflow:
+        errors.append("Le workflow de production doit exiger un lancement manuel explicite avec apply=true pour toute écriture.")
+    if "ÉTAT PRODUCTION" not in workflow:
+        warnings.append("Le workflow devrait résumer explicitement si la production a été modifiée ou seulement prévisualisée.")
 
     function_dirs = sorted(
         p.name for p in FUNCTIONS.iterdir()
@@ -169,7 +174,6 @@ def main() -> int:
             custom_env.update(env_re.findall(read(path)))
     custom_env -= DEFAULT_EDGE_ENV
 
-    # Contrat navigateur / Edge Functions -> schéma SQL.
     tables, views = find_created_relations(sql)
     defined_relations = tables | views
     storage_buckets = set(re.findall(r"\.storage\.from\(\s*['\"]([a-zA-Z0-9_-]+)['\"]", source_text))
@@ -195,9 +199,6 @@ def main() -> int:
     if missing_edges:
         errors.append("Edge Functions invoquées mais absentes du dépôt: " + ", ".join(missing_edges))
 
-    # Toute table applicative créée par les migrations doit avoir RLS activé quelque part
-    # dans l'historique. Les Edge Functions service-role peuvent ensuite contourner RLS
-    # explicitement, mais le navigateur ne doit jamais dépendre d'une table sans RLS.
     rls_enabled = set(re.findall(
         r"\balter\s+table\s+(?:if\s+exists\s+)?(?:public\.)?([a-z_][a-z0-9_]*)\s+enable\s+row\s+level\s+security",
         sql,
@@ -208,8 +209,6 @@ def main() -> int:
     if missing_rls:
         errors.append("Tables applicatives sans activation RLS détectée: " + ", ".join(missing_rls))
 
-    # SECURITY DEFINER doit toujours verrouiller search_path. Ce contrôle est volontairement
-    # conservateur : il analyse chaque bloc CREATE FUNCTION terminé par $$;.
     function_blocks = re.findall(
         r"(create\s+(?:or\s+replace\s+)?function\s+.*?\$\$;)",
         sql,
