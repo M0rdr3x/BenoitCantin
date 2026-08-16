@@ -15,7 +15,6 @@ const GUEST_ACTIONS = document.querySelector('[data-guest-actions]');
 const SESSION_BADGE = document.querySelector('[data-session-badge]');
 const EMAIL_PANEL = document.querySelector('[data-email-panel]');
 const EMAIL_INPUT = document.querySelector('[data-report-email]');
-const EMAIL_CONSENT = document.querySelector('[data-report-email-consent]');
 
 let user = null;
 let currentSessionId = new URLSearchParams(location.search).get('session') || null;
@@ -129,6 +128,7 @@ function markClean(message = 'À jour') {
 }
 
 function setMode() {
+  const emailButton = document.querySelector('[data-email-report]');
   if (user) {
     MODE.textContent = `Compte joueur · ${user.email}`;
     MODE.dataset.mode = 'account';
@@ -138,11 +138,22 @@ function setMode() {
       EMAIL_INPUT.value = user.email || '';
       EMAIL_INPUT.readOnly = true;
     }
+    if (emailButton) {
+      emailButton.disabled = false;
+      emailButton.removeAttribute('aria-disabled');
+      emailButton.title = 'Envoyer le rapport à l’adresse du compte connecté';
+    }
   } else {
     MODE.textContent = 'Mode invité · aucune sauvegarde serveur';
     MODE.dataset.mode = 'guest';
     ACCOUNT_ACTIONS.hidden = true;
     GUEST_ACTIONS.hidden = false;
+    if (EMAIL_PANEL) EMAIL_PANEL.hidden = true;
+    if (emailButton) {
+      emailButton.disabled = true;
+      emailButton.setAttribute('aria-disabled', 'true');
+      emailButton.title = 'Connexion requise pour l’envoi par courriel';
+    }
   }
 }
 
@@ -288,13 +299,10 @@ async function invokeReport(mode) {
     return;
   }
 
-  const email = String(EMAIL_INPUT?.value || '').trim();
   if (mode === 'email' && !user) {
-    if (!email || !EMAIL_CONSENT?.checked) {
-      setStatus(STATUS, 'Indiquez votre courriel et autorisez explicitement cet envoi.', 'error');
-      EMAIL_PANEL.hidden = false;
-      return;
-    }
+    if (EMAIL_PANEL) EMAIL_PANEL.hidden = true;
+    setStatus(STATUS, 'Connectez-vous à votre Compte SINJIRA™ pour recevoir le rapport par courriel. Le téléchargement PDF local reste disponible sans compte.', 'error');
+    return;
   }
 
   const supabase = getSupabase();
@@ -304,8 +312,7 @@ async function invokeReport(mode) {
     body: {
       mode,
       session_id: currentSessionId,
-      sheet_data: collectSheetData(),
-      email: user ? undefined : email
+      sheet_data: collectSheetData()
     }
   });
 
@@ -324,15 +331,9 @@ async function invokeReport(mode) {
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     setStatus(STATUS, 'Votre PDF rempli a été généré sur votre appareil.', 'success');
-  } else if (mode === 'email') {
-    EMAIL_PANEL.hidden = true;
-    setStatus(
-      STATUS,
-      user
-        ? `Rapport envoyé à ${user.email}.`
-        : `Rapport envoyé à ${email}. Aucune partie n’a été sauvegardée sur le site.`,
-      'success'
-    );
+  } else if (mode === 'email' && user) {
+    if (EMAIL_PANEL) EMAIL_PANEL.hidden = true;
+    setStatus(STATUS, `Rapport envoyé à ${user.email}.`, 'success');
   }
 }
 
@@ -376,12 +377,16 @@ function bindActions() {
   document.querySelector('[data-finish-session]')?.addEventListener('click', () => saveSession({ finish: true }));
   document.querySelector('[data-download-report]')?.addEventListener('click', () => invokeReport('download'));
   document.querySelector('[data-email-report]')?.addEventListener('click', () => {
-    EMAIL_PANEL.hidden = false;
-    if (user) invokeReport('email');
+    if (!user) {
+      setStatus(STATUS, 'Connexion requise pour l’envoi par courriel.', 'error');
+      return;
+    }
+    if (EMAIL_PANEL) EMAIL_PANEL.hidden = false;
+    invokeReport('email');
   });
   document.querySelector('[data-confirm-email-report]')?.addEventListener('click', () => invokeReport('email'));
   document.querySelector('[data-cancel-email-report]')?.addEventListener('click', () => {
-    EMAIL_PANEL.hidden = true;
+    if (EMAIL_PANEL) EMAIL_PANEL.hidden = true;
   });
   document.querySelector('[data-contribute]')?.addEventListener('click', contribute);
   document.querySelector('[data-new-session]')?.addEventListener('click', () => {
