@@ -1,5 +1,6 @@
 import {getSupabase,requireUser,escapeHtml,friendlyBackendMessage} from './sinjira-supabase.js';
 
+const UI_VERSION='24.4.23';
 const code=(new URLSearchParams(location.search).get('code')||'').trim().toUpperCase();
 const root=document.querySelector('[data-engine-root]');
 const status=document.querySelector('[data-fracture-status]');
@@ -8,6 +9,10 @@ let busy=false;
 let loading=false;
 let timer=null;
 let requestSerial=0;
+let lastRenderedStateSignature='';
+let keepDraft={key:'',selected:new Set()};
+let reportDraft={key:'',values:{report:'',suspect:'',proof:''}};
+let voteDraft={key:'',selected:new Set()};
 
 const phaseLabels={
   lobby:'Salon',
@@ -37,11 +42,53 @@ const identityMeta=value=>{
     className:'engine-identity--rm',
     description:'Vous appartenez au Réseau-Mère.'
   };
-  return {code:'?',label:'Identité non attribuée',className:'engine-identity--unknown',description:'Votre identité n’est pas encore disponible.'};
+  return {
+    code:'?',
+    label:'Identité non attribuée',
+    className:'engine-identity--unknown',
+    description:'Le serveur n’a pas encore renvoyé votre identité privée.'
+  };
 };
 
 const identityLabel=value=>identityMeta(value).label;
 const winnerLabel=value=>value==='resistance'?'Résistance':value==='network'?'Réseau-Mère':'—';
+
+function draftKey(state,phase=state?.phase){
+  return `${state?.party_code||code}|${phase||'unknown'}|${Number(state?.round)||0}|${Number(state?.my_seat)||0}`;
+}
+
+function stateSignature(state){
+  try{return JSON.stringify(state);}catch{return '';}
+}
+
+function isEditingControl(){
+  const active=document.activeElement;
+  return Boolean(active&&root&&root.contains(active)&&active.matches('select,input,textarea'));
+}
+
+function getKeepSelection(state,cards){
+  const key=draftKey(state,'choose_keep');
+  if(keepDraft.key!==key) keepDraft={key,selected:new Set()};
+  const valid=new Set((cards||[]).map(card=>Number(card.id)));
+  [...keepDraft.selected].forEach(id=>{if(!valid.has(id)) keepDraft.selected.delete(id);});
+  return keepDraft.selected;
+}
+
+function getReportValues(state){
+  const key=draftKey(state,'report');
+  if(reportDraft.key!==key){
+    reportDraft={key,values:{report:'',suspect:'',proof:''}};
+  }
+  return reportDraft.values;
+}
+
+function getVoteSelection(state,others){
+  const key=draftKey(state,'final_vote');
+  if(voteDraft.key!==key) voteDraft={key,selected:new Set()};
+  const valid=new Set((others||[]).map(seat=>Number(seat.seat)));
+  [...voteDraft.selected].forEach(id=>{if(!valid.has(id)) voteDraft.selected.delete(id);});
+  return voteDraft.selected;
+}
 
 function show(msg,type='info'){
   if(!status) return;
@@ -75,15 +122,20 @@ function backHtml(card,enabled){
 }
 
 function identityHtml(state){
-  if(!state?.my_identity) return '';
-  const meta=identityMeta(state.my_identity);
-  return `<aside class="engine-identity ${meta.className}" aria-label="Votre identité privée : ${escapeHtml(meta.label)}">
+  const meta=identityMeta(state?.my_identity);
+  const ready=state?.my_identity==='resistance'||state?.my_identity==='network';
+  const privacyText=ready
+    ? 'Visible uniquement sur votre écran. Les identités des autres joueurs restent cachées jusqu’à la fin officielle de la partie.'
+    : 'Votre identité devrait être attribuée dès le démarrage. Si ce message persiste, rechargez la partie.';
+  return `<aside class="engine-identity ${meta.className}" data-private-identity-card data-private-identity-status="${ready?'ready':'missing'}" aria-live="polite" aria-label="Carte d’identité secrète : ${escapeHtml(meta.label)}">
     <div class="engine-identity__mark" aria-hidden="true">${escapeHtml(meta.code)}</div>
     <div class="engine-identity__content">
-      <span class="engine-identity__eyebrow">Votre identité privée</span>
+      <span class="engine-identity__eyebrow">Carte d’identité secrète · vous seul</span>
+      <span class="engine-identity__role-label">Votre faction pour cette partie</span>
       <strong>${escapeHtml(meta.label)}</strong>
-      <small>${escapeHtml(meta.description)} Cette information ne doit être montrée à personne pendant la partie.</small>
+      <small>${escapeHtml(meta.description)} ${escapeHtml(privacyText)}</small>
     </div>
+    <div class="engine-identity__privacy" aria-hidden="true">NE PAS MONTRER AUX AUTRES JOUEURS</div>
   </aside>`;
 }
 
@@ -130,19 +182,19 @@ function scoreHtml(score){
 }
 
 /**
- * Défense côté interface : même si un état serveur mal formé contenait l'identité
- * d'un autre siège avant la fin, on ne l'affiche jamais. La protection serveur
- * demeure l'autorité; cette couche évite une fuite visuelle accidentelle.
+ * Avant la fin, la liste des sièges ne montre aucune identité, même celle du
+ * joueur local. La seule identité visible pendant la partie est la carte privée
+ * rendue par identityHtml(). Les identités de tous les sièges sont révélées
+ * uniquement sur l’écran final.
  */
 function seatsHtml(state,{revealAll=false}={}){
   return `<div class="engine-seats">${(state.seats||[]).map(seat=>{
-    const visibleIdentity=seat.seat===state.my_seat
-      ? state.my_identity
-      : (revealAll ? seat.identity : null);
+    const visibleIdentity=revealAll?seat.identity:null;
     return `<article class="engine-seat${seat.seat===state.turn_seat?' is-turn':''}${seat.seat===state.my_seat?' is-me':''}">
       <strong>#${seat.seat} ${escapeHtml(seat.name)}</strong>
       <span>${seat.kind==='bot'?'Moteur tactique':'Humain'}</span>
       ${visibleIdentity?`<em>${escapeHtml(identityLabel(visibleIdentity))}</em>`:''}
+      ${!revealAll&&seat.seat===state.my_seat?'<small>Votre siège · identité dans votre carte privée</small>':''}
     </article>`;
   }).join('')}</div>`;
 }
@@ -184,6 +236,8 @@ function renderLobby(state){
 
 function renderKeep(state){
   const cards=state.hand||[];
+  const selected=getKeepSelection(state,cards);
+  if(state.keep_submitted) selected.clear();
   root.innerHTML=`${headerGame(state)}
     <section class="fracture-online-card engine-panel">
       <span class="eyebrow">Ronde ${state.round}</span>
@@ -191,12 +245,11 @@ function renderKeep(state){
       <p>Vous voyez seulement vos 3 cartes. Chaque carte indique clairement sa faction et sa valeur. Sélectionnez-en exactement 2; la troisième est défaussée. Vos 2 cartes rejoignent ensuite le centre et cessent de vous appartenir.</p>
       ${state.keep_submitted
         ? '<div class="v24-callout">Choix enregistré. Attente des autres joueurs…</div>'
-        : `<div class="engine-cards" data-hand>${cards.map(card=>cardHtml(card,true,false)).join('')}</div><button class="btn btn-primary" data-submit-keep disabled>Confirmer mes 2 cartes</button>`}
+        : `<div class="engine-cards" data-hand>${cards.map(card=>cardHtml(card,true,selected.has(Number(card.id)))).join('')}</div><button class="btn btn-primary" data-submit-keep ${selected.size===2?'':'disabled'}>Confirmer mes 2 cartes</button>`}
     </section>
     ${reportsHtml(state)}${roundsHtml(state)}${eventsHtml(state)}`;
 
   if(!state.keep_submitted){
-    const selected=new Set();
     const button=root.querySelector('[data-submit-keep]');
     root.querySelectorAll('[data-card-id]').forEach(cardButton=>cardButton.addEventListener('click',()=>{
       const id=Number(cardButton.dataset.cardId);
@@ -232,6 +285,13 @@ function renderReport(state){
   const submitted=state.report_submitted;
   const picks=state.my_picks||[];
   const seats=(state.seats||[]).filter(seat=>seat.seat!==state.my_seat);
+  const values=getReportValues(state);
+  if(state.my_proof_used) values.proof='';
+  if(submitted){
+    values.report='';
+    values.suspect='';
+    values.proof='';
+  }
   root.innerHTML=`${headerGame(state)}
     <section class="fracture-online-card engine-panel">
       <span class="eyebrow">Ronde ${state.round}</span>
@@ -240,7 +300,7 @@ function renderReport(state){
       <div class="engine-cards">${picks.map(card=>cardHtml(card,false)).join('')}</div>
       ${submitted
         ? '<div class="v24-callout">Votre rapport est enregistré. Attente des autres joueurs…</div>'
-        : `<form data-report-form class="engine-form">
+        : `<form data-report-form class="engine-form" autocomplete="off">
             <label>Rapport annoncé
               <select name="report" required>
                 <option value="">Choisir…</option>
@@ -269,21 +329,43 @@ function renderReport(state){
     <section class="fracture-online-card engine-panel"><h2>Rapports annoncés</h2>${reportsHtml(state)}</section>
     ${roundsHtml(state)}${eventsHtml(state)}`;
 
-  root.querySelector('[data-report-form]')?.addEventListener('submit',event=>{
-    event.preventDefault();
-    const form=event.currentTarget;
-    act('fracture_engine_submit_report',{
-      p_party_code:code,
-      p_report:form.report.value,
-      p_suspect_seat:Number(form.suspect.value),
-      p_proof_card_id:form.proof.value?Number(form.proof.value):null
+  const form=root.querySelector('[data-report-form]');
+  if(form){
+    ['report','suspect','proof'].forEach(name=>{
+      const field=form.elements[name];
+      if(!field||field.disabled) return;
+      const wanted=values[name]||'';
+      if([...field.options].some(option=>option.value===wanted)) field.value=wanted;
     });
-  });
+    form.addEventListener('change',event=>{
+      const field=event.target;
+      if(!field?.matches?.('select[name]')) return;
+      if(Object.prototype.hasOwnProperty.call(values,field.name)) values[field.name]=field.value;
+    });
+    form.addEventListener('submit',event=>{
+      event.preventDefault();
+      values.report=form.report.value;
+      values.suspect=form.suspect.value;
+      values.proof=form.proof.value;
+      if(!values.report||!values.suspect){
+        show('Choisissez votre rapport annoncé et votre soupçon privé avant l’envoi.','error');
+        return;
+      }
+      act('fracture_engine_submit_report',{
+        p_party_code:code,
+        p_report:values.report,
+        p_suspect_seat:Number(values.suspect),
+        p_proof_card_id:values.proof?Number(values.proof):null
+      });
+    });
+  }
 }
 
 function renderFinalVote(state){
   const count=Number(state.agents)||0;
   const others=(state.seats||[]).filter(seat=>seat.seat!==state.my_seat);
+  const selected=getVoteSelection(state,others);
+  if(state.voted) selected.clear();
   root.innerHTML=`${headerGame(state)}
     <section class="fracture-online-card engine-panel">
       <span class="eyebrow">Accusation finale</span>
@@ -291,7 +373,7 @@ function renderFinalVote(state){
       <p>Choisissez exactement ${count} siège${count>1?'s':''} distinct${count>1?'s':''}. Les sièges contrôlés par le moteur ne votent pas.</p>
       ${state.voted
         ? '<div class="v24-callout">Votre accusation définitive est enregistrée. Elle ne peut plus être modifiée. Attente des autres humains…</div>'
-        : `<div class="engine-accusation" data-accusation>${others.map(seat=>`<label><input type="checkbox" value="${seat.seat}"> #${seat.seat} ${escapeHtml(seat.name)}</label>`).join('')}</div><button class="btn btn-primary" data-submit-vote disabled>Confirmer l’accusation définitive</button>`}
+        : `<div class="engine-accusation" data-accusation>${others.map(seat=>`<label><input type="checkbox" value="${seat.seat}" ${selected.has(Number(seat.seat))?'checked':''}> #${seat.seat} ${escapeHtml(seat.name)}</label>`).join('')}</div><button class="btn btn-primary" data-submit-vote disabled>Confirmer l’accusation définitive</button>`}
     </section>
     ${roundsHtml(state)}${eventsHtml(state)}`;
 
@@ -299,11 +381,16 @@ function renderFinalVote(state){
     const checks=[...root.querySelectorAll('[data-accusation] input')];
     const button=root.querySelector('[data-submit-vote]');
     const sync=()=>{
-      const selected=checks.filter(input=>input.checked).length;
-      checks.forEach(input=>{input.disabled=!input.checked&&selected>=count;});
-      if(button) button.disabled=selected!==count;
+      const selectedCount=checks.filter(input=>input.checked).length;
+      checks.forEach(input=>{input.disabled=!input.checked&&selectedCount>=count;});
+      if(button) button.disabled=selectedCount!==count;
     };
-    checks.forEach(input=>input.addEventListener('change',sync));
+    checks.forEach(input=>input.addEventListener('change',()=>{
+      const seat=Number(input.value);
+      input.checked?selected.add(seat):selected.delete(seat);
+      sync();
+    }));
+    sync();
     button?.addEventListener('click',()=>act('fracture_engine_submit_accusation',{
       p_party_code:code,
       p_accused_seats:checks.filter(input=>input.checked).map(input=>Number(input.value))
@@ -340,9 +427,12 @@ function headerGame(state){
     ${seatsHtml(state)}`;
 }
 
-function render(state){
+function render(state,{force=false}={}){
   if(!state||state.ok===false) throw new Error(state?.error||'État de partie invalide.');
   current=state;
+  const signature=stateSignature(state);
+  if(!force&&signature&&signature===lastRenderedStateSignature&&root?.children?.length) return;
+  lastRenderedStateSignature=signature;
   clearShow();
 
   const heading=document.querySelector('[data-party-heading]');
@@ -374,7 +464,7 @@ async function load(){
     show('Code de partie invalide. Format attendu : FRM-ABC123.','error');
     return;
   }
-  if(loading||busy||document.hidden) return;
+  if(loading||busy||document.hidden||isEditingControl()) return;
   const serial=++requestSerial;
   loading=true;
   try{
@@ -397,7 +487,7 @@ async function act(name,args){
   show('Synchronisation…','info');
   try{
     const state=await gatewayAction(name,args);
-    if(serial===requestSerial) render(state);
+    if(serial===requestSerial) render(state,{force:true});
   }catch(error){
     if(serial===requestSerial){
       console.warn(`[Fracture ${name}]`,error);
@@ -416,6 +506,7 @@ async function boot(){
     show('Code de partie invalide. Format attendu : FRM-ABC123.','error');
     return;
   }
+  document.documentElement.dataset.fractureUiVersion=UI_VERSION;
   document.querySelector('[data-copy-party-code]')?.addEventListener('click',async()=>{
     try{
       await navigator.clipboard.writeText(code);
@@ -424,12 +515,17 @@ async function boot(){
       show(`Code : ${code}`,'info');
     }
   });
+  root?.addEventListener('focusout',()=>{
+    setTimeout(()=>{
+      if(!busy&&!loading&&!document.hidden&&current?.phase!=='finished') load();
+    },180);
+  });
   await load();
   timer=setInterval(()=>{
-    if(!busy&&!loading&&!document.hidden&&current?.phase!=='finished') load();
+    if(!busy&&!loading&&!document.hidden&&!isEditingControl()&&current?.phase!=='finished') load();
   },2200);
   addEventListener('visibilitychange',()=>{
-    if(!document.hidden&&!busy&&current?.phase!=='finished') load();
+    if(!document.hidden&&!busy&&!isEditingControl()&&current?.phase!=='finished') load();
   });
   addEventListener('beforeunload',()=>clearInterval(timer),{once:true});
 }
