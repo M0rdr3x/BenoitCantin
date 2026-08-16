@@ -66,3 +66,4 @@
 20260816151100 sinjira_v24_4_13_fracture_lobby_concurrency
 20260816151200 sinjira_v24_4_13_registry_uniqueness
 20260816161701 sinjira_v24_4_13_context_rpc_privacy
+20260816161847 sinjira_v24_4_13_platform_marker
