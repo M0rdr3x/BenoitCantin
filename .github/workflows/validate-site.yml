@@ -36,6 +36,8 @@ jobs:
         run: python scripts/validate_pwa.py
       - name: Vérifier la structure Supabase
         run: python scripts/validate_supabase.py
+      - name: Vérifier la reconstruction du schéma production
+        run: python scripts/validate_production_schema_manifest.py
       - name: Vérifier les avatars 512 × 512 et leurs politiques Storage
         run: python scripts/validate_storage_policies.py
       - name: Vérifier la console administrateur complète
