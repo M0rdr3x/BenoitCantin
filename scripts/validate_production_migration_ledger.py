@@ -8,9 +8,9 @@ MIG=ROOT/'supabase'/'migrations'
 BUILDER=ROOT/'scripts'/'build_supabase_production_workspace.py'
 ROW_RE=re.compile(r'^(\d{14})\s+([a-zA-Z0-9_]+)$')
 FILE_RE=re.compile(r'^(\d{14})_(.+)\.sql$')
-EXPECTED_COUNT=62
+EXPECTED_COUNT=64
 EXPECTED_FIRST='20260809050252'
-EXPECTED_LAST='20260816151028'
+EXPECTED_LAST='20260816151200'
 
 
 def rows():
@@ -40,8 +40,6 @@ def main()->int:
         local.append((m.group(1),p.name))
     if len({v for v,_ in local})!=len(local):errors.append('Deux fichiers locaux partagent le même timestamp.')
 
-    # Les fichiers locaux antérieurs/égaux au cutoff reconstruisent le schéma;
-    # ils ne doivent jamais être envoyés tels quels au db push lié.
     cutoff=EXPECTED_LAST
     future=[name for v,name in local if v>cutoff]
 
