@@ -19,17 +19,30 @@ export function friendlyBackendMessage(message,fallback='Une opération serveur 
   if(/JWT|token.*expired|session.*expired|invalid claim/i.test(raw))return 'Votre session a expiré. Reconnectez-vous puis réessayez.';
   if(/Failed to fetch|NetworkError|FunctionsFetchError|Load failed/i.test(raw))return 'Communication avec le serveur SINJIRA™ impossible pour le moment.';
   if(/row-level security|permission denied|42501|not authorized|forbidden/i.test(raw))return 'Votre compte n’a pas l’autorisation nécessaire pour cette opération.';
-  if(/FRACTURE_ACCESS_REQUIRED/i.test(raw))return 'Un droit d’accès Fracture du Réseau-Mère est requis pour ce compte.';
+  if(/FRACTURE_(?:ACCESS|ENTITLEMENT)_REQUIRED/i.test(raw))return 'Un droit d’accès Fracture du Réseau-Mère est requis pour ce compte.';
   if(/WAITING_FOR_PLAYERS/i.test(raw))return 'La partie attend encore les autres joueurs humains.';
   if(/GAME_ALREADY_STARTED/i.test(raw))return 'Cette partie a déjà commencé.';
   if(/PARTY_FULL/i.test(raw))return 'Tous les sièges humains de cette partie sont occupés.';
   if(/PARTY_NOT_FOUND/i.test(raw))return 'Cette partie Fracture est introuvable.';
-  if(/SEAT_TAKEN/i.test(raw))return 'Ce siège est déjà occupé.';
+  if(/SEAT_(?:TAKEN|ALREADY_TAKEN)/i.test(raw))return 'Ce siège est déjà occupé.';
+  if(/INVALID_SEAT/i.test(raw))return 'Ce numéro de siège n’est pas valide pour cette partie.';
+  if(/SOLO_PARTY_CANNOT_BE_JOINED/i.test(raw))return 'Une partie Solo ne peut pas être rejointe par un deuxième compte.';
+  if(/INVALID_PLAYER_COUNT/i.test(raw))return 'Le nombre de joueurs humains doit être compris entre 1 et 20.';
+  if(/NOT_A_MEMBER/i.test(raw))return 'Votre compte ne fait pas partie de cette partie.';
   if(/NOT_YOUR_TURN/i.test(raw))return 'Ce n’est pas encore votre tour.';
   if(/WRONG_PHASE/i.test(raw))return 'Cette action n’est pas disponible à cette étape de la ronde.';
   if(/CHOOSE_EXACTLY_TWO/i.test(raw))return 'Choisissez exactement deux cartes.';
+  if(/INVALID_CARDS|CARD_NOT_AVAILABLE/i.test(raw))return 'Une des cartes choisies n’est plus disponible. Rechargez l’état de la partie.';
+  if(/INVALID_REPORT/i.test(raw))return 'Le rapport doit être Résistance, Réseau-Mère ou Équilibré.';
+  if(/INVALID_SUSPECT/i.test(raw))return 'Choisissez un autre siège valide comme soupçon.';
+  if(/INVALID_PROOF/i.test(raw))return 'Cette carte ne peut pas être utilisée comme Preuve.';
   if(/PROOF_ALREADY_USED/i.test(raw))return 'Votre Preuve a déjà été utilisée dans cette partie.';
+  if(/INVALID_ACCUSATION_COUNT/i.test(raw))return 'Le nombre d’accusations finales ne correspond pas au nombre d’agents à identifier.';
+  if(/ACCUSATIONS_MUST_BE_DISTINCT/i.test(raw))return 'Chaque siège accusé doit être différent.';
+  if(/INVALID_ACCUSED_SEAT/i.test(raw))return 'Une accusation finale vise un siège invalide ou votre propre siège.';
   if(/ALREADY_SUBMITTED/i.test(raw))return 'Cette décision a déjà été enregistrée.';
+  if(/OWNER_ONLY/i.test(raw))return 'Seul le créateur de la partie peut effectuer cette action.';
+  if(/AUTH_REQUIRED/i.test(raw))return 'Connexion requise pour cette opération.';
   if(/duplicate key|23505/i.test(raw))return 'Cette information existe déjà dans votre compte.';
   if(/foreign key|23503/i.test(raw))return 'Cette opération dépend d’un élément qui n’est plus disponible.';
   if(/null value|23502|check constraint|23514|syntax error|SQLSTATE|column .* does not exist/i.test(raw))return 'Le serveur a refusé cette opération. Le diagnostic administrateur permet d’identifier le composant à synchroniser.';
@@ -39,4 +52,4 @@ export function setStatus(node,msg,type='info'){if(!node)return;const raw=String
 export function roleLabel(v){return ({public:'Public',account:'Compte joueur',player:'Joueur approuvé',tester:'Testeur approuvé',admin:'Administration'})[v]||v||'—'}
 export function projectStatusLabel(v){return ({draft:'Brouillon',development:'En développement',testing:'En test',active:'Disponible',archived:'Archivé'})[v]||v||'—'}
 export { SINJIRA_CONFIG, isSinjiraBackendConfigured };
-if(typeof location!=='undefined'&&/^\/admin\/sinjira(?:\/|$)/i.test(location.pathname)){queueMicrotask(()=>import('./v24-admin-health.js?v=24.4.3').catch(err=>console.warn('[SINJIRA admin health loader]',err)))}
+if(typeof location!=='undefined'&&/^\/admin\/sinjira(?:\/|$)/i.test(location.pathname)){queueMicrotask(()=>import('./v24-admin-health.js?v=24.4.6').catch(err=>console.warn('[SINJIRA admin health loader]',err)))}
