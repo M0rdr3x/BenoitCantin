@@ -67,7 +67,6 @@ jobs:
             echo "Secrets de connexion Supabase présents." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-
           echo "ready=false" >> "$GITHUB_OUTPUT"
           echo "Prévol distant non exécuté : SUPABASE_ACCESS_TOKEN et/ou SUPABASE_DB_PASSWORD absent(s)." >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -140,7 +139,6 @@ jobs:
         run: |
           set -euo pipefail
           secrets="$(supabase secrets list --project-ref "$PROJECT_ID")"
-
           if ! grep -Eq '(^|[[:space:]])SINJIRA_LICENSE_PEPPER([[:space:]]|$)' <<< "$secrets"; then
             pepper="$(openssl rand -hex 32)"
             supabase secrets set "SINJIRA_LICENSE_PEPPER=$pepper" --project-ref "$PROJECT_ID"
@@ -151,12 +149,14 @@ jobs:
           fi
 
           # Décision produit V24.4.11 : l'IA de personnage reste inactive tant que le site
-          # n'est pas finalisé. Une éventuelle OPENAI_API_KEY ne suffit donc jamais à l'activer.
+          # n'est pas finalisé. Même après activation future de l'IA générale, le canon privé
+          # auteur ne sera transmis à un fournisseur externe qu'avec un second choix explicite.
           supabase secrets set \
             "REPORT_FROM_EMAIL=SINJIRA <no-reply@benoitcantin.com>" \
             "CHARACTER_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
             "FRACTURE_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
             "SINJIRA_CHARACTER_AI_ENABLED=false" \
+            "SINJIRA_CHARACTER_AI_CANON_CONTEXT_ENABLED=false" \
             --project-ref "$PROJECT_ID"
 
           if [ -n "${OPTIONAL_RESEND_API_KEY:-}" ]; then
@@ -176,7 +176,7 @@ jobs:
             echo "Courriel transactionnel: RESEND_API_KEY absent; les téléchargements restent disponibles mais l'envoi de courriel demeure désactivé." >> "$GITHUB_STEP_SUMMARY"
           fi
           if grep -Eq '(^|[[:space:]])OPENAI_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then
-            echo "Fournisseur IA: clé disponible, mais SINJIRA_CHARACTER_AI_ENABLED=false maintient l'IA de personnage désactivée." >> "$GITHUB_STEP_SUMMARY"
+            echo "Fournisseur IA: clé disponible, mais IA personnage et contexte canon privé restent explicitement désactivés." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "IA de personnage: désactivée; aucune clé fournisseur requise pour le fonctionnement du site." >> "$GITHUB_STEP_SUMMARY"
           fi
