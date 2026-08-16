@@ -1,4 +1,4 @@
-# SINJIRA™ — Fracture du Réseau-Mère — moteur Web V24.4.1
+# SINJIRA™ — Fracture du Réseau-Mère — moteur Web V24.4.2
 
 ## Objectif
 
@@ -22,9 +22,11 @@ Les tables internes du moteur sont protégées et ne sont pas lisibles directeme
 - sa main quand elle doit être visible;
 - ses cartes récupérées;
 - le centre sous forme de cartes face cachée;
-- les informations publiques de la partie.
+- les rapports et Preuves publics;
+- son propre soupçon privé;
+- les autres informations publiques de la partie.
 
-Les identités adverses sont révélées uniquement à la fin.
+Les identités adverses sont révélées uniquement à la fin. Les soupçons de ronde des autres joueurs restent côté serveur et peuvent servir au départage de l’accusation sans être affichés aux adversaires.
 
 ## Déroulement numérique
 
@@ -34,7 +36,7 @@ Les identités adverses sont révélées uniquement à la fin.
 4. chaque siège conserve 2 cartes sur 3;
 5. ajout automatique des cartes système au centre;
 6. deux passages de sélection face cachée;
-7. rapport, Preuve facultative et soupçon;
+7. rapport, Preuve facultative et soupçon privé;
 8. résolution automatique de la ronde;
 9. accusation finale des humains;
 10. calcul des bonus et résultat;
@@ -42,4 +44,10 @@ Les identités adverses sont révélées uniquement à la fin.
 
 ## Déploiement
 
-Le navigateur V24.4 exige le marqueur serveur `24.4.x`. Les migrations `20260816_fracture_web_engine_v24_4.sql` puis `20260816_fracture_web_engine_v24_4_1_hotfix.sql` doivent être appliquées à Supabase production avant que le salon soit déverrouillé.
+Le navigateur V24.4.2 exige le marqueur serveur `24.4.2`. Les migrations suivantes doivent être appliquées à Supabase production, dans l’ordre, après les migrations V24 déjà présentes :
+
+1. `20260816_fracture_web_engine_v24_4.sql`
+2. `20260816_fracture_web_engine_v24_4_1_hotfix.sql`
+3. `20260816_fracture_web_engine_v24_4_2_privacy.sql`
+
+Le workflow GitHub `Synchroniser Supabase production` doit d’abord être lancé en prévisualisation (`apply=false`) puis en application (`apply=true`) seulement si le dry-run est cohérent.
