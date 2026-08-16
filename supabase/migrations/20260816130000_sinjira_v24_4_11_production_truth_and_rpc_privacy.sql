@@ -45,6 +45,35 @@ $$;
 revoke all on function public.is_sinjira_owner(uuid) from public,anon;
 grant execute on function public.is_sinjira_owner(uuid) to authenticated,service_role;
 
+-- Même principe pour l'ancien helper administrateur utilisé par la navigation et les Edge Functions.
+-- Un navigateur ne peut vérifier que son propre compte; le service_role peut faire les contrôles serveur.
+create or replace function public.is_sinjira_admin(p_user_id uuid default auth.uid())
+returns boolean
+language sql
+stable
+security definer
+set search_path=public,auth
+as $$
+  select case
+    when p_user_id is null then false
+    when coalesce(auth.jwt()->>'role','')='service_role' then exists(
+      select 1
+      from public.internal_admin_users a
+      join auth.users u on u.id=a.user_id
+      where a.user_id=p_user_id and lower(coalesce(u.email,''))='kingtyrano@gmail.com'
+    )
+    when auth.uid() is null or p_user_id<>auth.uid() then false
+    else exists(
+      select 1
+      from public.internal_admin_users a
+      join auth.users u on u.id=a.user_id
+      where a.user_id=p_user_id and lower(coalesce(u.email,''))='kingtyrano@gmail.com'
+    )
+  end;
+$$;
+revoke all on function public.is_sinjira_admin(uuid) from public,anon;
+grant execute on function public.is_sinjira_admin(uuid) to authenticated,service_role;
+
 -- ---------------------------------------------------------------------------
 -- DROITS PRODUITS : même cloisonnement par utilisateur.
 -- Un navigateur ne peut plus tester les entitlements d'un autre UUID.
@@ -132,6 +161,7 @@ as $$
       to_regclass('public.user_entitlements') is not null and
       to_regprocedure('public.ensure_sinjira_owner_character()') is not null and
       to_regprocedure('public.has_sinjira_product(text,uuid)') is not null and
+      to_regprocedure('public.is_sinjira_admin(uuid)') is not null and
       to_regprocedure('public.fracture_engine_health()') is not null,
     'platform_version','24.4.11',
     'components',jsonb_build_object(
@@ -142,6 +172,7 @@ as $$
       'products',to_regclass('public.products') is not null,
       'user_entitlements',to_regclass('public.user_entitlements') is not null,
       'owner_repair',to_regprocedure('public.ensure_sinjira_owner_character()') is not null,
+      'admin_check',to_regprocedure('public.is_sinjira_admin(uuid)') is not null,
       'fracture_health',to_regprocedure('public.fracture_engine_health()') is not null
     )
   );
