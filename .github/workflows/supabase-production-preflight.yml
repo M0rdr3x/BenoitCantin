@@ -150,10 +150,13 @@ jobs:
             echo "SINJIRA_LICENSE_PEPPER déjà présent; conservation de la valeur existante." >> "$GITHUB_STEP_SUMMARY"
           fi
 
+          # Décision produit V24.4.11 : l'IA de personnage reste inactive tant que le site
+          # n'est pas finalisé. Une éventuelle OPENAI_API_KEY ne suffit donc jamais à l'activer.
           supabase secrets set \
             "REPORT_FROM_EMAIL=SINJIRA <no-reply@benoitcantin.com>" \
             "CHARACTER_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
             "FRACTURE_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
+            "SINJIRA_CHARACTER_AI_ENABLED=false" \
             --project-ref "$PROJECT_ID"
 
           if [ -n "${OPTIONAL_RESEND_API_KEY:-}" ]; then
@@ -173,9 +176,9 @@ jobs:
             echo "Courriel transactionnel: RESEND_API_KEY absent; les téléchargements restent disponibles mais l'envoi de courriel demeure désactivé." >> "$GITHUB_STEP_SUMMARY"
           fi
           if grep -Eq '(^|[[:space:]])OPENAI_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then
-            echo "IA optionnelle: OPENAI_API_KEY présent." >> "$GITHUB_STEP_SUMMARY"
+            echo "Fournisseur IA: clé disponible, mais SINJIRA_CHARACTER_AI_ENABLED=false maintient l'IA de personnage désactivée." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "IA optionnelle: OPENAI_API_KEY absent; SINJIRA continue de fonctionner en mode IA désactivée." >> "$GITHUB_STEP_SUMMARY"
+            echo "IA de personnage: désactivée; aucune clé fournisseur requise pour le fonctionnement du site." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Déployer toutes les Edge Functions du dépôt
