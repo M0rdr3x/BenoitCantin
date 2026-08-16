@@ -18,8 +18,18 @@ function nextDestination(def='/compte/index.html'){
   if(!value||!value.startsWith('/')||value.startsWith('//')||value.includes('\\')||/[\u0000-\u001f\u007f]/.test(value))return def;
   try{const url=new URL(value,location.origin);return url.origin===location.origin?`${url.pathname}${url.search}${url.hash}`:def}catch{return def}
 }
+function normalizeGenderControl(){
+  const select=form?.elements?.gender;
+  if(!(select instanceof HTMLSelectElement))return;
+  const allowed=new Set(['','Femme','Homme']);
+  [...select.options].forEach(option=>{if(!allowed.has(String(option.value||option.textContent||'').trim()))option.remove()});
+  select.required=true;
+  const label=select.closest('.field')?.querySelector('label');
+  if(label)label.textContent='Sexe *';
+}
 
 if(form){
+  normalizeGenderControl();
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(!isSinjiraBackendConfigured()){
