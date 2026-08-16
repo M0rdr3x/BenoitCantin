@@ -38,3 +38,5 @@ jobs:
         run: python scripts/validate_supabase.py
       - name: Vérifier les avatars 512 × 512 et leurs politiques Storage
         run: python scripts/validate_storage_policies.py
+      - name: Vérifier la console administrateur complète
+        run: python scripts/validate_admin_console.py
