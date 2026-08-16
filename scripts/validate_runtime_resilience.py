@@ -22,7 +22,7 @@ def main() -> int:
     site_js = (ROOT / "assets" / "js" / "site.js").read_text("utf-8", errors="ignore")
     for marker in (
         "RUNTIME_VERSION = '24.4.21'",
-        "crypto.randomUUID",
+        "randomUUID",
         "window.addEventListener('error'",
         "window.addEventListener('unhandledrejection'",
         "sessionStorage",
@@ -42,7 +42,14 @@ def main() -> int:
         require(report, marker, "send-game-report", errors)
 
     gateway = (ROOT / "supabase" / "functions" / "fracture-engine-gateway" / "index.ts").read_text("utf-8", errors="ignore")
-    for marker in ("requiredUser", "ALLOWED_ACTIONS", "party_code"):
+    for marker in (
+        "MAX_BODY_BYTES",
+        "ALLOWED_ACTIONS",
+        "PARTY_RE",
+        "Authorization",
+        "client.auth.getUser",
+        "actionError",
+    ):
         require(gateway, marker, "fracture-engine-gateway", errors)
 
     search_roots = [ROOT / "assets", ROOT / "compte", ROOT / "projets", ROOT / "admin"]
