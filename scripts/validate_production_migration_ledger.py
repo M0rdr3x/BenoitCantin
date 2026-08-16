@@ -8,9 +8,9 @@ MIG=ROOT/'supabase'/'migrations'
 BUILDER=ROOT/'scripts'/'build_supabase_production_workspace.py'
 ROW_RE=re.compile(r'^(\d{14})\s+([a-zA-Z0-9_]+)$')
 FILE_RE=re.compile(r'^(\d{14})_(.+)\.sql$')
-EXPECTED_COUNT=64
+EXPECTED_COUNT=65
 EXPECTED_FIRST='20260809050252'
-EXPECTED_LAST='20260816151200'
+EXPECTED_LAST='20260816161701'
 
 
 def rows():
