@@ -78,7 +78,7 @@
   if (!document.querySelector('script[data-v2431-runtime]')) {
     const runtime = document.createElement('script');
     runtime.type = 'module';
-    runtime.src = '/assets/js/v24-3-1-runtime.js?v=24.3.3';
+    runtime.src = '/assets/js/v24-3-1-runtime.js?v=24.3.6';
     runtime.dataset.v2431Runtime = '';
     document.head.appendChild(runtime);
   }
@@ -87,7 +87,7 @@
   if (!document.querySelector('script[data-v2432-runtime]')) {
     const runtime = document.createElement('script');
     runtime.type = 'module';
-    runtime.src = '/assets/js/v24-3-2-runtime.js?v=24.3.3';
+    runtime.src = '/assets/js/v24-3-2-runtime.js?v=24.3.6';
     runtime.dataset.v2432Runtime = '';
     document.head.appendChild(runtime);
   }
@@ -96,8 +96,18 @@
   if (!document.querySelector('script[data-v2433-runtime]')) {
     const runtime = document.createElement('script');
     runtime.type = 'module';
-    runtime.src = '/assets/js/v24-3-3-runtime.js?v=24.3.3';
+    runtime.src = '/assets/js/v24-3-3-runtime.js?v=24.3.6';
     runtime.dataset.v2433Runtime = '';
+    document.head.appendChild(runtime);
+  }
+
+  // V24.3.6 : la disponibilité de Fracture dépend de la vraie version Supabase
+  // et non d'un simple déverrouillage visuel du compte propriétaire.
+  if (!document.querySelector('script[data-v2436-runtime]')) {
+    const runtime = document.createElement('script');
+    runtime.type = 'module';
+    runtime.src = '/assets/js/v24-3-6-runtime.js?v=24.3.6';
+    runtime.dataset.v2436Runtime = '';
     document.head.appendChild(runtime);
   }
 })();
