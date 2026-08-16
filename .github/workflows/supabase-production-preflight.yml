@@ -7,6 +7,12 @@ on:
       - 'supabase/**'
       - 'scripts/validate_supabase.py'
       - '.github/workflows/supabase-production-preflight.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'supabase/**'
+      - 'scripts/validate_supabase.py'
+      - '.github/workflows/supabase-production-preflight.yml'
   workflow_dispatch:
     inputs:
       apply:
@@ -19,7 +25,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: supabase-production
+  group: supabase-production-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -47,7 +53,7 @@ jobs:
       - name: Installer Supabase CLI
         uses: supabase/setup-cli@v2
         with:
-          version: latest
+          version: 2.111.0
           github-token: ${{ github.token }}
 
       - name: Vérifier le dépôt Supabase
@@ -67,14 +73,13 @@ jobs:
             echo "Secrets de connexion Supabase présents." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-
           echo "ready=false" >> "$GITHUB_OUTPUT"
           echo "Prévol distant non exécuté : SUPABASE_ACCESS_TOKEN et/ou SUPABASE_DB_PASSWORD absent(s)." >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "Le lancement manuel exige les deux secrets GitHub Actions."
             exit 2
           fi
-          echo "Push main : aucune écriture Supabase n'est tentée et l'absence de secrets n'échoue pas la CI."
+          echo "CI non destructive : aucune écriture Supabase n'est tentée et l'absence de secrets n'échoue pas la validation." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Lier le projet de production
         if: ${{ steps.auth.outputs.ready == 'true' }}
@@ -82,6 +87,36 @@ jobs:
         run: |
           set -euo pipefail
           supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Exporter l'historique exact des migrations de production
+        if: ${{ steps.auth.outputs.ready == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          cp -a supabase "$tmp/supabase"
+          rm -rf "$tmp/supabase/migrations"
+          mkdir -p "$tmp/supabase/migrations"
+          (
+            cd "$tmp"
+            supabase migration fetch --linked
+          )
+          rm -rf /tmp/supabase-production-migrations
+          mkdir -p /tmp/supabase-production-migrations
+          cp -a "$tmp/supabase/migrations/." /tmp/supabase-production-migrations/
+          find /tmp/supabase-production-migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort | tee /tmp/supabase-production-migrations/MANIFEST.txt
+          count="$(find /tmp/supabase-production-migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
+          echo "Historique distant exporté en lecture seule : $count migration(s)." >> "$GITHUB_STEP_SUMMARY"
+          test "$count" -gt 0
+
+      - name: Publier l'historique distant comme artefact de prévol
+        if: ${{ steps.auth.outputs.ready == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-production-migrations-${{ github.run_id }}
+          path: /tmp/supabase-production-migrations
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Auditer les fonctions SQL déjà en production
         if: ${{ steps.auth.outputs.ready == 'true' }}
@@ -140,7 +175,6 @@ jobs:
         run: |
           set -euo pipefail
           secrets="$(supabase secrets list --project-ref "$PROJECT_ID")"
-
           if ! grep -Eq '(^|[[:space:]])SINJIRA_LICENSE_PEPPER([[:space:]]|$)' <<< "$secrets"; then
             pepper="$(openssl rand -hex 32)"
             supabase secrets set "SINJIRA_LICENSE_PEPPER=$pepper" --project-ref "$PROJECT_ID"
@@ -149,34 +183,17 @@ jobs:
           else
             echo "SINJIRA_LICENSE_PEPPER déjà présent; conservation de la valeur existante." >> "$GITHUB_STEP_SUMMARY"
           fi
-
           supabase secrets set \
             "REPORT_FROM_EMAIL=SINJIRA <no-reply@benoitcantin.com>" \
             "CHARACTER_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
             "FRACTURE_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
             --project-ref "$PROJECT_ID"
-
-          if [ -n "${OPTIONAL_RESEND_API_KEY:-}" ]; then
-            supabase secrets set "RESEND_API_KEY=$OPTIONAL_RESEND_API_KEY" --project-ref "$PROJECT_ID"
-          fi
-          if [ -n "${OPTIONAL_OPENAI_API_KEY:-}" ]; then
-            supabase secrets set "OPENAI_API_KEY=$OPTIONAL_OPENAI_API_KEY" --project-ref "$PROJECT_ID"
-          fi
-          if [ -n "${OPTIONAL_OPENAI_CHARACTER_MODEL:-}" ]; then
-            supabase secrets set "OPENAI_CHARACTER_MODEL=$OPTIONAL_OPENAI_CHARACTER_MODEL" --project-ref "$PROJECT_ID"
-          fi
-
+          if [ -n "${OPTIONAL_RESEND_API_KEY:-}" ]; then supabase secrets set "RESEND_API_KEY=$OPTIONAL_RESEND_API_KEY" --project-ref "$PROJECT_ID"; fi
+          if [ -n "${OPTIONAL_OPENAI_API_KEY:-}" ]; then supabase secrets set "OPENAI_API_KEY=$OPTIONAL_OPENAI_API_KEY" --project-ref "$PROJECT_ID"; fi
+          if [ -n "${OPTIONAL_OPENAI_CHARACTER_MODEL:-}" ]; then supabase secrets set "OPENAI_CHARACTER_MODEL=$OPTIONAL_OPENAI_CHARACTER_MODEL" --project-ref "$PROJECT_ID"; fi
           secrets_after="$(supabase secrets list --project-ref "$PROJECT_ID")"
-          if grep -Eq '(^|[[:space:]])RESEND_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then
-            echo "Courriel transactionnel: secret RESEND_API_KEY présent." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "Courriel transactionnel: RESEND_API_KEY absent; les téléchargements restent disponibles mais l'envoi de courriel demeure désactivé." >> "$GITHUB_STEP_SUMMARY"
-          fi
-          if grep -Eq '(^|[[:space:]])OPENAI_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then
-            echo "IA optionnelle: OPENAI_API_KEY présent." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "IA optionnelle: OPENAI_API_KEY absent; SINJIRA continue de fonctionner en mode IA désactivée." >> "$GITHUB_STEP_SUMMARY"
-          fi
+          if grep -Eq '(^|[[:space:]])RESEND_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then echo "Courriel transactionnel: secret RESEND_API_KEY présent." >> "$GITHUB_STEP_SUMMARY"; else echo "Courriel transactionnel: RESEND_API_KEY absent; les données restent enregistrées mais l'envoi de courriel demeure désactivé." >> "$GITHUB_STEP_SUMMARY"; fi
+          if grep -Eq '(^|[[:space:]])OPENAI_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then echo "IA optionnelle: OPENAI_API_KEY présent." >> "$GITHUB_STEP_SUMMARY"; else echo "IA optionnelle: OPENAI_API_KEY absent; SINJIRA continue de fonctionner en mode IA désactivée." >> "$GITHUB_STEP_SUMMARY"; fi
 
       - name: Déployer toutes les Edge Functions du dépôt
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
@@ -194,14 +211,12 @@ jobs:
           missing=0
           while IFS= read -r name; do
             [ -z "$name" ] && continue
-            if ! grep -Fq "$name" /tmp/sinjira-functions.txt; then
-              echo "Edge Function manquante après déploiement: $name"
-              missing=1
-            fi
+            if ! grep -Fq "$name" /tmp/sinjira-functions.txt; then echo "Edge Function manquante après déploiement: $name"; missing=1; fi
           done < <(find supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name '_*' -printf '%f\n' | sort)
           test "$missing" -eq 0
 
       - name: Vérifier l'historique et le dry-run après déploiement
+        id: final_verify
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
         shell: bash
         run: |
@@ -222,11 +237,15 @@ jobs:
           set -euo pipefail
           echo '## ÉTAT PRODUCTION' >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ steps.auth.outputs.ready }}" != "true" ]; then
-            echo '⛔ NON SYNCHRONISÉ : les secrets de connexion Supabase ne sont pas disponibles au workflow. Aucune lecture distante ni écriture de production n’a eu lieu.' >> "$GITHUB_STEP_SUMMARY"
+            echo '⛔ NON SYNCHRONISÉ : les secrets de connexion Supabase ne sont pas disponibles au workflow. Aucune écriture de production n’a eu lieu.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo '🟡 PRÉVOL PR : historique distant exporté, production auditée et dry-run exécuté; aucune écriture de production.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
-            echo '🟡 PRÉVOL SEULEMENT : la production a été auditée et le dry-run a été exécuté, mais aucune migration ni Edge Function n’a été appliquée. Pour écrire en production, lancer manuellement ce workflow avec apply=true.' >> "$GITHUB_STEP_SUMMARY"
+            echo '🟡 PRÉVOL SEULEMENT : production auditée + dry-run; aucune migration ni Edge Function appliquée.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ inputs.apply }}" != "true" ]; then
             echo '🟡 PRÉVOL MANUEL SEULEMENT : aucune modification de production, car apply=false.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ steps.final_verify.outcome }}" = "success" ]; then
+            echo '✅ APPLIQUÉ ET VÉRIFIÉ : migrations appliquées, Edge Functions contrôlées, historique relu et dry-run final réussi sans étape restante.' >> "$GITHUB_STEP_SUMMARY"
           else
-            echo '✅ SYNCHRONISATION DEMANDÉE : migrations, secrets opérationnels et Edge Functions ont été appliqués si toutes les étapes précédentes sont vertes. Vérifier ensuite le diagnostic propriétaire dans /admin/sinjira/.' >> "$GITHUB_STEP_SUMMARY"
+            echo '❌ ÉCHEC OU SYNCHRONISATION PARTIELLE : apply=true a été demandé mais la vérification finale n’est pas verte. Ne pas considérer la production synchronisée; consulter la première étape en échec.' >> "$GITHUB_STEP_SUMMARY"
           fi

@@ -16,6 +16,11 @@ export function formatDate(v){if(!v)return '—';return new Intl.DateTimeFormat(
 export function friendlyBackendMessage(message,fallback='Une opération serveur n’a pas pu être terminée.'){
   const raw=String(message||'').trim();if(!raw)return fallback;
   if(/PGRST20[25]|Could not find the (?:table|function)|relation .* does not exist|schema cache/i.test(raw))return 'Le serveur SINJIRA™ doit encore être synchronisé pour cette fonction.';
+  if(/GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14/i.test(raw))return 'Un code d’autorisation parentale est obligatoire pour un compte de 12 ou 13 ans.';
+  if(/INVALID_OR_EXPIRED_GUARDIAN_CODE/i.test(raw))return 'Le code d’autorisation parentale est invalide, expiré ou déjà utilisé.';
+  if(/ADULT_GUARDIAN_REQUIRED/i.test(raw))return 'Le code doit provenir d’un parent ou tuteur possédant un compte adulte.';
+  if(/MFA_REQUIRED/i.test(raw))return 'Une authentification renforcée est requise pour cette opération sensible.';
+  if(/SINJIRA_MINIMUM_AGE_12/i.test(raw))return 'Les Comptes SINJIRA™ sont disponibles à partir de 12 ans.';
   if(/JWT|token.*expired|session.*expired|invalid claim/i.test(raw))return 'Votre session a expiré. Reconnectez-vous puis réessayez.';
   if(/Failed to fetch|NetworkError|FunctionsFetchError|Load failed/i.test(raw))return 'Communication avec le serveur SINJIRA™ impossible pour le moment.';
   if(/row-level security|permission denied|42501|not authorized|forbidden/i.test(raw))return 'Votre compte n’a pas l’autorisation nécessaire pour cette opération.';
@@ -52,4 +57,4 @@ export function setStatus(node,msg,type='info'){if(!node)return;const raw=String
 export function roleLabel(v){return ({public:'Public',account:'Compte joueur',player:'Joueur approuvé',tester:'Testeur approuvé',admin:'Administration'})[v]||v||'—'}
 export function projectStatusLabel(v){return ({draft:'Brouillon',development:'En développement',testing:'En test',active:'Disponible',archived:'Archivé'})[v]||v||'—'}
 export { SINJIRA_CONFIG, isSinjiraBackendConfigured };
-if(typeof location!=='undefined'&&/^\/admin\/sinjira(?:\/|$)/i.test(location.pathname)){queueMicrotask(()=>import('./v24-admin-health.js?v=24.4.11').catch(err=>console.warn('[SINJIRA admin health loader]',err)))}
+if(typeof location!=='undefined'&&/^\/admin\/sinjira(?:\/|$)/i.test(location.pathname)){queueMicrotask(()=>import('./v24-admin-health.js?v=24.4.13').catch(err=>console.warn('[SINJIRA admin health loader]',err)))}

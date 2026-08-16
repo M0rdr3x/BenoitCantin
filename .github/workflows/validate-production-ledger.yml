@@ -1,0 +1,39 @@
+name: Validation du ledger Supabase production
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/production-migration-ledger.txt'
+      - 'scripts/build_supabase_production_workspace.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - '.github/workflows/validate-production-ledger.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/production-migration-ledger.txt'
+      - 'scripts/build_supabase_production_workspace.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - '.github/workflows/validate-production-ledger.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Vérifier la reconstruction des tables production
+        run: python scripts/validate_production_schema_manifest.py
+      - name: Vérifier le ledger et le workspace de déploiement lié
+        run: python scripts/validate_production_migration_ledger.py

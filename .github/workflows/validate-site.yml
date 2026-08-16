@@ -28,9 +28,27 @@ jobs:
           package-manager-cache: false
       - name: Vérifier les routes, fichiers, secrets et JavaScript
         run: python scripts/validate_site.py
+      - name: Vérifier le focus professionnel de l’accueil
+        run: python scripts/validate_home_focus.py
       - name: Vérifier les flux d’authentification
         run: python scripts/validate_auth.py
       - name: Vérifier PWA, SEO et cache hors ligne
         run: python scripts/validate_pwa.py
       - name: Vérifier la structure Supabase
         run: python scripts/validate_supabase.py
+      - name: Vérifier la reconstruction du schéma production
+        run: python scripts/validate_production_schema_manifest.py
+      - name: Vérifier les avatars 512 × 512 et leurs politiques Storage
+        run: python scripts/validate_storage_policies.py
+      - name: Vérifier la console administrateur complète
+        run: python scripts/validate_admin_console.py
+      - name: Vérifier le moteur Fracture Online
+        run: python scripts/validate_fracture_engine.py
+      - name: Vérifier le compte propriétaire AbyssTime
+        run: python scripts/validate_owner_account.py
+      - name: Vérifier la séparation jeunesse / adulte
+        run: python scripts/validate_youth_safety.py
+      - name: Vérifier l’identité exacte des personnages sociaux
+        run: python scripts/validate_character_identity_rls.py
+      - name: Vérifier le Monde parallèle canonique
+        run: python scripts/validate_parallel_world.py
