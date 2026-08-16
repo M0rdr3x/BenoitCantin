@@ -4,7 +4,7 @@ import re
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase'/'migrations'/'20260816149000_sinjira_v24_4_12_parallel_character_convergence.sql'
-OWNER_REPAIR_MIG=ROOT/'supabase'/'migrations'/'20260816194000_sinjira_v24_4_20_owner_character_resilience.sql'
+OWNER_REPAIR_MIG=ROOT/'supabase'/'migrations'/'20260816193515_sinjira_v24_4_20_owner_character_resilience.sql'
 JS=ROOT/'assets'/'js'/'v24-parallel.js'
 HTML=ROOT/'compte'/'monde-parallele.html'
 UI_VERSION='24.4.20'
@@ -63,8 +63,6 @@ def main()->int:
     if "'provisoire','legacy-v22'" not in low:
         errors.append('La migration V22 ne garantit pas une importation PROVISOIRE.')
 
-    # V24.4.20 renforce la résilience du propriétaire : un lien parallèle supprimé
-    # accidentellement doit être recréé par la même réparation qu'utilisent les pages compte.
     for marker in [
       'insertintopublic.parallel_character_state(character_id,user_id)',
       'insertintopublic.parallel_world_memberships(',
