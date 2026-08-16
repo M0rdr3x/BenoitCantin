@@ -1,0 +1,138 @@
+name: Synchroniser Supabase production — sécurisé
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Appliquer réellement les migrations futures et Edge Functions"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-production-safe
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_ID: gpvivleexywljowcqkru
+      OPTIONAL_RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      OPTIONAL_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPTIONAL_OPENAI_CHARACTER_MODEL: ${{ vars.OPENAI_CHARACTER_MODEL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+          github-token: ${{ github.token }}
+
+      - name: Vérifier reconstruction et ledger
+        run: |
+          set -euo pipefail
+          python scripts/validate_supabase.py
+          python scripts/validate_production_schema_manifest.py
+          python scripts/validate_production_migration_ledger.py
+
+      - name: Exiger les secrets de production
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo 'SUPABASE_ACCESS_TOKEN absent.'; exit 2; }
+          test -n "${SUPABASE_DB_PASSWORD:-}" || { echo 'SUPABASE_DB_PASSWORD absent.'; exit 2; }
+
+      - name: Construire le workspace de production protégé
+        run: |
+          set -euo pipefail
+          python scripts/build_supabase_production_workspace.py --output "$GITHUB_WORKSPACE/.prod-workspace/supabase"
+          test "$(find .prod-workspace/supabase/migrations -maxdepth 1 -name '*.sql' | wc -l)" -ge 62
+
+      - name: Lier la copie temporaire à Supabase production
+        working-directory: .prod-workspace
+        run: supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Lint SQL production
+        working-directory: .prod-workspace
+        run: supabase db lint --linked --schema public --level error --fail-on error
+
+      - name: Vérifier l'alignement du ledger distant
+        working-directory: .prod-workspace
+        run: |
+          set -euo pipefail
+          supabase migration list --linked --password "$SUPABASE_DB_PASSWORD" | tee /tmp/sinjira-safe-migration-list.txt
+          supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD" | tee /tmp/sinjira-safe-dry-run.txt
+
+      - name: État prévol
+        if: ${{ inputs.apply != true }}
+        run: |
+          echo '## PRÉVOL SÉCURISÉ' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Aucune écriture effectuée : apply=false. Ledger protégé, lint et dry-run terminés.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Appliquer uniquement les migrations futures
+        if: ${{ inputs.apply == true }}
+        working-directory: .prod-workspace
+        run: |
+          set -euo pipefail
+          supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Configurer les secrets Edge indispensables
+        if: ${{ inputs.apply == true }}
+        run: |
+          set -euo pipefail
+          secrets="$(supabase secrets list --project-ref "$PROJECT_ID")"
+          if ! grep -Eq '(^|[[:space:]])SINJIRA_LICENSE_PEPPER([[:space:]]|$)' <<< "$secrets"; then
+            pepper="$(openssl rand -hex 32)"
+            supabase secrets set "SINJIRA_LICENSE_PEPPER=$pepper" --project-ref "$PROJECT_ID"
+            unset pepper
+          fi
+          supabase secrets set \
+            "REPORT_FROM_EMAIL=SINJIRA <no-reply@benoitcantin.com>" \
+            "CHARACTER_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
+            "FRACTURE_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
+            --project-ref "$PROJECT_ID"
+          if [ -n "${OPTIONAL_RESEND_API_KEY:-}" ]; then supabase secrets set "RESEND_API_KEY=$OPTIONAL_RESEND_API_KEY" --project-ref "$PROJECT_ID"; fi
+          if [ -n "${OPTIONAL_OPENAI_API_KEY:-}" ]; then supabase secrets set "OPENAI_API_KEY=$OPTIONAL_OPENAI_API_KEY" --project-ref "$PROJECT_ID"; fi
+          if [ -n "${OPTIONAL_OPENAI_CHARACTER_MODEL:-}" ]; then supabase secrets set "OPENAI_CHARACTER_MODEL=$OPTIONAL_OPENAI_CHARACTER_MODEL" --project-ref "$PROJECT_ID"; fi
+
+      - name: Déployer les Edge Functions depuis le workspace protégé
+        if: ${{ inputs.apply == true }}
+        working-directory: .prod-workspace
+        run: supabase functions deploy --project-ref "$PROJECT_ID" --use-api
+
+      - name: Vérification finale
+        id: final
+        if: ${{ inputs.apply == true }}
+        working-directory: .prod-workspace
+        run: |
+          set -euo pipefail
+          supabase db lint --linked --schema public --level error --fail-on error
+          supabase migration list --linked --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD"
+          supabase functions list --project-ref "$PROJECT_ID"
+
+      - name: Verdict
+        if: ${{ always() }}
+        run: |
+          echo '## ÉTAT PRODUCTION — WORKFLOW SÉCURISÉ' >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ inputs.apply }}" != 'true' ]; then
+            echo '🟡 Prévol uniquement : aucune écriture.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ steps.final.outcome }}" = 'success' ]; then
+            echo '✅ Appliqué et vérifié : ledger protégé, migrations futures, lint, Edge Functions et dry-run final réussis.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '❌ Application non confirmée : consulter la première étape en échec. Ne pas considérer la production synchronisée.' >> "$GITHUB_STEP_SUMMARY"
+          fi
