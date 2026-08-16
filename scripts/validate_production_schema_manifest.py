@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import re
+import os,re
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase'/'migrations'
@@ -31,6 +31,12 @@ EXPECTED_TABLES={
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
 
 
+def annotate(level:str,message:str):
+    if os.getenv('GITHUB_ACTIONS')=='true':
+        safe=message.replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+        print(f'::{level} file=scripts/validate_production_schema_manifest.py::{safe}')
+
+
 def main()->int:
     sql='\n'.join(p.read_text('utf-8',errors='ignore') for p in sorted(MIG.glob('*.sql')))
     local={m.group(1).lower() for m in CREATE_RE.finditer(sql)}
@@ -39,10 +45,14 @@ def main()->int:
     print(f'Manifeste production: {len(EXPECTED_TABLES)} tables attendues; reconstruction locale: {len(local)} tables créées.')
     if missing:
         print(f'ECHEC reconstruction: {len(missing)} table(s) de production absente(s) des migrations locales:')
-        for name in missing: print('- MISSING '+name)
+        for name in missing:
+            print('- MISSING '+name)
+            annotate('error',f'Table de production absente des migrations locales: {name}')
     if extra:
         print(f'INFO: {len(extra)} table(s) locale(s) non présente(s) dans le manifeste production courant:')
-        for name in extra: print('- EXTRA '+name)
+        for name in extra:
+            print('- EXTRA '+name)
+            annotate('warning',f'Table locale absente du manifeste production courant: {name}')
     if missing:return 1
     print('OK reconstruction: toutes les tables de production sont créées par l’historique GitHub.')
     return 0
