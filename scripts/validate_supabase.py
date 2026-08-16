@@ -19,6 +19,7 @@ SHARED_AUTH = FUNCTIONS / "_shared" / "auth.ts"
 PUBLIC_CHARACTER = FUNCTIONS / "submit-character-questionnaire" / "index.ts"
 ADMIN_CHARACTER = FUNCTIONS / "admin-sinjira-v18" / "index.ts"
 ADMIN_SOCIAL = FUNCTIONS / "admin-social-v20" / "index.ts"
+SOCIAL_INTEGRITY = MIGRATIONS / "20260816130000_sinjira_v24_4_11_social_report_integrity.sql"
 
 DEFAULT_EDGE_ENV = {
     "SUPABASE_URL", "SUPABASE_DB_URL", "SUPABASE_PUBLISHABLE_KEYS",
@@ -88,6 +89,23 @@ def main() -> int:
     if "before insert on public.social_reports" not in sql_lower:
         errors.append("Le trigger BEFORE INSERT des signalements sociaux est absent.")
 
+    social_sql = read(SOCIAL_INTEGRITY) if SOCIAL_INTEGRITY.exists() else ""
+    social_lower = social_sql.lower()
+    if "create table if not exists public.social_report_targets" not in social_lower:
+        errors.append("La table privée social_report_targets est absente de la migration V24.4.11.")
+    if "after insert on public.social_reports" not in social_lower or "persist_social_report_target" not in social_lower:
+        errors.append("Le mapping serveur privé des cibles de signalement n'est pas persisté après insertion.")
+    if "alter table public.social_report_targets enable row level security" not in social_lower:
+        errors.append("RLS absent sur social_report_targets.")
+    if "revoke all on public.social_report_targets from public,anon,authenticated" not in social_lower:
+        errors.append("social_report_targets doit être inaccessible aux rôles navigateur.")
+    # Le snapshot d'un signalement narratif est lisible par son déclarant. Il ne doit donc
+    # jamais embarquer l'UUID du compte réel derrière le personnage.
+    char_section = social_sql.split("elsif new.network='character'", 1)[1] if "elsif new.network='character'" in social_sql else ""
+    char_section = char_section.split("return new;", 1)[0]
+    if re.search(r"new\.snapshot\s*:=\s*jsonb_build_object\([^;]*?'(?:user_id|sender_user_id|recipient_user_id)'", char_section, re.I | re.S):
+        errors.append("Un snapshot de réseau personnage expose encore un UUID de compte réel.")
+
     config_text = read(CONFIG) if CONFIG.exists() else ""
     if f'project_id = "{PROJECT_ID}"' not in config_text:
         errors.append("supabase/config.toml ne pointe pas vers le projet de production attendu.")
@@ -118,6 +136,8 @@ def main() -> int:
         errors.append("Le workflow de production doit effectuer un dry-run avant application.")
     if "db lint --linked --schema public --level error --fail-on error" not in workflow:
         errors.append("Le workflow doit exécuter le lint SQL distant avant/après migrations.")
+    if 'SINJIRA_CHARACTER_AI_ENABLED=false' not in workflow:
+        errors.append("Le workflow de production doit maintenir explicitement l'IA de personnage désactivée.")
 
     function_dirs = sorted(p.name for p in FUNCTIONS.iterdir() if p.is_dir() and not p.name.startswith("_")) if FUNCTIONS.exists() else []
     configured_functions = sorted(set(re.findall(r"^\[functions\.([^\]]+)\]", config_text, re.M)))
@@ -166,6 +186,8 @@ def main() -> int:
     admin_social = read(ADMIN_SOCIAL) if ADMIN_SOCIAL.exists() else ""
     if "authoritativeTargetUser" not in admin_social:
         errors.append("La modération sociale ne résout pas la cible depuis les tables autoritaires.")
+    if "social_report_targets" not in admin_social:
+        errors.append("La modération sociale n'utilise pas le mapping privé de cible V24.4.11.")
     if re.search(r"snap\.(?:user_id|sender_user_id|character_id|sender_character_id)", admin_social):
         errors.append("La modération sociale fait encore confiance au snapshot fourni par le signalement.")
     for action in ("resolve_social_report", "remove_reported_content", "suspend_reported_user"):
