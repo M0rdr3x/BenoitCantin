@@ -6,94 +6,185 @@ ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase'/'migrations'
 SIGNUP=ROOT/'assets'/'js'/'v24-signup.js'
 HTML=ROOT/'compte'/'inscription.html'
+RELATIONS_JS=ROOT/'assets'/'js'/'v24-relations.js'
 
 
-def latest_sql()->str:
-    return '\n'.join(p.read_text('utf-8',errors='ignore') for p in sorted(MIG.glob('*.sql')))
+def read(path:Path)->str:
+    return path.read_text('utf-8',errors='ignore')
+
+
+def all_sql()->str:
+    return '\n'.join(read(p) for p in sorted(MIG.glob('*.sql')))
+
+
+def latest_policy(sql:str,name:str)->str:
+    matches=list(re.finditer(rf'create\s+policy\s+{re.escape(name)}\b.*?(?=\n\s*(?:drop\s+policy|create\s+policy|create\s+(?:or\s+replace\s+)?function|alter\s+table|$))',sql,re.I|re.S))
+    return matches[-1].group(0) if matches else ''
+
+
+def function_block(sql:str,name:str)->str:
+    matches=list(re.finditer(rf'create\s+(?:or\s+replace\s+)?function\s+public\.{re.escape(name)}\s*\([^)]*\).*?\$\$.*?\$\$\s*;',sql,re.I|re.S))
+    return matches[-1].group(0) if matches else ''
 
 
 def main()->int:
     errors=[]
-    warnings=[]
-    sql=latest_sql()
+    sql=all_sql()
     low=re.sub(r'\s+',' ',sql.lower())
     compact=re.sub(r'\s+','',sql.lower())
-    signup=SIGNUP.read_text('utf-8',errors='ignore')
-    html=HTML.read_text('utf-8',errors='ignore')
+    signup=read(SIGNUP)
+    signup_low=signup.lower()
+    html=read(HTML)
+    relations_js=read(RELATIONS_JS) if RELATIONS_JS.exists() else ''
 
     required_functions=[
-        'sinjira_age_band','sinjira_social_compatible','sinjira_parent_can_supervise',
-        'get_guardian_youth_contacts','respond_family_relationship','enforce_sinjira_private_profile_age'
+        'sinjira_age_band','sinjira_can_social_interact','sinjira_social_compatible',
+        'sinjira_parent_can_supervise','get_guardian_youth_contacts',
+        'create_guardian_signup_invite','sinjira_mfa_access_allowed',
+        'sinjira_phone_factor_verified','enforce_sinjira_account_safety_age',
+        'handle_new_sinjira_user'
     ]
     for name in required_functions:
-        if f'function public.{name}' not in low:
-            errors.append(f'Fonction jeunesse absente: {name}')
+        if not function_block(sql,name):
+            errors.append(f'Fonction jeunesse/sécurité absente: {name}')
 
-    for band in ['under_12','youth_12_17','adult_18_plus']:
-        if band not in sql:
-            errors.append(f'Cohorte jeunesse/adulte absente: {band}')
+    age=function_block(sql,'sinjira_age_band').lower()
+    for band in ['under12','youth','youth_pending','adult','unverified']:
+        if f"'{band}'" not in age:
+            errors.append(f'Cohorte canonique absente de sinjira_age_band: {band}')
+    if "g.status='verified'" not in re.sub(r'\s+','',age):
+        errors.append('La cohorte youth ne dépend pas explicitement d’un tuteur vérifié.')
+    if 'account_safety_profiles' not in age:
+        errors.append('sinjira_age_band ne lit pas account_safety_profiles.')
 
-    for policy in ['real_messages_insert','char_messages_insert']:
-        start=low.rfind(f'create policy {policy}')
-        if start<0:
-            errors.append(f'Politique sociale absente: {policy}')
-            continue
-        block=low[start:start+1800]
-        if 'sinjira_social_compatible(sender_user_id,recipient_user_id)' not in block:
-            errors.append(f'Politique {policy} ne bloque pas les échanges jeunesse/adulte.')
-
-    for policy in ['real_posts_read','char_posts_read','real_comments_read','char_comments_read']:
-        start=low.rfind(f'create policy {policy}')
-        if start<0:
-            errors.append(f'Politique de lecture absente: {policy}')
-            continue
-        block=low[start:start+1800]
-        if 'sinjira_social_compatible' not in block:
-            errors.append(f'Politique {policy} ne limite pas la visibilité à la cohorte compatible.')
-
-    m=re.search(r'create\s+or\s+replace\s+function\s+public\.get_guardian_youth_contacts\([^)]*\).*?\$\$.*?\$\$\s*;',sql,re.I|re.S)
-    if not m:
-        errors.append('RPC de supervision parentale absente.')
+    social=function_block(sql,'sinjira_can_social_interact').lower()
+    social_compact=re.sub(r'\s+','',social)
+    if not social:
+        errors.append('Fonction canonique de compatibilité sociale absente.')
     else:
-        block=m.group(0).lower()
-        if 'sinjira_parent_can_supervise' not in block:
-            errors.append('RPC de supervision parentale sans vérification du lien parent/tuteur.')
-        if "'body'" in block or 'body,' in block or '.body' in block:
-            errors.append('RPC de supervision parentale expose potentiellement le contenu des messages.')
+        for marker in ["='adult'andpublic.sinjira_age_band(p_b)='adult'","='youth'andpublic.sinjira_age_band(p_b)='youth'"]:
+            if marker not in social_compact:
+                errors.append('sinjira_can_social_interact n’impose pas strictement adulte↔adulte et jeunesse vérifiée↔jeunesse vérifiée.')
+                break
+        if "p_a=p_bthenpublic.sinjira_age_band(p_a)in('adult','youth')" not in social_compact:
+            errors.append('Un compte youth_pending/under12/unverified pourrait être traité comme socialement actif avec lui-même.')
+        for forbidden in ["youth_pending","under12","unverified"]:
+            if re.search(rf"in\s*\([^)]*'{forbidden}'",social,re.I):
+                errors.append(f'Cohorte interdite autorisée par la compatibilité sociale: {forbidden}')
 
-    if 'respond_family_relationship' not in sql:
-        errors.append('Acceptation bilatérale des relations familiales absente.')
-    if "related_user_idisnotnullandrelated_user_id<>owner_user_idandstatus='pending'" not in compact:
-        errors.append('Une relation familiale liée peut être créée sans statut pending.')
+    policy_names=[
+        'real_messages_insert','char_messages_insert','real_messages_read','char_messages_read',
+        'real_posts_read','char_posts_read','real_comments_read','char_comments_read',
+        'real_likes_read','char_likes_read'
+    ]
+    for name in policy_names:
+        block=latest_policy(sql,name).lower()
+        if not block:
+            errors.append(f'Politique sociale absente: {name}')
+        elif 'sinjira_can_social_interact' not in block:
+            errors.append(f'Politique {name} n’utilise pas la règle canonique de cohorte.')
 
-    for marker in ["if(age<12)","if(age>120)","['Femme','Homme'].includes(gender)","normalizeGenderControl()"]:
-        if marker not in signup:
-            errors.append(f'Validation inscription absente: {marker}')
+    for name in ['real_posts_insert','char_posts_insert']:
+        block=latest_policy(sql,name).lower()
+        if not block:
+            errors.append(f'Politique de publication absente: {name}')
+        elif "sinjira_age_band(auth.uid()) in ('youth','adult')" not in re.sub(r'\s+',' ',block):
+            errors.append(f'Politique {name} n’exclut pas explicitement youth_pending/under12/unverified.')
 
-    if "genderisnullorgenderin('homme','femme')" not in compact:
-        errors.append('Contrainte backend Homme/Femme absente de private_profiles.')
-    for marker in ['sinjira_minimum_age_12','profile_sex_required','beforeinsertorupdateofbirth_date,gender']:
+    parent=function_block(sql,'sinjira_parent_can_supervise').lower()
+    parent_compact=re.sub(r'\s+','',parent)
+    for marker in ["sinjira_age_band(p_parent)='adult'","sinjira_age_band(p_child)='youth'","g.status='verified'","guardian_links"]:
+        if marker not in parent_compact:
+            errors.append('La supervision parentale n’exige pas adulte + jeune vérifié + guardian_links verified.')
+            break
+
+    contacts=function_block(sql,'get_guardian_youth_contacts').lower()
+    if 'sinjira_parent_can_supervise' not in contacts:
+        errors.append('RPC de supervision sans vérification du lien parent/tuteur.')
+    forbidden_message_fields=['body','message_body','content','message_text','text_content']
+    if any(re.search(rf'\b{re.escape(field)}\b',contacts) for field in forbidden_message_fields):
+        errors.append('RPC de supervision parentale expose potentiellement le contenu des messages.')
+    for required_meta in ['other_user_id','last_contact_at']:
+        if required_meta not in contacts:
+            errors.append(f'RPC parentale privée de métadonnée utile: {required_meta}')
+
+    invite=function_block(sql,'create_guardian_signup_invite').lower()
+    invite_compact=re.sub(r'\s+','',invite)
+    for marker in ["sinjira_age_band(auth.uid())<>'adult'","sinjira_mfa_access_allowed(auth.uid())","youth-"]:
+        if marker not in invite_compact:
+            errors.append('Création du code parental sans vérification adulte/MFA ou format de code attendu.')
+            break
+    if "interval'7days'" not in compact and "interval'7day'" not in compact:
+        errors.append('Expiration du code parental à 7 jours absente.')
+    if 'used_at is null' not in low or 'minor_user_id' not in low:
+        errors.append('Code parental sans consommation à usage unique traçable.')
+
+    new_user=function_block(sql,'handle_new_sinjira_user').lower()
+    new_user_compact=re.sub(r'\s+','',new_user)
+    for marker in [
+        "years<12thenraiseexception'sinjira_minimum_age_12'",
+        "years<14then",
+        "guardian_authorization_required_under_14",
+        "invalid_or_expired_guardian_code",
+        "guardian_links",
+        "status,'verified'",
+        "birth_date",
+        "date_of_birth",
+        "gender",
+        "sex"
+    ]:
+        if marker not in new_user_compact:
+            errors.append(f'Pont d’inscription serveur incomplet: {marker}')
+
+    age_trigger=function_block(sql,'enforce_sinjira_account_safety_age').lower()
+    age_trigger_compact=re.sub(r'\s+','',age_trigger)
+    for marker in ['sinjira_minimum_age_12','date_of_birth',"new.sexnotin('female','male')"]:
+        if marker not in age_trigger_compact:
+            errors.append(f'Verrou âge/sexe serveur incomplet: {marker}')
+    if 'beforeinsertorupdateofdate_of_birth,sexonpublic.account_safety_profiles' not in compact:
+        errors.append('Trigger âge/sexe non branché à account_safety_profiles.')
+    if 'revokeallonfunctionpublic.enforce_sinjira_account_safety_age()frompublic,anon,authenticated' not in compact:
+        errors.append('Fonction trigger âge/sexe encore exposée comme RPC.')
+
+    # Les attributs de sécurité sensibles ne doivent pas être modifiables directement par un membre.
+    for marker in [
+        'revokeinsert,delete,updateonpublic.account_safety_profilesfromauthenticated',
+        'grantselectonpublic.account_safety_profilestoauthenticated',
+        'grantupdate(birthday_greeting_opt_in,real_life_to_fiction_opt_in,relationship_data_opt_in,public_birthday_opt_in,birthday_public_opt_in,relationship_status,relationship_status_updated_at)onpublic.account_safety_profilestoauthenticated'
+    ]:
         if marker not in compact:
-            errors.append(f'Verrou serveur âge/sexe absent: {marker}')
+            errors.append('Surface d’écriture account_safety_profiles trop large ou non explicitement restreinte.')
+            break
 
+    # Frontend d’inscription : 12+, 12–13 avec code, Femme/Homme seulement, pont metadata V22/V24.
+    for marker in [
+        'if(age<12)', 'if(age<14&&!guardiancode)', "['Femme','Homme'].includes(gender)",
+        'birth_date:birthDate','date_of_birth:birthDate','gender,','sex:legacySex','guardian_code:guardianCode'
+    ]:
+        if marker not in signup:
+            errors.append(f'Validation/pont inscription absent: {marker}')
     if 'name="birth_date"' not in html or 'required' not in html:
         errors.append('Date de naissance obligatoire absente de l’inscription.')
-    if 'name="gender"' not in html:
-        errors.append('Champ sexe/genre absent de l’inscription.')
-    stale=[x for x in ['Non binaire','Autre','Préfère ne pas répondre'] if x in html]
-    if stale:
-        if 'option.remove()' not in signup or "new Set(['','Femme','Homme'])" not in signup:
-            errors.append('Anciennes options d’interface encore visibles sans normalisation runtime sécurisée: '+', '.join(stale))
-        else:
-            warnings.append('Le HTML historique contient encore des options retirées immédiatement par v24-signup.js; nettoyage statique recommandé à la prochaine réécriture sûre de cette page.')
+    if 'name="gender"' not in html or '<option value="Femme">Femme</option>' not in html or '<option value="Homme">Homme</option>' not in html:
+        errors.append('Inscription sans choix strict Femme/Homme.')
+    for stale in ['Non binaire','Préfère ne pas répondre']:
+        if stale in html:
+            errors.append(f'Option de profil non prévue encore visible: {stale}')
+    if 'data-guardian-code' not in html or 'Code d’autorisation parentale' not in html:
+        errors.append('Champ de code parental absent du formulaire d’inscription.')
 
-    for warning in warnings:
-        print('AVERTISSEMENT: '+warning)
+    if 'create_guardian_signup_invite' not in relations_js:
+        errors.append('Interface Relations & famille sans génération de code parental.')
+    if 'guardian_signup_invites' not in relations_js or 'guardian_links' not in relations_js:
+        errors.append('Interface parentale sans état des codes/liens vérifiés.')
+    if 'aucun contenu privé' not in relations_js.lower():
+        errors.append('Interface parentale ne rappelle pas explicitement la non-lecture du contenu privé.')
+
     if errors:
-        print(f'ECHEC sécurité jeunesse: {len(errors)} problème(s).')
+        print(f'ECHEC sécurité jeunesse canonique: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK jeunesse: verrou serveur 12+, cohortes 12–17/18+ isolées, relations parentales confirmées et supervision sans contenu privé.')
+    print('OK jeunesse: 12+, 12–13 avec autorisation parentale, youth_pending verrouillé, youth/adult isolés, MFA parentale et supervision sans contenu privé.')
     return 0
 
 if __name__=='__main__':
