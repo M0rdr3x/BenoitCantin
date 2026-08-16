@@ -35,23 +35,27 @@ jobs:
       OPTIONAL_OPENAI_CHARACTER_MODEL: ${{ vars.OPENAI_CHARACTER_MODEL }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Configurer Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Installer Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
+          github-token: ${{ github.token }}
 
       - name: Vérifier le dépôt Supabase
         shell: bash
         run: |
           set -euo pipefail
           python scripts/validate_supabase.py
+          supabase --version
 
       - name: Détecter les secrets de connexion Supabase
         id: auth
