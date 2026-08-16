@@ -34,6 +34,7 @@ def main() -> int:
     normalized = compact(sql)
 
     start_path, start = latest_function(files, 'fracture_engine_start')
+    raw_path, raw_state = latest_function(files, '_fracture_engine_get_state_raw')
     state_path, state = latest_function(files, 'fracture_engine_get_state')
     health_path, health = latest_function(files, 'fracture_engine_health')
 
@@ -49,6 +50,22 @@ def main() -> int:
         for stale in ("engine_version='24.4.0'", "engine_version='24.4.1'"):
             if stale in start_compact:
                 errors.append(f'{start_path.name}: version historique encore active dans fracture_engine_start: {stale}')
+
+    if not raw_path:
+        errors.append('_fracture_engine_get_state_raw introuvable.')
+    else:
+        raw_compact = compact(raw_state)
+        if f"canonical_engine_version:=coalesce(p.engine_version,'{ENGINE_VERSION}')" not in raw_compact:
+            errors.append(
+                f'{raw_path.name}: le helper brut ne dérive pas sa version de fracture_parties avec repli {ENGINE_VERSION}.'
+            )
+        for stale in ("'engine_version','24.4.0'", "'engine_version','24.4.1'"):
+            if stale in raw_compact:
+                errors.append(f'{raw_path.name}: état brut contient encore une version historique active: {stale}')
+        if "grantexecuteonfunctionpublic._fracture_engine_get_state_raw(text)toservice_role" not in normalized:
+            errors.append('Le helper brut Fracture doit rester réservé au service_role.')
+        if "revokeallonfunctionpublic._fracture_engine_get_state_raw(text)frompublic,anon,authenticated" not in normalized:
+            errors.append('Le helper brut Fracture doit être explicitement révoqué aux rôles navigateur.')
 
     if not state_path:
         errors.append('fracture_engine_get_state introuvable.')
@@ -75,7 +92,7 @@ def main() -> int:
 
     if f"altercolumnengine_versionsetdefault'{ENGINE_VERSION}'" not in normalized:
         errors.append(f'La valeur par défaut de fracture_parties.engine_version n’est pas {ENGINE_VERSION}.')
-    if "engine_versionisdistinctfrom'24.4.6'" not in normalized:
+    if f"engine_versionisdistinctfrom'{ENGINE_VERSION}'" not in normalized:
         errors.append('Aucune réparation explicite des parties actives ayant une version divergente.')
 
     if errors:
@@ -85,7 +102,7 @@ def main() -> int:
         return 1
 
     print(
-        f'OK cohérence Fracture: démarrage, état public, valeur par défaut, réparation active et health sont verrouillés sur le moteur {ENGINE_VERSION}.'
+        f'OK cohérence Fracture: démarrage, état brut interne, état public, valeur par défaut, réparation active et health sont verrouillés sur le moteur {ENGINE_VERSION}.'
     )
     return 0
 
