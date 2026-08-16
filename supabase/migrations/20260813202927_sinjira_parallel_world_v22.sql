@@ -1,5 +1,5 @@
 create table if not exists public.parallel_world_memberships(
-  character_id uuid primary key references public.sinjira_characters(id) on delete cascade,
+  character_id uuid primary key references public.characters(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   pioneer_number integer unique check(pioneer_number between 1 and 40),
   main_canon_eligible boolean not null default false,
@@ -30,7 +30,7 @@ create table if not exists public.parallel_groups(
 create table if not exists public.parallel_group_members(
   group_id uuid not null references public.parallel_groups(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
-  character_id uuid not null references public.sinjira_characters(id) on delete cascade,
+  character_id uuid not null references public.characters(id) on delete cascade,
   role text not null default 'member' check(role in ('owner','member')),
   joined_at timestamptz not null default now(),
   primary key(group_id,user_id)
@@ -39,7 +39,7 @@ create table if not exists public.parallel_cycle_responses(
   id uuid primary key default gen_random_uuid(),
   cycle_id uuid not null references public.parallel_world_cycles(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
-  character_id uuid not null references public.sinjira_characters(id) on delete cascade,
+  character_id uuid not null references public.characters(id) on delete cascade,
   group_id uuid references public.parallel_groups(id) on delete set null,
   response_text text not null,
   response_kind text not null default 'solo' check(response_kind in ('solo','group')),
@@ -50,7 +50,7 @@ create table if not exists public.parallel_story_installments(
   id uuid primary key default gen_random_uuid(),
   cycle_id uuid not null references public.parallel_world_cycles(id) on delete cascade,
   story_kind text not null check(story_kind in ('collective','individual')),
-  character_id uuid references public.sinjira_characters(id) on delete cascade,
+  character_id uuid references public.characters(id) on delete cascade,
   title text not null,
   content text not null,
   published_at timestamptz,
@@ -58,7 +58,7 @@ create table if not exists public.parallel_story_installments(
   check((story_kind='collective' and character_id is null) or (story_kind='individual' and character_id is not null))
 );
 create table if not exists public.parallel_character_state(
-  character_id uuid primary key references public.sinjira_characters(id) on delete cascade,
+  character_id uuid primary key references public.characters(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   life_state text not null default 'active' check(life_state in ('active','missing','memorial')),
   location_name text,
@@ -69,8 +69,8 @@ create table if not exists public.parallel_character_state(
 );
 create table if not exists public.fictional_relationships(
   id uuid primary key default gen_random_uuid(),
-  character_a_id uuid not null references public.sinjira_characters(id) on delete cascade,
-  character_b_id uuid references public.sinjira_characters(id) on delete set null,
+  character_a_id uuid not null references public.characters(id) on delete cascade,
+  character_b_id uuid references public.characters(id) on delete set null,
   relationship_type text not null check(relationship_type in ('partner','spouse','separated','divorced','parent','child','sibling','friend','rival','other')),
   started_on date,
   ended_on date,
@@ -95,7 +95,7 @@ create policy parallel_group_members_own_insert on public.parallel_group_members
 create policy parallel_responses_own on public.parallel_cycle_responses for all to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
 create policy parallel_stories_public on public.parallel_story_installments for select to anon,authenticated using(published_at is not null);
 create policy parallel_state_own on public.parallel_character_state for select to authenticated using(user_id=auth.uid());
-create policy fictional_relationships_participants_read on public.fictional_relationships for select to authenticated using(exists(select 1 from public.sinjira_characters c where c.id in (character_a_id,character_b_id) and c.user_id=auth.uid()));
+create policy fictional_relationships_participants_read on public.fictional_relationships for select to authenticated using(exists(select 1 from public.characters c where c.id in (character_a_id,character_b_id) and c.user_id=auth.uid()));
 create or replace function public.assign_parallel_world_membership() returns trigger language plpgsql security definer set search_path=public as $$
 declare n integer;
 begin
@@ -107,8 +107,8 @@ begin
   insert into public.parallel_character_state(character_id,user_id) values(new.id,new.user_id) on conflict(character_id) do nothing;
   return new;
 end $$;
-drop trigger if exists trg_assign_parallel_world_membership on public.sinjira_characters;
-create trigger trg_assign_parallel_world_membership after insert or update of status on public.sinjira_characters for each row execute function public.assign_parallel_world_membership();
+drop trigger if exists trg_assign_parallel_world_membership on public.characters;
+create trigger trg_assign_parallel_world_membership after insert or update of status on public.characters for each row execute function public.assign_parallel_world_membership();
 create or replace function public.protect_parallel_character_life() returns trigger language plpgsql security definer set search_path=public as $$
 begin
   if new.life_state='memorial' and old.life_state is distinct from 'memorial' then
