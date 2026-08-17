@@ -128,6 +128,35 @@ def run() -> None:
             page.goto(urljoin(BASE_URL, "compte/reinitialiser-mot-de-passe.html"), wait_until="domcontentloaded", timeout=30_000)
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à la réinitialisation")
 
+            # L’assistant V24.4.39 est testé sur la copie exacte du dépôt pour éviter
+            # les faux négatifs pendant les quelques secondes de propagation Pages.
+            page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
+            page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.39'", timeout=10_000)
+            assistant = page.evaluate("window.__SINJIRA_ASSISTANT__")
+            assert_true(assistant.get("providerMode") == "local", f"{BROWSER_NAME}: assistant non local")
+            assert_true(assistant.get("externalProviderEnabled") is False, f"{BROWSER_NAME}: fournisseur externe activé")
+            assert_true(assistant.get("privacy") == "ephemeral-memory-only", f"{BROWSER_NAME}: contrat de confidentialité assistant invalide")
+
+            assistant_toggle = page.locator(".sinjira-assistant-toggle")
+            assert_true(assistant_toggle.count() == 1, f"{BROWSER_NAME}: bouton Aide IA absent")
+            assistant_toggle.click()
+            panel = page.locator("#sinjira-assistant-panel")
+            assert_true(panel.is_visible(), f"{BROWSER_NAME}: panneau assistant ne s’ouvre pas")
+            assert_true(assistant_toggle.get_attribute("aria-expanded") == "true", f"{BROWSER_NAME}: aria-expanded assistant invalide")
+
+            question = page.locator("#sinjira-assistant-input")
+            question.fill("Comment créer mon personnage ?")
+            question.press("Enter")
+            log_text = page.locator(".sinjira-assistant-log").inner_text().lower()
+            assert_true("registre des consciences" in log_text, f"{BROWSER_NAME}: réponse Registre absente")
+            assert_true(page.locator('.sinjira-assistant-link[href="/projets/sinjira/registre/"]').count() >= 1, f"{BROWSER_NAME}: lien Registre assistant absent")
+            page.keyboard.press("Escape")
+            assert_true(panel.is_hidden(), f"{BROWSER_NAME}: Escape ne ferme pas l’assistant")
+
+            page.goto(urljoin(BASE_URL, "projets/projet-nova/"), wait_until="domcontentloaded", timeout=30_000)
+            page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.39'", timeout=10_000)
+            assert_true(page.locator(".sinjira-assistant-toggle").count() == 1, f"{BROWSER_NAME}: assistant absent de Projet Nova")
+
         mobile = browser.new_context(
             locale="fr-CA",
             viewport={"width": 390, "height": 844},
@@ -153,6 +182,19 @@ def run() -> None:
         assert_true("open" in nav_class.split(), f"{BROWSER_NAME}: menu mobile ne s’ouvre pas")
         toggle.click()
         assert_true(toggle.get_attribute("aria-expanded") == "false", f"{BROWSER_NAME}: menu mobile ne se referme pas")
+
+        if IS_LOCAL:
+            mobile_page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.39'", timeout=10_000)
+            mobile_assistant = mobile_page.locator(".sinjira-assistant-toggle")
+            mobile_assistant.click()
+            mobile_panel = mobile_page.locator("#sinjira-assistant-panel")
+            assert_true(mobile_panel.is_visible(), f"{BROWSER_NAME}: assistant mobile ne s’ouvre pas")
+            assistant_overflow = mobile_page.evaluate(
+                "document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2"
+            )
+            assert_true(assistant_overflow, f"{BROWSER_NAME}: assistant crée un débordement horizontal en 390 px")
+            mobile_page.keyboard.press("Escape")
+
         mobile.close()
 
         # Contrôle la réponse HTML initiale de la zone privée. Certains moteurs
@@ -170,7 +212,7 @@ def run() -> None:
         assert_true(not all_errors, f"{BROWSER_NAME}: erreurs JavaScript navigateur: " + " | ".join(all_errors[:5]))
         context.close()
         browser.close()
-        auth_note = f", {len(AUTH_ROUTES)} pages Auth locales" if IS_LOCAL else ""
+        auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V24.4.39" if IS_LOCAL else ""
         print(
             f"OK E2E {BROWSER_NAME}: {len(PUBLIC_ROUTES)} routes publiques{auth_note}, "
             f"accueil desktop/mobile, contact, compatibilité CSS/runtime et frontière compte vérifiés sur {BASE_URL}"
