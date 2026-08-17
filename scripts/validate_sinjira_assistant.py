@@ -9,9 +9,11 @@ NOVA_RUNTIME = ROOT / "projets/projet-nova/script.js"
 
 errors = []
 
+
 def require(condition, message):
     if not condition:
         errors.append(message)
+
 
 require(JS.exists(), "assets/js/sinjira-assistant.js est absent")
 require(CSS.exists(), "assets/css/sinjira-assistant.css est absent")
@@ -23,8 +25,8 @@ css = CSS.read_text(encoding="utf-8") if CSS.exists() else ""
 site = SITE.read_text(encoding="utf-8") if SITE.exists() else ""
 nova_runtime = NOVA_RUNTIME.read_text(encoding="utf-8") if NOVA_RUNTIME.exists() else ""
 
-# Contrat de version et fournisseur: V24.4.39 fonctionne intégralement côté navigateur.
-require("ASSISTANT_VERSION = '24.4.39'" in js, "version assistant attendue 24.4.39 absente")
+# Contrat de version et fournisseur: V24.4.40 fonctionne intégralement côté navigateur.
+require("ASSISTANT_VERSION = '24.4.40'" in js, "version assistant attendue 24.4.40 absente")
 require("PROVIDER_MODE = 'local'" in js, "l’assistant doit rester en fournisseur local")
 require("EXTERNAL_PROVIDER_ENABLED = false" in js, "un fournisseur externe ne doit pas être activé")
 require("privacy: 'ephemeral-memory-only'" in js, "le contrat de mémoire éphémère est absent")
@@ -59,10 +61,25 @@ require("if (youth && intent.youthSafe !== true) continue;" in js, "le filtre je
 intent_blocks = re.findall(r"\{\s*id:\s*'[^']+'.*?youthSafe:\s*(true|false)\s*\}", js, flags=re.S)
 require(intent_blocks and all(value == "true" for value in intent_blocks), "un sujet exposé n’est pas marqué youthSafe=true")
 
-# Chargement global via les runtimes communs.
+# V24.4.40: contexte déterminé uniquement par la route, sans lecture des champs privés.
+require("var PAGE_CONTEXTS = [" in js, "base de contexte par page absente")
+require("function currentPageContext()" in js, "résolution du contexte de page absente")
+require("function isPageHelpQuery(query)" in js, "intention d’aide sur la page absente")
+require("contextLabel: pageContext.label" in js, "diagnostic du contexte public absent")
+require("input.value" in js and "querySelector('input')" not in js, "l’assistant ne doit pas parcourir les champs de la page")
+for expected_context in (
+    "Registre des Consciences", "Romans SINJIRA™", "Jeux SINJIRA™",
+    "Fracture du Réseau-Mère", "Projet Nova", "Compte SINJIRA™",
+):
+    require(expected_context in js, f"contexte critique absent: {expected_context}")
+
+# Chargement global via les runtimes communs. Site.js doit utiliser le cache-buster actuel;
+# Projet Nova conserve son chargeur dédié et peut être mis à jour indépendamment.
+require("/assets/css/sinjira-assistant.css?v=24.4.40" in site, "site.js ne charge pas le CSS assistant V24.4.40")
+require("/assets/js/sinjira-assistant.js?v=24.4.40" in site, "site.js ne charge pas le JS assistant V24.4.40")
 for runtime_name, runtime in (("site.js", site), ("Projet Nova/script.js", nova_runtime)):
-    require("/assets/css/sinjira-assistant.css?v=24.4.39" in runtime, f"{runtime_name} ne charge pas le CSS de l’assistant V24.4.39")
-    require("/assets/js/sinjira-assistant.js?v=24.4.39" in runtime, f"{runtime_name} ne charge pas le JS de l’assistant V24.4.39")
+    require("/assets/css/sinjira-assistant.css?v=" in runtime, f"{runtime_name} ne charge pas le CSS de l’assistant")
+    require("/assets/js/sinjira-assistant.js?v=" in runtime, f"{runtime_name} ne charge pas le JS de l’assistant")
     require("data-disable-sinjira-assistant" in runtime, f"{runtime_name}: opt-out technique explicite absent")
 
 site_runtime_pages = [
@@ -88,9 +105,9 @@ if nova_page.exists():
     require("script.js" in nova_html, "Projet Nova ne charge pas son runtime commun et donc pas l’assistant")
 
 if errors:
-    print("ERREUR — contrat Assistant SINJIRA V24.4.39")
+    print("ERREUR — contrat Assistant SINJIRA V24.4.40")
     for error in errors:
         print(f" - {error}")
     raise SystemExit(1)
 
-print("OK — Assistant SINJIRA V24.4.39: local, éphémère, accessible, jeunesse-safe et chargé sur les parcours critiques, incluant Projet Nova.")
+print("OK — Assistant SINJIRA V24.4.40: local, éphémère, contextuel, accessible, jeunesse-safe et chargé sur les parcours critiques, incluant Projet Nova.")
