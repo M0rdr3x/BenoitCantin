@@ -78,6 +78,17 @@ def main()->int:
 
     config=read(CONFIG) if CONFIG.exists() else ''
     if f'project_id = "{PROJECT}"' not in config:fail(errors,'config.toml pointe vers le mauvais projet.')
+    auth_block=re.search(r'(?ms)^\[auth\]\s*(.*?)(?=^\[|\Z)',config)
+    if not auth_block:
+        fail(errors,'config.toml: bloc [auth] absent; la reconstruction locale ne garantit pas la politique de mot de passe.')
+    else:
+        auth=auth_block.group(1)
+        if not re.search(r'(?m)^\s*enabled\s*=\s*true\s*(?:#.*)?$',auth):
+            fail(errors,'config.toml: Auth local doit rester activé.')
+        if not re.search(r'(?m)^\s*minimum_password_length\s*=\s*12\s*(?:#.*)?$',auth):
+            fail(errors,'config.toml: minimum_password_length doit être 12 pour correspondre au frontend SINJIRA.')
+        if not re.search(r'(?m)^\s*password_requirements\s*=\s*""\s*(?:#.*)?$',auth):
+            fail(errors,'config.toml: password_requirements doit rester vide tant que le frontend impose seulement la longueur.')
     browser=read(FRONTEND) if FRONTEND.exists() else ''
     if f'https://{PROJECT}.supabase.co' not in browser:fail(errors,'Frontend Supabase: mauvais projet.')
     if 'sb_publishable_' not in browser:fail(errors,'Frontend Supabase: clé publiable moderne absente.')
@@ -102,7 +113,7 @@ def main()->int:
         print(f'ECHEC: {len(errors)} problème(s).')
         for e in errors:print('- '+e)
         return 1
-    print('OK: dépôt, runtime, Registre, RLS, propriétaire, jeunesse et déploiement cohérents.')
+    print('OK: dépôt, runtime, Registre, RLS, propriétaire, jeunesse, Auth local 12 caractères et déploiement cohérents.')
     return 0
 
 if __name__=='__main__':raise SystemExit(main())
