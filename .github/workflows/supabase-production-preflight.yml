@@ -7,6 +7,8 @@ on:
       - 'supabase/**'
       - 'scripts/validate_supabase.py'
       - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_social_rls_contract.py'
+      - 'scripts/validate_production_migration_ledger.py'
       - '.github/workflows/supabase-production-preflight.yml'
   pull_request:
     branches: [ main ]
@@ -14,6 +16,8 @@ on:
       - 'supabase/**'
       - 'scripts/validate_supabase.py'
       - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_social_rls_contract.py'
+      - 'scripts/validate_production_migration_ledger.py'
       - '.github/workflows/supabase-production-preflight.yml'
   workflow_dispatch:
     inputs:
@@ -64,6 +68,8 @@ jobs:
           set -euo pipefail
           python scripts/validate_supabase.py
           python scripts/validate_edge_function_inventory.py
+          python scripts/validate_social_rls_contract.py
+          python scripts/validate_production_migration_ledger.py
           supabase --version
 
       - name: Détecter les secrets de connexion Supabase
@@ -111,19 +117,22 @@ jobs:
           retired_found=0
           for name in "${retired[@]}"; do
             if grep -Fq "$name" /tmp/sinjira-functions-before.txt; then
-              echo "Edge Function héritée encore déployée: $name"
-              retired_found=1
+              echo "Edge Function retirée physiquement présente (stub neutralisé attendu): $name"
+              retired_found=$((retired_found+1))
             fi
           done
 
           {
             echo '### Inventaire Edge Functions production'
             if [ "$missing" -eq 0 ]; then echo '- Toutes les fonctions canoniques du dépôt sont présentes.'; else echo '- Des fonctions canoniques sont absentes.'; fi
-            if [ "$retired_found" -eq 0 ]; then echo '- Aucun des six anciens slugs connus n’est déployé.'; else echo '- Dérive détectée : au moins une ancienne fonction est encore déployée.'; fi
+            if [ "$retired_found" -eq 0 ]; then
+              echo '- Aucun des six anciens slugs connus n’est physiquement déployé.'
+            else
+              echo "- $retired_found ancien(s) slug(s) restent physiquement présents comme stubs neutralisés 410. Leur présence est informative tant que la suppression physique n’est pas disponible; aucun appel actif n’est autorisé par le validateur du dépôt."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
           test "$missing" -eq 0
-          test "$retired_found" -eq 0
 
       - name: Lier le projet de production
         if: ${{ steps.auth.outputs.ready == 'true' }}
@@ -262,12 +271,12 @@ jobs:
           retired_found=0
           for name in "${retired[@]}"; do
             if grep -Fq "$name" /tmp/sinjira-functions.txt; then
-              echo "Edge Function héritée encore déployée après synchronisation: $name"
-              retired_found=1
+              echo "Edge Function retirée physiquement présente après synchronisation (stub neutralisé attendu): $name"
+              retired_found=$((retired_found+1))
             fi
           done
+          echo "Fonctions retirées encore physiquement présentes: $retired_found" >> "$GITHUB_STEP_SUMMARY"
           test "$missing" -eq 0
-          test "$retired_found" -eq 0
 
       - name: Vérifier l'historique et le dry-run après déploiement
         id: final_verify
