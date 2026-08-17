@@ -47,6 +47,17 @@ PUBLIC_PAGES = {
 for nova_name in NOVA_PAGE_NAMES:
     PUBLIC_PAGES[f"projets/projet-nova/{nova_name}"] = f"/projets/projet-nova/{nova_name}"
 
+DESCRIPTION_OVERRIDES = {
+    "projets/sinjira/registre/index.html": (
+        "Créez la base humaine de votre personnage SINJIRA™ avec le Registre des Consciences : "
+        "questionnaire guidé, compte lié et photo source privée facultative."
+    ),
+    "projets/projet-nova/index.html": (
+        "Projet Nova est une démarche citoyenne québécoise en construction axée sur la transparence, "
+        "la responsabilité publique et la participation démocratique."
+    ),
+}
+
 ROOT_SITEMAP_PATHS = [
     "/",
     "/a-propos.html",
@@ -111,6 +122,19 @@ def remove_link_rel(source: str, rel_value: str) -> str:
     return pattern.sub("", source)
 
 
+def replace_description(source: str, description: str) -> str:
+    escaped = esc(description)
+    patterns = [
+        re.compile(r'(?is)<meta\b(?=[^>]*\bname=["\']description["\'])[^>]*>'),
+        re.compile(r'(?is)<meta\b(?=[^>]*\bcontent=[^>]+)(?=[^>]*\bname=["\']description["\'])[^>]*>'),
+    ]
+    replacement = f'<meta name="description" content="{escaped}">'
+    for pattern in patterns:
+        if pattern.search(source):
+            return pattern.sub(replacement, source, count=1)
+    return source
+
+
 def esc(value: str) -> str:
     return html.escape(value, quote=True)
 
@@ -155,7 +179,7 @@ def seo_block(title: str, description: str, canonical: str, og_image: str) -> st
         tags.append(f'<meta property="og:image" content="{esc(og_image)}">')
     tags.extend(
         [
-            '<meta name="twitter:card" content="summary_large_image">',
+            f'<meta name="twitter:card" content="{"summary_large_image" if og_image else "summary"}">',
             f'<meta name="twitter:title" content="{esc(title)}">',
             f'<meta name="twitter:description" content="{esc(description)}">',
         ]
@@ -178,7 +202,7 @@ def patch_page(rel_path: str, canonical_path: str) -> bool:
     parser = HeadFacts()
     parser.feed(source)
     title = parser.title
-    description = parser.description
+    description = DESCRIPTION_OVERRIDES.get(rel_path, parser.description)
     if not title:
         raise RuntimeError(f"Titre absent: {rel_path}")
     if not description:
@@ -187,7 +211,7 @@ def patch_page(rel_path: str, canonical_path: str) -> bool:
     canonical = BASE + canonical_path
     og_image = absolute_asset(parser.og_image, canonical)
 
-    cleaned = source
+    cleaned = replace_description(source, description)
     cleaned = re.sub(r"(?is)\s*<!--\s*SEO V24\.4\.46\s*-->\s*", "\n", cleaned)
     cleaned = re.sub(
         r"(?is)<script\b(?=[^>]*\bdata-seo-v24-4-46\b)[^>]*>.*?</script>\s*",
