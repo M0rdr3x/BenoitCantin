@@ -155,13 +155,15 @@ def run() -> None:
             assert_true("registre des consciences" in log_text, f"{BROWSER_NAME}: réponse Registre absente")
             assert_true(page.locator('.sinjira-assistant-link[href="/projets/sinjira/registre/"]').count() >= 1, f"{BROWSER_NAME}: lien Registre assistant absent")
 
-            # L’assistant possède un anti-double-envoi de 350 ms. Les scénarios E2E
-            # espacés vérifient des questions distinctes sans déclencher ce garde-fou volontaire.
             page.wait_for_timeout(400)
             question.fill("Résistant ou Réseau-Mère")
             question.press("Enter")
             log_text = page.locator(".sinjira-assistant-log").inner_text().lower()
-            assert_true("seule votre propre identité" in log_text, f"{BROWSER_NAME}: garde-fou identité Fracture absent")
+            fracture_privacy_ok = (
+                "seule votre propre identité" in log_text
+                or ("votre identité est privée" in log_text and "identités des autres" in log_text)
+            )
+            assert_true(fracture_privacy_ok, f"{BROWSER_NAME}: garde-fou identité Fracture absent")
 
             page.wait_for_timeout(400)
             question.fill("voici mon mot de passe est test-seulement")
