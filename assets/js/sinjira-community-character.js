@@ -1,6 +1,6 @@
-import {getSupabase,requireCommunityUser,escapeHtml,formatDate,reportContent,socialStatus} from './sinjira-social-common.js';
+import {getSupabase,requireCommunityUser,escapeHtml,formatDate,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
 
-const UI_VERSION='24.4.20';
+const UI_VERSION='24.4.42';
 const feed=document.querySelector('[data-character-feed]');
 const form=document.querySelector('[data-character-post-form]');
 const status=document.querySelector('[data-social-status]');
@@ -13,8 +13,8 @@ function portrait(profile={}){
   return path.startsWith('/')?path:'/assets/media/sinjira-emblem.webp';
 }
 
-function fail(message){
-  socialStatus(status,message,'error');
+function fail(error,fallback='Action impossible dans le Réseau personnage.'){
+  socialErrorStatus(status,error,fallback);
 }
 
 async function charMap(ids){
@@ -81,7 +81,7 @@ function bind(posts){
     card.querySelector('[data-delete]')?.addEventListener('click',async()=>{
       if(!confirm('Supprimer cette publication de votre personnage?'))return;
       const {error}=await getSupabase().from('social_character_posts').delete().eq('id',id);
-      if(error)return fail(error.message);
+      if(error)return fail(error,'Suppression impossible pour le moment.');
       await load();
     });
 
@@ -91,17 +91,17 @@ function bind(posts){
       try{
         await reportContent({network:'character',target_type:'post',target_id:id,reason,snapshot:{body:post.body,character_id:post.character_id}});
         alert('Signalement transmis à l’administration.');
-      }catch(error){fail(error?.message||'Signalement impossible.');}
+      }catch(error){fail(error,'Signalement impossible pour le moment.');}
     });
 
     card.querySelector('[data-like]')?.addEventListener('click',async()=>{
       const s=getSupabase();
       const {data,error:readError}=await s.from('social_character_likes').select('post_id').eq('post_id',id).eq('user_id',user.id).maybeSingle();
-      if(readError)return fail(readError.message);
+      if(readError)return fail(readError,'Impossible de vérifier votre réaction.');
       const result=data
         ?await s.from('social_character_likes').delete().eq('post_id',id).eq('user_id',user.id)
         :await s.from('social_character_likes').insert({post_id:id,user_id:user.id,character_id:me.character_id});
-      if(result.error)return fail(result.error.message);
+      if(result.error)return fail(result.error,'Impossible d’enregistrer votre réaction.');
       await load();
     });
 
@@ -112,10 +112,14 @@ function bind(posts){
       if(!body)return;
       const button=commentForm.querySelector('button[type="submit"]');
       if(button)button.disabled=true;
-      const {error}=await getSupabase().from('social_character_comments').insert({post_id:id,user_id:user.id,character_id:me.character_id,body});
-      if(button)button.disabled=false;
-      if(error)return fail(error.message);
-      await load();
+      try{
+        const {error}=await getSupabase().from('social_character_comments').insert({post_id:id,user_id:user.id,character_id:me.character_id,body});
+        if(error)return fail(error,'Impossible de publier ce commentaire.');
+        commentForm.reset();
+        await load();
+      }finally{
+        if(button)button.disabled=false;
+      }
     });
   });
 }
@@ -176,19 +180,22 @@ function showLocked(owner){
       if(!body)return;
       const button=form.querySelector('button[type="submit"]');
       if(button)button.disabled=true;
-      const {error}=await getSupabase().from('social_character_posts').insert({user_id:user.id,character_id:me.character_id,body});
-      if(button)button.disabled=false;
-      if(error)return fail(error.message);
-      form.reset();
-      await load();
+      try{
+        const {error}=await getSupabase().from('social_character_posts').insert({user_id:user.id,character_id:me.character_id,body});
+        if(error)return fail(error,'Impossible de publier en personnage pour le moment.');
+        form.reset();
+        await load();
+        socialStatus(status,`Publication enregistrée · interface ${UI_VERSION}.`,'success');
+      }finally{
+        if(button)button.disabled=false;
+      }
     });
 
     await load();
     socialStatus(status,`Réseau personnage prêt · interface ${UI_VERSION}.`,'success');
   }catch(error){
-    console.error('[SINJIRA Réseau personnage]',error);
     if(error?.message!=='RULES_REQUIRED'&&error?.message!=='Connexion requise'){
-      fail(error?.message||'Erreur du Réseau personnage.');
+      fail(error,'Le Réseau personnage n’a pas pu terminer sa vérification. Rechargez la page pour réessayer.');
       if(identity)identity.innerHTML='<strong>Mode personnage — indisponible</strong><p>Le service personnage n’a pas pu terminer la vérification.</p>';
     }
   }
