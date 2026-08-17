@@ -91,8 +91,6 @@ def run() -> None:
             f"{BROWSER_NAME}: CSS Grid indisponible dans le moteur testé",
         )
 
-        # Le formulaire de contact contient encore un petit runtime inline : on le
-        # teste dans chaque moteur pour éviter une régression Safari/Firefox.
         page.goto(urljoin(BASE_URL, "contact.html"), wait_until="domcontentloaded", timeout=30_000)
         project = page.locator("#contact-project")
         form = page.locator("#contact-general")
@@ -106,10 +104,6 @@ def run() -> None:
         contact_html = page.content().lower()
         assert_true("kingtyrano@gmail.com" not in contact_html, "Adresse privée embarquée dans le formulaire de contact")
 
-        # Le smoke Auth détaillé est volontairement exécuté uniquement sur la copie
-        # exacte du dépôt. Le déploiement GitHub Pages peut être en retard de quelques
-        # secondes sur le push; mélanger ce test de version au site public créerait un
-        # faux négatif de CI. Aucune soumission n'est effectuée et aucun compte n'est créé.
         if IS_LOCAL:
             for auth_route in AUTH_ROUTES:
                 auth_url = urljoin(BASE_URL, auth_route)
@@ -128,14 +122,14 @@ def run() -> None:
             page.goto(urljoin(BASE_URL, "compte/reinitialiser-mot-de-passe.html"), wait_until="domcontentloaded", timeout=30_000)
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à la réinitialisation")
 
-            # L’assistant V24.4.39 est testé sur la copie exacte du dépôt pour éviter
-            # les faux négatifs pendant les quelques secondes de propagation Pages.
+            # Assistant local exact du dépôt: navigation, confidentialité et contexte.
             page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
-            page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.39'", timeout=10_000)
+            page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.40'", timeout=10_000)
             assistant = page.evaluate("window.__SINJIRA_ASSISTANT__")
             assert_true(assistant.get("providerMode") == "local", f"{BROWSER_NAME}: assistant non local")
             assert_true(assistant.get("externalProviderEnabled") is False, f"{BROWSER_NAME}: fournisseur externe activé")
             assert_true(assistant.get("privacy") == "ephemeral-memory-only", f"{BROWSER_NAME}: contrat de confidentialité assistant invalide")
+            assert_true(assistant.get("contextLabel") == "Accueil Benoit Cantin", f"{BROWSER_NAME}: contexte accueil assistant invalide")
 
             assistant_toggle = page.locator(".sinjira-assistant-toggle")
             assert_true(assistant_toggle.count() == 1, f"{BROWSER_NAME}: bouton Aide IA absent")
@@ -153,9 +147,18 @@ def run() -> None:
             page.keyboard.press("Escape")
             assert_true(panel.is_hidden(), f"{BROWSER_NAME}: Escape ne ferme pas l’assistant")
 
+            page.goto(urljoin(BASE_URL, "projets/sinjira/registre/"), wait_until="domcontentloaded", timeout=30_000)
+            page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.40'", timeout=10_000)
+            assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Registre des Consciences", f"{BROWSER_NAME}: contexte Registre invalide")
+            page.locator(".sinjira-assistant-toggle").click()
+            page.locator("#sinjira-assistant-input").fill("Que puis-je faire sur cette page ?")
+            page.locator("#sinjira-assistant-input").press("Enter")
+            assert_true("base humaine" in page.locator(".sinjira-assistant-log").inner_text().lower(), f"{BROWSER_NAME}: aide contextuelle Registre absente")
+
             page.goto(urljoin(BASE_URL, "projets/projet-nova/"), wait_until="domcontentloaded", timeout=30_000)
-            page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.39'", timeout=10_000)
+            page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.40'", timeout=10_000)
             assert_true(page.locator(".sinjira-assistant-toggle").count() == 1, f"{BROWSER_NAME}: assistant absent de Projet Nova")
+            assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Projet Nova", f"{BROWSER_NAME}: contexte Projet Nova invalide")
 
         mobile = browser.new_context(
             locale="fr-CA",
@@ -169,9 +172,7 @@ def run() -> None:
         response = mobile_page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: accueil mobile inaccessible")
 
-        overflow = mobile_page.evaluate(
-            "document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2"
-        )
+        overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
         assert_true(overflow, f"{BROWSER_NAME}: débordement horizontal détecté en 390 px")
 
         toggle = mobile_page.locator("[data-menu-toggle]")
@@ -184,22 +185,17 @@ def run() -> None:
         assert_true(toggle.get_attribute("aria-expanded") == "false", f"{BROWSER_NAME}: menu mobile ne se referme pas")
 
         if IS_LOCAL:
-            mobile_page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.39'", timeout=10_000)
+            mobile_page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.40'", timeout=10_000)
             mobile_assistant = mobile_page.locator(".sinjira-assistant-toggle")
             mobile_assistant.click()
             mobile_panel = mobile_page.locator("#sinjira-assistant-panel")
             assert_true(mobile_panel.is_visible(), f"{BROWSER_NAME}: assistant mobile ne s’ouvre pas")
-            assistant_overflow = mobile_page.evaluate(
-                "document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2"
-            )
+            assistant_overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
             assert_true(assistant_overflow, f"{BROWSER_NAME}: assistant crée un débordement horizontal en 390 px")
             mobile_page.keyboard.press("Escape")
 
         mobile.close()
 
-        # Contrôle la réponse HTML initiale de la zone privée. Certains moteurs
-        # exécutent la redirection d’authentification avant que Playwright ne lise
-        # le DOM; le contrat noindex doit donc être vérifié sur la réponse source.
         account_url = urljoin(BASE_URL, "compte/")
         account_response = context.request.get(account_url, timeout=30_000)
         assert_true(account_response.ok, f"{BROWSER_NAME}: page compte inaccessible")
@@ -212,7 +208,7 @@ def run() -> None:
         assert_true(not all_errors, f"{BROWSER_NAME}: erreurs JavaScript navigateur: " + " | ".join(all_errors[:5]))
         context.close()
         browser.close()
-        auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V24.4.39" if IS_LOCAL else ""
+        auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V24.4.40 contextuel" if IS_LOCAL else ""
         print(
             f"OK E2E {BROWSER_NAME}: {len(PUBLIC_ROUTES)} routes publiques{auth_note}, "
             f"accueil desktop/mobile, contact, compatibilité CSS/runtime et frontière compte vérifiés sur {BASE_URL}"
