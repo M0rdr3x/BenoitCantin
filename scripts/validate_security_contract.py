@@ -6,6 +6,8 @@ ROOT = Path(__file__).resolve().parents[1]
 MIGRATIONS = ROOT / "supabase" / "migrations"
 FRONTEND = ROOT / "assets" / "js" / "sinjira-fracture-engine.js"
 VERSION = "24.4.19"
+SENSITIVE_ACL_VERSION = "24.4.36"
+SENSITIVE_ACL_MIGRATION = MIGRATIONS / "20260817012809_sinjira_v24_4_36_sensitive_acl_hardening.sql"
 
 SEALED_TABLES = (
     "character_generation_runs",
@@ -102,6 +104,46 @@ def main() -> int:
     if health_revoke not in normalized:
         fail(errors, "Le diagnostic du contrat de sécurité est exposé à un rôle navigateur.")
 
+    # V24.4.36 : réduire aussi les privilèges SQL de tables privées qui étaient déjà
+    # protégées par RLS. La défense ne dépend plus uniquement de l'absence de policy anon.
+    if not SENSITIVE_ACL_MIGRATION.exists():
+        fail(errors, f"Migration ACL sensible absente: {SENSITIVE_ACL_MIGRATION.name}.")
+    else:
+        acl = compact(SENSITIVE_ACL_MIGRATION.read_text("utf-8", errors="ignore"))
+        acl_markers = (
+            "revokeallprivilegesontablepublic.guardian_linksfrompublic,anon;",
+            "grantsel ectontablepublic.guardian_linkstoauthenticated;".replace(" ", ""),
+            "revokeallprivilegesontablepublic.guardian_signup_invitesfrompublic,anon;",
+            "revokeinsert,update,delete,truncate,references,triggerontablepublic.guardian_signup_invitesfromauthenticated;",
+            "grantselectontablepublic.guardian_signup_invitestoauthenticated;",
+            "revokeallprivilegesontablepublic.private_family_linksfrompublic,anon;",
+            "grantselect,insert,update,deleteontablepublic.private_family_linkstoauthenticated;",
+            "revokeallprivilegesontablepublic.social_real_messagesfrompublic,anon;",
+            "grantselect,insertontablepublic.social_real_messagestoauthenticated;",
+            "revokeallprivilegesontablepublic.social_character_messagesfrompublic,anon;",
+            "grantselect,insertontablepublic.social_character_messagestoauthenticated;",
+            f"'version','{SENSITIVE_ACL_VERSION}'",
+            "revokeallonfunctionpublic.sinjira_sensitive_acl_health()frompublic,anon,authenticated;",
+            "grantexecuteonfunctionpublic.sinjira_sensitive_acl_health()toservice_role;",
+        )
+        for marker in acl_markers:
+            if marker not in acl:
+                fail(errors, f"Contrat ACL sensible {SENSITIVE_ACL_VERSION} incomplet: {marker}.")
+        health = latest_function(all_sql, "sinjira_sensitive_acl_health")
+        health_compact = compact(health)
+        if not health:
+            fail(errors, "sinjira_sensitive_acl_health() introuvable.")
+        else:
+            for marker in (
+                "securitydefiner",
+                "setsearch_path=public",
+                "guardian_signup_invites_auth_read_only",
+                "social_real_messages_auth_minimal",
+                "social_character_messages_auth_minimal",
+            ):
+                if compact(marker) not in health_compact:
+                    fail(errors, f"Diagnostic ACL sensible incomplet: {marker}.")
+
     if FRONTEND.exists():
         frontend = FRONTEND.read_text("utf-8", errors="ignore")
         if "fracture-engine-gateway" not in frontend:
@@ -179,8 +221,8 @@ def main() -> int:
         return 1
 
     print(
-        "OK contrat sécurité: tables internes scellées, état brut Fracture réservé au serveur, "
-        f"état joueur assaini, self-scope SECURITY DEFINER et diagnostic {VERSION} protégés."
+        "OK contrat sécurité: tables internes scellées, ACL sensibles minimales, état brut Fracture réservé au serveur, "
+        f"état joueur assaini, self-scope SECURITY DEFINER et diagnostics {VERSION}/{SENSITIVE_ACL_VERSION} protégés."
     )
     return 0
 
