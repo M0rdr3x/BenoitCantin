@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
 SUPPORTED_BROWSERS = {"chromium", "firefox", "webkit"}
-ASSISTANT_VERSION = "24.4.46"
+ASSISTANT_VERSION = "24.4.48"
 PUBLIC_ROUTES = [
     "",
     "a-propos.html",
@@ -160,6 +160,18 @@ def run() -> None:
             question.press("Enter")
             log_text = page.locator(".sinjira-assistant-log").inner_text().lower()
             assert_true("seule votre propre identité" in log_text, f"{BROWSER_NAME}: garde-fou identité Fracture absent")
+
+            page.wait_for_timeout(400)
+            question.fill("Mon questionnaire est enregistré mais la notification n’a pas été envoyée")
+            question.press("Enter")
+            log_text = page.locator(".sinjira-assistant-log").inner_text().lower()
+            assert_true("sans annuler le dossier" in log_text, f"{BROWSER_NAME}: dépannage notification Registre absent")
+
+            page.wait_for_timeout(400)
+            question.fill("Mon compte reste bloqué en synchronisation")
+            question.press("Enter")
+            log_text = page.locator(".sinjira-assistant-log").inner_text().lower()
+            assert_true("session est toujours connectée" in log_text, f"{BROWSER_NAME}: dépannage synchronisation absent")
 
             page.wait_for_timeout(400)
             question.fill("voici mon mot de passe est test-seulement")
