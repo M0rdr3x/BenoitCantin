@@ -6,7 +6,7 @@ JS = ROOT / "assets/js/sinjira-assistant.js"
 CSS = ROOT / "assets/css/sinjira-assistant.css"
 SITE = ROOT / "assets/js/site.js"
 NOVA_RUNTIME = ROOT / "projets/projet-nova/script.js"
-ASSISTANT_VERSION = "24.4.46"
+ASSISTANT_VERSION = "24.4.48"
 
 errors = []
 
@@ -65,12 +65,15 @@ require("function isYouthContext()" in js, "la détection du contexte jeunesse e
 require("if (youth && intent.youthSafe !== true) continue;" in js, "le filtre jeunesse est absent")
 intent_blocks = re.findall(r"\{\s*id:\s*'[^']+'.*?youthSafe:\s*(true|false)\s*\}", js, flags=re.S)
 require(intent_blocks and all(value == "true" for value in intent_blocks), "un sujet exposé n’est pas marqué youthSafe=true")
-require(len(intent_blocks) >= 20, "la base d’aide doit couvrir au moins 20 intentions fiables")
+require(len(intent_blocks) >= 27, "la base d’aide doit couvrir au moins 27 intentions fiables")
 
 # Contexte déterminé uniquement par la route, sans lecture des champs privés.
 require("var PAGE_CONTEXTS = [" in js, "base de contexte par page absente")
 require("function currentPageContext()" in js, "résolution du contexte de page absente")
 require("function isPageHelpQuery(query)" in js, "intention d’aide sur la page absente")
+require("var CONTEXT_SUGGESTIONS = {" in js and "function currentSuggestions(context)" in js, "suggestions contextuelles V24.4.48 absentes")
+for marker in ("Enregistré mais non envoyé", "Voir mon identité", "Synchronisation", "Lire la démo"):
+    require(marker in js, f"suggestion contextuelle absente: {marker}")
 require("contextLabel: pageContext.label" in js, "diagnostic du contexte public absent")
 require("input.value" in js and "querySelector('input')" not in js, "l’assistant ne doit pas parcourir les champs de la page")
 for expected_context in (
@@ -85,7 +88,8 @@ for expected_context in (
 for intent_id in (
     "'fracture-identity'", "'fracture-controls'", "'licenses'", "'purchases'",
     "'moderation'", "'parallel'", "'youth'", "'browser'", "'accessibility'",
-    "'nova-transparency'", "'assistant'",
+    "'nova-transparency'", "'registre-delivery'", "'sync-status'", "'admin-access'",
+    "'avatar'", "'roman-demo'", "'roman-comments'", "'fracture-access'", "'assistant'",
 ):
     require(f"id: {intent_id}" in js, f"intention d’aide critique absente: {intent_id}")
 

@@ -2,7 +2,7 @@
   'use strict';
 
   var doc = document;
-  var ASSISTANT_VERSION = '24.4.46';
+  var ASSISTANT_VERSION = '24.4.48';
   var PROVIDER_MODE = 'local';
   var EXTERNAL_PROVIDER_ENABLED = false;
   var MAX_MESSAGE_LENGTH = 500;
@@ -15,7 +15,17 @@
   function normalize(value) {
     var text = String(value || '').toLowerCase();
     if (text.normalize) text = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return text.replace(/[-‐‑‒–—―'’]/g, ' ').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+    text = text.replace(/[-‐‑‒–—―'’]/g, ' ').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+    text = text
+      .replace(/\bpersonage\b/g, 'personnage')
+      .replace(/\benregister\b/g, 'enregistrer')
+      .replace(/\bsyncronisation\b/g, 'synchronisation')
+      .replace(/\bsyncroniser\b/g, 'synchronisation')
+      .replace(/\bsynchroniser\b/g, 'synchronisation')
+      .replace(/\bmarche pas\b/g, 'ne fonctionne pas')
+      .replace(/\bfonctionne plus\b/g, 'ne fonctionne pas')
+      .replace(/\bresistant\b/g, 'resistance');
+    return text;
   }
 
   function tokenize(value) {
@@ -65,6 +75,54 @@
     return { label: 'Site Benoit Cantin', answer: 'Vous êtes sur le site officiel de Benoit Cantin. Je peux vous guider vers SINJIRA™, le Registre des Consciences, Projet Nova ou la page Contact.', links: [{ label: 'Accueil', href: '/' }, { label: 'Contact', href: '/contact.html' }] };
   }
 
+  var CONTEXT_SUGGESTIONS = {
+    'Accueil Benoit Cantin': [
+      { label: 'Découvrir SINJIRA™', question: 'C’est quoi SINJIRA™ ?' },
+      { label: 'Créer mon personnage', question: 'Comment créer mon personnage ?' },
+      { label: 'Découvrir Projet Nova', question: 'C’est quoi Projet Nova ?' }
+    ],
+    'Registre des Consciences': [
+      { label: 'Créer mon personnage', question: 'Comment créer mon personnage ?' },
+      { label: 'Enregistré mais non envoyé', question: 'Mon questionnaire est enregistré mais la notification n’a pas été envoyée.' },
+      { label: 'Voir mon personnage', question: 'Où voir l’état de mon personnage ?' }
+    ],
+    'Fracture du Réseau-Mère': [
+      { label: 'Voir mon identité', question: 'Comment voir mon identité privée dans Fracture ?' },
+      { label: 'Choix qui s’efface', question: 'Mon choix dans un menu Fracture s’efface.' },
+      { label: 'Jouer en ligne', question: 'Comment démarrer ou rejoindre une partie Fracture en ligne ?' }
+    ],
+    'Compte SINJIRA™': [
+      { label: 'Synchronisation', question: 'Mon compte reste bloqué en synchronisation.' },
+      { label: 'Photo de profil', question: 'Comment changer ma photo de profil ?' },
+      { label: 'Accès et licences', question: 'Pourquoi un contenu reste verrouillé ?' }
+    ],
+    'Mon personnage': [
+      { label: 'Vérification interminable', question: 'Mon personnage reste sur Vérification de votre personnage.' },
+      { label: 'Questionnaire', question: 'Comment refaire ou compléter mon questionnaire ?' },
+      { label: 'Monde parallèle', question: 'Comment mon personnage rejoint le Monde parallèle ?' }
+    ],
+    'Romans SINJIRA™': [
+      { label: 'Lire la démo', question: 'Comment lire ou télécharger la démo du Livre I ?' },
+      { label: 'Ma bibliothèque', question: 'Où retrouver mes romans ?' },
+      { label: 'Commentaires', question: 'Comment commenter un roman ?' }
+    ],
+    'Projet Nova': [
+      { label: 'Comprendre Nova', question: 'C’est quoi Projet Nova ?' },
+      { label: 'Documents', question: 'Où sont les documents de Projet Nova ?' },
+      { label: 'Transparence', question: 'Où voir la transparence et la conformité de Projet Nova ?' }
+    ]
+  };
+
+  function currentSuggestions(context) {
+    var items = CONTEXT_SUGGESTIONS[context.label];
+    if (items && items.length) return items;
+    return [
+      { label: 'Aide sur cette page', question: 'Que puis-je faire sur cette page ?' },
+      { label: 'Mon compte', question: 'J’ai besoin d’aide avec mon compte.' },
+      { label: 'Contacter un humain', question: 'Je veux contacter le support humain.' }
+    ];
+  }
+
   var INTENTS = [
     { id: 'sinjira', label: 'Découvrir SINJIRA™', keywords: ['sinjira', 'univers', 'science fiction', 'saga', 'plateforme', 'c est quoi', 'quest ce que'], answer: 'SINJIRA™ est l’univers narratif et interactif de Benoit Cantin. Le portail réunit notamment les romans, les jeux, le Registre des Consciences, la Communauté et le Monde parallèle.', links: [{ label: 'Ouvrir SINJIRA™', href: '/projets/sinjira/' }, { label: 'Voir les romans', href: '/projets/sinjira/romans/' }], youthSafe: true },
     { id: 'registre', label: 'Créer mon personnage', keywords: ['registre', 'conscience', 'personnage', 'creer personnage', 'creer mon personnage', 'comment creer mon personnage', 'nouveau personnage', 'creation personnage', 'questionnaire', 'fan', 'apparence', 'personnalite'], answer: 'Le Registre des Consciences vous permet de remplir un questionnaire lié à votre Compte SINJIRA™. Il sert de base humaine à votre personnage original. Les choix sont volontairement simples et la photo source facultative reste une référence de travail privée.', links: [{ label: 'Ouvrir le Registre', href: '/projets/sinjira/registre/' }, { label: 'Voir mon personnage', href: '/compte/mon-personnage.html' }], youthSafe: true },
@@ -87,6 +145,13 @@
     { id: 'accessibility', label: 'Accessibilité', keywords: ['accessibilite', 'clavier', 'lecteur ecran', 'focus', 'zoom', 'contraste', 'animation'], answer: 'Les parcours critiques sont conçus pour le clavier, le focus visible, la réduction des animations et les technologies d’assistance. Si un contrôle reste inaccessible, indiquez la page et le navigateur via Contact.', links: [{ label: 'Contact', href: '/contact.html' }], youthSafe: true },
     { id: 'nova', label: 'Découvrir Projet Nova', keywords: ['nova', 'projet nova', 'citoyen', 'citoyenne', 'proposition', 'propositions', 'programme'], answer: 'Projet Nova est l’espace consacré à la démarche citoyenne de Benoit Cantin. Il présente la démarche, les propositions et les documents publics dans une section distincte de SINJIRA™.', links: [{ label: 'Ouvrir Projet Nova', href: '/projets/projet-nova/' }, { label: 'Documents', href: '/projets/projet-nova/documents.html' }], youthSafe: true },
     { id: 'nova-transparency', label: 'Transparence Projet Nova', keywords: ['transparence nova', 'comptabilite nova', 'conformite nova', 'registre rencontres', 'audit citoyen', 'documents nova'], answer: 'Projet Nova publie des pages distinctes pour les documents, la transparence, la comptabilité, les rencontres et la conformité. Les documents peuvent être préparatoires; leur statut doit être lu sur la page concernée.', links: [{ label: 'Transparence', href: '/projets/projet-nova/transparence.html' }, { label: 'Documents', href: '/projets/projet-nova/documents.html' }], youthSafe: true },
+    { id: 'registre-delivery', label: 'Questionnaire enregistré mais notification échouée', keywords: ['questionnaire enregistre mais notification', 'enregistre mais pas envoye', 'enregistre mais non envoye', 'n a pas pu etre envoye', 'pas pu etre envoye', 'notification questionnaire', 'courriel questionnaire', 'formulaire enregistre'], answer: 'Si le Registre confirme que le questionnaire a été enregistré, la sauvegarde SINJIRA™ est l’étape importante. Une notification ou un courriel peut échouer séparément sans annuler le dossier. Vérifiez ensuite Mon personnage; si le dossier n’apparaît toujours pas après reconnexion, utilisez Contact sans renvoyer de données sensibles.', links: [{ label: 'Mon personnage', href: '/compte/mon-personnage.html' }, { label: 'Contact', href: '/contact.html' }], youthSafe: true },
+    { id: 'sync-status', label: 'Synchronisation ou chargement bloqué', keywords: ['supabase', 'synchronisation', 'compte bloque', 'reste bloque', 'chargement infini', 'verification de votre personnage', 'verification personnage', 'ne fonctionne pas serveur', 'erreur serveur', 'service indisponible'], answer: 'Pour un écran bloqué en synchronisation, commencez par vérifier que votre session est toujours connectée, puis rechargez une seule fois la page. Si le même état revient, n’envoyez pas plusieurs fois le même formulaire: notez la page et le message affiché, puis utilisez Contact. Les opérations importantes doivent être confirmées par le serveur avant d’être considérées comme terminées.', links: [{ label: 'Mon espace', href: '/compte/' }, { label: 'Sécurité', href: '/compte/securite.html' }, { label: 'Contact', href: '/contact.html' }], youthSafe: true },
+    { id: 'admin-access', label: 'Accès administrateur', keywords: ['administrateur', 'administration', 'menu admin', 'menu administrateur', 'acces admin', 'panneau admin'], answer: 'Les fonctions d’administration ne doivent apparaître que pour un compte autorisé par le serveur. Si vous êtes censé avoir ce rôle mais que le menu n’apparaît pas, reconnectez-vous puis vérifiez votre espace de compte. L’assistant public ne fournit jamais de raccourci permettant de contourner les contrôles d’autorisation.', links: [{ label: 'Mon espace', href: '/compte/' }, { label: 'Sécurité', href: '/compte/securite.html' }], youthSafe: true },
+    { id: 'avatar', label: 'Photo de profil', keywords: ['photo de profil', 'avatar', 'image profil', 'changer photo', 'televerser photo', '512 512', 'webp profil'], answer: 'La photo de profil est préparée pour un affichage carré. Le site peut recadrer et optimiser une image compatible vers 512 × 512 px avant l’enregistrement. Si l’envoi échoue, vérifiez votre connexion puis réessayez avec une image standard JPEG, PNG ou WebP.', links: [{ label: 'Profil', href: '/compte/profil.html' }, { label: 'Sécurité', href: '/compte/securite.html' }], youthSafe: true },
+    { id: 'roman-demo', label: 'Démo du Livre I', keywords: ['demo livre', 'demo roman', 'lire demo', 'telecharger demo', 'cendre du jugement demo', 'extrait roman'], answer: 'La démo de La Cendre du Jugement peut être lue depuis la section Romans et conservée lorsque le bouton de téléchargement est proposé. La version intégrale, lorsqu’elle est protégée, doit passer par les droits de la bibliothèque plutôt que par un lien public direct.', links: [{ label: 'Romans SINJIRA™', href: '/projets/sinjira/romans/' }, { label: 'Ma bibliothèque', href: '/compte/bibliotheque.html' }], youthSafe: true },
+    { id: 'roman-comments', label: 'Commentaires sur les romans', keywords: ['commentaire roman', 'commenter roman', 'laisser commentaire', 'avis roman', 'mes commentaires'], answer: 'Les commentaires de lecture sont liés au Compte SINJIRA™. Selon la page, un commentaire peut être soumis puis attendre une modération avant publication. Vos commentaires et votre progression restent distincts du personnage fictif.', links: [{ label: 'Romans', href: '/projets/sinjira/romans/' }, { label: 'Mon espace', href: '/compte/' }], youthSafe: true },
+    { id: 'fracture-access', label: 'Démarrer Fracture Online', keywords: ['jouer fracture en ligne', 'fracture online', 'demarrer partie fracture', 'creer partie fracture', 'rejoindre partie fracture', 'code partie fracture', 'solo fracture', 'duo fracture'], answer: 'Fracture Online utilise une partie serveur liée au Compte SINJIRA™. Vous pouvez créer une partie ou rejoindre un code lorsque votre accès au jeu est actif. En Solo, les sièges invisibles sont gérés par le moteur; en Duo, un siège invisible complète la table; à 3 joueurs ou plus, chaque personne utilise son propre compte.', links: [{ label: 'Fracture du Réseau-Mère', href: '/projets/sinjira/jeux/fracture-du-reseau-mere/' }, { label: 'Mes parties', href: '/compte/mes-parties.html' }, { label: 'Licences', href: '/compte/licences.html' }], youthSafe: true },
     { id: 'privacy', label: 'Vie privée et sécurité', keywords: ['confidentialite', 'vie privee', 'prive', 'donnee', 'donnees', 'securite', 'trace', 'conversation', 'stocke'], answer: 'Cet assistant fonctionne localement dans votre navigateur. Votre texte n’est pas envoyé à un fournisseur d’IA externe et la conversation de cette fenêtre n’est pas enregistrée par l’assistant. Pour les règles générales du site, consultez Confidentialité.', links: [{ label: 'Lire Confidentialité', href: '/confidentialite.html' }, { label: 'Sécurité du compte', href: '/compte/securite.html' }], youthSafe: true },
     { id: 'assistant', label: 'Comment fonctionne cette aide', keywords: ['assistant ia', 'aide ia', 'intelligence artificielle', 'comment tu fonctionne', 'mode local', 'ia locale'], answer: 'Cette version de l’assistant est une aide contextuelle locale. Elle classe votre question dans une base d’aide embarquée dans le site; elle n’envoie pas votre texte à un modèle externe et n’invente pas une réponse lorsqu’aucun sujet fiable ne correspond.', links: [{ label: 'Confidentialité', href: '/confidentialite.html' }], youthSafe: true },
     { id: 'contact', label: 'Contacter Benoit Cantin', keywords: ['contact', 'contacter', 'humain', 'aide humaine', 'support', 'courriel', 'email', 'question autre'], answer: 'Pour une question qui demande une intervention humaine ou qui dépasse l’aide du site, utilisez la page Contact officielle.', links: [{ label: 'Ouvrir Contact', href: '/contact.html' }], youthSafe: true }
@@ -182,19 +247,12 @@
   var intro = el('p', 'sinjira-assistant-intro', 'Vous êtes dans « ' + pageContext.label + ' ». Posez une question sur le site; je vous guide sans envoyer votre message à un service d’IA externe.');
   var suggestions = el('div', 'sinjira-assistant-suggestions');
   suggestions.setAttribute('aria-label', 'Questions suggérées');
-  var pageSuggestion = el('button', 'sinjira-assistant-chip', 'Aide sur cette page');
-  pageSuggestion.type = 'button';
-  pageSuggestion.setAttribute('data-assistant-question', 'Que puis-je faire sur cette page ?');
-  suggestions.appendChild(pageSuggestion);
-  var suggestedIntentIds = ['registre', 'fracture', 'compte'];
-  for (var s = 0; s < suggestedIntentIds.length; s += 1) {
-    for (var si = 0; si < INTENTS.length; si += 1) {
-      if (INTENTS[si].id !== suggestedIntentIds[s]) continue;
-      var suggestion = el('button', 'sinjira-assistant-chip', INTENTS[si].label);
-      suggestion.type = 'button';
-      suggestion.setAttribute('data-assistant-question', INTENTS[si].keywords[0]);
-      suggestions.appendChild(suggestion);
-    }
+  var pageSuggestions = currentSuggestions(pageContext);
+  for (var s = 0; s < pageSuggestions.length; s += 1) {
+    var suggestion = el('button', 'sinjira-assistant-chip', pageSuggestions[s].label);
+    suggestion.type = 'button';
+    suggestion.setAttribute('data-assistant-question', pageSuggestions[s].question);
+    suggestions.appendChild(suggestion);
   }
 
   var log = el('div', 'sinjira-assistant-log');
@@ -218,7 +276,7 @@
   var submit = el('button', 'sinjira-assistant-send', 'Envoyer');
   submit.type = 'submit';
   form.appendChild(label); form.appendChild(input); form.appendChild(submit);
-  var privacy = el('p', 'sinjira-assistant-privacy', 'Mode V24.4.46 : conversation éphémère dans cet onglet, sans fournisseur d’IA externe. L’assistant utilise seulement une base d’aide locale et le chemin de la page. Ne saisissez jamais un mot de passe, un code de récupération ou une information très sensible.');
+  var privacy = el('p', 'sinjira-assistant-privacy', 'Mode V24.4.48 : conversation éphémère dans cet onglet, sans fournisseur d’IA externe. L’assistant utilise seulement une base d’aide locale et le chemin de la page. Ne saisissez jamais un mot de passe, un code de récupération ou une information très sensible.');
   privacy.id = 'sinjira-assistant-privacy';
   panel.appendChild(header); panel.appendChild(intro); panel.appendChild(suggestions); panel.appendChild(log); panel.appendChild(form); panel.appendChild(privacy);
   root.appendChild(toggle); root.appendChild(panel); doc.body.appendChild(root);

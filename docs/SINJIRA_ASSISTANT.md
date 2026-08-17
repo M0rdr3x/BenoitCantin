@@ -1,4 +1,4 @@
-# Assistant SINJIRA™ — contrat V24.4.46
+# Assistant SINJIRA™ — contrat V24.4.48
 
 L’assistant public du site est une aide contextuelle locale chargée dans le navigateur. Il sert à orienter les visiteurs et les membres vers les bons parcours sans dépendre d’un fournisseur d’IA externe.
 
@@ -12,6 +12,9 @@ L’assistant public du site est une aide contextuelle locale chargée dans le n
 - séparation explicite des contextes jeunesse;
 - aucune route d’administration proposée par l’assistant public;
 - aide contextuelle pour SINJIRA™, le Registre des Consciences, les romans, Fracture, le Compte SINJIRA™, la Communauté, le Monde parallèle et Projet Nova.
+- suggestions adaptées à la page visitée plutôt qu’une liste générique identique partout;
+- dépannage local des cas fréquents: questionnaire enregistré mais notification échouée, synchronisation bloquée, accès administrateur, avatar, démo/lecture, commentaires et démarrage Fracture Online;
+- normalisation de quelques fautes de frappe fréquentes sans envoyer le texte hors du navigateur.
 
 ## Compatibilité
 
