@@ -7,6 +7,7 @@ MIG = ROOT / 'supabase' / 'migrations'
 
 OWNER = 'kingtyrano@gmail.com'
 SOCIAL_VERSION = '24.4.42'
+PAGE_VERSION = '24.4.44'
 
 errors: list[str] = []
 
@@ -143,6 +144,29 @@ for path in social_clients:
         require(forbidden not in text,
                 f'{path.relative_to(ROOT)} expose encore une erreur technique brute: {forbidden}')
 
+# Les pages qui exposent ces clients doivent elles aussi forcer les nouvelles URL
+# de modules. Sans cache-buster à jour, un navigateur peut conserver un ancien JS
+# même lorsque le code source GitHub a été corrigé.
+social_pages = {
+    ROOT / 'compte' / 'communaute.html': 'sinjira-community-real.js',
+    ROOT / 'compte' / 'reseau-personnage.html': 'sinjira-community-character.js',
+    ROOT / 'compte' / 'messages-reels.html': 'sinjira-messages-real.js',
+    ROOT / 'compte' / 'messages-personnage.html': 'sinjira-messages-character.js',
+    ROOT / 'compte' / 'regles-communaute.html': 'sinjira-community-rules.js',
+    ROOT / 'compte' / 'blocages.html': 'sinjira-social-blocks.js',
+}
+for path, asset in social_pages.items():
+    require(path.exists(), f'Page sociale absente: {path.relative_to(ROOT)}')
+    if not path.exists():
+        continue
+    html = path.read_text('utf-8', errors='ignore')
+    require(f'{asset}?v={SOCIAL_VERSION}' in html,
+            f'{path.relative_to(ROOT)} ne force pas {asset} V{SOCIAL_VERSION}.')
+    require(f'data-social-runtime="{SOCIAL_VERSION}"' in html,
+            f'{path.relative_to(ROOT)} ne déclare pas le runtime social V{SOCIAL_VERSION}.')
+    require(f'site.js?v={PAGE_VERSION}' in html,
+            f'{path.relative_to(ROOT)} ne force pas le shell privé V{PAGE_VERSION}.')
+
 sw = (ROOT / 'sw.js').read_text('utf-8', errors='ignore') if (ROOT / 'sw.js').exists() else ''
 require('benoitcantin-v24-4-44-public-1' in sw,
         'Le cache du service worker n’a pas été invalidé après les correctifs sociaux.')
@@ -153,4 +177,4 @@ if errors:
         print('- ' + error)
     raise SystemExit(1)
 
-print('OK — contrat social/RLS V24.4.44: propriétaire rétabli sans fausse date de naissance, cohorte self-only, ACL DDL durcies et erreurs publiques assainies.')
+print('OK — contrat social/RLS V24.4.44: propriétaire rétabli sans fausse date de naissance, cohorte self-only, ACL DDL durcies, pages sociales cache-bustées et erreurs publiques assainies.')
