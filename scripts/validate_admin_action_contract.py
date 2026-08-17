@@ -16,13 +16,15 @@ server=SERVER.read_text('utf-8')
 called=set(re.findall(r"call\('([a-z0-9_]+)'",client))
 handled=set(re.findall(r"a==='([a-z0-9_]+)'",server))
 missing=sorted(called-handled)
-extra_required={'dashboard','list_comments','moderate_comment','list_submissions','create_manual_character','generate_character','audit_log','purge_submission_source','list_characters','canon_overview','save_character'}
+extra_required={'dashboard','list_comments','moderate_comment','list_submissions','create_manual_character','generate_character','audit_log','purge_submission_source','list_characters','canon_overview','save_character','list_notifications','mark_notification_read','mark_all_notifications_read'}
 need(not missing,'actions appelées par le client mais absentes du serveur: '+', '.join(missing))
 need(extra_required <= handled,'actions administrateur critiques absentes: '+', '.join(sorted(extra_required-handled)))
 need("source_payload,photo_path" in server,'list_submissions ne charge pas les réponses/photo confidentielles')
 need("createSignedUrl" in server and "sinjira-character-sources" in server,'photo confidentielle sans URL signée temporaire')
 need("s.from('admin_audit_log')" in server,'journal administrateur non branché')
 need("s.from('character_status_events')" in server,'historique des statuts personnage non branché')
+need("s.from('admin_notifications')" in server,'centre de notifications administrateur non branché')
+need("data-admin-notification-badge" in client and "data-admin-notification-list" in client,'interface de notifications administrateur absente')
 need(MIG.exists(),'migration V24.4.50 absente')
 if MIG.exists():
     sql=MIG.read_text('utf-8')
