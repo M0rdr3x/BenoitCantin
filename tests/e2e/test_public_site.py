@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 from playwright.sync_api import sync_playwright
 
@@ -17,6 +17,12 @@ PUBLIC_ROUTES = [
     "projets/sinjira/jeux/",
     "projets/sinjira/jeux/fracture-du-reseau-mere/",
 ]
+AUTH_ROUTES = [
+    "compte/connexion.html",
+    "compte/inscription.html",
+    "compte/mot-de-passe-oublie.html",
+    "compte/reinitialiser-mot-de-passe.html",
+]
 EXPECTED_DOORS = {
     "/projets/sinjira/",
     "/projets/sinjira/registre/",
@@ -24,6 +30,7 @@ EXPECTED_DOORS = {
 }
 NOVA_ENDPOINT = "https://formspree.io/f/xkolwjdg"
 PERSONAL_ENDPOINT = "https://formspree.io/f/xdenkzrv"
+IS_LOCAL = (urlparse(BASE_URL).hostname or "").lower() in {"127.0.0.1", "localhost"}
 
 
 def assert_true(value, message):
@@ -99,6 +106,28 @@ def run() -> None:
         contact_html = page.content().lower()
         assert_true("kingtyrano@gmail.com" not in contact_html, "Adresse privée embarquée dans le formulaire de contact")
 
+        # Le smoke Auth détaillé est volontairement exécuté uniquement sur la copie
+        # exacte du dépôt. Le déploiement GitHub Pages peut être en retard de quelques
+        # secondes sur le push; mélanger ce test de version au site public créerait un
+        # faux négatif de CI. Aucune soumission n'est effectuée et aucun compte n'est créé.
+        if IS_LOCAL:
+            for auth_route in AUTH_ROUTES:
+                auth_url = urljoin(BASE_URL, auth_route)
+                response = page.goto(auth_url, wait_until="domcontentloaded", timeout=30_000)
+                assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: page Auth inaccessible: {auth_route}")
+                assert_true(page.locator("main#main-content").count() == 1, f"{BROWSER_NAME}: main Auth accessible absent: {auth_route}")
+                assert_true(page.locator("h1").count() == 1, f"{BROWSER_NAME}: H1 Auth invalide: {auth_route}")
+                assert_true(page.locator('a.skip-link[href="#main-content"]').count() == 1, f"{BROWSER_NAME}: lien d'évitement Auth absent: {auth_route}")
+                assert_true(page.locator('[data-account-status]').count() == 1, f"{BROWSER_NAME}: zone de statut Auth absente: {auth_route}")
+                robots = page.locator('meta[name="robots"]').get_attribute("content") or ""
+                assert_true("noindex" in robots.lower(), f"{BROWSER_NAME}: page Auth indexable: {auth_route}")
+                assert_true(bool(page.title().strip()), f"{BROWSER_NAME}: titre Auth absent: {auth_route}")
+
+            page.goto(urljoin(BASE_URL, "compte/inscription.html"), wait_until="domcontentloaded", timeout=30_000)
+            assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à l'inscription")
+            page.goto(urljoin(BASE_URL, "compte/reinitialiser-mot-de-passe.html"), wait_until="domcontentloaded", timeout=30_000)
+            assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à la réinitialisation")
+
         mobile = browser.new_context(
             locale="fr-CA",
             viewport={"width": 390, "height": 844},
@@ -141,8 +170,9 @@ def run() -> None:
         assert_true(not all_errors, f"{BROWSER_NAME}: erreurs JavaScript navigateur: " + " | ".join(all_errors[:5]))
         context.close()
         browser.close()
+        auth_note = f", {len(AUTH_ROUTES)} pages Auth locales" if IS_LOCAL else ""
         print(
-            f"OK E2E {BROWSER_NAME}: {len(PUBLIC_ROUTES)} routes publiques, "
+            f"OK E2E {BROWSER_NAME}: {len(PUBLIC_ROUTES)} routes publiques{auth_note}, "
             f"accueil desktop/mobile, contact, compatibilité CSS/runtime et frontière compte vérifiés sur {BASE_URL}"
         )
 
