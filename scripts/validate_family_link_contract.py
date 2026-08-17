@@ -5,6 +5,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 MIGRATIONS = ROOT / 'supabase' / 'migrations'
 EXPECTED = MIGRATIONS / '20260817004645_family_link_contract_repair_v24_4_27.sql'
+RETIRE_GUARDIAN = MIGRATIONS / '20260816150000_sinjira_v24_4_12_retire_legacy_guardian_rpcs.sql'
 VERSION = '24.4.27'
 
 
@@ -22,6 +23,22 @@ def latest_function_block(files, name):
 
 def compact(value):
     return re.sub(r'\s+', '', value.lower())
+
+
+def require_function_contract(errors, files, name, markers, search_paths=('setsearch_path=public',)):
+    path, block = latest_function_block(files, name)
+    if not path:
+        errors.append(f'{name} introuvable.')
+        return '', ''
+    c = compact(block)
+    if 'securitydefiner' not in c:
+        errors.append(f'{name}: SECURITY DEFINER attendu.')
+    if not any(marker in c for marker in search_paths):
+        errors.append(f'{name}: search_path explicite absent ou inattendu.')
+    for marker in markers:
+        if compact(marker) not in c:
+            errors.append(f'{name}: garde manquante: {marker}')
+    return path, c
 
 
 def main() -> int:
@@ -80,10 +97,58 @@ def main() -> int:
         if marker not in sql:
             errors.append(f'ACL famille V{VERSION} incomplète: {marker}')
 
+    # Supervision jeunesse: l'API exposée au tuteur ne doit jamais accepter un UUID
+    # arbitraire. Le caller doit être authentifié et posséder un guardian_link vérifié.
+    _, contacts = require_function_contract(
+        errors,
+        files,
+        'get_guardian_youth_contacts',
+        (
+            "uid uuid:=auth.uid()",
+            "if uid is null then raise exception 'AUTH_REQUIRED'",
+            "if not public.sinjira_parent_can_supervise(uid,p_child_user_id) then raise exception 'GUARDIAN_ACCESS_REQUIRED'",
+            "p_child_user_id in(m.sender_user_id,m.recipient_user_id)",
+        ),
+        search_paths=('setsearch_path=public,auth',),
+    )
+
+    # Helper interne: adulte + jeune confirmé + lien guardian vérifié. Il reste
+    # nécessaire à la RPC ci-dessus, mais sa surface directe navigateur est retirée.
+    _, parent_guard = require_function_contract(
+        errors,
+        files,
+        'sinjira_parent_can_supervise',
+        (
+            "sinjira_age_band(p_parent)='adult'",
+            "sinjira_age_band(p_child)='youth'",
+            "g.guardian_user_id=p_parent",
+            "g.minor_user_id=p_child",
+            "g.status='verified'",
+        ),
+    )
+
+    all_sql = '\n'.join(p.read_text('utf-8', errors='ignore').lower() for p in files)
+    all_compact = compact(all_sql)
+    if 'revokeallonfunctionpublic.get_guardian_youth_contacts(uuid)frompublic,anon;' not in all_compact:
+        errors.append('get_guardian_youth_contacts: PUBLIC/anon ne sont pas révoqués explicitement.')
+    if 'grantexecuteonfunctionpublic.get_guardian_youth_contacts(uuid)toauthenticated;' not in all_compact:
+        errors.append('get_guardian_youth_contacts: exécution authenticated absente.')
+
+    if not RETIRE_GUARDIAN.exists():
+        errors.append(f'Migration de retrait des helpers parentaux absente: {RETIRE_GUARDIAN.name}')
+    else:
+        retired = compact(RETIRE_GUARDIAN.read_text('utf-8', errors='ignore'))
+        for marker in (
+            "'public.sinjira_parent_can_supervise(uuid,uuid)'",
+            "revokeexecuteonfunction%sfromauthenticated",
+            "grantexecuteonfunction%stoservice_role",
+        ):
+            if compact(marker) not in retired:
+                errors.append(f'Retrait helper parental incomplet: {marker}')
+
     # Le contrat SQL historique de la table reste la source canonique :
     # confirmed est valide; active ne l'est pas. child/other sont valides;
     # adult_child/family sont seulement des alias d'entrée de la RPC.
-    all_sql = '\n'.join(p.read_text('utf-8', errors='ignore').lower() for p in files)
     status_constraints = re.findall(r"private_family_links_status_check.*?(?:;|\n\s*\))", all_sql, re.S)
     relationship_constraints = re.findall(r"private_family_links_relationship_type_check.*?(?:;|\n\s*\))", all_sql, re.S)
     if status_constraints:
@@ -102,7 +167,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK liens familiaux V24.4.27: rédemption compatible avec les contraintes, consentement adulte vérifié et miroir fiction privé par défaut.')
+    print('OK liens familiaux V24.4.27: rédemption compatible, consentement adulte, miroir fiction privé et supervision jeunesse limitée au tuteur vérifié.')
     return 0
 
 
