@@ -156,3 +156,23 @@
     }
   });
 })();
+
+
+// V24.4.39 — Assistant SINJIRA local et sans fournisseur d’IA externe.
+(function(){
+  if(document.documentElement.getAttribute('data-disable-sinjira-assistant') === 'true') return;
+  if(!document.querySelector('link[data-sinjira-assistant-style]')){
+    const style=document.createElement('link');
+    style.rel='stylesheet';
+    style.href='/assets/css/sinjira-assistant.css?v=24.4.39';
+    style.setAttribute('data-sinjira-assistant-style','');
+    document.head.appendChild(style);
+  }
+  if(!document.querySelector('script[data-sinjira-assistant-script]')){
+    const script=document.createElement('script');
+    script.src='/assets/js/sinjira-assistant.js?v=24.4.39';
+    script.defer=true;
+    script.setAttribute('data-sinjira-assistant-script','');
+    document.head.appendChild(script);
+  }
+})();
