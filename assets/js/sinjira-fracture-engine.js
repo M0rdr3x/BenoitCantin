@@ -1,6 +1,6 @@
 import {getSupabase,requireUser,escapeHtml,friendlyBackendMessage} from './sinjira-supabase.js';
 
-const UI_VERSION='24.4.23';
+const UI_VERSION='24.4.24';
 const code=(new URLSearchParams(location.search).get('code')||'').trim().toUpperCase();
 const root=document.querySelector('[data-engine-root]');
 const status=document.querySelector('[data-fracture-status]');
@@ -423,8 +423,8 @@ function headerGame(state){
       </div>
       ${scoreHtml(state.score)}
     </section>
-    ${identityHtml(state)}
-    ${seatsHtml(state)}`;
+    ${state.phase==='finished'?'':identityHtml(state)}
+    ${state.phase==='finished'?'':seatsHtml(state)}`;
 }
 
 function render(state,{force=false}={}){
