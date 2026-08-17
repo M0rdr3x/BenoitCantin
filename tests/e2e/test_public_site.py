@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
 SUPPORTED_BROWSERS = {"chromium", "firefox", "webkit"}
-ASSISTANT_VERSION = "24.4.45"
+ASSISTANT_VERSION = "24.4.46"
 PUBLIC_ROUTES = [
     "",
     "a-propos.html",
@@ -156,7 +156,7 @@ def run() -> None:
             assert_true(page.locator('.sinjira-assistant-link[href="/projets/sinjira/registre/"]').count() >= 1, f"{BROWSER_NAME}: lien Registre assistant absent")
 
             page.wait_for_timeout(400)
-            question.fill("ma carte identité")
+            question.fill("Résistant ou Réseau-Mère")
             question.press("Enter")
             log_text = page.locator(".sinjira-assistant-log").inner_text().lower()
             assert_true("seule votre propre identité" in log_text, f"{BROWSER_NAME}: garde-fou identité Fracture absent")
