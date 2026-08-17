@@ -27,7 +27,8 @@ EXPECTED_TABLES={
 'sinjira_novels','sinjira_reader_library','sinjira_security_settings','social_blocks',
 'social_character_comments','social_character_likes','social_character_messages',
 'social_character_posts','social_profiles','social_real_comments','social_real_likes',
-'social_real_messages','social_real_posts','social_reports','social_suspensions','user_entitlements'
+'social_real_messages','social_real_posts','social_reports','social_suspensions','user_entitlements',
+'license_batches','activation_codes','license_redemptions'
 }
 
 # Tables conçues dans l'historique V24 mais pas encore déployées dans la production
@@ -38,7 +39,6 @@ PLANNED_LOCAL_TABLES={
 'privacy_settings','notification_preferences',
 'parallel_cycles','parallel_missions','parallel_responses',
 'market_listings','market_favorites','token_ledger',
-'license_batches','activation_codes','license_redemptions',
 'codex_entities','codex_relationships','content_versions',
 'admin_audit_log','character_status_events'
 }
