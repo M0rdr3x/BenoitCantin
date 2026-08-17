@@ -6,7 +6,7 @@ JS = ROOT / "assets/js/sinjira-assistant.js"
 CSS = ROOT / "assets/css/sinjira-assistant.css"
 SITE = ROOT / "assets/js/site.js"
 NOVA_RUNTIME = ROOT / "projets/projet-nova/script.js"
-ASSISTANT_VERSION = "24.4.45"
+ASSISTANT_VERSION = "24.4.46"
 
 errors = []
 

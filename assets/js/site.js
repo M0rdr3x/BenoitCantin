@@ -42,13 +42,13 @@
     if (!doc.querySelector('link[data-sinjira-assistant-style]')) {
       var assistantStyle = doc.createElement('link');
       assistantStyle.rel = 'stylesheet';
-      assistantStyle.href = '/assets/css/sinjira-assistant.css?v=24.4.45';
+      assistantStyle.href = '/assets/css/sinjira-assistant.css?v=24.4.46';
       assistantStyle.setAttribute('data-sinjira-assistant-style', '');
       doc.head.appendChild(assistantStyle);
     }
     if (!doc.querySelector('script[data-sinjira-assistant-script]')) {
       var assistantScript = doc.createElement('script');
-      assistantScript.src = '/assets/js/sinjira-assistant.js?v=24.4.45';
+      assistantScript.src = '/assets/js/sinjira-assistant.js?v=24.4.46';
       assistantScript.defer = true;
       assistantScript.setAttribute('data-sinjira-assistant-script', '');
       doc.head.appendChild(assistantScript);

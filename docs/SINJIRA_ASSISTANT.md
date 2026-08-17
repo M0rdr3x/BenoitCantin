@@ -1,4 +1,4 @@
-# Assistant SINJIRA™ — contrat V24.4.45
+# Assistant SINJIRA™ — contrat V24.4.46
 
 L’assistant public du site est une aide contextuelle locale chargée dans le navigateur. Il sert à orienter les visiteurs et les membres vers les bons parcours sans dépendre d’un fournisseur d’IA externe.
 

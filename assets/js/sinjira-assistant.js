@@ -2,7 +2,7 @@
   'use strict';
 
   var doc = document;
-  var ASSISTANT_VERSION = '24.4.45';
+  var ASSISTANT_VERSION = '24.4.46';
   var PROVIDER_MODE = 'local';
   var EXTERNAL_PROVIDER_ENABLED = false;
   var MAX_MESSAGE_LENGTH = 500;
@@ -15,7 +15,7 @@
   function normalize(value) {
     var text = String(value || '').toLowerCase();
     if (text.normalize) text = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return text.replace(/[^a-z0-9\s'-]/g, ' ').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+    return text.replace(/[-‐‑‒–—―'’]/g, ' ').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
   }
 
   function tokenize(value) {
@@ -218,7 +218,7 @@
   var submit = el('button', 'sinjira-assistant-send', 'Envoyer');
   submit.type = 'submit';
   form.appendChild(label); form.appendChild(input); form.appendChild(submit);
-  var privacy = el('p', 'sinjira-assistant-privacy', 'Mode V24.4.45 : conversation éphémère dans cet onglet, sans fournisseur d’IA externe. L’assistant utilise seulement une base d’aide locale et le chemin de la page. Ne saisissez jamais un mot de passe, un code de récupération ou une information très sensible.');
+  var privacy = el('p', 'sinjira-assistant-privacy', 'Mode V24.4.46 : conversation éphémère dans cet onglet, sans fournisseur d’IA externe. L’assistant utilise seulement une base d’aide locale et le chemin de la page. Ne saisissez jamais un mot de passe, un code de récupération ou une information très sensible.');
   privacy.id = 'sinjira-assistant-privacy';
   panel.appendChild(header); panel.appendChild(intro); panel.appendChild(suggestions); panel.appendChild(log); panel.appendChild(form); panel.appendChild(privacy);
   root.appendChild(toggle); root.appendChild(panel); doc.body.appendChild(root);
