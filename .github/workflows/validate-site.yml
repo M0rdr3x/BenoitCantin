@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions:
@@ -16,6 +17,7 @@ concurrency:
 
 jobs:
   validate:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -47,6 +49,8 @@ jobs:
         with:
           node-version: '22'
           package-manager-cache: false
+      - name: Vérifier le contrat CI des PR brouillon
+        run: python scripts/validate_ci_draft_gate.py
       - name: Vérifier la compatibilité multi-navigateurs
         run: python scripts/validate_browser_compat.py
       - name: Vérifier l’accessibilité des parcours critiques

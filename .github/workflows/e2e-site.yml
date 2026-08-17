@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions:
@@ -16,6 +17,7 @@ concurrency:
 
 jobs:
   browser-smoke:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     name: Navigation ${{ matrix.browser }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -67,6 +69,7 @@ jobs:
           if [ -f /tmp/sinjira-http.pid ]; then kill "$(cat /tmp/sinjira-http.pid)" || true; fi
 
   lighthouse-mobile:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     name: Lighthouse mobile Chromium
     runs-on: ubuntu-latest
     timeout-minutes: 15
