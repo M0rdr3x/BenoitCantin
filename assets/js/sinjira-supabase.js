@@ -53,7 +53,19 @@ export function friendlyBackendMessage(message,fallback='Une opération serveur 
   if(/null value|23502|check constraint|23514|syntax error|SQLSTATE|column .* does not exist/i.test(raw))return 'Le serveur a refusé cette opération. Le diagnostic administrateur permet d’identifier le composant à synchroniser.';
   return raw.length>240?fallback:raw;
 }
-export function setStatus(node,msg,type='info'){if(!node)return;const raw=String(msg||'');const friendly=friendlyBackendMessage(raw,raw||'Une opération n’a pas pu être terminée.');if(friendly!==raw&&raw)console.warn('[SINJIRA backend]',raw);node.textContent=friendly;node.dataset.statusType=type;node.hidden=false}
+export function setStatus(node,msg,type='info'){
+  if(!node)return;
+  const raw=String(msg||'');
+  const friendly=friendlyBackendMessage(raw,raw||'Une opération n’a pas pu être terminée.');
+  if(friendly!==raw&&raw)console.warn('[SINJIRA backend]',raw);
+  const isError=type==='error';
+  node.setAttribute('role',isError?'alert':'status');
+  node.setAttribute('aria-live',isError?'assertive':'polite');
+  node.setAttribute('aria-atomic','true');
+  node.textContent=friendly;
+  node.dataset.statusType=type;
+  node.hidden=false;
+}
 export function roleLabel(v){return ({public:'Public',account:'Compte joueur',player:'Joueur approuvé',tester:'Testeur approuvé',admin:'Administration'})[v]||v||'—'}
 export function projectStatusLabel(v){return ({draft:'Brouillon',development:'En développement',testing:'En test',active:'Disponible',archived:'Archivé'})[v]||v||'—'}
 export { SINJIRA_CONFIG, isSinjiraBackendConfigured };
