@@ -2,6 +2,7 @@ import {getSupabase,SINJIRA_CONFIG,isSinjiraBackendConfigured,setStatus} from '.
 
 const form=document.querySelector('[data-signup-form]');
 const status=document.querySelector('[data-account-status]');
+const backend=document.querySelector('[data-backend-state]');
 const birthInput=form?.querySelector('[data-signup-birth-date]');
 const guardianWrap=form?.querySelector('[data-guardian-code-wrap]');
 const guardianInput=form?.querySelector('[data-guardian-code]');
@@ -24,6 +25,10 @@ function ageOn(dateString){
   if(beforeBirthday)age--;
   return age;
 }
+function localDateString(date=new Date()){
+  const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
 function nextDestination(def='/compte/index.html'){
   if(window.SINJIRA_AUTH_ROUTE?.next)return window.SINJIRA_AUTH_ROUTE.next(def);
   const value=new URLSearchParams(location.search).get('next');
@@ -31,6 +36,16 @@ function nextDestination(def='/compte/index.html'){
   try{const url=new URL(value,location.origin);return url.origin===location.origin?`${url.pathname}${url.search}${url.hash}`:def}catch{return def}
 }
 function normalizeGuardianCode(value=''){return String(value).trim().toUpperCase().replace(/\s+/g,'')}
+function setBusy(busy){
+  form?.setAttribute('aria-busy',busy?'true':'false');
+  const submit=form?.querySelector('[type="submit"]');
+  if(submit)submit.disabled=Boolean(busy);
+}
+function ready(){
+  const ok=isSinjiraBackendConfigured();
+  if(backend)backend.textContent=ok?'Service de comptes sécurisé actif.':'Service de comptes temporairement indisponible.';
+  return ok;
+}
 function syncYouthControls(){
   if(!guardianWrap||!guardianInput)return;
   const age=ageOn(String(birthInput?.value||''));
@@ -41,21 +56,23 @@ function syncYouthControls(){
   if(!youth)guardianInput.value='';
 }
 if(birthInput){
-  birthInput.max=new Date().toISOString().slice(0,10);
+  birthInput.max=localDateString();
   birthInput.addEventListener('change',syncYouthControls);
   birthInput.addEventListener('input',syncYouthControls);
 }
 syncYouthControls();
+ready();
 
 if(form){
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(!form.checkValidity()){form.reportValidity();return}
-    if(!isSinjiraBackendConfigured()){
+    if(!ready()){
       setStatus(status,'Le service de comptes SINJIRA™ est temporairement indisponible.','error');
       return;
     }
     const d=new FormData(form);
+    const pseudo=String(d.get('pseudo')||'').trim();
     const email=String(d.get('email')||'').trim();
     const password=String(d.get('password')||'');
     const confirm=String(d.get('password_confirm')||'');
@@ -63,6 +80,7 @@ if(form){
     const gender=String(d.get('gender')||'').trim();
     const guardianCode=normalizeGuardianCode(d.get('guardian_code')||'');
     const age=ageOn(birthDate);
+    if(!pseudo){setStatus(status,'Choisissez un pseudo non vide.','error');return}
     if(password.length<12){setStatus(status,'Utilisez un mot de passe d’au moins 12 caractères.','error');return}
     if(password!==confirm){setStatus(status,'Les mots de passe ne correspondent pas.','error');return}
     if(age===null||age<0){setStatus(status,'Indiquez une date de naissance valide.','error');return}
@@ -77,7 +95,7 @@ if(form){
     const contributor=d.get('initial_contributor_opt_in')==='yes';
     const legacySex=gender==='Femme'?'female':'male';
     const metadata={
-      pseudo:String(d.get('pseudo')||'').trim(),
+      pseudo,
       display_name:String(d.get('display_name')||'').trim(),
       birth_date:birthDate,
       date_of_birth:birthDate,
@@ -101,20 +119,26 @@ if(form){
       initial_share_free_text:contributor&&d.get('share_free_text')==='yes'
     };
     const destination=wantsQuestionnaire?'/projets/sinjira/registre/':nextDestination();
-    const {data,error}=await getSupabase().auth.signUp({
-      email,password,
-      options:{emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}${destination}`,data:metadata}
-    });
-    if(error){
-      const raw=String(error.message||'');
-      if(/GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14|INVALID_OR_EXPIRED_GUARDIAN_CODE|ADULT_GUARDIAN_REQUIRED/i.test(raw)){
-        setStatus(status,'Le code d’autorisation parentale est absent, expiré ou invalide. Demandez au parent ou tuteur d’en générer un nouveau depuis son Compte SINJIRA™.','error');
-      }else setStatus(status,'Création du compte impossible. Vérifiez les renseignements ou utilisez une autre adresse courriel.','error');
-      return;
-    }
-    if(data.session){location.assign(destination);return}
-    const youthNote=age>=14&&age<18&&!guardianCode?' Les fonctions sociales resteront protégées jusqu’à la vérification d’un parent ou tuteur.':'';
-    setStatus(status,(wantsQuestionnaire?'Compte créé. Confirmez votre adresse courriel; le lien de confirmation vous mènera ensuite au questionnaire complet du Registre.':'Compte créé. Vérifiez votre courriel pour confirmer votre adresse.')+youthNote,'success');
-    form.reset();syncYouthControls();
+    setBusy(true);
+    try{
+      const {data,error}=await getSupabase().auth.signUp({
+        email,password,
+        options:{emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}${destination}`,data:metadata}
+      });
+      if(error){
+        const raw=String(error.message||'');
+        if(/GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14|INVALID_OR_EXPIRED_GUARDIAN_CODE|ADULT_GUARDIAN_REQUIRED/i.test(raw)){
+          setStatus(status,'Le code d’autorisation parentale est absent, expiré ou invalide. Demandez au parent ou tuteur d’en générer un nouveau depuis son Compte SINJIRA™.','error');
+        }else setStatus(status,'Création du compte impossible. Vérifiez les renseignements ou utilisez une autre adresse courriel.','error');
+        return;
+      }
+      if(data.session){location.assign(destination);return}
+      const youthNote=age>=14&&age<18&&!guardianCode?' Les fonctions sociales resteront protégées jusqu’à la vérification d’un parent ou tuteur.':'';
+      setStatus(status,(wantsQuestionnaire?'Compte créé. Confirmez votre adresse courriel; le lien de confirmation vous mènera ensuite au questionnaire complet du Registre.':'Compte créé. Vérifiez votre courriel pour confirmer votre adresse.')+youthNote,'success');
+      form.reset();syncYouthControls();
+    }catch(err){
+      console.warn('[SINJIRA signup]',err);
+      setStatus(status,'Création du compte impossible pour le moment. Réessayez dans quelques instants.','error');
+    }finally{setBusy(false)}
   });
 }
