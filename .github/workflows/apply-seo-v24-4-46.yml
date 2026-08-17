@@ -1,6 +1,7 @@
 name: Appliquer SEO V24.4.46
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - v24-4-46-seo-completion
