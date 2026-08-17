@@ -6,6 +6,7 @@ JS = ROOT / "assets/js/sinjira-assistant.js"
 CSS = ROOT / "assets/css/sinjira-assistant.css"
 SITE = ROOT / "assets/js/site.js"
 NOVA_RUNTIME = ROOT / "projets/projet-nova/script.js"
+ASSISTANT_VERSION = "24.4.45"
 
 errors = []
 
@@ -25,11 +26,12 @@ css = CSS.read_text(encoding="utf-8") if CSS.exists() else ""
 site = SITE.read_text(encoding="utf-8") if SITE.exists() else ""
 nova_runtime = NOVA_RUNTIME.read_text(encoding="utf-8") if NOVA_RUNTIME.exists() else ""
 
-# Contrat de version et fournisseur: V24.4.40 fonctionne intégralement côté navigateur.
-require("ASSISTANT_VERSION = '24.4.40'" in js, "version assistant attendue 24.4.40 absente")
+# Fournisseur local seulement tant qu'aucun backend IA externe n'est explicitement activé.
+require(f"ASSISTANT_VERSION = '{ASSISTANT_VERSION}'" in js, f"version assistant attendue {ASSISTANT_VERSION} absente")
 require("PROVIDER_MODE = 'local'" in js, "l’assistant doit rester en fournisseur local")
 require("EXTERNAL_PROVIDER_ENABLED = false" in js, "un fournisseur externe ne doit pas être activé")
 require("privacy: 'ephemeral-memory-only'" in js, "le contrat de mémoire éphémère est absent")
+require("intentCount: INTENTS.length" in js, "le diagnostic du volume de connaissances est absent")
 
 # Aucun message de visiteur ne doit quitter le navigateur ni être persisté par l’assistant.
 for forbidden in (
@@ -51,17 +53,21 @@ require("prefers-reduced-motion" in css, "le style doit respecter prefers-reduce
 require(":focus-visible" in css, "les contrôles de l’assistant doivent avoir un focus visible")
 require("forced-colors" in css, "le style doit prévoir le mode forced-colors")
 
-# L’assistant ne doit jamais recommander de routes d’administration ou de secrets.
+# L’assistant ne doit jamais proposer de routes d’administration ou de secrets.
 require("'/admin/" not in js and '"/admin/' not in js, "l’assistant public ne doit pas proposer de route d’administration")
 require("SUPABASE_SERVICE_ROLE" not in js and "OPENAI_API_KEY" not in js, "aucun secret/API key ne doit être présent")
+require("function isSensitiveQuery(query)" in js, "le filtre de saisie sensible est absent")
+for marker in ("mot de passe", "code de récupération", "clé API", "secret"):
+    require(marker in js, f"garde-fou de secret absent: {marker}")
 
-# Séparation jeunesse: tous les sujets actuellement exposés sont explicitement sûrs.
+# Séparation jeunesse: tous les sujets exposés restent explicitement sûrs.
 require("function isYouthContext()" in js, "la détection du contexte jeunesse est absente")
 require("if (youth && intent.youthSafe !== true) continue;" in js, "le filtre jeunesse est absent")
 intent_blocks = re.findall(r"\{\s*id:\s*'[^']+'.*?youthSafe:\s*(true|false)\s*\}", js, flags=re.S)
 require(intent_blocks and all(value == "true" for value in intent_blocks), "un sujet exposé n’est pas marqué youthSafe=true")
+require(len(intent_blocks) >= 20, "la base d’aide doit couvrir au moins 20 intentions fiables")
 
-# V24.4.40: contexte déterminé uniquement par la route, sans lecture des champs privés.
+# Contexte déterminé uniquement par la route, sans lecture des champs privés.
 require("var PAGE_CONTEXTS = [" in js, "base de contexte par page absente")
 require("function currentPageContext()" in js, "résolution du contexte de page absente")
 require("function isPageHelpQuery(query)" in js, "intention d’aide sur la page absente")
@@ -70,13 +76,22 @@ require("input.value" in js and "querySelector('input')" not in js, "l’assista
 for expected_context in (
     "Registre des Consciences", "Romans SINJIRA™", "Jeux SINJIRA™",
     "Fracture du Réseau-Mère", "Projet Nova", "Compte SINJIRA™",
+    "Réseau des personnages", "Messages SINJIRA™", "Ma bibliothèque",
+    "Licences", "Relations", "Mes parties", "Achats, marché et jetons",
 ):
     require(expected_context in js, f"contexte critique absent: {expected_context}")
 
-# Chargement global via les runtimes communs. Site.js doit utiliser le cache-buster actuel;
-# Projet Nova conserve son chargeur dédié et peut être mis à jour indépendamment.
-require("/assets/css/sinjira-assistant.css?v=24.4.40" in site, "site.js ne charge pas le CSS assistant V24.4.40")
-require("/assets/js/sinjira-assistant.js?v=24.4.40" in site, "site.js ne charge pas le JS assistant V24.4.40")
+# Connaissances minimales que le système d’aide doit conserver.
+for intent_id in (
+    "'fracture-identity'", "'fracture-controls'", "'licenses'", "'purchases'",
+    "'moderation'", "'parallel'", "'youth'", "'browser'", "'accessibility'",
+    "'nova-transparency'", "'assistant'",
+):
+    require(f"id: {intent_id}" in js, f"intention d’aide critique absente: {intent_id}")
+
+# Chargement global via les runtimes communs.
+require(f"/assets/css/sinjira-assistant.css?v={ASSISTANT_VERSION}" in site, f"site.js ne charge pas le CSS assistant V{ASSISTANT_VERSION}")
+require(f"/assets/js/sinjira-assistant.js?v={ASSISTANT_VERSION}" in site, f"site.js ne charge pas le JS assistant V{ASSISTANT_VERSION}")
 for runtime_name, runtime in (("site.js", site), ("Projet Nova/script.js", nova_runtime)):
     require("/assets/css/sinjira-assistant.css?v=" in runtime, f"{runtime_name} ne charge pas le CSS de l’assistant")
     require("/assets/js/sinjira-assistant.js?v=" in runtime, f"{runtime_name} ne charge pas le JS de l’assistant")
@@ -91,6 +106,9 @@ site_runtime_pages = [
     ROOT / "compte/index.html",
     ROOT / "compte/connexion.html",
     ROOT / "compte/mon-personnage.html",
+    ROOT / "compte/reseau-personnage.html",
+    ROOT / "compte/messages.html",
+    ROOT / "compte/securite.html",
 ]
 for page in site_runtime_pages:
     require(page.exists(), f"page critique absente: {page.relative_to(ROOT)}")
@@ -105,9 +123,9 @@ if nova_page.exists():
     require("script.js" in nova_html, "Projet Nova ne charge pas son runtime commun et donc pas l’assistant")
 
 if errors:
-    print("ERREUR — contrat Assistant SINJIRA V24.4.40")
+    print(f"ERREUR — contrat Assistant SINJIRA V{ASSISTANT_VERSION}")
     for error in errors:
         print(f" - {error}")
     raise SystemExit(1)
 
-print("OK — Assistant SINJIRA V24.4.40: local, éphémère, contextuel, accessible, jeunesse-safe et chargé sur les parcours critiques, incluant Projet Nova.")
+print(f"OK — Assistant SINJIRA V{ASSISTANT_VERSION}: local, éphémère, contextuel, accessible, jeunesse-safe, avec aide étendue Compte/Fracture/Communauté/Nova.")
