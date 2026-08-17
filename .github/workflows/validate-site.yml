@@ -49,6 +49,8 @@ jobs:
         with:
           node-version: '22'
           package-manager-cache: false
+      - name: Vérifier le contrat CI des PR brouillon
+        run: python scripts/validate_ci_draft_gate.py
       - name: Vérifier la compatibilité multi-navigateurs
         run: python scripts/validate_browser_compat.py
       - name: Vérifier l’accessibilité des parcours critiques
