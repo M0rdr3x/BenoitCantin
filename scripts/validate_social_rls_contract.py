@@ -84,7 +84,7 @@ require('grantexecuteonfunctionpublic.sinjira_age_band(uuid)toauthenticated' not
 for policy_name in ('real_posts_insert', 'char_posts_insert'):
     block = compact(latest_policy(sql, policy_name))
     require(bool(block), f'Politique RLS absente: {policy_name}')
-    require("sinjira_my_age_band()" in block,
+    require('sinjira_my_age_band()' in block,
             f'{policy_name} doit utiliser la cohorte self-only.')
     require("in('youth','adult')" in block or "=any(array['youth'::text,'adult'::text])" in block,
             f'{policy_name} doit exclure les cohortes non vérifiées.')
@@ -127,6 +127,7 @@ for marker in (
 social_clients = (
     ROOT / 'assets' / 'js' / 'sinjira-community-character.js',
     ROOT / 'assets' / 'js' / 'sinjira-community-real.js',
+    ROOT / 'assets' / 'js' / 'sinjira-community-rules.js',
     ROOT / 'assets' / 'js' / 'sinjira-messages-character.js',
     ROOT / 'assets' / 'js' / 'sinjira-messages-real.js',
     ROOT / 'assets' / 'js' / 'sinjira-social-blocks.js',
@@ -143,7 +144,7 @@ for path in social_clients:
                 f'{path.relative_to(ROOT)} expose encore une erreur technique brute: {forbidden}')
 
 sw = (ROOT / 'sw.js').read_text('utf-8', errors='ignore') if (ROOT / 'sw.js').exists() else ''
-require("benoitcantin-v24-4-44-public-1" in sw,
+require('benoitcantin-v24-4-44-public-1' in sw,
         'Le cache du service worker n’a pas été invalidé après les correctifs sociaux.')
 
 if errors:
