@@ -1,5 +1,6 @@
-import {getSupabase,requireCommunityUser,escapeHtml,formatDate,reportContent,socialStatus} from './sinjira-social-common.js';
+import {getSupabase,requireCommunityUser,escapeHtml,formatDate,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
 
+const UI_VERSION='24.4.42';
 const contacts=document.querySelector('[data-contact-list]');
 const search=document.querySelector('[data-contact-search]');
 const log=document.querySelector('[data-chat-log]');
@@ -15,7 +16,9 @@ function portrait(profile={}){
   return path.startsWith('/')?path:'/assets/media/sinjira-emblem.webp';
 }
 
-function fail(message){socialStatus(status,message,'error')}
+function fail(error,fallback='Action impossible dans la messagerie personnage.'){
+  socialErrorStatus(status,error,fallback);
+}
 
 async function getMyCharacter(){
   const {data,error}=await getSupabase()
@@ -50,7 +53,7 @@ function renderContacts(){
   const rows=all.filter(item=>String(item.public_name||'').toLowerCase().includes(q));
   contacts.innerHTML=rows.map(item=>`<button class="v20-contact character" data-character="${escapeHtml(item.character_id)}"><img src="${escapeHtml(portrait(item))}" alt=""><span><strong>${escapeHtml(item.public_name||'Personnage')}</strong><small>Personnage SINJIRA</small></span></button>`).join('')||'<p>Aucun personnage disponible.</p>';
   contacts.querySelectorAll('[data-character]').forEach(button=>{
-    button.addEventListener('click',()=>openPeer(button.dataset.character));
+    button.addEventListener('click',()=>openPeer(button.dataset.character).catch(error=>fail(error,'Impossible d’ouvrir cette conversation.')));
   });
 }
 
@@ -83,7 +86,7 @@ async function messages(){
     try{
       await reportContent({network:'character',target_type:'message',target_id:message.id,reason,snapshot:{body:message.body,sender_character_id:message.sender_character_id,recipient_character_id:message.recipient_character_id}});
       alert('Message signalé à l’administration.');
-    }catch(error){fail(error?.message||'Signalement impossible.');}
+    }catch(error){fail(error,'Signalement impossible pour le moment.');}
   }));
 }
 
@@ -120,31 +123,37 @@ function showLocked(owner){
       if(!body)return;
       const button=form.querySelector('button[type="submit"]');
       if(button)button.disabled=true;
-      const {error}=await getSupabase().from('social_character_messages').insert({
-        sender_user_id:user.id,
-        recipient_user_id:peer.user_id,
-        sender_character_id:me.character_id,
-        recipient_character_id:peer.character_id,
-        body
-      });
-      if(button)button.disabled=false;
-      if(error)return fail(error.message);
-      form.reset();
-      await messages();
+      try{
+        const {error}=await getSupabase().from('social_character_messages').insert({
+          sender_user_id:user.id,
+          recipient_user_id:peer.user_id,
+          sender_character_id:me.character_id,
+          recipient_character_id:peer.character_id,
+          body
+        });
+        if(error)return fail(error,'Impossible d’envoyer ce message personnage.');
+        form.reset();
+        await messages();
+      }finally{
+        if(button)button.disabled=false;
+      }
     });
 
     getSupabase().channel(`character-messages-${user.id}`)
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'social_character_messages'},payload=>{
         const message=payload.new;
-        if(peer&&((message.sender_character_id===me.character_id&&message.recipient_character_id===peer.character_id)||(message.sender_character_id===peer.character_id&&message.recipient_character_id===me.character_id)))messages().catch(error=>fail(error.message));
+        if(peer&&((message.sender_character_id===me.character_id&&message.recipient_character_id===peer.character_id)||(message.sender_character_id===peer.character_id&&message.recipient_character_id===me.character_id))){
+          messages().catch(error=>fail(error,'Impossible d’actualiser la conversation.'));
+        }
       })
       .subscribe();
 
     const requested=new URLSearchParams(location.search).get('character');
     if(requested&&all.some(item=>item.character_id===requested))await openPeer(requested);
-    socialStatus(status,'Messagerie personnage prête · V24.4.20.','success');
+    socialStatus(status,`Messagerie personnage prête · V${UI_VERSION}.`,'success');
   }catch(error){
-    console.error('[SINJIRA messages personnage]',error);
-    if(error?.message!=='RULES_REQUIRED'&&error?.message!=='Connexion requise')fail(error?.message||'Erreur de messagerie personnage.');
+    if(error?.message!=='RULES_REQUIRED'&&error?.message!=='Connexion requise'){
+      fail(error,'La messagerie personnage n’a pas pu terminer sa vérification.');
+    }
   }
 })();
