@@ -5,6 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 JS = ROOT / "assets/js/sinjira-assistant.js"
 CSS = ROOT / "assets/css/sinjira-assistant.css"
 SITE = ROOT / "assets/js/site.js"
+NOVA_RUNTIME = ROOT / "projets/projet-nova/script.js"
 
 errors = []
 
@@ -15,10 +16,12 @@ def require(condition, message):
 require(JS.exists(), "assets/js/sinjira-assistant.js est absent")
 require(CSS.exists(), "assets/css/sinjira-assistant.css est absent")
 require(SITE.exists(), "assets/js/site.js est absent")
+require(NOVA_RUNTIME.exists(), "projets/projet-nova/script.js est absent")
 
 js = JS.read_text(encoding="utf-8") if JS.exists() else ""
 css = CSS.read_text(encoding="utf-8") if CSS.exists() else ""
 site = SITE.read_text(encoding="utf-8") if SITE.exists() else ""
+nova_runtime = NOVA_RUNTIME.read_text(encoding="utf-8") if NOVA_RUNTIME.exists() else ""
 
 # Contrat de version et fournisseur: V24.4.39 fonctionne intégralement côté navigateur.
 require("ASSISTANT_VERSION = '24.4.39'" in js, "version assistant attendue 24.4.39 absente")
@@ -56,27 +59,33 @@ require("if (youth && intent.youthSafe !== true) continue;" in js, "le filtre je
 intent_blocks = re.findall(r"\{\s*id:\s*'[^']+'.*?youthSafe:\s*(true|false)\s*\}", js, flags=re.S)
 require(intent_blocks and all(value == "true" for value in intent_blocks), "un sujet exposé n’est pas marqué youthSafe=true")
 
-# Chargement global via le runtime commun, sans devoir dupliquer le widget dans chaque page.
-require("/assets/css/sinjira-assistant.css?v=24.4.39" in site, "site.js ne charge pas le CSS de l’assistant V24.4.39")
-require("/assets/js/sinjira-assistant.js?v=24.4.39" in site, "site.js ne charge pas le JS de l’assistant V24.4.39")
-require("data-disable-sinjira-assistant" in site, "l’opt-out technique explicite est absent")
+# Chargement global via les runtimes communs.
+for runtime_name, runtime in (("site.js", site), ("Projet Nova/script.js", nova_runtime)):
+    require("/assets/css/sinjira-assistant.css?v=24.4.39" in runtime, f"{runtime_name} ne charge pas le CSS de l’assistant V24.4.39")
+    require("/assets/js/sinjira-assistant.js?v=24.4.39" in runtime, f"{runtime_name} ne charge pas le JS de l’assistant V24.4.39")
+    require("data-disable-sinjira-assistant" in runtime, f"{runtime_name}: opt-out technique explicite absent")
 
-critical_pages = [
+site_runtime_pages = [
     ROOT / "index.html",
     ROOT / "a-propos.html",
     ROOT / "contact.html",
     ROOT / "projets/sinjira/index.html",
     ROOT / "projets/sinjira/registre/index.html",
-    ROOT / "projets/projet-nova/index.html",
     ROOT / "compte/index.html",
     ROOT / "compte/connexion.html",
     ROOT / "compte/mon-personnage.html",
 ]
-for page in critical_pages:
+for page in site_runtime_pages:
     require(page.exists(), f"page critique absente: {page.relative_to(ROOT)}")
     if page.exists():
         html = page.read_text(encoding="utf-8")
         require("assets/js/site.js" in html, f"assistant non chargé via site.js sur {page.relative_to(ROOT)}")
+
+nova_page = ROOT / "projets/projet-nova/index.html"
+require(nova_page.exists(), "page critique absente: projets/projet-nova/index.html")
+if nova_page.exists():
+    nova_html = nova_page.read_text(encoding="utf-8")
+    require("script.js" in nova_html, "Projet Nova ne charge pas son runtime commun et donc pas l’assistant")
 
 if errors:
     print("ERREUR — contrat Assistant SINJIRA V24.4.39")
@@ -84,4 +93,4 @@ if errors:
         print(f" - {error}")
     raise SystemExit(1)
 
-print("OK — Assistant SINJIRA V24.4.39: local, éphémère, accessible, jeunesse-safe et chargé sur les parcours critiques.")
+print("OK — Assistant SINJIRA V24.4.39: local, éphémère, accessible, jeunesse-safe et chargé sur les parcours critiques, incluant Projet Nova.")
