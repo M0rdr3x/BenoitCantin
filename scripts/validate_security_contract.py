@@ -33,6 +33,34 @@ def fail(errors: list[str], message: str) -> None:
     errors.append(message)
 
 
+def latest_function(all_sql: str, name: str) -> str:
+    """Return the latest CREATE/REPLACE definition for a public function."""
+    pattern = re.compile(
+        rf"create\s+(?:or\s+replace\s+)?function\s+public\.{re.escape(name)}\s*"
+        rf"\([^)]*\).*?(?P<tag>\$[A-Za-z0-9_]*\$).*?(?P=tag)\s*;",
+        flags=re.I | re.S,
+    )
+    matches = [m.group(0) for m in pattern.finditer(all_sql)]
+    return matches[-1] if matches else ""
+
+
+def require_latest_function_contract(
+    errors: list[str], all_sql: str, name: str, markers: tuple[str, ...]
+) -> None:
+    definition = latest_function(all_sql, name)
+    if not definition:
+        fail(errors, f"Fonction de sécurité introuvable: {name}.")
+        return
+    normalized = compact(definition)
+    if "securitydefiner" not in normalized:
+        fail(errors, f"{name}: SECURITY DEFINER attendu par le contrat actuel.")
+    if "setsearch_path=public,auth" not in normalized:
+        fail(errors, f"{name}: search_path explicite public,auth absent.")
+    for marker in markers:
+        if compact(marker) not in normalized:
+            fail(errors, f"{name}: garde d'autorisation manquante: {marker}.")
+
+
 def main() -> int:
     errors: list[str] = []
     files = sorted(MIGRATIONS.glob("*.sql"))
@@ -90,23 +118,51 @@ def main() -> int:
     # statut unique (pending/approved/...) plutôt que des colonnes is_hidden/is_reported.
     # Le contrat exige donc: roman identifiable, commentaires activés, statut approved
     # et limite dure afin de contenir la surface publique et le coût de la requête.
-    comment_defs = re.findall(
-        r"create\s+(?:or\s+replace\s+)?function\s+public\.list_sinjira_novel_comments\s*\([^)]*\).*?\$\$.*?\$\$\s*;",
-        all_sql,
-        flags=re.I | re.S,
-    )
-    if not comment_defs:
+    comment = latest_function(all_sql, "list_sinjira_novel_comments")
+    if not comment:
         fail(errors, "RPC publique de commentaires introuvable.")
     else:
-        comment = compact(comment_defs[-1])
+        comment_normalized = compact(comment)
         for marker in (
             "c.status='approved'",
             "n.comments_enabled=true",
             "n.slug=trim(p_novel_slug)",
             "limit250",
         ):
-            if compact(marker) not in comment:
+            if compact(marker) not in comment_normalized:
                 fail(errors, f"Garde publique manquante dans list_sinjira_novel_comments: {marker}.")
+
+    # Contrats de self-scope SECURITY DEFINER. Les avertissements du Security Advisor
+    # sont génériques; ces gardes empêchent un navigateur authentifié d'interroger
+    # l'état d'un UUID arbitraire en profitant des privilèges du propriétaire de fonction.
+    require_latest_function_contract(
+        errors, all_sql, "is_sinjira_admin",
+        ("p_user_id=auth.uid()", "auth.jwt()->>'role'", "'service_role'", "else false"),
+    )
+    require_latest_function_contract(
+        errors, all_sql, "is_sinjira_owner",
+        ("p_user_id=auth.uid()", "auth.jwt()->>'role'", "'service_role'", "kingtyrano@gmail.com"),
+    )
+    require_latest_function_contract(
+        errors, all_sql, "social_is_suspended",
+        ("p_user_id=auth.uid()", "auth.jwt()->>'role'", "'service_role'", "else false"),
+    )
+    require_latest_function_contract(
+        errors, all_sql, "is_fracture_party_member",
+        ("p_user_id=auth.uid()", "auth.jwt()->>'role'", "'service_role'", "else false"),
+    )
+    require_latest_function_contract(
+        errors, all_sql, "sinjira_cycle_allowed",
+        ("p_user_id<>auth.uid()", "then false", "auth.jwt()->>'role'", "'service_role'"),
+    )
+    require_latest_function_contract(
+        errors, all_sql, "sinjira_can_social_interact",
+        ("auth.uid()<>p_a", "auth.uid()<>p_b", "then false", "'service_role'"),
+    )
+    require_latest_function_contract(
+        errors, all_sql, "sinjira_mfa_access_allowed",
+        ("p_user_id<>auth.uid()", "return false", "auth.jwt()->>'aal'", "'aal2'"),
+    )
 
     if errors:
         print(f"ECHEC contrat sécurité: {len(errors)} problème(s).")
@@ -116,7 +172,7 @@ def main() -> int:
 
     print(
         "OK contrat sécurité: tables internes scellées, état brut Fracture réservé au serveur, "
-        f"état joueur assaini et diagnostic {VERSION} protégé."
+        f"état joueur assaini, self-scope SECURITY DEFINER et diagnostic {VERSION} protégés."
     )
     return 0
 
