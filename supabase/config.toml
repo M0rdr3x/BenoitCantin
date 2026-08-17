@@ -1,5 +1,13 @@
 project_id = "gpvivleexywljowcqkru"
 
+[auth]
+enabled = true
+# Contrat SINJIRA : la pile locale/reconstruction refuse les mots de passe < 12 caractères.
+# La production hébergée doit conserver la même valeur dans les réglages Supabase Auth.
+minimum_password_length = 12
+# Aucune règle de composition additionnelle côté interface : la longueur reste le contrat commun.
+password_requirements = ""
+
 [functions.send-game-report]
 verify_jwt = false
 
