@@ -99,12 +99,21 @@ def main() -> int:
     if ".skip-link" not in css:
         errors.append("assets/css/site.css: style du lien d’évitement absent.")
 
+    status_helper = (ROOT / "assets" / "js" / "sinjira-supabase.js").read_text("utf-8", errors="ignore")
+    for marker, label in [
+        ("node.setAttribute('aria-live',isError?'assertive':'polite')", "aria-live adaptatif"),
+        ("node.setAttribute('aria-atomic','true')", "aria-atomic"),
+        ("node.setAttribute('role',isError?'alert':'status')", "rôle alert/status"),
+    ]:
+        if marker not in status_helper:
+            errors.append(f"assets/js/sinjira-supabase.js: annonce dynamique accessible absente ({label}).")
+
     if errors:
         print(f"ECHEC accessibilité: {len(errors)} problème(s).")
         for error in errors:
             print("- " + error)
         return 1
-    print("OK accessibilité: repères, titres, alternatives, clavier et réduction des animations vérifiés sur les pages critiques.")
+    print("OK accessibilité: repères, titres, alternatives, clavier, réduction des animations et annonces dynamiques vérifiés.")
     return 0
 
 
