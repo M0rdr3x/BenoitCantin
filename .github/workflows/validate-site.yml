@@ -51,6 +51,8 @@ jobs:
         run: python scripts/validate_browser_compat.py
       - name: Vérifier l’accessibilité des parcours critiques
         run: python scripts/validate_accessibility.py
+      - name: Vérifier l’assistant intelligent SINJIRA
+        run: python scripts/validate_sinjira_assistant.py
       - name: Vérifier les budgets de performance
         run: python scripts/validate_performance_budget.py
       - name: Vérifier SEO, indexation et données structurées
