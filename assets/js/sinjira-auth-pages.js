@@ -12,6 +12,16 @@ function ready(){
   if(backend)backend.textContent=ok?'Service de comptes sécurisé actif.':'Service de comptes temporairement indisponible.';
   return ok;
 }
+function setBusy(form,busy){
+  form?.setAttribute('aria-busy',busy?'true':'false');
+  const submit=form?.querySelector('[type="submit"]');
+  if(submit)submit.disabled=Boolean(busy);
+}
+function reportInvalid(form){
+  if(form.checkValidity())return false;
+  form.reportValidity();
+  return true;
+}
 
 async function login(){
   const form=document.querySelector('[data-login-form]');if(!form)return;
@@ -19,14 +29,18 @@ async function login(){
   if(existing){location.replace(destination());return}
   form.addEventListener('submit',async e=>{
     e.preventDefault();
+    if(reportInvalid(form))return;
     if(!ready())return setStatus(status,'Le service de comptes SINJIRA™ est temporairement indisponible.','error');
-    const submit=form.querySelector('[type="submit"]');if(submit)submit.disabled=true;
     const d=new FormData(form);
+    setBusy(form,true);
     try{
       const {error}=await getSupabase().auth.signInWithPassword({email:String(d.get('email')||'').trim(),password:String(d.get('password')||'')});
       if(error)return setStatus(status,'Connexion impossible. Vérifiez vos informations et la confirmation du courriel.','error');
       location.replace(destination());
-    }finally{if(submit)submit.disabled=false}
+    }catch(err){
+      console.warn('[SINJIRA auth login]',err);
+      setStatus(status,'Connexion impossible pour le moment. Réessayez dans quelques instants.','error');
+    }finally{setBusy(form,false)}
   });
 }
 
@@ -34,39 +48,51 @@ async function forgot(){
   const form=document.querySelector('[data-forgot-form]');if(!form)return;
   form.addEventListener('submit',async e=>{
     e.preventDefault();
+    if(reportInvalid(form))return;
     if(!ready())return setStatus(status,'Le service de comptes SINJIRA™ est temporairement indisponible.','error');
     const email=String(new FormData(form).get('email')||'').trim();
-    const submit=form.querySelector('[type="submit"]');if(submit)submit.disabled=true;
+    setBusy(form,true);
     try{
-      await getSupabase().auth.resetPasswordForEmail(email,{redirectTo:`${SINJIRA_CONFIG.siteUrl}/compte/reinitialiser-mot-de-passe.html`});
+      const {error}=await getSupabase().auth.resetPasswordForEmail(email,{redirectTo:`${SINJIRA_CONFIG.siteUrl}/compte/reinitialiser-mot-de-passe.html`});
+      if(error){
+        console.warn('[SINJIRA auth recovery]',error);
+        return setStatus(status,'La demande de récupération n’a pas pu être traitée pour le moment. Réessayez plus tard.','error');
+      }
       // Réponse identique qu'un compte existe ou non : évite l'énumération d'adresses.
       setStatus(status,'Si un compte correspond à cette adresse, un lien de récupération sera envoyé.','success');
       form.reset();
-    }finally{if(submit)submit.disabled=false}
+    }catch(err){
+      console.warn('[SINJIRA auth recovery]',err);
+      setStatus(status,'La demande de récupération n’a pas pu être traitée pour le moment. Réessayez plus tard.','error');
+    }finally{setBusy(form,false)}
   });
 }
 
 async function reset(){
   const form=document.querySelector('[data-reset-form]');if(!form)return;
   if(!ready())return setStatus(status,'Le service de comptes SINJIRA™ est temporairement indisponible.','error');
-  const {data:{session}}=await getSupabase().auth.getSession();
-  if(!session){
+  const {data:{user},error:userError}=await getSupabase().auth.getUser();
+  if(userError||!user){
     form.querySelectorAll('input,button').forEach(el=>el.disabled=true);
     setStatus(status,'Ce lien de récupération est invalide ou expiré. Demandez un nouveau lien.','error');
     return;
   }
   form.addEventListener('submit',async e=>{
     e.preventDefault();
+    if(reportInvalid(form))return;
     const d=new FormData(form),password=String(d.get('password')||''),confirm=String(d.get('password_confirm')||'');
     if(password.length<12||password!==confirm)return setStatus(status,'Les mots de passe doivent correspondre et contenir au moins 12 caractères.','error');
-    const submit=form.querySelector('[type="submit"]');if(submit)submit.disabled=true;
+    setBusy(form,true);
     try{
       const {error}=await getSupabase().auth.updateUser({password});
       if(error)return setStatus(status,'Impossible de mettre à jour le mot de passe. Demandez un nouveau lien de récupération.','error');
       await getSupabase().auth.signOut({scope:'global'}).catch(()=>getSupabase().auth.signOut());
       setStatus(status,'Mot de passe mis à jour. Toutes les sessions ont été fermées; reconnectez-vous avec le nouveau mot de passe.','success');
       setTimeout(()=>location.replace('/compte/connexion.html?reset=1'),900);
-    }finally{if(submit)submit.disabled=false}
+    }catch(err){
+      console.warn('[SINJIRA auth reset]',err);
+      setStatus(status,'Impossible de mettre à jour le mot de passe pour le moment. Demandez un nouveau lien si le problème persiste.','error');
+    }finally{setBusy(form,false)}
   });
 }
 
@@ -75,4 +101,4 @@ try{
   if(page==='login')await login();
   else if(page==='forgot')await forgot();
   else if(page==='reset')await reset();
-}catch(err){console.warn('[SINJIRA auth]',err);setStatus(status,'Le service d’authentification n’a pas pu terminer cette opération.','error')}
+}catch(err){console.warn('[SINJIRA auth init]',err);setStatus(status,'Le service d’authentification n’a pas pu terminer cette opération.','error')}
