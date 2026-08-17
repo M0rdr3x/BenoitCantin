@@ -16,19 +16,38 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "https://www.benoitcantin.com"
 
+NOVA_PAGE_NAMES = [
+    "comprendre-nova.html",
+    "programme.html",
+    "documents.html",
+    "recrutement.html",
+    "transparence.html",
+    "comptabilite.html",
+    "registre-rencontres.html",
+    "registre-conformite.html",
+    "equipe.html",
+    "propositions.html",
+    "presse.html",
+    "faq.html",
+    "contact.html",
+    "avis-legal.html",
+    "confidentialite.html",
+    "accessibilite.html",
+    "actualites.html",
+    "manifeste.html",
+    "livre-nova.html",
+    "transition.html",
+    "code-conduite.html",
+]
+
 PUBLIC_PAGES = {
     "projets/sinjira/registre/index.html": "/projets/sinjira/registre/",
     "projets/projet-nova/index.html": "/projets/projet-nova/",
-    "projets/projet-nova/comprendre-nova.html": "/projets/projet-nova/comprendre-nova.html",
-    "projets/projet-nova/programme.html": "/projets/projet-nova/programme.html",
-    "projets/projet-nova/transparence.html": "/projets/projet-nova/transparence.html",
-    "projets/projet-nova/documents.html": "/projets/projet-nova/documents.html",
-    "projets/projet-nova/calendrier.html": "/projets/projet-nova/calendrier.html",
-    "projets/projet-nova/faq.html": "/projets/projet-nova/faq.html",
-    "projets/projet-nova/contact.html": "/projets/projet-nova/contact.html",
 }
+for nova_name in NOVA_PAGE_NAMES:
+    PUBLIC_PAGES[f"projets/projet-nova/{nova_name}"] = f"/projets/projet-nova/{nova_name}"
 
-SITEMAP_PATHS = [
+ROOT_SITEMAP_PATHS = [
     "/",
     "/a-propos.html",
     "/contact.html",
@@ -37,13 +56,10 @@ SITEMAP_PATHS = [
     "/projets/sinjira/romans/",
     "/projets/sinjira/jeux/",
     "/projets/projet-nova/",
-    "/projets/projet-nova/comprendre-nova.html",
-    "/projets/projet-nova/programme.html",
-    "/projets/projet-nova/transparence.html",
-    "/projets/projet-nova/documents.html",
-    "/projets/projet-nova/calendrier.html",
-    "/projets/projet-nova/faq.html",
-    "/projets/projet-nova/contact.html",
+] + [f"/projets/projet-nova/{name}" for name in NOVA_PAGE_NAMES]
+
+NOVA_SITEMAP_PATHS = ["/projets/projet-nova/"] + [
+    f"/projets/projet-nova/{name}" for name in NOVA_PAGE_NAMES
 ]
 
 
@@ -106,7 +122,6 @@ def absolute_asset(value: str, canonical: str) -> str:
         return value
     if value.startswith("/"):
         return BASE + value
-    # Toutes les images Nova actuellement relatives sont dans /projets/projet-nova/.
     if "/projet-nova/" in canonical:
         return BASE + "/projets/projet-nova/" + value.lstrip("./")
     return BASE + "/" + value.lstrip("./")
@@ -197,16 +212,20 @@ def patch_page(rel_path: str, canonical_path: str) -> bool:
     return True
 
 
-def patch_sitemap() -> bool:
-    path = ROOT / "sitemap.xml"
-    source = path.read_text(encoding="utf-8")
-    entries = "\n".join(f"  <url><loc>{BASE}{p}</loc></url>" for p in SITEMAP_PATHS)
-    target = (
+def sitemap_xml(paths: list[str]) -> str:
+    entries = "\n".join(f"  <url><loc>{BASE}{p}</loc></url>" for p in paths)
+    return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         f"{entries}\n"
         "</urlset>\n"
     )
+
+
+def patch_sitemap(rel_path: str, paths: list[str]) -> bool:
+    path = ROOT / rel_path
+    source = path.read_text(encoding="utf-8")
+    target = sitemap_xml(paths)
     if source == target:
         return False
     path.write_text(target, encoding="utf-8")
@@ -218,8 +237,10 @@ def main() -> None:
     for rel_path, canonical_path in PUBLIC_PAGES.items():
         if patch_page(rel_path, canonical_path):
             changed.append(rel_path)
-    if patch_sitemap():
+    if patch_sitemap("sitemap.xml", ROOT_SITEMAP_PATHS):
         changed.append("sitemap.xml")
+    if patch_sitemap("projets/projet-nova/sitemap.xml", NOVA_SITEMAP_PATHS):
+        changed.append("projets/projet-nova/sitemap.xml")
     if changed:
         print("SEO V24.4.46 appliqué:")
         for item in changed:
