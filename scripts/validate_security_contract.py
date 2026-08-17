@@ -148,6 +148,10 @@ def main() -> int:
         ("p_user_id=auth.uid()", "auth.jwt()->>'role'", "'service_role'", "else false"),
     )
     require_latest_function_contract(
+        errors, all_sql, "social_is_blocked",
+        ("auth.uid()<>a", "auth.uid()<>b", "then false", "'service_role'"),
+    )
+    require_latest_function_contract(
         errors, all_sql, "is_fracture_party_member",
         ("p_user_id=auth.uid()", "auth.jwt()->>'role'", "'service_role'", "else false"),
     )
@@ -158,6 +162,10 @@ def main() -> int:
     require_latest_function_contract(
         errors, all_sql, "sinjira_can_social_interact",
         ("auth.uid()<>p_a", "auth.uid()<>p_b", "then false", "'service_role'"),
+    )
+    require_latest_function_contract(
+        errors, all_sql, "sinjira_content_allowed",
+        ("p_user_id<>auth.uid()", "return false", "auth.jwt()->>'role'", "'service_role'"),
     )
     require_latest_function_contract(
         errors, all_sql, "sinjira_mfa_access_allowed",
