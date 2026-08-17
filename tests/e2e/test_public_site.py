@@ -7,6 +7,7 @@ from playwright.sync_api import sync_playwright
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
 SUPPORTED_BROWSERS = {"chromium", "firefox", "webkit"}
+ASSISTANT_VERSION = "24.4.45"
 PUBLIC_ROUTES = [
     "",
     "a-propos.html",
@@ -40,6 +41,14 @@ def assert_true(value, message):
 
 def register_error_capture(page, target):
     page.on("pageerror", lambda error: target.append(f"pageerror: {error}"))
+
+
+def wait_for_assistant(page):
+    page.wait_for_function(
+        "([version]) => window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === version",
+        arg=[ASSISTANT_VERSION],
+        timeout=10_000,
+    )
 
 
 def run() -> None:
@@ -122,14 +131,15 @@ def run() -> None:
             page.goto(urljoin(BASE_URL, "compte/reinitialiser-mot-de-passe.html"), wait_until="domcontentloaded", timeout=30_000)
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à la réinitialisation")
 
-            # Assistant local exact du dépôt: navigation, confidentialité et contexte.
+            # Assistant local exact du dépôt: navigation, confidentialité, connaissances et contexte.
             page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
-            page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.40'", timeout=10_000)
+            wait_for_assistant(page)
             assistant = page.evaluate("window.__SINJIRA_ASSISTANT__")
             assert_true(assistant.get("providerMode") == "local", f"{BROWSER_NAME}: assistant non local")
             assert_true(assistant.get("externalProviderEnabled") is False, f"{BROWSER_NAME}: fournisseur externe activé")
             assert_true(assistant.get("privacy") == "ephemeral-memory-only", f"{BROWSER_NAME}: contrat de confidentialité assistant invalide")
             assert_true(assistant.get("contextLabel") == "Accueil Benoit Cantin", f"{BROWSER_NAME}: contexte accueil assistant invalide")
+            assert_true(int(assistant.get("intentCount") or 0) >= 20, f"{BROWSER_NAME}: base d’aide assistant trop limitée")
 
             assistant_toggle = page.locator(".sinjira-assistant-toggle")
             assert_true(assistant_toggle.count() == 1, f"{BROWSER_NAME}: bouton Aide IA absent")
@@ -144,11 +154,24 @@ def run() -> None:
             log_text = page.locator(".sinjira-assistant-log").inner_text().lower()
             assert_true("registre des consciences" in log_text, f"{BROWSER_NAME}: réponse Registre absente")
             assert_true(page.locator('.sinjira-assistant-link[href="/projets/sinjira/registre/"]').count() >= 1, f"{BROWSER_NAME}: lien Registre assistant absent")
+
+            page.wait_for_timeout(400)
+            question.fill("ma carte identité")
+            question.press("Enter")
+            log_text = page.locator(".sinjira-assistant-log").inner_text().lower()
+            assert_true("seule votre propre identité" in log_text, f"{BROWSER_NAME}: garde-fou identité Fracture absent")
+
+            page.wait_for_timeout(400)
+            question.fill("voici mon mot de passe est test-seulement")
+            question.press("Enter")
+            log_text = page.locator(".sinjira-assistant-log").inner_text().lower()
+            assert_true("n’envoyez pas de mot de passe" in log_text or "n'envoyez pas de mot de passe" in log_text, f"{BROWSER_NAME}: garde-fou secret assistant absent")
+
             page.keyboard.press("Escape")
             assert_true(panel.is_hidden(), f"{BROWSER_NAME}: Escape ne ferme pas l’assistant")
 
             page.goto(urljoin(BASE_URL, "projets/sinjira/registre/"), wait_until="domcontentloaded", timeout=30_000)
-            page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.40'", timeout=10_000)
+            wait_for_assistant(page)
             assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Registre des Consciences", f"{BROWSER_NAME}: contexte Registre invalide")
             page.locator(".sinjira-assistant-toggle").click()
             page.locator("#sinjira-assistant-input").fill("Que puis-je faire sur cette page ?")
@@ -156,7 +179,7 @@ def run() -> None:
             assert_true("base humaine" in page.locator(".sinjira-assistant-log").inner_text().lower(), f"{BROWSER_NAME}: aide contextuelle Registre absente")
 
             page.goto(urljoin(BASE_URL, "projets/projet-nova/"), wait_until="domcontentloaded", timeout=30_000)
-            page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.40'", timeout=10_000)
+            wait_for_assistant(page)
             assert_true(page.locator(".sinjira-assistant-toggle").count() == 1, f"{BROWSER_NAME}: assistant absent de Projet Nova")
             assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Projet Nova", f"{BROWSER_NAME}: contexte Projet Nova invalide")
 
@@ -185,7 +208,7 @@ def run() -> None:
         assert_true(toggle.get_attribute("aria-expanded") == "false", f"{BROWSER_NAME}: menu mobile ne se referme pas")
 
         if IS_LOCAL:
-            mobile_page.wait_for_function("window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === '24.4.40'", timeout=10_000)
+            wait_for_assistant(mobile_page)
             mobile_assistant = mobile_page.locator(".sinjira-assistant-toggle")
             mobile_assistant.click()
             mobile_panel = mobile_page.locator("#sinjira-assistant-panel")
@@ -208,7 +231,7 @@ def run() -> None:
         assert_true(not all_errors, f"{BROWSER_NAME}: erreurs JavaScript navigateur: " + " | ".join(all_errors[:5]))
         context.close()
         browser.close()
-        auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V24.4.40 contextuel" if IS_LOCAL else ""
+        auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(
             f"OK E2E {BROWSER_NAME}: {len(PUBLIC_ROUTES)} routes publiques{auth_note}, "
             f"accueil desktop/mobile, contact, compatibilité CSS/runtime et frontière compte vérifiés sur {BASE_URL}"
