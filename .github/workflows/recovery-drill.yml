@@ -48,6 +48,44 @@ jobs:
       - name: Exécuter les contrats pgTAP
         run: supabase test db
 
+      - name: Vérifier la politique Auth locale de 12 caractères
+        shell: bash
+        run: |
+          set -euo pipefail
+          status_env="$(supabase status -o env)"
+          API_URL="$(sed -n 's/^API_URL="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          ANON_KEY="$(sed -n 's/^ANON_KEY="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          test -n "$API_URL"
+          test -n "$ANON_KEY"
+
+          weak_code="$(curl --silent --show-error --output /tmp/auth-weak.json --write-out '%{http_code}' \
+            --request POST "$API_URL/auth/v1/signup" \
+            --header "apikey: $ANON_KEY" \
+            --header 'Content-Type: application/json' \
+            --data '{"email":"sinjira-auth-weak@example.com","password":"12345678901"}')"
+          if [ "$weak_code" -lt 400 ]; then
+            echo "Auth local a accepté un mot de passe de 11 caractères."
+            cat /tmp/auth-weak.json
+            exit 1
+          fi
+          if ! grep -Eiq 'password|weak|characters|length' /tmp/auth-weak.json; then
+            echo "Auth local a refusé la requête, mais pas avec un diagnostic de mot de passe faible."
+            cat /tmp/auth-weak.json
+            exit 1
+          fi
+
+          strong_code="$(curl --silent --show-error --output /tmp/auth-strong.json --write-out '%{http_code}' \
+            --request POST "$API_URL/auth/v1/signup" \
+            --header "apikey: $ANON_KEY" \
+            --header 'Content-Type: application/json' \
+            --data '{"email":"sinjira-auth-strong@example.com","password":"123456789012"}')"
+          if [ "$strong_code" -ge 400 ]; then
+            echo "Auth local a refusé le mot de passe de 12 caractères prévu par le contrat."
+            cat /tmp/auth-strong.json
+            exit 1
+          fi
+          echo "OK Auth local: 11 caractères refusés, 12 caractères acceptés."
+
       - name: Arrêter et supprimer la pile locale
         if: always()
         run: supabase stop --no-backup
