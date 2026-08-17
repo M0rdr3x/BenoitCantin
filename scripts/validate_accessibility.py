@@ -10,6 +10,10 @@ CRITICAL_PAGES = [
     ROOT / "projets" / "sinjira" / "index.html",
     ROOT / "projets" / "sinjira" / "registre" / "index.html",
     ROOT / "projets" / "projet-nova" / "index.html",
+    ROOT / "compte" / "connexion.html",
+    ROOT / "compte" / "inscription.html",
+    ROOT / "compte" / "mot-de-passe-oublie.html",
+    ROOT / "compte" / "reinitialiser-mot-de-passe.html",
 ]
 
 
@@ -103,17 +107,17 @@ def main() -> int:
     for marker, label in [
         ("node.setAttribute('aria-live',isError?'assertive':'polite')", "aria-live adaptatif"),
         ("node.setAttribute('aria-atomic','true')", "aria-atomic"),
-        ("node.setAttribute('role',isError?'alert':'status')", "rôle alert/status"),
+        ("node.setAttribute('role',isError?'alert':'status')", "role alert/status"),
     ]:
         if marker not in status_helper:
             errors.append(f"assets/js/sinjira-supabase.js: annonce dynamique accessible absente ({label}).")
 
     if errors:
-        print(f"ECHEC accessibilité: {len(errors)} problème(s).")
+        print(f"ECHEC accessibilite: {len(errors)} probleme(s).")
         for error in errors:
             print("- " + error)
         return 1
-    print("OK accessibilité: repères, titres, alternatives, clavier, réduction des animations et annonces dynamiques vérifiés.")
+    print("OK accessibilite: reperes, titres, alternatives, clavier, reduction des animations et annonces dynamiques verifies sur les pages publiques et Auth critiques.")
     return 0
 
 
