@@ -1,0 +1,63 @@
+name: Appliquer V24.4.48 temporaire
+
+on:
+  push:
+    branches: [ v24-4-48-assistant-diagnostic ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Récupérer la branche
+        uses: actions/checkout@v6
+        with:
+          ref: v24-4-48-assistant-diagnostic
+          fetch-depth: 0
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Configurer Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Appliquer la passe V24.4.48
+        run: python scripts/apply_v24_4_48_temp.py
+      - name: Vérifier les JavaScript modifiés
+        run: |
+          node --check assets/js/sinjira-assistant.js
+          node --check assets/js/site.js
+          node --check projets/projet-nova/script.js
+      - name: Vérifier l’assistant et le site
+        run: |
+          python scripts/validate_sinjira_assistant.py
+          python scripts/validate_ci_draft_gate.py
+          python scripts/validate_browser_compat.py
+          python scripts/validate_accessibility.py
+          python scripts/validate_performance_budget.py
+          python scripts/validate_runtime_resilience.py
+          python scripts/validate_pwa.py
+          python scripts/validate_site.py
+      - name: Retirer les fichiers temporaires
+        run: |
+          rm -f scripts/apply_v24_4_48_temp.py
+          rm -f .github/workflows/apply-v24-4-48-temp.yml
+      - name: Enregistrer la V24.4.48 sur la branche
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Aucune modification à enregistrer."
+            exit 0
+          fi
+          git commit -m "SINJIRA V24.4.48 — assistant contextuel et dépannage renforcé"
+          git push origin HEAD:v24-4-48-assistant-diagnostic
