@@ -37,6 +37,44 @@ jobs:
       - name: Appliquer le contrat SEO idempotent
         run: python scripts/apply_seo_v24_4_46.py
 
+      - name: Aligner l’assistant V24.4.46 et sa ponctuation naturelle
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_required(path, old, new, minimum=1):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count < minimum:
+                  raise SystemExit(f"{path}: motif attendu absent: {old!r}")
+              p.write_text(text.replace(old, new), encoding='utf-8')
+              print(f"{path}: {count} remplacement(s)")
+
+          assistant = Path('assets/js/sinjira-assistant.js')
+          text = assistant.read_text(encoding='utf-8')
+          old_normalize = "return text.replace(/[^a-z0-9\\s'-]/g, ' ').replace(/\\s+/g, ' ').replace(/^\\s+|\\s+$/g, '');"
+          new_normalize = "return text.replace(/[-‐‑‒–—―'’]/g, ' ').replace(/[^a-z0-9\\s]/g, ' ').replace(/\\s+/g, ' ').replace(/^\\s+|\\s+$/g, '');"
+          if old_normalize not in text and new_normalize not in text:
+              raise SystemExit('assets/js/sinjira-assistant.js: normalisation attendue introuvable')
+          if old_normalize in text:
+              text = text.replace(old_normalize, new_normalize, 1)
+          text = text.replace("ASSISTANT_VERSION = '24.4.45'", "ASSISTANT_VERSION = '24.4.46'")
+          text = text.replace('Mode V24.4.45', 'Mode V24.4.46')
+          assistant.write_text(text, encoding='utf-8')
+
+          replace_required('assets/js/site.js', 'sinjira-assistant.css?v=24.4.45', 'sinjira-assistant.css?v=24.4.46')
+          replace_required('assets/js/site.js', 'sinjira-assistant.js?v=24.4.45', 'sinjira-assistant.js?v=24.4.46')
+          replace_required('projets/projet-nova/script.js', 'sinjira-assistant.css?v=24.4.45', 'sinjira-assistant.css?v=24.4.46')
+          replace_required('projets/projet-nova/script.js', 'sinjira-assistant.js?v=24.4.45', 'sinjira-assistant.js?v=24.4.46')
+          replace_required('projets/projet-nova/script.js', 'V24.4.45 — Assistant SINJIRA', 'V24.4.46 — Assistant SINJIRA')
+          replace_required('scripts/validate_sinjira_assistant.py', 'ASSISTANT_VERSION = "24.4.45"', 'ASSISTANT_VERSION = "24.4.46"')
+          replace_required('tests/e2e/test_public_site.py', 'ASSISTANT_VERSION = "24.4.45"', 'ASSISTANT_VERSION = "24.4.46"')
+          replace_required('tests/e2e/test_public_site.py', 'question.fill("ma carte identité")', 'question.fill("Résistant ou Réseau-Mère")')
+          replace_required('docs/SINJIRA_ASSISTANT.md', 'V24.4.45', 'V24.4.46')
+          PY
+
       - name: Enregistrer les transformations si nécessaire
         shell: bash
         run: |
@@ -46,6 +84,14 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add projets/sinjira/registre/index.html projets/projet-nova sitemap.xml
-          git commit -m "V24.4.46 — applique les métadonnées SEO publiques"
+          git add \
+            projets/sinjira/registre/index.html \
+            projets/projet-nova \
+            sitemap.xml \
+            assets/js/sinjira-assistant.js \
+            assets/js/site.js \
+            scripts/validate_sinjira_assistant.py \
+            tests/e2e/test_public_site.py \
+            docs/SINJIRA_ASSISTANT.md
+          git commit -m "V24.4.46 — applique SEO et normalisation assistant"
           git push origin HEAD:v24-4-46-seo-completion
