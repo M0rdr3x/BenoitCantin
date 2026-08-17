@@ -79,6 +79,8 @@ jobs:
         run: python scripts/validate_admin_console.py
       - name: Vérifier le moteur Fracture Online
         run: python scripts/validate_fracture_engine.py
+      - name: Vérifier l’isolation des identités Fracture
+        run: python scripts/validate_fracture_identity_isolation.py
       - name: Vérifier la cohérence de version Fracture
         run: python scripts/validate_fracture_version_consistency.py
       - name: Vérifier le compte propriétaire AbyssTime
