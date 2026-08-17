@@ -1,0 +1,50 @@
+name: Appliquer SEO V24.4.46
+
+on:
+  push:
+    branches:
+      - v24-4-46-seo-completion
+    paths:
+      - 'scripts/apply_seo_v24_4_46.py'
+      - 'projets/sinjira/registre/index.html'
+      - 'projets/projet-nova/**.html'
+      - 'sitemap.xml'
+      - '.github/workflows/apply-seo-v24-4-46.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: seo-v24-4-46-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer la branche exacte
+        uses: actions/checkout@v6
+        with:
+          ref: v24-4-46-seo-completion
+          fetch-depth: 0
+
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Appliquer le contrat SEO idempotent
+        run: python scripts/apply_seo_v24_4_46.py
+
+      - name: Enregistrer les transformations si nécessaire
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "Aucune transformation supplémentaire à enregistrer."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add projets/sinjira/registre/index.html projets/projet-nova sitemap.xml
+          git commit -m "V24.4.46 — applique les métadonnées SEO publiques"
+          git push origin HEAD:v24-4-46-seo-completion
