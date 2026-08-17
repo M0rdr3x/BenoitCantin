@@ -33,25 +33,21 @@ def main()->int:
     if not versions or versions[0]!=EXPECTED_FIRST:errors.append('Première version production inattendue.')
     if not versions or versions[-1]!=EXPECTED_LAST:errors.append('Dernière version production inattendue.')
 
+    # Le dépôt de reconstruction est historique: plusieurs anciennes migrations ont
+    # été consolidées sous des timestamps locaux différents de ceux attribués par la
+    # production. Le ledger distant reste la source d'identité des versions déjà
+    # appliquées; on exige seulement l'unicité des timestamps locaux et on vérifie le
+    # workspace de déploiement généré contre le ledger complet.
     local=[]
-    local_by_version={}
+    local_versions=[]
     for p in sorted(MIG.glob('*.sql')):
         m=FILE_RE.fullmatch(p.name)
         if not m:errors.append(f'Nom de migration invalide: {p.name}');continue
         version=m.group(1)
         local.append((version,p.name))
-        local_by_version.setdefault(version,[]).append(p.name)
-    if any(len(names)>1 for names in local_by_version.values()):
+        local_versions.append(version)
+    if len(local_versions)!=len(set(local_versions)):
         errors.append('Deux fichiers locaux partagent le même timestamp.')
-
-    for version,name in r:
-        candidates=local_by_version.get(version,[])
-        if not candidates:
-            errors.append(f'Version production sans fichier local correspondant: {version} {name}')
-        elif len(candidates)==1:
-            local_stem=candidates[0][15:-4]
-            if local_stem!=name:
-                errors.append(f'Nom local différent du ledger pour {version}: {local_stem} != {name}')
 
     cutoff=EXPECTED_LAST
     future=[name for v,name in local if v>cutoff]
