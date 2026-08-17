@@ -8,9 +8,9 @@ MIG=ROOT/'supabase'/'migrations'
 BUILDER=ROOT/'scripts'/'build_supabase_production_workspace.py'
 ROW_RE=re.compile(r'^(\d{14})\s+([a-zA-Z0-9_]+)$')
 FILE_RE=re.compile(r'^(\d{14})_(.+)\.sql$')
-EXPECTED_COUNT=66
+EXPECTED_COUNT=81
 EXPECTED_FIRST='20260809050252'
-EXPECTED_LAST='20260816161847'
+EXPECTED_LAST='20260817103625'
 
 
 def rows():
@@ -34,11 +34,24 @@ def main()->int:
     if not versions or versions[-1]!=EXPECTED_LAST:errors.append('Dernière version production inattendue.')
 
     local=[]
+    local_by_version={}
     for p in sorted(MIG.glob('*.sql')):
         m=FILE_RE.fullmatch(p.name)
         if not m:errors.append(f'Nom de migration invalide: {p.name}');continue
-        local.append((m.group(1),p.name))
-    if len({v for v,_ in local})!=len(local):errors.append('Deux fichiers locaux partagent le même timestamp.')
+        version=m.group(1)
+        local.append((version,p.name))
+        local_by_version.setdefault(version,[]).append(p.name)
+    if any(len(names)>1 for names in local_by_version.values()):
+        errors.append('Deux fichiers locaux partagent le même timestamp.')
+
+    for version,name in r:
+        candidates=local_by_version.get(version,[])
+        if not candidates:
+            errors.append(f'Version production sans fichier local correspondant: {version} {name}')
+        elif len(candidates)==1:
+            local_stem=candidates[0][15:-4]
+            if local_stem!=name:
+                errors.append(f'Nom local différent du ledger pour {version}: {local_stem} != {name}')
 
     cutoff=EXPECTED_LAST
     future=[name for v,name in local if v>cutoff]
