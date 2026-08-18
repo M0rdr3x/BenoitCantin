@@ -22,6 +22,7 @@ function notificationTarget(n){
  if(type.includes('character')||entity.includes('character_submission'))return 'fan-characters';
  if(type.includes('tester')||type.includes('access')||entity.includes('access'))return 'access';
  if(type.includes('report')||entity.includes('fracture')||entity.includes('report'))return 'reports';
+ if(type.includes('novel_comment')||entity.includes('novel_comment'))return 'reader-comments';
  if(type.includes('social')||entity.includes('social'))return 'social-moderation';
  return 'notifications';
 }
