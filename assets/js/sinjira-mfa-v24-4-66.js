@@ -11,6 +11,17 @@ function verifiedTotp(data){
   return (data?.totp||[]).filter(factor=>factor?.status==='verified');
 }
 
+function renderFactorOptions(factors){
+  if(!factorSelect)return;
+  factorSelect.replaceChildren();
+  factors.forEach((factor,index)=>{
+    const option=document.createElement('option');
+    option.value=String(factor.id||'');
+    option.textContent=String(factor.friendly_name||`Application d’authentification ${index+1}`);
+    factorSelect.append(option);
+  });
+}
+
 async function init(){
   const {data:{user},error:userError}=await s.auth.getUser();
   if(userError||!user){
@@ -34,13 +45,17 @@ async function init(){
     return;
   }
 
-  factorSelect.innerHTML=totp.map((factor,index)=>`<option value="${factor.id}">${factor.friendly_name||`Application d’authentification ${index+1}`}</option>`).join('');
+  renderFactorOptions(totp);
   form.hidden=false;
 
   form.addEventListener('submit',async event=>{
     event.preventDefault();
     const code=String(new FormData(form).get('code')||'').replace(/\s+/g,'');
     const factorId=factorSelect.value;
+    if(!factorId){
+      setStatus(status,'Choisissez un facteur TOTP valide.','error');
+      return;
+    }
     if(!/^\d{6}$/.test(code)){
       setStatus(status,'Entrez le code à 6 chiffres affiché par votre application d’authentification.','error');
       return;
