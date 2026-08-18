@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,7 +54,26 @@ def main() -> None:
     for browser in ("chromium", "firefox", "webkit"):
         require(browser in workflow, f"workflow E2E sans {browser}")
     require("matrix:" in workflow and "browser:" in workflow, "tests multi-navigateurs non matricés")
-    require("playwright install --with-deps" in workflow, "installation Playwright multi-moteurs absente")
+
+    # Playwright peut être préparé par la CLI ou par son image Docker officielle.
+    # Si l'image officielle est utilisée, la version du client Python doit être
+    # strictement identique à celle du conteneur afin d'éviter un décalage des binaires.
+    cli_install = "playwright install --with-deps" in workflow
+    container_match = re.search(
+        r"mcr\.microsoft\.com/playwright/python:v([0-9]+(?:\.[0-9]+)*)-noble",
+        workflow,
+    )
+    client_match = re.search(r"playwright==([0-9]+(?:\.[0-9]+)*)", workflow)
+    official_container = bool(
+        container_match
+        and client_match
+        and container_match.group(1) == client_match.group(1)
+    )
+    require(
+        cli_install or official_container,
+        "préparation Playwright absente ou versions conteneur/client désalignées",
+    )
+
     require("BROWSER: ${{ matrix.browser }}" in workflow, "moteur non transmis au test E2E")
 
     e2e_markers = [
@@ -71,7 +91,7 @@ def main() -> None:
     require("Chromium" in support_doc and "Firefox" in support_doc and "WebKit" in support_doc, "politique de support navigateur incomplète")
     require("progressive enhancement" in support_doc.lower(), "stratégie de dégradation progressive non documentée")
 
-    print("OK compatibilité navigateur V24.4.22: noyau public, fallbacks CSS et matrice Chromium/Firefox/WebKit validés")
+    print("OK compatibilité navigateur V24.4.59: noyau public, fallbacks CSS et matrice Chromium/Firefox/WebKit validés")
 
 
 if __name__ == "__main__":

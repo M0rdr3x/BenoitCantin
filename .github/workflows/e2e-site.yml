@@ -20,6 +20,9 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     name: Navigation ${{ matrix.browser }}
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble
+      options: --user 1001
     timeout-minutes: 25
     strategy:
       fail-fast: false
@@ -34,17 +37,17 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Installer Playwright et ${{ matrix.browser }}
-        run: |
-          python -m pip install --disable-pip-version-check playwright
-          python -m playwright install --with-deps "${{ matrix.browser }}"
+      - name: Installer le client Playwright épinglé
+        run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
 
       - name: Démarrer le site statique local
         run: |
           python -m http.server 4173 --bind 127.0.0.1 > /tmp/sinjira-http.log 2>&1 &
           echo $! > /tmp/sinjira-http.pid
-          for i in {1..20}; do
-            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+          i=0
+          while [ "$i" -lt 20 ]; do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/', timeout=1).read(1)" >/dev/null 2>&1; then exit 0; fi
+            i=$((i + 1))
             sleep 1
           done
           cat /tmp/sinjira-http.log
