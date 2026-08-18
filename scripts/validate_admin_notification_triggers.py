@@ -43,9 +43,12 @@ if ADMIN_JS.exists():
     need("return 'reader-comments'" in js,'notification de commentaire roman ne cible pas l’onglet de modération')
     for target in ('fan-characters','access','reports','social-moderation'):
         need(f"return '{target}'" in js,f'cible notification admin absente: {target}')
+    init=js.split('(async()=>{try{',1)[1] if '(async()=>{try{' in js else ''
+    need('notifications()' in init,'chargement initial du compteur notifications absent')
+    need("mark_all_notifications_read" not in init.split('catch(e)',1)[0], 'le chargement initial ne doit jamais marquer automatiquement tous les avis lus')
 
 if errors:
     print(f'ECHEC notifications V24.4.52: {len(errors)} problème(s).')
     for e in errors: print('- '+e)
     raise SystemExit(1)
-print('OK notifications V24.4.52: demandes, commentaires, signalements et rapports Fracture créent des avis administrateur ciblés et ouvrent la bonne section.')
+print('OK notifications V24.4.52: demandes, commentaires, signalements et rapports Fracture créent des avis administrateur ciblés; aucun avis n’est consommé au chargement.')
