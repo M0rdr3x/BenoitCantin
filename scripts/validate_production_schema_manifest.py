@@ -28,7 +28,8 @@ EXPECTED_TABLES={
 'social_character_comments','social_character_likes','social_character_messages',
 'social_character_posts','social_profiles','social_real_comments','social_real_likes',
 'social_real_messages','social_real_posts','social_reports','social_suspensions','user_entitlements',
-'license_batches','activation_codes','license_redemptions','admin_audit_log','character_status_events'
+'user_notifications','license_batches','activation_codes','license_redemptions','admin_audit_log',
+'character_status_events'
 }
 
 # Tables conçues dans l'historique V24 mais pas encore déployées dans la production
