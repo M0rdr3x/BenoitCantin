@@ -5,11 +5,23 @@ export const SINJIRA_CONFIG = Object.freeze({
   siteUrl: 'https://www.benoitcantin.com',
   contributionConsentVersion: 'sinjira-gameplay-v3-endgame-only',
   privateDocumentBucket: 'sinjira-private-documents',
-  avatarBucket: 'sinjira-avatars'
+  avatarBucket: 'sinjira-avatars',
+  freeOnlyMode: true,
+  paidFeaturesEnabled: false,
+  remoteAiEnabled: false,
+  commercePublishingEnabled: false,
+  tokenPurchasesEnabled: false
 });
 export function isSinjiraBackendConfigured() {
   return SINJIRA_CONFIG.supabaseUrl.startsWith('https://')
     && !SINJIRA_CONFIG.supabaseUrl.includes('VOTRE-PROJET')
     && SINJIRA_CONFIG.supabasePublishableKey.length > 20
     && !SINJIRA_CONFIG.supabasePublishableKey.includes('VOTRE_CLE');
+}
+export function isSinjiraFreeOnlyMode(){
+  return SINJIRA_CONFIG.freeOnlyMode === true
+    && SINJIRA_CONFIG.paidFeaturesEnabled === false
+    && SINJIRA_CONFIG.remoteAiEnabled === false
+    && SINJIRA_CONFIG.commercePublishingEnabled === false
+    && SINJIRA_CONFIG.tokenPurchasesEnabled === false;
 }
