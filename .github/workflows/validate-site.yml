@@ -75,6 +75,8 @@ jobs:
         run: python scripts/validate_supabase.py
       - name: Vérifier la sécurité publique des commentaires romans V24.4.55
         run: python scripts/validate_public_comment_security.py
+      - name: Vérifier le rôle propriétaire/admin V24.4.56
+        run: python scripts/validate_owner_role_invoker.py
       - name: Vérifier l’activation de licences V24.4.49
         run: python scripts/validate_license_activation.py
       - name: Vérifier les index licences V24.4.54
