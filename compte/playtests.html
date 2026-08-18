@@ -6,24 +6,27 @@
 <meta content="noindex,nofollow" name="robots"/>
 <title>Mes playtests | Compte SINJIRA™</title>
 <link href="../assets/icons/sinjira-favicon.png" rel="icon" type="image/png"/>
-<link href="../assets/css/site.css?v=24.4.64" rel="stylesheet"/>
-<link href="../assets/css/sinjira-player-account.css?v=24.4.64" rel="stylesheet"/>
-<link href="../assets/css/sinjira-reader-character.css?v=24.4.64" rel="stylesheet"/>
-<link href="../assets/css/v19-pro.css?v=24.4.64" rel="stylesheet"/>
-<link href="../assets/css/v20-social.css?v=24.4.64" rel="stylesheet"/>
+<link href="../assets/css/site.css?v=24.4.65" rel="stylesheet"/>
+<link href="../assets/css/sinjira-player-account.css?v=24.4.65" rel="stylesheet"/>
+<link href="../assets/css/sinjira-reader-character.css?v=24.4.65" rel="stylesheet"/>
+<link href="../assets/css/v19-pro.css?v=24.4.65" rel="stylesheet"/>
+<link href="../assets/css/v20-social.css?v=24.4.65" rel="stylesheet"/>
 </head>
-<body class="account-page" data-library-page="playtests-v24-4-64">
+<body class="account-page" data-library-page="playtests-v24-4-65">
 <header class="site-header"><div class="container nav-shell"><a class="brand" href="/"><img alt="" height="47" src="../assets/media/sinjira-emblem.webp" style="border-radius:50%" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Playtests</span></span></a><nav class="main-nav"><a href="../projets/sinjira/index.html">SINJIRA™</a><a href="../projets/sinjira/jeux/index.html">Jeux</a><a href="../index.html">Benoit Cantin</a></nav></div></header>
 <div class="account-shell account-nav-scroll"><nav aria-label="Navigation du compte" class="account-nav"><a href="index.html">Mon espace</a><a href="bibliotheque.html">Ma bibliothèque</a><a href="licences.html">Licences</a><a href="mon-personnage.html">Mon personnage</a><a href="notifications.html">Notifications</a><a href="relations.html">Relations</a><a href="monde-parallele.html">Monde parallèle</a><a href="mes-parties.html">Mes parties</a><a href="mes-achats.html">Mes achats</a><a href="marche.html">Marché</a><a href="jetons.html">Jetons</a><a href="communaute.html">Communauté</a><a href="reseau-personnage.html">Réseau personnage</a><a href="messages.html">Messages</a><a href="profil.html">Profil</a><a href="securite.html">Sécurité</a><a href="parametres.html">Paramètres</a><a data-admin-nav hidden href="/admin/sinjira/">Administration</a><button data-logout type="button">Déconnexion</button></nav></div>
 <main>
-<section class="account-hero"><div class="account-shell"><span class="eyebrow">Programme de test</span><h1>Mes playtests SINJIRA™</h1><p>Retrouvez vos candidatures, invitations et participations même après la fermeture d’un test. Vous pouvez vous retirer de votre propre participation, mais jamais vous auto-approuver.</p><div class="account-stats"><div class="account-stat"><span>Mes participations</span><strong data-playtest-my-count>0</strong></div><div class="account-stat"><span>Nouveaux tests ouverts</span><strong data-playtest-open-count>0</strong></div><div class="account-stat"><span>Participations approuvées</span><strong data-playtest-approved-count>0</strong></div></div><div class="account-status" data-library-status hidden></div></div></section>
-<section class="section section-tight"><div class="account-shell"><div class="section-heading"><span class="eyebrow">Historique privé</span><h2>Mes participations</h2><p>Les playtests liés à votre compte restent visibles même lorsqu’ils sont fermés ou archivés.</p></div><div class="playtest-grid" data-my-playtests-list></div></div></section>
+<section class="account-hero"><div class="account-shell"><span class="eyebrow">Programme de test</span><h1>Mes playtests SINJIRA™</h1><p>Retrouvez vos candidatures, invitations internes et participations même après la fermeture d’un test. Une invitation doit être acceptée par le membre avant d’activer son accès testeur.</p><div class="account-stats"><div class="account-stat"><span>Mes participations</span><strong data-playtest-my-count>0</strong></div><div class="account-stat"><span>Invitations</span><strong data-playtest-invite-count>0</strong></div><div class="account-stat"><span>Nouveaux tests ouverts</span><strong data-playtest-open-count>0</strong></div><div class="account-stat"><span>Participations approuvées</span><strong data-playtest-approved-count>0</strong></div></div><div class="account-status" data-library-status hidden></div></div></section>
+
+<section class="section section-tight" data-admin-playtest-invites hidden><div class="account-shell"><article class="account-card"><span class="eyebrow">Administration SINJIRA™</span><h2>Inviter un membre à un playtest</h2><p>L’invitation reste interne au site. Le serveur vérifie l’admissibilité du compte, y compris les protections jeunesse, sans afficher ici les données d’âge ou de tuteur.</p><form class="account-form" data-admin-invite-form><div class="field"><label>Playtest ouvert ou actif</label><select data-admin-invite-playtest required></select></div><div class="field"><label>Compte à inviter</label><select data-admin-invite-user required></select></div><button class="btn btn-primary" type="submit">Créer l’invitation interne</button></form><div class="account-status" data-admin-invite-status hidden></div></article></div></section>
+
+<section class="section section-tight"><div class="account-shell"><div class="section-heading"><span class="eyebrow">Historique privé</span><h2>Mes participations</h2><p>Les playtests liés à votre compte restent visibles même lorsqu’ils sont fermés ou archivés. Une invitation peut être acceptée ou déclinée directement ici.</p></div><div class="playtest-grid" data-my-playtests-list></div></div></section>
 <section class="section section-tight"><div class="account-shell"><div class="section-heading"><span class="eyebrow">Candidatures</span><h2>Playtests ouverts pour mon niveau d’accès</h2><p>Le serveur vérifie le niveau requis avant d’accepter la candidature. Une candidature n’accorde jamais automatiquement l’accès.</p></div><div class="playtest-grid" data-open-playtests-list></div></div></section>
-<section class="section section-tight"><div class="account-shell"><article class="account-card"><span class="eyebrow">Sécurité</span><h2>Contrôle limité au participant</h2><p>Votre compte peut seulement créer sa propre candidature et changer son propre statut vers « Retiré ». L’approbation, le refus et la complétion restent réservés à l’administration SINJIRA™.</p></article></div></section>
+<section class="section section-tight"><div class="account-shell"><article class="account-card"><span class="eyebrow">Sécurité</span><h2>Acceptation contrôlée côté serveur</h2><p>Le membre ne peut jamais s’auto-approuver par une écriture directe. Seule une invitation réelle, créée par un administrateur et encore valide, peut être acceptée par le RPC sécurisé. Les moins de 12 ans restent non admissibles et les comptes 12–17 exigent une supervision vérifiée.</p></article></div></section>
 </main>
-<footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Playtests SINJIRA™ — sans service payant.</span></div></div></footer>
-<script defer src="../assets/js/site.js?v=24.4.64"></script>
-<script src="../assets/js/sinjira-account.js?v=24.4.64" type="module"></script>
-<script src="../assets/js/sinjira-playtests-v24-4-64.js?v=24.4.64" type="module"></script>
+<footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Playtests SINJIRA™ — invitations internes, sans service payant.</span></div></div></footer>
+<script defer src="../assets/js/site.js?v=24.4.65"></script>
+<script src="../assets/js/sinjira-account.js?v=24.4.65" type="module"></script>
+<script src="../assets/js/sinjira-playtests-v24-4-65.js?v=24.4.65" type="module"></script>
 </body>
 </html>
