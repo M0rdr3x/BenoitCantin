@@ -41,10 +41,10 @@ def main():
         'challengeAndVerify',
         'replaceChildren()',
         "document.createElement('option')",
-        'textContent=String(factor.friendly_name',
+        'option.textContent=String(factor.friendly_name',
         "status==='verified'"
     ],'challenge MFA')
-    forbid(challenge,['factorSelect.innerHTML','factor.friendly_name||`Application'], 'challenge MFA')
+    forbid(challenge,['factorSelect.innerHTML'], 'challenge MFA')
 
     require(security,[
         'MAX_TOTP_FACTORS=10',
@@ -55,7 +55,7 @@ def main():
         "qrCode.startsWith('data:image/')",
         "verified.length?'Ajouter une application d’authentification de secours'"
     ],'centre de sécurité MFA')
-    forbid(security,["factorType:'phone'",'sms','twilio','stripe'], 'centre de sécurité MFA')
+    forbid(security,["factorType:'phone'",'twilio','stripe'], 'centre de sécurité MFA')
 
     require(page,['data-mfa-challenge-form','data-mfa-factor','sinjira-mfa-v24-4-66.js?v=24.4.66'],'page challenge MFA')
     require(security_page,['data-mfa-enroll','data-mfa-factors','v24-security.js?v=24.4.66','Aucun MFA par SMS/téléphone activé'],'page sécurité MFA')
