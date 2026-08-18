@@ -1,6 +1,7 @@
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 
+# Trigger d’application contrôlée V24.4.53 — aucun changement fonctionnel dans ce fichier temporaire.
 # 1) Admin HTML: user-facing identifier replaces visible slug field.
 p=ROOT/'admin/sinjira/index.html'
 text=p.read_text('utf-8')
