@@ -1,6 +1,7 @@
 import {getSupabase,requireUser,escapeHtml,formatDate,isSinjiraOwner} from './sinjira-supabase.js';
 
-const UI_VERSION='24.4.20';
+const UI_VERSION='24.4.60';
+const OWNER_REPAIR_CONTRACT='24.4.20';
 const box=document.querySelector('[data-my-character]');
 const status=document.querySelector('[data-character-status]');
 const labels={submitted:'Questionnaire reçu',ai_draft:'Brouillon IA',author_review:'En préparation',approved:'Approuvé',assigned:'Roman attribué',future:'Futur roman',published:'Publié',refused:'Refusé',archived:'Archivé'};
@@ -61,7 +62,7 @@ function renderOwnerFallback(message='AbyssTime est reconnu par votre Compte SIN
     status:'assigned',
     canon_status:'PROVISOIRE',
     visible_to_user:true,
-    novel_note:'SINJIRA — Livre II (titre à confirmer)'
+    novel_note:'SINJIRA — Livre II : Le Sang du Sauveur'
   });
   setStatus(message,'success');
 }
@@ -112,7 +113,7 @@ async function loadCharacter(user){
     if(character){
       renderCharacter(character,submission);
       setStatus(owner
-        ?`AbyssTime est synchronisé avec sa fiche persistante, son profil social et le Monde parallèle (interface ${UI_VERSION}${repair?.repair_version?` · serveur ${repair.repair_version}`:''}).`
+        ?`AbyssTime est synchronisé avec sa fiche persistante, son profil social et le Monde parallèle (interface ${UI_VERSION} · contrat ${OWNER_REPAIR_CONTRACT}${repair?.repair_version?` · serveur ${repair.repair_version}`:''}).`
         :'Votre personnage est synchronisé avec votre Compte SINJIRA™.','success');
       return;
     }
