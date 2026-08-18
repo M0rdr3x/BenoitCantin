@@ -75,6 +75,8 @@ jobs:
         run: python scripts/validate_admin_mfa_v24_4_67.py
       - name: Vérifier la gestion des sessions V24.4.68
         run: python scripts/validate_session_security_v24_4_68.py
+      - name: Vérifier le contrôle des données V24.4.69
+        run: python scripts/validate_data_control_v24_4_69.py
       - name: Vérifier PWA, SEO et cache hors ligne
         run: python scripts/validate_pwa.py
       - name: Vérifier la structure Supabase
