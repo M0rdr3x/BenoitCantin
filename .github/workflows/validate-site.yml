@@ -69,6 +69,8 @@ jobs:
         run: python scripts/validate_home_focus.py
       - name: Vérifier les flux d’authentification
         run: python scripts/validate_auth.py
+      - name: Vérifier le MFA TOTP gratuit V24.4.66
+        run: python scripts/validate_mfa_v24_4_66.py
       - name: Vérifier PWA, SEO et cache hors ligne
         run: python scripts/validate_pwa.py
       - name: Vérifier la structure Supabase
