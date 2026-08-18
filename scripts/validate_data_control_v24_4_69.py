@@ -86,7 +86,9 @@ def main():
         "'sinjira-character-submissions'",
         "service.rpc('revoke_sinjira_contributions'",
         'service.auth.admin.deleteUser(user.id)',
-        "code:'STORAGE_DELETE_FAILED'",
+        "throw new Error('STORAGE_DELETE_FAILED')",
+        "error?.message==='STORAGE_DELETE_FAILED'",
+        "throw new Error('CONTRIBUTION_REVOKE_FAILED')",
         "code:'CONTRIBUTION_REVOKE_FAILED'",
     ],'suppression serveur sûre')
 
