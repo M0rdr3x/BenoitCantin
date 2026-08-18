@@ -73,6 +73,8 @@ jobs:
         run: python scripts/validate_mfa_v24_4_66.py
       - name: Vérifier le MFA administrateur AAL2 V24.4.67
         run: python scripts/validate_admin_mfa_v24_4_67.py
+      - name: Vérifier la gestion des sessions V24.4.68
+        run: python scripts/validate_session_security_v24_4_68.py
       - name: Vérifier PWA, SEO et cache hors ligne
         run: python scripts/validate_pwa.py
       - name: Vérifier la structure Supabase

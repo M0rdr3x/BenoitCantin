@@ -58,7 +58,9 @@ def main():
     forbid(security,["factorType:'phone'",'twilio','stripe'], 'centre de sécurité MFA')
 
     require(page,['data-mfa-challenge-form','data-mfa-factor','sinjira-mfa-v24-4-66.js?v=24.4.66'],'page challenge MFA')
-    require(security_page,['data-mfa-enroll','data-mfa-factors','v24-security.js?v=24.4.66','Aucun MFA par SMS/téléphone activé'],'page sécurité MFA')
+    # Le runtime de sécurité continue d’évoluer après V24.4.66; ce contrat doit
+    # vérifier que le bon fichier est chargé, sans figer son cache-bust à 24.4.66.
+    require(security_page,['data-mfa-enroll','data-mfa-factors','v24-security.js?v=','Aucun MFA par SMS/téléphone activé'],'page sécurité MFA')
 
     print('OK MFA V24.4.66: TOTP gratuit, AAL2 fail-closed, redirections internes, rendu sans XSS et facteurs de secours autorisés.')
     return 0
