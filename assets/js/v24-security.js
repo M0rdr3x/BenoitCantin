@@ -10,6 +10,7 @@ const secret=document.querySelector('[data-mfa-secret]');
 const enrollForm=document.querySelector('[data-mfa-enroll-form]');
 const cancelButton=document.querySelector('[data-mfa-cancel]');
 const status=document.querySelector('[data-v24-security-status]');
+const MAX_TOTP_FACTORS=10;
 
 let pendingFactorId='';
 
@@ -23,7 +24,8 @@ async function loadFactors(s){
   const factors=totpFactors(data);
   const verified=factors.filter(factor=>factor.status==='verified');
   const pending=factors.filter(factor=>factor.status!=='verified');
-  const {data:aal}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
+  const {data:aal,error:aalError}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
+  if(aalError)throw aalError;
 
   if(mfaBox){
     mfaBox.innerHTML=verified.length
@@ -50,8 +52,11 @@ async function loadFactors(s){
     await loadFactors(s);
   }));
 
-  if(enrollButton)enrollButton.disabled=verified.length>0||Boolean(pendingFactorId);
-  return {verified,pending};
+  if(enrollButton){
+    enrollButton.disabled=factors.length>=MAX_TOTP_FACTORS||Boolean(pendingFactorId);
+    enrollButton.textContent=verified.length?'Ajouter une application d’authentification de secours':'Activer une application d’authentification';
+  }
+  return {verified,pending,factors};
 }
 
 function hideSetup(){
@@ -66,7 +71,8 @@ try{
   const user=await requireUser();
   const s=getSupabase();
   const {data:{session}}=await s.auth.getSession();
-  const {data:aal}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
+  const {data:aal,error:aalError}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
+  if(aalError)throw aalError;
 
   if(sessionBox)sessionBox.innerHTML=`<p><strong>${escapeHtml(user.email||'Compte')}</strong></p><p>Courriel : ${user.email_confirmed_at?'vérifié':'à confirmer'}</p><p>Session active : ${session?'oui':'non'}</p><p>Niveau d’assurance : ${escapeHtml(aal?.currentLevel||'aal1')}</p>`;
 
@@ -75,22 +81,35 @@ try{
   enrollButton?.addEventListener('click',async()=>{
     enrollButton.disabled=true;
     try{
-      const {data:current}=await s.auth.mfa.listFactors();
+      const {data:current,error:listError}=await s.auth.mfa.listFactors();
+      if(listError)throw listError;
       for(const factor of totpFactors(current).filter(item=>item.status!=='verified')){
-        await s.auth.mfa.unenroll({factorId:factor.id}).catch(()=>{});
+        const {error:cleanupError}=await s.auth.mfa.unenroll({factorId:factor.id});
+        if(cleanupError)throw cleanupError;
       }
+      const verifiedCount=totpFactors(current).filter(item=>item.status==='verified').length;
+      if(verifiedCount>=MAX_TOTP_FACTORS)throw new Error('TOTP_FACTOR_LIMIT');
 
-      const {data,error}=await s.auth.mfa.enroll({factorType:'totp'});
+      const {data,error}=await s.auth.mfa.enroll({factorType:'totp',friendlyName:`SINJIRA TOTP ${verifiedCount+1}`});
       if(error)throw error;
       pendingFactorId=data.id;
-      if(qr){qr.src=data.totp.qr_code;qr.alt='Code QR TOTP à scanner avec votre application d’authentification';}
-      if(secret)secret.textContent=data.totp.secret||'—';
+      const qrCode=String(data?.totp?.qr_code||'');
+      if(qr){
+        if(qrCode.startsWith('data:image/')){
+          qr.src=qrCode;
+          qr.alt='Code QR TOTP à scanner avec votre application d’authentification';
+        }else{
+          qr.removeAttribute('src');
+          qr.alt='';
+        }
+      }
+      if(secret)secret.textContent=data?.totp?.secret||'—';
       if(setup)setup.hidden=false;
       setStatus(status,'Scannez le QR ou saisissez le secret, puis entrez le code à 6 chiffres pour terminer l’activation.','info');
     }catch(error){
       console.warn('[SINJIRA MFA enroll]',error);
       enrollButton.disabled=false;
-      setStatus(status,'Impossible de démarrer l’activation TOTP pour le moment.','error');
+      setStatus(status,error?.message==='TOTP_FACTOR_LIMIT'?'Le nombre maximal de facteurs TOTP est déjà atteint.':'Impossible de démarrer l’activation TOTP pour le moment.','error');
     }
   });
 
@@ -118,10 +137,13 @@ try{
   cancelButton?.addEventListener('click',async()=>{
     const factorId=pendingFactorId;
     cancelButton.disabled=true;
-    if(factorId)await s.auth.mfa.unenroll({factorId}).catch(()=>{});
+    if(factorId){
+      const {error}=await s.auth.mfa.unenroll({factorId});
+      if(error)console.warn('[SINJIRA MFA cancel]',error);
+    }
     hideSetup();
     cancelButton.disabled=false;
-    if(enrollButton)enrollButton.disabled=false;
+    await loadFactors(s).catch(()=>{});
     setStatus(status,'Activation TOTP annulée.','info');
   });
 }catch(error){
