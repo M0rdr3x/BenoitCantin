@@ -27,9 +27,13 @@ export function serviceClient() {
   });
 }
 
-export async function optionalUser(req: Request) {
+export function bearerToken(req: Request) {
   const header = req.headers.get('Authorization') || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  return header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+}
+
+export async function optionalUser(req: Request) {
+  const token = bearerToken(req);
   if (!token) return null;
   const client = serviceClient();
   const { data, error } = await client.auth.getUser(token);
@@ -41,4 +45,38 @@ export async function requiredUser(req: Request) {
   const user = await optionalUser(req);
   if (!user) throw new Error('AUTH_REQUIRED');
   return user;
+}
+
+/**
+ * Contexte administrateur V24.4.67.
+ *
+ * Politique MFA progressive :
+ * - aucun facteur MFA vérifié -> la session aal1 reste permise;
+ * - un facteur vérifié existe et la session peut monter à aal2 -> aal2 devient obligatoire;
+ * - état MFA impossible à vérifier -> refus fermé pour une opération administrative.
+ */
+export async function requiredAdmin(req: Request) {
+  const token = bearerToken(req);
+  if (!token) throw new Error('AUTH_REQUIRED');
+
+  const service = serviceClient();
+  const { data: authData, error: authError } = await service.auth.getUser(token);
+  const user = authData?.user;
+  if (authError || !user) throw new Error('AUTH_REQUIRED');
+
+  const { data: isAdmin, error: adminError } = await service.rpc('is_sinjira_admin', {
+    p_user_id: user.id
+  });
+  if (adminError || !isAdmin) throw new Error('ADMIN_REQUIRED');
+
+  const { data: aal, error: aalError } = await service.auth.mfa.getAuthenticatorAssuranceLevel(token);
+  if (aalError || !aal) {
+    console.error('[SINJIRA admin auth] état MFA indisponible', aalError);
+    throw new Error('MFA_STATE_UNAVAILABLE');
+  }
+  if (aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
+    throw new Error('MFA_REQUIRED');
+  }
+
+  return { user, service, token, aal };
 }
