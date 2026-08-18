@@ -21,6 +21,7 @@ if MIG.exists():
       "'version','24.4.56'"
     ):
         need(marker in sql,'élément rôle propriétaire absent: '+marker)
+    need("lower(coalesce(u.email,''))='kingtyrano@gmail.com'" in sql,'le rôle owner n’est pas explicitement rattaché au compte propriétaire attendu')
     need(sql.count('security invoker') >= 3,'fonctions rôle/health non SECURITY INVOKER')
     need("where a.user_id=p_user_id and a.role='owner'" in sql,'is_sinjira_owner ne vérifie pas le rôle owner')
     need("p_user_id=(select auth.uid())" in sql,'vérification self auth.uid absente')
