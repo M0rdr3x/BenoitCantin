@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260817235509_sinjira_v24_4_52_admin_notification_triggers.sql'
+ADMIN_JS=ROOT/'assets/js/sinjira-admin-v18.js'
 errors=[]
 
 def need(cond,msg):
@@ -35,8 +36,16 @@ if MIG.exists():
           'fonction trigger exposée au navigateur: '+fn
         )
 
+need(ADMIN_JS.exists(),'JavaScript administration absent')
+if ADMIN_JS.exists():
+    js=ADMIN_JS.read_text('utf-8')
+    need("type.includes('novel_comment')" in js,"type de notification novel_comment non reconnu")
+    need("return 'reader-comments'" in js,'notification de commentaire roman ne cible pas l’onglet de modération')
+    for target in ('fan-characters','access','reports','social-moderation'):
+        need(f"return '{target}'" in js,f'cible notification admin absente: {target}')
+
 if errors:
     print(f'ECHEC notifications V24.4.52: {len(errors)} problème(s).')
     for e in errors: print('- '+e)
     raise SystemExit(1)
-print('OK notifications V24.4.52: demandes, commentaires, signalements et rapports Fracture créent des avis administrateur ciblés.')
+print('OK notifications V24.4.52: demandes, commentaires, signalements et rapports Fracture créent des avis administrateur ciblés et ouvrent la bonne section.')
