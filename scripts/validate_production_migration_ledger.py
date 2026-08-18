@@ -8,9 +8,9 @@ MIG=ROOT/'supabase'/'migrations'
 BUILDER=ROOT/'scripts'/'build_supabase_production_workspace.py'
 ROW_RE=re.compile(r'^(\d{14})\s+([a-zA-Z0-9_]+)$')
 FILE_RE=re.compile(r'^(\d{14})_(.+)\.sql$')
-EXPECTED_COUNT=84
+EXPECTED_COUNT=85
 EXPECTED_FIRST='20260809050252'
-EXPECTED_LAST='20260817235509'
+EXPECTED_LAST='20260818001515'
 
 
 def rows():
@@ -33,11 +33,6 @@ def main()->int:
     if not versions or versions[0]!=EXPECTED_FIRST:errors.append('Première version production inattendue.')
     if not versions or versions[-1]!=EXPECTED_LAST:errors.append('Dernière version production inattendue.')
 
-    # Le dépôt de reconstruction est historique: plusieurs anciennes migrations ont
-    # été consolidées sous des timestamps locaux différents de ceux attribués par la
-    # production. Le ledger distant reste la source d'identité des versions déjà
-    # appliquées; on exige seulement l'unicité des timestamps locaux et on vérifie le
-    # workspace de déploiement généré contre le ledger complet.
     local=[]
     local_versions=[]
     for p in sorted(MIG.glob('*.sql')):
