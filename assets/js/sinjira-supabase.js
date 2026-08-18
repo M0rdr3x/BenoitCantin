@@ -11,10 +11,10 @@ export async function getCurrentUser() {if (!isSinjiraBackendConfigured()) retur
 
 export function safeInternalDestination(value,fallback='/compte/index.html'){
   const raw=String(value||'').trim();
-  if(!raw.startsWith('/')||raw.startsWith('//')||raw.includes('\\'))return fallback;
+  if(!raw.startsWith('/')||raw.startsWith('//')||raw.includes('\\')||/[\u0000-\u001f\u007f]/.test(raw))return fallback;
   try{
     const url=new URL(raw,location.origin);
-    if(url.origin!==location.origin)return fallback;
+    if(url.origin!==location.origin||url.username||url.password)return fallback;
     return `${url.pathname}${url.search}${url.hash}`;
   }catch{return fallback}
 }
@@ -23,20 +23,22 @@ export async function requireUser(redirect='/compte/connexion.html') {
   const user=await getCurrentUser();
   if (!user) {
     const next=encodeURIComponent(safeInternalDestination(location.pathname+location.search+location.hash,'/compte/index.html'));
-    location.href=`${redirect}?next=${next}`;
+    location.replace(`${redirect}?next=${next}`);
     throw new Error('Connexion requise');
   }
   if(!/^\/compte\/mfa\.html$/i.test(location.pathname)){
+    const next=safeInternalDestination(location.pathname+location.search+location.hash,'/compte/index.html');
     try{
       const {data,error}=await getSupabase().auth.mfa.getAuthenticatorAssuranceLevel();
       if(error)throw error;
       if(data?.nextLevel==='aal2'&&data?.currentLevel!=='aal2'){
-        const next=safeInternalDestination(location.pathname+location.search+location.hash,'/compte/index.html');
-        location.href=`/compte/mfa.html?next=${encodeURIComponent(next)}`;
+        location.replace(`/compte/mfa.html?next=${encodeURIComponent(next)}`);
         await new Promise(()=>{});
       }
     }catch(error){
       console.warn('[SINJIRA MFA gate]',error?.message||error);
+      location.replace(`/compte/mfa.html?next=${encodeURIComponent(next)}&state=aal-check`);
+      await new Promise(()=>{});
     }
   }
   return user;
