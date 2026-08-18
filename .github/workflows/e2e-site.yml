@@ -44,8 +44,10 @@ jobs:
         run: |
           python -m http.server 4173 --bind 127.0.0.1 > /tmp/sinjira-http.log 2>&1 &
           echo $! > /tmp/sinjira-http.pid
-          for i in {1..20}; do
-            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+          i=0
+          while [ "$i" -lt 20 ]; do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/', timeout=1).read(1)" >/dev/null 2>&1; then exit 0; fi
+            i=$((i + 1))
             sleep 1
           done
           cat /tmp/sinjira-http.log
