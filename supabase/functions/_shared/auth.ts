@@ -1,5 +1,15 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
+const ACTIVE_ADMIN_FUNCTIONS = new Set([
+  'admin-analytics',
+  'admin-console',
+  'admin-license-codes',
+  'admin-reports',
+  'admin-sinjira-v18',
+  'admin-social-v20',
+  'admin-users'
+]);
+
 function serverSecretKey() {
   const modern = Deno.env.get('SUPABASE_SECRET_KEYS');
   if (modern) {
@@ -32,38 +42,28 @@ export function bearerToken(req: Request) {
   return header.startsWith('Bearer ') ? header.slice(7).trim() : '';
 }
 
-export async function optionalUser(req: Request) {
-  const token = bearerToken(req);
-  if (!token) return null;
-  const client = serviceClient();
-  const { data, error } = await client.auth.getUser(token);
-  if (error || !data.user) return null;
-  return data.user;
+function edgeFunctionName(req: Request) {
+  try {
+    const parts = new URL(req.url).pathname.split('/').filter(Boolean);
+    const v1 = parts.indexOf('v1');
+    if (v1 >= 0 && parts[v1 + 1]) return parts[v1 + 1];
+    return parts.length ? parts[parts.length - 1] : '';
+  } catch {
+    return '';
+  }
 }
 
-export async function requiredUser(req: Request) {
-  const user = await optionalUser(req);
-  if (!user) throw new Error('AUTH_REQUIRED');
-  return user;
-}
-
-/**
- * Contexte administrateur V24.4.67.
- *
- * Politique MFA progressive :
- * - aucun facteur MFA vérifié -> la session aal1 reste permise;
- * - un facteur vérifié existe et la session peut monter à aal2 -> aal2 devient obligatoire;
- * - état MFA impossible à vérifier -> refus fermé pour une opération administrative.
- */
-export async function requiredAdmin(req: Request) {
+async function authenticatedContext(req: Request) {
   const token = bearerToken(req);
   if (!token) throw new Error('AUTH_REQUIRED');
-
   const service = serviceClient();
-  const { data: authData, error: authError } = await service.auth.getUser(token);
-  const user = authData?.user;
-  if (authError || !user) throw new Error('AUTH_REQUIRED');
+  const { data, error } = await service.auth.getUser(token);
+  if (error || !data.user) throw new Error('AUTH_REQUIRED');
+  return { user: data.user, service, token };
+}
 
+async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
+  const { user, service, token } = context;
   const { data: isAdmin, error: adminError } = await service.rpc('is_sinjira_admin', {
     p_user_id: user.id
   });
@@ -77,6 +77,35 @@ export async function requiredAdmin(req: Request) {
   if (aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
     throw new Error('MFA_REQUIRED');
   }
+  return aal;
+}
 
-  return { user, service, token, aal };
+export async function optionalUser(req: Request) {
+  try {
+    return (await authenticatedContext(req)).user;
+  } catch {
+    return null;
+  }
+}
+
+export async function requiredUser(req: Request) {
+  const context = await authenticatedContext(req);
+  if (ACTIVE_ADMIN_FUNCTIONS.has(edgeFunctionName(req))) {
+    await assertAdminMfa(context);
+  }
+  return context.user;
+}
+
+/**
+ * Contexte administrateur V24.4.67.
+ *
+ * Politique MFA progressive :
+ * - aucun facteur MFA vérifié -> la session aal1 reste permise;
+ * - un facteur vérifié existe et la session peut monter à aal2 -> aal2 devient obligatoire;
+ * - état MFA impossible à vérifier -> refus fermé pour une opération administrative.
+ */
+export async function requiredAdmin(req: Request) {
+  const context = await authenticatedContext(req);
+  const aal = await assertAdminMfa(context);
+  return { ...context, aal };
 }
