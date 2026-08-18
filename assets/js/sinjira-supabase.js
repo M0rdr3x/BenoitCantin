@@ -54,6 +54,7 @@ export function friendlyBackendMessage(message,fallback='Une opération serveur 
   if(/INVALID_OR_EXPIRED_GUARDIAN_CODE/i.test(raw))return 'Le code d’autorisation parentale est invalide, expiré ou déjà utilisé.';
   if(/ADULT_GUARDIAN_REQUIRED/i.test(raw))return 'Le code doit provenir d’un parent ou tuteur possédant un compte adulte.';
   if(/MFA_REQUIRED/i.test(raw))return 'Une authentification renforcée est requise pour cette opération sensible.';
+  if(/MFA_STATE_UNAVAILABLE/i.test(raw))return 'L’état de votre authentification renforcée ne peut pas être vérifié pour le moment.';
   if(/SINJIRA_MINIMUM_AGE_12/i.test(raw))return 'Les Comptes SINJIRA™ sont disponibles à partir de 12 ans.';
   if(/JWT|token.*expired|session.*expired|invalid claim/i.test(raw))return 'Votre session a expiré. Reconnectez-vous puis réessayez.';
   if(/Failed to fetch|NetworkError|FunctionsFetchError|Load failed/i.test(raw))return 'Communication avec le serveur SINJIRA™ impossible pour le moment.';
@@ -103,4 +104,4 @@ export function setStatus(node,msg,type='info'){
 export function roleLabel(v){return ({public:'Public',account:'Compte joueur',player:'Joueur approuvé',tester:'Testeur approuvé',admin:'Administration'})[v]||v||'—'}
 export function projectStatusLabel(v){return ({draft:'Brouillon',development:'En développement',testing:'En test',active:'Disponible',archived:'Archivé'})[v]||v||'—'}
 export { SINJIRA_CONFIG, isSinjiraBackendConfigured };
-if(typeof location!=='undefined'&&/^\/admin\/sinjira(?:\/|$)/i.test(location.pathname)){queueMicrotask(()=>import('./v24-admin-health.js?v=24.4.13').catch(err=>console.warn('[SINJIRA admin health loader]',err)))}
+if(typeof location!=='undefined'&&/^\/admin\/sinjira(?:\/|$)/i.test(location.pathname)){queueMicrotask(()=>import('./v24-admin-health.js?v=24.4.67').catch(err=>console.warn('[SINJIRA admin health loader]',err)))}
