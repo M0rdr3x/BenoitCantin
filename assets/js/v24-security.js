@@ -9,6 +9,8 @@ const qr=document.querySelector('[data-mfa-qr]');
 const secret=document.querySelector('[data-mfa-secret]');
 const enrollForm=document.querySelector('[data-mfa-enroll-form]');
 const cancelButton=document.querySelector('[data-mfa-cancel]');
+const signOutOthersButton=document.querySelector('[data-session-signout-others]');
+const signOutGlobalButton=document.querySelector('[data-session-signout-global]');
 const status=document.querySelector('[data-v24-security-status]');
 const MAX_TOTP_FACTORS=10;
 
@@ -75,6 +77,39 @@ try{
   if(aalError)throw aalError;
 
   if(sessionBox)sessionBox.innerHTML=`<p><strong>${escapeHtml(user.email||'Compte')}</strong></p><p>Courriel : ${user.email_confirmed_at?'vérifié':'à confirmer'}</p><p>Session active : ${session?'oui':'non'}</p><p>Niveau d’assurance : ${escapeHtml(aal?.currentLevel||'aal1')}</p>`;
+
+  signOutOthersButton?.addEventListener('click',async()=>{
+    if(!confirm('Déconnecter toutes les autres sessions SINJIRA™ et conserver seulement cet appareil?'))return;
+    signOutOthersButton.disabled=true;
+    if(signOutGlobalButton)signOutGlobalButton.disabled=true;
+    try{
+      const {error}=await s.auth.signOut({scope:'others'});
+      if(error)throw error;
+      setStatus(status,'Les autres sessions ont été révoquées. Cet appareil reste connecté.','success');
+    }catch(error){
+      console.warn('[SINJIRA sessions others]',error);
+      setStatus(status,'Impossible de révoquer les autres sessions pour le moment.','error');
+    }finally{
+      signOutOthersButton.disabled=false;
+      if(signOutGlobalButton)signOutGlobalButton.disabled=false;
+    }
+  });
+
+  signOutGlobalButton?.addEventListener('click',async()=>{
+    if(!confirm('Déconnecter ce compte de tous les appareils, y compris celui-ci? Vous devrez vous reconnecter.'))return;
+    signOutGlobalButton.disabled=true;
+    if(signOutOthersButton)signOutOthersButton.disabled=true;
+    try{
+      const {error}=await s.auth.signOut({scope:'global'});
+      if(error)throw error;
+      location.replace('/compte/connexion.html?sessions=closed');
+    }catch(error){
+      console.warn('[SINJIRA sessions global]',error);
+      signOutGlobalButton.disabled=false;
+      if(signOutOthersButton)signOutOthersButton.disabled=false;
+      setStatus(status,'Impossible de fermer toutes les sessions pour le moment.','error');
+    }
+  });
 
   await loadFactors(s);
 
