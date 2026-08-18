@@ -63,6 +63,25 @@ def require_latest_function_contract(
             fail(errors, f"{name}: garde d'autorisation manquante: {marker}.")
 
 
+def require_latest_invoker_role_contract(
+    errors: list[str], all_sql: str, name: str, markers: tuple[str, ...]
+) -> None:
+    definition = latest_function(all_sql, name)
+    if not definition:
+        fail(errors, f"Fonction de rôle introuvable: {name}.")
+        return
+    normalized = compact(definition)
+    if "securityinvoker" not in normalized:
+        fail(errors, f"{name}: SECURITY INVOKER attendu depuis V24.4.56.")
+    if "securitydefiner" in normalized:
+        fail(errors, f"{name}: SECURITY DEFINER ne doit plus être utilisé depuis V24.4.56.")
+    if "setsearch_path=public,auth,pg_temp" not in normalized:
+        fail(errors, f"{name}: search_path explicite public,auth,pg_temp absent.")
+    for marker in markers:
+        if compact(marker) not in normalized:
+            fail(errors, f"{name}: garde de rôle manquante: {marker}.")
+
+
 def main() -> int:
     errors: list[str] = []
     files = sorted(MIGRATIONS.glob("*.sql"))
@@ -174,16 +193,16 @@ def main() -> int:
             if compact(marker) not in comment_normalized:
                 fail(errors, f"Garde publique manquante dans list_sinjira_novel_comments: {marker}.")
 
-    # Contrats de self-scope SECURITY DEFINER. Les avertissements du Security Advisor
-    # sont génériques; ces gardes empêchent un navigateur authentifié d'interroger
-    # l'état d'un UUID arbitraire en profitant des privilèges du propriétaire de fonction.
-    require_latest_function_contract(
+    # V24.4.56 : les vérifications de rôle utilisent désormais SECURITY INVOKER + RLS self-only.
+    # Le navigateur ne lit que sa propre ligne internal_admin_users; service_role conserve
+    # le chemin serveur nécessaire aux Edge Functions.
+    require_latest_invoker_role_contract(
         errors, all_sql, "is_sinjira_admin",
-        ("p_user_id=auth.uid()", "auth.jwt()->>'role'", "'service_role'", "else false"),
+        ("p_user_id=(select auth.uid())", "auth.jwt()->>'role'", "'service_role'", "internal_admin_users"),
     )
-    require_latest_function_contract(
+    require_latest_invoker_role_contract(
         errors, all_sql, "is_sinjira_owner",
-        ("p_user_id=auth.uid()", "auth.jwt()->>'role'", "'service_role'", "kingtyrano@gmail.com"),
+        ("p_user_id=(select auth.uid())", "auth.jwt()->>'role'", "'service_role'", "a.role='owner'"),
     )
     require_latest_function_contract(
         errors, all_sql, "social_is_suspended",
@@ -222,7 +241,7 @@ def main() -> int:
 
     print(
         "OK contrat sécurité: tables internes scellées, ACL sensibles minimales, état brut Fracture réservé au serveur, "
-        f"état joueur assaini, self-scope SECURITY DEFINER et diagnostics {VERSION}/{SENSITIVE_ACL_VERSION} protégés."
+        f"état joueur assaini, rôles owner/admin SECURITY INVOKER + RLS self-only, autres self-scopes privilégiés contrôlés et diagnostics {VERSION}/{SENSITIVE_ACL_VERSION} protégés."
     )
     return 0
 
