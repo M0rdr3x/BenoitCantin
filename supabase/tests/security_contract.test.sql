@@ -5,8 +5,9 @@ set local search_path = public, extensions;
 
 select plan(40);
 
--- V24.4.19 : les tables internes ne doivent exposer aucun privilège direct
--- aux rôles navigateur. Les accès autorisés passent uniquement par RPC/Edge.
+-- V24.4.19 : les tables internes restent sans privilège direct navigateur,
+-- sauf internal_admin_users depuis V24.4.56 : authenticated reçoit uniquement SELECT
+-- et la RLS internal_admin_users_self_read limite la lecture à auth.uid().
 select is((select count(*) from information_schema.role_table_grants where grantee='anon' and table_schema='public' and table_name='character_generation_runs'), 0::bigint, 'anon: character_generation_runs scellée');
 select is((select count(*) from information_schema.role_table_grants where grantee='authenticated' and table_schema='public' and table_name='character_generation_runs'), 0::bigint, 'authenticated: character_generation_runs scellée');
 select is((select count(*) from information_schema.role_table_grants where grantee='anon' and table_schema='public' and table_name='fracture_engine_actions'), 0::bigint, 'anon: fracture_engine_actions scellée');
@@ -24,7 +25,7 @@ select is((select count(*) from information_schema.role_table_grants where grant
 select is((select count(*) from information_schema.role_table_grants where grantee='anon' and table_schema='public' and table_name='fracture_engine_votes'), 0::bigint, 'anon: fracture_engine_votes scellée');
 select is((select count(*) from information_schema.role_table_grants where grantee='authenticated' and table_schema='public' and table_name='fracture_engine_votes'), 0::bigint, 'authenticated: fracture_engine_votes scellée');
 select is((select count(*) from information_schema.role_table_grants where grantee='anon' and table_schema='public' and table_name='internal_admin_users'), 0::bigint, 'anon: internal_admin_users scellée');
-select is((select count(*) from information_schema.role_table_grants where grantee='authenticated' and table_schema='public' and table_name='internal_admin_users'), 0::bigint, 'authenticated: internal_admin_users scellée');
+select is((select count(*) from information_schema.role_table_grants where grantee='authenticated' and table_schema='public' and table_name='internal_admin_users' and privilege_type='SELECT'), 1::bigint, 'authenticated: internal_admin_users lecture self via RLS uniquement');
 select is((select count(*) from information_schema.role_table_grants where grantee='anon' and table_schema='public' and table_name='internal_contribution_ownership'), 0::bigint, 'anon: internal_contribution_ownership scellée');
 select is((select count(*) from information_schema.role_table_grants where grantee='authenticated' and table_schema='public' and table_name='internal_contribution_ownership'), 0::bigint, 'authenticated: internal_contribution_ownership scellée');
 select is((select count(*) from information_schema.role_table_grants where grantee='anon' and table_schema='public' and table_name='internal_gameplay_contributions'), 0::bigint, 'anon: internal_gameplay_contributions scellée');
