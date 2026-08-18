@@ -65,13 +65,31 @@ function renderLibrary(rows){
     : 'Votre bibliothèque de lecture est prête. Ajoutez un roman depuis la section Romans.');
 }
 
+function normalizeCharacter(primary,legacy){
+  if(primary){
+    return {
+      name:primary.public_name||'Personnage SINJIRA™',
+      status:primary.status,
+      detail:primary.canon_status&&primary.canon_status!=='PROVISOIRE'?primary.canon_status:''
+    };
+  }
+  if(legacy){
+    return {
+      name:legacy.canonical_name||'Personnage SINJIRA™',
+      status:legacy.status,
+      detail:legacy.narrative_role||''
+    };
+  }
+  return null;
+}
+
 function renderCharacter(character,application){
   const name=document.querySelector('[data-character-name]');
   const summary=document.querySelector('[data-character-summary]');
   const register=document.querySelector('[data-registre-summary]');
   if(character){
-    if(name)name.textContent=character.canonical_name||'Personnage SINJIRA™';
-    if(summary)summary.textContent=`${characterStatusLabel(character.status)}${character.narrative_role?` · ${character.narrative_role}`:''}`;
+    if(name)name.textContent=character.name;
+    if(summary)summary.textContent=`${characterStatusLabel(character.status)}${character.detail?` · ${character.detail}`:''}`;
     if(register)register.textContent='Votre personnage est déjà rattaché à votre compte. Le Registre reste consultable, sans créer de doublon.';
     return;
   }
@@ -89,11 +107,12 @@ async function loadPrivateDashboard(){
 
   await waitForLegacyDashboard();
 
-  const [adminResult,ownerResult,accessResult,libraryResult,characterResult,applicationResult]=await Promise.all([
+  const [adminResult,ownerResult,accessResult,libraryResult,characterResult,legacyCharacterResult,applicationResult]=await Promise.all([
     s.rpc('is_sinjira_admin',{p_user_id:user.id}),
     s.rpc('is_sinjira_owner',{p_user_id:user.id}),
     s.from('project_access').select('project_id,access_level,expires_at,projects(id,slug,name,status)').eq('user_id',user.id),
     s.from('sinjira_reader_library').select('novel_id,last_opened_at,progress_percent').eq('user_id',user.id),
+    s.from('characters').select('id,status,public_name,canon_status,novel_note,updated_at').eq('user_id',user.id).eq('visible_to_user',true).order('updated_at',{ascending:false}).limit(1),
     s.from('sinjira_characters').select('id,status,canonical_name,narrative_role,future_novel_note,updated_at').eq('user_id',user.id).order('updated_at',{ascending:false}).limit(1),
     s.from('sinjira_character_applications').select('id,status,submitted_at,updated_at').eq('user_id',user.id).order('updated_at',{ascending:false}).limit(1)
   ]);
@@ -110,11 +129,15 @@ async function loadPrivateDashboard(){
 
   renderAccess(projects,isOwner,isAdmin);
   renderLibrary(libraryResult.data||[]);
-  renderCharacter(characterResult.data?.[0]||null,applicationResult.data?.[0]||null);
+  renderCharacter(
+    normalizeCharacter(characterResult.data?.[0]||null,legacyCharacterResult.data?.[0]||null),
+    applicationResult.data?.[0]||null
+  );
 
   const state=document.querySelector('[data-dashboard-private-state]');
   if(state){
-    const hadError=[accessResult,libraryResult,characterResult,applicationResult].some(result=>result.error);
+    const characterUnavailable=characterResult.error&&legacyCharacterResult.error;
+    const hadError=[accessResult,libraryResult,applicationResult].some(result=>result.error)||characterUnavailable;
     state.hidden=!hadError;
     if(hadError)state.textContent='Certaines informations privées n’ont pas pu être chargées. Vos données restent protégées; réessayez après avoir rechargé la page.';
   }
