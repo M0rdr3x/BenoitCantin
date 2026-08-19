@@ -31,11 +31,11 @@ select ok(not has_function_privilege('anon','public.dating_compatibility_candida
 select ok(has_function_privilege('authenticated','public.dating_send_message(uuid,text)','EXECUTE'),'RPC message exécutable par authenticated');
 select ok(not has_function_privilege('anon','public.dating_send_message(uuid,text)','EXECUTE'),'RPC message interdite à anon');
 
-select ok(position("relationship_status='single'" in replace(pg_get_functiondef('private.dating_is_eligible(uuid)'::regprocedure),' ',''))>0,'admissibilité exige célibataire');
+select ok(position($q$relationship_status='single'$q$ in replace(pg_get_functiondef('private.dating_is_eligible(uuid)'::regprocedure),' ',''))>0,'admissibilité exige célibataire');
 select ok(position('>=18' in replace(pg_get_functiondef('private.dating_is_eligible(uuid)'::regprocedure),' ',''))>0,'admissibilité exige 18+');
-select ok(position("interval'90days'" in replace(pg_get_functiondef('private.dating_is_eligible(uuid)'::regprocedure),' ',''))>0,'confirmation célibataire expire après 90 jours');
+select ok(position($q$interval'90days'$q$ in replace(pg_get_functiondef('private.dating_is_eligible(uuid)'::regprocedure),' ',''))>0,'confirmation célibataire expire après 90 jours');
 select ok(position('v_my<10orv_their<10' in replace(pg_get_functiondef('public.dating_set_photo_consent(uuid,boolean)'::regprocedure),' ',''))>0,'dévoilement exige 10 messages chacun');
-select ok(position("'dating'" in pg_get_functiondef('public.dating_request_conversation(uuid)'::regprocedure))>0,'proposition produit un avis interne dating');
+select ok(position($q$'dating'$q$ in pg_get_functiondef('public.dating_request_conversation(uuid)'::regprocedure))>0,'proposition produit un avis interne dating');
 select ok(not exists(select 1 from information_schema.columns where table_schema='public' and table_name='dating_messages' and (column_name ilike '%photo%' or column_name ilike '%image%' or column_name ilike '%attachment%')),'messagerie dating ne stocke aucune image ou pièce jointe');
 
 select * from finish();
