@@ -18,5 +18,9 @@
 .dating-dimensions{display:grid;gap:.6rem}.dating-dimension{display:grid;grid-template-columns:minmax(110px,1fr) minmax(120px,1.7fr) auto;align-items:center;gap:.65rem;font-size:.86rem}
 .dating-dimension-track{height:8px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.08)}.dating-dimension-fill{display:block;height:100%;width:var(--dating-score,0%);background:linear-gradient(90deg,rgba(192,38,62,.88),rgba(232,103,84,.95));border-radius:inherit}
 .dating-detail-foot{font-size:.78rem;opacity:.72;margin:0}.dating-registry-chip{display:inline-flex;align-items:center;padding:.32rem .55rem;border-radius:999px;background:rgba(110,196,146,.09);border:1px solid rgba(110,196,146,.25);font-size:.76rem}
-@media(max-width:760px){.dating-progress-grid,.dating-stage-list{grid-template-columns:1fr}.dating-prompt-box,.dating-progress-head,.dating-detail-head{display:grid}.dating-dimension{grid-template-columns:1fr auto}.dating-dimension-track{grid-column:1/-1;grid-row:2}}
+.dating-report-panel{display:grid;gap:.8rem;margin:.85rem 0;padding:1rem;border-radius:16px;border:1px solid rgba(232,103,84,.28);background:rgba(192,38,62,.08)}
+.dating-report-panel[hidden]{display:none}.dating-report-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem}.dating-report-panel p{margin:0;font-size:.86rem;opacity:.85}
+.dating-report-panel form{display:grid;gap:.75rem}.dating-report-panel label{display:grid;gap:.3rem}.dating-report-panel select,.dating-report-panel textarea{width:100%}.dating-report-panel textarea{min-height:96px;resize:vertical}
+.dating-report-block{grid-template-columns:auto 1fr!important;align-items:flex-start!important;gap:.55rem!important}.dating-report-block input{margin-top:.2rem}
+@media(max-width:760px){.dating-progress-grid,.dating-stage-list{grid-template-columns:1fr}.dating-prompt-box,.dating-progress-head,.dating-detail-head,.dating-report-head{display:grid}.dating-dimension{grid-template-columns:1fr auto}.dating-dimension-track{grid-column:1/-1;grid-row:2}}
 @media(prefers-reduced-motion:reduce){.dating-progress-fill{transition:none}}
