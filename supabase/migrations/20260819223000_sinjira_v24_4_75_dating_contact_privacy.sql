@@ -13,23 +13,14 @@ declare
   m text[];
 begin
   if btrim(v)='' then return false; end if;
-
-  -- Courriel.
   if v ~ '[[:alnum:]._%+\-]+@[[:alnum:].\-]+\.[[:alpha:]]{2,}' then return true; end if;
-  -- URL avec schéma ou www.
   if v ~ '(https?://|www\.)' then return true; end if;
-  -- @identifiant isolé.
   if v ~ '(^|[^[:alnum:]_])@[[:alnum:]_.\-]{2,}' then return true; end if;
-  -- Domaine courant sans schéma (ex.: exemple.com/profil).
   if v ~ '(^|[^[:alnum:]_])([[:alnum:]\-]+\.)+(com|ca|net|org|io|me|fr|co|app|gg|social|chat|dev|tv|info|xyz)([^[:alnum:]_]|$)' then return true; end if;
-  -- Identifiant social explicitement donné sans @.
   if v ~ '(instagram|insta|snapchat|snap|tiktok|telegram|discord|whatsapp|facebook|messenger)[[:space:]]*[:=][[:space:]]*[[:alnum:]_.\-]{3,}' then return true; end if;
-
-  -- Séquence ressemblant à un numéro de téléphone: au moins 7 chiffres.
   for m in select regexp_matches(v,'(\+?[0-9][0-9 ()\.\-]{5,}[0-9])','g') loop
     if char_length(regexp_replace(m[1],'[^0-9]','','g'))>=7 then return true; end if;
   end loop;
-
   return false;
 end;
 $$;
@@ -92,18 +83,8 @@ $$;
 
 revoke all on function private.dating_profile_contact_guard(), private.dating_preferences_contact_guard() from public,anon,authenticated;
 
-drop trigger if exists dating_profile_contact_guard on public.dating_profiles;
-create trigger dating_profile_contact_guard
-before insert or update on public.dating_profiles
-for each row execute function private.dating_profile_contact_guard();
-
-drop trigger if exists dating_preferences_contact_guard on public.dating_preferences;
-create trigger dating_preferences_contact_guard
-before insert or update on public.dating_preferences
-for each row execute function private.dating_preferences_contact_guard();
-
--- Les éventuels profils historiques contenant déjà des coordonnées sont mis en pause,
--- sans supprimer leur texte afin que leur propriétaire puisse le corriger.
+-- Nettoyage défensif AVANT l'installation des triggers, afin de pouvoir désactiver
+-- proprement un ancien profil qui contiendrait déjà des coordonnées.
 update public.dating_profiles p
 set enabled=false,serious_intent_confirmed=false,single_confirmed_at=null,updated_at=now()
 where private.dating_contains_contact_info(p.region)
@@ -127,6 +108,16 @@ where private.dating_contains_contact_info(p.region)
          or private.dating_array_contains_contact_info(d.wanted_goals)
        )
    );
+
+drop trigger if exists dating_profile_contact_guard on public.dating_profiles;
+create trigger dating_profile_contact_guard
+before insert or update on public.dating_profiles
+for each row execute function private.dating_profile_contact_guard();
+
+drop trigger if exists dating_preferences_contact_guard on public.dating_preferences;
+create trigger dating_preferences_contact_guard
+before insert or update on public.dating_preferences
+for each row execute function private.dating_preferences_contact_guard();
 
 create or replace function private.dating_is_eligible(p_user_id uuid)
 returns boolean
@@ -202,8 +193,8 @@ with me as (
   from c
 ), ready as (
   select counts.*,
-    case when profile_a_id=me_id then a_photo_consent else b_photo_consent end my_consent,
-    case when profile_a_id=me_id then b_photo_consent else a_photo_consent end their_consent
+    case when profile_a_id=me_id then coalesce(a_photo_consent,false) else coalesce(b_photo_consent,false) end my_consent,
+    case when profile_a_id=me_id then coalesce(b_photo_consent,false) else coalesce(a_photo_consent,false) end their_consent
   from counts
 )
 select
@@ -276,7 +267,7 @@ begin
   select count(*)::int into v_their_count
   from public.dating_messages dm where dm.connection_id=p_connection_id and dm.sender_profile_id=v_other;
 
-  v_revealed := v_my_count>=10 and v_their_count>=10 and v_a_consent and v_b_consent;
+  v_revealed := v_my_count>=10 and v_their_count>=10 and coalesce(v_a_consent,false) and coalesce(v_b_consent,false);
   if not v_revealed and private.dating_contains_contact_info(v_body) then
     raise exception 'DATING_CONTACT_INFO_FORBIDDEN_BEFORE_REVEAL';
   end if;
