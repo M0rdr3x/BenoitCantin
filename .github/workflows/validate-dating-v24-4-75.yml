@@ -1,0 +1,40 @@
+name: Validation Rencontres V24.4.75
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dating-v24-4-75-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Configurer Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Vérifier le contrat de confidentialité Rencontres
+        run: python scripts/validate_dating_contact_privacy_v24_4_75.py
+      - name: Vérifier la syntaxe JavaScript Rencontres
+        run: node --check assets/js/sinjira-dating-v24-4-75.js
+      - name: Vérifier le ledger + migrations futures
+        run: python scripts/validate_production_migration_ledger.py

@@ -5,7 +5,9 @@ ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260819221038_sinjira_v24_4_74_compatibility_dating_private.sql'
 SAFETY=ROOT/'supabase/migrations/20260819222305_sinjira_v24_4_74_dating_contact_safety.sql'
 PAGE=ROOT/'compte/rencontres.html'
-JS=ROOT/'assets/js/sinjira-dating-v24-4-74.js'
+JS75=ROOT/'assets/js/sinjira-dating-v24-4-75.js'
+JS74=ROOT/'assets/js/sinjira-dating-v24-4-74.js'
+JS=JS75 if JS75.exists() else JS74
 COMMUNITY=ROOT/'compte/communaute.html'
 NOTIFY=ROOT/'assets/js/sinjira-user-notifications-v24-4-63.js'
 LEDGER=ROOT/'supabase/production-migration-ledger.txt'
@@ -56,8 +58,10 @@ def main():
     require(page,[
         '18+ · célibataires · relations sérieuses','Rencontres par compatibilité','aucune photo','10 messages envoyés par chaque personne',
         'data-dating-profile-form','data-dating-candidates','data-dating-connections','data-dating-message-form',
-        'sinjira-dating-v24-4-74.js?v=24.4.74','Utiliser volontairement certains repères non sensibles de mon questionnaire du Registre'
+        'Utiliser volontairement certains repères non sensibles de mon questionnaire du Registre'
     ],'page Rencontres')
+    if 'sinjira-dating-v24-4-74.js?v=24.4.74' not in page and 'sinjira-dating-v24-4-75.js?v=24.4.75' not in page:
+        raise AssertionError('page Rencontres: runtime V24.4.74/V24.4.75 introuvable')
     forbid(page,['type="file"','accept="image','data-like','data-swipe','Tinder','Bumble'],'page Rencontres')
 
     require(js,[
@@ -79,7 +83,7 @@ def main():
         '20260819222305 sinjira_v24_4_74_dating_contact_safety'
     ],'ledger')
 
-    print('OK V24.4.74: Rencontres 18+ privées, célibataire/serious-only, compatibilité explicable, Registre opt-in, aucune photo de sélection, messagerie texte, dévoilement mutuel 10/10 et fermeture/blocage anonymes.')
+    print(f'OK V24.4.74 baseline: protections Rencontres conservées avec runtime {JS.name}.')
     return 0
 
 if __name__=='__main__':
