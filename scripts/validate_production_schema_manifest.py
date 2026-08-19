@@ -29,7 +29,7 @@ EXPECTED_TABLES={
 'social_character_posts','social_profiles','social_real_comments','social_real_likes',
 'social_real_messages','social_real_posts','social_reports','social_suspensions','user_entitlements',
 'user_notifications','license_batches','activation_codes','license_redemptions','admin_audit_log',
-'character_status_events'
+'character_status_events','privacy_settings','notification_preferences'
 }
 
 # Tables conçues dans l'historique V24 mais pas encore déployées dans la production
@@ -37,7 +37,6 @@ EXPECTED_TABLES={
 # à des modules explicitement planifiés. Une nouvelle table non classée est une erreur.
 PLANNED_LOCAL_TABLES={
 'private_profiles','family_relationships','character_questionnaire_drafts',
-'privacy_settings','notification_preferences',
 'parallel_cycles','parallel_missions','parallel_responses',
 'market_listings','market_favorites','token_ledger',
 'codex_entities','codex_relationships','content_versions'
