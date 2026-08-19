@@ -83,6 +83,8 @@ jobs:
         run: python scripts/validate_message_read_state_v24_4_71.py
       - name: Vérifier la gestion self-only du contenu social V24.4.72
         run: python scripts/validate_social_content_v24_4_72.py
+      - name: Vérifier les avis de réponses sociales V24.4.73
+        run: python scripts/validate_social_reply_notifications_v24_4_73.py
       - name: Vérifier PWA, SEO et cache hors ligne
         run: python scripts/validate_pwa.py
       - name: Vérifier la structure Supabase
