@@ -66,7 +66,7 @@ def main():
         'DATING_CONTACT_INFO_FORBIDDEN_BEFORE_REVEAL','DATING_CONTACT_INFO_FORBIDDEN','DATING_RATE_LIMIT',
         'if(profileContainsContactInfo())throw new Error',
         '!info?.identity_revealed&&containsContactInfo(body)',
-        "s.rpc('dating_send_message'",'s.rpc(\'dating_connections_overview\')'
+        "s.rpc('dating_send_message'","s.rpc('dating_connections_overview')"
     ],'runtime V24.4.75')
     forbid(js,['openai','anthropic','stripe','twilio','type="file"','storage.upload'],'runtime V24.4.75')
 
