@@ -15,11 +15,21 @@ function setDisabled(form,disabled){
   }
 }
 
+function formPayload(form){
+  const payload={};
+  for(const el of form.elements){
+    if(!el.name||el.disabled)continue;
+    payload[el.name]=el.type==='checkbox'?el.checked:el.value;
+  }
+  return payload;
+}
+
 async function bind(table,formSel,statusSel){
   const form=document.querySelector(formSel),status=document.querySelector(statusSel);
   if(!form)return;
   const {data,error}=await s.from(table).select('*').eq('user_id',user.id).maybeSingle();
   let ready=!error;
+  let exists=Boolean(data);
   if(error){
     setDisabled(form,true);
     setStatus(status,tableMissing(error)?'Cette section attend la synchronisation du serveur SINJIRA™. Vos réglages actuels ne sont pas modifiés.':'Impossible de charger ces préférences pour le moment. Réessayez plus tard.','info');
@@ -34,14 +44,17 @@ async function bind(table,formSel,statusSel){
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(!ready){setStatus(status,'Enregistrement temporairement indisponible tant que le serveur n’est pas synchronisé.','info');return}
-    const payload={user_id:user.id};
-    for(const el of form.elements){
-      if(!el.name||el.disabled)continue;
-      payload[el.name]=el.type==='checkbox'?el.checked:el.value;
+    const payload=formPayload(form);
+    let result;
+    if(exists){
+      result=await s.from(table).update({...payload,updated_at:new Date().toISOString()}).eq('user_id',user.id);
+    }else{
+      result=await s.from(table).insert({user_id:user.id,...payload});
     }
-    const {error:save}=await s.from(table).upsert(payload,{onConflict:'user_id'});
+    const save=result.error;
     if(save&&tableMissing(save)){ready=false;setDisabled(form,true)}
-    setStatus(status,save?'Impossible d’enregistrer ces préférences pour le moment.':'Préférences enregistrées.',save?'error':'success');
+    if(!save)exists=true;
+    setStatus(status,save?'Impossible d’enregistrer ces préférences pour le moment.':'Préférences enregistrées dans votre compte.',save?'error':'success');
   });
 }
 
