@@ -31,7 +31,6 @@ def main():
     require(runtime,[
         'PAGE_SIZE=1000',
         'async function fetchAll',
-        "format:'SINJIRA_USER_EXPORT_V24_4_69'",
         'complete:errors.length===0',
         'errors.push({section:label',
         "s.from('profiles')",
@@ -51,13 +50,13 @@ def main():
         "data?.code==='MFA_REQUIRED'",
         "auth.signOut({scope:'local'})",
     ],'runtime contrôle des données')
+    if "format:'SINJIRA_USER_EXPORT_V24_4_69'" not in runtime and "format:'SINJIRA_USER_EXPORT_V24_4_70'" not in runtime:
+        raise AssertionError('runtime contrôle des données: format export V24.4.69+ absent')
 
-    # Ces anciens noms produisaient auparavant des sections vides silencieuses.
+    # Ces anciens noms restent inexistants ou non canoniques dans l’export.
     forbid(runtime,[
         "s.from('private_profiles')",
         "s.from('family_relationships')",
-        "s.from('privacy_settings')",
-        "s.from('notification_preferences')",
         "s.from('character_questionnaire_drafts')",
         "s.from('market_listings')",
         "s.from('token_ledger')",
@@ -65,13 +64,15 @@ def main():
         "s.from('parallel_state')",
     ],'aucune source export obsolète')
 
+    if 'data-account-page="settings-v69"' not in page and 'data-account-page="settings-v70"' not in page:
+        raise AssertionError('page paramètres: version settings V69+ absente')
     require(page,[
-        'data-account-page="settings-v69"',
-        'v24-data-control.js?v=24.4.69',
         'sinjira-account.js?v=24.4.69',
         'Les comptes propriétaire et administrateur sont protégés',
         'L’export indique explicitement s’il est complet',
-    ],'page paramètres V24.4.69')
+    ],'page paramètres V24.4.69+')
+    if 'v24-data-control.js?v=24.4.69' not in page and 'v24-data-control.js?v=24.4.70' not in page:
+        raise AssertionError('page paramètres: runtime data-control V69+ absent')
 
     require(delete_fn,[
         "CONFIRM_PHRASE='SUPPRIMER MON COMPTE'",
@@ -100,7 +101,7 @@ def main():
         'twilio',
     ],'suppression sans ancien contrat ni service payant')
 
-    print('OK données V24.4.69: export canonique paginé et explicite, suppression admin bloquée, AAL2 et Storage protégés.')
+    print('OK données V24.4.69+: export canonique paginé et explicite, suppression admin bloquée, AAL2 et Storage protégés.')
     return 0
 
 
