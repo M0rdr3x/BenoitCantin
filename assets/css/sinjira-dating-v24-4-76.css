@@ -1,0 +1,17 @@
+.dating-progress-panel{display:grid;gap:.85rem;margin:1rem 0;padding:1rem;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(255,255,255,.035)}
+.dating-progress-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.dating-progress-head strong{font-size:1rem}.dating-progress-head span{font-size:.86rem;opacity:.78}
+.dating-progress-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.dating-progress-item{display:grid;gap:.35rem}.dating-progress-item small{display:flex;justify-content:space-between;gap:.5rem}
+.dating-progress-track{height:10px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}
+.dating-progress-fill{display:block;height:100%;width:var(--dating-progress,0%);border-radius:inherit;background:linear-gradient(90deg,rgba(192,38,62,.92),rgba(232,103,84,.92));transition:width .25s ease}
+.dating-stage-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.55rem;margin-top:.25rem}
+.dating-stage{padding:.65rem .7rem;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025);font-size:.8rem;line-height:1.35;opacity:.62}
+.dating-stage.is-current{opacity:1;border-color:rgba(232,103,84,.5);background:rgba(192,38,62,.12)}
+.dating-stage.is-done{opacity:.92;border-color:rgba(110,196,146,.35);background:rgba(110,196,146,.08)}
+.dating-reveal-note{margin:.7rem 0 0;padding:.7rem .8rem;border-left:3px solid rgba(232,103,84,.8);background:rgba(192,38,62,.08);border-radius:0 12px 12px 0;font-size:.88rem}
+.dating-prompt-box{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin:.8rem 0;padding:.85rem 1rem;border-radius:16px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08)}
+.dating-prompt-box p{margin:.2rem 0 0}.dating-prompt-box button{flex:0 0 auto}
+.dating-expiry{display:inline-flex;align-items:center;gap:.4rem;font-size:.84rem;opacity:.82}
+@media(max-width:760px){.dating-progress-grid,.dating-stage-list{grid-template-columns:1fr}.dating-prompt-box{display:grid}.dating-progress-head{display:grid}}
+@media(prefers-reduced-motion:reduce){.dating-progress-fill{transition:none}}
