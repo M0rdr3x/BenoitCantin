@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260819001526_sinjira_v24_4_70_self_only_preferences.sql'
+CONV=ROOT/'supabase/migrations/20260819003353_sinjira_v24_4_70_preferences_schema_convergence.sql'
 JS=ROOT/'assets/js/v24-preferences.js'
 EXPORT=ROOT/'assets/js/v24-data-control.js'
 PAGE=ROOT/'compte/parametres.html'
@@ -21,6 +22,7 @@ def forbid(text,markers,label):
 
 def main():
     migration=MIG.read_text('utf-8',errors='ignore')
+    convergence=CONV.read_text('utf-8',errors='ignore')
     js=JS.read_text('utf-8',errors='ignore')
     export=EXPORT.read_text('utf-8',errors='ignore')
     page=PAGE.read_text('utf-8',errors='ignore')
@@ -44,6 +46,21 @@ def main():
         'grant delete',
         ' to anon;'
     ],'ACL préférences')
+
+    require(convergence,[
+        'add column if not exists created_at',
+        "alter table public.privacy_settings alter column show_avatar_public set default false",
+        "alter table public.privacy_settings alter column show_online_status set default false",
+        "alter table public.privacy_settings alter column allow_messages_from set default 'nobody'",
+        "alter table public.notification_preferences alter column security_email set default false",
+        "alter table public.notification_preferences alter column market_activity set default false",
+        "alter table public.notification_preferences alter column digest_frequency set default 'never'",
+        'privacy_settings_allow_ai_personal_data_check',
+        'drop policy if exists privacy_settings_own',
+        'drop policy if exists notification_preferences_own',
+        'revoke all on table public.privacy_settings from public, anon, authenticated',
+        'revoke all on table public.notification_preferences from public, anon, authenticated'
+    ],'convergence préférences')
 
     require(js,[
         "await bind('privacy_settings'",
@@ -70,8 +87,11 @@ def main():
         'disabled="" name="allow_ai_personal_data"'
     ],'page paramètres')
 
-    require(ledger,['20260819001526 sinjira_v24_4_70_self_only_preferences'],'ledger production')
-    print('OK préférences V24.4.70: stockage self-only, export complet, RLS, moindre privilège, IA personnelle forcée off et aucun canal payant actif.')
+    require(ledger,[
+        '20260819001526 sinjira_v24_4_70_self_only_preferences',
+        '20260819003353 sinjira_v24_4_70_preferences_schema_convergence'
+    ],'ledger production')
+    print('OK préférences V24.4.70: stockage self-only, convergence historique, export complet, RLS, moindre privilège, IA personnelle forcée off et aucun canal payant actif.')
     return 0
 
 if __name__=='__main__':
