@@ -4,6 +4,7 @@ import re
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260819221500_sinjira_v24_4_74_dating_compatibility.sql'
+LIFECYCLE=ROOT/'supabase/migrations/20260819221600_sinjira_v24_4_74_dating_lifecycle_guard.sql'
 PAGE=ROOT/'compte/rencontres.html'
 JS=ROOT/'assets/js/sinjira-dating-v24-4-74.js'
 CSS=ROOT/'assets/css/sinjira-dating-v24-4-74.css'
@@ -29,6 +30,7 @@ def function_body(sql,name):
 
 def main():
     migration=MIG.read_text('utf-8',errors='ignore')
+    lifecycle=LIFECYCLE.read_text('utf-8',errors='ignore')
     page=PAGE.read_text('utf-8',errors='ignore')
     js=JS.read_text('utf-8',errors='ignore')
     css=CSS.read_text('utf-8',errors='ignore')
@@ -59,6 +61,16 @@ def main():
         'revoke all on table public.dating_photo_reveal_consents from public,anon,authenticated',
         'grant execute on function public.dating_recommendations(integer) to authenticated'
     ],'migration Rencontres')
+
+    require(lifecycle,[
+        'private.dating_close_active_for_user',
+        "status in('requested','accepted')",
+        'perform private.dating_close_active_for_user(new.user_id)',
+        'private.dating_close_on_social_block',
+        'dating_social_block_guard',
+        'new.blocker_user_id',
+        'new.blocked_user_id'
+    ],'cycle de vie Rencontres')
 
     rec=function_body(migration,'public.dating_recommendations')
     forbid(rec,['avatar_path','account_email','email','source_payload','questionnaire_traits','birth_date','date_of_birth','relationship_partner_label'],'sortie recommandations')
@@ -100,7 +112,6 @@ def main():
     ],'runtime Rencontres')
     forbid(js,['fetch(','openai','stripe','paypal','innerHTML=row','eval('],'runtime Rencontres')
 
-    # L’avatar ne doit être rendu que dans le bloc de révélation après le RPC de seuil/consentement.
     avatar_uses=[m.start() for m in re.finditer(r'avatarUrl\(',js)]
     if len(avatar_uses)!=1:
         raise AssertionError(f'runtime Rencontres: avatarUrl doit être utilisé exactement une fois après déverrouillage, trouvé {len(avatar_uses)}')
@@ -111,7 +122,7 @@ def main():
     require(community,['href="rencontres.html">Rencontres 18+</a>','Rencontres par compatibilité · 18+','sans swipe ni catalogue de photos'],'portail Communauté')
     require(css,['.dating-recommendations','.dating-photo-gate','@media(max-width:640px)'],'CSS Rencontres')
 
-    print('OK V24.4.74: Rencontres 18+ opt-in, sans swipe/photo de découverte, questionnaire minimisé, blocages respectés, présentation mutuelle et photo après 10+10 messages + double consentement.')
+    print('OK V24.4.74: Rencontres 18+ opt-in, sans swipe/photo de découverte, questionnaire minimisé, blocages respectés, présentations invalidées au besoin et photo après 10+10 messages + double consentement.')
     return 0
 
 if __name__=='__main__':
