@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260819001526_sinjira_v24_4_70_self_only_preferences.sql'
 JS=ROOT/'assets/js/v24-preferences.js'
+EXPORT=ROOT/'assets/js/v24-data-control.js'
 PAGE=ROOT/'compte/parametres.html'
 LEDGER=ROOT/'supabase/production-migration-ledger.txt'
 
@@ -21,6 +22,7 @@ def forbid(text,markers,label):
 def main():
     migration=MIG.read_text('utf-8',errors='ignore')
     js=JS.read_text('utf-8',errors='ignore')
+    export=EXPORT.read_text('utf-8',errors='ignore')
     page=PAGE.read_text('utf-8',errors='ignore')
     ledger=LEDGER.read_text('utf-8',errors='ignore')
 
@@ -52,8 +54,16 @@ def main():
     ],'runtime préférences')
     forbid(js,['.upsert(', 'user_id:user.id,...payload,updated_at'], 'runtime préférences')
 
+    require(export,[
+        "privacy_settings:()=>s.from('privacy_settings')",
+        "notification_preferences:()=>s.from('notification_preferences')",
+        "format:'SINJIRA_USER_EXPORT_V24_4_70'",
+        'complete:errors.length===0'
+    ],'export V24.4.70')
+
     require(page,[
         'settings-v70',
+        'v24-data-control.js?v=24.4.70',
         'v24-preferences.js?v=24.4.70',
         'Elles ne déclenchent aucun courriel, SMS, push ni service payant',
         'name="allow_ai_personal_data"',
@@ -61,7 +71,7 @@ def main():
     ],'page paramètres')
 
     require(ledger,['20260819001526 sinjira_v24_4_70_self_only_preferences'],'ledger production')
-    print('OK préférences V24.4.70: stockage self-only, RLS, moindre privilège, IA personnelle forcée off et aucun canal payant actif.')
+    print('OK préférences V24.4.70: stockage self-only, export complet, RLS, moindre privilège, IA personnelle forcée off et aucun canal payant actif.')
     return 0
 
 if __name__=='__main__':
