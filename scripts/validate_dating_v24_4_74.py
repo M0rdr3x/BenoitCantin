@@ -9,6 +9,8 @@ PAGE=ROOT/'compte/rencontres.html'
 JS=ROOT/'assets/js/sinjira-dating-v24-4-74.js'
 CSS=ROOT/'assets/css/sinjira-dating-v24-4-74.css'
 COMMUNITY=ROOT/'compte/communaute.html'
+MESSAGE_PAGE=ROOT/'compte/messages-reels.html'
+MESSAGE_JS=ROOT/'assets/js/sinjira-messages-real.js'
 
 
 def require(text,markers,label):
@@ -35,6 +37,8 @@ def main():
     js=JS.read_text('utf-8',errors='ignore')
     css=CSS.read_text('utf-8',errors='ignore')
     community=COMMUNITY.read_text('utf-8',errors='ignore')
+    message_page=MESSAGE_PAGE.read_text('utf-8',errors='ignore')
+    message_js=MESSAGE_JS.read_text('utf-8',errors='ignore')
 
     require(migration,[
         'create table if not exists public.dating_profiles',
@@ -119,10 +123,40 @@ def main():
     if reveal_pos<0 or avatar_uses[0]<reveal_pos:
         raise AssertionError('runtime Rencontres: avatar rendu avant vérification de révélation')
 
-    require(community,['href="rencontres.html">Rencontres 18+</a>','Rencontres par compatibilité · 18+','sans swipe ni catalogue de photos'],'portail Communauté')
-    require(css,['.dating-recommendations','.dating-photo-gate','@media(max-width:640px)'],'CSS Rencontres')
+    require(message_page,[
+        'data-social-runtime="24.4.74"',
+        'href="rencontres.html">Rencontres 18+</a>',
+        'sinjira-dating-v24-4-74.css?v=24.4.74',
+        'sinjira-messages-real.js?v=24.4.74',
+        'photo reste masquée jusqu’au seuil 10+10 messages'
+    ],'page messagerie réelle')
 
-    print('OK V24.4.74: Rencontres 18+ opt-in, sans swipe/photo de découverte, questionnaire minimisé, blocages respectés, présentations invalidées au besoin et photo après 10+10 messages + double consentement.')
+    require(message_js,[
+        "select('user_id,pseudo,display_name')",
+        'datingLockedUsers',
+        'datingIntroByUser',
+        "rpc('dating_my_introductions')",
+        "rpc('dating_photo_reveal_status'",
+        'if(photoError||!photo?.unlocked)',
+        'filter(item=>!datingLockedUsers.has(item.user_id))',
+        "select('user_id,avatar_path')",
+        'photo Rencontres verrouillée',
+        'Présentation Rencontres · photo verrouillée jusqu’à 10+10 messages et double consentement'
+    ],'runtime messagerie réelle')
+    if ".from('social_profiles').select('*')" in message_js:
+        raise AssertionError('runtime messagerie réelle: un select(*) sur social_profiles pourrait charger avatar_path avant la vérification Rencontres')
+    initial_contacts=message_js.find("select('user_id,pseudo,display_name')")
+    reveal_check=message_js.find("rpc('dating_photo_reveal_status'")
+    avatar_fetch=message_js.find("select('user_id,avatar_path')")
+    if min(initial_contacts,reveal_check,avatar_fetch)<0:
+        raise AssertionError('runtime messagerie réelle: séquence de confidentialité incomplète')
+    if avatar_fetch < reveal_check:
+        raise AssertionError('runtime messagerie réelle: avatar_path peut être chargé avant le contrôle photo Rencontres')
+
+    require(community,['href="rencontres.html">Rencontres 18+</a>','Rencontres par compatibilité · 18+','sans swipe ni catalogue de photos'],'portail Communauté')
+    require(css,['.dating-recommendations','.dating-photo-gate','.v20-avatar-placeholder','@media(max-width:640px)'],'CSS Rencontres')
+
+    print('OK V24.4.74: Rencontres 18+ opt-in, sans swipe/photo de découverte, questionnaire minimisé, blocages respectés, présentations invalidées au besoin et photo protégée dans Rencontres + messagerie jusqu’à 10+10 messages + double consentement.')
     return 0
 
 if __name__=='__main__':
