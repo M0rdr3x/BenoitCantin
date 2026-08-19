@@ -1,4 +1,4 @@
-name: Validation Rencontres V24.4.75
+name: Validation Rencontres V24.4.76
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: dating-v24-4-75-${{ github.event.pull_request.number || github.ref }}
+  group: dating-v24-4-76-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -35,6 +35,15 @@ jobs:
       - name: Vérifier le contrat de confidentialité Rencontres
         run: python scripts/validate_dating_contact_privacy_v24_4_75.py
       - name: Vérifier la syntaxe JavaScript Rencontres
-        run: node --check assets/js/sinjira-dating-v24-4-75.js
+        run: |
+          node --check assets/js/sinjira-dating-v24-4-75.js
+          node --check assets/js/sinjira-dating-progress-v24-4-76.js
+      - name: Vérifier les ressources V24.4.76
+        run: |
+          test -f assets/css/sinjira-dating-v24-4-76.css
+          grep -q 'sinjira-dating-v24-4-76.css' compte/rencontres.html
+          grep -q 'sinjira-dating-progress-v24-4-76.js' compte/rencontres.html
+          grep -q '10 messages chacun' compte/rencontres.html
+          grep -q 'Le seuil n.oblige jamais' compte/rencontres.html
       - name: Vérifier le ledger + migrations futures
         run: python scripts/validate_production_migration_ledger.py

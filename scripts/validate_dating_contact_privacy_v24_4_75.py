@@ -53,11 +53,12 @@ def main():
     require(sender,['social_blocks','DATING_CONTACT_INFO_FORBIDDEN_BEFORE_REVEAL','DATING_RATE_LIMIT','v_my_count>=10','v_their_count>=10','coalesce(v_a_consent,false)','coalesce(v_b_consent,false)'],'envoi chat V24.4.75')
 
     require(page,[
-        'Moteur local V24.4.75','aucune coordonnée directe','Confidentialité de la phase anonyme',
+        'Moteur de compatibilité explicable V24.4.76','aucune coordonnée directe','Confidentialité de la phase anonyme',
         'N’inscrivez pas de courriel, numéro de téléphone, URL','aucune adresse, URL, téléphone ou identifiant social',
-        'courriels, téléphones, URL et identifiants sociaux','sinjira-dating-v24-4-75.js?v=24.4.75'
-    ],'page Rencontres V24.4.75')
-    forbid(page,['sinjira-dating-v24-4-74.js?v=24.4.74'],'page Rencontres V24.4.75')
+        'courriels, téléphones, URL et identifiants sociaux','sinjira-dating-v24-4-75.js?v=24.4.76',
+        'sinjira-dating-progress-v24-4-76.js?v=24.4.76','Le seuil n’oblige jamais à se dévoiler'
+    ],'page Rencontres V24.4.76')
+    forbid(page,['sinjira-dating-v24-4-74.js?v=24.4.74'],'page Rencontres V24.4.76')
 
     require(js,[
         'function containsContactInfo','function profileContainsContactInfo',
@@ -68,7 +69,7 @@ def main():
     ],'runtime V24.4.75')
     forbid(js,['openai','anthropic','stripe','twilio','type="file"','storage.upload'],'runtime V24.4.75')
 
-    print('OK V24.4.75: coordonnées bloquées dans le profil et le chat anonyme avant dévoilement, protections serveur + client, blocage global et anti-spam conservés.')
+    print('OK V24.4.76: protections V24.4.75 conservées et nouvelle interface de progression branchée sans affaiblir la confidentialité.')
     return 0
 
 if __name__=='__main__':

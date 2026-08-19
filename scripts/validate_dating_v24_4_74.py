@@ -60,8 +60,13 @@ def main():
         'data-dating-profile-form','data-dating-candidates','data-dating-connections','data-dating-message-form',
         'Utiliser volontairement certains repères non sensibles de mon questionnaire du Registre'
     ],'page Rencontres')
-    if 'sinjira-dating-v24-4-74.js?v=24.4.74' not in page and 'sinjira-dating-v24-4-75.js?v=24.4.75' not in page:
-        raise AssertionError('page Rencontres: runtime V24.4.74/V24.4.75 introuvable')
+    valid_runtime_markers=(
+        'sinjira-dating-v24-4-74.js?v=24.4.74',
+        'sinjira-dating-v24-4-75.js?v=24.4.75',
+        'sinjira-dating-v24-4-75.js?v=24.4.76'
+    )
+    if not any(marker in page for marker in valid_runtime_markers):
+        raise AssertionError('page Rencontres: runtime V24.4.74/V24.4.75 compatible introuvable')
     forbid(page,['type="file"','accept="image','data-like','data-swipe','Tinder','Bumble'],'page Rencontres')
 
     require(js,[
