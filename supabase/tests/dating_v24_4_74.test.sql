@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 
-select plan(24);
+select plan(25);
 
 select has_table('public','dating_profiles','table profils rencontres présente');
 select has_table('public','dating_introductions','table présentations présente');
@@ -43,6 +43,7 @@ select ok(position('sent_n >= 10' in lower(pg_get_functiondef(p.oid)))>0 and pos
 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' and p.proname='dating_photo_status';
 
 select is((select count(*) from pg_trigger where tgrelid='public.private_profiles'::regclass and tgname='dating_private_profile_guard' and not tgisinternal),1::bigint,'changement de statut relationnel coupe le profil');
+select is((select count(*) from pg_trigger where tgrelid='public.social_blocks'::regclass and tgname='dating_social_block_guard' and not tgisinternal),1::bigint,'blocage communautaire ferme la présentation');
 
 select * from finish();
 rollback;
