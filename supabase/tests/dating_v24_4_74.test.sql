@@ -3,20 +3,23 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 
-select plan(25);
+select plan(31);
 
 select has_table('public','dating_profiles','table profils rencontres présente');
 select has_table('public','dating_introductions','table présentations présente');
 select has_table('public','dating_photo_reveal_consents','table consentements photo présente');
+select has_table('public','dating_recommendation_tokens','table jetons de découverte présente');
 
 select ok((select relrowsecurity from pg_class where oid='public.dating_profiles'::regclass),'RLS profils activée');
 select ok((select relrowsecurity from pg_class where oid='public.dating_introductions'::regclass),'RLS présentations activée');
 select ok((select relrowsecurity from pg_class where oid='public.dating_photo_reveal_consents'::regclass),'RLS consentements photo activée');
+select ok((select relrowsecurity from pg_class where oid='public.dating_recommendation_tokens'::regclass),'RLS jetons de découverte activée');
 
 select ok(not has_table_privilege('authenticated','public.dating_profiles','INSERT'),'client ne peut pas créer directement un profil rencontre');
 select ok(not has_table_privilege('authenticated','public.dating_profiles','UPDATE'),'client ne peut pas modifier directement un profil rencontre');
 select ok(not has_table_privilege('authenticated','public.dating_introductions','INSERT'),'client ne peut pas créer directement une présentation');
 select ok(not has_table_privilege('authenticated','public.dating_photo_reveal_consents','SELECT'),'consentements photo opaques au client');
+select ok(not has_table_privilege('authenticated','public.dating_recommendation_tokens','SELECT'),'cibles des jetons opaques au client');
 select ok(not has_table_privilege('anon','public.dating_profiles','SELECT'),'aucun catalogue anonyme des rencontres');
 
 select has_function('public','dating_my_eligibility',array[]::text[],'RPC admissibilité présente');
@@ -36,8 +39,23 @@ from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='priv
 select ok(position('source_purged_at is null' in lower(pg_get_functiondef(p.oid)))>0,'questionnaire purgé jamais réutilisé')
 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' and p.proname='dating_latest_payload';
 
-select ok(position('avatar_path' in lower(pg_get_functiondef(p.oid)))=0 and position('source_payload' in lower(pg_get_functiondef(p.oid)))=0,'recommandations ne renvoient ni avatar ni questionnaire brut')
+select ok(position('''recommendation_token''' in lower(pg_get_functiondef(p.oid)))>0
+  and position('''user_id''' in lower(pg_get_functiondef(p.oid)))=0
+  and position('''pseudo''' in lower(pg_get_functiondef(p.oid)))=0
+  and position('''avatar_path''' in lower(pg_get_functiondef(p.oid)))=0,
+  'sortie recommandations = jeton opaque sans identité communautaire')
 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='dating_recommendations';
+
+select ok(position('dating_recommendation_tokens' in lower(pg_get_functiondef(p.oid)))>0
+  and position('viewer_user_id = uid' in lower(pg_get_functiondef(p.oid)))>0
+  and position('expires_at > now()' in lower(pg_get_functiondef(p.oid)))>0,
+  'demande de présentation consomme un jeton appartenant au compte et non expiré')
+from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='dating_request_introduction';
+
+select ok(position("i.status = 'accepted'" in lower(pg_get_functiondef(p.oid)))>0
+  and position("else 'membre compatible'" in lower(pg_get_functiondef(p.oid)))>0,
+  'présentations masquent identité/pseudo avant acceptation')
+from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='dating_my_introductions';
 
 select ok(position('sent_n >= 10' in lower(pg_get_functiondef(p.oid)))>0 and position('received_n >= 10' in lower(pg_get_functiondef(p.oid)))>0 and position('mine and theirs' in lower(pg_get_functiondef(p.oid)))>0,'révélation photo exige 10+10 et double consentement')
 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' and p.proname='dating_photo_status';
