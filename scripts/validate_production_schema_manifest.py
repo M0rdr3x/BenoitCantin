@@ -40,7 +40,7 @@ PLANNED_LOCAL_TABLES={
 'parallel_cycles','parallel_missions','parallel_responses',
 'market_listings','market_favorites','token_ledger',
 'codex_entities','codex_relationships','content_versions',
-'dating_profiles','dating_introductions','dating_photo_reveal_consents'
+'dating_profiles','dating_introductions','dating_photo_reveal_consents','dating_recommendation_tokens'
 }
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
@@ -60,33 +60,23 @@ def main()->int:
     unexpected=sorted(local-EXPECTED_TABLES-PLANNED_LOCAL_TABLES)
     stale_planned=sorted(PLANNED_LOCAL_TABLES-local)
 
-    print(
-        f'Manifeste production: {len(EXPECTED_TABLES)} tables; '
-        f'reconstruction locale: {len(local)} tables; modules planifiés présents: {len(planned)}.'
-    )
+    print(f'Manifeste production: {len(EXPECTED_TABLES)} tables; reconstruction locale: {len(local)} tables; modules planifiés présents: {len(planned)}.')
 
     if missing:
         print(f'ECHEC reconstruction: {len(missing)} table(s) de production absente(s) des migrations locales:')
         for name in missing:
-            print('- MISSING '+name)
-            annotate('error',f'Table de production absente des migrations locales: {name}')
-
+            print('- MISSING '+name);annotate('error',f'Table de production absente des migrations locales: {name}')
     if unexpected:
         print(f'ECHEC classification: {len(unexpected)} table(s) locale(s) non déclarée(s):')
         for name in unexpected:
-            print('- UNCLASSIFIED '+name)
-            annotate('error',f'Table locale non classifiée production/planifiée: {name}')
-
+            print('- UNCLASSIFIED '+name);annotate('error',f'Table locale non classifiée production/planifiée: {name}')
     if stale_planned:
         print(f'ECHEC classification: {len(stale_planned)} table(s) déclarée(s) planifiée(s) sans DDL local:')
         for name in stale_planned:
-            print('- STALE-PLANNED '+name)
-            annotate('error',f'Table planifiée déclarée mais absente des migrations: {name}')
-
+            print('- STALE-PLANNED '+name);annotate('error',f'Table planifiée déclarée mais absente des migrations: {name}')
     if planned:
         print('INFO modules locaux explicitement planifiés, non revendiqués comme production:')
         for name in planned: print('- PLANNED '+name)
-
     if missing or unexpected or stale_planned:return 1
     print('OK reconstruction: production entièrement reconstructible; aucune table locale non classifiée.')
     return 0
