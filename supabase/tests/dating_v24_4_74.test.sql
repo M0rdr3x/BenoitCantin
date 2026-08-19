@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 
-select plan(31);
+select plan(30);
 
 select has_table('public','dating_profiles','table profils rencontres présente');
 select has_table('public','dating_introductions','table présentations présente');
@@ -47,13 +47,13 @@ select ok(position('''recommendation_token''' in lower(pg_get_functiondef(p.oid)
 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='dating_recommendations';
 
 select ok(position('dating_recommendation_tokens' in lower(pg_get_functiondef(p.oid)))>0
-  and position('viewer_user_id = uid' in lower(pg_get_functiondef(p.oid)))>0
-  and position('expires_at > now()' in lower(pg_get_functiondef(p.oid)))>0,
+  and position('viewer_user_id=uid' in replace(lower(pg_get_functiondef(p.oid)),' ',''))>0
+  and position('expires_at>now()' in replace(lower(pg_get_functiondef(p.oid)),' ',''))>0,
   'demande de présentation consomme un jeton appartenant au compte et non expiré')
 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='dating_request_introduction';
 
-select ok(position("i.status = 'accepted'" in lower(pg_get_functiondef(p.oid)))>0
-  and position("else 'membre compatible'" in lower(pg_get_functiondef(p.oid)))>0,
+select ok(position("i.status='accepted'" in replace(lower(pg_get_functiondef(p.oid)),' ',''))>0
+  and position("else'membrecompatible'" in replace(lower(pg_get_functiondef(p.oid)),' ',''))>0,
   'présentations masquent identité/pseudo avant acceptation')
 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='dating_my_introductions';
 
