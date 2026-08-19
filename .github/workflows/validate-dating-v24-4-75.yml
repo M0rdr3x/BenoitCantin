@@ -1,4 +1,4 @@
-name: Validation Rencontres V24.4.77
+name: Validation Rencontres V24.4.78
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: dating-v24-4-77-${{ github.event.pull_request.number || github.ref }}
+  group: dating-v24-4-78-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -47,5 +47,10 @@ jobs:
         run: |
           node --check assets/js/sinjira-dating-explain-v24-4-77.js
           python scripts/validate_dating_explanations_v24_4_77.py
+      - name: Vérifier la modération V24.4.78
+        run: |
+          node --check assets/js/sinjira-dating-safety-v24-4-78.js
+          node --check assets/js/sinjira-admin-social-v20.js
+          python scripts/validate_dating_moderation_v24_4_78.py
       - name: Vérifier le ledger + migrations futures
         run: python scripts/validate_production_migration_ledger.py
