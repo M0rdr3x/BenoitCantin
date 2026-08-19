@@ -4,6 +4,8 @@ import re
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase'/'migrations'/'20260818041444_sinjira_v24_4_63_user_notifications.sql'
+MIN_CLIENT_VERSION='24.4.63'
+CLIENT_ASSET='sinjira-user-notifications-v24-4-63.js'
 
 
 def read(path:Path)->str:
@@ -24,12 +26,41 @@ def forbid(text:str,markers:list[str],label:str)->None:
         raise AssertionError(f'{label}: marqueurs interdits présents: {found}')
 
 
+def version_tuple(value:str)->tuple[int,...]:
+    parts=[]
+    for token in str(value).split('.'):
+        match=re.match(r'\d+',token)
+        if not match:return ()
+        parts.append(int(match.group(0)))
+    return tuple(parts)
+
+
+def version_at_least(value:str,minimum:str)->bool:
+    current=version_tuple(value);floor=version_tuple(minimum)
+    if not current or not floor:return False
+    width=max(len(current),len(floor))
+    return current+(0,)*(width-len(current)) >= floor+(0,)*(width-len(floor))
+
+
+def asset_version(html:str)->str|None:
+    match=re.search(rf'{re.escape(CLIENT_ASSET)}\?v=([0-9]+(?:\.[0-9]+)+)',html,re.I)
+    return match.group(1) if match else None
+
+
+def require_client_version(html:str,label:str)->None:
+    loaded=asset_version(html)
+    if loaded is None:
+        raise AssertionError(f'{label}: version de {CLIENT_ASSET} absente.')
+    if not version_at_least(loaded,MIN_CLIENT_VERSION):
+        raise AssertionError(f'{label}: {CLIENT_ASSET} v{loaded} antérieur au minimum {MIN_CLIENT_VERSION}.')
+
+
 def main()->int:
     migration=read(MIG)
     compact=re.sub(r'\s+',' ',migration.lower())
     page=read(ROOT/'compte'/'notifications.html')
     dashboard=read(ROOT/'compte'/'index.html')
-    client=read(ROOT/'assets'/'js'/'sinjira-user-notifications-v24-4-63.js')
+    client=read(ROOT/'assets'/'js'/CLIENT_ASSET)
     ledger=read(ROOT/'supabase'/'production-migration-ledger.txt')
 
     require(migration,[
@@ -66,16 +97,16 @@ def main()->int:
         'noindex,nofollow',
         'data-notifications-list',
         'data-notifications-read-all',
-        'sinjira-user-notifications-v24-4-63.js?v=24.4.63',
         'Aucun courriel, SMS ou service payant n’est nécessaire.'
     ],'page notifications')
+    require_client_version(page,'page notifications')
 
     require(dashboard,[
         'href="notifications.html"',
         'data-notifications-dashboard-count',
-        'data-notifications-preview',
-        'sinjira-user-notifications-v24-4-63.js?v=24.4.63'
+        'data-notifications-preview'
     ],'tableau de bord notifications')
+    require_client_version(dashboard,'tableau de bord notifications')
 
     require(client,[
         "from('user_notifications')",
@@ -94,7 +125,7 @@ def main()->int:
 
     require(ledger,['20260818041444 sinjira_v24_4_63_user_notifications'],'ledger notifications')
 
-    print('OK notifications V24.4.63: self-only, lecture + read_at seulement, déclencheurs privés sans texte sensible et interface interne gratuite.')
+    print(f'OK notifications V24.4.63+: self-only, lecture + read_at seulement, déclencheurs privés sans texte sensible et client >= {MIN_CLIENT_VERSION}.')
     return 0
 
 

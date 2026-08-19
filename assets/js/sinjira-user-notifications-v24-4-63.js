@@ -8,7 +8,9 @@ const typeLabel=type=>({
   novel_comment:'Commentaire',
   character_submission:'Registre',
   character:'Personnage',
-  playtest:'Playtest'
+  playtest:'Playtest',
+  social_real_reply:'Communauté',
+  social_character_reply:'Rôle-play'
 }[type]||'SINJIRA™');
 
 function safeActionPath(value){
