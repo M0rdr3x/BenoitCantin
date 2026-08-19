@@ -20,9 +20,11 @@ let openedConnection=null;
 let refreshTimer=null;
 let refreshing=false;
 let promptIndex=0;
+let connectionsObserver=null;
 
 const clampCount=value=>Math.max(0,Number(value||0));
 const percent=value=>Math.min(100,Math.round((clampCount(value)/THRESHOLD)*100));
+const escapeSelector=value=>globalThis.CSS?.escape?CSS.escape(String(value)):String(value).replace(/[^a-zA-Z0-9_-]/g,'\\$&');
 
 function stageFor(row){
   if(row.identity_revealed)return 3;
@@ -43,16 +45,25 @@ function progressPanel(row){
   return `<div class="dating-progress-panel" data-dating-progress-panel><div class="dating-progress-head"><strong>${escapeHtml(stageLabels[stage])}</strong><span>Minimum avant dévoilement : ${THRESHOLD} messages chacun</span></div><div class="dating-progress-grid"><div class="dating-progress-item"><small><span>Vous</span><strong>${mine}/${THRESHOLD}</strong></small><div class="dating-progress-track" role="progressbar" aria-label="Vos messages avant dévoilement" aria-valuemin="0" aria-valuemax="${THRESHOLD}" aria-valuenow="${Math.min(mine,THRESHOLD)}"><span class="dating-progress-fill" style="--dating-progress:${percent(mine)}%"></span></div></div><div class="dating-progress-item"><small><span>Autre personne</span><strong>${theirs}/${THRESHOLD}</strong></small><div class="dating-progress-track" role="progressbar" aria-label="Messages de l’autre personne avant dévoilement" aria-valuemin="0" aria-valuemax="${THRESHOLD}" aria-valuenow="${Math.min(theirs,THRESHOLD)}"><span class="dating-progress-fill" style="--dating-progress:${percent(theirs)}%"></span></div></div></div><div class="dating-stage-list">${stageLabels.map((label,index)=>`<div class="dating-stage ${index<stage?'is-done':index===stage?'is-current':''}">${index+1}. ${escapeHtml(label)}</div>`).join('')}</div><p class="dating-reveal-note">${escapeHtml(note)}</p></div>`;
 }
 
+function observeConnections(){
+  if(!connectionsBox)return;
+  if(!connectionsObserver)connectionsObserver=new MutationObserver(scheduleRefresh);
+  connectionsObserver.observe(connectionsBox,{childList:true,subtree:true});
+}
+
 function decorateCards(){
   if(!connectionsBox)return;
-  for(const row of lastOverview){
-    const card=connectionsBox.querySelector(`[data-dating-connection="${CSS.escape(row.connection_id)}"]`);
-    if(!card)continue;
-    card.querySelector('[data-dating-progress-panel]')?.remove();
-    const actions=card.querySelector('.hero-actions');
-    if(actions)actions.insertAdjacentHTML('beforebegin',progressPanel(row));
-    else card.insertAdjacentHTML('beforeend',progressPanel(row));
-  }
+  connectionsObserver?.disconnect();
+  try{
+    for(const row of lastOverview){
+      const card=connectionsBox.querySelector(`[data-dating-connection="${escapeSelector(row.connection_id)}"]`);
+      if(!card)continue;
+      card.querySelector('[data-dating-progress-panel]')?.remove();
+      const actions=card.querySelector('.hero-actions');
+      if(actions)actions.insertAdjacentHTML('beforebegin',progressPanel(row));
+      else card.insertAdjacentHTML('beforeend',progressPanel(row));
+    }
+  }finally{observeConnections();}
 }
 
 function ensurePromptBox(){
@@ -98,7 +109,7 @@ connectionsBox?.addEventListener('click',event=>{
   openedConnection=button.closest('[data-dating-connection]')?.dataset.datingConnection||null;promptIndex=0;setTimeout(()=>{ensurePromptBox();scheduleRefresh();},180);
 });
 
-if(connectionsBox)new MutationObserver(scheduleRefresh).observe(connectionsBox,{childList:true,subtree:true});
+observeConnections();
 if(conversationZone)new MutationObserver(()=>{if(!conversationZone.hidden){ensurePromptBox();scheduleRefresh();}}).observe(conversationZone,{attributes:true,attributeFilter:['hidden']});
 
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleRefresh();});
