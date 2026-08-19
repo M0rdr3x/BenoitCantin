@@ -1,13 +1,14 @@
 import {getSupabase,requireCommunityUser,escapeHtml,formatDate,avatarUrl,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
+import {unreadCounts,markConversationRead} from './sinjira-message-read-state.js?v=24.4.71';
 
-const UI_VERSION='24.4.42';
+const UI_VERSION='24.4.71';
 const contacts=document.querySelector('[data-contact-list]');
 const search=document.querySelector('[data-contact-search]');
 const log=document.querySelector('[data-chat-log]');
 const form=document.querySelector('[data-chat-form]');
 const title=document.querySelector('[data-chat-title]');
 const status=document.querySelector('[data-social-status]');
-let user,all=[],peer=null,channel=null;
+let user,all=[],peer=null,channel=null,unreadByUser=new Map();
 
 function fail(error,fallback='Action impossible dans la messagerie.'){
   socialErrorStatus(status,error,fallback);
@@ -17,14 +18,21 @@ async function loadContacts(){
   const {data,error}=await getSupabase().from('social_profiles').select('*').neq('user_id',user.id).order('pseudo');
   if(error)throw error;
   all=Array.isArray(data)?data:[];
-  renderContacts();
+}
+
+async function loadUnread(){
+  unreadByUser=await unreadCounts('social_real_messages',user.id,'sender_user_id');
 }
 
 function renderContacts(){
   const q=String(search?.value||'').trim().toLowerCase();
   contacts.innerHTML=all
     .filter(item=>String(item.pseudo||item.display_name||'').toLowerCase().includes(q))
-    .map(item=>`<button class="v20-contact" data-user="${escapeHtml(item.user_id)}"><img src="${escapeHtml(avatarUrl(item.avatar_path))}" alt=""><span><strong>${escapeHtml(item.pseudo||item.display_name||'Membre')}</strong><small>Compte réel</small></span></button>`)
+    .map(item=>{
+      const unread=unreadByUser.get(item.user_id)||0;
+      const unreadLabel=unread?` · ${unread} non lu${unread>1?'s':''}`:'';
+      return `<button class="v20-contact" data-user="${escapeHtml(item.user_id)}"><img src="${escapeHtml(avatarUrl(item.avatar_path))}" alt=""><span><strong>${escapeHtml(item.pseudo||item.display_name||'Membre')}</strong><small>Compte réel${unreadLabel}</small></span></button>`;
+    })
     .join('')||'<p>Aucun membre trouvé.</p>';
   contacts.querySelectorAll('[data-user]').forEach(button=>{
     button.addEventListener('click',()=>openPeer(button.dataset.user).catch(error=>fail(error,'Impossible d’ouvrir cette conversation.')));
@@ -51,6 +59,13 @@ async function messages(){
   const rows=Array.isArray(data)?data:[];
   log.innerHTML=rows.map(message=>`<div class="v20-bubble ${message.sender_user_id===user.id?'mine':''}" data-message="${message.id}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button class="link-button" data-report-message>Signaler</button>':''}</div>`).join('')||'<p>Commencez la conversation.</p>';
   log.scrollTop=log.scrollHeight;
+
+  if(rows.some(message=>message.recipient_user_id===user.id&&!message.read_at)){
+    await markConversationRead('social_real_messages',user.id,{sender_user_id:peer.user_id});
+    unreadByUser.delete(peer.user_id);
+    renderContacts();
+  }
+
   log.querySelectorAll('[data-report-message]').forEach(button=>button.addEventListener('click',async()=>{
     const element=button.closest('[data-message]');
     const message=rows.find(item=>item.id===element?.dataset.message);
@@ -74,7 +89,8 @@ async function blockPeer(){
 (async()=>{
   try{
     user=await requireCommunityUser();
-    await loadContacts();
+    await Promise.all([loadContacts(),loadUnread()]);
+    renderContacts();
     search?.addEventListener('input',renderContacts);
 
     form.addEventListener('submit',async event=>{
@@ -97,8 +113,12 @@ async function blockPeer(){
     channel=getSupabase().channel(`real-messages-${user.id}`)
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'social_real_messages'},payload=>{
         const message=payload.new;
-        if(peer&&((message.sender_user_id===user.id&&message.recipient_user_id===peer.user_id)||(message.sender_user_id===peer.user_id&&message.recipient_user_id===user.id))){
+        const currentPeer=peer?.user_id;
+        const belongsToOpenPeer=currentPeer&&((message.sender_user_id===user.id&&message.recipient_user_id===currentPeer)||(message.sender_user_id===currentPeer&&message.recipient_user_id===user.id));
+        if(belongsToOpenPeer){
           messages().catch(error=>fail(error,'Impossible d’actualiser la conversation.'));
+        }else if(message.recipient_user_id===user.id){
+          loadUnread().then(renderContacts).catch(error=>fail(error,'Impossible d’actualiser les messages non lus.'));
         }
       })
       .subscribe();
