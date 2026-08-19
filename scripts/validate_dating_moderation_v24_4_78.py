@@ -2,7 +2,7 @@
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-MIG=ROOT/'supabase/migrations/20260819234500_sinjira_v24_4_78_dating_moderation.sql'
+MIG=ROOT/'supabase/migrations/20260819235435_sinjira_v24_4_78_dating_moderation.sql'
 TEST=ROOT/'supabase/tests/dating_moderation_v24_4_78.test.sql'
 JS=ROOT/'assets/js/sinjira-dating-safety-v24-4-78.js'
 PROGRESS=ROOT/'assets/js/sinjira-dating-progress-v24-4-76.js'
@@ -10,6 +10,8 @@ ADMIN_EDGE=ROOT/'supabase/functions/admin-social-v20/index.ts'
 ADMIN_JS=ROOT/'assets/js/sinjira-admin-social-v20.js'
 CSS=ROOT/'assets/css/sinjira-dating-v24-4-76.css'
 LEDGER=ROOT/'supabase/production-migration-ledger.txt'
+PRODUCTION_VERSION='20260819235435'
+PRODUCTION_NAME='sinjira_v24_4_78_dating_moderation'
 
 
 def require(text,markers,label):
@@ -62,11 +64,11 @@ def main():
 
     require(admin_js,['Rencontres SINJIRA™','Personne signalée','Extrait de preuve','snapshot?.source===\'dating\'','désactive aussi Rencontres'],'console admin sociale')
     require(test,['select plan(14)','DATING_REPORT_ALREADY_OPEN','social_suspensions','limit 30'],'pgTAP V24.4.78')
+    require(ledger,[f'{PRODUCTION_VERSION} {PRODUCTION_NAME}'],'ledger production V24.4.78')
+    if '20260819234500_sinjira_v24_4_78_dating_moderation.sql' in {p.name for p in (ROOT/'supabase/migrations').glob('*.sql')}:
+        raise AssertionError('ancien timestamp local V24.4.78 encore présent')
 
-    if '20260819234500 sinjira_v24_4_78_dating_moderation' in ledger:
-        raise AssertionError('la migration V24.4.78 est future sur cette branche et ne doit pas être déclarée production avant application réelle')
-
-    print('OK V24.4.78: signalement Rencontres, preuve bornée, blocage atomique, suspension dating et résolution admin canonique sans confiance au snapshot.')
+    print(f'OK V24.4.78 production {PRODUCTION_VERSION}: signalement Rencontres, preuve bornée, blocage atomique, suspension dating et résolution admin canonique sans confiance au snapshot.')
     return 0
 
 if __name__=='__main__':
