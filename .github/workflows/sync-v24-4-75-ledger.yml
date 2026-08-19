@@ -1,0 +1,35 @@
+name: Synchroniser ledger V24.4.75 une fois
+
+on:
+  push:
+    branches: [ chore/v24-4-75-production-ledger ]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: ${{ !contains(github.event.head_commit.message, 'Synchroniser ledger production V24.4.75') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: chore/v24-4-75-production-ledger
+          fetch-depth: 0
+      - name: Ajouter uniquement la migration réellement déployée
+        shell: bash
+        run: |
+          set -euo pipefail
+          line='20260819223000 sinjira_v24_4_75_dating_contact_privacy'
+          file='supabase/production-migration-ledger.txt'
+          if ! grep -qxF "$line" "$file"; then
+            printf '%s\n' "$line" >> "$file"
+          fi
+          rm -f .github/workflows/sync-v24-4-75-ledger.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$file" .github/workflows/sync-v24-4-75-ledger.yml
+          git diff --cached --check
+          git commit -m 'Synchroniser ledger production V24.4.75'
+          git push origin HEAD:chore/v24-4-75-production-ledger
