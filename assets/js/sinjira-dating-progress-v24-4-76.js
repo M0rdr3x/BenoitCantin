@@ -1,5 +1,6 @@
 import {getSupabase,escapeHtml} from './sinjira-supabase.js';
 import './sinjira-dating-explain-v24-4-77.js';
+import './sinjira-dating-safety-v24-4-78.js';
 
 const s=getSupabase();
 const connectionsBox=document.querySelector('[data-dating-connections]');
