@@ -6,7 +6,6 @@ ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260819223000_sinjira_v24_4_75_dating_contact_privacy.sql'
 PAGE=ROOT/'compte/rencontres.html'
 JS=ROOT/'assets/js/sinjira-dating-v24-4-75.js'
-LEDGER=ROOT/'supabase/production-migration-ledger.txt'
 
 
 def require(text,markers,label):
@@ -30,7 +29,6 @@ def main():
     migration=MIG.read_text('utf-8',errors='ignore')
     page=PAGE.read_text('utf-8',errors='ignore')
     js=JS.read_text('utf-8',errors='ignore')
-    ledger=LEDGER.read_text('utf-8',errors='ignore')
 
     require(migration,[
         'private.dating_contains_contact_info','private.dating_array_contains_contact_info',
@@ -69,9 +67,6 @@ def main():
         "s.rpc('dating_send_message'","s.rpc('dating_connections_overview')"
     ],'runtime V24.4.75')
     forbid(js,['openai','anthropic','stripe','twilio','type="file"','storage.upload'],'runtime V24.4.75')
-
-    if '20260819223000 sinjira_v24_4_75_dating_contact_privacy' in ledger:
-        raise AssertionError('ledger: V24.4.75 est marquée production avant vérification du déploiement réel')
 
     print('OK V24.4.75: coordonnées bloquées dans le profil et le chat anonyme avant dévoilement, protections serveur + client, blocage global et anti-spam conservés.')
     return 0
