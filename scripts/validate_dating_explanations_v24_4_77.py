@@ -2,12 +2,13 @@
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-MIG=ROOT/'supabase/migrations/20260819233500_sinjira_v24_4_77_dating_explanations.sql'
+MIG=ROOT/'supabase/migrations/20260819233701_sinjira_v24_4_77_dating_explanations.sql'
 TEST=ROOT/'supabase/tests/dating_explanations_v24_4_77.test.sql'
 JS=ROOT/'assets/js/sinjira-dating-explain-v24-4-77.js'
 PROGRESS=ROOT/'assets/js/sinjira-dating-progress-v24-4-76.js'
 CSS=ROOT/'assets/css/sinjira-dating-v24-4-76.css'
 LEDGER=ROOT/'supabase/production-migration-ledger.txt'
+PRODUCTION_ROW='20260819233701 sinjira_v24_4_77_dating_explanations'
 
 
 def require(text, markers, label):
@@ -47,11 +48,9 @@ def main():
     require(progress,["import './sinjira-dating-explain-v24-4-77.js'"],'branchement V24.4.77')
     require(css,['.dating-detail','.dating-dimension','.dating-registry-chip'],'styles V24.4.77')
     require(test,['select plan(12)','personality_notes','compte_courriel','raw_registry_answers_returned'],'pgTAP V24.4.77')
+    require(ledger,[PRODUCTION_ROW],'ledger V24.4.77')
 
-    if '20260819233500 sinjira_v24_4_77_dating_explanations' in ledger:
-        raise AssertionError('la migration V24.4.77 est encore future sur cette branche et ne doit pas être déclarée production avant synchronisation réelle')
-
-    print('OK V24.4.77: explications agrégées, Registre enrichi avec consentement, aucune donnée brute exposée et aucune IA distante active.')
+    print('OK V24.4.77: migration canonique production alignée, explications agrégées, Registre enrichi avec consentement et aucune donnée brute exposée.')
     return 0
 
 if __name__=='__main__':
