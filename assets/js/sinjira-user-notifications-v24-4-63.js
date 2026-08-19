@@ -10,7 +10,8 @@ const typeLabel=type=>({
   character:'Personnage',
   playtest:'Playtest',
   social_real_reply:'Communauté',
-  social_character_reply:'Rôle-play'
+  social_character_reply:'Rôle-play',
+  dating:'Rencontres'
 }[type]||'SINJIRA™');
 
 function safeActionPath(value){
