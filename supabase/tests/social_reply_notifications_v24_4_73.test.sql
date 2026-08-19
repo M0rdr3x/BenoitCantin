@@ -52,8 +52,15 @@ select ok(position('insert into public.user_notifications' in lower(pg_get_funct
 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' and p.proname='notify_social_comment_reply';
 select ok(position('new.body' in lower(pg_get_functiondef(p.oid)))=0,'aucun texte libre du commentaire copié dans l’avis')
 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' and p.proname='notify_social_comment_reply';
-select ok(position('set search_path = pg_catalog, public' in lower(pg_get_functiondef(p.oid)))>0,'search_path du trigger fixé')
-from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' and p.proname='notify_social_comment_reply';
+select ok(exists(
+  select 1
+  from pg_proc p
+  join pg_namespace n on n.oid=p.pronamespace
+  cross join lateral unnest(coalesce(p.proconfig,array[]::text[])) cfg
+  where n.nspname='private'
+    and p.proname='notify_social_comment_reply'
+    and cfg='search_path=pg_catalog, public'
+),'search_path du trigger fixé');
 
 select * from finish();
 rollback;
