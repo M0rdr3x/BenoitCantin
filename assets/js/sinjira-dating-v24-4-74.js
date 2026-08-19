@@ -160,12 +160,13 @@ function connectionCard(item){
     ?`<div class="v20-social-identity"><img class="v20-social-avatar" src="${escapeHtml(avatarUrl(item.revealed_avatar_path))}" alt="Photo de profil dévoilée avec consentement mutuel"><div><strong>${escapeHtml(item.revealed_name||'Membre SINJIRA™')}</strong><p>Identité dévoilée par consentement mutuel.</p></div></div>`
     :`<strong>${escapeHtml(item.blind_alias)}</strong>`;
   let actions='';
-  if(item.status==='pending'&&item.direction==='incoming')actions='<button class="btn btn-primary btn-small" data-dating-accept type="button">Accepter la discussion</button> <button class="btn btn-secondary btn-small" data-dating-decline type="button">Refuser</button>';
-  if(item.status==='pending'&&item.direction==='outgoing')actions='<span>Votre proposition attend une réponse.</span>';
+  if(item.status==='pending'&&item.direction==='incoming')actions='<button class="btn btn-primary btn-small" data-dating-accept type="button">Accepter la discussion</button> <button class="btn btn-secondary btn-small" data-dating-decline type="button">Refuser</button> <button class="btn btn-secondary btn-small" data-dating-block type="button">Bloquer</button>';
+  if(item.status==='pending'&&item.direction==='outgoing')actions='<span>Votre proposition attend une réponse.</span> <button class="btn btn-secondary btn-small" data-dating-close type="button">Retirer la proposition</button> <button class="btn btn-secondary btn-small" data-dating-block type="button">Bloquer</button>';
   if(item.status==='accepted'){
     actions=`<button class="btn btn-primary btn-small" data-dating-open type="button">Ouvrir la discussion</button>`;
     if(item.photo_unlock_available&&!item.my_photo_consent)actions+=` <button class="btn btn-secondary btn-small" data-dating-reveal type="button">Autoriser le dévoilement</button>`;
     else if(item.my_photo_consent&&!item.identity_revealed)actions+=' <span>Votre consentement est donné · attente de l’autre personne.</span>';
+    actions+=' <button class="btn btn-secondary btn-small" data-dating-close type="button">Fermer cette rencontre</button> <button class="btn btn-secondary btn-small" data-dating-block type="button">Bloquer</button>';
   }
   return `<article class="account-card" data-dating-connection="${escapeHtml(item.connection_id)}">
     <div class="account-welcome-strip">${identity}<span>${escapeHtml(statusText)}</span></div>
@@ -185,6 +186,8 @@ async function loadConnections(){
     card.querySelector('[data-dating-accept]')?.addEventListener('click',()=>respondConnection(id,true));
     card.querySelector('[data-dating-decline]')?.addEventListener('click',()=>respondConnection(id,false));
     card.querySelector('[data-dating-open]')?.addEventListener('click',()=>openConversation(id));
+    card.querySelector('[data-dating-close]')?.addEventListener('click',()=>closeConnection(id));
+    card.querySelector('[data-dating-block]')?.addEventListener('click',()=>blockConnection(id));
     card.querySelector('[data-dating-reveal]')?.addEventListener('click',async()=>{
       const {error:revealError}=await s.rpc('dating_set_photo_consent',{p_connection_id:id,p_consent:true});
       if(revealError){setStatus(statusNode,explainError(revealError,'Impossible d’enregistrer votre consentement.'),'error');return;}
@@ -198,6 +201,24 @@ async function respondConnection(id,accept){
   const {error}=await s.rpc('dating_respond_connection',{p_connection_id:id,p_accept:accept});
   if(error){setStatus(statusNode,explainError(error,'Impossible de répondre à cette proposition.'),'error');return;}
   setStatus(statusNode,accept?'Discussion anonyme ouverte.':'Proposition refusée.','success');
+  await refreshAll();
+}
+
+async function closeConnection(id){
+  if(!confirm('Fermer définitivement cette rencontre? Cette personne ne sera plus reproposée dans ce lien de compatibilité.'))return;
+  const {error}=await s.rpc('dating_close_connection',{p_connection_id:id});
+  if(error){setStatus(statusNode,explainError(error,'Impossible de fermer cette rencontre.'),'error');return;}
+  if(activeConnection===id){activeConnection=null;conversationZone.hidden=true;}
+  setStatus(statusNode,'Rencontre fermée. Aucun consentement de dévoilement n’est conservé.','success');
+  await refreshAll();
+}
+
+async function blockConnection(id){
+  if(!confirm('Bloquer cette personne? Son identité restera cachée, la rencontre sera fermée et ce compte sera ajouté à vos blocages communautaires.'))return;
+  const {error}=await s.rpc('dating_block_connection',{p_connection_id:id});
+  if(error){setStatus(statusNode,explainError(error,'Impossible de bloquer cette personne.'),'error');return;}
+  if(activeConnection===id){activeConnection=null;conversationZone.hidden=true;}
+  setStatus(statusNode,'Personne bloquée et rencontre fermée.','success');
   await refreshAll();
 }
 
