@@ -35,6 +35,11 @@ def asset_version(html:str,asset_name:str)->str|None:
  return match.group(1) if match else None
 
 
+def social_runtime_version(html:str)->str|None:
+ match=re.search(r'data-social-runtime="([0-9]+(?:\.[0-9]+)+)"',html,re.I)
+ return match.group(1) if match else None
+
+
 def latest_function(files:list[Path],name:str)->tuple[Path|None,str]:
  rx=re.compile(
   rf'create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?{re.escape(name)}\s*\([^)]*\).*?\$\$.*?\$\$\s*;',
@@ -52,8 +57,6 @@ def main()->int:
  sql='\n'.join(p.read_text('utf-8',errors='ignore') for p in files)
  all_compact=compact(sql)
 
- # Contrat propriétaire global : l'accès illimité et les privilèges ne doivent
- # pas dépendre d'une licence individuelle ou d'un produit particulier.
  required=[
   OWNER,
   "'abysstime'",
@@ -73,8 +76,6 @@ def main()->int:
   if compact(marker) not in all_compact:
    errors.append(f'Contrat propriétaire absent: {marker}')
 
- # On valide la DERNIÈRE définition de la réparation, pas une ancienne version
- # encore présente dans l'historique des migrations.
  repair_path,repair=latest_function(files,'ensure_sinjira_owner_character')
  if not repair_path:
   errors.append('ensure_sinjira_owner_character() introuvable.')
@@ -117,13 +118,9 @@ def main()->int:
    if compact(marker) not in health_block:
     errors.append(f'{health_path.name}: diagnostic personnage propriétaire incomplet: {marker}')
 
- # Le chemin d'accès universel propriétaire doit rester côté serveur.
  if 'public.is_sinjira_owner(p_user_id)' not in sql:
   errors.append('has_sinjira_product ne conserve plus le bypass propriétaire universel.')
 
- # Les interfaces qui dépendent directement du personnage doivent toujours
- # appeler la réparation canonique. Leur version d'interface peut avancer sans
- # modifier la version de la réparation serveur V24.4.20.
  frontend_checks={
   ROOT/'assets/js/sinjira-mon-personnage.js':('ensure_sinjira_owner_character',REPAIR_VERSION),
   ROOT/'assets/js/sinjira-community-character.js':('ensure_sinjira_owner_character',REPAIR_VERSION),
@@ -138,9 +135,6 @@ def main()->int:
    if marker not in text:
     errors.append(f'{path.relative_to(ROOT)}: marqueur propriétaire absent: {marker}')
 
- # Chaque page critique doit charger son runtime propriétaire à une version au
- # moins égale au correctif de base. Le Réseau personnage exige désormais la
- # couche sociale V24.4.42 qui assainit les erreurs RLS et fiabilise la publication.
  critical_pages={
   ROOT/'compte/mon-personnage.html':('sinjira-mon-personnage.js',REPAIR_VERSION),
   ROOT/'compte/reseau-personnage.html':('sinjira-community-character.js',SOCIAL_RUNTIME_VERSION),
@@ -161,8 +155,11 @@ def main()->int:
  network=ROOT/'compte/reseau-personnage.html'
  if network.exists():
   html=network.read_text('utf-8',errors='ignore')
-  if f'data-social-runtime="{SOCIAL_RUNTIME_VERSION}"' not in html:
-   errors.append(f'{network.relative_to(ROOT)}: marqueur social {SOCIAL_RUNTIME_VERSION} absent.')
+  runtime=social_runtime_version(html)
+  if runtime is None:
+   errors.append(f'{network.relative_to(ROOT)}: marqueur social absent.')
+  elif not version_at_least(runtime,SOCIAL_RUNTIME_VERSION):
+   errors.append(f'{network.relative_to(ROOT)}: runtime social {runtime} antérieur au minimum {SOCIAL_RUNTIME_VERSION}.')
 
  community=ROOT/'assets/js/sinjira-community-character.js'
  if community.exists() and 'V24.3.1' in community.read_text('utf-8',errors='ignore'):
@@ -176,7 +173,7 @@ def main()->int:
  print(
   'OK propriétaire: AbyssTime est protégé par le contrat serveur, visible, '
   'auto-réparable dans Mon personnage/Réseau/Messages/Monde parallèle, avec '
-  f'accès universel, réparation {REPAIR_VERSION} et Réseau social {SOCIAL_RUNTIME_VERSION}.'
+  f'accès universel, réparation {REPAIR_VERSION} et Réseau social >= {SOCIAL_RUNTIME_VERSION}.'
  )
  return 0
 
