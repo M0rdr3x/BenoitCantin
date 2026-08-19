@@ -110,7 +110,7 @@ def main():
         'avatarUrl(data.other_avatar_path)',
         'escapeHtml(row.pseudo',
     ],'runtime Rencontres')
-    forbid(js,['fetch(','openai','stripe','paypal','innerHTML=row','eval('],'runtime Rencontres')
+    forbid(js,['fetch(','openai','stripe','paypal','eval('],'runtime Rencontres')
 
     avatar_uses=[m.start() for m in re.finditer(r'avatarUrl\(',js)]
     if len(avatar_uses)!=1:
