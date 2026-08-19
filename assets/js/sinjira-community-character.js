@@ -1,12 +1,13 @@
 import {getSupabase,requireCommunityUser,escapeHtml,formatDate,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
 import {editOwnContent,deleteOwnContent,editedSuffix} from './sinjira-social-self-content.js?v=24.4.72';
 
-const UI_VERSION='24.4.72';
+const UI_VERSION='24.4.74';
 const feed=document.querySelector('[data-character-feed]');
 const form=document.querySelector('[data-character-post-form]');
 const status=document.querySelector('[data-social-status]');
 const identity=document.querySelector('[data-character-identity]');
 const lock=document.querySelector('[data-character-network-lock]');
+const expandedComments=new Set();
 let user,me;
 
 function portrait(profile={}){
@@ -63,10 +64,12 @@ async function load(){
     const postLikes=likes.filter(row=>row.post_id===post.id);
     const liked=postLikes.some(row=>row.user_id===user.id);
     const ownPost=post.user_id===user.id;
+    const isExpanded=expandedComments.has(post.id);
+    const visibleComments=isExpanded?postComments:postComments.slice(-4);
     const postControls=ownPost
       ?'<span><button class="btn btn-secondary btn-small" data-edit>Modifier</button> <button class="btn btn-secondary btn-small" data-delete>Supprimer</button></span>'
       :'<button class="btn btn-secondary btn-small" data-report>Signaler</button>';
-    const commentHtml=postComments.slice(-4).map(comment=>{
+    const commentHtml=visibleComments.map(comment=>{
       const cp=cmap.get(comment.character_id)||{};
       const ownComment=comment.user_id===user.id;
       const controls=ownComment
@@ -74,11 +77,14 @@ async function load(){
         :'';
       return `<div class="v20-comment" data-comment="${escapeHtml(comment.id)}"><strong>${escapeHtml(cp.public_name||'Personnage')}</strong><p>${escapeHtml(comment.body)}</p><small>${escapeHtml(formatDate(comment.created_at)+editedSuffix(comment))}</small>${controls}</div>`;
     }).join('');
+    const commentToggle=postComments.length>4
+      ?`<button class="link-button" type="button" data-toggle-comments aria-expanded="${isExpanded?'true':'false'}">${isExpanded?'Réduire les commentaires':`Voir tous les commentaires (${postComments.length})`}</button>`
+      :'';
     return `<article class="v20-social-card" data-post="${post.id}">
       <div class="v20-social-meta"><div class="v20-social-identity"><img class="v20-social-avatar character" src="${escapeHtml(portrait(profile))}" alt=""><div><span class="v20-social-name">${escapeHtml(profile.public_name||'Personnage SINJIRA')}</span><time class="v20-social-time">${escapeHtml(formatDate(post.created_at)+editedSuffix(post))} · rôle-play</time></div></div>${postControls}</div>
       <p class="v20-social-body">${escapeHtml(post.body)}</p>
       <div class="v20-social-actions"><button class="btn btn-secondary btn-small" data-like>${liked?'♥':'♡'} ${postLikes.length}</button><span>${postComments.length} commentaire(s)</span></div>
-      <div class="v20-comments">${commentHtml}</div>
+      <div class="v20-comments">${commentToggle}${commentHtml}</div>
       <form class="v20-comment-form" data-comment-form><input name="body" maxlength="1000" placeholder="Répondre en personnage…" required><button class="btn btn-secondary btn-small" type="submit">Envoyer</button></form>
     </article>`;
   }).join('')||'<article class="v20-social-card"><h2>Le Réseau des personnages est prêt</h2><p>Les personnages approuvés peuvent commencer à interagir ici.</p></article>';
@@ -90,6 +96,11 @@ function bind(posts,comments){
   feed.querySelectorAll('[data-post]').forEach(card=>{
     const id=card.dataset.post;
     const post=posts.find(row=>row.id===id);
+
+    card.querySelector('[data-toggle-comments]')?.addEventListener('click',async()=>{
+      if(expandedComments.has(id))expandedComments.delete(id);else expandedComments.add(id);
+      try{await load();}catch(error){fail(error,'Impossible de modifier l’affichage des commentaires.');}
+    });
 
     card.querySelector('[data-edit]')?.addEventListener('click',async()=>{
       if(!post)return;
@@ -103,7 +114,10 @@ function bind(posts,comments){
 
     card.querySelector('[data-delete]')?.addEventListener('click',async()=>{
       try{
-        if(await deleteOwnContent({table:'social_character_posts',id,label:'cette publication de votre personnage'}))await load();
+        if(await deleteOwnContent({table:'social_character_posts',id,label:'cette publication de votre personnage'})){
+          expandedComments.delete(id);
+          await load();
+        }
       }catch(error){fail(error,'Suppression impossible pour le moment.');}
     });
 
