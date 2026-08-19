@@ -1,6 +1,7 @@
 import {getSupabase,requireCommunityUser,escapeHtml,formatDate,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
+import {unreadCounts,markConversationRead} from './sinjira-message-read-state.js?v=24.4.71';
 
-const UI_VERSION='24.4.42';
+const UI_VERSION='24.4.71';
 const contacts=document.querySelector('[data-contact-list]');
 const search=document.querySelector('[data-contact-search]');
 const log=document.querySelector('[data-chat-log]');
@@ -9,7 +10,7 @@ const title=document.querySelector('[data-chat-title]');
 const status=document.querySelector('[data-social-status]');
 const lock=document.querySelector('[data-character-message-lock]');
 const shell=document.querySelector('.v20-message-shell');
-let user,me,all=[],peer=null;
+let user,me,all=[],peer=null,channel=null,unreadByCharacter=new Map();
 
 function portrait(profile={}){
   const path=String(profile.portrait_path||'').trim();
@@ -45,13 +46,20 @@ async function loadContacts(){
     .order('public_name');
   if(error)throw error;
   all=Array.isArray(data)?data:[];
-  renderContacts();
+}
+
+async function loadUnread(){
+  unreadByCharacter=await unreadCounts('social_character_messages',user.id,'sender_character_id');
 }
 
 function renderContacts(){
   const q=String(search?.value||'').trim().toLowerCase();
   const rows=all.filter(item=>String(item.public_name||'').toLowerCase().includes(q));
-  contacts.innerHTML=rows.map(item=>`<button class="v20-contact character" data-character="${escapeHtml(item.character_id)}"><img src="${escapeHtml(portrait(item))}" alt=""><span><strong>${escapeHtml(item.public_name||'Personnage')}</strong><small>Personnage SINJIRA</small></span></button>`).join('')||'<p>Aucun personnage disponible.</p>';
+  contacts.innerHTML=rows.map(item=>{
+    const unread=unreadByCharacter.get(item.character_id)||0;
+    const unreadLabel=unread?` · ${unread} non lu${unread>1?'s':''}`:'';
+    return `<button class="v20-contact character" data-character="${escapeHtml(item.character_id)}"><img src="${escapeHtml(portrait(item))}" alt=""><span><strong>${escapeHtml(item.public_name||'Personnage')}</strong><small>Personnage SINJIRA${unreadLabel}</small></span></button>`;
+  }).join('')||'<p>Aucun personnage disponible.</p>';
   contacts.querySelectorAll('[data-character]').forEach(button=>{
     button.addEventListener('click',()=>openPeer(button.dataset.character).catch(error=>fail(error,'Impossible d’ouvrir cette conversation.')));
   });
@@ -77,6 +85,13 @@ async function messages(){
   const rows=Array.isArray(data)?data:[];
   log.innerHTML=rows.map(message=>`<div class="v20-bubble character ${message.sender_user_id===user.id?'mine':''}" data-message="${message.id}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button class="link-button" data-report-message>Signaler</button>':''}</div>`).join('')||'<p>Commencez le rôle-play. Les échanges ici ne modifient pas le canon officiel.</p>';
   log.scrollTop=log.scrollHeight;
+
+  if(rows.some(message=>message.recipient_user_id===user.id&&!message.read_at)){
+    await markConversationRead('social_character_messages',user.id,{sender_character_id:peer.character_id});
+    unreadByCharacter.delete(peer.character_id);
+    renderContacts();
+  }
+
   log.querySelectorAll('[data-report-message]').forEach(button=>button.addEventListener('click',async()=>{
     const element=button.closest('[data-message]');
     const message=rows.find(item=>item.id===element?.dataset.message);
@@ -113,7 +128,8 @@ function showLocked(owner){
 
     if(shell)shell.hidden=false;
     if(lock)lock.hidden=true;
-    await loadContacts();
+    await Promise.all([loadContacts(),loadUnread()]);
+    renderContacts();
     search?.addEventListener('input',renderContacts);
 
     form.addEventListener('submit',async event=>{
@@ -139,11 +155,15 @@ function showLocked(owner){
       }
     });
 
-    getSupabase().channel(`character-messages-${user.id}`)
+    channel=getSupabase().channel(`character-messages-${user.id}`)
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'social_character_messages'},payload=>{
         const message=payload.new;
-        if(peer&&((message.sender_character_id===me.character_id&&message.recipient_character_id===peer.character_id)||(message.sender_character_id===peer.character_id&&message.recipient_character_id===me.character_id))){
+        const currentPeer=peer?.character_id;
+        const belongsToOpenPeer=currentPeer&&((message.sender_character_id===me.character_id&&message.recipient_character_id===currentPeer)||(message.sender_character_id===currentPeer&&message.recipient_character_id===me.character_id));
+        if(belongsToOpenPeer){
           messages().catch(error=>fail(error,'Impossible d’actualiser la conversation.'));
+        }else if(message.recipient_user_id===user.id){
+          loadUnread().then(renderContacts).catch(error=>fail(error,'Impossible d’actualiser les messages non lus.'));
         }
       })
       .subscribe();
