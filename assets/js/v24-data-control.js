@@ -32,6 +32,8 @@ function queries(uid){
     profile:()=>s.from('profiles').select('*').eq('user_id',uid),
     safety_profile:()=>s.from('account_safety_profiles').select('*').eq('user_id',uid),
     legacy_preferences:()=>s.from('account_legacy_preferences').select('*').eq('user_id',uid),
+    privacy_settings:()=>s.from('privacy_settings').select('*').eq('user_id',uid),
+    notification_preferences:()=>s.from('notification_preferences').select('*').eq('user_id',uid),
     research_consent:()=>s.from('research_consents').select('*').eq('user_id',uid),
     access_requests:()=>s.from('access_requests').select('*').eq('user_id',uid),
     project_access:()=>s.from('project_access').select('*,projects(name,slug)').eq('user_id',uid),
@@ -88,7 +90,7 @@ async function exportData(){
     catch(error){errors.push({section:label,error:safeError(error)})}
   }
   const payload={
-    format:'SINJIRA_USER_EXPORT_V24_4_69',
+    format:'SINJIRA_USER_EXPORT_V24_4_70',
     exported_at:new Date().toISOString(),
     complete:errors.length===0,
     account:{id:user.id,email:user.email||null,created_at:user.created_at||null,last_sign_in_at:user.last_sign_in_at||null},
