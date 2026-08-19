@@ -25,7 +25,7 @@ select is((select count(*) from information_schema.column_privileges where grant
 select is((select count(*) from pg_policies where schemaname='public' and tablename='privacy_settings' and policyname like 'privacy_settings_self_%'),3::bigint,'privacy_settings: trois politiques self-only');
 select is((select count(*) from pg_policies where schemaname='public' and tablename='notification_preferences' and policyname like 'notification_preferences_self_%'),3::bigint,'notification_preferences: trois politiques self-only');
 select ok(has_column_privilege('authenticated','public.privacy_settings','allow_ai_personal_data','UPDATE'),'colonne IA techniquement modifiable mais contrainte SQL impose false');
-select ok(not exists(select 1 from pg_constraint where conrelid='public.privacy_settings'::regclass and contype='c' and pg_get_constraintdef(oid) ilike '%allow_ai_personal_data = false%') is false,'privacy_settings: contrainte IA forcée à false présente');
+select ok(exists(select 1 from pg_constraint where conrelid='public.privacy_settings'::regclass and contype='c' and pg_get_constraintdef(oid) ilike '%allow_ai_personal_data = false%'),'privacy_settings: contrainte IA forcée à false présente');
 
 select * from finish();
 rollback;
