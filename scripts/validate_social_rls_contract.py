@@ -9,6 +9,7 @@ OWNER = 'kingtyrano@gmail.com'
 SOCIAL_VERSION = '24.4.42'
 PAGE_VERSION = '24.4.44'
 MESSAGE_VERSION = '24.4.71'
+COMMUNITY_VERSION = '24.4.72'
 
 errors: list[str] = []
 
@@ -145,12 +146,9 @@ for path in social_clients:
         require(forbidden not in text,
                 f'{path.relative_to(ROOT)} expose encore une erreur technique brute: {forbidden}')
 
-# Les pages sociales historiques gardent leur contrat social 24.4.42/24.4.44.
-# Les deux messageries peuvent avancer indépendamment tant qu'elles importent
-# toujours la couche sociale canonique et que leur propre version reste explicite.
 social_pages = {
-    ROOT / 'compte' / 'communaute.html': ('sinjira-community-real.js', SOCIAL_VERSION, PAGE_VERSION),
-    ROOT / 'compte' / 'reseau-personnage.html': ('sinjira-community-character.js', SOCIAL_VERSION, PAGE_VERSION),
+    ROOT / 'compte' / 'communaute.html': ('sinjira-community-real.js', COMMUNITY_VERSION, PAGE_VERSION),
+    ROOT / 'compte' / 'reseau-personnage.html': ('sinjira-community-character.js', COMMUNITY_VERSION, PAGE_VERSION),
     ROOT / 'compte' / 'messages-reels.html': ('sinjira-messages-real.js', MESSAGE_VERSION, MESSAGE_VERSION),
     ROOT / 'compte' / 'messages-personnage.html': ('sinjira-messages-character.js', MESSAGE_VERSION, MESSAGE_VERSION),
     ROOT / 'compte' / 'regles-communaute.html': ('sinjira-community-rules.js', SOCIAL_VERSION, PAGE_VERSION),
@@ -178,4 +176,4 @@ if errors:
         print('- ' + error)
     raise SystemExit(1)
 
-print('OK — contrat social/RLS: socle V24.4.44 conservé, messageries V24.4.71 explicites, cohorte self-only, ACL DDL durcies et erreurs publiques assainies.')
+print('OK — contrat social/RLS: socle V24.4.44 conservé, messageries V24.4.71 et réseaux V24.4.72 explicites, cohorte self-only, ACL durcies et erreurs publiques assainies.')
