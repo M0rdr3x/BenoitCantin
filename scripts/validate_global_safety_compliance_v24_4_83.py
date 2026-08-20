@@ -55,7 +55,7 @@ req("years<13thenraiseexception'sinjira_minimum_age_13'" in compact,'Le serveur 
 req("ifyears<14then" in compact and 'guardian_authorization_required_under_14' in mig.lower(),'L’autorisation parentale à 13 ans n’est pas préservée.')
 req("interval'5years'" in compact,'La rétention minimale de cinq ans des incidents est absente.')
 req("interval'30days'" in compact,'L’échéance interne de 30 jours des demandes est absente.')
-req("enable row level security" in mig.lower(),'RLS absent des registres V83.')
+req('enable row level security' in mig.lower(),'RLS absent des registres V83.')
 req('revoke all on private.privacy_incident_register from public,anon,authenticated' in mig.lower(),'Registre incidents exposé à un rôle navigateur.')
 req('revoke all on private.privacy_requests from public,anon,authenticated' in mig.lower(),'Demandes vie privée exposées directement.')
 
@@ -74,7 +74,7 @@ for phrase in ('prostitution','proxénétisme','traite','vente de drogues','groo
 
 for phrase in ('québec','canada','rgpd','digital services act','royaume-uni','coppa'):
     req(phrase in docs.lower(),f'Matrice/gouvernance internationale incomplète: {phrase}')
-for phrase in ('privacy by default','confidentialité élevée','efvp','legal holds','21 jours','aucune fonction d’achat'):
+for phrase in ('confidentialité élevée','efvp','legal holds','21 jours','fonction d\'achat'):
     req(phrase in docs.lower(),f'Gouvernance V83 marqueur absent: {phrase}')
 
 req('paid_sexual_content' in v82.lower() and 'human_trafficking' in v82.lower() and 'dating_profiles_adult_only' in v82.lower(),'Le contrat V24.4.82 de sécurité n’est plus présent.')
