@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260819014532_sinjira_v24_4_72_social_content_self_management.sql'
@@ -19,6 +20,16 @@ def require(text,markers,label):
 def forbid(text,markers,label):
     found=[m for m in markers if m in text]
     if found: raise AssertionError(f'{label}: marqueurs interdits: {found}')
+
+
+def version_tuple(value):
+    return tuple(int(x) for x in value.split('.'))
+
+
+def require_runtime_at_least(text,pattern,minimum,label):
+    match=re.search(pattern,text)
+    if not match or version_tuple(match.group(1)) < version_tuple(minimum):
+        raise AssertionError(f'{label}: runtime antérieur à V{minimum}')
 
 
 def main():
@@ -71,19 +82,21 @@ def main():
         (char,'réseau personnage','social_character_posts','social_character_comments'),
     ):
         require(text,[
-            "const UI_VERSION='24.4.72'",
             'sinjira-social-self-content.js?v=24.4.72',
             'data-edit', 'data-delete', 'data-edit-comment', 'data-delete-comment',
             f"table:'{post_table}'",
             f"table:'{comment_table}'",
             'editedSuffix('
         ],label)
+        require_runtime_at_least(text,r"const UI_VERSION='([0-9]+(?:\.[0-9]+)+)'",'24.4.72',label)
 
-    require(real_page,['sinjira-community-real.js?v=24.4.72','data-social-runtime="24.4.72"'],'page communauté')
-    require(char_page,['sinjira-community-character.js?v=24.4.72','data-social-runtime="24.4.72"'],'page réseau personnage')
+    require_runtime_at_least(real_page,r'sinjira-community-real\.js\?v=([0-9]+(?:\.[0-9]+)+)','24.4.72','page communauté script')
+    require_runtime_at_least(real_page,r'data-social-runtime="([0-9]+(?:\.[0-9]+)+)"','24.4.72','page communauté runtime')
+    require_runtime_at_least(char_page,r'sinjira-community-character\.js\?v=([0-9]+(?:\.[0-9]+)+)','24.4.72','page réseau personnage script')
+    require_runtime_at_least(char_page,r'data-social-runtime="([0-9]+(?:\.[0-9]+)+)"','24.4.72','page réseau personnage runtime')
     require(ledger,['20260819014532 sinjira_v24_4_72_social_content_self_management'],'ledger production')
 
-    print('OK V24.4.72: édition/suppression self-only sur les deux réseaux, body seul modifiable, anon révoqué, règles communautaires et identité personnage préservées.')
+    print('OK V24.4.72+: édition/suppression self-only sur les deux réseaux, body seul modifiable, anon révoqué, règles communautaires et identité personnage préservées sur runtime courant.')
     return 0
 
 if __name__=='__main__':

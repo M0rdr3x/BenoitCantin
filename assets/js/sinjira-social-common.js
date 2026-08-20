@@ -1,7 +1,7 @@
 import {getSupabase,requireUser,escapeHtml,formatDate,SINJIRA_CONFIG} from './sinjira-supabase.js';
 
 export const RULES_VERSION='sinjira-community-rules-v1-2026-08-12';
-export const SOCIAL_RUNTIME_VERSION='24.4.42';
+export const SOCIAL_RUNTIME_VERSION='24.4.79';
 export {getSupabase,requireUser,escapeHtml,formatDate};
 
 export function avatarUrl(path){
@@ -42,18 +42,22 @@ export async function characterProfileByUser(userId){
   return data||null;
 }
 
-export async function reportContent({network,target_type,target_id,reason,snapshot={}}){
-  const user=await requireCommunityUser();
-  const {error}=await getSupabase().from('social_reports').insert({
-    reporter_user_id:user.id,
-    network,
-    target_type,
-    target_id,
-    reason:String(reason||'Autre').slice(0,120),
-    snapshot
+export async function reportContent({network,target_type,target_id,reason='other',details=null,block=false}){
+  await requireCommunityUser();
+  const allowed=new Set(['harassment','sexual_content','pressure','scam','hate','threats','impersonation','spam','other']);
+  const raw=String(reason||'other').trim();
+  const normalized=allowed.has(raw)?raw:'other';
+  const safeDetails=details??(normalized==='other'&&raw&&raw.toLowerCase()!=='other'?raw:null);
+  const {data,error}=await getSupabase().rpc('social_report_content',{
+    p_network:network,
+    p_target_type:target_type,
+    p_target_id:target_id,
+    p_reason:normalized,
+    p_details:safeDetails?String(safeDetails).slice(0,1200):null,
+    p_block:!!block
   });
   if(error)throw error;
-  return true;
+  return data||{ok:true};
 }
 
 export function socialStatus(node,msg,type='info'){
@@ -67,6 +71,9 @@ export function socialErrorMessage(error,fallback='Action impossible pour le mom
   const code=String(error?.code||'').toUpperCase();
   const message=String(error?.message||error||'').toLowerCase();
 
+  if(message.includes('social_report_already_open'))return 'Un signalement ouvert existe déjà pour ce contenu.';
+  if(message.includes('social_report_rate_limit'))return 'Trop de signalements ont été envoyés récemment. Réessayez plus tard.';
+  if(message.includes('social_report_target_unavailable'))return 'Ce contenu n’est plus disponible depuis votre compte.';
   if(code==='42501'||message.includes('row-level security')||message.includes('permission denied')){
     return 'Cette action n’est pas autorisée avec l’état actuel de votre compte. Rechargez la page; si le problème persiste, consultez Sécurité ou utilisez la page Contact.';
   }
