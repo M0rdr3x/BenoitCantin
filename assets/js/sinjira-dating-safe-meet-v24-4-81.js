@@ -40,7 +40,7 @@ function announce(text,type='info'){
 function explain(error){
   const raw=String(error?.message||error||'');
   if(raw.includes('DATING_MEET_REVEAL_REQUIRED'))return 'Les suggestions de première rencontre deviennent disponibles seulement après le seuil 10 + 10 et le dévoilement mutuel.';
-  if(raw.includes('DATING_MEET_CREDIT_REQUIRED'))return 'La personne qui propose doit avoir au moins 1 Crédit Rencontre disponible.';
+  if(raw.includes('SINJIRA_POINTS_REQUIRED'))return 'La personne qui propose doit avoir au moins 1 Point SINJIRA™ disponible.';
   if(raw.includes('DATING_MEET_AREA_REQUIRED'))return 'Indiquez une zone générale de rencontre, par exemple « Montréal — Plateau », jamais une adresse privée.';
   if(raw.includes('DATING_MEET_AREA_MISMATCH'))return 'La zone proposée a changé. Utilisez la même zone générale afin que les deux personnes consentent au même secteur.';
   if(raw.includes('DATING_MEET_PREFERENCE_INVALID'))return 'Une préférence de sortie n’est pas reconnue.';
@@ -51,29 +51,29 @@ function explain(error){
   return 'Cette action n’a pas pu être terminée.';
 }
 
-function ensureCreditSection(){
-  if(document.querySelector('[data-dating-credit-section]')||!connectionsBox)return;
+function ensurePointsSection(){
+  if(document.querySelector('[data-sinjira-points-section]')||!connectionsBox)return;
   const currentSection=connectionsBox.closest('section');if(!currentSection)return;
   const section=document.createElement('section');
-  section.className='section section-tight';section.dataset.datingCreditSection='';
+  section.className='section section-tight';section.dataset.sinjiraPointsSection='';
   section.innerHTML=`<div class="account-shell"><article class="account-card safe-meet-credit-card">
-    <div class="account-welcome-strip"><span class="eyebrow">Crédits Rencontre</span><strong data-dating-credit-balance>Chargement…</strong></div>
+    <div class="account-welcome-strip"><span class="eyebrow">Points SINJIRA™</span><strong data-sinjira-points-balance>Chargement…</strong></div>
     <h2>Préparer une première rencontre publique, à deux</h2>
-    <p>Après le dévoilement mutuel, l’une des deux personnes peut proposer de chercher des idées de sortie adaptées aux goûts des deux. <strong>La demande coûte 1 Crédit Rencontre au total</strong>, débité à la personne qui lance la proposition seulement lorsque l’autre accepte aussi.</p>
+    <p>Après le dévoilement mutuel, l’une des deux personnes peut proposer de chercher des idées de sortie adaptées aux goûts des deux. <strong>La demande coûte 1 Point SINJIRA™ au total</strong>, débité à la personne qui lance la proposition seulement lorsque l’autre accepte aussi.</p>
     <div class="safe-meet-principles">
-      <span>3 crédits gratuits au départ</span><span>+1 gratuit par mois</span><span>Aucun achat activé</span><span>Aucune IA distante payante</span>
+      <span>1 Point SINJIRA™ par recommandation</span><span>Un seul débit pour la paire</span><span>Consentement des deux</span><span>Même portefeuille que la boutique</span>
     </div>
-    <p><small>SINJIRA™ propose des catégories de lieux publics et une recherche cartographique. Il ne garantit jamais la sécurité d’un établissement. Vérifiez les heures, l’accessibilité et les conditions actuelles avant de vous déplacer.</small></p>
+    <p><small>Les Points SINJIRA™ forment un portefeuille commun au site et pourront aussi servir à la boutique et à d’autres services. SINJIRA™ privilégie ici des catégories de lieux publics; il ne garantit jamais la sécurité d’un établissement. Vérifiez les heures, l’accessibilité et les conditions actuelles avant de vous déplacer.</small></p>
   </article></div>`;
   currentSection.before(section);
 }
 
-async function refreshCredit(){
-  const node=document.querySelector('[data-dating-credit-balance]');if(!node)return;
-  const {data,error}=await s.rpc('dating_credit_status');
-  if(error){node.textContent='Crédits indisponibles';return;}
+async function refreshPoints(){
+  const node=document.querySelector('[data-sinjira-points-balance]');if(!node)return;
+  const {data,error}=await s.rpc('sinjira_points_status');
+  if(error){node.textContent='Solde indisponible';return;}
   const balance=Number(data?.balance||0);
-  node.textContent=`${balance} Crédit${balance===1?'':'s'} Rencontre`;
+  node.textContent=`${balance} Point${balance===1?'':'s'} SINJIRA™`;
 }
 
 function checkboxMarkup(){
@@ -100,7 +100,7 @@ function decorateCards(){
       const actions=card.querySelector('.hero-actions');if(!actions)continue;
       const button=document.createElement('button');
       button.type='button';button.className='btn btn-secondary btn-small';button.dataset.safeMeetToggle='';
-      button.textContent='Préparer une rencontre publique';
+      button.textContent='Préparer une rencontre publique · 1 Point';
       actions.append(button);
       actions.insertAdjacentHTML('afterend',panelMarkup(row.connection_id));
     }
@@ -114,14 +114,14 @@ function renderWaiting(state,body){
   const consentText=state.my_consent
     ?'Votre accord est enregistré. Aucun nouveau débit ne sera fait pendant cette attente.'
     :state.other_consent
-      ?'L’autre personne a déjà accepté. Votre accord déclenchera la recommandation et le débit de 1 crédit à la personne qui a lancé la demande.'
-      :'Le premier accord crée seulement une proposition. Aucun crédit n’est débité avant l’accord des deux.';
+      ?'L’autre personne a déjà accepté. Votre accord déclenchera la recommandation et le débit de 1 Point SINJIRA™ à la personne qui a lancé la demande.'
+      :'Le premier accord crée seulement une proposition. Aucun Point SINJIRA™ n’est débité avant l’accord des deux.';
   body.innerHTML=`<div class="safe-meet-notice"><strong>Consentement des deux obligatoire</strong><p>${escapeHtml(consentText)}</p></div>
     <form data-safe-meet-form>
       <label><strong>Zone générale proposée</strong><input name="meeting_area" maxlength="120" ${readonly} ${areaValue} placeholder="Ex. Montréal — Plateau" required/><small>Quartier ou secteur général seulement. N’inscrivez jamais votre domicile ou une adresse privée.</small></label>
       <fieldset><legend><strong>Mes goûts pour cette sortie</strong></legend><div class="safe-meet-chips">${checkboxMarkup()}</div></fieldset>
       <div class="safe-meet-safety"><strong>Avant de confirmer</strong><ul><li>Lieu public avec personnel ou passage régulier.</li><li>Chacun garde son propre moyen de retour.</li><li>Une personne de confiance connaît le lieu et l’heure.</li><li>Pas de domicile, hôtel ou endroit isolé comme première rencontre.</li></ul></div>
-      <div class="hero-actions"><button class="btn btn-primary btn-small" type="submit">${state.my_consent?'Mettre à jour mes goûts':'Je veux ces suggestions'}</button>${state.status==='waiting'?'<button class="btn btn-secondary btn-small" type="button" data-safe-meet-cancel>Annuler la proposition</button>':''}</div>
+      <div class="hero-actions"><button class="btn btn-primary btn-small" type="submit">${state.my_consent?'Mettre à jour mes goûts':'Je veux ces suggestions · 1 Point'}</button>${state.status==='waiting'?'<button class="btn btn-secondary btn-small" type="button" data-safe-meet-cancel>Annuler la proposition</button>':''}</div>
     </form>`;
 }
 
@@ -131,10 +131,10 @@ function renderGenerated(state,body){
   const cards=places.map(place=>{
     const query=encodeURIComponent(String(place.search_query||`${place.title||''} ${state.meeting_area||''}`).trim());
     const href=`https://www.openstreetmap.org/search?query=${query}`;
-    return `<article class="safe-meet-result"><span class="eyebrow">Idée publique</span><h4>${escapeHtml(place.title||'Sortie publique')}</h4><p>${escapeHtml(place.why||'')}</p><p><small>${escapeHtml(place.detail||'')}</small></p><a class="btn btn-secondary btn-small" href="${href}" target="_blank" rel="noopener noreferrer">Chercher dans OpenStreetMap</a></article>`;
+    return `<article class="safe-meet-result"><span class="eyebrow">Idée publique</span><h4>${escapeHtml(place.title||'Sortie publique')}</h4><p>${escapeHtml(place.why||'')}</p><p><small>${escapeHtml(place.detail||'')}</small></p><a class="btn btn-secondary btn-small" href="${href}" target="_blank" rel="noopener noreferrer">Chercher des lieux dans OpenStreetMap</a></article>`;
   }).join('');
   const checklist=(Array.isArray(rec.checklist)?rec.checklist:[]).map(item=>`<li>${escapeHtml(item)}</li>`).join('');
-  body.innerHTML=`<div class="safe-meet-generated"><div class="account-welcome-strip"><strong>Suggestions prêtes</strong><span>${escapeHtml(state.meeting_area||rec.area||'Zone convenue')}</span></div><p>Les goûts des deux ont été combinés sans dévoiler les préférences brutes de l’autre personne. Le Crédit Rencontre a été débité une seule fois à la personne qui a lancé la demande.</p><div class="safe-meet-results">${cards||'<p>Aucune suggestion disponible.</p>'}</div><div class="safe-meet-safety"><strong>Checklist de première rencontre</strong><ul>${checklist}</ul></div><p><small>${escapeHtml(rec.safety_notice||'Vérifiez toujours le lieu et les conditions actuelles vous-mêmes.')}</small></p></div>`;
+  body.innerHTML=`<div class="safe-meet-generated"><div class="account-welcome-strip"><strong>Suggestions prêtes</strong><span>${escapeHtml(state.meeting_area||rec.area||'Zone convenue')}</span></div><p>Les goûts des deux ont été combinés sans dévoiler les préférences brutes de l’autre personne. Le Point SINJIRA™ a été débité une seule fois à la personne qui a lancé la demande.</p><div class="safe-meet-results">${cards||'<p>Aucune suggestion disponible.</p>'}</div><div class="safe-meet-safety"><strong>Checklist de première rencontre</strong><ul>${checklist}</ul></div><p><small>${escapeHtml(rec.safety_notice||'Vérifiez toujours le lieu et les conditions actuelles vous-mêmes.')}</small></p></div>`;
 }
 
 async function loadPanel(panel){
@@ -151,7 +151,7 @@ async function refreshOverview(){
   try{
     const {data=[],error}=await s.rpc('dating_connections_overview');
     if(!error){overview=data;decorateCards();}
-    await refreshCredit();
+    await refreshPoints();
   }finally{refreshing=false;}
 }
 
@@ -168,7 +168,7 @@ connectionsBox?.addEventListener('click',async event=>{
     const {error}=await s.rpc('dating_safe_meet_cancel',{p_connection_id:panel.dataset.connectionId});
     cancel.disabled=false;
     if(error){announce(explain(error),'error');return;}
-    announce('Proposition de rencontre annulée. Aucun crédit n’a été débité.','success');await loadPanel(panel);await refreshCredit();
+    announce('Proposition de rencontre annulée. Aucun Point SINJIRA™ n’a été débité.','success');await loadPanel(panel);await refreshPoints();
   }
 });
 
@@ -181,16 +181,16 @@ connectionsBox?.addEventListener('submit',async event=>{
   try{
     const {data,error}=await s.rpc('dating_safe_meet_opt_in',{p_connection_id:panel.dataset.connectionId,p_preferences:prefs,p_meeting_area:area});
     if(error)throw error;
-    if(data?.status==='generated')announce('Vous avez tous les deux accepté : les suggestions de première rencontre sont prêtes.','success');
-    else announce('Votre accord est enregistré. Aucun crédit ne sera débité avant l’accord de l’autre personne.','success');
-    await loadPanel(panel);await refreshCredit();
+    if(data?.status==='generated')announce('Vous avez tous les deux accepté : les suggestions de première rencontre sont prêtes. 1 Point SINJIRA™ a été débité une seule fois.','success');
+    else announce('Votre accord est enregistré. Aucun Point SINJIRA™ ne sera débité avant l’accord de l’autre personne.','success');
+    await loadPanel(panel);await refreshPoints();
   }catch(error){announce(explain(error),'error');}
   finally{if(submit)submit.disabled=false;}
 });
 
 function scheduleRefresh(){clearTimeout(refreshTimer);refreshTimer=setTimeout(()=>refreshOverview().catch(()=>{}),140);}
 
-ensureStyle();ensureCreditSection();
+ensureStyle();ensurePointsSection();
 if(connectionsBox){observer=new MutationObserver(scheduleRefresh);observer.observe(connectionsBox,{childList:true,subtree:true});}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleRefresh();});
 scheduleRefresh();
