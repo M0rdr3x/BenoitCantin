@@ -1,4 +1,4 @@
-name: Validation Communauté V24.4.79
+name: Validation Communauté V24.4.80
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: community-v24-4-79-${{ github.event.pull_request.number || github.ref }}
+  group: community-v24-4-80-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -32,8 +32,10 @@ jobs:
         with:
           node-version: '22'
           package-manager-cache: false
-      - name: Vérifier le contrat Communauté V24.4.79
+      - name: Vérifier le contrat Communauté privée V24.4.79
         run: python scripts/validate_community_safety_v24_4_79.py
+      - name: Vérifier le portail public Communauté V24.4.80
+        run: python scripts/validate_public_community_v24_4_80.py
       - name: Vérifier la syntaxe JavaScript communautaire
         run: |
           node --check assets/js/sinjira-social-common.js
