@@ -4,6 +4,13 @@ const blocksBox=document.querySelector('[data-social-blocks]');
 const reportsBox=document.querySelector('[data-social-reports]');
 const statusNode=document.querySelector('[data-social-safety-status]');
 const reasonLabels={
+  minor_safety:'Sécurité d’un mineur',
+  grooming:'Grooming ou sollicitation d’un mineur',
+  off_platform_minor_contact:'Tentative de déplacer un mineur hors plateforme',
+  sexual_exploitation:'Prostitution, proxénétisme ou exploitation sexuelle',
+  human_trafficking:'Traite, vente ou achat de personnes',
+  paid_sexual_content:'Contenu sexuel payant',
+  drugs_or_illicit_sales:'Vente de drogues ou commerce illicite',
   harassment:'Harcèlement',sexual_content:'Contenu sexuel',pressure:'Pression ou manipulation',scam:'Arnaque ou fraude',hate:'Propos haineux',threats:'Menaces',impersonation:'Usurpation',spam:'Spam',other:'Autre'
 };
 const sourceLabels={community:'Communauté',dating:'Rencontres',real:'Communauté',character:'Réseau personnage'};
