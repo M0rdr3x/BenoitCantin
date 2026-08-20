@@ -7,10 +7,12 @@ on:
       - 'supabase/tests/**'
       - 'supabase/functions/delete-player-account/**'
       - 'assets/js/v24-signup.js'
+      - 'assets/js/v24-data-control.js'
       - 'assets/js/sinjira-privacy-center-v24-4-83.js'
       - 'compte/inscription.html'
       - 'compte/vie-privee.html'
       - 'compte/confidentialite-joueur.html'
+      - 'compte/parametres.html'
       - 'confidentialite.html'
       - 'gouvernance-vie-privee.html'
       - 'contact.html'
@@ -26,10 +28,12 @@ on:
       - 'supabase/tests/**'
       - 'supabase/functions/delete-player-account/**'
       - 'assets/js/v24-signup.js'
+      - 'assets/js/v24-data-control.js'
       - 'assets/js/sinjira-privacy-center-v24-4-83.js'
       - 'compte/inscription.html'
       - 'compte/vie-privee.html'
       - 'compte/confidentialite-joueur.html'
+      - 'compte/parametres.html'
       - 'confidentialite.html'
       - 'gouvernance-vie-privee.html'
       - 'contact.html'
@@ -59,6 +63,7 @@ jobs:
       - name: Vérifier la syntaxe JavaScript
         run: |
           node --check assets/js/v24-signup.js
+          node --check assets/js/v24-data-control.js
           node --check assets/js/sinjira-privacy-center-v24-4-83.js
       - name: Vérifier le ledger production
         run: python scripts/validate_production_migration_ledger.py
