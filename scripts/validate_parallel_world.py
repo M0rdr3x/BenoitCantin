@@ -4,14 +4,16 @@ import re
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase'/'migrations'/'20260816149000_sinjira_v24_4_12_parallel_character_convergence.sql'
-IDENTITY_MIG=ROOT/'supabase'/'migrations'/'20260820223914_sinjira_v24_4_87_identity_firewall.sql'
+IDENTITY_MIG=ROOT/'supabase'/'migrations'/'20260820224802_sinjira_v24_4_89_private_handle_runtime_decoupling.sql'
 CLEANUP_MIG=ROOT/'supabase'/'migrations'/'20260820224027_sinjira_v24_4_88_identity_leak_cleanup.sql'
 JS=ROOT/'assets'/'js'/'v24-parallel.js'
 HTML=ROOT/'compte'/'monde-parallele.html'
 PUBLIC_HTML=ROOT/'projets'/'sinjira'/'monde-parallele'/'index.html'
 UI_VERSION='24.4.88'
 
+
 def compact(value:str)->str:return re.sub(r'\s+','',value.lower())
+
 
 def main()->int:
     errors=[]
@@ -34,8 +36,10 @@ def main()->int:
     for marker in [
       'createtableifnotexistsprivate.account_identities',
       'revokeallontableprivate.account_identitiesfromanon,authenticated',
-      "account_handle='abysstime'",
+      'createtableifnotexistsprivate.parallel_identities',
+      'revokeallontableprivate.parallel_identitiesfromanon,authenticated',
       "public_name='sethtremblay'",
+      'createorreplacefunctionpublic.parallel_my_identity()',
       'createorreplacefunctionpublic.parallel_my_context()',
       'createorreplacefunctionpublic.parallel_save_cycle_response',
       "'character_id',v_identity.id",
@@ -59,7 +63,7 @@ def main()->int:
 
     if "s.rpc('parallel_my_context')" not in js:errors.append('Le client ne charge pas son contexte par RPC cloisonné.')
     if "s.rpc('parallel_save_cycle_response'" not in js:errors.append('Le client n’enregistre pas ses réponses par RPC cloisonné.')
-    if f"const ui_version='{UI_VERSION}'" not in js_low:errors.append(f'Version client {UI_VERSION} absente.')
+    if f"constui_version='{UI_VERSION}'" not in js_low:errors.append(f'Version client {UI_VERSION} absente.')
     if f'v24-parallel.js?v={UI_VERSION}' not in html:errors.append(f'Cache-busting {UI_VERSION} absent.')
     if f'Univers persistant V{UI_VERSION}' not in html:errors.append(f'Version visible différente de V{UI_VERSION}.')
     if 'identifiant technique privé du compte' not in html.lower():errors.append('La séparation compte/personnage n’est pas expliquée dans l’espace compte.')
