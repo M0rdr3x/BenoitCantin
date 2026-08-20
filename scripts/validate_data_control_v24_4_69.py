@@ -27,7 +27,7 @@ def main():
     runtime=read('assets/js/v24-data-control.js')
     page=read('compte/parametres.html')
     delete_fn=read('supabase/functions/delete-player-account/index.ts')
-    hold_migration=read('supabase/migrations/20260820022200_sinjira_v24_4_83_deletion_hold_hardening.sql')
+    hold_migration=read('supabase/migrations/20260820204409_sinjira_v24_4_83_deletion_hold_hardening.sql')
 
     require(runtime,[
         'PAGE_SIZE=1000','async function fetchAll','complete:errors.length===0','errors.push({section:label',
