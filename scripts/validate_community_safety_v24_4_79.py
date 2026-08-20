@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260820001600_sinjira_v24_4_79_community_safety_center.sql'
@@ -53,7 +54,10 @@ def main():
     ],'migration V24.4.79')
     forbid(mig,['openai','anthropic','stripe','twilio','pg_net','http_post','snapshot jsonb'],'migration V24.4.79')
 
-    require(common,["rpc('social_report_content'",'SOCIAL_RUNTIME_VERSION=\'24.4.79\''],'helper social commun')
+    require(common,["rpc('social_report_content'"],'helper social commun')
+    runtime=re.search(r"SOCIAL_RUNTIME_VERSION='24\.4\.(\d+)'",common)
+    if not runtime or int(runtime.group(1))<79:
+        raise AssertionError('helper social commun: runtime antérieur à V24.4.79 ou absent')
     forbid(common,[".from('social_reports').insert",'.from("social_reports").insert'],'helper social commun')
     require(safety,['Sécurité communautaire','snapshot utilisé comme preuve',"rpc('social_report_content'",'p_block:block'],'dialogue signalement')
     require(real,['data-report-comment','openSocialReport','UI_VERSION=\'24.4.79\''],'Communauté réelle')
