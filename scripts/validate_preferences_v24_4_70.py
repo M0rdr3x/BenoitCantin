@@ -74,24 +74,26 @@ def main():
     require(export,[
         "privacy_settings:()=>s.from('privacy_settings')",
         "notification_preferences:()=>s.from('notification_preferences')",
-        "format:'SINJIRA_USER_EXPORT_V24_4_70'",
         'complete:errors.length===0'
-    ],'export V24.4.70')
+    ],'export V24.4.70+')
+    if "format:'SINJIRA_USER_EXPORT_V24_4_70'" not in export and "format:'SINJIRA_USER_EXPORT_V24_4_83'" not in export:
+        raise AssertionError('export V24.4.70+: format canonique V70 ou V83 absent')
 
     require(page,[
         'settings-v70',
-        'v24-data-control.js?v=24.4.70',
         'v24-preferences.js?v=24.4.70',
         'Elles ne déclenchent aucun courriel, SMS, push ni service payant',
         'name="allow_ai_personal_data"',
         'disabled="" name="allow_ai_personal_data"'
     ],'page paramètres')
+    if 'v24-data-control.js?v=24.4.70' not in page and 'v24-data-control.js?v=24.4.83' not in page:
+        raise AssertionError('page paramètres: runtime contrôle des données V70+ absent')
 
     require(ledger,[
         '20260819001526 sinjira_v24_4_70_self_only_preferences',
         '20260819003353 sinjira_v24_4_70_preferences_schema_convergence'
     ],'ledger production')
-    print('OK préférences V24.4.70: stockage self-only, convergence historique, export complet, RLS, moindre privilège, IA personnelle forcée off et aucun canal payant actif.')
+    print('OK préférences V24.4.70+: stockage self-only, export canonique actuel, RLS, moindre privilège, IA personnelle forcée off et aucun canal payant actif.')
     return 0
 
 if __name__=='__main__':

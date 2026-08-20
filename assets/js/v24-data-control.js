@@ -85,12 +85,24 @@ async function exportData(){
   const entries=Object.entries(queries(user.id));
   for(let i=0;i<entries.length;i++){
     const [label,build]=entries[i];
-    exportButton.textContent=`Export ${i+1}/${entries.length}`;
+    exportButton.textContent=`Export ${i+1}/${entries.length+1}`;
     try{sections[label]=await fetchAll(label,build)}
     catch(error){errors.push({section:label,error:safeError(error)})}
   }
+
+  // Les modules ajoutés après V24.4.70 sont scellés derrière des RPC. Le complément self-only
+  // couvre Vie privée, Points SINJIRA™, Rencontres/Safe Meet et les métadonnées de signalements.
+  exportButton.textContent=`Export ${entries.length+1}/${entries.length+1}`;
+  try{
+    const {data,error}=await s.rpc('privacy_export_my_extended_data');
+    if(error)throw error;
+    sections.extended_private=data||{};
+  }catch(error){
+    errors.push({section:'extended_private',error:safeError(error)});
+  }
+
   const payload={
-    format:'SINJIRA_USER_EXPORT_V24_4_70',
+    format:'SINJIRA_USER_EXPORT_V24_4_83',
     exported_at:new Date().toISOString(),
     complete:errors.length===0,
     account:{id:user.id,email:user.email||null,created_at:user.created_at||null,last_sign_in_at:user.last_sign_in_at||null},
@@ -109,7 +121,7 @@ async function exportData(){
   if(errors.length){
     setStatus(status,`Export partiel téléchargé : ${errors.length} section(s) n’ont pas pu être lues. Le fichier contient la liste exacte des erreurs.`,'error');
   }else{
-    setStatus(status,`Export complet téléchargé : ${entries.length} section(s) vérifiées.`,'success');
+    setStatus(status,`Export complet téléchargé : ${entries.length+1} section(s) vérifiées.`,'success');
   }
 }
 
@@ -129,6 +141,8 @@ async function deleteAccount(){
       }else if(data?.code==='MFA_REQUIRED'){
         location.href=`/compte/mfa.html?next=${encodeURIComponent('/compte/parametres.html')}`;
         return;
+      }else if(data?.code==='LEGAL_HOLD_ACTIVE'){
+        setStatus(status,'La suppression automatique est temporairement bloquée par une obligation de conservation documentée. Ouvrez le Centre Vie privée pour suivre la demande.','error');
       }else{
         setStatus(status,data?.error||'Suppression impossible.','error');
       }

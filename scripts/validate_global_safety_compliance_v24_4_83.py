@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+from pathlib import Path
+
+ROOT=Path(__file__).resolve().parents[1]
+MIG=ROOT/'supabase/migrations/20260820022000_sinjira_v24_4_83_global_safety_compliance.sql'
+GATE=ROOT/'supabase/migrations/20260820022100_sinjira_v24_4_83_youth_jurisdiction_gate.sql'
+HOLD=ROOT/'supabase/migrations/20260820022200_sinjira_v24_4_83_deletion_hold_hardening.sql'
+V82=ROOT/'supabase/migrations/20260820020733_sinjira_v24_4_82_minor_exploitation_safety.sql'
+TEST=ROOT/'supabase/tests/global_safety_compliance_v24_4_83.test.sql'
+HOLD_TEST=ROOT/'supabase/tests/deletion_hold_v24_4_83.test.sql'
+DELETE_FN=ROOT/'supabase/functions/delete-player-account/index.ts'
+SIGNUP_JS=ROOT/'assets/js/v24-signup.js'; SIGNUP_HTML=ROOT/'compte/inscription.html'
+PRIVACY=ROOT/'confidentialite.html'; GOVERNANCE=ROOT/'gouvernance-vie-privee.html'; ACCOUNT_PRIVACY=ROOT/'compte/confidentialite-joueur.html'
+PRIVACY_CENTER=ROOT/'compte/vie-privee.html'; PRIVACY_JS=ROOT/'assets/js/sinjira-privacy-center-v24-4-83.js'; LEGAL=ROOT/'avis-legal.html'; CONTACT=ROOT/'contact.html'
+DOCS=[
+ ROOT/'docs/compliance/INTERNATIONAL_COMPLIANCE_MATRIX.md',ROOT/'docs/compliance/EFVP.md',ROOT/'docs/compliance/CHILD_SAFETY_RISK_ASSESSMENT.md',
+ ROOT/'docs/compliance/ILLEGAL_CONTENT_RISK_ASSESSMENT.md',ROOT/'docs/compliance/DATA_RETENTION_SCHEDULE.md',ROOT/'docs/compliance/PRIVACY_INCIDENT_RESPONSE.md',
+ ROOT/'docs/compliance/CHILD_SEXUAL_EXPLOITATION_REPORTING_PLAYBOOK.md',ROOT/'docs/compliance/COMMERCE_ACTIVATION_GATE.md',
+ ROOT/'docs/compliance/THIRD_PARTY_PROCESSOR_REGISTER.md',ROOT/'docs/compliance/AUTOMATED_DECISION_GATE.md',ROOT/'docs/compliance/JURISDICTION_ACTIVATION_GATE.md'
+]
+errors=[]
+def read(p):
+    if not p.exists(): errors.append(f'Fichier absent: {p.relative_to(ROOT)}'); return ''
+    return p.read_text('utf-8')
+def req(ok,msg):
+    if not ok: errors.append(msg)
+
+mig=read(MIG); gate=read(GATE); hold=read(HOLD); v82=read(V82); test=read(TEST); hold_test=read(HOLD_TEST); delete_fn=read(DELETE_FN); signup_js=read(SIGNUP_JS); signup_html=read(SIGNUP_HTML)
+privacy=read(PRIVACY); governance=read(GOVERNANCE); account_privacy=read(ACCOUNT_PRIVACY); privacy_center=read(PRIVACY_CENTER); privacy_js=read(PRIVACY_JS); legal=read(LEGAL); contact=read(CONTACT); docs='\n'.join(read(p) for p in DOCS)
+compact=''.join(mig.lower().split()); gatecompact=''.join(gate.lower().split())
+alltext='\n'.join((mig,gate,hold,test,hold_test,delete_fn,signup_js,signup_html,privacy,governance,account_privacy,privacy_center,privacy_js,legal,contact,docs)).lower()
+
+for marker in ('create table if not exists private.privacy_incident_register','create table if not exists private.privacy_requests','create table if not exists private.privacy_legal_holds','create table if not exists private.safety_escalation_cases','create or replace function public.privacy_create_request','create or replace function public.privacy_my_requests','create or replace function public.privacy_admin_record_incident','create trigger trg_safety_create_escalation_case','sinjira_minimum_age_13'):
+    req(marker in mig.lower(),f'Migration V83 marqueur absent: {marker}')
+req("years<13thenraiseexception'sinjira_minimum_age_13'" in compact,'Le serveur ne refuse pas explicitement les moins de 13 ans.')
+req("ifyears<14then" in compact and 'guardian_authorization_required_under_14' in mig.lower(),'L’autorisation parentale à 13 ans n’est pas préservée.')
+req("interval'5years'" in compact,'La rétention minimale de cinq ans des incidents est absente.')
+req("interval'30days'" in compact,'L’échéance interne de 30 jours des demandes est absente.')
+req('enable row level security' in mig.lower(),'RLS absent des registres V83.')
+req('revoke all on private.privacy_incident_register from public,anon,authenticated' in mig.lower(),'Registre incidents exposé à un rôle navigateur.')
+req('revoke all on private.privacy_requests from public,anon,authenticated' in mig.lower(),'Demandes vie privée exposées directement.')
+
+req("years<18andresidence_countrynotin('canada','ca','can')" in gatecompact and 'youth_jurisdiction_not_enabled' in gate.lower(),'Gate jeunesse Canada absent côté serveur.')
+req("'privacy_policy_update'" in gate.lower() and "'/confidentialite.html'" in gate,'Avis interne de changement de politique absent.')
+
+for marker in ('private.privacy_has_active_legal_hold','public.privacy_service_can_delete_user','public.privacy_export_my_extended_data','on delete set null','privacy_requests_user_id_fkey','safety_escalation_cases_source_report_id_fkey'):
+    req(marker in hold.lower(),f'Durcissement suppression/export absent: {marker}')
+req("service.rpc('privacy_service_can_delete_user'" in delete_fn and "code:'LEGAL_HOLD_ACTIVE'" in delete_fn,'Edge Function de suppression ne respecte pas le legal hold.')
+req('LEGAL_HOLD_CHECK_FAILED' in delete_fn,'Échec du contrôle de hold ne provoque pas un arrêt sûr.')
+req('select plan(13);' in hold_test,'Plan pgTAP suppression/hold/export inattendu.')
+req('privacy_service_can_delete_user' in hold_test and 'privacy_export_my_extended_data' in hold_test and 'safety_escalation_cases_source_report_id_fkey' in hold_test,'Tests suppression/hold/export incomplets.')
+
+req('age<13' in signup_js and '13 ans et plus' in signup_js,'JavaScript inscription pas aligné sur 13+.')
+req('age<18&&!isCanada(residenceCountry)' in signup_js,'Gate jeunesse Canada absent côté client.')
+req('partir de 13 ans' in signup_html.lower() and 'moins de 13 ans' in signup_html.lower(),'Interface inscription pas alignée sur 13+.')
+req('comptes de 13 à 17 ans' in signup_html.lower() and 'canada' in signup_html.lower(),'Gate jeunesse Canada non expliqué à l’inscription.')
+req('v24-signup.js?v=24.4.83' in signup_html,'Version du client inscription non invalidée.')
+for phrase in ('registre interne','cinq ans','30 jours','13 ans','comptes jeunesse 13–17 ans','canada','rencontres sinjira™ est strictement 18+','ia distante payante est désactivée','paiements en ligne','responsable de la protection des renseignements personnels','gouvernance-vie-privee.html','formspree','états-unis','canada central'):
+    req(phrase in privacy.lower(),f'Politique vie privée incomplète: {phrase}')
+for phrase in ('responsable de la protection des renseignements personnels','benoit cantin','rôles et responsabilités','conservation et destruction','plaintes et demandes','efvp','formulaire officiel de contact'):
+    req(phrase in governance.lower(),f'Gouvernance publique incomplète: {phrase}')
+for phrase in ('accès à mes renseignements','suppression','retrait d’un consentement','plainte de vie privée'):
+    req(phrase in privacy_center.lower(),f'Centre Vie privée incomplet: {phrase}')
+req("rpc('privacy_my_requests'" in privacy_js and "rpc('privacy_create_request'" in privacy_js,'Centre Vie privée non relié aux RPC.')
+for phrase in ('prostitution','proxénétisme','traite','vente de drogues','grooming','13+','18+ strict'):
+    req(phrase in legal.lower(),f'Avis légal incomplet: {phrase}')
+for phrase in ('vie privée / renseignements personnels','formspree','états-unis','politique de confidentialité'):
+    req(phrase in contact.lower(),f'Formulaire contact/transparence incomplet: {phrase}')
+for phrase in ('québec','canada','rgpd','digital services act','royaume-uni','coppa','australie','formspree','canada central','décisions automatisées','jeunesse hors canada'):
+    req(phrase in docs.lower(),f'Matrice/gouvernance internationale incomplète: {phrase}')
+for phrase in ('confidentialité élevée','efvp','legal holds','21 jours','fonction d\'achat','restrict to domain','révision humaine'):
+    req(phrase in docs.lower(),f'Gouvernance V83 marqueur absent: {phrase}')
+req('paid_sexual_content' in v82.lower() and 'human_trafficking' in v82.lower() and 'dating_profiles_adult_only' in v82.lower(),'Le contrat V24.4.82 de sécurité n’est plus présent.')
+req('select plan(31);' in test,'Plan pgTAP V83 inattendu.')
+req('YOUTH_JURISDICTION_NOT_ENABLED' in test and "'sinjira_content_policy_guard'" in test and "'dating_profiles_adult_only'" in test,'Les tests V83 ne protègent pas les gates jeunesse/V82.')
+for paid in ('stripe','paypal','openai_api_key','paymentintent','google places api','mapbox token'):
+    req(paid not in alltext,f'V83 introduit une intégration payante/interdite: {paid}')
+if errors:
+    print(f'ECHEC conformité V24.4.83: {len(errors)} problème(s).'); [print('- '+e) for e in errors]; raise SystemExit(1)
+print('OK V24.4.83: 13+ Canada jeunesse + RPRP/gouvernance + fournisseurs/transferts + droits/export + incidents 5 ans + legal holds + escalade + gates internationaux, sans service payant.')
