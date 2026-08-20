@@ -2,11 +2,13 @@
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-MIG=ROOT/'supabase/migrations/20260820003500_sinjira_v24_4_81_dating_strict_safe_meet.sql'
+MIG=ROOT/'supabase/migrations/20260820012349_sinjira_v24_4_81_dating_strict_safe_meet.sql'
 JS=ROOT/'assets/js/sinjira-dating-safe-meet-v24-4-81.js'
 CSS=ROOT/'assets/css/sinjira-dating-safe-meet-v24-4-81.css'
 PROGRESS=ROOT/'assets/js/sinjira-dating-progress-v24-4-76.js'
 TEST=ROOT/'supabase/tests/dating_strict_safe_meet_v24_4_81.test.sql'
+LEDGER=ROOT/'supabase/production-migration-ledger.txt'
+OLD_MIG=ROOT/'supabase/migrations/20260820003500_sinjira_v24_4_81_dating_strict_safe_meet.sql'
 errors=[]
 
 def req(cond,msg):
@@ -18,7 +20,7 @@ def read(path):
         return ''
     return path.read_text('utf-8')
 
-mig=read(MIG); js=read(JS); css=read(CSS); progress=read(PROGRESS); test=read(TEST)
+mig=read(MIG); js=read(JS); css=read(CSS); progress=read(PROGRESS); test=read(TEST); ledger=read(LEDGER)
 compact=''.join(mig.lower().split())
 
 for marker in (
@@ -72,9 +74,11 @@ req('domicile' in js.lower() and 'hôtel' in js.lower(),'Interface: consignes co
 req('@media(max-width:820px)' in css,'CSS Safe Meet non responsive.')
 req('@media(prefers-reduced-motion:reduce)' in css,'CSS Safe Meet sans garde reduced-motion.')
 req('select plan(34);' in test,'pgTAP V24.4.81 incomplet ou plan obsolète.')
+req('20260820012349 sinjira_v24_4_81_dating_strict_safe_meet' in ledger,'Ledger production V24.4.81 canonique absent.')
+req(not OLD_MIG.exists(),'Ancien timestamp local V24.4.81 encore présent.')
 
 if errors:
     print(f'ECHEC Rencontres V24.4.81: {len(errors)} problème(s)')
     for e in errors: print('- '+e)
     raise SystemExit(1)
-print('OK Rencontres V24.4.81: célibat strict + portefeuille universel Points SINJIRA + suggestions publiques consenties.')
+print('OK Rencontres V24.4.81: production canonique, célibat strict + portefeuille universel Points SINJIRA + suggestions publiques consenties.')

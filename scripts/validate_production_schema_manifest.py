@@ -30,7 +30,8 @@ EXPECTED_TABLES={
 'social_real_messages','social_real_posts','social_reports','social_suspensions','user_entitlements',
 'user_notifications','license_batches','activation_codes','license_redemptions','admin_audit_log',
 'character_status_events','privacy_settings','notification_preferences',
-'dating_profiles','dating_preferences','dating_connections','dating_messages'
+'dating_profiles','dating_preferences','dating_connections','dating_messages',
+'sinjira_points_accounts','sinjira_points_ledger','dating_meet_requests'
 }
 
 # Tables conçues dans l'historique V24 mais pas encore déployées dans la production
@@ -40,8 +41,7 @@ PLANNED_LOCAL_TABLES={
 'private_profiles','family_relationships','character_questionnaire_drafts',
 'parallel_cycles','parallel_missions','parallel_responses',
 'market_listings','market_favorites','token_ledger',
-'codex_entities','codex_relationships','content_versions',
-'sinjira_points_accounts','sinjira_points_ledger','dating_meet_requests'
+'codex_entities','codex_relationships','content_versions'
 }
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
