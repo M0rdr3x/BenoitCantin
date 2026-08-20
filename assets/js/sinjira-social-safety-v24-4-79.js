@@ -1,6 +1,13 @@
-import {getSupabase,escapeHtml,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.79';
+import {getSupabase,escapeHtml,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.82';
 
 const reasons=[
+  ['minor_safety','Sécurité d’un mineur / situation préoccupante'],
+  ['grooming','Grooming, manipulation ou sollicitation d’un mineur'],
+  ['off_platform_minor_contact','Tentative de déplacer un mineur hors de SINJIRA™'],
+  ['sexual_exploitation','Prostitution, proxénétisme ou exploitation sexuelle'],
+  ['human_trafficking','Traite, vente ou achat de personnes'],
+  ['paid_sexual_content','Contenu sexuel payant ou promotion type OnlyFans'],
+  ['drugs_or_illicit_sales','Vente de drogues ou commerce illicite'],
   ['harassment','Harcèlement ou attaques répétées'],
   ['sexual_content','Contenu sexuel non désiré ou inapproprié'],
   ['pressure','Pression, manipulation ou partage forcé de coordonnées'],
@@ -21,6 +28,7 @@ function ensureDialog(){
   dialog.innerHTML=`<form method="dialog" class="social-report-card" data-social-report-form>
     <div class="social-report-head"><div><span class="eyebrow">Sécurité communautaire</span><h2>Signaler un contenu</h2></div><button class="btn btn-secondary btn-small" value="cancel" type="submit" data-social-report-close>Fermer</button></div>
     <p data-social-report-context>Le signalement sera transmis à la modération SINJIRA™.</p>
+    <div class="social-report-note"><strong>Protection prioritaire :</strong> les situations impliquant un mineur, l’exploitation sexuelle, la traite de personnes, la prostitution, le contenu sexuel payant et la vente de drogues sont interdites sur SINJIRA™.</div>
     <label><strong>Motif</strong><select name="reason" required><option value="">Choisir…</option>${reasons.map(([value,label])=>`<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join('')}</select></label>
     <label><strong>Détails utiles</strong><textarea name="details" maxlength="1200" placeholder="Expliquez brièvement ce qui pose problème. N’ajoutez pas d’informations personnelles inutiles."></textarea></label>
     <label class="social-report-block"><input type="checkbox" name="block"/> Bloquer aussi ce membre. Son contenu disparaîtra de vos espaces sociaux et vos interactions seront coupées.</label>
@@ -66,9 +74,8 @@ async function submitReport(){
     if(dialog.open)dialog.close();else dialog.removeAttribute('open');
     socialStatus(current.statusNode,block?'Signalement transmis. Le membre est aussi bloqué.':'Signalement transmis à la modération SINJIRA™.','success');
     await current.onDone?.({blocked:block});
-  }catch(error){
-    socialErrorStatus(current.statusNode,error,errorMessage(error));
-  }finally{if(button)button.disabled=false;}
+  }catch(error){socialErrorStatus(current.statusNode,error,errorMessage(error));}
+  finally{if(button)button.disabled=false;}
 }
 
 export function openSocialReport({network,targetType,targetId,label='ce contenu',statusNode=null,onDone=null}){
