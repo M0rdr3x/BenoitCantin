@@ -17,7 +17,7 @@ EXPECTED_TABLES={
 'fracture_party_members','fracture_player_documents','game_sessions','guardian_links',
 'guardian_signup_invites','internal_admin_users','internal_contribution_ownership',
 'internal_gameplay_contributions','legacy_directives','memorial_records','memorial_requests',
-'novel_comments','novels','order_items','orders','parallel_character_state',
+'novel_comments','novels','order_items','orders','parallel_character_state','parallel_identities',
 'parallel_cycle_responses','parallel_group_members','parallel_groups','parallel_story_installments',
 'parallel_world_cycles','parallel_world_memberships','player_reports','player_sheets',
 'playtest_participants','playtests','private_family_links','private_life_events','products','profiles',
