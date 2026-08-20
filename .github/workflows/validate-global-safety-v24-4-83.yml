@@ -1,0 +1,54 @@
+name: Validation conformité globale V24.4.83
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+      - 'assets/js/v24-signup.js'
+      - 'assets/js/sinjira-privacy-center-v24-4-83.js'
+      - 'compte/inscription.html'
+      - 'compte/vie-privee.html'
+      - 'compte/confidentialite-joueur.html'
+      - 'confidentialite.html'
+      - 'avis-legal.html'
+      - 'docs/compliance/**'
+      - 'scripts/validate_global_safety_compliance_v24_4_83.py'
+      - '.github/workflows/validate-global-safety-v24-4-83.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+      - 'assets/js/v24-signup.js'
+      - 'assets/js/sinjira-privacy-center-v24-4-83.js'
+      - 'compte/inscription.html'
+      - 'compte/vie-privee.html'
+      - 'compte/confidentialite-joueur.html'
+      - 'confidentialite.html'
+      - 'avis-legal.html'
+      - 'docs/compliance/**'
+      - 'scripts/validate_global_safety_compliance_v24_4_83.py'
+      - '.github/workflows/validate-global-safety-v24-4-83.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  compliance-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Valider le contrat V24.4.83
+        run: python scripts/validate_global_safety_compliance_v24_4_83.py
+      - name: Vérifier la syntaxe JavaScript
+        run: |
+          node --check assets/js/v24-signup.js
+          node --check assets/js/sinjira-privacy-center-v24-4-83.js
+      - name: Vérifier le ledger production
+        run: python scripts/validate_production_migration_ledger.py
