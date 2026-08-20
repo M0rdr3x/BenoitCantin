@@ -73,7 +73,7 @@ if(form){
       return;
     }
     const d=new FormData(form);
-    const pseudo=String(d.get('pseudo')||'').trim();
+    const displayName=String(d.get('display_name')||'').trim();
     const email=String(d.get('email')||'').trim();
     const password=String(d.get('password')||'');
     const confirm=String(d.get('password_confirm')||'');
@@ -82,7 +82,7 @@ if(form){
     const guardianCode=normalizeGuardianCode(d.get('guardian_code')||'');
     const residenceCountry=String(d.get('residence_country')||'').trim();
     const age=ageOn(birthDate);
-    if(!pseudo){setStatus(status,'Choisissez un pseudo non vide.','error');return}
+    if(!displayName){setStatus(status,'Choisissez le nom à afficher sur votre profil.','error');return}
     if(password.length<12){setStatus(status,'Utilisez un mot de passe d’au moins 12 caractères.','error');return}
     if(password!==confirm){setStatus(status,'Les mots de passe ne correspondent pas.','error');return}
     if(age===null||age<0){setStatus(status,'Indiquez une date de naissance valide.','error');return}
@@ -98,8 +98,10 @@ if(form){
     const contributor=d.get('initial_contributor_opt_in')==='yes';
     const legacySex=gender==='Femme'?'female':'male';
     const metadata={
-      pseudo,
-      display_name:String(d.get('display_name')||'').trim(),
+      // `pseudo` demeure un champ de compatibilité et reçoit le nom affiché.
+      // L’identifiant technique du compte est généré côté serveur dans private.account_identities.
+      pseudo:displayName,
+      display_name:displayName,
       birth_date:birthDate,
       date_of_birth:birthDate,
       gender,
