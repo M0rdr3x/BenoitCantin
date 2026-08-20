@@ -18,6 +18,17 @@ def compact(value: str) -> str:
     return re.sub(r'\s+', '', value.lower())
 
 
+def version_tuple(value: str):
+    return tuple(int(x) for x in value.split('.'))
+
+
+def version_at_least(value: str, minimum: str) -> bool:
+    try:
+        return version_tuple(value) >= version_tuple(minimum)
+    except Exception:
+        return False
+
+
 def latest_function(sql: str, name: str) -> str:
     matches = list(re.finditer(
         rf'create\s+(?:or\s+replace\s+)?function\s+public\.{re.escape(name)}\s*\([^)]*\).*?\$\$.*?\$\$\s*;',
@@ -39,6 +50,11 @@ def latest_policy(sql: str, name: str) -> str:
 def require(condition: bool, message: str) -> None:
     if not condition:
         errors.append(message)
+
+
+def require_runtime(text: str, pattern: str, minimum: str, message: str) -> None:
+    match = re.search(pattern, text)
+    require(bool(match) and version_at_least(match.group(1), minimum), message)
 
 
 files = sorted(MIG.glob('*.sql'))
@@ -118,8 +134,9 @@ require('revokeallonfunctionpublic.sinjira_owner_social_health()frompublic,anon,
 
 common_path = ROOT / 'assets' / 'js' / 'sinjira-social-common.js'
 common = common_path.read_text('utf-8', errors='ignore') if common_path.exists() else ''
+require_runtime(common, r"SOCIAL_RUNTIME_VERSION='([0-9]+(?:\.[0-9]+)+)'", SOCIAL_VERSION,
+                f'Couche d’erreur sociale antérieure à {SOCIAL_VERSION}.')
 for marker in (
-    f"SOCIAL_RUNTIME_VERSION='{SOCIAL_VERSION}'",
     'socialErrorMessage',
     "code==='42501'",
     "message.includes('row-level security')",
@@ -140,8 +157,8 @@ for path in social_clients:
     if not path.exists():
         continue
     text = path.read_text('utf-8', errors='ignore')
-    require(f"sinjira-social-common.js?v={SOCIAL_VERSION}" in text,
-            f'{path.relative_to(ROOT)} ne force pas la couche sociale {SOCIAL_VERSION}.')
+    require_runtime(text, r'sinjira-social-common\.js\?v=([0-9]+(?:\.[0-9]+)+)', SOCIAL_VERSION,
+                    f'{path.relative_to(ROOT)} utilise une couche sociale antérieure à {SOCIAL_VERSION}.')
     for forbidden in ('alert(error.message)', 'fail(error.message)', "socialStatus(status,error.message"):
         require(forbidden not in text,
                 f'{path.relative_to(ROOT)} expose encore une erreur technique brute: {forbidden}')
@@ -159,12 +176,12 @@ for path, (asset, runtime_version, shell_version) in social_pages.items():
     if not path.exists():
         continue
     html = path.read_text('utf-8', errors='ignore')
-    require(f'{asset}?v={runtime_version}' in html,
-            f'{path.relative_to(ROOT)} ne force pas {asset} V{runtime_version}.')
-    require(f'data-social-runtime="{runtime_version}"' in html,
-            f'{path.relative_to(ROOT)} ne déclare pas le runtime social V{runtime_version}.')
-    require(f'site.js?v={shell_version}' in html,
-            f'{path.relative_to(ROOT)} ne force pas le shell privé V{shell_version}.')
+    require_runtime(html, rf'{re.escape(asset)}\?v=([0-9]+(?:\.[0-9]+)+)', runtime_version,
+                    f'{path.relative_to(ROOT)} utilise {asset} avant V{runtime_version}.')
+    require_runtime(html, r'data-social-runtime="([0-9]+(?:\.[0-9]+)+)"', runtime_version,
+                    f'{path.relative_to(ROOT)} déclare un runtime social antérieur à V{runtime_version}.')
+    require_runtime(html, r'site\.js\?v=([0-9]+(?:\.[0-9]+)+)', shell_version,
+                    f'{path.relative_to(ROOT)} utilise un shell privé antérieur à V{shell_version}.')
 
 sw = (ROOT / 'sw.js').read_text('utf-8', errors='ignore') if (ROOT / 'sw.js').exists() else ''
 require('benoitcantin-v24-4-44-public-1' in sw,
@@ -176,4 +193,4 @@ if errors:
         print('- ' + error)
     raise SystemExit(1)
 
-print('OK — contrat social/RLS: socle V24.4.44 conservé, messageries V24.4.71 et réseaux V24.4.72 explicites, cohorte self-only, ACL durcies et erreurs publiques assainies.')
+print('OK — contrat social/RLS: socle V24.4.44 conservé, runtimes sociaux au moins aux versions de sécurité requises, cohorte self-only, ACL durcies et erreurs publiques assainies.')
