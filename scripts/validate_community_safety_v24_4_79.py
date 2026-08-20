@@ -2,7 +2,7 @@
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-MIG=ROOT/'supabase/migrations/20260820000500_sinjira_v24_4_79_community_safety_center.sql'
+MIG=ROOT/'supabase/migrations/20260820001600_sinjira_v24_4_79_community_safety_center.sql'
 TEST=ROOT/'supabase/tests/community_safety_v24_4_79.test.sql'
 COMMON=ROOT/'assets/js/sinjira-social-common.js'
 SAFETY=ROOT/'assets/js/sinjira-social-safety-v24-4-79.js'
@@ -67,10 +67,11 @@ def main():
     require(admin,['canonicalUser','reportTargetUser'],'admin social canonique')
     forbid(admin,['if(snap.user_id)','if(snap.sender_user_id)','return snap.user_id','return snap.sender_user_id'],'admin social canonique')
 
-    if '20260820000500 sinjira_v24_4_79_community_safety_center' in ledger:
-        raise AssertionError('la migration V24.4.79 est future et ne doit pas être déclarée production avant application réelle')
+    require(ledger,['20260820001600 sinjira_v24_4_79_community_safety_center'],'ledger production V24.4.79')
+    if (ROOT/'supabase/migrations/20260820000500_sinjira_v24_4_79_community_safety_center.sql').exists():
+        raise AssertionError('ancien timestamp local V24.4.79 encore présent')
 
-    print('OK V24.4.79: signalements communautaires canoniques, commentaires signalables, blocage unifié et centre self-only sans snapshot client arbitraire.')
+    print('OK V24.4.79: migration canonique production, signalements communautaires canoniques, commentaires signalables, blocage unifié et centre self-only.')
     return 0
 
 if __name__=='__main__':

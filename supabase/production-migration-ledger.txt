@@ -102,3 +102,4 @@
 20260819223000 sinjira_v24_4_75_dating_contact_privacy
 20260819233701 sinjira_v24_4_77_dating_explanations
 20260819235435 sinjira_v24_4_78_dating_moderation
+20260820001600 sinjira_v24_4_79_community_safety_center
