@@ -7,6 +7,7 @@ on:
       - 'supabase/tests/**'
       - 'assets/js/sinjira-social-common.js'
       - 'assets/js/sinjira-social-safety-v24-4-79.js'
+      - 'assets/js/sinjira-social-safety-center-v24-4-79.js'
       - 'assets/js/sinjira-dating-safety-v24-4-78.js'
       - 'assets/js/sinjira-community-rules.js'
       - 'scripts/validate_minor_exploitation_safety_v24_4_82.py'
@@ -18,6 +19,7 @@ on:
       - 'supabase/tests/**'
       - 'assets/js/sinjira-social-common.js'
       - 'assets/js/sinjira-social-safety-v24-4-79.js'
+      - 'assets/js/sinjira-social-safety-center-v24-4-79.js'
       - 'assets/js/sinjira-dating-safety-v24-4-78.js'
       - 'assets/js/sinjira-community-rules.js'
       - 'scripts/validate_minor_exploitation_safety_v24_4_82.py'
@@ -42,6 +44,7 @@ jobs:
         run: |
           node --check assets/js/sinjira-social-common.js
           node --check assets/js/sinjira-social-safety-v24-4-79.js
+          node --check assets/js/sinjira-social-safety-center-v24-4-79.js
           node --check assets/js/sinjira-dating-safety-v24-4-78.js
           node --check assets/js/sinjira-community-rules.js
       - name: Vérifier le ledger production
