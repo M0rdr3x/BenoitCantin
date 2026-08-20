@@ -43,7 +43,7 @@ export async function characterProfileByUser(userId){
 }
 
 export async function reportContent({network,target_type,target_id,reason='other',details=null,block=false}){
-  await requireCommunityUser();
+  await requireUser('/compte/connexion.html');
   const allowed=new Set([
     'minor_safety','grooming','sexual_exploitation','human_trafficking','paid_sexual_content','drugs_or_illicit_sales','off_platform_minor_contact',
     'harassment','sexual_content','pressure','scam','hate','threats','impersonation','spam','other'
