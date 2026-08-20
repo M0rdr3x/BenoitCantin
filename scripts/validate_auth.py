@@ -41,18 +41,23 @@ def main():
   if len(re.findall(r'autocomplete=["\']new-password["\']',signup_html))<2:
     errors.append('Inscription: autocomplete=new-password absent sur les deux champs mot de passe.')
   for marker,label in [
-    ('name="pseudo"','pseudo'),('name="email"','courriel'),('name="birth_date"','date de naissance'),
+    ('name="display_name"','nom affiché'),('name="email"','courriel'),('name="birth_date"','date de naissance'),
     ('data-signup-birth-date','garde date locale'),('confidentialite-joueur.html','consentement confidentialité'),
     ('partir de 13 ans','âge minimum visible 13 ans'),('À 13 ans','autorisation parentale visible à 13 ans'),
-    ('Moins de 13 ans','refus libre-service visible sous 13 ans')
+    ('Moins de 13 ans','refus libre-service visible sous 13 ans'),
+    ('identifiant technique privé','séparation visible du nom affiché et de l’identifiant technique')
   ]:
     if marker not in signup_html: errors.append(f'Inscription: champ/contrat absent: {label}.')
+  if 'name="pseudo"' in signup_html:
+    errors.append('Inscription: un pseudo technique ne doit plus être demandé au membre.')
 
   signup=text('assets/js/v24-signup.js')
   signup_requirements={
     'password.length<12':'politique 12 caractères',
     'password!==confirm':'confirmation du mot de passe',
-    "if(!pseudo)":'pseudo non vide après normalisation',
+    "if(!displayName)":'nom affiché non vide après normalisation',
+    'pseudo:displayName':'alias de compatibilité dérivé du nom affiché',
+    'display_name:displayName':'nom affiché transmis au profil',
     'form.checkValidity()':'validation HTML native',
     'setBusy(true)':'verrou anti-double soumission',
     "console.warn('[SINJIRA signup]'":'gestion explicite des erreurs réseau',
@@ -67,6 +72,8 @@ def main():
   }
   for marker,label in signup_requirements.items():
     require(errors, signup, marker, f'Inscription: contrat absent: {label}.')
+  if "d.get('pseudo')" in signup:
+    errors.append('Inscription: le client lit encore un pseudo technique saisi par le membre.')
   if 'age<12' in signup:
     errors.append('Inscription: ancien seuil 12 ans encore présent dans le client.')
   if 'toISOString().slice(0,10)' in signup:
@@ -118,12 +125,12 @@ def main():
     if re.search(r'console\.(?:log|info|warn|error)\([^\n]*\bpassword\b',src,re.I):
       errors.append(f'Secret potentiel journalisé dans {rel}: référence password dans console.*().')
 
-  print(f'Validation auth SINJIRA V24.4.83: {len(pages)} pages critiques.')
+  print(f'Validation auth SINJIRA V24.4.89: {len(pages)} pages critiques.')
   if errors:
     print(f'ECHEC auth: {len(errors)} problème(s).')
     for e in errors: print('- '+e)
     return 1
-  print('OK auth: 13+ côté client, autorisation parentale à 13 ans, redirections internes, anti-énumération, validation serveur de récupération, verrou de soumission et politique 12 caractères cohérents.')
+  print('OK auth: nom affiché distinct de l’identifiant technique privé, 13+ côté client, autorisation parentale à 13 ans, redirections internes, anti-énumération et politique 12 caractères cohérents.')
   return 0
 
 if __name__=='__main__': raise SystemExit(main())
