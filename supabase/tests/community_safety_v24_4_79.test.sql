@@ -24,8 +24,8 @@ select ok(position('social_character_posts' in pg_get_functiondef('public.social
 select ok(position('social_character_comments' in pg_get_functiondef('public.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,'commentaire personnage résolu côté serveur');
 select ok(position($q$interval'1hour'$q$ in replace(pg_get_functiondef('public.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure),' ',''))>0,'anti-spam horaire présent');
 select ok(position('SOCIAL_REPORT_ALREADY_OPEN' in pg_get_functiondef('public.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,'doublon ouvert bloqué');
-select ok(position('where b.blocker_user_id=auth.uid()' in replace(pg_get_functiondef('public.social_my_blocks()'::regprocedure),' ',''))>0,'liste blocages limitée à auth.uid');
-select ok(position('where r.reporter_user_id=auth.uid()' in replace(pg_get_functiondef('public.social_my_reports(integer)'::regprocedure),' ',''))>0,'historique signalements limité à auth.uid');
+select ok(position('whereb.blocker_user_id=auth.uid()' in replace(pg_get_functiondef('public.social_my_blocks()'::regprocedure),' ',''))>0,'liste blocages limitée à auth.uid');
+select ok(position('wherer.reporter_user_id=auth.uid()' in replace(pg_get_functiondef('public.social_my_reports(integer)'::regprocedure),' ',''))>0,'historique signalements limité à auth.uid');
 
 select * from finish();
 rollback;
