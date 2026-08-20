@@ -8,7 +8,7 @@ const empty=msg=>`<div class="v24-empty">${escapeHtml(msg)}</div>`;
 
 function friendlyDate(value){try{return value?formatDate(value):'—'}catch{return String(value||'—')}}
 function stateSummary(state){
-  if(!state)return 'La Chronique technique sera créée automatiquement lorsque votre personnage devient admissible.';
+  if(!state)return 'La Chronique technique sera créée automatiquement lorsque votre continuité devient admissible.';
   const data=state.state_data&&typeof state.state_data==='object'?state.state_data:{};
   const summary=String(data.summary||data.private_summary||'').trim();
   return summary||'Aucun résumé narratif privé n’a encore été enregistré.';
@@ -19,10 +19,10 @@ async function load(){
   const user=await requireUser();
   const s=getSupabase();
   const owner=isSinjiraOwner(user);
-  if(owner){try{await s.rpc('ensure_sinjira_owner_character')}catch{/* le backend V24 peut déjà être synchronisé */}}
+  if(owner){try{await s.rpc('ensure_sinjira_owner_character')}catch{/* le backend peut déjà être synchronisé */}}
 
   const {data:characterRows,error:characterError}=await s.from('characters')
-    .select('id,public_name,status,visible_to_user,novel_note,updated_at')
+    .select('id,status,visible_to_user,updated_at')
     .eq('user_id',user.id)
     .order('updated_at',{ascending:false})
     .limit(10);
@@ -30,11 +30,22 @@ async function load(){
   const characters=Array.isArray(characterRows)?characterRows:[];
   const character=characters.find(x=>x.status!=='archived'&&x.visible_to_user)||characters.find(x=>x.status!=='archived')||null;
   if(!character){
-    missionBox.innerHTML=empty('Votre personnage doit d’abord être approuvé ou assigné avant d’entrer dans le Monde parallèle.');
+    missionBox.innerHTML=empty('Votre continuité doit d’abord être approuvée ou assignée avant d’entrer dans le Monde parallèle.');
     stateBox.innerHTML=empty('Aucune Chronique personnelle pour le moment.');
-    if(historyBox)historyBox.innerHTML=empty('Aucune histoire liée à votre personnage.');
+    if(historyBox)historyBox.innerHTML=empty('Aucune histoire liée à votre continuité.');
     return;
   }
+
+  const identityRes=await s.rpc('parallel_my_identity');
+  if(identityRes.error)throw identityRes.error;
+  const identity=identityRes.data&&identityRes.data.ok?identityRes.data:null;
+  if(!identity){
+    missionBox.innerHTML=empty('Votre identité du Monde parallèle n’est pas encore prête.');
+    stateBox.innerHTML=empty('Aucune identité parallèle disponible pour le moment.');
+    return;
+  }
+  const parallelName=String(identity.public_name||'Identité parallèle').trim()||'Identité parallèle';
+  const parallelBio=String(identity.public_bio||'').trim();
 
   const [membershipRes,stateRes,cycleRes,personalStoriesRes,collectiveStoriesRes]=await Promise.all([
     s.from('parallel_world_memberships').select('pioneer_number,main_canon_eligible,parallel_world_only,status,joined_at').eq('character_id',character.id).maybeSingle(),
@@ -54,16 +65,16 @@ async function load(){
   const collectiveStories=Array.isArray(collectiveStoriesRes.data)?collectiveStoriesRes.data:[];
 
   if(!membership){
-    missionBox.innerHTML=empty(`${character.public_name||'Votre personnage'} est reconnu, mais son adhésion parallèle n’est pas encore active. Elle est créée automatiquement à l’approbation ou à l’assignation.`);
+    missionBox.innerHTML=empty(`${parallelName} est reconnu dans le Monde parallèle, mais son adhésion n’est pas encore active.`);
   }else if(!cycle){
-    missionBox.innerHTML=`<article><span class="v24-badge live">Adhésion ${escapeHtml(membership.status||'active')}</span><h3>${escapeHtml(character.public_name||'Mon personnage')}</h3><p>Aucun cycle mensuel n’est ouvert actuellement.</p></article>`;
+    missionBox.innerHTML=`<article><span class="v24-badge live">Adhésion ${escapeHtml(membership.status||'active')}</span><h3>${escapeHtml(parallelName)}</h3><p>Aucun cycle mensuel n’est ouvert actuellement.</p></article>`;
   }else{
     const {data:existingResponse,error:responseError}=await s.from('parallel_cycle_responses')
       .select('id,response_text,submitted_at')
       .eq('cycle_id',cycle.id).eq('user_id',user.id).maybeSingle();
     if(responseError)throw responseError;
     const closes=cycle.closes_at?`Clôture : ${escapeHtml(friendlyDate(cycle.closes_at))}`:'Cycle ouvert';
-    missionBox.innerHTML=`<article><span class="v24-badge live">${escapeHtml(cycle.title||'Cycle actif')}</span><h3>${escapeHtml(cycle.monthly_question||'Question mensuelle')}</h3><p>${closes}</p><form data-parallel-response-form><label>Votre réponse<textarea name="response" maxlength="4000" required>${escapeHtml(existingResponse?.response_text||'')}</textarea></label><button class="btn btn-primary" type="submit">${existingResponse?'Mettre à jour ma réponse':'Enregistrer ma réponse'}</button></form>${existingResponse?`<small>Dernier enregistrement : ${escapeHtml(friendlyDate(existingResponse.submitted_at))}</small>`:''}</article>`;
+    missionBox.innerHTML=`<article><span class="v24-badge live">${escapeHtml(cycle.title||'Cycle actif')}</span><p><strong>Identité parallèle : ${escapeHtml(parallelName)}</strong></p><h3>${escapeHtml(cycle.monthly_question||'Question mensuelle')}</h3><p>${closes}</p><form data-parallel-response-form><label>Votre réponse<textarea name="response" maxlength="4000" required>${escapeHtml(existingResponse?.response_text||'')}</textarea></label><button class="btn btn-primary" type="submit">${existingResponse?'Mettre à jour ma réponse':'Enregistrer ma réponse'}</button></form>${existingResponse?`<small>Dernier enregistrement : ${escapeHtml(friendlyDate(existingResponse.submitted_at))}</small>`:''}</article>`;
     const responseForm=missionBox.querySelector('[data-parallel-response-form]');
     responseForm?.addEventListener('submit',async e=>{
       e.preventDefault();
@@ -80,9 +91,9 @@ async function load(){
 
   const eligibility=membership?(
     membership.pioneer_number?`Pionnier #${membership.pioneer_number} · admissible au canon principal et au Monde parallèle`:
-    membership.parallel_world_only?'Personnage du Monde parallèle uniquement':'Accès propriétaire / canon principal + Monde parallèle'
+    membership.parallel_world_only?'Continuité du Monde parallèle uniquement':'Accès propriétaire / canon principal + Monde parallèle'
   ):'Adhésion en attente';
-  stateBox.innerHTML=`<p><strong>${escapeHtml(character.public_name||'Mon personnage')}</strong></p><p>${escapeHtml(eligibility)}</p>${state?`<p>État : ${escapeHtml(state.life_state||'active')} · Réputation : ${escapeHtml(String(state.reputation??0))}</p>${state.location_name?`<p>Lieu : ${escapeHtml(state.location_name)}</p>`:''}${state.faction_name?`<p>Faction : ${escapeHtml(state.faction_name)}</p>`:''}<p>${escapeHtml(stateSummary(state))}</p><small>Dernière mise à jour : ${escapeHtml(friendlyDate(state.updated_at))}</small>`:'<p>Chronique technique en attente.</p>'}`;
+  stateBox.innerHTML=`<p><strong>${escapeHtml(parallelName)}</strong></p><p><small>Identité narrative du Monde parallèle — distincte du compte et du Registre.</small></p>${parallelBio?`<p>${escapeHtml(parallelBio)}</p>`:''}<p>${escapeHtml(eligibility)}</p>${state?`<p>État : ${escapeHtml(state.life_state||'active')} · Réputation : ${escapeHtml(String(state.reputation??0))}</p>${state.location_name?`<p>Lieu : ${escapeHtml(state.location_name)}</p>`:''}${state.faction_name?`<p>Faction : ${escapeHtml(state.faction_name)}</p>`:''}<p>${escapeHtml(stateSummary(state))}</p><small>Dernière mise à jour : ${escapeHtml(friendlyDate(state.updated_at))}</small>`:'<p>Chronique technique en attente.</p>'}`;
 
   if(historyBox){
     const renderStory=(x,label)=>`<article class="v24-panel"><span class="v24-badge">${label}</span><h3>${escapeHtml(x.title||'Chronique')}</h3><p>${escapeHtml(String(x.content||'').slice(0,700))}${String(x.content||'').length>700?'…':''}</p><small>${escapeHtml(friendlyDate(x.published_at))}</small></article>`;
