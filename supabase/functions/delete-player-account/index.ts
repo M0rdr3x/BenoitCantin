@@ -21,14 +21,22 @@ Deno.serve(async (req) => {
     const user = await requiredUser(req);
     const service = serviceClient();
 
-    // Un compte administrateur/propriétaire ne peut jamais s’autodétruire depuis
-    // une page utilisateur. Il doit d’abord être retiré explicitement de l’administration.
     const {data:isAdmin,error:adminError}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
     if(adminError)throw new Error('ADMIN_CHECK_FAILED');
     if(isAdmin)return json({ok:false,error:'Suppression self-service interdite pour un compte propriétaire ou administrateur.',code:'OWNER_OR_ADMIN_DELETE_BLOCKED'},403);
 
-    // Si ce compte a activé un second facteur, une session aal2 est obligatoire
-    // pour l’action irréversible. Sans facteur vérifié, Supabase retourne aal1/aal1.
+    // Vérifier toute conservation légale AVANT de supprimer un fichier ou révoquer une contribution.
+    // La RPC est service_role-only afin que le navigateur ne puisse pas sonder les holds d'autres comptes.
+    const {data:canDelete,error:holdError}=await service.rpc('privacy_service_can_delete_user',{p_user_id:user.id});
+    if(holdError)throw new Error('LEGAL_HOLD_CHECK_FAILED');
+    if(canDelete!==true){
+      return json({
+        ok:false,
+        error:'La suppression automatique ne peut pas être exécutée pour le moment en raison d’une obligation de conservation documentée. Vous pouvez suivre votre demande dans le Centre Vie privée.',
+        code:'LEGAL_HOLD_ACTIVE'
+      },409);
+    }
+
     const token=bearerToken(req);
     const {data:aal,error:aalError}=await service.auth.mfa.getAuthenticatorAssuranceLevel(token);
     if(aalError||!aal)return json({ok:false,error:'État MFA temporairement indisponible.',code:'MFA_STATE_UNAVAILABLE'},503);
@@ -37,8 +45,6 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(()=>({}));
     if (body?.confirm !== CONFIRM_PHRASE) return json({ ok: false, error: 'Confirmation invalide.',code:'CONFIRMATION_REQUIRED' }, 400);
 
-    // Lire les chemins avant la suppression des lignes. Les objets Storage ne
-    // suivent pas automatiquement les cascades de auth.users.
     const [profileRes,submissionRes,applicationRes]=await Promise.all([
       service.from('profiles').select('avatar_path').eq('user_id',user.id).maybeSingle(),
       service.from('character_submissions').select('photo_path').eq('user_id',user.id),
@@ -66,6 +72,7 @@ Deno.serve(async (req) => {
     console.error('[delete-player-account]',error);
     if(error?.message==='AUTH_REQUIRED')return json({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
     if(error?.message==='ADMIN_CHECK_FAILED')return json({ok:false,error:'Vérification du rôle impossible.',code:'ADMIN_CHECK_FAILED'},503);
+    if(error?.message==='LEGAL_HOLD_CHECK_FAILED')return json({ok:false,error:'La vérification des obligations de conservation est temporairement indisponible. Aucune suppression n’a été effectuée.',code:'LEGAL_HOLD_CHECK_FAILED'},503);
     if(error?.message==='STORAGE_DELETE_FAILED'||error?.message==='STORAGE_PATH_LOOKUP_FAILED')return json({ok:false,error:'Les fichiers personnels n’ont pas pu être préparés pour suppression. Le compte n’a pas été supprimé.',code:error.message},503);
     if(error?.message==='CONTRIBUTION_REVOKE_FAILED')return json({ok:false,error:'Les contributions liées au compte n’ont pas pu être révoquées. Le compte n’a pas été supprimé.',code:'CONTRIBUTION_REVOKE_FAILED'},503);
     return json({ok:false,error:'Suppression impossible.',code:'DELETE_FAILED'},500);
