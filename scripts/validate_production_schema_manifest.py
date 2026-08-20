@@ -34,17 +34,17 @@ EXPECTED_TABLES={
 'sinjira_points_accounts','sinjira_points_ledger','dating_meet_requests'
 }
 
-# Tables conçues dans l'historique V24 mais pas encore déployées dans la production
-# courante. Elles sont autorisées localement uniquement parce qu'elles correspondent
-# à des modules explicitement planifiés. Une nouvelle table non classée est une erreur.
+# Tables conçues dans l'historique mais pas encore déployées dans la production courante.
+# Inclut les tables `private.*`: elles sont classées par leur nom, jamais exposées comme tables publiques.
 PLANNED_LOCAL_TABLES={
 'private_profiles','family_relationships','character_questionnaire_drafts',
 'parallel_cycles','parallel_missions','parallel_responses',
 'market_listings','market_favorites','token_ledger',
-'codex_entities','codex_relationships','content_versions'
+'codex_entities','codex_relationships','content_versions',
+'privacy_incident_register','privacy_requests','privacy_legal_holds','safety_escalation_cases'
 }
 
-CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
+CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|private)\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
 
 
 def annotate(level:str,message:str):
