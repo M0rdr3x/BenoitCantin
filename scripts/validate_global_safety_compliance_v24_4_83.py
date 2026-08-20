@@ -43,12 +43,12 @@ req('revoke all on private.privacy_requests from public,anon,authenticated' in m
 req("years<18andresidence_countrynotin('canada','ca','can')" in gatecompact and 'youth_jurisdiction_not_enabled' in gate.lower(),'Gate jeunesse Canada absent côté serveur.')
 req("'privacy_policy_update'" in gate.lower() and "'/confidentialite.html'" in gate,'Avis interne de changement de politique absent.')
 
-for marker in ('private.privacy_has_active_legal_hold','public.privacy_service_can_delete_user','on delete set null','privacy_requests_user_id_fkey','safety_escalation_cases_source_report_id_fkey'):
-    req(marker in hold.lower(),f'Durcissement suppression/hold absent: {marker}')
+for marker in ('private.privacy_has_active_legal_hold','public.privacy_service_can_delete_user','public.privacy_export_my_extended_data','on delete set null','privacy_requests_user_id_fkey','safety_escalation_cases_source_report_id_fkey'):
+    req(marker in hold.lower(),f'Durcissement suppression/export absent: {marker}')
 req("service.rpc('privacy_service_can_delete_user'" in delete_fn and "code:'LEGAL_HOLD_ACTIVE'" in delete_fn,'Edge Function de suppression ne respecte pas le legal hold.')
 req('LEGAL_HOLD_CHECK_FAILED' in delete_fn,'Échec du contrôle de hold ne provoque pas un arrêt sûr.')
-req('select plan(9);' in hold_test,'Plan pgTAP suppression/hold inattendu.')
-req('privacy_service_can_delete_user' in hold_test and 'safety_escalation_cases_source_report_id_fkey' in hold_test,'Tests suppression/hold incomplets.')
+req('select plan(13);' in hold_test,'Plan pgTAP suppression/hold/export inattendu.')
+req('privacy_service_can_delete_user' in hold_test and 'privacy_export_my_extended_data' in hold_test and 'safety_escalation_cases_source_report_id_fkey' in hold_test,'Tests suppression/hold/export incomplets.')
 
 req('age<13' in signup_js and '13 ans et plus' in signup_js,'JavaScript inscription pas aligné sur 13+.')
 req('age<18&&!isCanada(residenceCountry)' in signup_js,'Gate jeunesse Canada absent côté client.')
@@ -77,4 +77,4 @@ for paid in ('stripe','paypal','openai_api_key','paymentintent','google places a
     req(paid not in alltext,f'V83 introduit une intégration payante/interdite: {paid}')
 if errors:
     print(f'ECHEC conformité V24.4.83: {len(errors)} problème(s).'); [print('- '+e) for e in errors]; raise SystemExit(1)
-print('OK V24.4.83: 13+ Canada jeunesse + RPRP/gouvernance + fournisseurs/transferts + droits + incidents 5 ans + legal holds + escalade + gates internationaux, sans service payant.')
+print('OK V24.4.83: 13+ Canada jeunesse + RPRP/gouvernance + fournisseurs/transferts + droits/export + incidents 5 ans + legal holds + escalade + gates internationaux, sans service payant.')
