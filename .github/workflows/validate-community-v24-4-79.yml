@@ -1,0 +1,45 @@
+name: Validation Communauté V24.4.79
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: community-v24-4-79-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Configurer Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Vérifier le contrat Communauté V24.4.79
+        run: python scripts/validate_community_safety_v24_4_79.py
+      - name: Vérifier la syntaxe JavaScript communautaire
+        run: |
+          node --check assets/js/sinjira-social-common.js
+          node --check assets/js/sinjira-social-safety-v24-4-79.js
+          node --check assets/js/sinjira-social-safety-center-v24-4-79.js
+          node --check assets/js/sinjira-community-real.js
+          node --check assets/js/sinjira-community-character.js
+      - name: Vérifier le ledger + migration future
+        run: python scripts/validate_production_migration_ledger.py
