@@ -19,6 +19,7 @@
 .character-status[data-status="future"]{color:#ddaaff;border-color:rgba(210,145,255,.25)}
 .character-status[data-status="refused"]{color:#ff9a8e;border-color:rgba(255,112,89,.25)}
 .character-bible{display:grid;gap:10px;margin-top:14px}.character-bible div{padding:10px 12px;border:1px solid rgba(150,165,210,.12);border-radius:12px;background:rgba(255,255,255,.02)}
+.character-psychology{margin-top:22px}.character-psychology .v24-field-help{margin:.35rem 0 .75rem}
 .registry-account-link{padding:18px;border:1px solid rgba(145,248,238,.20);border-radius:16px;background:rgba(45,130,110,.06);margin:18px 0}
 .registry-account-link strong{display:block;font-size:1.05rem}.registry-account-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
 .registry-account-fields input{background:#090c17;color:#eef2ff;border:1px solid rgba(150,165,210,.22);border-radius:10px;padding:10px 11px}
