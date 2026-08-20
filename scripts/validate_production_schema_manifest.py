@@ -5,10 +5,8 @@ import os,re
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase'/'migrations'
 
-# Tables réellement présentes dans Supabase production. Cette liste est un contrat:
-# toute table de production doit pouvoir être reconstruite par l'historique GitHub.
 EXPECTED_TABLES={
-'access_requests','account_legacy_preferences','account_safety_profiles','admin_notifications',
+'access_requests','account_identities','account_legacy_preferences','account_safety_profiles','admin_notifications',
 'character_generation_runs','character_social_profiles','character_submissions','characters',
 'community_rule_acceptances','contribution_receipts','documents','endgame_sheets','extensions',
 'family_link_invites','family_relationship_events','fictional_relationships','fracture_endgame_reports',
@@ -34,8 +32,6 @@ EXPECTED_TABLES={
 'sinjira_points_accounts','sinjira_points_ledger','dating_meet_requests'
 }
 
-# Tables conçues dans l'historique mais pas encore déployées dans la production courante.
-# Inclut les tables `private.*`: elles sont classées par leur nom, jamais exposées comme tables publiques.
 PLANNED_LOCAL_TABLES={
 'private_profiles','family_relationships','character_questionnaire_drafts',
 'parallel_cycles','parallel_missions','parallel_responses',
@@ -46,12 +42,10 @@ PLANNED_LOCAL_TABLES={
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|private)\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
 
-
 def annotate(level:str,message:str):
     if os.getenv('GITHUB_ACTIONS')=='true':
         safe=message.replace('%','%25').replace('\r','%0D').replace('\n','%0A')
         print(f'::{level} file=scripts/validate_production_schema_manifest.py::{safe}')
-
 
 def main()->int:
     sql='\n'.join(p.read_text('utf-8',errors='ignore') for p in sorted(MIG.glob('*.sql')))
@@ -61,36 +55,24 @@ def main()->int:
     unexpected=sorted(local-EXPECTED_TABLES-PLANNED_LOCAL_TABLES)
     stale_planned=sorted(PLANNED_LOCAL_TABLES-local)
 
-    print(
-        f'Manifeste production: {len(EXPECTED_TABLES)} tables; '
-        f'reconstruction locale: {len(local)} tables; modules planifiés présents: {len(planned)}.'
-    )
-
+    print(f'Manifeste production: {len(EXPECTED_TABLES)} tables; reconstruction locale: {len(local)} tables; modules planifiés présents: {len(planned)}.')
     if missing:
         print(f'ECHEC reconstruction: {len(missing)} table(s) de production absente(s) des migrations locales:')
         for name in missing:
-            print('- MISSING '+name)
-            annotate('error',f'Table de production absente des migrations locales: {name}')
-
+            print('- MISSING '+name);annotate('error',f'Table de production absente des migrations locales: {name}')
     if unexpected:
         print(f'ECHEC classification: {len(unexpected)} table(s) locale(s) non déclarée(s):')
         for name in unexpected:
-            print('- UNCLASSIFIED '+name)
-            annotate('error',f'Table locale non classifiée production/planifiée: {name}')
-
+            print('- UNCLASSIFIED '+name);annotate('error',f'Table locale non classifiée production/planifiée: {name}')
     if stale_planned:
         print(f'ECHEC classification: {len(stale_planned)} table(s) déclarée(s) planifiée(s) sans DDL local:')
         for name in stale_planned:
-            print('- STALE-PLANNED '+name)
-            annotate('error',f'Table planifiée déclarée mais absente des migrations: {name}')
-
+            print('- STALE-PLANNED '+name);annotate('error',f'Table planifiée déclarée mais absente des migrations: {name}')
     if planned:
         print('INFO modules locaux explicitement planifiés, non revendiqués comme production:')
-        for name in planned: print('- PLANNED '+name)
-
+        for name in planned:print('- PLANNED '+name)
     if missing or unexpected or stale_planned:return 1
     print('OK reconstruction: production entièrement reconstructible; aucune table locale non classifiée.')
     return 0
 
-if __name__=='__main__':
-    raise SystemExit(main())
+if __name__=='__main__':raise SystemExit(main())
