@@ -49,9 +49,9 @@ function ready(){
 function syncYouthControls(){
   if(!guardianWrap||!guardianInput)return;
   const age=ageOn(String(birthInput?.value||''));
-  const youth=Number.isInteger(age)&&age>=12&&age<18;
+  const youth=Number.isInteger(age)&&age>=13&&age<18;
   guardianWrap.hidden=!youth;
-  guardianInput.required=Number.isInteger(age)&&age>=12&&age<14;
+  guardianInput.required=Number.isInteger(age)&&age>=13&&age<14;
   guardianInput.setAttribute('aria-required',guardianInput.required?'true':'false');
   if(!youth)guardianInput.value='';
 }
@@ -84,10 +84,10 @@ if(form){
     if(password.length<12){setStatus(status,'Utilisez un mot de passe d’au moins 12 caractères.','error');return}
     if(password!==confirm){setStatus(status,'Les mots de passe ne correspondent pas.','error');return}
     if(age===null||age<0){setStatus(status,'Indiquez une date de naissance valide.','error');return}
-    if(age<12){setStatus(status,'Les Comptes SINJIRA™ sont réservés aux personnes de 12 ans et plus.','error');return}
+    if(age<13){setStatus(status,'Les Comptes SINJIRA™ sont réservés aux personnes de 13 ans et plus.','error');return}
     if(age>120){setStatus(status,'La date de naissance indiquée n’est pas valide.','error');return}
     if(!['Femme','Homme'].includes(gender)){setStatus(status,'Choisissez Femme ou Homme pour ce profil.','error');return}
-    if(age<14&&!guardianCode){setStatus(status,'Pour un compte de 12 ou 13 ans, un code d’autorisation créé par un parent ou tuteur adulte est obligatoire.','error');return}
+    if(age<14&&!guardianCode){setStatus(status,'Pour un compte de 13 ans, un code d’autorisation créé par un parent ou tuteur adulte est obligatoire.','error');return}
     if(guardianCode&&!GUARDIAN_CODE_RE.test(guardianCode)){setStatus(status,'Le code parental doit respecter le format YOUTH-XXXXXXXXXX.','error');return}
     const minor=age<18;
     const languages=String(d.get('languages')||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,12);
@@ -113,7 +113,7 @@ if(form){
       relationship_since:String(d.get('relationship_since')||''),
       relationship_partner_label:String(d.get('relationship_partner_label')||'').trim(),
       wants_character_questionnaire:wantsQuestionnaire,
-      account_age_band:minor?'minor_12_17':'adult_18_plus',
+      account_age_band:minor?'minor_13_17':'adult_18_plus',
       guardian_controls_required:minor,
       initial_contributor_opt_in:contributor,
       initial_share_free_text:contributor&&d.get('share_free_text')==='yes'
