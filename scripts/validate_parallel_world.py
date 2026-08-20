@@ -5,9 +5,11 @@ import re
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase'/'migrations'/'20260816149000_sinjira_v24_4_12_parallel_character_convergence.sql'
 OWNER_REPAIR_MIG=ROOT/'supabase'/'migrations'/'20260816193515_sinjira_v24_4_20_owner_character_resilience.sql'
+IDENTITY_MIG=ROOT/'supabase'/'migrations'/'20260820215158_sinjira_v24_4_86_parallel_identity_isolation.sql'
 JS=ROOT/'assets'/'js'/'v24-parallel.js'
 HTML=ROOT/'compte'/'monde-parallele.html'
-UI_VERSION='24.4.20'
+PUBLIC_HTML=ROOT/'projets'/'sinjira'/'monde-parallele'/'index.html'
+UI_VERSION='24.4.86'
 
 
 def compact(value:str)->str:
@@ -18,8 +20,10 @@ def main()->int:
     errors=[]
     if not MIG.exists(): errors.append('Migration de convergence Monde parallèle absente.')
     if not OWNER_REPAIR_MIG.exists(): errors.append('Migration de résilience propriétaire V24.4.20 absente.')
+    if not IDENTITY_MIG.exists(): errors.append('Migration d’isolation d’identité V24.4.86 absente.')
     if not JS.exists(): errors.append('Client Monde parallèle absent.')
     if not HTML.exists(): errors.append('Page compte Monde parallèle absente.')
+    if not PUBLIC_HTML.exists(): errors.append('Portail public Monde parallèle absent.')
     if errors:
         print(f'ECHEC Monde parallèle canonique: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
@@ -27,10 +31,13 @@ def main()->int:
 
     sql=MIG.read_text('utf-8',errors='ignore')
     owner_sql=OWNER_REPAIR_MIG.read_text('utf-8',errors='ignore')
+    identity_sql=IDENTITY_MIG.read_text('utf-8',errors='ignore')
     js=JS.read_text('utf-8',errors='ignore')
     html=HTML.read_text('utf-8',errors='ignore')
+    public_html=PUBLIC_HTML.read_text('utf-8',errors='ignore')
     low=compact(sql)
     owner_low=compact(owner_sql)
+    identity_low=compact(identity_sql)
     js_low=compact(js)
 
     affected=[
@@ -74,6 +81,20 @@ def main()->int:
         if marker not in owner_low:
             errors.append(f'Résilience propriétaire V24.4.20 absente: {marker}')
 
+    for marker in [
+      'createtableifnotexistsprivate.parallel_identities',
+      'altertableprivate.parallel_identitiesenablerowlevelsecurity',
+      'revokeallontableprivate.parallel_identitiesfromanon,authenticated',
+      'createorreplacefunctionpublic.parallel_my_identity()',
+      'createorreplacefunctionpublic.parallel_set_my_identity',
+      "'sethtremblay'"
+    ]:
+        if marker not in identity_low:
+            errors.append(f'Isolation d’identité V24.4.86 absente: {marker}')
+    for forbidden in ["'user_id',v_identity.user_id","'source_character_id',v_identity.source_character_id"]:
+        if forbidden in identity_low:
+            errors.append(f'RPC identité parallèle expose un lien interne interdit: {forbidden}')
+
     stale=['parallel_missions','parallel_responses','parallel_cycles']
     for name in stale:
         if name in js:
@@ -87,20 +108,28 @@ def main()->int:
         errors.append('Upsert mensuel non verrouillé sur cycle_id,user_id.')
     if 'ensure_sinjira_owner_character' not in js:
         errors.append('Le Monde parallèle ne déclenche plus la réparation propriétaire lorsque nécessaire.')
+    if "s.rpc('parallel_my_identity')" not in js:
+        errors.append('Le client Monde parallèle ne charge pas l’identité narrative isolée.')
+    if ".select('id,public_name" in js or 'character.public_name' in js:
+        errors.append('Le client Monde parallèle relit encore le nom du Registre pour son identité publique.')
 
     if 'data-parallel-history' not in html:
         errors.append('Historique narratif absent de la page Monde parallèle.')
-    if f'?v={UI_VERSION}' not in html:
-        errors.append(f'Cache-busting {UI_VERSION} absent de la page Monde parallèle.')
+    if f'v24-parallel.js?v={UI_VERSION}' not in html:
+        errors.append(f'Cache-busting {UI_VERSION} absent du client Monde parallèle.')
     if f'Univers persistant V{UI_VERSION}' not in html:
         errors.append(f'Version visible Monde parallèle différente de V{UI_VERSION}.')
+    if 'identité narrative distincte' not in html.lower():
+        errors.append('La séparation d’identité n’est pas expliquée dans l’espace compte.')
+    if 'propre identité narrative' not in public_html.lower():
+        errors.append('La séparation d’identité n’est pas expliquée dans le portail public.')
 
     if errors:
         print(f'ECHEC Monde parallèle canonique: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
     print(
-        'OK Monde parallèle: public.characters canonique, adhésion à l’approbation, '
+        'OK Monde parallèle: continuité technique canonique, identité narrative isolée, '
         'pionniers 1–40, Chronique/cycles V24 et résilience propriétaire '
         f'{UI_VERSION} vérifiés.'
     )
