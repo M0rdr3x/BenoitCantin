@@ -40,7 +40,8 @@ PLANNED_LOCAL_TABLES={
 'private_profiles','family_relationships','character_questionnaire_drafts',
 'parallel_cycles','parallel_missions','parallel_responses',
 'market_listings','market_favorites','token_ledger',
-'codex_entities','codex_relationships','content_versions'
+'codex_entities','codex_relationships','content_versions',
+'sinjira_points_accounts','sinjira_points_ledger','dating_meet_requests'
 }
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
