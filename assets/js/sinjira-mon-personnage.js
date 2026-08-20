@@ -1,12 +1,14 @@
 import {getSupabase,requireUser,escapeHtml,formatDate,isSinjiraOwner} from './sinjira-supabase.js';
 
-const UI_VERSION='24.4.60';
+const UI_VERSION='24.4.85';
 const OWNER_REPAIR_CONTRACT='24.4.20';
 const box=document.querySelector('[data-my-character]');
 const status=document.querySelector('[data-character-status]');
 const labels={submitted:'Questionnaire reçu',ai_draft:'Brouillon IA',author_review:'En préparation',approved:'Approuvé',assigned:'Roman attribué',future:'Futur roman',published:'Publié',refused:'Refusé',archived:'Archivé'};
 const canonLabels={PROVISOIRE:'Provisoire',CANON:'Canon',SECRET_AUTEUR:'Secret auteur',A_ARBITRER:'À arbitrer'};
 const list=v=>Array.isArray(v)?v:[];
+const clean=v=>String(v??'').trim();
+const escapedList=(value,separator=', ')=>list(value).map(clean).filter(Boolean).map(escapeHtml).join(separator);
 
 function setStatus(message,type='info'){
   if(!status)return;
@@ -33,6 +35,53 @@ function timeline(submission,ch){
   }).sort((a,b)=>new Date(a.date)-new Date(b.date));
 }
 
+function psychologyCard(title,body){
+  const text=clean(body);
+  if(!text)return '';
+  return `<div><strong>${escapeHtml(title)}</strong><br>${text}</div>`;
+}
+
+function renderPsychology(bible){
+  if(!bible||typeof bible!=='object'||Array.isArray(bible))return '';
+  const cards=[];
+  const forces=escapedList(bible.forces);
+  const cautions=escapedList(bible.failles);
+  if(forces)cards.push(psychologyCard('Forces',forces));
+  if(cautions)cards.push(psychologyCard('Points de vigilance',cautions));
+
+  const failure=bible.failure_model&&typeof bible.failure_model==='object'?bible.failure_model:null;
+  if(failure){
+    const principle=clean(failure.principle);
+    const sequence=escapedList(failure.sequence,' → ');
+    const growth=clean(failure.growth_edge);
+    const body=[principle&&escapeHtml(principle),sequence&&`<em>${sequence}</em>`,growth&&`Défi : ${escapeHtml(growth)}`].filter(Boolean).join('<br>');
+    if(body)cards.push(psychologyCard('Face à l’échec',body));
+  }
+
+  const bonds=bible.social_bonds&&typeof bible.social_bonds==='object'?bible.social_bonds:null;
+  if(bonds){
+    const desired=escapedList(bonds.desired_bonds);
+    const trust=clean(bonds.trust);
+    const attachment=clean(bonds.attachment);
+    const body=[trust&&`Confiance : ${escapeHtml(trust)}`,desired&&`Liens recherchés : ${desired}`,attachment&&escapeHtml(attachment)].filter(Boolean).join('<br>');
+    if(body)cards.push(psychologyCard('Liens et confiance',body));
+  }
+
+  const visibility=bible.visibility_motivation&&typeof bible.visibility_motivation==='object'?bible.visibility_motivation:null;
+  if(visibility){
+    const principle=clean(visibility.principle);
+    const humanGoal=clean(visibility.human_goal);
+    const body=[principle&&escapeHtml(principle),humanGoal&&escapeHtml(humanGoal)].filter(Boolean).join('<br>');
+    if(body)cards.push(psychologyCard('Motivation',body));
+  }
+
+  const voice=escapedList(list(bible.voice_markers).slice(0,4),' · ');
+  if(voice)cards.push(psychologyCard('Façon de réagir',voice));
+
+  if(!cards.length)return '';
+  return `<section class="character-psychology" data-character-psychology><h2>Portrait du personnage</h2><p class="v24-field-help">Cette synthèse vient uniquement de la bible narrative validée du personnage. La fiche humaine source du Registre reste privée.</p><div class="character-bible">${cards.join('')}</div></section>`;
+}
+
 function renderCharacter(ch,submission=null){
   const ready=['approved','assigned','future','published'].includes(ch.status)&&ch.visible_to_user!==false;
   const name=ch.public_name||'Personnage SINJIRA™';
@@ -48,6 +97,7 @@ function renderCharacter(ch,submission=null){
         <div><strong>Roman</strong><br>${escapeHtml(ch.novels?.title||ch.novel_note||'À attribuer / futur roman')}</div>
         <div><strong>Statut de continuité</strong><br>${escapeHtml(canon)}</div>
       </div>
+      ${renderPsychology(ch.bible)}
       ${steps.length?`<div class="v19-timeline">${steps.map(step=>`<div class="v19-timeline-item"><strong>${escapeHtml(step.label)}</strong><span>${escapeHtml(formatDate(step.date))}</span></div>`).join('')}</div>`:''}
       ${ready?'<div class="hero-actions"><a class="btn btn-primary" href="reseau-personnage.html">Entrer dans le Réseau personnage</a><a class="btn btn-secondary" href="messages-personnage.html">Messages personnage</a></div>':'<div class="v20-character-lock"><p>Le Réseau personnage sera disponible lorsque votre personnage sera approuvé et prêt à être utilisé.</p></div>'}
     </div>
@@ -84,7 +134,7 @@ async function loadCharacter(user){
       .order('created_at',{ascending:false})
       .limit(1),
     s.from('characters')
-      .select('id,submission_id,public_name,public_description,portrait_path,status,canon_status,novel_note,visible_to_user,novels(title),created_at,updated_at')
+      .select('id,submission_id,public_name,public_description,bible,portrait_path,status,canon_status,novel_note,visible_to_user,novels(title),created_at,updated_at')
       .eq('user_id',user.id)
       .order('updated_at',{ascending:false})
       .limit(10)
