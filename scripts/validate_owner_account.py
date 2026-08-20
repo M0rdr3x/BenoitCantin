@@ -4,9 +4,11 @@ import re
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase'/'migrations'
-REPAIR_VERSION='24.4.87'
+REPAIR_VERSION='24.4.89'
 SOCIAL_RUNTIME_VERSION='24.4.42'
 PARALLEL_VERSION='24.4.88'
+CURRENT_MIG=ROOT/'supabase/migrations/20260820224802_sinjira_v24_4_89_private_handle_runtime_decoupling.sql'
+
 
 def compact(value:str)->str:return re.sub(r'\s+','',value.lower())
 
@@ -35,22 +37,20 @@ def latest_function(files:list[Path],name:str)->tuple[Path|None,str]:
         if matches:return path,matches[-1].group(0)
     return None,''
 
+
 def main()->int:
     errors=[];files=sorted(MIG.glob('*.sql'))
-    firewall=ROOT/'supabase/migrations/20260820223914_sinjira_v24_4_87_identity_firewall.sql'
-    cleanup=ROOT/'supabase/migrations/20260820224027_sinjira_v24_4_88_identity_leak_cleanup.sql'
-    for path in [firewall,cleanup]:
-        if not path.exists():errors.append(f'Migration identité absente: {path.name}')
-    if firewall.exists():
-        low=compact(firewall.read_text('utf-8',errors='ignore'))
+    if not CURRENT_MIG.exists():errors.append('Migration V24.4.89 de cloisonnement absente.')
+    else:
+        low=compact(CURRENT_MIG.read_text('utf-8',errors='ignore'))
         for marker in [
           'createtableifnotexistsprivate.account_identities',
           'revokeallontableprivate.account_identitiesfromanon,authenticated',
-          "account_handle='abysstime'",
           "values(v_user,'benoitcantin','benoitcantin')",
           "public_name='sethtremblay'",
-          'novel_note=null',
-          "'identity_scope','parallel_world'"
+          'novel_id=null','novel_note=null',
+          "'identity_scope','parallel_world'",
+          "'sin-'||upper(replace(v_user::text,'-',''))",
         ]:
             if marker not in low:errors.append(f'Pare-feu propriétaire incomplet: {marker}')
 
@@ -60,7 +60,7 @@ def main()->int:
         block=compact(repair)
         for marker in [
           'frompublic.internal_admin_usersa',"a.role='owner'",
-          'insertintoprivate.account_identities',"'abysstime'",
+          'insertintoprivate.account_identities',
           "'benoitcantin'","'sethtremblay'",
           'novel_id=null','novel_note=null',
           'insertintopublic.character_social_profiles','insertintoprivate.parallel_identities',
@@ -69,28 +69,32 @@ def main()->int:
           f"'repair_version','{REPAIR_VERSION}'"
         ]:
             if compact(marker) not in block:errors.append(f'{repair_path.name}: réparation propriétaire incomplète: {marker}')
-        if "public_name='abysstime'" in block or "values(v_user,'abysstime','benoitcantin')" in block:
-            errors.append('La routine propriétaire réexpose AbyssTime comme identité publique.')
 
     health_path,health=latest_function(files,'sinjira_owner_character_health')
     if not health_path:errors.append('sinjira_owner_character_health() introuvable.')
     else:
         block=compact(health)
-        for marker in [f"'repair_version','{REPAIR_VERSION}'","'private_account_identity',v_account","public_name='sethtremblay'",'account_handle=\'abysstime\'']:
+        for marker in [
+          f"'repair_version','{REPAIR_VERSION}'",
+          "'private_account_identity',v_account",
+          "public_name='sethtremblay'",
+          'fromprivate.account_identitieswhereuser_id=v_user'
+        ]:
             if compact(marker) not in block:errors.append(f'{health_path.name}: diagnostic propriétaire incomplet: {marker}')
 
-    # Les interfaces de personnage peuvent déclencher la réparation; le Monde parallèle, lui,
-    # doit passer exclusivement par son RPC cloisonné et ne jamais recevoir le lien source.
     for rel in ['assets/js/sinjira-mon-personnage.js','assets/js/sinjira-community-character.js','assets/js/sinjira-messages-character.js']:
         path=ROOT/rel
         if not path.exists():errors.append(f'Interface propriétaire absente: {rel}')
         elif 'ensure_sinjira_owner_character' not in path.read_text('utf-8',errors='ignore'):errors.append(f'{rel}: réparation propriétaire absente.')
+
     parallel=ROOT/'assets/js/v24-parallel.js'
     if not parallel.exists():errors.append('Client Monde parallèle absent.')
     else:
         text=parallel.read_text('utf-8',errors='ignore')
-        if 'ensure_sinjira_owner_character' in text or ".from('characters')" in text:errors.append('Le client Monde parallèle reçoit encore une identité source du Registre.')
-        if "s.rpc('parallel_my_context')" not in text:errors.append('Le client Monde parallèle ne passe pas par le contexte cloisonné.')
+        if 'ensure_sinjira_owner_character' in text or ".from('characters')" in text:
+            errors.append('Le client Monde parallèle reçoit encore une identité source du Registre.')
+        if "s.rpc('parallel_my_context')" not in text:
+            errors.append('Le client Monde parallèle ne passe pas par le contexte cloisonné.')
 
     critical_pages={
       ROOT/'compte/mon-personnage.html':('sinjira-mon-personnage.js','24.4.85'),
@@ -108,7 +112,7 @@ def main()->int:
         print(f'ECHEC propriétaire: {len(errors)} problème(s).')
         for e in errors:print('- '+e)
         return 1
-    print('OK propriétaire: identifiant compte privé, profil affiché et personnage Seth Tremblay séparés; Monde parallèle cloisonné côté serveur.')
+    print('OK propriétaire: identifiant compte privé, profil affiché et personnage séparés; aucun identifiant privé spécifique n’est requis par le runtime versionné.')
     return 0
 
 if __name__=='__main__':raise SystemExit(main())
