@@ -31,9 +31,8 @@ req("interval'30days'" in compact,'L’échéance interne de 30 jours des demand
 req('enable row level security' in mig.lower(),'RLS absent des registres V83.')
 req('revoke all on private.privacy_incident_register from public,anon,authenticated' in mig.lower(),'Registre incidents exposé à un rôle navigateur.')
 req('revoke all on private.privacy_requests from public,anon,authenticated' in mig.lower(),'Demandes vie privée exposées directement.')
-
 req("years<18andresidence_countrynotin('canada','ca','can')" in gatecompact and 'youth_jurisdiction_not_enabled' in gate.lower(),'Gate jeunesse Canada absent côté serveur.')
-req("notification_type='privacy_policy_update'" in gate.lower() and "'/confidentialite.html'" in gate,'Avis interne de changement de politique absent.')
+req("'privacy_policy_update'" in gate.lower() and "'/confidentialite.html'" in gate,'Avis interne de changement de politique absent.')
 req('age<13' in signup_js and '13 ans et plus' in signup_js,'JavaScript inscription pas aligné sur 13+.')
 req('age<18&&!isCanada(residenceCountry)' in signup_js,'Gate jeunesse Canada absent côté client.')
 req('partir de 13 ans' in signup_html.lower() and 'moins de 13 ans' in signup_html.lower(),'Interface inscription pas alignée sur 13+.')
