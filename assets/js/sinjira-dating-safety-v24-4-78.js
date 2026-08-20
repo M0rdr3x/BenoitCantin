@@ -6,6 +6,12 @@ const statusNode=document.querySelector('[data-dating-status]');
 let observer=null;
 
 const reasons=[
+  ['minor_safety','Âge trompeur ou sécurité potentielle d’un mineur'],
+  ['grooming','Grooming, manipulation ou sollicitation visant un mineur'],
+  ['sexual_exploitation','Prostitution, proxénétisme ou exploitation sexuelle'],
+  ['human_trafficking','Traite, vente ou achat de personnes'],
+  ['paid_sexual_content','Contenu sexuel payant ou promotion type OnlyFans'],
+  ['drugs_or_illicit_sales','Vente de drogues ou commerce illicite'],
   ['harassment','Harcèlement ou insistance répétée'],
   ['sexual_content','Contenu sexuel non désiré'],
   ['pressure','Pression pour se dévoiler ou partager des coordonnées'],
@@ -16,6 +22,17 @@ const reasons=[
   ['other','Autre problème de sécurité']
 ];
 
+function installSafetyNotice(){
+  if(document.querySelector('[data-dating-v82-safety]'))return;
+  const anchor=document.querySelector('[data-dating-adult-zone]');
+  if(!anchor)return;
+  const section=document.createElement('section');
+  section.className='section section-tight';
+  section.dataset.datingV82Safety='';
+  section.innerHTML=`<div class="account-shell"><article class="account-card"><span class="eyebrow">Protection renforcée</span><h2>Rencontres SINJIRA™ est strictement 18+</h2><p><strong>Les personnes de 17 ans et moins ne peuvent pas utiliser Rencontres SINJIRA™.</strong> L’âge est vérifié côté serveur et un compte mineur ne peut pas créer de profil Rencontres.</p><div class="notice"><strong>Tolérance zéro</strong><p>La prostitution, le proxénétisme, l’exploitation sexuelle, la traite ou la vente de personnes, la vente de drogues et la promotion ou vente de contenu sexuel payant — y compris les offres de type OnlyFans — sont interdits. Signalez immédiatement toute tentative de ce type.</p></div></article></div>`;
+  anchor.before(section);
+}
+
 function announce(text,type='info'){
   if(!statusNode)return;
   statusNode.hidden=false;
@@ -25,6 +42,11 @@ function announce(text,type='info'){
 
 function explain(error){
   const raw=String(error?.message||error||'');
+  if(raw.includes('ADULTS_ONLY'))return 'Rencontres SINJIRA™ est strictement réservé aux personnes de 18 ans et plus.';
+  if(raw.includes('SINJIRA_CONTENT_POLICY_PAID_SEXUAL_CONTENT'))return 'La promotion ou la vente de contenu sexuel payant est interdite.';
+  if(raw.includes('SINJIRA_CONTENT_POLICY_SEXUAL_EXPLOITATION'))return 'La prostitution, le proxénétisme et la vente de services sexuels sont interdits.';
+  if(raw.includes('SINJIRA_CONTENT_POLICY_HUMAN_TRAFFICKING'))return 'La traite, la vente ou l’achat de personnes sont strictement interdits.';
+  if(raw.includes('SINJIRA_CONTENT_POLICY_ILLICIT_DRUG_SALES'))return 'La vente ou la sollicitation commerciale de drogues est interdite.';
   if(raw.includes('DATING_REPORT_ALREADY_OPEN'))return 'Un signalement ouvert existe déjà pour cette rencontre.';
   if(raw.includes('DATING_REPORT_RATE_LIMIT'))return 'Trop de signalements ont été envoyés récemment. Réessayez plus tard.';
   if(raw.includes('DATING_REPORT_REASON_INVALID'))return 'Choisissez un motif de signalement valide.';
@@ -38,6 +60,7 @@ function panel(connectionId){
   return `<div class="dating-report-panel" data-dating-report-panel hidden>
     <div class="dating-report-head"><strong>Signaler cette rencontre</strong><button class="btn btn-secondary btn-small" type="button" data-dating-report-cancel>Annuler</button></div>
     <p>Le signalement est transmis à la modération SINJIRA™. Un extrait limité des derniers messages est conservé comme preuve, sans révéler l’identité cachée dans votre interface.</p>
+    <p><strong>Priorité sécurité :</strong> signalez sans attendre toute suspicion concernant un mineur, la prostitution, le proxénétisme, la traite de personnes, la vente de drogues ou la vente de contenu sexuel.</p>
     <form data-dating-report-form data-connection-id="${escapeHtml(connectionId)}">
       <label><strong>Motif</strong><select name="reason" required><option value="">Choisir…</option>${options}</select></label>
       <label><strong>Détails utiles à la modération</strong><textarea name="details" maxlength="1200" placeholder="Décrivez brièvement ce qui s’est passé. N’ajoutez pas d’informations personnelles inutiles."></textarea></label>
@@ -91,4 +114,5 @@ box?.addEventListener('submit',async event=>{
   finally{if(submit)submit.disabled=false;}
 });
 
+installSafetyNotice();
 if(box){observer=new MutationObserver(decorate);observer.observe(box,{childList:true,subtree:true});decorate();}
