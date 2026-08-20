@@ -8,9 +8,9 @@ MIG=ROOT/'supabase'/'migrations'
 BUILDER=ROOT/'scripts'/'build_supabase_production_workspace.py'
 ROW_RE=re.compile(r'^(\d{14})\s+([a-zA-Z0-9_]+)$')
 FILE_RE=re.compile(r'^(\d{14})_(.+)\.sql$')
-EXPECTED_COUNT=108
+EXPECTED_COUNT=110
 EXPECTED_FIRST='20260809050252'
-EXPECTED_LAST='20260820215158'
+EXPECTED_LAST='20260820224027'
 
 
 def rows():
@@ -33,25 +33,19 @@ def main()->int:
     if not versions or versions[0]!=EXPECTED_FIRST:errors.append('Première version production inattendue.')
     if not versions or versions[-1]!=EXPECTED_LAST:errors.append('Dernière version production inattendue.')
 
-    local=[]
-    local_versions=[]
+    local=[];local_versions=[]
     for p in sorted(MIG.glob('*.sql')):
         m=FILE_RE.fullmatch(p.name)
         if not m:errors.append(f'Nom de migration invalide: {p.name}');continue
-        version=m.group(1)
-        local.append((version,p.name))
-        local_versions.append(version)
-    if len(local_versions)!=len(set(local_versions)):
-        errors.append('Deux fichiers locaux partagent le même timestamp.')
+        version=m.group(1);local.append((version,p.name));local_versions.append(version)
+    if len(local_versions)!=len(set(local_versions)):errors.append('Deux fichiers locaux partagent le même timestamp.')
 
     cutoff=EXPECTED_LAST
     future=[name for v,name in local if v>cutoff]
-
     with tempfile.TemporaryDirectory(prefix='sinjira-ledger-') as td:
         out=Path(td)/'supabase'
         p=subprocess.run([sys.executable,str(BUILDER),'--output',str(out)],cwd=ROOT,capture_output=True,text=True)
-        if p.returncode:
-            errors.append('Builder workspace en échec: '+(p.stderr or p.stdout).strip())
+        if p.returncode:errors.append('Builder workspace en échec: '+(p.stderr or p.stdout).strip())
         else:
             generated=[]
             for f in sorted((out/'migrations').glob('*.sql')):
@@ -60,12 +54,10 @@ def main()->int:
                 generated.append((m.group(1),f.name))
             generated_versions=[v for v,_ in generated]
             expected_versions=versions+[v for v,_ in local if v>cutoff]
-            if generated_versions!=expected_versions:
-                errors.append('Le workspace lié ne reproduit pas exactement le ledger + migrations futures.')
+            if generated_versions!=expected_versions:errors.append('Le workspace lié ne reproduit pas exactement le ledger + migrations futures.')
             for version,name in generated[:len(r)]:
                 text=(out/'migrations'/name).read_text('utf-8',errors='ignore')
-                if 'Marqueur de déploiement lié uniquement' not in text:
-                    errors.append(f'Version déjà appliquée contient du DDL dans le workspace: {name}')
+                if 'Marqueur de déploiement lié uniquement' not in text:errors.append(f'Version déjà appliquée contient du DDL dans le workspace: {name}')
             for name in future:
                 if not (out/'migrations'/name).exists():errors.append(f'Migration future absente du workspace: {name}')
 
