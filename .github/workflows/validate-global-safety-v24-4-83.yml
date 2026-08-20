@@ -5,6 +5,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/**'
+      - 'supabase/functions/delete-player-account/**'
       - 'assets/js/v24-signup.js'
       - 'assets/js/sinjira-privacy-center-v24-4-83.js'
       - 'compte/inscription.html'
@@ -16,12 +17,14 @@ on:
       - 'avis-legal.html'
       - 'docs/compliance/**'
       - 'scripts/validate_global_safety_compliance_v24_4_83.py'
+      - 'scripts/validate_data_control_v24_4_69.py'
       - '.github/workflows/validate-global-safety-v24-4-83.yml'
   push:
     branches: [main]
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/**'
+      - 'supabase/functions/delete-player-account/**'
       - 'assets/js/v24-signup.js'
       - 'assets/js/sinjira-privacy-center-v24-4-83.js'
       - 'compte/inscription.html'
@@ -33,6 +36,7 @@ on:
       - 'avis-legal.html'
       - 'docs/compliance/**'
       - 'scripts/validate_global_safety_compliance_v24_4_83.py'
+      - 'scripts/validate_data_control_v24_4_69.py'
       - '.github/workflows/validate-global-safety-v24-4-83.yml'
 
 permissions:
@@ -50,6 +54,8 @@ jobs:
           python-version: '3.12'
       - name: Valider le contrat V24.4.83
         run: python scripts/validate_global_safety_compliance_v24_4_83.py
+      - name: Vérifier le contrôle des données et suppressions
+        run: python scripts/validate_data_control_v24_4_69.py
       - name: Vérifier la syntaxe JavaScript
         run: |
           node --check assets/js/v24-signup.js
