@@ -46,6 +46,7 @@ function errorMessage(error){
 
 async function submitReport(){
   if(!active||!dialog)return;
+  const current=active;
   const form=dialog.querySelector('[data-social-report-form]');
   const reason=form.elements.reason.value;
   if(!reason){form.elements.reason.reportValidity();return;}
@@ -54,19 +55,19 @@ async function submitReport(){
   const button=dialog.querySelector('[data-social-report-submit]');if(button)button.disabled=true;
   try{
     const {error}=await getSupabase().rpc('social_report_content',{
-      p_network:active.network,
-      p_target_type:active.targetType,
-      p_target_id:active.targetId,
+      p_network:current.network,
+      p_target_type:current.targetType,
+      p_target_id:current.targetId,
       p_reason:reason,
       p_details:details||null,
       p_block:block
     });
     if(error)throw error;
-    dialog.close();
-    socialStatus(active.statusNode,block?'Signalement transmis. Le membre est aussi bloqué.':'Signalement transmis à la modération SINJIRA™.','success');
-    await active.onDone?.({blocked:block});
+    if(dialog.open)dialog.close();else dialog.removeAttribute('open');
+    socialStatus(current.statusNode,block?'Signalement transmis. Le membre est aussi bloqué.':'Signalement transmis à la modération SINJIRA™.','success');
+    await current.onDone?.({blocked:block});
   }catch(error){
-    socialErrorStatus(active.statusNode,error,errorMessage(error));
+    socialErrorStatus(current.statusNode,error,errorMessage(error));
   }finally{if(button)button.disabled=false;}
 }
 
