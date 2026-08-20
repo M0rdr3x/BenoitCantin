@@ -16,7 +16,7 @@ def read(p:Path)->str:return p.read_text('utf-8',errors='ignore')
 def fail(errors:list[str],msg:str):errors.append(msg)
 
 def latest_function(files:list[Path],name:str)->tuple[Path|None,str]:
-    rx=re.compile(rf"create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?{re.escape(name)}\s*\([^)]*\).*?\$\$.*?\$\$\s*;",re.I|re.S)
+    rx=re.compile(rf"create\s+(?:or\s+replace\s+)?function\s+(?:(?:public|private)\.)?{re.escape(name)}\s*\([^)]*\).*?\$\$.*?\$\$\s*;",re.I|re.S)
     for p in reversed(files):
         matches=list(rx.finditer(read(p)))
         if matches:return p,matches[-1].group(0)
@@ -36,8 +36,8 @@ def main()->int:
 
     sql='\n'.join(read(p) for p in files)
     compact=re.sub(r'\s+','',sql.lower())
-    funcs={x.lower() for x in re.findall(r'\bcreate\s+(?:or\s+replace\s+)?function\s+(?:public\.)?([a-z_][a-z0-9_]*)\s*\(',sql,re.I)}
-    tables={x.lower() for x in re.findall(r'\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?([a-z_][a-z0-9_]*)',sql,re.I)}
+    funcs={x.lower() for x in re.findall(r'\bcreate\s+(?:or\s+replace\s+)?function\s+(?:(?:public|private)\.)?([a-z_][a-z0-9_]*)\s*\(',sql,re.I)}
+    tables={x.lower() for x in re.findall(r'\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|private)\.)?([a-z_][a-z0-9_]*)',sql,re.I)}
     required_funcs={
       'get_sinjira_server_version','get_sinjira_runtime_health','get_sinjira_account_capabilities',
       'is_sinjira_owner','ensure_sinjira_owner_character','has_sinjira_product',
@@ -55,7 +55,7 @@ def main()->int:
     for table in ('admin_notifications','guardian_signup_invites','products','user_entitlements','character_submissions','characters'):
         if table not in tables:fail(errors,f'Table contractuelle absente des migrations: {table}')
     for table in tables:
-        if not re.search(rf'alter\s+table\s+(?:if\s+exists\s+)?(?:public\.)?{re.escape(table)}\s+enable\s+row\s+level\s+security',sql,re.I):
+        if not re.search(rf'alter\s+table\s+(?:if\s+exists\s+)?(?:(?:public|private)\.)?{re.escape(table)}\s+enable\s+row\s+level\s+security',sql,re.I):
             fail(errors,f'RLS non activée sur {table}')
 
     source=[]
@@ -83,12 +83,9 @@ def main()->int:
         fail(errors,'config.toml: bloc [auth] absent; la reconstruction locale ne garantit pas la politique de mot de passe.')
     else:
         auth=auth_block.group(1)
-        if not re.search(r'(?m)^\s*enabled\s*=\s*true\s*(?:#.*)?$',auth):
-            fail(errors,'config.toml: Auth local doit rester activé.')
-        if not re.search(r'(?m)^\s*minimum_password_length\s*=\s*12\s*(?:#.*)?$',auth):
-            fail(errors,'config.toml: minimum_password_length doit être 12 pour correspondre au frontend SINJIRA.')
-        if not re.search(r'(?m)^\s*password_requirements\s*=\s*""\s*(?:#.*)?$',auth):
-            fail(errors,'config.toml: password_requirements doit rester vide tant que le frontend impose seulement la longueur.')
+        if not re.search(r'(?m)^\s*enabled\s*=\s*true\s*(?:#.*)?$',auth):fail(errors,'config.toml: Auth local doit rester activé.')
+        if not re.search(r'(?m)^\s*minimum_password_length\s*=\s*12\s*(?:#.*)?$',auth):fail(errors,'config.toml: minimum_password_length doit être 12 pour correspondre au frontend SINJIRA.')
+        if not re.search(r'(?m)^\s*password_requirements\s*=\s*""\s*(?:#.*)?$',auth):fail(errors,'config.toml: password_requirements doit rester vide tant que le frontend impose seulement la longueur.')
     browser=read(FRONTEND) if FRONTEND.exists() else ''
     if f'https://{PROJECT}.supabase.co' not in browser:fail(errors,'Frontend Supabase: mauvais projet.')
     if 'sb_publishable_' not in browser:fail(errors,'Frontend Supabase: clé publiable moderne absente.')
@@ -106,14 +103,14 @@ def main()->int:
     definers=re.findall(r'(create\s+(?:or\s+replace\s+)?function\s+.*?\$\$;)',sql,re.I|re.S)
     for block in definers:
         if 'security definer' in block.lower() and 'set search_path' not in block.lower():
-            m=re.search(r'function\s+(?:public\.)?([a-z_][a-z0-9_]*)',block,re.I);fail(errors,f'SECURITY DEFINER sans search_path: {m.group(1) if m else "inconnue"}')
+            m=re.search(r'function\s+(?:(?:public|private)\.)?([a-z_][a-z0-9_]*)',block,re.I);fail(errors,f'SECURITY DEFINER sans search_path: {m.group(1) if m else "inconnue"}')
 
     print(f'Validation Supabase V{EXPECTED}: {len(files)} migrations, {len(tables)} tables, {len(funcs)} RPC, {len(function_dirs)} Edge Functions.')
     if errors:
         print(f'ECHEC: {len(errors)} problème(s).')
         for e in errors:print('- '+e)
         return 1
-    print('OK: dépôt, runtime, Registre, RLS, propriétaire, jeunesse, Auth local 12 caractères et déploiement cohérents.')
+    print('OK: dépôt, runtime, Registre, RLS public/private, propriétaire, jeunesse, Auth local 12 caractères et déploiement cohérents.')
     return 0
 
 if __name__=='__main__':raise SystemExit(main())
