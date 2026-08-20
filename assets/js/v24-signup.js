@@ -36,6 +36,7 @@ function nextDestination(def='/compte/index.html'){
   try{const url=new URL(value,location.origin);return url.origin===location.origin?`${url.pathname}${url.search}${url.hash}`:def}catch{return def}
 }
 function normalizeGuardianCode(value=''){return String(value).trim().toUpperCase().replace(/\s+/g,'')}
+function isCanada(value=''){return ['canada','ca','can'].includes(String(value).trim().toLowerCase())}
 function setBusy(busy){
   form?.setAttribute('aria-busy',busy?'true':'false');
   const submit=form?.querySelector('[type="submit"]');
@@ -79,6 +80,7 @@ if(form){
     const birthDate=String(d.get('birth_date')||'');
     const gender=String(d.get('gender')||'').trim();
     const guardianCode=normalizeGuardianCode(d.get('guardian_code')||'');
+    const residenceCountry=String(d.get('residence_country')||'').trim();
     const age=ageOn(birthDate);
     if(!pseudo){setStatus(status,'Choisissez un pseudo non vide.','error');return}
     if(password.length<12){setStatus(status,'Utilisez un mot de passe d’au moins 12 caractères.','error');return}
@@ -86,6 +88,7 @@ if(form){
     if(age===null||age<0){setStatus(status,'Indiquez une date de naissance valide.','error');return}
     if(age<13){setStatus(status,'Les Comptes SINJIRA™ sont réservés aux personnes de 13 ans et plus.','error');return}
     if(age>120){setStatus(status,'La date de naissance indiquée n’est pas valide.','error');return}
+    if(age<18&&!isCanada(residenceCountry)){setStatus(status,'Pour le moment, les comptes jeunesse de 13 à 17 ans sont disponibles uniquement pour les personnes résidant au Canada. Les autres juridictions jeunesse resteront fermées jusqu’à leur validation spécifique.','error');return}
     if(!['Femme','Homme'].includes(gender)){setStatus(status,'Choisissez Femme ou Homme pour ce profil.','error');return}
     if(age<14&&!guardianCode){setStatus(status,'Pour un compte de 13 ans, un code d’autorisation créé par un parent ou tuteur adulte est obligatoire.','error');return}
     if(guardianCode&&!GUARDIAN_CODE_RE.test(guardianCode)){setStatus(status,'Le code parental doit respecter le format YOUTH-XXXXXXXXXX.','error');return}
@@ -105,7 +108,7 @@ if(form){
       languages,
       residence_city:String(d.get('residence_city')||'').trim(),
       residence_region:String(d.get('residence_region')||'').trim(),
-      residence_country:String(d.get('residence_country')||'').trim(),
+      residence_country:residenceCountry,
       origin_city:String(d.get('origin_city')||'').trim(),
       origin_region:String(d.get('origin_region')||'').trim(),
       origin_country:String(d.get('origin_country')||'').trim(),
@@ -121,14 +124,13 @@ if(form){
     const destination=wantsQuestionnaire?'/projets/sinjira/registre/':nextDestination();
     setBusy(true);
     try{
-      const {data,error}=await getSupabase().auth.signUp({
-        email,password,
-        options:{emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}${destination}`,data:metadata}
-      });
+      const {data,error}=await getSupabase().auth.signUp({email,password,options:{emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}${destination}`,data:metadata}});
       if(error){
         const raw=String(error.message||'');
         if(/GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14|INVALID_OR_EXPIRED_GUARDIAN_CODE|ADULT_GUARDIAN_REQUIRED/i.test(raw)){
           setStatus(status,'Le code d’autorisation parentale est absent, expiré ou invalide. Demandez au parent ou tuteur d’en générer un nouveau depuis son Compte SINJIRA™.','error');
+        }else if(/YOUTH_JURISDICTION_NOT_ENABLED/i.test(raw)){
+          setStatus(status,'Les comptes jeunesse sont actuellement activés uniquement pour le Canada.','error');
         }else setStatus(status,'Création du compte impossible. Vérifiez les renseignements ou utilisez une autre adresse courriel.','error');
         return;
       }
