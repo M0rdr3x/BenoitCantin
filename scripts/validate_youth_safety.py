@@ -7,7 +7,7 @@ MIG=ROOT/'supabase'/'migrations'
 SIGNUP=ROOT/'assets'/'js'/'v24-signup.js'
 HTML=ROOT/'compte'/'inscription.html'
 RELATIONS_JS=ROOT/'assets'/'js'/'v24-relations.js'
-CONTRACT_VERSION='24.4.14'
+CONTRACT_VERSION='24.4.83'
 
 
 def read(path:Path)->str:
@@ -62,7 +62,6 @@ def main()->int:
 
     low=re.sub(r'\s+',' ',sql.lower())
     sql_compact=compact(sql)
-    signup_compact=compact(signup)
     relations_compact=compact(relations_js)
 
     # --- Contrat serveur canonique -------------------------------------------------
@@ -78,6 +77,7 @@ def main()->int:
             add_error(errors,'RPC_MISSING',f'Fonction jeunesse/sécurité absente: {name}')
 
     age=function_block(sql,'sinjira_age_band').lower()
+    # `under12` reste un état défensif historique même si l'inscription V83 refuse maintenant <13 ans.
     for band in ['under12','youth','youth_pending','adult','unverified']:
         if f"'{band}'" not in age:
             add_error(errors,'AGE_BAND',f'Cohorte canonique absente de sinjira_age_band: {band}')
@@ -169,12 +169,13 @@ def main()->int:
     if 'used_at is null' not in low or 'minor_user_id' not in low:
         add_error(errors,'GUARDIAN_USAGE','Code parental sans consommation à usage unique traçable.')
 
-    # --- Pont Auth -> profil sécurité ----------------------------------------------
+    # --- Pont Auth -> profil sécurité V24.4.83 -------------------------------------
     new_user=function_block(sql,'handle_new_sinjira_user')
     new_user_compact=compact(new_user)
     bridge_markers=[
-        "years<12thenraiseexception'sinjira_minimum_age_12'","years<14then",
+        "years<13thenraiseexception'sinjira_minimum_age_13'","years<14then",
         'guardian_authorization_required_under_14','invalid_or_expired_guardian_code',
+        'youth_jurisdiction_not_enabled','residence_country',
         'guardian_links','birth_date','date_of_birth','gender','sex'
     ]
     for marker in bridge_markers:
@@ -190,7 +191,7 @@ def main()->int:
 
     age_trigger=function_block(sql,'enforce_sinjira_account_safety_age').lower()
     age_trigger_compact=compact(age_trigger)
-    trigger_markers=['sinjira_minimum_age_12','date_of_birth',"new.sexnotin('female','male')"]
+    trigger_markers=['sinjira_minimum_age_13','date_of_birth',"new.sexnotin('female','male')"]
     for marker in trigger_markers:
         if marker not in age_trigger_compact:
             add_error(errors,'AGE_TRIGGER',f'Verrou âge/sexe serveur incomplet: {marker}')
@@ -207,16 +208,18 @@ def main()->int:
     if not all(marker in sql_compact for marker in profile_write_markers):
         add_error(errors,'PROFILE_WRITE','Surface d’écriture account_safety_profiles trop large ou non explicitement restreinte.')
 
-    # --- Contrat frontend : comportement, pas nom d’implémentation -----------------
+    # --- Contrat frontend V24.4.83 -------------------------------------------------
     frontend_checks=[
-        (r'if\s*\(\s*age\s*<\s*12\s*\)', 'SIGNUP_AGE_MIN', 'Validation frontend 12+ absente.'),
+        (r'if\s*\(\s*age\s*<\s*13\s*\)', 'SIGNUP_AGE_MIN', 'Validation frontend 13+ absente.'),
         (r'if\s*\(\s*age\s*>\s*120\s*\)', 'SIGNUP_AGE_MAX', 'Validation frontend de date de naissance irréaliste absente.'),
-        (r'if\s*\(\s*age\s*<\s*14\s*&&\s*!\s*guardianCode\s*\)', 'SIGNUP_GUARDIAN', 'Code parental obligatoire pour 12–13 ans non vérifié côté interface.'),
+        (r'if\s*\(\s*age\s*<\s*14\s*&&\s*!\s*guardianCode\s*\)', 'SIGNUP_GUARDIAN', 'Code parental obligatoire à 13 ans non vérifié côté interface.'),
+        (r'age\s*<\s*18\s*&&\s*!\s*isCanada\(\s*residenceCountry\s*\)', 'SIGNUP_JURISDICTION', 'Gate jeunesse Canada absent du frontend.'),
         (r'birth_date\s*:\s*birthDate\b', 'SIGNUP_METADATA', 'birth_date n’est pas transmis dans les métadonnées Auth.'),
         (r'date_of_birth\s*:\s*birthDate\b', 'SIGNUP_METADATA', 'date_of_birth n’est pas transmis dans les métadonnées Auth.'),
         (r'gender\s*,', 'SIGNUP_METADATA', 'gender n’est pas transmis dans les métadonnées Auth.'),
         (r'sex\s*:\s*legacySex\b', 'SIGNUP_METADATA', 'sex normalisé n’est pas transmis dans les métadonnées Auth.'),
         (r'guardian_code\s*:\s*guardianCode\b', 'SIGNUP_METADATA', 'guardian_code n’est pas transmis dans les métadonnées Auth.'),
+        (r'residence_country\s*:\s*residenceCountry\b', 'SIGNUP_METADATA', 'pays de résidence n’est pas transmis au gate serveur.'),
         (r'GUARDIAN_CODE_RE\s*=\s*/\^YOUTH-\[A-Z0-9\]\{10\}\$/', 'SIGNUP_GUARDIAN', 'Format strict YOUTH-XXXXXXXXXX absent du frontend.')
     ]
     for pattern,code,message in frontend_checks:
@@ -226,11 +229,10 @@ def main()->int:
     if not has_regex(signup,r"\[\s*['\"]Femme['\"]\s*,\s*['\"]Homme['\"]\s*\]\.includes\(\s*gender\s*\)"):
         add_error(errors,'SIGNUP_SEX','Validation inscription Femme/Homme absente ou affaiblie.')
 
-    # Vérifie la logique de visibilité/obligation du code parental sans imposer un nom de fonction précis.
-    if not has_regex(signup,r'age\s*>=\s*12\s*&&\s*age\s*<\s*18'):
-        add_error(errors,'SIGNUP_GUARDIAN','La plage jeunesse 12–17 n’est pas utilisée pour afficher les contrôles parentaux.')
-    if not has_regex(signup,r'age\s*>=\s*12\s*&&\s*age\s*<\s*14'):
-        add_error(errors,'SIGNUP_GUARDIAN','La plage 12–13 n’est pas utilisée pour rendre le code parental obligatoire.')
+    if not has_regex(signup,r'age\s*>=\s*13\s*&&\s*age\s*<\s*18'):
+        add_error(errors,'SIGNUP_GUARDIAN','La plage jeunesse 13–17 n’est pas utilisée pour afficher les contrôles parentaux.')
+    if not has_regex(signup,r'age\s*>=\s*13\s*&&\s*age\s*<\s*14'):
+        add_error(errors,'SIGNUP_GUARDIAN','La plage de 13 ans n’est pas utilisée pour rendre le code parental obligatoire.')
 
     # --- HTML d’inscription ---------------------------------------------------------
     if 'name="birth_date"' not in html or not has_regex(html,r'<input[^>]+name="birth_date"[^>]+required',re.I|re.S):
@@ -245,6 +247,8 @@ def main()->int:
             add_error(errors,'SIGNUP_HTML',f'Option de profil non prévue encore visible: {stale}')
     if 'data-guardian-code' not in html or 'Code d’autorisation parentale' not in html:
         add_error(errors,'SIGNUP_HTML','Champ de code parental absent du formulaire d’inscription.')
+    if '13 à 17 ans' not in html or 'Canada' not in html:
+        add_error(errors,'SIGNUP_HTML','Le gate jeunesse Canada n’est pas expliqué dans le formulaire.')
 
     # --- Interface Relations & famille ---------------------------------------------
     for marker in ["rpc('sinjira_my_age_band'","rpc('create_guardian_signup_invite'","rpc('redeem_guardian_signup_invite'","rpc('revoke_guardian_link'"]:
@@ -266,7 +270,7 @@ def main()->int:
             print('- '+item)
         return 1
 
-    print('OK jeunesse: 12+, 12–13 avec autorisation parentale, youth_pending vérifiable après inscription, cohortes isolées, RPC self-only et supervision révocable sans contenu privé.')
+    print('OK jeunesse: inscription 13+, autorisation parentale à 13 ans, jeunesse 13–17 limitée au Canada, youth_pending vérifiable, cohortes isolées, RPC self-only et supervision révocable sans contenu privé.')
     return 0
 
 if __name__=='__main__':
