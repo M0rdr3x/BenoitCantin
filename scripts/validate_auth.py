@@ -42,7 +42,9 @@ def main():
     errors.append('Inscription: autocomplete=new-password absent sur les deux champs mot de passe.')
   for marker,label in [
     ('name="pseudo"','pseudo'),('name="email"','courriel'),('name="birth_date"','date de naissance'),
-    ('data-signup-birth-date','garde date locale'),('confidentialite-joueur.html','consentement confidentialité')
+    ('data-signup-birth-date','garde date locale'),('confidentialite-joueur.html','consentement confidentialité'),
+    ('partir de 13 ans','âge minimum visible 13 ans'),('À 13 ans','autorisation parentale visible à 13 ans'),
+    ('Moins de 13 ans','refus libre-service visible sous 13 ans')
   ]:
     if marker not in signup_html: errors.append(f'Inscription: champ/contrat absent: {label}.')
 
@@ -57,12 +59,16 @@ def main():
     'localDateString()':'date maximale calculée en heure locale',
     'birthInput.max=localDateString()':'borne de naissance locale',
     'GUARDIAN_CODE_RE':'validation du code parental',
-    'age<12':'âge minimum 12 ans',
+    'age<13':'âge minimum 13 ans',
+    'age<14&&!guardianCode':'autorisation parentale obligatoire à 13 ans',
+    "age>=13&&age<18":'cohorte jeunesse 13–17',
     'age>120':'borne de date de naissance',
     "window.SINJIRA_AUTH_ROUTE?.next":'destination sécurisée partagée',
   }
   for marker,label in signup_requirements.items():
     require(errors, signup, marker, f'Inscription: contrat absent: {label}.')
+  if 'age<12' in signup:
+    errors.append('Inscription: ancien seuil 12 ans encore présent dans le client.')
   if 'toISOString().slice(0,10)' in signup:
     errors.append('Inscription: borne de date UTC détectée; elle peut autoriser demain selon le fuseau horaire.')
 
@@ -112,12 +118,12 @@ def main():
     if re.search(r'console\.(?:log|info|warn|error)\([^\n]*\bpassword\b',src,re.I):
       errors.append(f'Secret potentiel journalisé dans {rel}: référence password dans console.*().')
 
-  print(f'Validation auth SINJIRA V24.4.28: {len(pages)} pages critiques.')
+  print(f'Validation auth SINJIRA V24.4.83: {len(pages)} pages critiques.')
   if errors:
     print(f'ECHEC auth: {len(errors)} problème(s).')
     for e in errors: print('- '+e)
     return 1
-  print('OK auth: redirections internes, anti-énumération, validation serveur de récupération, verrou de soumission, gestion réseau et politique 12 caractères cohérents.')
+  print('OK auth: 13+ côté client, autorisation parentale à 13 ans, redirections internes, anti-énumération, validation serveur de récupération, verrou de soumission et politique 12 caractères cohérents.')
   return 0
 
 if __name__=='__main__': raise SystemExit(main())
