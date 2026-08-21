@@ -55,8 +55,18 @@
     }
   }
 
+  function appendPwaAssets() {
+    if (doc.querySelector('script[data-sinjira-pwa-install]')) return;
+    var pwaScript = doc.createElement('script');
+    pwaScript.src = '/assets/js/sinjira-pwa-install.js?v=24.4.93';
+    pwaScript.defer = true;
+    pwaScript.setAttribute('data-sinjira-pwa-install', '');
+    doc.head.appendChild(pwaScript);
+  }
+
   appendCompatStylesheet();
   appendAssistantAssets();
+  appendPwaAssets();
 
   var toggle = doc.querySelector('[data-menu-toggle]');
   var nav = doc.querySelector('[data-main-nav]');
