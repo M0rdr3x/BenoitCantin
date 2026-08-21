@@ -10,6 +10,10 @@ const ACTIVE_ADMIN_FUNCTIONS = new Set([
   'admin-users'
 ]);
 
+const EXTREMELY_SENSITIVE_FUNCTIONS = new Set([
+  'submit-character-questionnaire'
+]);
+
 function serverSecretKey() {
   const modern = Deno.env.get('SUPABASE_SECRET_KEYS');
   if (modern) {
@@ -97,9 +101,19 @@ async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authent
     console.error('[SINJIRA sensitive auth] préférences de sécurité indisponibles', error);
     throw new Error('SECURITY_STATE_UNAVAILABLE');
   }
-  // Le défaut canonique est protecteur : si aucune ligne n'existe encore,
-  // les zones extrêmement sensibles demandent le step-up.
   return data?.sensitive_step_up !== false;
+}
+
+async function assertSensitiveMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
+  if (!(await sensitiveStepUpEnabled(context))) return null;
+
+  const aal = await assuranceLevel(context).catch((error) => {
+    console.error('[SINJIRA sensitive auth] état MFA indisponible', error);
+    throw error;
+  });
+  if (aal.nextLevel !== 'aal2') throw new Error('MFA_SETUP_REQUIRED');
+  if (aal.currentLevel !== 'aal2') throw new Error('MFA_REQUIRED');
+  return aal;
 }
 
 export async function optionalUser(req: Request) {
@@ -112,8 +126,12 @@ export async function optionalUser(req: Request) {
 
 export async function requiredUser(req: Request) {
   const context = await authenticatedContext(req);
-  if (ACTIVE_ADMIN_FUNCTIONS.has(edgeFunctionName(req))) {
+  const functionName = edgeFunctionName(req);
+  if (ACTIVE_ADMIN_FUNCTIONS.has(functionName)) {
     await assertAdminMfa(context);
+  }
+  if (EXTREMELY_SENSITIVE_FUNCTIONS.has(functionName)) {
+    await assertSensitiveMfa(context);
   }
   return context.user;
 }
@@ -131,14 +149,7 @@ export async function requiredUser(req: Request) {
  */
 export async function requiredSensitiveUser(req: Request) {
   const context = await authenticatedContext(req);
-  if (!(await sensitiveStepUpEnabled(context))) return context.user;
-
-  const aal = await assuranceLevel(context).catch((error) => {
-    console.error('[SINJIRA sensitive auth] état MFA indisponible', error);
-    throw error;
-  });
-  if (aal.nextLevel !== 'aal2') throw new Error('MFA_SETUP_REQUIRED');
-  if (aal.currentLevel !== 'aal2') throw new Error('MFA_REQUIRED');
+  await assertSensitiveMfa(context);
   return context.user;
 }
 
