@@ -29,6 +29,19 @@
     navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});
   }
 
+  function loadMobileAccountShell(){
+    var p=location.pathname.toLowerCase();
+    if(p.indexOf('/compte/')!==0)return;
+    var excluded=['/compte/connexion.html','/compte/inscription.html','/compte/mot-de-passe-oublie.html','/compte/reinitialiser-mot-de-passe.html','/compte/mfa.html'];
+    if(excluded.indexOf(p)!==-1)return;
+    if(!d.querySelector('link[data-sinjira-mobile-account-shell]')){
+      var style=d.createElement('link');style.rel='stylesheet';style.href='/assets/css/sinjira-mobile-account-shell-v24-4-95.css?v=24.4.95';style.setAttribute('data-sinjira-mobile-account-shell','');d.head.appendChild(style);
+    }
+    if(!d.querySelector('script[data-sinjira-mobile-account-shell]')){
+      var script=d.createElement('script');script.src='/assets/js/sinjira-mobile-account-shell-v24-4-95.js?v=24.4.95';script.defer=true;script.setAttribute('data-sinjira-mobile-account-shell','');d.head.appendChild(script);
+    }
+  }
+
   function addStyle(){
     if(d.querySelector('[data-sinjira-pwa-style]'))return;
     var s=d.createElement('style');s.setAttribute('data-sinjira-pwa-style','');
@@ -68,6 +81,7 @@
 
   ensureHeadLinks();
   registerWorker();
+  loadMobileAccountShell();
   if(isIos()&&!standalone()){
     if(d.readyState==='loading')d.addEventListener('DOMContentLoaded',function(){ensureCard('ios');},{once:true});
     else ensureCard('ios');
