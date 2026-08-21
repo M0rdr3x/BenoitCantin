@@ -12,6 +12,15 @@ ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = 'www.benoitcantin.com'
 BASE_URL = f'https://{DOMAIN}'
 MANIFESTS = [ROOT / 'manifest.webmanifest', ROOT / 'site.webmanifest']
+REQUIRED_PUBLIC_ROUTES = {
+    f'{BASE_URL}/projets/sinjira/communaute/',
+    f'{BASE_URL}/projets/sinjira/monde-parallele/',
+}
+REQUIRED_OFFLINE_ROUTES = {
+    '/projets/sinjira/communaute/',
+    '/projets/sinjira/monde-parallele/',
+}
+CACHE_PREFIX = 'benoitcantin-v24-4-91-'
 
 
 def local_target(raw: str, base: Path | None = None) -> Path | None:
@@ -112,6 +121,9 @@ def validate_sitemap(errors: list[str]) -> None:
     duplicates = sorted({url for url in locs if locs.count(url) > 1})
     if duplicates:
         errors.append('sitemap.xml contient des URL dupliquées: ' + ', '.join(duplicates))
+    missing_required = sorted(REQUIRED_PUBLIC_ROUTES - set(locs))
+    if missing_required:
+        errors.append('sitemap.xml omet des espaces publics SINJIRA™: ' + ', '.join(missing_required))
     for url in locs:
         parsed = urlparse(url)
         if parsed.scheme != 'https' or parsed.netloc != DOMAIN:
@@ -164,6 +176,9 @@ def validate_service_worker(errors: list[str]) -> None:
     refs = re.findall(r"['\"]([^'\"]+)['\"]", match.group(1))
     if not refs:
         errors.append('sw.js: liste CORE vide.')
+    missing_offline = sorted(REQUIRED_OFFLINE_ROUTES - set(refs))
+    if missing_offline:
+        errors.append('sw.js CORE omet des espaces SINJIRA™ majeurs: ' + ', '.join(missing_offline))
     for raw in refs:
         target = local_target(raw, ROOT)
         if target is None or not target.exists():
@@ -171,6 +186,8 @@ def validate_service_worker(errors: list[str]) -> None:
     cache_match = re.search(r"\bconst\s+CACHE\s*=\s*['\"]([^'\"]+)['\"]", text)
     if not cache_match:
         errors.append('sw.js: nom de cache explicite absent.')
+    elif not cache_match.group(1).startswith(CACHE_PREFIX):
+        errors.append(f'sw.js: cache obsolète {cache_match.group(1)!r}; préfixe attendu {CACHE_PREFIX!r}.')
 
 
 def validate_offline(errors: list[str]) -> None:
@@ -201,7 +218,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK PWA/SEO: manifestes, sitemap, robots, CNAME, cache hors ligne et routes locales cohérents.')
+    print('OK PWA/SEO V24.4.91: manifestes, sitemap, Communauté, Monde parallèle, robots, CNAME, cache hors ligne et routes locales cohérents.')
     return 0
 
 
