@@ -9,8 +9,7 @@
   }
   function eligibleRoute(){
     var p=location.pathname.toLowerCase();
-    if(p.indexOf('/admin/')===0 || p.indexOf('/supabase/')===0)return false;
-    return p==='/' || p.indexOf('/projets/sinjira/')===0 || p.indexOf('/compte/')===0;
+    return p==='/' || p==='/projets/sinjira/' || p==='/compte/' || p==='/compte/index.html';
   }
   function isIos(){return /iphone|ipad|ipod/i.test(navigator.userAgent||'') && !w.MSStream;}
   function dismissed(){try{return sessionStorage.getItem(dismissedKey)==='1';}catch(e){return false;}}
