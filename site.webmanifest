@@ -2,8 +2,8 @@
   "id": "/projets/sinjira/",
   "name": "SINJIRA™ — Benoit Cantin",
   "short_name": "SINJIRA™",
-  "description": "Portail officiel SINJIRA™ de Benoit Cantin : romans, jeux, Registre, Communauté et Monde parallèle.",
-  "start_url": "/projets/sinjira/",
+  "description": "Application SINJIRA™ de Benoit Cantin : fil communautaire, Monde parallèle, messages, romans et Registre.",
+  "start_url": "/app/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
@@ -16,9 +16,9 @@
     {"src":"/android-chrome-512x512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
   ],
   "shortcuts": [
+    {"name":"App sociale","short_name":"Fil","url":"/app/","icons":[{"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"}]},
     {"name":"Romans","short_name":"Romans","url":"/projets/sinjira/romans/","icons":[{"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"}]},
     {"name":"Registre des Consciences","short_name":"Registre","url":"/projets/sinjira/registre/","icons":[{"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"}]},
-    {"name":"Communauté","short_name":"Communauté","url":"/projets/sinjira/communaute/","icons":[{"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"}]},
     {"name":"Monde parallèle","short_name":"Monde parallèle","url":"/projets/sinjira/monde-parallele/","icons":[{"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"}]}
   ]
 }
