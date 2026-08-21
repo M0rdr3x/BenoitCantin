@@ -1,0 +1,49 @@
+name: Validation modération et appels V24.4.90
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/functions/admin-social-v20/**'
+      - 'assets/js/sinjira-admin-social-v20.js'
+      - 'assets/js/sinjira-moderation-appeals-v24-4-90.js'
+      - 'compte/moderation.html'
+      - 'scripts/validate_moderation_appeals_v24_4_90.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'supabase/production-migration-ledger.txt'
+      - '.github/workflows/validate-moderation-v24-4-90.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/functions/admin-social-v20/**'
+      - 'assets/js/sinjira-admin-social-v20.js'
+      - 'assets/js/sinjira-moderation-appeals-v24-4-90.js'
+      - 'compte/moderation.html'
+      - 'scripts/validate_moderation_appeals_v24_4_90.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'supabase/production-migration-ledger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  moderation-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Valider le contrat de modération et appels
+        run: python scripts/validate_moderation_appeals_v24_4_90.py
+      - name: Valider le ledger production
+        run: python scripts/validate_production_migration_ledger.py
+      - name: Valider le manifeste du schéma production
+        run: python scripts/validate_production_schema_manifest.py
+      - name: Vérifier la syntaxe des clients JavaScript
+        run: |
+          node --check assets/js/sinjira-admin-social-v20.js
+          node --check assets/js/sinjira-moderation-appeals-v24-4-90.js
