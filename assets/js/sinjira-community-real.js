@@ -2,7 +2,7 @@ import {getSupabase,requireCommunityUser,escapeHtml,formatDate,avatarUrl,socialS
 import {editOwnContent,deleteOwnContent,editedSuffix} from './sinjira-social-self-content.js?v=24.4.72';
 import {openSocialReport} from './sinjira-social-safety-v24-4-79.js?v=24.4.79';
 
-const UI_VERSION='24.4.79';
+const UI_VERSION='24.4.94';
 const feed=document.querySelector('[data-real-feed]');
 const form=document.querySelector('[data-real-post-form]');
 const status=document.querySelector('[data-social-status]');
@@ -54,10 +54,10 @@ async function load(){
       const controls=ownComment
         ?'<span><button class="link-button" data-edit-comment>Modifier</button> <button class="link-button" data-delete-comment>Supprimer</button></span>'
         :'<button class="link-button" data-report-comment>Signaler</button>';
-      return `<div class="v20-comment" data-comment="${escapeHtml(comment.id)}"><strong>${escapeHtml(cp.pseudo||cp.display_name||'Membre')}</strong><p>${escapeHtml(comment.body)}</p><small>${escapeHtml(formatDate(comment.created_at)+editedSuffix(comment))}</small>${controls}</div>`;
+      return `<div class="v20-comment" data-comment="${escapeHtml(comment.id)}"><strong>${escapeHtml(cp.display_name||cp.pseudo||'Membre')}</strong><p>${escapeHtml(comment.body)}</p><small>${escapeHtml(formatDate(comment.created_at)+editedSuffix(comment))}</small>${controls}</div>`;
     }).join('');
     return `<article class="v20-social-card" data-post="${escapeHtml(post.id)}">
-      <div class="v20-social-meta"><div class="v20-social-identity"><img class="v20-social-avatar" src="${escapeHtml(avatarUrl(profile.avatar_path))}" alt=""><div><span class="v20-social-name">${escapeHtml(profile.pseudo||profile.display_name||'Membre SINJIRA')}</span><time class="v20-social-time">${escapeHtml(formatDate(post.created_at)+editedSuffix(post))}</time></div></div>${postControls}</div>
+      <div class="v20-social-meta"><div class="v20-social-identity"><img class="v20-social-avatar" src="${escapeHtml(avatarUrl(profile.avatar_path))}" alt=""><div><span class="v20-social-name">${escapeHtml(profile.display_name||profile.pseudo||'Membre SINJIRA')}</span><time class="v20-social-time">${escapeHtml(formatDate(post.created_at)+editedSuffix(post))}</time></div></div>${postControls}</div>
       <p class="v20-social-body">${escapeHtml(post.body)}</p>
       <div class="v20-social-actions"><button class="btn btn-secondary btn-small" data-like>${liked?'♥':'♡'} ${postLikes.length}</button><span>${postComments.length} commentaire(s)</span></div>
       <div class="v20-comments">${commentHtml}</div>
@@ -154,7 +154,7 @@ function bind(posts,comments){
     const {data,error}=await getSupabase().from('social_profiles').select('*').eq('user_id',user.id).maybeSingle();
     if(error)throw error;
     me=data||{};
-    if(identity)identity.innerHTML=`<strong>Mode compte réel — ${escapeHtml(me.pseudo||me.display_name||'Compte SINJIRA')}</strong><p>Vos publications utilisent votre pseudo de compte. Votre personnage n’est jamais utilisé dans cet espace.</p>`;
+    if(identity)identity.innerHTML=`<div><strong>${escapeHtml(me.display_name||me.pseudo||'Compte SINJIRA')}</strong><p>Vos publications utilisent votre nom affiché de profil. Votre identifiant technique privé et votre personnage ne sont jamais utilisés comme nom public ici.</p></div>`;
 
     form.addEventListener('submit',async event=>{
       event.preventDefault();
