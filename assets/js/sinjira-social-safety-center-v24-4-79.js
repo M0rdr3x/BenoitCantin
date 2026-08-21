@@ -26,6 +26,17 @@ function reportStatusLabel(value){
   return {open:'En cours',resolved:'Traité',dismissed:'Classé sans suite'}[value]||value||'—';
 }
 
+function ensureModerationLink(){
+  const section=reportsBox?.closest('section');
+  if(!section||section.querySelector('[data-moderation-center-link]'))return;
+  const link=document.createElement('div');
+  link.className='hero-actions';
+  link.dataset.moderationCenterLink='';
+  link.style.marginTop='18px';
+  link.innerHTML='<a class="btn btn-secondary" href="moderation.html">Voir mes décisions de modération et mes appels</a>';
+  section.append(link);
+}
+
 async function loadBlocks(){
   if(!blocksBox)return;
   const {data=[],error}=await getSupabase().rpc('social_my_blocks');
@@ -56,6 +67,7 @@ async function loadReports(){
 (async()=>{
   try{
     await requireUser('/compte/connexion.html');
+    ensureModerationLink();
     await Promise.all([loadBlocks(),loadReports()]);
   }catch(error){
     console.error(error);
