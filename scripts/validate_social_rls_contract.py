@@ -10,6 +10,7 @@ SOCIAL_VERSION = '24.4.42'
 PAGE_VERSION = '24.4.44'
 MESSAGE_VERSION = '24.4.71'
 COMMUNITY_VERSION = '24.4.72'
+CACHE_MIN_VERSION = '24.4.91'
 
 errors: list[str] = []
 
@@ -184,8 +185,10 @@ for path, (asset, runtime_version, shell_version) in social_pages.items():
                     f'{path.relative_to(ROOT)} utilise un shell privé antérieur à V{shell_version}.')
 
 sw = (ROOT / 'sw.js').read_text('utf-8', errors='ignore') if (ROOT / 'sw.js').exists() else ''
-require('benoitcantin-v24-4-44-public-1' in sw,
-        'Le cache du service worker n’a pas été invalidé après les correctifs sociaux.')
+cache = re.search(r"const\s+CACHE\s*=\s*['\"]benoitcantin-v([0-9-]+)-public-[0-9]+['\"]", sw)
+cache_version = cache.group(1).replace('-', '.') if cache else ''
+require(bool(cache) and version_at_least(cache_version, CACHE_MIN_VERSION),
+        f'Le cache du service worker doit être au moins V{CACHE_MIN_VERSION} après les correctifs sociaux/PWA.')
 
 if errors:
     print(f'ECHEC contrat social/RLS: {len(errors)} problème(s).')
@@ -193,4 +196,4 @@ if errors:
         print('- ' + error)
     raise SystemExit(1)
 
-print('OK — contrat social/RLS: socle V24.4.44 conservé, runtimes sociaux au moins aux versions de sécurité requises, cohorte self-only, ACL durcies et erreurs publiques assainies.')
+print('OK — contrat social/RLS: socle V24.4.44 conservé, runtimes sociaux sûrs, cohorte self-only, ACL durcies et cache public au moins V24.4.91.')
