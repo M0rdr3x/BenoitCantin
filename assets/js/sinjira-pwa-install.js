@@ -16,6 +16,15 @@
   function dismissed(){try{return sessionStorage.getItem(dismissedKey)==='1';}catch(e){return false;}}
   function rememberDismiss(){try{sessionStorage.setItem(dismissedKey,'1');}catch(e){}}
 
+  function ensureHeadLinks(){
+    if(!d.querySelector('link[rel="manifest"]')){
+      var manifest=d.createElement('link');manifest.rel='manifest';manifest.href='/manifest.webmanifest';d.head.appendChild(manifest);
+    }
+    if(!d.querySelector('link[rel="apple-touch-icon"]')){
+      var icon=d.createElement('link');icon.rel='apple-touch-icon';icon.href='/android-chrome-192x192.png';d.head.appendChild(icon);
+    }
+  }
+
   function registerWorker(){
     if(!('serviceWorker' in navigator))return;
     navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});
@@ -58,6 +67,7 @@
   });
   w.addEventListener('appinstalled',function(){deferredPrompt=null;var c=d.querySelector('[data-sinjira-pwa-install]');if(c)c.remove();});
 
+  ensureHeadLinks();
   registerWorker();
   if(isIos()&&!standalone()){
     if(d.readyState==='loading')d.addEventListener('DOMContentLoaded',function(){ensureCard('ios');},{once:true});
