@@ -1,8 +1,8 @@
-const CACHE='benoitcantin-v24-4-93-public-1';
+const CACHE='benoitcantin-v24-4-94-public-1';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest',
-  '/assets/css/site.css','/assets/css/browser-compat-v24-4-22.css','/assets/css/home-v24-4-12.css','/assets/css/v19-pro.css','/assets/css/v24-platform.css','/assets/css/v24-3-2-fixes.css','/assets/css/v24-3-3-fixes.css','/assets/css/fracture-engine.css','/assets/css/sinjira-assistant.css',
-  '/assets/js/site.js','/assets/js/sinjira-pwa-install.js','/assets/js/v24-3-1-runtime.js','/assets/js/v24-3-2-runtime.js','/assets/js/v24-3-3-runtime.js','/assets/js/v24-3-6-runtime.js','/assets/js/sinjira-fracture-lobby.js','/assets/js/sinjira-fracture-engine.js','/assets/js/sinjira-fracture-result.js','/assets/js/sinjira-assistant.js',
+  '/assets/css/site.css','/assets/css/browser-compat-v24-4-22.css','/assets/css/home-v24-4-12.css','/assets/css/v19-pro.css','/assets/css/v24-platform.css','/assets/css/v24-3-2-fixes.css','/assets/css/v24-3-3-fixes.css','/assets/css/fracture-engine.css','/assets/css/sinjira-assistant.css','/assets/css/sinjira-mobile-app-v24-4-94.css',
+  '/assets/js/site.js','/assets/js/sinjira-pwa-install.js','/assets/js/v24-3-1-runtime.js','/assets/js/v24-3-2-runtime.js','/assets/js/v24-3-3-runtime.js','/assets/js/v24-3-6-runtime.js','/assets/js/sinjira-fracture-lobby.js','/assets/js/sinjira-fracture-engine.js','/assets/js/sinjira-fracture-result.js','/assets/js/sinjira-assistant.js','/assets/js/sinjira-mobile-social-v24-4-94.js',
   '/assets/icons/benoit-sigil.svg','/android-chrome-192x192.png','/android-chrome-512x512.png','/assets/media/sinjira-emblem.webp','/assets/media/sinjira-registre.webp','/assets/media/nova-logo.webp','/assets/media/sinjira-livre-1-cover-480.webp','/assets/media/fracture-card-back.webp',
   '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/registre/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/','/projets/sinjira/jeux/fracture-du-reseau-mere/','/projets/projet-nova/'
 ];
@@ -11,7 +11,7 @@ self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise
 self.addEventListener('fetch',e=>{
   const r=e.request,u=new URL(r.url);
   if(r.method!=='GET'||u.origin!==location.origin)return;
-  const privatePath=u.pathname.startsWith('/compte/')||u.pathname.startsWith('/Admin/')||u.pathname.startsWith('/admin/')||u.pathname.startsWith('/supabase/');
+  const privatePath=u.pathname.startsWith('/app/')||u.pathname.startsWith('/compte/')||u.pathname.startsWith('/Admin/')||u.pathname.startsWith('/admin/')||u.pathname.startsWith('/supabase/');
   if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})).catch(()=>caches.match('/offline.html')));return}
   if(r.destination==='document'){
     e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{const cp=resp.clone();caches.open(CACHE).then(c=>c.put(r,cp));return resp}).catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));return;

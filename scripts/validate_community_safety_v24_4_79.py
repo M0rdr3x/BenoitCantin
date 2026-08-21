@@ -28,6 +28,18 @@ def forbid(text,markers,label):
     if found: raise AssertionError(f'{label}: marqueurs interdits: {found}')
 
 
+def ui_version_at_least(text, marker, minimum, label):
+    match=re.search(rf"{re.escape(marker)}=['\"]24\.4\.(\d+)['\"]",text,re.I)
+    if not match or int(match.group(1))<minimum:
+        raise AssertionError(f'{label}: version UI/runtime antérieure à V24.4.{minimum} ou absente')
+
+
+def html_runtime_at_least(text, minimum, label):
+    match=re.search(r'data-social-runtime=["\']24\.4\.(\d+)["\']',text,re.I)
+    if not match or int(match.group(1))<minimum:
+        raise AssertionError(f'{label}: data-social-runtime antérieur à V24.4.{minimum} ou absent')
+
+
 def main():
     mig=MIG.read_text('utf-8',errors='ignore')
     test=TEST.read_text('utf-8',errors='ignore')
@@ -60,12 +72,16 @@ def main():
         raise AssertionError('helper social commun: runtime antérieur à V24.4.79 ou absent')
     forbid(common,[".from('social_reports').insert",'.from("social_reports").insert'],'helper social commun')
     require(safety,['Sécurité communautaire','snapshot utilisé comme preuve',"rpc('social_report_content'",'p_block:block'],'dialogue signalement')
-    require(real,['data-report-comment','openSocialReport','UI_VERSION=\'24.4.79\''],'Communauté réelle')
-    require(char,['data-report-comment','openSocialReport','UI_VERSION=\'24.4.79\''],'Réseau personnage')
+    require(real,['data-report-comment','openSocialReport'],'Communauté réelle')
+    ui_version_at_least(real,'UI_VERSION',79,'Communauté réelle')
+    require(char,['data-report-comment','openSocialReport'],'Réseau personnage')
+    ui_version_at_least(char,'UI_VERSION',79,'Réseau personnage')
     require(center,["rpc('social_my_blocks'","rpc('social_unblock_user'","rpc('social_my_reports'",'Débloquer'],'centre sécurité client')
     require(security,['Blocages et signalements','data-social-blocks','data-social-reports','sinjira-social-safety-center-v24-4-79.js'],'page Sécurité')
-    require(community,['data-social-runtime="24.4.79"','sinjira-social-safety-v24-4-79.css','Gérer mes blocages et signalements'],'page Communauté')
-    require(char_page,['data-social-runtime="24.4.79"','sinjira-social-safety-v24-4-79.css','Mes blocages et signalements'],'page Réseau personnage')
+    require(community,['sinjira-social-safety-v24-4-79.css','Gérer mes blocages et signalements'],'page Communauté')
+    html_runtime_at_least(community,79,'page Communauté')
+    require(char_page,['sinjira-social-safety-v24-4-79.css','Mes blocages et signalements'],'page Réseau personnage')
+    html_runtime_at_least(char_page,79,'page Réseau personnage')
     require(css,['.social-report-dialog','.social-safety-grid','.social-report-status'],'styles V24.4.79')
     require(test,['select plan(20)','snapshot_source','social_my_blocks','social_my_reports'],'pgTAP V24.4.79')
     require(admin,['canonicalUser','reportTargetUser'],'admin social canonique')
@@ -75,7 +91,7 @@ def main():
     if (ROOT/'supabase/migrations/20260820000500_sinjira_v24_4_79_community_safety_center.sql').exists():
         raise AssertionError('ancien timestamp local V24.4.79 encore présent')
 
-    print('OK V24.4.79: migration canonique production, signalements communautaires canoniques, commentaires signalables, blocage unifié et centre self-only.')
+    print('OK V24.4.79+: migration canonique production, signalements communautaires canoniques, commentaires signalables, blocage unifié et interfaces plus récentes compatibles.')
     return 0
 
 if __name__=='__main__':
