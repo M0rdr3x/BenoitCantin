@@ -1,6 +1,6 @@
 -- SINJIRA™ V24.4.98 — Centre Ma sécurité, Mode Voyage et Bouclier de connexion
 -- Canon : CAHIER_MAITRE_SINJIRA.md
--- Principe : protéger sans surveiller. Aucune adresse IP brute ni GPS ne sont stockés ici.
+-- Principe : protéger sans surveiller. Aucune adresse IP brute ni donnée GPS n'est stockée ici.
 
 begin;
 
@@ -34,10 +34,8 @@ create table if not exists public.security_devices (
   updated_at timestamptz not null default now(),
   unique (user_id, device_key)
 );
-
 create unique index if not exists security_devices_one_primary_idx
-  on public.security_devices(user_id)
-  where is_primary and revoked_at is null;
+  on public.security_devices(user_id) where is_primary and revoked_at is null;
 create index if not exists security_devices_user_seen_idx
   on public.security_devices(user_id, last_seen_at desc);
 
@@ -59,6 +57,8 @@ create table if not exists public.security_travel_plans (
 );
 create index if not exists security_travel_plans_user_period_idx
   on public.security_travel_plans(user_id, starts_at, ends_at);
+create index if not exists security_travel_plans_delete_idx
+  on public.security_travel_plans(delete_after);
 
 create table if not exists public.security_connection_events (
   id uuid primary key default gen_random_uuid(),
@@ -110,8 +110,7 @@ create table if not exists public.security_connection_challenges (
   delete_after timestamptz not null default (now() + interval '7 days')
 );
 create index if not exists security_connection_challenges_user_pending_idx
-  on public.security_connection_challenges(user_id, created_at desc)
-  where status = 'pending';
+  on public.security_connection_challenges(user_id, created_at desc) where status = 'pending';
 create index if not exists security_connection_challenges_delete_idx
   on public.security_connection_challenges(delete_after);
 
@@ -126,4 +125,69 @@ begin
 end;
 $$;
 
+revoke all on function public.security_touch_updated_at() from public, anon, authenticated;
+
+drop trigger if exists security_user_settings_touch on public.security_user_settings;
+create trigger security_user_settings_touch before update on public.security_user_settings
 for each row execute function public.security_touch_updated_at();
+
+drop trigger if exists security_devices_touch on public.security_devices;
+create trigger security_devices_touch before update on public.security_devices
+for each row execute function public.security_touch_updated_at();
+
+drop trigger if exists security_travel_plans_touch on public.security_travel_plans;
+create trigger security_travel_plans_touch before update on public.security_travel_plans
+for each row execute function public.security_touch_updated_at();
+
+alter table public.security_user_settings enable row level security;
+alter table public.security_devices enable row level security;
+alter table public.security_travel_plans enable row level security;
+alter table public.security_connection_events enable row level security;
+alter table public.security_events enable row level security;
+alter table public.security_connection_challenges enable row level security;
+
+revoke all on table public.security_user_settings from public, anon, authenticated;
+revoke all on table public.security_devices from public, anon, authenticated;
+revoke all on table public.security_travel_plans from public, anon, authenticated;
+revoke all on table public.security_connection_events from public, anon, authenticated;
+revoke all on table public.security_events from public, anon, authenticated;
+revoke all on table public.security_connection_challenges from public, anon, authenticated;
+
+grant select on table public.security_user_settings to authenticated;
+grant select on table public.security_devices to authenticated;
+grant select on table public.security_travel_plans to authenticated;
+grant select on table public.security_connection_events to authenticated;
+grant select on table public.security_events to authenticated;
+grant select on table public.security_connection_challenges to authenticated;
+grant select, insert, update, delete on all tables in schema public to service_role;
+
+drop policy if exists security_user_settings_read_own on public.security_user_settings;
+create policy security_user_settings_read_own on public.security_user_settings
+for select to authenticated using ((select auth.uid()) = user_id);
+
+drop policy if exists security_devices_read_own on public.security_devices;
+create policy security_devices_read_own on public.security_devices
+for select to authenticated using ((select auth.uid()) = user_id);
+
+drop policy if exists security_travel_plans_read_own on public.security_travel_plans;
+create policy security_travel_plans_read_own on public.security_travel_plans
+for select to authenticated using ((select auth.uid()) = user_id);
+
+drop policy if exists security_connection_events_read_own on public.security_connection_events;
+create policy security_connection_events_read_own on public.security_connection_events
+for select to authenticated using ((select auth.uid()) = user_id);
+
+drop policy if exists security_events_read_own on public.security_events;
+create policy security_events_read_own on public.security_events
+for select to authenticated using ((select auth.uid()) = user_id);
+
+drop policy if exists security_connection_challenges_read_own on public.security_connection_challenges;
+create policy security_connection_challenges_read_own on public.security_connection_challenges
+for select to authenticated using ((select auth.uid()) = user_id);
+
+comment on table public.security_connection_events is
+  'Historique de sécurité volontairement sans IP brute ni GPS. Rétention cible: 90 jours.';
+comment on table public.security_travel_plans is
+  'Mode Voyage: destination approximative et période seulement. Suppression cible: 7 jours après fin/annulation.';
+
+commit;
