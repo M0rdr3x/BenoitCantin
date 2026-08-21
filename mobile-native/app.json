@@ -12,6 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#070914"
     },
+    "plugins": [
+      "expo-notifications"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.benoitcantin.sinjira",
