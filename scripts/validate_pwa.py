@@ -25,7 +25,7 @@ REQUIRED_SHORTCUTS = {
     '/projets/sinjira/registre/',
     '/projets/sinjira/monde-parallele/',
 }
-CACHE_PREFIX = 'benoitcantin-v24-4-94-'
+CACHE_PREFIX = 'benoitcantin-v24-4-95-'
 
 
 def local_target(raw: str, base: Path | None = None) -> Path | None:
@@ -204,7 +204,12 @@ def validate_service_worker(errors: list[str]) -> None:
     missing_offline = sorted(REQUIRED_OFFLINE_ROUTES - set(refs))
     if missing_offline:
         errors.append('sw.js CORE omet des espaces SINJIRA™ majeurs: ' + ', '.join(missing_offline))
-    for required in ['/manifest.webmanifest', '/assets/js/sinjira-pwa-install.js', '/assets/css/sinjira-mobile-app-v24-4-94.css', '/assets/js/sinjira-mobile-social-v24-4-94.js', '/android-chrome-192x192.png', '/android-chrome-512x512.png']:
+    for required in [
+        '/manifest.webmanifest', '/assets/js/sinjira-pwa-install.js',
+        '/assets/css/sinjira-mobile-app-v24-4-94.css', '/assets/js/sinjira-mobile-social-v24-4-94.js',
+        '/assets/css/sinjira-mobile-account-shell-v24-4-95.css', '/assets/js/sinjira-mobile-account-shell-v24-4-95.js',
+        '/android-chrome-192x192.png', '/android-chrome-512x512.png'
+    ]:
         if required not in refs:
             errors.append(f'sw.js CORE omet la ressource mobile: {required}')
     for raw in refs:
@@ -227,6 +232,8 @@ def validate_install_runtime(errors: list[str]) -> None:
     site = ROOT / 'assets/js/site.js'
     session = ROOT / 'assets/js/v19-session.js'
     app = ROOT / 'app/index.html'
+    mobile_shell = ROOT / 'assets/js/sinjira-mobile-account-shell-v24-4-95.js'
+    mobile_shell_css = ROOT / 'assets/css/sinjira-mobile-account-shell-v24-4-95.css'
     if not installer.exists():
         errors.append('Runtime d’installation PWA absent.')
         return
@@ -234,6 +241,8 @@ def validate_install_runtime(errors: list[str]) -> None:
     site_text = site.read_text('utf-8', errors='ignore') if site.exists() else ''
     session_text = session.read_text('utf-8', errors='ignore') if session.exists() else ''
     app_text = app.read_text('utf-8', errors='ignore') if app.exists() else ''
+    shell_text = mobile_shell.read_text('utf-8', errors='ignore') if mobile_shell.exists() else ''
+    shell_css = mobile_shell_css.read_text('utf-8', errors='ignore') if mobile_shell_css.exists() else ''
     for marker, message in [
         ('beforeinstallprompt', 'Invite Android/Chromium beforeinstallprompt absente.'),
         ('appinstalled', 'Événement appinstalled absent.'),
@@ -241,11 +250,14 @@ def validate_install_runtime(errors: list[str]) -> None:
         ('apple-touch-icon', 'Icône d’écran d’accueil iOS absente.'),
         ('Sur iPhone/iPad', 'Aide d’installation iPhone/iPad absente.'),
         ('display-mode: standalone', 'Détection du mode installé absente.'),
+        ('loadMobileAccountShell', 'Chargement de la continuité mobile du compte absent.'),
+        ('sinjira-mobile-account-shell-v24-4-95.css?v=24.4.95', 'Style de continuité mobile V24.4.95 non chargé.'),
+        ('sinjira-mobile-account-shell-v24-4-95.js?v=24.4.95', 'Runtime de continuité mobile V24.4.95 non chargé.'),
     ]:
         if marker not in text:
             errors.append(message)
     if '/assets/js/sinjira-pwa-install.js?v=24.4.93' not in site_text:
-        errors.append('site.js ne charge pas le runtime PWA V24.4.93.')
+        errors.append('site.js ne charge pas le runtime PWA historique compatible.')
     if 'serviceWorker.register' in session_text:
         errors.append('v19-session.js enregistre encore un deuxième Service Worker.')
     if "p?.display_name||p?.pseudo||'Mon compte'" not in session_text:
@@ -255,6 +267,14 @@ def validate_install_runtime(errors: list[str]) -> None:
             errors.append(f'App sociale V24.4.94 incomplète: {marker}')
     if 'name="robots" content="noindex,nofollow"' not in app_text:
         errors.append('App sociale privée sans noindex,nofollow.')
+    for marker in ['data-sinjira-account-mobile-nav','/app/','/compte/monde-parallele.html','/compte/messages.html','/compte/notifications.html','/compte/profil.html']:
+        if marker not in shell_text:
+            errors.append(f'Navigation mobile du compte V24.4.95 incomplète: {marker}')
+    for forbidden in ['/compte/connexion.html","label','/compte/inscription.html","label']:
+        if forbidden in shell_text:
+            errors.append('La navigation mobile pourrait être injectée dans un flux Auth.')
+    if 'display-mode:standalone' not in shell_css.replace(' ','') or 'safe-area-inset-bottom' not in shell_css:
+        errors.append('Styles V24.4.95 sans mode standalone/safe-area iPhone.')
 
 
 def validate_offline(errors: list[str]) -> None:
@@ -286,7 +306,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK PWA/SEO V24.4.94: lancement dans l’app sociale, installation Android/iOS, navigation mobile, cache privé/public et identité de profil cohérents.')
+    print('OK PWA/SEO V24.4.95: app sociale, navigation mobile persistante du compte, installation Android/iOS, cache privé/public et identité de profil cohérents.')
     return 0
 
 
