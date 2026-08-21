@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-44-public-1';
+const CACHE='benoitcantin-v24-4-91-public-1';
 const CORE=[
   '/','/offline.html',
   '/assets/css/site.css','/assets/css/browser-compat-v24-4-22.css','/assets/css/home-v24-4-12.css','/assets/css/v19-pro.css','/assets/css/v24-platform.css','/assets/css/v24-3-2-fixes.css','/assets/css/v24-3-3-fixes.css','/assets/css/fracture-engine.css','/assets/css/sinjira-assistant.css',
