@@ -25,8 +25,6 @@ jobs:
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_ID: gpvivleexywljowcqkru
       OPTIONAL_RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      OPTIONAL_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      OPTIONAL_OPENAI_CHARACTER_MODEL: ${{ vars.OPENAI_CHARACTER_MODEL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -106,8 +104,6 @@ jobs:
             "FRACTURE_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
             --project-ref "$PROJECT_ID"
           if [ -n "${OPTIONAL_RESEND_API_KEY:-}" ]; then supabase secrets set "RESEND_API_KEY=$OPTIONAL_RESEND_API_KEY" --project-ref "$PROJECT_ID"; fi
-          if [ -n "${OPTIONAL_OPENAI_API_KEY:-}" ]; then supabase secrets set "OPENAI_API_KEY=$OPTIONAL_OPENAI_API_KEY" --project-ref "$PROJECT_ID"; fi
-          if [ -n "${OPTIONAL_OPENAI_CHARACTER_MODEL:-}" ]; then supabase secrets set "OPENAI_CHARACTER_MODEL=$OPTIONAL_OPENAI_CHARACTER_MODEL" --project-ref "$PROJECT_ID"; fi
 
       - name: Déployer les Edge Functions depuis le workspace protégé
         if: ${{ inputs.apply == true }}
