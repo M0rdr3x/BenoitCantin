@@ -1,5 +1,6 @@
-import {getSupabase,requireUser,setStatus,escapeHtml,isSinjiraOwner,formatDate} from './sinjira-supabase.js';
+import {getSupabase,requireUser,setStatus,escapeHtml,formatDate} from './sinjira-supabase.js';
 
+const UI_VERSION='24.4.88';
 const missionBox=document.querySelector('[data-parallel-mission]');
 const stateBox=document.querySelector('[data-parallel-state]');
 const historyBox=document.querySelector('[data-parallel-history]');
@@ -16,74 +17,46 @@ function stateSummary(state){
 
 async function load(){
   if(!missionBox||!stateBox)return;
-  const user=await requireUser();
+  await requireUser();
   const s=getSupabase();
-  const owner=isSinjiraOwner(user);
-  if(owner){try{await s.rpc('ensure_sinjira_owner_character')}catch{/* le backend peut déjà être synchronisé */}}
 
-  const {data:characterRows,error:characterError}=await s.from('characters')
-    .select('id,status,visible_to_user,updated_at')
-    .eq('user_id',user.id)
-    .order('updated_at',{ascending:false})
-    .limit(10);
-  if(characterError)throw characterError;
-  const characters=Array.isArray(characterRows)?characterRows:[];
-  const character=characters.find(x=>x.status!=='archived'&&x.visible_to_user)||characters.find(x=>x.status!=='archived')||null;
-  if(!character){
-    missionBox.innerHTML=empty('Votre continuité doit d’abord être approuvée ou assignée avant d’entrer dans le Monde parallèle.');
+  // V24.4.88: le navigateur ne lit plus public.characters ni les clés techniques
+  // de continuité. Le serveur résout le lien privé compte <-> personnage.
+  const {data:context,error:contextError}=await s.rpc('parallel_my_context');
+  if(contextError)throw contextError;
+  if(!context?.ok){
+    missionBox.innerHTML=empty('Votre identité du Monde parallèle n’est pas encore prête.');
     stateBox.innerHTML=empty('Aucune Chronique personnelle pour le moment.');
     if(historyBox)historyBox.innerHTML=empty('Aucune histoire liée à votre continuité.');
     return;
   }
 
-  const identityRes=await s.rpc('parallel_my_identity');
-  if(identityRes.error)throw identityRes.error;
-  const identity=identityRes.data&&identityRes.data.ok?identityRes.data:null;
-  if(!identity){
-    missionBox.innerHTML=empty('Votre identité du Monde parallèle n’est pas encore prête.');
-    stateBox.innerHTML=empty('Aucune identité parallèle disponible pour le moment.');
-    return;
-  }
+  const identity=context.identity||{};
   const parallelName=String(identity.public_name||'Identité parallèle').trim()||'Identité parallèle';
   const parallelBio=String(identity.public_bio||'').trim();
-
-  const [membershipRes,stateRes,cycleRes,personalStoriesRes,collectiveStoriesRes]=await Promise.all([
-    s.from('parallel_world_memberships').select('pioneer_number,main_canon_eligible,parallel_world_only,status,joined_at').eq('character_id',character.id).maybeSingle(),
-    s.from('parallel_character_state').select('life_state,location_name,faction_name,reputation,state_data,updated_at').eq('character_id',character.id).maybeSingle(),
-    s.from('parallel_world_cycles').select('id,cycle_month,title,monthly_question,response_mode,opens_at,closes_at,status,audience,published_at').eq('status','open').order('cycle_month',{ascending:false}).limit(1),
-    s.from('parallel_story_installments').select('id,title,content,published_at,cycle_id,story_kind').eq('story_kind','individual').eq('character_id',character.id).order('published_at',{ascending:false}).limit(3),
-    s.from('parallel_story_installments').select('id,title,content,published_at,cycle_id,story_kind').eq('story_kind','collective').order('published_at',{ascending:false}).limit(3)
-  ]);
-  const firstError=[membershipRes,stateRes,cycleRes,personalStoriesRes,collectiveStoriesRes].find(x=>x.error)?.error;
-  if(firstError)throw firstError;
-
-  const membership=membershipRes.data||null;
-  const state=stateRes.data||null;
-  const cycles=Array.isArray(cycleRes.data)?cycleRes.data:[];
-  const cycle=cycles[0]||null;
-  const personalStories=Array.isArray(personalStoriesRes.data)?personalStoriesRes.data:[];
-  const collectiveStories=Array.isArray(collectiveStoriesRes.data)?collectiveStoriesRes.data:[];
+  const membership=context.membership||null;
+  const state=context.state||null;
+  const cycle=context.cycle||null;
+  const existingResponse=context.existing_response||null;
+  const personalStories=Array.isArray(context.personal_stories)?context.personal_stories:[];
+  const collectiveStories=Array.isArray(context.collective_stories)?context.collective_stories:[];
 
   if(!membership){
     missionBox.innerHTML=empty(`${parallelName} est reconnu dans le Monde parallèle, mais son adhésion n’est pas encore active.`);
   }else if(!cycle){
     missionBox.innerHTML=`<article><span class="v24-badge live">Adhésion ${escapeHtml(membership.status||'active')}</span><h3>${escapeHtml(parallelName)}</h3><p>Aucun cycle mensuel n’est ouvert actuellement.</p></article>`;
   }else{
-    const {data:existingResponse,error:responseError}=await s.from('parallel_cycle_responses')
-      .select('id,response_text,submitted_at')
-      .eq('cycle_id',cycle.id).eq('user_id',user.id).maybeSingle();
-    if(responseError)throw responseError;
     const closes=cycle.closes_at?`Clôture : ${escapeHtml(friendlyDate(cycle.closes_at))}`:'Cycle ouvert';
-    missionBox.innerHTML=`<article><span class="v24-badge live">${escapeHtml(cycle.title||'Cycle actif')}</span><p><strong>Identité parallèle : ${escapeHtml(parallelName)}</strong></p><h3>${escapeHtml(cycle.monthly_question||'Question mensuelle')}</h3><p>${closes}</p><form data-parallel-response-form><label>Votre réponse<textarea name="response" maxlength="4000" required>${escapeHtml(existingResponse?.response_text||'')}</textarea></label><button class="btn btn-primary" type="submit">${existingResponse?'Mettre à jour ma réponse':'Enregistrer ma réponse'}</button></form>${existingResponse?`<small>Dernier enregistrement : ${escapeHtml(friendlyDate(existingResponse.submitted_at))}</small>`:''}</article>`;
+    missionBox.innerHTML=`<article><span class="v24-badge live">${escapeHtml(cycle.title||'Cycle actif')}</span><p><strong>Personnage : ${escapeHtml(parallelName)}</strong></p><h3>${escapeHtml(cycle.monthly_question||'Question mensuelle')}</h3><p>${closes}</p><form data-parallel-response-form><label>Votre réponse<textarea name="response" maxlength="4000" required>${escapeHtml(existingResponse?.response_text||'')}</textarea></label><button class="btn btn-primary" type="submit">${existingResponse?'Mettre à jour ma réponse':'Enregistrer ma réponse'}</button></form>${existingResponse?`<small>Dernier enregistrement : ${escapeHtml(friendlyDate(existingResponse.submitted_at))}</small>`:''}</article>`;
     const responseForm=missionBox.querySelector('[data-parallel-response-form]');
     responseForm?.addEventListener('submit',async e=>{
       e.preventDefault();
       const response=String(new FormData(responseForm).get('response')||'').trim();
       if(!response){setStatus(statusBox,'Écrivez une réponse avant d’enregistrer.','error');return}
       const button=responseForm.querySelector('button[type="submit"]');if(button)button.disabled=true;
-      const {error}=await s.from('parallel_cycle_responses').upsert({cycle_id:cycle.id,user_id:user.id,character_id:character.id,group_id:null,response_text:response,response_kind:'solo',submitted_at:new Date().toISOString()},{onConflict:'cycle_id,user_id'});
+      const {data:saved,error}=await s.rpc('parallel_save_cycle_response',{p_cycle_id:cycle.id,p_response_text:response});
       if(button)button.disabled=false;
-      if(error){setStatus(statusBox,'Impossible d’enregistrer la réponse. Vérifiez votre supervision/MFA et réessayez.','error');return}
+      if(error||!saved?.ok){setStatus(statusBox,'Impossible d’enregistrer la réponse. Vérifiez votre supervision/MFA et réessayez.','error');return}
       setStatus(statusBox,'Réponse du cycle enregistrée dans votre continuité parallèle.','success');
       button.textContent='Mettre à jour ma réponse';
     });
@@ -93,7 +66,7 @@ async function load(){
     membership.pioneer_number?`Pionnier #${membership.pioneer_number} · admissible au canon principal et au Monde parallèle`:
     membership.parallel_world_only?'Continuité du Monde parallèle uniquement':'Accès propriétaire / canon principal + Monde parallèle'
   ):'Adhésion en attente';
-  stateBox.innerHTML=`<p><strong>${escapeHtml(parallelName)}</strong></p><p><small>Identité narrative du Monde parallèle — distincte du compte et du Registre.</small></p>${parallelBio?`<p>${escapeHtml(parallelBio)}</p>`:''}<p>${escapeHtml(eligibility)}</p>${state?`<p>État : ${escapeHtml(state.life_state||'active')} · Réputation : ${escapeHtml(String(state.reputation??0))}</p>${state.location_name?`<p>Lieu : ${escapeHtml(state.location_name)}</p>`:''}${state.faction_name?`<p>Faction : ${escapeHtml(state.faction_name)}</p>`:''}<p>${escapeHtml(stateSummary(state))}</p><small>Dernière mise à jour : ${escapeHtml(friendlyDate(state.updated_at))}</small>`:'<p>Chronique technique en attente.</p>'}`;
+  stateBox.innerHTML=`<p><strong>${escapeHtml(parallelName)}</strong></p><p><small>Identité de personnage — séparée de l’identifiant privé du compte.</small></p>${parallelBio?`<p>${escapeHtml(parallelBio)}</p>`:''}<p>${escapeHtml(eligibility)}</p>${state?`<p>État : ${escapeHtml(state.life_state||'active')} · Réputation : ${escapeHtml(String(state.reputation??0))}</p>${state.location_name?`<p>Lieu : ${escapeHtml(state.location_name)}</p>`:''}${state.faction_name?`<p>Faction : ${escapeHtml(state.faction_name)}</p>`:''}<p>${escapeHtml(stateSummary(state))}</p><small>Dernière mise à jour : ${escapeHtml(friendlyDate(state.updated_at))}</small>`:'<p>Chronique technique en attente.</p>'}`;
 
   if(historyBox){
     const renderStory=(x,label)=>`<article class="v24-panel"><span class="v24-badge">${label}</span><h3>${escapeHtml(x.title||'Chronique')}</h3><p>${escapeHtml(String(x.content||'').slice(0,700))}${String(x.content||'').length>700?'…':''}</p><small>${escapeHtml(friendlyDate(x.published_at))}</small></article>`;
@@ -103,7 +76,7 @@ async function load(){
 }
 
 load().catch(error=>{
-  console.error('[SINJIRA Monde parallèle]',error);
+  console.error(`[SINJIRA Monde parallèle ${UI_VERSION}]`,error);
   if(missionBox)missionBox.innerHTML=empty('Le Monde parallèle n’a pas pu charger le cycle actuel.');
   if(stateBox)stateBox.innerHTML=empty('La Chronique n’a pas pu être chargée.');
   if(historyBox)historyBox.innerHTML=empty('Historique temporairement indisponible.');

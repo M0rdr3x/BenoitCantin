@@ -1,0 +1,5 @@
+-- Marqueur de déploiement lié uniquement.
+-- La migration V24.4.87 a introduit le pare-feu d’identité en production.
+-- Sa configuration privée propre à la production n’est volontairement pas versionnée
+-- dans ce dépôt public. La définition reconstructible et sans secret est consolidée
+-- par V24.4.89.
