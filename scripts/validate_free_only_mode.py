@@ -25,6 +25,10 @@ def main()->int:
     market=text('assets/js/v24-market-account.js')
     tokens=text('assets/js/v24-tokens.js')
     purchases=text('compte/mes-achats.html')
+    production_workflows='\n'.join([
+        text('.github/workflows/supabase-production-safe.yml'),
+        text('.github/workflows/supabase-production-preflight.yml'),
+    ])
 
     require(config,[
         'freeOnlyMode: true',
@@ -65,6 +69,12 @@ def main()->int:
 
     require(purchases,['La boutique n’est pas encore ouverte.'],'Mes achats')
 
+    # Les workflows de production ne doivent plus importer ni synchroniser de secret OpenAI
+    # tant que freeOnlyMode/remoteAiEnabled gardent l'IA distante payante désactivée.
+    for marker in ('OPENAI_API_KEY','OPTIONAL_OPENAI_API_KEY','OPENAI_CHARACTER_MODEL','OPTIONAL_OPENAI_CHARACTER_MODEL'):
+        if marker in production_workflows:
+            raise AssertionError(f'Production: pont IA distante interdit en mode gratuit: {marker}')
+
     # Aucun SDK/end-point de paiement ou IA payante ne doit être actif dans le runtime navigateur.
     browser_roots=[ROOT/'assets'/'js',ROOT/'compte',ROOT/'projets'/'sinjira']
     forbidden_patterns={
@@ -91,7 +101,7 @@ def main()->int:
     if offenders:
         raise AssertionError('Mode gratuit: intégrations payantes actives détectées:\n- '+'\n- '.join(offenders))
 
-    print('OK mode gratuit V24.4.62: paiements, IA distante, commerce publié et achats de jetons verrouillés; activation de licences existantes permise.')
+    print('OK mode gratuit V24.4.91: paiements, IA distante, commerce publié et achats de jetons verrouillés; aucun secret OpenAI n’est synchronisé en production.')
     return 0
 
 
