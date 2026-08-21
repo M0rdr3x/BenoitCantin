@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "SINJIRA",
+    "slug": "sinjira",
+    "version": "24.4.96",
+    "orientation": "portrait",
+    "scheme": "sinjira",
+    "userInterfaceStyle": "dark",
+    "icon": "../android-chrome-512x512.png",
+    "splash": {
+      "image": "../android-chrome-512x512.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#070914"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.benoitcantin.sinjira",
+      "buildNumber": "24496",
+      "associatedDomains": [
+        "applinks:www.benoitcantin.com"
+      ],
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.benoitcantin.sinjira",
+      "versionCode": 24496,
+      "adaptiveIcon": {
+        "foregroundImage": "../android-chrome-512x512.png",
+        "backgroundColor": "#070914"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "www.benoitcantin.com",
+              "pathPrefix": "/app"
+            },
+            {
+              "scheme": "https",
+              "host": "www.benoitcantin.com",
+              "pathPrefix": "/compte"
+            },
+            {
+              "scheme": "https",
+              "host": "www.benoitcantin.com",
+              "pathPrefix": "/projets/sinjira"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    }
+  }
+}
