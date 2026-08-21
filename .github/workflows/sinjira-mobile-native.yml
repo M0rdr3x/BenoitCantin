@@ -1,0 +1,40 @@
+name: Validation mobile native SINJIRA
+
+on:
+  pull_request:
+    paths:
+      - 'mobile-native/**'
+      - '.github/workflows/sinjira-mobile-native.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'mobile-native/**'
+      - '.github/workflows/sinjira-mobile-native.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: mobile-native
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: npm
+          cache-dependency-path: mobile-native/package.json
+
+      - name: Installer les dépendances
+        run: npm install --no-audit --no-fund
+
+      - name: Vérifier TypeScript
+        run: npm run typecheck

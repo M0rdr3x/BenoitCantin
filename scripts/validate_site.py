@@ -8,7 +8,7 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-TEXT_EXTS = {'.html', '.js', '.css', '.json', '.md', '.txt', '.xml', '.webmanifest', '.sql', '.ts'}
+TEXT_EXTS = {'.html', '.js', '.css', '.json', '.md', '.txt', '.xml', '.webmanifest', '.sql', '.ts', '.tsx'}
 SECRET_PATTERNS = [
     re.compile(r'SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*[\'\"]?[A-Za-z0-9._-]{20,}', re.I),
     re.compile(r'OPENAI_API_KEY\s*[:=]\s*[\'\"]?sk-[A-Za-z0-9_-]{16,}', re.I),
@@ -17,6 +17,10 @@ SECRET_PATTERNS = [
 ]
 SKIP_SCHEMES = {'http', 'https', 'mailto', 'tel', 'javascript', 'data', 'blob'}
 ACTIVE_SINJIRA_PREFIXES = ('projets/sinjira/', 'compte/', 'admin/')
+# L'application React Native possède sa propre validation TypeScript/Expo.
+# Le validateur du site statique ne doit donc pas interpréter ses imports npm
+# ou sa résolution .ts/.tsx comme des dépendances de fichiers du site Web.
+NATIVE_MOBILE_PREFIX = 'mobile-native/'
 # Ces deux fichiers gardent volontairement la casse legacy /Admin/ uniquement pour
 # protéger/réécrire d'anciens favoris et caches. Ils ne constituent pas des liens actifs.
 LEGACY_ADMIN_COMPAT_FILES = {'sw.js', 'assets/js/v24-3-3-runtime.js'}
@@ -144,7 +148,11 @@ def main() -> int:
     htmls = [p for p in files if p.suffix.lower() == '.html']
     js = [p for p in files if p.suffix.lower() == '.js']
     css = [p for p in files if p.suffix.lower() == '.css']
-    code = [p for p in files if p.suffix.lower() in {'.js', '.ts'}]
+    code = [
+        p for p in files
+        if p.suffix.lower() in {'.js', '.ts'}
+        and not p.relative_to(ROOT).as_posix().startswith(NATIVE_MOBILE_PREFIX)
+    ]
 
     for p in files:
         rel = p.relative_to(ROOT).as_posix()
@@ -211,7 +219,7 @@ def main() -> int:
             if target is not None and not target.exists():
                 errors.append(f'Référence CSS manquante dans {rel}: {raw}')
 
-    # Imports ES modules / Deno locaux. Les imports npm:, jsr: et HTTP sont externes et ignorés.
+    # Imports ES modules / Deno du site statique. L'app native est validée séparément.
     import_patterns = [
         re.compile(r'\bfrom\s*[\'\"]([^\'\"]+)[\'\"]'),
         re.compile(r'\bimport\s*[\'\"]([^\'\"]+)[\'\"]'),
