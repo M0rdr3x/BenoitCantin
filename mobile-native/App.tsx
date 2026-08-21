@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#070914',
   },
   loading: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
