@@ -1,0 +1,46 @@
+name: Validation Monde parallèle V24.4.92
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-admin-parallel-v24.js'
+      - 'assets/js/sinjira-admin-social-v20.js'
+      - 'supabase/migrations/20260821012018_sinjira_v24_4_92_parallel_world_admin.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'scripts/validate_parallel_world_admin_v24_4_92.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - '.github/workflows/validate-parallel-world-v24-4-92.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-admin-parallel-v24.js'
+      - 'assets/js/sinjira-admin-social-v20.js'
+      - 'supabase/migrations/20260821012018_sinjira_v24_4_92_parallel_world_admin.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'scripts/validate_parallel_world_admin_v24_4_92.py'
+      - 'scripts/validate_production_migration_ledger.py'
+
+permissions:
+  contents: read
+
+jobs:
+  parallel-admin-contract:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Valider l’administration du Monde parallèle
+        run: python scripts/validate_parallel_world_admin_v24_4_92.py
+      - name: Valider le ledger production
+        run: python scripts/validate_production_migration_ledger.py
+      - name: Vérifier la syntaxe JavaScript
+        run: |
+          node --check assets/js/sinjira-admin-parallel-v24.js
+          node --check assets/js/sinjira-admin-social-v20.js
