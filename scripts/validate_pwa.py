@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 import re
-import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.parse import urlparse, unquote
@@ -20,7 +19,13 @@ REQUIRED_OFFLINE_ROUTES = {
     '/projets/sinjira/communaute/',
     '/projets/sinjira/monde-parallele/',
 }
-CACHE_PREFIX = 'benoitcantin-v24-4-91-'
+REQUIRED_SHORTCUTS = {
+    '/projets/sinjira/romans/',
+    '/projets/sinjira/registre/',
+    '/projets/sinjira/communaute/',
+    '/projets/sinjira/monde-parallele/',
+}
+CACHE_PREFIX = 'benoitcantin-v24-4-93-'
 
 
 def local_target(raw: str, base: Path | None = None) -> Path | None:
@@ -66,11 +71,14 @@ def validate_manifests(errors: list[str]) -> None:
             continue
         name = str(data.get('name') or '')
         short = str(data.get('short_name') or '')
+        app_id = str(data.get('id') or '')
         start = str(data.get('start_url') or '')
         scope = str(data.get('scope') or '')
         display = str(data.get('display') or '')
         if 'SINJIRA' not in name.upper() or 'SINJIRA' not in short.upper():
             errors.append(f'{path.name}: branding PWA autre que SINJIRA™.')
+        if app_id != '/projets/sinjira/':
+            errors.append(f'{path.name}: id PWA inattendu: {app_id or "—"}')
         if display not in {'standalone', 'fullscreen', 'minimal-ui'}:
             errors.append(f'{path.name}: display PWA invalide ou absent: {display or "—"}')
         start_target = local_target(start, path.parent)
@@ -94,10 +102,25 @@ def validate_manifests(errors: list[str]) -> None:
                 if not sizes:
                     errors.append(f'{path.name}: taille d’icône absente pour {src or "—"}.')
 
+        shortcuts = data.get('shortcuts')
+        if not isinstance(shortcuts, list) or not shortcuts:
+            errors.append(f'{path.name}: raccourcis PWA absents.')
+        else:
+            urls = {str(item.get('url') or '') for item in shortcuts if isinstance(item, dict)}
+            missing = sorted(REQUIRED_SHORTCUTS - urls)
+            if missing:
+                errors.append(f'{path.name}: raccourcis SINJIRA™ manquants: ' + ', '.join(missing))
+            for url in urls:
+                target = local_target(url, path.parent)
+                if target is None or not target.exists():
+                    errors.append(f'{path.name}: raccourci introuvable: {url or "—"}')
+                if url.lower().startswith(('/compte/', '/admin/', '/supabase/')):
+                    errors.append(f'{path.name}: raccourci PWA privé interdit: {url}')
+
     if all(data for _, data in loaded):
         canonical = loaded[0][1]
         legacy = loaded[1][1]
-        fields = ['name', 'short_name', 'start_url', 'scope', 'display', 'background_color', 'theme_color', 'lang', 'icons']
+        fields = ['id', 'name', 'short_name', 'description', 'start_url', 'scope', 'display', 'orientation', 'background_color', 'theme_color', 'lang', 'categories', 'icons', 'shortcuts']
         drift = [field for field in fields if canonical.get(field) != legacy.get(field)]
         if drift:
             errors.append('Les deux manifestes PWA divergent: ' + ', '.join(drift))
@@ -179,6 +202,9 @@ def validate_service_worker(errors: list[str]) -> None:
     missing_offline = sorted(REQUIRED_OFFLINE_ROUTES - set(refs))
     if missing_offline:
         errors.append('sw.js CORE omet des espaces SINJIRA™ majeurs: ' + ', '.join(missing_offline))
+    for required in ['/manifest.webmanifest', '/assets/js/sinjira-pwa-install.js', '/android-chrome-192x192.png', '/android-chrome-512x512.png']:
+        if required not in refs:
+            errors.append(f'sw.js CORE omet la ressource mobile: {required}')
     for raw in refs:
         target = local_target(raw, ROOT)
         if target is None or not target.exists():
@@ -188,6 +214,36 @@ def validate_service_worker(errors: list[str]) -> None:
         errors.append('sw.js: nom de cache explicite absent.')
     elif not cache_match.group(1).startswith(CACHE_PREFIX):
         errors.append(f'sw.js: cache obsolète {cache_match.group(1)!r}; préfixe attendu {CACHE_PREFIX!r}.')
+    if "u.pathname.startsWith('/compte/')" not in text:
+        errors.append('sw.js: les pages Compte ne sont plus explicitement network-only/no-store.')
+
+
+def validate_install_runtime(errors: list[str]) -> None:
+    installer = ROOT / 'assets/js/sinjira-pwa-install.js'
+    site = ROOT / 'assets/js/site.js'
+    session = ROOT / 'assets/js/v19-session.js'
+    if not installer.exists():
+        errors.append('Runtime d’installation PWA absent.')
+        return
+    text = installer.read_text('utf-8', errors='ignore')
+    site_text = site.read_text('utf-8', errors='ignore') if site.exists() else ''
+    session_text = session.read_text('utf-8', errors='ignore') if session.exists() else ''
+    for marker, message in [
+        ('beforeinstallprompt', 'Invite Android/Chromium beforeinstallprompt absente.'),
+        ('appinstalled', 'Événement appinstalled absent.'),
+        ("navigator.serviceWorker.register('/sw.js'", 'Enregistrement global du Service Worker absent.'),
+        ('apple-touch-icon', 'Icône d’écran d’accueil iOS absente.'),
+        ('Sur iPhone/iPad', 'Aide d’installation iPhone/iPad absente.'),
+        ('display-mode: standalone', 'Détection du mode installé absente.'),
+    ]:
+        if marker not in text:
+            errors.append(message)
+    if '/assets/js/sinjira-pwa-install.js?v=24.4.93' not in site_text:
+        errors.append('site.js ne charge pas le runtime PWA V24.4.93.')
+    if 'serviceWorker.register' in session_text:
+        errors.append('v19-session.js enregistre encore un deuxième Service Worker.')
+    if "p?.display_name||p?.pseudo||'Mon compte'" not in session_text:
+        errors.append('Le menu session ne priorise pas le nom affiché sur le pseudo historique.')
 
 
 def validate_offline(errors: list[str]) -> None:
@@ -211,6 +267,7 @@ def main() -> int:
     validate_robots(errors)
     validate_cname(errors)
     validate_service_worker(errors)
+    validate_install_runtime(errors)
     validate_offline(errors)
 
     if errors:
@@ -218,7 +275,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK PWA/SEO V24.4.91: manifestes, sitemap, Communauté, Monde parallèle, robots, CNAME, cache hors ligne et routes locales cohérents.')
+    print('OK PWA/SEO V24.4.93: installation Android/iOS, Service Worker global, manifestes, raccourcis, identité de profil, cache hors ligne et routes publiques cohérents.')
     return 0
 
 
