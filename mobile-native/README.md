@@ -1,6 +1,8 @@
-# SINJIRA™ Mobile Native — V24.4.96
+# SINJIRA™ Mobile Native — V24.4.97
 
 Application iOS/iPadOS et Android de SINJIRA™.
+
+> Référence normative : [`../CAHIER_MAITRE_SINJIRA.md`](../CAHIER_MAITRE_SINJIRA.md). L’application mobile doit respecter le principe **L’humain avant tout** et la règle **protéger sans surveiller**.
 
 ## Principe d’architecture
 
@@ -36,7 +38,25 @@ Le socle utilise Expo SDK 57 / React Native 0.86.
 - liens externes ouverts hors du conteneur SINJIRA;
 - aucune permission appareil ajoutée par défaut;
 - aucune géolocalisation ajoutée par cette version;
-- aucune nouvelle collecte de données.
+- aucune nouvelle collecte de données;
+- les futures données de localisation de sécurité doivent rester approximatives, minimisées et séparées des usages commerciaux, sociaux, Rencontres et Emploi;
+- le Registre des Consciences et l’IA personnelle sont classés comme zones extrêmement sensibles;
+- les notifications sur écran verrouillé ne doivent pas révéler de contenu extrêmement privé.
+
+## Centre de sécurité mobile visé
+
+L’application doit progressivement offrir un accès direct à :
+
+- Mes appareils;
+- Connexions récentes;
+- Mode Voyage;
+- Passkeys et authentification;
+- approbation ou refus d’une nouvelle connexion;
+- Téléphone perdu;
+- Compte compromis;
+- Récupération du compte.
+
+Le téléphone peut devenir l’appareil principal de confiance de l’utilisateur, sans devenir un outil de suivi permanent de sa localisation.
 
 ## Développement
 
@@ -72,9 +92,11 @@ Avant publication réelle :
 
 Priorité recommandée après ce socle :
 
-1. notifications push natives;
+1. notifications push natives, avec contenu discret pour les alertes sensibles;
 2. partage natif de liens SINJIRA;
-3. biométrie locale pour protéger la reprise de session;
-4. navigation profonde complète;
-5. migration progressive des écrans les plus utilisés vers React Native;
-6. intégration de la sécurité de connexion contextuelle et du mode voyage côté serveur, sans surveillance inutile.
+3. biométrie locale pour protéger la reprise de session et les zones extrêmement sensibles;
+4. passkeys et approbation de connexion depuis l’appareil de confiance;
+5. navigation profonde complète;
+6. accès rapide au Centre de sécurité;
+7. intégration côté serveur du Bouclier de connexion contextuel et du Mode Voyage;
+8. migration progressive des écrans les plus utilisés vers React Native sans dupliquer les comptes ni les données.
