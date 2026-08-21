@@ -12,6 +12,20 @@ function serialize(formEl){const out={};for(const [k,v] of new FormData(formEl).
 function rows(v){return Array.isArray(v)?v:[]}
 function installChoiceLimits(){form?.querySelectorAll('[data-max-select]').forEach(group=>{const max=Number(group.dataset.maxSelect||0);if(!max)return;group.addEventListener('change',e=>{if(!(e.target instanceof HTMLInputElement)||e.target.type!=='checkbox')return;const checked=[...group.querySelectorAll('input[type="checkbox"]:checked')];if(checked.length>max){e.target.checked=false;setState(`Choisissez au maximum ${max} réponses dans cette section.`,'error')}})})}
 function applyAnswers(payload){if(!payload||typeof payload!=='object')return;for(const [name,value] of Object.entries(payload)){const nodes=[...form.querySelectorAll(`[name="${CSS.escape(name)}"]`)];if(!nodes.length)continue;const values=Array.isArray(value)?value.map(String):[String(value??'')];for(const node of nodes){if(node.type==='file'||node.readOnly)continue;if(node.type==='checkbox'||node.type==='radio')node.checked=values.includes(String(node.value));else if(values.length)node.value=values[0]}}form.dispatchEvent(new Event('change',{bubbles:true}))}
+function blockSensitiveForm(message,href='/compte/securite.html',label='Ouvrir Ma sécurité'){
+ const submit=form?.querySelector('button[type="submit"]');if(submit)submit.disabled=true;
+ form?.querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=true);
+ setState(message,'error');
+ if(state&&!state.nextElementSibling?.matches?.('[data-registry-security-link]')){const link=document.createElement('a');link.dataset.registrySecurityLink='';link.className='btn btn-primary';link.href=href;link.textContent=label;state.insertAdjacentElement('afterend',link)}
+}
+async function ensureSensitiveAccess(){
+ const {data,error}=await getSupabase().rpc('security_sensitive_access_status',{p_scope:'registry'});
+ if(error)throw new Error('La protection du Registre ne peut pas être vérifiée pour le moment.');
+ if(data?.allowed)return true;
+ if(data?.setup_required){blockSensitiveForm('La protection renforcée du Registre est active. Configurez d’abord l’authentification à deux facteurs dans Ma sécurité.');return false}
+ if(data?.verification_required){const next=location.pathname+location.search+location.hash;location.replace(`/compte/mfa.html?next=${encodeURIComponent(next)}`);return false}
+ blockSensitiveForm('Le Registre reste protégé jusqu’à ce que votre identité soit vérifiée.');return false;
+}
 async function uploadPhoto(user){
  const input=form.querySelector('input[type="file"][name="photo"]'),file=input?.files?.[0];if(!file)return null;
  if(file.size>10*1024*1024)throw new Error('La photo doit faire 10 Mo ou moins.');
@@ -39,6 +53,7 @@ async function init(){
  currentUser=await getCurrentUser();
  const login=document.querySelector('[data-registry-login-actions]'),submit=form.querySelector('button[type="submit"]');
  if(!currentUser){if(login)login.hidden=false;submit.disabled=true;setState('Connectez-vous à votre Compte SINJIRA™ avant de transmettre le questionnaire.','error');return}
+ if(!(await ensureSensitiveAccess()))return;
  const owner=isSinjiraOwner(currentUser);
  if(owner)await tryOwnerRepair(currentUser);
  const [{data:p},{data:submissionRows},{data:characterRows}]=await Promise.all([
