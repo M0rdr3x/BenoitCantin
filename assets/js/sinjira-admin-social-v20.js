@@ -1,3 +1,4 @@
+import './sinjira-admin-parallel-v24.js';
 import {getSupabase,escapeHtml} from './sinjira-supabase.js';
 
 const reasonLabels={
