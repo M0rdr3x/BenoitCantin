@@ -43,8 +43,6 @@ jobs:
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_ID: gpvivleexywljowcqkru
       OPTIONAL_RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      OPTIONAL_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      OPTIONAL_OPENAI_CHARACTER_MODEL: ${{ vars.OPENAI_CHARACTER_MODEL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -242,11 +240,9 @@ jobs:
             "FRACTURE_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
             --project-ref "$PROJECT_ID"
           if [ -n "${OPTIONAL_RESEND_API_KEY:-}" ]; then supabase secrets set "RESEND_API_KEY=$OPTIONAL_RESEND_API_KEY" --project-ref "$PROJECT_ID"; fi
-          if [ -n "${OPTIONAL_OPENAI_API_KEY:-}" ]; then supabase secrets set "OPENAI_API_KEY=$OPTIONAL_OPENAI_API_KEY" --project-ref "$PROJECT_ID"; fi
-          if [ -n "${OPTIONAL_OPENAI_CHARACTER_MODEL:-}" ]; then supabase secrets set "OPENAI_CHARACTER_MODEL=$OPTIONAL_OPENAI_CHARACTER_MODEL" --project-ref "$PROJECT_ID"; fi
           secrets_after="$(supabase secrets list --project-ref "$PROJECT_ID")"
           if grep -Eq '(^|[[:space:]])RESEND_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then echo "Courriel transactionnel: secret RESEND_API_KEY présent." >> "$GITHUB_STEP_SUMMARY"; else echo "Courriel transactionnel: RESEND_API_KEY absent; les données restent enregistrées mais l'envoi de courriel demeure désactivé." >> "$GITHUB_STEP_SUMMARY"; fi
-          if grep -Eq '(^|[[:space:]])OPENAI_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then echo "IA optionnelle: OPENAI_API_KEY présent." >> "$GITHUB_STEP_SUMMARY"; else echo "IA optionnelle: OPENAI_API_KEY absent; SINJIRA continue de fonctionner en mode IA désactivée." >> "$GITHUB_STEP_SUMMARY"; fi
+          echo "IA distante payante: aucun secret OpenAI n'est synchronisé par ce workflow; le mode gratuit reste la référence de production." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Déployer toutes les Edge Functions du dépôt
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}

@@ -14,6 +14,8 @@ PUBLIC_ROUTES = [
     "contact.html",
     "projets/sinjira/",
     "projets/sinjira/registre/",
+    "projets/sinjira/communaute/",
+    "projets/sinjira/monde-parallele/",
     "projets/projet-nova/",
     "projets/sinjira/jeux/",
     "projets/sinjira/jeux/fracture-du-reseau-mere/",
@@ -131,7 +133,6 @@ def run() -> None:
             page.goto(urljoin(BASE_URL, "compte/reinitialiser-mot-de-passe.html"), wait_until="domcontentloaded", timeout=30_000)
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à la réinitialisation")
 
-            # Assistant local exact du dépôt: navigation, confidentialité, connaissances et contexte.
             page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
             wait_for_assistant(page)
             assistant = page.evaluate("window.__SINJIRA_ASSISTANT__")
