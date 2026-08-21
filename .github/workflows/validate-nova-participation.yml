@@ -1,0 +1,36 @@
+name: Validation participation Projet Nova
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projets/projet-nova/recrutement.html'
+      - 'projets/projet-nova/confidentialite.html'
+      - 'scripts/validate_nova_participation_v21.py'
+      - '.github/workflows/validate-nova-participation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'projets/projet-nova/recrutement.html'
+      - 'projets/projet-nova/confidentialite.html'
+      - 'scripts/validate_nova_participation_v21.py'
+
+permissions:
+  contents: read
+
+jobs:
+  nova-participation:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Valider la participation progressive
+        run: python scripts/validate_nova_participation_v21.py
+      - name: Valider les routes et fichiers du site
+        run: python scripts/validate_site.py
