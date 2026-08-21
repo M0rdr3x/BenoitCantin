@@ -62,22 +62,44 @@ async function authenticatedContext(req: Request) {
   return { user: data.user, service, token };
 }
 
+async function assuranceLevel(context: Awaited<ReturnType<typeof authenticatedContext>>) {
+  const { service, token } = context;
+  const { data: aal, error: aalError } = await service.auth.mfa.getAuthenticatorAssuranceLevel(token);
+  if (aalError || !aal) throw new Error('MFA_STATE_UNAVAILABLE');
+  return aal;
+}
+
 async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
-  const { user, service, token } = context;
+  const { user, service } = context;
   const { data: isAdmin, error: adminError } = await service.rpc('is_sinjira_admin', {
     p_user_id: user.id
   });
   if (adminError || !isAdmin) throw new Error('ADMIN_REQUIRED');
 
-  const { data: aal, error: aalError } = await service.auth.mfa.getAuthenticatorAssuranceLevel(token);
-  if (aalError || !aal) {
-    console.error('[SINJIRA admin auth] état MFA indisponible', aalError);
-    throw new Error('MFA_STATE_UNAVAILABLE');
-  }
+  const aal = await assuranceLevel(context).catch((error) => {
+    console.error('[SINJIRA admin auth] état MFA indisponible', error);
+    throw error;
+  });
   if (aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
     throw new Error('MFA_REQUIRED');
   }
   return aal;
+}
+
+async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authenticatedContext>>) {
+  const { user, service } = context;
+  const { data, error } = await service
+    .from('security_user_settings')
+    .select('sensitive_step_up')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  if (error) {
+    console.error('[SINJIRA sensitive auth] préférences de sécurité indisponibles', error);
+    throw new Error('SECURITY_STATE_UNAVAILABLE');
+  }
+  // Le défaut canonique est protecteur : si aucune ligne n'existe encore,
+  // les zones extrêmement sensibles demandent le step-up.
+  return data?.sensitive_step_up !== false;
 }
 
 export async function optionalUser(req: Request) {
@@ -93,6 +115,30 @@ export async function requiredUser(req: Request) {
   if (ACTIVE_ADMIN_FUNCTIONS.has(edgeFunctionName(req))) {
     await assertAdminMfa(context);
   }
+  return context.user;
+}
+
+/**
+ * Contexte pour une zone extrêmement sensible (Registre, récupération, etc.).
+ * Si la protection renforcée est activée :
+ * - aucun facteur vérifié -> la personne doit configurer un second facteur;
+ * - facteur vérifié mais session aal1 -> une vérification aal2 est requise;
+ * - état MFA impossible à vérifier -> refus fermé.
+ *
+ * L'utilisateur conserve une sortie : la préférence sensitive_step_up peut être
+ * désactivée explicitement depuis Ma sécurité. SINJIRA ne rend donc pas le compte
+ * irrécupérable pour une personne qui n'a pas encore de facteur MFA.
+ */
+export async function requiredSensitiveUser(req: Request) {
+  const context = await authenticatedContext(req);
+  if (!(await sensitiveStepUpEnabled(context))) return context.user;
+
+  const aal = await assuranceLevel(context).catch((error) => {
+    console.error('[SINJIRA sensitive auth] état MFA indisponible', error);
+    throw error;
+  });
+  if (aal.nextLevel !== 'aal2') throw new Error('MFA_SETUP_REQUIRED');
+  if (aal.currentLevel !== 'aal2') throw new Error('MFA_REQUIRED');
   return context.user;
 }
 
