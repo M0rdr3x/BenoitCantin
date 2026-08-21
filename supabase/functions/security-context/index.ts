@@ -29,6 +29,60 @@ function trustedGeo(req: Request) {
   return { country, region };
 }
 
+async function sendSecurityPush(service: ReturnType<typeof serviceClient>, userId: string, security: any) {
+  if (!security || !['challenge', 'block'].includes(String(security.outcome || ''))) return;
+
+  const { data: endpoints, error } = await service
+    .from('security_push_endpoints')
+    .select('id,expo_push_token')
+    .eq('user_id', userId)
+    .eq('enabled', true);
+  if (error) {
+    console.warn('[security-context] endpoints push indisponibles', error.message);
+    return;
+  }
+  if (!endpoints?.length) return;
+
+  const challenged = security.outcome === 'challenge';
+  const messages = endpoints.map((endpoint: any) => ({
+    to: endpoint.expo_push_token,
+    sound: null,
+    title: 'Sécurité SINJIRA',
+    body: challenged
+      ? 'Une connexion inhabituelle demande votre attention.'
+      : 'SINJIRA a bloqué une tentative nécessitant votre attention.',
+    data: { path: '/compte/securite.html' },
+    channelId: 'security',
+    priority: 'high',
+    ttl: 600
+  }));
+
+  try {
+    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(messages)
+    });
+    if (!response.ok) {
+      console.warn('[security-context] Expo Push HTTP', response.status, await response.text());
+      return;
+    }
+    const result = await response.json().catch(() => null);
+    const tickets = Array.isArray(result?.data) ? result.data : [];
+    const invalidIds: string[] = [];
+    tickets.forEach((ticket: any, index: number) => {
+      if (ticket?.status === 'error' && ticket?.details?.error === 'DeviceNotRegistered' && endpoints[index]?.id) {
+        invalidIds.push(endpoints[index].id);
+      }
+    });
+    if (invalidIds.length) {
+      await service.from('security_push_endpoints').update({ enabled: false, updated_at: new Date().toISOString() }).in('id', invalidIds);
+    }
+  } catch (error) {
+    console.warn('[security-context] envoi push impossible', error);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ ok: false, error: 'Méthode non autorisée.' }, 405);
@@ -53,6 +107,8 @@ Deno.serve(async (req) => {
     });
     if (error) throw error;
 
+    await sendSecurityPush(service, user.id, data);
+
     return json({
       ok: true,
       security: data,
@@ -60,7 +116,8 @@ Deno.serve(async (req) => {
       privacy: {
         raw_ip_stored: false,
         gps_used: false,
-        geo_reused_for_ads: false
+        geo_reused_for_ads: false,
+        push_reveals_location: false
       }
     });
   } catch (error) {
