@@ -79,7 +79,6 @@ def main() -> int:
     architecture = read('architecture')
     config = read('config')
 
-    # Fondation : privé par défaut, versions et destinataires séparés du Registre.
     require(errors, foundation, [
         'life_story_entries', 'life_story_versions', 'life_story_version_entries',
         'life_story_recipients', 'life_story_legacy_settings',
@@ -88,7 +87,6 @@ def main() -> int:
         'legacy_directive_review_required',
     ], 'Fondation Histoire de vie')
 
-    # Protocole : deux décisions humaines, hold, contestation et frontière serveur.
     require(errors, pipeline, [
         'life_story_posthumous_cases', 'life_story_posthumous_contests',
         'life_story_exports', 'life_story_delivery_links', 'life_story_cleanup_tasks',
@@ -100,7 +98,8 @@ def main() -> int:
         'POSTHUMOUS_DELIVERY_NOT_AUTHORIZED',
         'admin_life_story_confirm_case', 'admin_life_story_prepare_export',
         'service_life_story_register_download',
-        "public=false", "array['application/pdf']",
+        "values ('sinjira-life-story-exports','sinjira-life-story-exports',false",
+        "array['application/pdf']",
     ], 'Pipeline posthume')
     require(errors, pipeline + hardening, [
         "status='contested'", "status='rejected'", "status='verified_hold'",
@@ -110,7 +109,6 @@ def main() -> int:
         "now()+interval '90 days'",
     ], 'Durcissement posthume')
 
-    # Snapshot final : aucun identifiant technique de personne/destinataire inutile.
     final_prepare = hardening
     require(errors, final_prepare, [
         "'source_boundary','life_story_only'",
@@ -125,7 +123,6 @@ def main() -> int:
         if marker in final_prepare:
             errors.append(f'Instantané autorisé: accès Registre/personnage interdit: {marker}')
 
-    # Signalement : code aléatoire, hash seulement, pas d’auto-validation ni auto-signalement.
     require(errors, codes, [
         'life_story_report_codes', 'gen_random_bytes(32)',
         "digest(v_raw,'sha256')", 'code_hash text not null unique',
@@ -139,7 +136,6 @@ def main() -> int:
     if "values(v_code.user_id,v_requester,btrim(p_relationship_claim),'verified'" in codes:
         errors.append('Codes privés: le signalement ne doit jamais créer une demande déjà vérifiée.')
 
-    # Edge export : admin/AAL2 via requiredAdmin, stockage privé, aucune lecture Registre.
     require(errors, export, [
         'requiredAdmin', 'admin_life_story_get_export', 'pdf-lib',
         'service_life_story_mark_export_generated', 'sha256Hex',
@@ -151,7 +147,6 @@ def main() -> int:
     if '.from(\'life_story_entries\')' in export or '.from("life_story_entries")' in export:
         errors.append('Edge export: le générateur doit lire uniquement l’instantané serveur, pas les souvenirs sources.')
 
-    # Edge remise : authentification custom par hash, expiration/limite, no-store.
     require(errors, delivery, [
         'sha256Hex', 'token_hash', 'expires_at', 'max_downloads',
         'download_count', 'service_life_story_register_download',
@@ -164,7 +159,6 @@ def main() -> int:
         '[functions.life-story-delivery]', 'verify_jwt = false',
     ], 'Configuration Edge')
 
-    # Interfaces personne/proche.
     require(errors, life_ui + life_js, [
         'data-life-story-contest-form', 'life_story_my_posthumous_case',
         'life_story_contest_death_verification', 'life_story_create_report_code',
@@ -176,7 +170,6 @@ def main() -> int:
         '64', 'vérification humaine',
     ], 'Interface signalement')
 
-    # Console admin : client RPC/Edge uniquement, AAL2 local + garde serveur dans SQL.
     require(errors, admin_ui + admin_js, [
         'Héritage numérique', 'mfa.getAuthenticatorAssuranceLevel', "currentLevel !== 'aal2'",
         'admin_life_story_pending_requests', 'admin_life_story_verify_death',
@@ -193,7 +186,6 @@ def main() -> int:
     forbid(errors, admin_js, direct_table_patterns, 'Console héritage')
     require(errors, queue, ['private.require_sinjira_admin_aal2()', 'admin_life_story_pending_requests', 'admin_life_story_cleanup_due'], 'File admin')
 
-    # Canon/documentation.
     require(errors, canon, [
         'L’humain passe avant tout', 'Registre des Consciences n’est pas un héritage',
         'life_story_only', '30 jours', 'nouveau délai complet de 30 jours',
@@ -206,7 +198,6 @@ def main() -> int:
         'life_story_only', 'sinjira-life-story-exports',
     ], 'Architecture Compte')
 
-    # Aucun transport automatique tiers ajouté dans les fichiers V24.5.2.
     combined_runtime = export + delivery + admin_js + report_js + life_js
     forbid(errors, combined_runtime, ['sendgrid', 'mailgun', 'postmark', 'resend.com', 'ses.amazonaws.com'], 'Transport posthume')
 
