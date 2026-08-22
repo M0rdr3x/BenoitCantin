@@ -25,6 +25,7 @@ on:
       - 'supabase/migrations/20260822161058_sinjira_v24_5_2_life_story_fk_indexes.sql'
       - 'supabase/production-migration-ledger.txt'
       - 'scripts/validate_life_story_legacy_v24_5_2.py'
+      - 'scripts/validate_life_story_fk_indexes_v24_5_2.py'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'scripts/validate_edge_function_inventory.py'
@@ -44,6 +45,7 @@ on:
       - 'supabase/functions/life-story-delivery/**'
       - 'supabase/migrations/20260822161058_sinjira_v24_5_2_life_story_fk_indexes.sql'
       - 'scripts/validate_life_story_legacy_v24_5_2.py'
+      - 'scripts/validate_life_story_fk_indexes_v24_5_2.py'
 
 permissions:
   contents: read
@@ -59,6 +61,8 @@ jobs:
           python-version: '3.12'
       - name: Contrat Histoire de vie et héritage V24.5.2
         run: python scripts/validate_life_story_legacy_v24_5_2.py
+      - name: Index FK Histoire de vie
+        run: python scripts/validate_life_story_fk_indexes_v24_5_2.py
       - name: Ledger production Supabase
         run: python scripts/validate_production_migration_ledger.py
       - name: Manifeste du schéma production
