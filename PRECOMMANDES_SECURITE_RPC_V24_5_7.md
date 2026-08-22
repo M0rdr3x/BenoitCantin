@@ -1,7 +1,8 @@
 # SINJIRA™ — Sécurité RPC des précommandes
 
 **Version : V24.5.7**  
-**Migration production : `20260822193403 sinjira_v24_5_7_preorder_rpc_and_index_hardening`**
+**Migration production : `20260822193403 sinjira_v24_5_7_preorder_rpc_and_index_hardening`**  
+**Ledger production : 137 migrations**
 
 ## But
 
