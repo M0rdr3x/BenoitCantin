@@ -61,3 +61,12 @@ verify_jwt = true
 
 [functions.security-context]
 verify_jwt = true
+
+[functions.life-story-export]
+verify_jwt = true
+
+# Un proche choisi peut ne pas avoir de Compte SINJIRA.
+# Cette fonction applique une authentification propre par jeton opaque 256 bits,
+# dont seul le hash est conservé, avec expiration/révocation/limite de téléchargements.
+[functions.life-story-delivery]
+verify_jwt = false

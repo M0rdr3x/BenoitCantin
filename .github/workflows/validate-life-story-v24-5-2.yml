@@ -1,0 +1,88 @@
+name: SINJIRA V24.5.2 — Histoire de vie et héritage
+
+on:
+  pull_request:
+    paths:
+      - 'compte/histoire-de-vie.html'
+      - 'compte/signaler-deces.html'
+      - 'admin/sinjira/heritage.html'
+      - 'assets/js/sinjira-life-story-v24-5-0.js'
+      - 'assets/js/sinjira-life-story-v24-5-2.js'
+      - 'assets/js/sinjira-death-report-v24-5-2.js'
+      - 'assets/js/sinjira-admin-life-story-v24-5-2.js'
+      - 'assets/js/sinjira-admin-console.js'
+      - 'assets/js/sinjira-supabase-config.js'
+      - 'assets/css/sinjira-life-story-v24-5-0.css'
+      - 'HERITAGE_NUMERIQUE_V24_5_2.md'
+      - 'SERVICES_EXTERNES_PAYANTS.md'
+      - 'ARCHITECTURE_COMPTE_UNIVERSEL.md'
+      - 'supabase/config.toml'
+      - 'supabase/functions/life-story-export/**'
+      - 'supabase/functions/life-story-delivery/**'
+      - 'supabase/migrations/20260822012609_sinjira_v24_5_0_life_story_foundation.sql'
+      - 'supabase/migrations/20260822153324_sinjira_v24_5_2_verified_legacy_pdf_pipeline.sql'
+      - 'supabase/migrations/20260822153451_sinjira_v24_5_2_legacy_pipeline_hardening.sql'
+      - 'supabase/migrations/20260822154317_sinjira_v24_5_2_admin_legacy_queue.sql'
+      - 'supabase/migrations/20260822154450_sinjira_v24_5_2_private_death_report_codes.sql'
+      - 'supabase/migrations/20260822161058_sinjira_v24_5_2_life_story_fk_indexes.sql'
+      - 'supabase/migrations/20260822161721_sinjira_v24_5_2_export_boundary_enforcement.sql'
+      - 'supabase/migrations/20260822161849_sinjira_v24_5_2_export_boundary_enforcement_noop_marker.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'scripts/validate_life_story_legacy_v24_5_2.py'
+      - 'scripts/validate_life_story_fk_indexes_v24_5_2.py'
+      - 'scripts/validate_free_only_mode.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - '.github/workflows/validate-life-story-v24-5-2.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compte/histoire-de-vie.html'
+      - 'compte/signaler-deces.html'
+      - 'admin/sinjira/heritage.html'
+      - 'assets/js/sinjira-life-story-v24-5-0.js'
+      - 'assets/js/sinjira-life-story-v24-5-2.js'
+      - 'assets/js/sinjira-death-report-v24-5-2.js'
+      - 'assets/js/sinjira-admin-life-story-v24-5-2.js'
+      - 'assets/js/sinjira-supabase-config.js'
+      - 'HERITAGE_NUMERIQUE_V24_5_2.md'
+      - 'SERVICES_EXTERNES_PAYANTS.md'
+      - 'ARCHITECTURE_COMPTE_UNIVERSEL.md'
+      - 'supabase/functions/life-story-export/**'
+      - 'supabase/functions/life-story-delivery/**'
+      - 'supabase/migrations/20260822161058_sinjira_v24_5_2_life_story_fk_indexes.sql'
+      - 'supabase/migrations/20260822161721_sinjira_v24_5_2_export_boundary_enforcement.sql'
+      - 'supabase/migrations/20260822161849_sinjira_v24_5_2_export_boundary_enforcement_noop_marker.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'scripts/validate_life_story_legacy_v24_5_2.py'
+      - 'scripts/validate_life_story_fk_indexes_v24_5_2.py'
+      - 'scripts/validate_free_only_mode.py'
+      - 'scripts/validate_production_migration_ledger.py'
+
+permissions:
+  contents: read
+
+jobs:
+  legacy-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Contrat Histoire de vie et héritage V24.5.2
+        run: python scripts/validate_life_story_legacy_v24_5_2.py
+      - name: Index FK Histoire de vie
+        run: python scripts/validate_life_story_fk_indexes_v24_5_2.py
+      - name: Services externes payants désactivés
+        run: python scripts/validate_free_only_mode.py
+      - name: Ledger production Supabase
+        run: python scripts/validate_production_migration_ledger.py
+      - name: Manifeste du schéma production
+        run: python scripts/validate_production_schema_manifest.py
+      - name: Inventaire Edge Functions
+        run: python scripts/validate_edge_function_inventory.py
+      - name: Validation statique du site
+        run: python scripts/validate_site.py

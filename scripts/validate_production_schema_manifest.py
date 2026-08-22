@@ -18,7 +18,7 @@ EXPECTED_TABLES={
 'moderation_appeals','moderation_decisions','novel_comments','novels','order_items','orders','parallel_character_state','parallel_identities',
 'parallel_cycle_responses','parallel_group_members','parallel_groups','parallel_story_installments',
 'parallel_world_cycles','parallel_world_memberships','player_reports','player_sheets',
-'playtest_participants','playtests','private_family_links','private_life_events','products','profiles',
+'playtest_participants','playtests','private_family_links','private_life_events','products','product_preorders','profiles',
 'project_access','projects','reader_character_submissions','reader_characters','reader_comments',
 'reader_library','reader_works','registry_account_links','research_consents','session_feedback',
 'sinjira_canon_context','sinjira_character_applications','sinjira_characters','sinjira_novel_comments',
@@ -31,7 +31,9 @@ EXPECTED_TABLES={
 'dating_profiles','dating_preferences','dating_connections','dating_messages',
 'sinjira_points_accounts','sinjira_points_ledger','dating_meet_requests',
 'security_user_settings','security_devices','security_travel_plans','security_connection_events',
-'security_events','security_connection_challenges','security_push_endpoints'
+'security_events','security_connection_challenges','security_push_endpoints',
+'life_story_entries','life_story_versions','life_story_version_entries','life_story_recipients','life_story_legacy_settings',
+'life_story_posthumous_cases','life_story_posthumous_contests','life_story_exports','life_story_delivery_links','life_story_cleanup_tasks','life_story_report_codes'
 }
 
 PLANNED_LOCAL_TABLES={
