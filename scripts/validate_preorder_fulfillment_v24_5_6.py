@@ -39,15 +39,18 @@ def main()->int:
         if f'alter table public.{table} enable row level security' not in sql:errors.append(f'RLS absente: {table}')
         if f'revoke all on table public.{table} from public, anon, authenticated' not in sql:errors.append(f'ACL directe insuffisante: {table}')
 
-    locks={
-        'shipping_customer_pays':'true',
-        'pickup_interest_enabled':'true',
-        'external_carrier_api_enabled':'false',
-        'external_shipping_purchase_enabled':'false',
-        'pickup_shipping_charge_cents':'0'
-    }
-    for name,value in locks.items():
-        if f'{name}' not in sql or value not in sql:errors.append(f'Verrou livraison absent: {name}={value}')
+    strict_locks=[
+        'shipping_customer_paysbooleannotnulldefaulttruecheck(shipping_customer_pays=true)',
+        'pickup_interest_enabledbooleannotnulldefaulttruecheck(pickup_interest_enabled=true)',
+        'external_carrier_api_enabledbooleannotnulldefaultfalsecheck(external_carrier_api_enabled=false)',
+        'external_shipping_purchase_enabledbooleannotnulldefaultfalsecheck(external_shipping_purchase_enabled=false)',
+        'pickup_shipping_charge_centsintegernotnulldefault0check(pickup_shipping_charge_cents=0)'
+    ]
+    for marker in strict_locks:
+        if marker not in compact:errors.append(f'Verrou DB V24.5.6 manquant ou affaibli: {marker}')
+    for marker in ['new.shipping_customer_pays:=true;','new.pickup_interest_enabled:=true;','new.external_carrier_api_enabled:=false;','new.external_shipping_purchase_enabled:=false;','new.pickup_shipping_charge_cents:=0;']:
+        if marker not in compact:errors.append(f'Trigger serveur V24.5.6 manquant: {marker}')
+
     for marker in [
         "fulfillment_preference in ('shipping','pickup','undecided')",
         'product_preorder_fulfillment_options',
@@ -87,9 +90,11 @@ def main()->int:
     if 'publier ce point de ramassage' not in admin_js or 'adresse personnelle' not in admin_js:errors.append('La publication d’un point de ramassage ne comporte plus l’avertissement de confidentialité.')
     if 'publier cette estimation de livraison' not in admin_js:errors.append('Publication explicite des estimations absente.')
 
-    for text,name in [(doc,'Document V24.5.6'),(policy,'Politique payante'),(arch,'Architecture')]:
-        for marker in ['frais de livraison','ramassage','external_carrier_api_enabled']:
-            if marker not in text:errors.append(f'{name}: règle V24.5.6 absente: {marker}')
+    for marker in ['frais de livraison','ramassage','external_carrier_api_enabled','pickup_shipping_charge_cents']:
+        if marker not in doc:errors.append(f'Document V24.5.6: règle absente: {marker}')
+        if marker not in policy:errors.append(f'Politique services payants: règle absente: {marker}')
+    for marker in ['frais de livraison','ramassage','aucune api transporteur']:
+        if marker not in arch:errors.append(f'Architecture: règle V24.5.6 absente: {marker}')
     if '20260822190619 sinjira_v24_5_6_livre_1_shipping_pickup_preparation' not in ledger:errors.append('Ledger production sans migration V24.5.6.')
 
     if errors:
