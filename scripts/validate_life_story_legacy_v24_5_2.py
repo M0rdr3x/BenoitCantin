@@ -11,6 +11,8 @@ FILES = {
     'hardening': ROOT / 'supabase/migrations/20260822153451_sinjira_v24_5_2_legacy_pipeline_hardening.sql',
     'queue': ROOT / 'supabase/migrations/20260822154317_sinjira_v24_5_2_admin_legacy_queue.sql',
     'codes': ROOT / 'supabase/migrations/20260822154450_sinjira_v24_5_2_private_death_report_codes.sql',
+    'boundary': ROOT / 'supabase/migrations/20260822161721_sinjira_v24_5_2_export_boundary_enforcement.sql',
+    'noop': ROOT / 'supabase/migrations/20260822161849_sinjira_v24_5_2_export_boundary_enforcement_noop_marker.sql',
     'export': ROOT / 'supabase/functions/life-story-export/index.ts',
     'delivery': ROOT / 'supabase/functions/life-story-delivery/index.ts',
     'life_ui': ROOT / 'compte/histoire-de-vie.html',
@@ -20,7 +22,9 @@ FILES = {
     'admin_ui': ROOT / 'admin/sinjira/heritage.html',
     'admin_js': ROOT / 'assets/js/sinjira-admin-life-story-v24-5-2.js',
     'canon': ROOT / 'HERITAGE_NUMERIQUE_V24_5_2.md',
+    'paid_policy': ROOT / 'SERVICES_EXTERNES_PAYANTS.md',
     'architecture': ROOT / 'ARCHITECTURE_COMPTE_UNIVERSEL.md',
+    'runtime_config': ROOT / 'assets/js/sinjira-supabase-config.js',
     'config': ROOT / 'supabase/config.toml',
 }
 
@@ -67,6 +71,8 @@ def main() -> int:
     hardening = read('hardening')
     queue = read('queue')
     codes = read('codes')
+    boundary = read('boundary')
+    noop = read('noop')
     export = read('export')
     delivery = read('delivery')
     life_ui = read('life_ui')
@@ -76,7 +82,9 @@ def main() -> int:
     admin_ui = read('admin_ui')
     admin_js = read('admin_js')
     canon = read('canon')
+    paid_policy = read('paid_policy')
     architecture = read('architecture')
+    runtime_config = read('runtime_config')
     config = read('config')
 
     require(errors, foundation, [
@@ -122,6 +130,16 @@ def main() -> int:
     for marker in REGISTRY_MARKERS:
         if marker in final_prepare:
             errors.append(f'Instantané autorisé: accès Registre/personnage interdit: {marker}')
+
+    require(errors, boundary, [
+        'admin_life_story_get_export',
+        'private.require_sinjira_admin_aal2()',
+        'content_snapshot', 'recipients_snapshot',
+        'source_boundary', 'registry_access_prohibited',
+        'revoke all on function public.admin_life_story_get_export',
+    ], 'Frontière finale de lecture export')
+    forbid(errors, boundary, REGISTRY_MARKERS, 'Frontière finale de lecture export')
+    require(errors, noop, ['Aucun schéma ni aucune donnée', 'select 1;'], 'Marqueur production sans effet')
 
     require(errors, codes, [
         'life_story_report_codes', 'gen_random_bytes(32)',
@@ -192,10 +210,27 @@ def main() -> int:
         '256 bits', 'SHA-256', 'AAL2', 'no-store',
         'Aucun fournisseur externe de courriel', 'revues humaines',
     ], 'Canon héritage')
+    require(errors, paid_policy, [
+        'Préparer une intégration ne constitue jamais une autorisation de l’activer',
+        'décision explicite',
+        'paidExternalServicesEnabled',
+        'externalEmailDeliveryEnabled',
+        'nativeStorePublishingEnabled',
+        'App Store', 'Google Play',
+    ], 'Politique services externes payants')
+    require(errors, runtime_config, [
+        'paidExternalServicesEnabled: false',
+        'externalEmailDeliveryEnabled: false',
+        'nativeStorePublishingEnabled: false',
+        'remoteAiEnabled: false',
+        'commercePublishingEnabled: false',
+        'tokenPurchasesEnabled: false',
+    ], 'Configuration runtime gratuite')
     require(errors, architecture, [
-        'HERITAGE_NUMERIQUE_V24_5_2.md', 'Histoire de vie',
+        'HERITAGE_NUMERIQUE_V24_5_2.md', 'SERVICES_EXTERNES_PAYANTS.md', 'Histoire de vie',
         'Codes privés de signalement', 'Délai de sécurité de 30 jours',
         'life_story_only', 'sinjira-life-story-exports',
+        'Services externes payants',
     ], 'Architecture Compte')
 
     combined_runtime = export + delivery + admin_js + report_js + life_js
@@ -207,7 +242,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK Histoire de vie / héritage V24.5.2: consentement explicite, deux validations humaines, délai de 30 jours, contestation, frontière Registre, PDF privé et jetons hashés vérifiés.')
+    print('OK Histoire de vie / héritage V24.5.2: consentement explicite, deux validations humaines, délai de 30 jours, contestation, frontière Registre, PDF privé, jetons hashés et services externes payants désactivés vérifiés.')
     return 0
 
 
