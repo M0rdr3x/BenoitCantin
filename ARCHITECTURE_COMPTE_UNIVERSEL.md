@@ -4,6 +4,8 @@
 >
 > Protocole opérationnel d’héritage numérique : [`HERITAGE_NUMERIQUE_V24_5_2.md`](HERITAGE_NUMERIQUE_V24_5_2.md).
 >
+> Protocole de réservation du Livre I : [`PRECOMMANDES_ROMAN_V24_5_3.md`](PRECOMMANDES_ROMAN_V24_5_3.md).
+>
 > Garde-fou de déploiement : [`SERVICES_EXTERNES_PAYANTS.md`](SERVICES_EXTERNES_PAYANTS.md). Une intégration externe payante peut être construite, mais elle reste désactivée sans décision explicite séparée.
 
 ```text
@@ -18,6 +20,9 @@ Compte SINJIRA
 ├── Playtests
 ├── Profil
 ├── Contributions
+├── Mes achats et précommandes
+│   ├── Précommande Livre I — La Cendre du Jugement
+│   └── Achats payants (désactivés tant que la boutique n’est pas autorisée)
 ├── Histoire de vie
 │   ├── Mes éléments privés
 │   ├── Mes versions
@@ -46,6 +51,21 @@ Le Compte universel respecte le principe **protéger sans surveiller** : les don
 La localisation seule ne suffit pas à conclure qu’une connexion est frauduleuse. Le Bouclier de connexion doit combiner plusieurs signaux, avec une réponse graduée et une authentification renforcée lorsque le risque l’exige.
 
 Le **Registre des Consciences**, les conversations privées avec l’IA personnelle, les moyens de récupération du compte et les opérations d’héritage numérique appartiennent au niveau **extrêmement sensible** et peuvent exiger une nouvelle authentification même lorsqu’une session est déjà ouverte.
+
+## Précommandes de romans
+
+Une réservation de précommande est un objet distinct d’une commande payante.
+
+En V24.5.3, le Livre I peut être réservé depuis la section Littérature ou depuis **Mes achats et précommandes**. La réservation conserve le produit, le format souhaité, la quantité et une préférence d’avertissement interne. Elle ne collecte ni carte bancaire, ni adresse de facturation, ni adresse de livraison.
+
+Les invariants serveur de cette phase sont :
+
+```text
+payment_status = not_collected
+financial_commitment = false
+```
+
+Une réservation ne peut jamais être transformée automatiquement en vente. Une future ouverture de la boutique doit présenter les prix et conditions réels, puis obtenir une nouvelle confirmation volontaire avant tout checkout.
 
 ## Histoire de vie et héritage numérique
 
