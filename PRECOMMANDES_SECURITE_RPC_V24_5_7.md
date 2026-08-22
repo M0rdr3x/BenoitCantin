@@ -68,7 +68,11 @@ L’advisor Supabase signale encore plusieurs RPC `SECURITY DEFINER` authentifi�
 
 Les tables avec RLS activée et aucune politique peuvent également être volontairement scellées. Ajouter une politique permissive uniquement pour supprimer l’information du linter affaiblirait la sécurité.
 
-La protection Supabase contre les mots de passe compromis est toujours signalée comme désactivée. Le connecteur actuellement disponible n’expose pas d’action de configuration Auth permettant de l’activer; cette limitation reste donc explicitement ouverte et ne doit pas être présentée comme corrigée.
+### Protection contre les mots de passe compromis
+
+L’advisor Supabase signale `Leaked Password Protection Disabled`. La documentation officielle Supabase indique que la protection intégrée contre les mots de passe compromis est disponible **sur le plan Pro et supérieur**. SINJIRA™ reste en mode gratuit : aucun plan ou service payant ne doit être activé sans autorisation explicite.
+
+Cet avertissement est donc **accepté sous contrainte Free**, et non présenté comme corrigé. Le minimum de mot de passe SINJIRA™ demeure à 12 caractères et les protections MFA/AAL2 existantes restent en vigueur. Une alternative gratuite locale ne devra être ajoutée que si elle respecte la confidentialité, n’introduit pas de dépendance externe non approuvée et passe les mêmes contrôles de sécurité.
 
 ## Gouvernance GitHub
 
