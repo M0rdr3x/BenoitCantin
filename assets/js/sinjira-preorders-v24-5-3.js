@@ -105,6 +105,10 @@ async function refreshAll(user = null) {
   for (const root of roots) await refreshRoot(root, user);
 }
 
+function announcePreorderUpdate() {
+  window.dispatchEvent(new CustomEvent('sinjira:preorder-updated'));
+}
+
 async function reserve(root, event) {
   event.preventDefault();
   const nodes = rootNodes(root);
@@ -133,6 +137,7 @@ async function reserve(root, event) {
     if (error) throw error;
     setStatus(nodes.status, 'Votre précommande est réservée. Aucun paiement n’a été prélevé.', 'success');
     await refreshAll();
+    announcePreorderUpdate();
   } catch (error) {
     console.error('[SINJIRA preorder reserve]', error);
     setStatus(nodes.status, error?.message || 'La précommande n’a pas pu être enregistrée.', 'error');
@@ -152,6 +157,7 @@ async function cancel(root) {
     if (error) throw error;
     setStatus(nodes.status, data ? 'Votre précommande a été annulée.' : 'Aucune précommande active à annuler.', data ? 'success' : 'info');
     await refreshAll();
+    announcePreorderUpdate();
   } catch (error) {
     console.error('[SINJIRA preorder cancel]', error);
     setStatus(nodes.status, error?.message || 'La précommande n’a pas pu être annulée.', 'error');
