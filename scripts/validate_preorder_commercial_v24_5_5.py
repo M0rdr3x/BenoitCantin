@@ -51,7 +51,7 @@ def main()->int:
     if 'grant execute on function public.product_preorder_commercial_info(text) to anon, authenticated' not in sql:
         errors.append('RPC informative publique non exposée via exécution contrôlée.')
 
-    for marker in ['release_at is not null','terms_summary', 'paper_price_cents', 'digital_price_cents', 'paper_edition_label', 'digital_edition_label']:
+    for marker in ['release_at is not null','terms_summary','paper_price_cents','digital_price_cents','paper_edition_label','digital_edition_label']:
         if marker not in sql:errors.append(f'Critère de complétude commerciale absent: {marker}')
     if "status = 'superseded'" not in sql or 'commercial_plan_immutable' not in sql:
         errors.append('Versionnage/immutabilité des informations publiées incomplet.')
@@ -64,7 +64,7 @@ def main()->int:
         low=text.lower()
         for marker in ['stripe','paypal','api.resend.com','twilio']:
             if marker in low:errors.append(f'{name} référence un fournisseur externe interdit: {marker}')
-    for marker in ['aucune vente','aucun checkout','aucun paiement','aucun avis']:
+    for marker in ['aucune vente','aucune commande','ne prélève rien','aucun avis']:
         if marker not in admin_js.lower():errors.append(f'Confirmation admin ne rappelle plus le garde-fou: {marker}')
     if 'product_preorder_commercial_info' not in public_js:
         errors.append('Le runtime public ne lit plus la RPC commerciale assainie.')
