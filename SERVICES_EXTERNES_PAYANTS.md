@@ -1,6 +1,6 @@
 # SINJIRA™ — Politique des services externes payants
 
-**Statut : garde-fou produit et déploiement — V24.5.3**
+**Statut : garde-fou produit et déploiement — V24.5.4**
 
 SINJIRA peut préparer le code, les interfaces, les contrats techniques et les points d’intégration nécessaires à de futurs services externes. **Préparer une intégration ne constitue jamais une autorisation de l’activer.**
 
@@ -70,6 +70,25 @@ financial_commitment = false
 ```
 
 Aucune carte bancaire, adresse de facturation ou adresse de livraison n’est demandée dans cette phase. Une réservation ne doit jamais être convertie automatiquement en commande payante. L’ouverture d’un checkout futur exige une décision explicite séparée sur le fournisseur, le coût, les données transmises et les conditions de vente, puis une nouvelle confirmation volontaire de la personne.
+
+### Administration et avis d’ouverture V24.5.4
+
+L’administration peut mesurer la demande et préparer un avis pour les personnes ayant choisi `contact_when_sales_open=true`.
+
+Cet avis suit obligatoirement le parcours :
+
+```text
+brouillon → prêt → notification interne SINJIRA
+```
+
+La table `preorder_sales_announcements` impose :
+
+```text
+external_delivery_enabled = false
+payment_activation_allowed = false
+```
+
+L’action d’envoi V24.5.4 écrit uniquement dans `user_notifications`. Elle ne doit appeler aucun fournisseur de courriel ou SMS, ne doit ouvrir aucun checkout et ne doit convertir aucune réservation en commande. Le prix éventuellement saisi dans la console est un texte informatif destiné à préparer la communication; il n’autorise aucun débit.
 
 ## Héritage numérique
 
