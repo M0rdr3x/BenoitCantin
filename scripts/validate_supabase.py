@@ -10,7 +10,7 @@ CONFIG=ROOT/'supabase'/'config.toml'
 FRONTEND=ROOT/'assets'/'js'/'sinjira-supabase-config.js'
 WORKFLOW=ROOT/'.github'/'workflows'/'supabase-production-preflight.yml'
 EXPECTED='24.4.13'
-REGISTRY_EXPECTED='24.4.98'
+REGISTRY_EXPECTED='24.5.2'
 PROJECT='gpvivleexywljowcqkru'
 
 def read(p:Path)->str:return p.read_text('utf-8',errors='ignore')
