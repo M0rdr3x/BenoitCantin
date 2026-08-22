@@ -74,9 +74,14 @@ def main():
 
     require(page,['data-mfa-challenge-form','data-mfa-factor','sinjira-mfa-v24-4-66.js?v=24.4.98'],'page challenge MFA')
     require(login_page,['sinjira-auth-pages.js?v=24.4.98'],'page connexion Bouclier')
-    # Le runtime de sécurité continue d’évoluer après V24.4.66; ce contrat doit
-    # vérifier que le bon fichier est chargé, sans figer les autres composants à 24.4.66.
-    require(security_page,['data-mfa-enroll','data-mfa-factors','v24-security.js?v=','Aucun MFA par SMS/téléphone activé'],'page sécurité MFA')
+    # Le runtime de sécurité continue d’évoluer après V24.4.66; ce contrat vérifie
+    # le bon fichier et la promesse utilisateur, sans figer les autres composants.
+    require(security_page,[
+        'data-mfa-enroll',
+        'data-mfa-factors',
+        'v24-security.js?v=',
+        'aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'
+    ],'page sécurité MFA')
 
     print('OK MFA V24.4.98: TOTP gratuit, AAL2 fail-closed, Bouclier au login, redirections internes, rendu sans XSS et facteurs de secours autorisés.')
     return 0
