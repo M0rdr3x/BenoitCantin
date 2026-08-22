@@ -52,9 +52,12 @@ function configureProjectIdentifier(){
   }
 }
 
+function adminActions(){
+  return document.querySelector('.hero-actions')||document.querySelector('.admin-console-layout section');
+}
 function installHeritageLink(){
   if(document.querySelector('[data-admin-heritage-link]'))return;
-  const actions=document.querySelector('.hero-actions')||document.querySelector('.admin-console-layout section');
+  const actions=adminActions();
   if(!actions)return;
   const link=document.createElement('a');
   link.href='/admin/sinjira/heritage.html';
@@ -63,6 +66,18 @@ function installHeritageLink(){
   link.textContent='Héritage numérique';
   actions.appendChild(link);
 }
+function installPreorderLink(){
+  if(document.querySelector('[data-admin-preorders-link]'))return;
+  const actions=adminActions();
+  if(!actions)return;
+  const link=document.createElement('a');
+  link.href='/admin/sinjira/precommandes.html';
+  link.className='btn btn-secondary';
+  link.dataset.adminPreordersLink='';
+  link.textContent='Précommandes du Livre I';
+  actions.appendChild(link);
+}
 
 configureProjectIdentifier();
 installHeritageLink();
+installPreorderLink();
