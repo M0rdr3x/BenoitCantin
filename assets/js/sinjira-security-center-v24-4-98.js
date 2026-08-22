@@ -120,8 +120,17 @@ function renderChallenges(rows,devices,meta){
   const node=qs('[data-security-challenges]');if(!node)return;
   const pending=rows.filter(r=>r.status==='pending'&&new Date(r.expires_at)>new Date());
   if(!pending.length){node.innerHTML=empty('Aucune connexion ne demande votre confirmation.');return}
-  const currentTrusted=devices.some(d=>d.device_key===meta.device_key&&d.is_trusted&&!d.revoked_at);
-  node.innerHTML=pending.map(r=>`<article class="security-item"><div class="security-item-head"><div><h3>Nouvelle connexion à confirmer</h3>${pill('En attente','warn')}</div><small>Expire : ${escapeHtml(formatDate(r.expires_at))}</small></div><p>Code de vérification : <span class="security-code">${escapeHtml(r.display_code)}</span></p>${currentTrusted?`<div class="security-actions"><button class="btn btn-primary" type="button" data-challenge-approve="${r.id}">Autoriser</button><button class="btn btn-secondary" type="button" data-challenge-deny="${r.id}">Refuser</button></div>`:'<p><small>Pour autoriser ou refuser depuis cet appareil, marquez-le d’abord comme appareil fiable.</small></p>'}</article>`).join('');
+  const currentDevice=devices.find(d=>d.device_key===meta.device_key&&!d.revoked_at)||null;
+  node.innerHTML=pending.map(r=>{
+    const sameRequestDevice=Boolean(currentDevice&&currentDevice.id===r.request_device_id);
+    const canResolve=Boolean(currentDevice&&currentDevice.is_trusted&&!sameRequestDevice);
+    const controls=canResolve
+      ? `<div class="security-actions"><button class="btn btn-primary" type="button" data-challenge-approve="${r.id}">Autoriser</button><button class="btn btn-secondary" type="button" data-challenge-deny="${r.id}">Refuser</button></div>`
+      : sameRequestDevice
+        ? '<p><small>Cette tentative provient de cet appareil. Elle doit être confirmée par votre MFA pendant la connexion ou depuis un autre appareil déjà fiable.</small></p>'
+        : '<p><small>Pour autoriser ou refuser cette tentative, utilisez un autre appareil déjà marqué comme fiable.</small></p>';
+    return `<article class="security-item"><div class="security-item-head"><div><h3>Nouvelle connexion à confirmer</h3>${pill('En attente','warn')}</div><small>Expire : ${escapeHtml(formatDate(r.expires_at))}</small></div><p>Code de vérification : <span class="security-code">${escapeHtml(r.display_code)}</span></p>${controls}</article>`;
+  }).join('');
 }
 
 function fillSettings(settings){
