@@ -22,5 +22,178 @@
 .dating-report-panel[hidden]{display:none}.dating-report-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem}.dating-report-panel p{margin:0;font-size:.86rem;opacity:.85}
 .dating-report-panel form{display:grid;gap:.75rem}.dating-report-panel label{display:grid;gap:.3rem}.dating-report-panel select,.dating-report-panel textarea{width:100%}.dating-report-panel textarea{min-height:96px;resize:vertical}
 .dating-report-block{grid-template-columns:auto 1fr!important;align-items:flex-start!important;gap:.55rem!important}.dating-report-block input{margin-top:.2rem}
-@media(max-width:760px){.dating-progress-grid,.dating-stage-list{grid-template-columns:1fr}.dating-prompt-box,.dating-progress-head,.dating-detail-head,.dating-report-head{display:grid}.dating-dimension{grid-template-columns:1fr auto}.dating-dimension-track{grid-column:1/-1;grid-row:2}}
-@media(prefers-reduced-motion:reduce){.dating-progress-fill{transition:none}}
+
+/* V24.4.100 — présentation professionnelle Rencontres */
+body[data-account-page="dating"]{
+  --dating-accent:#70e3d3;
+  --dating-accent-strong:#45cbb9;
+  --dating-surface:#0c1221;
+  --dating-surface-soft:#10182a;
+  --dating-border:rgba(163,184,221,.14);
+  --dating-border-strong:rgba(112,227,211,.30);
+  --dating-muted:#aeb8cc;
+  --dating-danger:#ff8492;
+  background:
+    radial-gradient(circle at 78% 16%,rgba(112,227,211,.055),transparent 28rem),
+    radial-gradient(circle at 12% 44%,rgba(124,108,255,.045),transparent 32rem),
+    #070b16;
+}
+body[data-account-page="dating"] .account-shell{max-width:1180px}
+body[data-account-page="dating"] main{padding-bottom:3rem}
+body[data-account-page="dating"] .section.section-tight{padding-block:1rem}
+body[data-account-page="dating"] .account-hero{padding:3.3rem 0 1.25rem}
+body[data-account-page="dating"] .account-nav-scroll{max-width:1180px;margin-inline:auto}
+
+.dating-hero{
+  display:grid;
+  grid-template-columns:minmax(0,1.55fr) minmax(270px,.65fr);
+  gap:2rem;
+  align-items:end;
+}
+.dating-hero-copy{max-width:790px}
+.dating-hero-copy .eyebrow{color:var(--dating-accent);letter-spacing:.12em}
+.dating-hero-copy h1{font-size:clamp(2.15rem,5vw,4.3rem);line-height:1.02;letter-spacing:-.045em;margin:.7rem 0 1rem;max-width:780px}
+.dating-hero-copy>p{font-size:clamp(1rem,1.6vw,1.18rem);line-height:1.75;color:var(--dating-muted);max-width:760px;margin:0}
+.dating-hero-status{
+  padding:1.25rem 1.3rem;
+  border:1px solid var(--dating-border);
+  border-radius:20px;
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018));
+  box-shadow:0 18px 50px rgba(0,0,0,.18);
+}
+.dating-hero-status small{display:block;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.11em;color:var(--dating-muted);font-size:.72rem;font-weight:800}
+.dating-hero-status strong{display:block;font-size:1.05rem;line-height:1.45}
+.dating-hero-status p{margin:.65rem 0 0;color:var(--dating-muted);font-size:.86rem;line-height:1.55}
+body[data-account-page="dating"] .account-status{margin-top:1rem;border-radius:14px}
+
+.dating-section-shell{
+  border:1px solid var(--dating-border);
+  border-radius:24px;
+  background:linear-gradient(180deg,rgba(15,23,42,.94),rgba(10,16,30,.92));
+  box-shadow:0 20px 60px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+.dating-section-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:1.5rem;
+  padding:1.65rem 1.75rem 1.35rem;
+  border-bottom:1px solid var(--dating-border);
+}
+.dating-section-head-copy{max-width:760px}
+.dating-section-head .eyebrow{color:var(--dating-accent);font-size:.73rem;letter-spacing:.11em}
+.dating-section-head h2{font-size:clamp(1.45rem,2.4vw,2rem);letter-spacing:-.025em;margin:.45rem 0 .4rem}
+.dating-section-head p{margin:0;color:var(--dating-muted);line-height:1.65}
+.dating-step-number{
+  display:grid;place-items:center;flex:0 0 auto;width:42px;height:42px;border-radius:14px;
+  border:1px solid var(--dating-border-strong);background:rgba(112,227,211,.07);color:var(--dating-accent);font-weight:850
+}
+
+.dating-principles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--dating-border);border-left:1px solid var(--dating-border);border-radius:22px;overflow:hidden}
+.dating-principle{padding:1.4rem 1.35rem;border-right:1px solid var(--dating-border);border-bottom:1px solid var(--dating-border);background:rgba(12,18,33,.72)}
+.dating-principle strong{display:block;font-size:.96rem;margin-bottom:.45rem}
+.dating-principle p{margin:0;color:var(--dating-muted);font-size:.9rem;line-height:1.6}
+.dating-principle-index{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9px;background:rgba(112,227,211,.09);color:var(--dating-accent);font-size:.78rem;font-weight:800;margin-bottom:.8rem}
+
+.dating-form{display:grid;gap:0}
+.dating-form-section{padding:1.55rem 1.75rem;border-bottom:1px solid var(--dating-border)}
+.dating-form-section:last-child{border-bottom:0}
+.dating-form-title{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.1rem}
+.dating-form-title h3{margin:0;font-size:1.08rem;letter-spacing:-.01em}
+.dating-form-title p{margin:.3rem 0 0;color:var(--dating-muted);font-size:.88rem;line-height:1.55;max-width:720px}
+.dating-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem 1.15rem}
+.dating-field-grid.is-four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.dating-field-grid.is-five{grid-template-columns:repeat(2,minmax(0,1fr))}
+.dating-field{display:grid;gap:.42rem;align-content:start}
+.dating-field.is-wide{grid-column:1/-1}
+.dating-field>strong,.dating-field>span:first-child{font-size:.88rem;font-weight:760;color:#edf3ff}
+.dating-field small{color:var(--dating-muted);font-size:.76rem;line-height:1.5}
+body[data-account-page="dating"] .dating-field input:not([type="checkbox"]):not([type="radio"]),
+body[data-account-page="dating"] .dating-field select,
+body[data-account-page="dating"] .dating-field textarea,
+body[data-account-page="dating"] .dating-report-panel select,
+body[data-account-page="dating"] .dating-report-panel textarea{
+  width:100%;box-sizing:border-box;min-height:46px;padding:.78rem .86rem;border-radius:12px;
+  border:1px solid rgba(174,194,226,.18);background:#090f1d;color:#f5f7fb;
+  font:inherit;font-size:.92rem;line-height:1.45;outline:none;transition:border-color .18s ease,box-shadow .18s ease,background .18s ease
+}
+body[data-account-page="dating"] .dating-field textarea{min-height:116px;resize:vertical}
+body[data-account-page="dating"] .dating-field input::placeholder,
+body[data-account-page="dating"] .dating-field textarea::placeholder{color:#73809a;opacity:1}
+body[data-account-page="dating"] .dating-field input:focus,
+body[data-account-page="dating"] .dating-field select:focus,
+body[data-account-page="dating"] .dating-field textarea:focus{border-color:rgba(112,227,211,.62);box-shadow:0 0 0 3px rgba(112,227,211,.09);background:#0b1323}
+
+.dating-choice-grid{display:flex;flex-wrap:wrap;gap:.55rem;border:0;padding:0;margin:0}
+.dating-choice-grid legend{width:100%;margin-bottom:.3rem;font-size:.88rem;font-weight:760}
+.dating-choice-grid label{display:flex;align-items:center;gap:.5rem;padding:.68rem .78rem;border-radius:11px;border:1px solid var(--dating-border);background:rgba(255,255,255,.025);font-size:.86rem;cursor:pointer;transition:border-color .18s ease,background .18s ease}
+.dating-choice-grid label:hover{border-color:rgba(112,227,211,.36);background:rgba(112,227,211,.035)}
+.dating-choice-grid input{accent-color:var(--dating-accent-strong);width:16px;height:16px;margin:0}
+
+.dating-privacy-note{display:grid;grid-template-columns:auto 1fr;gap:.85rem;align-items:start;padding:1rem 1.05rem;border-radius:15px;border:1px solid rgba(112,227,211,.18);background:rgba(112,227,211,.045)}
+.dating-privacy-note-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:rgba(112,227,211,.1);color:var(--dating-accent);font-weight:850}
+.dating-privacy-note strong{display:block;margin-bottom:.25rem;font-size:.9rem}
+.dating-privacy-note p{margin:0;color:var(--dating-muted);font-size:.84rem;line-height:1.55}
+
+.dating-registry-consent{display:flex;align-items:flex-start;gap:.7rem;padding:1rem;border:1px solid var(--dating-border);border-radius:14px;background:rgba(255,255,255,.02);font-size:.86rem;line-height:1.55}
+.dating-registry-consent input{margin-top:.15rem;accent-color:var(--dating-accent-strong);width:17px;height:17px;flex:0 0 auto}
+.dating-form-actions{display:flex;flex-wrap:wrap;gap:.7rem;padding-top:.2rem}
+body[data-account-page="dating"] .dating-form-actions .btn{min-height:44px;padding:.72rem 1rem}
+
+.dating-activation{margin:0 1.75rem 1.75rem;padding:1.25rem 1.3rem;border:1px solid rgba(112,227,211,.22);border-radius:18px;background:linear-gradient(135deg,rgba(112,227,211,.065),rgba(124,108,255,.04))}
+.dating-activation-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.85rem}
+.dating-activation h3{margin:0 0 .3rem;font-size:1.05rem}.dating-activation p{margin:0;color:var(--dating-muted);font-size:.88rem;line-height:1.55;max-width:790px}
+.dating-activation-state{display:inline-flex;align-items:center;padding:.4rem .65rem;border-radius:999px;border:1px solid var(--dating-border-strong);color:var(--dating-accent);font-size:.75rem;font-weight:800;white-space:nowrap}
+
+.dating-results-body{padding:1.25rem 1.75rem 1.6rem}
+.dating-empty{padding:1.1rem 1.15rem;border:1px dashed rgba(174,194,226,.18);border-radius:14px;color:var(--dating-muted);background:rgba(255,255,255,.018)}
+.dating-empty p{margin:0;line-height:1.55}
+body[data-account-page="dating"] [data-dating-candidates],
+body[data-account-page="dating"] [data-dating-connections]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+body[data-account-page="dating"] [data-dating-candidates]>.account-card,
+body[data-account-page="dating"] [data-dating-connections]>.account-card{margin:0;padding:1.15rem;border-color:var(--dating-border);background:rgba(255,255,255,.022);box-shadow:none}
+body[data-account-page="dating"] [data-dating-candidates]>p,
+body[data-account-page="dating"] [data-dating-connections]>p{grid-column:1/-1;margin:0;padding:1.05rem 1.1rem;border:1px dashed rgba(174,194,226,.18);border-radius:14px;color:var(--dating-muted)}
+
+.dating-conversation-shell{padding:1.25rem 1.75rem 1.5rem}
+body[data-account-page="dating"] [data-dating-message-form]{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.65rem;margin-top:1rem}
+body[data-account-page="dating"] [data-dating-message-form] input{min-height:46px;border-radius:12px;border:1px solid rgba(174,194,226,.18);background:#090f1d;color:#fff;padding:.75rem .85rem;font:inherit}
+body[data-account-page="dating"] [data-dating-message-form] input:focus{outline:none;border-color:rgba(112,227,211,.62);box-shadow:0 0 0 3px rgba(112,227,211,.09)}
+
+.dating-safety{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,.7fr);gap:1.5rem;align-items:start;padding:1.55rem 1.75rem}
+.dating-safety h2{margin:.35rem 0 .7rem;font-size:1.45rem}.dating-safety p{color:var(--dating-muted);line-height:1.65}
+.dating-safety-links{display:grid;gap:.7rem;padding-top:.3rem}
+
+body[data-account-page="dating"] .account-welcome-strip{gap:.65rem;align-items:center}
+body[data-account-page="dating"] .notice{border-radius:14px}
+body[data-account-page="dating"] hr{border:0;border-top:1px solid var(--dating-border);margin:1.3rem 0}
+body[data-account-page="dating"] .btn{font-weight:760;letter-spacing:-.005em;border-radius:11px}
+body[data-account-page="dating"] .btn.btn-primary{background:linear-gradient(180deg,#7be8d9,#59d3c3);color:#05110f;border-color:rgba(112,227,211,.82);box-shadow:0 8px 24px rgba(69,203,185,.13)}
+body[data-account-page="dating"] .btn.btn-primary:hover{filter:brightness(1.04)}
+body[data-account-page="dating"] .btn.btn-secondary{background:rgba(255,255,255,.035);border-color:rgba(174,194,226,.18)}
+
+@media(max-width:980px){
+  .dating-hero{grid-template-columns:1fr}.dating-hero-status{max-width:620px}
+  .dating-principles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dating-field-grid.is-four{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dating-safety{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .dating-progress-grid,.dating-stage-list{grid-template-columns:1fr}.dating-prompt-box,.dating-progress-head,.dating-detail-head,.dating-report-head{display:grid}.dating-dimension{grid-template-columns:1fr auto}.dating-dimension-track{grid-column:1/-1;grid-row:2}
+  body[data-account-page="dating"] .account-hero{padding-top:2rem}
+  .dating-hero-copy h1{font-size:2.35rem}
+  .dating-section-head{padding:1.25rem;display:grid;grid-template-columns:auto 1fr}.dating-section-head-copy{grid-column:2}.dating-section-head .btn{grid-column:1/-1;justify-self:start}
+  .dating-principles,.dating-field-grid,.dating-field-grid.is-four,.dating-field-grid.is-five,body[data-account-page="dating"] [data-dating-candidates],body[data-account-page="dating"] [data-dating-connections]{grid-template-columns:1fr}
+  .dating-form-section,.dating-results-body,.dating-conversation-shell,.dating-safety{padding:1.2rem}
+  .dating-activation{margin:0 1.2rem 1.2rem}.dating-activation-head{display:grid}
+  .dating-choice-grid{display:grid;grid-template-columns:1fr}
+  .dating-form-actions{display:grid}.dating-form-actions .btn{width:100%;justify-content:center}
+  body[data-account-page="dating"] [data-dating-message-form]{grid-template-columns:1fr}.dating-section-shell{border-radius:18px}
+}
+@media(max-width:520px){
+  .dating-principles{border-radius:16px}.dating-principle{padding:1.1rem}
+  .dating-hero-status{padding:1rem}.dating-section-head{padding:1.05rem}.dating-step-number{width:38px;height:38px;border-radius:12px}
+  .dating-form-section,.dating-results-body,.dating-conversation-shell,.dating-safety{padding:1.05rem}.dating-activation{margin:0 1.05rem 1.05rem;padding:1.05rem}
+}
+@media(prefers-reduced-motion:reduce){.dating-progress-fill{transition:none}.dating-choice-grid label,.dating-field input,.dating-field select,.dating-field textarea{transition:none}}
