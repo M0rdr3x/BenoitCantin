@@ -3,6 +3,8 @@
 > Référence normative : [`CAHIER_MAITRE_SINJIRA.md`](CAHIER_MAITRE_SINJIRA.md). En cas de conflit, le Cahier maître prévaut.
 >
 > Protocole opérationnel d’héritage numérique : [`HERITAGE_NUMERIQUE_V24_5_2.md`](HERITAGE_NUMERIQUE_V24_5_2.md).
+>
+> Garde-fou de déploiement : [`SERVICES_EXTERNES_PAYANTS.md`](SERVICES_EXTERNES_PAYANTS.md). Une intégration externe payante peut être construite, mais elle reste désactivée sans décision explicite séparée.
 
 ```text
 Compte SINJIRA
@@ -135,6 +137,10 @@ Ce bucket n’est jamais une source publique et ses fichiers ne sont accessibles
 Un compte peut poser sa candidature.
 L'administration approuve ou refuse.
 Une approbation peut automatiquement donner le niveau `tester` sur le projet.
+
+## Services externes payants
+
+Le code peut préparer des adaptateurs ou intégrations futures, mais leur activation reste séparée du développement. Par défaut : paiements, IA distante payante, courriel/SMS externe payant, publication commerciale et soumission App Store/Google Play restent désactivés. Le CI doit empêcher leur activation accidentelle tant que le projet demeure en mode gratuit.
 
 ## Futures extensions
 
