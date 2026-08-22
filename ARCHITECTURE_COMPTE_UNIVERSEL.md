@@ -8,6 +8,8 @@
 >
 > Préparation commerciale du Livre I : [`PREPARATION_COMMERCIALE_LIVRE_I_V24_5_5.md`](PREPARATION_COMMERCIALE_LIVRE_I_V24_5_5.md).
 >
+> Livraison et ramassage du Livre I : [`LIVRAISON_RAMASSAGE_LIVRE_I_V24_5_6.md`](LIVRAISON_RAMASSAGE_LIVRE_I_V24_5_6.md).
+>
 > Garde-fou de déploiement : [`SERVICES_EXTERNES_PAYANTS.md`](SERVICES_EXTERNES_PAYANTS.md). Une intégration externe payante peut être construite, mais elle reste désactivée sans décision explicite séparée.
 
 ```text
@@ -24,7 +26,9 @@ Compte SINJIRA
 ├── Contributions
 ├── Mes achats et précommandes
 │   ├── Précommande Livre I — La Cendre du Jugement
-│   │   └── Informations commerciales publiées, si disponibles
+│   │   ├── Informations commerciales publiées, si disponibles
+│   │   ├── Estimation de livraison par zone
+│   │   └── Préférence livraison / ramassage / plus tard
 │   └── Achats payants (désactivés tant que la boutique n’est pas autorisée)
 ├── Histoire de vie
 │   ├── Mes éléments privés
@@ -99,6 +103,24 @@ auto_conversion_allowed = false
 Une révision publiée devient immuable. Une modification future doit passer par une nouvelle révision afin que l’information précédemment affichée ne soit pas réécrite silencieusement.
 
 La publication de la fiche commerciale ne crée aucune notification. Le mécanisme d’avis interne V24.5.4 demeure un parcours séparé.
+
+### Livraison et ramassage V24.5.6
+
+Le parcours de livraison est séparé du paiement. Pour un livre physique expédié, les frais de livraison sont à la charge du client et doivent être annoncés avant l’achat.
+
+Le calculateur de précommande utilise uniquement une zone publiée et la quantité. Il ne demande ni ne stocke l’adresse de livraison. La fourchette affichée est indicative et le montant réel doit être présenté avant toute future commande.
+
+La préférence de réception peut être :
+
+```text
+shipping
+pickup
+undecided
+```
+
+Le ramassage sur place n’ajoute aucun frais de livraison. Un point de retrait reste privé jusqu’à publication explicite de son adresse et de ses instructions par un administrateur MFA/AAL2. Modifier un tarif ou un point publié le remet en brouillon avant une nouvelle publication.
+
+Aucune API transporteur ou achat d’étiquette externe n’est actif en V24.5.6.
 
 ## Histoire de vie et héritage numérique
 
@@ -193,7 +215,7 @@ Une approbation peut automatiquement donner le niveau `tester` sur le projet.
 
 ## Services externes payants
 
-Le code peut préparer des adaptateurs ou intégrations futures, mais leur activation reste séparée du développement. Par défaut : paiements, IA distante payante, courriel/SMS externe payant, publication commerciale transactionnelle et soumission App Store/Google Play restent désactivés. Le CI doit empêcher leur activation accidentelle tant que le projet demeure en mode gratuit.
+Le code peut préparer des adaptateurs ou intégrations futures, mais leur activation reste séparée du développement. Par défaut : paiements, IA distante payante, courriel/SMS externe payant, transporteurs externes, publication commerciale transactionnelle et soumission App Store/Google Play restent désactivés. Le CI doit empêcher leur activation accidentelle tant que le projet demeure en mode gratuit.
 
 ## Futures extensions
 
