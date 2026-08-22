@@ -2,8 +2,11 @@ import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
-const FUNCTION_VERSION='24.4.15';
+const FUNCTION_VERSION='24.5.2';
 const MAX_REQUEST_BYTES=220_000;
+// Intégration préparée, jamais activée implicitement. Une future activation exige
+// une décision explicite distincte sur le fournisseur et les coûts.
+const PAID_EXTERNAL_SERVICES_ENABLED=false;
 const TEMPLATE_URL =
   Deno.env.get('REPORT_TEMPLATE_URL') ||
   'https://www.benoitcantin.com/projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf';
@@ -118,6 +121,10 @@ Deno.serve(async (req) => {
     if (mode === 'download') {
       if (user) await recordDelivery(user.id, body?.session_id, 'download');
       return json({ ok: true, filename, pdf_base64: toBase64(pdfBytes), function_version: FUNCTION_VERSION });
+    }
+
+    if (!PAID_EXTERNAL_SERVICES_ENABLED) {
+      return json({ ok:false, error:'Le transport courriel externe est préparé mais désactivé. Téléchargez le PDF directement.', code:'PAID_EXTERNAL_SERVICE_DISABLED', function_version:FUNCTION_VERSION }, 503);
     }
 
     // L'envoi de courriel est réservé à un compte authentifié et uniquement à son adresse.
