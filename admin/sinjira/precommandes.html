@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="noindex,nofollow" name="robots"/>
+<title>Précommandes du Livre I | Administration SINJIRA™</title>
+<link href="/assets/icons/sinjira-favicon.png" rel="icon"/>
+<link href="/assets/css/site.css?v=20.0" rel="stylesheet"/>
+<link href="/assets/css/sinjira-player-account.css?v=24.1" rel="stylesheet"/>
+<link href="/assets/css/v19-pro.css?v=19.0" rel="stylesheet"/>
+<link href="/assets/css/v24-platform.css?v=24.1" rel="stylesheet"/>
+<link href="/assets/css/sinjira-admin-preorders-v24-5-4.css?v=24.5.4" rel="stylesheet"/>
+</head>
+<body class="admin-sinjira-page preorder-admin-page">
+<header class="site-header"><div class="container nav-shell"><a class="brand" href="/"><img alt="" height="47" src="/assets/media/sinjira-emblem.webp" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Administration</span></span></a><nav class="main-nav"><a href="/admin/sinjira/">Administration</a><a href="/projets/sinjira/romans/precommande.html">Page publique</a><a href="/compte/mes-achats.html#precommandes">Compte</a></nav></div></header>
+<main class="preorder-admin-main">
+<section class="preorder-admin-hero"><div class="container"><a class="project-back" href="/admin/sinjira/">← Retour à l’administration</a><span class="eyebrow">V24.5.4 · administration privée · MFA requis</span><h1>Précommandes du Livre I</h1><p>Suivi des réservations de <strong>La Cendre du Jugement</strong> et préparation d’un avis interne SINJIRA™. Cette console n’active aucun paiement, aucun checkout, aucun courriel et aucun SMS.</p><div class="preorder-admin-safety"><strong>Contrat financier verrouillé</strong><span>Une précommande reste une réservation. L’ouverture future d’une vente exigera un mécanisme séparé et une nouvelle confirmation volontaire de l’acheteur.</span></div><div class="account-status" data-preorder-admin-status hidden></div></div></section>
+
+<section class="section section-tight"><div class="container">
+<div class="preorder-admin-stat-grid">
+<article class="preorder-admin-stat"><span>Réservations actives</span><strong data-pa-reserved>0</strong><small>comptes</small></article>
+<article class="preorder-admin-stat"><span>Exemplaires souhaités</span><strong data-pa-units>0</strong><small>réservés</small></article>
+<article class="preorder-admin-stat"><span>À avertir dans SINJIRA</span><strong data-pa-optin>0</strong><small>opt-in interne</small></article>
+<article class="preorder-admin-stat"><span>Réservations annulées</span><strong data-pa-cancelled>0</strong><small>comptes</small></article>
+</div>
+
+<div class="preorder-admin-layout">
+<article class="account-card preorder-admin-card">
+<span class="eyebrow">Préférences de format</span><h2>Demande estimée</h2><p>Ces données servent uniquement à comprendre l’intérêt exprimé. Elles ne constituent pas des commandes payées.</p>
+<div class="preorder-format-grid">
+<div><span>Papier</span><strong data-pa-paper-accounts>0</strong><small><b data-pa-paper-units>0</b> exemplaire(s)</small></div>
+<div><span>Numérique</span><strong data-pa-digital-accounts>0</strong><small><b data-pa-digital-units>0</b> exemplaire(s)</small></div>
+<div><span>Papier + numérique</span><strong data-pa-both-accounts>0</strong><small><b data-pa-both-units>0</b> exemplaire(s)</small></div>
+<div><span>Indécis</span><strong data-pa-undecided-accounts>0</strong><small><b data-pa-undecided-units>0</b> exemplaire(s)</small></div>
+</div>
+</article>
+
+<article class="account-card preorder-admin-card">
+<span class="eyebrow">Avis interne · aucun fournisseur externe</span><div class="preorder-admin-card-head"><div><h2>Préparer l’ouverture future des ventes</h2><p>L’avis est d’abord enregistré comme brouillon, puis marqué « prêt ». L’envoi est une troisième action séparée.</p></div><span class="preorder-status-pill" data-pa-announcement-state>Non préparé</span></div>
+<form class="account-form preorder-announcement-form" data-pa-announcement-form>
+<div class="field wide"><label for="pa-title">Titre de l’avis interne</label><input id="pa-title" maxlength="160" name="title" required value="Le Livre I de SINJIRA™ — conditions de vente disponibles"/></div>
+<div class="field wide"><label for="pa-body">Message</label><textarea id="pa-body" maxlength="1000" name="body" required rows="5">Les conditions de vente de La Cendre du Jugement sont maintenant disponibles dans SINJIRA™. Consultez votre réservation avant de confirmer séparément tout futur achat.</textarea></div>
+<div class="field"><label for="pa-sales-open">Date/heure prévue de l’ouverture</label><input id="pa-sales-open" name="sales_open_at" type="datetime-local"/><small>Facultatif tant que la date n’est pas officielle.</small></div>
+<div class="field"><label for="pa-price">Prix affiché</label><input id="pa-price" maxlength="120" name="public_price_text" placeholder="Ex. 24,99 $ CAD — papier"/><small>Texte informatif seulement; aucun paiement n’est relié à ce champ.</small></div>
+<div class="field wide"><label for="pa-edition">Note sur l’édition</label><textarea id="pa-edition" maxlength="600" name="edition_note" rows="3" placeholder="Ex. détails de l’édition, disponibilité prévue, information à confirmer…"></textarea></div>
+<div class="field wide"><label for="pa-path">Destination dans SINJIRA</label><input id="pa-path" name="action_path" value="/compte/mes-achats.html#precommandes"/></div>
+<div class="preorder-announcement-actions wide"><button class="btn btn-secondary" data-pa-save-draft type="submit">Enregistrer le brouillon</button><button class="btn btn-secondary" data-pa-mark-ready type="button">Marquer prêt</button><button class="btn btn-primary" data-pa-send-internal type="button">Envoyer l’avis interne</button></div>
+</form>
+<div class="preorder-admin-contract"><div><span>Transport externe</span><strong>désactivé</strong></div><div><span>Paiement</span><strong>désactivé</strong></div><div><span>Conversion automatique en commande</span><strong>interdite</strong></div><div><span>Dernier envoi</span><strong data-pa-sent-meta>—</strong></div></div>
+</article>
+</div>
+</div></section>
+
+<section class="section section-tight"><div class="container"><article class="account-card preorder-admin-card">
+<div class="preorder-admin-list-head"><div><span class="eyebrow">Réservations</span><h2>Liste de suivi</h2><p>Aucun courriel, adresse postale ou identifiant technique n’est affiché ici.</p></div><button class="btn btn-secondary" data-pa-refresh type="button">Actualiser</button></div>
+<div class="preorder-admin-filters"><label>État<select data-pa-filter-status><option value="">Tous</option><option value="reserved">Actives</option><option value="cancelled">Annulées</option></select></label><label>Format<select data-pa-filter-format><option value="">Tous</option><option value="paper">Papier</option><option value="digital">Numérique</option><option value="both">Papier + numérique</option><option value="undecided">Indécis</option></select></label></div>
+<div class="preorder-admin-list" data-pa-list><p>Chargement…</p></div>
+</article></div></section>
+</main>
+<footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>SINJIRA™ — administration des précommandes sans paiement.</span></div></div></footer>
+<script defer src="/assets/js/site.js?v=20.0"></script>
+<script type="module" src="/assets/js/sinjira-admin-preorders-v24-5-4.js?v=24.5.4"></script>
+</body>
+</html>
