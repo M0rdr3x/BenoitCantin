@@ -12,56 +12,127 @@
 <link href="../assets/css/v19-pro.css?v=24.4.76" rel="stylesheet"/>
 <link href="../assets/css/v20-social.css?v=24.4.76" rel="stylesheet"/>
 <link href="../assets/css/v24-platform.css?v=24.4.76" rel="stylesheet"/>
-<link href="../assets/css/sinjira-dating-v24-4-76.css?v=24.4.76" rel="stylesheet"/>
+<link href="../assets/css/sinjira-dating-v24-4-76.css?v=24.4.100" rel="stylesheet"/>
 </head>
 <body class="account-page" data-account-page="dating">
 <header class="site-header"><div class="container nav-shell"><a class="brand" href="/"><img alt="" height="47" src="../assets/media/sinjira-emblem.webp" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Rencontres privées</span></span></a><nav class="main-nav"><a href="communaute.html">Communauté</a><a href="messages.html">Messages</a><a href="index.html">Mon espace</a></nav></div></header>
 <div class="account-shell account-nav-scroll"><nav aria-label="Navigation du compte" class="account-nav"><a href="index.html">Mon espace</a><a href="bibliotheque.html">Ma bibliothèque</a><a href="mon-personnage.html">Mon personnage</a><a href="notifications.html">Notifications</a><a href="communaute.html">Communauté</a><a aria-current="page" href="rencontres.html">Rencontres</a><a href="messages.html">Messages</a><a href="profil.html">Profil</a><a href="securite.html">Sécurité</a><a href="parametres.html">Paramètres</a><button data-logout type="button">Déconnexion</button></nav></div>
 <main>
-<section class="account-hero"><div class="account-shell"><span class="eyebrow">18+ · célibataires · relations sérieuses</span><h1>Rencontres par compatibilité</h1><p>Pas de catalogue de photos et pas de sélection basée sur l’apparence. Les propositions sont anonymisées et expliquées à partir de vos valeurs, projets, habitudes, communication, intérêts et préférences déclarées.</p><div class="account-welcome-strip"><strong data-dating-status-label>Vérification de l’admissibilité…</strong><span>Moteur de compatibilité explicable V24.4.76 · aucune IA distante payante</span></div><div class="account-status" data-dating-status hidden></div></div></section>
+<section class="account-hero"><div class="account-shell dating-hero">
+  <div class="dating-hero-copy">
+    <span class="eyebrow">18+ · célibataires · relations sérieuses</span>
+    <h1>Rencontres par compatibilité</h1>
+    <p>Un espace conçu pour découvrir une personne par ses valeurs, ses projets et sa façon de communiquer avant son apparence. Les propositions sont anonymisées et expliquées à partir des informations que vous choisissez de déclarer.</p>
+  </div>
+  <aside class="dating-hero-status" aria-live="polite">
+    <small>État de mon profil</small>
+    <strong data-dating-status-label>Vérification de l’admissibilité…</strong>
+    <p>Moteur de compatibilité explicable V24.4.76 · aucune IA distante payante.</p>
+  </aside>
+  <div class="account-status" data-dating-status hidden></div>
+</div></section>
 
-<section class="section section-tight"><div class="account-shell"><article class="account-card"><span class="eyebrow">Principes</span><h2>La compatibilité avant l’apparence</h2><div class="account-reader-grid"><div><strong>Propositions expliquées</strong><p>Valeurs 25 %, projets 25 %, communication 20 %, rythme de vie 15 %, intérêts 15 %. Le Registre peut contribuer volontairement à hauteur de 5 %.</p></div><div><strong>Identité protégée</strong><p>Avant le dévoilement mutuel, aucune photo, aucun avatar, aucun pseudo réel et aucune coordonnée directe ne sont fournis par cette page.</p></div><div><strong>Dévoilement progressif</strong><p>Après au moins 10 messages envoyés par chaque personne, les deux doivent consentir avant d’afficher le pseudo et la photo de profil. Le seuil n’oblige jamais à se dévoiler.</p></div><div><strong>Disponibilité stricte</strong><p>Le profil doit être célibataire confirmé, majeur et orienté vers une relation sérieuse. La confirmation expire après 90 jours.</p></div></div></article></div></section>
+<section class="section section-tight"><div class="account-shell">
+  <div class="dating-principles" aria-label="Principes de Rencontres SINJIRA">
+    <article class="dating-principle"><span class="dating-principle-index">01</span><strong>Compatibilité expliquée</strong><p>Valeurs 25 %, projets 25 %, communication 20 %, rythme de vie 15 % et intérêts 15 %. Le Registre peut contribuer volontairement à hauteur de 5 %.</p></article>
+    <article class="dating-principle"><span class="dating-principle-index">02</span><strong>Identité protégée</strong><p>Avant le dévoilement mutuel, aucune photo, aucun avatar, aucun pseudo réel et aucune coordonnée directe ne sont fournis.</p></article>
+    <article class="dating-principle"><span class="dating-principle-index">03</span><strong>Dévoilement progressif</strong><p>Après au moins 10 messages envoyés par chaque personne, les deux doivent consentir avant d’afficher le pseudo et la photo. Le seuil n’oblige jamais à se dévoiler.</p></article>
+    <article class="dating-principle"><span class="dating-principle-index">04</span><strong>Disponibilité vérifiée</strong><p>Le profil doit être célibataire confirmé, majeur et orienté vers une relation sérieuse. La confirmation expire après 90 jours.</p></article>
+  </div>
+</div></section>
 
-<section class="section section-tight" data-dating-adult-zone><div class="account-shell"><article class="account-card"><span class="eyebrow">1 · Mon profil</span><h2>Ce qui me décrit et ce que je recherche</h2><div class="notice"><strong>Confidentialité de la phase anonyme</strong><p>N’inscrivez pas de courriel, numéro de téléphone, URL, adresse de site ou identifiant social dans ce profil. Supabase les bloque côté serveur pour empêcher qu’une personne contourne le dévoilement progressif.</p></div><form data-dating-profile-form>
-<div class="account-reader-grid">
-<label><strong>Mon identité de genre</strong><select name="gender_identity" required><option value="">Choisir…</option><option value="woman">Femme</option><option value="man">Homme</option><option value="nonbinary">Non binaire</option><option value="other">Autre</option><option value="prefer_not_say">Je préfère ne pas préciser</option></select></label>
-<label><strong>Région générale</strong><input maxlength="120" name="region" placeholder="Ex. Montréal, Québec"/><small>Région générale seulement — aucune adresse, URL, téléphone ou identifiant social.</small></label>
-<label><strong>Âge recherché — minimum</strong><input name="min_age" type="number" min="18" max="99" value="18" required/></label>
-<label><strong>Âge recherché — maximum</strong><input name="max_age" type="number" min="18" max="99" value="99" required/></label>
-</div>
-<label><strong>Courte présentation</strong><textarea name="intro" maxlength="1200" required placeholder="Présentez votre façon de vivre, vos priorités et ce qui compte pour vous, sans mettre l’accent sur l’apparence."></textarea><small>Ne donnez ici ni courriel, téléphone, URL, @identifiant ou contact social. Ces données sont refusées avant le dévoilement mutuel.</small></label>
-<fieldset><legend><strong>Je souhaite rencontrer</strong></legend><label><input type="checkbox" name="seeking_genders" value="woman"/> Femme</label> <label><input type="checkbox" name="seeking_genders" value="man"/> Homme</label> <label><input type="checkbox" name="seeking_genders" value="nonbinary"/> Personne non binaire</label> <label><input type="checkbox" name="seeking_genders" value="other"/> Autre identité</label> <label><input type="checkbox" name="seeking_genders" value="prefer_not_say"/> Sans préférence déclarée</label></fieldset>
-<div class="account-reader-grid">
-<label><strong>Mes valeurs</strong><textarea name="values_tags" placeholder="Ex. honnêteté, famille, curiosité, autonomie"></textarea></label>
-<label><strong>Mes intérêts</strong><textarea name="interests_tags" placeholder="Ex. lecture, jeux, nature, cinéma, cuisine"></textarea></label>
-<label><strong>Mon rythme de vie</strong><textarea name="lifestyle_tags" placeholder="Ex. calme, actif, maison, voyages, spontané"></textarea></label>
-<label><strong>Ma communication</strong><textarea name="communication_tags" placeholder="Ex. directe, douce, réfléchie, expressive"></textarea></label>
-<label><strong>Mes projets de relation</strong><textarea name="goals_tags" placeholder="Ex. long terme, construire ensemble, famille, stabilité"></textarea></label>
-</div>
-<h3>Ce que je recherche chez une future partenaire ou un futur partenaire</h3>
-<div class="account-reader-grid">
-<label><strong>Valeurs recherchées</strong><textarea name="wanted_values" placeholder="Séparez les éléments par des virgules ou des lignes."></textarea></label>
-<label><strong>Intérêts recherchés</strong><textarea name="wanted_interests"></textarea></label>
-<label><strong>Rythme de vie recherché</strong><textarea name="wanted_lifestyle"></textarea></label>
-<label><strong>Communication recherchée</strong><textarea name="wanted_communication"></textarea></label>
-<label><strong>Projets recherchés</strong><textarea name="wanted_goals"></textarea></label>
-</div>
-<label><strong>En mes mots, la personne que j’espère rencontrer</strong><textarea name="partner_description" maxlength="1600"></textarea></label>
-<label><strong>Limites importantes / incompatibilités personnelles</strong><textarea name="dealbreakers" maxlength="1200" placeholder="Décrivez vos limites sans dénigrer d’autres personnes."></textarea></label>
-<label><input type="checkbox" name="use_registry_answers"/> Utiliser volontairement certains repères non sensibles de mon questionnaire du Registre pour enrichir la compatibilité.</label>
-<div class="hero-actions"><button class="btn btn-primary" type="submit">Enregistrer mon profil</button><button class="btn btn-secondary" type="button" data-dating-import-registry>Importer mes repères du Registre</button></div>
-</form>
-<hr/>
-<div class="notice"><strong>Activation</strong><p>Pour entrer dans les propositions, vous confirmez être majeur, célibataire, réellement disponible et à la recherche d’une relation sérieuse. Cette confirmation doit être renouvelée tous les 90 jours.</p><div class="hero-actions"><button class="btn btn-primary" type="button" data-dating-confirm>Je confirme être célibataire et disponible</button><button class="btn btn-secondary" type="button" data-dating-pause>Mettre mon profil en pause</button><button class="btn btn-secondary" type="button" data-dating-partnered>Je suis maintenant en couple / indisponible</button></div></div>
-</article></div></section>
+<section class="section section-tight" data-dating-adult-zone><div class="account-shell"><div class="dating-section-shell">
+  <header class="dating-section-head">
+    <span class="dating-step-number" aria-hidden="true">1</span>
+    <div class="dating-section-head-copy"><span class="eyebrow">Mon profil</span><h2>Ce qui me décrit et ce que je recherche</h2><p>Complétez uniquement ce qui est utile à la compatibilité. Votre profil reste privé et anonymisé jusqu’au consentement mutuel.</p></div>
+  </header>
 
-<section class="section section-tight" data-dating-adult-zone><div class="account-shell"><article class="account-card"><div class="account-welcome-strip"><span class="eyebrow">2 · Propositions</span><button class="btn btn-secondary btn-small" type="button" data-dating-refresh>Actualiser</button></div><h2>Compatibilités proposées</h2><p>Chaque fiche est volontairement sans photo, sans identité réelle et sans coordonnées directes. Le score n’est pas une promesse de relation : il sert à sélectionner des conversations qui méritent une vraie chance.</p><div class="account-reader-grid" data-dating-candidates><p>Activez votre profil pour recevoir des propositions.</p></div></article></div></section>
+  <form class="dating-form" data-dating-profile-form>
+    <section class="dating-form-section">
+      <div class="dating-privacy-note"><span class="dating-privacy-note-icon" aria-hidden="true">i</span><div><strong>Confidentialité de la phase anonyme</strong><p>N’inscrivez pas de courriel, numéro de téléphone, URL, adresse de site ou identifiant social dans ce profil. Supabase les bloque côté serveur pour empêcher qu’une personne contourne le dévoilement progressif.</p></div></div>
+    </section>
 
-<section class="section section-tight" data-dating-adult-zone><div class="account-shell"><article class="account-card"><span class="eyebrow">3 · Discussions</span><h2>Mes propositions et conversations</h2><p>Chaque conversation affiche maintenant sa progression. Le seuil 10 + 10 ouvre seulement la possibilité de consentir au dévoilement; il ne révèle rien automatiquement.</p><div class="account-reader-grid" data-dating-connections><p>Aucune discussion chargée.</p></div></article></div></section>
+    <section class="dating-form-section">
+      <div class="dating-form-title"><div><h3>Informations essentielles</h3><p>Ces données servent seulement à déterminer l’admissibilité et les compatibilités possibles.</p></div></div>
+      <div class="dating-field-grid is-four">
+        <label class="dating-field"><strong>Mon identité de genre</strong><select name="gender_identity" required><option value="">Choisir…</option><option value="woman">Femme</option><option value="man">Homme</option><option value="nonbinary">Non binaire</option><option value="other">Autre</option><option value="prefer_not_say">Je préfère ne pas préciser</option></select></label>
+        <label class="dating-field"><strong>Région générale</strong><input maxlength="120" name="region" placeholder="Ex. Montréal, Québec"/><small>Région générale seulement — aucune adresse, URL, téléphone ou identifiant social.</small></label>
+        <label class="dating-field"><strong>Âge recherché — minimum</strong><input name="min_age" type="number" min="18" max="99" value="18" required/></label>
+        <label class="dating-field"><strong>Âge recherché — maximum</strong><input name="max_age" type="number" min="18" max="99" value="99" required/></label>
+      </div>
+    </section>
 
-<section class="section section-tight" data-dating-conversation-zone hidden><div class="account-shell"><article class="account-card"><div class="account-welcome-strip"><strong data-dating-conversation-title>Discussion anonyme</strong><button class="btn btn-secondary btn-small" data-dating-close-conversation type="button">Fermer</button></div><div data-dating-conversation-messages class="v20-comments"></div><form data-dating-message-form class="v20-comment-form"><input name="body" maxlength="2000" required placeholder="Écrire un message texte…"/><button class="btn btn-primary btn-small" type="submit">Envoyer</button></form><p><small>Aucune pièce jointe ni image libre n’est acceptée à cette étape. Après 10 messages chacun et le consentement des deux personnes, le système peut dévoiler uniquement le pseudo et la photo de profil déjà enregistrée. Avant ce dévoilement, le chat bloque aussi les courriels, téléphones, URL et identifiants sociaux.</small></p></article></div></section>
+    <section class="dating-form-section">
+      <div class="dating-form-title"><div><h3>Ma présentation</h3><p>Présentez votre façon de vivre, vos priorités et ce qui compte réellement pour vous.</p></div></div>
+      <label class="dating-field"><strong>Courte présentation</strong><textarea name="intro" maxlength="1200" required placeholder="Parlez de votre quotidien, de vos priorités et de la relation que vous souhaitez construire."></textarea><small>Ne donnez ici ni courriel, téléphone, URL, @identifiant ou contact social. Ces données sont refusées avant le dévoilement mutuel.</small></label>
+    </section>
 
-<section class="section section-tight"><div class="account-shell"><article class="account-card"><span class="eyebrow">Sécurité et respect</span><h2>Pas de promesse algorithmique</h2><p>Le moteur classe des compatibilités à partir de données déclarées. Il ne déduit pas l’orientation, le statut amoureux, la santé, la religion ou d’autres informations sensibles. Les données du Registre sont facultatives et limitées à quelques repères de personnalité explicitement sélectionnés côté serveur.</p><p>Une future couche IA pourra enrichir les explications de compatibilité seulement avec consentement et garde-fous. Elle n’est pas activée ici tant qu’un fonctionnement local, explicable et sans coût externe suffit.</p><div class="hero-actions"><a class="btn btn-secondary" href="regles-communaute.html">Règles de la communauté</a><a class="btn btn-secondary" href="securite.html">Sécurité du compte</a></div></article></div></section>
+    <section class="dating-form-section">
+      <div class="dating-form-title"><div><h3>Qui je souhaite rencontrer</h3><p>Ces choix servent de filtre d’admissibilité. Ils ne sont pas affichés comme une étiquette publique.</p></div></div>
+      <fieldset class="dating-choice-grid"><legend>Je souhaite rencontrer</legend><label><input type="checkbox" name="seeking_genders" value="woman"/> Femme</label><label><input type="checkbox" name="seeking_genders" value="man"/> Homme</label><label><input type="checkbox" name="seeking_genders" value="nonbinary"/> Personne non binaire</label><label><input type="checkbox" name="seeking_genders" value="other"/> Autre identité</label><label><input type="checkbox" name="seeking_genders" value="prefer_not_say"/> Sans préférence déclarée</label></fieldset>
+    </section>
+
+    <section class="dating-form-section">
+      <div class="dating-form-title"><div><h3>Mon profil de compatibilité</h3><p>Utilisez des mots ou courtes expressions séparés par des virgules ou des lignes.</p></div></div>
+      <div class="dating-field-grid is-five">
+        <label class="dating-field"><strong>Mes valeurs</strong><textarea name="values_tags" placeholder="Ex. honnêteté, famille, curiosité, autonomie"></textarea></label>
+        <label class="dating-field"><strong>Mes intérêts</strong><textarea name="interests_tags" placeholder="Ex. lecture, jeux, nature, cinéma, cuisine"></textarea></label>
+        <label class="dating-field"><strong>Mon rythme de vie</strong><textarea name="lifestyle_tags" placeholder="Ex. calme, actif, maison, voyages, spontané"></textarea></label>
+        <label class="dating-field"><strong>Ma communication</strong><textarea name="communication_tags" placeholder="Ex. directe, douce, réfléchie, expressive"></textarea></label>
+        <label class="dating-field is-wide"><strong>Mes projets de relation</strong><textarea name="goals_tags" placeholder="Ex. long terme, construire ensemble, famille, stabilité"></textarea></label>
+      </div>
+    </section>
+
+    <section class="dating-form-section">
+      <div class="dating-form-title"><div><h3>Ce que je recherche chez une future partenaire ou un futur partenaire</h3><p>Décrivez une compatibilité souhaitée, pas une personne parfaite.</p></div></div>
+      <div class="dating-field-grid is-five">
+        <label class="dating-field"><strong>Valeurs recherchées</strong><textarea name="wanted_values" placeholder="Séparez les éléments par des virgules ou des lignes."></textarea></label>
+        <label class="dating-field"><strong>Intérêts recherchés</strong><textarea name="wanted_interests" placeholder="Ex. activités partagées, curiosités communes"></textarea></label>
+        <label class="dating-field"><strong>Rythme de vie recherché</strong><textarea name="wanted_lifestyle" placeholder="Ex. rythme compatible, temps calme, sorties"></textarea></label>
+        <label class="dating-field"><strong>Communication recherchée</strong><textarea name="wanted_communication" placeholder="Ex. ouverte, respectueuse, directe"></textarea></label>
+        <label class="dating-field is-wide"><strong>Projets recherchés</strong><textarea name="wanted_goals" placeholder="Ex. relation durable, projets communs, stabilité"></textarea></label>
+      </div>
+    </section>
+
+    <section class="dating-form-section">
+      <div class="dating-form-title"><div><h3>En mes mots</h3><p>Ajoutez les nuances qui ne tiennent pas dans des listes de mots-clés.</p></div></div>
+      <div class="dating-field-grid">
+        <label class="dating-field"><strong>La personne que j’espère rencontrer</strong><textarea name="partner_description" maxlength="1600" placeholder="Décrivez le type de relation et de dynamique humaine que vous recherchez."></textarea></label>
+        <label class="dating-field"><strong>Limites importantes / incompatibilités personnelles</strong><textarea name="dealbreakers" maxlength="1200" placeholder="Décrivez vos limites sans dénigrer d’autres personnes."></textarea></label>
+      </div>
+    </section>
+
+    <section class="dating-form-section">
+      <label class="dating-registry-consent"><input type="checkbox" name="use_registry_answers"/><span><strong>Utiliser volontairement certains repères non sensibles de mon questionnaire du Registre</strong><br/>Cette option peut enrichir la compatibilité. Les données sensibles du Registre ne sont pas transférées à Rencontres.</span></label>
+      <div class="dating-form-actions" style="margin-top:1rem"><button class="btn btn-primary" type="submit">Enregistrer mon profil</button><button class="btn btn-secondary" type="button" data-dating-import-registry>Importer mes repères du Registre</button></div>
+    </section>
+  </form>
+
+  <div class="dating-activation">
+    <div class="dating-activation-head"><div><h3>Activer les propositions</h3><p>Pour entrer dans les propositions, vous confirmez être majeur, célibataire, réellement disponible et à la recherche d’une relation sérieuse. Cette confirmation doit être renouvelée tous les 90 jours.</p></div><span class="dating-activation-state">Confirmation requise</span></div>
+    <div class="dating-form-actions"><button class="btn btn-primary" type="button" data-dating-confirm>Je confirme être célibataire et disponible</button><button class="btn btn-secondary" type="button" data-dating-pause>Mettre mon profil en pause</button><button class="btn btn-secondary" type="button" data-dating-partnered>Je suis maintenant en couple / indisponible</button></div>
+  </div>
+</div></div></section>
+
+<section class="section section-tight" data-dating-adult-zone><div class="account-shell"><div class="dating-section-shell">
+  <header class="dating-section-head"><span class="dating-step-number" aria-hidden="true">2</span><div class="dating-section-head-copy"><span class="eyebrow">Propositions</span><h2>Compatibilités proposées</h2><p>Chaque fiche reste volontairement sans photo, sans identité réelle et sans coordonnées directes. Le score n’est pas une promesse de relation : il aide seulement à sélectionner des conversations qui méritent une vraie chance.</p></div><button class="btn btn-secondary btn-small" type="button" data-dating-refresh>Actualiser</button></header>
+  <div class="dating-results-body"><div data-dating-candidates><p>Activez votre profil pour recevoir des propositions.</p></div></div>
+</div></div></section>
+
+<section class="section section-tight" data-dating-adult-zone><div class="account-shell"><div class="dating-section-shell">
+  <header class="dating-section-head"><span class="dating-step-number" aria-hidden="true">3</span><div class="dating-section-head-copy"><span class="eyebrow">Discussions</span><h2>Mes propositions et conversations</h2><p>Chaque conversation affiche sa progression. Le seuil 10 + 10 ouvre seulement la possibilité de consentir au dévoilement; il ne révèle rien automatiquement.</p></div></header>
+  <div class="dating-results-body"><div data-dating-connections><p>Aucune proposition ou conversation pour le moment.</p></div></div>
+</div></div></section>
+
+<section class="section section-tight" data-dating-conversation-zone hidden><div class="account-shell"><div class="dating-section-shell">
+  <header class="dating-section-head"><span class="dating-step-number" aria-hidden="true">4</span><div class="dating-section-head-copy"><span class="eyebrow">Conversation privée</span><h2 data-dating-conversation-title>Discussion anonyme</h2><p>La conversation reste anonyme jusqu’au consentement mutuel prévu par le parcours.</p></div><button class="btn btn-secondary btn-small" data-dating-close-conversation type="button">Fermer</button></header>
+  <div class="dating-conversation-shell"><div data-dating-conversation-messages class="v20-comments"></div><form data-dating-message-form class="v20-comment-form"><input name="body" maxlength="2000" required placeholder="Écrire un message texte…"/><button class="btn btn-primary btn-small" type="submit">Envoyer</button></form><p><small>Aucune pièce jointe ni image libre n’est acceptée à cette étape. Après 10 messages chacun et le consentement des deux personnes, le système peut dévoiler uniquement le pseudo et la photo de profil déjà enregistrée. Avant ce dévoilement, le chat bloque aussi les courriels, téléphones, URL et identifiants sociaux.</small></p></div>
+</div></div></section>
+
+<section class="section section-tight"><div class="account-shell"><div class="dating-section-shell"><div class="dating-safety">
+  <div><span class="eyebrow">Sécurité et respect</span><h2>Pas de promesse algorithmique</h2><p>Le moteur classe des compatibilités à partir de données déclarées. Il ne déduit pas l’orientation, le statut amoureux, la santé, la religion ou d’autres informations sensibles. Les données du Registre sont facultatives et limitées à quelques repères de personnalité explicitement sélectionnés côté serveur.</p><p>Une future couche IA pourra enrichir les explications de compatibilité seulement avec consentement et garde-fous. Elle n’est pas activée ici tant qu’un fonctionnement local, explicable et sans coût externe suffit.</p></div>
+  <div class="dating-safety-links"><a class="btn btn-secondary" href="regles-communaute.html">Règles de la communauté</a><a class="btn btn-secondary" href="securite.html">Sécurité du compte</a></div>
+</div></div></div></section>
 </main>
 <footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Rencontres SINJIRA™ — compatibilité, consentement et confidentialité.</span></div></div></footer>
 <script defer src="../assets/js/site.js?v=24.4.76"></script>
