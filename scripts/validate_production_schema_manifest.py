@@ -32,7 +32,8 @@ EXPECTED_TABLES={
 'sinjira_points_accounts','sinjira_points_ledger','dating_meet_requests',
 'security_user_settings','security_devices','security_travel_plans','security_connection_events',
 'security_events','security_connection_challenges','security_push_endpoints',
-'life_story_entries','life_story_versions','life_story_version_entries','life_story_recipients','life_story_legacy_settings'
+'life_story_entries','life_story_versions','life_story_version_entries','life_story_recipients','life_story_legacy_settings',
+'life_story_posthumous_cases','life_story_posthumous_contests','life_story_exports','life_story_delivery_links','life_story_cleanup_tasks','life_story_report_codes'
 }
 
 PLANNED_LOCAL_TABLES={
