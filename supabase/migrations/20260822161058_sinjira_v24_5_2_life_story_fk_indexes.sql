@@ -1,0 +1,11 @@
+create index if not exists life_story_cleanup_tasks_subject_fkey_idx on public.life_story_cleanup_tasks(subject_user_id);
+create index if not exists life_story_cleanup_tasks_completed_by_fkey_idx on public.life_story_cleanup_tasks(completed_by) where completed_by is not null;
+create index if not exists life_story_exports_case_subject_fkey_idx on public.life_story_exports(case_id,subject_user_id);
+create index if not exists life_story_exports_version_fkey_idx on public.life_story_exports(version_id);
+create index if not exists life_story_posthumous_cases_first_verified_by_fkey_idx on public.life_story_posthumous_cases(first_verified_by) where first_verified_by is not null;
+create index if not exists life_story_posthumous_cases_second_confirmed_by_fkey_idx on public.life_story_posthumous_cases(second_confirmed_by) where second_confirmed_by is not null;
+create index if not exists life_story_contests_case_subject_fkey_idx on public.life_story_posthumous_contests(case_id,subject_user_id);
+create index if not exists life_story_contests_resolved_by_fkey_idx on public.life_story_posthumous_contests(resolved_by) where resolved_by is not null;
+create index if not exists life_story_recipients_version_owner_fkey_idx on public.life_story_recipients(version_id,user_id);
+create index if not exists life_story_version_entries_entry_owner_fkey_idx on public.life_story_version_entries(entry_id,user_id);
+create index if not exists life_story_version_entries_version_owner_fkey_idx on public.life_story_version_entries(version_id,user_id);
