@@ -14,12 +14,13 @@
 <link href="../assets/css/v24-platform.css?v=24.1" rel="stylesheet"/>
 <link href="../assets/css/sinjira-preorders-v24-5-3.css?v=24.5.3" rel="stylesheet"/>
 <link href="../assets/css/sinjira-preorder-commercial-v24-5-5.css?v=24.5.5" rel="stylesheet"/>
+<link href="../assets/css/sinjira-preorder-fulfillment-v24-5-6.css?v=24.5.6" rel="stylesheet"/>
 </head>
 <body class="account-page" data-v20-page="purchases">
 <header class="site-header"><div class="container nav-shell"><a class="brand" href="/"><img alt="" height="47" src="../assets/media/sinjira-emblem.webp" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Compte universel</span></span></a><nav class="main-nav"><a href="../projets/sinjira/romans/">Littérature</a><a href="../projets/sinjira/jeux/">Jeux</a><a href="../projets/sinjira/registre/">Registre</a></nav></div></header>
 <div class="account-shell account-nav-scroll"><nav aria-label="Navigation du compte" class="account-nav"><a href="index.html">Mon espace</a><a href="bibliotheque.html">Ma bibliothèque</a><a href="licences.html">Licences</a><a href="mon-personnage.html">Mon personnage</a><a href="relations.html">Relations</a><a href="monde-parallele.html">Monde parallèle</a><a href="mes-parties.html">Mes parties</a><a aria-current="page" href="mes-achats.html">Mes achats</a><a href="marche.html">Marché</a><a href="jetons.html">Jetons</a><a href="communaute.html">Communauté</a><a href="reseau-personnage.html">Réseau personnage</a><a href="messages.html">Messages</a><a href="profil.html">Profil</a><a href="securite.html">Sécurité</a><a href="parametres.html">Paramètres</a><a data-admin-nav hidden href="/admin/sinjira/">Administration</a><button data-logout type="button">Déconnexion</button></nav></div>
 <main>
-<section class="account-hero"><div class="account-shell"><span class="eyebrow">Boutique et réservations SINJIRA™</span><h1>Mes achats et précommandes</h1><p>Les achats payants restent désactivés. Cette page peut toutefois enregistrer vos réservations de précommande sans demander de carte bancaire ni effectuer de transaction.</p></div></section>
+<section class="account-hero"><div class="account-shell"><span class="eyebrow">Boutique et réservations SINJIRA™</span><h1>Mes achats et précommandes</h1><p>Les achats payants restent désactivés. Cette page peut toutefois enregistrer vos réservations de précommande sans demander de carte bancaire ni effectuer de transaction. Pour un livre physique expédié, les frais de livraison seront à votre charge; le ramassage sur place pourra être choisi lorsqu’un lieu public de retrait sera disponible.</p></div></section>
 <section class="section section-tight" id="precommandes"><div class="account-shell">
 <article class="v20-purchase-card sinjira-preorder-account-card" data-preorder-root>
 <span class="eyebrow">Livre I · Réservation sans paiement</span>
@@ -46,6 +47,21 @@
 </div>
 </article>
 </div></section>
+
+<section class="section section-tight"><div class="account-shell"><article class="v20-purchase-card sinjira-fulfillment-card" data-preorder-fulfillment>
+<span class="eyebrow">V24.5.6 · réception du Livre I</span><h2>Livraison ou ramassage sur place</h2>
+<div class="sinjira-shipping-warning"><strong>Les frais de livraison seront à la charge du client.</strong><span>Ils ne sont pas compris dans la réservation. Une estimation peut être affichée avant l’achat et le montant final devra être présenté avant tout paiement. Si vous choisissez le ramassage sur place, aucun frais de livraison ne sera ajouté.</span></div>
+<div class="sinjira-fulfillment-grid">
+<div class="sinjira-fulfillment-panel"><h3>Estimation des frais de livraison</h3><p>Le calcul utilise uniquement une zone publiée et la quantité; aucune adresse n’est enregistrée.</p><div class="sinjira-fulfillment-empty" data-pf-estimator-empty>Aucune fourchette de livraison n’est encore publiée. Elle sera ajoutée lorsque les coûts d’expédition réels pourront être estimés de façon raisonnable.</div><div data-pf-estimator hidden><div class="sinjira-estimator-controls"><label>Zone<select data-pf-zone></select></label><label>Quantité<select data-pf-quantity><option value="1">1 exemplaire</option><option value="2">2 exemplaires</option><option value="3">3 exemplaires</option><option value="4">4 exemplaires</option><option value="5">5 exemplaires</option></select></label><button class="btn btn-secondary" data-pf-estimate type="button">Estimer</button></div></div><div class="sinjira-estimator-result" data-pf-estimate-result hidden></div></div>
+<div class="sinjira-fulfillment-panel"><h3>Points de ramassage</h3><p>Les lieux apparaîtront uniquement lorsqu’ils auront été confirmés pour le public.</p><div class="sinjira-fulfillment-empty" data-pf-pickup-empty>Vous pouvez déjà choisir « ramassage sur place » comme préférence; le lieu pourra être confirmé plus tard.</div><div class="sinjira-pickup-list" data-pf-pickup-list hidden></div><p class="sinjira-pickup-zero">Frais de livraison pour un ramassage : 0 $.</p></div>
+</div>
+<div class="sinjira-fulfillment-auth" data-pf-preference-auth hidden><strong>Connexion requise</strong><span>Connectez-vous pour enregistrer une préférence de réception.</span></div>
+<div class="sinjira-fulfillment-no-preorder" data-pf-no-preorder hidden><strong>Aucune précommande active</strong><span>Réservez ou réactivez d’abord le Livre I ci-dessus.</span></div>
+<div class="sinjira-fulfillment-choice" data-pf-preference-panel hidden><label>Ma préférence<select data-pf-method><option value="undecided">Je déciderai plus tard</option><option value="shipping">Livraison — frais à ma charge</option><option value="pickup">Ramassage sur place — sans frais de livraison</option></select></label><label data-pf-pickup-select-wrap hidden>Point de ramassage<select data-pf-pickup-select><option value="">Lieu à confirmer plus tard</option></select></label><button class="btn btn-primary" data-pf-save-preference type="button">Enregistrer</button></div>
+<div class="account-status" data-pf-preference-status hidden></div>
+<p class="sinjira-fulfillment-fineprint">Cette préférence n’est pas une commande. Le choix final, l’adresse d’expédition éventuelle et le coût réel devront être confirmés dans un futur parcours d’achat distinct.</p>
+</article></div></section>
+
 <section class="section section-tight"><div class="account-shell"><article class="v20-purchase-card"><span class="eyebrow">Achats payants</span><h2>Aucun achat payant associé pour le moment</h2><p><strong>La boutique n’est pas encore ouverte.</strong> La boutique transactionnelle et les paiements restent désactivés. Lorsque la vente en ligne sera explicitement activée, les commandes réellement payées, téléchargements et reçus pourront apparaître ici séparément des réservations de précommande.</p></article></div></section>
 </main>
 <footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Compte SINJIRA™ — paiements désactivés.</span></div></div></footer>
@@ -53,5 +69,6 @@
 <script src="../assets/js/sinjira-account.js?v=19.0" type="module"></script>
 <script src="../assets/js/sinjira-preorders-v24-5-3.js?v=24.5.3" type="module"></script>
 <script src="../assets/js/sinjira-preorder-commercial-v24-5-5.js?v=24.5.5" type="module"></script>
+<script src="../assets/js/sinjira-preorder-fulfillment-v24-5-6.js?v=24.5.6" type="module"></script>
 </body>
 </html>

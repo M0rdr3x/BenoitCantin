@@ -1,6 +1,6 @@
 # SINJIRA™ — Politique des services externes payants
 
-**Statut : garde-fou produit et déploiement — V24.5.5**
+**Statut : garde-fou produit et déploiement — V24.5.6**
 
 SINJIRA peut préparer le code, les interfaces, les contrats techniques et les points d’intégration nécessaires à de futurs services externes. **Préparer une intégration ne constitue jamais une autorisation de l’activer.**
 
@@ -14,6 +14,7 @@ Cette règle couvre notamment :
 - IA distante facturée à l’usage;
 - fournisseurs externes de courriel transactionnel;
 - fournisseurs SMS/téléphonie payants;
+- transporteurs, agrégateurs de tarifs et achats d’étiquettes d’expédition;
 - publication commerciale nécessitant une infrastructure payante;
 - soumission App Store / Google Play lorsqu’elle exige un compte développeur payant ou une action de publication;
 - tout autre service tiers dont l’activation peut créer une dépense.
@@ -116,6 +117,26 @@ Une fiche publiée est versionnée et devient immuable. Une modification future 
 - n’active aucun fournisseur de production, de livraison ou de paiement.
 
 L’activation réelle d’une vente reste donc une décision future séparée.
+
+### Livraison et ramassage V24.5.6
+
+La V24.5.6 prépare le parcours de réception du Livre I sans activer de transporteur externe.
+
+La règle publique est : **pour un exemplaire physique expédié, les frais de livraison sont à la charge du client**. Une estimation peut être affichée par zone, mais le coût réel doit être confirmé avant tout futur paiement.
+
+Le ramassage sur place peut être choisi comme préférence et n’ajoute aucun frais de livraison. Une adresse de retrait ne devient visible qu’après publication explicite par l’administration MFA/AAL2.
+
+Les garde-fous serveur sont :
+
+```text
+shipping_customer_pays = true
+pickup_interest_enabled = true
+external_carrier_api_enabled = false
+external_shipping_purchase_enabled = false
+pickup_shipping_charge_cents = 0
+```
+
+Les fourchettes de livraison sont gérées localement par SINJIRA. V24.5.6 n’appelle aucune API Canada Post, UPS, FedEx, Purolator ou autre transporteur et n’achète aucune étiquette d’expédition.
 
 ## Héritage numérique
 
