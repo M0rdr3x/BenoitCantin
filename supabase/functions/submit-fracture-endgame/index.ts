@@ -7,6 +7,7 @@ const cors={
   'Vary':'Origin'
 };
 const json=(x:unknown,status=200)=>new Response(JSON.stringify(x),{status,headers:{...cors,'Content-Type':'application/json; charset=utf-8'}});
+const PAID_EXTERNAL_SERVICES_ENABLED=false;
 function service(){
   const url=Deno.env.get('SUPABASE_URL'),key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if(!url||!key)throw new Error('SERVER_CONFIG');
@@ -67,7 +68,7 @@ Deno.serve(async(req)=>{
 
     let email_sent=false;
     const resend=Deno.env.get('RESEND_API_KEY'),from=Deno.env.get('REPORT_FROM_EMAIL'),to=Deno.env.get('FRACTURE_REPORT_TO_EMAIL')||'kingtyrano@gmail.com';
-    if(resend&&from){
+    if(PAID_EXTERNAL_SERVICES_ENABLED&&resend&&from){
       const bodyText=[
         `Fracture du Réseau-Mère — fin de partie ${party.party_code}`,
         `Humains : ${party.human_player_count}`,
@@ -85,7 +86,7 @@ Deno.serve(async(req)=>{
       const r=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${resend}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[to],subject:`SINJIRA — Fin de partie ${party.party_code}`,text:bodyText})});
       email_sent=r.ok;
     }
-    return json({ok:true,email_sent});
+    return json({ok:true,email_sent,paid_external_services_enabled:PAID_EXTERNAL_SERVICES_ENABLED});
   }catch(e){
     console.error(e);
     if(e?.message==='AUTH')return json({ok:false,error:'Connexion requise.'},401);
