@@ -16,6 +16,7 @@ CONFIG=ROOT/'supabase'/'config.toml'
 ENGINE_VERSION='24.4.6'
 UI_VERSION='24.4.24'
 PRIVACY_VERSION='24.4.15'
+REPORT_FUNCTION_VERSION='24.5.2'
 
 
 def latest_block(sql_files,name):
@@ -175,23 +176,31 @@ def main()->int:
   if 'verify_jwt = true' not in stanza:
    errors.append('supabase/config.toml ne protège pas fracture-engine-gateway avec verify_jwt=true.')
 
- # Report delivery hardening: no caller-selected email relay.
+ # Report delivery hardening: no caller-selected email relay and no paid transport while free-only mode is active.
  if not report_fn:
   errors.append('send-game-report Edge Function absente.')
  else:
   compact_report=re.sub(r'\s+','',report_fn)
-  if "FUNCTION_VERSION='24.4.15'" not in report_fn:
-   errors.append('send-game-report n’est pas la version durcie 24.4.15.')
+  if f"FUNCTION_VERSION='{REPORT_FUNCTION_VERSION}'" not in report_fn:
+   errors.append(f'send-game-report n’est pas la version durcie {REPORT_FUNCTION_VERSION}.')
   if 'body?.email' in report_fn or 'body.email' in report_fn:
    errors.append('send-game-report accepte encore une adresse courriel fournie par le navigateur.')
   if 'if(!user?.email)' not in compact_report or 'to:[user.email]' not in compact_report:
    errors.append('send-game-report ne verrouille pas le destinataire sur le compte authentifié.')
+  if 'constPAID_EXTERNAL_SERVICES_ENABLED=false;' not in compact_report:
+   errors.append('send-game-report peut perdre le verrou de transport externe payant.')
+  if "if(!PAID_EXTERNAL_SERVICES_ENABLED)" not in report_fn:
+   errors.append('send-game-report ne refuse plus explicitement le transport courriel externe désactivé.')
+  disabled_pos=report_fn.find('if (!PAID_EXTERNAL_SERVICES_ENABLED)')
+  resend_pos=report_fn.find("fetch('https://api.resend.com/emails'")
+  if disabled_pos < 0 or resend_pos < 0 or disabled_pos > resend_pos:
+   errors.append('send-game-report pourrait atteindre Resend avant le verrou de service payant.')
 
  if errors:
   print(f'ECHEC Fracture: {len(errors)} problème(s).')
   for e in errors: print('- '+e)
   return 1
- print(f'OK Fracture: moteur {ENGINE_VERSION}, interface {UI_VERSION}, carte identité privée pendant le jeu, révélation finale sans doublon privé, identités adverses masquées, sélections persistantes, dos officiel, passerelle d’action, état serveur assaini, RLS, vote final immuable et contrôle de licence vérifiés.')
+ print(f'OK Fracture: moteur {ENGINE_VERSION}, interface {UI_VERSION}, confidentialité {PRIVACY_VERSION}, rapport {REPORT_FUNCTION_VERSION} avec transport externe verrouillé, état serveur assaini, RLS, vote final immuable et contrôle de licence vérifiés.')
  return 0
 
 if __name__=='__main__': raise SystemExit(main())
