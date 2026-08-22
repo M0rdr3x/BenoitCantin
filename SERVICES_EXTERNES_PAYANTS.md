@@ -1,6 +1,6 @@
 # SINJIRA™ — Politique des services externes payants
 
-**Statut : garde-fou produit et déploiement — V24.5.4**
+**Statut : garde-fou produit et déploiement — V24.5.5**
 
 SINJIRA peut préparer le code, les interfaces, les contrats techniques et les points d’intégration nécessaires à de futurs services externes. **Préparer une intégration ne constitue jamais une autorisation de l’activer.**
 
@@ -89,6 +89,33 @@ payment_activation_allowed = false
 ```
 
 L’action d’envoi V24.5.4 écrit uniquement dans `user_notifications`. Elle ne doit appeler aucun fournisseur de courriel ou SMS, ne doit ouvrir aucun checkout et ne doit convertir aucune réservation en commande. Le prix éventuellement saisi dans la console est un texte informatif destiné à préparer la communication; il n’autorise aucun débit.
+
+### Préparation commerciale V24.5.5
+
+La V24.5.5 permet de préparer puis de publier **uniquement de l’information commerciale** : devise, prix confirmés, éditions, date de sortie, fin éventuelle des réservations, disponibilité et résumé des conditions.
+
+Aucun prix, aucune édition et aucune date ne sont créés automatiquement. Tant qu’une fiche n’a pas été complétée, marquée prête puis publiée par un administrateur avec MFA/AAL2, les pages utilisateur indiquent simplement que ces informations ne sont pas encore annoncées.
+
+La table `preorder_commercial_plans` impose en base :
+
+```text
+sales_enabled = false
+checkout_enabled = false
+payment_enabled = false
+external_fulfillment_enabled = false
+auto_conversion_allowed = false
+```
+
+Une fiche publiée est versionnée et devient immuable. Une modification future passe par une nouvelle révision. Publier une fiche commerciale :
+
+- ne crée aucune ligne dans `orders` ou `order_items`;
+- ne transforme aucune réservation en commande;
+- ne prélève aucun paiement;
+- ne déclenche aucun checkout;
+- n’envoie aucun courriel, SMS ou notification interne;
+- n’active aucun fournisseur de production, de livraison ou de paiement.
+
+L’activation réelle d’une vente reste donc une décision future séparée.
 
 ## Héritage numérique
 

@@ -24,6 +24,11 @@ def require(errors, text, markers, label):
             errors.append(f'{label}: marqueur absent: {marker}')
 
 
+def require_any(errors, text, markers, label):
+    if not any(marker in text for marker in markers):
+        errors.append(f'{label}: aucun marqueur équivalent trouvé: {" | ".join(markers)}')
+
+
 def forbid(errors, text, markers, label):
     low = text.lower()
     for marker in markers:
@@ -74,11 +79,14 @@ def main():
     require(errors, html, [
         'Précommandes du Livre I', 'MFA requis',
         'Réservations actives', 'Exemplaires souhaités', 'À avertir dans SINJIRA',
-        'Préparer l’ouverture future des ventes',
         'Enregistrer le brouillon', 'Marquer prêt', 'Envoyer l’avis interne',
         'Transport externe', 'désactivé', 'Paiement', 'Conversion automatique en commande',
         'Aucun courriel, adresse postale ou identifiant technique n’est affiché ici.'
     ], 'Interface admin')
+    require_any(errors, html, [
+        'Préparer l’ouverture future des ventes',
+        'Préparer l’avis d’ouverture futur'
+    ], 'Interface admin — module d’avis')
     forbid(errors, html, ['Stripe', 'PayPal', 'Numéro de carte', 'Adresse de facturation'], 'Interface admin')
 
     require(errors, js, [
@@ -109,7 +117,7 @@ def main():
         print(f'ECHEC V24.5.4 administration précommandes: {len(errors)} problème(s).')
         for e in errors: print('- ' + e)
         return 1
-    print('OK V24.5.4: statistiques admin, MFA/AAL2, brouillon→prêt→avis interne et verrou paiement/services externes validés.')
+    print('OK V24.5.4: statistiques admin, MFA/AAL2, brouillon→prêt→avis interne et verrou paiement/services externes validés sur la console actuelle.')
     return 0
 
 

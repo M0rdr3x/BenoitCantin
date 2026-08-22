@@ -1,6 +1,6 @@
 # SINJIRA™ — Précommandes du Livre I
 
-**Version : V24.5.3**  
+**Version : V24.5.5**  
 **Statut : canon produit et architecture**  
 **Produit initial : SINJIRA™ — Livre I : La Cendre du Jugement**
 
@@ -12,7 +12,7 @@ Cette phase sert à enregistrer l’intention d’achat et à mesurer la demande
 
 ## 2. Règle financière absolue de cette phase
 
-En V24.5.3 :
+En V24.5.3 et versions préparatoires suivantes :
 
 - aucun paiement n’est prélevé;
 - aucune carte bancaire n’est demandée;
@@ -30,7 +30,7 @@ payment_status = not_collected
 financial_commitment = false
 ```
 
-Ces deux valeurs sont des invariants serveur de la V24.5.3.
+Ces deux valeurs restent des invariants serveur tant que la réservation n’a pas été remplacée par un futur parcours d’achat explicitement consenti.
 
 ## 3. Parcours utilisateur
 
@@ -91,11 +91,51 @@ name: SINJIRA™ — Livre I : La Cendre du Jugement
 product_type: novel
 ```
 
-Aucun prix n’est défini par cette migration.
+Aucun prix n’est défini automatiquement.
 
-## 8. Frontière avec les commandes payantes
+## 8. Information commerciale V24.5.5
 
-`product_preorders` est distinct de `orders` et `order_items`.
+La V24.5.5 ajoute une fiche commerciale versionnée distincte de la réservation. Elle peut contenir, une fois les décisions humaines prises :
+
+- la devise;
+- le prix et le libellé d’une édition papier;
+- le prix et le libellé d’une édition numérique;
+- la date de sortie annoncée;
+- la fin éventuelle des réservations;
+- une note de disponibilité;
+- un résumé des conditions.
+
+Aucune de ces valeurs n’est inventée ni préremplie par la migration.
+
+Le parcours de publication est :
+
+```text
+brouillon privé
+      ↓
+prêt après vérification de complétude
+      ↓
+publication informative
+```
+
+Une publication informative ne constitue pas une ouverture des ventes. Elle ne crée ni commande, ni notification, ni paiement.
+
+Les cinq verrous serveur demeurent :
+
+```text
+sales_enabled = false
+checkout_enabled = false
+payment_enabled = false
+external_fulfillment_enabled = false
+auto_conversion_allowed = false
+```
+
+Une révision publiée est immuable. Une future correction ou modification passe par une nouvelle révision afin de préserver ce qui avait été présenté aux personnes.
+
+Le protocole détaillé est défini dans `PREPARATION_COMMERCIALE_LIVRE_I_V24_5_5.md`.
+
+## 9. Frontière avec les commandes payantes
+
+`product_preorders` et `preorder_commercial_plans` sont distincts de `orders` et `order_items`.
 
 Une future ouverture des ventes doit être une nouvelle phase explicite. Une réservation peut alors permettre d’inviter la personne à commander, mais la création d’une commande payante doit exiger une nouvelle action volontaire et l’acceptation des conditions alors en vigueur.
 
@@ -121,11 +161,11 @@ Réservation de précommande
 Débit automatique / commande automatique
 ```
 
-## 9. Services externes
+## 10. Services externes
 
 Cette fonctionnalité respecte `SERVICES_EXTERNES_PAYANTS.md` : le système de paiement futur peut être préparé en code, mais il reste désactivé tant qu’une autorisation séparée n’a pas été donnée.
 
-## 10. Principe d’arbitrage
+## 11. Principe d’arbitrage
 
 La précommande doit réduire la friction pour la personne sans lui retirer son choix.
 
