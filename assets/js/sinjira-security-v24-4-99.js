@@ -23,9 +23,10 @@ function addPasskeyReadiness(){
   if(!anchor||document.querySelector('[data-passkey-readiness]'))return;
   const supported=typeof globalThis.PublicKeyCredential!=='undefined';
   const section=document.createElement('section');
-  section.className='section section-tight';
+  section.className='security-card security-section-card';
   section.setAttribute('data-passkey-readiness','');
-  section.innerHTML=`<div class="section-heading"><span class="eyebrow">Passkeys</span><h2>Préparation WebAuthn</h2><p>Les passkeys seront activées lorsque <strong>sinjira.com</strong> sera le domaine définitif de SINJIRA. Elles ne sont pas créées sur le domaine temporaire actuel afin d’éviter une migration d’identifiants.</p></div><article class="account-card"><p><strong>${supported?'Cet appareil prend en charge les passkeys.':'Compatibilité passkey non détectée sur ce navigateur.'}</strong></p><p class="v24-feature-note">État : préparé, non activé. Aucun identifiant WebAuthn n’est créé tant que le RP ID définitif n’est pas sinjira.com.</p></article>`;
+  section.setAttribute('aria-labelledby','passkey-readiness-title');
+  section.innerHTML=`<div class="security-card-head"><div><h2 id="passkey-readiness-title">Passkeys</h2><p>Préparation WebAuthn pour le futur domaine définitif de SINJIRA.</p></div><span class="security-state-chip">Préparé</span></div><p><strong>${supported?'Cet appareil prend en charge les passkeys.':'Compatibilité passkey non détectée sur ce navigateur.'}</strong></p><p class="v24-feature-note">État : préparé, non activé. Aucun identifiant WebAuthn n’est créé tant que le RP ID définitif n’est pas <strong>sinjira.com</strong>.</p>`;
   anchor.insertAdjacentElement('afterend',section);
 }
 
