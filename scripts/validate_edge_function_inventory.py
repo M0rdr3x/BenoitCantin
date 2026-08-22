@@ -20,6 +20,7 @@ CANONICAL = {
     "get-document-url",
     "redeem-license-code",
     "revoke-my-contributions",
+    "security-context",
     "send-game-report",
     "send-player-sheet",
     "submit-character-questionnaire",
@@ -165,7 +166,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK inventaire Edge Functions: 17 fonctions canoniques, configuration JWT cohérente, "
+        "OK inventaire Edge Functions: 18 fonctions canoniques, configuration JWT cohérente, "
         "garde-fous des 2 fonctions publiques vérifiés et aucun ancien appel Edge référencé."
     )
     return 0

@@ -1,6 +1,6 @@
 {
   "name": "sinjira-mobile-native",
-  "version": "24.4.96",
+  "version": "24.4.98",
   "private": true,
   "main": "index.ts",
   "scripts": {
@@ -12,6 +12,10 @@
   },
   "dependencies": {
     "expo": "~57.0.9",
+    "expo-constants": "~57.0.8",
+    "expo-local-authentication": "~57.0.2",
+    "expo-notifications": "~57.0.8",
+    "expo-secure-store": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
     "react-native": "0.86.2",

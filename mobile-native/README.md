@@ -1,26 +1,14 @@
-# SINJIRA™ Mobile Native — V24.4.97
+# SINJIRA™ Mobile Native — V24.4.98
 
 Application iOS/iPadOS et Android de SINJIRA™.
 
-> Référence normative : [`../CAHIER_MAITRE_SINJIRA.md`](../CAHIER_MAITRE_SINJIRA.md). L’application mobile doit respecter le principe **L’humain avant tout** et la règle **protéger sans surveiller**.
+> Référence normative : [`../CAHIER_MAITRE_SINJIRA.md`](../CAHIER_MAITRE_SINJIRA.md). L’application mobile respecte **L’humain avant tout** et la règle **protéger sans surveiller**.
 
 ## Principe d’architecture
 
-Cette application ne crée **aucun second compte SINJIRA, aucune seconde base sociale et aucune copie des données**. Elle utilise le site mobile-first existant comme surface fonctionnelle commune dans un conteneur natif Expo/React Native.
+Cette application ne crée **aucun second compte SINJIRA, aucune seconde base sociale et aucune copie indépendante des données**. Elle utilise le même Compte universel et la même plateforme Supabase que le Web.
 
-Cette stratégie donne immédiatement une application installable depuis les stores tout en conservant les fonctions existantes :
-
-- Fil de la Communauté;
-- Monde parallèle;
-- Messages;
-- Notifications;
-- Profil;
-- Registre des Consciences;
-- Réseau personnage;
-- Rencontres 18+;
-- Compte, sécurité, modération et autres écrans déjà disponibles sur le Web.
-
-Les écrans pourront ensuite être migrés progressivement vers des composants React Native natifs sans changer les comptes ni Supabase.
+Le conteneur Expo/React Native conserve immédiatement l’accès aux fonctions Web existantes tout en ajoutant progressivement les capacités natives nécessaires à la sécurité.
 
 ## Plateformes
 
@@ -30,41 +18,73 @@ Le socle utilise Expo SDK 57 / React Native 0.86.
 - iOS/iPadOS : iOS 16.4 et versions ultérieures prises en charge par Expo SDK 57;
 - appareils non couverts : la PWA SINJIRA reste disponible depuis le navigateur.
 
-## Sécurité et vie privée
+## V24.4.98 — sécurité native mise en place
 
-- HTTPS seulement pour le domaine SINJIRA;
-- aucun secret Supabase embarqué dans ce shell;
-- cookies et stockage WebView persistants pour conserver la session de l’utilisateur;
-- liens externes ouverts hors du conteneur SINJIRA;
-- aucune permission appareil ajoutée par défaut;
-- aucune géolocalisation ajoutée par cette version;
-- aucune nouvelle collecte de données;
-- les futures données de localisation de sécurité doivent rester approximatives, minimisées et séparées des usages commerciaux, sociaux, Rencontres et Emploi;
-- le Registre des Consciences et l’IA personnelle sont classés comme zones extrêmement sensibles;
-- les notifications sur écran verrouillé ne doivent pas révéler de contenu extrêmement privé.
+### Identité d’appareil
 
-## Centre de sécurité mobile visé
+- un identifiant aléatoire opaque est créé par l’application;
+- il est conservé dans `expo-secure-store`;
+- le même identifiant est transmis au WebView pour relier l’application au Centre **Ma sécurité**;
+- il ne s’agit pas d’une empreinte publicitaire ou d’un fingerprint du téléphone;
+- aucune adresse IP brute ni donnée GPS n’est utilisée pour produire cet identifiant.
 
-L’application doit progressivement offrir un accès direct à :
+### Protection biométrique locale
 
-- Mes appareils;
-- Connexions récentes;
-- Mode Voyage;
-- Passkeys et authentification;
-- approbation ou refus d’une nouvelle connexion;
-- Téléphone perdu;
-- Compte compromis;
-- Récupération du compte.
+L’utilisateur peut choisir d’activer un verrou local avec Face ID, Touch ID ou l’authentification biométrique Android.
 
-Le téléphone peut devenir l’appareil principal de confiance de l’utilisateur, sans devenir un outil de suivi permanent de sa localisation.
+- activation volontaire seulement;
+- la biométrie reste gérée par le système d’exploitation;
+- SINJIRA ne reçoit ni visage ni empreinte;
+- l’application se reverrouille lorsqu’elle passe en arrière-plan;
+- si aucune biométrie utilisable ne reste configurée, le verrou local est désactivé afin de ne pas enfermer la personne hors de son propre compte.
+
+### Notifications push de sécurité
+
+L’utilisateur peut choisir d’activer les notifications natives de sécurité.
+
+- permission demandée seulement après action explicite;
+- jeton push conservé dans le stockage sécurisé local puis enregistré côté serveur;
+- contenu volontairement générique sur l’écran verrouillé;
+- aucune localisation précise, confidence, donnée de santé ou interprétation psychologique dans une alerte push;
+- l’app ouvre le Centre **Ma sécurité** lorsqu’une alerte correspondante est touchée;
+- l’inscription push reste inactive tant que le projet n’est pas relié à un identifiant EAS réel.
+
+### Accès rapide
+
+La barre d’accès mobile inclut maintenant **Sécurité**, Registre, Personnage et Rencontres. Le Centre **Ma sécurité** permet la gestion des appareils, sessions, Mode Voyage, alertes et connexions à confirmer.
+
+## Bouclier de connexion
+
+Le moteur serveur V24.4.98 combine plusieurs signaux : appareil nouveau ou non fiable, changement de pays approximatif lorsqu’une infrastructure de confiance le fournit, déplacement temporellement improbable, Mode Voyage et sensibilité de l’action.
+
+Un pays ou une région ne suffit jamais à conclure qu’une connexion est frauduleuse.
+
+La géolocalisation de sécurité est **désactivée par défaut** dans l’Edge Function. Elle ne peut être activée que par une infrastructure SINJIRA contrôlée qui fournit une région approximative fiable. Le moteur ne lit ni ne stocke l’adresse IP brute et ne demande pas le GPS du téléphone.
+
+## Passkeys — préparation, pas encore activation production
+
+Le projet prévoit les passkeys, mais elles ne doivent pas être activées précipitamment sur l’ancien domaine.
+
+WebAuthn lie les passkeys à un **RP ID**. Comme `sinjira.com` est réservé et destiné à devenir le domaine principal, l’activation production sera faite après le choix définitif du domaine et la configuration correspondante dans Supabase Auth. Cela évite de créer aujourd’hui des passkeys liées à `benoitcantin.com` qu’une migration ultérieure pourrait rendre inutilisables.
+
+En attendant, TOTP/AAL2 et la biométrie locale assurent le step-up disponible dans la V24.4.98.
+
+## Vie privée
+
+- HTTPS seulement;
+- aucun secret Supabase embarqué dans l’application;
+- aucune géolocalisation GPS ajoutée;
+- aucune donnée de sécurité réutilisée pour publicité, Communauté, Rencontres ou Emploi;
+- notifications sensibles discrètes;
+- Registre et IA privée classés comme zones extrêmement sensibles;
+- même Compte universel entre Web et application.
 
 ## Développement
-
-Prérequis : Node.js compatible avec Expo SDK 57.
 
 ```bash
 cd mobile-native
 npm install
+npm run typecheck
 npm run start
 ```
 
@@ -81,22 +101,19 @@ Le fichier `eas.json` prépare les profils development, preview et production.
 
 Avant publication réelle :
 
-1. relier le projet à un compte Expo/EAS;
+1. relier le projet à un compte Expo/EAS et obtenir le `projectId`;
 2. configurer les certificats/signatures Apple et Google;
 3. créer les fiches App Store Connect et Google Play Console;
-4. finaliser les fichiers d’association de domaine pour Universal Links / Android App Links avec les identifiants de signature réels;
-5. tester connexion, récupération de session, retour arrière Android, ouverture des liens et réinstallation;
-6. vérifier les politiques des stores au moment de la soumission.
+4. finaliser Universal Links / Android App Links avec les signatures réelles;
+5. configurer le domaine final `sinjira.com` lorsque sa migration sera décidée;
+6. activer et tester les passkeys seulement avec le RP ID final;
+7. tester connexion, MFA, biométrie, push, Mode Voyage, récupération de session et réinstallation;
+8. vérifier les politiques des stores au moment de la soumission.
 
-## Étapes natives suivantes
+## Prochaines migrations natives
 
-Priorité recommandée après ce socle :
-
-1. notifications push natives, avec contenu discret pour les alertes sensibles;
-2. partage natif de liens SINJIRA;
-3. biométrie locale pour protéger la reprise de session et les zones extrêmement sensibles;
-4. passkeys et approbation de connexion depuis l’appareil de confiance;
-5. navigation profonde complète;
-6. accès rapide au Centre de sécurité;
-7. intégration côté serveur du Bouclier de connexion contextuel et du Mode Voyage;
-8. migration progressive des écrans les plus utilisés vers React Native sans dupliquer les comptes ni les données.
+- partage natif de liens SINJIRA;
+- navigation profonde complète;
+- écrans React Native natifs pour les parcours les plus utilisés;
+- passkeys après activation du domaine/RP ID final;
+- amélioration du parcours de récupération sans diminuer la protection du Registre.

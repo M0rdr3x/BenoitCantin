@@ -10,6 +10,7 @@ CONFIG=ROOT/'supabase'/'config.toml'
 FRONTEND=ROOT/'assets'/'js'/'sinjira-supabase-config.js'
 WORKFLOW=ROOT/'.github'/'workflows'/'supabase-production-preflight.yml'
 EXPECTED='24.4.13'
+REGISTRY_EXPECTED='24.4.98'
 PROJECT='gpvivleexywljowcqkru'
 
 def read(p:Path)->str:return p.read_text('utf-8',errors='ignore')
@@ -74,7 +75,7 @@ def main()->int:
         t=read(registry)
         for needle in ("persisted:true","version:VERSION","admin_notification_created","admin_email_sent","participant_email_sent","body?.health===true"):
             if needle not in t:fail(errors,f'Contrat Registre incomplet: {needle}')
-        if f"const VERSION='{EXPECTED}'" not in t:fail(errors,f'Version Edge Registre différente de {EXPECTED}.')
+        if f"const VERSION='{REGISTRY_EXPECTED}'" not in t:fail(errors,f'Version Edge Registre différente de {REGISTRY_EXPECTED}.')
 
     config=read(CONFIG) if CONFIG.exists() else ''
     if f'project_id = "{PROJECT}"' not in config:fail(errors,'config.toml pointe vers le mauvais projet.')
@@ -105,7 +106,7 @@ def main()->int:
         if 'security definer' in block.lower() and 'set search_path' not in block.lower():
             m=re.search(r'function\s+(?:(?:public|private)\.)?([a-z_][a-z0-9_]*)',block,re.I);fail(errors,f'SECURITY DEFINER sans search_path: {m.group(1) if m else "inconnue"}')
 
-    print(f'Validation Supabase V{EXPECTED}: {len(files)} migrations, {len(tables)} tables, {len(funcs)} RPC, {len(function_dirs)} Edge Functions.')
+    print(f'Validation Supabase plateforme V{EXPECTED} / Registre V{REGISTRY_EXPECTED}: {len(files)} migrations, {len(tables)} tables, {len(funcs)} RPC, {len(function_dirs)} Edge Functions.')
     if errors:
         print(f'ECHEC: {len(errors)} problème(s).')
         for e in errors:print('- '+e)
