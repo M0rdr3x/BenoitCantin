@@ -22,6 +22,7 @@ on:
       - 'supabase/migrations/20260822153451_sinjira_v24_5_2_legacy_pipeline_hardening.sql'
       - 'supabase/migrations/20260822154317_sinjira_v24_5_2_admin_legacy_queue.sql'
       - 'supabase/migrations/20260822154450_sinjira_v24_5_2_private_death_report_codes.sql'
+      - 'supabase/migrations/20260822161058_sinjira_v24_5_2_life_story_fk_indexes.sql'
       - 'supabase/production-migration-ledger.txt'
       - 'scripts/validate_life_story_legacy_v24_5_2.py'
       - 'scripts/validate_production_migration_ledger.py'
@@ -41,6 +42,7 @@ on:
       - 'HERITAGE_NUMERIQUE_V24_5_2.md'
       - 'supabase/functions/life-story-export/**'
       - 'supabase/functions/life-story-delivery/**'
+      - 'supabase/migrations/20260822161058_sinjira_v24_5_2_life_story_fk_indexes.sql'
       - 'scripts/validate_life_story_legacy_v24_5_2.py'
 
 permissions:
