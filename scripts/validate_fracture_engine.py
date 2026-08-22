@@ -189,7 +189,7 @@ def main()->int:
    errors.append('send-game-report ne verrouille pas le destinataire sur le compte authentifié.')
   if 'constPAID_EXTERNAL_SERVICES_ENABLED=false;' not in compact_report:
    errors.append('send-game-report peut perdre le verrou de transport externe payant.')
-  if "if(!PAID_EXTERNAL_SERVICES_ENABLED)" not in report_fn:
+  if 'if(!PAID_EXTERNAL_SERVICES_ENABLED)' not in compact_report:
    errors.append('send-game-report ne refuse plus explicitement le transport courriel externe désactivé.')
   disabled_pos=report_fn.find('if (!PAID_EXTERNAL_SERVICES_ENABLED)')
   resend_pos=report_fn.find("fetch('https://api.resend.com/emails'")
