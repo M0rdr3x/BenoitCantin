@@ -1,6 +1,6 @@
 # SINJIRA™ — Politique des services externes payants
 
-**Statut : garde-fou produit et déploiement — V24.5.2**
+**Statut : garde-fou produit et déploiement — V24.5.3**
 
 SINJIRA peut préparer le code, les interfaces, les contrats techniques et les points d’intégration nécessaires à de futurs services externes. **Préparer une intégration ne constitue jamais une autorisation de l’activer.**
 
@@ -57,6 +57,19 @@ Le runtime public doit conserver les drapeaux suivants à `false` :
 - `nativeStorePublishingEnabled`.
 
 Le CI doit échouer si une intégration payante connue est activée dans le navigateur, les Edge Functions ou un workflow de publication mobile alors que ces garde-fous restent désactivés.
+
+## Précommandes du Livre I
+
+La V24.5.3 permet d’enregistrer une **réservation de précommande** de `SINJIRA™ — Livre I : La Cendre du Jugement` sans activer le commerce payant.
+
+La table `product_preorders` impose :
+
+```text
+payment_status = not_collected
+financial_commitment = false
+```
+
+Aucune carte bancaire, adresse de facturation ou adresse de livraison n’est demandée dans cette phase. Une réservation ne doit jamais être convertie automatiquement en commande payante. L’ouverture d’un checkout futur exige une décision explicite séparée sur le fournisseur, le coût, les données transmises et les conditions de vente, puis une nouvelle confirmation volontaire de la personne.
 
 ## Héritage numérique
 
