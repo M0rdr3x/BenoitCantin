@@ -29,7 +29,9 @@ EXPECTED_TABLES={
 'user_notifications','license_batches','activation_codes','license_redemptions','admin_audit_log',
 'character_status_events','privacy_settings','notification_preferences',
 'dating_profiles','dating_preferences','dating_connections','dating_messages',
-'sinjira_points_accounts','sinjira_points_ledger','dating_meet_requests'
+'sinjira_points_accounts','sinjira_points_ledger','dating_meet_requests',
+'security_user_settings','security_devices','security_travel_plans','security_connection_events',
+'security_events','security_connection_challenges','security_push_endpoints'
 }
 
 PLANNED_LOCAL_TABLES={
