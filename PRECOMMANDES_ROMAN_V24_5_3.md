@@ -184,4 +184,6 @@ Cette fonctionnalité respecte `SERVICES_EXTERNES_PAYANTS.md` : le système de p
 
 La précommande doit réduire la friction pour la personne sans lui retirer son choix.
 
-**Réserver aujourd’hui ne signifie jamais consentir à payer demain, et les frais de livraison ne doivent jamais être une surprise après l’achat.**
+**Réserver aujourd’hui ne signifie jamais consentir à payer demain.**
+
+Les frais de livraison ne doivent jamais être une surprise après l’achat.
