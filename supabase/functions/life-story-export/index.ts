@@ -22,6 +22,17 @@ async function sha256Hex(value: Uint8Array | string) {
   const bytes = typeof value === 'string' ? new TextEncoder().encode(value) : value;
   return hex(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)));
 }
+function assertLifeStoryBoundary(record: any) {
+  const snapshot = record?.content_snapshot;
+  if (
+    record?.source_boundary !== 'life_story_only' ||
+    record?.registry_access_prohibited !== true ||
+    snapshot?.source_boundary !== 'life_story_only' ||
+    snapshot?.registry_access_prohibited !== true
+  ) {
+    throw new Error('SOURCE_BOUNDARY_VIOLATION');
+  }
+}
 function wrap(text: string, max = 88) {
   const words = printable(text).split(/\s+/).filter(Boolean);
   const lines: string[] = []; let line = '';
@@ -81,6 +92,7 @@ Deno.serve(async (req) => {
       const { data: record, error } = await service.rpc('admin_life_story_get_export', { p_export_id: exportId });
       if (error) throw error;
       if (!record || !['prepared', 'generated'].includes(record.status)) throw new Error('EXPORT_NOT_GENERATABLE');
+      assertLifeStoryBoundary(record);
       if (record.status === 'generated' && record.storage_path) return json({ ok: true, export_id: exportId, status: 'generated', sha256: record.sha256 });
       const bytes = await buildPdf(record.content_snapshot);
       const digest = await sha256Hex(bytes);
@@ -96,6 +108,7 @@ Deno.serve(async (req) => {
       const { data: record, error } = await service.rpc('admin_life_story_get_export', { p_export_id: exportId });
       if (error) throw error;
       if (!record || record.status !== 'generated' || !record.storage_path) throw new Error('EXPORT_NOT_GENERATED');
+      assertLifeStoryBoundary(record);
       const recipients = Array.isArray(record.recipients_snapshot) ? record.recipients_snapshot : [];
       if (!recipients.length) throw new Error('NO_RECIPIENTS');
       await service.from('life_story_delivery_links').delete().eq('export_id', exportId);
