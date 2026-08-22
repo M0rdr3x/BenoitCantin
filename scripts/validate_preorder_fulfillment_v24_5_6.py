@@ -87,7 +87,8 @@ def main()->int:
 
     for marker in ['data-pf-admin-settings','data-pf-admin-zone-form','data-pf-admin-pickup-form','api transporteur','frais de livraison','ramassage']:
         if marker not in admin:errors.append(f'Console admin: marqueur absent: {marker}')
-    if 'publier ce point de ramassage' not in admin_js or 'adresse personnelle' not in admin_js:errors.append('La publication d’un point de ramassage ne comporte plus l’avertissement de confidentialité.')
+    privacy_wording = 'adresse personnelle' in admin_js or 'adresse privée' in admin_js
+    if 'publier ce point de ramassage' not in admin_js or not privacy_wording:errors.append('La publication d’un point de ramassage ne comporte plus l’avertissement de confidentialité.')
     if 'publier cette estimation de livraison' not in admin_js:errors.append('Publication explicite des estimations absente.')
 
     for marker in ['frais de livraison','ramassage','external_carrier_api_enabled','pickup_shipping_charge_cents']:
@@ -96,6 +97,7 @@ def main()->int:
     for marker in ['frais de livraison','ramassage','aucune api transporteur']:
         if marker not in arch:errors.append(f'Architecture: règle V24.5.6 absente: {marker}')
     if '20260822190619 sinjira_v24_5_6_livre_1_shipping_pickup_preparation' not in ledger:errors.append('Ledger production sans migration V24.5.6.')
+    if '20260822191907 sinjira_v24_5_6_fulfillment_fk_index' not in ledger:errors.append('Ledger production sans index FK V24.5.6.')
 
     if errors:
         print(f'ECHEC V24.5.6 livraison/ramassage: {len(errors)} problème(s).')
