@@ -126,7 +126,7 @@ Le bucket n’est jamais rendu public.
 
 Les réponses de téléchargement doivent empêcher la mise en cache inutile du document, notamment avec `Cache-Control: no-store`.
 
-V24.5.2 n’active aucun fournisseur externe de courriel. Les liens peuvent être remis manuellement. Un éventuel transport automatisé futur devra faire l’objet d’une décision distincte concernant la confidentialité, la sécurité, le coût et le fournisseur.
+**Aucun fournisseur externe de courriel n’est activé en V24.5.2.** Les liens peuvent être remis manuellement. Un éventuel transport automatisé futur devra faire l’objet d’une décision distincte concernant la confidentialité, la sécurité, le coût et le fournisseur.
 
 ## 8. Révocation et rétention
 
