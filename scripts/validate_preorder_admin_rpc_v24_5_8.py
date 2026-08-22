@@ -61,18 +61,21 @@ def main():
     ]
     runtime=admin_js+'\n'+fulfillment_js
     missing=[x for x in expected if x not in runtime]
-    # Toutes les RPC n'ont pas à être appelées par les deux modules, mais aucune renommage de celles utilisées n'est autorisé.
     if len(missing) > 6:
         errors.append('Trop de RPC admin historiques ne sont plus référencées par les runtimes admin; vérifier une régression de noms.')
 
-    rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=139: errors.append(f'Ledger: {len(rows)} migrations au lieu de 139.')
-    for x in [
+    historical=[
         '20260822195029 sinjira_v24_5_8_preorder_admin_rpc_boundary',
         '20260822195124 sinjira_v24_5_8_preorder_admin_rpc_acl_hardening'
-    ]:
-        if x not in ledger: errors.append(f'Ledger sans {x}')
-    if not rows or not rows[-1].startswith('20260822195124 '): errors.append('Dernière migration ledger inattendue.')
+    ]
+    rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
+    if len(rows)<139: errors.append(f'Ledger tronqué: {len(rows)} migrations, minimum historique attendu 139.')
+    for x in historical:
+        if x not in rows: errors.append(f'Ledger sans {x}')
+    if len(rows)>=139 and rows[137:139] != historical:
+        errors.append('La position historique de V24.5.8 dans le ledger a été modifiée.')
+    versions=[row.split()[0] for row in rows]
+    if versions != sorted(versions): errors.append('Le ledger n’est plus ordonné chronologiquement.')
 
     forbidden=['stripe','paypal','canadapost','canada post','fedex','purolator','shippo','easypost','twilio','api.resend.com']
     combined=m1+'\n'+m2
@@ -83,7 +86,7 @@ def main():
         print(f'ECHEC V24.5.8 frontière admin: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.8: 15 RPC admin derrière frontière interne, wrappers SECURITY INVOKER, anon révoqué, MFA/AAL2 conservé et 139 migrations synchronisées.')
+    print('OK V24.5.8: invariant historique conservé; 15 RPC admin derrière frontière interne, wrappers SECURITY INVOKER, anon révoqué et MFA/AAL2 conservé.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
