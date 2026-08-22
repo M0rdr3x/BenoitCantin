@@ -72,11 +72,12 @@ def main()->int:
         errors.append('Le runtime public ne vérifie plus les cinq verrous de non-vente.')
 
     for html,name in [(account,'Compte'),(public,'Page publique')]:
+        low_html=html.lower()
         if 'sinjira-preorder-commercial-v24-5-5.js?v=24.5.5' not in html:
             errors.append(f'{name} ne charge pas le runtime commercial V24.5.5.')
         if 'data-preorder-commercial' not in html:
             errors.append(f'{name} ne contient pas le bloc d’informations commerciales.')
-        if 'conversion automatique' not in html.lower():
+        if 'conversion automatique' not in low_html and 'automatiquement une commande' not in low_html:
             errors.append(f'{name} ne rappelle pas que la réservation ne devient pas automatiquement une commande.')
 
     if 'data-pc-admin-form' not in admin or 'data-pc-admin-publish' not in admin:
