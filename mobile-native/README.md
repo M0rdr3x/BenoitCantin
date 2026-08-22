@@ -1,4 +1,4 @@
-# SINJIRA™ Mobile Native — V24.4.98
+# SINJIRA™ Mobile Native — V24.4.99
 
 Application iOS/iPadOS et Android de SINJIRA™.
 
@@ -18,7 +18,7 @@ Le socle utilise Expo SDK 57 / React Native 0.86.
 - iOS/iPadOS : iOS 16.4 et versions ultérieures prises en charge par Expo SDK 57;
 - appareils non couverts : la PWA SINJIRA reste disponible depuis le navigateur.
 
-## V24.4.98 — sécurité native mise en place
+## V24.4.98 — fondation sécurité native
 
 ### Identité d’appareil
 
@@ -46,28 +46,62 @@ L’utilisateur peut choisir d’activer les notifications natives de sécurité
 - jeton push conservé dans le stockage sécurisé local puis enregistré côté serveur;
 - contenu volontairement générique sur l’écran verrouillé;
 - aucune localisation précise, confidence, donnée de santé ou interprétation psychologique dans une alerte push;
-- l’app ouvre le Centre **Ma sécurité** lorsqu’une alerte correspondante est touchée;
+- l’app ouvre la route SINJIRA fournie par une alerte lorsqu’elle est touchée;
 - l’inscription push reste inactive tant que le projet n’est pas relié à un identifiant EAS réel.
 
-### Accès rapide
+## V24.4.99 — phase mobile 2
 
-La barre d’accès mobile inclut maintenant **Sécurité**, Registre, Personnage et Rencontres. Le Centre **Ma sécurité** permet la gestion des appareils, sessions, Mode Voyage, alertes et connexions à confirmer.
+### Origine Web migrable
+
+L’origine n’est plus une dépendance métier figée dans le code.
+
+- valeur active : `expo.extra.webOrigin = https://www.benoitcantin.com`;
+- hôtes autorisés par le runtime : `benoitcantin.com`, `www.benoitcantin.com`, `sinjira.com`, `www.sinjira.com`;
+- HTTPS est obligatoire;
+- toute origine configurée qui ne fait pas partie de cette liste retombe sur l’origine sûre actuelle;
+- les liens `sinjira://` et les liens HTTPS des domaines autorisés sont normalisés vers l’origine active.
+
+Cette préparation **ne change pas le DNS** et ne fait pas de `sinjira.com` le domaine actif.
+
+### Universal Links et Android App Links
+
+La configuration mobile déclare maintenant les futurs hôtes SINJIRA pour `/app`, `/compte` et `/projets/sinjira`.
+
+Ils ne seront réellement vérifiés qu’après publication des fichiers d’association avec :
+
+- le vrai Apple Team ID dans `apple-app-site-association`;
+- le vrai SHA-256 du certificat Android de production dans `assetlinks.json`.
+
+Aucun identifiant de signature ne doit être inventé.
+
+### Récupération et téléphone perdu
+
+La récupération V24.4.99 est renforcée côté Web/serveur :
+
+- lorsqu’un TOTP vérifié existe, AAL2 est requis avant le changement de mot de passe;
+- après récupération, les autres appareils SINJIRA sont révoqués;
+- les push de sécurité sont désactivés et devront être réactivés volontairement;
+- toutes les sessions Auth sont fermées;
+- l’appareil courant doit regagner explicitement la confiance;
+- un appareil déclaré perdu perd sa confiance et ses notifications, puis les autres sessions sont fermées.
 
 ## Bouclier de connexion
 
-Le moteur serveur V24.4.98 combine plusieurs signaux : appareil nouveau ou non fiable, changement de pays approximatif lorsqu’une infrastructure de confiance le fournit, déplacement temporellement improbable, Mode Voyage et sensibilité de l’action.
+Le moteur serveur combine plusieurs signaux : appareil nouveau ou non fiable, changement de pays approximatif lorsqu’une infrastructure de confiance le fournit, déplacement temporellement improbable, Mode Voyage et sensibilité de l’action.
 
 Un pays ou une région ne suffit jamais à conclure qu’une connexion est frauduleuse.
 
 La géolocalisation de sécurité est **désactivée par défaut** dans l’Edge Function. Elle ne peut être activée que par une infrastructure SINJIRA contrôlée qui fournit une région approximative fiable. Le moteur ne lit ni ne stocke l’adresse IP brute et ne demande pas le GPS du téléphone.
 
-## Passkeys — préparation, pas encore activation production
+## Passkeys — préparées, pas activées
 
-Le projet prévoit les passkeys, mais elles ne doivent pas être activées précipitamment sur l’ancien domaine.
+WebAuthn lie les passkeys à un **RP ID**. Le RP ID prévu est `sinjira.com`, mais il ne doit être utilisé qu’après la migration réelle du domaine.
 
-WebAuthn lie les passkeys à un **RP ID**. Comme `sinjira.com` est réservé et destiné à devenir le domaine principal, l’activation production sera faite après le choix définitif du domaine et la configuration correspondante dans Supabase Auth. Cela évite de créer aujourd’hui des passkeys liées à `benoitcantin.com` qu’une migration ultérieure pourrait rendre inutilisables.
+V24.4.99 peut détecter la compatibilité du navigateur et afficher l’état de préparation, mais ne crée aucun identifiant WebAuthn sur le domaine actuel.
 
-En attendant, TOTP/AAL2 et la biométrie locale assurent le step-up disponible dans la V24.4.98.
+En attendant, TOTP/AAL2 et la biométrie locale assurent le step-up disponible.
+
+Voir [`../DOMAIN_MIGRATION_SINJIRA.md`](../DOMAIN_MIGRATION_SINJIRA.md) pour le plan de cutover et de rollback.
 
 ## Vie privée
 
@@ -105,15 +139,15 @@ Avant publication réelle :
 2. configurer les certificats/signatures Apple et Google;
 3. créer les fiches App Store Connect et Google Play Console;
 4. finaliser Universal Links / Android App Links avec les signatures réelles;
-5. configurer le domaine final `sinjira.com` lorsque sa migration sera décidée;
-6. activer et tester les passkeys seulement avec le RP ID final;
-7. tester connexion, MFA, biométrie, push, Mode Voyage, récupération de session et réinstallation;
-8. vérifier les politiques des stores au moment de la soumission.
+5. effectuer le prévol de [`DOMAIN_MIGRATION_SINJIRA.md`](../DOMAIN_MIGRATION_SINJIRA.md);
+6. migrer le domaine seulement lorsque tous les contrôles sont verts;
+7. activer et tester les passkeys seulement avec le RP ID final;
+8. tester connexion, MFA, biométrie, push, Mode Voyage, récupération, appareil perdu et réinstallation;
+9. vérifier les politiques des stores au moment de la soumission.
 
 ## Prochaines migrations natives
 
 - partage natif de liens SINJIRA;
-- navigation profonde complète;
 - écrans React Native natifs pour les parcours les plus utilisés;
-- passkeys après activation du domaine/RP ID final;
-- amélioration du parcours de récupération sans diminuer la protection du Registre.
+- actions de sécurité enrichies depuis les notifications après stabilisation EAS;
+- passkeys après activation du domaine/RP ID final.

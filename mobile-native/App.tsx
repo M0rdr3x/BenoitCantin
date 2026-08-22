@@ -19,7 +19,17 @@ import {
 } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
 
-const ORIGIN = 'https://www.benoitcantin.com';
+const DEFAULT_ORIGIN = 'https://www.benoitcantin.com';
+const ALLOWED_WEB_HOSTS = new Set(['www.benoitcantin.com', 'benoitcantin.com', 'sinjira.com', 'www.sinjira.com']);
+function configuredWebOrigin() {
+  const raw = String(Constants.expoConfig?.extra?.webOrigin || DEFAULT_ORIGIN).replace(/\/+$/, '');
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol === 'https:' && ALLOWED_WEB_HOSTS.has(parsed.hostname)) return parsed.origin;
+  } catch {}
+  return DEFAULT_ORIGIN;
+}
+const ORIGIN = configuredWebOrigin();
 const HOME_URL = `${ORIGIN}/app/`;
 const DEVICE_KEY_STORAGE = 'sinjira_native_device_key_v1';
 const BIOMETRIC_LOCK_STORAGE = 'sinjira_biometric_lock_v1';
@@ -64,7 +74,7 @@ function normalizeSinjiraUrl(url: string | null): string | null {
   }
   try {
     const parsed = new URL(url);
-    if (parsed.hostname === 'www.benoitcantin.com' || parsed.hostname === 'benoitcantin.com') {
+    if (parsed.protocol === 'https:' && ALLOWED_WEB_HOSTS.has(parsed.hostname)) {
       return `${ORIGIN}${parsed.pathname}${parsed.search}${parsed.hash}`;
     }
   } catch {
@@ -103,13 +113,13 @@ export default function App() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushToken, setPushToken] = useState('');
 
-  const allowedHosts = useMemo(() => new Set(['www.benoitcantin.com', 'benoitcantin.com']), []);
+  const allowedHosts = useMemo(() => new Set(ALLOWED_WEB_HOSTS), []);
 
   const injectedSecurityScript = useMemo(() => {
     if (!nativeDeviceKey) return 'true;';
     const enabled = pushEnabled ? '1' : '0';
     const platform = Platform.OS;
-    return `try{localStorage.setItem(${JSON.stringify(WEB_DEVICE_KEY_STORAGE)},${JSON.stringify(nativeDeviceKey)});localStorage.setItem(${JSON.stringify(WEB_PUSH_ENABLED_STORAGE)},${JSON.stringify(enabled)});localStorage.setItem(${JSON.stringify(WEB_PUSH_PLATFORM_STORAGE)},${JSON.stringify(platform)});${pushToken ? `localStorage.setItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)},${JSON.stringify(pushToken)});` : `localStorage.removeItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)});`}setTimeout(()=>import('/assets/js/sinjira-security-push-bridge-v24-4-98.js?v=24.4.98').catch(()=>{}),0);}catch(e){};true;`;
+    return `try{localStorage.setItem(${JSON.stringify(WEB_DEVICE_KEY_STORAGE)},${JSON.stringify(nativeDeviceKey)});localStorage.setItem(${JSON.stringify(WEB_PUSH_ENABLED_STORAGE)},${JSON.stringify(enabled)});localStorage.setItem(${JSON.stringify(WEB_PUSH_PLATFORM_STORAGE)},${JSON.stringify(platform)});${pushToken ? `localStorage.setItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)},${JSON.stringify(pushToken)});` : `localStorage.removeItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)});`}setTimeout(()=>import('/assets/js/sinjira-security-push-bridge-v24-4-98.js?v=24.4.99').catch(()=>{}),0);}catch(e){};true;`;
   }, [nativeDeviceKey, pushEnabled, pushToken]);
 
   const syncPushToWeb = (enabled: boolean, token: string) => {
@@ -225,14 +235,14 @@ export default function App() {
 
   const navigate=(path:string,tab?:TabKey)=>{setCurrentUrl(`${ORIGIN}${path}`);if(tab)setActiveTab(tab)};
   const onNavigationStateChange=(state:WebViewNavigation)=>{setCanGoBack(state.canGoBack);setCurrentUrl(state.url);const nextTab=tabForUrl(state.url);if(nextTab)setActiveTab(nextTab)};
-  const shouldStart=(request:{url:string})=>{const {url}=request;if(url.startsWith('about:blank'))return true;try{const parsed=new URL(url);if(allowedHosts.has(parsed.hostname))return true}catch{if(url.startsWith('mailto:')||url.startsWith('tel:'))void Linking.openURL(url);return false}void Linking.openURL(url);return false};
+  const shouldStart=(request:{url:string})=>{const {url}=request;if(url.startsWith('about:blank'))return true;try{const parsed=new URL(url);if(parsed.protocol==='https:'&&allowedHosts.has(parsed.hostname))return true}catch{if(url.startsWith('mailto:')||url.startsWith('tel:'))void Linking.openURL(url);return false}void Linking.openURL(url);return false};
 
   if(!securityReady)return <SafeAreaView style={styles.root}><StatusBar style="light"/><View style={styles.loading}><ActivityIndicator size="large"/><Text style={styles.loadingText}>Préparation sécurisée de SINJIRA…</Text></View></SafeAreaView>;
   if(biometricEnabled&&!isUnlocked)return <SafeAreaView style={styles.root}><StatusBar style="light"/><View style={styles.lockScreen}><Text style={styles.lockTitle}>SINJIRA™ est verrouillé</Text><Text style={styles.lockText}>La biométrie reste sur votre téléphone. SINJIRA ne reçoit ni votre visage ni votre empreinte.</Text>{nativeMessage?<Text style={styles.lockNote}>{nativeMessage}</Text>:null}<Pressable accessibilityRole="button" onPress={()=>void unlockWithBiometrics()} style={styles.retryButton}><Text style={styles.retryText}>Déverrouiller</Text></Pressable></View></SafeAreaView>;
 
   return <SafeAreaView style={styles.root}>
     <StatusBar style="light"/>
-    <View style={styles.topbar}><View><Text style={styles.brand}>SINJIRA™</Text><Text style={styles.subtitle}>Application mobile · V24.4.98</Text></View><View style={styles.topActions}>
+    <View style={styles.topbar}><View><Text style={styles.brand}>SINJIRA™</Text><Text style={styles.subtitle}>Application mobile · V24.4.99</Text></View><View style={styles.topActions}>
       <Pressable accessibilityRole="button" accessibilityLabel="Activer ou désactiver la protection biométrique" onPress={()=>void toggleBiometric()} style={styles.refreshButton}><Text style={styles.refreshText}>{biometricEnabled?'Bio ✓':'Bio'}</Text></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Activer ou désactiver les notifications de sécurité" onPress={()=>void (pushEnabled?disableSecurityPush():enableSecurityPush())} style={styles.refreshButton}><Text style={styles.refreshText}>{pushEnabled?'Alertes ✓':'Alertes'}</Text></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Recharger la page" onPress={()=>{webViewRef.current?.reload();setWebViewKey(v=>v+1)}} style={styles.refreshButton}><Text style={styles.refreshText}>↻</Text></Pressable>

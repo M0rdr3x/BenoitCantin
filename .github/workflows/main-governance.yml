@@ -1,0 +1,27 @@
+name: Gouvernance main SINJIRA
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  require-associated-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier que le commit main provient d’une PR
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const sha = context.sha;
+            const { data: pulls } = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: sha });
+            const mergedToMain = pulls.some(pr => pr.merged_at && pr.base?.ref === 'main');
+            if (!mergedToMain) {
+              core.setFailed(`Le commit ${sha} est arrivé sur main sans Pull Request fusionnée associée. Examiner immédiatement ce changement.`);
+              return;
+            }
+            core.info(`Commit ${sha} associé à une PR fusionnée vers main.`);
