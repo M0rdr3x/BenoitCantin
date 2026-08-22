@@ -31,7 +31,8 @@ EXPECTED_TABLES={
 'dating_profiles','dating_preferences','dating_connections','dating_messages',
 'sinjira_points_accounts','sinjira_points_ledger','dating_meet_requests',
 'security_user_settings','security_devices','security_travel_plans','security_connection_events',
-'security_events','security_connection_challenges','security_push_endpoints'
+'security_events','security_connection_challenges','security_push_endpoints',
+'life_story_entries','life_story_versions','life_story_version_entries','life_story_recipients','life_story_legacy_settings'
 }
 
 PLANNED_LOCAL_TABLES={
