@@ -65,8 +65,10 @@ def main():
     row='20260822200413 sinjira_v24_5_9_global_admin_rpc_boundary'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
     if row not in rows: errors.append('Ledger sans migration V24.5.9.')
-    if len(rows)!=140: errors.append(f'Ledger: {len(rows)} migrations au lieu de 140.')
-    if not rows or rows[-1]!=row: errors.append('V24.5.9 doit être la dernière migration du ledger courant.')
+    if len(rows)<140: errors.append(f'Ledger tronqué: {len(rows)} migrations, minimum historique attendu 140.')
+    if len(rows)>=140 and rows[139] != row: errors.append('La position historique de V24.5.9 dans le ledger a été modifiée.')
+    versions=[r.split()[0] for r in rows]
+    if versions != sorted(versions): errors.append('Le ledger n’est plus ordonné chronologiquement.')
 
     for marker in ['25 fonctions','20/25','5/25','security invoker','sinjira_admin_internal','140 migrations','service_role']:
         if marker not in doc: errors.append(f'Document V24.5.9 incomplet: {marker}')
@@ -79,7 +81,7 @@ def main():
         print(f'ECHEC V24.5.9 frontière RPC admin globale: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.9: 25 RPC admin isolées, wrappers SECURITY INVOKER, anon révoqué, authenticated/service_role conservés et ledger 140 synchronisé.')
+    print('OK V24.5.9: invariant historique conservé; 25 RPC admin isolées, wrappers SECURITY INVOKER, anon révoqué et authenticated/service_role conservés.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
