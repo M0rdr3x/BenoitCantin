@@ -52,4 +52,17 @@ function configureProjectIdentifier(){
   }
 }
 
+function installHeritageLink(){
+  if(document.querySelector('[data-admin-heritage-link]'))return;
+  const actions=document.querySelector('.hero-actions')||document.querySelector('.admin-console-layout section');
+  if(!actions)return;
+  const link=document.createElement('a');
+  link.href='/admin/sinjira/heritage.html';
+  link.className='btn btn-secondary';
+  link.dataset.adminHeritageLink='';
+  link.textContent='Héritage numérique';
+  actions.appendChild(link);
+}
+
 configureProjectIdentifier();
+installHeritageLink();
