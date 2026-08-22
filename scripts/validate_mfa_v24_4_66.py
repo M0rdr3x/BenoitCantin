@@ -23,7 +23,9 @@ def main():
     core=read('assets/js/sinjira-supabase.js')
     challenge=read('assets/js/sinjira-mfa-v24-4-66.js')
     security=read('assets/js/v24-security.js')
+    login=read('assets/js/sinjira-auth-pages.js')
     page=read('compte/mfa.html')
+    login_page=read('compte/connexion.html')
     security_page=read('compte/securite.html')
 
     require(core,[
@@ -42,7 +44,11 @@ def main():
         'replaceChildren()',
         "document.createElement('option')",
         'option.textContent=String(factor.friendly_name',
-        "status==='verified'"
+        "status==='verified'",
+        "security_resolve_connection_challenge_mfa",
+        "aal?.currentLevel!=='aal2'",
+        "signOut({scope:'local'})",
+        'PENDING_CHALLENGE_STORAGE'
     ],'challenge MFA')
     forbid(challenge,['factorSelect.innerHTML'], 'challenge MFA')
 
@@ -57,12 +63,22 @@ def main():
     ],'centre de sécurité MFA')
     forbid(security,["factorType:'phone'",'twilio','stripe'], 'centre de sécurité MFA')
 
-    require(page,['data-mfa-challenge-form','data-mfa-factor','sinjira-mfa-v24-4-66.js?v=24.4.66'],'page challenge MFA')
+    require(login,[
+        "functions.invoke('security-context'",
+        "outcome==='challenge'",
+        "outcome==='block'",
+        "getAuthenticatorAssuranceLevel",
+        'PENDING_CHALLENGE_STORAGE',
+        "signOut({scope:'local'})"
+    ],'Bouclier au login')
+
+    require(page,['data-mfa-challenge-form','data-mfa-factor','sinjira-mfa-v24-4-66.js?v=24.4.98'],'page challenge MFA')
+    require(login_page,['sinjira-auth-pages.js?v=24.4.98'],'page connexion Bouclier')
     # Le runtime de sécurité continue d’évoluer après V24.4.66; ce contrat doit
-    # vérifier que le bon fichier est chargé, sans figer son cache-bust à 24.4.66.
+    # vérifier que le bon fichier est chargé, sans figer les autres composants à 24.4.66.
     require(security_page,['data-mfa-enroll','data-mfa-factors','v24-security.js?v=','Aucun MFA par SMS/téléphone activé'],'page sécurité MFA')
 
-    print('OK MFA V24.4.66: TOTP gratuit, AAL2 fail-closed, redirections internes, rendu sans XSS et facteurs de secours autorisés.')
+    print('OK MFA V24.4.98: TOTP gratuit, AAL2 fail-closed, Bouclier au login, redirections internes, rendu sans XSS et facteurs de secours autorisés.')
     return 0
 
 if __name__=='__main__':
