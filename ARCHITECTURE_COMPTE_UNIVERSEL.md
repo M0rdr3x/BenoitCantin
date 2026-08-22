@@ -6,6 +6,8 @@
 >
 > Protocole de réservation du Livre I : [`PRECOMMANDES_ROMAN_V24_5_3.md`](PRECOMMANDES_ROMAN_V24_5_3.md).
 >
+> Préparation commerciale du Livre I : [`PREPARATION_COMMERCIALE_LIVRE_I_V24_5_5.md`](PREPARATION_COMMERCIALE_LIVRE_I_V24_5_5.md).
+>
 > Garde-fou de déploiement : [`SERVICES_EXTERNES_PAYANTS.md`](SERVICES_EXTERNES_PAYANTS.md). Une intégration externe payante peut être construite, mais elle reste désactivée sans décision explicite séparée.
 
 ```text
@@ -22,6 +24,7 @@ Compte SINJIRA
 ├── Contributions
 ├── Mes achats et précommandes
 │   ├── Précommande Livre I — La Cendre du Jugement
+│   │   └── Informations commerciales publiées, si disponibles
 │   └── Achats payants (désactivés tant que la boutique n’est pas autorisée)
 ├── Histoire de vie
 │   ├── Mes éléments privés
@@ -66,6 +69,36 @@ financial_commitment = false
 ```
 
 Une réservation ne peut jamais être transformée automatiquement en vente. Une future ouverture de la boutique doit présenter les prix et conditions réels, puis obtenir une nouvelle confirmation volontaire avant tout checkout.
+
+### Préparation commerciale V24.5.5
+
+La fiche commerciale du Livre I est séparée de `product_preorders`, `orders` et `order_items`.
+
+Elle permet à l’administration MFA/AAL2 de préparer puis de publier uniquement des informations confirmées : devise, prix, éditions, date de sortie, disponibilité et résumé des conditions. Aucun prix ni aucune date n’est prérempli automatiquement.
+
+Le parcours est :
+
+```text
+brouillon privé
+      ↓
+prêt après contrôle de complétude
+      ↓
+publication informative
+```
+
+La publication informative n’est jamais assimilée à l’ouverture des ventes. La base impose :
+
+```text
+sales_enabled = false
+checkout_enabled = false
+payment_enabled = false
+external_fulfillment_enabled = false
+auto_conversion_allowed = false
+```
+
+Une révision publiée devient immuable. Une modification future doit passer par une nouvelle révision afin que l’information précédemment affichée ne soit pas réécrite silencieusement.
+
+La publication de la fiche commerciale ne crée aucune notification. Le mécanisme d’avis interne V24.5.4 demeure un parcours séparé.
 
 ## Histoire de vie et héritage numérique
 
@@ -160,7 +193,7 @@ Une approbation peut automatiquement donner le niveau `tester` sur le projet.
 
 ## Services externes payants
 
-Le code peut préparer des adaptateurs ou intégrations futures, mais leur activation reste séparée du développement. Par défaut : paiements, IA distante payante, courriel/SMS externe payant, publication commerciale et soumission App Store/Google Play restent désactivés. Le CI doit empêcher leur activation accidentelle tant que le projet demeure en mode gratuit.
+Le code peut préparer des adaptateurs ou intégrations futures, mais leur activation reste séparée du développement. Par défaut : paiements, IA distante payante, courriel/SMS externe payant, publication commerciale transactionnelle et soumission App Store/Google Play restent désactivés. Le CI doit empêcher leur activation accidentelle tant que le projet demeure en mode gratuit.
 
 ## Futures extensions
 
