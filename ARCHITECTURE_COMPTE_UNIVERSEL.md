@@ -1,6 +1,8 @@
 # Architecture — Compte SINJIRA universel
 
 > Référence normative : [`CAHIER_MAITRE_SINJIRA.md`](CAHIER_MAITRE_SINJIRA.md). En cas de conflit, le Cahier maître prévaut.
+>
+> Protocole opérationnel d’héritage numérique : [`HERITAGE_NUMERIQUE_V24_5_2.md`](HERITAGE_NUMERIQUE_V24_5_2.md).
 
 ```text
 Compte SINJIRA
@@ -14,6 +16,16 @@ Compte SINJIRA
 ├── Playtests
 ├── Profil
 ├── Contributions
+├── Histoire de vie
+│   ├── Mes éléments privés
+│   ├── Mes versions
+│   │   ├── Famille
+│   │   ├── Personnelle
+│   │   └── Générale
+│   ├── Destinataires choisis
+│   ├── Directive posthume
+│   ├── Codes privés de signalement
+│   └── Contestation d’une fausse déclaration de décès
 ├── Ma sécurité
 │   ├── Mes appareils
 │   ├── Connexions récentes
@@ -31,7 +43,52 @@ Le Compte universel respecte le principe **protéger sans surveiller** : les don
 
 La localisation seule ne suffit pas à conclure qu’une connexion est frauduleuse. Le Bouclier de connexion doit combiner plusieurs signaux, avec une réponse graduée et une authentification renforcée lorsque le risque l’exige.
 
-Le **Registre des Consciences**, les conversations privées avec l’IA personnelle et les moyens de récupération du compte appartiennent au niveau **extrêmement sensible** et peuvent exiger une nouvelle authentification même lorsqu’une session est déjà ouverte.
+Le **Registre des Consciences**, les conversations privées avec l’IA personnelle, les moyens de récupération du compte et les opérations d’héritage numérique appartiennent au niveau **extrêmement sensible** et peuvent exiger une nouvelle authentification même lorsqu’une session est déjà ouverte.
+
+## Histoire de vie et héritage numérique
+
+L’**Histoire de vie** et le **Registre des Consciences** sont deux domaines techniques et fonctionnels distincts.
+
+Un élément ajouté à l’Histoire de vie est **privé par défaut**. Il n’entre dans une œuvre transmissible qu’après deux choix explicites de la personne :
+
+1. autoriser l’élément pour l’œuvre;
+2. choisir la ou les versions dans lesquelles il peut apparaître.
+
+La transmission posthume est désactivée tant que la personne n’a pas activé sa directive. Les destinataires sont choisis par la personne et peuvent être absents.
+
+Le protocole posthume V24.5.2 suit obligatoirement cette séquence :
+
+```text
+Code privé ou demande légitime
+            ↓
+Signalement de décès
+            ↓
+Première vérification humaine
+            ↓
+Délai de sécurité de 30 jours
+            ↓
+Contestation possible à tout moment applicable
+            ↓
+Deuxième validation humaine avec MFA/AAL2
+            ↓
+Instantané Histoire de vie autorisé uniquement
+            ↓
+PDF privé
+            ↓
+Lien de remise opaque, expirant et révocable
+            ↓
+Revue humaine de rétention / suppression
+```
+
+Un signalement ne constitue jamais une validation. Une contestation ouverte suspend la seconde validation et la génération. Si une contestation est rejetée après vérification humaine, un **nouveau délai complet de 30 jours** commence.
+
+Le générateur PDF applique une frontière serveur `life_story_only` et ne doit jamais lire le Registre, les personnages, les conversations privées de l’IA ou une autre source intime non explicitement autorisée.
+
+Les liens destinés aux proches ne rendent aucun bucket public. Le jeton brut n’est pas stocké : seul son hash est conservé, avec expiration, révocation et limite de téléchargements.
+
+Aucun fournisseur externe de courriel n’est requis par défaut. Une remise peut rester manuelle afin d’éviter d’introduire un service tiers ou payant sans décision explicite.
+
+Après les opérations autorisées, les tâches de nettoyage sont des **revues humaines**. Elles ne doivent pas effacer automatiquement le Registre ou les données sources à partir d’un simple délai.
 
 ## Mode Voyage
 
@@ -66,6 +123,12 @@ Quand un joueur ouvre un document, `get-document-url` :
 2. vérifie le projet;
 3. vérifie le niveau d'accès du compte;
 4. génère un lien signé temporaire de 10 minutes.
+
+Les PDF posthumes utilisent un bucket distinct et privé :
+
+`sinjira-life-story-exports`
+
+Ce bucket n’est jamais une source publique et ses fichiers ne sont accessibles que par le protocole de remise autorisé.
 
 ## Playtests
 
