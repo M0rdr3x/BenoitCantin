@@ -2,7 +2,7 @@
   "expo": {
     "name": "SINJIRA",
     "slug": "sinjira",
-    "version": "24.4.98",
+    "version": "24.4.99",
     "orientation": "portrait",
     "scheme": "sinjira",
     "userInterfaceStyle": "dark",
@@ -15,12 +15,17 @@
     "plugins": [
       "expo-notifications"
     ],
+    "extra": {
+      "webOrigin": "https://www.benoitcantin.com"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.benoitcantin.sinjira",
-      "buildNumber": "24498",
+      "buildNumber": "24499",
       "associatedDomains": [
-        "applinks:www.benoitcantin.com"
+        "applinks:www.benoitcantin.com",
+        "applinks:sinjira.com",
+        "applinks:www.sinjira.com"
       ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -29,7 +34,7 @@
     },
     "android": {
       "package": "com.benoitcantin.sinjira",
-      "versionCode": 24498,
+      "versionCode": 24499,
       "adaptiveIcon": {
         "foregroundImage": "../android-chrome-512x512.png",
         "backgroundColor": "#070914"
@@ -39,21 +44,15 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            {
-              "scheme": "https",
-              "host": "www.benoitcantin.com",
-              "pathPrefix": "/app"
-            },
-            {
-              "scheme": "https",
-              "host": "www.benoitcantin.com",
-              "pathPrefix": "/compte"
-            },
-            {
-              "scheme": "https",
-              "host": "www.benoitcantin.com",
-              "pathPrefix": "/projets/sinjira"
-            }
+            {"scheme":"https","host":"www.benoitcantin.com","pathPrefix":"/app"},
+            {"scheme":"https","host":"www.benoitcantin.com","pathPrefix":"/compte"},
+            {"scheme":"https","host":"www.benoitcantin.com","pathPrefix":"/projets/sinjira"},
+            {"scheme":"https","host":"sinjira.com","pathPrefix":"/app"},
+            {"scheme":"https","host":"sinjira.com","pathPrefix":"/compte"},
+            {"scheme":"https","host":"sinjira.com","pathPrefix":"/projets/sinjira"},
+            {"scheme":"https","host":"www.sinjira.com","pathPrefix":"/app"},
+            {"scheme":"https","host":"www.sinjira.com","pathPrefix":"/compte"},
+            {"scheme":"https","host":"www.sinjira.com","pathPrefix":"/projets/sinjira"}
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
