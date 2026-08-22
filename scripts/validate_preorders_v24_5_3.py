@@ -21,7 +21,8 @@ public_page = read("projets/sinjira/romans/precommande.html")
 romans_page = read("projets/sinjira/romans/index.html")
 account_page = read("compte/mes-achats.html")
 client = read("assets/js/sinjira-preorders-v24-5-3.js")
-architecture = read("PRECOMMANDES_ROMAN_V24_5_3.md")
+canon = read("PRECOMMANDES_ROMAN_V24_5_3.md")
+account_architecture = read("ARCHITECTURE_COMPTE_UNIVERSEL.md")
 paid_policy = read("SERVICES_EXTERNES_PAYANTS.md")
 ledger = read("supabase/production-migration-ledger.txt")
 
@@ -75,7 +76,22 @@ for token in (
     "payment_status = not_collected",
     "financial_commitment = false",
 ):
-    require(architecture, token, "canon précommandes")
+    require(canon, token, "canon précommandes")
+
+for token in (
+    "Mes achats et précommandes",
+    "payment_status = not_collected",
+    "financial_commitment = false",
+    "Une réservation ne peut jamais être transformée automatiquement en vente",
+):
+    require(account_architecture, token, "architecture du Compte")
+
+for token in (
+    "Précommandes du Livre I",
+    "payment_status = not_collected",
+    "financial_commitment = false",
+    "ne doit jamais être convertie automatiquement en commande payante",
+):
     require(paid_policy, token, "politique services payants")
 
 require(
