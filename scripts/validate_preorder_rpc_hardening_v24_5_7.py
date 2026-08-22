@@ -94,11 +94,17 @@ def main() -> int:
     for token in forbidden:
         if token in low: errors.append(f'Intégration externe interdite dans la migration: {token}')
 
-    if '20260822193403 sinjira_v24_5_7_preorder_rpc_and_index_hardening' not in ledger:
-        errors.append('Ledger sans migration V24.5.7.')
+    historical='20260822193403 sinjira_v24_5_7_preorder_rpc_and_index_hardening'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows) != 137: errors.append(f'Ledger: {len(rows)} migrations au lieu de 137.')
-    if not rows or not rows[-1].startswith('20260822193403 '): errors.append('V24.5.7 n’est pas la dernière migration du ledger.')
+    if historical not in rows:
+        errors.append('Ledger sans migration V24.5.7.')
+    if len(rows) < 137:
+        errors.append(f'Ledger tronqué: {len(rows)} migrations, minimum historique attendu 137.')
+    elif rows[136] != historical:
+        errors.append('La position historique de V24.5.7 dans le ledger a été modifiée.')
+    versions=[row.split()[0] for row in rows]
+    if versions != sorted(versions):
+        errors.append('Le ledger n’est plus ordonné chronologiquement.')
 
     for marker in ['security invoker','preorder_public_internal','mots de passe compromis','137']:
         if marker not in doc: errors.append(f'Document V24.5.7 incomplet: {marker}')
@@ -110,7 +116,7 @@ def main() -> int:
         print(f'ECHEC V24.5.7 hardening RPC: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.7: wrappers publics SECURITY INVOKER, lecteurs privilégiés isolés, tables scellées, politique SELECT unifiée, 9 FK couvertes et aucun service externe activé.')
+    print('OK V24.5.7: invariant historique conservé; wrappers publics SECURITY INVOKER, lecteurs privilégiés isolés, tables scellées, politique SELECT unifiée, 9 FK couvertes et aucun service externe activé.')
     return 0
 
 if __name__=='__main__':
