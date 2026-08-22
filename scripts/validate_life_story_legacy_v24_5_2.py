@@ -204,11 +204,13 @@ def main() -> int:
     forbid(errors, admin_js, direct_table_patterns, 'Console héritage')
     require(errors, queue, ['private.require_sinjira_admin_aal2()', 'admin_life_story_pending_requests', 'admin_life_story_cleanup_due'], 'File admin')
 
+    # Ces marqueurs suivent les formulations réellement canoniques du document.
+    # Le test protège le sens du contrat sans exiger une variante typographique artificielle.
     require(errors, canon, [
-        'L’humain passe avant tout', 'Registre des Consciences n’est pas un héritage',
+        'l’humain passe avant tout', 'Registre des Consciences n’est pas un héritage',
         'life_story_only', '30 jours', 'nouveau délai complet de 30 jours',
         '256 bits', 'SHA-256', 'AAL2', 'no-store',
-        'Aucun fournisseur externe de courriel', 'revues humaines',
+        'n’active aucun fournisseur externe de courriel', 'tâches de revue humaine',
     ], 'Canon héritage')
     require(errors, paid_policy, [
         'Préparer une intégration ne constitue jamais une autorisation de l’activer',

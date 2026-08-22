@@ -1,0 +1,53 @@
+name: SINJIRA V24.5.3 — Précommandes Livre I
+
+on:
+  push:
+    branches:
+      - main
+      - 'sinjira-v24.5.3-*'
+    paths:
+      - 'PRECOMMANDES_ROMAN_V24_5_3.md'
+      - 'SERVICES_EXTERNES_PAYANTS.md'
+      - 'ARCHITECTURE_COMPTE_UNIVERSEL.md'
+      - 'projets/sinjira/romans/**'
+      - 'compte/mes-achats.html'
+      - 'assets/js/sinjira-preorders-v24-5-3.js'
+      - 'assets/css/sinjira-preorders-v24-5-3.css'
+      - 'supabase/migrations/20260822165140_sinjira_v24_5_3_livre_1_preorder_reservations.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'scripts/validate_preorders_v24_5_3.py'
+      - '.github/workflows/validate-preorders-v24-5-3.yml'
+  pull_request:
+    paths:
+      - 'PRECOMMANDES_ROMAN_V24_5_3.md'
+      - 'SERVICES_EXTERNES_PAYANTS.md'
+      - 'ARCHITECTURE_COMPTE_UNIVERSEL.md'
+      - 'projets/sinjira/romans/**'
+      - 'compte/mes-achats.html'
+      - 'assets/js/sinjira-preorders-v24-5-3.js'
+      - 'assets/css/sinjira-preorders-v24-5-3.css'
+      - 'supabase/migrations/20260822165140_sinjira_v24_5_3_livre_1_preorder_reservations.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'scripts/validate_preorders_v24_5_3.py'
+      - '.github/workflows/validate-preorders-v24-5-3.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Contrat précommandes V24.5.3
+        run: python scripts/validate_preorders_v24_5_3.py
+      - name: Validation statique du site
+        run: python scripts/validate_site.py
+      - name: Contrat Supabase
+        run: python scripts/validate_supabase.py
+      - name: Ledger de production
+        run: python scripts/validate_production_migration_ledger.py
