@@ -1,0 +1,38 @@
+name: Validation sécurité SINJIRA V24.4.99
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/sinjira-recovery-v24-4-99.js'
+      - 'assets/js/sinjira-security-v24-4-99.js'
+      - 'compte/reinitialiser-mot-de-passe.html'
+      - 'compte/securite.html'
+      - 'mobile-native/**'
+      - 'supabase/migrations/**'
+      - 'supabase/production-migration-ledger.txt'
+      - 'DOMAIN_MIGRATION_SINJIRA.md'
+      - '.github/CODEOWNERS'
+      - '.github/workflows/main-governance.yml'
+      - '.github/workflows/sinjira-security-v24-4-99.yml'
+      - 'scripts/validate_security_v24_4_99.py'
+      - 'scripts/validate_auth.py'
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  security-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Valider V24.4.99
+        run: python scripts/validate_security_v24_4_99.py
+      - name: Revalider les parcours Auth
+        run: python scripts/validate_auth.py
+      - name: Revalider le ledger production
+        run: python scripts/validate_production_migration_ledger.py
