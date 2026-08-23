@@ -46,8 +46,10 @@ def main():
 
     row='20260823034619 sinjira_v24_5_22_rls_helper_rpc_boundary'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=153: errors.append(f'Ledger: {len(rows)} migrations au lieu de 153.')
-    if rows.count(row)!=1 or not rows or rows[-1]!=row: errors.append('V24.5.22 doit être la dernière migration unique du ledger courant.')
+    if rows.count(row)!=1: errors.append('Le ledger doit conserver exactement une occurrence historique de V24.5.22.')
+    if row in rows:
+        idx=rows.index(row)
+        if any(x.split()[0]<'20260823034619' for x in rows[idx+1:]): errors.append('Le ledger n’est plus ordonné après V24.5.22.')
 
     for marker in ['neuf','security invoker','stable','sinjira_rls_internal','153 migrations','81/81','19 `sinjira_mfa_access_allowed`','12 `social_is_suspended`','aucun warning','rls enabled no policy','pro+','l’humain avant tout']:
         if marker not in doc: errors.append(f'Document V24.5.22 incomplet: {marker}')
@@ -58,7 +60,7 @@ def main():
         print(f'ECHEC V24.5.22 frontière helpers RLS: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.22: 9 helpers RLS isolés, wrappers STABLE SECURITY INVOKER, anon révoqué, 81 références RLS documentées et ledger 153 synchronisé.')
+    print('OK V24.5.22 historique: 9 helpers RLS isolés, wrappers STABLE SECURITY INVOKER, anon révoqué et jalon conservé dans le ledger.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
