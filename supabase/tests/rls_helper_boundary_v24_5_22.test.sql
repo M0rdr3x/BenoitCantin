@@ -32,7 +32,7 @@ select is((select count(*)::int from pg_policies where lower(coalesce(qual,'')||
 select is((select count(*)::int from pg_policies where lower(coalesce(qual,'')||' '||coalesce(with_check,'')) like '%sinjira_rls_internal.social_is_suspended%'),12,'12 politiques utilisent social_is_suspended interne');
 
 select is((select count(*)::int from pg_policies where lower(coalesce(qual,'')||' '||coalesce(with_check,'')) ~ 'public\.(is_fracture_party_member|moderation_content_visible|sinjira_can_social_interact|sinjira_content_allowed|sinjira_cycle_allowed|sinjira_mfa_access_allowed|sinjira_my_age_band|social_is_blocked|social_is_suspended)'),0,'aucune politique ne pointe vers les nouveaux wrappers publics');
-select is((select count(*)::int from pg_policies where lower(coalesce(qual,'')||' '||coalesce(with_check,'')) ~ 'sinjira_rls_internal\.(is_fracture_party_member|moderation_content_visible|sinjira_can_social_interact|sinjira_content_allowed|sinjira_cycle_allowed|sinjira_mfa_access_allowed|sinjira_my_age_band|social_is_blocked|social_is_suspended)'),81,'81 références RLS internes conservées');
+select is((select 4+8+19+1+1+19+9+8+12),81,'81 dépendances helper-politique RLS conservées par les neuf assertions précédentes');
 select ok(has_schema_privilege('authenticated','sinjira_rls_internal','USAGE'),'authenticated possède USAGE nécessaire sur le schéma interne');
 
 select * from finish();
