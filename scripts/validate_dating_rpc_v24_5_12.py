@@ -55,9 +55,9 @@ def main():
 
     row='20260823011647 sinjira_v24_5_12_dating_rpc_boundary'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=143: errors.append(f'Ledger: {len(rows)} migrations au lieu de 143.')
     if rows.count(row)!=1: errors.append('Le ledger doit contenir exactement une occurrence de V24.5.12.')
-    if not rows or rows[-1]!=row: errors.append('V24.5.12 doit être la dernière migration du ledger courant.')
+    if len(rows)<143: errors.append(f'Ledger historique incomplet: {len(rows)} migrations, au moins 143 attendues.')
+    if row in rows and rows.index(row)<142: errors.append('V24.5.12 apparaît trop tôt dans le ledger historique.')
 
     for marker in ['18 rpc','18/18','security invoker','sinjira_dating_internal','143 migrations','auth.uid','service_role','aucune identité','aucun consentement photo']:
         if marker not in doc: errors.append(f'Document V24.5.12 incomplet: {marker}')
@@ -70,7 +70,7 @@ def main():
         print(f'ECHEC V24.5.12 frontière RPC Rencontres: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.12: 18 RPC Rencontres isolées, wrappers SECURITY INVOKER, anon révoqué, auth.uid() et droits authenticated/service_role conservés, ledger 143 synchronisé.')
+    print('OK V24.5.12 historique: 18 RPC Rencontres isolées, wrappers SECURITY INVOKER, anon révoqué, auth.uid() et droits authenticated/service_role conservés.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
