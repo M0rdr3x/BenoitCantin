@@ -1,3 +1,4 @@
+import './sinjira-admin-preorder-tax-v24-5-27.js';
 import { escapeHtml, getSupabase, friendlyBackendMessage } from './sinjira-supabase.js';
 
 const PRODUCT_SLUG = 'sinjira-livre-01-la-cendre-du-jugement';
@@ -51,7 +52,7 @@ function renderReadiness(data) {
       ${item('Frais de livraison à la charge du client', data?.shipping_customer_pays === true)}
       ${item('Verrous vente / paiement / transport externe', flagsLocked)}
       <div><span>Ramassage — frais de livraison</span><strong>${Number(data?.pickup_shipping_charge_cents || 0) === 0 ? '0 $' : 'À corriger'}</strong><small>${Number(data?.pickup_shipping_charge_cents || 0) === 0 ? 'conforme' : 'à compléter'}</small></div>
-      <div><span>Taxes calculées dans SINJIRA</span><strong>Non</strong><small>les taxes applicables, le cas échéant, devront être déterminées avant tout futur paiement</small></div>
+      <div><span>Taxes calculées dans SINJIRA</span><strong>Non</strong><small>une estimation indicative séparée peut être publiée; les taxes de facturation devront être déterminées avant tout futur paiement</small></div>
     </div>
     <div class="preorder-admin-contract">
       <div><span>Zones de livraison publiées</span><strong>${Number(data?.published_shipping_zones || 0)}</strong></div>
