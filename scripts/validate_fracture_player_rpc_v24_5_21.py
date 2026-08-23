@@ -46,8 +46,9 @@ def main():
 
     row='20260823033756 sinjira_v24_5_21_fracture_player_rpc_boundary'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=152: errors.append(f'Ledger: {len(rows)} migrations au lieu de 152.')
-    if rows.count(row)!=1 or not rows or rows[-1]!=row: errors.append('V24.5.21 doit être la dernière migration unique du ledger courant.')
+    if len(rows)<152: errors.append(f'Ledger: {len(rows)} migrations, V24.5.21 exige au moins 152.')
+    if rows.count(row)!=1: errors.append('Le ledger doit conserver exactement une occurrence de V24.5.21.')
+    if row in rows and rows.index(row)!=151: errors.append('V24.5.21 doit conserver sa position historique 152 dans le ledger.')
 
     if '8 rpc' not in doc and 'huit rpc' not in doc:
         errors.append('Document V24.5.21 incomplet: huit RPC')
@@ -60,7 +61,7 @@ def main():
         print(f'ECHEC V24.5.21 frontière RPC Fracture: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.21: 8 RPC joueur Fracture isolées, helper RLS conservé, anon révoqué et ledger 152 synchronisé.')
+    print('OK V24.5.21 historique: 8 RPC joueur Fracture restent isolées et la position 152 est conservée.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
