@@ -41,7 +41,7 @@ function safeCommercial(info) {
 function markup() {
   return `<section class="sinjira-cost-summary" data-preorder-cost-summary aria-labelledby="preorder-cost-summary-title">
     <div class="sinjira-cost-summary-head">
-      <span class="eyebrow">V24.5.25 · avant tout futur achat</span>
+      <span class="eyebrow">V24.5.26 · avant tout futur achat</span>
       <h3 id="preorder-cost-summary-title">Résumé estimatif du coût</h3>
       <p>Voyez ce qui est connu avant de réserver ou d’acheter. <strong>Les frais de livraison seront à la charge du client.</strong> Aucun montant affiché ici n’est prélevé.</p>
     </div>
@@ -54,9 +54,9 @@ function markup() {
     <div class="sinjira-cost-summary-grid" aria-live="polite">
       <div><span>Prix du livre</span><strong data-pcs-book>Prix pas encore annoncé</strong><small data-pcs-book-note>Seul un prix officiellement publié peut être utilisé.</small></div>
       <div><span>Livraison</span><strong data-pcs-shipping>Estimation pas encore disponible</strong><small data-pcs-shipping-note>Le coût final devra être confirmé avant toute future commande.</small></div>
-      <div class="sinjira-cost-summary-total"><span>Total estimatif</span><strong data-pcs-total>Total estimatif indisponible pour le moment</strong><small data-pcs-total-note>Aucun total n’est inventé lorsqu’une donnée manque.</small></div>
+      <div class="sinjira-cost-summary-total"><span>Sous-total estimatif avant taxes</span><strong data-pcs-total>Total estimatif indisponible pour le moment</strong><small data-pcs-total-note>Aucun total n’est inventé lorsqu’une donnée manque.</small></div>
     </div>
-    <p class="sinjira-cost-summary-guard"><strong>Réservation ≠ vente.</strong> Aucun paiement n’est prélevé maintenant. L’estimation de livraison est non contractuelle, aucune adresse exacte n’est demandée pour ce calcul, et le prix/coût final devront être présentés puis acceptés séparément avant un futur achat.</p>
+    <p class="sinjira-cost-summary-guard"><strong>Réservation ≠ vente.</strong> Aucun paiement n’est prélevé maintenant. L’estimation de livraison est non contractuelle, aucune adresse exacte n’est demandée pour ce calcul, et les taxes applicables, le cas échéant, ne sont pas calculées ici. Le montant final devra être présenté puis accepté séparément avant tout futur paiement.</p>
   </section>`;
 }
 
@@ -227,12 +227,12 @@ async function init(root) {
       n.total.textContent = totalMin === totalMax
         ? (money(totalMin, currency || shippingCurrency) || '—')
         : `${money(totalMin, currency || shippingCurrency)} à ${money(totalMax, currency || shippingCurrency)}`;
-      n.totalNote.textContent = 'Total estimatif seulement. Le prix et les frais finaux devront être présentés et acceptés avant toute future commande.';
+      n.totalNote.textContent = 'Sous-total estimatif avant taxes applicables. Les taxes, le cas échéant, ne sont pas calculées ici; le montant final devra être présenté et accepté avant tout futur paiement.';
     } else {
       n.total.textContent = 'Total estimatif indisponible pour le moment';
       n.totalNote.textContent = sameCurrency
-        ? 'Aucun total n’est inventé lorsqu’un prix, une estimation ou un mode de réception confirmé manque.'
-        : 'Les monnaies du prix et de la livraison ne correspondent pas; aucun total n’est calculé.';
+        ? 'Aucun total n’est inventé lorsqu’un prix, une estimation ou un mode de réception confirmé manque. Les taxes applicables ne sont pas calculées ici.'
+        : 'Les monnaies du prix et de la livraison ne correspondent pas; aucun total n’est calculé et aucune taxe n’est estimée.';
     }
   }
 
