@@ -1,3 +1,4 @@
+import './sinjira-preorder-cost-summary-v24-5-25.js';
 import { escapeHtml, getCurrentUser, getSupabase, isSinjiraBackendConfigured } from './sinjira-supabase.js';
 
 const PRODUCT_SLUG = 'sinjira-livre-01-la-cendre-du-jugement';
