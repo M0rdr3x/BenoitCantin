@@ -20,6 +20,8 @@ Un profil ne peut être publié que si :
 
 Toute modification d’un profil publié le remet en brouillon en supprimant `published_at`. Une nouvelle publication humaine est nécessaire.
 
+Les longueurs sont aussi bornées côté serveur pour les libellés, subdivisions, références de source et notes publiques. Les paramètres `NULL` ou hors contrat sont refusés par la fonction d’estimation plutôt que d’être interprétés silencieusement.
+
 ## Précision
 
 Les taux papier, numérique et livraison sont stockés en points de base décimaux `numeric(10,3)`. 100 points de base correspondent à 1 %. Cette précision permet notamment de représenter un taux de 14,975 % sans imposer un arrondi à 14,98 % ou 14,97 %.
@@ -55,6 +57,8 @@ V24.5.27 conserve toutes les protections existantes :
 
 L’estimation fiscale n’est calculée que lorsque la fiche commerciale publiée et, lorsqu’elle est requise, la fourchette de livraison publiée sont disponibles. Si une donnée manque, aucun montant n’est inventé.
 
+La checklist `admin_preorder_sale_readiness` exige désormais au moins un profil fiscal indicatif publié et vérifié avant de pouvoir afficher `ready_for_future_manual_opening = true`. Cela ne garantit pas qu’un taux donné s’applique à chaque acheteur : la vérification fiscale finale reste obligatoire au moment d’une future transaction.
+
 ## Pas de service externe payant
 
 `external_tax_api_enabled = false` et `billing_authoritative = false` sont des invariants de cette version. Aucune API fiscale externe, aucun paiement, aucun checkout, aucune API transporteur et aucun service payant n’est activé.
@@ -69,11 +73,12 @@ Avant une future transaction, le prix, la livraison, les taxes réellement appli
 
 ## État production
 
-V24.5.27 correspond à deux migrations :
+V24.5.27 correspond à trois migrations :
 
 - `20260823195851 sinjira_v24_5_27_preorder_tax_estimate_preparation`;
-- `20260823200303 sinjira_v24_5_27_tax_rate_precision_hardening`.
+- `20260823200303 sinjira_v24_5_27_tax_rate_precision_hardening`;
+- `20260823201127 sinjira_v24_5_27_tax_input_and_readiness_hardening`.
 
-Le ledger production contient **159 migrations**.
+Le ledger production contient **160 migrations**.
 
 Au déploiement, aucun profil fiscal n’est créé ni publié automatiquement.
