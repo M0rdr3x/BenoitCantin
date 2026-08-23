@@ -37,7 +37,7 @@ function renderReadiness(data) {
       <div>
         <span class="eyebrow">V24.5.26 · garde de préparation</span>
         <h2>Checklist avant toute future ouverture</h2>
-        <p>Cette checklist vérifie uniquement si les informations sont assez complètes pour envisager plus tard une ouverture manuelle. <strong>Elle n’ouvre aucune vente, aucun checkout et aucun paiement.</strong></p>
+        <p>Cette checklist vérifie uniquement si les informations sont assez complètes pour envisager plus tard une ouverture manuelle. <strong>Elle n’ouvre aucune vente, aucun checkout et aucun paiement : la vente reste toujours désactivée.</strong></p>
       </div>
       <span class="preorder-status-pill" data-state="${ready ? 'ready' : 'draft'}">${ready ? 'Préparation complète' : 'Préparation incomplète'}</span>
     </div>
