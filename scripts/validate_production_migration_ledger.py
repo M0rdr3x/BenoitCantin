@@ -8,9 +8,9 @@ MIG = ROOT / 'supabase' / 'migrations'
 BUILDER = ROOT / 'scripts' / 'build_supabase_production_workspace.py'
 ROW_RE = re.compile(r'^(\d{14})\s+([a-zA-Z0-9_]+)$')
 FILE_RE = re.compile(r'^(\d{14})_(.+)\.sql$')
-EXPECTED_COUNT = 146
+EXPECTED_COUNT = 147
 EXPECTED_FIRST = '20260809050252'
-EXPECTED_LAST = '20260823020820'
+EXPECTED_LAST = '20260823021612'
 
 
 def ledger_rows():
@@ -30,16 +30,11 @@ def main():
     errors = []
     rows = ledger_rows()
     versions = [v for v, _ in rows]
-    if len(rows) != EXPECTED_COUNT:
-        errors.append(f'Ledger: {len(rows)} versions au lieu de {EXPECTED_COUNT}.')
-    if versions != sorted(versions):
-        errors.append('Ledger non trié.')
-    if len(versions) != len(set(versions)):
-        errors.append('Versions dupliquées dans le ledger.')
-    if not versions or versions[0] != EXPECTED_FIRST:
-        errors.append('Première version production inattendue.')
-    if not versions or versions[-1] != EXPECTED_LAST:
-        errors.append('Dernière version production inattendue.')
+    if len(rows) != EXPECTED_COUNT: errors.append(f'Ledger: {len(rows)} versions au lieu de {EXPECTED_COUNT}.')
+    if versions != sorted(versions): errors.append('Ledger non trié.')
+    if len(versions) != len(set(versions)): errors.append('Versions dupliquées dans le ledger.')
+    if not versions or versions[0] != EXPECTED_FIRST: errors.append('Première version production inattendue.')
+    if not versions or versions[-1] != EXPECTED_LAST: errors.append('Dernière version production inattendue.')
 
     local = []
     for path in sorted(MIG.glob('*.sql')):
@@ -49,8 +44,7 @@ def main():
             continue
         local.append((m.group(1), path.name))
     local_versions = [v for v, _ in local]
-    if len(local_versions) != len(set(local_versions)):
-        errors.append('Deux fichiers locaux partagent le même timestamp.')
+    if len(local_versions) != len(set(local_versions)): errors.append('Deux fichiers locaux partagent le même timestamp.')
 
     future = [(v, name) for v, name in local if v > EXPECTED_LAST]
     with tempfile.TemporaryDirectory(prefix='sinjira-ledger-') as td:
@@ -66,24 +60,19 @@ def main():
                     errors.append(f'Fichier workspace invalide: {path.name}')
                     continue
                 generated.append((m.group(1), path.name))
-            if [v for v, _ in generated] != versions + [v for v, _ in future]:
-                errors.append('Le workspace lié ne reproduit pas exactement le ledger + migrations futures.')
+            if [v for v, _ in generated] != versions + [v for v, _ in future]: errors.append('Le workspace lié ne reproduit pas exactement le ledger + migrations futures.')
             for _, name in generated[:len(rows)]:
                 text = (out / 'migrations' / name).read_text('utf-8', errors='ignore')
-                if 'Marqueur de déploiement lié uniquement' not in text:
-                    errors.append(f'Version déjà appliquée contient du DDL dans le workspace: {name}')
+                if 'Marqueur de déploiement lié uniquement' not in text: errors.append(f'Version déjà appliquée contient du DDL dans le workspace: {name}')
             for _, name in future:
-                if not (out / 'migrations' / name).exists():
-                    errors.append(f'Migration future absente du workspace: {name}')
+                if not (out / 'migrations' / name).exists(): errors.append(f'Migration future absente du workspace: {name}')
 
     if errors:
         print(f'ECHEC ledger production: {len(errors)} problème(s).')
-        for err in errors:
-            print('- ' + err)
+        for err in errors: print('- ' + err)
         return 1
     print(f'OK ledger production: {EXPECTED_COUNT} versions distantes protégées; {len(future)} migration(s) future(s) transmissible(s).')
     return 0
 
 
-if __name__ == '__main__':
-    raise SystemExit(main())
+if __name__ == '__main__': raise SystemExit(main())
