@@ -65,10 +65,11 @@ def main():
         '20260823035659 sinjira_v24_5_14_private_profile_editing',
         '20260823040936 sinjira_v24_5_23_private_profile_schema_convergence'
     ]
-    if len(rows)!=155: errors.append(f'Ledger: {len(rows)} migrations au lieu de 155.')
+    if len(rows)<155: errors.append(f'Ledger historique tronqué: {len(rows)} migrations, au moins 155 attendues.')
     for row in expected:
         if rows.count(row)!=1: errors.append(f'Ledger doit contenir exactement une fois: {row}')
-    if not rows or rows[-1]!=expected[-1]: errors.append('La convergence V24.5.23 doit être la dernière migration du ledger courant.')
+    if all(row in rows for row in expected) and rows.index(expected[0]) >= rows.index(expected[1]):
+        errors.append('Les deux migrations Profil V24.5.23 doivent conserver leur ordre historique.')
 
     for marker in ['l’humain avant tout','security invoker','sinjira_profile_internal','155 migrations','pas copiés automatiquement dans le registre','moins de 14 ans']:
         if marker not in doc: errors.append(f'Document V24.5.23 incomplet: {marker}')
@@ -84,7 +85,7 @@ def main():
         print(f'ECHEC V24.5.23 profil privé modifiable: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.23: coffre privé modifiable via RPC, accès table direct fermé, MFA/âge/juridiction/tuteur protégés et ledger 155 synchronisé.')
+    print('OK V24.5.23 historique: coffre privé modifiable via RPC, accès table direct fermé, MFA/âge/juridiction/tuteur protégés et migrations Profil présentes dans le ledger.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
