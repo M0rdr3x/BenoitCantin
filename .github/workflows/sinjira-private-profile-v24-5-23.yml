@@ -1,0 +1,42 @@
+name: SINJIRA V24.5.23 — Profil privé modifiable
+
+on:
+  pull_request:
+    paths:
+      - 'compte/profil.html'
+      - 'assets/js/sinjira-private-profile-v24-5-23.js'
+      - 'supabase/migrations/20260823035659_sinjira_v24_5_14_private_profile_editing.sql'
+      - 'supabase/migrations/20260823040936_sinjira_v24_5_23_private_profile_schema_convergence.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/tests/private_profile_editing_v24_5_23.test.sql'
+      - 'scripts/validate_private_profile_editing_v24_5_23.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_rls_helper_rpc_v24_5_22.py'
+      - 'PRIVATE_PROFILE_EDITING_V24_5_23.md'
+      - '.github/workflows/sinjira-private-profile-v24-5-23.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Contrat Profil privé V24.5.23
+        run: python scripts/validate_private_profile_editing_v24_5_23.py
+      - name: Manifeste schéma production
+        run: python scripts/validate_production_schema_manifest.py
+      - name: Ledger production
+        run: python scripts/validate_production_migration_ledger.py
+      - name: Contrat RLS historique V24.5.22
+        run: python scripts/validate_rls_helper_rpc_v24_5_22.py
+      - name: Sécurité générale
+        run: python scripts/validate_security_contract.py
+      - name: Mode gratuit
+        run: python scripts/validate_free_only_mode.py
