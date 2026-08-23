@@ -1,6 +1,6 @@
 # SINJIRA™ — Politique des services externes payants
 
-**Statut : garde-fou produit et déploiement — V24.5.6**
+**Statut : garde-fou produit et déploiement — V24.5.27**
 
 SINJIRA peut préparer le code, les interfaces, les contrats techniques et les points d’intégration nécessaires à de futurs services externes. **Préparer une intégration ne constitue jamais une autorisation de l’activer.**
 
@@ -15,6 +15,7 @@ Cette règle couvre notamment :
 - fournisseurs externes de courriel transactionnel;
 - fournisseurs SMS/téléphonie payants;
 - transporteurs, agrégateurs de tarifs et achats d’étiquettes d’expédition;
+- fournisseurs externes de calcul, validation ou déclaration fiscale;
 - publication commerciale nécessitant une infrastructure payante;
 - soumission App Store / Google Play lorsqu’elle exige un compte développeur payant ou une action de publication;
 - tout autre service tiers dont l’activation peut créer une dépense.
@@ -136,7 +137,24 @@ external_shipping_purchase_enabled = false
 pickup_shipping_charge_cents = 0
 ```
 
-Les fourchettes de livraison sont gérées localement par SINJIRA. V24.5.6 n’appelle aucune API Canada Post, UPS, FedEx, Purolator ou autre transporteur et n’achète aucune étiquette d’expédition.
+Les fourchettes de livraison sont gérées localement par SINJIRA. V24.5.6 n’appelle aucune API de transporteur et n’achète aucune étiquette d’expédition.
+
+### Estimation fiscale V24.5.27
+
+V24.5.27 permet de préparer des **estimations fiscales indicatives** à partir de taux vérifiés et saisis manuellement par un administrateur avec MFA/AAL2.
+
+Aucun taux n’est prérempli. La personne choisit explicitement le profil fiscal publié correspondant à sa situation; SINJIRA ne choisit pas automatiquement une juridiction à sa place.
+
+Les invariants sont :
+
+```text
+external_tax_api_enabled = false
+billing_authoritative = false
+estimate_nonbinding = true
+final_tax_confirmation_required = true
+```
+
+Aucun fournisseur externe de calcul fiscal n’est appelé. Une estimation fiscale ne devient jamais une taxe facturée automatiquement. Avant un futur paiement, les taxes réellement applicables et le montant final devront être déterminés selon les règles alors en vigueur, présentés clairement et acceptés dans une action distincte.
 
 ## Héritage numérique
 

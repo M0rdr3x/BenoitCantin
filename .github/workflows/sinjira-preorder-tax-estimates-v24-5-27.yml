@@ -1,0 +1,49 @@
+name: SINJIRA V24.5.27 — Estimation fiscale indicative
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260823195851_sinjira_v24_5_27_preorder_tax_estimate_preparation.sql'
+      - 'supabase/migrations/20260823200303_sinjira_v24_5_27_tax_rate_precision_hardening.sql'
+      - 'supabase/migrations/20260823201127_sinjira_v24_5_27_tax_input_and_readiness_hardening.sql'
+      - 'supabase/tests/preorder_tax_estimates_v24_5_27.test.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'assets/js/sinjira-admin-preorder-tax-v24-5-27.js'
+      - 'assets/js/sinjira-preorder-tax-estimate-v24-5-27.js'
+      - 'assets/js/sinjira-admin-preorder-readiness-v24-5-26.js'
+      - 'assets/js/sinjira-preorder-fulfillment-v24-5-6.js'
+      - 'PREORDER_TAX_ESTIMATES_V24_5_27.md'
+      - 'scripts/validate_preorder_tax_estimates_v24_5_27.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - '.github/workflows/sinjira-preorder-tax-estimates-v24-5-27.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20260823195851_sinjira_v24_5_27_preorder_tax_estimate_preparation.sql'
+      - 'supabase/migrations/20260823200303_sinjira_v24_5_27_tax_rate_precision_hardening.sql'
+      - 'supabase/migrations/20260823201127_sinjira_v24_5_27_tax_input_and_readiness_hardening.sql'
+      - 'supabase/tests/preorder_tax_estimates_v24_5_27.test.sql'
+      - 'assets/js/sinjira-admin-preorder-tax-v24-5-27.js'
+      - 'assets/js/sinjira-preorder-tax-estimate-v24-5-27.js'
+      - 'PREORDER_TAX_ESTIMATES_V24_5_27.md'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Valider V24.5.27
+        run: python scripts/validate_preorder_tax_estimates_v24_5_27.py
+      - name: Valider le ledger production
+        run: python scripts/validate_production_migration_ledger.py
+      - name: Valider le manifeste du schéma
+        run: python scripts/validate_production_schema_manifest.py
+      - name: Préserver V24.5.26 comme contrat historique
+        run: python scripts/validate_preorder_sale_readiness_v24_5_26.py
