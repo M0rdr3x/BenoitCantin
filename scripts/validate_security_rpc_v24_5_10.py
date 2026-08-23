@@ -56,8 +56,11 @@ def main():
 
     row='20260822201257 sinjira_v24_5_10_security_rpc_boundary'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=141: errors.append(f'Ledger: {len(rows)} migrations au lieu de 141.')
-    if not rows or rows[-1]!=row: errors.append('V24.5.10 doit être la dernière migration du ledger courant.')
+    if rows.count(row)!=1: errors.append('Le ledger doit contenir exactement une occurrence de V24.5.10.')
+    if len(rows)<141: errors.append(f'Ledger historique incomplet: {len(rows)} migrations, au moins 141 attendues.')
+    if row in rows:
+        idx=rows.index(row)
+        if idx<140: errors.append('V24.5.10 apparaît trop tôt dans le ledger historique.')
 
     for marker in ['17 rpc','17/17','2/17','security invoker','sinjira_security_internal','141 migrations','auth.uid','service_role']:
         if marker not in doc: errors.append(f'Document V24.5.10 incomplet: {marker}')
@@ -70,7 +73,7 @@ def main():
         print(f'ECHEC V24.5.10 frontière RPC sécurité: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.10: 17 RPC sécurité isolées, wrappers SECURITY INVOKER, anon révoqué, identité utilisateur et droits authenticated/service_role conservés.')
+    print('OK V24.5.10 historique: 17 RPC sécurité isolées, wrappers SECURITY INVOKER, anon révoqué, identité utilisateur et droits authenticated/service_role conservés.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
