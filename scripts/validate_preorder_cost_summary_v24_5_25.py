@@ -57,9 +57,9 @@ def main():
         errors.append('Le résumé ne doit pas embarquer de prix/tarif commercial fixe.')
 
     rows=[x.strip() for x in read(LEDGER).splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=156: errors.append(f'Ledger: {len(rows)} migrations au lieu de 156; V24.5.25 doit rester frontend-only.')
-    expected='20260823044507 sinjira_v24_5_24_security_definer_reconstruction_convergence'
-    if not rows or rows[-1]!=expected: errors.append('V24.5.25 ne doit pas ajouter de migration Supabase.')
+    historical='20260823044507 sinjira_v24_5_24_security_definer_reconstruction_convergence'
+    if len(rows)<156: errors.append(f'Ledger historique tronqué: {len(rows)} migrations, au moins 156 attendues.')
+    if rows.count(historical)!=1: errors.append('Le jalon frontend-only V24.5.25 doit conserver exactement une occurrence de la dernière migration qui existait à sa création.')
     if list(MIG.glob('*v24_5_25*.sql')): errors.append('Une migration V24.5.25 existe alors que ce jalon doit rester frontend-only.')
 
     for marker in ['frontend-only','156 migrations','frais de livraison seront à la charge du client','0 $ de frais de livraison','aucune adresse exacte','réservation reste distincte d’une vente']:
@@ -69,7 +69,7 @@ def main():
         print(f'ECHEC V24.5.25 résumé coût: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.25: coût affiché seulement depuis données publiées, livraison client, ramassage 0 $, null non converti en 0, aucun service payant, ledger 156 inchangé.')
+    print('OK V24.5.25 historique: coût affiché seulement depuis données publiées, livraison client, ramassage 0 $, null non converti en 0 et aucune migration propre à V24.5.25.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
