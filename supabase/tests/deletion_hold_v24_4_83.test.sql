@@ -16,7 +16,7 @@ select ok((select is_nullable='YES' from information_schema.columns where table_
 select ok(to_regprocedure('public.privacy_export_my_extended_data()') is not null,'RPC export étendu existe');
 select ok(has_function_privilege('authenticated','public.privacy_export_my_extended_data()','execute'),'membre authentifié peut exporter ses données récentes');
 select ok(not has_function_privilege('anon','public.privacy_export_my_extended_data()','execute'),'anon ne peut pas exporter des données privées');
-select ok(position($marker$-'snapshot'$marker$ in replace(pg_get_functiondef('public.privacy_export_my_extended_data()'::regprocedure),' ',''))>0,'export automatique exclut les snapshots tiers des signalements');
+select ok(position($marker$-'snapshot'$marker$ in replace(pg_get_functiondef('sinjira_user_rights_internal.privacy_export_my_extended_data()'::regprocedure),' ',''))>0,'export automatique exclut les snapshots tiers des signalements');
 
 select * from finish();
 rollback;
