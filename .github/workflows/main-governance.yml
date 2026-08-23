@@ -25,3 +25,10 @@ jobs:
               return;
             }
             core.info(`Commit ${sha} associé à une PR fusionnée vers main.`);
+
+            const protectedRef = process.env.GITHUB_REF_PROTECTED === 'true';
+            if (!protectedRef) {
+              core.warning('La branche main n’est pas protégée par une branch protection ou un ruleset. Cette alerte ne remplace pas la configuration GitHub Settings > Branches/Rulesets.');
+            } else {
+              core.info('La branche main est protégée par une branch protection ou un ruleset.');
+            }
