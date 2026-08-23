@@ -36,17 +36,17 @@ def main():
     if re.search(r'grant\s+execute\s+on\s+function\s+(?:public|sinjira_points_user_internal)\..*?\s+to\s+anon',low,re.S): errors.append('Aucun EXECUTE anon permis.')
     row='20260823030432 sinjira_v24_5_18_points_status_rpc_boundary'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=149: errors.append(f'Ledger: {len(rows)} migrations au lieu de 149.')
-    if rows.count(row)!=1 or not rows or rows[-1]!=row: errors.append('V24.5.18 doit être la dernière migration unique du ledger courant.')
+    if len(rows)<149: errors.append(f'Ledger: {len(rows)} migrations, moins que les 149 requises à V24.5.18.')
+    if rows.count(row)!=1: errors.append('Le ledger doit conserver exactement une occurrence de V24.5.18.')
     for marker in ['security invoker','sinjira_points_user_internal','149 migrations','auth.uid','purchases_enabled=false','aucun checkout','aucun paiement','safe meet']:
         if marker not in doc: errors.append(f'Document V24.5.18 incomplet: {marker}')
     for token in ['stripe','paypal','twilio','api.resend.com']:
         if token in low: errors.append(f'Intégration externe interdite dans V24.5.18: {token}')
     if errors:
-        print(f'ECHEC V24.5.18 frontière statut Points: {len(errors)} problème(s).')
+        print(f'ECHEC V24.5.18 historique: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.18: statut Points isolé, achats désactivés, ACL conservées et ledger 149 synchronisé.')
+    print('OK V24.5.18 historique: statut Points isolé, achats désactivés et migration conservée.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
