@@ -1,0 +1,40 @@
+name: SINJIRA V24.5.22 — Frontière helpers RLS
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/tests/rls_helper_boundary_v24_5_22.test.sql'
+      - 'scripts/validate_rls_helper_rpc_v24_5_22.py'
+      - 'scripts/validate_fracture_player_rpc_v24_5_21.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'RLS_HELPER_RPC_BOUNDARY_V24_5_22.md'
+      - '.github/workflows/sinjira-rls-helper-rpc-v24-5-22.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Contrat frontière helpers RLS V24.5.22
+        run: python scripts/validate_rls_helper_rpc_v24_5_22.py
+      - name: Contrat Fracture historique V24.5.21
+        run: python scripts/validate_fracture_player_rpc_v24_5_21.py
+      - name: Contrat Supabase
+        run: python scripts/validate_supabase.py
+      - name: Ledger production
+        run: python scripts/validate_production_migration_ledger.py
+      - name: Sécurité générale
+        run: python scripts/validate_security_contract.py
+      - name: RLS sociales
+        run: python scripts/validate_social_rls.py
+      - name: Mode gratuit
+        run: python scripts/validate_free_only_mode.py
