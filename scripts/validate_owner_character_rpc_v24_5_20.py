@@ -39,8 +39,9 @@ def main():
 
     row='20260823031850 sinjira_v24_5_20_owner_character_rpc_boundary'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=151: errors.append(f'Ledger: {len(rows)} migrations au lieu de 151.')
-    if rows.count(row)!=1 or not rows or rows[-1]!=row: errors.append('V24.5.20 doit être la dernière migration unique du ledger courant.')
+    if len(rows)<151: errors.append(f'Ledger: {len(rows)} migrations, V24.5.20 exige au moins 151.')
+    if rows.count(row)!=1: errors.append('Le ledger doit conserver exactement une occurrence de V24.5.20.')
+    if row in rows and rows.index(row)!=150: errors.append('V24.5.20 doit conserver sa position historique 151 dans le ledger.')
 
     for marker in ['security invoker','sinjira_owner_internal','151 migrations','auth.uid()','identité','registre','l’humain avant tout','service externe payant']:
         if marker not in doc: errors.append(f'Document V24.5.20 incomplet: {marker}')
@@ -51,7 +52,7 @@ def main():
         print(f'ECHEC V24.5.20 frontière personnage propriétaire: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.20: ensure_sinjira_owner_character isolée, wrapper SECURITY INVOKER, anon révoqué et ledger 151 synchronisé.')
+    print('OK V24.5.20 historique: ensure_sinjira_owner_character reste isolée et sa position 151 est conservée.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
