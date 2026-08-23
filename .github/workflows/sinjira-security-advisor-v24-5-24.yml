@@ -1,0 +1,30 @@
+name: SINJIRA V24.5.24 — Contrat advisor sécurité
+
+on:
+  pull_request:
+    paths:
+      - 'SECURITY_ADVISOR_CONTRACT_V24_5_24.md'
+      - 'scripts/validate_security_advisor_contract_v24_5_24.py'
+      - 'supabase/tests/security_advisor_contract_v24_5_24.test.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/migrations/**'
+      - '.github/workflows/sinjira-security-advisor-v24-5-24.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Valider le contrat advisor sécurité
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier le contrat V24.5.24
+        run: python scripts/validate_security_advisor_contract_v24_5_24.py
