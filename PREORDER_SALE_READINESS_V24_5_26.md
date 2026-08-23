@@ -46,6 +46,6 @@ Cette précision ne constitue pas un avis fiscal ou juridique.
 
 ## Services externes
 
-Aucun Stripe, PayPal, transporteur, service d’étiquettes, courriel/SMS payant, IA distante payante, DNS, passkey ou publication payante n’est activé par V24.5.26.
+**Aucun service payant n’est activé par V24.5.26.** Aucun Stripe, PayPal, transporteur, service d’étiquettes, courriel/SMS payant, IA distante payante, DNS, passkey ou publication payante n’est activé.
 
 La protection serveur GitHub de `main` reste un prérequis externe tant que l’action de ruleset/branch protection n’est pas exposée par les outils disponibles.
