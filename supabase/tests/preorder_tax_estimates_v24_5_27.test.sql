@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(22);
+select plan(24);
 
 select ok(to_regclass('public.preorder_tax_estimate_profiles') is not null,'table profils fiscaux existe');
 select ok((select relrowsecurity from pg_class where oid='public.preorder_tax_estimate_profiles'::regclass),'RLS profils fiscaux active');
@@ -27,8 +27,10 @@ select ok(not (select prosecdef from pg_proc where oid='public.product_preorder_
 select ok(has_function_privilege('anon','public.product_preorder_tax_estimate(text,text,text,integer,text,text)','EXECUTE'),'anon peut demander une estimation publiée');
 
 select ok(position('external_tax_api_enabled' in pg_get_functiondef('preorder_tax_internal.product_preorder_tax_estimate(text,text,text,integer,text,text)'::regprocedure))>0 and position('billing_authoritative' in pg_get_functiondef('preorder_tax_internal.product_preorder_tax_estimate(text,text,text,integer,text,text)'::regprocedure))>0 and position('final_tax_confirmation_required' in pg_get_functiondef('preorder_tax_internal.product_preorder_tax_estimate(text,text,text,integer,text,text)'::regprocedure))>0,'contrat non facturable et confirmation finale présent');
+select ok(position('p_format is null' in lower(pg_get_functiondef('preorder_tax_internal.product_preorder_tax_estimate(text,text,text,integer,text,text)'::regprocedure)))>0 and position('p_fulfillment_method is null' in lower(pg_get_functiondef('preorder_tax_internal.product_preorder_tax_estimate(text,text,text,integer,text,text)'::regprocedure)))>0,'les entrées nulles critiques sont refusées explicitement');
 select ok(position('source_reference' in pg_get_functiondef('preorder_tax_internal.admin_preorder_tax_profile_publish(text,text)'::regprocedure))>0,'publication exige une source');
 select ok(position('effective_on is not null' in lower(pg_get_functiondef('preorder_tax_internal.admin_preorder_tax_profile_publish(text,text)'::regprocedure)))>0,'publication exige une date effet');
+select ok(position('tax_estimate_ready' in pg_get_functiondef('preorder_readiness_internal.sale_readiness(text)'::regprocedure))>0 and position('v_tax_profile_count>0' in replace(pg_get_functiondef('preorder_readiness_internal.sale_readiness(text)'::regprocedure),' ',''))>0,'la readiness exige un profil fiscal indicatif publié');
 select is((select count(*)::int from public.preorder_tax_estimate_profiles),0,'aucun taux fiscal n est prérempli après reconstruction');
 
 select * from finish();
