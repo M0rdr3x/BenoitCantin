@@ -1,3 +1,4 @@
+import './sinjira-admin-preorder-readiness-v24-5-26.js';
 import { getSupabase, friendlyBackendMessage, escapeHtml } from './sinjira-supabase.js';
 
 const PRODUCT_SLUG = 'sinjira-livre-01-la-cendre-du-jugement';
@@ -116,6 +117,7 @@ async function load() {
   state.working = state.rows.find(row => row.status === 'draft' || row.status === 'ready') || null;
   state.published = state.rows.find(row => row.status === 'published') || null;
   render();
+  window.dispatchEvent(new CustomEvent('sinjira:preorder-commercial-updated'));
 }
 function args() {
   const fd = new FormData(form);
