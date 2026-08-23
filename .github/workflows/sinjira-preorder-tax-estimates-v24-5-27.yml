@@ -5,6 +5,7 @@ on:
     paths:
       - 'supabase/migrations/20260823195851_sinjira_v24_5_27_preorder_tax_estimate_preparation.sql'
       - 'supabase/migrations/20260823200303_sinjira_v24_5_27_tax_rate_precision_hardening.sql'
+      - 'supabase/migrations/20260823201127_sinjira_v24_5_27_tax_input_and_readiness_hardening.sql'
       - 'supabase/tests/preorder_tax_estimates_v24_5_27.test.sql'
       - 'supabase/production-migration-ledger.txt'
       - 'assets/js/sinjira-admin-preorder-tax-v24-5-27.js'
@@ -21,6 +22,7 @@ on:
     paths:
       - 'supabase/migrations/20260823195851_sinjira_v24_5_27_preorder_tax_estimate_preparation.sql'
       - 'supabase/migrations/20260823200303_sinjira_v24_5_27_tax_rate_precision_hardening.sql'
+      - 'supabase/migrations/20260823201127_sinjira_v24_5_27_tax_input_and_readiness_hardening.sql'
       - 'supabase/tests/preorder_tax_estimates_v24_5_27.test.sql'
       - 'assets/js/sinjira-admin-preorder-tax-v24-5-27.js'
       - 'assets/js/sinjira-preorder-tax-estimate-v24-5-27.js'
