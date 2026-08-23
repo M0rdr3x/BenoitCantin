@@ -15,12 +15,19 @@ function ensureStyle() {
   styleLoaded = true;
 }
 
+function centsValue(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
 function money(cents, currency) {
-  if (!Number.isFinite(Number(cents))) return null;
+  const value = centsValue(cents);
+  if (value === null) return null;
   try {
-    return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: currency || 'CAD' }).format(Number(cents) / 100);
+    return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: currency || 'CAD' }).format(value / 100);
   } catch {
-    return `${(Number(cents) / 100).toFixed(2)} ${currency || 'CAD'}`;
+    return `${(value / 100).toFixed(2)} ${currency || 'CAD'}`;
   }
 }
 
@@ -82,11 +89,11 @@ function commercialRow(data) {
 
 function bookSubtotal(info, format, quantity) {
   if (!info || format === 'undecided') return null;
-  const paper = Number(info.paper_price_cents);
-  const digital = Number(info.digital_price_cents);
-  if (format === 'paper') return Number.isFinite(paper) ? paper * quantity : null;
-  if (format === 'digital') return Number.isFinite(digital) ? digital * quantity : null;
-  if (format === 'both') return Number.isFinite(paper) && Number.isFinite(digital) ? (paper + digital) * quantity : null;
+  const paper = centsValue(info.paper_price_cents);
+  const digital = centsValue(info.digital_price_cents);
+  if (format === 'paper') return paper === null ? null : paper * quantity;
+  if (format === 'digital') return digital === null ? null : digital * quantity;
+  if (format === 'both') return paper === null || digital === null ? null : (paper + digital) * quantity;
   return null;
 }
 
@@ -189,10 +196,10 @@ async function init(root) {
           if (thisCalculation !== calculationId) return;
           const row = Array.isArray(data) ? data[0] : data;
           if (row && row.shipping_customer_pays === true && row.estimate_nonbinding === true) {
-            shippingMin = Number(row.estimate_min_cents);
-            shippingMax = Number(row.estimate_max_cents);
+            shippingMin = centsValue(row.estimate_min_cents);
+            shippingMax = centsValue(row.estimate_max_cents);
             shippingCurrency = row.currency || currency;
-            if (Number.isFinite(shippingMin) && Number.isFinite(shippingMax)) {
+            if (shippingMin !== null && shippingMax !== null) {
               fulfillmentComplete = true;
               n.shipping.textContent = `${money(shippingMin, shippingCurrency)} à ${money(shippingMax, shippingCurrency)}`;
               n.shippingNote.textContent = `Estimation non contractuelle — ${row.zone_label || 'zone publiée'}. Coût final à confirmer avant achat.`;
@@ -214,7 +221,7 @@ async function init(root) {
     }
 
     const sameCurrency = !shippingCurrency || !currency || shippingCurrency === currency;
-    if (subtotal !== null && fulfillmentComplete && sameCurrency && Number.isFinite(shippingMin) && Number.isFinite(shippingMax)) {
+    if (subtotal !== null && fulfillmentComplete && sameCurrency && shippingMin !== null && shippingMax !== null) {
       const totalMin = subtotal + shippingMin;
       const totalMax = subtotal + shippingMax;
       n.total.textContent = totalMin === totalMax
