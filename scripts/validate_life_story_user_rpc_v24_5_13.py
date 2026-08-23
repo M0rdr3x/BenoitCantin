@@ -51,9 +51,9 @@ def main():
 
     row='20260823013006 sinjira_v24_5_13_life_story_user_rpc_boundary'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=144: errors.append(f'Ledger: {len(rows)} migrations au lieu de 144.')
     if rows.count(row)!=1: errors.append('Le ledger doit contenir exactement une occurrence de V24.5.13.')
-    if not rows or rows[-1]!=row: errors.append('V24.5.13 doit être la dernière migration du ledger courant.')
+    if len(rows)<144: errors.append(f'Ledger historique incomplet: {len(rows)} migrations, au moins 144 attendues.')
+    if row in rows and rows.index(row)<143: errors.append('V24.5.13 apparaît trop tôt dans le ledger historique.')
 
     for marker in ['6 rpc','6/6','5/6','security invoker','sinjira_life_story_internal','144 migrations','auth.uid','service_role','distincte du registre','clonage ia posthume reste interdit','pdf final']:
         if marker not in doc: errors.append(f'Document V24.5.13 incomplet: {marker}')
@@ -66,7 +66,7 @@ def main():
         print(f'ECHEC V24.5.13 frontière RPC utilisateur Histoire de vie: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.13: 6 RPC Histoire de vie isolées, wrappers SECURITY INVOKER, anon révoqué, auth.uid(), MFA historique et droits authenticated/service_role conservés, ledger 144 synchronisé.')
+    print('OK V24.5.13 historique: 6 RPC Histoire de vie isolées, wrappers SECURITY INVOKER, anon révoqué, auth.uid(), MFA historique et droits authenticated/service_role conservés.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
