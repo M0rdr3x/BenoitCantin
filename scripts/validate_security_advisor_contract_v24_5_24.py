@@ -27,12 +27,10 @@ def main():
     migration = read(MIG).lower()
     rows = [line.strip() for line in read(LEDGER).splitlines() if line.strip() and not line.startswith('#')]
 
-    expected_last = '20260823044507 sinjira_v24_5_24_security_definer_reconstruction_convergence'
-    if len(rows) != 156:
-        errors.append(f'Ledger: {len(rows)} migrations au lieu de 156.')
-    if not rows or rows[-1] != expected_last:
-        errors.append('Le ledger doit finir sur la convergence SECURITY DEFINER V24.5.24.')
-    if rows.count(expected_last) != 1:
+    expected = '20260823044507 sinjira_v24_5_24_security_definer_reconstruction_convergence'
+    if len(rows) < 156:
+        errors.append(f'Ledger historique tronqué: {len(rows)} migrations, au moins 156 attendues.')
+    if rows.count(expected) != 1:
         errors.append('Le ledger doit contenir exactement une occurrence de la migration V24.5.24.')
 
     migration_markers = [
@@ -97,7 +95,7 @@ def main():
             print('- ' + err)
         return 1
 
-    print('OK V24.5.24: convergence reproductible, tables scellées protégées, SECURITY DEFINER public non exposé, aucun service payant activé, ledger 156 synchronisé.')
+    print('OK V24.5.24 historique: convergence reproductible, tables scellées protégées, SECURITY DEFINER public non exposé et migration canonique toujours présente.')
     return 0
 
 
