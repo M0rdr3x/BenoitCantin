@@ -60,9 +60,9 @@ def main():
 
     row='20260822202024 sinjira_v24_5_11_preorder_user_rpc_boundary'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=142: errors.append(f'Ledger: {len(rows)} migrations au lieu de 142.')
     if rows.count(row)!=1: errors.append('Le ledger doit contenir exactement une occurrence de V24.5.11.')
-    if not rows or rows[-1]!=row: errors.append('V24.5.11 doit être la dernière migration du ledger courant.')
+    if len(rows)<142: errors.append(f'Ledger historique incomplet: {len(rows)} migrations, au moins 142 attendues.')
+    if row in rows and rows.index(row)<141: errors.append('V24.5.11 apparaît trop tôt dans le ledger historique.')
 
     for marker in [
         '5 rpc','5/5','security invoker','preorder_user_internal','142 migrations',
@@ -79,7 +79,7 @@ def main():
         for e in errors: print('- '+e)
         return 1
 
-    print('OK V24.5.11: 5 RPC utilisateur précommandes isolées, wrappers SECURITY INVOKER, anon révoqué, auth.uid() et droits authenticated/service_role conservés, ledger 142 synchronisé.')
+    print('OK V24.5.11 historique: 5 RPC utilisateur précommandes isolées, wrappers SECURITY INVOKER, anon révoqué, auth.uid() et droits authenticated/service_role conservés.')
     return 0
 
 

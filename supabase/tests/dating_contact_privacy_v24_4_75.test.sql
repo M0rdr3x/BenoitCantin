@@ -21,12 +21,12 @@ select is((select count(*) from pg_trigger where tgrelid='public.dating_preferen
 select is((select count(*) from pg_trigger where tgrelid='public.social_blocks'::regclass and tgname='dating_social_block_guard' and not tgisinternal),1::bigint,'blocage communautaire ferme Rencontres');
 
 select ok(position('dating_contains_contact_info' in lower(pg_get_functiondef('private.dating_is_eligible(uuid)'::regprocedure)))>0,'admissibilité vérifie les coordonnées');
-select ok(position('dating_contact_info_forbidden_before_reveal' in lower(pg_get_functiondef('public.dating_send_message(uuid,text)'::regprocedure)))>0,'chat bloque coordonnées avant dévoilement');
-select ok(position('dating_rate_limit' in lower(pg_get_functiondef('public.dating_send_message(uuid,text)'::regprocedure)))>0,'chat possède anti-spam serveur');
-select ok(position('social_blocks' in lower(pg_get_functiondef('public.dating_send_message(uuid,text)'::regprocedure)))>0,'chat respecte les blocages communautaires');
-select ok(position('dating_contains_contact_info(o.intro)' in lower(pg_get_functiondef('public.dating_connections_overview()'::regprocedure)))>0,'aperçu assainit introduction historique');
-select ok(position('dating_contains_contact_info(o.region)' in lower(pg_get_functiondef('public.dating_connections_overview()'::regprocedure)))>0,'aperçu assainit région historique');
-select ok(position('v_my_count>=10' in replace(lower(pg_get_functiondef('public.dating_send_message(uuid,text)'::regprocedure)),' ',''))>0 and position('v_their_count>=10' in replace(lower(pg_get_functiondef('public.dating_send_message(uuid,text)'::regprocedure)),' ',''))>0,'chat conserve le seuil 10+10 avant coordonnées');
+select ok(position('dating_contact_info_forbidden_before_reveal' in lower(pg_get_functiondef('sinjira_dating_internal.dating_send_message(uuid,text)'::regprocedure)))>0,'chat bloque coordonnées avant dévoilement');
+select ok(position('dating_rate_limit' in lower(pg_get_functiondef('sinjira_dating_internal.dating_send_message(uuid,text)'::regprocedure)))>0,'chat possède anti-spam serveur');
+select ok(position('social_blocks' in lower(pg_get_functiondef('sinjira_dating_internal.dating_send_message(uuid,text)'::regprocedure)))>0,'chat respecte les blocages communautaires');
+select ok(position('dating_contains_contact_info(o.intro)' in lower(pg_get_functiondef('sinjira_dating_internal.dating_connections_overview()'::regprocedure)))>0,'aperçu assainit introduction historique');
+select ok(position('dating_contains_contact_info(o.region)' in lower(pg_get_functiondef('sinjira_dating_internal.dating_connections_overview()'::regprocedure)))>0,'aperçu assainit région historique');
+select ok(position('v_my_count>=10' in replace(lower(pg_get_functiondef('sinjira_dating_internal.dating_send_message(uuid,text)'::regprocedure)),' ',''))>0 and position('v_their_count>=10' in replace(lower(pg_get_functiondef('sinjira_dating_internal.dating_send_message(uuid,text)'::regprocedure)),' ',''))>0,'chat conserve le seuil 10+10 avant coordonnées');
 
 select * from finish();
 rollback;
