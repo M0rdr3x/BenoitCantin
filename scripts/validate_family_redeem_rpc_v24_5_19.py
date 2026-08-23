@@ -36,8 +36,9 @@ def main():
     if re.search(r'grant\s+execute\s+on\s+function\s+(?:public|sinjira_family_playtest_internal)\.redeem_family_link_invite.*?\s+to\s+anon',low,re.S): errors.append('Aucun EXECUTE anon permis sur redeem_family_link_invite.')
     row='20260823031150 sinjira_v24_5_19_family_redeem_rpc_boundary'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=150: errors.append(f'Ledger: {len(rows)} migrations au lieu de 150.')
-    if rows.count(row)!=1 or not rows or rows[-1]!=row: errors.append('V24.5.19 doit être la dernière migration unique du ledger courant.')
+    if len(rows)<150: errors.append(f'Ledger: {len(rows)} migrations, V24.5.19 exige au moins 150.')
+    if rows.count(row)!=1: errors.append('Le ledger doit conserver exactement une occurrence de V24.5.19.')
+    if row in rows and rows.index(row) != 149: errors.append('V24.5.19 doit conserver sa position historique 150 dans le ledger.')
     for marker in ['security invoker','sinjira_family_playtest_internal','150 migrations','auth.uid','adult_child → child','family → other','confirmed','mirror_to_fiction=false','service_role','l’humain avant tout']:
         if marker not in doc: errors.append(f'Document V24.5.19 incomplet: {marker}')
     for token in ['stripe','paypal','twilio','api.resend.com','openai.com']:
@@ -46,7 +47,7 @@ def main():
         print(f'ECHEC V24.5.19 frontière lien familial: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.19: redeem_family_link_invite isolée, health-check adapté, invariants familiaux conservés et ledger 150 synchronisé.')
+    print('OK V24.5.19 historique: redeem_family_link_invite reste isolée, health-check adapté et position 150 conservée.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
