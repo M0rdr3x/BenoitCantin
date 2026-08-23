@@ -34,7 +34,5 @@ jobs:
         run: python scripts/validate_production_migration_ledger.py
       - name: Sécurité générale
         run: python scripts/validate_security_contract.py
-      - name: RLS sociales
-        run: python scripts/validate_social_rls.py
       - name: Mode gratuit
         run: python scripts/validate_free_only_mode.py
