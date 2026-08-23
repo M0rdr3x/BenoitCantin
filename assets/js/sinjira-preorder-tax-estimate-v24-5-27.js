@@ -30,7 +30,7 @@ function addUi(summary) {
 
   const taxControl = document.createElement('label');
   taxControl.dataset.ptaxPublicWrap = 'true';
-  taxControl.innerHTML = `Zone fiscale indicative<select data-ptax-public><option value="">Aucune estimation fiscale publiée</option></select><small>Choisissez uniquement un profil publié correspondant à votre situation.</small>`;
+  taxControl.innerHTML = `Zone fiscale indicative<select data-ptax-public><option value="">Aucune estimation fiscale publiée</option></select><small>Choisissez explicitement un profil publié correspondant à votre situation. SINJIRA ne sélectionne jamais une zone fiscale à votre place.</small>`;
   controls.appendChild(taxControl);
 
   const taxCard = document.createElement('div');
@@ -44,7 +44,7 @@ function addUi(summary) {
   totalCard.innerHTML = `<span>Total indicatif après taxes</span><strong data-ptax-total>Indisponible pour le moment</strong><small data-ptax-total-note>Aucun total fiscal n’est inventé lorsqu’un taux ou un élément du coût manque.</small>`;
   grid.appendChild(totalCard);
 
-  if (guard) guard.innerHTML = `<strong>Réservation ≠ vente.</strong> Aucun paiement n’est prélevé maintenant. L’estimation de livraison est non contractuelle. Une estimation fiscale peut être affichée uniquement lorsqu’un profil vérifié est publié; elle n’est jamais un montant de facturation. Le prix, la livraison, les taxes réellement applicables et le total final devront être présentés puis acceptés séparément avant tout futur paiement.`;
+  if (guard) guard.innerHTML = `<strong>Réservation ≠ vente.</strong> Aucun paiement n’est prélevé maintenant. L’estimation de livraison est non contractuelle. Une estimation fiscale peut être affichée uniquement lorsqu’un profil vérifié est publié et choisi explicitement; elle n’est jamais un montant de facturation. Le prix, la livraison, les taxes réellement applicables et le total final devront être présentés puis acceptés séparément avant tout futur paiement.`;
 
   return {
     select: taxControl.querySelector('[data-ptax-public]'),
@@ -97,18 +97,20 @@ async function init(summary) {
   }
 
   const profiles = Array.isArray(options?.tax_profiles) ? options.tax_profiles : [];
-  n.select.innerHTML = '<option value="">Aucune estimation fiscale sélectionnée</option>' + profiles.map(p =>
+  n.select.innerHTML = '<option value="">Choisir une zone fiscale indicative</option>' + profiles.map(p =>
     `<option value="${escapeHtml(p.tax_code)}">${escapeHtml(p.label)}${p.effective_on ? ` — effet ${escapeHtml(p.effective_on)}` : ''}</option>`
   ).join('');
-  if (profiles.length === 1) n.select.value = profiles[0].tax_code;
-  if (!profiles.length) resetUi(n);
+  if (!profiles.length) {
+    n.select.innerHTML = '<option value="">Aucune estimation fiscale publiée</option>';
+    resetUi(n);
+  }
 
   let calculation = 0;
   async function calculate() {
     const id = ++calculation;
     const taxCode = String(n.select.value || '');
     const c = currentControls(summary);
-    if (!taxCode) { resetUi(n); return; }
+    if (!taxCode) { resetUi(n, profiles.length ? 'Choisissez une zone fiscale' : 'Aucune estimation fiscale publiée'); return; }
     if (c.format === 'undecided') { resetUi(n, 'Choisissez d’abord un format'); return; }
     if ((c.format === 'paper' || c.format === 'both') && c.method === 'undecided') { resetUi(n, 'Choisissez livraison ou ramassage'); return; }
     if ((c.format === 'paper' || c.format === 'both') && c.method === 'shipping' && !c.zone) { resetUi(n, 'Choisissez une zone de livraison'); return; }
