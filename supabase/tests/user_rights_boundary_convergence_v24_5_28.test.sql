@@ -21,7 +21,7 @@ select ok(not has_function_privilege('anon','public.privacy_my_requests(integer)
 
 select is((select count(*)::int from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='sinjira_user_rights_internal' and p.proname in ('moderation_my_decisions','moderation_submit_appeal','privacy_create_request','privacy_export_my_extended_data','privacy_my_requests') and p.prosecdef),5,'5 implémentations internes SECURITY DEFINER conservées');
 select is((select count(*)::int from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='sinjira_user_rights_internal' and p.proname in ('moderation_my_decisions','moderation_submit_appeal','privacy_create_request','privacy_export_my_extended_data','privacy_my_requests') and position('auth.uid()' in pg_get_functiondef(p.oid))>0),5,'5 contrôles auth.uid() conservés');
-select like(pg_get_function_arguments('public.privacy_my_requests(integer)'::regprocedure),'%DEFAULT 20%','privacy_my_requests conserve DEFAULT 20');
+select ok(position('DEFAULT 20' in pg_get_function_arguments('public.privacy_my_requests(integer)'::regprocedure))>0,'privacy_my_requests conserve DEFAULT 20');
 
 select * from finish();
 rollback;
