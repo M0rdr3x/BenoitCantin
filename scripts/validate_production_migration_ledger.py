@@ -8,9 +8,9 @@ MIG = ROOT / 'supabase' / 'migrations'
 BUILDER = ROOT / 'scripts' / 'build_supabase_production_workspace.py'
 ROW_RE = re.compile(r'^(\d{14})\s+([a-zA-Z0-9_]+)$')
 FILE_RE = re.compile(r'^(\d{14})_(.+)\.sql$')
-EXPECTED_COUNT = 147
+EXPECTED_COUNT = 148
 EXPECTED_FIRST = '20260809050252'
-EXPECTED_LAST = '20260823021612'
+EXPECTED_LAST = '20260823025628'
 
 
 def ledger_rows():
