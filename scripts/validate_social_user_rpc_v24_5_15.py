@@ -45,8 +45,9 @@ def main():
 
     row='20260823020820 sinjira_v24_5_15_social_user_rpc_boundary'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=146: errors.append(f'Ledger: {len(rows)} migrations au lieu de 146.')
-    if rows.count(row)!=1 or not rows or rows[-1]!=row: errors.append('V24.5.15 doit être la dernière migration unique du ledger.')
+    if len(rows)<146: errors.append(f'Ledger historique incomplet: {len(rows)} migrations, au moins 146 attendues.')
+    if rows.count(row)!=1: errors.append('Le ledger doit contenir exactement une occurrence de V24.5.15.')
+    if row in rows and rows.index(row)!=145: errors.append('V24.5.15 doit conserver sa position historique 146.')
 
     if 'sinjira_social_user_internal.social_report_content' not in community: errors.append('Le contrat communauté doit lire le corps interne du signalement.')
     if 'sinjira_social_user_internal.social_my_blocks' not in community: errors.append('Le contrat communauté doit lire le corps interne des blocages.')
@@ -61,7 +62,7 @@ def main():
         print(f'ECHEC V24.5.15 frontière RPC sociales utilisateur: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.15: 4 RPC sociales utilisateur isolées, helpers RLS préservés, anon révoqué, contrats communauté/mineurs adaptés, ledger 146 synchronisé.')
+    print('OK V24.5.15 historique: 4 RPC sociales utilisateur isolées, helpers RLS préservés et contrats de sécurité conservés.')
     return 0
 
 
