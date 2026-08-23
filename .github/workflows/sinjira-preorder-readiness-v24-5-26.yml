@@ -1,0 +1,36 @@
+name: SINJIRA V24.5.26 — Garde préparation commerciale
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260823171121_sinjira_v24_5_26_preorder_sale_readiness_guard.sql'
+      - 'supabase/tests/preorder_sale_readiness_v24_5_26.test.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'assets/js/sinjira-preorder-cost-summary-v24-5-25.js'
+      - 'assets/js/sinjira-admin-preorder-commercial-v24-5-5.js'
+      - 'assets/js/sinjira-admin-preorder-readiness-v24-5-26.js'
+      - 'PREORDER_SALE_READINESS_V24_5_26.md'
+      - 'scripts/validate_preorder_sale_readiness_v24_5_26.py'
+      - '.github/workflows/sinjira-preorder-readiness-v24-5-26.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20260823171121_sinjira_v24_5_26_preorder_sale_readiness_guard.sql'
+      - 'supabase/tests/preorder_sale_readiness_v24_5_26.test.sql'
+      - 'assets/js/sinjira-preorder-cost-summary-v24-5-25.js'
+      - 'assets/js/sinjira-admin-preorder-readiness-v24-5-26.js'
+      - 'PREORDER_SALE_READINESS_V24_5_26.md'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Valider V24.5.26
+        run: python scripts/validate_preorder_sale_readiness_v24_5_26.py
