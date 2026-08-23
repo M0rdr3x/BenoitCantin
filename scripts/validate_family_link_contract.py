@@ -6,7 +6,8 @@ ROOT = Path(__file__).resolve().parents[1]
 MIGRATIONS = ROOT / 'supabase' / 'migrations'
 EXPECTED = MIGRATIONS / '20260817004645_family_link_contract_repair_v24_4_27.sql'
 RETIRE_GUARDIAN = MIGRATIONS / '20260816150000_sinjira_v24_4_12_retire_legacy_guardian_rpcs.sql'
-VERSION = '24.4.27'
+BASELINE_VERSION = '24.4.27'
+HEALTH_VERSION = '24.5.19'
 
 
 def latest_function_block(files, name):
@@ -79,7 +80,7 @@ def main() -> int:
     else:
         ch = compact(health)
         for marker in (
-            f"'version','{VERSION}'",
+            f"'version','{HEALTH_VERSION}'",
             "'confirmed_status',confirmed_status",
             "'legacy_relationship_mapping',adult_child_mappedandfamily_mapped",
             "'mirror_defaults_private',mirror_defaults_private",
@@ -95,7 +96,7 @@ def main() -> int:
         "grant execute on function public.sinjira_family_link_health() to service_role;",
     ):
         if marker not in sql:
-            errors.append(f'ACL famille V{VERSION} incomplète: {marker}')
+            errors.append(f'ACL famille V{BASELINE_VERSION} incomplète: {marker}')
 
     # Supervision jeunesse: l'API exposée au tuteur ne doit jamais accepter un UUID
     # arbitraire. Le caller doit être authentifié et posséder un guardian_link vérifié.
@@ -167,7 +168,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK liens familiaux V24.4.27: rédemption compatible, consentement adulte, miroir fiction privé et supervision jeunesse limitée au tuteur vérifié.')
+    print(f'OK liens familiaux: socle V{BASELINE_VERSION}, health-check V{HEALTH_VERSION}, consentement adulte, miroir fiction privé et supervision jeunesse limitée au tuteur vérifié.')
     return 0
 
 
