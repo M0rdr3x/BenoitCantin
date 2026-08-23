@@ -1,0 +1,37 @@
+name: SINJIRA V24.5.25 — Résumé coût précommande
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/sinjira-preorder-cost-summary-v24-5-25.js'
+      - 'assets/js/sinjira-preorder-fulfillment-v24-5-6.js'
+      - 'assets/css/sinjira-preorder-cost-summary-v24-5-25.css'
+      - 'PREORDER_COST_SUMMARY_V24_5_25.md'
+      - 'scripts/validate_preorder_cost_summary_v24_5_25.py'
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/migrations/**'
+      - '.github/workflows/sinjira-preorder-cost-summary-v24-5-25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-preorder-cost-summary-v24-5-25.js'
+      - 'assets/js/sinjira-preorder-fulfillment-v24-5-6.js'
+      - 'assets/css/sinjira-preorder-cost-summary-v24-5-25.css'
+      - 'PREORDER_COST_SUMMARY_V24_5_25.md'
+      - 'scripts/validate_preorder_cost_summary_v24_5_25.py'
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/migrations/**'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Valider le résumé de coût V24.5.25
+        run: python scripts/validate_preorder_cost_summary_v24_5_25.py
