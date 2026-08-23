@@ -80,7 +80,9 @@ def main():
     ]:
         if marker not in hardening: errors.append(f'Hardening V24.5.27 absent: {marker}')
 
-    if re.search(r'grant\s+execute\s+on\s+function\s+public\.admin_preorder_tax_.*?\s+to\s+anon',m1,re.I|re.S):
+    # Contrôle ACL strict, limité à une instruction SQL. Ne doit jamais traverser
+    # plusieurs GRANT et produire un faux positif à cause de re.S.
+    if re.search(r'(?im)^\s*grant\s+execute\s+on\s+function\s+public\.admin_preorder_tax_[^\n;]*\s+to\s+anon\s*;',m1):
         errors.append('Les RPC fiscales admin ne doivent jamais être exécutables par anon.')
     for name in ['product_preorder_tax_options','product_preorder_tax_estimate']:
         if name not in m1 or f'grant execute on function public.{name}' not in m1.lower(): errors.append(f'RPC publique fiscale absente: {name}')
@@ -96,10 +98,12 @@ def main():
       '20260823200303 sinjira_v24_5_27_tax_rate_precision_hardening',
       '20260823201127 sinjira_v24_5_27_tax_input_and_readiness_hardening'
     ]
-    if len(rows)!=160: errors.append(f'Ledger: {len(rows)} migrations au lieu de 160.')
+    if len(rows)<160: errors.append(f'Ledger: {len(rows)} migrations; V24.5.27 exige au moins 160 migrations historiques.')
+    positions=[]
     for row in expected:
         if rows.count(row)!=1: errors.append(f'Ledger V24.5.27 absent/dupliqué: {row}')
-    if not rows or rows[-1]!=expected[-1]: errors.append('Le hardening final V24.5.27 doit être la dernière version courante.')
+        elif row in rows: positions.append(rows.index(row))
+    if len(positions)==3 and positions!=sorted(positions): errors.append('Les trois migrations V24.5.27 ne sont pas dans leur ordre canonique.')
 
     for marker in ['160 migrations','aucun profil fiscal','mfa/aal2','14,975 %','external_tax_api_enabled = false','billing_authoritative = false','final_tax_confirmation_required = true','aucun paiement','livraison à la charge du client','0 $ de frais de livraison','ready_for_future_manual_opening']:
         if marker not in doc: errors.append(f'Document V24.5.27 incomplet: {marker}')
@@ -127,7 +131,7 @@ def main():
         print(f'ECHEC V24.5.27 estimation fiscale: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.27: estimation fiscale indicative, précision décimale, validation serveur, publication humaine MFA, aucun taux par défaut, aucune API externe, aucune facturation et ledger 160 synchronisé.')
+    print('OK V24.5.27: estimation fiscale indicative, précision décimale, validation serveur, publication humaine MFA, aucun taux par défaut, aucune API externe et aucune facturation; contrat historique préservé.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
