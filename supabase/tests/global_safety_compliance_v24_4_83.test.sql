@@ -31,7 +31,7 @@ select ok(position('YOUTH_JURISDICTION_NOT_ENABLED' in pg_get_functiondef('publi
 select ok(position('years<14' in replace(pg_get_functiondef('public.handle_new_sinjira_user()'::regprocedure),' ',''))>0,'autorisation parentale moins de 14 conservée');
 select ok(position('SINJIRA_MINIMUM_AGE_13' in pg_get_functiondef('public.enforce_sinjira_account_safety_age()'::regprocedure))>0,'profil sécurité minimum 13');
 select ok(position('5 years' in pg_get_functiondef('private.privacy_incident_retention_guard()'::regprocedure))>0,'rétention incidents cinq ans verrouillée');
-select ok(position('30 days' in pg_get_functiondef('public.privacy_create_request(text,text)'::regprocedure))>0 or position('target_days' in pg_get_functiondef('public.privacy_create_request(text,text)'::regprocedure))>0,'demande informe cible 30 jours');
+select ok(position('30 days' in pg_get_functiondef('sinjira_user_rights_internal.privacy_create_request(text,text)'::regprocedure))>0 or position('target_days' in pg_get_functiondef('sinjira_user_rights_internal.privacy_create_request(text,text)'::regprocedure))>0,'demande informe cible 30 jours');
 select ok(exists(select 1 from pg_trigger where tgrelid='public.social_reports'::regclass and tgname='trg_safety_create_escalation_case' and not tgisinternal),'escalade automatique signalements prioritaires active');
 select is((select count(*)::int from pg_trigger where tgname='sinjira_content_policy_guard' and not tgisinternal),14,'les 14 gardes V24.4.82 restent actives');
 select ok(exists(select 1 from pg_trigger where tgrelid='public.dating_profiles'::regclass and tgname='dating_profiles_adult_only' and not tgisinternal),'Rencontres 18+ reste verrouillé');
