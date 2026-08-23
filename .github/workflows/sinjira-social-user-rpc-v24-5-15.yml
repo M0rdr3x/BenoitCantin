@@ -1,0 +1,47 @@
+name: SINJIRA V24.5.15 — Frontière RPC sociales utilisateur
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/tests/community_safety_v24_4_79.test.sql'
+      - 'supabase/tests/minor_exploitation_safety_v24_4_82.test.sql'
+      - 'scripts/validate_social_user_rpc_v24_5_15.py'
+      - 'scripts/validate_user_rights_rpc_v24_5_14.py'
+      - 'scripts/validate_life_story_user_rpc_v24_5_13.py'
+      - 'scripts/validate_dating_rpc_v24_5_12.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'SOCIAL_USER_RPC_BOUNDARY_V24_5_15.md'
+      - '.github/workflows/sinjira-social-user-rpc-v24-5-15.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Contrat frontière sociale V24.5.15
+        run: python scripts/validate_social_user_rpc_v24_5_15.py
+      - name: Contrat historique V24.5.14
+        run: python scripts/validate_user_rights_rpc_v24_5_14.py
+      - name: Contrat historique V24.5.13
+        run: python scripts/validate_life_story_user_rpc_v24_5_13.py
+      - name: Contrat historique V24.5.12
+        run: python scripts/validate_dating_rpc_v24_5_12.py
+      - name: Validation statique du site
+        run: python scripts/validate_site.py
+      - name: Contrat Supabase
+        run: python scripts/validate_supabase.py
+      - name: Ledger production
+        run: python scripts/validate_production_migration_ledger.py
+      - name: Manifeste du schéma production
+        run: python scripts/validate_production_schema_manifest.py
+      - name: Mode gratuit et services externes
+        run: python scripts/validate_free_only_mode.py
