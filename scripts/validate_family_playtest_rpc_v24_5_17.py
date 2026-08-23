@@ -52,9 +52,8 @@ def main():
 
     row='20260823025628 sinjira_v24_5_17_family_playtest_rpc_boundary'
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
-    if len(rows)!=148: errors.append(f'Ledger: {len(rows)} migrations au lieu de 148.')
-    if rows.count(row)!=1: errors.append('Le ledger doit contenir exactement une occurrence de V24.5.17.')
-    if not rows or rows[-1]!=row: errors.append('V24.5.17 doit être la dernière migration du ledger courant.')
+    if len(rows)<148: errors.append(f'Ledger: {len(rows)} migrations, moins que les 148 requises à V24.5.17.')
+    if rows.count(row)!=1: errors.append('Le ledger doit conserver exactement une occurrence de V24.5.17.')
 
     for marker in ['7 rpc','7/7','security invoker','sinjira_family_playtest_internal','148 migrations','auth.uid','mineurs','tuteur','playtest','l’humain avant tout','redeem_family_link_invite']:
         if marker not in doc: errors.append(f'Document V24.5.17 incomplet: {marker}')
@@ -63,10 +62,10 @@ def main():
         if token in low: errors.append(f'Intégration externe interdite dans V24.5.17: {token}')
 
     if errors:
-        print(f'ECHEC V24.5.17 frontière RPC famille/playtest: {len(errors)} problème(s).')
+        print(f'ECHEC V24.5.17 historique: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.17: 7 RPC famille/playtest isolées, wrappers SECURITY INVOKER, protections mineurs/tuteurs préservées et ledger 148 synchronisé.')
+    print('OK V24.5.17 historique: 7 RPC famille/playtest isolées et migration conservée dans le ledger.')
     return 0
 
 
