@@ -1,0 +1,45 @@
+name: SINJIRA V24.5.21 — Frontière RPC joueur Fracture
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/tests/**'
+      - 'scripts/validate_fracture_player_rpc_v24_5_21.py'
+      - 'scripts/validate_owner_character_rpc_v24_5_20.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_fracture_engine.py'
+      - 'scripts/validate_fracture_identity_isolation.py'
+      - 'scripts/validate_fracture_version_consistency.py'
+      - 'FRACTURE_PLAYER_RPC_BOUNDARY_V24_5_21.md'
+      - '.github/workflows/sinjira-fracture-player-rpc-v24-5-21.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Contrat frontière joueur Fracture V24.5.21
+        run: python scripts/validate_fracture_player_rpc_v24_5_21.py
+      - name: Contrat personnage propriétaire historique V24.5.20
+        run: python scripts/validate_owner_character_rpc_v24_5_20.py
+      - name: Moteur Fracture historique
+        run: python scripts/validate_fracture_engine.py
+      - name: Isolation des identités Fracture
+        run: python scripts/validate_fracture_identity_isolation.py
+      - name: Cohérence de version Fracture
+        run: python scripts/validate_fracture_version_consistency.py
+      - name: Contrat Supabase
+        run: python scripts/validate_supabase.py
+      - name: Ledger production
+        run: python scripts/validate_production_migration_ledger.py
+      - name: Mode gratuit
+        run: python scripts/validate_free_only_mode.py
