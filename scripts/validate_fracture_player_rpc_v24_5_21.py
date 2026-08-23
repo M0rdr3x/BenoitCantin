@@ -49,7 +49,9 @@ def main():
     if len(rows)!=152: errors.append(f'Ledger: {len(rows)} migrations au lieu de 152.')
     if rows.count(row)!=1 or not rows or rows[-1]!=row: errors.append('V24.5.21 doit être la dernière migration unique du ledger courant.')
 
-    for marker in ['8 rpc','security invoker','sinjira_fracture_internal','152 migrations','auth.uid()','_fracture_engine_get_state_raw','is_fracture_party_member','quatre politiques rls','état brut','aucun paiement','l’humain avant tout']:
+    if '8 rpc' not in doc and 'huit rpc' not in doc:
+        errors.append('Document V24.5.21 incomplet: huit RPC')
+    for marker in ['security invoker','sinjira_fracture_internal','152 migrations','auth.uid()','_fracture_engine_get_state_raw','is_fracture_party_member','quatre politiques rls','état brut','aucun paiement','l’humain avant tout']:
         if marker not in doc: errors.append(f'Document V24.5.21 incomplet: {marker}')
     for token in ['stripe','paypal','twilio','api.resend.com','openai.com','shippo','easypost']:
         if token in low: errors.append(f'Intégration externe interdite dans V24.5.21: {token}')
