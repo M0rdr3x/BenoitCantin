@@ -6,7 +6,7 @@ La transparence affichée avant la précommande doit aussi être comprise explic
 
 **Réserver aujourd’hui ne signifie jamais consentir à payer demain.**
 
-L’accusé V24.5.31 n’est pas un consentement financier. Il confirme uniquement que la personne a compris les limites de la phase de réservation.
+L’accusé V24.5.31 n’est pas un consentement financier. **Aucun consentement financier n’est donné par cette confirmation.** Elle confirme uniquement que la personne a compris les limites de la phase de réservation.
 
 ## Texte que la personne doit comprendre
 
