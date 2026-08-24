@@ -8,6 +8,7 @@ import {
 } from './sinjira-supabase.js';
 
 const PRODUCT_SLUG = 'sinjira-livre-01-la-cendre-du-jugement';
+const DISCLOSURE_VERSION = 'preorder-disclosure-v24.5.31';
 const FORMAT_LABELS = {
   digital: 'Numérique',
   paper: 'Papier',
@@ -25,6 +26,7 @@ function rootNodes(root) {
     format: root.querySelector('[data-preorder-format]'),
     quantity: root.querySelector('[data-preorder-quantity]'),
     contact: root.querySelector('[data-preorder-contact]'),
+    disclosure: root.querySelector('[data-preorder-disclosure]'),
     submit: root.querySelector('[data-preorder-submit]'),
     state: root.querySelector('[data-preorder-state]'),
     cancel: root.querySelector('[data-preorder-cancel]'),
@@ -46,6 +48,7 @@ async function readPreorder() {
 }
 
 function renderState(nodes, preorder) {
+  if (nodes.disclosure) nodes.disclosure.checked = false;
   if (!nodes.state) return;
   if (!preorder) {
     nodes.state.hidden = true;
@@ -126,21 +129,36 @@ async function reserve(root, event) {
     return;
   }
 
+  if (!nodes.disclosure?.checked) {
+    setStatus(nodes.status, 'Confirmez d’abord que vous avez compris les conditions de cette réservation sans paiement, y compris les frais de livraison à votre charge.', 'error');
+    nodes.disclosure?.focus();
+    return;
+  }
+
   if (nodes.submit) nodes.submit.disabled = true;
   try {
-    const { error } = await getSupabase().rpc('product_preorder_reserve', {
+    const { error } = await getSupabase().rpc('product_preorder_reserve_confirmed', {
       p_product_slug: PRODUCT_SLUG,
       p_preferred_format: preferredFormat,
       p_quantity: quantity,
-      p_contact_when_sales_open: contactWhenSalesOpen
+      p_contact_when_sales_open: contactWhenSalesOpen,
+      p_disclosure_version: DISCLOSURE_VERSION,
+      p_disclosure_acknowledged: true
     });
     if (error) throw error;
-    setStatus(nodes.status, 'Votre précommande est réservée. Aucun paiement n’a été prélevé.', 'success');
+    setStatus(nodes.status, 'Votre précommande est réservée. Aucun paiement n’a été prélevé; toute future commande devra être confirmée séparément.', 'success');
     await refreshAll();
     announcePreorderUpdate();
   } catch (error) {
     console.error('[SINJIRA preorder reserve]', error);
-    setStatus(nodes.status, error?.message || 'La précommande n’a pas pu être enregistrée.', 'error');
+    const message = String(error?.message || '');
+    setStatus(
+      nodes.status,
+      message.includes('PREORDER_DISCLOSURE_REQUIRED')
+        ? 'La réservation exige la confirmation du texte de transparence actuel. Relisez l’avertissement et confirmez-le avant de continuer.'
+        : (message || 'La précommande n’a pas pu être enregistrée.'),
+      'error'
+    );
   } finally {
     if (nodes.submit) nodes.submit.disabled = false;
   }
