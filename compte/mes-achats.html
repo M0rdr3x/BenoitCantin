@@ -34,10 +34,10 @@
 <div class="sinjira-preorder-field"><label for="preorder-quantity-account">Quantité souhaitée</label><select data-preorder-quantity id="preorder-quantity-account" name="quantity"><option value="1">1 exemplaire</option><option value="2">2 exemplaires</option><option value="3">3 exemplaires</option><option value="4">4 exemplaires</option><option value="5">5 exemplaires</option></select></div>
 </div>
 <label class="sinjira-preorder-check"><input checked data-preorder-contact name="contact_when_sales_open" type="checkbox"/><span>M’avertir dans SINJIRA™ lorsque les conditions de vente seront disponibles.</span></label>
-<label class="sinjira-preorder-check"><input name="acknowledgement" required type="checkbox"/><span>Je comprends qu’aucun paiement n’est prélevé et que cette réservation n’est pas encore un achat.</span></label>
+<label class="sinjira-preorder-check"><input data-preorder-disclosure name="preorder_disclosure" required type="checkbox"/><span><strong>Je comprends les conditions de cette réservation :</strong> aucun paiement n’est prélevé aujourd’hui; une réservation n’est pas une commande; pour une expédition physique, les frais de livraison seront à ma charge; le ramassage sur place, lorsqu’un point public sera disponible, ajoutera 0 $ de frais de livraison; les estimations de livraison et de taxes sont indicatives et non contractuelles; le prix, la livraison, les taxes applicables et le total final devront être présentés puis acceptés séparément avant tout futur paiement.</span></label>
 <div class="sinjira-preorder-actions"><button class="btn btn-primary" data-preorder-submit type="submit">Réserver ma précommande</button><button class="btn btn-secondary" data-preorder-cancel hidden type="button">Annuler ma réservation</button><a class="btn btn-secondary" href="../projets/sinjira/romans/precommande.html">Voir la page du Livre I</a></div>
 <div class="account-status" data-preorder-status hidden></div>
-<p class="sinjira-preorder-terms">Aucune donnée bancaire, adresse de facturation ou adresse de livraison n’est collectée dans cette phase de précommande.</p>
+<p class="sinjira-preorder-terms">Aucune donnée bancaire, adresse de facturation ou adresse de livraison n’est collectée dans cette phase de précommande. La confirmation ci-dessus n’est pas un consentement à payer.</p>
 </form>
 <div class="sinjira-commercial-card" data-preorder-commercial>
 <span class="eyebrow">Informations commerciales</span><h3>Prix, éditions et date de sortie</h3>
@@ -67,7 +67,7 @@
 <footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Compte SINJIRA™ — paiements désactivés.</span></div></div></footer>
 <script defer src="../assets/js/site.js?v=20.0"></script>
 <script src="../assets/js/sinjira-account.js?v=19.0" type="module"></script>
-<script src="../assets/js/sinjira-preorders-v24-5-3.js?v=24.5.3" type="module"></script>
+<script src="../assets/js/sinjira-preorders-v24-5-3.js?v=24.5.31" type="module"></script>
 <script src="../assets/js/sinjira-preorder-commercial-v24-5-5.js?v=24.5.5" type="module"></script>
 <script src="../assets/js/sinjira-preorder-fulfillment-v24-5-6.js?v=24.5.6" type="module"></script>
 </body>
