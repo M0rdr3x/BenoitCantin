@@ -1,0 +1,26 @@
+name: SINJIRA V24.5.30 — Transparence coût complet précommande
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - sinjira-v24.5.30-preorder-full-cost-contract
+
+permissions:
+  contents: read
+
+jobs:
+  preorder-full-cost-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier le contrat V24.5.30
+        run: python scripts/validate_preorder_full_cost_v24_5_30.py
+      - name: Vérifier le ledger production
+        run: python scripts/validate_production_migration_ledger.py
