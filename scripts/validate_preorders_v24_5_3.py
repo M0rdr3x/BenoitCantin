@@ -44,9 +44,20 @@ for token in (
     "data-preorder-root",
     "data-preorder-form",
     "data-preorder-cancel",
-    "Je comprends que cette réservation n’est pas encore un achat",
 ):
     require(public_page, token, "page publique de précommande")
+
+# V24.5.3 exigeait déjà une compréhension explicite que la réservation n'est pas un achat.
+# V24.5.31 conserve cet invariant avec un texte plus complet (commande, livraison, taxes, total final).
+if not (
+    "Je comprends que cette réservation n’est pas encore un achat" in public_page
+    or (
+        "data-preorder-disclosure" in public_page
+        and "une réservation n’est pas une commande" in public_page.lower()
+        and "aucun paiement n’est prélevé aujourd’hui" in public_page.lower()
+    )
+):
+    raise SystemExit("Contrat V24.5.3 absent dans page publique de précommande: compréhension explicite réservation ≠ achat/commande")
 
 for token in (
     'href="precommande.html"',
@@ -115,4 +126,4 @@ for forbidden in (
     if forbidden.lower() in (client + public_page + account_page + migration).lower():
         raise SystemExit(f"Intégration payante interdite dans la V24.5.3: {forbidden}")
 
-print("OK — SINJIRA V24.5.3 précommandes sans paiement validées.")
+print("OK — SINJIRA V24.5.3 précommandes sans paiement validées, y compris le texte de transparence renforcé V24.5.31.")

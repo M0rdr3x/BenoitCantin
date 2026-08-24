@@ -85,10 +85,11 @@ def main():
         if token in combined:
             errors.append(f'Intégration externe interdite dans le runtime de précommande: {token}')
 
-    if len(rows) != 163:
-        errors.append(f'Ledger: {len(rows)} migrations au lieu de 163; V24.5.30 ne doit ajouter aucune migration.')
-    if not rows or rows[-1] != '20260824013042 sinjira_v24_5_14_admin_privacy_safety_aal2_hardening':
-        errors.append('V24.5.30 doit conserver la dernière migration production 20260824013042.')
+    historical_row = '20260824013042 sinjira_v24_5_14_admin_privacy_safety_aal2_hardening'
+    if len(rows) < 163:
+        errors.append(f'Ledger: {len(rows)} migrations; V24.5.30 exige au moins ses 163 migrations historiques.')
+    if rows.count(historical_row) != 1:
+        errors.append('V24.5.30 exige exactement une occurrence de la dernière migration connue lors de sa livraison.')
 
     for marker in [
         'livraison sont à la charge du client',
@@ -108,7 +109,7 @@ def main():
         for error in errors: print('- ' + error)
         return 1
 
-    print('OK V24.5.30: coût, livraison/ramassage et taxes sont chaînés; aucune vente, paiement, API transporteur/fiscale ou migration ajoutée.')
+    print('OK V24.5.30: contrat historique conservé; coût, livraison/ramassage et taxes restent chaînés sans vente ni paiement.')
     return 0
 
 
