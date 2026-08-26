@@ -15,7 +15,14 @@ errors: list[str] = []
 if not NOVA.is_dir():
     errors.append("dossier projets/projet-nova absent")
 
-for rel in ["data/documents.json", "data/documents-word-only.json", "documents.json", "documents-word-only.json"]:
+DOCUMENT_MANIFESTS = [
+    "data/documents.json",
+    "data/documents-word-only.json",
+    "documents.json",
+    "documents-word-only.json",
+]
+
+for rel in DOCUMENT_MANIFESTS:
     p = NOVA / rel
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
@@ -70,8 +77,7 @@ for p in list(NOVA.rglob("*.html")) + list(NOVA.rglob("*.js")):
     if "10_formulaire_soutien_preadhesion_projet_nova.pdf" in low:
         errors.append(f"{p.relative_to(NOVA)}: référence à l'ancien PDF de préadhésion")
 
-# Les identifiants techniques peuvent exister dans les scripts internes, mais pas dans
-# les titres, métadonnées, liens, textes ou pieds de page rendus au public.
+# Les identifiants de chantier ne doivent pas être exposés dans la couche publique active.
 version_re = re.compile(r"\bA[12](?:\.\d+)?\b", re.I)
 for p in NOVA.glob("*.html"):
     text = p.read_text(encoding="utf-8", errors="replace")
@@ -79,6 +85,40 @@ for p in NOVA.glob("*.html"):
     public_markup = re.sub(r"<style\b[^>]*>.*?</style>", "", public_markup, flags=re.I | re.S)
     if version_re.search(public_markup):
         errors.append(f"{p.name}: numéro de version de chantier visible dans l'interface publique")
+
+# La bibliothèque, les manifestes, les références et les fichiers de gouvernance
+# servis dans le sous-site ne doivent eux-mêmes contenir aucun numéro de chantier.
+active_public_files = [
+    NOVA / "assets" / "documents.js",
+    NOVA / "data" / "documents.json",
+    NOVA / "data" / "documents-word-only.json",
+    NOVA / "documents.json",
+    NOVA / "documents-word-only.json",
+    NOVA / "data" / "sources.json",
+    NOVA / "document.html",
+    NOVA / "README.md",
+    NOVA / "DOCUMENT_CONTROL.md",
+    NOVA / "SECURITY.md",
+]
+active_public_files.extend(sorted((NOVA / "official" / "reference").glob("*.md")))
+for p in active_public_files:
+    if not p.is_file():
+        errors.append(f"source publique active absente: {p.relative_to(NOVA)}")
+        continue
+    if version_re.search(p.read_text(encoding="utf-8", errors="replace")):
+        errors.append(f"{p.relative_to(NOVA)}: numéro de version de chantier exposé dans une source publique active")
+
+# Les anciens points d'entrée versionnés sont conservés par l'historique Git,
+# mais ne doivent plus être servis par le site actif.
+legacy_public_paths = [
+    NOVA / "document-a1.html",
+    NOVA / "STATUT_A1.md",
+    NOVA / "data" / "a1-sources.json",
+    NOVA / "official" / "a1",
+]
+for p in legacy_public_paths:
+    if p.exists():
+        errors.append(f"ancien chemin versionné encore servi: {p.relative_to(NOVA)}")
 
 docjs = NOVA / "assets" / "documents.js"
 if docjs.is_file():
@@ -126,12 +166,6 @@ for rel, needle in required_pages.items():
 constitution = NOVA / "constitution.html"
 if constitution.is_file() and "noindex" in constitution.read_text(encoding="utf-8", errors="replace").lower():
     errors.append("constitution.html: la page constitutionnelle publique ne doit pas être noindex")
-
-legacy = NOVA / "document-a1.html"
-if legacy.is_file():
-    text = legacy.read_text(encoding="utf-8", errors="replace").lower()
-    if "noindex" not in text or "document.html" not in text:
-        errors.append("document-a1.html: doit être une redirection noindex vers document.html")
 
 for rel in ["SECURITY.md", "DOCUMENT_CONTROL.md"]:
     if not (NOVA / rel).is_file():

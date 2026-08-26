@@ -3,6 +3,14 @@
   "entries": [
     {
       "date": "2026-08-26",
+      "type": "Documents",
+      "title": "Références publiques synchronisées",
+      "summary": "Le Corpus maître, les Statuts et le Programme utilisent désormais des sources publiques permanentes. Les anciens PDF sont clairement classés comme archives et les anciens chemins de version de chantier ont été retirés du site actif.",
+      "link": "documents.html",
+      "link_label": "Voir la bibliothèque"
+    },
+    {
+      "date": "2026-08-26",
       "type": "Site public",
       "title": "Portail public institutionnel permanent",
       "summary": "La façade publique de Projet Nova a été restructurée pour présenter une navigation permanente, des contenus sans numéros de version de chantier et une séparation claire entre propositions, documents de référence et validations externes.",
