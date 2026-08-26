@@ -15,7 +15,6 @@ errors: list[str] = []
 if not NOVA.is_dir():
     errors.append("dossier projets/projet-nova absent")
 
-# 1) Les manifestes d'archives doivent rester cohérents tant qu'ils sont publiés.
 for rel in ["data/documents.json", "data/documents-word-only.json", "documents.json", "documents-word-only.json"]:
     p = NOVA / rel
     try:
@@ -28,7 +27,6 @@ for rel in ["data/documents.json", "data/documents-word-only.json", "documents.j
         if pdf and not (NOVA / pdf).is_file():
             errors.append(f"{rel}: {slug} référence un PDF absent: {pdf}")
 
-# 2) Manifeste public permanent et intégrité SHA-256 des sources de référence.
 manifest_path = NOVA / "data" / "sources.json"
 try:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -62,7 +60,6 @@ for doc_id, doc in (manifest.get("documents") or {}).items():
         elif actual != expected:
             errors.append(f"référence {doc_id}: empreinte différente: {raw}")
 
-# 3) Aucun fournisseur externe de formulaire politique dans le code public actif.
 for p in list(NOVA.rglob("*.html")) + list(NOVA.rglob("*.js")):
     if "node_modules" in p.parts or "vendor" in p.parts:
         continue
@@ -73,15 +70,16 @@ for p in list(NOVA.rglob("*.html")) + list(NOVA.rglob("*.js")):
     if "10_formulaire_soutien_preadhesion_projet_nova.pdf" in low:
         errors.append(f"{p.relative_to(NOVA)}: référence à l'ancien PDF de préadhésion")
 
-# 4) L'interface publique ne doit jamais afficher les identifiants de versions de chantier.
-# Les sources sous official/ et les manifestes techniques peuvent rester versionnés pour l'historique.
+# Les identifiants techniques peuvent exister dans les scripts internes, mais pas dans
+# les titres, métadonnées, liens, textes ou pieds de page rendus au public.
 version_re = re.compile(r"\bA[12](?:\.\d+)?\b", re.I)
 for p in NOVA.glob("*.html"):
     text = p.read_text(encoding="utf-8", errors="replace")
-    if version_re.search(text):
+    public_markup = re.sub(r"<script\b[^>]*>.*?</script>", "", text, flags=re.I | re.S)
+    public_markup = re.sub(r"<style\b[^>]*>.*?</style>", "", public_markup, flags=re.I | re.S)
+    if version_re.search(public_markup):
         errors.append(f"{p.name}: numéro de version de chantier visible dans l'interface publique")
 
-# 5) documents.js ne doit pas référencer un PDF inexistant.
 docjs = NOVA / "assets" / "documents.js"
 if docjs.is_file():
     text = docjs.read_text(encoding="utf-8", errors="replace")
@@ -89,7 +87,6 @@ if docjs.is_file():
         if not (NOVA / path).is_file():
             errors.append(f"assets/documents.js: fichier absent: {path}")
 
-# 6) Liens et ressources locaux dans les HTML de premier niveau.
 attr_re = re.compile(r'(?:href|src)=["\']([^"\'#]+)["\']', re.I)
 for p in NOVA.glob("*.html"):
     text = p.read_text(encoding="utf-8", errors="replace")
@@ -108,7 +105,6 @@ for p in NOVA.glob("*.html"):
         if not target.exists():
             errors.append(f"{p.name}: cible locale absente: {raw}")
 
-# 7) Pages publiques permanentes et liens de priorité documentaire.
 required_pages = {
     "index.html": "https://www.benoitcantin.com/projets/projet-nova/",
     "documents.html": "document.html?doc=corpus",
@@ -131,14 +127,12 @@ constitution = NOVA / "constitution.html"
 if constitution.is_file() and "noindex" in constitution.read_text(encoding="utf-8", errors="replace").lower():
     errors.append("constitution.html: la page constitutionnelle publique ne doit pas être noindex")
 
-# 8) L'ancien lecteur est uniquement une redirection noindex de compatibilité.
 legacy = NOVA / "document-a1.html"
 if legacy.is_file():
     text = legacy.read_text(encoding="utf-8", errors="replace").lower()
     if "noindex" not in text or "document.html" not in text:
         errors.append("document-a1.html: doit être une redirection noindex vers document.html")
 
-# 9) Gouvernance documentaire minimale interne.
 for rel in ["SECURITY.md", "DOCUMENT_CONTROL.md"]:
     if not (NOVA / rel).is_file():
         errors.append(f"gouvernance documentaire absente: {rel}")
