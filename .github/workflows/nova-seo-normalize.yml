@@ -1,0 +1,37 @@
+name: Normalisation SEO Projet Nova A1
+
+on:
+  push:
+    branches: [ nova-a1-reference-documents ]
+    paths:
+      - 'scripts/normalize_nova_seo.py'
+      - '.github/workflows/nova-seo-normalize.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+        with:
+          ref: nova-a1-reference-documents
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Normaliser les métadonnées Nova
+        run: python scripts/normalize_nova_seo.py
+      - name: Enregistrer les corrections
+        run: |
+          if git diff --quiet; then
+            echo "Aucun changement SEO nécessaire."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add projets/projet-nova/*.html
+          git commit -m "Projet Nova A1 — normalise les métadonnées SEO [seo-autofix]"
+          git push origin HEAD:nova-a1-reference-documents
