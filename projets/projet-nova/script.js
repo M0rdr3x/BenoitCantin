@@ -2,9 +2,16 @@
   if(!document.querySelector('link[data-nova-institutionnel]')){
     const polish=document.createElement('link');
     polish.rel='stylesheet';
-    polish.href='assets/nova-institutionnel.css?v=1';
+    polish.href='assets/nova-institutionnel.css?v=2';
     polish.setAttribute('data-nova-institutionnel','');
     document.head.appendChild(polish);
+  }
+  if(!document.querySelector('link[data-nova-maturite]')){
+    const maturity=document.createElement('link');
+    maturity.rel='stylesheet';
+    maturity.href='assets/nova-maturite.css?v=1';
+    maturity.setAttribute('data-nova-maturite','');
+    document.head.appendChild(maturity);
   }
 })();
 
@@ -51,6 +58,22 @@
       nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>setMenuState(false)));
     }
 
+    const footerNav=[...document.querySelectorAll('.footer section')].find(section=>{
+      const h=section.querySelector('h3');
+      return h&&h.textContent.trim()==='Navigation';
+    });
+    if(footerNav){
+      const list=footerNav.querySelector('ul');
+      if(list){
+        list.innerHTML=[
+          ['index.html','Accueil'],['comprendre-nova.html','Comprendre Nova'],['programme.html','Programme'],
+          ['constitution.html','Constitution'],['documents.html','Documents'],['transparence.html','Transparence'],
+          ['recrutement.html','Participer'],['equipe.html','Organisation et équipe'],['actualites.html','Actualités'],
+          ['presse.html','Centre médias'],['faq.html','FAQ'],['contact.html','Contact']
+        ].map(([href,label])=>`<li><a href="${href}">${label}</a></li>`).join('');
+      }
+    }
+
     const listEl=document.querySelector('[data-doc-list]');
     if(listEl&&Array.isArray(window.NOVA_DOCUMENTS)){
       const docs=window.NOVA_DOCUMENTS.slice();
@@ -81,6 +104,11 @@
   function ready(fn){document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);}
   function money(n){return new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD'}).format(Number(n||0));}
   function text(v){return(v===undefined||v===null||v==='')?'—':String(v);}
+  function formatDate(value){
+    if(!value)return '—';
+    const d=new Date(value+'T12:00:00');
+    return Number.isNaN(d.getTime())?value:new Intl.DateTimeFormat('fr-CA',{year:'numeric',month:'long',day:'numeric'}).format(d);
+  }
   ready(function(){
     const financeBody=document.querySelector('[data-finance-table]');
     if(financeBody){
@@ -95,6 +123,7 @@
         financeBody.innerHTML=entries.map(e=>`<tr><td>${text(e.date)}</td><td>${text(e.type)}</td><td>${text(e.categorie)}</td><td>${text(e.description)}</td><td>${text(e.fournisseur_ou_source)}</td><td>${money(e.montant)}</td><td>${text(e.statut)}</td></tr>`).join('');
       }).catch(()=>{financeBody.innerHTML='<tr><td colspan="7">Registre temporairement indisponible.</td></tr>';});
     }
+
     const meetingsBody=document.querySelector('[data-meetings-table]');
     if(meetingsBody||document.querySelector('[data-rencontre-count]')){
       fetch('data/rencontres.json',{cache:'no-store'}).then(r=>r.json()).then(data=>{
@@ -105,6 +134,17 @@
           meetingsBody.innerHTML=entries.map(e=>`<tr><td>${text(e.date)}</td><td>${text(e.type)}</td><td>${text(e.sujet)}</td><td>${text(e.participants_resume)}</td><td>${text(e.resume_public)}</td><td>${text(e.suivi)}</td><td>${text(e.statut_publication)}</td></tr>`).join('');
         }
       }).catch(()=>{if(meetingsBody)meetingsBody.innerHTML='<tr><td colspan="7">Registre temporairement indisponible.</td></tr>';});
+    }
+
+    const updates=document.querySelector('[data-public-updates]');
+    if(updates){
+      fetch('data/actualites.json',{cache:'no-store'}).then(r=>r.json()).then(data=>{
+        const entries=Array.isArray(data.entries)?data.entries:[];
+        const stamp=document.querySelector('[data-updates-date]');
+        if(stamp)stamp.textContent=data.updated?formatDate(data.updated):'—';
+        if(!entries.length){updates.innerHTML='<article class="timeline-entry"><h2>Aucune mise à jour publiée</h2><p>Le journal public sera complété au fil des changements significatifs.</p></article>';return;}
+        updates.innerHTML=entries.map(e=>`<article class="timeline-entry"><div class="timeline-meta"><time datetime="${text(e.date)}">${formatDate(e.date)}</time><span>${text(e.type)}</span></div><h2>${text(e.title)}</h2><p>${text(e.summary)}</p>${e.link?`<a class="text-link" href="${e.link}">${text(e.link_label||'Consulter')}</a>`:''}</article>`).join('');
+      }).catch(()=>{updates.innerHTML='<article class="timeline-entry"><h2>Journal temporairement indisponible</h2><p>Les autres pages publiques demeurent accessibles.</p></article>';});
     }
   });
 })();

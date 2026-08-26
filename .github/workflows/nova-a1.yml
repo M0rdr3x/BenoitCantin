@@ -1,4 +1,4 @@
-name: Validation Projet Nova A1
+name: Validation Projet Nova
 
 on:
   pull_request:
