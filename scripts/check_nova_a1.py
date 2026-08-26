@@ -86,8 +86,8 @@ for p in NOVA.glob("*.html"):
     if version_re.search(public_markup):
         errors.append(f"{p.name}: numéro de version de chantier visible dans l'interface publique")
 
-# La bibliothèque, les manifestes et les références actives ne doivent eux-mêmes
-# contenir aucun numéro de chantier, même lorsqu'un visiteur inspecte les sources.
+# La bibliothèque, les manifestes, les références et les fichiers de gouvernance
+# servis dans le sous-site ne doivent eux-mêmes contenir aucun numéro de chantier.
 active_public_files = [
     NOVA / "assets" / "documents.js",
     NOVA / "data" / "documents.json",
@@ -96,6 +96,9 @@ active_public_files = [
     NOVA / "documents-word-only.json",
     NOVA / "data" / "sources.json",
     NOVA / "document.html",
+    NOVA / "README.md",
+    NOVA / "DOCUMENT_CONTROL.md",
+    NOVA / "SECURITY.md",
 ]
 active_public_files.extend(sorted((NOVA / "official" / "reference").glob("*.md")))
 for p in active_public_files:
