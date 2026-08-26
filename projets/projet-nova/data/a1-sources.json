@@ -1,0 +1,30 @@
+{
+  "version": "A1-CANDIDATE-2026.08.25",
+  "date": "2026-08-25",
+  "status": "candidate-a1",
+  "documents": {
+    "corpus": {
+      "title": "Architecture de l’État Nova — Corpus maître A1",
+      "parts": [
+        {"path": "../../official/a1/corpus-part-01.md", "sha256": "5c0aab4876005d459ed3ba7e4394404cd88dae711ff1573bb18226e15a275f4f"},
+        {"path": "../../official/a1/corpus-part-02.md", "sha256": "5dbb672415fb7d3415cd0b3e4c5dcb6f144334be0abcc25e502fe2e463a162d9"},
+        {"path": "../../official/a1/corpus-part-03.md", "sha256": "6961f2aa7982218db8455a3b731a50bbdd9932878040881c3823e075f87fdffb"},
+        {"path": "../../official/a1/corpus-part-04.md", "sha256": "4f9a502c51a55853ac9b043cfbdf67a1d9a8cc2ed72dd9a4f094ff66e1aef467"},
+        {"path": "../../official/a1/corpus-part-05.md", "sha256": "082c213a9678fa4e833c887fff98c4cc56760abc9f33eb7782900177813423d6"},
+        {"path": "../../official/a1/corpus-part-06.md", "sha256": "a551bf4d381686c6f7e7fc4123d1661c4f34d8c4df73cc894badb0ba65eca21b"}
+      ]
+    },
+    "statuts": {
+      "title": "Statuts, gouvernance et conformité du Parti Nova — A1",
+      "parts": [
+        {"path": "../../official/a1/statuts.md", "sha256": "bda7a540235a6f17e347b837ae93ca0db70af00e448464e547e2aac96f255f3b"}
+      ]
+    },
+    "programme": {
+      "title": "Programme public du Projet Nova — A1",
+      "parts": [
+        {"path": "../../official/a1/programme.md", "sha256": "0113ac2da03d86d9bbe86b8fc325d2cbcdd9f296ce418f2471821bd85df7ef6a"}
+      ]
+    }
+  }
+}
