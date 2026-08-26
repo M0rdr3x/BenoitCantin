@@ -1,11 +1,19 @@
 (function(){
+  if(!document.querySelector('link[data-nova-institutionnel]')){
+    const polish=document.createElement('link');
+    polish.rel='stylesheet';
+    polish.href='assets/nova-institutionnel.css?v=1';
+    polish.setAttribute('data-nova-institutionnel','');
+    document.head.appendChild(polish);
+  }
+})();
+
+(function(){
   function ready(fn){document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);}
   ready(function(){
     const page=document.body.getAttribute('data-page')||'';
     const nav=document.querySelector('[data-main-nav]');
 
-    // Navigation publique canonique. Les pages techniques et registres restent accessibles
-    // depuis Transparence, Documents et les pieds de page sans surcharger l'en-tête.
     if(nav){
       const navItems=[
         ['index.html','Accueil'],
@@ -66,7 +74,6 @@
   });
 })();
 
-// Registres publics : comptabilité et rencontres.
 (function(){
   function ready(fn){document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);}
   function money(n){return new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD'}).format(Number(n||0));}
@@ -99,7 +106,6 @@
   });
 })();
 
-// Assistant SINJIRA local, contextuel et sans fournisseur d’IA externe.
 (function(){
   if(document.documentElement.getAttribute('data-disable-sinjira-assistant')==='true')return;
   if(!document.querySelector('link[data-sinjira-assistant-style]')){
