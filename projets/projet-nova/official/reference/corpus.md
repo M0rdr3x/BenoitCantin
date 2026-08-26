@@ -190,15 +190,28 @@ La fonction publique proposée repose sur :
 
 Projet Nova veut une fiscalité fortement simplifiée, mais aucune réforme fiscale ne doit être activée avant démonstration de sa viabilité.
 
+Le cadre financier public sur dix ans sert désormais d’outil de contrôle. Il distingue la base budgétaire québécoise, les responsabilités souveraines à reprendre, les économies candidates, les actifs et passifs, les fonds spéciaux et plusieurs trajectoires fiscales.
+
 Principes actuels :
 
-- orientation vers un impôt sur le revenu simplifié et des mécanismes robustes contre l’évasion et les paradis fiscaux;
+- simplification fiscale comme objectif conditionnel, sans date automatique d’abolition;
+- mécanismes robustes contre l’évasion et les paradis fiscaux, sans rendement additionnel présumé tant qu’il n’est pas démontré;
 - refus de faire des tarifs et contre-tarifs un instrument fiscal ordinaire;
-- modélisation au moins sur dix ans;
+- modélisation sur au moins dix ans;
 - publication de la dette, des garanties et engagements hors bilan;
 - scénarios central, prudent et défavorable;
 - coût complet des infrastructures sur leur cycle de vie;
+- distinction entre dépenses, prêts, placements, fonds spéciaux et engagements existants;
 - interdiction de présenter un taux fiscal comme définitif avant validation financière.
+
+Avant une nouvelle réduction importante d’un prélèvement, la règle candidate de prudence exige :
+
+1. un budget de l’année précédente à l’équilibre ou en surplus;
+2. une dette nette au plus de 45 % du PIB.
+
+Si une condition échoue, la réduction est suspendue.
+
+Les simulations de travail actuelles montrent qu’une abolition rapide des prélèvements visés n’est pas financée. Le cadre financier public expose ces résultats, ses hypothèses et ses limites afin que l’objectif politique ne soit pas confondu avec une promesse budgétaire.
 
 ## 13. Municipalités, infrastructures et services essentiels
 
@@ -246,7 +259,9 @@ Chaque réforme majeure doit afficher son état réel :
 
 Restent notamment à finaliser ou valider :
 
-- modèle financier et fiscal complet sur dix ans;
+- validation indépendante du modèle financier et fiscal sur dix ans;
+- données plus précises sur les prestations fédérales versées aux résidents du Québec;
+- scénarios négociés de partage de dette, d’actifs et d’obligations;
 - régionalisation détaillée du système électoral;
 - audit externe juridique du corpus pénal et constitutionnel;
 - audit de cybersécurité du vote à distance;
