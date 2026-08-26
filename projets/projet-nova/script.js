@@ -2,6 +2,24 @@
   function ready(fn){document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);}
   ready(function(){
     const page=document.body.getAttribute('data-page')||'';
+    const nav=document.querySelector('[data-main-nav]');
+
+    // Navigation publique canonique. Les pages techniques et registres restent accessibles
+    // depuis Transparence, Documents et les pieds de page sans surcharger l'en-tête.
+    if(nav){
+      const navItems=[
+        ['index.html','Accueil'],
+        ['comprendre-nova.html','Comprendre Nova'],
+        ['programme.html','Programme'],
+        ['constitution.html','Constitution'],
+        ['documents.html','Documents'],
+        ['transparence.html','Transparence'],
+        ['recrutement.html','Participer'],
+        ['contact.html','Contact']
+      ];
+      nav.innerHTML=navItems.map(([href,label])=>`<a class="nav-link" href="${href}">${label}</a>`).join('');
+    }
+
     document.querySelectorAll('.main-nav .nav-link').forEach(link=>{
       const href=link.getAttribute('href')||'';
       if(href===page||(page==='index.html'&&href==='index.html')){
@@ -11,7 +29,6 @@
     });
 
     const toggle=document.querySelector('[data-menu-toggle]');
-    const nav=document.querySelector('[data-main-nav]');
     if(toggle&&nav){
       const setMenuState=open=>{nav.classList.toggle('open',open);toggle.setAttribute('aria-expanded',open?'true':'false');};
       toggle.addEventListener('click',()=>setMenuState(!nav.classList.contains('open')));
