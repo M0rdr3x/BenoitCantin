@@ -1,0 +1,29 @@
+{
+  "updated": "2026-08-26",
+  "entries": [
+    {
+      "date": "2026-08-26",
+      "type": "Site public",
+      "title": "Portail public institutionnel permanent",
+      "summary": "La façade publique de Projet Nova a été restructurée pour présenter une navigation permanente, des contenus sans numéros de version de chantier et une séparation claire entre propositions, documents de référence et validations externes.",
+      "link": "index.html",
+      "link_label": "Voir l’accueil"
+    },
+    {
+      "date": "2026-08-26",
+      "type": "Documents",
+      "title": "Bibliothèque publique et lecteur documentaire permanents",
+      "summary": "Les documents publics sont désormais présentés avec des titres permanents et un lecteur public stable. Les sources techniques et historiques demeurent conservées séparément pour la traçabilité.",
+      "link": "documents.html",
+      "link_label": "Voir les documents"
+    },
+    {
+      "date": "2026-08-26",
+      "type": "Transparence",
+      "title": "Centre de transparence et registres publics",
+      "summary": "La comptabilité publique, les rencontres publiables, la conformité, les validations et les changements importants disposent maintenant d’un cadre public distinct.",
+      "link": "transparence.html",
+      "link_label": "Voir la transparence"
+    }
+  ]
+}
