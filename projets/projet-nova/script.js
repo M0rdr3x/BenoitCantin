@@ -1,7 +1,36 @@
 (function(){
+  if(!document.querySelector('link[data-nova-institutionnel]')){
+    const polish=document.createElement('link');
+    polish.rel='stylesheet';
+    polish.href='assets/nova-institutionnel.css?v=1';
+    polish.setAttribute('data-nova-institutionnel','');
+    document.head.appendChild(polish);
+  }
+})();
+
+(function(){
   function ready(fn){document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);}
   ready(function(){
     const page=document.body.getAttribute('data-page')||'';
+    const nav=document.querySelector('[data-main-nav]');
+
+    document.querySelectorAll('.header-project-pro').forEach(el=>el.textContent='Projet Nova');
+    document.querySelectorAll('.header-tagline-pro').forEach(el=>el.textContent='Le peuple d’abord — des institutions responsables');
+
+    if(nav){
+      const navItems=[
+        ['index.html','Accueil'],
+        ['comprendre-nova.html','Comprendre Nova'],
+        ['programme.html','Programme'],
+        ['constitution.html','Constitution'],
+        ['documents.html','Documents'],
+        ['transparence.html','Transparence'],
+        ['recrutement.html','Participer'],
+        ['contact.html','Contact']
+      ];
+      nav.innerHTML=navItems.map(([href,label])=>`<a class="nav-link" href="${href}">${label}</a>`).join('');
+    }
+
     document.querySelectorAll('.main-nav .nav-link').forEach(link=>{
       const href=link.getAttribute('href')||'';
       if(href===page||(page==='index.html'&&href==='index.html')){
@@ -11,7 +40,6 @@
     });
 
     const toggle=document.querySelector('[data-menu-toggle]');
-    const nav=document.querySelector('[data-main-nav]');
     if(toggle&&nav){
       const setMenuState=open=>{nav.classList.toggle('open',open);toggle.setAttribute('aria-expanded',open?'true':'false');};
       toggle.addEventListener('click',()=>setMenuState(!nav.classList.contains('open')));
@@ -49,7 +77,6 @@
   });
 })();
 
-// Registres publics : comptabilité et rencontres.
 (function(){
   function ready(fn){document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);}
   function money(n){return new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD'}).format(Number(n||0));}
@@ -82,7 +109,6 @@
   });
 })();
 
-// Assistant SINJIRA local, contextuel et sans fournisseur d’IA externe.
 (function(){
   if(document.documentElement.getAttribute('data-disable-sinjira-assistant')==='true')return;
   if(!document.querySelector('link[data-sinjira-assistant-style]')){

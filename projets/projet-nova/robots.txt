@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /official/
+Disallow: /data/
 Disallow: /documents/00_
 Disallow: /corpus_interne_corrige_pdf/
 Disallow: /rapport/

@@ -41,12 +41,12 @@ NOVA_PAGE_NAMES = [
     "code-conduite.html",
 ]
 
-SEO_V24_4_46_PAGES = {
+SEO_PAGES = {
     ROOT / "projets" / "sinjira" / "registre" / "index.html": BASE + "/projets/sinjira/registre/",
     ROOT / "projets" / "projet-nova" / "index.html": BASE + "/projets/projet-nova/",
 }
 for nova_name in NOVA_PAGE_NAMES:
-    SEO_V24_4_46_PAGES[ROOT / "projets" / "projet-nova" / nova_name] = BASE + "/projets/projet-nova/" + nova_name
+    SEO_PAGES[ROOT / "projets" / "projet-nova" / nova_name] = BASE + "/projets/projet-nova/" + nova_name
 
 PRIVATE_NOINDEX_PAGES = [
     ROOT / "compte" / "index.html",
@@ -139,9 +139,9 @@ def validate_basic_page(page: Path, errors: list[str]) -> None:
         errors.append(f"{rel}: canonique hors domaine: {canonical}")
 
 
-def validate_v24_4_46_page(page: Path, canonical_expected: str, errors: list[str]) -> None:
+def validate_seo_page(page: Path, canonical_expected: str, errors: list[str]) -> None:
     if not page.exists():
-        errors.append(f"Page SEO V24.4.46 absente: {page.relative_to(ROOT)}")
+        errors.append(f"Page SEO absente: {page.relative_to(ROOT)}")
         return
     html = page.read_text("utf-8", errors="ignore")
     rel = page.relative_to(ROOT)
@@ -194,12 +194,12 @@ def validate_v24_4_46_page(page: Path, canonical_expected: str, errors: list[str
             errors.append(f"{rel}: twitter:image présent sans og:image.")
 
     schema_match = re.search(
-        r"<script\b(?=[^>]*type=[\"']application/ld\+json[\"'])(?=[^>]*data-seo-v24-4-46)[^>]*>(.*?)</script>",
+        r"<script\b(?=[^>]*type=[\"']application/ld\+json[\"'])[^>]*>(.*?)</script>",
         html,
         flags=re.I | re.S,
     )
     if not schema_match:
-        errors.append(f"{rel}: JSON-LD V24.4.46 absent.")
+        errors.append(f"{rel}: JSON-LD absent.")
     else:
         try:
             schema = json.loads(schema_match.group(1))
@@ -254,10 +254,10 @@ def main() -> int:
 
     for page in BASIC_KEY_PAGES:
         validate_basic_page(page, errors)
-    for page, expected in SEO_V24_4_46_PAGES.items():
-        validate_v24_4_46_page(page, expected, errors)
+    for page, expected in SEO_PAGES.items():
+        validate_seo_page(page, expected, errors)
         if expected not in urls:
-            errors.append(f"sitemap.xml: canonique V24.4.46 absente: {expected}")
+            errors.append(f"sitemap.xml: canonique SEO absente: {expected}")
 
     for page in PRIVATE_NOINDEX_PAGES:
         if not page.exists():
@@ -286,13 +286,13 @@ def main() -> int:
             errors.append(f"index.html: métadonnée structurée absente: {marker}")
 
     if errors:
-        print(f"ECHEC SEO V24.4.46: {len(errors)} problème(s).")
+        print(f"ECHEC SEO: {len(errors)} problème(s).")
         for error in errors:
             print("- " + error)
         return 1
     print(
-        f"OK SEO V24.4.46: {len(urls)} URL(s) racine, {len(nova_urls)} URL(s) Nova, "
-        "Registre/Nova canonicalisés, Open Graph/Twitter/JSON-LD/hreflang cohérents et zones privées noindex."
+        f"OK SEO: {len(urls)} URL(s) racine, {len(nova_urls)} URL(s) Nova, "
+        "canonicalisation, Open Graph, Twitter, JSON-LD, hreflang et zones privées validés."
     )
     return 0
 
