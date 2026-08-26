@@ -1,0 +1,32 @@
+name: Validation Projet Nova A1
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'projets/projet-nova/**'
+      - 'scripts/check_nova_a1.py'
+      - '.github/workflows/nova-a1.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'projets/projet-nova/**'
+      - 'scripts/check_nova_a1.py'
+      - '.github/workflows/nova-a1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-nova:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Vérifier Projet Nova
+        run: python scripts/check_nova_a1.py
