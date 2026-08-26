@@ -6,6 +6,13 @@
     polish.setAttribute('data-nova-institutionnel','');
     document.head.appendChild(polish);
   }
+  if(!document.querySelector('link[data-nova-maturite]')){
+    const maturity=document.createElement('link');
+    maturity.rel='stylesheet';
+    maturity.href='assets/nova-maturite.css?v=1';
+    maturity.setAttribute('data-nova-maturite','');
+    document.head.appendChild(maturity);
+  }
 })();
 
 (function(){
