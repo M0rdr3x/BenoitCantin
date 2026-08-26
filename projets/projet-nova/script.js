@@ -14,6 +14,9 @@
     const page=document.body.getAttribute('data-page')||'';
     const nav=document.querySelector('[data-main-nav]');
 
+    document.querySelectorAll('.header-project-pro').forEach(el=>el.textContent='Projet Nova');
+    document.querySelectorAll('.header-tagline-pro').forEach(el=>el.textContent='Le peuple d’abord — des institutions responsables');
+
     if(nav){
       const navItems=[
         ['index.html','Accueil'],
