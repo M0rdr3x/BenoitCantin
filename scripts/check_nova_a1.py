@@ -42,7 +42,8 @@ except Exception as exc:
     errors.append(f"data/sources.json invalide ou absent: {exc}")
 
 required_docs = {"corpus", "statuts", "programme"}
-if set((manifest.get("documents") or {}).keys()) != required_docs:
+document_ids = set((manifest.get("documents") or {}).keys())
+if not required_docs.issubset(document_ids):
     errors.append("data/sources.json: corpus/statuts/programme requis")
 
 for doc_id, doc in (manifest.get("documents") or {}).items():
@@ -152,6 +153,7 @@ required_pages = {
     "constitution.html": "document.html?doc=corpus",
     "code-conduite.html": "document.html?doc=statuts",
     "registre-conformite.html": "document.html?doc=corpus",
+    "finances.html": "document.html?doc=finances",
     "document.html": "data/sources.json",
 }
 for rel, needle in required_pages.items():

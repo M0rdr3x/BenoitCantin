@@ -6,7 +6,7 @@
       "title": "Architecture de l’État Nova — Corpus maître",
       "subtitle": "Constitution, institutions, élections, justice, finances et transition proposées.",
       "parts": [
-        {"path": "official/reference/corpus.md", "sha256": "24bc59afb6f0ec06eea41630f4b2d0d9f6fcbc00273500c98ac0aa2517479978"}
+        {"path": "official/reference/corpus.md", "sha256": "7d019581baeb919f6eb0b894f4462dd85df54bd8be52461f62d816c3b4369867"}
       ]
     },
     "statuts": {
@@ -20,7 +20,14 @@
       "title": "Programme public du Projet Nova",
       "subtitle": "Orientations politiques et institutionnelles actuellement présentées aux citoyens.",
       "parts": [
-        {"path": "official/reference/programme.md", "sha256": "024b6f5a2201f216895bb8844496ec78c16a6c61a74ef17266eef69f6abc310b"}
+        {"path": "official/reference/programme.md", "sha256": "16a6ab534388294015856817d5f118cc9b2b1b4df0729d0accb04c58eebdbcab"}
+      ]
+    },
+    "finances": {
+      "title": "Cadre financier public du Projet Nova",
+      "subtitle": "Modèle sur dix ans, audits des dépenses, trajectoires fiscales, règles de prudence et limites méthodologiques.",
+      "parts": [
+        {"path": "official/reference/finances.md", "sha256": "cd144eb076b6e410893428f66706e8b9a1c3c7a1f0e399df3075aae82414b0af"}
       ]
     }
   }

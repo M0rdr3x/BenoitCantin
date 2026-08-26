@@ -3,6 +3,14 @@
   "entries": [
     {
       "date": "2026-08-26",
+      "type": "Finances publiques",
+      "title": "Cadre financier public sur dix ans",
+      "summary": "Projet Nova publie un cadre financier de travail fondé sur les données budgétaires officielles, un audit des dépenses québécoises, un audit des responsabilités souveraines et trois trajectoires fiscales. Le modèle ne déclenche aucune abolition fiscale tant que l'équilibre budgétaire et la règle de dette ne sont pas respectés.",
+      "link": "finances.html",
+      "link_label": "Voir le cadre financier"
+    },
+    {
+      "date": "2026-08-26",
       "type": "Documents",
       "title": "Références publiques synchronisées",
       "summary": "Le Corpus maître, les Statuts et le Programme utilisent désormais des sources publiques permanentes. Les anciens PDF sont clairement classés comme archives et les anciens chemins de version de chantier ont été retirés du site actif.",

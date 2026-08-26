@@ -133,17 +133,30 @@ La peine de mort demeure interdite.
 
 Nova veut une fiscalité beaucoup plus simple et un État financièrement discipliné.
 
+Le modèle financier public sur dix ans est maintenant utilisé comme outil de contrôle. Il ne constitue ni un budget adopté, ni une prévision certifiée, ni un taux d’imposition proposé.
+
 Orientation actuelle :
 
-- concentrer la fiscalité générale sur l’impôt sur le revenu;
-- mécanismes robustes contre l’évasion et les paradis fiscaux;
-- refus des tarifs et contre-tarifs comme instrument fiscal ordinaire;
-- modélisation sur au moins dix ans avant activation;
-- publication de la dette, des garanties et engagements;
-- scénarios central, prudent et défavorable;
-- coût complet des infrastructures.
+- simplifier fortement la fiscalité générale et réduire les prélèvements lorsqu’ils peuvent être remplacés ou supprimés sans créer un déficit structurel;
+- maintenir des mécanismes robustes contre l’évasion et les paradis fiscaux, sans inscrire de rendement additionnel non démontré;
+- refuser les tarifs et contre-tarifs comme instrument fiscal ordinaire;
+- publier la dette, les garanties, les engagements et les coûts de transition;
+- tester des scénarios central, prudent et défavorable;
+- intégrer le coût complet des infrastructures et des nouvelles responsabilités souveraines;
+- distinguer dépenses courantes, actifs financiers, prêts, placements, fonds spéciaux et engagements existants.
 
-Aucun taux fiscal définitif n’est présenté avant la modélisation financière complète.
+La simplification fiscale est un objectif conditionnel, et non une date automatique d’abolition.
+
+Avant une nouvelle réduction importante d’un prélèvement, le cadre candidat exige que :
+
+1. le budget de l’année précédente soit à l’équilibre ou en surplus;
+2. la dette nette soit au plus de 45 % du PIB.
+
+Si l’une de ces conditions échoue, la réduction est suspendue.
+
+Les simulations actuelles montrent qu’une abolition rapide des prélèvements visés n’est pas financée dans les hypothèses de travail actuelles. Aucun taux fiscal définitif n’est donc présenté.
+
+Le détail des hypothèses, audits, trajectoires et limites est publié dans le Cadre financier public du Projet Nova.
 
 ## 10. Municipalités et territoire
 
@@ -215,7 +228,9 @@ Une réforme qui échoue à ses critères publics doit pouvoir être corrigée, 
 
 ## 16. Travaux encore nécessaires
 
-- modèle financier et fiscal complet sur dix ans;
+- validation indépendante du modèle financier et fiscal sur dix ans;
+- données plus précises sur les prestations fédérales actuellement versées aux résidents du Québec;
+- scénarios négociés de partage de dette, d’actifs et d’obligations;
 - carte régionale définitive du système électoral;
 - audit externe du corpus de justice;
 - audit de cybersécurité du vote à distance;
