@@ -50,7 +50,10 @@ def main():
     for p in LEGACY:
         if 'noindex' not in read(p).lower(): errors.append(f'Page héritée non noindex: {p.name}')
 
-    if FRONT.stat().st_size < 100_000 or BACK.stat().st_size < 100_000:
+    # Les deux visuels WebP sont volontairement fortement optimisés pour le Web.
+    # On vérifie qu'ils contiennent une charge utile réelle sans imposer une taille
+    # artificiellement élevée qui pénaliserait la compression.
+    if FRONT.stat().st_size < 5_000 or BACK.stat().st_size < 5_000:
         errors.append('Une couverture officielle semble vide ou anormalement petite.')
 
     if errors:
