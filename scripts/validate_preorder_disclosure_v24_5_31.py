@@ -30,7 +30,6 @@ def main():
 
     sql = read(MIG)
     low = sql.lower()
-    flat = compact(sql)
     js = read(JS)
     pages = {'page publique': read(PUBLIC_PAGE), 'Mes achats': read(ACCOUNT_PAGE)}
     doc = read(DOC).lower()
@@ -84,36 +83,19 @@ def main():
             errors.append(f'{name}: case de compréhension explicite absente.')
         if re.search(r'<input[^>]*checked[^>]*data-preorder-disclosure|<input[^>]*data-preorder-disclosure[^>]*checked', page, re.I):
             errors.append(f'{name}: la case de compréhension ne doit jamais être précochée.')
-        for marker in [
-            'frais de livraison seront à ma charge',
-            '0 $ de frais de livraison',
-            'non contractuelles',
-            'total final',
-            'pas une commande',
-        ]:
+        for marker in ['frais de livraison seront à ma charge','0 $ de frais de livraison','non contractuelles','total final','pas une commande']:
             if marker not in low_page:
                 errors.append(f'{name}: avertissement incomplet: {marker}')
-        if 'sinjira-preorders-v24-5-3.js?v=24.5.31' not in page:
-            errors.append(f'{name}: cache-buster V24.5.31 absent.')
+        if 'sinjira-preorders-v24-5-3.js?v=' not in page:
+            errors.append(f'{name}: runtime précommande absent.')
 
     row = '20260824215053 sinjira_v24_5_31_preorder_disclosure_acknowledgement'
-    if len(rows) != 164:
-        errors.append(f'Ledger: {len(rows)} migrations au lieu de 164.')
+    if len(rows) < 164:
+        errors.append(f'Ledger: {len(rows)} migrations, V24.5.31 exige au moins 164 entrées historiques.')
     if rows.count(row) != 1:
         errors.append('Le ledger doit contenir exactement une occurrence de V24.5.31.')
-    if not rows or rows[-1] != row:
-        errors.append('V24.5.31 doit être la dernière migration du ledger courant.')
 
-    for marker in [
-        'réserver aujourd’hui ne signifie jamais consentir à payer demain',
-        'frais de livraison seront à la charge du client',
-        '0 $ de frais de livraison',
-        'non contractuelles',
-        'preorder-disclosure-v24.5.31',
-        'aucun consentement financier',
-        '164 migrations',
-        'aucun historique détaillé supplémentaire',
-    ]:
+    for marker in ['réserver aujourd’hui ne signifie jamais consentir à payer demain','frais de livraison seront à la charge du client','0 $ de frais de livraison','non contractuelles','preorder-disclosure-v24.5.31','aucun consentement financier','164 migrations','aucun historique détaillé supplémentaire']:
         if marker not in doc:
             errors.append(f'Document V24.5.31 incomplet: {marker}')
 
@@ -128,7 +110,7 @@ def main():
         for error in errors: print('- ' + error)
         return 1
 
-    print('OK V24.5.31: accusé explicite non financier requis, ancien RPC verrouillé, livraison/ramassage/estimations transparents, ledger 164 synchronisé.')
+    print('OK V24.5.31 historique: accusé explicite non financier toujours requis et contrat conservé après les versions ultérieures.')
     return 0
 
 

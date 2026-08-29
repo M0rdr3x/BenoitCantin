@@ -15,6 +15,11 @@ const FORMAT_LABELS = {
   both: 'Papier + numérique',
   undecided: 'Je déciderai plus tard'
 };
+const FULFILLMENT_LABELS = {
+  shipping: 'Livraison — frais à ma charge',
+  pickup: 'Ramassage sur place — 0 $ de frais de livraison',
+  undecided: 'Je déciderai plus tard'
+};
 
 const roots = [...document.querySelectorAll('[data-preorder-root]')];
 
@@ -61,21 +66,31 @@ function renderState(nodes, preorder) {
   nodes.state.hidden = false;
   nodes.state.dataset.state = reserved ? 'reserved' : 'cancelled';
   const format = FORMAT_LABELS[preorder.preferred_format] || 'À déterminer';
+  const fulfillment = FULFILLMENT_LABELS[preorder.fulfillment_preference] || 'Je déciderai plus tard';
   const title = reserved ? 'Précommande réservée' : 'Précommande annulée';
   const payment = preorder.payment_status === 'not_collected' && preorder.financial_commitment === false
     ? 'Aucun paiement — aucun engagement financier'
     : 'État financier à vérifier';
+  const reference = preorder.reservation_reference || 'Référence en cours de génération';
+  const disclosure = preorder.disclosure_version && preorder.disclosure_acknowledged_at
+    ? `${escapeHtml(preorder.disclosure_version)} — confirmé le ${escapeHtml(formatDate(preorder.disclosure_acknowledged_at))}`
+    : 'Confirmation non enregistrée pour cette ancienne réservation';
 
   nodes.state.innerHTML = `
     <strong>${title}</strong>
     <dl>
+      <dt>Référence de réservation</dt><dd><code>${escapeHtml(reference)}</code></dd>
       <dt>Roman</dt><dd>${escapeHtml(preorder.product_name || 'SINJIRA™ — Livre I')}</dd>
       <dt>Format souhaité</dt><dd>${escapeHtml(format)}</dd>
       <dt>Quantité</dt><dd>${Number(preorder.quantity || 1)}</dd>
+      <dt>Réception souhaitée</dt><dd>${escapeHtml(fulfillment)}</dd>
       <dt>État</dt><dd>${reserved ? 'Réservée' : 'Annulée'}</dd>
       <dt>Paiement</dt><dd>${payment}</dd>
+      <dt>Conditions de réservation</dt><dd>${disclosure}</dd>
+      <dt>Réservation créée</dt><dd>${escapeHtml(formatDate(preorder.created_at))}</dd>
       <dt>Dernière mise à jour</dt><dd>${escapeHtml(formatDate(preorder.updated_at))}</dd>
-    </dl>`;
+    </dl>
+    <p><small>Cette référence identifie seulement votre réservation SINJIRA™. Elle n’est ni un numéro de commande ni un identifiant technique de votre compte.</small></p>`;
 
   if (nodes.format) nodes.format.value = preorder.preferred_format || 'undecided';
   if (nodes.quantity) nodes.quantity.value = String(preorder.quantity || 1);

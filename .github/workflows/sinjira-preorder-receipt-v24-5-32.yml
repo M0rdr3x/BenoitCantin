@@ -1,0 +1,28 @@
+name: SINJIRA V24.5.32 — Preuve de réservation et confidentialité UUID
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - sinjira-v24.5.32-preorder-receipt-uuid-privacy
+
+permissions:
+  contents: read
+
+jobs:
+  preorder-receipt-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier le contrat V24.5.32
+        run: python scripts/validate_preorder_receipt_v24_5_32.py
+      - name: Vérifier le contrat historique V24.5.31
+        run: python scripts/validate_preorder_disclosure_v24_5_31.py
+      - name: Vérifier le ledger production
+        run: python scripts/validate_production_migration_ledger.py
