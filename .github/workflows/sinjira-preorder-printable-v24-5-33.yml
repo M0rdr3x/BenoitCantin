@@ -1,0 +1,30 @@
+name: SINJIRA V24.5.33 — Confirmation imprimable précommande
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - sinjira-v24.5.33-printable-preorder-confirmation
+
+permissions:
+  contents: read
+
+jobs:
+  printable-preorder-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier V24.5.33
+        run: python scripts/validate_preorder_printable_v24_5_33.py
+      - name: Vérifier V24.5.32
+        run: python scripts/validate_preorder_receipt_v24_5_32.py
+      - name: Vérifier V24.5.31 historique
+        run: python scripts/validate_preorder_disclosure_v24_5_31.py
+      - name: Vérifier le ledger production inchangé
+        run: python scripts/validate_production_migration_ledger.py
