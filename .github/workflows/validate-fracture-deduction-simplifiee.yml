@@ -1,0 +1,33 @@
+name: Fracture — Édition Déduction simplifiée
+
+on:
+  pull_request:
+    paths:
+      - 'projets/sinjira/jeux/**'
+      - 'assets/media/sinjira-fracture-deduction-simplifiee-*.webp'
+      - 'sitemap.xml'
+      - 'scripts/validate_fracture_deduction_simplifiee.py'
+      - '.github/workflows/validate-fracture-deduction-simplifiee.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'projets/sinjira/jeux/**'
+      - 'assets/media/sinjira-fracture-deduction-simplifiee-*.webp'
+      - 'sitemap.xml'
+      - 'scripts/validate_fracture_deduction_simplifiee.py'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier Fracture — Déduction simplifiée
+        run: python scripts/validate_fracture_deduction_simplifiee.py
