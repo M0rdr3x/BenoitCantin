@@ -52,6 +52,59 @@ async function readPreorder() {
   return Array.isArray(data) ? (data[0] || null) : (data || null);
 }
 
+function printableDisclosure(preorder) {
+  return preorder.disclosure_version && preorder.disclosure_acknowledged_at
+    ? `${preorder.disclosure_version} — confirmé le ${formatDate(preorder.disclosure_acknowledged_at)}`
+    : 'Confirmation non enregistrée pour cette ancienne réservation';
+}
+
+function printPreorderConfirmation(preorder) {
+  if (!preorder?.reservation_reference) return;
+  const printWindow = window.open('', '_blank', 'width=850,height=900');
+  if (!printWindow) {
+    window.alert('Votre navigateur a bloqué la fenêtre d’impression. Autorisez les fenêtres temporaires pour imprimer cette confirmation.');
+    return;
+  }
+  printWindow.opener = null;
+
+  const reserved = preorder.status === 'reserved';
+  const format = FORMAT_LABELS[preorder.preferred_format] || 'À déterminer';
+  const fulfillment = FULFILLMENT_LABELS[preorder.fulfillment_preference] || 'Je déciderai plus tard';
+  const generatedAt = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'long', timeStyle: 'short' }).format(new Date());
+  const disclosure = printableDisclosure(preorder);
+
+  printWindow.document.open();
+  printWindow.document.write(`<!doctype html>
+<html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Confirmation de réservation ${escapeHtml(preorder.reservation_reference)}</title>
+<style>
+@page{size:auto;margin:18mm}*{box-sizing:border-box}body{margin:0;color:#111;font:15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#fff}.sheet{max-width:760px;margin:0 auto}.brand{font-size:13px;letter-spacing:.12em;text-transform:uppercase}.title{margin:.35rem 0 0;font-size:28px}.subtitle{margin:.25rem 0 1.5rem;color:#444}.badge{display:inline-block;padding:.3rem .65rem;border:1px solid #222;border-radius:999px;font-weight:700}.notice{margin:1.25rem 0;padding:1rem;border:2px solid #222;border-radius:10px}.notice strong{display:block;margin-bottom:.25rem}dl{display:grid;grid-template-columns:minmax(170px,1fr) 2fr;margin:1.25rem 0;border-top:1px solid #bbb}dt,dd{margin:0;padding:.65rem 0;border-bottom:1px solid #ddd}dt{font-weight:700;padding-right:1rem}code{font:700 16px ui-monospace,SFMono-Regular,Menlo,monospace}.fine{font-size:12px;color:#444}.actions{margin-top:1.5rem}.actions button{font:inherit;padding:.65rem 1rem;background:#111;color:#fff;border:0;border-radius:7px;cursor:pointer}@media print{.actions{display:none}.sheet{max-width:none}}
+</style></head><body><main class="sheet">
+<div class="brand">SINJIRA™ · Livre I</div>
+<h1 class="title">Confirmation de réservation</h1>
+<p class="subtitle">La Cendre du Jugement</p>
+<span class="badge">${reserved ? 'Réservation active' : 'Réservation annulée'}</span>
+<div class="notice"><strong>Aucun paiement et aucune commande.</strong>Cette confirmation atteste uniquement l’état de la réservation dans SINJIRA™ au moment de sa consultation. Elle ne constitue ni une facture, ni un reçu de paiement, ni une promesse de prix. Pour une expédition physique, les frais de livraison seront à la charge du client. Un ramassage sur place, lorsqu’il sera disponible, ajoutera 0 $ de frais de livraison.</div>
+<dl>
+<dt>Référence</dt><dd><code>${escapeHtml(preorder.reservation_reference)}</code></dd>
+<dt>Roman</dt><dd>${escapeHtml(preorder.product_name || 'SINJIRA™ — Livre I')}</dd>
+<dt>Format souhaité</dt><dd>${escapeHtml(format)}</dd>
+<dt>Quantité</dt><dd>${Number(preorder.quantity || 1)}</dd>
+<dt>Réception souhaitée</dt><dd>${escapeHtml(fulfillment)}</dd>
+<dt>État</dt><dd>${reserved ? 'Réservée' : 'Annulée'}</dd>
+<dt>Paiement</dt><dd>Aucun paiement — aucun engagement financier</dd>
+<dt>Conditions de réservation</dt><dd>${escapeHtml(disclosure)}</dd>
+<dt>Réservation créée</dt><dd>${escapeHtml(formatDate(preorder.created_at))}</dd>
+<dt>Dernière mise à jour</dt><dd>${escapeHtml(formatDate(preorder.updated_at))}</dd>
+</dl>
+<p class="fine">Référence indépendante : elle n’est ni un UUID, ni un identifiant technique du compte, ni un numéro de commande. Aucune adresse de livraison, adresse de facturation ou donnée bancaire n’est incluse dans ce document.</p>
+<p class="fine">Document généré localement dans votre navigateur le ${escapeHtml(generatedAt)}. SINJIRA™ n’enregistre pas la création, l’impression ou l’enregistrement PDF de cette copie locale.</p>
+<div class="actions"><button type="button" onclick="window.print()">Imprimer / enregistrer en PDF</button></div>
+</main></body></html>`);
+  printWindow.document.close();
+  printWindow.focus();
+}
+
 function renderState(nodes, preorder) {
   if (nodes.disclosure) nodes.disclosure.checked = false;
   if (!nodes.state) return;
@@ -90,7 +143,10 @@ function renderState(nodes, preorder) {
       <dt>Réservation créée</dt><dd>${escapeHtml(formatDate(preorder.created_at))}</dd>
       <dt>Dernière mise à jour</dt><dd>${escapeHtml(formatDate(preorder.updated_at))}</dd>
     </dl>
-    <p><small>Cette référence identifie seulement votre réservation SINJIRA™. Elle n’est ni un numéro de commande ni un identifiant technique de votre compte.</small></p>`;
+    <div class="sinjira-preorder-actions"><button class="btn btn-secondary" data-preorder-print type="button">Imprimer / enregistrer en PDF</button></div>
+    <p><small>Cette référence identifie seulement votre réservation SINJIRA™. Elle n’est ni un numéro de commande ni un identifiant technique de votre compte. La confirmation imprimable est générée uniquement dans votre navigateur.</small></p>`;
+
+  nodes.state.querySelector('[data-preorder-print]')?.addEventListener('click', () => printPreorderConfirmation(preorder));
 
   if (nodes.format) nodes.format.value = preorder.preferred_format || 'undecided';
   if (nodes.quantity) nodes.quantity.value = String(preorder.quantity || 1);
