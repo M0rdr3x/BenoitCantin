@@ -65,15 +65,15 @@ def main():
     if 'preorder_id' in js or 'product_id' in js or 'user_id' in js:
         errors.append('Le runtime V24.5.32 ne doit manipuler aucun UUID interne de précommande.')
 
-    if 'sinjira-preorders-v24-5-3.js?v=24.5.32' not in pages:
-        errors.append('Les pages de précommande doivent charger le cache-buster V24.5.32.')
+    if not re.search(r'sinjira-preorders-v24-5-3\.js\?v=24\.5\.(?:3[2-9]|[4-9]\d|\d{3,})', pages):
+        errors.append('Les pages doivent charger le runtime de précommande avec un cache-buster V24.5.32 ou ultérieur.')
     for marker in ['référence de réservation indépendante','frais de livraison seront à la charge du client','0 $ de frais de livraison']:
         if marker not in pages: errors.append(f'Transparence utilisateur V24.5.32 absente: {marker}')
 
     row = '20260829233536 sinjira_v24_5_32_preorder_receipt_and_uuid_privacy'
     if len(rows) != 165: errors.append(f'Ledger: {len(rows)} migrations au lieu de 165.')
     if rows.count(row) != 1: errors.append('Le ledger doit contenir exactement une occurrence de V24.5.32.')
-    if not rows or rows[-1] != row: errors.append('V24.5.32 doit être la dernière migration du ledger courant.')
+    if not rows or rows[-1] != row: errors.append('V24.5.32 doit rester la dernière migration tant qu’aucune migration ultérieure n’est ajoutée.')
 
     for marker in ['aucun uuid interne','référence visible','anciennes réservations','165 migrations','aucun paiement','aucune adresse exacte']:
         if marker not in doc: errors.append(f'Document V24.5.32 incomplet: {marker}')
@@ -86,7 +86,7 @@ def main():
         print(f'ECHEC V24.5.32 preuve de réservation: {len(errors)} problème(s).')
         for error in errors: print('- ' + error)
         return 1
-    print('OK V24.5.32: référence indépendante, aucun UUID public, preuve de transparence affichée, ancien consentement non inventé, ledger 165 synchronisé.')
+    print('OK V24.5.32 historique: référence indépendante, aucun UUID public, preuve de transparence conservée et cache-buster V24.5.32 ou ultérieur.')
     return 0
 
 
