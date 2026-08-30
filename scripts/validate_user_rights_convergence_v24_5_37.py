@@ -35,9 +35,9 @@ def main():
 
     row1 = '20260830015838 sinjira_v24_5_14_privacy_moderation_user_rpc_boundary'
     row2 = '20260830015937 sinjira_v24_5_15_user_rights_wrapper_cleanup'
-    if len(rows) != 171: errors.append(f'Ledger: {len(rows)} migrations au lieu de 171.')
+    if len(rows) < 171: errors.append(f'Ledger historique tronqué: {len(rows)} migrations, au moins 171 attendues.')
     if rows.count(row1) != 1 or rows.count(row2) != 1: errors.append('Les deux migrations de convergence doivent apparaître exactement une fois.')
-    if len(rows) >= 2 and rows[-2:] != [row1, row2]: errors.append('Les migrations 170 et 171 doivent clôturer le ledger courant dans cet ordre.')
+    if row1 in rows and row2 in rows and (rows.index(row1) != 169 or rows.index(row2) != 170): errors.append('Les migrations V24.5.37 doivent rester les 170e et 171e migrations canoniques dans cet ordre.')
 
     if 'sinjira_privacy_moderation_internal' not in first:
         errors.append('La migration de traçabilité doit reproduire la couche intermédiaire réellement appliquée.')
@@ -75,7 +75,7 @@ def main():
         print(f'ECHEC V24.5.37 convergence droits utilisateur: {len(errors)} problème(s).')
         for error in errors: print('- ' + error)
         return 1
-    print('OK V24.5.37: historique 170/171 tracé, couche redondante supprimée, wrappers canoniques et valeurs par défaut restaurés, anon révoqué.')
+    print('OK V24.5.37 historique: migrations 170/171 conservées, couche redondante supprimée, wrappers canoniques et valeurs par défaut restaurés, anon révoqué.')
     return 0
 
 if __name__ == '__main__':
