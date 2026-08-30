@@ -25,7 +25,7 @@ def main():
         if forbidden in sql: errors.append(f'RPC logistique expose un champ interdit: {forbidden}')
     if re.search(r'grant\s+execute\s+on\s+function\s+public\.admin_preorder_logistics_queue.*?to\s+anon',sql,re.S):
         errors.append('anon ne doit jamais pouvoir exécuter la file logistique.')
-    for marker in ['v24.5.38 · préparation logistique interne','admin_preorder_logistics_queue','export csv local','aucun nom de compte, courriel, adresse, uuid ou donnée de paiement','url.createobjecturl','new blob']:
+    for marker in ['v24.5.38 · préparation logistique interne','admin_preorder_logistics_queue','exporter csv local','aucun nom de compte, courriel, adresse, uuid ou donnée de paiement','url.createobjecturl','new blob']:
         if marker not in js: errors.append(f'Interface logistique incomplète: {marker}')
     for forbidden in ['row.user_id','row.email','row.public_address','row.payment_status','row.financial_commitment','fetch(','xmlhttprequest','navigator.sendbeacon']:
         if forbidden in js: errors.append(f'Export local contient une surface interdite: {forbidden}')
