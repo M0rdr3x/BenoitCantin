@@ -1,0 +1,29 @@
+name: SINJIRA V24.5.42 — Convergence préparation commerciale
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/sinjira-admin-preorder-fulfillment-v24-5-6.js'
+      - 'assets/js/sinjira-admin-preorder-tax-v24-5-27.js'
+      - 'assets/js/sinjira-preorder-fulfillment-v24-5-6.js'
+      - 'assets/js/sinjira-preorder-cost-summary-v24-5-25.js'
+      - 'assets/js/sinjira-preorder-tax-estimate-v24-5-27.js'
+      - 'admin/sinjira/precommandes-readiness.html'
+      - 'PREORDER_COMMERCIAL_CONVERGENCE_V24_5_42.md'
+      - 'scripts/validate_preorder_commercial_convergence_v24_5_42.py'
+      - 'supabase/production-migration-ledger.txt'
+      - '.github/workflows/sinjira-preorder-commercial-convergence-v24-5-42.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valider V24.5.42
+        run: python3 scripts/validate_preorder_commercial_convergence_v24_5_42.py
+      - name: Valider le ledger production inchangé
+        run: python3 scripts/validate_production_migration_ledger.py
