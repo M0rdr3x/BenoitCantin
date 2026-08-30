@@ -71,9 +71,9 @@ def main():
         if marker not in pages: errors.append(f'Transparence utilisateur V24.5.32 absente: {marker}')
 
     row = '20260829233536 sinjira_v24_5_32_preorder_receipt_and_uuid_privacy'
-    if len(rows) != 165: errors.append(f'Ledger: {len(rows)} migrations au lieu de 165.')
+    if len(rows) < 165: errors.append(f'Ledger: {len(rows)} migrations; il doit conserver au moins les 165 migrations présentes lors de V24.5.32.')
     if rows.count(row) != 1: errors.append('Le ledger doit contenir exactement une occurrence de V24.5.32.')
-    if not rows or rows[-1] != row: errors.append('V24.5.32 doit rester la dernière migration tant qu’aucune migration ultérieure n’est ajoutée.')
+    if row in rows and rows.index(row) < 164: errors.append('V24.5.32 n’est pas à sa position historique attendue dans le ledger.')
 
     for marker in ['aucun uuid interne','référence visible','anciennes réservations','165 migrations','aucun paiement','aucune adresse exacte']:
         if marker not in doc: errors.append(f'Document V24.5.32 incomplet: {marker}')
@@ -86,7 +86,7 @@ def main():
         print(f'ECHEC V24.5.32 preuve de réservation: {len(errors)} problème(s).')
         for error in errors: print('- ' + error)
         return 1
-    print('OK V24.5.32 historique: référence indépendante, aucun UUID public, preuve de transparence conservée et cache-buster V24.5.32 ou ultérieur.')
+    print('OK V24.5.32 historique: référence indépendante, aucun UUID public, preuve de transparence conservée et migrations ultérieures autorisées.')
     return 0
 
 
