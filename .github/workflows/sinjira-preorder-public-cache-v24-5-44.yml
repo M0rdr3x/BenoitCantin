@@ -1,0 +1,25 @@
+name: SINJIRA V24.5.44 — Convergence cache public précommandes
+
+on:
+  pull_request:
+    paths:
+      - 'compte/mes-achats.html'
+      - 'projets/sinjira/romans/precommande.html'
+      - 'PREORDER_PUBLIC_CACHE_CONVERGENCE_V24_5_44.md'
+      - 'scripts/validate_preorder_public_cache_v24_5_44.py'
+      - 'supabase/production-migration-ledger.txt'
+      - '.github/workflows/sinjira-preorder-public-cache-v24-5-44.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valider V24.5.44
+        run: python3 scripts/validate_preorder_public_cache_v24_5_44.py
+      - name: Valider le ledger production inchangé
+        run: python3 scripts/validate_production_migration_ledger.py
