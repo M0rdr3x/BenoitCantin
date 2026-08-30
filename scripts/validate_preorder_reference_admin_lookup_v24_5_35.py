@@ -5,6 +5,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 MIG = ROOT / 'supabase/migrations/20260830004410_sinjira_v24_5_35_preorder_reference_admin_lookup.sql'
 JS = ROOT / 'assets/js/sinjira-admin-preorders-v24-5-4.js'
+PAGE = ROOT / 'admin/sinjira/precommandes.html'
 DOC = ROOT / 'PREORDER_REFERENCE_ADMIN_LOOKUP_V24_5_35.md'
 LEDGER = ROOT / 'supabase/production-migration-ledger.txt'
 TEST = ROOT / 'supabase/tests/preorder_reference_admin_lookup_v24_5_35.test.sql'
@@ -16,7 +17,7 @@ def read(path):
 
 def main():
     errors = []
-    for path in [MIG, JS, DOC, LEDGER, TEST]:
+    for path in [MIG, JS, PAGE, DOC, LEDGER, TEST]:
         if not path.exists(): errors.append(f'Fichier absent: {path.relative_to(ROOT)}')
     if errors:
         for error in errors: print('- ' + error)
@@ -26,6 +27,7 @@ def main():
     low = sql.lower()
     js = read(JS)
     js_low = js.lower()
+    page = read(PAGE).lower()
     doc = read(DOC).lower()
     test = read(TEST).lower()
     rows = [x for x in read(LEDGER).splitlines() if x.strip() and not x.startswith('#')]
@@ -63,6 +65,10 @@ def main():
     lookup_block = js_low.split('async function lookupreference(event)', 1)[-1].split('function renderoverview()', 1)[0]
     for forbidden in ['row.user_id', 'row.preorder_id', 'row.product_id', 'row.pickup_point_id', 'row.email', 'row.public_address', 'row.payment_status', 'row.financial_commitment']:
         if forbidden in lookup_block: errors.append(f'La console expose un champ interdit: {forbidden}')
+
+    if 'noindex,nofollow' not in page: errors.append('La console précommandes doit rester noindex,nofollow.')
+    if 'sinjira-admin-preorders-v24-5-4.js?v=24.5.35' not in page: errors.append('Cache-buster V24.5.35 absent de la console admin.')
+    if 'v24.5.35 · administration privée · mfa requis' not in page: errors.append('La console n’annonce pas sa frontière V24.5.35/MFA.')
 
     expected_row = '20260830004410 sinjira_v24_5_35_preorder_reference_admin_lookup'
     if len(rows) != 168: errors.append(f'Ledger: {len(rows)} migrations au lieu de 168.')
