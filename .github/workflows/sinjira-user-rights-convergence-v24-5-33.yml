@@ -1,0 +1,37 @@
+name: SINJIRA V24.5.33 — Convergence droits utilisateur
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260830001642_sinjira_v24_5_14_privacy_moderation_user_rpc_boundary.sql'
+      - 'supabase/migrations/20260830001742_sinjira_v24_5_32_user_rights_redundant_boundary_cleanup.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_user_rights_convergence_v24_5_33.py'
+      - 'USER_RIGHTS_CONVERGENCE_V24_5_33.md'
+      - '.github/workflows/sinjira-user-rights-convergence-v24-5-33.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20260830001642_sinjira_v24_5_14_privacy_moderation_user_rpc_boundary.sql'
+      - 'supabase/migrations/20260830001742_sinjira_v24_5_32_user_rights_redundant_boundary_cleanup.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_user_rights_convergence_v24_5_33.py'
+      - 'USER_RIGHTS_CONVERGENCE_V24_5_33.md'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Valider la convergence V24.5.33
+        run: python scripts/validate_user_rights_convergence_v24_5_33.py
+      - name: Valider le ledger production
+        run: python scripts/validate_production_migration_ledger.py
