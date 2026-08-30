@@ -1,3 +1,4 @@
+import './sinjira-admin-preorder-tax-v24-5-27.js';
 import { escapeHtml, friendlyBackendMessage, getSupabase } from './sinjira-supabase.js';
 
 const PRODUCT_SLUG = 'sinjira-livre-01-la-cendre-du-jugement';
@@ -9,6 +10,17 @@ const pickupForm = document.querySelector('[data-pf-admin-pickup-form]');
 const zoneList = document.querySelector('[data-pf-admin-zones]');
 const pickupList = document.querySelector('[data-pf-admin-pickups]');
 let state = { settings: {}, zones: [], pickup_points: [], summary: {} };
+
+function ensureReadinessLink() {
+  const hero = document.querySelector('.preorder-admin-hero .container');
+  if (!hero || hero.querySelector('[data-preorder-readiness-link]')) return;
+  const actions = document.createElement('div');
+  actions.className = 'hero-actions';
+  actions.dataset.preorderReadinessLink = 'true';
+  actions.innerHTML = '<a class="btn btn-secondary" href="/admin/sinjira/precommandes-readiness.html">Vérifier la préparation à une future vente</a>';
+  const status = hero.querySelector('[data-preorder-admin-status]');
+  hero.insertBefore(actions, status || null);
+}
 
 function showStatus(message, kind = '') {
   if (!statusNode) return;
@@ -259,11 +271,12 @@ function bind() {
 }
 
 async function init() {
+  ensureReadinessLink();
   bind();
   try {
     await requireAdminAal2();
     await load();
-    showStatus('Livraison et ramassage chargés. Aucun tarif, point public, transporteur ou paiement n’est activé automatiquement.', 'success');
+    showStatus('Livraison, ramassage et préparation fiscale chargés. Aucun tarif, point public, transporteur ou paiement n’est activé automatiquement.', 'success');
   } catch (error) {
     if (!['AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED'].includes(error?.message)) {
       showStatus(friendlyBackendMessage(error?.message, 'Impossible de charger la gestion de livraison.'), 'error');
