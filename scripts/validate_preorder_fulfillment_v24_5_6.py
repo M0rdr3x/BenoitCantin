@@ -77,12 +77,13 @@ def main()->int:
     for runtime,name in [(public_js,'public'),(admin_js,'admin')]:
         if 'fetch(' in runtime or '.functions.invoke(' in runtime:errors.append(f'Runtime {name} appelle un transport externe au lieu des RPC Supabase.')
 
+    runtime_pattern=r'sinjira-preorder-fulfillment-v24-5-6\.js\?v=[0-9]+\.[0-9]+\.[0-9]+'
     for html,name in [(public,'Page publique'),(account,'Compte')]:
         if 'frais de livraison seront à la charge du client' not in html and 'frais de livraison seront à votre charge' not in html:errors.append(f'{name}: avertissement frais de livraison absent.')
         if 'ramassage sur place' not in html:errors.append(f'{name}: option ramassage absente.')
         if 'data-preorder-fulfillment' not in html:errors.append(f'{name}: bloc V24.5.6 absent.')
         if 'data-pf-estimate' not in html:errors.append(f'{name}: estimateur absent.')
-        if 'sinjira-preorder-fulfillment-v24-5-6.js?v=24.5.6' not in html:errors.append(f'{name}: runtime V24.5.6 non chargé.')
+        if not re.search(runtime_pattern,html):errors.append(f'{name}: runtime de livraison V24.5.6 non chargé.')
         if 'adresse de livraison' not in html:errors.append(f'{name}: minimisation de l’adresse non expliquée.')
 
     for marker in ['data-pf-admin-settings','data-pf-admin-zone-form','data-pf-admin-pickup-form','api transporteur','frais de livraison','ramassage']:
@@ -103,7 +104,7 @@ def main()->int:
         print(f'ECHEC V24.5.6 livraison/ramassage: {len(errors)} problème(s).')
         for e in errors:print('- '+e)
         return 1
-    print('OK V24.5.6: frais de livraison à la charge du client, estimateur local, ramassage sans frais, publication MFA/AAL2 et services transporteurs externes désactivés.')
+    print('OK V24.5.6 historique: frais de livraison à la charge du client, estimateur local, ramassage sans frais, publication MFA/AAL2 et runtime V24.5.6 toujours chargés avec cache-buster courant.')
     return 0
 
 if __name__=='__main__':raise SystemExit(main())
