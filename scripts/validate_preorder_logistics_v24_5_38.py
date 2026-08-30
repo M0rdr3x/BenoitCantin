@@ -25,13 +25,14 @@ def main():
         if forbidden in sql: errors.append(f'RPC logistique expose un champ interdit: {forbidden}')
     if re.search(r'grant\s+execute\s+on\s+function\s+public\.admin_preorder_logistics_queue.*?to\s+anon',sql,re.S):
         errors.append('anon ne doit jamais pouvoir exécuter la file logistique.')
-    for marker in ['v24.5.38 · préparation logistique interne','admin_preorder_logistics_queue','exporter csv local','aucun nom de compte, courriel, adresse, uuid ou donnée de paiement','url.createobjecturl','new blob']:
-        if marker not in js: errors.append(f'Interface logistique incomplète: {marker}')
+    for marker in ['data-pa-logistics-panel','admin_preorder_logistics_queue','exporter csv local','aucun nom de compte, courriel, adresse, uuid ou donnée de paiement','url.createobjecturl','new blob']:
+        if marker not in js: errors.append(f'Interface logistique historique incomplète: {marker}')
     for forbidden in ['row.user_id','row.email','row.public_address','row.payment_status','row.financial_commitment','fetch(','xmlhttprequest','navigator.sendbeacon']:
         if forbidden in js: errors.append(f'Export local contient une surface interdite: {forbidden}')
     expected='20260830035043 sinjira_v24_5_38_preorder_logistics_queue'
-    if len(rows)!=172: errors.append(f'Ledger: {len(rows)} migrations au lieu de 172.')
-    if not rows or rows[-1]!=expected: errors.append('V24.5.38 doit être la dernière migration du ledger courant.')
+    if len(rows)<172: errors.append(f'Ledger historique tronqué: {len(rows)} migrations, au moins 172 attendues.')
+    if rows.count(expected)!=1: errors.append('V24.5.38 doit apparaître exactement une fois dans le ledger.')
+    if expected in rows and rows.index(expected)!=171: errors.append('V24.5.38 doit rester la 172e migration canonique.')
     for marker in ['172 migrations','mfa/aal2','aucun fichier n’est envoyé','ni uuid','aucune api transporteur','0 $ de frais de livraison']:
         if marker not in doc: errors.append(f'Document V24.5.38 incomplet: {marker}')
     for marker in ['rpc logistique existe','wrapper public est security invoker','anon ne peut pas exécuter la rpc logistique','implémentation interne exige admin + mfa/aal2','aucun champ sensible dans le type de retour']:
@@ -39,10 +40,10 @@ def main():
     for forbidden in ['stripe','paypal','resend','twilio','shippo','easypost','fedex','ups.com','canadapost','canada post']:
         if forbidden in sql+js: errors.append(f'Intégration externe interdite V24.5.38: {forbidden}')
     if errors:
-        print(f'ECHEC V24.5.38 logistique: {len(errors)} problème(s).')
+        print(f'ECHEC V24.5.38 logistique historique: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.38: file logistique minimale, MFA/AAL2, export CSV local, aucun UUID/adresse/paiement/service externe, ledger 172 synchronisé.')
+    print('OK V24.5.38 historique: file logistique minimale, MFA/AAL2, export CSV local, aucun UUID/adresse/paiement/service externe, migration canonique #172 conservée.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
