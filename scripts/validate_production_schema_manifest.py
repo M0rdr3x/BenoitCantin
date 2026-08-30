@@ -18,7 +18,7 @@ EXPECTED_TABLES={
 'moderation_appeals','moderation_decisions','novel_comments','novels','order_items','orders','parallel_character_state','parallel_identities',
 'parallel_cycle_responses','parallel_group_members','parallel_groups','parallel_story_installments',
 'parallel_world_cycles','parallel_world_memberships','player_reports','player_sheets',
-'playtest_participants','playtests','private_family_links','private_life_events','private_profiles','products','product_preorders','preorder_sales_announcements','preorder_commercial_plans','preorder_fulfillment_settings','preorder_shipping_zones','preorder_pickup_points','preorder_tax_estimate_profiles','profiles',
+'playtest_participants','playtests','private_family_links','private_life_events','private_profiles','products','product_preorders','preorder_admin_workflow','preorder_sales_announcements','preorder_commercial_plans','preorder_fulfillment_settings','preorder_shipping_zones','preorder_pickup_points','preorder_tax_estimate_profiles','profiles',
 'project_access','projects','reader_character_submissions','reader_characters','reader_comments',
 'reader_library','reader_works','registry_account_links','research_consents','session_feedback',
 'sinjira_canon_context','sinjira_character_applications','sinjira_characters','sinjira_novel_comments',
