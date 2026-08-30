@@ -67,8 +67,65 @@ function installReferenceLookup() {
   if (document.querySelector('[data-pa-reference-lookup]')) return;
   const hero = document.querySelector('.preorder-admin-hero');
   if (!hero) return;
-  hero.insertAdjacentHTML('afterend', `<section class="section section-tight" data-pa-reference-lookup><div class="container"><article class="account-card preorder-admin-card"><span class="eyebrow">V24.5.35 · assistance par référence</span><h2>Retrouver une réservation</h2><p>Entrez uniquement la référence <code>PR-…</code> fournie par la personne. Cette recherche n’accepte ni courriel, ni UUID, ni adresse et exige toujours l’administration avec MFA/AAL2.</p><form class="account-form" data-pa-reference-form><div class="field wide"><label for="pa-reference">Référence de réservation</label><input id="pa-reference" name="reservation_reference" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="19" placeholder="PR-0123456789ABCDEF" required/></div><div class="wide"><button class="btn btn-secondary" type="submit">Rechercher la réservation</button></div></form><div class="account-status" data-pa-reference-status hidden></div><div data-pa-reference-result hidden></div></article></div></section>`);
+  hero.insertAdjacentHTML('afterend', `<section class="section section-tight" data-pa-reference-lookup><div class="container"><article class="account-card preorder-admin-card"><span class="eyebrow">V24.5.36 · assistance par référence</span><h2>Retrouver une réservation</h2><p>Entrez uniquement la référence <code>PR-…</code> fournie par la personne. Cette recherche n’accepte ni courriel, ni UUID, ni adresse et exige toujours l’administration avec MFA/AAL2. Après la recherche, un résumé d’assistance minimal peut être copié localement sans transmettre de donnée.</p><form class="account-form" data-pa-reference-form><div class="field wide"><label for="pa-reference">Référence de réservation</label><input id="pa-reference" name="reservation_reference" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="19" placeholder="PR-0123456789ABCDEF" required/></div><div class="wide"><button class="btn btn-secondary" type="submit">Rechercher la réservation</button></div></form><div class="account-status" data-pa-reference-status hidden></div><div data-pa-reference-result hidden></div></article></div></section>`);
   document.querySelector('[data-pa-reference-form]')?.addEventListener('submit', lookupReference);
+}
+function safeSupportSummary(row) {
+  const reference = String(row?.reservation_reference || '').trim();
+  if (!/^PR-[0-9A-F]{16}$/.test(reference)) return '';
+  return [
+    'SINJIRA™ — Résumé d’assistance précommande',
+    `Référence : ${reference}`,
+    `Roman : ${row.product_name || 'Livre I'}`,
+    `Format souhaité : ${formatLabel(row.preferred_format)}`,
+    `Quantité : ${Number(row.quantity || 1)}`,
+    `État : ${statusLabel(row.status)}`,
+    `Réception : ${fulfillmentLabel(row.fulfillment_preference)}`,
+    `Conditions : ${row.disclosure_version || 'ancienne réservation'} — ${dt(row.disclosure_acknowledged_at)}`,
+    `Dernière mise à jour : ${dt(row.updated_at)}`,
+    '',
+    'Réservation seulement — aucune commande et aucun paiement.',
+    'Pour une expédition physique, les frais de livraison sont à la charge du client. Ramassage sur place : 0 $ de frais de livraison lorsqu’il est disponible.'
+  ].join('\n');
+}
+async function copySafeSupportSummary(row, button, status) {
+  const text = safeSupportSummary(row);
+  if (!text) {
+    if (status) status.textContent = 'Résumé indisponible.';
+    return;
+  }
+  const previous = button?.textContent || 'Copier le résumé sûr';
+  if (button) button.disabled = true;
+  try {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const field = document.createElement('textarea');
+      field.value = text;
+      field.setAttribute('readonly', '');
+      field.style.position = 'fixed';
+      field.style.opacity = '0';
+      field.style.pointerEvents = 'none';
+      document.body.appendChild(field);
+      field.select();
+      const copied = document.execCommand('copy');
+      field.remove();
+      if (!copied) throw new Error('COPY_NOT_AVAILABLE');
+    }
+    if (button) button.textContent = 'Résumé copié';
+    if (status) status.textContent = 'Résumé d’assistance sûr copié localement.';
+  } catch (error) {
+    console.warn('[SINJIRA safe support copy]', error);
+    if (status) status.textContent = 'Impossible de copier automatiquement. Utilisez uniquement les informations minimales affichées.';
+  } finally {
+    window.setTimeout(() => {
+      if (button) {
+        button.disabled = false;
+        button.textContent = previous;
+      }
+      if (status?.textContent === 'Résumé d’assistance sûr copié localement.') status.textContent = '';
+    }, 1800);
+  }
 }
 async function lookupReference(event) {
   event.preventDefault();
@@ -101,7 +158,10 @@ async function lookupReference(event) {
     }
     if (resultNode) {
       resultNode.hidden = false;
-      resultNode.innerHTML = `<div class="preorder-admin-row"><strong>${escapeHtml(row.reservation_reference || reference)}</strong><span>${escapeHtml(row.user_label || 'Compte SINJIRA')}</span><span>${escapeHtml(row.product_name || 'Livre I')} · ${escapeHtml(formatLabel(row.preferred_format))} · ${escapeHtml(String(row.quantity ?? 1))} exemplaire(s)</span><span class="${row.status === 'reserved' ? 'active' : 'cancelled'}">${escapeHtml(statusLabel(row.status))}</span><span>${escapeHtml(fulfillmentLabel(row.fulfillment_preference))}<br><small>Conditions : ${escapeHtml(row.disclosure_version || 'ancienne réservation')} · ${escapeHtml(dt(row.disclosure_acknowledged_at))}<br>Mise à jour : ${escapeHtml(dt(row.updated_at))}</small></span></div><p><small>Résultat volontairement minimal : aucun UUID, courriel, adresse de livraison, adresse de facturation ou donnée bancaire n’est retourné.</small></p>`;
+      resultNode.innerHTML = `<div class="preorder-admin-row"><strong>${escapeHtml(row.reservation_reference || reference)}</strong><span>${escapeHtml(row.user_label || 'Compte SINJIRA')}</span><span>${escapeHtml(row.product_name || 'Livre I')} · ${escapeHtml(formatLabel(row.preferred_format))} · ${escapeHtml(String(row.quantity ?? 1))} exemplaire(s)</span><span class="${row.status === 'reserved' ? 'active' : 'cancelled'}">${escapeHtml(statusLabel(row.status))}</span><span>${escapeHtml(fulfillmentLabel(row.fulfillment_preference))}<br><small>Conditions : ${escapeHtml(row.disclosure_version || 'ancienne réservation')} · ${escapeHtml(dt(row.disclosure_acknowledged_at))}<br>Mise à jour : ${escapeHtml(dt(row.updated_at))}</small></span></div><div class="sinjira-preorder-actions"><button class="btn btn-secondary" data-pa-copy-safe-summary type="button">Copier le résumé sûr</button><span class="sr-only" data-pa-copy-safe-status role="status" aria-live="polite"></span></div><p><small>Résultat volontairement minimal : aucun UUID, courriel, adresse de livraison, adresse de facturation ou donnée bancaire n’est retourné. Le résumé copié exclut aussi le nom/pseudo du profil.</small></p>`;
+      const copyButton = resultNode.querySelector('[data-pa-copy-safe-summary]');
+      const copyStatus = resultNode.querySelector('[data-pa-copy-safe-status]');
+      copyButton?.addEventListener('click', () => copySafeSupportSummary(row, copyButton, copyStatus));
     }
     setLookupStatus('Réservation retrouvée par sa référence.', 'success');
   } catch (error) {
