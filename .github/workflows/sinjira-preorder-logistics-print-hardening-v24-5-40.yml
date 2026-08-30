@@ -1,0 +1,26 @@
+name: SINJIRA V24.5.40 — Durcissement impression logistique locale
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/sinjira-admin-preorder-workflow-v24-5-36.js'
+      - 'PREORDER_LOGISTICS_PRINT_HARDENING_V24_5_40.md'
+      - 'scripts/validate_preorder_logistics_print_hardening_v24_5_40.py'
+      - 'supabase/production-migration-ledger.txt'
+      - '.github/workflows/sinjira-preorder-logistics-print-hardening-v24-5-40.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valider V24.5.40
+        run: python3 scripts/validate_preorder_logistics_print_hardening_v24_5_40.py
+      - name: Vérifier V24.5.39 historique
+        run: python3 scripts/validate_preorder_logistics_print_v24_5_39.py
+      - name: Valider le ledger production inchangé
+        run: python3 scripts/validate_production_migration_ledger.py
