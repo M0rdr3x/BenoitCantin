@@ -67,13 +67,13 @@ def main():
         if forbidden in lookup_block: errors.append(f'La console expose un champ interdit: {forbidden}')
 
     if 'noindex,nofollow' not in page: errors.append('La console précommandes doit rester noindex,nofollow.')
-    if 'sinjira-admin-preorders-v24-5-4.js?v=24.5.35' not in page: errors.append('Cache-buster V24.5.35 absent de la console admin.')
-    if 'v24.5.35 · administration privée · mfa requis' not in page: errors.append('La console n’annonce pas sa frontière V24.5.35/MFA.')
+    if 'sinjira-admin-preorders-v24-5-4.js?v=24.5.' not in page: errors.append('Le script admin précommandes doit garder un cache-buster versionné.')
+    if 'administration privée · mfa requis' not in page: errors.append('La console n’annonce plus sa frontière admin/MFA.')
 
     expected_row = '20260830004410 sinjira_v24_5_35_preorder_reference_admin_lookup'
-    if len(rows) != 168: errors.append(f'Ledger: {len(rows)} migrations au lieu de 168.')
-    if not rows or rows[-1] != expected_row: errors.append('V24.5.35 doit être la dernière migration du ledger courant.')
+    if len(rows) < 168: errors.append(f'Ledger historique trop court: {len(rows)} migrations.')
     if rows.count(expected_row) != 1: errors.append('Le ledger doit contenir V24.5.35 exactement une fois.')
+    if expected_row in rows and rows.index(expected_row) < 167: errors.append('V24.5.35 apparaît trop tôt dans le ledger historique.')
 
     for marker in ['168 migrations', 'mfa/aal2', 'aucune recherche par nom', 'aucun uuid', 'frais de livraison', '0 $ de frais de livraison']:
         if marker not in doc: errors.append(f'Document V24.5.35 incomplet: {marker}')
@@ -88,7 +88,7 @@ def main():
         print(f'ECHEC V24.5.35 recherche admin par référence: {len(errors)} problème(s).')
         for error in errors: print('- ' + error)
         return 1
-    print('OK V24.5.35: lookup PR-… admin MFA/AAL2, résultat minimal sans UUID/courriel/adresse/paiement, anon révoqué, ledger 168 synchronisé.')
+    print('OK V24.5.35 historique: lookup PR-… admin MFA/AAL2 et contrat de minimisation préservés après les versions ultérieures.')
     return 0
 
 
