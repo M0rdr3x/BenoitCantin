@@ -1,0 +1,25 @@
+name: SINJIRA V24.5.41 — Checklist préparation vente
+
+on:
+  pull_request:
+    paths:
+      - 'admin/sinjira/precommandes-readiness.html'
+      - 'assets/js/sinjira-admin-preorder-readiness-v24-5-41.js'
+      - 'PREORDER_SALE_READINESS_V24_5_41.md'
+      - 'scripts/validate_preorder_sale_readiness_v24_5_41.py'
+      - 'supabase/production-migration-ledger.txt'
+      - '.github/workflows/sinjira-preorder-sale-readiness-v24-5-41.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valider V24.5.41
+        run: python3 scripts/validate_preorder_sale_readiness_v24_5_41.py
+      - name: Valider le ledger production inchangé
+        run: python3 scripts/validate_production_migration_ledger.py
