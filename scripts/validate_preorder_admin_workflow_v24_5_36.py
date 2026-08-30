@@ -51,9 +51,9 @@ def main():
     if 'sinjira-admin-preorder-workflow-v24-5-36.js?v=24.5.36' not in page: errors.append('Script V24.5.36 absent de la console.')
 
     expected = '20260830012533 sinjira_v24_5_36_preorder_admin_workflow'
-    if len(rows) != 169: errors.append(f'Ledger: {len(rows)} migrations au lieu de 169.')
-    if not rows or rows[-1] != expected: errors.append('V24.5.36 doit être la dernière migration du ledger courant.')
+    if len(rows) < 169: errors.append(f'Ledger historique tronqué: {len(rows)} migrations, au moins 169 attendues.')
     if rows.count(expected) != 1: errors.append('V24.5.36 doit apparaître exactement une fois dans le ledger.')
+    elif rows.index(expected) != 168: errors.append('V24.5.36 doit rester la 169e migration canonique.')
 
     for marker in ['169 migrations','aucune note libre','mfa/aal2','ne crée aucune commande','n’active aucune vente','livraison d’un livre physique reste à la charge du client','0 $ de frais de livraison']:
         if marker not in doc: errors.append(f'Document V24.5.36 incomplet: {marker}')
@@ -68,7 +68,7 @@ def main():
         print(f'ECHEC V24.5.36 suivi admin: {len(errors)} problème(s).')
         for error in errors: print('- ' + error)
         return 1
-    print('OK V24.5.36: suivi admin non financier par PR-…, 3 états réversibles, aucune note libre/PII, admin MFA/AAL2, anon révoqué, ledger 169.')
+    print('OK V24.5.36 historique: suivi admin non financier conservé à la 169e migration; invariants métier et sécurité intacts.')
     return 0
 
 if __name__ == '__main__': raise SystemExit(main())

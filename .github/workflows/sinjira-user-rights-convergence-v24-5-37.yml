@@ -1,0 +1,28 @@
+name: SINJIRA V24.5.37 — Convergence droits utilisateur
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - sinjira-v24.5.37-user-rights-convergence
+
+permissions:
+  contents: read
+
+jobs:
+  user-rights-convergence-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier V24.5.37
+        run: python scripts/validate_user_rights_convergence_v24_5_37.py
+      - name: Vérifier V24.5.36 historique
+        run: python scripts/validate_preorder_admin_workflow_v24_5_36.py
+      - name: Vérifier le ledger production
+        run: python scripts/validate_production_migration_ledger.py
