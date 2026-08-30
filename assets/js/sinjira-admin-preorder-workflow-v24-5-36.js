@@ -46,7 +46,7 @@ function installLogisticsPanel() {
   if (document.querySelector('[data-pa-logistics-panel]')) return;
   const workflow = document.querySelector('[data-pa-workflow-panel]');
   if (!workflow) return;
-  workflow.insertAdjacentHTML('afterend', `<section class="section section-tight" data-pa-logistics-panel><div class="container"><article class="account-card preorder-admin-card"><div class="preorder-admin-list-head"><div><span class="eyebrow">V24.5.38 · préparation logistique interne</span><h2>Préparer les exemplaires sans données privées</h2><p>Cette vue utilise uniquement la référence PR-…, le produit, le format, la quantité, le mode de réception et, si applicable, le nom public du point de retrait. Aucun nom de compte, courriel, adresse, UUID ou donnée de paiement n’est retourné ni exporté.</p></div><div class="preorder-announcement-actions"><button class="btn btn-secondary" data-pa-logistics-refresh type="button">Actualiser</button><button class="btn btn-secondary" data-pa-logistics-export type="button" disabled>Exporter CSV local</button></div></div><div class="preorder-admin-filters"><label>Réservations<select data-pa-logistics-filter><option value="reserved">Actives seulement</option><option value="all">Toutes, incluant annulées</option></select></label></div><div class="preorder-admin-stat-grid"><article class="preorder-admin-stat"><span>Unités papier à prévoir</span><strong data-pa-logistics-paper>0</strong><small>papier ou papier + numérique</small></article><article class="preorder-admin-stat"><span>Livraison</span><strong data-pa-logistics-shipping>0</strong><small>réservations</small></article><article class="preorder-admin-stat"><span>Ramassage</span><strong data-pa-logistics-pickup>0</strong><small>réservations</small></article><article class="preorder-admin-stat"><span>Mode à décider</span><strong data-pa-logistics-undecided>0</strong><small>réservations</small></article></div><div class="account-status" data-pa-logistics-status hidden></div><div class="preorder-admin-list" data-pa-logistics-list><p>Chargement…</p></div><p><small>L’export est créé dans votre navigateur puis téléchargé localement. Aucun fichier n’est envoyé vers SINJIRA, un transporteur ou un service externe.</small></p></article></div></section>`);
+  workflow.insertAdjacentHTML('afterend', `<section class="section section-tight" data-pa-logistics-panel><div class="container"><article class="account-card preorder-admin-card"><div class="preorder-admin-list-head"><div><span class="eyebrow">V24.5.39 · préparation logistique locale</span><h2>Préparer les exemplaires sans données privées</h2><p>Cette vue utilise uniquement la référence PR-…, le produit, le format, la quantité, le mode de réception et, si applicable, le nom public du point de retrait. Aucun nom de compte, courriel, adresse, UUID ou donnée de paiement n’est retourné, exporté ou imprimé.</p></div><div class="preorder-announcement-actions"><button class="btn btn-secondary" data-pa-logistics-refresh type="button">Actualiser</button><button class="btn btn-secondary" data-pa-logistics-export type="button" disabled>Exporter CSV local</button><button class="btn btn-secondary" data-pa-logistics-print type="button" disabled>Imprimer feuille locale</button></div></div><div class="preorder-admin-filters"><label>Réservations<select data-pa-logistics-filter><option value="reserved">Actives seulement</option><option value="all">Toutes, incluant annulées</option></select></label></div><div class="preorder-admin-stat-grid"><article class="preorder-admin-stat"><span>Unités papier à prévoir</span><strong data-pa-logistics-paper>0</strong><small>papier ou papier + numérique</small></article><article class="preorder-admin-stat"><span>Livraison</span><strong data-pa-logistics-shipping>0</strong><small>réservations</small></article><article class="preorder-admin-stat"><span>Ramassage</span><strong data-pa-logistics-pickup>0</strong><small>réservations</small></article><article class="preorder-admin-stat"><span>Mode à décider</span><strong data-pa-logistics-undecided>0</strong><small>réservations</small></article></div><div class="account-status" data-pa-logistics-status hidden></div><div class="preorder-admin-list" data-pa-logistics-list><p>Chargement…</p></div><p><small>Le CSV et la feuille imprimable sont créés localement dans votre navigateur. Aucun fichier n’est envoyé vers SINJIRA, un transporteur ou un service externe.</small></p></article></div></section>`);
 }
 function setStatus(message, kind = '') {
   const node = document.querySelector('[data-pa-workflow-status]');
@@ -79,20 +79,27 @@ function filteredLogisticsRows() {
   const filter = document.querySelector('[data-pa-logistics-filter]')?.value || 'reserved';
   return filter === 'all' ? logisticsRows : logisticsRows.filter((row) => row.preorder_status === 'reserved');
 }
+function logisticsSummary(rows) {
+  return {
+    paperUnits: rows.reduce((sum, row) => sum + (['paper','both'].includes(row.preferred_format) ? Number(row.quantity || 0) : 0), 0),
+    shipping: rows.filter((row) => row.fulfillment_preference === 'shipping').length,
+    pickup: rows.filter((row) => row.fulfillment_preference === 'pickup').length,
+    undecided: rows.filter((row) => !['shipping','pickup'].includes(row.fulfillment_preference)).length
+  };
+}
 function renderLogistics() {
   const rows = filteredLogisticsRows();
   const list = document.querySelector('[data-pa-logistics-list]');
-  const paperUnits = rows.reduce((sum, row) => sum + (['paper','both'].includes(row.preferred_format) ? Number(row.quantity || 0) : 0), 0);
-  const shipping = rows.filter((row) => row.fulfillment_preference === 'shipping').length;
-  const pickup = rows.filter((row) => row.fulfillment_preference === 'pickup').length;
-  const undecided = rows.filter((row) => !['shipping','pickup'].includes(row.fulfillment_preference)).length;
+  const summary = logisticsSummary(rows);
   const set = (selector, value) => { const node = document.querySelector(selector); if (node) node.textContent = String(value); };
-  set('[data-pa-logistics-paper]', paperUnits);
-  set('[data-pa-logistics-shipping]', shipping);
-  set('[data-pa-logistics-pickup]', pickup);
-  set('[data-pa-logistics-undecided]', undecided);
+  set('[data-pa-logistics-paper]', summary.paperUnits);
+  set('[data-pa-logistics-shipping]', summary.shipping);
+  set('[data-pa-logistics-pickup]', summary.pickup);
+  set('[data-pa-logistics-undecided]', summary.undecided);
   const exportButton = document.querySelector('[data-pa-logistics-export]');
+  const printButton = document.querySelector('[data-pa-logistics-print]');
   if (exportButton) exportButton.disabled = rows.length === 0;
+  if (printButton) printButton.disabled = rows.length === 0;
   if (!list) return;
   if (!rows.length) {
     list.innerHTML = '<div class="preorder-admin-empty">Aucune réservation à préparer pour ce filtre.</div>';
@@ -195,6 +202,30 @@ function exportLogisticsCsv() {
   URL.revokeObjectURL(url);
   setLogisticsStatus(`Export local créé pour ${rows.length} réservation(s). Aucun fichier n’a été envoyé vers un service externe.`, 'success');
 }
+function printLogisticsSheet() {
+  const rows = filteredLogisticsRows();
+  if (!rows.length) return;
+  const summary = logisticsSummary(rows);
+  const scope = document.querySelector('[data-pa-logistics-filter]')?.value === 'all' ? 'Toutes les réservations affichées' : 'Réservations actives seulement';
+  const generatedAt = dt(new Date().toISOString());
+  const bodyRows = rows.map((row) => {
+    const pickup = row.fulfillment_preference === 'pickup'
+      ? [row.pickup_point_label, row.pickup_city].filter(Boolean).join(' · ') || 'Point à confirmer'
+      : '—';
+    return `<tr><td>${escapeHtml(row.reservation_reference || '—')}</td><td>${escapeHtml(row.product_name || 'Livre I')}</td><td>${escapeHtml(String(row.quantity ?? 1))}</td><td>${escapeHtml(formatLabel(row.preferred_format))}</td><td>${escapeHtml(fulfillmentLabel(row.fulfillment_preference))}</td><td>${escapeHtml(pickup)}</td><td>${escapeHtml(workflowLabel(row.workflow_state))}</td><td>${escapeHtml(row.disclosure_version || 'ancienne réservation')}<br><small>${escapeHtml(dt(row.disclosure_acknowledged_at))}</small></td></tr>`;
+  }).join('');
+  const sheet = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>SINJIRA — Feuille logistique locale</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{margin:0 0 6px}p{margin:6px 0}.notice{border:1px solid #555;padding:10px;margin:14px 0}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0}.summary div{border:1px solid #aaa;padding:8px}.summary strong{display:block;font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #aaa;padding:6px;text-align:left;vertical-align:top}th{background:#eee}@media print{body{margin:10mm}.no-print{display:none}.summary{break-inside:avoid}tr{break-inside:avoid}}</style></head><body><h1>SINJIRA™ — Feuille de préparation logistique</h1><p>Générée localement : ${escapeHtml(generatedAt)} · ${escapeHtml(scope)}</p><div class="notice"><strong>Document interne préparatoire — ce n’est ni une commande ni une preuve de paiement.</strong><br>Livraison : frais à la charge du client. Ramassage : 0 $ de frais de livraison. Aucun nom, courriel, adresse, UUID ou donnée de paiement n’est inclus.</div><div class="summary"><div><span>Unités papier</span><strong>${escapeHtml(String(summary.paperUnits))}</strong></div><div><span>Livraison</span><strong>${escapeHtml(String(summary.shipping))}</strong></div><div><span>Ramassage</span><strong>${escapeHtml(String(summary.pickup))}</strong></div><div><span>À décider</span><strong>${escapeHtml(String(summary.undecided))}</strong></div></div><table><thead><tr><th>Référence</th><th>Produit</th><th>Qté</th><th>Format</th><th>Réception</th><th>Point de retrait</th><th>Suivi</th><th>Conditions</th></tr></thead><tbody>${bodyRows}</tbody></table><p class="no-print"><button type="button" onclick="window.print()">Imprimer / Enregistrer en PDF</button></p></body></html>`;
+  const printWindow = window.open('', '_blank', 'width=1100,height=800');
+  if (!printWindow) {
+    setLogisticsStatus('La fenêtre d’impression a été bloquée par le navigateur. Autorisez les fenêtres contextuelles pour cette page puis réessayez.', 'error');
+    return;
+  }
+  printWindow.document.open();
+  printWindow.document.write(sheet);
+  printWindow.document.close();
+  printWindow.focus();
+  setLogisticsStatus(`Feuille locale préparée pour ${rows.length} réservation(s). Aucun fichier n’a été envoyé vers un service externe.`, 'success');
+}
 function bind() {
   document.querySelector('[data-pa-workflow-refresh]')?.addEventListener('click', () => loadQueue('Suivi actualisé.'));
   document.querySelector('[data-pa-workflow-filter]')?.addEventListener('change', () => loadQueue());
@@ -205,6 +236,7 @@ function bind() {
   document.querySelector('[data-pa-logistics-refresh]')?.addEventListener('click', () => loadLogistics('Préparation logistique actualisée.'));
   document.querySelector('[data-pa-logistics-filter]')?.addEventListener('change', renderLogistics);
   document.querySelector('[data-pa-logistics-export]')?.addEventListener('click', exportLogisticsCsv);
+  document.querySelector('[data-pa-logistics-print]')?.addEventListener('click', printLogisticsSheet);
 }
 async function init() {
   installPanel();
