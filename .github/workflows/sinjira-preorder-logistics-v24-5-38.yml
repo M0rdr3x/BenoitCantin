@@ -1,0 +1,27 @@
+name: SINJIRA V24.5.38 — Préparation logistique précommandes
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/tests/**'
+      - 'assets/js/sinjira-admin-preorder-workflow-v24-5-36.js'
+      - 'scripts/validate_preorder_logistics_v24_5_38.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'PREORDER_LOGISTICS_V24_5_38.md'
+      - '.github/workflows/sinjira-preorder-logistics-v24-5-38.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valider V24.5.38
+        run: python3 scripts/validate_preorder_logistics_v24_5_38.py
+      - name: Valider le ledger production
+        run: python3 scripts/validate_production_migration_ledger.py
