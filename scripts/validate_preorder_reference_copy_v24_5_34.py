@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 JS = ROOT / 'assets/js/sinjira-preorders-v24-5-3.js'
@@ -51,14 +52,14 @@ def main():
         if forbidden in copy_block: errors.append(f'Identifiant interne interdit dans la copie: {forbidden}')
 
     for name, page in [('page publique', pages[0]), ('Mes achats', pages[1])]:
-        if 'sinjira-preorders-v24-5-3.js?v=24.5.34' not in page:
-            errors.append(f'{name}: cache-buster V24.5.34 absent.')
+        if not re.search(r'sinjira-preorders-v24-5-3\.js\?v=24\.5\.(?:3[4-9]|[4-9]\d|\d{3,})', page):
+            errors.append(f'{name}: cache-buster V24.5.34 ou ultérieur absent.')
 
-    expected_last = '20260830001742 sinjira_v24_5_32_user_rights_redundant_boundary_cleanup'
-    if len(rows) != 167:
-        errors.append(f'Ledger: {len(rows)} migrations au lieu de 167; V24.5.34 ne doit pas ajouter de migration.')
-    if not rows or rows[-1] != expected_last:
-        errors.append('V24.5.34 ne doit pas modifier la dernière migration production actuelle.')
+    historical_anchor = '20260830001742 sinjira_v24_5_32_user_rights_redundant_boundary_cleanup'
+    if len(rows) < 167:
+        errors.append(f'Ledger: {len(rows)} migrations; V24.5.34 exige au moins les 167 présentes lors de sa livraison.')
+    if rows.count(historical_anchor) != 1:
+        errors.append('Le ledger doit conserver exactement une occurrence de l’ancre production présente lors de V24.5.34.')
 
     for marker in [
         'copie locale de la référence', 'navigator.clipboard.writetext', 'repli local',
@@ -75,7 +76,7 @@ def main():
         print(f'ECHEC V24.5.34 copie de référence: {len(errors)} problème(s).')
         for error in errors: print('- ' + error)
         return 1
-    print('OK V24.5.34: copie locale de PR-…, accessible, sans UUID, stockage, réseau, service payant ni nouvelle migration; ledger 167 inchangé.')
+    print('OK V24.5.34 historique: copie locale PR-… conservée, sans UUID, stockage, réseau ni service payant; ledger peut évoluer au-delà de 167.')
     return 0
 
 

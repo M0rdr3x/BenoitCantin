@@ -1,0 +1,28 @@
+name: SINJIRA V24.5.35 — Recherche admin référence précommande
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - sinjira-v24.5.35-preorder-reference-admin-lookup
+
+permissions:
+  contents: read
+
+jobs:
+  preorder-reference-admin-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier V24.5.35
+        run: python scripts/validate_preorder_reference_admin_lookup_v24_5_35.py
+      - name: Vérifier V24.5.34 historique
+        run: python scripts/validate_preorder_reference_copy_v24_5_34.py
+      - name: Vérifier le ledger production
+        run: python scripts/validate_production_migration_ledger.py

@@ -30,6 +30,9 @@ function toLocalInput(value) {
 function formatLabel(value) {
   return ({ paper: 'Papier', digital: 'Numérique', both: 'Papier + numérique', undecided: 'Indécis' })[value] || value || '—';
 }
+function fulfillmentLabel(value) {
+  return ({ shipping: 'Livraison — frais à la charge du client', pickup: 'Ramassage sur place — 0 $ de frais de livraison', undecided: 'À décider' })[value] || value || '—';
+}
 function statusLabel(value) {
   return ({ reserved: 'Active', cancelled: 'Annulée', draft: 'Brouillon', ready: 'Prêt', sent: 'Envoyé', cancelled_campaign: 'Annulé' })[value] || value || 'Non préparé';
 }
@@ -59,6 +62,55 @@ async function requireAdminAal2() {
 function setText(selector, value) {
   const node = document.querySelector(selector);
   if (node) node.textContent = String(value ?? 0);
+}
+function installReferenceLookup() {
+  if (document.querySelector('[data-pa-reference-lookup]')) return;
+  const hero = document.querySelector('.preorder-admin-hero');
+  if (!hero) return;
+  hero.insertAdjacentHTML('afterend', `<section class="section section-tight" data-pa-reference-lookup><div class="container"><article class="account-card preorder-admin-card"><span class="eyebrow">V24.5.35 · assistance par référence</span><h2>Retrouver une réservation</h2><p>Entrez uniquement la référence <code>PR-…</code> fournie par la personne. Cette recherche n’accepte ni courriel, ni UUID, ni adresse et exige toujours l’administration avec MFA/AAL2.</p><form class="account-form" data-pa-reference-form><div class="field wide"><label for="pa-reference">Référence de réservation</label><input id="pa-reference" name="reservation_reference" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="19" placeholder="PR-0123456789ABCDEF" required/></div><div class="wide"><button class="btn btn-secondary" type="submit">Rechercher la réservation</button></div></form><div class="account-status" data-pa-reference-status hidden></div><div data-pa-reference-result hidden></div></article></div></section>`);
+  document.querySelector('[data-pa-reference-form]')?.addEventListener('submit', lookupReference);
+}
+async function lookupReference(event) {
+  event.preventDefault();
+  const lookupForm = event.currentTarget;
+  const input = lookupForm.elements.reservation_reference;
+  const reference = String(input?.value || '').trim().toUpperCase();
+  const resultNode = document.querySelector('[data-pa-reference-result]');
+  const lookupStatus = document.querySelector('[data-pa-reference-status]');
+  const button = lookupForm.querySelector('button[type="submit"]');
+  const setLookupStatus = (message, kind = '') => {
+    if (!lookupStatus) return;
+    lookupStatus.hidden = false;
+    lookupStatus.textContent = message;
+    lookupStatus.dataset.kind = kind;
+  };
+  if (!/^PR-[0-9A-F]{16}$/.test(reference)) {
+    if (resultNode) resultNode.hidden = true;
+    setLookupStatus('Entrez une référence valide au format PR- suivi de 16 caractères hexadécimaux.', 'error');
+    input?.focus();
+    return;
+  }
+  if (button) button.disabled = true;
+  try {
+    const rows = await rpc('admin_preorder_find_by_reference', { p_reservation_reference: reference });
+    const row = Array.isArray(rows) ? (rows[0] || null) : rows;
+    if (!row) {
+      if (resultNode) resultNode.hidden = true;
+      setLookupStatus('Aucune réservation ne correspond à cette référence.', 'info');
+      return;
+    }
+    if (resultNode) {
+      resultNode.hidden = false;
+      resultNode.innerHTML = `<div class="preorder-admin-row"><strong>${escapeHtml(row.reservation_reference || reference)}</strong><span>${escapeHtml(row.user_label || 'Compte SINJIRA')}</span><span>${escapeHtml(row.product_name || 'Livre I')} · ${escapeHtml(formatLabel(row.preferred_format))} · ${escapeHtml(String(row.quantity ?? 1))} exemplaire(s)</span><span class="${row.status === 'reserved' ? 'active' : 'cancelled'}">${escapeHtml(statusLabel(row.status))}</span><span>${escapeHtml(fulfillmentLabel(row.fulfillment_preference))}<br><small>Conditions : ${escapeHtml(row.disclosure_version || 'ancienne réservation')} · ${escapeHtml(dt(row.disclosure_acknowledged_at))}<br>Mise à jour : ${escapeHtml(dt(row.updated_at))}</small></span></div><p><small>Résultat volontairement minimal : aucun UUID, courriel, adresse de livraison, adresse de facturation ou donnée bancaire n’est retourné.</small></p>`;
+    }
+    setLookupStatus('Réservation retrouvée par sa référence.', 'success');
+  } catch (error) {
+    if (resultNode) resultNode.hidden = true;
+    const message = String(error?.message || '');
+    setLookupStatus(message.includes('INVALID_RESERVATION_REFERENCE') ? 'Référence invalide.' : friendlyBackendMessage(message, 'Impossible de rechercher cette réservation.'), 'error');
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 function renderOverview() {
   const o = state.overview || {};
@@ -198,6 +250,7 @@ async function sendInternal() {
   }
 }
 function bind() {
+  installReferenceLookup();
   form?.addEventListener('submit', saveDraft);
   document.querySelector('[data-pa-mark-ready]')?.addEventListener('click', markReady);
   document.querySelector('[data-pa-send-internal]')?.addEventListener('click', sendInternal);
