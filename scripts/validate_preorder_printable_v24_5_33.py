@@ -61,9 +61,10 @@ def main():
     for forbidden in ['fetch(', '.rpc(', 'xmlhttprequest', 'websocket', 'new eventsource', 'navigator.sendbeacon']:
         if forbidden in print_block: errors.append(f'La fonction d’impression ne doit faire aucun appel réseau: {forbidden}')
 
-    if len(rows) != 165: errors.append(f'Ledger: {len(rows)} migrations au lieu de 165; V24.5.33 ne doit pas ajouter de migration.')
-    if not rows or rows[-1] != '20260829233536 sinjira_v24_5_32_preorder_receipt_and_uuid_privacy':
-        errors.append('V24.5.33 ne doit pas modifier la dernière migration production V24.5.32.')
+    historical_row = '20260829233536 sinjira_v24_5_32_preorder_receipt_and_uuid_privacy'
+    if len(rows) < 165: errors.append(f'Ledger: {len(rows)} migrations; il doit conserver au moins les 165 présentes lors de cette confirmation locale.')
+    if rows.count(historical_row) != 1:
+        errors.append('Le ledger doit conserver exactement une occurrence de la migration V24.5.32 qui précédait cette fonctionnalité sans migration.')
 
     for marker in [
         'confirmation imprimable locale', 'aucun uuid', 'aucun service pdf externe',
@@ -77,7 +78,7 @@ def main():
         print(f'ECHEC V24.5.33 confirmation imprimable: {len(errors)} problème(s).')
         for error in errors: print('- ' + error)
         return 1
-    print('OK V24.5.33: copie imprimable locale, cache-buster courant, sans UUID, stockage, appel réseau, service payant ni nouvelle migration.')
+    print('OK V24.5.33 historique: copie imprimable locale, sans UUID, stockage, appel réseau ou service payant; migrations ultérieures autorisées.')
     return 0
 
 
