@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="noindex,nofollow" name="robots"/>
+<title>Préparation à la vente du Livre I | Administration SINJIRA™</title>
+<link href="/assets/icons/sinjira-favicon.png" rel="icon"/>
+<link href="/assets/css/site.css?v=20.0" rel="stylesheet"/>
+<link href="/assets/css/sinjira-player-account.css?v=24.1" rel="stylesheet"/>
+<link href="/assets/css/v24-platform.css?v=24.1" rel="stylesheet"/>
+<link href="/assets/css/sinjira-admin-preorders-v24-5-4.css?v=24.5.4" rel="stylesheet"/>
+<style>
+.readiness-main{padding-bottom:64px}.readiness-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.readiness-item{padding:16px;border:1px solid var(--border-color,#d7d7d7);border-radius:14px}.readiness-item strong{display:block;margin-top:6px}.readiness-blockers{margin:0;padding-left:22px}.readiness-blockers li{margin:8px 0}.readiness-ok{font-weight:700}.readiness-locks{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.readiness-locks div{padding:12px;border:1px solid var(--border-color,#d7d7d7);border-radius:12px}.readiness-locks span,.readiness-locks strong{display:block}.readiness-actions{display:flex;gap:10px;flex-wrap:wrap}
+</style>
+</head>
+<body class="admin-sinjira-page preorder-admin-page">
+<header class="site-header"><div class="container nav-shell"><a class="brand" href="/"><img alt="" height="47" src="/assets/media/sinjira-emblem.webp" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Administration</span></span></a><nav class="main-nav"><a href="/admin/sinjira/">Administration</a><a href="/admin/sinjira/precommandes.html">Précommandes</a><a href="/projets/sinjira/romans/precommande.html">Page publique</a></nav></div></header>
+<main class="readiness-main">
+<section class="preorder-admin-hero"><div class="container"><a class="project-back" href="/admin/sinjira/precommandes.html">← Retour aux précommandes</a><span class="eyebrow">V24.5.41 · lecture seule · MFA/AAL2</span><h1>Préparation à une future ouverture de vente</h1><p>Cette page montre uniquement si les informations nécessaires sont prêtes. Elle ne peut pas ouvrir une vente, créer un checkout, activer un paiement, convertir une réservation ou activer un fournisseur externe.</p><div class="preorder-admin-safety"><strong>Ouverture manuelle obligatoire</strong><span>Même lorsque tous les indicateurs sont prêts, une décision humaine séparée reste requise. Aucun état « prêt » n’autorise automatiquement une transaction.</span></div><div class="account-status" data-readiness-status hidden></div></div></section>
+<section class="section section-tight"><div class="container">
+<article class="account-card preorder-admin-card"><div class="preorder-admin-card-head"><div><span class="eyebrow">État global</span><h2 data-readiness-title>Chargement…</h2><p data-readiness-summary>Vérification des prérequis techniques et commerciaux.</p></div><button class="btn btn-secondary" data-readiness-refresh type="button">Actualiser</button></div><div class="readiness-grid" data-readiness-grid></div></article>
+</div></section>
+<section class="section section-tight"><div class="container"><div class="preorder-admin-layout">
+<article class="account-card preorder-admin-card"><span class="eyebrow">Blocages</span><h2>Ce qui manque avant une future ouverture</h2><div data-readiness-blockers><p>Chargement…</p></div></article>
+<article class="account-card preorder-admin-card"><span class="eyebrow">Verrous obligatoires</span><h2>Doivent rester désactivés</h2><div class="readiness-locks" data-readiness-locks></div><p><small>Un état « prêt » signifie seulement que l’information préparatoire est complète. Il ne donne aucune autorisation d’activer un paiement ou un service externe.</small></p></article>
+</div></div></section>
+<section class="section section-tight"><div class="container"><article class="account-card preorder-admin-card"><span class="eyebrow">Actions permises</span><h2>Lecture et préparation seulement</h2><div class="readiness-actions"><a class="btn btn-secondary" href="/admin/sinjira/precommandes.html">Modifier les informations préparatoires</a><a class="btn btn-secondary" href="/projets/sinjira/romans/precommande.html">Voir la page publique</a></div><p><small>Aucun bouton « ouvrir les ventes », « activer le paiement » ou « convertir les réservations » n’existe sur cette page.</small></p></article></div></section>
+</main>
+<script type="module" src="/assets/js/sinjira-admin-preorder-readiness-v24-5-41.js"></script>
+</body>
+</html>
