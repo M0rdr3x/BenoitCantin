@@ -57,22 +57,25 @@ def main():
         '20260830001642 sinjira_v24_5_14_privacy_moderation_user_rpc_boundary',
         '20260830001742 sinjira_v24_5_32_user_rights_redundant_boundary_cleanup',
     ]
-    if len(rows) != 167: errors.append(f'Ledger: {len(rows)} migrations au lieu de 167.')
+    if len(rows) < 167: errors.append(f'Ledger: {len(rows)} migrations; V24.5.33 exige au moins les 167 présentes lors de sa convergence.')
     for row in expected_rows:
         if rows.count(row) != 1: errors.append(f'Ledger: ligne absente ou dupliquée: {row}')
-    if not rows or rows[-1] != expected_rows[-1]:
-        errors.append('La convergence doit être la dernière migration du ledger courant.')
+    try:
+        positions = [rows.index(row) for row in expected_rows]
+        if positions != sorted(positions): errors.append('Les migrations historiques V24.5.33 ne sont plus dans leur ordre canonique.')
+    except ValueError:
+        pass
 
     for marker in ['167 migrations', 'sinjira_user_rights_internal', 'security invoker', 'anon', 'aucun paiement']:
         if marker not in doc:
             errors.append(f'Document V24.5.33 incomplet: {marker}')
 
     if errors:
-        print(f'ECHEC V24.5.33: {len(errors)} problème(s).')
+        print(f'ECHEC V24.5.33 historique: {len(errors)} problème(s).')
         for err in errors: print('- ' + err)
         return 1
 
-    print('OK V24.5.33: frontière redondante tracée puis supprimée, wrappers directs vers sinjira_user_rights_internal, anon révoqué, ledger 167 synchronisé.')
+    print('OK V24.5.33 historique: convergence droits conservée, wrappers vers sinjira_user_rights_internal, anon révoqué; le ledger peut évoluer après les 167 migrations de ce jalon.')
     return 0
 
 
