@@ -71,10 +71,11 @@ def main()->int:
     if 'locked(info)' not in public_js:
         errors.append('Le runtime public ne vérifie plus les cinq verrous de non-vente.')
 
+    runtime_pattern=r'sinjira-preorder-commercial-v24-5-5\.js\?v=[0-9]+\.[0-9]+\.[0-9]+'
     for html,name in [(account,'Compte'),(public,'Page publique')]:
         low_html=html.lower()
-        if 'sinjira-preorder-commercial-v24-5-5.js?v=24.5.5' not in html:
-            errors.append(f'{name} ne charge pas le runtime commercial V24.5.5.')
+        if not re.search(runtime_pattern,html):
+            errors.append(f'{name} ne charge pas le runtime commercial V24.5.5 avec un cache-buster courant.')
         if 'data-preorder-commercial' not in html:
             errors.append(f'{name} ne contient pas le bloc d’informations commerciales.')
         if 'conversion automatique' not in low_html and 'automatiquement une commande' not in low_html:
@@ -91,7 +92,7 @@ def main()->int:
         print(f'ECHEC V24.5.5 préparation commerciale: {len(errors)} problème(s).')
         for e in errors:print('- '+e)
         return 1
-    print('OK V24.5.5: prix/date/éditions préparables et publiables comme information seulement; MFA/AAL2, RLS, versionnage et cinq verrous de non-vente sont conservés.')
+    print('OK V24.5.5 historique: prix/date/éditions restent informationnels; MFA/AAL2, RLS, versionnage, cinq verrous de non-vente et runtime V24.5.5 avec cache-buster courant sont conservés.')
     return 0
 
 if __name__=='__main__':raise SystemExit(main())
