@@ -47,8 +47,9 @@ def main():
         if forbidden in js_low: errors.append(f'Interface V24.5.36 expose un champ interdit: {forbidden}')
 
     if 'noindex,nofollow' not in page: errors.append('La console admin doit rester noindex,nofollow.')
-    if 'v24.5.36 · administration privée · mfa requis' not in page: errors.append('Version/MFA V24.5.36 absente de la console.')
-    if 'sinjira-admin-preorder-workflow-v24-5-36.js?v=24.5.36' not in page: errors.append('Script V24.5.36 absent de la console.')
+    if 'administration privée · mfa requis' not in page: errors.append('Le garde administration privée + MFA doit rester visible dans la console.')
+    if not re.search(r'sinjira-admin-preorder-workflow-v24-5-36\.js\?v=24\.5\.\d+', page):
+        errors.append('Le module physique V24.5.36 doit rester chargé avec un cache-buster V24.5.x.')
 
     expected = '20260830012533 sinjira_v24_5_36_preorder_admin_workflow'
     if len(rows) < 169: errors.append(f'Ledger historique tronqué: {len(rows)} migrations, au moins 169 attendues.')
@@ -68,7 +69,7 @@ def main():
         print(f'ECHEC V24.5.36 suivi admin: {len(errors)} problème(s).')
         for error in errors: print('- ' + error)
         return 1
-    print('OK V24.5.36 historique: suivi admin non financier conservé à la 169e migration; invariants métier et sécurité intacts.')
+    print('OK V24.5.36 historique: suivi admin non financier conservé à la 169e migration; module toujours chargé, MFA visible et cache-buster ultérieur accepté.')
     return 0
 
 if __name__ == '__main__': raise SystemExit(main())
