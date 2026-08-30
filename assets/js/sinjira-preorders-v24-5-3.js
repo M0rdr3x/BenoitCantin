@@ -58,6 +58,47 @@ function printableDisclosure(preorder) {
     : 'Confirmation non enregistrée pour cette ancienne réservation';
 }
 
+async function copyReservationReference(reference, button, statusNode) {
+  const value = String(reference || '').trim();
+  if (!/^PR-[0-9A-F]{16}$/.test(value)) {
+    if (statusNode) statusNode.textContent = 'Référence indisponible.';
+    return;
+  }
+
+  const previous = button?.textContent || 'Copier la référence';
+  if (button) button.disabled = true;
+  try {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+    } else {
+      const field = document.createElement('textarea');
+      field.value = value;
+      field.setAttribute('readonly', '');
+      field.style.position = 'fixed';
+      field.style.opacity = '0';
+      field.style.pointerEvents = 'none';
+      document.body.appendChild(field);
+      field.select();
+      const copied = document.execCommand('copy');
+      field.remove();
+      if (!copied) throw new Error('COPY_NOT_AVAILABLE');
+    }
+    if (button) button.textContent = 'Référence copiée';
+    if (statusNode) statusNode.textContent = 'Référence de réservation copiée.';
+  } catch (error) {
+    console.warn('[SINJIRA preorder copy]', error);
+    if (statusNode) statusNode.textContent = 'Impossible de copier automatiquement. Sélectionnez la référence affichée ci-dessus.';
+  } finally {
+    window.setTimeout(() => {
+      if (button) {
+        button.disabled = false;
+        button.textContent = previous;
+      }
+      if (statusNode?.textContent === 'Référence de réservation copiée.') statusNode.textContent = '';
+    }, 1800);
+  }
+}
+
 function printPreorderConfirmation(preorder) {
   if (!preorder?.reservation_reference) return;
   const printWindow = window.open('', '_blank', 'width=850,height=900');
@@ -143,9 +184,16 @@ function renderState(nodes, preorder) {
       <dt>Réservation créée</dt><dd>${escapeHtml(formatDate(preorder.created_at))}</dd>
       <dt>Dernière mise à jour</dt><dd>${escapeHtml(formatDate(preorder.updated_at))}</dd>
     </dl>
-    <div class="sinjira-preorder-actions"><button class="btn btn-secondary" data-preorder-print type="button">Imprimer / enregistrer en PDF</button></div>
-    <p><small>Cette référence identifie seulement votre réservation SINJIRA™. Elle n’est ni un numéro de commande ni un identifiant technique de votre compte. La confirmation imprimable est générée uniquement dans votre navigateur.</small></p>`;
+    <div class="sinjira-preorder-actions">
+      <button class="btn btn-secondary" data-preorder-copy type="button">Copier la référence</button>
+      <button class="btn btn-secondary" data-preorder-print type="button">Imprimer / enregistrer en PDF</button>
+      <span class="sr-only" data-preorder-copy-status role="status" aria-live="polite"></span>
+    </div>
+    <p><small>Cette référence identifie seulement votre réservation SINJIRA™. Elle n’est ni un numéro de commande ni un identifiant technique de votre compte. Copier la référence et générer la confirmation imprimable se font uniquement dans votre navigateur.</small></p>`;
 
+  const copyButton = nodes.state.querySelector('[data-preorder-copy]');
+  const copyStatus = nodes.state.querySelector('[data-preorder-copy-status]');
+  copyButton?.addEventListener('click', () => copyReservationReference(preorder.reservation_reference, copyButton, copyStatus));
   nodes.state.querySelector('[data-preorder-print]')?.addEventListener('click', () => printPreorderConfirmation(preorder));
 
   if (nodes.format) nodes.format.value = preorder.preferred_format || 'undecided';

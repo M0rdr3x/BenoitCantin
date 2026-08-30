@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 JS = ROOT / 'assets/js/sinjira-preorders-v24-5-3.js'
@@ -46,8 +47,8 @@ def main():
         if marker not in js: errors.append(f'Runtime V24.5.33 incomplet: {marker}')
 
     for page_name, page in [('page publique', pages[0]), ('Mes achats', pages[1])]:
-        if 'sinjira-preorders-v24-5-3.js?v=24.5.33' not in page:
-            errors.append(f'{page_name}: cache-buster V24.5.33 absent.')
+        if not re.search(r'sinjira-preorders-v24-5-3\.js\?v=24\.5\.(?:3[3-9]|[4-9]\d|\d{3,})', page):
+            errors.append(f'{page_name}: cache-buster V24.5.33 ou ultérieur absent.')
 
     for forbidden in [
         'onclick=', '<script', 'preorder_id', 'user_id', 'product_id', 'pickup_point_id',
@@ -78,7 +79,7 @@ def main():
         print(f'ECHEC V24.5.33 confirmation imprimable: {len(errors)} problème(s).')
         for error in errors: print('- ' + error)
         return 1
-    print('OK V24.5.33 historique: copie imprimable locale, sans UUID, stockage, appel réseau ou service payant; migrations ultérieures autorisées.')
+    print('OK V24.5.33 historique: copie imprimable locale conservée, cache-buster V24.5.33 ou ultérieur, sans UUID, stockage, appel réseau ni service payant.')
     return 0
 
 
