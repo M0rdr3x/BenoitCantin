@@ -61,6 +61,12 @@ CUSTOM_AUTH = {
         "MAX_REQUEST_BYTES",
         "TextEncoder",
         "PAID_EXTERNAL_SERVICES_ENABLED=false",
+        "MAX_TEMPLATE_BYTES=15*1024*1024",
+        "TEMPLATE_ORIGIN='https://www.benoitcantin.com'",
+        "TEMPLATE_PATH_PREFIX='/projets/sinjira/jeux/fracture-du-reseau-mere/documents/'",
+        "redirect:'error'",
+        "REPORT_TEMPLATE_TOO_LARGE",
+        "%PDF-",
         "Cache-Control",
         "no-store",
         "Referrer-Policy",
@@ -180,7 +186,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, réponses sensibles no-store, remise posthume protégée et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, réponses sensibles no-store, modèle PDF Fracture borné à l’origine approuvée, remise posthume protégée et aucun ancien appel Edge référencé.")
     return 0
 
 
