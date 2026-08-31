@@ -77,6 +77,13 @@ CUSTOM_AUTH = {
         "expires_at",
         "max_downloads",
         "service_life_story_register_download",
+        "req.method !== 'POST'",
+        "requestUrl.search",
+        "MAX_REQUEST_BYTES",
+        "MAX_PDF_BYTES",
+        "hasPdfSignature",
+        "allowedOrigin",
+        "Content-Security-Policy",
         "Cache-Control",
         "no-store",
     ),
@@ -160,17 +167,27 @@ def main() -> int:
             if marker not in source:
                 errors.append(f"{slug}: garde-fou custom auth/access manquant: {marker}.")
 
+    delivery_source = read_tree_text(FUNCTIONS / "life-story-delivery")
+    if "searchParams.get('token')" in delivery_source or 'searchParams.get("token")' in delivery_source:
+        errors.append("life-story-delivery: le jeton ne doit jamais être lu depuis l URL.")
+    if "req.method !== 'GET'" in delivery_source:
+        errors.append("life-story-delivery: le mode GET direct est interdit depuis V24.5.50.")
+
     export_source = read_tree_text(FUNCTIONS / "life-story-export")
     for marker in (
         "requiredAdmin",
         "admin_life_story_get_export",
         "source_boundary",
-        "life-story-delivery",
+        "DELIVERY_PAGE",
+        "histoire-de-vie/remise.html",
+        "#${raw}",
         "service_life_story_mark_export_generated",
         "service_life_story_mark_export_purged",
     ):
         if marker not in export_source:
             errors.append(f"life-story-export: contrat posthume manquant: {marker}.")
+    if "?token=" in export_source:
+        errors.append("life-story-export: les liens de remise ne doivent plus placer le jeton dans la query string.")
     if "reader_characters" in export_source or "registry_account_links" in export_source or "characters')." in export_source:
         errors.append("life-story-export ne doit pas interroger le Registre ou les personnages.")
 
@@ -186,7 +203,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, réponses sensibles no-store, modèle PDF Fracture borné à l’origine approuvée, remise posthume protégée et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, réponses sensibles no-store, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
