@@ -60,8 +60,13 @@ def main():
         if marker not in doc:
             errors.append(f'Document V24.5.43 incomplet: {marker}')
 
-    if len(ledger_rows) != 172:
-        errors.append(f'Ledger modifié: {len(ledger_rows)} migrations au lieu de 172.')
+    historical_row = '20260830035043 sinjira_v24_5_38_preorder_logistics_queue'
+    if len(ledger_rows) < 172:
+        errors.append(f'Ledger régressé: {len(ledger_rows)} migrations, moins que les 172 connues en V24.5.43.')
+    if len(ledger_rows) >= 172 and ledger_rows[171] != historical_row:
+        errors.append('L’historique V24.5.43 n’est plus aligné sur la 172e migration canonique.')
+    if ledger_rows.count(historical_row) != 1:
+        errors.append('La migration terminale connue en V24.5.43 doit exister exactement une fois.')
 
     forbidden = ['stripe', 'paypal', 'twilio', 'api.resend.com', 'shippo', 'easypost']
     changed = (page + doc).lower()
@@ -74,7 +79,7 @@ def main():
         for e in errors: print('- ' + e)
         return 1
 
-    print('OK V24.5.43: quatre modules admin chargés avec cache-buster 24.5.43, ledger 172 inchangé, aucun paiement/checkout/fournisseur externe ajouté.')
+    print('OK V24.5.43 historique: cache admin 24.5.43 et garde-fous commerciaux conservés; migrations ultérieures autorisées.')
     return 0
 
 
