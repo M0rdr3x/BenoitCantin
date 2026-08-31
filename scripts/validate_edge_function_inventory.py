@@ -44,13 +44,26 @@ CUSTOM_AUTH = {
         "optionalUser",
         "project_access_rank",
         "doc.status!=='approved'",
+        "doc.projects?.status!=='active'",
         "createSignedUrl",
+        "MAX_REQUEST_BYTES",
+        "UUID_RE",
+        "externalUrlAllowed",
+        "TextEncoder",
+        "Cache-Control",
+        "no-store",
+        "Referrer-Policy",
     ),
     "send-game-report": (
         "optionalUser",
         "!user?.email",
         "to: [user.email]",
         "MAX_REQUEST_BYTES",
+        "TextEncoder",
+        "PAID_EXTERNAL_SERVICES_ENABLED=false",
+        "Cache-Control",
+        "no-store",
+        "Referrer-Policy",
     ),
     "life-story-delivery": (
         "token_hash",
@@ -167,7 +180,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, remise posthume protégée et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, réponses sensibles no-store, remise posthume protégée et aucun ancien appel Edge référencé.")
     return 0
 
 
