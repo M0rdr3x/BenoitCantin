@@ -1,0 +1,28 @@
+name: SINJIRA V24.5.46 — Confidentialité UUID précommandes
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260831004411_sinjira_v24_5_46_preorder_uuid_output_hardening.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'PREORDER_UUID_OUTPUT_HARDENING_V24_5_46.md'
+      - 'scripts/validate_preorder_uuid_output_v24_5_46.py'
+      - 'scripts/validate_transaction_tables_acl_v24_5_45.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - '.github/workflows/sinjira-preorder-uuid-output-v24-5-46.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valider V24.5.46
+        run: python3 scripts/validate_preorder_uuid_output_v24_5_46.py
+      - name: Valider le ledger production
+        run: python3 scripts/validate_production_migration_ledger.py
+      - name: Vérifier V24.5.45 historique
+        run: python3 scripts/validate_transaction_tables_acl_v24_5_45.py
