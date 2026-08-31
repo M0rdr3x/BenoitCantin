@@ -2,7 +2,7 @@ import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
-const FUNCTION_VERSION='24.5.2';
+const FUNCTION_VERSION='24.5.49';
 const MAX_REQUEST_BYTES=220_000;
 // Intégration préparée, jamais activée implicitement. Une future activation exige
 // une décision explicite distincte sur le fournisseur et les coûts.
@@ -69,21 +69,15 @@ const TEXT_FIELDS = new Set([
 
 function sanitizeSheet(input: Record<string, unknown>) {
   const output: Record<string, string | boolean> = {};
-  for (const name of TEXT_FIELDS) {
-    output[name] = String(input?.[name] ?? '').slice(0, MAX_TEXT);
-  }
-  for (const name of CHECKBOXES) {
-    output[name] = Boolean(input?.[name]);
-  }
+  for (const name of TEXT_FIELDS) output[name] = String(input?.[name] ?? '').slice(0, MAX_TEXT);
+  for (const name of CHECKBOXES) output[name] = Boolean(input?.[name]);
   return output;
 }
 
 function toBase64(bytes: Uint8Array) {
   let binary = '';
   const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
+  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   return btoa(binary);
 }
 
@@ -108,12 +102,9 @@ async function buildPdf(sheet: Record<string, string | boolean>) {
     }
   }
 
-  try {
-    form.updateFieldAppearances(font);
-  } catch {
+  try { form.updateFieldAppearances(font); } catch {
     // Certaines versions de lecteurs gèrent les apparences elles-mêmes.
   }
-
   return await pdf.save();
 }
 
@@ -127,11 +118,7 @@ async function recordDelivery(userId: string, sessionId: unknown, delivery: 'dow
     .eq('user_id', userId)
     .maybeSingle();
   if (!ownedSession?.id) return;
-  const { error } = await service.from('player_reports').insert({
-    user_id: userId,
-    session_id: ownedSession.id,
-    delivery
-  });
+  const { error } = await service.from('player_reports').insert({ user_id: userId, session_id: ownedSession.id, delivery });
   if (error) console.warn('[SINJIRA report] journalisation non bloquante:', error.message);
 }
 
@@ -145,6 +132,15 @@ Deno.serve(async (req) => {
     const body = parsed.body || {};
     const mode = body?.mode === 'email' ? 'email' : 'download';
     const user = await optionalUser(req);
+
+    // Refus avant tout chargement/génération PDF quand le transport payant est désactivé.
+    if (mode === 'email' && !PAID_EXTERNAL_SERVICES_ENABLED) {
+      return privateJson({ ok:false, error:'Le transport courriel externe est préparé mais désactivé. Téléchargez le PDF directement.', code:'PAID_EXTERNAL_SERVICE_DISABLED', function_version:FUNCTION_VERSION }, 503);
+    }
+    if (mode === 'email' && !user?.email) {
+      return privateJson({ ok: false, error: 'Connexion requise pour l’envoi par courriel.', function_version: FUNCTION_VERSION }, 401);
+    }
+
     const sheet = sanitizeSheet(body?.sheet_data || {});
     const pdfBytes = await buildPdf(sheet);
     const filename = `SINJIRA_Fracture_Rapport_${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -154,51 +150,31 @@ Deno.serve(async (req) => {
       return privateJson({ ok: true, filename, pdf_base64: toBase64(pdfBytes), function_version: FUNCTION_VERSION });
     }
 
-    if (!PAID_EXTERNAL_SERVICES_ENABLED) {
-      return privateJson({ ok:false, error:'Le transport courriel externe est préparé mais désactivé. Téléchargez le PDF directement.', code:'PAID_EXTERNAL_SERVICE_DISABLED', function_version:FUNCTION_VERSION }, 503);
-    }
-
-    // L'envoi de courriel est réservé à un compte authentifié et uniquement à son adresse.
-    // Cette règle empêche la fonction publique de devenir un relais de spam.
-    if (!user?.email) {
-      return privateJson({ ok: false, error: 'Connexion requise pour l’envoi par courriel.', function_version: FUNCTION_VERSION }, 401);
-    }
-
     const resendKey = Deno.env.get('RESEND_API_KEY');
     const from = Deno.env.get('REPORT_FROM_EMAIL') || 'SINJIRA <no-reply@benoitcantin.com>';
     if (!resendKey) return privateJson({ ok: false, error: 'Service courriel non configuré.', function_version: FUNCTION_VERSION }, 503);
 
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendKey}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from,
         to: [user.email],
         subject: 'SINJIRA — Rapport de fin de partie — Fracture du Réseau-Mère',
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto">
-            <h1>SINJIRA</h1>
-            <h2>Fracture du Réseau-Mère</h2>
-            <p>Voici la copie de votre fiche joueur telle qu’elle a été générée au moment de votre demande.</p>
-            <p>— SINJIRA</p>
-          </div>`,
+        html: '<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto"><h1>SINJIRA</h1><h2>Fracture du Réseau-Mère</h2><p>Voici la copie de votre fiche joueur telle qu’elle a été générée au moment de votre demande.</p><p>— SINJIRA</p></div>',
         attachments: [{ filename, content: toBase64(pdfBytes) }]
       })
     });
 
     if (!resendResponse.ok) {
-      const details = await resendResponse.text();
-      console.error('Resend:', details);
+      console.error('[send-game-report] transport externe refusé:', resendResponse.status);
       return privateJson({ ok: false, error: 'Le courriel n’a pas pu être envoyé.', function_version: FUNCTION_VERSION }, 502);
     }
 
     await recordDelivery(user.id, body?.session_id, 'email');
     return privateJson({ ok: true, emailed: true, function_version: FUNCTION_VERSION });
   } catch (error) {
-    console.error(error);
+    console.error('[send-game-report]', error);
     return privateJson({ ok: false, error: 'Erreur lors de la génération du rapport.', function_version: FUNCTION_VERSION }, 500);
   }
 });
