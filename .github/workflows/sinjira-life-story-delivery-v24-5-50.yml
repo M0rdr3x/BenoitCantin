@@ -29,5 +29,5 @@ jobs:
         run: |
           python scripts/validate_life_story_delivery_v24_5_50.py
           python scripts/validate_edge_function_inventory.py
-          python scripts/validate_life_story_v24_5_2.py
+          python scripts/validate_life_story_legacy_v24_5_2.py
           python scripts/validate_production_migration_ledger.py
