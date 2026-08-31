@@ -5,6 +5,7 @@ import { optionalUser, serviceClient } from '../_shared/auth.ts';
 const FUNCTION_VERSION='24.5.2';
 const MAX_REQUEST_BYTES=220_000;
 const MAX_TEMPLATE_BYTES=15*1024*1024;
+const TEMPLATE_FETCH_TIMEOUT_MS=10_000;
 // Intégration préparée, jamais activée implicitement. Une future activation exige
 // une décision explicite distincte sur le fournisseur et les coûts.
 const PAID_EXTERNAL_SERVICES_ENABLED=false;
@@ -39,13 +40,43 @@ function reportTemplateUrl(){
   return url.toString();
 }
 
+async function readTemplateStreamLimited(response:Response){
+  if(!response.body)throw new Error('REPORT_TEMPLATE_EMPTY');
+  const reader=response.body.getReader();
+  const chunks:Uint8Array[]=[];
+  let total=0;
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(!value)continue;
+      total+=value.byteLength;
+      if(total>MAX_TEMPLATE_BYTES){
+        try{await reader.cancel('REPORT_TEMPLATE_TOO_LARGE')}catch{/* non bloquant */}
+        throw new Error('REPORT_TEMPLATE_TOO_LARGE');
+      }
+      chunks.push(value);
+    }
+  }finally{
+    try{reader.releaseLock()}catch{/* non bloquant */}
+  }
+  if(total===0)throw new Error('REPORT_TEMPLATE_EMPTY');
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
+  return bytes;
+}
+
 async function fetchTemplateBytes(){
-  const response=await fetch(reportTemplateUrl(),{cache:'no-store',redirect:'error'});
+  const response=await fetch(reportTemplateUrl(),{
+    cache:'no-store',
+    redirect:'error',
+    signal:AbortSignal.timeout(TEMPLATE_FETCH_TIMEOUT_MS)
+  });
   if(!response.ok)throw new Error('REPORT_TEMPLATE_FETCH_FAILED');
   const declared=Number(response.headers.get('content-length')||'0');
   if(Number.isFinite(declared)&&declared>MAX_TEMPLATE_BYTES)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
-  const bytes=new Uint8Array(await response.arrayBuffer());
-  if(bytes.byteLength===0||bytes.byteLength>MAX_TEMPLATE_BYTES)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
+  const bytes=await readTemplateStreamLimited(response);
   if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('REPORT_TEMPLATE_NOT_PDF');
   return bytes;
 }
