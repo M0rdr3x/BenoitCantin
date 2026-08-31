@@ -83,8 +83,13 @@ def main():
             errors.append(f'Document V24.5.44 incomplet: {marker}')
 
     rows = [line for line in read(LEDGER).splitlines() if line.strip() and not line.startswith('#')]
-    if len(rows) != 172:
-        errors.append(f'Ledger modifié: {len(rows)} migrations au lieu de 172.')
+    historical_row = '20260830035043 sinjira_v24_5_38_preorder_logistics_queue'
+    if len(rows) < 172:
+        errors.append(f'Ledger régressé: {len(rows)} migrations, moins que les 172 connues en V24.5.44.')
+    if len(rows) >= 172 and rows[171] != historical_row:
+        errors.append('L’historique V24.5.44 n’est plus aligné sur la 172e migration canonique.')
+    if rows.count(historical_row) != 1:
+        errors.append('La migration terminale connue en V24.5.44 doit exister exactement une fois.')
 
     changed = (read(ACCOUNT) + read(PUBLIC) + read(DOC)).lower()
     forbidden = [
@@ -103,7 +108,7 @@ def main():
             print('- ' + err)
         return 1
 
-    print('OK V24.5.44: deux surfaces utilisateur convergées sur cache 24.5.44; règles livraison, ramassage, non-paiement et minimisation conservées; ledger 172 inchangé.')
+    print('OK V24.5.44 historique: cache public 24.5.44 et invariants non-paiement/livraison/minimisation conservés; migrations ultérieures autorisées.')
     return 0
 
 
