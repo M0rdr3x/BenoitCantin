@@ -3,6 +3,7 @@ import { corsHeaders, json } from '../_shared/cors.ts';
 import { requiredAdmin } from '../_shared/auth.ts';
 
 const BUCKET = 'sinjira-life-story-exports';
+const DELIVERY_PAGE = 'https://www.benoitcantin.com/histoire-de-vie/remise.html';
 const DAY = 24 * 60 * 60 * 1000;
 
 function safeText(value: unknown, max = 10000) {
@@ -113,17 +114,16 @@ Deno.serve(async (req) => {
       if (!recipients.length) throw new Error('NO_RECIPIENTS');
       await service.from('life_story_delivery_links').delete().eq('export_id', exportId);
       const rows: any[] = []; const responseLinks: any[] = [];
-      const base = `${Deno.env.get('SUPABASE_URL')}/functions/v1/life-story-delivery`;
       for (let i = 0; i < recipients.length; i += 1) {
         const raw = hex(crypto.getRandomValues(new Uint8Array(32)));
         const tokenHash = await sha256Hex(raw);
         const expiresAt = new Date(Date.now() + 30 * DAY).toISOString();
         rows.push({ export_id: exportId, recipient_index: i, recipient_label: safeText(recipients[i]?.recipient_label, 160) || `Destinataire ${i + 1}`, token_hash: tokenHash, expires_at: expiresAt, max_downloads: 3 });
-        responseLinks.push({ recipient_label: safeText(recipients[i]?.recipient_label, 160), recipient_email: safeText(recipients[i]?.recipient_email, 254) || null, expires_at: expiresAt, download_url: `${base}?token=${encodeURIComponent(raw)}` });
+        responseLinks.push({ recipient_label: safeText(recipients[i]?.recipient_label, 160), recipient_email: safeText(recipients[i]?.recipient_email, 254) || null, expires_at: expiresAt, download_url: `${DELIVERY_PAGE}#${raw}` });
       }
       const { error: insertError } = await service.from('life_story_delivery_links').insert(rows);
       if (insertError) throw insertError;
-      return json({ ok: true, export_id: exportId, links: responseLinks, transport: 'manual_or_future_sender', note: 'Les liens sont retournés une seule fois. Aucun courriel externe n est envoyé automatiquement.' });
+      return json({ ok: true, export_id: exportId, links: responseLinks, transport: 'manual_or_future_sender', note: 'Les liens sont retournés une seule fois. Le jeton reste dans le fragment du navigateur et aucun courriel externe n est envoyé automatiquement.' });
     }
 
     if (action === 'revoke') {

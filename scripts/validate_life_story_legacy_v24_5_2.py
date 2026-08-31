@@ -122,7 +122,7 @@ def main() -> int:
         "'source_boundary','life_story_only'",
         "'registry_access_prohibited',true",
         "'entries',v_entries",
-        'approval_status=\'approved\'',
+        "approval_status='approved'",
         "posthumous_disclosure='selected_versions'",
         'user_approved_at is not null',
     ], 'Instantané autorisé')
@@ -162,13 +162,13 @@ def main() -> int:
         "transport: 'manual_or_future_sender'",
     ], 'Edge export')
     forbid(errors, export, REGISTRY_MARKERS, 'Edge export')
-    if '.from(\'life_story_entries\')' in export or '.from("life_story_entries")' in export:
+    if ".from('life_story_entries')" in export or '.from("life_story_entries")' in export:
         errors.append('Edge export: le générateur doit lire uniquement l’instantané serveur, pas les souvenirs sources.')
 
     require(errors, delivery, [
         'sha256Hex', 'token_hash', 'expires_at', 'max_downloads',
         'download_count', 'service_life_story_register_download',
-        "'Cache-Control': 'no-store'",
+        "'Cache-Control':", 'no-store',
         'sinjira-life-story-exports',
     ], 'Edge remise')
     forbid(errors, delivery, REGISTRY_MARKERS + ('life_story_entries', 'life_story_versions'), 'Edge remise')
@@ -204,8 +204,6 @@ def main() -> int:
     forbid(errors, admin_js, direct_table_patterns, 'Console héritage')
     require(errors, queue, ['private.require_sinjira_admin_aal2()', 'admin_life_story_pending_requests', 'admin_life_story_cleanup_due'], 'File admin')
 
-    # Ces marqueurs suivent les formulations réellement canoniques du document.
-    # Le test protège le sens du contrat sans exiger une variante typographique artificielle.
     require(errors, canon, [
         'l’humain passe avant tout', 'Registre des Consciences n’est pas un héritage',
         'life_story_only', '30 jours', 'nouveau délai complet de 30 jours',

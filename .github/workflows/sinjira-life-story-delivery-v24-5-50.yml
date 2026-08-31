@@ -1,0 +1,33 @@
+name: SINJIRA V24.5.50 — Remise Histoire de vie privée
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Vérifier V24.5.50
+        run: |
+          python scripts/validate_life_story_delivery_v24_5_50.py
+          python scripts/validate_edge_function_inventory.py
+          python scripts/validate_life_story_legacy_v24_5_2.py
+          python scripts/validate_production_migration_ledger.py
