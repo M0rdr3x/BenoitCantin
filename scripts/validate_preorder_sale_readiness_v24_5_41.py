@@ -32,8 +32,9 @@ def main():
         if marker not in doc: errors.append(f'Document V24.5.41 incomplet: {marker}')
 
     expected='20260830035043 sinjira_v24_5_38_preorder_logistics_queue'
-    if len(rows)!=172: errors.append(f'Ledger: {len(rows)} migrations au lieu de 172; V24.5.41 ne doit pas ajouter de migration.')
-    if not rows or rows[-1]!=expected: errors.append('V24.5.41 doit conserver V24.5.38 comme dernière migration production.')
+    if len(rows)<172: errors.append(f'Ledger régressé: {len(rows)} migrations, moins que les 172 connues en V24.5.41.')
+    if len(rows)>=172 and rows[171]!=expected: errors.append('L’historique V24.5.41 n’est plus aligné sur la 172e migration canonique.')
+    if rows.count(expected)!=1: errors.append('La migration terminale connue en V24.5.41 doit exister exactement une fois.')
 
     dangerous=['ouvrir les ventes</button>','activer le paiement</button>','convertir les réservations</button>','sales_enabled = true','checkout_enabled = true','payment_enabled = true']
     for marker in dangerous:
@@ -43,7 +44,7 @@ def main():
         print(f'ECHEC V24.5.41 checklist préparation vente: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.41: checklist admin MFA/AAL2 en lecture seule, aucun bouton d’ouverture/paiement, aucun service externe, ledger 172 inchangé.')
+    print('OK V24.5.41 historique: checklist MFA/AAL2 lecture seule et verrous commerciaux conservés; migrations ultérieures autorisées.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
