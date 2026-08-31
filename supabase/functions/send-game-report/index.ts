@@ -4,12 +4,13 @@ import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
 const FUNCTION_VERSION='24.5.2';
 const MAX_REQUEST_BYTES=220_000;
+const MAX_TEMPLATE_BYTES=15*1024*1024;
 // Intégration préparée, jamais activée implicitement. Une future activation exige
 // une décision explicite distincte sur le fournisseur et les coûts.
 const PAID_EXTERNAL_SERVICES_ENABLED=false;
-const TEMPLATE_URL =
-  Deno.env.get('REPORT_TEMPLATE_URL') ||
-  'https://www.benoitcantin.com/projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf';
+const DEFAULT_TEMPLATE_URL='https://www.benoitcantin.com/projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf';
+const TEMPLATE_ORIGIN='https://www.benoitcantin.com';
+const TEMPLATE_PATH_PREFIX='/projets/sinjira/jeux/fracture-du-reseau-mere/documents/';
 
 const PRIVATE_JSON_HEADERS = {
   ...corsHeaders,
@@ -22,6 +23,31 @@ const PRIVATE_JSON_HEADERS = {
 
 function privateJson(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: PRIVATE_JSON_HEADERS });
+}
+
+function reportTemplateUrl(){
+  const raw=String(Deno.env.get('REPORT_TEMPLATE_URL')||DEFAULT_TEMPLATE_URL).trim();
+  let url:URL;
+  try{url=new URL(raw)}catch{throw new Error('REPORT_TEMPLATE_URL_INVALID')}
+  if(
+    url.protocol!=='https:' ||
+    url.origin!==TEMPLATE_ORIGIN ||
+    !url.pathname.startsWith(TEMPLATE_PATH_PREFIX) ||
+    !url.pathname.toLowerCase().endsWith('.pdf') ||
+    url.username || url.password || url.search || url.hash
+  ) throw new Error('REPORT_TEMPLATE_URL_NOT_ALLOWED');
+  return url.toString();
+}
+
+async function fetchTemplateBytes(){
+  const response=await fetch(reportTemplateUrl(),{cache:'no-store',redirect:'error'});
+  if(!response.ok)throw new Error('REPORT_TEMPLATE_FETCH_FAILED');
+  const declared=Number(response.headers.get('content-length')||'0');
+  if(Number.isFinite(declared)&&declared>MAX_TEMPLATE_BYTES)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
+  const bytes=new Uint8Array(await response.arrayBuffer());
+  if(bytes.byteLength===0||bytes.byteLength>MAX_TEMPLATE_BYTES)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
+  if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('REPORT_TEMPLATE_NOT_PDF');
+  return bytes;
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
@@ -88,9 +114,7 @@ function toBase64(bytes: Uint8Array) {
 }
 
 async function buildPdf(sheet: Record<string, string | boolean>) {
-  const response = await fetch(TEMPLATE_URL, { cache: 'no-store' });
-  if (!response.ok) throw new Error('Impossible de charger le modèle PDF.');
-  const bytes = new Uint8Array(await response.arrayBuffer());
+  const bytes = await fetchTemplateBytes();
   const pdf = await PDFDocument.load(bytes);
   const form = pdf.getForm();
   const font = await pdf.embedFont(StandardFonts.Helvetica);
