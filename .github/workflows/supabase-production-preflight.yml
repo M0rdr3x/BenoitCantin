@@ -43,6 +43,8 @@ jobs:
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_ID: gpvivleexywljowcqkru
       OPTIONAL_RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      OPTIONAL_CHARACTER_REPORT_TO_EMAIL: ${{ secrets.CHARACTER_REPORT_TO_EMAIL }}
+      OPTIONAL_FRACTURE_REPORT_TO_EMAIL: ${{ secrets.FRACTURE_REPORT_TO_EMAIL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -129,7 +131,6 @@ jobs:
               echo "- $retired_found ancien(s) slug(s) restent physiquement présents comme stubs neutralisés 410. Leur présence est informative tant que la suppression physique n’est pas disponible; aucun appel actif n’est autorisé par le validateur du dépôt."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
-
           test "$missing" -eq 0
 
       - name: Lier le projet de production
@@ -234,14 +235,32 @@ jobs:
           else
             echo "SINJIRA_LICENSE_PEPPER déjà présent; conservation de la valeur existante." >> "$GITHUB_STEP_SUMMARY"
           fi
-          supabase secrets set \
-            "REPORT_FROM_EMAIL=SINJIRA <no-reply@benoitcantin.com>" \
-            "CHARACTER_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
-            "FRACTURE_REPORT_TO_EMAIL=kingtyrano@gmail.com" \
-            --project-ref "$PROJECT_ID"
-          if [ -n "${OPTIONAL_RESEND_API_KEY:-}" ]; then supabase secrets set "RESEND_API_KEY=$OPTIONAL_RESEND_API_KEY" --project-ref "$PROJECT_ID"; fi
+
+          supabase secrets set "REPORT_FROM_EMAIL=SINJIRA <no-reply@benoitcantin.com>" --project-ref "$PROJECT_ID"
+
+          if [ -n "${OPTIONAL_CHARACTER_REPORT_TO_EMAIL:-}" ]; then
+            supabase secrets set "CHARACTER_REPORT_TO_EMAIL=$OPTIONAL_CHARACTER_REPORT_TO_EMAIL" --project-ref "$PROJECT_ID"
+            echo "Destination du rapport personnage synchronisée depuis GitHub Secrets (valeur non affichée)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Destination du rapport personnage absente de GitHub Secrets; la valeur Supabase existante est conservée sans lecture ni affichage." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -n "${OPTIONAL_FRACTURE_REPORT_TO_EMAIL:-}" ]; then
+            supabase secrets set "FRACTURE_REPORT_TO_EMAIL=$OPTIONAL_FRACTURE_REPORT_TO_EMAIL" --project-ref "$PROJECT_ID"
+            echo "Destination du rapport Fracture synchronisée depuis GitHub Secrets (valeur non affichée)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Destination du rapport Fracture absente de GitHub Secrets; la valeur Supabase existante est conservée sans lecture ni affichage." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -n "${OPTIONAL_RESEND_API_KEY:-}" ]; then
+            supabase secrets set "RESEND_API_KEY=$OPTIONAL_RESEND_API_KEY" --project-ref "$PROJECT_ID"
+          fi
           secrets_after="$(supabase secrets list --project-ref "$PROJECT_ID")"
-          if grep -Eq '(^|[[:space:]])RESEND_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then echo "Courriel transactionnel: secret RESEND_API_KEY présent." >> "$GITHUB_STEP_SUMMARY"; else echo "Courriel transactionnel: RESEND_API_KEY absent; les données restent enregistrées mais l'envoi de courriel demeure désactivé." >> "$GITHUB_STEP_SUMMARY"; fi
+          if grep -Eq '(^|[[:space:]])RESEND_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then
+            echo "Courriel transactionnel: secret RESEND_API_KEY présent." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Courriel transactionnel: RESEND_API_KEY absent; les données restent enregistrées mais l'envoi de courriel demeure désactivé." >> "$GITHUB_STEP_SUMMARY"
+          fi
           echo "IA distante payante: aucun secret OpenAI n'est synchronisé par ce workflow; le mode gratuit reste la référence de production." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Déployer toutes les Edge Functions du dépôt
