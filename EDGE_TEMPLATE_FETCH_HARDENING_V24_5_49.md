@@ -44,7 +44,7 @@ V24.5.48 reste applicable :
 
 `PAID_EXTERNAL_SERVICES_ENABLED=false` demeure obligatoire.
 
-Le code d’intégration courriel peut rester préparé, mais il ne peut pas contacter le fournisseur tant que le verrou serveur reste à `false`. V24.5.49 n’active aucun paiement, checkout, vente, transporteur, IA distante, courriel/SMS payant ou autre fournisseur facturable.
+Le code d’intégration courriel peut rester préparé, mais il ne peut pas contacter le fournisseur tant que le verrou serveur reste à `false`. V24.5.49 n’active aucun paiement, checkout, vente, IA distante, courriel/SMS payant ou autre fournisseur facturable. **Aucun transporteur externe n’est activé.**
 
 ## Base de données
 
