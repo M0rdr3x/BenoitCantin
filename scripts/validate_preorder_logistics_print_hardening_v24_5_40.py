@@ -25,25 +25,16 @@ def main():
     print_slice=js[start:end] if start>=0 and end>start else ''
 
     for marker in [
-        'content-security-policy',
-        "default-src 'none'",
-        "connect-src 'none'",
-        "object-src 'none'",
-        "frame-src 'none'",
-        "base-uri 'none'",
-        "form-action 'none'",
-        'name="referrer" content="no-referrer"',
-        'id="sinjira-local-print"',
-        "addeventlistener('click', () => printwindow.print())",
-        'printwindow.opener = null',
-        'document.write(sheet)',
-        'escapehtml('
+        'content-security-policy', "default-src 'none'", "connect-src 'none'",
+        "object-src 'none'", "frame-src 'none'", "base-uri 'none'", "form-action 'none'",
+        'name="referrer" content="no-referrer"', 'id="sinjira-local-print"',
+        "addeventlistener('click', () => printwindow.print())", 'printwindow.opener = null',
+        'document.write(sheet)', 'escapehtml('
     ]:
         if marker not in print_slice: errors.append(f'Durcissement impression incomplet: {marker}')
 
     for forbidden in ['onclick=', '<script', 'fetch(', 'xmlhttprequest', 'sendbeacon', 'websocket', 'eventsource']:
         if forbidden in print_slice: errors.append(f'Comportement interdit dans la feuille locale: {forbidden}')
-
     for forbidden in ['row.user_id','row.email','row.phone','row.shipping_address','row.billing_address','row.payment_status','row.financial_commitment']:
         if forbidden in print_slice: errors.append(f'Donnée privée interdite dans la feuille locale: {forbidden}')
 
@@ -51,8 +42,9 @@ def main():
         if marker not in doc: errors.append(f'Document V24.5.40 incomplet: {marker}')
 
     expected='20260830035043 sinjira_v24_5_38_preorder_logistics_queue'
-    if len(rows)!=172: errors.append(f'Ledger: {len(rows)} migrations au lieu de 172; V24.5.40 ne doit pas ajouter de migration.')
-    if not rows or rows[-1]!=expected: errors.append('V24.5.40 doit conserver V24.5.38 comme dernière migration production.')
+    if len(rows)<172: errors.append(f'Ledger régressé: {len(rows)} migrations, moins que les 172 connues en V24.5.40.')
+    if len(rows)>=172 and rows[171]!=expected: errors.append('L’historique V24.5.40 n’est plus aligné sur la 172e migration canonique.')
+    if rows.count(expected)!=1: errors.append('La migration terminale connue en V24.5.40 doit exister exactement une fois.')
 
     for token in ['stripe','paypal','resend','twilio','shippo','easypost','fedex','ups.com','canadapost','canada post']:
         if token in print_slice: errors.append(f'Fournisseur externe interdit dans V24.5.40: {token}')
@@ -61,7 +53,7 @@ def main():
         print(f'ECHEC V24.5.40 durcissement impression locale: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.40: CSP locale restrictive, aucun script inline/réseau/opener, données minimales et contrat commercial inchangés, ledger 172.')
+    print('OK V24.5.40 historique: CSP locale restrictive, aucun réseau/opener, minimisation conservée; migrations ultérieures autorisées.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())

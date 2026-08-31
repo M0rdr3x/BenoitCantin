@@ -1,0 +1,31 @@
+name: SINJIRA V24.5.45 — ACL tables transactionnelles
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260831002808_sinjira_v24_5_45_transaction_tables_acl_hardening.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'TRANSACTION_TABLES_ACL_HARDENING_V24_5_45.md'
+      - 'scripts/validate_transaction_tables_acl_v24_5_45.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_preorder_public_cache_v24_5_44.py'
+      - 'scripts/validate_preorder_admin_cache_v24_5_43.py'
+      - '.github/workflows/sinjira-transaction-acl-v24-5-45.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valider V24.5.45
+        run: python3 scripts/validate_transaction_tables_acl_v24_5_45.py
+      - name: Valider le ledger production
+        run: python3 scripts/validate_production_migration_ledger.py
+      - name: Vérifier le contrat historique V24.5.44
+        run: python3 scripts/validate_preorder_public_cache_v24_5_44.py
+      - name: Vérifier le contrat historique V24.5.43
+        run: python3 scripts/validate_preorder_admin_cache_v24_5_43.py

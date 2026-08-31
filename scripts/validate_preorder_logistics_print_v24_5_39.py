@@ -35,8 +35,9 @@ def main():
         if marker not in doc: errors.append(f'Document V24.5.39 incomplet: {marker}')
 
     expected='20260830035043 sinjira_v24_5_38_preorder_logistics_queue'
-    if len(rows)!=172: errors.append(f'Ledger: {len(rows)} migrations au lieu de 172; V24.5.39 ne doit pas ajouter de migration.')
-    if not rows or rows[-1]!=expected: errors.append('Le ledger V24.5.39 doit rester clôturé par V24.5.38.')
+    if len(rows)<172: errors.append(f'Ledger régressé: {len(rows)} migrations, moins que les 172 connues en V24.5.39.')
+    if len(rows)>=172 and rows[171]!=expected: errors.append('L’historique V24.5.39 n’est plus aligné sur la 172e migration canonique.')
+    if rows.count(expected)!=1: errors.append('La migration terminale connue en V24.5.39 doit exister exactement une fois.')
 
     forbidden_providers=['stripe','paypal','resend','twilio','shippo','easypost','fedex','ups.com','canadapost','canada post']
     for token in forbidden_providers:
@@ -46,7 +47,7 @@ def main():
         print(f'ECHEC V24.5.39 impression logistique: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.39: feuille logistique imprimable localement, données minimales échappées, aucun upload/réseau/paiement, ledger inchangé à 172.')
+    print('OK V24.5.39 historique: feuille logistique locale et minimisée conservée; migrations ultérieures autorisées.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())

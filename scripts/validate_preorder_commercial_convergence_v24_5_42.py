@@ -19,77 +19,48 @@ def read(path):
 def main():
     errors = []
     for path in [ADMIN_FULFILLMENT, ADMIN_TAX, PUBLIC_FULFILLMENT, COST, TAX, READINESS, DOC, LEDGER]:
-        if not path.exists():
-            errors.append(f'Fichier absent: {path.relative_to(ROOT)}')
+        if not path.exists(): errors.append(f'Fichier absent: {path.relative_to(ROOT)}')
     if errors:
         for e in errors: print('- ' + e)
         return 1
 
-    admin = read(ADMIN_FULFILLMENT)
-    admin_tax = read(ADMIN_TAX)
-    public = read(PUBLIC_FULFILLMENT)
-    cost = read(COST)
-    tax = read(TAX)
-    readiness = read(READINESS)
-    doc = read(DOC).lower()
-    ledger_rows = [x for x in read(LEDGER).splitlines() if x.strip() and not x.startswith('#')]
+    admin=read(ADMIN_FULFILLMENT); admin_tax=read(ADMIN_TAX); public=read(PUBLIC_FULFILLMENT)
+    cost=read(COST); tax=read(TAX); readiness=read(READINESS); doc=read(DOC).lower()
+    ledger_rows=[x for x in read(LEDGER).splitlines() if x.strip() and not x.startswith('#')]
 
-    required_admin = [
-        "import './sinjira-admin-preorder-tax-v24-5-27.js';",
-        '/admin/sinjira/precommandes-readiness.html',
-        'ensureReadinessLink()',
-    ]
-    for marker in required_admin:
-        if marker not in admin:
-            errors.append(f'Console admin non convergée: {marker}')
+    for marker in ["import './sinjira-admin-preorder-tax-v24-5-27.js';",'/admin/sinjira/precommandes-readiness.html','ensureReadinessLink()']:
+        if marker not in admin: errors.append(f'Console admin non convergée: {marker}')
+    for marker in ["import './sinjira-preorder-cost-summary-v24-5-25.js';","import './sinjira-preorder-tax-estimate-v24-5-27.js';"]:
+        if marker not in public: errors.append(f'Parcours public incomplet: {marker}')
+    for marker in ['requireAdminAal2','admin_preorder_tax_profile_save','admin_preorder_tax_profile_publish','API fiscale externe : désactivée']:
+        if marker not in admin_tax: errors.append(f'Éditeur fiscal incomplet: {marker}')
+    for marker in ['shipping_customer_pays === true','estimate_nonbinding === true','Réservation ≠ vente']:
+        if marker not in cost: errors.append(f'Résumé de coût ne conserve pas le garde: {marker}')
+    for marker in ['external_tax_api_enabled !== false','billing_authoritative !== false','final_tax_confirmation_required !== true']:
+        if marker not in tax: errors.append(f'Estimation fiscale ne conserve pas le garde: {marker}')
 
-    required_public = [
-        "import './sinjira-preorder-cost-summary-v24-5-25.js';",
-        "import './sinjira-preorder-tax-estimate-v24-5-27.js';",
-    ]
-    for marker in required_public:
-        if marker not in public:
-            errors.append(f'Parcours public incomplet: {marker}')
+    low_ready=readiness.lower()
+    for marker in ['ouvrir les ventes</button>','activer le paiement</button>','convertir les réservations</button>']:
+        if marker in low_ready: errors.append(f'La checklist contient une action commerciale interdite: {marker}')
 
-    for marker in ['requireAdminAal2', 'admin_preorder_tax_profile_save', 'admin_preorder_tax_profile_publish', 'API fiscale externe : désactivée']:
-        if marker not in admin_tax:
-            errors.append(f'Éditeur fiscal incomplet: {marker}')
+    expected='20260830035043 sinjira_v24_5_38_preorder_logistics_queue'
+    if len(ledger_rows)<172: errors.append(f'Ledger régressé: {len(ledger_rows)} migrations, moins que les 172 connues en V24.5.42.')
+    if len(ledger_rows)>=172 and ledger_rows[171]!=expected: errors.append('L’historique V24.5.42 n’est plus aligné sur la 172e migration canonique.')
+    if ledger_rows.count(expected)!=1: errors.append('La migration terminale connue en V24.5.42 doit exister exactement une fois.')
 
-    for marker in ['shipping_customer_pays === true', 'estimate_nonbinding === true', 'Réservation ≠ vente']:
-        if marker not in cost:
-            errors.append(f'Résumé de coût ne conserve pas le garde: {marker}')
+    for marker in ['172 migrations','aucune migration','réservation ≠ commande','frais de livraison à la charge du client','0 $ de frais de livraison','external_tax_api_enabled = false','aucun checkout']:
+        if marker not in doc: errors.append(f'Document V24.5.42 incomplet: {marker}')
 
-    for marker in ['external_tax_api_enabled !== false', 'billing_authoritative !== false', 'final_tax_confirmation_required !== true']:
-        if marker not in tax:
-            errors.append(f'Estimation fiscale ne conserve pas le garde: {marker}')
-
-    forbidden_readiness = ['ouvrir les ventes</button>', 'activer le paiement</button>', 'convertir les réservations</button>']
-    low_ready = readiness.lower()
-    for marker in forbidden_readiness:
-        if marker in low_ready:
-            errors.append(f'La checklist contient une action commerciale interdite: {marker}')
-
-    if len(ledger_rows) != 172:
-        errors.append(f'Ledger modifié: {len(ledger_rows)} migrations au lieu de 172.')
-
-    for marker in ['172 migrations', 'aucune migration', 'réservation ≠ commande', 'frais de livraison à la charge du client', '0 $ de frais de livraison', 'external_tax_api_enabled = false', 'aucun checkout']:
-        if marker not in doc:
-            errors.append(f'Document V24.5.42 incomplet: {marker}')
-
-    forbidden_external = ['stripe', 'paypal', 'twilio', 'api.resend.com', 'shippo', 'easypost', 'canada post api', 'fedex api', 'ups api']
-    changed_surface = (admin + doc).lower()
-    for token in forbidden_external:
-        if token in changed_surface:
-            errors.append(f'Intégration payante/externe interdite dans V24.5.42: {token}')
+    changed_surface=(admin+doc).lower()
+    for token in ['stripe','paypal','twilio','api.resend.com','shippo','easypost','canada post api','fedex api','ups api']:
+        if token in changed_surface: errors.append(f'Intégration payante/externe interdite dans V24.5.42: {token}')
 
     if errors:
         print(f'ECHEC V24.5.42: {len(errors)} problème(s).')
         for e in errors: print('- ' + e)
         return 1
-
-    print('OK V24.5.42: fiscalité admin et checklist accessibles, résumé public prix/livraison/taxes conservé, ledger 172 inchangé, aucun paiement/checkout/fournisseur externe ajouté.')
+    print('OK V24.5.42 historique: fiscalité/readiness/coût et verrous non-paiement conservés; migrations ultérieures autorisées.')
     return 0
 
 
-if __name__ == '__main__':
-    raise SystemExit(main())
+if __name__ == '__main__': raise SystemExit(main())
