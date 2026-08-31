@@ -2,8 +2,22 @@ import { PDFDocument, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { requiredAdmin } from '../_shared/auth.ts';
 
+const FUNCTION_VERSION = '24.5.49';
 const BUCKET = 'sinjira-life-story-exports';
 const DAY = 24 * 60 * 60 * 1000;
+const MAX_REQUEST_BYTES = 32_768;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ALLOWED_ACTIONS = new Set(['generate', 'create_delivery_links', 'revoke', 'purge']);
+const SAFE_ERROR_CODES = new Set([
+  'AUTH_REQUIRED',
+  'ADMIN_REQUIRED',
+  'MFA_REQUIRED',
+  'MFA_STATE_UNAVAILABLE',
+  'SOURCE_BOUNDARY_VIOLATION',
+  'EXPORT_NOT_GENERATABLE',
+  'EXPORT_NOT_GENERATED',
+  'NO_RECIPIENTS'
+]);
 
 function safeText(value: unknown, max = 10000) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -45,6 +59,25 @@ function wrap(text: string, max = 88) {
   return lines.length ? lines : [''];
 }
 
+async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
+  const rawLength = req.headers.get('content-length');
+  if (rawLength) {
+    const declaredLength = Number(rawLength);
+    if (!Number.isFinite(declaredLength) || declaredLength < 0 || declaredLength > MAX_REQUEST_BYTES) {
+      return { response: json({ ok: false, error: 'Requête trop volumineuse.', code: 'REQUEST_TOO_LARGE', function_version: FUNCTION_VERSION }, 413) };
+    }
+  }
+  const raw = await req.text();
+  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
+    return { response: json({ ok: false, error: 'Requête trop volumineuse.', code: 'REQUEST_TOO_LARGE', function_version: FUNCTION_VERSION }, 413) };
+  }
+  try {
+    return { body: JSON.parse(raw || '{}') };
+  } catch {
+    return { response: json({ ok: false, error: 'Corps JSON invalide.', code: 'INVALID_JSON', function_version: FUNCTION_VERSION }, 400) };
+  }
+}
+
 async function buildPdf(snapshot: any) {
   const pdf = await PDFDocument.create();
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
@@ -78,22 +111,40 @@ async function buildPdf(snapshot: any) {
   return new Uint8Array(await pdf.save());
 }
 
+function safeFailure(error: unknown) {
+  const raw = String((error as any)?.message || '');
+  const code = SAFE_ERROR_CODES.has(raw) ? raw : 'INTERNAL_ERROR';
+  const status = raw === 'AUTH_REQUIRED'
+    ? 401
+    : raw === 'ADMIN_REQUIRED' || raw === 'MFA_REQUIRED'
+      ? 403
+      : raw === 'MFA_STATE_UNAVAILABLE'
+        ? 503
+        : SAFE_ERROR_CODES.has(raw)
+          ? 400
+          : 500;
+  return { code, status };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return json({ ok: false, error: 'Méthode non autorisée.' }, 405);
+  if (req.method !== 'POST') return json({ ok: false, error: 'Méthode non autorisée.', function_version: FUNCTION_VERSION }, 405);
   try {
     const { service } = await requiredAdmin(req);
-    const body = await req.json().catch(() => ({}));
+    const parsed = await readLimitedJson(req);
+    if (parsed.response) return parsed.response;
+    const body = parsed.body || {};
     const action = safeText(body?.action, 40);
     const exportId = safeText(body?.export_id, 80);
-    if (!exportId) return json({ ok: false, error: 'Export requis.' }, 400);
+    if (!ALLOWED_ACTIONS.has(action)) return json({ ok: false, error: 'Action inconnue.', function_version: FUNCTION_VERSION }, 400);
+    if (!UUID_RE.test(exportId)) return json({ ok: false, error: 'Export requis ou invalide.', function_version: FUNCTION_VERSION }, 400);
 
     if (action === 'generate') {
       const { data: record, error } = await service.rpc('admin_life_story_get_export', { p_export_id: exportId });
       if (error) throw error;
       if (!record || !['prepared', 'generated'].includes(record.status)) throw new Error('EXPORT_NOT_GENERATABLE');
       assertLifeStoryBoundary(record);
-      if (record.status === 'generated' && record.storage_path) return json({ ok: true, export_id: exportId, status: 'generated', sha256: record.sha256 });
+      if (record.status === 'generated' && record.storage_path) return json({ ok: true, export_id: exportId, status: 'generated', sha256: record.sha256, function_version: FUNCTION_VERSION });
       const bytes = await buildPdf(record.content_snapshot);
       const digest = await sha256Hex(bytes);
       const path = `${record.subject_user_id}/${record.case_id}/${exportId}.pdf`;
@@ -101,7 +152,7 @@ Deno.serve(async (req) => {
       if (uploadError) throw uploadError;
       const { error: markError } = await service.rpc('service_life_story_mark_export_generated', { p_export_id: exportId, p_storage_path: path, p_sha256: digest });
       if (markError) throw markError;
-      return json({ ok: true, export_id: exportId, status: 'generated', sha256: digest });
+      return json({ ok: true, export_id: exportId, status: 'generated', sha256: digest, function_version: FUNCTION_VERSION });
     }
 
     if (action === 'create_delivery_links') {
@@ -123,13 +174,13 @@ Deno.serve(async (req) => {
       }
       const { error: insertError } = await service.from('life_story_delivery_links').insert(rows);
       if (insertError) throw insertError;
-      return json({ ok: true, export_id: exportId, links: responseLinks, transport: 'manual_or_future_sender', note: 'Les liens sont retournés une seule fois. Aucun courriel externe n est envoyé automatiquement.' });
+      return json({ ok: true, export_id: exportId, links: responseLinks, transport: 'manual_or_future_sender', note: 'Les liens sont retournés une seule fois. Aucun courriel externe n est envoyé automatiquement.', function_version: FUNCTION_VERSION });
     }
 
     if (action === 'revoke') {
       const { error } = await service.rpc('admin_life_story_revoke_export', { p_export_id: exportId });
       if (error) throw error;
-      return json({ ok: true, export_id: exportId, status: 'revoked' });
+      return json({ ok: true, export_id: exportId, status: 'revoked', function_version: FUNCTION_VERSION });
     }
 
     if (action === 'purge') {
@@ -141,14 +192,13 @@ Deno.serve(async (req) => {
       }
       const { error: markError } = await service.rpc('service_life_story_mark_export_purged', { p_export_id: exportId });
       if (markError) throw markError;
-      return json({ ok: true, export_id: exportId, status: 'purged' });
+      return json({ ok: true, export_id: exportId, status: 'purged', function_version: FUNCTION_VERSION });
     }
 
-    return json({ ok: false, error: 'Action inconnue.' }, 400);
+    return json({ ok: false, error: 'Action inconnue.', function_version: FUNCTION_VERSION }, 400);
   } catch (error) {
     console.error('[life-story-export]', error);
-    const code = String(error?.message || 'EXPORT_ERROR');
-    const status = code.includes('AUTH_REQUIRED') ? 401 : code.includes('ADMIN_REQUIRED') ? 403 : code.includes('MFA_REQUIRED') ? 403 : 400;
-    return json({ ok: false, error: 'Opération Histoire de vie refusée.', code }, status);
+    const { code, status } = safeFailure(error);
+    return json({ ok: false, error: 'Opération Histoire de vie refusée.', code, function_version: FUNCTION_VERSION }, status);
   }
 });
