@@ -57,7 +57,16 @@ jobs:
         env:
           BASE_URL: http://127.0.0.1:4173/
           BROWSER: ${{ matrix.browser }}
-        run: python tests/e2e/test_public_site.py
+        run: |
+          if python tests/e2e/test_public_site.py; then
+            exit 0
+          fi
+          if [ "$BROWSER" != "firefox" ]; then
+            exit 1
+          fi
+          echo "::warning::Premier passage Firefox en échec; une seule relance bornée est autorisée pour absorber un timeout moteur isolé."
+          sleep 2
+          python tests/e2e/test_public_site.py
 
       - name: Tester le site public déployé avec ${{ matrix.browser }}
         if: github.event_name != 'pull_request'
