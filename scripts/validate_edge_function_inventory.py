@@ -8,106 +8,55 @@ FUNCTIONS = ROOT / "supabase" / "functions"
 CONFIG = ROOT / "supabase" / "config.toml"
 
 CANONICAL = {
-    "admin-analytics",
-    "admin-console",
-    "admin-license-codes",
-    "admin-reports",
-    "admin-sinjira-v18",
-    "admin-social-v20",
-    "admin-users",
-    "delete-player-account",
-    "fracture-engine-gateway",
-    "get-document-url",
-    "life-story-delivery",
-    "life-story-export",
-    "redeem-license-code",
-    "revoke-my-contributions",
-    "security-context",
-    "send-game-report",
-    "send-player-sheet",
-    "submit-character-questionnaire",
-    "submit-fracture-endgame",
+    "admin-analytics", "admin-console", "admin-license-codes", "admin-reports",
+    "admin-sinjira-v18", "admin-social-v20", "admin-users", "delete-player-account",
+    "fracture-engine-gateway", "get-document-url", "life-story-delivery", "life-story-export",
+    "redeem-license-code", "revoke-my-contributions", "security-context", "send-game-report",
+    "send-player-sheet", "submit-character-questionnaire", "submit-fracture-endgame",
     "submit-game-contribution",
 }
 
 RETIRED = {
-    "admin-reader",
-    "generate-sinjira-character",
-    "admin-literary",
-    "validate-phone-v22",
-    "guardian-create-youth-v22",
-    "create-youth-account",
+    "admin-reader", "generate-sinjira-character", "admin-literary", "validate-phone-v22",
+    "guardian-create-youth-v22", "create-youth-account",
 }
 
 CUSTOM_AUTH = {
     "get-document-url": (
-        "optionalUser",
-        "project_access_rank",
-        "doc.status!=='approved'",
-        "doc.projects?.status!=='active'",
-        "createSignedUrl",
-        "MAX_REQUEST_BYTES",
-        "UUID_RE",
-        "externalUrlAllowed",
-        "TextEncoder",
-        "Cache-Control",
-        "no-store",
-        "Referrer-Policy",
+        "optionalUser", "project_access_rank", "doc.status!=='approved'",
+        "doc.projects?.status!=='active'", "createSignedUrl", "MAX_REQUEST_BYTES", "UUID_RE",
+        "externalUrlAllowed", "TextEncoder", "Cache-Control", "no-store", "Referrer-Policy",
     ),
     "send-game-report": (
-        "optionalUser",
-        "!user?.email",
-        "to: [user.email]",
-        "MAX_REQUEST_BYTES",
-        "TextEncoder",
-        "PAID_EXTERNAL_SERVICES_ENABLED=false",
-        "MAX_TEMPLATE_BYTES=15*1024*1024",
+        "optionalUser", "!user?.email", "to: [user.email]", "MAX_REQUEST_BYTES", "TextEncoder",
+        "PAID_EXTERNAL_SERVICES_ENABLED=false", "MAX_TEMPLATE_BYTES=15*1024*1024",
         "TEMPLATE_ORIGIN='https://www.benoitcantin.com'",
         "TEMPLATE_PATH_PREFIX='/projets/sinjira/jeux/fracture-du-reseau-mere/documents/'",
-        "redirect:'error'",
-        "REPORT_TEMPLATE_TOO_LARGE",
-        "%PDF-",
-        "Cache-Control",
-        "no-store",
+        "redirect:'error'", "REPORT_TEMPLATE_TOO_LARGE", "%PDF-", "Cache-Control", "no-store",
         "Referrer-Policy",
     ),
     "life-story-delivery": (
-        "token_hash",
-        "sha256Hex",
-        "expires_at",
-        "max_downloads",
-        "service_life_story_register_download",
-        "req.method !== 'POST'",
-        "requestUrl.search",
-        "MAX_REQUEST_BYTES",
-        "MAX_PDF_BYTES",
-        "hasPdfSignature",
-        "allowedOrigin",
-        "Content-Security-Policy",
-        "Cache-Control",
-        "no-store",
+        "token_hash", "sha256Hex", "expires_at", "max_downloads",
+        "service_life_story_register_download", "req.method !== 'POST'", "requestUrl.search",
+        "MAX_REQUEST_BYTES", "MAX_PDF_BYTES", "hasPdfSignature", "allowedOrigin",
+        "Content-Security-Policy", "Cache-Control", "no-store",
     ),
 }
 
 JWT_SENSITIVE_GUARDS = {
     "delete-player-account": (
-        "req.method !== 'POST'",
-        "MAX_REQUEST_BYTES=1024",
-        "readBoundedJson",
-        "TextEncoder",
-        "JSON_REQUIRED",
-        "REQUEST_TOO_LARGE",
-        "INVALID_JSON",
-        "Cache-Control",
-        "private, no-store",
-        "X-Content-Type-Options",
-        "nosniff",
-        "Referrer-Policy",
-        "no-referrer",
-        "privacy_service_can_delete_user",
-        "MFA_REQUIRED",
-        "OWNER_OR_ADMIN_DELETE_BLOCKED",
+        "req.method !== 'POST'", "MAX_REQUEST_BYTES=1024", "readBoundedJson", "TextEncoder",
+        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "Cache-Control", "private, no-store",
+        "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
+        "privacy_service_can_delete_user", "MFA_REQUIRED", "OWNER_OR_ADMIN_DELETE_BLOCKED",
         "CONFIRM_PHRASE='SUPPRIMER MON COMPTE'",
+    ),
+    "revoke-my-contributions": (
+        "req.method !== 'POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
+        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "body.all===true",
+        "AMBIGUOUS_SCOPE", "SESSION_REQUIRED", "revokeAll ? null : sessionId",
+        "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
+        "Referrer-Policy", "no-referrer",
     ),
 }
 
@@ -123,10 +72,7 @@ def text_files(path: Path):
 
 
 def read_tree_text(path: Path) -> str:
-    return "\n".join(
-        file.read_text("utf-8", errors="ignore")
-        for file in text_files(path) or []
-    )
+    return "\n".join(file.read_text("utf-8", errors="ignore") for file in text_files(path) or [])
 
 
 def find_edge_calls(paths: list[Path], slug: str) -> list[str]:
@@ -194,10 +140,8 @@ def main() -> int:
         for marker in markers:
             if marker not in source:
                 errors.append(f"{slug}: garde-fou HTTP/destructif manquant: {marker}.")
-
-    delete_source = read_tree_text(FUNCTIONS / "delete-player-account")
-    if "await req.json()" in delete_source or "await req.json (" in delete_source:
-        errors.append("delete-player-account: lecture JSON directe non bornée interdite depuis V24.5.51.")
+        if "await req.json()" in source or "await req.json (" in source:
+            errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
 
     delivery_source = read_tree_text(FUNCTIONS / "life-story-delivery")
     if "searchParams.get('token')" in delivery_source or 'searchParams.get("token")' in delivery_source:
@@ -207,13 +151,8 @@ def main() -> int:
 
     export_source = read_tree_text(FUNCTIONS / "life-story-export")
     for marker in (
-        "requiredAdmin",
-        "admin_life_story_get_export",
-        "source_boundary",
-        "DELIVERY_PAGE",
-        "histoire-de-vie/remise.html",
-        "#${raw}",
-        "service_life_story_mark_export_generated",
+        "requiredAdmin", "admin_life_story_get_export", "source_boundary", "DELIVERY_PAGE",
+        "histoire-de-vie/remise.html", "#${raw}", "service_life_story_mark_export_generated",
         "service_life_story_mark_export_purged",
     ):
         if marker not in export_source:
@@ -235,7 +174,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, suppression de compte bornée/no-store, réponses sensibles no-store, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, actions destructives bornées/no-store, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
