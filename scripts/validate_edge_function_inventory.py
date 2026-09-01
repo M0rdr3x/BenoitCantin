@@ -89,6 +89,28 @@ CUSTOM_AUTH = {
     ),
 }
 
+JWT_SENSITIVE_GUARDS = {
+    "delete-player-account": (
+        "req.method !== 'POST'",
+        "MAX_REQUEST_BYTES=1024",
+        "readBoundedJson",
+        "TextEncoder",
+        "JSON_REQUIRED",
+        "REQUEST_TOO_LARGE",
+        "INVALID_JSON",
+        "Cache-Control",
+        "private, no-store",
+        "X-Content-Type-Options",
+        "nosniff",
+        "Referrer-Policy",
+        "no-referrer",
+        "privacy_service_can_delete_user",
+        "MFA_REQUIRED",
+        "OWNER_OR_ADMIN_DELETE_BLOCKED",
+        "CONFIRM_PHRASE='SUPPRIMER MON COMPTE'",
+    ),
+}
+
 TEXT_SUFFIXES = {".ts", ".js", ".json", ".toml", ".md", ".html"}
 
 
@@ -167,6 +189,16 @@ def main() -> int:
             if marker not in source:
                 errors.append(f"{slug}: garde-fou custom auth/access manquant: {marker}.")
 
+    for slug, markers in JWT_SENSITIVE_GUARDS.items():
+        source = read_tree_text(FUNCTIONS / slug)
+        for marker in markers:
+            if marker not in source:
+                errors.append(f"{slug}: garde-fou HTTP/destructif manquant: {marker}.")
+
+    delete_source = read_tree_text(FUNCTIONS / "delete-player-account")
+    if "await req.json()" in delete_source or "await req.json (" in delete_source:
+        errors.append("delete-player-account: lecture JSON directe non bornée interdite depuis V24.5.51.")
+
     delivery_source = read_tree_text(FUNCTIONS / "life-story-delivery")
     if "searchParams.get('token')" in delivery_source or 'searchParams.get("token")' in delivery_source:
         errors.append("life-story-delivery: le jeton ne doit jamais être lu depuis l URL.")
@@ -203,7 +235,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, réponses sensibles no-store, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, suppression de compte bornée/no-store, réponses sensibles no-store, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
