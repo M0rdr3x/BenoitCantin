@@ -65,6 +65,14 @@ JWT_SENSITIVE_GUARDS = {
         "submitted:true", "Cache-Control", "private, no-store", "X-Content-Type-Options",
         "nosniff", "Referrer-Policy", "no-referrer",
     ),
+    "submit-fracture-endgame": (
+        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
+        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "PARTY_CODE_RE=/^[A-Z0-9-]{10}$/",
+        "record_sinjira_fracture_endgame_contribution", "p_user_id:user.id", "p_session_id:session.id",
+        "p_party_id:party.id", "submitted:true", "PAID_EXTERNAL_SERVICES_ENABLED=false",
+        "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
+        "Referrer-Policy", "no-referrer",
+    ),
 }
 
 TEXT_SUFFIXES = {".ts", ".js", ".json", ".toml", ".md", ".html"}
@@ -156,6 +164,20 @@ def main() -> int:
     if ".select('*')" in contribution_source:
         errors.append("submit-game-contribution: sélection SQL large interdite depuis V24.5.53.")
 
+    fracture_source = read_tree_text(FUNCTIONS / "submit-fracture-endgame")
+    for forbidden in (
+        ".from('internal_gameplay_contributions').insert",
+        '.from("internal_gameplay_contributions").insert',
+        ".from('internal_contribution_ownership').insert",
+        '.from("internal_contribution_ownership").insert',
+        ".from('contribution_receipts').insert",
+        '.from("contribution_receipts").insert',
+    ):
+        if forbidden in fracture_source:
+            errors.append("submit-fracture-endgame: écriture directe interdite; utiliser la RPC transactionnelle V24.5.54.")
+    if ".select('*')" in fracture_source:
+        errors.append("submit-fracture-endgame: sélection SQL large interdite depuis V24.5.54.")
+
     delivery_source = read_tree_text(FUNCTIONS / "life-story-delivery")
     if "searchParams.get('token')" in delivery_source or 'searchParams.get("token")' in delivery_source:
         errors.append("life-story-delivery: le jeton ne doit jamais être lu depuis l URL.")
@@ -187,7 +209,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, actions sensibles bornées/no-store, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, actions sensibles bornées/no-store, contributions jeu sans UUID exposé, Fracture via RPC transactionnelle révocable, modèle PDF Fracture borné, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
