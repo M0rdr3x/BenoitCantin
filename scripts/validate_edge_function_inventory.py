@@ -58,6 +58,13 @@ JWT_SENSITIVE_GUARDS = {
         "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
         "Referrer-Policy", "no-referrer",
     ),
+    "submit-game-contribution": (
+        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
+        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "INVALID_SESSION",
+        "p_user_id:user.id", "select('id,game_slug,play_mode,human_player_count,effective_player_count,player_count,duration_minutes')",
+        "submitted:true", "Cache-Control", "private, no-store", "X-Content-Type-Options",
+        "nosniff", "Referrer-Policy", "no-referrer",
+    ),
 }
 
 TEXT_SUFFIXES = {".ts", ".js", ".json", ".toml", ".md", ".html"}
@@ -143,6 +150,12 @@ def main() -> int:
         if "await req.json()" in source or "await req.json (" in source:
             errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
 
+    contribution_source = read_tree_text(FUNCTIONS / "submit-game-contribution")
+    if "contribution_id" in contribution_source:
+        errors.append("submit-game-contribution: un UUID interne de contribution ne doit pas sortir vers le client.")
+    if ".select('*')" in contribution_source:
+        errors.append("submit-game-contribution: sélection SQL large interdite depuis V24.5.53.")
+
     delivery_source = read_tree_text(FUNCTIONS / "life-story-delivery")
     if "searchParams.get('token')" in delivery_source or 'searchParams.get("token")' in delivery_source:
         errors.append("life-story-delivery: le jeton ne doit jamais être lu depuis l URL.")
@@ -174,7 +187,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, actions destructives bornées/no-store, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, actions sensibles bornées/no-store, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
