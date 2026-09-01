@@ -1,0 +1,32 @@
+name: SINJIRA V24.5.51 — Suppression de compte bornée
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Vérifier V24.5.51
+        run: |
+          python scripts/validate_delete_account_v24_5_51.py
+          python scripts/validate_edge_function_inventory.py
+          python scripts/validate_production_migration_ledger.py
