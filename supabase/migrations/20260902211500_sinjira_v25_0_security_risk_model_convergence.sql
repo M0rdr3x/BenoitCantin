@@ -147,6 +147,7 @@ declare
 
   v_unknown_device boolean := false;
   v_had_trusted_device boolean := false;
+  v_previous_found boolean := false;
   v_travel_match boolean := false;
   v_unexpected_region boolean := false;
   v_impossible_travel boolean := false;
@@ -170,6 +171,21 @@ begin
   if p_user_id is null or p_device_key is null or char_length(p_device_key) not between 16 and 128 then
     raise exception 'INVALID_CONTEXT';
   end if;
+
+  -- `registry` est conservé uniquement pour compatibilité avec les appels V24 existants.
+  -- Les nouveaux périmètres du Registre personnel utilisent des noms explicites afin de
+  -- ne pas le confondre avec le Registre narratif SINJIRA.
+  v_sensitive := v_action in (
+    'registry','ai_private','recovery','passkeys','posthumous','security_change',
+    'conscience_vault','personal_registry','vault'
+  );
+
+  -- Ces zones ne peuvent jamais perdre le step-up à cause d’un appareil fiable,
+  -- d’un Mode Voyage ou d’une préférence utilisateur.
+  v_mandatory_step_up := v_action in (
+    'ai_private','recovery','passkeys','posthumous','security_change',
+    'conscience_vault','personal_registry','vault'
+  );
 
   insert into public.security_user_settings(user_id)
   values(p_user_id)
@@ -233,6 +249,7 @@ begin
         and outcome in ('allow','approved')
       order by occurred_at desc
       limit 1;
+      v_previous_found := found;
 
       select exists(
         select 1
@@ -244,7 +261,7 @@ begin
           and upper(trim(d))=v_country
       ) into v_travel_match;
 
-      if found then
+      if v_previous_found then
         v_unexpected_region := v_previous.country_code <> v_country and not v_travel_match;
         v_impossible_travel := v_previous.country_code <> v_country
           and v_previous.occurred_at > now()-interval '2 hours';
@@ -284,21 +301,6 @@ begin
         )
         and created_at >= now()-interval '24 hours'
     ) into v_auth_factor_change;
-
-    -- `registry` est conservé uniquement pour compatibilité avec les appels V24 existants.
-    -- Les nouveaux périmètres du Registre personnel utilisent des noms explicites afin de
-    -- ne pas le confondre avec le Registre narratif SINJIRA.
-    v_sensitive := v_action in (
-      'registry','ai_private','recovery','passkeys','posthumous','security_change',
-      'conscience_vault','personal_registry','vault'
-    );
-
-    -- Ces zones ne peuvent jamais perdre le step-up à cause d’un appareil fiable,
-    -- d’un Mode Voyage ou d’une préférence utilisateur.
-    v_mandatory_step_up := v_action in (
-      'ai_private','recovery','passkeys','posthumous','security_change',
-      'conscience_vault','personal_registry','vault'
-    );
 
     v_risk := private.security_risk_score_v25(
       v_unknown_device,
@@ -366,12 +368,12 @@ begin
       p_user_id,
       'security_connection',
       case
-        when v_outcome='block' then 'Action de sécurité bloquée'
+        when v_outcome='block' then 'Connexion ou action bloquée'
         when v_outcome='challenge' then 'Connexion à confirmer'
         else 'Connexion inhabituelle détectée'
       end,
       case
-        when v_outcome='block' then 'SINJIRA a bloqué une action présentant un risque critique. Vérifiez votre Centre de sécurité.'
+        when v_outcome='block' then 'SINJIRA a bloqué une connexion ou une action présentant un risque critique. Vérifiez votre Centre de sécurité.'
         when v_outcome='challenge' then 'Une connexion inhabituelle demande une vérification renforcée.'
         else 'Une connexion inhabituelle a été détectée. Vérifiez-la dans votre Centre de sécurité si nécessaire.'
       end,
