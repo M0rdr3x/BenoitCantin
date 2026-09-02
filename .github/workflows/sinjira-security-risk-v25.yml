@@ -1,0 +1,47 @@
+name: SINJIRA V25 — Moteur de risque sécurité
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/security_risk_model_v25.test.sql'
+      - 'supabase/config.toml'
+      - '.github/workflows/sinjira-security-risk-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  risk-model-pgtap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+          github-token: ${{ github.token }}
+
+      - name: Démarrer PostgreSQL Supabase local et appliquer les migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db start
+
+      - name: Exécuter les 20 assertions pgTAP V25
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase test db supabase/tests/security_risk_model_v25.test.sql --local
+
+      - name: Arrêter la base locale
+        if: always()
+        shell: bash
+        run: supabase stop --no-backup || true
