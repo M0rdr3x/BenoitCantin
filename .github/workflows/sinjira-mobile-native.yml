@@ -36,5 +36,8 @@ jobs:
       - name: Installer les dépendances
         run: npm install --no-audit --no-fund
 
+      - name: Vérifier le contrat mobile du Registre personnel
+        run: npm run validate:vault
+
       - name: Vérifier TypeScript
         run: npm run typecheck
