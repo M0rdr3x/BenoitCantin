@@ -116,6 +116,17 @@ async function assertSensitiveMfa(context: Awaited<ReturnType<typeof authenticat
   return aal;
 }
 
+async function assertVaultMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
+  // Le Registre personnel ne consulte volontairement PAS sensitive_step_up :
+  // sa vérification AAL2 est obligatoire et ne peut pas être désactivée par préférence.
+  const aal = await assuranceLevel(context).catch(() => {
+    throw new Error('MFA_STATE_UNAVAILABLE');
+  });
+  if (aal.nextLevel !== 'aal2') throw new Error('MFA_SETUP_REQUIRED');
+  if (aal.currentLevel !== 'aal2') throw new Error('MFA_REQUIRED');
+  return aal;
+}
+
 export async function optionalUser(req: Request) {
   try {
     return (await authenticatedContext(req)).user;
@@ -134,6 +145,18 @@ export async function requiredUser(req: Request) {
     await assertSensitiveMfa(context);
   }
   return context.user;
+}
+
+/**
+ * Contexte du Registre personnel des consciences.
+ * AAL2 est toujours obligatoire et ne dépend d'aucune préférence utilisateur.
+ * Le contexte retourne le service serveur afin que l'Edge Function puisse appeler
+ * uniquement les RPC étroites du coffre après l'évaluation de risque V25.
+ */
+export async function requiredVaultUser(req: Request) {
+  const context = await authenticatedContext(req);
+  const aal = await assertVaultMfa(context);
+  return { ...context, aal };
 }
 
 /**
