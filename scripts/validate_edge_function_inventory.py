@@ -47,8 +47,8 @@ CUSTOM_AUTH = {
 JWT_SENSITIVE_GUARDS = {
     "conscience-vault": (
         "req.method !== 'POST'", "MAX_REQUEST_BYTES", "readBoundedJson", "req.body.getReader()",
-        "REQUEST_TOO_LARGE", "INVALID_JSON", "requiredVaultUser", "p_action: 'conscience_vault'",
-        "CLIENT_IDENTITY_FORBIDDEN", "Cache-Control", "private, no-store",
+        "REQUEST_TOO_LARGE", "INVALID_JSON", "requiredVaultUser", "service_conscience_evaluate_access",
+        "CLIENT_IDENTITY_FORBIDDEN", "trusted_device_confirmation", "Cache-Control", "private, no-store",
         "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
     ),
     "delete-player-account": (
@@ -157,6 +157,10 @@ def main() -> int:
         if "await req.json()" in source or "await req.json (" in source:
             errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
 
+    vault_source = read_tree_text(FUNCTIONS / "conscience-vault")
+    if "service.rpc('security_evaluate_context'" in vault_source or 'service.rpc("security_evaluate_context"' in vault_source:
+        errors.append("conscience-vault: l Edge doit passer par service_conscience_evaluate_access pour conserver les challenges entre retries.")
+
     contribution_source = read_tree_text(FUNCTIONS / "submit-game-contribution")
     if "contribution_id" in contribution_source:
         errors.append("submit-game-contribution: un UUID interne de contribution ne doit pas sortir vers le client.")
@@ -194,7 +198,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 21 fonctions canoniques, JWT/custom auth cohérents, actions sensibles bornées/no-store, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 21 fonctions canoniques, JWT/custom auth cohérents, actions sensibles bornées/no-store, coffre derrière continuité de challenge serveur, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
