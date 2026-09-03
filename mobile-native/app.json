@@ -2,7 +2,7 @@
   "expo": {
     "name": "SINJIRA",
     "slug": "sinjira",
-    "version": "24.4.99",
+    "version": "25.0.0",
     "orientation": "portrait",
     "scheme": "sinjira",
     "userInterfaceStyle": "dark",
@@ -21,7 +21,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.benoitcantin.sinjira",
-      "buildNumber": "24499",
+      "buildNumber": "25000",
       "associatedDomains": [
         "applinks:www.benoitcantin.com",
         "applinks:sinjira.com",
@@ -29,12 +29,12 @@
       ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSFaceIDUsageDescription": "SINJIRA utilise Face ID uniquement si vous activez la protection biométrique locale de l’application."
+        "NSFaceIDUsageDescription": "SINJIRA utilise Face ID uniquement comme protection locale supplémentaire. Le Registre personnel reste aussi protégé par l’authentification renforcée et le moteur de risque du serveur."
       }
     },
     "android": {
       "package": "com.benoitcantin.sinjira",
-      "versionCode": 24499,
+      "versionCode": 25000,
       "adaptiveIcon": {
         "foregroundImage": "../android-chrome-512x512.png",
         "backgroundColor": "#070914"
