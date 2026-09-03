@@ -25,6 +25,7 @@ def main()->int:
     js=read('assets/js/sinjira-consciousness-vault-v25.js')
     css=read('assets/css/sinjira-consciousness-vault-v25.css')
     dashboard=read('compte/index.html')
+    life_story=read('compte/histoire-de-vie.html')
 
     require(page,[
         '<meta content="noindex,nofollow" name="robots"/>',
@@ -54,26 +55,6 @@ def main()->int:
     ],'aucune identité cible, export ou promesse posthume dans la page')
 
     require(js,[
-        "const VAULT_TTL_SECONDS=300;",
-        "getSupabase().functions.invoke('conscience-vault',{body})",
-        "action:'open_session'",
-        "action:'list_entries'",
-        "action:'create_entry'",
-        "action:'update_entry'",
-        "action:'delete_entry'",
-        "action:'revoke_session'",
-        'let vaultSessionId=null;',
-        'function clearSensitiveDom()',
-        'function localLock(',
-        "document.addEventListener('visibilitychange'",
-        "globalThis.addEventListener('pagehide'",
-        'HIDDEN_LOCK_DELAY_MS=60_000',
-        "error?.code==='SECURITY_CHALLENGE_REQUIRED'",
-        "code==='MFA_SETUP_REQUIRED'",
-        "code==='MFA_REQUIRED'",
-        "code==='SECURITY_BLOCKED'",
-        "rpc('security_list_devices'",
-    ] if False else [
         "const VAULT_TTL_SECONDS=300;",
         "getSupabase().functions.invoke('conscience-vault',{body})",
         "action:'open_session'",
@@ -140,8 +121,19 @@ def main()->int:
     require(dashboard,[
         'href="registre-personnel.html"',
         'Mon Registre personnel',
-        'Registre narratif',
+        'Registre narratif SINJIRA',
+        'Coffre privé réel',
+        'Son contenu n’est jamais transmis à vos proches.',
     ],'accès dashboard et séparation des deux Registres')
+
+    require(life_story,[
+        'href="registre-personnel.html">Registre personnel</a>',
+        'href="/projets/sinjira/registre/">Registre narratif</a>',
+        'sans donner accès à votre Registre personnel des consciences.',
+        'L’Histoire de vie est séparée du Registre personnel.',
+        'Histoire de vie uniquement. Jamais le Registre personnel.',
+        'Elle ne transmet pas le Registre personnel des consciences.',
+    ],'Histoire de vie ne confond plus le coffre réel et le Registre narratif')
 
     print('OK Web V25: Registre personnel distinct du narratif, Edge uniquement, capacité mémoire, auto-verrouillage, aucun export ni stockage local du contenu.')
     return 0
