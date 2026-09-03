@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, auth, extensions;
 
-select plan(24);
+select plan(25);
 
 select has_table('private','conscience_entries','le coffre personnel existe dans le schema private');
 select has_table('private','conscience_vault_sessions','les sessions temporaires du coffre existent');
@@ -25,13 +25,13 @@ select ok(not has_table_privilege('service_role','private.conscience_vault_sessi
 
 -- Les points d'entree publics restent strictement serveur.
 select ok(not has_function_privilege('anon',
-  'public.service_conscience_open_session(uuid,text,integer,text,text,integer)','EXECUTE'),
+  'public.service_conscience_open_session(uuid,text,integer,text,text,text,integer)','EXECUTE'),
   'anon ne peut pas ouvrir une session de coffre');
 select ok(not has_function_privilege('authenticated',
-  'public.service_conscience_open_session(uuid,text,integer,text,text,integer)','EXECUTE'),
+  'public.service_conscience_open_session(uuid,text,integer,text,text,text,integer)','EXECUTE'),
   'authenticated ne peut pas ouvrir directement une session de coffre');
 select ok(has_function_privilege('service_role',
-  'public.service_conscience_open_session(uuid,text,integer,text,text,integer)','EXECUTE'),
+  'public.service_conscience_open_session(uuid,text,integer,text,text,text,integer)','EXECUTE'),
   'service_role peut appeler le point entree serveur');
 select ok(not has_function_privilege('authenticated',
   'public.service_conscience_list_entries(uuid,uuid)','EXECUTE'),
@@ -76,27 +76,32 @@ select ok(
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 
 select throws_ok(
-  $$select public.service_conscience_open_session('00000000-0000-0000-0000-000000000001','aal1',0,'allow','v25.0',300)$$,
+  $$select public.service_conscience_open_session('00000000-0000-0000-0000-000000000001','aal1',0,'allow','conscience_vault','v25.0',300)$$,
   '42501','AAL2_REQUIRED',
   'AAL1 est toujours refuse meme si le risque est faible'
 );
 select throws_ok(
-  $$select public.service_conscience_open_session('00000000-0000-0000-0000-000000000001','aal2',80,'allow','v25.0',300)$$,
+  $$select public.service_conscience_open_session('00000000-0000-0000-0000-000000000001','aal2',20,'allow','session','v25.0',300)$$,
+  '42501','RISK_SCOPE_REQUIRED',
+  'une evaluation de risque generique ne peut pas ouvrir le coffre'
+);
+select throws_ok(
+  $$select public.service_conscience_open_session('00000000-0000-0000-0000-000000000001','aal2',80,'allow','conscience_vault','v25.0',300)$$,
   '42501','RISK_NOT_ACCEPTABLE',
   'un risque critique bloque le coffre'
 );
 select throws_ok(
-  $$select public.service_conscience_open_session('00000000-0000-0000-0000-000000000001','aal2',50,'challenge','v25.0',300)$$,
+  $$select public.service_conscience_open_session('00000000-0000-0000-0000-000000000001','aal2',50,'challenge','conscience_vault','v25.0',300)$$,
   '42501','RISK_APPROVAL_REQUIRED',
   'un challenge non resolu ne peut pas ouvrir le coffre'
 );
 select throws_ok(
-  $$select public.service_conscience_open_session('00000000-0000-0000-0000-000000000001','aal2',20,'allow','v25.0',601)$$,
+  $$select public.service_conscience_open_session('00000000-0000-0000-0000-000000000001','aal2',20,'allow','conscience_vault','v25.0',601)$$,
   '22023','VAULT_TTL_INVALID',
   'une capacite de plus de dix minutes est refusee'
 );
 select throws_ok(
-  $$select public.service_conscience_open_session('00000000-0000-0000-0000-000000000001','aal2',20,'allow','legacy',300)$$,
+  $$select public.service_conscience_open_session('00000000-0000-0000-0000-000000000001','aal2',20,'allow','conscience_vault','legacy',300)$$,
   '42501','RISK_MODEL_V25_REQUIRED',
   'le coffre refuse une decision provenant dun ancien modele de risque'
 );
