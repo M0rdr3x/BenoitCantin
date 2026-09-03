@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, auth, extensions;
 
-select plan(27);
+select plan(31);
 
 select has_table('private','conscience_entries','le coffre personnel existe dans le schema private');
 select has_table('private','conscience_vault_sessions','les sessions temporaires du coffre existent');
@@ -75,6 +75,22 @@ select ok(
    join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='public' and p.proname like 'service_conscience_%'),
   'les sept RPC de coffre figent leur search_path'
+);
+
+-- Le navigateur ne peut plus lire device_key directement; il passe par une RPC assainie.
+select ok(not has_table_privilege('authenticated','public.security_devices','SELECT'),
+  'authenticated ne peut plus SELECT directement security_devices');
+select ok(has_function_privilege('authenticated','public.security_list_devices(text)','EXECUTE'),
+  'authenticated peut lister ses appareils uniquement via la RPC assainie');
+select ok(not has_function_privilege('anon','public.security_list_devices(text)','EXECUTE'),
+  'anon ne peut pas lister les appareils');
+select ok(
+  (select not p.prosecdef and array_to_string(p.proconfig,',') like '%search_path=%'
+   from pg_proc p
+   join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='security_list_devices'
+   limit 1),
+  'security_list_devices public reste SECURITY INVOKER avec search_path fixe'
 );
 
 -- Les assertions suivantes simulent uniquement le contexte serveur. Aucun utilisateur valide
