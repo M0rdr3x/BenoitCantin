@@ -39,13 +39,20 @@ def main() -> int:
     config = read('supabase/config.toml')
     migration = read('supabase/migrations/20260902223000_sinjira_v25_0_personal_consciousness_vault.sql')
 
+    require(auth, [
+        'getAuthenticatorAssuranceLevel(token)',
+        'export async function requiredVaultUser',
+        'await assertVaultMfa(context)',
+        'return { ...context, aal }',
+    ], 'contexte authentifié du coffre')
+
     vault_auth = function_block(
         auth,
         'async function assertVaultMfa',
         'export async function optionalUser'
     )
     require(vault_auth, [
-        'getAuthenticatorAssuranceLevel',
+        'await assuranceLevel(context)',
         "aal.nextLevel !== 'aal2'",
         "aal.currentLevel !== 'aal2'",
         "throw new Error('MFA_SETUP_REQUIRED')",
@@ -55,12 +62,6 @@ def main() -> int:
         'sensitiveStepUpEnabled',
         'sensitive_step_up',
     ], 'AAL2 du coffre ne dépend pas des préférences')
-
-    require(auth, [
-        'export async function requiredVaultUser',
-        'await assertVaultMfa(context)',
-        'return { ...context, aal }',
-    ], 'contexte authentifié du coffre')
 
     require(edge, [
         "import { requiredVaultUser } from '../_shared/auth.ts'",
@@ -110,9 +111,9 @@ def main() -> int:
     ], 'aucun contournement ou journal de contenu dans Edge')
 
     config_block = function_block(
-        config + '\n[__end__]\n',
+        config,
         '[functions.conscience-vault]',
-        '[__end__]'
+        '[functions.life-story-export]'
     )
     require(config_block, ['verify_jwt = true'], 'JWT Supabase obligatoire pour conscience-vault')
     forbid(config_block, ['verify_jwt = false'], 'conscience-vault ne peut jamais être public')
