@@ -89,19 +89,27 @@ begin
     );
   end if;
 
-  select * into v_challenge
+  -- Seuls les challenges créés pour ce coffre peuvent confirmer ce coffre.
+  -- Une approbation d'une autre zone SINJIRA n'est jamais réutilisée ici.
+  select c.* into v_challenge
   from public.security_connection_challenges c
+  join public.security_connection_events e
+    on e.id=c.connection_event_id
+   and e.user_id=p_user_id
+   and e.action_name='conscience_vault'
   where c.user_id=p_user_id
     and c.request_device_id=v_device.id
   order by c.created_at desc
   limit 1;
 
   if found then
-    -- Une approbation depuis un appareil fiable confirme ce device tant qu'il n'est
-    -- pas révoqué; elle ne le transforme pas silencieusement en appareil principal.
-    if v_challenge.status='approved' then
+    -- L'approbation est une autorisation fraîche, pas une confiance permanente.
+    -- Elle couvre largement une capacité de coffre (10 min max), puis une nouvelle
+    -- ouverture sur appareil non fiable redemande une confirmation.
+    if v_challenge.status='approved'
+       and coalesce(v_challenge.resolved_at,v_challenge.created_at) > v_now-interval '30 minutes' then
       return v_result || jsonb_build_object(
-        'trusted_device_confirmation','approved',
+        'trusted_device_confirmation','approved_recently',
         'challenge_id',v_challenge.id
       );
     end if;
@@ -143,7 +151,7 @@ begin
     end if;
   end if;
 
-  -- Aucun challenge approuvé utilisable : réémet une confirmation contrôlée.
+  -- Aucun challenge approuvé et frais utilisable : réémet une confirmation contrôlée.
   insert into public.security_connection_events(
     user_id,device_id,event_type,country_code,region_code,client_type,platform,
     action_name,risk_score,risk_reasons,outcome,risk_model_version
@@ -199,6 +207,6 @@ grant execute on function public.service_conscience_evaluate_access(uuid,text,te
 to service_role;
 
 comment on function public.service_conscience_evaluate_access(uuid,text,text,text,text,text,text) is
-  'Serveur seulement. Enveloppe security_evaluate_context pour conscience_vault et maintient la confirmation appareil fiable entre les retries, avec anti-fatigue après refus.';
+  'Serveur seulement. Enveloppe security_evaluate_context pour conscience_vault, limite les approbations appareil à 30 min et maintient pending/refus entre retries avec anti-fatigue.';
 
 commit;
