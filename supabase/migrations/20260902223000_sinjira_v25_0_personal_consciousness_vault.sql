@@ -30,6 +30,7 @@ create table if not exists private.conscience_vault_sessions (
   scope text not null default 'conscience_vault'
     check (scope = 'conscience_vault'),
   aal text not null check (aal = 'aal2'),
+  risk_action text not null check (risk_action = 'conscience_vault'),
   risk_score smallint not null check (risk_score between 0 and 74),
   risk_band text not null check (risk_band in ('low','medium','high')),
   risk_outcome text not null check (risk_outcome in ('allow','approved')),
@@ -121,6 +122,7 @@ create or replace function public.service_conscience_open_session(
   p_aal text,
   p_risk_score integer,
   p_risk_outcome text,
+  p_risk_action text,
   p_risk_model_version text default 'v25.0',
   p_ttl_seconds integer default 300
 )
@@ -138,6 +140,11 @@ begin
   -- AAL2 reste obligatoire même si la préférence sensitive_step_up est désactivée.
   if p_aal is distinct from 'aal2' then
     raise exception 'AAL2_REQUIRED' using errcode='42501';
+  end if;
+  -- Le score doit provenir explicitement de l'évaluation de la zone privée, pas d'une
+  -- évaluation générique de session ou d'un autre produit SINJIRA.
+  if p_risk_action is distinct from 'conscience_vault' then
+    raise exception 'RISK_SCOPE_REQUIRED' using errcode='42501';
   end if;
   if p_risk_model_version is distinct from 'v25.0' then
     raise exception 'RISK_MODEL_V25_REQUIRED' using errcode='42501';
@@ -169,9 +176,9 @@ begin
      and expires_at > now();
 
   insert into private.conscience_vault_sessions(
-    user_id, aal, risk_score, risk_band, risk_outcome, risk_model_version, expires_at
+    user_id, aal, risk_action, risk_score, risk_band, risk_outcome, risk_model_version, expires_at
   ) values(
-    p_user_id, 'aal2', p_risk_score, v_band, p_risk_outcome, 'v25.0',
+    p_user_id, 'aal2', 'conscience_vault', p_risk_score, v_band, p_risk_outcome, 'v25.0',
     now() + make_interval(secs => p_ttl_seconds)
   ) returning id into v_id;
 
@@ -339,22 +346,22 @@ begin
 end;
 $$;
 
-revoke all on function public.service_conscience_open_session(uuid,text,integer,text,text,integer) from public, anon, authenticated;
+revoke all on function public.service_conscience_open_session(uuid,text,integer,text,text,text,integer) from public, anon, authenticated;
 revoke all on function public.service_conscience_revoke_session(uuid,uuid) from public, anon, authenticated;
 revoke all on function public.service_conscience_list_entries(uuid,uuid) from public, anon, authenticated;
 revoke all on function public.service_conscience_create_entry(uuid,uuid,text,text) from public, anon, authenticated;
 revoke all on function public.service_conscience_update_entry(uuid,uuid,uuid,text,text) from public, anon, authenticated;
 revoke all on function public.service_conscience_delete_entry(uuid,uuid,uuid) from public, anon, authenticated;
 
-grant execute on function public.service_conscience_open_session(uuid,text,integer,text,text,integer) to service_role;
+grant execute on function public.service_conscience_open_session(uuid,text,integer,text,text,text,integer) to service_role;
 grant execute on function public.service_conscience_revoke_session(uuid,uuid) to service_role;
 grant execute on function public.service_conscience_list_entries(uuid,uuid) to service_role;
 grant execute on function public.service_conscience_create_entry(uuid,uuid,text,text) to service_role;
 grant execute on function public.service_conscience_update_entry(uuid,uuid,uuid,text,text) to service_role;
 grant execute on function public.service_conscience_delete_entry(uuid,uuid,uuid) to service_role;
 
-comment on function public.service_conscience_open_session(uuid,text,integer,text,text,integer) is
-  'Serveur seulement. Exige AAL2, décision de risque V25 approuvée et capacité <=10 min. Le périmètre attendu du moteur est conscience_vault.';
+comment on function public.service_conscience_open_session(uuid,text,integer,text,text,text,integer) is
+  'Serveur seulement. Exige AAL2, décision V25 approuvée pour conscience_vault et capacité <=10 min.';
 comment on function public.service_conscience_list_entries(uuid,uuid) is
   'Serveur seulement. Jamais utilisé par le pipeline Histoire de vie/héritage.';
 comment on function public.service_conscience_create_entry(uuid,uuid,text,text) is
