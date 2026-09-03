@@ -130,7 +130,8 @@ function publicSecurityDecision(security: any) {
     requires_step_up: security?.requires_step_up === true,
     mandatory_step_up: security?.mandatory_step_up === true,
     challenge_id: security?.challenge_id || null,
-    display_code: security?.display_code || null
+    display_code: security?.display_code || null,
+    trusted_device_confirmation: String(security?.trusted_device_confirmation || '')
   };
 }
 
@@ -199,15 +200,16 @@ Deno.serve(async (req) => {
       }
 
       const geo = trustedGeo(req);
-      const { data: security, error: securityError } = await service.rpc('security_evaluate_context', {
+      // Le wrapper SQL fixe lui-même l'action conscience_vault et maintient le challenge
+      // d'appareil fiable entre les retries. L'Edge ne peut donc pas diminuer le scope.
+      const { data: security, error: securityError } = await service.rpc('service_conscience_evaluate_access', {
         p_user_id: user.id,
         p_device_key: deviceKey,
         p_display_name: safeText(body.display_name, 120) || 'Appareil SINJIRA',
         p_device_type: safeDeviceType(body.device_type),
         p_platform: safeText(body.platform, 120),
         p_country_code: geo.country,
-        p_region_code: geo.region,
-        p_action: 'conscience_vault'
+        p_region_code: geo.region
       });
       if (securityError) throw new Error('SECURITY_DECISION_INVALID');
 
