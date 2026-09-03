@@ -66,6 +66,15 @@ def main() -> int:
     require(edge, [
         "import { requiredVaultUser } from '../_shared/auth.ts'",
         'await requiredVaultUser(req)',
+        'async function readBoundedJson(req: Request)',
+        "contentType !== 'application/json'",
+        'req.body.getReader()',
+        'total > MAX_REQUEST_BYTES',
+        "throw new Error('REQUEST_TOO_LARGE')",
+        "new TextDecoder('utf-8', { fatal: true })",
+        "'Cache-Control': 'private, no-store, max-age=0'",
+        "'X-Content-Type-Options': 'nosniff'",
+        "'Referrer-Policy': 'no-referrer'",
         "['user_id', 'target_user_id', 'subject_user_id']",
         "throw new Error('CLIENT_IDENTITY_FORBIDDEN')",
         "p_action: 'conscience_vault'",
@@ -95,6 +104,7 @@ def main() -> int:
         ".from('conscience_entries')",
         ".from('conscience_vault_sessions')",
         ".from('conscience_vault_audit')",
+        'await req.json()',
         'body.user_id',
         'body?.user_id',
         'body.target_user_id',
@@ -108,7 +118,7 @@ def main() -> int:
         'console.log(payload',
         'console.error(error',
         'console.error(error)',
-    ], 'aucun contournement ou journal de contenu dans Edge')
+    ], 'aucun contournement, corps non borné ou journal de contenu dans Edge')
 
     config_block = function_block(
         config,
@@ -126,7 +136,7 @@ def main() -> int:
         "check (expires_at <= issued_at + interval '10 minutes')",
     ], 'barrières SQL du coffre')
 
-    print('OK coffre V25: JWT + AAL2 obligatoire, identité dérivée, risque conscience_vault et RPC étroites sans accès direct au schéma private.')
+    print('OK coffre V25: JWT + AAL2 obligatoire, corps borné, no-store, identité dérivée, risque conscience_vault et RPC étroites sans accès direct au schéma private.')
     return 0
 
 
