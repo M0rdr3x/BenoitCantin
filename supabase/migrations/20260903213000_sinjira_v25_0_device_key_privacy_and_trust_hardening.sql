@@ -169,6 +169,8 @@ $$;
 -- Un appareil ne peut devenir fiable que s'il s'agit de l'appareil de la session courante.
 -- Le premier appareil fiable peut être amorcé avec AAL2. Dès qu'un autre appareil fiable existe,
 -- une approbation récente depuis un autre appareil fiable est obligatoire.
+-- Retirer une confiance demeure possible selon la protection historique afin de ne pas bloquer
+-- une action défensive chez une personne qui n'a pas encore configuré de MFA.
 create or replace function sinjira_security_internal.security_set_device_trust(
   p_device_id uuid,
   p_trusted boolean,
@@ -177,7 +179,7 @@ create or replace function sinjira_security_internal.security_set_device_trust(
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public, auth
+set search_path = pg_catalog, public, auth, private
 as $$
 declare
   v_user uuid := auth.uid();
@@ -187,7 +189,11 @@ declare
   v_recent_approved boolean := false;
 begin
   if v_user is null then raise exception 'AUTH_REQUIRED' using errcode='42501'; end if;
-  if coalesce(auth.jwt()->>'aal','aal1') <> 'aal2' then
+  perform private.security_require_aal2_if_available(v_user);
+
+  -- Accroître la confiance exige toujours AAL2 strict, même si aucune MFA n'était
+  -- auparavant configurée. Retirer la confiance ne doit pas être rendu impossible.
+  if p_trusted and coalesce(auth.jwt()->>'aal','aal1') <> 'aal2' then
     raise exception 'AAL2_REQUIRED' using errcode='42501';
   end if;
   if p_primary and not p_trusted then
@@ -273,11 +279,13 @@ begin
 end;
 $$;
 
+-- Révoquer est une action défensive. On conserve donc le comportement historique :
+-- si une MFA vérifiée existe elle impose AAL2; sinon la personne peut quand même retirer l'appareil.
 create or replace function sinjira_security_internal.security_revoke_device(p_device_id uuid)
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public, auth
+set search_path = pg_catalog, public, auth, private
 as $$
 declare
   v_user uuid := auth.uid();
@@ -285,9 +293,7 @@ declare
   v_row public.security_devices;
 begin
   if v_user is null then raise exception 'AUTH_REQUIRED' using errcode='42501'; end if;
-  if coalesce(auth.jwt()->>'aal','aal1') <> 'aal2' then
-    raise exception 'AAL2_REQUIRED' using errcode='42501';
-  end if;
+  perform private.security_require_aal2_if_available(v_user);
 
   update public.security_devices
      set revoked_at=now(),is_trusted=false,is_primary=false
@@ -326,6 +332,6 @@ grant execute on function sinjira_security_internal.security_revoke_device(uuid)
 comment on function public.security_list_devices(text) is
   'Liste assainie des appareils du compte. device_key et last_session_id ne sortent jamais vers le navigateur.';
 comment on function sinjira_security_internal.security_set_device_trust(uuid,boolean,boolean) is
-  'Confiance appareil: AAL2 strict; bootstrap du premier appareil seulement, puis approbation récente par un autre appareil fiable.';
+  'Confiance appareil: AAL2 strict pour augmenter la confiance; bootstrap du premier appareil seulement, puis approbation récente par un autre appareil fiable.';
 
 commit;
