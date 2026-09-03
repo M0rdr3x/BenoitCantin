@@ -9,6 +9,7 @@ on:
       - 'supabase/functions/conscience-vault/**'
       - 'supabase/functions/_shared/auth.ts'
       - 'supabase/config.toml'
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
       - 'scripts/validate_conscience_vault_edge_v25.py'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_production_schema_manifest.py'
@@ -48,7 +49,7 @@ jobs:
           set -euo pipefail
           supabase db start
 
-      - name: Exécuter les 27 assertions pgTAP du coffre V25
+      - name: Exécuter les 31 assertions pgTAP du coffre V25
         shell: bash
         run: |
           set -euo pipefail
