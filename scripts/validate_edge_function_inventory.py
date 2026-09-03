@@ -9,9 +9,10 @@ CONFIG = ROOT / "supabase" / "config.toml"
 
 CANONICAL = {
     "admin-analytics", "admin-console", "admin-license-codes", "admin-reports",
-    "admin-sinjira-v18", "admin-social-v20", "admin-users", "delete-player-account",
-    "fracture-engine-gateway", "get-document-url", "life-story-delivery", "life-story-export",
-    "redeem-license-code", "revoke-my-contributions", "security-context", "send-game-report",
+    "admin-sinjira-v18", "admin-social-v20", "admin-users", "conscience-vault",
+    "delete-player-account", "fracture-engine-gateway", "get-document-url",
+    "life-story-delivery", "life-story-export", "redeem-license-code",
+    "revoke-my-contributions", "security-context", "send-game-report",
     "send-player-sheet", "submit-character-questionnaire", "submit-fracture-endgame",
     "submit-game-contribution",
 }
@@ -44,6 +45,12 @@ CUSTOM_AUTH = {
 }
 
 JWT_SENSITIVE_GUARDS = {
+    "conscience-vault": (
+        "req.method !== 'POST'", "MAX_REQUEST_BYTES", "readBoundedJson", "req.body.getReader()",
+        "REQUEST_TOO_LARGE", "INVALID_JSON", "requiredVaultUser", "p_action: 'conscience_vault'",
+        "CLIENT_IDENTITY_FORBIDDEN", "Cache-Control", "private, no-store",
+        "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
+    ),
     "delete-player-account": (
         "req.method !== 'POST'", "MAX_REQUEST_BYTES=1024", "readBoundedJson", "TextEncoder",
         "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "Cache-Control", "private, no-store",
@@ -187,7 +194,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 20 fonctions canoniques, JWT/custom auth cohérents, actions sensibles bornées/no-store, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 21 fonctions canoniques, JWT/custom auth cohérents, actions sensibles bornées/no-store, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
