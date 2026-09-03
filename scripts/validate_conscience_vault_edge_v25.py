@@ -151,6 +151,12 @@ def main() -> int:
         "v_challenge.status='denied'",
         "v_challenge.status='pending'",
         "interval '30 minutes'",
+        'resolver.id=v_challenge.resolved_device_id',
+        'resolver.user_id=p_user_id',
+        'resolver.id<>v_device.id',
+        'resolver.is_trusted',
+        'resolver.revoked_at is null',
+        "'other_trusted_device_required',true",
         "trusted_device_confirmation_required",
         "approved_recently",
         "denied_recently",
@@ -227,7 +233,7 @@ def main() -> int:
         'devices.find(d=>d.device_key',
     ], 'le navigateur ne lit ni ne compare device_key')
 
-    print('OK coffre V25: JWT + AAL2 obligatoire, corps borné, no-store, identité dérivée, scope serveur conscience_vault, challenge continu, device_key non exposé et confiance appareil confirmée.')
+    print('OK coffre V25: JWT + AAL2 obligatoire, corps borné, no-store, identité dérivée, scope serveur conscience_vault, approbation par autre appareil fiable, device_key non exposé et confiance appareil confirmée.')
     return 0
 
 
