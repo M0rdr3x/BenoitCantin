@@ -6,7 +6,10 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/personal_consciousness_vault_v25.test.sql'
+      - 'supabase/functions/conscience-vault/**'
+      - 'supabase/functions/_shared/auth.ts'
       - 'supabase/config.toml'
+      - 'scripts/validate_conscience_vault_edge_v25.py'
       - '.github/workflows/sinjira-consciousness-vault-v25.yml'
   workflow_dispatch:
 
@@ -22,6 +25,12 @@ jobs:
         uses: actions/checkout@v6
         with:
           persist-credentials: false
+
+      - name: Vérifier le contrat de sécurité Edge du coffre
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_conscience_vault_edge_v25.py
 
       - name: Installer Supabase CLI
         uses: supabase/setup-cli@v2
