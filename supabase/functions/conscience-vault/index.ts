@@ -1,9 +1,70 @@
-import { corsHeaders, json } from '../_shared/cors.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 import { requiredVaultUser } from '../_shared/auth.ts';
 
 const MAX_CONTENT_BYTES = 1024 * 1024;
-const MAX_REQUEST_BYTES = MAX_CONTENT_BYTES + 64 * 1024;
+// Un JSON peut représenter un même texte avec des séquences \uXXXX plus longues.
+// La limite de transport reste bornée tout en permettant une entrée décodée de 1 Mio.
+const MAX_REQUEST_BYTES = MAX_CONTENT_BYTES * 6 + 64 * 1024;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const PRIVATE_HEADERS = {
+  ...corsHeaders,
+  'Content-Type': 'application/json; charset=utf-8',
+  'Cache-Control': 'private, no-store, max-age=0',
+  'Pragma': 'no-cache',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer'
+};
+
+function privateJson(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), { status, headers: PRIVATE_HEADERS });
+}
+
+async function readBoundedJson(req: Request) {
+  const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
+  if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');
+
+  const declaredRaw = req.headers.get('content-length');
+  if (declaredRaw) {
+    const declared = Number(declaredRaw);
+    if (Number.isFinite(declared) && declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
+  }
+
+  if (!req.body) throw new Error('INVALID_JSON');
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      total += value.byteLength;
+      if (total > MAX_REQUEST_BYTES) {
+        await reader.cancel('REQUEST_TOO_LARGE').catch(() => undefined);
+        throw new Error('REQUEST_TOO_LARGE');
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+  } catch {
+    throw new Error('INVALID_JSON');
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('INVALID_JSON');
+  return parsed as Record<string, unknown>;
+}
 
 function safeText(value: unknown, max: number) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -97,6 +158,9 @@ function errorCode(error: unknown) {
     'MFA_SETUP_REQUIRED',
     'MFA_REQUIRED',
     'MFA_STATE_UNAVAILABLE',
+    'JSON_REQUIRED',
+    'REQUEST_TOO_LARGE',
+    'INVALID_JSON',
     'CLIENT_IDENTITY_FORBIDDEN',
     'VAULT_SESSION_REQUIRED',
     'VAULT_SESSION_INVALID',
@@ -111,20 +175,12 @@ function errorCode(error: unknown) {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return json({ ok: false, error: 'Méthode non autorisée.' }, 405);
-
-  const declaredLength = Number(req.headers.get('content-length') || '0');
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BYTES) {
-    return json({ ok: false, error: 'Requête trop volumineuse.', code: 'REQUEST_TOO_LARGE' }, 413);
-  }
+  if (req.method !== 'POST') return privateJson({ ok: false, error: 'Méthode non autorisée.', code: 'METHOD_NOT_ALLOWED' }, 405);
 
   try {
     // AAL2 est vérifié à CHAQUE appel. Une capacité de coffre ne remplace jamais le JWT.
     const { user, service } = await requiredVaultUser(req);
-    const parsed = await req.json().catch(() => ({}));
-    const body = parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? parsed as Record<string, unknown>
-      : {};
+    const body = await readBoundedJson(req);
 
     // L'identité vient exclusivement du JWT vérifié par requiredVaultUser().
     rejectClientIdentity(body);
@@ -134,7 +190,7 @@ Deno.serve(async (req) => {
     if (action === 'open_session') {
       const deviceKey = safeText(body.device_key, 128);
       if (deviceKey.length < 16) {
-        return json({ ok: false, error: 'Identifiant d’appareil invalide.', code: 'DEVICE_KEY_INVALID' }, 400);
+        return privateJson({ ok: false, error: 'Identifiant d’appareil invalide.', code: 'DEVICE_KEY_INVALID' }, 400);
       }
 
       const ttlRaw = body.ttl_seconds == null ? 300 : Number(body.ttl_seconds);
@@ -159,7 +215,7 @@ Deno.serve(async (req) => {
       const publicDecision = publicSecurityDecision(security);
 
       if (decision.outcome === 'challenge') {
-        return json({
+        return privateJson({
           ok: false,
           error: 'Une vérification de sécurité supplémentaire est requise.',
           code: 'SECURITY_CHALLENGE_REQUIRED',
@@ -168,7 +224,7 @@ Deno.serve(async (req) => {
         }, 403);
       }
       if (decision.outcome === 'block' || decision.score >= 75) {
-        return json({
+        return privateJson({
           ok: false,
           error: 'Accès au coffre refusé par la protection du compte.',
           code: 'SECURITY_BLOCKED',
@@ -191,7 +247,7 @@ Deno.serve(async (req) => {
       });
       if (sessionError || !validUuid(sessionId)) throw new Error('VAULT_OPERATION_REFUSED');
 
-      return json({
+      return privateJson({
         ok: true,
         vault_session_id: sessionId,
         expires_in_seconds: ttlRaw,
@@ -216,7 +272,7 @@ Deno.serve(async (req) => {
         p_session_id: sessionId
       });
       if (error) throw new Error(error.message || 'VAULT_OPERATION_REFUSED');
-      return json({ ok: true, entries: Array.isArray(data) ? data : [] });
+      return privateJson({ ok: true, entries: Array.isArray(data) ? data : [] });
     }
 
     if (action === 'create_entry') {
@@ -229,7 +285,7 @@ Deno.serve(async (req) => {
         p_content_payload: payload
       });
       if (error) throw new Error(error.message || 'VAULT_OPERATION_REFUSED');
-      return json({ ok: true, entry_id: entryId });
+      return privateJson({ ok: true, entry_id: entryId });
     }
 
     if (action === 'update_entry') {
@@ -245,7 +301,7 @@ Deno.serve(async (req) => {
         p_content_payload: payload
       });
       if (error) throw new Error(error.message || 'VAULT_OPERATION_REFUSED');
-      return json({ ok: true, updated: updated === true });
+      return privateJson({ ok: true, updated: updated === true });
     }
 
     if (action === 'delete_entry') {
@@ -257,7 +313,7 @@ Deno.serve(async (req) => {
         p_entry_id: id
       });
       if (error) throw new Error(error.message || 'VAULT_OPERATION_REFUSED');
-      return json({ ok: true, deleted: deleted === true });
+      return privateJson({ ok: true, deleted: deleted === true });
     }
 
     if (action === 'revoke_session') {
@@ -266,36 +322,45 @@ Deno.serve(async (req) => {
         p_session_id: sessionId
       });
       if (error) throw new Error(error.message || 'VAULT_OPERATION_REFUSED');
-      return json({ ok: true, revoked: revoked === true });
+      return privateJson({ ok: true, revoked: revoked === true });
     }
 
-    return json({ ok: false, error: 'Action inconnue.', code: 'UNKNOWN_ACTION' }, 400);
+    return privateJson({ ok: false, error: 'Action inconnue.', code: 'UNKNOWN_ACTION' }, 400);
   } catch (error) {
     const code = errorCode(error);
     // Ne jamais journaliser le corps de requête, le contenu du Registre ou un objet d'erreur SQL complet.
     console.warn('[conscience-vault] opération refusée', code);
 
     if (code === 'AUTH_REQUIRED') {
-      return json({ ok: false, error: 'Connexion requise.', code }, 401);
+      return privateJson({ ok: false, error: 'Connexion requise.', code }, 401);
     }
     if (code === 'MFA_SETUP_REQUIRED') {
-      return json({ ok: false, error: 'Une authentification renforcée doit être configurée avant d’ouvrir le coffre.', code }, 403);
+      return privateJson({ ok: false, error: 'Une authentification renforcée doit être configurée avant d’ouvrir le coffre.', code }, 403);
     }
     if (code === 'MFA_REQUIRED') {
-      return json({ ok: false, error: 'Une vérification renforcée est requise.', code }, 403);
+      return privateJson({ ok: false, error: 'Une vérification renforcée est requise.', code }, 403);
     }
     if (code === 'MFA_STATE_UNAVAILABLE' || code === 'SECURITY_DECISION_INVALID') {
-      return json({ ok: false, error: 'La protection du coffre est temporairement indisponible.', code }, 503);
+      return privateJson({ ok: false, error: 'La protection du coffre est temporairement indisponible.', code }, 503);
+    }
+    if (code === 'JSON_REQUIRED') {
+      return privateJson({ ok: false, error: 'Corps JSON requis.', code }, 415);
+    }
+    if (code === 'REQUEST_TOO_LARGE') {
+      return privateJson({ ok: false, error: 'Requête trop volumineuse.', code }, 413);
+    }
+    if (code === 'INVALID_JSON') {
+      return privateJson({ ok: false, error: 'JSON invalide.', code }, 400);
     }
     if (code === 'CLIENT_IDENTITY_FORBIDDEN') {
-      return json({ ok: false, error: 'L’identité du compte ne peut pas être fournie par le client.', code }, 400);
+      return privateJson({ ok: false, error: 'L’identité du compte ne peut pas être fournie par le client.', code }, 400);
     }
     if (code === 'VAULT_TTL_INVALID' || code === 'VAULT_ENTRY_ID_INVALID' || code === 'VAULT_ENTRY_TYPE_INVALID' || code === 'VAULT_ENTRY_CONTENT_INVALID') {
-      return json({ ok: false, error: 'Données de coffre invalides.', code }, 400);
+      return privateJson({ ok: false, error: 'Données de coffre invalides.', code }, 400);
     }
     if (code === 'VAULT_SESSION_REQUIRED' || code === 'VAULT_SESSION_INVALID') {
-      return json({ ok: false, error: 'Session de coffre invalide ou expirée.', code }, 403);
+      return privateJson({ ok: false, error: 'Session de coffre invalide ou expirée.', code }, 403);
     }
-    return json({ ok: false, error: 'Opération du coffre refusée.', code }, 400);
+    return privateJson({ ok: false, error: 'Opération du coffre refusée.', code }, 400);
   }
 });
