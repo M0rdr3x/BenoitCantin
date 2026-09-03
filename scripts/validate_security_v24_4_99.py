@@ -17,6 +17,15 @@ def forbid(text, markers, label):
     found=[m for m in markers if m in text]
     if found: raise AssertionError(f'{label}: marqueurs interdits: {found}')
 
+def numeric_version(value):
+    try:
+        parts=tuple(int(part) for part in str(value).split('.'))
+    except (TypeError,ValueError):
+        raise AssertionError(f'app.json: version mobile invalide: {value!r}')
+    if len(parts)!=3:
+        raise AssertionError(f'app.json: version mobile invalide: {value!r}')
+    return parts
+
 def main():
     migration=read('supabase/migrations/20260822011003_v24_4_99_recovery_and_lost_device_security.sql')
     require(migration,[
@@ -62,10 +71,16 @@ def main():
     require(center,['sinjira-security-v24-4-99.js?v=24.4.99','Déclarer perdu','aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'],'page Ma sécurité')
 
     app=json.loads(read('mobile-native/app.json'))['expo']
-    if app.get('version')!='24.4.99': raise AssertionError('app.json: version mobile différente de 24.4.99')
+    version=numeric_version(app.get('version'))
+    if version<(24,4,99): raise AssertionError('app.json: la version mobile ne peut pas régresser sous 24.4.99')
     if app.get('extra',{}).get('webOrigin')!='https://www.benoitcantin.com': raise AssertionError('app.json: origine active ne doit pas migrer avant le DNS')
-    if app.get('ios',{}).get('buildNumber')!='24499': raise AssertionError('app.json: buildNumber iOS inattendu')
-    if app.get('android',{}).get('versionCode')!=24499: raise AssertionError('app.json: versionCode Android inattendu')
+    try:
+        ios_build=int(app.get('ios',{}).get('buildNumber','0'))
+    except (TypeError,ValueError):
+        raise AssertionError('app.json: buildNumber iOS invalide')
+    if ios_build<24499: raise AssertionError('app.json: buildNumber iOS ne peut pas régresser sous 24499')
+    android_build=app.get('android',{}).get('versionCode')
+    if not isinstance(android_build,int) or android_build<24499: raise AssertionError('app.json: versionCode Android ne peut pas régresser sous 24499')
     domains=set(app.get('ios',{}).get('associatedDomains',[]))
     for domain in ('applinks:www.benoitcantin.com','applinks:sinjira.com','applinks:www.sinjira.com'):
         if domain not in domains: raise AssertionError(f'app.json: domaine iOS absent: {domain}')
@@ -77,7 +92,7 @@ def main():
         "parsed.protocol === 'https:'",
         "'sinjira.com'",
         "'www.sinjira.com'",
-        'Application mobile · V24.4.99',
+        'Application mobile · V',
         'v=24.4.99',
     ],'runtime mobile')
 
@@ -100,7 +115,7 @@ def main():
     ledger=read('supabase/production-migration-ledger.txt')
     require(ledger,['20260822011003 v24_4_99_recovery_and_lost_device_security'],'ledger production')
 
-    print('OK SINJIRA V24.4.99: récupération AAL2, appareil perdu, mobile migrable, passkeys différées, domaine et gouvernance contrôlés.')
+    print(f'OK SINJIRA >=V24.4.99 ({app.get("version")}): récupération AAL2, appareil perdu, mobile migrable, passkeys différées, domaine et gouvernance contrôlés.')
     return 0
 
 if __name__=='__main__':
