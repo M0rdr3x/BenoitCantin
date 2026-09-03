@@ -38,6 +38,7 @@ def main() -> int:
     edge = read('supabase/functions/conscience-vault/index.ts')
     config = read('supabase/config.toml')
     migration = read('supabase/migrations/20260902223000_sinjira_v25_0_personal_consciousness_vault.sql')
+    continuity = read('supabase/migrations/20260902231500_sinjira_v25_0_conscience_vault_challenge_continuity.sql')
 
     require(auth, [
         'getAuthenticatorAssuranceLevel(token)',
@@ -77,7 +78,7 @@ def main() -> int:
         "'Referrer-Policy': 'no-referrer'",
         "['user_id', 'target_user_id', 'subject_user_id']",
         "throw new Error('CLIENT_IDENTITY_FORBIDDEN')",
-        "p_action: 'conscience_vault'",
+        "service.rpc('service_conscience_evaluate_access'",
         "security?.risk_model_version !== 'v25.0'",
         'security?.mandatory_step_up !== true',
         'security?.requires_step_up !== true',
@@ -95,10 +96,12 @@ def main() -> int:
         'client_geo_accepted: false',
         'raw_ip_stored: false',
         'gps_used: false',
+        'trusted_device_confirmation',
         "console.warn('[conscience-vault] opération refusée', code)",
     ], 'contrat Edge du Registre personnel')
 
     forbid(edge, [
+        "service.rpc('security_evaluate_context'",
         'requiredSensitiveUser',
         ".schema('private')",
         ".from('conscience_entries')",
@@ -136,7 +139,27 @@ def main() -> int:
         "check (expires_at <= issued_at + interval '10 minutes')",
     ], 'barrières SQL du coffre')
 
-    print('OK coffre V25: JWT + AAL2 obligatoire, corps borné, no-store, identité dérivée, risque conscience_vault et RPC étroites sans accès direct au schéma private.')
+    require(continuity, [
+        'create or replace function public.service_conscience_evaluate_access(',
+        'perform private.conscience_vault_require_service_role()',
+        'public.security_evaluate_context(',
+        "'conscience_vault'",
+        "e.action_name='conscience_vault'",
+        "v_challenge.status='approved'",
+        "v_challenge.status='denied'",
+        "v_challenge.status='pending'",
+        "interval '30 minutes'",
+        "trusted_device_confirmation_required",
+        "approved_recently",
+        "denied_recently",
+        "'trusted_device_confirmation','pending'",
+        "'trusted_device_confirmation','reissued'",
+        'revoke all on function public.service_conscience_evaluate_access(uuid,text,text,text,text,text,text)',
+        'grant execute on function public.service_conscience_evaluate_access(uuid,text,text,text,text,text,text)',
+        'to service_role',
+    ], 'continuité du challenge appareil fiable')
+
+    print('OK coffre V25: JWT + AAL2 obligatoire, corps borné, no-store, identité dérivée, scope serveur conscience_vault, challenge continu et RPC étroites sans accès direct au schéma private.')
     return 0
 
 
