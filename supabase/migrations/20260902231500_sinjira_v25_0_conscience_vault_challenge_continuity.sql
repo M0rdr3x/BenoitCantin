@@ -104,10 +104,19 @@ begin
 
   if found then
     -- L'approbation est une autorisation fraîche, pas une confiance permanente.
-    -- Elle couvre largement une capacité de coffre (10 min max), puis une nouvelle
-    -- ouverture sur appareil non fiable redemande une confirmation.
+    -- Quand un autre appareil fiable existe, le coffre exige que cette approbation
+    -- provienne réellement d'un autre appareil toujours fiable et non révoqué.
     if v_challenge.status='approved'
-       and coalesce(v_challenge.resolved_at,v_challenge.created_at) > v_now-interval '30 minutes' then
+       and coalesce(v_challenge.resolved_at,v_challenge.created_at) > v_now-interval '30 minutes'
+       and exists(
+         select 1
+         from public.security_devices resolver
+         where resolver.id=v_challenge.resolved_device_id
+           and resolver.user_id=p_user_id
+           and resolver.id<>v_device.id
+           and resolver.is_trusted
+           and resolver.revoked_at is null
+       ) then
       return v_result || jsonb_build_object(
         'trusted_device_confirmation','approved_recently',
         'challenge_id',v_challenge.id
@@ -139,7 +148,7 @@ begin
         'risk_reasons',coalesce(v_result->'risk_reasons','[]'::jsonb) || jsonb_build_array('trusted_device_confirmation_required'),
         'challenge_id',v_challenge.id,
         'display_code',v_challenge.display_code,
-        'mfa_or_other_trusted_device_required',true,
+        'other_trusted_device_required',true,
         'trusted_device_confirmation','pending'
       );
     end if;
@@ -195,7 +204,7 @@ begin
     'risk_reasons',coalesce(v_result->'risk_reasons','[]'::jsonb) || jsonb_build_array('trusted_device_confirmation_required'),
     'challenge_id',v_challenge.id,
     'display_code',v_challenge.display_code,
-    'mfa_or_other_trusted_device_required',true,
+    'other_trusted_device_required',true,
     'trusted_device_confirmation','reissued'
   );
 end;
@@ -207,6 +216,6 @@ grant execute on function public.service_conscience_evaluate_access(uuid,text,te
 to service_role;
 
 comment on function public.service_conscience_evaluate_access(uuid,text,text,text,text,text,text) is
-  'Serveur seulement. Enveloppe security_evaluate_context pour conscience_vault, limite les approbations appareil à 30 min et maintient pending/refus entre retries avec anti-fatigue.';
+  'Serveur seulement. Enveloppe security_evaluate_context pour conscience_vault; si un autre appareil fiable existe, son approbation récente est obligatoire, avec continuité pending/refus et anti-fatigue.';
 
 commit;
