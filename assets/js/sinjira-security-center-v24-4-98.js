@@ -77,13 +77,13 @@ function renderOverview({devices=[],connections=[],travel=[],challenges=[],setti
   }
 }
 
-function renderDevices(devices,meta){
+function renderDevices(devices){
   const node=qs('[data-security-devices]');if(!node)return;
   if(!devices.length){node.innerHTML=empty('Aucun appareil enregistré.');return}
   node.innerHTML=devices.map(d=>{
-    const current=d.device_key===meta.device_key;
+    const current=d.is_current===true;
     const badges=[current&&pill('Cet appareil','good'),d.is_primary&&pill('Principal','good'),d.is_trusted&&pill('Fiable','good'),d.revoked_at&&pill('Révoqué','danger')].filter(Boolean).join(' ');
-    return `<article class="security-item" data-device-id="${d.id}"><div class="security-item-head"><div><h3>${escapeHtml(d.display_name||'Appareil SINJIRA')}</h3><div>${badges}</div></div><small>Dernière activité : ${escapeHtml(formatDate(d.last_seen_at))}</small></div><p><small>${escapeHtml(d.device_type||'appareil')} · ${escapeHtml(d.platform||'plateforme non précisée')}</small></p>${d.last_country_code?`<p><small>Dernière région de sécurité : ${escapeHtml(d.last_country_code)}${d.last_region_code?` · ${escapeHtml(d.last_region_code)}`:''}</small></p>`:''}<div class="security-actions">${!d.revoked_at&&!d.is_trusted?`<button class="btn btn-secondary" type="button" data-device-trust="${d.id}">Marquer fiable</button>`:''}${!d.revoked_at&&d.is_trusted&&!d.is_primary?`<button class="btn btn-secondary" type="button" data-device-primary="${d.id}">Définir principal</button>`:''}${!d.revoked_at&&d.is_trusted?`<button class="btn btn-secondary" type="button" data-device-untrust="${d.id}">Retirer la confiance</button>`:''}${!d.revoked_at&&!current?`<button class="btn btn-secondary" type="button" data-device-revoke="${d.id}">Révoquer</button>`:''}</div></article>`;
+    return `<article class="security-item" data-device-id="${d.id}"><div class="security-item-head"><div><h3>${escapeHtml(d.display_name||'Appareil SINJIRA')}</h3><div>${badges}</div></div><small>Dernière activité : ${escapeHtml(formatDate(d.last_seen_at))}</small></div><p><small>${escapeHtml(d.device_type||'appareil')} · ${escapeHtml(d.platform||'plateforme non précisée')}</small></p>${d.last_country_code?`<p><small>Dernière région de sécurité : ${escapeHtml(d.last_country_code)}${d.last_region_code?` · ${escapeHtml(d.last_region_code)}`:''}</small></p>`:''}<div class="security-actions">${!d.revoked_at&&!d.is_trusted&&current?`<button class="btn btn-secondary" type="button" data-device-trust="${d.id}">Marquer cet appareil fiable</button>`:''}${!d.revoked_at&&d.is_trusted&&!d.is_primary?`<button class="btn btn-secondary" type="button" data-device-primary="${d.id}">Définir principal</button>`:''}${!d.revoked_at&&d.is_trusted?`<button class="btn btn-secondary" type="button" data-device-untrust="${d.id}">Retirer la confiance</button>`:''}${!d.revoked_at&&!current?`<button class="btn btn-secondary" type="button" data-device-revoke="${d.id}">Révoquer</button>`:''}</div></article>`;
   }).join('');
 }
 
@@ -116,18 +116,18 @@ function renderTravel(rows){
   node.innerHTML=rows.map(r=>`<article class="security-item"><div class="security-item-head"><div><h3>${escapeHtml((r.destinations||[]).join(' → '))}</h3>${pill(r.status,r.status==='active'?'good':'')}</div><small>${escapeHtml(formatDate(r.starts_at))} → ${escapeHtml(formatDate(r.ends_at))}</small></div><p><small>Suppression prévue : ${escapeHtml(formatDate(r.delete_after))}</small></p>${r.status==='active'?`<div class="security-actions"><button class="btn btn-secondary" type="button" data-travel-cancel="${r.id}">Annuler ce voyage</button></div>`:''}</article>`).join('');
 }
 
-function renderChallenges(rows,devices,meta){
+function renderChallenges(rows,devices){
   const node=qs('[data-security-challenges]');if(!node)return;
   const pending=rows.filter(r=>r.status==='pending'&&new Date(r.expires_at)>new Date());
   if(!pending.length){node.innerHTML=empty('Aucune connexion ne demande votre confirmation.');return}
-  const currentDevice=devices.find(d=>d.device_key===meta.device_key&&!d.revoked_at)||null;
+  const currentDevice=devices.find(d=>d.is_current===true&&!d.revoked_at)||null;
   node.innerHTML=pending.map(r=>{
     const sameRequestDevice=Boolean(currentDevice&&currentDevice.id===r.request_device_id);
     const canResolve=Boolean(currentDevice&&currentDevice.is_trusted&&!sameRequestDevice);
     const controls=canResolve
       ? `<div class="security-actions"><button class="btn btn-primary" type="button" data-challenge-approve="${r.id}">Autoriser</button><button class="btn btn-secondary" type="button" data-challenge-deny="${r.id}">Refuser</button></div>`
       : sameRequestDevice
-        ? '<p><small>Cette tentative provient de cet appareil. Elle doit être confirmée par votre MFA pendant la connexion ou depuis un autre appareil déjà fiable.</small></p>'
+        ? '<p><small>Cette tentative provient de cet appareil. Elle doit être confirmée depuis un autre appareil déjà fiable.</small></p>'
         : '<p><small>Pour autoriser ou refuser cette tentative, utilisez un autre appareil déjà marqué comme fiable.</small></p>';
     return `<article class="security-item"><div class="security-item-head"><div><h3>Nouvelle connexion à confirmer</h3>${pill('En attente','warn')}</div><small>Expire : ${escapeHtml(formatDate(r.expires_at))}</small></div><p>Code de vérification : <span class="security-code">${escapeHtml(r.display_code)}</span></p>${controls}</article>`;
   }).join('');
@@ -140,14 +140,14 @@ function fillSettings(settings){
 async function loadState(meta,context=null){
   const [settings,devices,sessions,travel,connections,events,challenges]=await Promise.all([
     rpc('security_get_settings'),
-    getSupabase().from('security_devices').select('*').order('last_seen_at',{ascending:false}).then(({data,error})=>{if(error)throw error;return data||[]}),
+    rpc('security_list_devices',{p_current_device_key:meta.device_key}),
     rpc('security_list_sessions'),
     getSupabase().from('security_travel_plans').select('*').order('starts_at',{ascending:false}).limit(20).then(({data,error})=>{if(error)throw error;return data||[]}),
     getSupabase().from('security_connection_events').select('*').order('occurred_at',{ascending:false}).limit(MAX_RECENT).then(({data,error})=>{if(error)throw error;return data||[]}),
     getSupabase().from('security_events').select('*').order('created_at',{ascending:false}).limit(MAX_RECENT).then(({data,error})=>{if(error)throw error;return data||[]}),
     getSupabase().from('security_connection_challenges').select('*').order('created_at',{ascending:false}).limit(MAX_RECENT).then(({data,error})=>{if(error)throw error;return data||[]})
   ]);
-  fillSettings(settings);renderDevices(devices,meta);renderSessions(sessions);renderTravel(travel);renderConnections(connections);renderSecurityEvents(events);renderChallenges(challenges,devices,meta);renderOverview({devices,connections,travel,challenges,settings,context});
+  fillSettings(settings);renderDevices(devices);renderSessions(sessions);renderTravel(travel);renderConnections(connections);renderSecurityEvents(events);renderChallenges(challenges,devices);renderOverview({devices,connections,travel,challenges,settings,context});
   return {settings,devices,sessions,travel,connections,events,challenges};
 }
 
@@ -166,6 +166,14 @@ async function createTravel(form){
 
 function confirmAction(message){return globalThis.confirm(message)}
 
+function friendlySecurityError(error){
+  const message=error?.message||String(error||'Erreur de sécurité.');
+  if(message.includes('TRUST_CONFIRMATION_REQUIRED'))return 'Cet appareil doit d’abord être autorisé depuis un autre appareil déjà fiable.';
+  if(message.includes('CURRENT_DEVICE_REQUIRED'))return 'Seul l’appareil que vous utilisez actuellement peut être marqué comme fiable.';
+  if(message.includes('AAL2_REQUIRED'))return 'Une vérification MFA récente est requise pour modifier la confiance des appareils.';
+  return message;
+}
+
 async function boot(){
   const meta=deviceMetadata();
   try{
@@ -174,12 +182,12 @@ async function boot(){
     const contextResult=await registerContext(meta);
     let state=await loadState(meta,contextResult.context);
 
-    qs('[data-security-settings-save]')?.addEventListener('click',async()=>{try{await saveSettings();state=await loadState(meta,contextResult.context)}catch(e){status(e.message||String(e),'error')}});
-    qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{e.preventDefault();try{await createTravel(e.currentTarget);state=await loadState(meta,contextResult.context)}catch(err){status(err.message||String(err),'error')}});
-    qs('[data-security-refresh]')?.addEventListener('click',async()=>{try{state=await loadState(meta,contextResult.context);status('État de sécurité actualisé.','success')}catch(e){status(e.message||String(e),'error')}});
+    qs('[data-security-settings-save]')?.addEventListener('click',async()=>{try{await saveSettings();state=await loadState(meta,contextResult.context)}catch(e){status(friendlySecurityError(e),'error')}});
+    qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{e.preventDefault();try{await createTravel(e.currentTarget);state=await loadState(meta,contextResult.context)}catch(err){status(friendlySecurityError(err),'error')}});
+    qs('[data-security-refresh]')?.addEventListener('click',async()=>{try{state=await loadState(meta,contextResult.context);status('État de sécurité actualisé.','success')}catch(e){status(friendlySecurityError(e),'error')}});
     qs('[data-security-compromised]')?.addEventListener('click',async()=>{
       if(!confirmAction('Révoquer les autres appareils SINJIRA et fermer leurs sessions ?'))return;
-      try{await rpc('security_compromise_account',{p_current_device_key:meta.device_key});await getSupabase().auth.signOut({scope:'others'});state=await loadState(meta,contextResult.context);status('Mesures d’urgence appliquées : autres appareils révoqués et autres sessions fermées.','success')}catch(e){status(e.message||String(e),'error')}
+      try{await rpc('security_compromise_account',{p_current_device_key:meta.device_key});await getSupabase().auth.signOut({scope:'others'});state=await loadState(meta,contextResult.context);status('Mesures d’urgence appliquées : autres appareils révoqués et autres sessions fermées.','success')}catch(e){status(friendlySecurityError(e),'error')}
     });
 
     document.addEventListener('click',async e=>{
@@ -194,11 +202,11 @@ async function boot(){
         else if(target.dataset.challengeDeny){await rpc('security_resolve_connection_challenge',{p_challenge_id:target.dataset.challengeDeny,p_device_key:meta.device_key,p_decision:'denied'});status('Connexion refusée. Vérifiez vos appareils si vous ne reconnaissez pas cette tentative.','success')}
         else return;
         state=await loadState(meta,contextResult.context);
-      }catch(err){status(err.message||String(err),'error')}
+      }catch(err){status(friendlySecurityError(err),'error')}
     });
 
     status('Centre de sécurité prêt.','success');
-  }catch(error){console.error('[SINJIRA security center]',error);status(error.message||String(error),'error')}
+  }catch(error){console.error('[SINJIRA security center]',error);status(friendlySecurityError(error),'error')}
 }
 
 boot();

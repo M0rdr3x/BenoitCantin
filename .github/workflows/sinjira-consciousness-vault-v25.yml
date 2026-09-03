@@ -1,0 +1,61 @@
+name: SINJIRA V25 — Coffre des consciences
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/personal_consciousness_vault_v25.test.sql'
+      - 'supabase/functions/conscience-vault/**'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'supabase/config.toml'
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
+      - 'scripts/validate_conscience_vault_edge_v25.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - '.github/workflows/sinjira-consciousness-vault-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  consciousness-vault-pgtap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Vérifier le contrat de sécurité Edge du coffre
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_conscience_vault_edge_v25.py
+          python3 scripts/validate_edge_function_inventory.py
+          python3 scripts/validate_production_schema_manifest.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+          github-token: ${{ github.token }}
+
+      - name: Démarrer PostgreSQL Supabase local et appliquer les migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db start
+
+      - name: Exécuter les 31 assertions pgTAP du coffre V25
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase test db supabase/tests/personal_consciousness_vault_v25.test.sql --local
+
+      - name: Arrêter la base locale
+        if: always()
+        shell: bash
+        run: supabase stop --no-backup || true
