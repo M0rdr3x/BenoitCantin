@@ -59,8 +59,8 @@ def main() -> int:
         "throw new Error('MFA_REQUIRED')",
     ], 'AAL2 obligatoire du coffre')
     forbid(vault_auth, [
-        'sensitiveStepUpEnabled',
-        'sensitive_step_up',
+        'sensitiveStepUpEnabled(context)',
+        ".from('security_user_settings')",
     ], 'AAL2 du coffre ne dépend pas des préférences')
 
     require(edge, [
