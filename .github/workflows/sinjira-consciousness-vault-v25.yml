@@ -9,8 +9,14 @@ on:
       - 'supabase/functions/conscience-vault/**'
       - 'supabase/functions/_shared/auth.ts'
       - 'supabase/config.toml'
+      - 'compte/registre-personnel.html'
+      - 'compte/index.html'
+      - 'compte/histoire-de-vie.html'
+      - 'assets/js/sinjira-consciousness-vault-v25.js'
+      - 'assets/css/sinjira-consciousness-vault-v25.css'
       - 'assets/js/sinjira-security-center-v24-4-98.js'
       - 'scripts/validate_conscience_vault_edge_v25.py'
+      - 'scripts/validate_conscience_vault_web_v25.py'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_production_schema_manifest.py'
       - '.github/workflows/sinjira-consciousness-vault-v25.yml'
@@ -29,11 +35,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Vérifier le contrat de sécurité Edge du coffre
+      - name: Vérifier les contrats de sécurité du coffre
         shell: bash
         run: |
           set -euo pipefail
           python3 scripts/validate_conscience_vault_edge_v25.py
+          python3 scripts/validate_conscience_vault_web_v25.py
           python3 scripts/validate_edge_function_inventory.py
           python3 scripts/validate_production_schema_manifest.py
 
