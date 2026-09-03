@@ -36,9 +36,11 @@ def function_block(text: str, start_marker: str, end_marker: str) -> str:
 def main() -> int:
     auth = read('supabase/functions/_shared/auth.ts')
     edge = read('supabase/functions/conscience-vault/index.ts')
+    security_ui = read('assets/js/sinjira-security-center-v24-4-98.js')
     config = read('supabase/config.toml')
     migration = read('supabase/migrations/20260902223000_sinjira_v25_0_personal_consciousness_vault.sql')
     continuity = read('supabase/migrations/20260902231500_sinjira_v25_0_conscience_vault_challenge_continuity.sql')
+    device_hardening = read('supabase/migrations/20260903213000_sinjira_v25_0_device_key_privacy_and_trust_hardening.sql')
 
     require(auth, [
         'getAuthenticatorAssuranceLevel(token)',
@@ -159,7 +161,73 @@ def main() -> int:
         'to service_role',
     ], 'continuité du challenge appareil fiable')
 
-    print('OK coffre V25: JWT + AAL2 obligatoire, corps borné, no-store, identité dérivée, scope serveur conscience_vault, challenge continu et RPC étroites sans accès direct au schéma private.')
+    require(device_hardening, [
+        'revoke select on table public.security_devices from authenticated',
+        'device_trust_reset_v25',
+        'create or replace function sinjira_security_internal.security_list_devices(',
+        'create or replace function public.security_list_devices(',
+        'security invoker',
+        "coalesce(auth.jwt()->>'aal','aal1') <> 'aal2'",
+        "raise exception 'AAL2_REQUIRED'",
+        'v_row.last_session_id is distinct from v_session',
+        "raise exception 'CURRENT_DEVICE_REQUIRED'",
+        'v_has_other_trusted',
+        "c.status='approved'",
+        'resolver.is_trusted',
+        "c.resolved_at>now()-interval '30 minutes'",
+        "raise exception 'TRUST_CONFIRMATION_REQUIRED'",
+        'create or replace function sinjira_security_internal.security_register_device(',
+        'create or replace function sinjira_security_internal.security_set_device_trust(',
+        'create or replace function sinjira_security_internal.security_revoke_device(',
+    ], 'confidentialité device_key et confiance appareil')
+
+    list_block = function_block(
+        device_hardening,
+        'create or replace function sinjira_security_internal.security_list_devices(',
+        'create or replace function public.security_list_devices('
+    )
+    register_block = function_block(
+        device_hardening,
+        'create or replace function sinjira_security_internal.security_register_device(',
+        '-- Un appareil ne peut devenir fiable'
+    )
+    trust_block = function_block(
+        device_hardening,
+        'create or replace function sinjira_security_internal.security_set_device_trust(',
+        'create or replace function sinjira_security_internal.security_revoke_device('
+    )
+    revoke_block = function_block(
+        device_hardening,
+        'create or replace function sinjira_security_internal.security_revoke_device(',
+        '-- Les fonctions internes restent derrière'
+    )
+    for block, label in [
+        (list_block, 'liste appareils'),
+        (register_block, 'enregistrement appareil'),
+        (trust_block, 'confiance appareil'),
+        (revoke_block, 'révocation appareil'),
+    ]:
+        forbid(block, [
+            "'device_key',",
+            "'last_session_id',",
+            'to_jsonb(v_row)',
+        ], f'{label}: aucune clé appareil dans la réponse')
+
+    require(security_ui, [
+        "rpc('security_list_devices',{p_current_device_key:meta.device_key})",
+        'const current=d.is_current===true',
+        'devices.find(d=>d.is_current===true&&!d.revoked_at)',
+        "!d.revoked_at&&!d.is_trusted&&current?",
+        "message.includes('TRUST_CONFIRMATION_REQUIRED')",
+        "message.includes('CURRENT_DEVICE_REQUIRED')",
+    ], 'interface sécurité assainie')
+    forbid(security_ui, [
+        ".from('security_devices')",
+        'd.device_key',
+        'devices.find(d=>d.device_key',
+    ], 'le navigateur ne lit ni ne compare device_key')
+
+    print('OK coffre V25: JWT + AAL2 obligatoire, corps borné, no-store, identité dérivée, scope serveur conscience_vault, challenge continu, device_key non exposé et confiance appareil confirmée.')
     return 0
 
 
