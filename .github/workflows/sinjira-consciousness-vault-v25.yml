@@ -11,6 +11,7 @@ on:
       - 'supabase/config.toml'
       - 'compte/registre-personnel.html'
       - 'compte/index.html'
+      - 'compte/histoire-de-vie.html'
       - 'assets/js/sinjira-consciousness-vault-v25.js'
       - 'assets/css/sinjira-consciousness-vault-v25.css'
       - 'assets/js/sinjira-security-center-v24-4-98.js'
