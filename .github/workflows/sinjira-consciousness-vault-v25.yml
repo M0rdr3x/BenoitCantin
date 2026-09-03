@@ -1,0 +1,47 @@
+name: SINJIRA V25 — Coffre des consciences
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/personal_consciousness_vault_v25.test.sql'
+      - 'supabase/config.toml'
+      - '.github/workflows/sinjira-consciousness-vault-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  consciousness-vault-pgtap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+          github-token: ${{ github.token }}
+
+      - name: Démarrer PostgreSQL Supabase local et appliquer les migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db start
+
+      - name: Exécuter les 24 assertions pgTAP du coffre V25
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase test db supabase/tests/personal_consciousness_vault_v25.test.sql --local
+
+      - name: Arrêter la base locale
+        if: always()
+        shell: bash
+        run: supabase stop --no-backup || true
