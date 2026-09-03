@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   quickButton: { flex: 1, minHeight: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 10, borderWidth: 1, borderColor: '#252d45', backgroundColor: '#11162a' },
   quickText: { color: '#dce3ff', fontSize: 10, fontWeight: '700', textAlign: 'center' },
   webview: { flex: 1, backgroundColor: '#070914' },
-  loading: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: '#070914' },
+  loading: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: '#070914' },
   loadingText: { color: '#c8d0eb', fontSize: 14 },
   lockScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30, backgroundColor: '#070914' },
   lockTitle: { color: '#ffffff', fontSize: 22, fontWeight: '800', marginBottom: 10, textAlign: 'center' },
