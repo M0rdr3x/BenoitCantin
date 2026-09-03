@@ -10,6 +10,8 @@ on:
       - 'supabase/functions/_shared/auth.ts'
       - 'supabase/config.toml'
       - 'scripts/validate_conscience_vault_edge_v25.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_production_schema_manifest.py'
       - '.github/workflows/sinjira-consciousness-vault-v25.yml'
   workflow_dispatch:
 
@@ -31,6 +33,8 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/validate_conscience_vault_edge_v25.py
+          python3 scripts/validate_edge_function_inventory.py
+          python3 scripts/validate_production_schema_manifest.py
 
       - name: Installer Supabase CLI
         uses: supabase/setup-cli@v2
