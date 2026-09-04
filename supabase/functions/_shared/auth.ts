@@ -127,6 +127,17 @@ async function assertVaultMfa(context: Awaited<ReturnType<typeof authenticatedCo
   return aal;
 }
 
+async function assertPersonalAiMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
+  // Mon IA privée appartient au périmètre ai_private du moteur V25 : AAL2 reste
+  // obligatoire, indépendamment de la préférence sensitive_step_up.
+  const aal = await assuranceLevel(context).catch(() => {
+    throw new Error('MFA_STATE_UNAVAILABLE');
+  });
+  if (aal.nextLevel !== 'aal2') throw new Error('MFA_SETUP_REQUIRED');
+  if (aal.currentLevel !== 'aal2') throw new Error('MFA_REQUIRED');
+  return aal;
+}
+
 export async function optionalUser(req: Request) {
   try {
     return (await authenticatedContext(req)).user;
@@ -156,6 +167,16 @@ export async function requiredUser(req: Request) {
 export async function requiredVaultUser(req: Request) {
   const context = await authenticatedContext(req);
   const aal = await assertVaultMfa(context);
+  return { ...context, aal };
+}
+
+/**
+ * Contexte Mon IA V25. AAL2 est obligatoire et le service serveur n'est rendu
+ * disponible qu'après vérification du JWT réel et de l'assurance MFA.
+ */
+export async function requiredPersonalAiUser(req: Request) {
+  const context = await authenticatedContext(req);
+  const aal = await assertPersonalAiMfa(context);
   return { ...context, aal };
 }
 
