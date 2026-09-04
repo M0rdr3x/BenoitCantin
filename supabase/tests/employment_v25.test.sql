@@ -1,6 +1,6 @@
 begin;
 
-select plan(30);
+select plan(31);
 
 select has_table('public', 'employment_profiles', 'employment_profiles existe');
 select has_table('public', 'employment_applications', 'employment_applications existe');
@@ -40,7 +40,8 @@ select ok(coalesce(obj_description('public.employment_profiles'::regclass),'') i
 select ok(coalesce(obj_description('public.employment_applications'::regclass),'') ilike '%Registre personnel%', 'le suivi documente la séparation du Registre personnel');
 select ok(exists(select 1 from pg_constraint where conrelid='public.employment_profiles'::regclass and contype='c' and pg_get_constraintdef(oid) ilike '%actively_looking%'), 'les états de recherche sont bornés');
 select ok(exists(select 1 from pg_constraint where conrelid='public.employment_applications'::regclass and contype='c' and pg_get_constraintdef(oid) ilike '%accepted%'), 'les états de candidature sont bornés');
-select ok(exists(select 1 from pg_constraint where conrelid='public.employment_profiles'::regclass and contype='c' and pg_get_constraintdef(oid) ilike '%cardinality%'), 'la liste de compétences est bornée');
+select ok(exists(select 1 from pg_constraint where conrelid='public.employment_profiles'::regclass and contype='c' and pg_get_constraintdef(oid) ilike '%cardinality%'), 'le nombre de compétences est borné');
+select ok(exists(select 1 from pg_constraint where conrelid='public.employment_profiles'::regclass and contype='c' and pg_get_constraintdef(oid) ilike '%array_to_string%' and pg_get_constraintdef(oid) ilike '%2400%'), 'le volume total des compétences est borné côté SQL');
 select ok(exists(select 1 from pg_constraint where conrelid='public.employment_applications'::regclass and contype='c' and pg_get_constraintdef(oid) ilike '%https%'), 'les liens sources sont limités à HTTP/HTTPS');
 
 select * from finish();
