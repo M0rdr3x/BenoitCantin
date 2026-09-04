@@ -5,6 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MIGRATION = ROOT / 'supabase' / 'migrations' / '20260904225000_sinjira_v25_employment_foundation.sql'
 TEST = ROOT / 'supabase' / 'tests' / 'employment_v25.test.sql'
 PAGE = ROOT / 'compte' / 'emploi.html'
+DASHBOARD = ROOT / 'compte' / 'index.html'
 JS = ROOT / 'assets' / 'js' / 'sinjira-employment-v25.js'
 MANIFEST = ROOT / 'scripts' / 'validate_production_schema_manifest.py'
 
@@ -15,12 +16,13 @@ def require(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    for path in (MIGRATION, TEST, PAGE, JS, MANIFEST):
+    for path in (MIGRATION, TEST, PAGE, DASHBOARD, JS, MANIFEST):
         require(path.is_file(), f'fichier manquant: {path.relative_to(ROOT)}')
 
     migration = MIGRATION.read_text('utf-8')
     test = TEST.read_text('utf-8')
     page = PAGE.read_text('utf-8')
+    dashboard = DASHBOARD.read_text('utf-8')
     js = JS.read_text('utf-8')
     manifest = MANIFEST.read_text('utf-8')
 
@@ -46,6 +48,8 @@ def main() -> int:
     require('sinjira-employment-v25.js' in page, 'module JS Emploi non chargé')
     require('Aucune offre n’est affichée' in page, 'la limite sur les offres réelles doit être visible')
     require('Registre personnel' in page and 'Rencontres' in page and 'Mode Voyage' in page, 'séparation des usages insuffisamment expliquée')
+    require('href="emploi.html"' in dashboard, 'Emploi doit être accessible depuis Mon espace uniquement une fois la route créée')
+    require('<h2>Emploi</h2>' in dashboard, 'la carte Emploi du tableau de bord est absente')
 
     require('localStorage' not in js and 'sessionStorage' not in js, 'les données Emploi ne doivent pas être persistées dans le navigateur')
     require('.innerHTML' not in js, 'les données utilisateur doivent être rendues sans innerHTML')
@@ -53,8 +57,8 @@ def main() -> int:
     require(".from('employment_applications')" in js, 'suivi de candidatures non utilisé')
     for table in ('dating_', 'security_', 'conscience_', 'life_story_', 'registry_'):
         require(f".from('{table}" not in js.lower(), f'lecture inter-module interdite depuis {table}')
-    require("supabase.auth.getUser()" in js, 'identité utilisateur non dérivée de la session')
-    require("user_id: user.id" in js, 'écritures non liées à l’utilisateur courant')
+    require('supabase.auth.getUser()' in js, 'identité utilisateur non dérivée de la session')
+    require('user_id: user.id' in js, 'écritures non liées à l’utilisateur courant')
     require("rel = 'noopener noreferrer'" in js, 'liens externes non durcis')
     require('select * from finish()' in test.lower(), 'test pgTAP incomplet')
 
