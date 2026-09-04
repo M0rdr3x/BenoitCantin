@@ -1,0 +1,42 @@
+name: SINJIRA V25 — Emploi
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'compte/emploi.html'
+      - 'compte/index.html'
+      - 'assets/js/sinjira-employment-v25.js'
+      - 'supabase/migrations/**employment**.sql'
+      - 'supabase/tests/employment_v25.test.sql'
+      - 'scripts/validate_employment_v25.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - '.github/workflows/sinjira-employment-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  employment-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Valider le contrat Emploi V25
+        run: python3 scripts/validate_employment_v25.py
+      - name: Valider la classification du schéma
+        run: python3 scripts/validate_production_schema_manifest.py
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+      - name: Démarrer Supabase local
+        run: supabase db start
+      - name: Tester Emploi avec pgTAP
+        run: supabase test db supabase/tests/employment_v25.test.sql --local
+      - name: Arrêter Supabase local
+        if: always()
+        run: supabase stop --no-backup || true
