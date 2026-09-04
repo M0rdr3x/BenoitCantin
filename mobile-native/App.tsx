@@ -55,18 +55,18 @@ Notifications.setNotificationHandler({
 });
 
 const tabs = [
-  { key: 'feed', label: 'Fil', path: '/app/' },
-  { key: 'world', label: 'Monde', path: '/compte/monde-parallele.html' },
+  { key: 'home', label: 'Accueil', path: '/app/' },
   { key: 'messages', label: 'Messages', path: '/compte/messages.html' },
-  { key: 'alerts', label: 'Alertes', path: '/compte/notifications.html' },
+  { key: 'dating', label: 'Rencontres', path: '/compte/rencontres.html' },
+  { key: 'world', label: 'Monde', path: '/compte/monde-parallele.html' },
   { key: 'profile', label: 'Profil', path: '/compte/profil.html' },
 ] as const;
 
 const quickLinks = [
+  { label: 'Alertes', path: '/compte/notifications.html' },
   { label: 'Sécurité', path: '/compte/securite.html' },
   { label: 'Registre perso', path: VAULT_PATH },
   { label: 'Registre narratif', path: '/projets/sinjira/registre/' },
-  { label: 'Rencontres', path: '/compte/rencontres.html' },
 ] as const;
 
 type TabKey = (typeof tabs)[number]['key'];
@@ -117,7 +117,7 @@ export default function App() {
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const vaultLocalGateUntilRef = useRef(0);
   const [currentUrl, setCurrentUrl] = useState(HOME_URL);
-  const [activeTab, setActiveTab] = useState<TabKey>('feed');
+  const [activeTab, setActiveTab] = useState<TabKey>('home');
   const [canGoBack, setCanGoBack] = useState(false);
   const [webViewKey, setWebViewKey] = useState(0);
   const [nativeDeviceKey, setNativeDeviceKey] = useState('');
