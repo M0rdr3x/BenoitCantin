@@ -21,7 +21,6 @@ requireMarkers(app, [
   "const VAULT_PATH = '/compte/registre-personnel.html';",
   'const VAULT_LOCAL_GATE_MS = 90_000;',
   "{ label: 'Registre perso', path: VAULT_PATH }",
-  "{ label: 'Registre narratif', path: '/projets/sinjira/registre/' }",
   'const vaultLocalGateUntilRef = useRef(0);',
   'const requestVaultLocalGate = async () => {',
   "promptMessage: 'Ouvrir mon Registre personnel'",
@@ -45,13 +44,16 @@ requireMarkers(app, [
   "{ key: 'home', label: 'Accueil', path: '/app/' }",
   "{ key: 'messages', label: 'Messages', path: '/compte/messages.html' }",
   "{ key: 'dating', label: 'Rencontres', path: '/compte/rencontres.html' }",
+  "{ key: 'employment', label: 'Emploi', path: '/compte/emploi.html' }",
   "{ key: 'world', label: 'Monde', path: '/compte/monde-parallele.html' }",
-  "{ key: 'profile', label: 'Profil', path: '/compte/profil.html' }",
   "{ label: 'Alertes', path: '/compte/notifications.html' }",
+  "{ label: 'Profil', path: '/compte/profil.html' }",
+  "{ label: 'Sécurité', path: '/compte/securite.html' }",
   "const [activeTab, setActiveTab] = useState<TabKey>('home');",
 ], 'navigation mobile V25 limitée aux modules réellement disponibles');
 
 forbidMarkers(app, [
+  "{ key: 'profile', label: 'Profil', path: '/compte/profil.html' }",
   "{ label: 'Registre',",
   'conscience-vault',
   'vault_session_id',
@@ -72,7 +74,6 @@ forbidMarkers(app, [
   "{ key: 'feed', label: 'Fil'",
   "{ key: 'alerts', label: 'Alertes'",
   "{ label: 'Rencontres', path: '/compte/rencontres.html' }",
-  '/compte/emploi.html',
   '/compte/mon-ia.html',
 ], 'aucun onglet obsolète ou destination mobile non implémentée');
 
@@ -81,4 +82,4 @@ if (config?.expo?.ios?.buildNumber !== '25000') throw new Error('app.json: build
 if (config?.expo?.android?.versionCode !== 25000) throw new Error('app.json: versionCode Android 25000 requis');
 if (config?.expo?.scheme !== 'sinjira') throw new Error('app.json: schéma sinjira requis pour les liens profonds');
 
-console.log('OK mobile V25: Registre personnel protégé, navigation alignée sur les routes existantes, aucun contenu du coffre dans le natif.');
+console.log('OK mobile V25: Emploi dans la navigation principale, Profil secondaire, Registre personnel protégé et aucun contenu du coffre dans le natif.');

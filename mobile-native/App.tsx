@@ -58,15 +58,15 @@ const tabs = [
   { key: 'home', label: 'Accueil', path: '/app/' },
   { key: 'messages', label: 'Messages', path: '/compte/messages.html' },
   { key: 'dating', label: 'Rencontres', path: '/compte/rencontres.html' },
+  { key: 'employment', label: 'Emploi', path: '/compte/emploi.html' },
   { key: 'world', label: 'Monde', path: '/compte/monde-parallele.html' },
-  { key: 'profile', label: 'Profil', path: '/compte/profil.html' },
 ] as const;
 
 const quickLinks = [
   { label: 'Alertes', path: '/compte/notifications.html' },
+  { label: 'Profil', path: '/compte/profil.html' },
   { label: 'Sécurité', path: '/compte/securite.html' },
   { label: 'Registre perso', path: VAULT_PATH },
-  { label: 'Registre narratif', path: '/projets/sinjira/registre/' },
 ] as const;
 
 type TabKey = (typeof tabs)[number]['key'];
