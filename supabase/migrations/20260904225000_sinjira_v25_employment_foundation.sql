@@ -12,7 +12,8 @@ create table if not exists public.employment_profiles (
   remote_preference text not null default 'flexible'
     check (remote_preference in ('onsite','hybrid','remote','flexible')),
   skills text[] not null default '{}'::text[]
-    check (cardinality(skills) <= 30),
+    check (cardinality(skills) <= 30)
+    check (char_length(array_to_string(skills, ',')) <= 2400),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   check (professional_title is null or char_length(professional_title) <= 120),
