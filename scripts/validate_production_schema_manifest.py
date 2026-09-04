@@ -42,7 +42,8 @@ PLANNED_LOCAL_TABLES={
 'market_listings','market_favorites','token_ledger',
 'codex_entities','codex_relationships','content_versions',
 'privacy_incident_register','privacy_requests','privacy_legal_holds','safety_escalation_cases',
-'conscience_entries','conscience_vault_sessions','conscience_vault_audit'
+'conscience_entries','conscience_vault_sessions','conscience_vault_audit',
+'employment_profiles','employment_applications'
 }
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|private)\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
