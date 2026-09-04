@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="noindex,nofollow" name="robots"/>
+<title>Emploi | Compte SINJIRA™</title>
+<link href="../assets/icons/sinjira-favicon.png" rel="icon" type="image/png"/>
+<link href="../assets/css/site.css?v=7.6-sinjira-account" rel="stylesheet"/>
+<link href="../assets/css/sinjira-player-account.css?v=24.1" rel="stylesheet"/>
+<link href="../assets/css/v24-platform.css?v=24.1" rel="stylesheet"/>
+</head>
+<body class="account-page" data-account-page="employment">
+<header class="site-header"><div class="container nav-shell"><a class="brand" href="/"><img alt="" height="47" src="../assets/media/sinjira-emblem.webp" style="border-radius:50%" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Compte universel</span></span></a><nav class="main-nav"><a href="../projets/sinjira/index.html">SINJIRA™</a><a href="../projets/sinjira/jeux/index.html">Jeux</a><a href="../index.html">Benoit Cantin</a></nav></div></header>
+<div class="account-shell account-nav-scroll"><nav aria-label="Navigation du compte" class="account-nav"><a href="index.html">Mon espace</a><a href="bibliotheque.html">Ma bibliothèque</a><a href="mon-personnage.html">Mon personnage</a><a href="relations.html">Relations</a><a href="monde-parallele.html">Monde parallèle</a><a aria-current="page" href="emploi.html">Emploi</a><a href="registre-personnel.html">Registre personnel</a><a href="histoire-de-vie.html">Histoire de vie</a><a href="communaute.html">Communauté</a><a href="rencontres.html">Rencontres</a><a href="messages.html">Messages</a><a href="profil.html">Profil</a><a href="securite.html">Sécurité</a><a href="parametres.html">Paramètres</a><button data-logout type="button">Déconnexion</button></nav></div>
+<main>
+<section class="account-hero"><div class="account-shell"><article class="account-card"><span class="eyebrow">Emploi · privé par défaut</span><h1>Mon espace Emploi</h1><p>Préparez votre profil professionnel et suivez vos démarches à votre rythme. SINJIRA ne fabrique aucune offre d’emploi et ne récupère pas automatiquement des renseignements depuis votre Registre personnel, Rencontres, Histoire de vie ou vos données de sécurité et de voyage.</p><div class="account-status" data-employment-status aria-live="polite" hidden></div></article></div></section>
+
+<section class="section section-tight"><div class="account-shell"><div class="account-reader-grid">
+<article class="account-card"><span class="eyebrow">Profil professionnel privé</span><h2>Ce que je veux présenter pour l’emploi</h2><form class="account-form" data-employment-profile-form>
+<div class="field"><label for="employment-title">Titre professionnel</label><input id="employment-title" maxlength="120" name="professional_title" placeholder="Ex. Développeur Web"/></div>
+<div class="field"><label for="employment-summary">Résumé</label><textarea id="employment-summary" maxlength="3000" name="summary" rows="6" placeholder="Décrivez volontairement votre expérience, vos objectifs ou ce que vous recherchez."></textarea></div>
+<div class="field-row"><div class="field"><label for="employment-search-status">Situation de recherche</label><select id="employment-search-status" name="search_status"><option value="not_looking">Je ne cherche pas actuellement</option><option value="open">Ouvert aux possibilités</option><option value="actively_looking">En recherche active</option></select></div><div class="field"><label for="employment-remote">Mode de travail</label><select id="employment-remote" name="remote_preference"><option value="flexible">Flexible</option><option value="remote">Télétravail</option><option value="hybrid">Hybride</option><option value="onsite">Sur place</option></select></div></div>
+<div class="field"><label for="employment-location">Lieu préféré</label><input id="employment-location" maxlength="160" name="preferred_location" placeholder="Ex. Québec, télétravail au Canada"/></div>
+<div class="field"><label for="employment-skills">Compétences</label><input id="employment-skills" maxlength="1200" name="skills" placeholder="Ex. JavaScript, rédaction, service à la clientèle"/><small>Séparez les compétences par une virgule. Maximum 30.</small></div>
+<div class="hero-actions"><button class="btn btn-primary" type="submit">Enregistrer mon profil Emploi</button></div>
+</form></article>
+
+<article class="account-card"><span class="eyebrow">Séparation des usages</span><h2>Vos autres espaces restent séparés</h2><p>Votre profil Emploi n’est pas automatiquement enrichi à partir du Registre personnel, de Rencontres, de vos relations, de votre localisation de sécurité ou du Mode Voyage.</p><p>Les renseignements de sécurité servent à protéger votre compte, pas à classer votre candidature. Une éventuelle recommandation d’emploi nécessitera une fonctionnalité distincte et des choix de confidentialité explicites.</p><p><strong>Aucune offre n’est affichée tant qu’un véritable système d’organisations et d’offres vérifiées n’existe pas.</strong></p></article>
+</div></div></section>
+
+<section class="section section-tight"><div class="account-shell"><article class="account-card"><span class="eyebrow">Suivi personnel</span><h2>Ajouter une candidature</h2><p>Ajoutez ici une démarche que vous avez réellement faite ou que vous souhaitez suivre. Cette fiche est privée à votre compte.</p><form class="account-form" data-employment-application-form>
+<div class="field-row"><div class="field"><label for="application-employer">Employeur / organisation</label><input id="application-employer" maxlength="160" name="employer_name" required/></div><div class="field"><label for="application-role">Poste</label><input id="application-role" maxlength="160" name="role_title" required/></div></div>
+<div class="field-row"><div class="field"><label for="application-location">Lieu</label><input id="application-location" maxlength="160" name="location_label"/></div><div class="field"><label for="application-status">Étape</label><select id="application-status" name="status"><option value="saved">À considérer</option><option value="applied">Candidature envoyée</option><option value="interview">Entrevue</option><option value="offer">Offre reçue</option><option value="rejected">Non retenue</option><option value="withdrawn">Retirée</option><option value="accepted">Acceptée</option></select></div></div>
+<div class="field"><label for="application-url">Lien source</label><input id="application-url" maxlength="2048" name="source_url" inputmode="url" placeholder="https://…" type="url"/></div>
+<div class="field-row"><div class="field"><label for="application-applied-on">Date de candidature</label><input id="application-applied-on" name="applied_on" type="date"/></div><div class="field"><label for="application-next-step">Prochaine étape</label><input id="application-next-step" name="next_step_on" type="date"/></div></div>
+<div class="field"><label for="application-notes">Notes privées</label><textarea id="application-notes" maxlength="5000" name="private_notes" rows="5"></textarea></div>
+<div class="hero-actions"><button class="btn btn-primary" type="submit">Ajouter à mon suivi</button></div>
+</form></article></div></section>
+
+<section class="section section-tight"><div class="account-shell"><article class="account-card"><div class="account-welcome-strip"><div><span class="eyebrow">Mes candidatures</span><h2>Mon suivi</h2></div><button class="btn btn-secondary" data-employment-refresh type="button">Actualiser</button></div><div data-employment-applications><p>Chargement de vos candidatures…</p></div></article></div></section>
+</main>
+<footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Emploi SINJIRA™ — espace privé.</span></div></div></footer>
+<script defer src="../assets/js/site.js?v=7.6-sinjira-account"></script>
+<script src="../assets/js/sinjira-account.js?v=24.4.88" type="module"></script>
+<script src="../assets/js/sinjira-employment-v25.js?v=25.0" type="module"></script>
+</body>
+</html>
