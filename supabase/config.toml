@@ -65,6 +65,9 @@ verify_jwt = true
 [functions.conscience-vault]
 verify_jwt = true
 
+[functions.personal-ai]
+verify_jwt = true
+
 [functions.life-story-export]
 verify_jwt = true
 
