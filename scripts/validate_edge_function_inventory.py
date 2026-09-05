@@ -11,7 +11,7 @@ CANONICAL = {
     "admin-analytics", "admin-console", "admin-license-codes", "admin-reports",
     "admin-sinjira-v18", "admin-social-v20", "admin-users", "conscience-vault",
     "delete-player-account", "fracture-engine-gateway", "get-document-url",
-    "life-story-delivery", "life-story-export", "redeem-license-code",
+    "life-story-delivery", "life-story-export", "personal-ai", "redeem-license-code",
     "revoke-my-contributions", "security-context", "send-game-report",
     "send-player-sheet", "submit-character-questionnaire", "submit-fracture-endgame",
     "submit-game-contribution",
@@ -50,6 +50,13 @@ JWT_SENSITIVE_GUARDS = {
         "REQUEST_TOO_LARGE", "INVALID_JSON", "requiredVaultUser", "service_conscience_evaluate_access",
         "CLIENT_IDENTITY_FORBIDDEN", "trusted_device_confirmation", "Cache-Control", "private, no-store",
         "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
+    ),
+    "personal-ai": (
+        "req.method !== 'POST'", "MAX_REQUEST_BYTES", "readBoundedJson", "req.body.getReader()",
+        "REQUEST_TOO_LARGE", "INVALID_JSON", "requiredPersonalAiUser", "service_personal_ai_evaluate_access",
+        "CLIENT_IDENTITY_FORBIDDEN", "ai_private", "Cache-Control", "private, no-store",
+        "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
+        "conversation_enabled", "source_retrieval_enabled",
     ),
     "delete-player-account": (
         "req.method !== 'POST'", "MAX_REQUEST_BYTES=1024", "readBoundedJson", "TextEncoder",
@@ -161,6 +168,13 @@ def main() -> int:
     if "service.rpc('security_evaluate_context'" in vault_source or 'service.rpc("security_evaluate_context"' in vault_source:
         errors.append("conscience-vault: l Edge doit passer par service_conscience_evaluate_access pour conserver les challenges entre retries.")
 
+    ai_source = read_tree_text(FUNCTIONS / "personal-ai")
+    if "service.rpc('security_evaluate_context'" in ai_source or 'service.rpc("security_evaluate_context"' in ai_source:
+        errors.append("personal-ai: l Edge doit passer par service_personal_ai_evaluate_access pour conserver le scope ai_private et les challenges.")
+    for forbidden in ("conscience_entries", "service_conscience_", "life_story_entries", "employment_profiles", "employment_applications"):
+        if forbidden in ai_source:
+            errors.append(f"personal-ai: lecture directe de source interdite dans la fondation V25: {forbidden}.")
+
     contribution_source = read_tree_text(FUNCTIONS / "submit-game-contribution")
     if "contribution_id" in contribution_source:
         errors.append("submit-game-contribution: un UUID interne de contribution ne doit pas sortir vers le client.")
@@ -198,7 +212,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 21 fonctions canoniques, JWT/custom auth cohérents, actions sensibles bornées/no-store, coffre derrière continuité de challenge serveur, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 22 fonctions canoniques, JWT/custom auth cohérents, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
