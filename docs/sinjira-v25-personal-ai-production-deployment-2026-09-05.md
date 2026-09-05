@@ -73,8 +73,10 @@ Après la correction performance, l’index a été confirmé avec la définitio
 - statut `ACTIVE`;
 - version `1`;
 - `verify_jwt=true`;
-- id `906d52bb-299a-4e9d-a830-3d4ff36a6a33`;
-- bundle SHA-256 `d3c700c6d9fb128a986cc61f4c9d70889f2e26358988a09495f13d77efc0bbc5`.
+- id `431ebe9c-99e5-4e5a-971c-4101f28b90b4`;
+- bundle `ezbr_sha256` `d3c700c6056bbaa03aa80a7788a9f61825987044fbecd95b8fb7a91c32dadc9a`.
+
+Ces métadonnées ont été revalidées directement dans l’inventaire Supabase après la fusion de la PR #180. Cette correction documentaire n’a entraîné **aucun redéploiement** de l’Edge Function.
 
 Fichiers déployés depuis le SHA gelé :
 
@@ -126,6 +128,26 @@ PR #179 — index audit : tous les workflows verts, dont :
 PR #179 a été fusionnée sur `main` au commit :
 
 `c75be5b7a72d7ade12d440c456702188a20d5540`
+
+PR #180 — réconciliation production : Mon IA, Emploi, Coffre, site, navigateurs, ledger et gardes déclenchés sont tous passés au vert après correction des deux assertions de classification. Elle a été fusionnée sur `main` au commit :
+
+`0e5e9b9e95ec65c25cdd3b1ccb64f0a97195e0d6`
+
+## Revalidation production après PR #180
+
+Les trois dernières migrations production restent, dans cet ordre :
+
+1. `20260905145448_sinjira_v25_personal_ai_foundation`;
+2. `20260905145502_sinjira_v25_personal_ai_rls_hardening`;
+3. `20260905150553_sinjira_v25_personal_ai_audit_user_index`.
+
+Les trois tables privées Mon IA sont toujours vides. Elles conservent :
+
+- RLS activée;
+- `0` policy client;
+- aucun SELECT direct pour `anon`, `authenticated` ou `service_role`;
+- aucun INSERT direct pour `anon`, `authenticated` ou `service_role`;
+- l’index `personal_ai_audit_user_idx` présent.
 
 ## Advisors après correction
 
