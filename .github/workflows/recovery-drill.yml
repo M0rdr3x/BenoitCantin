@@ -41,6 +41,12 @@ jobs:
         with:
           version: latest
 
+      - name: Vérifier la présence du contrat RLS server-only V25
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s supabase/tests/server_only_rls_contract_v25.test.sql
+
       - name: Démarrer une pile Supabase locale propre
         run: supabase start
 
