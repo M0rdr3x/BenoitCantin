@@ -1,0 +1,69 @@
+name: SINJIRA V25 — Mon IA fonctionnel AAL2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/smoke_personal_ai_functional_local.py'
+      - 'scripts/validate_personal_ai_functional_smoke.py'
+      - 'scripts/smoke_sensitive_aal2_local.py'
+      - 'scripts/validate_sensitive_aal2_smoke.py'
+      - 'scripts/validate_personal_ai_v25.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'supabase/tests/personal_ai_v25.test.sql'
+      - 'supabase/functions/personal-ai/**'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'supabase/functions/_shared/cors.ts'
+      - 'supabase/migrations/**personal_ai**.sql'
+      - 'supabase/migrations/**security**.sql'
+      - 'supabase/config.toml'
+      - '.github/workflows/sinjira-personal-ai-functional-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  personal-ai-functional:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Valider les contrats Mon IA et AAL2
+        run: |
+          python3 scripts/validate_personal_ai_v25.py
+          python3 scripts/validate_sensitive_aal2_smoke.py
+          python3 scripts/validate_personal_ai_functional_smoke.py
+          python3 scripts/validate_production_schema_manifest.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+
+      - name: Démarrer Supabase local complet
+        run: supabase start
+
+      - name: Tester Mon IA avec pgTAP
+        run: supabase test db supabase/tests/personal_ai_v25.test.sql --local
+
+      - name: Tester le parcours fonctionnel Mon IA derrière AAL2
+        shell: bash
+        run: |
+          set -euo pipefail
+          status_env="$(supabase status -o env)"
+          API_URL="$(sed -n 's/^API_URL="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          ANON_KEY="$(sed -n 's/^ANON_KEY="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          test -n "$API_URL"
+          test -n "$ANON_KEY"
+          SINJIRA_LOCAL_API_URL="$API_URL" \
+          SINJIRA_LOCAL_ANON_KEY="$ANON_KEY" \
+            python3 scripts/smoke_personal_ai_functional_local.py
+
+      - name: Arrêter Supabase local
+        if: always()
+        run: supabase stop --no-backup || true
