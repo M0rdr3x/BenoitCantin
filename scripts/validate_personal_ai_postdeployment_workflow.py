@@ -19,7 +19,7 @@ def main() -> int:
     trigger_block = text.split('on:\n', 1)[1].split('\npermissions:', 1)[0]
     trigger_keys = {
         match.group(1)
-        for line in trigger_block.splitlines()[1:]
+        for line in trigger_block.splitlines()
         if (match := re.match(r'^  ([A-Za-z0-9_-]+):(?:\s|$)', line))
     }
     require(trigger_keys == {'workflow_dispatch'}, 'le contrôle doit rester manuel uniquement')
