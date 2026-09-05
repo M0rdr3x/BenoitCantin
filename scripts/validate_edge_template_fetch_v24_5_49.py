@@ -74,11 +74,12 @@ def main()->int:
     for marker in inventory_markers:
         if marker not in inventory: errors.append(f'Inventaire Edge non aligné V24.5.49: {marker}')
 
-    if len(ledger_rows)!=174:
-        errors.append(f'Ledger: {len(ledger_rows)} migrations au lieu de 174.')
-    expected_last='20260831004411 sinjira_v24_5_46_preorder_uuid_output_hardening'
-    if not ledger_rows or ledger_rows[-1]!=expected_last:
-        errors.append('V24.5.49 ne doit ajouter aucune migration Supabase.')
+    # V24.5.49 est un durcissement Edge historique sans migration SQL propre.
+    baseline='20260831004411 sinjira_v24_5_46_preorder_uuid_output_hardening'
+    if ledger_rows.count(baseline)!=1:
+        errors.append('La baseline historique V24.5.46 doit apparaître exactement une fois dans le ledger.')
+    if any('v24_5_49' in row.lower() for row in ledger_rows):
+        errors.append('V24.5.49 ne doit ajouter aucune ligne au ledger SQL.')
 
     doc_markers=[
         '15 mib','redirect: \'error\'','%pdf-','174 migrations','version 6',
@@ -92,7 +93,7 @@ def main()->int:
         print(f'ECHEC V24.5.49 modèle PDF Fracture: {len(errors)} problème(s).')
         for error in errors: print('- '+error)
         return 1
-    print('OK V24.5.49: modèle PDF limité à l’origine SINJIRA, redirections refusées, 15 MiB max, signature PDF vérifiée, services payants désactivés et ledger 174 inchangé.')
+    print('OK V24.5.49: modèle PDF limité à l’origine SINJIRA, redirections refusées, 15 MiB max, signature PDF vérifiée, services payants désactivés et aucune migration V24.5.49.')
     return 0
 
 if __name__=='__main__':

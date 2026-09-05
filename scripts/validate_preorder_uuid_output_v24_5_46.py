@@ -56,9 +56,9 @@ def main():
     if 'await refreshall();' not in js or 'reservation_reference' not in js:
         errors.append('Le parcours utilisateur ne relit pas la référence sûre après réservation.')
 
+    # Contrat historique : V24.5.46 doit rester enregistré exactement une fois.
+    # Le dernier état global du ledger est validé par validate_production_migration_ledger.py.
     row='20260831004411 sinjira_v24_5_46_preorder_uuid_output_hardening'
-    if len(rows)!=174: errors.append(f'Ledger: {len(rows)} migrations au lieu de 174.')
-    if not rows or rows[-1]!=row: errors.append('V24.5.46 doit être la dernière migration courante.')
     if rows.count(row)!=1: errors.append('V24.5.46 doit apparaître exactement une fois dans le ledger.')
 
     for marker in ['uuid interne','reservation_reference','pr-','174 migrations','aucune vente active','aucun paiement actif','0 $ de frais de livraison','aucun service payant activé']:
@@ -71,7 +71,7 @@ def main():
         print(f'ECHEC V24.5.46 confidentialité UUID: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.46: réservation confirmée et liste admin utilisent la référence PR-…; aucun UUID interne en sortie, ACL et garde-fous commerciaux conservés, ledger 174 synchronisé.')
+    print('OK V24.5.46: réservation confirmée et liste admin utilisent la référence PR-…; aucun UUID interne en sortie, ACL et garde-fous commerciaux conservés; migration historique enregistrée une fois.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())

@@ -72,11 +72,12 @@ def main()->int:
         if cfg.get('verify_jwt') is not False:
             errors.append(f'{slug}: verify_jwt doit rester false pour son contrat custom-auth/public actuel.')
 
-    if len(ledger_rows)!=174:
-        errors.append(f'Ledger: {len(ledger_rows)} migrations au lieu de 174.')
-    expected_last='20260831004411 sinjira_v24_5_46_preorder_uuid_output_hardening'
-    if not ledger_rows or ledger_rows[-1]!=expected_last:
-        errors.append('V24.5.48 ne doit pas modifier la dernière migration production.')
+    # V24.5.48 n'a pas de migration SQL propre. Le ledger global courant est validé séparément.
+    baseline='20260831004411 sinjira_v24_5_46_preorder_uuid_output_hardening'
+    if ledger_rows.count(baseline)!=1:
+        errors.append('La baseline historique V24.5.46 doit apparaître exactement une fois dans le ledger.')
+    if any('v24_5_48' in row.lower() for row in ledger_rows):
+        errors.append('V24.5.48 ne doit pas ajouter de ligne au ledger SQL.')
 
     for marker in ('174 migrations','private, no-store','220 000','8 kib','https','paid_external_services_enabled=false','aucun paiement','aucun transporteur'):
         if marker not in doc: errors.append(f'Document V24.5.48 incomplet: {marker}')
@@ -95,7 +96,7 @@ def main()->int:
         print(f'ECHEC V24.5.48 confidentialité Edge: {len(errors)} problème(s).')
         for error in errors: print('- '+error)
         return 1
-    print('OK V24.5.48: liens signés et PDF no-store, taille réelle bornée, URL sûres, services payants désactivés, ledger 174 inchangé.')
+    print('OK V24.5.48: liens signés et PDF no-store, taille réelle bornée, URL sûres, services payants désactivés et aucune migration V24.5.48.')
     return 0
 
 if __name__=='__main__':

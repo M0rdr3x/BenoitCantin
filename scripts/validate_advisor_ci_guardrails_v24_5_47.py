@@ -27,11 +27,13 @@ def main() -> int:
     e2e = read(E2E)
     rows = [line.strip() for line in read(LEDGER).splitlines() if line.strip() and not line.startswith('#')]
 
-    if len(rows) != 174:
-        errors.append(f'Ledger: {len(rows)} migrations au lieu de 174.')
-    expected_last = '20260831004411 sinjira_v24_5_46_preorder_uuid_output_hardening'
-    if not rows or rows[-1] != expected_last:
-        errors.append('V24.5.47 ne doit pas ajouter une migration no-op; V24.5.46 doit rester la dernière migration production.')
+    # V24.5.47 est un lot CI/documentaire historique : il ne doit pas créer sa propre migration.
+    # L'état global courant du ledger est validé séparément par validate_production_migration_ledger.py.
+    baseline = '20260831004411 sinjira_v24_5_46_preorder_uuid_output_hardening'
+    if rows.count(baseline) != 1:
+        errors.append('La baseline historique V24.5.46 doit apparaître exactement une fois dans le ledger.')
+    if any('v24_5_47' in line.lower() for line in rows):
+        errors.append('V24.5.47 ne doit pas ajouter de ligne au ledger SQL.')
 
     v47_migrations = sorted(MIGRATIONS.glob('*v24_5_47*.sql'))
     if v47_migrations:
@@ -74,7 +76,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK V24.5.47: advisor interprété sans ouverture RLS artificielle, index conservés sans lint-chasing, aucun service payant activé et retry Firefox unique borné; ledger inchangé à 174.')
+    print('OK V24.5.47: advisor interprété sans ouverture RLS artificielle, index conservés sans lint-chasing, aucun service payant activé et retry Firefox unique borné; aucune migration V24.5.47.')
     return 0
 
 

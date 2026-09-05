@@ -142,11 +142,12 @@ def main() -> int:
     if functions.get('life-story-export', {}).get('verify_jwt') is not True:
         errors.append('life-story-export doit rester verify_jwt=true.')
 
+    # Contrat historique : V24.5.50 n'a aucune migration SQL propre.
+    # Le ledger global courant est validé séparément par validate_production_migration_ledger.py.
     rows = [line.strip() for line in ledger.splitlines() if line.strip() and not line.startswith('#')]
-    if len(rows) != 174:
-        errors.append(f'Ledger courant: {len(rows)} migrations au lieu de 174.')
-    if not rows or rows[-1] != '20260831004411 sinjira_v24_5_46_preorder_uuid_output_hardening':
-        errors.append('La dernière migration production attendue pour V24.5.50 est V24.5.46.')
+    baseline = '20260831004411 sinjira_v24_5_46_preorder_uuid_output_hardening'
+    if rows.count(baseline) != 1:
+        errors.append('La baseline historique V24.5.46 doit apparaître exactement une fois dans le ledger.')
     if any('v24_5_50' in line.lower() for line in rows):
         errors.append('V24.5.50 ne doit pas ajouter de ligne au ledger SQL.')
     if any('v24_5_50' in path.name.lower() for path in MIGRATIONS.glob('*.sql')):
@@ -168,7 +169,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK V24.5.50: jeton 256 bits en fragment, retrait avant réseau, POST JSON borné, PDF validé avant comptage, réponses no-store, aucune migration ni service payant.')
+    print('OK V24.5.50: jeton 256 bits en fragment, retrait avant réseau, POST JSON borné, PDF validé avant comptage, réponses no-store, aucune migration V24.5.50 ni service payant.')
     return 0
 
 

@@ -9,6 +9,7 @@ on:
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_social_rls_contract.py'
       - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/build_supabase_production_workspace.py'
       - '.github/workflows/supabase-production-preflight.yml'
   pull_request:
     branches: [ main ]
@@ -18,6 +19,7 @@ on:
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_social_rls_contract.py'
       - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/build_supabase_production_workspace.py'
       - '.github/workflows/supabase-production-preflight.yml'
   workflow_dispatch:
     inputs:
@@ -70,6 +72,16 @@ jobs:
           python scripts/validate_production_migration_ledger.py
           supabase --version
 
+      - name: Construire le workspace production protégé
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .prod-workspace
+          python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase
+          test -f .prod-workspace/supabase/config.toml
+          test -d .prod-workspace/supabase/migrations
+          echo "Workspace production protégé construit depuis le ledger canonique." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Détecter les secrets de connexion Supabase
         id: auth
         shell: bash
@@ -102,7 +114,7 @@ jobs:
               echo "Edge Function canonique absente de production: $name"
               missing=1
             fi
-          done < <(find supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name '_*' -printf '%f\n' | sort)
+          done < <(find .prod-workspace/supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name '_*' -printf '%f\n' | sort)
 
           retired=(
             admin-reader
@@ -122,7 +134,7 @@ jobs:
 
           {
             echo '### Inventaire Edge Functions production'
-            if [ "$missing" -eq 0 ]; then echo '- Toutes les fonctions canoniques du dépôt sont présentes.'; else echo '- Des fonctions canoniques sont absentes.'; fi
+            if [ "$missing" -eq 0 ]; then echo '- Toutes les fonctions canoniques du workspace protégé sont présentes.'; else echo '- Des fonctions canoniques sont absentes.'; fi
             if [ "$retired_found" -eq 0 ]; then
               echo '- Aucun des six anciens slugs connus n’est physiquement déployé.'
             else
@@ -132,12 +144,12 @@ jobs:
 
           test "$missing" -eq 0
 
-      - name: Lier le projet de production
+      - name: Lier le projet de production dans le workspace protégé
         if: ${{ steps.auth.outputs.ready == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
-          supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+          (cd .prod-workspace && supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD")
 
       - name: Exporter l'historique exact des migrations de production
         if: ${{ steps.auth.outputs.ready == 'true' }}
@@ -145,7 +157,7 @@ jobs:
         run: |
           set -euo pipefail
           tmp="$(mktemp -d)"
-          cp -a supabase "$tmp/supabase"
+          cp -a .prod-workspace/supabase "$tmp/supabase"
           rm -rf "$tmp/supabase/migrations"
           mkdir -p "$tmp/supabase/migrations"
           (
@@ -174,7 +186,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          supabase db lint --linked --schema public --level error --fail-on error | tee /tmp/sinjira-db-lint-before.txt
+          (cd .prod-workspace && supabase db lint --linked --schema public --level error --fail-on error) | tee /tmp/sinjira-db-lint-before.txt
           echo '### Lint SQL production avant synchronisation' >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/sinjira-db-lint-before.txt >> "$GITHUB_STEP_SUMMARY"
@@ -185,7 +197,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          supabase migration list --linked --password "$SUPABASE_DB_PASSWORD" | tee /tmp/sinjira-migrations-before.txt
+          (cd .prod-workspace && supabase migration list --linked --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-migrations-before.txt
           echo '### Historique Supabase avant synchronisation' >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/sinjira-migrations-before.txt >> "$GITHUB_STEP_SUMMARY"
@@ -196,25 +208,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD" | tee /tmp/sinjira-dry-run.txt
-          echo '### Dry-run base de données' >> "$GITHUB_STEP_SUMMARY"
+          (cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run.txt
+          echo '### Dry-run base de données depuis le workspace protégé' >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/sinjira-dry-run.txt >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Appliquer les migrations de production
+      - name: Appliquer les migrations de production depuis le workspace protégé
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
-          supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+          (cd .prod-workspace && supabase db push --linked --password "$SUPABASE_DB_PASSWORD")
 
       - name: Auditer les fonctions SQL après migrations
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
-          supabase db lint --linked --schema public --level error --fail-on error | tee /tmp/sinjira-db-lint-after.txt
+          (cd .prod-workspace && supabase db lint --linked --schema public --level error --fail-on error) | tee /tmp/sinjira-db-lint-after.txt
           echo '### Lint SQL production après migrations' >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/sinjira-db-lint-after.txt >> "$GITHUB_STEP_SUMMARY"
@@ -244,12 +256,12 @@ jobs:
           if grep -Eq '(^|[[:space:]])RESEND_API_KEY([[:space:]]|$)' <<< "$secrets_after"; then echo "Courriel transactionnel: secret RESEND_API_KEY présent." >> "$GITHUB_STEP_SUMMARY"; else echo "Courriel transactionnel: RESEND_API_KEY absent; les données restent enregistrées mais l'envoi de courriel demeure désactivé." >> "$GITHUB_STEP_SUMMARY"; fi
           echo "IA distante payante: aucun secret OpenAI n'est synchronisé par ce workflow; le mode gratuit reste la référence de production." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Déployer toutes les Edge Functions du dépôt
+      - name: Déployer toutes les Edge Functions du workspace protégé
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
-          supabase functions deploy --project-ref "$PROJECT_ID" --use-api
+          (cd .prod-workspace && supabase functions deploy --project-ref "$PROJECT_ID" --use-api)
 
       - name: Vérifier les Edge Functions déployées
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
@@ -261,7 +273,7 @@ jobs:
           while IFS= read -r name; do
             [ -z "$name" ] && continue
             if ! grep -Fq "$name" /tmp/sinjira-functions.txt; then echo "Edge Function manquante après déploiement: $name"; missing=1; fi
-          done < <(find supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name '_*' -printf '%f\n' | sort)
+          done < <(find .prod-workspace/supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name '_*' -printf '%f\n' | sort)
 
           retired=(admin-reader generate-sinjira-character admin-literary validate-phone-v22 guardian-create-youth-v22 create-youth-account)
           retired_found=0
@@ -280,9 +292,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          supabase migration list --linked --password "$SUPABASE_DB_PASSWORD" | tee /tmp/sinjira-migrations-after.txt
-          supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD" | tee /tmp/sinjira-dry-run-after.txt
-          echo '### Vérification finale Supabase' >> "$GITHUB_STEP_SUMMARY"
+          (cd .prod-workspace && supabase migration list --linked --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-migrations-after.txt
+          (cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run-after.txt
+          echo '### Vérification finale Supabase depuis le workspace protégé' >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/sinjira-migrations-after.txt >> "$GITHUB_STEP_SUMMARY"
           echo >> "$GITHUB_STEP_SUMMARY"
@@ -298,13 +310,13 @@ jobs:
           if [ "${{ steps.auth.outputs.ready }}" != "true" ]; then
             echo '⛔ NON SYNCHRONISÉ : les secrets de connexion Supabase ne sont pas disponibles au workflow. Aucune écriture de production n’a eu lieu.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo '🟡 PRÉVOL PR : historique distant exporté, production auditée et dry-run exécuté; aucune écriture de production.' >> "$GITHUB_STEP_SUMMARY"
+            echo '🟡 PRÉVOL PR : workspace protégé construit; historique distant exporté, production auditée et dry-run exécuté si les secrets sont disponibles; aucune écriture de production.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
-            echo '🟡 PRÉVOL SEULEMENT : production auditée + dry-run; aucune migration ni Edge Function appliquée.' >> "$GITHUB_STEP_SUMMARY"
+            echo '🟡 PRÉVOL SEULEMENT : workspace protégé + audit/dry-run; aucune migration ni Edge Function appliquée.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ inputs.apply }}" != "true" ]; then
             echo '🟡 PRÉVOL MANUEL SEULEMENT : aucune modification de production, car apply=false.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ steps.final_verify.outcome }}" = "success" ]; then
-            echo '✅ APPLIQUÉ ET VÉRIFIÉ : migrations appliquées, Edge Functions contrôlées, historique relu et dry-run final réussi sans étape restante.' >> "$GITHUB_STEP_SUMMARY"
+            echo '✅ APPLIQUÉ ET VÉRIFIÉ : migrations appliquées depuis le workspace protégé, Edge Functions contrôlées, historique relu et dry-run final réussi sans étape restante.' >> "$GITHUB_STEP_SUMMARY"
           else
             echo '❌ ÉCHEC OU SYNCHRONISATION PARTIELLE : apply=true a été demandé mais la vérification finale n’est pas verte. Ne pas considérer la production synchronisée; consulter la première étape en échec.' >> "$GITHUB_STEP_SUMMARY"
           fi
