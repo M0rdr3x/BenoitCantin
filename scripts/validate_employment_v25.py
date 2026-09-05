@@ -6,8 +6,8 @@ MIGRATION = ROOT / 'supabase' / 'migrations' / '20260904225000_sinjira_v25_emplo
 TEST = ROOT / 'supabase' / 'tests' / 'employment_v25.test.sql'
 PAGE = ROOT / 'compte' / 'emploi.html'
 DASHBOARD = ROOT / 'compte' / 'index.html'
-JS = ROOT / 'assets' / 'js' / 'sinjira-employment-v25.js'
-MANIFEST = ROOT / 'scripts' / 'validate_production_schema_manifest.py'
+JS = ROOT / 'assets' / 'js/sinjira-employment-v25.js'
+MANIFEST = ROOT / 'scripts/validate_production_schema_manifest.py'
 
 
 def require(condition: bool, message: str) -> None:
@@ -49,7 +49,8 @@ def main() -> int:
         require(f"'{table}'" in expected_block, f'{table} doit être classée production')
         require(f"'{table}'" not in planned_block, f'{table} ne doit plus être classée planifiée')
     for table in ('personal_ai_settings', 'personal_ai_source_permissions', 'personal_ai_audit'):
-        require(f"'{table}'" in planned_block, f'{table} Mon IA doit rester planifiée')
+        require(f"'{table}'" in expected_block, f'{table} Mon IA doit maintenant être classée production')
+        require(f"'{table}'" not in planned_block, f'{table} Mon IA ne doit plus être classée planifiée')
 
     require('data-account-page="employment"' in page, 'route Emploi non identifiée')
     require('sinjira-employment-v25.js' in page, 'module JS Emploi non chargé')
@@ -69,7 +70,7 @@ def main() -> int:
     require("rel = 'noopener noreferrer'" in js, 'liens externes non durcis')
     require('select * from finish()' in test.lower(), 'test pgTAP incomplet')
 
-    print('OK emploi V25: production déclarée, RLS propriétaire, séparation des usages, zéro fausse offre et zéro persistance navigateur.')
+    print('OK emploi V25: Emploi et Mon IA classés production, séparation maintenue, RLS propriétaire, zéro fausse offre et zéro persistance navigateur.')
     return 0
 
 
