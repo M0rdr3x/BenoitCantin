@@ -15,9 +15,11 @@ on:
       - 'supabase/tests/personal_ai_v25.test.sql'
       - 'scripts/validate_personal_ai_v25.py'
       - 'scripts/validate_personal_ai_production_readiness.py'
+      - 'scripts/validate_personal_ai_postdeployment_workflow.py'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'docs/sinjira-v25-personal-ai-production-readiness.md'
+      - 'docs/sinjira-v25-personal-ai-production-deployment-2026-09-05.md'
       - '.github/workflows/sinjira-personal-ai-v25.yml'
       - '.github/workflows/sinjira-v25-personal-ai-production-readiness.yml'
   workflow_dispatch:
@@ -37,6 +39,7 @@ jobs:
         run: |
           python3 scripts/validate_personal_ai_v25.py
           python3 scripts/validate_personal_ai_production_readiness.py
+          python3 scripts/validate_personal_ai_postdeployment_workflow.py
       - name: Valider l'inventaire Edge
         run: python3 scripts/validate_edge_function_inventory.py
       - name: Valider la classification du schéma

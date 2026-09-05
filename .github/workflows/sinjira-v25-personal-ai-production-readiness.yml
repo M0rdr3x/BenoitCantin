@@ -1,4 +1,4 @@
-name: SINJIRA V25 — Readiness production Mon IA
+name: SINJIRA V25 — Vérification production Mon IA
 
 on:
   workflow_dispatch:
@@ -12,55 +12,90 @@ permissions:
   contents: read
 
 concurrency:
-  group: sinjira-v25-personal-ai-production-readiness
+  group: sinjira-v25-personal-ai-production-verify
   cancel-in-progress: false
 
 env:
-  PERSONAL_AI_DEPLOY_SHA: e2e99ec63730559c440ccd90b10a9c18747c5f45
-  EXPECTED_REMOTE_BASELINE: "20260905133130"
-  EXPECTED_REMOTE_BASELINE_NAME: sinjira_v25_employment_foundation
+  SUPABASE_PROJECT_REF: gpvivleexywljowcqkru
+  SUPABASE_MANAGEMENT_API: https://api.supabase.com/v1
+  EMPLOYMENT_VERSION: "20260905133130"
+  EMPLOYMENT_NAME: sinjira_v25_employment_foundation
+  PERSONAL_AI_FOUNDATION_VERSION: "20260905145448"
+  PERSONAL_AI_FOUNDATION_NAME: sinjira_v25_personal_ai_foundation
+  PERSONAL_AI_RLS_VERSION: "20260905145502"
+  PERSONAL_AI_RLS_NAME: sinjira_v25_personal_ai_rls_hardening
+  PERSONAL_AI_INDEX_VERSION: "20260905150553"
+  PERSONAL_AI_INDEX_NAME: sinjira_v25_personal_ai_audit_user_index
 
 jobs:
   verify-personal-ai-v25:
-    name: Vérifier le lot Mon IA V25
+    name: Vérifier Mon IA V25 en production
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
     steps:
-      - name: Vérifier la confirmation
+      - name: Vérifier la confirmation et le jeton
         shell: bash
         env:
           VERIFY_CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
           test "$VERIFY_CONFIRMATION" = "VERIFY-SINJIRA-V25-PERSONAL-AI"
+          test -n "${SUPABASE_ACCESS_TOKEN:-}"
 
-      - name: Checkout du lot Mon IA gelé
+      - name: Checkout de main
         uses: actions/checkout@v6
         with:
-          ref: ${{ env.PERSONAL_AI_DEPLOY_SHA }}
           persist-credentials: false
-          fetch-depth: 1
 
-      - name: Vérifier le SHA et le contrat statique
+      - name: Vérifier le contrat production local
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$PERSONAL_AI_DEPLOY_SHA"
           python3 scripts/validate_personal_ai_v25.py
+          python3 scripts/validate_personal_ai_production_readiness.py
+          python3 scripts/validate_production_schema_manifest.py
 
-      - name: Vérifier les invariants du lot gelé
+      - name: Vérifier l'historique distant en lecture seule
         shell: bash
         run: |
           set -euo pipefail
-          test -f supabase/migrations/20260905000500_sinjira_v25_personal_ai_foundation.sql
-          test -f supabase/migrations/20260905001000_sinjira_v25_personal_ai_rls_hardening.sql
-          test -f supabase/functions/personal-ai/index.ts
-          test -f supabase/functions/_shared/auth.ts
-          test -f supabase/functions/_shared/cors.ts
-          grep -A2 '^\[functions.personal-ai\]' supabase/config.toml | grep -q 'verify_jwt = true'
-          grep -q "runtime_status text not null default 'not_configured'" supabase/migrations/20260905000500_sinjira_v25_personal_ai_foundation.sql
-          ! grep -Eq "action === '(chat|memory|retrieve_source|complete|generate)'" supabase/functions/personal-ai/index.ts
+          history="$RUNNER_TEMP/personal-ai-production-migrations.json"
+          curl --fail-with-body --silent --show-error \
+            "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/database/migrations" \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header 'Accept: application/json' \
+            --output "$history"
+
+          MIGRATION_HISTORY="$history" python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          payload=json.loads(Path(os.environ['MIGRATION_HISTORY']).read_text(encoding='utf-8'))
+          rows=payload if isinstance(payload,list) else next(
+              (payload[k] for k in ('migrations','data','result') if isinstance(payload,dict) and isinstance(payload.get(k),list)),
+              []
+          )
+          rows=sorted(rows,key=lambda row:str(row.get('version','')))
+          expected=[
+              (os.environ['EMPLOYMENT_VERSION'],os.environ['EMPLOYMENT_NAME']),
+              (os.environ['PERSONAL_AI_FOUNDATION_VERSION'],os.environ['PERSONAL_AI_FOUNDATION_NAME']),
+              (os.environ['PERSONAL_AI_RLS_VERSION'],os.environ['PERSONAL_AI_RLS_NAME']),
+              (os.environ['PERSONAL_AI_INDEX_VERSION'],os.environ['PERSONAL_AI_INDEX_NAME']),
+          ]
+          positions=[]
+          for version,name in expected:
+              matches=[i for i,row in enumerate(rows) if str(row.get('version'))==version and row.get('name')==name]
+              if len(matches)!=1:
+                  raise SystemExit(f'Migration attendue introuvable de façon unique: {version}_{name}')
+              positions.append(matches[0])
+          if positions != list(range(positions[0],positions[0]+len(positions))):
+              raise SystemExit(f'Ordre/continuité inattendu autour de Mon IA: positions={positions}')
+          print('Historique production Mon IA confirmé: Emploi, fondation, RLS, index dans l ordre exact.')
+          PY
 
       - name: Installer Supabase CLI
         uses: supabase/setup-cli@v2
@@ -70,17 +105,16 @@ jobs:
       - name: Démarrer Supabase local
         run: supabase db start
 
-      - name: Tester Mon IA avec pgTAP
+      - name: Exécuter les 36 assertions Mon IA
         run: supabase test db supabase/tests/personal_ai_v25.test.sql --local
 
-      - name: Résumé readiness
+      - name: Résumé lecture seule
         shell: bash
         run: |
           cat <<'EOF'
-          Readiness Mon IA V25 validé localement.
-          Baseline production attendue: 20260905133130_sinjira_v25_employment_foundation.
-          Lot gelé: deux migrations Mon IA + Edge personal-ai avec JWT obligatoire.
-          Ce workflow ne modifie pas la production et n'active aucun moteur conversationnel.
+          Vérification Mon IA V25 terminée sans écriture production.
+          Les trois migrations production sont verrouillées dans leur ordre réel.
+          L'Edge personal-ai reste contractuellement JWT obligatoire et sans chat/mémoire/provider/récupération de sources.
           EOF
 
       - name: Arrêter Supabase local

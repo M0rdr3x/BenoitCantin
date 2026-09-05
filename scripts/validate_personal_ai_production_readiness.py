@@ -14,7 +14,7 @@ MANIFEST = ROOT / 'scripts/validate_production_schema_manifest.py'
 
 def require(condition: bool, message: str) -> None:
     if not condition:
-        raise SystemExit(f'ECHEC readiness Mon IA V25: {message}')
+        raise SystemExit(f'ECHEC état production Mon IA V25: {message}')
 
 
 def main() -> int:
@@ -56,12 +56,16 @@ def main() -> int:
     config_block = block[1].split('[functions.', 1)[0]
     require('verify_jwt = true' in config_block, 'JWT doit rester obligatoire')
 
-    compact_manifest = manifest.replace('\n', '')
-    require("'personal_ai_settings','personal_ai_source_permissions','personal_ai_audit'" in compact_manifest, 'tables Mon IA non classées ensemble dans le manifeste')
+    expected_block = manifest.split('EXPECTED_TABLES={', 1)[1].split('}\n\nPLANNED_LOCAL_TABLES=', 1)[0]
+    planned_block = manifest.split('PLANNED_LOCAL_TABLES={', 1)[1].split('}\n\nCREATE_RE=', 1)[0]
+    for table in ('personal_ai_settings','personal_ai_source_permissions','personal_ai_audit'):
+        require(f"'{table}'" in expected_block, f'{table} doit être classée production')
+        require(f"'{table}'" not in planned_block, f'{table} ne doit plus être classée planifiée')
+
     require('select plan(36);' in test, 'contrat pgTAP Mon IA doit rester à 36 assertions')
     require("has_index('private','personal_ai_audit','personal_ai_audit_user_idx'" in test, 'test de l index audit absent')
 
-    print('OK readiness Mon IA V25: fondation privée, 36 pgTAP, index audit, AAL2/ai_private, JWT obligatoire, runtime non configuré et aucune source Registre.')
+    print('OK production Mon IA V25: 3 tables classées production, 36 pgTAP, index audit, AAL2/ai_private, JWT obligatoire, runtime non configuré et aucune source Registre.')
     return 0
 
 
