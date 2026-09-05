@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="noindex,nofollow" name="robots"/>
+<title>Mon IA | Compte SINJIRA™</title>
+<link href="../assets/icons/sinjira-favicon.png" rel="icon" type="image/png"/>
+<link href="../assets/css/site.css?v=7.6-sinjira-account" rel="stylesheet"/>
+<link href="../assets/css/sinjira-player-account.css?v=24.1" rel="stylesheet"/>
+<link href="../assets/css/v24-platform.css?v=24.1" rel="stylesheet"/>
+</head>
+<body class="account-page" data-account-page="personal-ai">
+<header class="site-header"><div class="container nav-shell"><a class="brand" href="/"><img alt="" height="47" src="../assets/media/sinjira-emblem.webp" style="border-radius:50%" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Compte universel</span></span></a><nav class="main-nav"><a href="../projets/sinjira/index.html">SINJIRA™</a><a href="../projets/sinjira/jeux/index.html">Jeux</a><a href="../index.html">Benoit Cantin</a></nav></div></header>
+<div class="account-shell account-nav-scroll"><nav aria-label="Navigation du compte" class="account-nav"><a href="index.html">Mon espace</a><a href="bibliotheque.html">Ma bibliothèque</a><a href="mon-personnage.html">Mon personnage</a><a href="relations.html">Relations</a><a href="monde-parallele.html">Monde parallèle</a><a href="emploi.html">Emploi</a><a aria-current="page" href="mon-ia.html">Mon IA</a><a href="registre-personnel.html">Registre personnel</a><a href="histoire-de-vie.html">Histoire de vie</a><a href="communaute.html">Communauté</a><a href="rencontres.html">Rencontres</a><a href="messages.html">Messages</a><a href="profil.html">Profil</a><a href="securite.html">Sécurité</a><a href="parametres.html">Paramètres</a><button data-logout type="button">Déconnexion</button></nav></div>
+<main>
+<section class="account-hero"><div class="account-shell"><article class="account-card"><span class="eyebrow">Mon IA · fondation privée V25</span><h1>Votre IA, sous votre contrôle</h1><p>Cette première version prépare les réglages et les consentements de votre future IA personnelle. <strong>Aucun moteur conversationnel n’est encore activé</strong> : SINJIRA ne simule pas une IA qui n’existe pas et ne stocke actuellement ni conversation, ni mémoire, ni profil psychologique.</p><div class="account-status" data-personal-ai-status aria-live="polite" hidden></div><div class="hero-actions"><button class="btn btn-primary" data-personal-ai-open type="button">Ouvrir mes réglages privés</button><a class="btn btn-secondary" href="securite.html">Ma sécurité</a></div></article></div></section>
+
+<section class="section section-tight" data-personal-ai-workspace hidden><div class="account-shell"><div class="account-reader-grid">
+<article class="account-card"><span class="eyebrow">Activation volontaire</span><h2>Réglages de Mon IA</h2><form class="account-form" data-personal-ai-settings-form>
+<div class="field"><label><input name="enabled" type="checkbox"/> Préparer Mon IA sur mon compte</label><small>Ce choix ne lance aucun modèle et ne crée aucune mémoire. Il active uniquement votre préférence.</small></div>
+<div class="field"><label for="personal-ai-name">Nom d’affichage</label><input id="personal-ai-name" maxlength="80" name="ai_display_name" placeholder="Ex. Mon assistant SINJIRA"/></div>
+<div class="field"><label for="personal-ai-language">Langue préférée</label><select id="personal-ai-language" name="language_code"><option value="fr-CA">Français (Canada)</option><option value="fr-FR">Français (France)</option><option value="en-CA">English (Canada)</option><option value="en-US">English (United States)</option></select></div>
+<div class="hero-actions"><button class="btn btn-primary" type="submit">Enregistrer mes réglages</button></div>
+</form></article>
+
+<article class="account-card"><span class="eyebrow">Sources · consentement explicite</span><h2>Ce que Mon IA pourrait consulter plus tard</h2><p>Ces autorisations enregistrent seulement votre intention. <strong>La récupération de contenu est désactivée dans cette version.</strong> Les accorder ne transmet donc actuellement aucune donnée à une IA.</p>
+<div class="field"><label><input data-personal-ai-source="life_story" type="checkbox"/> Histoire de vie</label><small>Jamais le Registre personnel. Une future utilisation devra respecter les éléments que vous avez vous-même autorisés.</small></div>
+<div class="field"><label><input data-personal-ai-source="employment" type="checkbox"/> Emploi</label><small>Vos données professionnelles ne servent ni à la publicité, ni à un score caché.</small></div>
+<p><strong>Le Registre personnel des consciences n’est pas une source disponible ici et n’est jamais ajouté automatiquement.</strong></p></article>
+
+<article class="account-card"><span class="eyebrow">Limites V25</span><h2>Ce que cette version ne fait pas</h2><ul><li>Aucun chat ou modèle IA n’est configuré.</li><li>Aucune conversation ou mémoire n’est enregistrée.</li><li>Aucun accès automatique au Registre personnel, à Histoire de vie ou à Emploi.</li><li>Aucun profil psychologique, score caché, publicité ou recommandation commerciale.</li><li>Aucun clone IA après votre décès.</li></ul><p data-personal-ai-runtime><strong>Runtime : non configuré.</strong></p></article>
+</div></div></section>
+
+<section class="section section-tight" data-personal-ai-workspace hidden><div class="account-shell"><article class="account-card"><span class="eyebrow">Contrôle des données</span><h2>Supprimer la fondation Mon IA</h2><p>Vous pouvez retirer les réglages, consentements et l’audit minimal de cette fondation. Cette action ne touche pas vos autres espaces SINJIRA.</p><div class="hero-actions"><button class="btn btn-secondary" data-personal-ai-delete type="button">Supprimer mes données Mon IA</button></div></article></div></section>
+</main>
+<footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Mon IA SINJIRA™ — contrôle humain d’abord.</span></div></div></footer>
+<script defer src="../assets/js/site.js?v=7.6-sinjira-account"></script>
+<script src="../assets/js/sinjira-account.js?v=24.4.88" type="module"></script>
+<script src="../assets/js/sinjira-personal-ai-v25.js?v=25.0" type="module"></script>
+</body>
+</html>
