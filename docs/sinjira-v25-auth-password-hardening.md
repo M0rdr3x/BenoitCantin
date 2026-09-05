@@ -14,18 +14,29 @@ Le 2026-09-05, le Security Advisor Supabase production signale encore :
 
 Les garde-fous RLS V25 sont déjà verrouillés séparément en CI et le Performance Advisor ne signale plus de clé étrangère non indexée. Ce réglage Auth hébergé est donc le dernier WARN de sécurité identifié dans cette phase.
 
+Le même jour, la lecture connectée de l’organisation Supabase `glaxqwyumblfqmzusqbt` confirme :
+
+- projet `gpvivleexywljowcqkru` : `ACTIVE_HEALTHY` ;
+- région : `ca-central-1` ;
+- plan de l’organisation : **`free`**.
+
+La protection HIBP ne peut donc pas être activée dans l’état actuel du plan. Ce document et le workflow ne doivent jamais présenter l’activation comme terminée tant que l’organisation reste `free`.
+
 ## Référence Supabase
 
 Supabase Auth permet de refuser les mots de passe connus comme compromis via l’API Pwned Passwords de HaveIBeenPwned.
 
-Référence :
+Références :
 
 - https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
-- Management API GET : `/v1/projects/{ref}/config/auth`
-- Management API PATCH : `/v1/projects/{ref}/config/auth`
+- Management API organisation : `GET /v1/organizations/{slug}`
+- Management API Auth GET : `/v1/projects/{ref}/config/auth`
+- Management API Auth PATCH : `/v1/projects/{ref}/config/auth`
 - champ exact : `password_hibp_enabled`
 
-Cette fonctionnalité est indiquée par Supabase comme disponible sur le plan **Pro et supérieur**. Si le projet n’a pas droit à cette option, l’appel Management API doit échouer : le workflow ne tente aucun contournement ni changement de plan.
+Supabase indique que la protection contre les mots de passe compromis est disponible sur le plan **Pro et supérieur**. Les plans actuels correspondants sont Pro, Team et Enterprise.
+
+Le workflow n’achète, ne change ni ne contourne aucun plan. Il lit seulement le plan courant et s’arrête avant toute opération Auth si le plan n’est pas explicitement éligible.
 
 ## Workflow de production
 
@@ -37,9 +48,21 @@ Le workflow est exclusivement `workflow_dispatch`, utilise l’environnement Git
 
 Le secret utilisé est uniquement `SUPABASE_ACCESS_TOKEN`, déjà réservé aux appels Management API du projet production `gpvivleexywljowcqkru`.
 
-### Préflight
+### Préflight 0 — éligibilité du plan
 
-Le workflow :
+Avant même de lire `/config/auth`, le workflow :
+
+1. lit `GET /v1/organizations/glaxqwyumblfqmzusqbt` ;
+2. extrait uniquement le champ `plan` ;
+3. autorise uniquement `pro`, `team` ou `enterprise` ;
+4. échoue immédiatement pour `free`, valeur absente ou valeur inconnue ;
+5. n’exécute alors aucun PATCH Auth.
+
+**État actuel : cette étape doit échouer sur `plan='free'`.** Il n’est donc pas pertinent de déclencher le workflow tant que le plan reste inchangé.
+
+### Préflight Auth
+
+Seulement après éligibilité du plan, le workflow :
 
 1. lit `/config/auth` sans afficher le document complet ;
 2. exige `password_min_length >= 12` ;
@@ -59,6 +82,7 @@ Une seule écriture est autorisée :
 
 Aucun autre champ Auth n’est envoyé. Le workflow ne modifie notamment pas :
 
+- le plan ou la facturation Supabase ;
 - la longueur minimale des mots de passe ;
 - les caractères obligatoires ;
 - les fournisseurs OAuth ;
@@ -100,9 +124,10 @@ Aucun rollback de base de données n’est pertinent, car ce réglage n’est pa
 
 Une activation n’est considérée terminée que lorsque :
 
+- le plan de l’organisation est Pro, Team ou Enterprise ;
 - `/config/auth` renvoie `password_hibp_enabled=true` ;
 - `password_min_length >= 12` ;
 - les autres paramètres Auth n’ont pas changé durant l’opération ;
 - le Security Advisor ne contient plus `auth_leaked_password_protection`.
 
-Tant que le workflow n’a pas été exécuté avec succès et que ces preuves ne sont pas réunies, GitHub ne doit pas prétendre que la protection est active en production.
+Tant que le plan reste `free`, le WARN est un **blocage de capacité hébergée connu et documenté**, pas une permission de contourner la sécurité ou de modifier d’autres réglages.
