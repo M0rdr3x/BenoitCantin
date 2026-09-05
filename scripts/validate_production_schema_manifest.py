@@ -36,15 +36,15 @@ EXPECTED_TABLES={
 'life_story_posthumous_cases','life_story_posthumous_contests','life_story_exports','life_story_delivery_links','life_story_cleanup_tasks','life_story_report_codes',
 'conscience_entries','conscience_vault_sessions','conscience_vault_audit',
 'employment_profiles','employment_applications',
-'personal_ai_settings','personal_ai_source_permissions','personal_ai_audit'
+'personal_ai_settings','personal_ai_source_permissions','personal_ai_audit',
+'privacy_incident_register','privacy_requests','privacy_legal_holds','safety_escalation_cases'
 }
 
 PLANNED_LOCAL_TABLES={
 'family_relationships','character_questionnaire_drafts',
 'parallel_cycles','parallel_missions','parallel_responses',
 'market_listings','market_favorites','token_ledger',
-'codex_entities','codex_relationships','content_versions',
-'privacy_incident_register','privacy_requests','privacy_legal_holds','safety_escalation_cases'
+'codex_entities','codex_relationships','content_versions'
 }
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|private)\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
