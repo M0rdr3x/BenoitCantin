@@ -3,11 +3,13 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, auth, extensions;
 
-select plan(31);
+select plan(32);
 
 select has_table('private','conscience_entries','le coffre personnel existe dans le schema private');
 select has_table('private','conscience_vault_sessions','les sessions temporaires du coffre existent');
 select has_table('private','conscience_vault_audit','audit prive du coffre existe');
+select has_index('private','conscience_vault_audit','conscience_vault_audit_session_idx',
+  'la FK session_id de audit est couverte par un index');
 
 -- Aucun rôle client ni service_role ne lit directement le contenu intime.
 select ok(not has_table_privilege('anon','private.conscience_entries','SELECT'),
