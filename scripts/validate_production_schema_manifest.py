@@ -43,7 +43,8 @@ PLANNED_LOCAL_TABLES={
 'codex_entities','codex_relationships','content_versions',
 'privacy_incident_register','privacy_requests','privacy_legal_holds','safety_escalation_cases',
 'conscience_entries','conscience_vault_sessions','conscience_vault_audit',
-'employment_profiles','employment_applications'
+'employment_profiles','employment_applications',
+'personal_ai_settings','personal_ai_source_permissions','personal_ai_audit'
 }
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|private)\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
