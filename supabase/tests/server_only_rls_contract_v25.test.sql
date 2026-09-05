@@ -2,76 +2,112 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
--- Contrat dérivé de l'état production vérifié le 2026-09-05.
--- Une table RLS sans policy est ici volontairement server-only et deny-by-default.
--- Toute nouvelle table de cette catégorie doit être classifiée explicitement.
--- `service_role_allowed` est une permission maximale, jamais une obligation :
--- retirer un privilège service_role reste compatible avec ce contrat.
+-- Contrat dérivé de l'état production vérifié le 2026-09-05 et du manifeste
+-- de reconstruction local. Une table RLS sans policy est ici volontairement
+-- server-only et deny-by-default.
+--
+-- presence_scope:
+-- - production_observed : table réellement observée dans Supabase production;
+-- - reconstruction_only : objet local explicitement planifié, jamais revendiqué
+--   comme présent en production.
+--
+-- access_class:
+-- - strict_no_direct : aucun CRUD direct, même pour service_role;
+-- - service_role_allowed : service_role peut conserver du CRUD direct.
+--   Cette classe est une permission maximale, jamais une obligation : retirer
+--   un privilège service_role reste compatible avec ce contrat.
 create temporary table expected_server_only_rls (
   schema_name text not null,
   table_name text not null,
+  presence_scope text not null check (presence_scope in ('production_observed','reconstruction_only')),
   access_class text not null check (access_class in ('strict_no_direct','service_role_allowed')),
   primary key (schema_name,table_name)
 ) on commit drop;
 
-insert into expected_server_only_rls(schema_name,table_name,access_class) values
-  ('private','account_identities','strict_no_direct'),
-  ('private','conscience_entries','strict_no_direct'),
-  ('private','conscience_vault_audit','strict_no_direct'),
-  ('private','conscience_vault_sessions','strict_no_direct'),
-  ('private','moderation_appeals','strict_no_direct'),
-  ('private','moderation_decisions','strict_no_direct'),
-  ('private','parallel_identities','strict_no_direct'),
-  ('private','personal_ai_audit','strict_no_direct'),
-  ('private','personal_ai_settings','strict_no_direct'),
-  ('private','personal_ai_source_permissions','strict_no_direct'),
-  ('private','privacy_incident_register','strict_no_direct'),
-  ('private','privacy_legal_holds','strict_no_direct'),
-  ('private','privacy_requests','strict_no_direct'),
-  ('private','safety_escalation_cases','strict_no_direct'),
+insert into expected_server_only_rls(schema_name,table_name,presence_scope,access_class) values
+  ('private','account_identities','production_observed','strict_no_direct'),
+  ('private','conscience_entries','production_observed','strict_no_direct'),
+  ('private','conscience_vault_audit','production_observed','strict_no_direct'),
+  ('private','conscience_vault_sessions','production_observed','strict_no_direct'),
+  ('private','moderation_appeals','production_observed','strict_no_direct'),
+  ('private','moderation_decisions','production_observed','strict_no_direct'),
+  ('private','parallel_identities','production_observed','strict_no_direct'),
+  ('private','personal_ai_audit','production_observed','strict_no_direct'),
+  ('private','personal_ai_settings','production_observed','strict_no_direct'),
+  ('private','personal_ai_source_permissions','production_observed','strict_no_direct'),
+  ('private','privacy_incident_register','production_observed','strict_no_direct'),
+  ('private','privacy_legal_holds','production_observed','strict_no_direct'),
+  ('private','privacy_requests','production_observed','strict_no_direct'),
+  ('private','safety_escalation_cases','production_observed','strict_no_direct'),
 
-  ('private','preorder_admin_workflow','service_role_allowed'),
-  ('public','activation_codes','service_role_allowed'),
-  ('public','admin_audit_log','service_role_allowed'),
-  ('public','character_generation_runs','service_role_allowed'),
-  ('public','dating_connections','service_role_allowed'),
-  ('public','dating_meet_requests','service_role_allowed'),
-  ('public','dating_messages','service_role_allowed'),
-  ('public','fracture_engine_actions','service_role_allowed'),
-  ('public','fracture_engine_cards','service_role_allowed'),
-  ('public','fracture_engine_events','service_role_allowed'),
-  ('public','fracture_engine_games','service_role_allowed'),
-  ('public','fracture_engine_rounds','service_role_allowed'),
-  ('public','fracture_engine_seats','service_role_allowed'),
-  ('public','fracture_engine_votes','service_role_allowed'),
-  ('public','internal_contribution_ownership','service_role_allowed'),
-  ('public','internal_gameplay_contributions','service_role_allowed'),
-  ('public','license_batches','service_role_allowed'),
-  ('public','license_redemptions','service_role_allowed'),
-  ('public','life_story_cleanup_tasks','service_role_allowed'),
-  ('public','life_story_delivery_links','service_role_allowed'),
-  ('public','life_story_exports','service_role_allowed'),
-  ('public','life_story_posthumous_cases','service_role_allowed'),
-  ('public','life_story_posthumous_contests','service_role_allowed'),
-  ('public','life_story_report_codes','service_role_allowed'),
-  ('public','preorder_commercial_plans','service_role_allowed'),
-  ('public','preorder_fulfillment_settings','service_role_allowed'),
-  ('public','preorder_pickup_points','service_role_allowed'),
-  ('public','preorder_sales_announcements','service_role_allowed'),
-  ('public','preorder_shipping_zones','service_role_allowed'),
-  ('public','security_push_endpoints','service_role_allowed'),
-  ('public','sinjira_canon_context','service_role_allowed'),
-  ('public','sinjira_points_accounts','service_role_allowed'),
-  ('public','sinjira_points_ledger','service_role_allowed'),
-  ('public','sinjira_security_settings','service_role_allowed'),
-  ('public','social_suspensions','service_role_allowed');
+  ('private','preorder_admin_workflow','production_observed','service_role_allowed'),
+  ('public','activation_codes','production_observed','service_role_allowed'),
+  ('public','admin_audit_log','production_observed','service_role_allowed'),
+  ('public','character_generation_runs','production_observed','service_role_allowed'),
+  ('public','dating_connections','production_observed','service_role_allowed'),
+  ('public','dating_meet_requests','production_observed','service_role_allowed'),
+  ('public','dating_messages','production_observed','service_role_allowed'),
+  ('public','fracture_engine_actions','production_observed','service_role_allowed'),
+  ('public','fracture_engine_cards','production_observed','service_role_allowed'),
+  ('public','fracture_engine_events','production_observed','service_role_allowed'),
+  ('public','fracture_engine_games','production_observed','service_role_allowed'),
+  ('public','fracture_engine_rounds','production_observed','service_role_allowed'),
+  ('public','fracture_engine_seats','production_observed','service_role_allowed'),
+  ('public','fracture_engine_votes','production_observed','service_role_allowed'),
+  ('public','internal_contribution_ownership','production_observed','service_role_allowed'),
+  ('public','internal_gameplay_contributions','production_observed','service_role_allowed'),
+  ('public','license_batches','production_observed','service_role_allowed'),
+  ('public','license_redemptions','production_observed','service_role_allowed'),
+  ('public','life_story_cleanup_tasks','production_observed','service_role_allowed'),
+  ('public','life_story_delivery_links','production_observed','service_role_allowed'),
+  ('public','life_story_exports','production_observed','service_role_allowed'),
+  ('public','life_story_posthumous_cases','production_observed','service_role_allowed'),
+  ('public','life_story_posthumous_contests','production_observed','service_role_allowed'),
+  ('public','life_story_report_codes','production_observed','service_role_allowed'),
+  ('public','preorder_commercial_plans','production_observed','service_role_allowed'),
+  ('public','preorder_fulfillment_settings','production_observed','service_role_allowed'),
+  ('public','preorder_pickup_points','production_observed','service_role_allowed'),
+  ('public','preorder_sales_announcements','production_observed','service_role_allowed'),
+  ('public','preorder_shipping_zones','production_observed','service_role_allowed'),
+  ('public','security_push_endpoints','production_observed','service_role_allowed'),
+  ('public','sinjira_canon_context','production_observed','service_role_allowed'),
+  ('public','sinjira_points_accounts','production_observed','service_role_allowed'),
+  ('public','sinjira_points_ledger','production_observed','service_role_allowed'),
+  ('public','sinjira_security_settings','production_observed','service_role_allowed'),
+  ('public','social_suspensions','production_observed','service_role_allowed'),
 
-select plan(9);
+  -- Objet historique de la reconstruction cumulative V24. Le manifeste le
+  -- classe PLANNED_LOCAL_TABLES et la production vérifiée ne possède pas cette table.
+  ('public','content_versions','reconstruction_only','service_role_allowed');
+
+select plan(12);
 
 select is(
   (select count(*)::int from expected_server_only_rls),
+  50,
+  'le contrat classifie les 49 tables production et l’unique table RLS reconstruction-only'
+);
+
+select is(
+  (select count(*)::int from expected_server_only_rls where presence_scope='production_observed'),
   49,
-  'le contrat classifie exactement les 49 tables RLS sans policy observées'
+  '49 tables RLS sans policy ont été réellement observées en production'
+);
+
+select is(
+  (select count(*)::int from expected_server_only_rls where presence_scope='reconstruction_only'),
+  1,
+  'une seule table RLS sans policy est explicitement propre à la reconstruction locale'
+);
+
+select is(
+  (
+    select string_agg(format('%I.%I',schema_name,table_name), ', ' order by schema_name,table_name)
+    from expected_server_only_rls
+    where presence_scope='reconstruction_only'
+  ),
+  'public.content_versions'::text,
+  'content_versions reste l’unique exception RLS reconstruction-only explicitement nommée'
 );
 
 select is(
@@ -82,8 +118,8 @@ select is(
 
 select is(
   (select count(*)::int from expected_server_only_rls where access_class='service_role_allowed'),
-  35,
-  '35 tables serveur peuvent conserver un CRUD direct service_role explicitement autorisé'
+  36,
+  '35 tables production et content_versions peuvent conserver un CRUD direct service_role explicitement autorisé'
 );
 
 select is(
