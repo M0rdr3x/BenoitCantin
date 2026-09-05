@@ -26,6 +26,20 @@ Au contrôle du 2026-09-04 :
 
 Conclusion : le lot V25 est fusionné dans `main`, mais **n’est pas encore déployé sur Supabase production** tant que le workflow de production n’a pas été exécuté et que les contrôles post-déploiement n’ont pas réussi.
 
+## Historique Supabase : règle importante
+
+L’historique production SINJIRA existant n’utilise pas systématiquement les mêmes timestamps que les fichiers de `supabase/migrations/`. Par exemple, la production contient `20260809050252_sinjira_universal_platform` alors que le dépôt historique contient une migration locale portant le même nom avec un autre timestamp.
+
+Supabase CLI `migration list` compare les migrations **par timestamp uniquement**. Un `supabase db push` depuis l’historique Git actuel considérerait donc des migrations anciennes comme divergentes, même lorsque leur changement de schéma est déjà présent en production.
+
+Conséquences :
+
+- **ne pas** utiliser `supabase db push`, `--include-all` ou `migration repair` pour forcer l’alignement de ce rollout;
+- **ne pas** réécrire en masse l’historique ancien uniquement pour déployer le coffre;
+- utiliser l’API officielle Supabase `POST /v1/projects/{ref}/database/migrations`, qui exécute la migration transactionnellement et crée l’entrée distante dans `supabase_migrations`;
+- pour V25, le contrat de séquence repose sur les **noms des quatre migrations et leur ordre**, tandis que les versions/timestamps distants sont générérés par Supabase;
+- conserver la baseline distante V24.5.54 comme frontière : aucune migration inattendue ne doit apparaître après elle avant ou pendant ce rollout.
+
 ## Voie de déploiement contrôlée
 
 Le lot doit être déployé par `.github/workflows/sinjira-v25-production-deploy.yml` après fusion de ce workflow dans `main`.
@@ -34,13 +48,15 @@ Le workflow est volontairement manuel (`workflow_dispatch`) et impose :
 
 - l’environnement GitHub `production`;
 - la confirmation textuelle exacte `DEPLOY-SINJIRA-V25`;
-- les secrets `SUPABASE_ACCESS_TOKEN` et `SUPABASE_DB_PASSWORD`;
-- Supabase CLI `2.111.0`, identique à la CI du coffre V25;
+- le secret `SUPABASE_ACCESS_TOKEN`;
 - le projet Supabase explicite `gpvivleexywljowcqkru`;
 - le checkout du SHA gelé `fc8d9fe26c8f095a0e95dc6cadcbf43d7c61c9dd`;
-- un contrôle `supabase migration list --linked` qui refuse toute migration locale en attente autre que les quatre versions V25 prévues;
-- un `supabase db push --linked --dry-run` avant toute écriture;
-- le déploiement de la seule Edge Function `conscience-vault`, sans `--no-verify-jwt`.
+- une lecture préalable de `GET /v1/projects/{ref}/database/migrations`;
+- la baseline exacte `20260901002241_sinjira_v24_5_54_fracture_contribution_atomic_finalize`;
+- après cette baseline, uniquement un préfixe valide des quatre noms V25 attendus, ce qui permet une reprise sûre après une interruption partielle;
+- l’application des migrations via `POST /v1/projects/{ref}/database/migrations` avec une `Idempotency-Key` stable;
+- une nouvelle lecture de l’historique exigeant exactement les quatre noms V25 dans l’ordre avant le déploiement Edge;
+- Supabase CLI `2.111.0` uniquement pour déployer la seule Edge Function `conscience-vault`, sans `--no-verify-jwt`.
 
 ### Pourquoi le SHA est gelé
 
@@ -55,20 +71,20 @@ La chronologie vérifiée est la suivante :
 - #165 introduit ensuite `20260904225000_sinjira_v25_employment_foundation.sql`;
 - #167 introduit ensuite les migrations `20260905000500_sinjira_v25_personal_ai_foundation.sql` et `20260905001000_sinjira_v25_personal_ai_rls_hardening.sql`.
 
-**Ne pas exécuter `supabase db push` depuis le `main` actuel pour ce déploiement du coffre.** Cela pourrait embarquer des migrations de modules qui ne font pas partie de ce lot de production.
+**Ne pas exécuter `supabase db push` depuis le `main` actuel pour ce déploiement du coffre.** Cela pourrait embarquer des migrations de modules qui ne font pas partie de ce lot et se heurterait en plus à la dérive historique de timestamps déjà présente.
 
-Le SHA gelé ne contourne pas l’historique Supabase : `db push` compare toujours les migrations locales de ce SHA avec `supabase_migrations.schema_migrations` et le workflow refuse de continuer si le périmètre distant observé n’est plus exactement celui attendu.
+Le SHA gelé sert à garantir le contenu exact du SQL et de l’Edge Function. La production reste protégée par un second contrat indépendant : la baseline distante et la suite ordonnée des noms de migrations lue directement depuis l’API Supabase.
 
 ## Lot SQL V25 à appliquer — ordre obligatoire
 
-1. `20260902211500_sinjira_v25_0_security_risk_model_convergence.sql`
-2. `20260902223000_sinjira_v25_0_personal_consciousness_vault.sql`
-3. `20260902231500_sinjira_v25_0_conscience_vault_challenge_continuity.sql`
-4. `20260903213000_sinjira_v25_0_device_key_privacy_and_trust_hardening.sql`
+1. `20260902211500_sinjira_v25_0_security_risk_model_convergence.sql` → `sinjira_v25_0_security_risk_model_convergence`
+2. `20260902223000_sinjira_v25_0_personal_consciousness_vault.sql` → `sinjira_v25_0_personal_consciousness_vault`
+3. `20260902231500_sinjira_v25_0_conscience_vault_challenge_continuity.sql` → `sinjira_v25_0_conscience_vault_challenge_continuity`
+4. `20260903213000_sinjira_v25_0_device_key_privacy_and_trust_hardening.sql` → `sinjira_v25_0_device_key_privacy_and_trust_hardening`
 
 Ne pas sauter la première migration : le coffre exige explicitement le modèle de risque `v25.0` et le scope sensible `conscience_vault`.
 
-Ne pas utiliser `migration repair`, `db reset --linked`, `--include-all`, un SQL copié à la main ou un outil qui inventerait une nouvelle version de migration pour forcer le passage. En cas de divergence d’historique, arrêter le déploiement et diagnostiquer la divergence avant toute écriture.
+Ne pas utiliser `migration repair`, `db reset --linked`, `db push`, `--include-all` ou un SQL copié manuellement pour forcer le passage. Si une migration inattendue apparaît après la baseline V24.5.54, arrêter le déploiement et diagnostiquer avant toute nouvelle écriture.
 
 ## Effet utilisateur important avant production
 
@@ -78,7 +94,7 @@ Cette remise à zéro est une mesure de sécurité parce que les anciennes `devi
 
 Le contrôle production du 2026-09-04 a trouvé un seul appareil enregistré, aucun appareil `is_trusted`, aucun appareil `is_primary` et donc aucun utilisateur affecté par cette remise à zéro au moment du préflight. Ce constat doit être revérifié si le déploiement est reporté.
 
-Le déploiement doit être traité comme un changement utilisateur réel, pas comme une simple migration invisible.
+Le déploiement doit donc être traité comme un changement utilisateur réel, pas comme une simple migration invisible.
 
 ## Edge Function à déployer après les migrations
 
@@ -98,14 +114,15 @@ Ne pas rendre l’interface du Registre personnel opérationnelle tant que cette
 Avant toute écriture production :
 
 1. vérifier que le projet Supabase est `ACTIVE_HEALTHY`;
-2. relire l’historique des migrations et confirmer qu’aucune version V25 n’a été appliquée manuellement entre-temps;
-3. confirmer que les workflows V25 de `main` sont verts;
-4. confirmer que `conscience-vault` reste `verify_jwt=true` dans le SHA gelé;
-5. revérifier l’impact de la remise à zéro de confiance des appareils;
-6. confirmer que l’environnement GitHub `production` et les deux secrets requis sont configurés;
-7. déclencher uniquement `.github/workflows/sinjira-v25-production-deploy.yml` avec la confirmation exacte;
-8. lire le résultat du dry-run et arrêter si une migration autre que les quatre versions attendues apparaît;
-9. ne pas confondre le Registre personnel avec le Registre narratif ni avec Histoire de vie.
+2. lire l’historique Supabase et confirmer la baseline `20260901002241_sinjira_v24_5_54_fracture_contribution_atomic_finalize`;
+3. confirmer qu’après cette baseline il n’existe aucune migration inattendue : seulement zéro à quatre noms V25, dans l’ordre prévu;
+4. confirmer que les workflows V25 de `main` sont verts;
+5. confirmer que `conscience-vault` reste `verify_jwt=true` dans le SHA gelé;
+6. revérifier l’impact de la remise à zéro de confiance des appareils;
+7. confirmer que l’environnement GitHub `production` et `SUPABASE_ACCESS_TOKEN` sont configurés;
+8. déclencher uniquement `.github/workflows/sinjira-v25-production-deploy.yml` avec la confirmation exacte;
+9. arrêter immédiatement si l’API de migrations refuse l’accès ou si l’historique ne correspond plus au préfixe attendu;
+10. ne pas confondre le Registre personnel avec le Registre narratif ni avec Histoire de vie.
 
 ## Vérifications post-déploiement DB
 
@@ -181,7 +198,7 @@ Seulement après vérification réelle du backend :
 - mettre à jour `scripts/validate_production_schema_manifest.py` pour déplacer `conscience_entries`, `conscience_vault_sessions` et `conscience_vault_audit` de `PLANNED_LOCAL_TABLES` vers `EXPECTED_TABLES`;
 - conserver les tests/guards V25 actifs;
 - effectuer un smoke test Web et mobile sans contenu intime réel;
-- noter la date, le SHA gelé et la version de déploiement dans le journal de release.
+- noter la date, le SHA gelé et les versions distantes générées par Supabase dans le journal de release.
 
 ## Rollback / incident
 
