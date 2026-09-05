@@ -27,3 +27,6 @@ jobs:
 
       - name: Vérifier les garde-fous V24.5.47
         run: python scripts/validate_advisor_ci_guardrails_v24_5_47.py
+
+      - name: Vérifier le durcissement Auth V25
+        run: python scripts/validate_auth_password_hardening_workflow.py
