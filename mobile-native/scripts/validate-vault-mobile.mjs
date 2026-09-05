@@ -41,11 +41,21 @@ requireMarkers(app, [
 ], 'contrat mobile V25 du Registre personnel');
 
 requireMarkers(app, [
+  "const PERSONAL_AI_PATH = '/compte/mon-ia.html';",
+  "{ key: 'ai', label: 'Mon IA', path: PERSONAL_AI_PATH }",
+  'function isPersonalAiUrl(url: string)',
+  "if (isPersonalAiUrl(currentUrl)) {",
+  "setActiveTab('home');",
+  "Mon IA privée a été fermée automatiquement lorsque SINJIRA a quitté le premier plan.",
+], 'contrat mobile V25 de Mon IA privée');
+
+requireMarkers(app, [
   "{ key: 'home', label: 'Accueil', path: '/app/' }",
   "{ key: 'messages', label: 'Messages', path: '/compte/messages.html' }",
   "{ key: 'dating', label: 'Rencontres', path: '/compte/rencontres.html' }",
   "{ key: 'employment', label: 'Emploi', path: '/compte/emploi.html' }",
   "{ key: 'world', label: 'Monde', path: '/compte/monde-parallele.html' }",
+  "{ key: 'ai', label: 'Mon IA', path: PERSONAL_AI_PATH }",
   "{ label: 'Alertes', path: '/compte/notifications.html' }",
   "{ label: 'Profil', path: '/compte/profil.html' }",
   "{ label: 'Sécurité', path: '/compte/securite.html' }",
@@ -71,15 +81,27 @@ forbidMarkers(app, [
 ], 'le natif ne reçoit, ne stocke et n’exporte jamais le contenu du coffre');
 
 forbidMarkers(app, [
+  "functions.invoke('personal-ai'",
+  'service_personal_ai_',
+  'personal_ai_settings',
+  'personal_ai_source_permissions',
+  'personal_ai_audit',
+  'source_permissions',
+  'conversation_enabled',
+  'memory_enabled',
+  'source_retrieval_enabled',
+  'provider_configured',
+], 'le natif ne reçoit ni ne stocke l’état de Mon IA et ne contourne jamais l Edge Web sécurisée');
+
+forbidMarkers(app, [
   "{ key: 'feed', label: 'Fil'",
   "{ key: 'alerts', label: 'Alertes'",
   "{ label: 'Rencontres', path: '/compte/rencontres.html' }",
-  '/compte/mon-ia.html',
-], 'aucun onglet obsolète ou destination mobile non implémentée');
+], 'aucun onglet obsolète ou doublon secondaire');
 
 if (config?.expo?.version !== '25.0.0') throw new Error('app.json: version V25.0.0 requise');
 if (config?.expo?.ios?.buildNumber !== '25000') throw new Error('app.json: buildNumber iOS 25000 requis');
 if (config?.expo?.android?.versionCode !== 25000) throw new Error('app.json: versionCode Android 25000 requis');
 if (config?.expo?.scheme !== 'sinjira') throw new Error('app.json: schéma sinjira requis pour les liens profonds');
 
-console.log('OK mobile V25: Emploi dans la navigation principale, Profil secondaire, Registre personnel protégé et aucun contenu du coffre dans le natif.');
+console.log('OK mobile V25: Emploi et Mon IA dans la navigation principale, Profil secondaire, Registre personnel protégé, Mon IA déchargée en arrière-plan et aucune donnée privée du coffre ou de l IA dans le natif.');

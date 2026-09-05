@@ -22,6 +22,7 @@ import { WebView, WebViewNavigation } from 'react-native-webview';
 const DEFAULT_ORIGIN = 'https://www.benoitcantin.com';
 const ALLOWED_WEB_HOSTS = new Set(['www.benoitcantin.com', 'benoitcantin.com', 'sinjira.com', 'www.sinjira.com']);
 const VAULT_PATH = '/compte/registre-personnel.html';
+const PERSONAL_AI_PATH = '/compte/mon-ia.html';
 const ACCOUNT_HOME_PATH = '/compte/index.html';
 const VAULT_LOCAL_GATE_MS = 90_000;
 
@@ -60,6 +61,7 @@ const tabs = [
   { key: 'dating', label: 'Rencontres', path: '/compte/rencontres.html' },
   { key: 'employment', label: 'Emploi', path: '/compte/emploi.html' },
   { key: 'world', label: 'Monde', path: '/compte/monde-parallele.html' },
+  { key: 'ai', label: 'Mon IA', path: PERSONAL_AI_PATH },
 ] as const;
 
 const quickLinks = [
@@ -92,6 +94,15 @@ function isVaultUrl(url: string) {
   try {
     const parsed = new URL(url, ORIGIN);
     return parsed.pathname === VAULT_PATH;
+  } catch {
+    return false;
+  }
+}
+
+function isPersonalAiUrl(url: string) {
+  try {
+    const parsed = new URL(url, ORIGIN);
+    return parsed.pathname === PERSONAL_AI_PATH;
   } catch {
     return false;
   }
@@ -287,6 +298,13 @@ export default function App() {
           setCanGoBack(false);
           setWebViewKey((value) => value + 1);
           setNativeMessage('Registre personnel verrouillé automatiquement lorsque SINJIRA a quitté le premier plan.');
+        }
+        if (isPersonalAiUrl(currentUrl)) {
+          setCurrentUrl(`${ORIGIN}${ACCOUNT_HOME_PATH}`);
+          setActiveTab('home');
+          setCanGoBack(false);
+          setWebViewKey((value) => value + 1);
+          setNativeMessage('Mon IA privée a été fermée automatiquement lorsque SINJIRA a quitté le premier plan.');
         }
         if (biometricEnabled) setIsUnlocked(false);
       }
