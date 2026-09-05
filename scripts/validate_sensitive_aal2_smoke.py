@@ -6,6 +6,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 SMOKE = ROOT / 'scripts' / 'smoke_sensitive_aal2_local.py'
 WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-sensitive-aal2-v25.yml'
+CONFIG = ROOT / 'supabase' / 'config.toml'
 
 
 def fail(message: str) -> None:
@@ -19,10 +20,11 @@ def require(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    require(SMOKE.is_file(), f'fichier manquant: {SMOKE.relative_to(ROOT)}')
-    require(WORKFLOW.is_file(), f'fichier manquant: {WORKFLOW.relative_to(ROOT)}')
+    for path in (SMOKE, WORKFLOW, CONFIG):
+        require(path.is_file(), f'fichier manquant: {path.relative_to(ROOT)}')
     smoke = SMOKE.read_text('utf-8')
     workflow = WORKFLOW.read_text('utf-8')
+    config = CONFIG.read_text('utf-8')
 
     require('/auth/v1/signup' in smoke, 'signup Auth local absent')
     require('/auth/v1/token?grant_type=password' in smoke, 'reconnexion AAL1 absente')
@@ -46,6 +48,20 @@ def main() -> int:
     for marker in privileged_markers:
         require(marker not in smoke, f'identifiant privilégié interdit dans le smoke: {marker}')
 
+    # Le CLI Supabase local doit permettre exactement le facteur TOTP utilisé par le produit.
+    require('[auth.mfa.totp]' in config, 'bloc auth.mfa.totp local absent')
+    mfa_block = config.split('[auth.mfa.totp]', 1)[1]
+    mfa_block = mfa_block.split('\n[', 1)[0]
+    require(re.search(r'^enroll_enabled\s*=\s*true\s*$', mfa_block, re.MULTILINE) is not None,
+            'enrôlement TOTP local doit être activé')
+    require(re.search(r'^verify_enabled\s*=\s*true\s*$', mfa_block, re.MULTILINE) is not None,
+            'vérification TOTP locale doit être activée')
+    require('[auth.mfa.phone]' not in config, 'le smoke AAL2 ne doit pas activer le MFA téléphone')
+    require('[auth.passkey]' not in config, 'le smoke AAL2 ne doit pas activer les passkeys')
+    require('[functions.personal-ai]' in config and '[functions.conscience-vault]' in config,
+            'configuration des deux Edge sensibles absente')
+    require(config.count('verify_jwt = true') >= 2, 'JWT doit rester requis sur les fonctions sensibles')
+
     require('workflow_dispatch:' in workflow, 'déclenchement manuel absent')
     require('pull_request:' in workflow, 'validation PR absente')
     require('supabase start' in workflow, 'pile Supabase complète obligatoire')
@@ -54,12 +70,13 @@ def main() -> int:
     require('python3 scripts/smoke_sensitive_aal2_local.py' in workflow, 'smoke AAL2 non exécuté')
     require('SINJIRA_LOCAL_API_URL="$API_URL"' in workflow, 'URL locale non injectée')
     require('SINJIRA_LOCAL_ANON_KEY="$ANON_KEY"' in workflow, 'clé publique locale non injectée')
+    require('--no-verify-jwt' not in workflow, 'la vérification JWT Edge ne doit jamais être désactivée')
     require('SUPABASE_ACCESS_TOKEN' not in workflow, 'PAT production interdit')
     require('environment: production' not in workflow, 'le smoke local ne doit jamais demander l’environnement production')
     secret_refs = set(re.findall(r'secrets\.([A-Z0-9_]+)', workflow))
     require(not secret_refs, f'secrets GitHub interdits dans le smoke local: {sorted(secret_refs)}')
 
-    print('OK smoke AAL2 V25: local uniquement, TOTP réel, JWT aal2 vérifié, Mon IA + Coffre couverts sans privilège de contournement.')
+    print('OK smoke AAL2 V25: TOTP local activé, JWT aal2 vérifié, Mon IA + Coffre couverts sans privilège de contournement.')
     return 0
 
 
