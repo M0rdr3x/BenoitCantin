@@ -1,213 +1,163 @@
-# SINJIRA V25 — Préparation du déploiement production
+# SINJIRA V25 — État et exploitation production
 
-> État vérifié le 2026-09-04. Ce document distingue volontairement **fusionné dans GitHub** et **appliqué sur Supabase production**.
+> État vérifié le **2026-09-05**. Le backend du Registre personnel des consciences est désormais déployé en production. La preuve détaillée est conservée dans `docs/sinjira-v25-production-deployment-2026-09-05.md`.
 
-## Principe de déploiement
+## Principe
 
-**L’HUMAIN AVANT TOUT.** Le Registre personnel des consciences ne doit jamais être activé partiellement : le moteur de risque, le coffre privé, la continuité des challenges, le durcissement des appareils et l’Edge Function doivent former un lot cohérent.
+**L’HUMAIN AVANT TOUT.** Le Registre personnel des consciences concerne la personne réelle et reste strictement distinct du Registre narratif SINJIRA, de Histoire de vie et de l’héritage posthume.
 
-Ce runbook ne constitue pas une preuve de déploiement. La production doit être vérifiée après chaque opération.
+Le contenu intime du coffre ne doit jamais être copié vers :
 
-## État observé en production
+- Histoire de vie ou le PDF posthume;
+- les analytics;
+- la publicité;
+- les recommandations;
+- les journaux de sécurité.
 
-Projet Supabase configuré par `supabase/config.toml` : `gpvivleexywljowcqkru`.
+## État production vérifié
 
-Au contrôle du 2026-09-04 :
+Projet Supabase : `gpvivleexywljowcqkru` (`ca-central-1`).
 
-- dernière migration appliquée observée : `20260901002241_sinjira_v24_5_54_fracture_contribution_atomic_finalize`;
-- `public.security_connection_events.risk_model_version` : absent;
-- `private.security_risk_score_v25(...)` : absent;
-- `private.conscience_entries` : absent;
-- `private.conscience_vault_sessions` : absent;
-- `private.conscience_vault_audit` : absent;
-- `public.service_conscience_evaluate_access(...)` : absent;
-- Edge Function `conscience-vault` : absente de l’inventaire production;
-- les trois tables du coffre restent donc correctement classées comme **planifiées** dans `scripts/validate_production_schema_manifest.py`.
+Baseline avant V25 :
 
-Conclusion : le lot V25 est fusionné dans `main`, mais **n’est pas encore déployé sur Supabase production** tant que le workflow de production n’a pas été exécuté et que les contrôles post-déploiement n’ont pas réussi.
+`20260901002241_sinjira_v24_5_54_fracture_contribution_atomic_finalize`
 
-## Historique Supabase : règle importante
+Migrations V25 réellement présentes après cette baseline, dans l’ordre :
 
-L’historique production SINJIRA existant n’utilise pas systématiquement les mêmes timestamps que les fichiers de `supabase/migrations/`. Par exemple, la production contient `20260809050252_sinjira_universal_platform` alors que le dépôt historique contient une migration locale portant le même nom avec un autre timestamp.
+1. `20260905040230_sinjira_v25_0_security_risk_model_convergence`
+2. `20260905040303_sinjira_v25_0_personal_consciousness_vault`
+3. `20260905040330_sinjira_v25_0_conscience_vault_challenge_continuity`
+4. `20260905040400_sinjira_v25_0_device_key_privacy_and_trust_hardening`
 
-Supabase CLI `migration list` compare les migrations **par timestamp uniquement**. Un `supabase db push` depuis l’historique Git actuel considérerait donc des migrations anciennes comme divergentes, même lorsque leur changement de schéma est déjà présent en production.
+Le contenu SQL et l’Edge Function proviennent du lot gelé :
 
-Conséquences :
+`fc8d9fe26c8f095a0e95dc6cadcbf43d7c61c9dd`
 
-- **ne pas** utiliser `supabase db push`, `--include-all` ou `migration repair` pour forcer l’alignement de ce rollout;
-- **ne pas** réécrire en masse l’historique ancien uniquement pour déployer le coffre;
-- utiliser l’API officielle Supabase `POST /v1/projects/{ref}/database/migrations`, qui exécute la migration transactionnellement et crée l’entrée distante dans `supabase_migrations`;
-- pour V25, le contrat de séquence repose sur les **noms des quatre migrations et leur ordre**, tandis que les versions/timestamps distants sont générérés par Supabase;
-- conserver la baseline distante V24.5.54 comme frontière : aucune migration inattendue ne doit apparaître après elle avant ou pendant ce rollout.
+Aucune migration Emploi ou Mon IA n’a été incluse dans ce rollout ciblé.
 
-## Voie de déploiement contrôlée
+## Objets DB confirmés
 
-Le lot doit être déployé par `.github/workflows/sinjira-v25-production-deploy.yml` après fusion de ce workflow dans `main`.
+Les contrôles production confirment :
 
-Le workflow est volontairement manuel (`workflow_dispatch`) et impose :
+- `public.security_connection_events.risk_model_version` présent;
+- `private.security_risk_score_v25(...)` présent;
+- `private.conscience_entries` présent;
+- `private.conscience_vault_sessions` présent;
+- `private.conscience_vault_audit` présent;
+- `public.service_conscience_evaluate_access(...)` présent.
 
-- l’environnement GitHub `production`;
-- la confirmation textuelle exacte `DEPLOY-SINJIRA-V25`;
-- le secret `SUPABASE_ACCESS_TOKEN`;
-- le projet Supabase explicite `gpvivleexywljowcqkru`;
-- le checkout du SHA gelé `fc8d9fe26c8f095a0e95dc6cadcbf43d7c61c9dd`;
-- une lecture préalable de `GET /v1/projects/{ref}/database/migrations`;
-- la baseline exacte `20260901002241_sinjira_v24_5_54_fracture_contribution_atomic_finalize`;
-- après cette baseline, uniquement un préfixe valide des quatre noms V25 attendus, ce qui permet une reprise sûre après une interruption partielle;
-- l’application des migrations via `POST /v1/projects/{ref}/database/migrations` avec une `Idempotency-Key` stable;
-- une nouvelle lecture de l’historique exigeant exactement les quatre noms V25 dans l’ordre avant le déploiement Edge;
-- Supabase CLI `2.111.0` uniquement pour déployer la seule Edge Function `conscience-vault`, sans `--no-verify-jwt`.
+Pour les trois tables `private.conscience_*` :
 
-### Pourquoi le SHA est gelé
+- RLS est activé;
+- `anon` n’a aucun CRUD direct;
+- `authenticated` n’a aucun CRUD direct;
+- `service_role` n’a aucun CRUD direct;
+- les fonctions serveur sensibles possèdent un `search_path` explicite.
 
-`fc8d9fe26c8f095a0e95dc6cadcbf43d7c61c9dd` correspond à l’état du dépôt après le runbook #162 et avant les fondations applicatives ajoutant d’autres migrations.
+Le coffre était vide immédiatement après rollout : `0` entrée, `0` session et `0` événement d’audit.
 
-La chronologie vérifiée est la suivante :
+L’audit ne possède que des métadonnées (`id`, `user_id`, `session_id`, `entry_id`, `event_type`, `occurred_at`) et aucun champ de contenu intime, IP ou GPS.
 
-- #155 introduit `20260902211500_sinjira_v25_0_security_risk_model_convergence.sql`;
-- #156 introduit les trois autres migrations SQL du coffre ainsi que `conscience-vault`;
-- #157, #158, #159, #161 et #162 n’ajoutent aucune migration SQL;
-- #164 ne contient aucune migration;
-- #165 introduit ensuite `20260904225000_sinjira_v25_employment_foundation.sql`;
-- #167 introduit ensuite les migrations `20260905000500_sinjira_v25_personal_ai_foundation.sql` et `20260905001000_sinjira_v25_personal_ai_rls_hardening.sql`.
+## Edge Function production
 
-**Ne pas exécuter `supabase db push` depuis le `main` actuel pour ce déploiement du coffre.** Cela pourrait embarquer des migrations de modules qui ne font pas partie de ce lot et se heurterait en plus à la dérive historique de timestamps déjà présente.
+`conscience-vault` est :
 
-Le SHA gelé sert à garantir le contenu exact du SQL et de l’Edge Function. La production reste protégée par un second contrat indépendant : la baseline distante et la suite ordonnée des noms de migrations lue directement depuis l’API Supabase.
+- `ACTIVE`;
+- version `1`;
+- `verify_jwt=true`;
+- bundle SHA-256 `d2a61d32bf09e9278506e0682cf2bba87c0b5941b8acc607e64cd8a772998dfd`.
 
-## Lot SQL V25 à appliquer — ordre obligatoire
+Le code du lot impose :
 
-1. `20260902211500_sinjira_v25_0_security_risk_model_convergence.sql` → `sinjira_v25_0_security_risk_model_convergence`
-2. `20260902223000_sinjira_v25_0_personal_consciousness_vault.sql` → `sinjira_v25_0_personal_consciousness_vault`
-3. `20260902231500_sinjira_v25_0_conscience_vault_challenge_continuity.sql` → `sinjira_v25_0_conscience_vault_challenge_continuity`
-4. `20260903213000_sinjira_v25_0_device_key_privacy_and_trust_hardening.sql` → `sinjira_v25_0_device_key_privacy_and_trust_hardening`
+- JWT vérifié;
+- AAL2 obligatoire à chaque appel;
+- identité issue exclusivement du JWT;
+- rejet de `user_id`, `target_user_id` et `subject_user_id` client;
+- scope serveur `conscience_vault`;
+- capacités courtes de 60 à 600 secondes;
+- réponses sensibles `private, no-store`;
+- aucune IP brute ni donnée GPS stockée;
+- aucune journalisation du corps de requête ou du contenu du Registre.
 
-Ne pas sauter la première migration : le coffre exige explicitement le modèle de risque `v25.0` et le scope sensible `conscience_vault`.
+## Durcissement des appareils
 
-Ne pas utiliser `migration repair`, `db reset --linked`, `db push`, `--include-all` ou un SQL copié manuellement pour forcer le passage. Si une migration inattendue apparaît après la baseline V24.5.54, arrêter le déploiement et diagnostiquer avant toute nouvelle écriture.
+La migration V25 retire le `SELECT` direct de `public.security_devices` pour `authenticated`.
 
-## Effet utilisateur important avant production
+État vérifié :
 
-La migration `20260903213000_sinjira_v25_0_device_key_privacy_and_trust_hardening.sql` retire le `SELECT` direct de `security_devices` et **réinitialise volontairement tous les statuts historiques `is_trusted` / `is_primary`**.
+- `authenticated` : aucun `SELECT` direct sur `security_devices`;
+- `authenticated` : accès autorisé à `public.security_list_devices(text)`, réponse assainie;
+- `anon` : aucun accès à cette liste assainie.
 
-Cette remise à zéro est une mesure de sécurité parce que les anciennes `device_key` avaient déjà été exposées au navigateur. Elle implique toutefois que les utilisateurs devront réamorcer la confiance de leurs appareils selon le nouveau contrat AAL2 / autre appareil fiable.
+Avant le rollout, il existait un seul appareil enregistré et aucun appareil `is_trusted` ou `is_primary`. La remise à zéro de confiance n’a donc supprimé aucun statut fiable/principal existant au moment du déploiement.
 
-Le contrôle production du 2026-09-04 a trouvé un seul appareil enregistré, aucun appareil `is_trusted`, aucun appareil `is_primary` et donc aucun utilisateur affecté par cette remise à zéro au moment du préflight. Ce constat doit être revérifié si le déploiement est reporté.
+## Historique Supabase : règle permanente
 
-Le déploiement doit donc être traité comme un changement utilisateur réel, pas comme une simple migration invisible.
+L’historique production SINJIRA utilise historiquement des timestamps distants qui peuvent différer de ceux des fichiers Git portant le même nom de migration.
 
-## Edge Function à déployer après les migrations
+Supabase CLI `migration list` compare les versions par timestamp. Pour éviter de réécrire artificiellement l’historique :
 
-Déployer `supabase/functions/conscience-vault/index.ts` avec :
+- ne pas utiliser `migration repair` en masse;
+- ne pas utiliser `db reset --linked`;
+- ne pas utiliser `db push --include-all` pour forcer la convergence;
+- conserver le contrat par **nom et ordre** pour les migrations V25 appliquées via l’API de migrations Supabase.
 
-- `verify_jwt = true`;
-- les mêmes dépendances partagées que le SHA gelé;
-- aucune exposition directe du schéma `private` au navigateur;
-- aucune journalisation du contenu du Registre.
+La voie reproductible gardée dans le dépôt est `.github/workflows/sinjira-v25-production-deploy.yml`. Elle reste `workflow_dispatch` uniquement, avec confirmation `DEPLOY-SINJIRA-V25`, environnement GitHub `production`, SHA gelé et contrôle de l’historique distant.
 
-Le workflow déploie explicitement seulement `conscience-vault` après confirmation de l’historique SQL. Il ne doit jamais utiliser `--no-verify-jwt`.
+Le rollout réel du 2026-09-05 a été appliqué via l’interface de gestion Supabase connectée après les mêmes contrôles de baseline et de périmètre. Aucun run GitHub fictif n’est revendiqué.
 
-Ne pas rendre l’interface du Registre personnel opérationnelle tant que cette fonction et les quatre migrations ne sont pas présentes en production.
+## CI validée avant rollout
 
-## Préflight obligatoire
+La PR #172 a validé :
 
-Avant toute écriture production :
+- le contrat statique du workflow de production;
+- les garde-fous Edge du coffre;
+- le démarrage d’une base Supabase locale;
+- l’application locale des migrations;
+- **31 assertions pgTAP** du coffre V25;
+- les autres workflows déclenchés sans échec observé.
 
-1. vérifier que le projet Supabase est `ACTIVE_HEALTHY`;
-2. lire l’historique Supabase et confirmer la baseline `20260901002241_sinjira_v24_5_54_fracture_contribution_atomic_finalize`;
-3. confirmer qu’après cette baseline il n’existe aucune migration inattendue : seulement zéro à quatre noms V25, dans l’ordre prévu;
-4. confirmer que les workflows V25 de `main` sont verts;
-5. confirmer que `conscience-vault` reste `verify_jwt=true` dans le SHA gelé;
-6. revérifier l’impact de la remise à zéro de confiance des appareils;
-7. confirmer que l’environnement GitHub `production` et `SUPABASE_ACCESS_TOKEN` sont configurés;
-8. déclencher uniquement `.github/workflows/sinjira-v25-production-deploy.yml` avec la confirmation exacte;
-9. arrêter immédiatement si l’API de migrations refuse l’accès ou si l’historique ne correspond plus au préfixe attendu;
-10. ne pas confondre le Registre personnel avec le Registre narratif ni avec Histoire de vie.
+## Advisor sécurité après rollout
 
-## Vérifications post-déploiement DB
+Supabase signale les tables `private.conscience_*` en `RLS Enabled No Policy` au niveau `INFO`. Pour ce coffre, ce résultat est cohérent avec le design : RLS est activé, aucun rôle applicatif n’a de CRUD direct et les opérations passent par les RPC `SECURITY DEFINER` étroites.
 
-Exécuter en lecture seule :
+Un avertissement séparé reste ouvert : **Leaked Password Protection Disabled**.
 
-```sql
-select
-  to_regclass('private.conscience_entries') is not null as conscience_entries_exists,
-  to_regclass('private.conscience_vault_sessions') is not null as conscience_vault_sessions_exists,
-  to_regclass('private.conscience_vault_audit') is not null as conscience_vault_audit_exists,
-  exists (
-    select 1
-    from pg_proc p
-    join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public'
-      and p.proname = 'service_conscience_evaluate_access'
-  ) as conscience_access_rpc_exists,
-  exists (
-    select 1
-    from information_schema.columns
-    where table_schema = 'public'
-      and table_name = 'security_connection_events'
-      and column_name = 'risk_model_version'
-  ) as risk_model_version_column_exists,
-  exists (
-    select 1
-    from pg_proc p
-    join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'private'
-      and p.proname = 'security_risk_score_v25'
-  ) as security_risk_score_v25_exists;
-```
+Le dépôt fixe déjà `minimum_password_length = 12`, mais la protection contre les mots de passe compromis est un réglage Supabase Auth hébergé distinct. Elle n’est pas activée par une migration SQL et ne doit pas être déclarée résolue tant que le réglage hébergé n’a pas été modifié et revérifié.
 
-Toutes les valeurs doivent être `true`.
+Référence : https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
 
-Puis vérifier les privilèges :
+## Validations d’expérience encore à faire
 
-- aucun CRUD direct `anon` / `authenticated` sur `private.conscience_*`;
-- aucun accès direct au contenu du coffre par le navigateur/mobile;
-- RPC serveur avec `search_path` fixé;
-- AAL2 obligatoire;
-- Mode Voyage/appareil fiable ne contourne jamais le step-up du Registre personnel;
-- l’audit du coffre ne contient que des métadonnées;
-- Histoire de vie / héritage n’a aucune voie vers `private.conscience_*`.
+Le backend est déployé et structurellement vérifié. Les smoke tests authentifiés suivants restent à exécuter avec un **compte de test AAL2** et sans contenu intime réel :
 
-## Vérifications post-déploiement Edge
+1. une requête sans JWT est refusée;
+2. une session AAL1 est refusée;
+3. un identifiant utilisateur fourni par le client est refusé;
+4. une ouverture AAL2 avec risque acceptable crée une capacité courte;
+5. une capacité expirée ou révoquée ne permet plus de lecture;
+6. le challenge d’un autre appareil fiable reste obligatoire lorsqu’il est requis;
+7. Web et mobile utilisent le même contrat sans conserver de contenu intime hors du flux prévu.
 
-1. `conscience-vault` apparaît `ACTIVE` dans l’inventaire Supabase;
-2. `verify_jwt=true`;
-3. une requête sans JWT est refusée;
-4. une session AAL1 est refusée;
-5. un `user_id` / `target_user_id` fourni par le client est refusé;
-6. une ouverture AAL2 avec risque acceptable crée une capacité courte;
-7. une capacité expirée ou révoquée ne lit plus aucune entrée;
-8. un challenge d’appareil fiable reste obligatoire lorsqu’il est requis;
-9. les réponses sensibles sont `private, no-store`;
-10. aucun contenu intime n’apparaît dans les logs.
+Ces smoke tests ne doivent jamais utiliser de vraie confession, note intime ou donnée personnelle sensible.
 
-Le succès du workflow n’est pas, à lui seul, une preuve suffisante de ces dix propriétés : les contrôles production doivent être exécutés après le déploiement.
+## Manifeste production
 
-## Vérification Auth séparée
+À partir de ce rollout, `conscience_entries`, `conscience_vault_sessions` et `conscience_vault_audit` doivent rester dans `EXPECTED_TABLES` de `scripts/validate_production_schema_manifest.py`, et non dans `PLANNED_LOCAL_TABLES`.
 
-Le conseiller sécurité Supabase observé le 2026-09-04 signale **Leaked Password Protection Disabled**.
+Les fondations Emploi et Mon IA restent séparées de cette déclaration tant qu’elles n’ont pas été vérifiées comme déployées en production.
 
-Le dépôt fixe déjà `minimum_password_length = 12` pour la reconstruction locale, mais la protection contre les mots de passe compromis est un réglage Auth hébergé distinct. Il doit être activé et revérifié séparément dans la configuration production; ne pas prétendre qu’un changement GitHub ou le workflow SQL suffit à l’activer.
+## Incident / rollback
 
-Référence Supabase : https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+Ne jamais faire de rollback destructif automatique du coffre si des entrées réelles existent.
 
-## Après validation production
-
-Seulement après vérification réelle du backend :
-
-- mettre à jour `scripts/validate_production_schema_manifest.py` pour déplacer `conscience_entries`, `conscience_vault_sessions` et `conscience_vault_audit` de `PLANNED_LOCAL_TABLES` vers `EXPECTED_TABLES`;
-- conserver les tests/guards V25 actifs;
-- effectuer un smoke test Web et mobile sans contenu intime réel;
-- noter la date, le SHA gelé et les versions distantes générées par Supabase dans le journal de release.
-
-## Rollback / incident
-
-Ne pas tenter un rollback destructif automatique du coffre si des entrées réelles ont été créées. En cas d’incident :
+En cas d’incident :
 
 1. désactiver l’accès applicatif au Registre personnel;
 2. révoquer les capacités actives;
 3. conserver les données privées intactes;
-4. analyser les logs de métadonnées seulement;
-5. corriger en migration avant de rouvrir l’accès.
+4. analyser uniquement les métadonnées de sécurité nécessaires;
+5. corriger par une nouvelle migration;
+6. refaire les contrôles DB, Edge et AAL2 avant réouverture.
 
 Le Registre personnel ne doit jamais être exporté vers Histoire de vie, le PDF posthume, les analytics, la publicité ou les recommandations, y compris pendant une procédure d’incident.
