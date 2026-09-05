@@ -18,6 +18,7 @@ concurrency:
 env:
   SUPABASE_PROJECT_REF: gpvivleexywljowcqkru
   V25_DEPLOY_SHA: fc8d9fe26c8f095a0e95dc6cadcbf43d7c61c9dd
+  EXPECTED_REMOTE_BASELINE: "20260901002241"
 
 jobs:
   deploy-v25-consciousness-vault:
@@ -111,7 +112,7 @@ jobs:
           set -euo pipefail
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
-      - name: Vérifier que seules les quatre migrations V25 sont en attente
+      - name: Vérifier la baseline distante et les quatre migrations en attente
         shell: bash
         run: |
           set -euo pipefail
@@ -129,9 +130,12 @@ jobs:
               "20260902231500",
               "20260903213000",
           }
+          baseline = os.environ["EXPECTED_REMOTE_BASELINE"]
 
           text = Path(os.environ["MIGRATION_LIST"]).read_text(encoding="utf-8")
           pending = set()
+          remote_versions = set()
+          remote_only = set()
 
           for raw_line in text.splitlines():
               parts = re.split(r"[|│]", raw_line)
@@ -139,8 +143,31 @@ jobs:
                   continue
               local = re.search(r"\b(\d{14})\b", parts[0])
               remote = re.search(r"\b(\d{14})\b", parts[1])
-              if local and not remote:
-                  pending.add(local.group(1))
+              local_version = local.group(1) if local else None
+              remote_version = remote.group(1) if remote else None
+
+              if remote_version:
+                  remote_versions.add(remote_version)
+              if local_version and not remote_version:
+                  pending.add(local_version)
+              if remote_version and not local_version:
+                  remote_only.add(remote_version)
+
+          if not remote_versions:
+              raise SystemExit("Historique de migration distant illisible ou vide.")
+
+          actual_baseline = max(remote_versions)
+          if actual_baseline != baseline:
+              raise SystemExit(
+                  "Baseline distante refusée. "
+                  f"Attendue={baseline}; observée={actual_baseline}"
+              )
+
+          if remote_only:
+              raise SystemExit(
+                  "Dérive d'historique refusée: migrations distantes absentes du SHA gelé: "
+                  f"{sorted(remote_only)}"
+              )
 
           if pending != expected:
               raise SystemExit(
@@ -148,6 +175,7 @@ jobs:
                   f"Attendu={sorted(expected)}; en attente={sorted(pending)}"
               )
 
+          print("Baseline distante confirmée:", actual_baseline)
           print("Périmètre migration confirmé:", ", ".join(sorted(pending)))
           PY
 
