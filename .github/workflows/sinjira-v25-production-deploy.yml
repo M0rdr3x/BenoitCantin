@@ -1,0 +1,238 @@
+name: SINJIRA V25 — Déploiement production coffre
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Saisir exactement DEPLOY-SINJIRA-V25"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-v25-consciousness-vault-production
+  cancel-in-progress: false
+
+env:
+  SUPABASE_PROJECT_REF: gpvivleexywljowcqkru
+  V25_DEPLOY_SHA: fc8d9fe26c8f095a0e95dc6cadcbf43d7c61c9dd
+
+jobs:
+  deploy-v25-consciousness-vault:
+    name: Déployer le coffre V25 en production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+    steps:
+      - name: Vérifier la confirmation et les secrets
+        shell: bash
+        env:
+          DEPLOY_CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          test "$DEPLOY_CONFIRMATION" = "DEPLOY-SINJIRA-V25" || {
+            echo "Confirmation invalide; aucun déploiement n'est autorisé." >&2
+            exit 1
+          }
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || {
+            echo "Secret SUPABASE_ACCESS_TOKEN manquant." >&2
+            exit 1
+          }
+          test -n "${SUPABASE_DB_PASSWORD:-}" || {
+            echo "Secret SUPABASE_DB_PASSWORD manquant." >&2
+            exit 1
+          }
+
+      - name: Checkout du lot V25 gelé
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.V25_DEPLOY_SHA }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Vérifier le SHA et le périmètre du lot
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$V25_DEPLOY_SHA" || {
+            echo "SHA inattendu: $actual_sha" >&2
+            exit 1
+          }
+
+          expected_files=(
+            "supabase/migrations/20260902211500_sinjira_v25_0_security_risk_model_convergence.sql"
+            "supabase/migrations/20260902223000_sinjira_v25_0_personal_consciousness_vault.sql"
+            "supabase/migrations/20260902231500_sinjira_v25_0_conscience_vault_challenge_continuity.sql"
+            "supabase/migrations/20260903213000_sinjira_v25_0_device_key_privacy_and_trust_hardening.sql"
+            "supabase/functions/conscience-vault/index.ts"
+          )
+          for path in "${expected_files[@]}"; do
+            test -f "$path" || {
+              echo "Fichier requis absent du lot gelé: $path" >&2
+              exit 1
+            }
+          done
+
+          grep -Fq '[functions.conscience-vault]' supabase/config.toml
+          awk '
+            $0 == "[functions.conscience-vault]" { in_fn=1; next }
+            /^\[/ { if (in_fn) exit }
+            in_fn && $0 ~ /^verify_jwt[[:space:]]*=[[:space:]]*true[[:space:]]*$/ { ok=1 }
+            END { exit ok ? 0 : 1 }
+          ' supabase/config.toml || {
+            echo "conscience-vault doit rester verify_jwt=true." >&2
+            exit 1
+          }
+
+      - name: Vérifier les contrats statiques V25
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_conscience_vault_edge_v25.py
+          python3 scripts/validate_edge_function_inventory.py
+          python3 scripts/validate_production_schema_manifest.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+          github-token: ${{ github.token }}
+
+      - name: Lier explicitement le projet production
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Vérifier que seules les quatre migrations V25 sont en attente
+        shell: bash
+        run: |
+          set -euo pipefail
+          migration_list="$RUNNER_TEMP/v25-migration-list.txt"
+          supabase migration list --linked | tee "$migration_list"
+
+          MIGRATION_LIST="$migration_list" python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          expected = {
+              "20260902211500",
+              "20260902223000",
+              "20260902231500",
+              "20260903213000",
+          }
+
+          text = Path(os.environ["MIGRATION_LIST"]).read_text(encoding="utf-8")
+          pending = set()
+
+          for raw_line in text.splitlines():
+              parts = re.split(r"[|│]", raw_line)
+              if len(parts) < 2:
+                  continue
+              local = re.search(r"\b(\d{14})\b", parts[0])
+              remote = re.search(r"\b(\d{14})\b", parts[1])
+              if local and not remote:
+                  pending.add(local.group(1))
+
+          if pending != expected:
+              raise SystemExit(
+                  "Périmètre de migration refusé. "
+                  f"Attendu={sorted(expected)}; en attente={sorted(pending)}"
+              )
+
+          print("Périmètre migration confirmé:", ", ".join(sorted(pending)))
+          PY
+
+      - name: Prévisualiser le déploiement SQL sans écriture
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db push --linked --dry-run
+
+      - name: Appliquer les quatre migrations V25
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db push --linked --yes
+
+      - name: Vérifier l'historique après migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          migration_list="$RUNNER_TEMP/v25-migration-list-after.txt"
+          supabase migration list --linked | tee "$migration_list"
+
+          MIGRATION_LIST="$migration_list" python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          expected = {
+              "20260902211500",
+              "20260902223000",
+              "20260902231500",
+              "20260903213000",
+          }
+
+          text = Path(os.environ["MIGRATION_LIST"]).read_text(encoding="utf-8")
+          pending = set()
+          remote = set()
+
+          for raw_line in text.splitlines():
+              parts = re.split(r"[|│]", raw_line)
+              if len(parts) < 2:
+                  continue
+              local_match = re.search(r"\b(\d{14})\b", parts[0])
+              remote_match = re.search(r"\b(\d{14})\b", parts[1])
+              if remote_match:
+                  remote.add(remote_match.group(1))
+              if local_match and not remote_match:
+                  pending.add(local_match.group(1))
+
+          missing = expected - remote
+          if missing or (pending & expected):
+              raise SystemExit(
+                  "Historique distant incomplet après db push. "
+                  f"manquantes={sorted(missing)}; encore en attente={sorted(pending & expected)}"
+              )
+
+          print("Historique distant V25 confirmé.")
+          PY
+
+      - name: Déployer uniquement conscience-vault
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Ne jamais ajouter --no-verify-jwt ici.
+          supabase functions deploy conscience-vault \
+            --project-ref "$SUPABASE_PROJECT_REF" \
+            --use-api
+
+      - name: Vérifier que la fonction est présente
+        shell: bash
+        run: |
+          set -euo pipefail
+          functions_list="$RUNNER_TEMP/v25-functions-list.txt"
+          supabase functions list --project-ref "$SUPABASE_PROJECT_REF" | tee "$functions_list"
+          grep -Fq 'conscience-vault' "$functions_list" || {
+            echo "conscience-vault absente après déploiement." >&2
+            exit 1
+          }
+
+      - name: Résumé de sécurité
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat <<'EOF'
+          Lot SQL V25 appliqué et conscience-vault déployée.
+          Le workflow n'active PAS Leaked Password Protection : ce réglage Supabase Auth reste une vérification séparée.
+          Exécuter ensuite les contrôles DB/Edge en lecture seule décrits dans docs/sinjira-v25-production-readiness.md sur main.
+          EOF
