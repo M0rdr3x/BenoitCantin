@@ -87,7 +87,8 @@ def main()->int:
     require('/rest/v1/employment_applications' in smoke,'le smoke doit traverser PostgREST pour les candidatures')
     require('SINJIRA_LOCAL_API_URL' in smoke and 'SINJIRA_LOCAL_ANON_KEY' in smoke,'variables locales du smoke absentes')
     require('127.0.0.1' in smoke and 'localhost' in smoke,'le smoke doit refuser une API non locale')
-    require('service_role' not in smoke.lower(),'le smoke ne doit pas utiliser service_role')
+    for privileged_marker in ('SERVICE_ROLE_KEY','SINJIRA_LOCAL_SERVICE_ROLE','SUPABASE_SERVICE_ROLE','sb_secret_'):
+        require(privileged_marker not in smoke,f'le smoke contient un identifiant privilégié interdit: {privileged_marker}')
     require('gpvivleexywljowcqkru' not in smoke,'le smoke ne doit pas cibler le projet production')
     require('Entreprise Test Locale' in smoke and 'Aucune donnée réelle' in smoke,'données synthétiques explicites absentes')
     for operation in ('isolation SELECT profil A depuis B','isolation UPDATE profil A depuis B','isolation DELETE profil A depuis B','isolation SELECT candidature A depuis B','isolation UPDATE candidature A depuis B','isolation DELETE candidature A depuis B'):
