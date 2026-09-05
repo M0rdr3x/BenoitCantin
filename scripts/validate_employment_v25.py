@@ -42,7 +42,14 @@ def main() -> int:
         require(needle not in migration.lower(), f'couplage SQL interdit détecté: {needle}')
 
     require('employment_job_listings' not in migration, 'aucune table d’offres fictives ne doit être créée')
-    require("'employment_profiles','employment_applications'" in manifest.replace('\n', ''), 'tables Emploi non classées comme planifiées')
+
+    require('PLANNED_LOCAL_TABLES={' in manifest, 'bloc des modules planifiés absent du manifeste')
+    expected_block, planned_block = manifest.split('PLANNED_LOCAL_TABLES={', 1)
+    for table in ('employment_profiles', 'employment_applications'):
+        require(f"'{table}'" in expected_block, f'{table} doit être classée production')
+        require(f"'{table}'" not in planned_block, f'{table} ne doit plus être classée planifiée')
+    for table in ('personal_ai_settings', 'personal_ai_source_permissions', 'personal_ai_audit'):
+        require(f"'{table}'" in planned_block, f'{table} Mon IA doit rester planifiée')
 
     require('data-account-page="employment"' in page, 'route Emploi non identifiée')
     require('sinjira-employment-v25.js' in page, 'module JS Emploi non chargé')
@@ -62,7 +69,7 @@ def main() -> int:
     require("rel = 'noopener noreferrer'" in js, 'liens externes non durcis')
     require('select * from finish()' in test.lower(), 'test pgTAP incomplet')
 
-    print('OK emploi V25: RLS propriétaire, séparation des usages, zéro fausse offre et zéro persistance navigateur.')
+    print('OK emploi V25: production déclarée, RLS propriétaire, séparation des usages, zéro fausse offre et zéro persistance navigateur.')
     return 0
 
 
