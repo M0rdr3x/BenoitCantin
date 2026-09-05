@@ -13,6 +13,7 @@ on:
       - 'scripts/validate_employment_production_deploy_workflow.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'docs/sinjira-v25-employment-production-readiness.md'
+      - 'docs/sinjira-v25-employment-production-deployment-2026-09-05.md'
       - '.github/workflows/sinjira-employment-v25.yml'
       - '.github/workflows/sinjira-v25-employment-production.yml'
   workflow_dispatch:

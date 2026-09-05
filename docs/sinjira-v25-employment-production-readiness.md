@@ -1,7 +1,8 @@
-# SINJIRA V25 — Readiness production Emploi
+# SINJIRA V25 — État et exploitation production Emploi
 
-État préparatoire vérifié le **2026-09-05**.  
-Projet Supabase : `gpvivleexywljowcqkru` (`ca-central-1`).
+État vérifié le **2026-09-05**.  
+Projet Supabase : `gpvivleexywljowcqkru` (`ca-central-1`).  
+Preuve détaillée : `docs/sinjira-v25-employment-production-deployment-2026-09-05.md`.
 
 ## Principe
 
@@ -14,165 +15,128 @@ Projet Supabase : `gpvivleexywljowcqkru` (`ca-central-1`).
 - de Mon IA;
 - de la publicité et du profilage inter-module.
 
-Cette fondation **ne crée aucun catalogue d’offres** et ne prétend pas fournir des offres d’emploi vérifiées. Toute future place de marché devra faire l’objet d’un lot distinct avec organisations/employeurs vérifiés, offres réelles, signalement et anti-fraude.
+Cette fondation ne crée aucun catalogue d’offres. Toute future place de marché devra faire l’objet d’un lot séparé avec organisations/employeurs vérifiés, offres réelles, signalement, anti-fraude et règles de confidentialité propres.
 
-## État production avant rollout
+## État production vérifié
 
-Contrôle en lecture seule du 2026-09-05 :
-
-- `public.employment_profiles` : absent;
-- `public.employment_applications` : absent;
-- migration distante `sinjira_v25_employment_foundation` : absente.
-
-La dernière migration production observée est :
+Baseline avant Emploi :
 
 `20260905131659_sinjira_v25_conscience_vault_audit_session_index`
 
-Cette version constitue la baseline obligatoire du rollout Emploi ciblé.
+Migration Emploi réellement appliquée immédiatement après :
 
-## Lot Git gelé
+`20260905133130_sinjira_v25_employment_foundation`
 
-SHA :
+Le lot historique gelé reste :
 
 `2077ca7ff3a0ec77a27a908a9379e92149a4e0a5`
 
-Ce SHA correspond à l’état après l’ajout d’Emploi à la navigation mobile et avant les migrations Mon IA.
+Ce SHA contient Emploi Web/mobile et précède volontairement les migrations Mon IA.
 
-Vérifications effectuées :
+## Schéma production
 
-- `20260904225000_sinjira_v25_employment_foundation.sql` est présent;
-- la migration Mon IA `20260905000500_sinjira_v25_personal_ai_foundation.sql` est absente à ce SHA;
-- la migration Mon IA de durcissement `20260905001000_sinjira_v25_personal_ai_rls_hardening.sql` est absente à ce SHA.
+`public.employment_profiles` et `public.employment_applications` existent en production.
 
-## Migration autorisée
+Pour chacune :
 
-Une seule migration peut être appliquée :
+- RLS activé;
+- RLS forcé;
+- quatre policies propriétaire;
+- aucun CRUD `anon`;
+- accès `authenticated` borné par `auth.uid()`.
 
-`20260904225000_sinjira_v25_employment_foundation.sql`
+Les seules clés étrangères du module pointent vers `auth.users`.
 
-Nom distant attendu :
+Aucune table `public.employment_job_listings` n’existe.
 
-`sinjira_v25_employment_foundation`
+Au contrôle immédiatement après rollout :
 
-Elle crée uniquement :
+- `employment_profiles` : `0` ligne;
+- `employment_applications` : `0` ligne.
 
-- `public.employment_profiles`;
-- `public.employment_applications`;
-- deux index de suivi des candidatures;
-- les politiques RLS propriétaire nécessaires.
-
-Aucune Edge Function n’est requise pour cette fondation.
-
-## Contrat SQL
-
-### `employment_profiles`
-
-- clé primaire `user_id` liée à `auth.users` avec suppression en cascade;
-- données professionnelles volontairement saisies;
-- états de recherche bornés;
-- préférences de travail bornées;
-- maximum 30 compétences;
-- longueurs SQL bornées;
-- RLS activé et forcé;
-- quatre policies propriétaire `SELECT/INSERT/UPDATE/DELETE` basées sur `auth.uid()`.
-
-### `employment_applications`
-
-- identifiant UUID;
-- propriétaire `user_id` lié à `auth.users`;
-- organisation et poste obligatoires et bornés;
-- URL source limitée à HTTP/HTTPS et 2048 caractères;
-- états de candidature bornés;
-- notes privées bornées;
-- RLS activé et forcé;
-- quatre policies propriétaire `SELECT/INSERT/UPDATE/DELETE` basées sur `auth.uid()`.
-
-## Contrat Web/mobile
+## Contrat applicatif
 
 Le module Web :
 
-- dérive l’identité de `supabase.auth.getUser()`;
+- dérive l’identité avec `supabase.auth.getUser()`;
 - filtre les lectures et mutations sur l’utilisateur courant;
 - ne persiste aucune donnée Emploi dans `localStorage` ou `sessionStorage`;
 - rend les données utilisateur avec `textContent`, pas `innerHTML`;
-- valide les URL HTTP/HTTPS avant affichage;
-- ouvre les liens externes avec `noopener noreferrer`;
+- limite les URL externes à HTTP/HTTPS et utilise `noopener noreferrer`;
 - ne lit aucune table Rencontres, Sécurité, Registre, Histoire de vie ou registre narratif.
 
-L’application mobile utilise la route Web existante; elle ne crée pas un second stockage Emploi natif.
+L’application mobile réutilise la route Web existante et ne crée pas un stockage Emploi natif parallèle.
 
-## Tests existants
+## CI validée avant rollout
 
-`supabase/tests/employment_v25.test.sql` contient **31 assertions pgTAP** couvrant notamment :
+La PR #176 a passé sans échec :
 
-- présence des deux tables;
-- RLS activé et forcé;
-- absence de lecture `anon`;
-- CRUD `authenticated` borné par RLS;
-- huit policies propriétaire;
-- absence de table de fausses offres;
-- absence de FK vers d’autres modules SINJIRA;
-- bornes des états, compétences et URL.
+- le contrat Emploi;
+- le garde de production ciblé;
+- la classification du schéma;
+- les **31 assertions pgTAP** Emploi;
+- les tests navigateur Chromium, Firefox et WebKit;
+- Lighthouse mobile;
+- la validation générale du site;
+- les garde-fous secrets et advisor déclenchés.
 
-Le workflow `.github/workflows/sinjira-employment-v25.yml` reconstruit la base locale et exécute ces tests.
+La PR #176 a été fusionnée par squash sur `main` au commit :
 
-## Voie de déploiement ciblée
+`7103a6344ebfa61248b38cf82d59ac9252429142`
 
-Workflow :
+## Advisors après rollout
 
-`.github/workflows/sinjira-v25-employment-production.yml`
+Aucun nouveau problème de sécurité spécifique à Emploi n’a été signalé.
 
-Garde-fous :
+Les deux index Emploi sont signalés `unused_index` au niveau `INFO`, ce qui est attendu avec zéro candidature et ne justifie pas leur suppression.
+
+Référence performance : https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index
+
+L’avertissement global **Leaked Password Protection Disabled** reste ouvert côté Supabase Auth hébergé.
+
+Référence : https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+## Vérification post-déploiement
+
+`.github/workflows/sinjira-v25-employment-production.yml` est désormais destiné à être un **vérificateur lecture seule** :
 
 - `workflow_dispatch` uniquement;
-- confirmation exacte `DEPLOY-SINJIRA-V25-EMPLOYMENT`;
+- confirmation exacte `VERIFY-SINJIRA-V25-EMPLOYMENT`;
 - environnement GitHub `production`;
-- `SUPABASE_ACCESS_TOKEN` requis;
-- checkout du SHA gelé `2077ca7f...`;
-- baseline distante exacte `20260905131659_sinjira_v25_conscience_vault_audit_session_index`;
-- historique après baseline autorisé seulement vide ou contenant déjà l’unique migration Emploi;
-- application par l’API de migrations Supabase;
-- idempotence par nom de migration;
-- aucune Edge Function;
-- aucun `db push`;
-- aucune migration Mon IA.
+- lecture de l’historique des migrations via l’API de gestion;
+- vérification que `20260905133130_sinjira_v25_employment_foundation` suit immédiatement la baseline du coffre;
+- aucune migration appliquée;
+- aucune Edge Function déployée;
+- aucun secret modifié.
 
-Si une migration inattendue apparaît après la baseline avant le rollout Emploi, **arrêter le déploiement** et refaire le readiness; ne pas forcer l’historique.
+## Smoke tests encore à faire
 
-## Contrôles post-déploiement obligatoires
+Les tests authentifiés nécessitent un compte de test non sensible. Ils ne sont pas déclarés réussis tant qu’ils n’ont pas été réellement exécutés.
 
-Après application, vérifier en lecture seule :
+À vérifier :
 
-1. l’historique contient une seule migration après la baseline, nommée `sinjira_v25_employment_foundation`;
-2. les deux tables existent;
-3. RLS est activé et forcé sur les deux tables;
-4. les 8 policies propriétaire existent;
-5. `anon` n’a aucun CRUD utile sur les deux tables;
-6. un utilisateur authentifié ne peut lire/modifier que ses propres lignes;
-7. aucune table `employment_job_listings` n’existe;
-8. les advisors Supabase ne révèlent aucun nouveau problème sécurité/performance directement causé par Emploi;
-9. le manifeste GitHub n’est déplacé de `PLANNED_LOCAL_TABLES` vers `EXPECTED_TABLES` qu’après preuve réelle de production.
+1. créer/modifier/supprimer un profil professionnel factice;
+2. ajouter/modifier/supprimer une candidature fictive clairement identifiée comme test;
+3. confirmer qu’un autre compte ne peut pas lire ces données;
+4. confirmer qu’une URL non HTTP/HTTPS est refusée;
+5. confirmer qu’aucune donnée Emploi n’est écrite dans les stockages persistants du navigateur.
 
-## Smoke tests
+Ne pas utiliser de vraie candidature, CV, employeur réel ou note personnelle pendant ces smoke tests.
 
-Utiliser un compte de test non sensible :
+## Manifeste production
 
-- créer/modifier/supprimer un profil professionnel factice;
-- ajouter/modifier/supprimer une candidature fictive clairement identifiée comme test;
-- vérifier qu’un autre compte ne peut pas lire ces données;
-- vérifier qu’une URL non HTTP/HTTPS est refusée;
-- vérifier que rien n’est écrit dans les stockages navigateur persistants.
+`employment_profiles` et `employment_applications` doivent désormais rester dans `EXPECTED_TABLES` de `scripts/validate_production_schema_manifest.py`.
 
-Ne pas utiliser de vraie candidature, CV, employeur réel ou note personnelle pendant les smoke tests.
+Les tables Mon IA restent dans `PLANNED_LOCAL_TABLES` tant que leur propre lot n’a pas été audité et déployé séparément.
 
-## Rollback / incident
+## Incident / rollback
 
-Tant qu’aucune donnée utilisateur réelle n’existe, une correction de schéma peut être préparée de façon classique. Dès qu’une donnée Emploi réelle existe :
+Dès qu’une donnée Emploi réelle existe :
 
-- ne pas supprimer automatiquement les tables;
-- désactiver l’accès applicatif si nécessaire;
-- préserver les données privées;
-- corriger par une nouvelle migration;
-- revalider RLS et séparation inter-module avant réouverture.
+1. ne pas supprimer automatiquement les tables;
+2. désactiver l’accès applicatif si nécessaire;
+3. préserver les données privées;
+4. corriger par une nouvelle migration;
+5. revalider RLS, isolation propriétaire et séparation inter-module avant réouverture.
 
-Emploi ne doit jamais être utilisé comme source automatique pour le Registre personnel, Rencontres, Histoire de vie, Mode Voyage, sécurité ou Mon IA.
+Emploi ne doit jamais devenir une source automatique pour le Registre personnel, Rencontres, Histoire de vie, Mode Voyage, sécurité ou Mon IA.

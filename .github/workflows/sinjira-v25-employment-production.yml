@@ -1,10 +1,10 @@
-name: SINJIRA V25 — Déploiement production Emploi
+name: SINJIRA V25 — Vérification production Emploi
 
 on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: "Saisir exactement DEPLOY-SINJIRA-V25-EMPLOYMENT"
+        description: "Saisir exactement VERIFY-SINJIRA-V25-EMPLOYMENT"
         required: true
         type: string
 
@@ -12,22 +12,22 @@ permissions:
   contents: read
 
 concurrency:
-  group: sinjira-v25-employment-production
+  group: sinjira-v25-employment-production-verify
   cancel-in-progress: false
 
 env:
   SUPABASE_PROJECT_REF: gpvivleexywljowcqkru
-  EMPLOYMENT_DEPLOY_SHA: 2077ca7ff3a0ec77a27a908a9379e92149a4e0a5
   EXPECTED_REMOTE_BASELINE: "20260905131659"
   EXPECTED_REMOTE_BASELINE_NAME: sinjira_v25_conscience_vault_audit_session_index
-  EMPLOYMENT_MIGRATION_NAME: sinjira_v25_employment_foundation
+  EXPECTED_EMPLOYMENT_VERSION: "20260905133130"
+  EXPECTED_EMPLOYMENT_NAME: sinjira_v25_employment_foundation
   SUPABASE_MANAGEMENT_API: https://api.supabase.com/v1
 
 jobs:
-  deploy-employment-v25:
-    name: Déployer la fondation Emploi V25
+  verify-employment-v25:
+    name: Vérifier Emploi V25 en production
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     environment: production
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -36,11 +36,11 @@ jobs:
       - name: Vérifier la confirmation et le jeton
         shell: bash
         env:
-          DEPLOY_CONFIRMATION: ${{ inputs.confirmation }}
+          VERIFY_CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
-          test "$DEPLOY_CONFIRMATION" = "DEPLOY-SINJIRA-V25-EMPLOYMENT" || {
-            echo "Confirmation invalide; aucun déploiement Emploi n'est autorisé." >&2
+          test "$VERIFY_CONFIRMATION" = "VERIFY-SINJIRA-V25-EMPLOYMENT" || {
+            echo "Confirmation invalide; aucune vérification production Emploi n'est exécutée." >&2
             exit 1
           }
           test -n "${SUPABASE_ACCESS_TOKEN:-}" || {
@@ -48,40 +48,26 @@ jobs:
             exit 1
           }
 
-      - name: Checkout du lot Emploi gelé
+      - name: Checkout de main
         uses: actions/checkout@v6
         with:
-          ref: ${{ env.EMPLOYMENT_DEPLOY_SHA }}
+          ref: main
           persist-credentials: false
           fetch-depth: 1
 
-      - name: Vérifier le SHA et le périmètre
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$EMPLOYMENT_DEPLOY_SHA"
-          test -f supabase/migrations/20260904225000_sinjira_v25_employment_foundation.sql
-          test -f supabase/tests/employment_v25.test.sql
-          test -f scripts/validate_employment_v25.py
-          test -f compte/emploi.html
-          test -f assets/js/sinjira-employment-v25.js
-
-          # Le point de gel Emploi précède volontairement Mon IA.
-          test ! -f supabase/migrations/20260905000500_sinjira_v25_personal_ai_foundation.sql
-          test ! -f supabase/migrations/20260905001000_sinjira_v25_personal_ai_rls_hardening.sql
-
-      - name: Vérifier le contrat Emploi
+      - name: Vérifier les contrats Emploi
         shell: bash
         run: |
           set -euo pipefail
           python3 scripts/validate_employment_v25.py
+          python3 scripts/validate_employment_production_deploy_workflow.py
           python3 scripts/validate_production_schema_manifest.py
 
-      - name: Vérifier la baseline distante
+      - name: Vérifier l'historique Emploi en lecture seule
         shell: bash
         run: |
           set -euo pipefail
-          history="$RUNNER_TEMP/employment-migrations-before.json"
+          history="$RUNNER_TEMP/employment-production-migrations.json"
           curl --fail-with-body --silent --show-error \
             "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/database/migrations" \
             --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
@@ -97,121 +83,62 @@ jobs:
           if isinstance(payload, list):
               rows = payload
           elif isinstance(payload, dict):
-              rows = next((payload[k] for k in ('migrations','data','result') if isinstance(payload.get(k), list)), None)
+              rows = next((payload[k] for k in ('migrations', 'data', 'result') if isinstance(payload.get(k), list)), None)
           else:
               rows = None
           if not rows:
               raise SystemExit('Historique de migration distant illisible ou vide.')
 
           rows = sorted(rows, key=lambda row: str(row.get('version', '')))
-          baseline_version = os.environ['EXPECTED_REMOTE_BASELINE']
-          baseline_name = os.environ['EXPECTED_REMOTE_BASELINE_NAME']
-          indexes = [
+          baseline = (
+              os.environ['EXPECTED_REMOTE_BASELINE'],
+              os.environ['EXPECTED_REMOTE_BASELINE_NAME'],
+          )
+          employment = (
+              os.environ['EXPECTED_EMPLOYMENT_VERSION'],
+              os.environ['EXPECTED_EMPLOYMENT_NAME'],
+          )
+
+          baseline_indexes = [
               i for i, row in enumerate(rows)
-              if str(row.get('version')) == baseline_version and row.get('name') == baseline_name
+              if (str(row.get('version', '')), str(row.get('name', ''))) == baseline
           ]
-          if len(indexes) != 1:
+          if len(baseline_indexes) != 1:
               raise SystemExit('Baseline post-coffre introuvable de façon unique.')
 
-          after = [str(row.get('name', '')) for row in rows[indexes[0] + 1:]]
-          allowed = [os.environ['EMPLOYMENT_MIGRATION_NAME']]
-          if after not in ([], allowed):
+          index = baseline_indexes[0]
+          if index + 1 >= len(rows):
+              raise SystemExit('Migration Emploi absente après la baseline.')
+
+          observed = (
+              str(rows[index + 1].get('version', '')),
+              str(rows[index + 1].get('name', '')),
+          )
+          if observed != employment:
               raise SystemExit(
-                  'Dérive production après la baseline Emploi: '
-                  f'observé={after}; attendu=[] ou {allowed}'
+                  'Migration suivant la baseline inattendue: '
+                  f'observé={observed}; attendu={employment}'
               )
-          print(f'Baseline Emploi confirmée; après baseline={after}')
-          PY
 
-      - name: Appliquer uniquement la migration Emploi
-        shell: bash
-        run: |
-          set -euo pipefail
-          history="$RUNNER_TEMP/employment-history-current.json"
-          curl --fail-with-body --silent --show-error \
-            "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/database/migrations" \
-            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            --header 'Accept: application/json' \
-            --output "$history"
-
-          if MIGRATION_HISTORY="$history" python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-          payload = json.loads(Path(os.environ['MIGRATION_HISTORY']).read_text(encoding='utf-8'))
-          rows = payload if isinstance(payload, list) else next(
-              (payload[k] for k in ('migrations','data','result') if isinstance(payload, dict) and isinstance(payload.get(k), list)),
-              []
-          )
-          raise SystemExit(0 if any(row.get('name') == os.environ['EMPLOYMENT_MIGRATION_NAME'] for row in rows) else 1)
-          PY
-          then
-            echo "Migration Emploi déjà présente; aucune réapplication."
-          else
-            payload="$RUNNER_TEMP/employment-migration.json"
-            MIGRATION_FILE="supabase/migrations/20260904225000_sinjira_v25_employment_foundation.sql" \
-              PAYLOAD_FILE="$payload" python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-          sql = Path(os.environ['MIGRATION_FILE']).read_text(encoding='utf-8')
-          Path(os.environ['PAYLOAD_FILE']).write_text(
-              json.dumps({'name': os.environ['EMPLOYMENT_MIGRATION_NAME'], 'query': sql}),
-              encoding='utf-8',
-          )
-          PY
-
-            curl --fail-with-body --silent --show-error \
-              "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/database/migrations" \
-              --request POST \
-              --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-              --header 'Content-Type: application/json' \
-              --header 'Idempotency-Key: sinjira-v25-employment-foundation' \
-              --data-binary "@$payload" \
-              --output "$RUNNER_TEMP/employment-migration-response.json"
-          fi
-
-      - name: Vérifier l'historique après déploiement
-        shell: bash
-        run: |
-          set -euo pipefail
-          history="$RUNNER_TEMP/employment-migrations-after.json"
-          curl --fail-with-body --silent --show-error \
-            "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/database/migrations" \
-            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            --header 'Accept: application/json' \
-            --output "$history"
-
-          MIGRATION_HISTORY="$history" python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-          payload = json.loads(Path(os.environ['MIGRATION_HISTORY']).read_text(encoding='utf-8'))
-          rows = payload if isinstance(payload, list) else next(
-              (payload[k] for k in ('migrations','data','result') if isinstance(payload, dict) and isinstance(payload.get(k), list)),
-              []
-          )
-          rows = sorted(rows, key=lambda row: str(row.get('version', '')))
-          indexes = [
-              i for i, row in enumerate(rows)
-              if str(row.get('version')) == os.environ['EXPECTED_REMOTE_BASELINE']
-              and row.get('name') == os.environ['EXPECTED_REMOTE_BASELINE_NAME']
+          matches = [
+              row for row in rows
+              if str(row.get('name', '')) == os.environ['EXPECTED_EMPLOYMENT_NAME']
           ]
-          if len(indexes) != 1:
-              raise SystemExit('Baseline Emploi introuvable après déploiement.')
-          after = [str(row.get('name', '')) for row in rows[indexes[0] + 1:]]
-          expected = [os.environ['EMPLOYMENT_MIGRATION_NAME']]
-          if after != expected:
-              raise SystemExit(f'Historique Emploi inattendu: {after}; attendu={expected}')
-          print('Historique Emploi confirmé: une seule migration après la baseline.')
+          if len(matches) != 1:
+              raise SystemExit('La migration Emploi doit être présente une seule fois dans l’historique.')
+
+          print(
+              f"Emploi production confirmé: {employment[0]}_{employment[1]} "
+              'suit immédiatement la baseline du coffre.'
+          )
           PY
 
-      - name: Résumé de sécurité
+      - name: Résumé lecture seule
         shell: bash
         run: |
           set -euo pipefail
           cat <<'EOF'
-          Fondation Emploi V25 appliquée seule.
-          Aucun catalogue d'offres, aucune Edge Function, aucun module Mon IA et aucune donnée du Registre personnel ne sont déployés par ce workflow.
-          Les deux tables Emploi restent privées par RLS propriétaire et le navigateur ne persiste pas les données localement.
+          Vérification Emploi V25 terminée en lecture seule.
+          Aucune migration, aucune Edge Function et aucun secret n'ont été modifiés par ce workflow.
+          Emploi reste séparé du Registre personnel, de Rencontres, de Histoire de vie, du Mode Voyage, de la sécurité et de Mon IA.
           EOF
