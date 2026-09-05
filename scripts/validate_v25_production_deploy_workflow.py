@@ -5,17 +5,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/sinjira-v25-production-deploy.yml'
 
-EXPECTED_MIGRATIONS = [
-    '20260902211500_sinjira_v25_0_security_risk_model_convergence.sql',
-    '20260902223000_sinjira_v25_0_personal_consciousness_vault.sql',
-    '20260902231500_sinjira_v25_0_conscience_vault_challenge_continuity.sql',
-    '20260903213000_sinjira_v25_0_device_key_privacy_and_trust_hardening.sql',
-]
 EXPECTED_NAMES = [
     'sinjira_v25_0_security_risk_model_convergence',
     'sinjira_v25_0_personal_consciousness_vault',
     'sinjira_v25_0_conscience_vault_challenge_continuity',
     'sinjira_v25_0_device_key_privacy_and_trust_hardening',
+    'sinjira_v25_conscience_vault_audit_session_index',
 ]
 
 
@@ -68,72 +63,52 @@ def main() -> int:
     observed_triggers = trigger_keys(triggers)
     if observed_triggers != {'workflow_dispatch'}:
         raise AssertionError(
-            'Le déploiement production doit être strictement manuel: '
+            'La vérification production V25 doit rester strictement manuelle: '
             f'triggers observés={sorted(observed_triggers)}'
         )
 
     require(workflow, [
-        'Saisir exactement DEPLOY-SINJIRA-V25',
-        'test "$DEPLOY_CONFIRMATION" = "DEPLOY-SINJIRA-V25"',
+        'name: SINJIRA V25 — Vérification production coffre',
+        'Saisir exactement VERIFY-SINJIRA-V25',
+        'test "$VERIFY_CONFIRMATION" = "VERIFY-SINJIRA-V25"',
         'environment: production',
         'SUPABASE_PROJECT_REF: gpvivleexywljowcqkru',
-        'V25_DEPLOY_SHA: fc8d9fe26c8f095a0e95dc6cadcbf43d7c61c9dd',
         'EXPECTED_REMOTE_BASELINE: "20260901002241"',
         'EXPECTED_REMOTE_BASELINE_NAME: sinjira_v24_5_54_fracture_contribution_atomic_finalize',
         'SUPABASE_MANAGEMENT_API: https://api.supabase.com/v1',
         'SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}',
-        'ref: ${{ env.V25_DEPLOY_SHA }}',
+        'ref: main',
         'persist-credentials: false',
-        'actual_sha="$(git rev-parse HEAD)"',
         '/projects/$SUPABASE_PROJECT_REF/database/migrations',
         '--header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"',
-        '--request POST',
-        'Idempotency-Key: sinjira-v25-$name',
-        'json.dumps({"name": os.environ["MIGRATION_NAME"], "query": sql})',
-        'after_names != expected[:len(after_names)]',
-        'if after_names != expected:',
-        'supabase functions deploy conscience-vault',
-        '--project-ref "$SUPABASE_PROJECT_REF"',
-        '--use-api',
-    ], 'contrat de déploiement V25')
+        'after_names[:len(required)] != required',
+        'supabase functions list --project-ref "$SUPABASE_PROJECT_REF"',
+        "grep -Fq 'conscience-vault'",
+        'Aucune migration, aucun secret et aucune Edge Function',
+    ], 'contrat de vérification post-déploiement V25')
 
-    for migration in EXPECTED_MIGRATIONS:
-        require(workflow, [f'supabase/migrations/{migration}'], f'migration gelée {migration}')
     for name in EXPECTED_NAMES:
         require(workflow, [f'"{name}"'], f'nom distant V25 {name}')
 
     forbid(active, [
-        'SUPABASE_DB_PASSWORD',
-        '--no-verify-jwt',
+        '--request POST',
+        'supabase functions deploy',
         'supabase db push',
-        'supabase db reset',
-        'supabase migration repair',
-        '--include-all',
         'continue-on-error: true',
         'set -x',
-        '/database/query',
-        '20260904225000_sinjira_v25_employment_foundation.sql',
-        '20260905000500_sinjira_v25_personal_ai_foundation.sql',
-        '20260905001000_sinjira_v25_personal_ai_rls_hardening.sql',
-    ], 'aucun élargissement, fuite de secret ou contournement du rollout')
+    ], 'la vérification post-déploiement doit rester en lecture seule')
 
-    if active.count('supabase functions deploy ') != 1:
-        raise AssertionError('Le workflow doit déployer exactement une Edge Function.')
+    if active.count('/projects/$SUPABASE_PROJECT_REF/database/migrations') != 1:
+        raise AssertionError('Le workflow doit effectuer une seule lecture explicite de l’historique distant.')
 
-    first_history_read = active.find('/projects/$SUPABASE_PROJECT_REF/database/migrations')
-    apply_migrations = active.find('--request POST')
-    post_history_check = active.find('Vérifier l\'historique V25 après migration')
-    edge = active.find('supabase functions deploy conscience-vault')
-    if min(first_history_read, apply_migrations, post_history_check, edge) < 0:
-        raise AssertionError('Étapes obligatoires du déploiement V25 introuvables.')
-    if not (first_history_read < apply_migrations < post_history_check < edge):
-        raise AssertionError(
-            'Ordre obligatoire: lecture historique, migrations API, vérification historique, Edge Function.'
-        )
+    history = active.find('/projects/$SUPABASE_PROJECT_REF/database/migrations')
+    functions = active.find('supabase functions list --project-ref "$SUPABASE_PROJECT_REF"')
+    if min(history, functions) < 0 or not history < functions:
+        raise AssertionError('Ordre attendu: historique de migrations, puis inventaire Edge en lecture seule.')
 
     print(
-        'OK déploiement V25: manuel uniquement, SHA/baseline gelés, '
-        'quatre migrations Management API idempotentes, puis conscience-vault avec JWT.'
+        'OK vérification V25: manuel uniquement, production en lecture seule, '
+        'cinq migrations obligatoires présentes dans l’ordre et conscience-vault inventoriée.'
     )
     return 0
 
