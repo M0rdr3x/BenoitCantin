@@ -9,6 +9,7 @@ on:
       - 'assets/js/sinjira-employment-v25.js'
       - 'supabase/migrations/**employment**.sql'
       - 'supabase/tests/employment_v25.test.sql'
+      - 'scripts/smoke_employment_auth_local.py'
       - 'scripts/validate_employment_v25.py'
       - 'scripts/validate_employment_production_deploy_workflow.py'
       - 'scripts/validate_production_schema_manifest.py'
@@ -24,7 +25,7 @@ permissions:
 jobs:
   employment-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
         with:
@@ -39,10 +40,22 @@ jobs:
         uses: supabase/setup-cli@v2
         with:
           version: 2.111.0
-      - name: Démarrer Supabase local
-        run: supabase db start
+      - name: Démarrer Supabase local complet
+        run: supabase start
       - name: Tester Emploi avec pgTAP
         run: supabase test db supabase/tests/employment_v25.test.sql --local
+      - name: Tester Auth et isolation RLS Emploi par HTTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          status_env="$(supabase status -o env)"
+          API_URL="$(sed -n 's/^API_URL="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          ANON_KEY="$(sed -n 's/^ANON_KEY="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          test -n "$API_URL"
+          test -n "$ANON_KEY"
+          SINJIRA_LOCAL_API_URL="$API_URL" \
+          SINJIRA_LOCAL_ANON_KEY="$ANON_KEY" \
+            python3 scripts/smoke_employment_auth_local.py
       - name: Arrêter Supabase local
         if: always()
         run: supabase stop --no-backup || true
