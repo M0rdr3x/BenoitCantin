@@ -1,10 +1,11 @@
 begin;
 
-select plan(35);
+select plan(36);
 
 select has_table('private','personal_ai_settings','réglages Mon IA privés');
 select has_table('private','personal_ai_source_permissions','permissions de sources privées');
 select has_table('private','personal_ai_audit','audit Mon IA privé');
+select has_index('private','personal_ai_audit','personal_ai_audit_user_idx','la FK user_id de l audit Mon IA est couverte par un index');
 select ok((select relrowsecurity from pg_class where oid='private.personal_ai_settings'::regclass), 'RLS activée sur les réglages Mon IA');
 select ok((select relrowsecurity from pg_class where oid='private.personal_ai_source_permissions'::regclass), 'RLS activée sur les consentements Mon IA');
 select ok((select relrowsecurity from pg_class where oid='private.personal_ai_audit'::regclass), 'RLS activée sur l audit Mon IA');
