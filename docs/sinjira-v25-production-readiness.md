@@ -1,6 +1,6 @@
 # SINJIRA V25 — État et exploitation production
 
-> État vérifié le **2026-09-05**. Le backend du Registre personnel des consciences est désormais déployé en production. La preuve détaillée est conservée dans `docs/sinjira-v25-production-deployment-2026-09-05.md`.
+> État vérifié le **2026-09-05**. Le backend du Registre personnel des consciences est désormais déployé et optimisé en production. La preuve détaillée est conservée dans `docs/sinjira-v25-production-deployment-2026-09-05.md`.
 
 ## Principe
 
@@ -28,10 +28,13 @@ Migrations V25 réellement présentes après cette baseline, dans l’ordre :
 2. `20260905040303_sinjira_v25_0_personal_consciousness_vault`
 3. `20260905040330_sinjira_v25_0_conscience_vault_challenge_continuity`
 4. `20260905040400_sinjira_v25_0_device_key_privacy_and_trust_hardening`
+5. `20260905131659_sinjira_v25_conscience_vault_audit_session_index`
 
-Le contenu SQL et l’Edge Function proviennent du lot gelé :
+Les quatre migrations du rollout initial et l’Edge Function proviennent du lot gelé :
 
 `fc8d9fe26c8f095a0e95dc6cadcbf43d7c61c9dd`
+
+La cinquième migration est l’optimisation d’index ajoutée par la PR #174 après le premier contrôle advisor production.
 
 Aucune migration Emploi ou Mon IA n’a été incluse dans ce rollout ciblé.
 
@@ -44,7 +47,8 @@ Les contrôles production confirment :
 - `private.conscience_entries` présent;
 - `private.conscience_vault_sessions` présent;
 - `private.conscience_vault_audit` présent;
-- `public.service_conscience_evaluate_access(...)` présent.
+- `public.service_conscience_evaluate_access(...)` présent;
+- `private.conscience_vault_audit_session_idx` présent sur `session_id` lorsque non nul.
 
 Pour les trois tables `private.conscience_*` :
 
@@ -54,7 +58,7 @@ Pour les trois tables `private.conscience_*` :
 - `service_role` n’a aucun CRUD direct;
 - les fonctions serveur sensibles possèdent un `search_path` explicite.
 
-Le coffre était vide immédiatement après rollout : `0` entrée, `0` session et `0` événement d’audit.
+Le coffre est resté vide après rollout et après l’optimisation : `0` entrée, `0` session et `0` événement d’audit.
 
 L’audit ne possède que des métadonnées (`id`, `user_id`, `session_id`, `entry_id`, `event_type`, `occurred_at`) et aucun champ de contenu intime, IP ou GPS.
 
@@ -102,13 +106,13 @@ Supabase CLI `migration list` compare les versions par timestamp. Pour éviter d
 - ne pas utiliser `db push --include-all` pour forcer la convergence;
 - conserver le contrat par **nom et ordre** pour les migrations V25 appliquées via l’API de migrations Supabase.
 
-La voie reproductible gardée dans le dépôt est `.github/workflows/sinjira-v25-production-deploy.yml`. Elle reste `workflow_dispatch` uniquement, avec confirmation `DEPLOY-SINJIRA-V25`, environnement GitHub `production`, SHA gelé et contrôle de l’historique distant.
+Le rollout V25 étant terminé, `.github/workflows/sinjira-v25-production-deploy.yml` doit désormais rester un **vérificateur post-déploiement en lecture seule**, `workflow_dispatch` uniquement, avec confirmation `VERIFY-SINJIRA-V25`, environnement GitHub `production`, lecture de l’historique distant et inventaire de `conscience-vault`. Il ne doit plus appliquer de migration ni redéployer d’Edge Function.
 
 Le rollout réel du 2026-09-05 a été appliqué via l’interface de gestion Supabase connectée après les mêmes contrôles de baseline et de périmètre. Aucun run GitHub fictif n’est revendiqué.
 
-## CI validée avant rollout
+## CI validée
 
-La PR #172 a validé :
+Avant le rollout initial, la PR #172 a validé :
 
 - le contrat statique du workflow de production;
 - les garde-fous Edge du coffre;
@@ -117,7 +121,22 @@ La PR #172 a validé :
 - **31 assertions pgTAP** du coffre V25;
 - les autres workflows déclenchés sans échec observé.
 
-## Advisor sécurité après rollout
+Après déploiement, la PR #174 a validé l’optimisation d’index avec :
+
+- reconstruction Supabase complète depuis zéro;
+- contrats SQL globaux;
+- **32 assertions pgTAP** du coffre V25;
+- **20 assertions pgTAP** du moteur de risque V25;
+- tests navigateur;
+- ledger production;
+- préflight Supabase production non destructif;
+- aucun échec observé avant fusion.
+
+## Advisors après rollout
+
+L’avertissement performance `unindexed_foreign_keys` concernant `private.conscience_vault_audit.session_id` est résolu par `private.conscience_vault_audit_session_idx`.
+
+L’index est signalé `unused_index` au niveau `INFO` tant que le coffre reste vide. Ce constat est attendu et ne justifie pas sa suppression.
 
 Supabase signale les tables `private.conscience_*` en `RLS Enabled No Policy` au niveau `INFO`. Pour ce coffre, ce résultat est cohérent avec le design : RLS est activé, aucun rôle applicatif n’a de CRUD direct et les opérations passent par les RPC `SECURITY DEFINER` étroites.
 
