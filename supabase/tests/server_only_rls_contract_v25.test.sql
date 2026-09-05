@@ -113,7 +113,7 @@ select is(
 
 select is(
   (
-    select count(*)::int
+    select string_agg(format('%I.%I',n.nspname,c.relname), ', ' order by n.nspname,c.relname)
     from pg_class c
     join pg_namespace n on n.oid=c.relnamespace
     where n.nspname in ('public','private')
@@ -126,7 +126,7 @@ select is(
         where e.schema_name=n.nspname and e.table_name=c.relname
       )
   ),
-  0,
+  null::text,
   'aucune nouvelle table RLS sans policy ne peut apparaître sans classification explicite'
 );
 
@@ -172,7 +172,7 @@ select is(
 
 select is(
   (
-    select count(*)::int
+    select string_agg(format('%I.%I',n.nspname,c.relname), ', ' order by n.nspname,c.relname)
     from pg_class c
     join pg_namespace n on n.oid=c.relnamespace
     where n.nspname in ('public','private')
@@ -193,7 +193,7 @@ select is(
           and e.access_class='service_role_allowed'
       )
   ),
-  0,
+  null::text,
   'tout CRUD direct service_role sur une table RLS sans policy doit appartenir à l’allowlist explicite'
 );
 
