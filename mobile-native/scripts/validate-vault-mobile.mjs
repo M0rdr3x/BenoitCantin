@@ -59,6 +59,7 @@ requireMarkers(app, [
   "{ label: 'Alertes', path: '/compte/notifications.html' }",
   "{ label: 'Profil', path: '/compte/profil.html' }",
   "{ label: 'Sécurité', path: '/compte/securite.html' }",
+  "{ label: 'Mode Voyage', path: '/compte/securite.html#travel-title' }",
   "const [activeTab, setActiveTab] = useState<TabKey>('home');",
 ], 'navigation mobile V25 limitée aux modules réellement disponibles');
 
@@ -94,6 +95,19 @@ forbidMarkers(app, [
 ], 'le natif ne reçoit ni ne stocke l’état de Mon IA et ne contourne jamais l Edge Web sécurisée');
 
 forbidMarkers(app, [
+  'security_travel_windows',
+  'security_travel_plans',
+  'travel_destinations',
+  'travel_starts_at',
+  'travel_ends_at',
+  'travel_multi_country',
+  "destinations:",
+  "starts_at:",
+  "ends_at:",
+  "multi_country:",
+], 'Mode Voyage reste géré côté Web/serveur; le natif ne stocke ni destination ni période de voyage');
+
+forbidMarkers(app, [
   "{ key: 'feed', label: 'Fil'",
   "{ key: 'alerts', label: 'Alertes'",
   "{ label: 'Rencontres', path: '/compte/rencontres.html' }",
@@ -104,4 +118,4 @@ if (config?.expo?.ios?.buildNumber !== '25000') throw new Error('app.json: build
 if (config?.expo?.android?.versionCode !== 25000) throw new Error('app.json: versionCode Android 25000 requis');
 if (config?.expo?.scheme !== 'sinjira') throw new Error('app.json: schéma sinjira requis pour les liens profonds');
 
-console.log('OK mobile V25: Emploi et Mon IA dans la navigation principale, Profil secondaire, Registre personnel protégé, Mon IA déchargée en arrière-plan et aucune donnée privée du coffre ou de l IA dans le natif.');
+console.log('OK mobile V25: Emploi, Mon IA et accès direct Mode Voyage présents; Registre personnel protégé; aucune donnée privée du coffre, de l IA ou du voyage dans le natif.');
