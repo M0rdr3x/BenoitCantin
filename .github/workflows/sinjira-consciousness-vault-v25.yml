@@ -19,7 +19,9 @@ on:
       - 'scripts/validate_conscience_vault_web_v25.py'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_v25_production_deploy_workflow.py'
       - '.github/workflows/sinjira-consciousness-vault-v25.yml'
+      - '.github/workflows/sinjira-v25-production-deploy.yml'
   workflow_dispatch:
 
 permissions:
@@ -43,6 +45,7 @@ jobs:
           python3 scripts/validate_conscience_vault_web_v25.py
           python3 scripts/validate_edge_function_inventory.py
           python3 scripts/validate_production_schema_manifest.py
+          python3 scripts/validate_v25_production_deploy_workflow.py
 
       - name: Installer Supabase CLI
         uses: supabase/setup-cli@v2
