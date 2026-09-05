@@ -19,6 +19,8 @@ env:
   SUPABASE_PROJECT_REF: gpvivleexywljowcqkru
   V25_DEPLOY_SHA: fc8d9fe26c8f095a0e95dc6cadcbf43d7c61c9dd
   EXPECTED_REMOTE_BASELINE: "20260901002241"
+  EXPECTED_REMOTE_BASELINE_NAME: sinjira_v24_5_54_fracture_contribution_atomic_finalize
+  SUPABASE_MANAGEMENT_API: https://api.supabase.com/v1
 
 jobs:
   deploy-v25-consciousness-vault:
@@ -28,10 +30,9 @@ jobs:
     environment: production
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
     steps:
-      - name: Vérifier la confirmation et les secrets
+      - name: Vérifier la confirmation et le jeton
         shell: bash
         env:
           DEPLOY_CONFIRMATION: ${{ inputs.confirmation }}
@@ -43,10 +44,6 @@ jobs:
           }
           test -n "${SUPABASE_ACCESS_TOKEN:-}" || {
             echo "Secret SUPABASE_ACCESS_TOKEN manquant." >&2
-            exit 1
-          }
-          test -n "${SUPABASE_DB_PASSWORD:-}" || {
-            echo "Secret SUPABASE_DB_PASSWORD manquant." >&2
             exit 1
           }
 
@@ -100,140 +97,188 @@ jobs:
           python3 scripts/validate_edge_function_inventory.py
           python3 scripts/validate_production_schema_manifest.py
 
-      - name: Installer Supabase CLI
+      - name: Lire l'historique de migrations via l'API Supabase
+        shell: bash
+        run: |
+          set -euo pipefail
+          history="$RUNNER_TEMP/v25-migrations-before.json"
+          curl --fail-with-body --silent --show-error \
+            "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/database/migrations" \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header 'Accept: application/json' \
+            --output "$history"
+
+          MIGRATION_HISTORY="$history" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          expected = [
+              "sinjira_v25_0_security_risk_model_convergence",
+              "sinjira_v25_0_personal_consciousness_vault",
+              "sinjira_v25_0_conscience_vault_challenge_continuity",
+              "sinjira_v25_0_device_key_privacy_and_trust_hardening",
+          ]
+          baseline_version = os.environ["EXPECTED_REMOTE_BASELINE"]
+          baseline_name = os.environ["EXPECTED_REMOTE_BASELINE_NAME"]
+
+          payload = json.loads(Path(os.environ["MIGRATION_HISTORY"]).read_text(encoding="utf-8"))
+          if isinstance(payload, list):
+              rows = payload
+          elif isinstance(payload, dict):
+              rows = next((payload[k] for k in ("migrations", "data", "result") if isinstance(payload.get(k), list)), None)
+          else:
+              rows = None
+          if not rows:
+              raise SystemExit("Historique de migration distant illisible ou vide.")
+
+          rows = sorted(rows, key=lambda row: str(row.get("version", "")))
+          baseline_indexes = [
+              i for i, row in enumerate(rows)
+              if str(row.get("version")) == baseline_version and row.get("name") == baseline_name
+          ]
+          if len(baseline_indexes) != 1:
+              raise SystemExit(
+                  "Baseline distante refusée: "
+                  f"version={baseline_version}, nom={baseline_name} introuvable de façon unique."
+              )
+
+          after = rows[baseline_indexes[0] + 1:]
+          after_names = [str(row.get("name", "")) for row in after]
+          if len(after_names) > len(expected) or after_names != expected[:len(after_names)]:
+              raise SystemExit(
+                  "Migrations inattendues après la baseline V24.5.54: "
+                  f"{after_names}. Attendu: préfixe de {expected}."
+              )
+
+          print(f"Baseline distante confirmée: {baseline_version} / {baseline_name}")
+          print(f"Migrations V25 déjà appliquées: {len(after_names)}/{len(expected)}")
+          PY
+
+      - name: Appliquer uniquement les quatre migrations V25 via l'API Supabase
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          migration_files=(
+            "supabase/migrations/20260902211500_sinjira_v25_0_security_risk_model_convergence.sql"
+            "supabase/migrations/20260902223000_sinjira_v25_0_personal_consciousness_vault.sql"
+            "supabase/migrations/20260902231500_sinjira_v25_0_conscience_vault_challenge_continuity.sql"
+            "supabase/migrations/20260903213000_sinjira_v25_0_device_key_privacy_and_trust_hardening.sql"
+          )
+          migration_names=(
+            "sinjira_v25_0_security_risk_model_convergence"
+            "sinjira_v25_0_personal_consciousness_vault"
+            "sinjira_v25_0_conscience_vault_challenge_continuity"
+            "sinjira_v25_0_device_key_privacy_and_trust_hardening"
+          )
+
+          for i in "${!migration_files[@]}"; do
+            file="${migration_files[$i]}"
+            name="${migration_names[$i]}"
+            history="$RUNNER_TEMP/v25-history-$i.json"
+
+            curl --fail-with-body --silent --show-error \
+              "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/database/migrations" \
+              --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              --header 'Accept: application/json' \
+              --output "$history"
+
+            if MIGRATION_HISTORY="$history" MIGRATION_NAME="$name" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = json.loads(Path(os.environ["MIGRATION_HISTORY"]).read_text(encoding="utf-8"))
+          if isinstance(payload, list):
+              rows = payload
+          elif isinstance(payload, dict):
+              rows = next((payload[k] for k in ("migrations", "data", "result") if isinstance(payload.get(k), list)), [])
+          else:
+              rows = []
+          raise SystemExit(0 if any(row.get("name") == os.environ["MIGRATION_NAME"] for row in rows) else 1)
+          PY
+            then
+              echo "Migration déjà appliquée, conservation idempotente: $name"
+              continue
+            fi
+
+            payload="$RUNNER_TEMP/v25-migration-$i.json"
+            MIGRATION_FILE="$file" MIGRATION_NAME="$name" PAYLOAD_FILE="$payload" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          sql = Path(os.environ["MIGRATION_FILE"]).read_text(encoding="utf-8")
+          Path(os.environ["PAYLOAD_FILE"]).write_text(
+              json.dumps({"name": os.environ["MIGRATION_NAME"], "query": sql}),
+              encoding="utf-8",
+          )
+          PY
+
+            echo "Application contrôlée: $name"
+            curl --fail-with-body --silent --show-error \
+              "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/database/migrations" \
+              --request POST \
+              --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              --header 'Content-Type: application/json' \
+              --header "Idempotency-Key: sinjira-v25-$name" \
+              --data-binary "@$payload" \
+              --output "$RUNNER_TEMP/v25-migration-$i-response.json"
+          done
+
+      - name: Vérifier l'historique V25 après migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          history="$RUNNER_TEMP/v25-migrations-after.json"
+          curl --fail-with-body --silent --show-error \
+            "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/database/migrations" \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header 'Accept: application/json' \
+            --output "$history"
+
+          MIGRATION_HISTORY="$history" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          expected = [
+              "sinjira_v25_0_security_risk_model_convergence",
+              "sinjira_v25_0_personal_consciousness_vault",
+              "sinjira_v25_0_conscience_vault_challenge_continuity",
+              "sinjira_v25_0_device_key_privacy_and_trust_hardening",
+          ]
+          baseline_version = os.environ["EXPECTED_REMOTE_BASELINE"]
+          baseline_name = os.environ["EXPECTED_REMOTE_BASELINE_NAME"]
+          payload = json.loads(Path(os.environ["MIGRATION_HISTORY"]).read_text(encoding="utf-8"))
+          if isinstance(payload, list):
+              rows = payload
+          elif isinstance(payload, dict):
+              rows = next((payload[k] for k in ("migrations", "data", "result") if isinstance(payload.get(k), list)), [])
+          else:
+              rows = []
+          rows = sorted(rows, key=lambda row: str(row.get("version", "")))
+          indexes = [
+              i for i, row in enumerate(rows)
+              if str(row.get("version")) == baseline_version and row.get("name") == baseline_name
+          ]
+          if len(indexes) != 1:
+              raise SystemExit("Baseline distante introuvable après migration.")
+          after_names = [str(row.get("name", "")) for row in rows[indexes[0] + 1:]]
+          if after_names != expected:
+              raise SystemExit(
+                  "Historique V25 inattendu après migration. "
+                  f"Observé={after_names}; attendu={expected}"
+              )
+          print("Historique V25 confirmé par noms, dans l'ordre attendu.")
+          PY
+
+      - name: Installer Supabase CLI pour l'Edge Function
         uses: supabase/setup-cli@v2
         with:
           version: 2.111.0
           github-token: ${{ github.token }}
-
-      - name: Lier explicitement le projet production
-        shell: bash
-        run: |
-          set -euo pipefail
-          supabase link --project-ref "$SUPABASE_PROJECT_REF"
-
-      - name: Vérifier la baseline distante et les quatre migrations en attente
-        shell: bash
-        run: |
-          set -euo pipefail
-          migration_list="$RUNNER_TEMP/v25-migration-list.txt"
-          supabase migration list --linked | tee "$migration_list"
-
-          MIGRATION_LIST="$migration_list" python3 - <<'PY'
-          import os
-          import re
-          from pathlib import Path
-
-          expected = {
-              "20260902211500",
-              "20260902223000",
-              "20260902231500",
-              "20260903213000",
-          }
-          baseline = os.environ["EXPECTED_REMOTE_BASELINE"]
-
-          text = Path(os.environ["MIGRATION_LIST"]).read_text(encoding="utf-8")
-          pending = set()
-          remote_versions = set()
-          remote_only = set()
-
-          for raw_line in text.splitlines():
-              parts = re.split(r"[|│]", raw_line)
-              if len(parts) < 2:
-                  continue
-              local = re.search(r"\b(\d{14})\b", parts[0])
-              remote = re.search(r"\b(\d{14})\b", parts[1])
-              local_version = local.group(1) if local else None
-              remote_version = remote.group(1) if remote else None
-
-              if remote_version:
-                  remote_versions.add(remote_version)
-              if local_version and not remote_version:
-                  pending.add(local_version)
-              if remote_version and not local_version:
-                  remote_only.add(remote_version)
-
-          if not remote_versions:
-              raise SystemExit("Historique de migration distant illisible ou vide.")
-
-          actual_baseline = max(remote_versions)
-          if actual_baseline != baseline:
-              raise SystemExit(
-                  "Baseline distante refusée. "
-                  f"Attendue={baseline}; observée={actual_baseline}"
-              )
-
-          if remote_only:
-              raise SystemExit(
-                  "Dérive d'historique refusée: migrations distantes absentes du SHA gelé: "
-                  f"{sorted(remote_only)}"
-              )
-
-          if pending != expected:
-              raise SystemExit(
-                  "Périmètre de migration refusé. "
-                  f"Attendu={sorted(expected)}; en attente={sorted(pending)}"
-              )
-
-          print("Baseline distante confirmée:", actual_baseline)
-          print("Périmètre migration confirmé:", ", ".join(sorted(pending)))
-          PY
-
-      - name: Prévisualiser le déploiement SQL sans écriture
-        shell: bash
-        run: |
-          set -euo pipefail
-          supabase db push --linked --dry-run
-
-      - name: Appliquer les quatre migrations V25
-        shell: bash
-        run: |
-          set -euo pipefail
-          supabase db push --linked --yes
-
-      - name: Vérifier l'historique après migration
-        shell: bash
-        run: |
-          set -euo pipefail
-          migration_list="$RUNNER_TEMP/v25-migration-list-after.txt"
-          supabase migration list --linked | tee "$migration_list"
-
-          MIGRATION_LIST="$migration_list" python3 - <<'PY'
-          import os
-          import re
-          from pathlib import Path
-
-          expected = {
-              "20260902211500",
-              "20260902223000",
-              "20260902231500",
-              "20260903213000",
-          }
-
-          text = Path(os.environ["MIGRATION_LIST"]).read_text(encoding="utf-8")
-          pending = set()
-          remote = set()
-
-          for raw_line in text.splitlines():
-              parts = re.split(r"[|│]", raw_line)
-              if len(parts) < 2:
-                  continue
-              local_match = re.search(r"\b(\d{14})\b", parts[0])
-              remote_match = re.search(r"\b(\d{14})\b", parts[1])
-              if remote_match:
-                  remote.add(remote_match.group(1))
-              if local_match and not remote_match:
-                  pending.add(local_match.group(1))
-
-          missing = expected - remote
-          if missing or (pending & expected):
-              raise SystemExit(
-                  "Historique distant incomplet après db push. "
-                  f"manquantes={sorted(missing)}; encore en attente={sorted(pending & expected)}"
-              )
-
-          print("Historique distant V25 confirmé.")
-          PY
 
       - name: Déployer uniquement conscience-vault
         shell: bash
@@ -260,7 +305,8 @@ jobs:
         run: |
           set -euo pipefail
           cat <<'EOF'
-          Lot SQL V25 appliqué et conscience-vault déployée.
+          Lot SQL V25 appliqué via l'API de migrations Supabase et conscience-vault déployée.
+          Les versions distantes sont générées par Supabase; les noms de migration constituent le contrat de séquence V25.
           Le workflow n'active PAS Leaked Password Protection : ce réglage Supabase Auth reste une vérification séparée.
           Exécuter ensuite les contrôles DB/Edge en lecture seule décrits dans docs/sinjira-v25-production-readiness.md sur main.
           EOF
