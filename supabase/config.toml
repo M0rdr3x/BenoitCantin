@@ -8,6 +8,13 @@ minimum_password_length = 12
 # Aucune règle de composition additionnelle côté interface : la longueur reste le contrat commun.
 password_requirements = ""
 
+# Contrat de test local V25 : les zones sensibles exigent réellement AAL2.
+# Le CLI local doit donc permettre l'enrôlement et la vérification TOTP afin de
+# tester Auth -> JWT aal2 -> Edge sans clé privilégiée ni modification distante.
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [functions.send-game-report]
 verify_jwt = false
 
