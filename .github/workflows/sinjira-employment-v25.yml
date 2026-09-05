@@ -10,8 +10,11 @@ on:
       - 'supabase/migrations/**employment**.sql'
       - 'supabase/tests/employment_v25.test.sql'
       - 'scripts/validate_employment_v25.py'
+      - 'scripts/validate_employment_production_deploy_workflow.py'
       - 'scripts/validate_production_schema_manifest.py'
+      - 'docs/sinjira-v25-employment-production-readiness.md'
       - '.github/workflows/sinjira-employment-v25.yml'
+      - '.github/workflows/sinjira-v25-employment-production.yml'
   workflow_dispatch:
 
 permissions:
@@ -26,7 +29,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Valider le contrat Emploi V25
-        run: python3 scripts/validate_employment_v25.py
+        run: |
+          python3 scripts/validate_employment_v25.py
+          python3 scripts/validate_employment_production_deploy_workflow.py
       - name: Valider la classification du schéma
         run: python3 scripts/validate_production_schema_manifest.py
       - name: Installer Supabase CLI
