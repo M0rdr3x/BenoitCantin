@@ -1,0 +1,88 @@
+name: SINJIRA V25 — Readiness production Mon IA
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Saisir exactement VERIFY-SINJIRA-V25-PERSONAL-AI"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-v25-personal-ai-production-readiness
+  cancel-in-progress: false
+
+env:
+  PERSONAL_AI_DEPLOY_SHA: e2e99ec63730559c440ccd90b10a9c18747c5f45
+  EXPECTED_REMOTE_BASELINE: "20260905133130"
+  EXPECTED_REMOTE_BASELINE_NAME: sinjira_v25_employment_foundation
+
+jobs:
+  verify-personal-ai-v25:
+    name: Vérifier le lot Mon IA V25
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Vérifier la confirmation
+        shell: bash
+        env:
+          VERIFY_CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          test "$VERIFY_CONFIRMATION" = "VERIFY-SINJIRA-V25-PERSONAL-AI"
+
+      - name: Checkout du lot Mon IA gelé
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.PERSONAL_AI_DEPLOY_SHA }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Vérifier le SHA et le contrat statique
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PERSONAL_AI_DEPLOY_SHA"
+          python3 scripts/validate_personal_ai_v25.py
+
+      - name: Vérifier les invariants du lot gelé
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f supabase/migrations/20260905000500_sinjira_v25_personal_ai_foundation.sql
+          test -f supabase/migrations/20260905001000_sinjira_v25_personal_ai_rls_hardening.sql
+          test -f supabase/functions/personal-ai/index.ts
+          test -f supabase/functions/_shared/auth.ts
+          test -f supabase/functions/_shared/cors.ts
+          grep -A2 '^\[functions.personal-ai\]' supabase/config.toml | grep -q 'verify_jwt = true'
+          grep -q "runtime_status text not null default 'not_configured'" supabase/migrations/20260905000500_sinjira_v25_personal_ai_foundation.sql
+          ! grep -Eq "action === '(chat|memory|retrieve_source|complete|generate)'" supabase/functions/personal-ai/index.ts
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+
+      - name: Démarrer Supabase local
+        run: supabase db start
+
+      - name: Tester Mon IA avec pgTAP
+        run: supabase test db supabase/tests/personal_ai_v25.test.sql --local
+
+      - name: Résumé readiness
+        shell: bash
+        run: |
+          cat <<'EOF'
+          Readiness Mon IA V25 validé localement.
+          Baseline production attendue: 20260905133130_sinjira_v25_employment_foundation.
+          Lot gelé: deux migrations Mon IA + Edge personal-ai avec JWT obligatoire.
+          Ce workflow ne modifie pas la production et n'active aucun moteur conversationnel.
+          EOF
+
+      - name: Arrêter Supabase local
+        if: always()
+        run: supabase stop --no-backup || true

@@ -14,9 +14,12 @@ on:
       - 'supabase/migrations/**personal_ai**.sql'
       - 'supabase/tests/personal_ai_v25.test.sql'
       - 'scripts/validate_personal_ai_v25.py'
+      - 'scripts/validate_personal_ai_production_readiness.py'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_production_schema_manifest.py'
+      - 'docs/sinjira-v25-personal-ai-production-readiness.md'
       - '.github/workflows/sinjira-personal-ai-v25.yml'
+      - '.github/workflows/sinjira-v25-personal-ai-production-readiness.yml'
   workflow_dispatch:
 
 permissions:
@@ -31,7 +34,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Valider le contrat Mon IA V25
-        run: python3 scripts/validate_personal_ai_v25.py
+        run: |
+          python3 scripts/validate_personal_ai_v25.py
+          python3 scripts/validate_personal_ai_production_readiness.py
       - name: Valider l'inventaire Edge
         run: python3 scripts/validate_edge_function_inventory.py
       - name: Valider la classification du schéma
