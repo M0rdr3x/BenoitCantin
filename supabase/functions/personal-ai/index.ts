@@ -4,6 +4,7 @@ import { requiredPersonalAiUser } from '../_shared/auth.ts';
 const MAX_REQUEST_BYTES = 16 * 1024;
 // Le scope est fixé dans service_personal_ai_evaluate_access; l'Edge ne peut pas le réduire.
 const RISK_SCOPE = 'ai_private';
+// Contrat de fondation : conversation_enabled=false; source_retrieval_enabled=false.
 const PRIVATE_HEADERS = {
   ...corsHeaders,
   'Content-Type': 'application/json; charset=utf-8',
@@ -116,7 +117,6 @@ Deno.serve(async (req) => {
     if (decision.outcome === 'block' || decision.score >= 75) return privateJson({ ok:false, code:'SECURITY_BLOCKED', error:'Accès à Mon IA bloqué par la protection du compte.', security:securityPublic }, 403);
     if (!['allow','approved'].includes(decision.outcome)) throw new Error('SECURITY_DECISION_INVALID');
 
-    // Le serveur SQL a fixé RISK_SCOPE=ai_private avant d'atteindre les RPC ci-dessous.
     void RISK_SCOPE;
     const risk = { p_aal:'aal2', p_risk_score:decision.score, p_risk_outcome:decision.outcome, p_risk_model_version:'v25.0' };
     const action = safeText(body.action,40);
