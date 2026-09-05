@@ -36,6 +36,10 @@ def main() -> int:
         "project ref production inattendu",
     )
     require(
+        "SUPABASE_ORGANIZATION_SLUG: glaxqwyumblfqmzusqbt" in text,
+        "organization slug production inattendu",
+    )
+    require(
         "SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}" in text,
         "le workflow doit utiliser uniquement le PAT Management API de l'environnement production",
     )
@@ -46,18 +50,31 @@ def main() -> int:
         f"secrets GitHub inattendus: {sorted(secret_refs)}",
     )
 
-    # Surface Management API autorisée: Auth config + Security Advisor.
-    require(
-        "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/config/auth" in text,
-        "endpoint /config/auth obligatoire",
-    )
-    require(
-        "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/advisors/security" in text,
-        "postflight Security Advisor obligatoire",
-    )
+    # Surface Management API autorisée: organisation en lecture, Auth config et Security Advisor.
+    organization_endpoint = "$SUPABASE_MANAGEMENT_API/organizations/$SUPABASE_ORGANIZATION_SLUG"
+    auth_endpoint = "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/config/auth"
+    advisor_endpoint = "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/advisors/security"
+    require(organization_endpoint in text, "préflight organisation/plan obligatoire")
+    require(auth_endpoint in text, "endpoint /config/auth obligatoire")
+    require(advisor_endpoint in text, "postflight Security Advisor obligatoire")
     require(text.count("--request PATCH") == 1, "un unique PATCH Management API est autorisé")
     for method in ("POST", "PUT", "DELETE"):
         require(f"--request {method}" not in text, f"méthode Management API interdite: {method}")
+
+    # L'éligibilité Pro+ doit être testée avant toute lecture/écriture Auth.
+    require(
+        'eligible = {"pro", "team", "enterprise"}' in text,
+        "allowlist des plans éligibles Pro/Team/Enterprise absente",
+    )
+    require("if plan not in eligible:" in text, "refus explicite des plans non éligibles absent")
+    require(
+        "Activation HIBP bloquée avant PATCH" in text,
+        "diagnostic de blocage avant PATCH absent",
+    )
+    organization_pos = text.index(organization_endpoint)
+    auth_pos = text.index(auth_endpoint)
+    patch_pos = text.index("--request PATCH")
+    require(organization_pos < auth_pos < patch_pos, "l'ordre plan -> Auth GET -> PATCH doit rester strict")
 
     # Le corps du PATCH est volontairement minuscule: un seul booléen, rien d'autre.
     data_lines = [line.strip() for line in text.splitlines() if line.strip().startswith("--data")]
@@ -91,6 +108,8 @@ def main() -> int:
         "twilio_",
         "password_required_characters\":",
         "password_min_length\":",
+        "organizations/$SUPABASE_ORGANIZATION_SLUG/billing",
+        "organizations/$SUPABASE_ORGANIZATION_SLUG/subscription",
     ]
     for fragment in forbidden_fragments:
         require(fragment not in text, f"surface interdite détectée: {fragment}")
@@ -107,7 +126,9 @@ def main() -> int:
         "le workflow doit refuser un rollback Auth aveugle en cas de concurrence",
     )
 
-    print("OK workflow Auth V25: manuel, production bornée, PATCH HIBP seul, postflight strict.")
+    print(
+        "OK workflow Auth V25: manuel, plan Pro+ requis avant Auth, PATCH HIBP seul, postflight strict."
+    )
     return 0
 
 
