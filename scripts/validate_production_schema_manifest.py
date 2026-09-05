@@ -34,7 +34,8 @@ EXPECTED_TABLES={
 'security_events','security_connection_challenges','security_push_endpoints',
 'life_story_entries','life_story_versions','life_story_version_entries','life_story_recipients','life_story_legacy_settings',
 'life_story_posthumous_cases','life_story_posthumous_contests','life_story_exports','life_story_delivery_links','life_story_cleanup_tasks','life_story_report_codes',
-'conscience_entries','conscience_vault_sessions','conscience_vault_audit'
+'conscience_entries','conscience_vault_sessions','conscience_vault_audit',
+'employment_profiles','employment_applications'
 }
 
 PLANNED_LOCAL_TABLES={
@@ -43,7 +44,6 @@ PLANNED_LOCAL_TABLES={
 'market_listings','market_favorites','token_ledger',
 'codex_entities','codex_relationships','content_versions',
 'privacy_incident_register','privacy_requests','privacy_legal_holds','safety_escalation_cases',
-'employment_profiles','employment_applications',
 'personal_ai_settings','personal_ai_source_permissions','personal_ai_audit'
 }
 
