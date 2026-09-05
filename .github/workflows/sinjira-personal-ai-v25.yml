@@ -1,0 +1,49 @@
+name: SINJIRA V25 — Mon IA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'compte/mon-ia.html'
+      - 'compte/index.html'
+      - 'assets/js/sinjira-personal-ai-v25.js'
+      - 'mobile-native/**'
+      - 'supabase/functions/personal-ai/**'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'supabase/config.toml'
+      - 'supabase/migrations/**personal_ai**.sql'
+      - 'supabase/tests/personal_ai_v25.test.sql'
+      - 'scripts/validate_personal_ai_v25.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - '.github/workflows/sinjira-personal-ai-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  personal-ai-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Valider le contrat Mon IA V25
+        run: python3 scripts/validate_personal_ai_v25.py
+      - name: Valider l'inventaire Edge
+        run: python3 scripts/validate_edge_function_inventory.py
+      - name: Valider la classification du schéma
+        run: python3 scripts/validate_production_schema_manifest.py
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+      - name: Démarrer Supabase local
+        run: supabase db start
+      - name: Tester Mon IA avec pgTAP
+        run: supabase test db supabase/tests/personal_ai_v25.test.sql --local
+      - name: Arrêter Supabase local
+        if: always()
+        run: supabase stop --no-backup || true
