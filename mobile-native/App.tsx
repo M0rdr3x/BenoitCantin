@@ -68,6 +68,7 @@ const quickLinks = [
   { label: 'Alertes', path: '/compte/notifications.html' },
   { label: 'Profil', path: '/compte/profil.html' },
   { label: 'Sécurité', path: '/compte/securite.html' },
+  { label: 'Mode Voyage', path: '/compte/securite.html#travel-title' },
   { label: 'Registre perso', path: VAULT_PATH },
 ] as const;
 
