@@ -1,0 +1,58 @@
+name: SINJIRA V25 — Smoke AAL2 sensible
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/smoke_sensitive_aal2_local.py'
+      - 'scripts/validate_sensitive_aal2_smoke.py'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'supabase/functions/personal-ai/**'
+      - 'supabase/functions/conscience-vault/**'
+      - 'supabase/config.toml'
+      - 'supabase/migrations/**security**.sql'
+      - 'supabase/migrations/**personal_ai**.sql'
+      - 'supabase/migrations/**conscience**.sql'
+      - '.github/workflows/sinjira-sensitive-aal2-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sensitive-aal2-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Vérifier le contrat du smoke AAL2
+        run: python3 scripts/validate_sensitive_aal2_smoke.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+
+      - name: Démarrer Supabase local complet
+        run: supabase start
+
+      - name: Tester TOTP, AAL2 et les deux portes Edge sensibles
+        shell: bash
+        run: |
+          set -euo pipefail
+          status_env="$(supabase status -o env)"
+          API_URL="$(sed -n 's/^API_URL="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          ANON_KEY="$(sed -n 's/^ANON_KEY="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          test -n "$API_URL"
+          test -n "$ANON_KEY"
+          SINJIRA_LOCAL_API_URL="$API_URL" \
+          SINJIRA_LOCAL_ANON_KEY="$ANON_KEY" \
+            python3 scripts/smoke_sensitive_aal2_local.py
+
+      - name: Arrêter Supabase local
+        if: always()
+        run: supabase stop --no-backup || true
