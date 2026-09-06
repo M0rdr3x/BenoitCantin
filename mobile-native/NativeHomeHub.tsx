@@ -4,6 +4,7 @@ import { NativeAlertsHub } from './NativeAlertsHub';
 import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
 import { NativeMessagesHub } from './NativeMessagesHub';
+import { NativeParallelWorldHub } from './NativeParallelWorldHub';
 import { NativeProfileHub } from './NativeProfileHub';
 
 type Props = {
@@ -29,7 +30,7 @@ const mainDestinations = [
   },
   {
     label: 'Monde parallèle',
-    description: 'Continuer votre parcours Monde dans la surface existante.',
+    description: 'Ouvrir un hub natif sans identité ni Chronique privée avant la continuité Monde parallèle protégée.',
     path: '/compte/monde-parallele.html',
   },
   {
@@ -92,6 +93,7 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [datingHubOpen, setDatingHubOpen] = useState(false);
   const [employmentHubOpen, setEmploymentHubOpen] = useState(false);
   const [messagesHubOpen, setMessagesHubOpen] = useState(false);
+  const [parallelWorldHubOpen, setParallelWorldHubOpen] = useState(false);
   const [profileHubOpen, setProfileHubOpen] = useState(false);
 
   if (datingHubOpen) {
@@ -107,6 +109,15 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     return (
       <NativeEmploymentHub
         onBack={() => setEmploymentHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
+  if (parallelWorldHubOpen) {
+    return (
+      <NativeParallelWorldHub
+        onBack={() => setParallelWorldHubOpen(false)}
         onOpenPath={onOpenPath}
       />
     );
@@ -150,6 +161,10 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     }
     if (path === '/compte/emploi.html') {
       setEmploymentHubOpen(true);
+      return;
+    }
+    if (path === '/compte/monde-parallele.html') {
+      setParallelWorldHubOpen(true);
       return;
     }
     onOpenPath(path);
