@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativeAlertsHub } from './NativeAlertsHub';
+import { NativeCharacterHub } from './NativeCharacterHub';
 import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
 import { NativeLifeStoryHub } from './NativeLifeStoryHub';
@@ -29,6 +30,11 @@ const mainDestinations = [
     label: 'Emploi',
     description: 'Ouvrir un hub natif sans données professionnelles avant le profil et les candidatures protégés.',
     path: '/compte/emploi.html',
+  },
+  {
+    label: 'Mon personnage',
+    description: 'Ouvrir un hub natif sans fiche humaine, portrait, bible narrative ni statut avant la surface personnage protégée.',
+    path: '/compte/mon-personnage.html',
   },
   {
     label: 'Monde parallèle',
@@ -97,6 +103,7 @@ function DestinationCard({
 
 export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [alertsHubOpen, setAlertsHubOpen] = useState(false);
+  const [characterHubOpen, setCharacterHubOpen] = useState(false);
   const [datingHubOpen, setDatingHubOpen] = useState(false);
   const [employmentHubOpen, setEmploymentHubOpen] = useState(false);
   const [lifeStoryHubOpen, setLifeStoryHubOpen] = useState(false);
@@ -104,6 +111,15 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [parallelWorldHubOpen, setParallelWorldHubOpen] = useState(false);
   const [personalAiHubOpen, setPersonalAiHubOpen] = useState(false);
   const [profileHubOpen, setProfileHubOpen] = useState(false);
+
+  if (characterHubOpen) {
+    return (
+      <NativeCharacterHub
+        onBack={() => setCharacterHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
 
   if (datingHubOpen) {
     return (
@@ -188,6 +204,10 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     }
     if (path === '/compte/emploi.html') {
       setEmploymentHubOpen(true);
+      return;
+    }
+    if (path === '/compte/mon-personnage.html') {
+      setCharacterHubOpen(true);
       return;
     }
     if (path === '/compte/monde-parallele.html') {
