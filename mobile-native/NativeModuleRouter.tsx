@@ -1,6 +1,7 @@
 import { NativeAlertsHub } from './NativeAlertsHub';
 import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
+import { NativeLifeStoryHub } from './NativeLifeStoryHub';
 import { NativeMessagesHub } from './NativeMessagesHub';
 import { NativeParallelWorldHub } from './NativeParallelWorldHub';
 import { NativePersonalAiHub } from './NativePersonalAiHub';
@@ -12,6 +13,7 @@ export const NATIVE_MODULE_PATHS = [
   '/compte/emploi.html',
   '/compte/monde-parallele.html',
   '/compte/mon-ia.html',
+  '/compte/histoire-de-vie.html',
   '/compte/notifications.html',
   '/compte/profil.html',
 ] as const;
@@ -40,6 +42,8 @@ export function NativeModuleRouter({ path, onOpenPath, onBack }: Props) {
       return <NativeParallelWorldHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/mon-ia.html':
       return <NativePersonalAiHub onOpenPath={onOpenPath} onBack={onBack} />;
+    case '/compte/histoire-de-vie.html':
+      return <NativeLifeStoryHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/notifications.html':
       return <NativeAlertsHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/profil.html':

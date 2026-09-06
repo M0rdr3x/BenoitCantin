@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativeAlertsHub } from './NativeAlertsHub';
 import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
+import { NativeLifeStoryHub } from './NativeLifeStoryHub';
 import { NativeMessagesHub } from './NativeMessagesHub';
 import { NativeParallelWorldHub } from './NativeParallelWorldHub';
 import { NativePersonalAiHub } from './NativePersonalAiHub';
@@ -38,6 +39,11 @@ const mainDestinations = [
     label: 'Mon IA',
     description: 'Ouvrir un hub natif sans réglage, consentement ni runtime avant la surface IA privée protégée.',
     path: '/compte/mon-ia.html',
+  },
+  {
+    label: 'Histoire de vie',
+    description: 'Ouvrir un hub natif sans souvenir, destinataire ni directive avant la surface Histoire de vie protégée.',
+    path: '/compte/histoire-de-vie.html',
   },
 ] as const;
 
@@ -93,6 +99,7 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [alertsHubOpen, setAlertsHubOpen] = useState(false);
   const [datingHubOpen, setDatingHubOpen] = useState(false);
   const [employmentHubOpen, setEmploymentHubOpen] = useState(false);
+  const [lifeStoryHubOpen, setLifeStoryHubOpen] = useState(false);
   const [messagesHubOpen, setMessagesHubOpen] = useState(false);
   const [parallelWorldHubOpen, setParallelWorldHubOpen] = useState(false);
   const [personalAiHubOpen, setPersonalAiHubOpen] = useState(false);
@@ -111,6 +118,15 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     return (
       <NativeEmploymentHub
         onBack={() => setEmploymentHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
+  if (lifeStoryHubOpen) {
+    return (
+      <NativeLifeStoryHub
+        onBack={() => setLifeStoryHubOpen(false)}
         onOpenPath={onOpenPath}
       />
     );
@@ -180,6 +196,10 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     }
     if (path === '/compte/mon-ia.html') {
       setPersonalAiHubOpen(true);
+      return;
+    }
+    if (path === '/compte/histoire-de-vie.html') {
+      setLifeStoryHubOpen(true);
       return;
     }
     onOpenPath(path);
