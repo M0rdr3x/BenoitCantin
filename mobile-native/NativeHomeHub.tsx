@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativeAlertsHub } from './NativeAlertsHub';
+import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
 import { NativeMessagesHub } from './NativeMessagesHub';
 import { NativeProfileHub } from './NativeProfileHub';
@@ -18,7 +19,7 @@ const mainDestinations = [
   },
   {
     label: 'Rencontres',
-    description: 'Accéder au parcours Rencontres avec ses règles de sécurité et de consentement existantes.',
+    description: 'Ouvrir un hub natif sans profil, compatibilité ni conversation avant la surface Rencontres protégée.',
     path: '/compte/rencontres.html',
   },
   {
@@ -88,9 +89,19 @@ function DestinationCard({
 
 export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [alertsHubOpen, setAlertsHubOpen] = useState(false);
+  const [datingHubOpen, setDatingHubOpen] = useState(false);
   const [employmentHubOpen, setEmploymentHubOpen] = useState(false);
   const [messagesHubOpen, setMessagesHubOpen] = useState(false);
   const [profileHubOpen, setProfileHubOpen] = useState(false);
+
+  if (datingHubOpen) {
+    return (
+      <NativeDatingHub
+        onBack={() => setDatingHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
 
   if (employmentHubOpen) {
     return (
@@ -131,6 +142,10 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const openMainDestination = (path: string) => {
     if (path === '/compte/messages.html') {
       setMessagesHubOpen(true);
+      return;
+    }
+    if (path === '/compte/rencontres.html') {
+      setDatingHubOpen(true);
       return;
     }
     if (path === '/compte/emploi.html') {
