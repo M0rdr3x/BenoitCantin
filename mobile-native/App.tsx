@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
+import { NativeAccountHub } from './NativeAccountHub';
 import { NativeHomeHub } from './NativeHomeHub';
 import { NativeSecurityHub } from './NativeSecurityHub';
 import { sharePublicSinjiraUrl } from './safePublicShare';
@@ -53,6 +54,7 @@ function configuredWebOrigin() {
 
 const ORIGIN = configuredWebOrigin();
 const HOME_URL = `${ORIGIN}/app/`;
+const ACCOUNT_HOME_URL = `${ORIGIN}${ACCOUNT_HOME_PATH}`;
 const DEVICE_KEY_STORAGE = 'sinjira_native_device_key_v1';
 const BIOMETRIC_LOCK_STORAGE = 'sinjira_biometric_lock_v1';
 const PUSH_OPT_IN_STORAGE = 'sinjira_security_push_opt_in_v1';
@@ -163,6 +165,16 @@ function isNativeHomeUrl(url: string) {
   }
 }
 
+function isNativeAccountUrl(url: string) {
+  try {
+    const parsed = new URL(url, ORIGIN);
+    return parsed.protocol === 'https:' && ALLOWED_WEB_HOSTS.has(parsed.hostname)
+      && parsed.pathname === ACCOUNT_HOME_PATH && !parsed.search && !parsed.hash;
+  } catch {
+    return false;
+  }
+}
+
 function tabForUrl(url: string): TabKey | null {
   const match = tabs.find((tab) => url.includes(tab.path));
   return match?.key ?? null;
@@ -194,6 +206,7 @@ export default function App() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushToken, setPushToken] = useState('');
   const [nativeHomeOpen, setNativeHomeOpen] = useState(true);
+  const [nativeAccountOpen, setNativeAccountOpen] = useState(false);
   const [nativeSecurityOpen, setNativeSecurityOpen] = useState(false);
 
   const allowedHosts = useMemo(() => new Set(ALLOWED_WEB_HOSTS), []);
@@ -351,13 +364,20 @@ export default function App() {
       if (nextState === 'background' || nextState === 'inactive') {
         vaultLocalGateUntilRef.current = 0;
         if (isVaultUrl(currentUrl)) {
-          setCurrentUrl(`${ORIGIN}${ACCOUNT_HOME_PATH}`);
+          setNativeSecurityOpen(false);
+          setNativeHomeOpen(false);
+          setNativeAccountOpen(true);
+          setCurrentUrl(ACCOUNT_HOME_URL);
+          setActiveTab('home');
           setCanGoBack(false);
           setWebViewKey((value) => value + 1);
           setNativeMessage('Registre personnel verrouillé automatiquement lorsque SINJIRA a quitté le premier plan.');
         }
         if (isPersonalAiUrl(currentUrl)) {
-          setCurrentUrl(`${ORIGIN}${ACCOUNT_HOME_PATH}`);
+          setNativeSecurityOpen(false);
+          setNativeHomeOpen(false);
+          setNativeAccountOpen(true);
+          setCurrentUrl(ACCOUNT_HOME_URL);
           setActiveTab('home');
           setCanGoBack(false);
           setWebViewKey((value) => value + 1);
@@ -380,8 +400,18 @@ export default function App() {
   const navigateToUrl = async (url: string, tab?: TabKey) => {
     if (isNativeHomeUrl(url)) {
       setNativeSecurityOpen(false);
+      setNativeAccountOpen(false);
       setNativeHomeOpen(true);
       setCurrentUrl(HOME_URL);
+      setActiveTab('home');
+      setCanGoBack(false);
+      return;
+    }
+    if (isNativeAccountUrl(url)) {
+      setNativeSecurityOpen(false);
+      setNativeHomeOpen(false);
+      setNativeAccountOpen(true);
+      setCurrentUrl(ACCOUNT_HOME_URL);
       setActiveTab('home');
       setCanGoBack(false);
       return;
@@ -392,6 +422,7 @@ export default function App() {
     }
     setNativeSecurityOpen(false);
     setNativeHomeOpen(false);
+    setNativeAccountOpen(false);
     setCurrentUrl(url);
     if (tab) setActiveTab(tab);
     else {
@@ -447,6 +478,14 @@ export default function App() {
         setNativeSecurityOpen(false);
         return true;
       }
+      if (nativeAccountOpen) {
+        setNativeAccountOpen(false);
+        setNativeHomeOpen(true);
+        setCurrentUrl(HOME_URL);
+        setActiveTab('home');
+        setCanGoBack(false);
+        return true;
+      }
       if (nativeHomeOpen) return false;
       if (canGoBack) {
         webViewRef.current?.goBack();
@@ -455,7 +494,7 @@ export default function App() {
       return false;
     });
     return () => subscription.remove();
-  }, [canGoBack, isUnlocked, biometricEnabled, nativeHomeOpen, nativeSecurityOpen]);
+  }, [canGoBack, isUnlocked, biometricEnabled, nativeHomeOpen, nativeAccountOpen, nativeSecurityOpen]);
 
   const toggleBiometric = async () => {
     if (biometricEnabled) {
@@ -487,9 +526,18 @@ export default function App() {
 
   const onNavigationStateChange = (state: WebViewNavigation) => {
     if (isNativeHomeUrl(state.url)) {
+      setNativeAccountOpen(false);
       setNativeHomeOpen(true);
       setCanGoBack(false);
       setCurrentUrl(HOME_URL);
+      setActiveTab('home');
+      return;
+    }
+    if (isNativeAccountUrl(state.url)) {
+      setNativeHomeOpen(false);
+      setNativeAccountOpen(true);
+      setCanGoBack(false);
+      setCurrentUrl(ACCOUNT_HOME_URL);
       setActiveTab('home');
       return;
     }
@@ -512,6 +560,14 @@ export default function App() {
     }
 
     if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)) {
+      if (isNativeHomeUrl(url)) {
+        void navigate('/app/', 'home');
+        return false;
+      }
+      if (isNativeAccountUrl(url)) {
+        void navigate(ACCOUNT_HOME_PATH);
+        return false;
+      }
       if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
         void navigate(VAULT_PATH);
         return false;
@@ -578,7 +634,7 @@ export default function App() {
           <Pressable accessibilityRole="button" accessibilityLabel="Activer ou désactiver les notifications de sécurité" onPress={() => void (pushEnabled ? disableSecurityPush() : enableSecurityPush())} style={styles.refreshButton}>
             <Text style={styles.refreshText}>{pushEnabled ? 'Alertes ✓' : 'Alertes'}</Text>
           </Pressable>
-          {!nativeSecurityOpen && !nativeHomeOpen ? (
+          {!nativeSecurityOpen && !nativeHomeOpen && !nativeAccountOpen ? (
             <>
               <Pressable accessibilityRole="button" accessibilityLabel="Partager cette page SINJIRA si elle est publique" onPress={() => void shareCurrentPage()} style={styles.refreshButton}>
                 <Text style={styles.refreshText}>Partager</Text>
@@ -629,6 +685,12 @@ export default function App() {
         <NativeHomeHub
           onOpenPath={(path) => void navigate(path)}
           onOpenSecurity={() => setNativeSecurityOpen(true)}
+        />
+      ) : nativeAccountOpen ? (
+        <NativeAccountHub
+          onOpenPath={(path) => void navigate(path)}
+          onOpenSecurity={() => setNativeSecurityOpen(true)}
+          onOpenHome={() => void navigate('/app/', 'home')}
         />
       ) : (
         <WebView
