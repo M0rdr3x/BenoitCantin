@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { NativeMessagesHub } from './NativeMessagesHub';
 
 type Props = {
   onOpenPath: (path: string) => void;
@@ -18,7 +20,7 @@ const alertDestinations = [
   },
   {
     label: 'Messages',
-    description: 'Ouvrir vos conversations dans leur surface privée existante.',
+    description: 'Ouvrir le hub natif sans contenu privé avant de choisir votre identité de messagerie.',
     path: '/compte/messages.html',
   },
   {
@@ -46,6 +48,25 @@ function DestinationCard({ label, description, onPress }: { label: string; descr
 }
 
 export function NativeAlertsHub({ onOpenPath, onBack }: Props) {
+  const [messagesHubOpen, setMessagesHubOpen] = useState(false);
+
+  if (messagesHubOpen) {
+    return (
+      <NativeMessagesHub
+        onBack={() => setMessagesHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
+  const openDestination = (path: string) => {
+    if (path === '/compte/messages.html') {
+      setMessagesHubOpen(true);
+      return;
+    }
+    onOpenPath(path);
+  };
+
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Pressable
@@ -83,7 +104,7 @@ export function NativeAlertsHub({ onOpenPath, onBack }: Props) {
             key={item.path}
             label={item.label}
             description={item.description}
-            onPress={() => onOpenPath(item.path)}
+            onPress={() => openDestination(item.path)}
           />
         ))}
       </View>
