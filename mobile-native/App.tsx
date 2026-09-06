@@ -17,7 +17,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { WebView, WebViewNavigation } from 'react-native-webview';
+import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
 
 const DEFAULT_ORIGIN = 'https://www.benoitcantin.com';
 const ALLOWED_WEB_HOSTS = new Set(['www.benoitcantin.com', 'benoitcantin.com', 'sinjira.com', 'www.sinjira.com']);
@@ -41,10 +41,12 @@ const DEVICE_KEY_STORAGE = 'sinjira_native_device_key_v1';
 const BIOMETRIC_LOCK_STORAGE = 'sinjira_biometric_lock_v1';
 const PUSH_OPT_IN_STORAGE = 'sinjira_security_push_opt_in_v1';
 const PUSH_TOKEN_STORAGE = 'sinjira_security_push_token_v1';
-const WEB_DEVICE_KEY_STORAGE = 'sinjira.security.device_key.v1';
+const LEGACY_WEB_DEVICE_KEY_STORAGE = 'sinjira.security.device_key.v1';
 const WEB_PUSH_TOKEN_STORAGE = 'sinjira.security.push_token.v1';
 const WEB_PUSH_ENABLED_STORAGE = 'sinjira.security.push_enabled.v1';
 const WEB_PUSH_PLATFORM_STORAGE = 'sinjira.security.push_platform.v1';
+const DEVICE_KEY_REQUEST_TYPE = 'sinjira.device-key.request';
+const DEVICE_KEY_RESPONSE_EVENT = 'sinjira:native-device-key-response';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -91,6 +93,15 @@ function normalizeSinjiraUrl(url: string | null): string | null {
   return null;
 }
 
+function isAllowedWebUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' && ALLOWED_WEB_HOSTS.has(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
 function isVaultUrl(url: string) {
   try {
     const parsed = new URL(url, ORIGIN);
@@ -132,7 +143,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
   const [canGoBack, setCanGoBack] = useState(false);
   const [webViewKey, setWebViewKey] = useState(0);
-  const [nativeDeviceKey, setNativeDeviceKey] = useState('');
   const [securityReady, setSecurityReady] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -143,14 +153,41 @@ export default function App() {
   const allowedHosts = useMemo(() => new Set(ALLOWED_WEB_HOSTS), []);
 
   const injectedSecurityScript = useMemo(() => {
-    if (!nativeDeviceKey) return 'true;';
     const enabled = pushEnabled ? '1' : '0';
     const platform = Platform.OS;
-    return `try{localStorage.setItem(${JSON.stringify(WEB_DEVICE_KEY_STORAGE)},${JSON.stringify(nativeDeviceKey)});localStorage.setItem(${JSON.stringify(WEB_PUSH_ENABLED_STORAGE)},${JSON.stringify(enabled)});localStorage.setItem(${JSON.stringify(WEB_PUSH_PLATFORM_STORAGE)},${JSON.stringify(platform)});${pushToken ? `localStorage.setItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)},${JSON.stringify(pushToken)});` : `localStorage.removeItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)});`}setTimeout(()=>import('/assets/js/sinjira-security-push-bridge-v24-4-98.js?v=24.4.99').catch(()=>{}),0);}catch(e){};true;`;
-  }, [nativeDeviceKey, pushEnabled, pushToken]);
+    return `try{localStorage.removeItem(${JSON.stringify(LEGACY_WEB_DEVICE_KEY_STORAGE)});sessionStorage.removeItem(${JSON.stringify(LEGACY_WEB_DEVICE_KEY_STORAGE)});localStorage.setItem(${JSON.stringify(WEB_PUSH_ENABLED_STORAGE)},${JSON.stringify(enabled)});localStorage.setItem(${JSON.stringify(WEB_PUSH_PLATFORM_STORAGE)},${JSON.stringify(platform)});${pushToken ? `localStorage.setItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)},${JSON.stringify(pushToken)});` : `localStorage.removeItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)});`}setTimeout(()=>import('/assets/js/sinjira-security-push-bridge-v24-4-98.js?v=24.4.99').catch(()=>{}),0);}catch(e){};true;`;
+  }, [pushEnabled, pushToken]);
 
   const syncPushToWeb = (enabled: boolean, token: string) => {
     const script = `try{localStorage.setItem(${JSON.stringify(WEB_PUSH_ENABLED_STORAGE)},${JSON.stringify(enabled ? '1' : '0')});localStorage.setItem(${JSON.stringify(WEB_PUSH_PLATFORM_STORAGE)},${JSON.stringify(Platform.OS)});${token ? `localStorage.setItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)},${JSON.stringify(token)});` : `localStorage.removeItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)});`}window.dispatchEvent(new Event('sinjira:push-changed'));}catch(e){};true;`;
+    webViewRef.current?.injectJavaScript(script);
+  };
+
+  const handleWebMessage = async (event: WebViewMessageEvent) => {
+    if (!isAllowedWebUrl(currentUrl)) return;
+    if (event.nativeEvent.url && !isAllowedWebUrl(event.nativeEvent.url)) return;
+    let message: unknown;
+    try {
+      message = JSON.parse(String(event.nativeEvent.data || ''));
+    } catch {
+      return;
+    }
+    if (!message || typeof message !== 'object') return;
+    const payload = message as { type?: unknown; request_id?: unknown };
+    if (payload.type !== DEVICE_KEY_REQUEST_TYPE) return;
+    const requestId = String(payload.request_id || '');
+    if (!/^[A-Za-z0-9-]{16,80}$/.test(requestId)) return;
+
+    let response: { request_id: string; device_key?: string; error?: string } = { request_id: requestId };
+    try {
+      const key = await SecureStore.getItemAsync(DEVICE_KEY_STORAGE);
+      if (!key || key.length < 16) response = { request_id: requestId, error: 'NATIVE_DEVICE_KEY_UNAVAILABLE' };
+      else response.device_key = key;
+    } catch {
+      response = { request_id: requestId, error: 'NATIVE_DEVICE_KEY_UNAVAILABLE' };
+    }
+
+    const script = `window.dispatchEvent(new CustomEvent(${JSON.stringify(DEVICE_KEY_RESPONSE_EVENT)},{detail:${JSON.stringify(response)}}));true;`;
     webViewRef.current?.injectJavaScript(script);
   };
 
@@ -267,7 +304,6 @@ export default function App() {
       const push = (await SecureStore.getItemAsync(PUSH_OPT_IN_STORAGE)) === '1';
       const token = (await SecureStore.getItemAsync(PUSH_TOKEN_STORAGE)) || '';
       if (cancelled) return;
-      setNativeDeviceKey(key);
       setBiometricEnabled(biometric);
       setPushEnabled(push);
       setPushToken(token);
@@ -506,6 +542,7 @@ export default function App() {
         startInLoadingState
         pullToRefreshEnabled={Platform.OS === 'ios'}
         allowsBackForwardNavigationGestures={Platform.OS === 'ios'}
+        onMessage={(event) => { void handleWebMessage(event); }}
         onNavigationStateChange={onNavigationStateChange}
         onShouldStartLoadWithRequest={shouldStart}
         renderLoading={() => (
