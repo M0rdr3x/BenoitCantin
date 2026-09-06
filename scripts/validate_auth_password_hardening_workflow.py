@@ -5,6 +5,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "sinjira-v25-auth-password-hardening.yml"
+STATUS = ROOT / "docs" / "sinjira-v25-hosted-auth-password-security.md"
+CONFIG = ROOT / "supabase" / "config.toml"
 
 
 def fail(message: str) -> None:
@@ -18,8 +20,11 @@ def require(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    require(WORKFLOW.is_file(), f"workflow absent: {WORKFLOW.relative_to(ROOT)}")
+    for path in (WORKFLOW, STATUS, CONFIG):
+        require(path.is_file(), f"fichier absent: {path.relative_to(ROOT)}")
     text = WORKFLOW.read_text(encoding="utf-8")
+    status = STATUS.read_text(encoding="utf-8")
+    config = CONFIG.read_text(encoding="utf-8")
 
     # Déclenchement et cible production strictement bornés.
     require("workflow_dispatch:" in text, "workflow_dispatch obligatoire")
@@ -126,8 +131,27 @@ def main() -> int:
         "le workflow doit refuser un rollback Auth aveugle en cas de concurrence",
     )
 
+    # Le dépôt doit refléter honnêtement l'état hébergé observé, sans le transformer en contrat permanent.
+    require("Dernière vérification : 2026-09-06." in status, "date de vérification hébergée absente")
+    require("Plan observé le 2026-09-06 : **Free**" in status, "plan Free observé non documenté")
+    require("auth_leaked_password_protection" in status, "WARN Advisor HIBP non documenté")
+    require("n'est donc **pas activée** en production" in status, "état HIBP réel ambigu")
+    require("Cette page est un état daté" in status, "le plan observé ne doit pas être traité comme permanent")
+    require("password_hibp_enabled" in status, "champ Management API HIBP non documenté")
+    require("PATCH /v1/projects/{ref}/config/auth" in status, "route Management API HIBP non documentée")
+    require("ne doit jamais être modifié avec une migration SQL" in status, "interdiction du contournement SQL absente")
+    require("workflow prêt, activation hébergée bloquée par le plan actuel" in status,
+            "formulation de statut bornée absente")
+    require("https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection" in status,
+            "référence Supabase sur la protection HIBP absente")
+
+    # La protection disponible dans le dépôt reste au minimum de 12 caractères.
+    require("minimum_password_length = 12" in config, "minimum local Auth de 12 caractères absent")
+    require("[auth.mfa.totp]" in config and "enroll_enabled = true" in config and "verify_enabled = true" in config,
+            "le contrat AAL2 local doit rester actif")
+
     print(
-        "OK workflow Auth V25: manuel, plan Pro+ requis avant Auth, PATCH HIBP seul, postflight strict."
+        "OK workflow Auth V25: manuel, plan Pro+ requis avant Auth, PATCH HIBP seul, état Free/WARN documenté et minimum local 12 conservé."
     )
     return 0
 
