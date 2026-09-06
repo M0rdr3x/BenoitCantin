@@ -42,34 +42,34 @@ select ok(
   'implémentation MFA interne reste SECURITY DEFINER avec search_path fixe'
 );
 
-select like(
-  pg_get_functiondef('sinjira_security_internal.security_resolve_connection_challenge(uuid,text,text)'::regprocedure),
-  '%last_session_id=v_session%',
+select ok(
+  pg_get_functiondef('sinjira_security_internal.security_resolve_connection_challenge(uuid,text,text)'::regprocedure)
+    like '%last_session_id=v_session%',
   'la résolution standard lie la clé de l’approbateur à la session courante'
 );
-select like(
-  pg_get_functiondef('sinjira_security_internal.security_resolve_connection_challenge(uuid,text,text)'::regprocedure),
-  '%CURRENT_TRUSTED_DEVICE_REQUIRED%',
+select ok(
+  pg_get_functiondef('sinjira_security_internal.security_resolve_connection_challenge(uuid,text,text)'::regprocedure)
+    like '%CURRENT_TRUSTED_DEVICE_REQUIRED%',
   'la résolution standard refuse une clé fiable qui ne correspond pas à la session courante'
 );
-select like(
-  pg_get_functiondef('sinjira_security_internal.security_resolve_connection_challenge_mfa(uuid,text)'::regprocedure),
-  '%v_action=''conscience_vault''%',
+select ok(
+  pg_get_functiondef('sinjira_security_internal.security_resolve_connection_challenge_mfa(uuid,text)'::regprocedure)
+    like '%v_action=''conscience_vault''%',
   'la résolution MFA distingue explicitement les challenges du Coffre'
 );
-select like(
-  pg_get_functiondef('sinjira_security_internal.security_resolve_connection_challenge_mfa(uuid,text)'::regprocedure),
-  '%TRUSTED_OTHER_DEVICE_REQUIRED%',
+select ok(
+  pg_get_functiondef('sinjira_security_internal.security_resolve_connection_challenge_mfa(uuid,text)'::regprocedure)
+    like '%TRUSTED_OTHER_DEVICE_REQUIRED%',
   'la résolution MFA interdit l’auto-approbation du Coffre si un autre appareil fiable existe'
 );
-select like(
-  pg_get_functiondef('sinjira_security_internal.security_set_device_trust(uuid,boolean,boolean)'::regprocedure),
-  '%resolver.id<>v_row.id%',
+select ok(
+  pg_get_functiondef('sinjira_security_internal.security_set_device_trust(uuid,boolean,boolean)'::regprocedure)
+    like '%resolver.id<>v_row.id%',
   'une approbation fraîche de confiance doit provenir explicitement d’un autre appareil'
 );
-select like(
-  pg_get_functiondef('sinjira_security_internal.security_resolve_connection_challenge_mfa(uuid,text)'::regprocedure),
-  '%last_session_id=v_session%',
+select ok(
+  pg_get_functiondef('sinjira_security_internal.security_resolve_connection_challenge_mfa(uuid,text)'::regprocedure)
+    like '%last_session_id=v_session%',
   'la résolution MFA lie aussi la clé fournie à la session courante'
 );
 
