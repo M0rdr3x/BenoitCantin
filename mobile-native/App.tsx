@@ -13,12 +13,12 @@ import {
   Platform,
   Pressable,
   SafeAreaView,
-  Share,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
+import { sharePublicSinjiraUrl } from './safePublicShare';
 
 const DEFAULT_ORIGIN = 'https://www.benoitcantin.com';
 const ALLOWED_WEB_HOSTS = new Set(['www.benoitcantin.com', 'benoitcantin.com', 'sinjira.com', 'www.sinjira.com']);
@@ -364,11 +364,7 @@ export default function App() {
       return;
     }
     try {
-      await Share.share({
-        title: 'SINJIRA™',
-        message: `SINJIRA™ — ${shareUrl}`,
-        url: shareUrl,
-      });
+      await sharePublicSinjiraUrl(shareUrl);
     } catch {
       setNativeMessage('Le partage natif est temporairement indisponible.');
     }
