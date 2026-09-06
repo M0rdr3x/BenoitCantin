@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativePrivacyHub } from './NativePrivacyHub';
+import { NativeSettingsHub } from './NativeSettingsHub';
 
 type Props = {
   onOpenPath: (path: string) => void;
@@ -20,7 +21,7 @@ const profileDestinations = [
   },
   {
     label: 'Paramètres',
-    description: 'Gérer les préférences, l’export des données et les actions de compte dans la surface Web protégée.',
+    description: 'Ouvrir un hub natif sans préférences locales avant les actions protégées du compte.',
     path: '/compte/parametres.html',
   },
   {
@@ -57,6 +58,7 @@ function DestinationCard({
 
 export function NativeProfileHub({ onOpenPath, onBack }: Props) {
   const [privacyHubOpen, setPrivacyHubOpen] = useState(false);
+  const [settingsHubOpen, setSettingsHubOpen] = useState(false);
 
   if (privacyHubOpen) {
     return (
@@ -67,9 +69,22 @@ export function NativeProfileHub({ onOpenPath, onBack }: Props) {
     );
   }
 
+  if (settingsHubOpen) {
+    return (
+      <NativeSettingsHub
+        onBack={() => setSettingsHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
   const openProfileDestination = (path: string) => {
     if (path === '/compte/vie-privee.html') {
       setPrivacyHubOpen(true);
+      return;
+    }
+    if (path === '/compte/parametres.html') {
+      setSettingsHubOpen(true);
       return;
     }
     onOpenPath(path);

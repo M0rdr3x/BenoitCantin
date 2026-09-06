@@ -1,32 +1,30 @@
-import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { NativeSettingsHub } from './NativeSettingsHub';
 
 type Props = {
   onOpenPath: (path: string) => void;
   onBack: () => void;
 };
 
-const privacyDestinations = [
+const settingsDestinations = [
   {
-    label: 'Exercer mes droits',
-    description: 'Ouvrir le formulaire Vie privée existant pour une demande d’accès, rectification, portabilité, suppression ou autre droit applicable.',
+    label: 'Ouvrir les paramètres complets',
+    description: 'Accéder à la surface Web protégée pour modifier les préférences, exporter vos données ou gérer les actions sensibles du compte.',
+    path: '/compte/parametres.html?surface=web',
+  },
+  {
+    label: 'Vie privée',
+    description: 'Ouvrir le Centre Vie privée existant pour exercer vos droits et suivre les demandes dans leur source de vérité.',
     path: '/compte/vie-privee.html?surface=web',
   },
   {
-    label: 'Politique générale',
-    description: 'Consulter la politique de confidentialité publique de SINJIRA.',
-    path: '/confidentialite.html',
-  },
-  {
     label: 'Ma sécurité',
-    description: 'Pour un enjeu de sécurité ou de protection, ouvrir le Centre de sécurité existant.',
+    description: 'Accéder au Centre de sécurité existant pour les opérations de protection du compte.',
     path: '/compte/securite.html',
   },
   {
-    label: 'Paramètres du compte',
-    description: 'Ouvrir un hub natif sans préférences locales avant les actions protégées du compte.',
-    path: '/compte/parametres.html',
+    label: 'Mon profil',
+    description: 'Retourner au profil complet existant pour les renseignements et réglages qui restent protégés côté serveur.',
+    path: '/compte/profil.html?surface=web',
   },
 ] as const;
 
@@ -47,72 +45,53 @@ function DestinationCard({ label, description, onPress }: { label: string; descr
   );
 }
 
-export function NativePrivacyHub({ onOpenPath, onBack }: Props) {
-  const [settingsHubOpen, setSettingsHubOpen] = useState(false);
-
-  if (settingsHubOpen) {
-    return (
-      <NativeSettingsHub
-        onBack={() => setSettingsHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
-  }
-
-  const openPrivacyDestination = (path: string) => {
-    if (path === '/compte/parametres.html') {
-      setSettingsHubOpen(true);
-      return;
-    }
-    onOpenPath(path);
-  };
-
+export function NativeSettingsHub({ onOpenPath, onBack }: Props) {
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Retour au profil"
+        accessibilityLabel="Retour"
         onPress={onBack}
         style={styles.backButton}
       >
-        <Text style={styles.backButtonText}>‹ Profil</Text>
+        <Text style={styles.backButtonText}>‹ Retour</Text>
       </Pressable>
 
       <View style={styles.hero}>
         <Text style={styles.eyebrow}>L’HUMAIN AVANT TOUT</Text>
-        <Text style={styles.title}>Vie privée</Text>
+        <Text style={styles.title}>Paramètres</Text>
         <Text style={styles.intro}>
-          Ce hub natif explique la frontière et vous oriente. Il ne lit aucune demande Vie privée, aucun renseignement personnel et aucun historique de votre compte.
+          Ce hub natif ne lit, ne copie et ne modifie aucune préférence du compte. Il ne prépare aucun export et ne peut jamais supprimer votre compte.
         </Text>
       </View>
 
       <View style={styles.boundaryCard}>
-        <Text style={styles.cardKicker}>VOS DROITS RESTENT SOUS VOTRE CONTRÔLE</Text>
-        <Text style={styles.boundaryTitle}>Aucune demande n’est traitée localement</Text>
+        <Text style={styles.cardKicker}>PROTÉGER SANS SURVEILLER</Text>
+        <Text style={styles.boundaryTitle}>Les actions sensibles restent côté serveur</Text>
         <Text style={styles.boundaryText}>
-          Les demandes, leur état et toute vérification d’identité restent dans le Centre Vie privée Web et ses contrôles serveur. Le natif ne crée, ne modifie et ne conserve aucun dossier de vie privée.
+          L’export de données, la suppression irréversible du compte, la confidentialité du profil et les préférences de notification continuent dans la surface Web protégée et ses contrôles RLS/serveur. Cet écran natif sert uniquement à vous orienter.
         </Text>
       </View>
 
       <Text style={styles.sectionTitle}>Choisir une destination</Text>
       <Text style={styles.sectionText}>
-        Les actions réelles continuent dans les surfaces canoniques existantes.
+        Aucune modification de compte n’est exécutée localement depuis ce hub.
       </Text>
       <View style={styles.destinationList}>
-        {privacyDestinations.map((item) => (
+        {settingsDestinations.map((item) => (
           <DestinationCard
             key={item.path}
             label={item.label}
             description={item.description}
-            onPress={() => openPrivacyDestination(item.path)}
+            onPress={() => onOpenPath(item.path)}
           />
         ))}
       </View>
 
       <View style={styles.privacyNote}>
-        <Text style={styles.privacyTitle}>Protéger sans surveiller</Text>
+        <Text style={styles.privacyTitle}>Pas de copie locale des réglages</Text>
         <Text style={styles.privacyText}>
-          Aucun GPS, aucune adresse IP brute, aucun secret, aucune pièce d’identité et aucun contenu d’une demande ne sont demandés par cet écran natif.
+          Aucun profil public, choix de visibilité, préférence de notification, fichier d’export ou état de suppression n’est conservé par ce composant React Native.
         </Text>
       </View>
     </ScrollView>
