@@ -29,17 +29,24 @@ EXPECTED_TAIL = [
 ]
 
 
-def ledger_rows():
+def parse_ledger_text(text, source):
     out = []
-    for i, raw in enumerate(LEDGER.read_text('utf-8').splitlines(), 1):
+    for i, raw in enumerate(text.splitlines(), 1):
         line = raw.strip()
         if not line or line.startswith('#'):
             continue
         m = ROW_RE.fullmatch(line)
         if not m:
-            raise SystemExit(f'Ledger invalide ligne {i}: {line}')
+            raise ValueError(f'Ledger invalide {source} ligne {i}: {line}')
         out.append((m.group(1), m.group(2)))
     return out
+
+
+def ledger_rows():
+    try:
+        return parse_ledger_text(LEDGER.read_text('utf-8'), 'courant')
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
 
 
 def migration_version(path_text):
@@ -86,6 +93,29 @@ def validate_historical_migration_diff(errors, base_ref):
             )
 
 
+def validate_ledger_append_only(errors, base_ref, current_rows):
+    if not base_ref:
+        return
+    proc = subprocess.run(
+        ['git', 'show', f'{base_ref}:supabase/production-migration-ledger.txt'],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode:
+        errors.append('Impossible de lire le ledger du commit de base: ' + (proc.stderr or proc.stdout).strip())
+        return
+    try:
+        base_rows = parse_ledger_text(proc.stdout, f'base {base_ref}')
+    except ValueError as exc:
+        errors.append(str(exc))
+        return
+    if len(current_rows) < len(base_rows) or current_rows[:len(base_rows)] != base_rows:
+        errors.append(
+            'Ledger production non append-only: une version déjà enregistrée a été supprimée, renommée ou réécrite.'
+        )
+
+
 def validate_production_workflow(errors):
     if not WORKFLOW.is_file():
         errors.append('Workflow Supabase production absent.')
@@ -128,6 +158,7 @@ def validate_production_workflow(errors):
     history_required = (
         'fetch-depth: 0',
         'id: migration_base',
+        "'supabase/production-migration-ledger.txt'",
         '${{ github.event.pull_request.base.sha }}',
         '${{ github.event.before }}',
         'validate_production_migration_ledger.py --base-ref "$BASE_REF"',
@@ -171,6 +202,7 @@ def main():
     if len(local_versions) != len(set(local_versions)): errors.append('Deux fichiers locaux partagent le même timestamp.')
 
     validate_historical_migration_diff(errors, args.base_ref)
+    validate_ledger_append_only(errors, args.base_ref, rows)
 
     future = [(v, name) for v, name in local if v > EXPECTED_LAST]
     with tempfile.TemporaryDirectory(prefix='sinjira-ledger-') as td:

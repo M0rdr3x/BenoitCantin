@@ -5,12 +5,14 @@ on:
     branches: [ main ]
     paths:
       - 'supabase/migrations/**'
+      - 'supabase/production-migration-ledger.txt'
       - 'scripts/validate_production_migration_ledger.py'
       - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'supabase/migrations/**'
+      - 'supabase/production-migration-ledger.txt'
       - 'scripts/validate_production_migration_ledger.py'
       - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
   workflow_dispatch:
