@@ -81,21 +81,29 @@ def main() -> int:
                 f"la destination {label} pointe vers un ancrage Web inexistant: {anchor}")
 
     # Le shell conserve une seule identité et toute opération réelle passe par la WebView existante.
+    # D'autres surfaces natives peuvent maintenant s'intercaler entre le hub et la WebView,
+    # sans modifier la priorité du hub Sécurité ni ses capacités.
     for marker in (
         "import { NativeSecurityHub } from './NativeSecurityHub';",
         "const [nativeSecurityOpen, setNativeSecurityOpen] = useState(false);",
         "if (item.label === 'Sécurité')",
         "setNativeSecurityOpen(true);",
-        "setNativeSecurityOpen(false);\n    setCurrentUrl(url);",
+        "setNativeSecurityOpen(false);",
+        "setCurrentUrl(url);",
         "if (nativeSecurityOpen)",
+        "nativeSecurityOpen ? (",
         "<NativeSecurityHub",
         "onToggleBiometric={() => void toggleBiometric()}",
         "onTogglePush={() => void (pushEnabled ? disableSecurityPush() : enableSecurityPush())}",
         "onOpenPath={(path) => void navigate(path)}",
         "onClose={() => setNativeSecurityOpen(false)}",
-        ") : (\n        <WebView",
+        "<WebView",
     ):
         require(marker in app, f"intégration shell absente: {marker}")
+
+    security_render = app.split("nativeSecurityOpen ? (", 1)[1].split("<WebView", 1)[0]
+    require("<NativeSecurityHub" in security_render,
+            "le hub Sécurité doit conserver la priorité sur les autres surfaces natives")
 
     back_block = app.split("BackHandler.addEventListener('hardwareBackPress'", 1)[1].split(
         "return () => subscription.remove();", 1
