@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / 'mobile-native' / 'App.tsx'
+SHARE_MODULE = ROOT / 'mobile-native' / 'safePublicShare.ts'
 PACKAGE = ROOT / 'mobile-native' / 'package.json'
+VAULT_GUARD = ROOT / 'mobile-native' / 'scripts' / 'validate-vault-mobile.mjs'
 CLIENT_BOUNDARY = ROOT / 'scripts' / 'validate_device_challenge_client_boundary.py'
 WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-mobile-safe-share-v25.yml'
 
@@ -31,55 +32,99 @@ def section(text: str, start: str, end: str) -> str:
 
 
 def main() -> int:
-    for path in (APP, PACKAGE, CLIENT_BOUNDARY, WORKFLOW):
+    for path in (APP, SHARE_MODULE, PACKAGE, VAULT_GUARD, CLIENT_BOUNDARY, WORKFLOW):
         require(path.is_file(), f'fichier manquant: {path.relative_to(ROOT)}')
 
     app = APP.read_text('utf-8')
+    share_module = SHARE_MODULE.read_text('utf-8')
     package = PACKAGE.read_text('utf-8')
+    vault_guard = VAULT_GUARD.read_text('utf-8')
     client_boundary = CLIENT_BOUNDARY.read_text('utf-8')
     workflow = WORKFLOW.read_text('utf-8')
 
-    require(re.search(r'\bShare,\s*\n\s*StyleSheet,', app) is not None,
-            'API Share de React Native non importée')
+    # Le shell privé garde la décision de partage, mais il ne possède aucune API d’export native.
+    require("import { sharePublicSinjiraUrl } from './safePublicShare';" in app,
+            'module de partage public non importé dans App.tsx')
+    forbid(app, 'Share.share(', 'App.tsx doit rester incapable d’appeler directement le menu de partage')
+    forbid(app, '  Share,', 'API Share ne doit pas être importée dans le shell privé')
     require("const PRIVATE_SHARE_PATH_PREFIXES = ['/app/', '/compte/', '/admin/', '/auth/', '/api/'] as const;" in app,
-            'liste minimale des routes privées partageables absente ou affaiblie')
+            'liste minimale des routes privées absente ou affaiblie dans App.tsx')
 
     share_guard = section(app, 'function shareableSinjiraUrl', 'function isVaultUrl')
     require("parsed.protocol !== 'https:'" in share_guard,
-            'le partage doit être limité à HTTPS')
+            'le premier garde doit limiter le partage à HTTPS')
     require('!ALLOWED_WEB_HOSTS.has(parsed.hostname)' in share_guard,
-            'le partage doit être limité aux domaines SINJIRA autorisés')
+            'le premier garde doit limiter aux domaines SINJIRA autorisés')
     require('PRIVATE_SHARE_PATH_PREFIXES.some' in share_guard,
-            'les préfixes privés ne sont pas évalués')
+            'les préfixes privés ne sont pas évalués dans App.tsx')
     require('normalizedPath === root || normalizedPath.startsWith(prefix)' in share_guard,
-            'les racines et descendants privés doivent être bloqués')
+            'racines et descendants privés non bloqués dans App.tsx')
     require('if (privatePath) return null;' in share_guard,
-            'une route privée doit être refusée avant partage')
+            'une route privée doit être refusée avant sortie du shell')
     require('return `${ORIGIN}${pathname}`;' in share_guard,
-            'le partage doit reconstruire une URL canonique chemin-seulement')
-    forbid(share_guard, 'parsed.search', 'les paramètres de requête ne doivent jamais être partagés')
-    forbid(share_guard, 'parsed.hash', 'les fragments ne doivent jamais être partagés')
+            'App.tsx doit produire une URL chemin-seulement')
+    forbid(share_guard, 'parsed.search', 'query string interdite dans l’URL de partage')
+    forbid(share_guard, 'parsed.hash', 'fragment interdit dans l’URL de partage')
 
     share_action = section(app, 'const shareCurrentPage = async () => {', '  useEffect(() => {\n    Linking.getInitialURL()')
     require('const shareUrl = shareableSinjiraUrl(currentUrl);' in share_action,
-            'la page courante doit passer par le garde de partage')
+            'currentUrl doit passer par le premier garde')
     require("if (!shareUrl)" in share_action and 'Cette page reste privée.' in share_action,
-            'refus explicite des pages privées absent')
-    require('await Share.share({' in share_action,
-            'menu de partage natif non appelé')
-    require('message: `SINJIRA™ — ${shareUrl}`' in share_action and 'url: shareUrl' in share_action,
-            'seule l’URL validée doit être transmise au menu natif')
-    forbid(share_action, 'url: currentUrl', 'currentUrl brut ne doit jamais être partagé')
+            'refus local explicite des pages privées absent')
+    require('await sharePublicSinjiraUrl(shareUrl);' in share_action,
+            'le shell doit transmettre uniquement shareUrl au module isolé')
+    forbid(share_action, 'sharePublicSinjiraUrl(currentUrl)',
+           'currentUrl brut ne doit jamais quitter le shell privé')
     require('onPress={() => void shareCurrentPage()}' in app,
             'bouton de partage natif non relié')
     require('Partager cette page SINJIRA si elle est publique' in app,
             'libellé accessibilité du partage absent')
 
-    # Le partage ne doit pas contourner les protections appareil déjà figées en #195.
+    # Le module d’export est public-only et refait sa propre validation en défense en profondeur.
+    require("import { Share } from 'react-native';" in share_module,
+            'API Share absente du module public isolé')
+    require("const PRIVATE_PATH_PREFIXES = ['/app/', '/compte/', '/admin/', '/auth/', '/api/'] as const;" in share_module,
+            'module isolé sans liste minimale de routes privées')
+    for host in ('www.benoitcantin.com', 'benoitcantin.com', 'sinjira.com', 'www.sinjira.com'):
+        require(host in share_module, f'domaine public autorisé manquant: {host}')
+    module_guard = section(share_module, 'function canonicalPublicSinjiraUrl', 'export async function sharePublicSinjiraUrl')
+    require("parsed.protocol !== 'https:'" in module_guard,
+            'module isolé non limité à HTTPS')
+    require('!PUBLIC_SHARE_HOSTS.has(parsed.hostname)' in module_guard,
+            'module isolé non limité aux domaines publics autorisés')
+    require('PRIVATE_PATH_PREFIXES.some' in module_guard and 'if (privatePath) return null;' in module_guard,
+            'module isolé ne bloque pas les routes privées')
+    require('return `${parsed.origin}${pathname}`;' in module_guard,
+            'module isolé doit reconstruire une URL sans query/hash')
+    forbid(module_guard, 'parsed.search', 'query string interdite dans le module isolé')
+    forbid(module_guard, 'parsed.hash', 'fragment interdit dans le module isolé')
+
+    export_action = share_module[share_module.index('export async function sharePublicSinjiraUrl'):]
+    require('const shareUrl = canonicalPublicSinjiraUrl(candidate);' in export_action,
+            'seconde validation de l’URL absente')
+    require("if (!shareUrl) throw new Error('PUBLIC_SHARE_URL_REQUIRED');" in export_action,
+            'refus du module public absent')
+    require('return Share.share({' in export_action,
+            'menu natif non appelé depuis le module isolé')
+    require('message: `SINJIRA™ — ${shareUrl}`' in export_action and 'url: shareUrl' in export_action,
+            'le menu natif doit recevoir uniquement l’URL revalidée')
+    forbid(export_action, 'url: candidate', 'candidate brute interdite dans le menu natif')
+
+    # Le module public ne connaît aucune donnée, capacité ou mécanisme du shell privé.
+    for marker in (
+        'currentUrl', 'WebView', 'SecureStore', 'localStorage', 'VAULT_PATH', 'PERSONAL_AI_PATH',
+        'conscience', 'vault_session_id', 'content_payload', 'service_conscience_', 'functions.invoke',
+        'SUPABASE_SERVICE_ROLE_KEY', 'SERVICE_ROLE_KEY', 'SUPABASE_ACCESS_TOKEN', 'sb_secret_',
+        '/auth/v1/admin/', 'gpvivleexywljowcqkru',
+    ):
+        forbid(share_module, marker, f'surface privée/privilégiée interdite dans safePublicShare.ts: {marker}')
+
+    # Le garde historique du Coffre reste inchangé et doit continuer d’interdire Share.share dans App.tsx.
+    require("'Share.share('," in vault_guard,
+            'le garde historique du Coffre ne bloque plus Share.share dans App.tsx')
     for marker in ('security_resolve_connection_challenge_mfa', 'SecureStore', 'WEB_DEVICE_KEY_STORAGE'):
         require(marker in client_boundary, f'garde client sécurité #195 non chaînable: {marker}')
 
-    # Aucun secret ni surface serveur dans cette fonctionnalité client.
     for marker in (
         'SUPABASE_SERVICE_ROLE_KEY', 'SERVICE_ROLE_KEY', 'SUPABASE_ACCESS_TOKEN', 'sb_secret_',
         '/auth/v1/admin/', 'service_conscience_', 'private.conscience_', 'gpvivleexywljowcqkru',
@@ -88,9 +133,12 @@ def main() -> int:
 
     require('"typecheck": "tsc --noEmit"' in package,
             'script TypeScript typecheck mobile absent')
+    require('"validate:vault": "node scripts/validate-vault-mobile.mjs"' in package,
+            'garde mobile historique absent du package')
 
     required_paths = (
         'mobile-native/App.tsx',
+        'mobile-native/safePublicShare.ts',
         'mobile-native/package.json',
         'scripts/validate_mobile_safe_share_v25.py',
         'scripts/validate_device_challenge_client_boundary.py',
@@ -106,7 +154,9 @@ def main() -> int:
     require('python3 scripts/validate_no_committed_secrets.py' in workflow,
             'garde secrets non exécuté')
     require('npm install --ignore-scripts --no-audit --no-fund' in workflow,
-            'installation mobile déterministe au package.json absente')
+            'installation mobile sans scripts absente')
+    require('npm run validate:vault' in workflow,
+            'garde mobile historique du Coffre non exécuté')
     require('npm run typecheck' in workflow,
             'typecheck TypeScript mobile absent')
     forbid(workflow, 'environment: production', 'environnement production interdit')
@@ -114,8 +164,8 @@ def main() -> int:
     forbid(workflow, '${{ secrets.', 'aucun secret GitHub Actions ne doit être requis')
 
     print(
-        'OK partage mobile V25: Share natif limité aux URL SINJIRA publiques HTTPS, '
-        'routes privées bloquées et query/hash supprimés avant tout partage.'
+        'OK partage mobile V25: shell privé sans Share.share, export isolé public-only, '
+        'double validation HTTPS/domaines/routes et query/hash supprimés avant partage.'
     )
     return 0
 
