@@ -1,0 +1,98 @@
+name: SINJIRA V25 — Hub Histoire de vie natif
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile-native/NativeHomeHub.tsx'
+      - 'mobile-native/NativeModuleRouter.tsx'
+      - 'mobile-native/NativeLifeStoryHub.tsx'
+      - 'mobile-native/NATIVE_LIFE_STORY_HUB_V25.md'
+      - 'compte/histoire-de-vie.html'
+      - 'assets/js/sinjira-life-story-v24-5-0.js'
+      - 'assets/js/sinjira-life-story-v24-5-2.js'
+      - 'scripts/validate_mobile_native_life_story_hub_v25.py'
+      - 'scripts/validate_life_story_legacy_v24_5_2.py'
+      - 'scripts/validate_life_story_fk_indexes_v24_5_2.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_mobile_native_route_dispatch_v25.py'
+      - 'scripts/validate_mobile_native_personal_ai_hub_v25.py'
+      - 'scripts/validate_mobile_native_home_hub_v25.py'
+      - 'scripts/validate_mobile_native_security_hub_v25.py'
+      - 'scripts/validate_mobile_navigation_boundary_v25.py'
+      - 'scripts/validate_mobile_safe_share_v25.py'
+      - 'scripts/validate_device_challenge_client_boundary.py'
+      - 'scripts/validate_no_committed_secrets.py'
+      - 'mobile-native/package.json'
+      - 'mobile-native/package-lock.json'
+      - 'mobile-native/scripts/validate-vault-mobile.mjs'
+      - '.github/workflows/sinjira-mobile-native-life-story-hub-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-life-story-hub:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Valider le hub Histoire de vie natif V25
+        run: python3 scripts/validate_mobile_native_life_story_hub_v25.py
+
+      - name: Revalider le contrat Histoire de vie historique
+        run: python3 scripts/validate_life_story_legacy_v24_5_2.py
+
+      - name: Revalider les index FK Histoire de vie
+        run: python3 scripts/validate_life_story_fk_indexes_v24_5_2.py
+
+      - name: Revalider le ledger de production sans écriture
+        run: python3 scripts/validate_production_migration_ledger.py
+
+      - name: Revalider le routeur natif central
+        run: python3 scripts/validate_mobile_native_route_dispatch_v25.py
+
+      - name: Revalider la séparation Mon IA
+        run: python3 scripts/validate_mobile_native_personal_ai_hub_v25.py
+
+      - name: Revalider l'accueil natif V25
+        run: python3 scripts/validate_mobile_native_home_hub_v25.py
+
+      - name: Revalider le hub Sécurité natif
+        run: python3 scripts/validate_mobile_native_security_hub_v25.py
+
+      - name: Revalider la frontière challenge client
+        run: python3 scripts/validate_device_challenge_client_boundary.py
+
+      - name: Revalider la frontière de navigation mobile
+        run: python3 scripts/validate_mobile_navigation_boundary_v25.py
+
+      - name: Revalider le partage public natif
+        run: python3 scripts/validate_mobile_safe_share_v25.py
+
+      - name: Revalider l'absence de secrets suivis
+        run: python3 scripts/validate_no_committed_secrets.py
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: npm
+          cache-dependency-path: mobile-native/package.json
+
+      - name: Installer les dépendances sans scripts de cycle de vie
+        working-directory: mobile-native
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Vérifier le contrat mobile sensible existant
+        working-directory: mobile-native
+        run: npm run validate:vault
+
+      - name: Vérifier TypeScript
+        working-directory: mobile-native
+        run: npm run typecheck
