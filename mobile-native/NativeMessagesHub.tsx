@@ -1,32 +1,35 @@
-import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { NativeMessagesHub } from './NativeMessagesHub';
 
 type Props = {
   onOpenPath: (path: string) => void;
   onBack: () => void;
 };
 
-const alertDestinations = [
+const messageDestinations = [
   {
-    label: 'Voir mes avis privés',
-    description: 'Ouvrir la liste complète existante avec son état lu/non lu dans la surface Web protégée.',
-    path: '/compte/notifications.html?surface=web',
+    label: 'Choisir mon identité',
+    description: 'Ouvrir le sélecteur Web existant sans mémoriser localement si vous utilisez votre compte réel ou votre personnage.',
+    path: '/compte/messages.html?surface=web',
   },
   {
-    label: 'Ma sécurité',
-    description: 'Accéder au Centre de sécurité pour les alertes et événements qui concernent la protection du compte.',
-    path: '/compte/securite.html',
+    label: 'Compte réel',
+    description: 'Accéder à la messagerie de communauté avec le pseudo et l’avatar de compte dans sa surface privée existante.',
+    path: '/compte/messages-reels.html?surface=web',
   },
   {
-    label: 'Messages',
-    description: 'Ouvrir le hub natif sans contenu privé avant de choisir votre identité de messagerie.',
-    path: '/compte/messages.html',
+    label: 'Personnage',
+    description: 'Accéder séparément à la messagerie de rôle-play sous l’identité du personnage SINJIRA™.',
+    path: '/compte/messages-personnage.html?surface=web',
   },
   {
-    label: 'Préférences',
-    description: 'Gérer les préférences internes de notification dans la surface Paramètres protégée.',
-    path: '/compte/parametres.html?surface=web',
+    label: 'Comptes bloqués',
+    description: 'Gérer vos blocages dans la surface de sécurité sociale existante.',
+    path: '/compte/blocages.html',
+  },
+  {
+    label: 'Règles de la communauté',
+    description: 'Relire les règles applicables aux échanges avant ou pendant une conversation.',
+    path: '/compte/regles-communaute.html',
   },
 ] as const;
 
@@ -47,72 +50,53 @@ function DestinationCard({ label, description, onPress }: { label: string; descr
   );
 }
 
-export function NativeAlertsHub({ onOpenPath, onBack }: Props) {
-  const [messagesHubOpen, setMessagesHubOpen] = useState(false);
-
-  if (messagesHubOpen) {
-    return (
-      <NativeMessagesHub
-        onBack={() => setMessagesHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
-  }
-
-  const openDestination = (path: string) => {
-    if (path === '/compte/messages.html') {
-      setMessagesHubOpen(true);
-      return;
-    }
-    onOpenPath(path);
-  };
-
+export function NativeMessagesHub({ onOpenPath, onBack }: Props) {
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Retour à l’accueil"
+        accessibilityLabel="Retour"
         onPress={onBack}
         style={styles.backButton}
       >
-        <Text style={styles.backButtonText}>‹ Accueil</Text>
+        <Text style={styles.backButtonText}>‹ Retour</Text>
       </Pressable>
 
       <View style={styles.hero}>
         <Text style={styles.eyebrow}>L’HUMAIN AVANT TOUT</Text>
-        <Text style={styles.title}>Alertes</Text>
+        <Text style={styles.title}>Messages</Text>
         <Text style={styles.intro}>
-          Ce hub natif ne lit aucune notification privée, aucun compteur et aucun état lu/non lu. Il sert uniquement à vous orienter vers les modules SINJIRA existants.
+          Ce hub natif ne lit aucun message privé, aucune conversation, aucun participant, aucun compteur non lu et aucun état lu/non lu. Il sert uniquement à choisir explicitement la bonne surface SINJIRA.
         </Text>
       </View>
 
       <View style={styles.boundaryCard}>
         <Text style={styles.cardKicker}>PROTÉGER SANS SURVEILLER</Text>
-        <Text style={styles.boundaryTitle}>Aucun contenu d’avis n’est copié dans le natif</Text>
+        <Text style={styles.boundaryTitle}>Votre identité reste un choix explicite</Text>
         <Text style={styles.boundaryText}>
-          Les avis de compte, leurs catégories, leurs liens, leurs compteurs et l’action de marquage lu/non lu restent dans la surface Web et ses règles RLS. Ce composant n’a aucune source de vérité propre.
+          SINJIRA sépare la messagerie du compte réel et celle du personnage. Le natif ne choisit jamais votre identité à votre place, ne fusionne pas ces deux contextes et ne mémorise pas votre dernier choix.
         </Text>
       </View>
 
       <Text style={styles.sectionTitle}>Choisir une destination</Text>
       <Text style={styles.sectionText}>
-        Le natif ne marque, ne crée et ne supprime aucun avis.
+        Le natif n’envoie, ne modifie, ne supprime et ne marque aucun message.
       </Text>
       <View style={styles.destinationList}>
-        {alertDestinations.map((item) => (
+        {messageDestinations.map((item) => (
           <DestinationCard
             key={item.path}
             label={item.label}
             description={item.description}
-            onPress={() => openDestination(item.path)}
+            onPress={() => onOpenPath(item.path)}
           />
         ))}
       </View>
 
       <View style={styles.privacyNote}>
-        <Text style={styles.privacyTitle}>Pas de résumé local de votre activité</Text>
+        <Text style={styles.privacyTitle}>Aucun aperçu de conversation n’est copié dans le natif</Text>
         <Text style={styles.privacyText}>
-          Aucun nombre d’avis, aperçu, date, expéditeur, événement de sécurité ou activité communautaire n’est conservé dans cet écran React Native.
+          Aucun texte, nom de participant, avatar, date, statut, compteur ou extrait de conversation n’est conservé par cet écran React Native. La source de vérité reste la messagerie Web protégée et ses règles d’accès.
         </Text>
       </View>
     </ScrollView>
