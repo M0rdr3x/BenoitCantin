@@ -134,6 +134,21 @@ Ces opérations continuent d’ouvrir le **Centre de sécurité Web existant**. 
 
 Cette frontière évite de créer deux implémentations de sécurité qui pourraient diverger.
 
+### Accueil natif minimal
+
+La racine `/app/` est maintenant représentée par un accueil React Native de navigation uniquement. Il devient l’écran initial du conteneur mobile sans créer une seconde copie du compte.
+
+- aucune donnée utilisateur n’est passée au composant : aucun message, profil, compteur, candidature, rencontre, confidence ou contenu privé;
+- l’accueil n’appelle ni Supabase, ni Edge Function, ni RPC et n’utilise aucun stockage sécurisé;
+- Messages, Rencontres, Emploi, Monde, Mon IA, Alertes et Profil continuent d’ouvrir leurs surfaces existantes;
+- **Ma sécurité** ouvre le hub natif déjà borné, qui renvoie lui-même vers la source de vérité serveur pour les opérations réelles;
+- **Mode Voyage** reste une fonction de sécurité et ouvre uniquement son ancre dans le Centre de sécurité existant;
+- **Registre personnel** reste une zone extrêmement sensible : son raccourci passe par le même `navigate()` que le reste de l’application, donc par la vérification locale ponctuelle puis par les protections MFA/AAL2 et risque côté serveur;
+- Partager et Recharger sont masqués lorsque l’Accueil ou Ma sécurité natifs remplacent la WebView;
+- une URL `/app/` portant un paramètre ou un fragment n’est pas absorbée par le hub natif : elle reste une navigation Web afin de ne pas perdre un état que le natif ne comprend pas.
+
+Le but est de migrer l’expérience visible avant les données : le natif peut devenir plus agréable sans devenir une nouvelle source de vérité moins protégée.
+
 ## Bouclier de connexion
 
 Le moteur serveur combine plusieurs signaux : appareil nouveau ou non fiable, changement de pays approximatif lorsqu’une infrastructure de confiance le fournit, déplacement temporellement improbable, Mode Voyage et sensibilité de l’action.
