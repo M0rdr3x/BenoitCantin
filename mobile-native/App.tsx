@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
+import { NativeHomeHub } from './NativeHomeHub';
 import { NativeSecurityHub } from './NativeSecurityHub';
 import { sharePublicSinjiraUrl } from './safePublicShare';
 
@@ -152,6 +153,16 @@ function isPersonalAiUrl(url: string) {
   }
 }
 
+function isNativeHomeUrl(url: string) {
+  try {
+    const parsed = new URL(url, ORIGIN);
+    return parsed.protocol === 'https:' && ALLOWED_WEB_HOSTS.has(parsed.hostname)
+      && parsed.pathname === '/app/' && !parsed.search && !parsed.hash;
+  } catch {
+    return false;
+  }
+}
+
 function tabForUrl(url: string): TabKey | null {
   const match = tabs.find((tab) => url.includes(tab.path));
   return match?.key ?? null;
@@ -182,6 +193,7 @@ export default function App() {
   const [nativeMessage, setNativeMessage] = useState('');
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushToken, setPushToken] = useState('');
+  const [nativeHomeOpen, setNativeHomeOpen] = useState(true);
   const [nativeSecurityOpen, setNativeSecurityOpen] = useState(false);
 
   const allowedHosts = useMemo(() => new Set(ALLOWED_WEB_HOSTS), []);
@@ -366,11 +378,20 @@ export default function App() {
   }, [biometricEnabled, currentUrl]);
 
   const navigateToUrl = async (url: string, tab?: TabKey) => {
+    if (isNativeHomeUrl(url)) {
+      setNativeSecurityOpen(false);
+      setNativeHomeOpen(true);
+      setCurrentUrl(HOME_URL);
+      setActiveTab('home');
+      setCanGoBack(false);
+      return;
+    }
     if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
       const approved = await requestVaultLocalGate();
       if (!approved) return;
     }
     setNativeSecurityOpen(false);
+    setNativeHomeOpen(false);
     setCurrentUrl(url);
     if (tab) setActiveTab(tab);
     else {
@@ -426,6 +447,7 @@ export default function App() {
         setNativeSecurityOpen(false);
         return true;
       }
+      if (nativeHomeOpen) return false;
       if (canGoBack) {
         webViewRef.current?.goBack();
         return true;
@@ -433,7 +455,7 @@ export default function App() {
       return false;
     });
     return () => subscription.remove();
-  }, [canGoBack, isUnlocked, biometricEnabled, nativeSecurityOpen]);
+  }, [canGoBack, isUnlocked, biometricEnabled, nativeHomeOpen, nativeSecurityOpen]);
 
   const toggleBiometric = async () => {
     if (biometricEnabled) {
@@ -464,6 +486,13 @@ export default function App() {
   };
 
   const onNavigationStateChange = (state: WebViewNavigation) => {
+    if (isNativeHomeUrl(state.url)) {
+      setNativeHomeOpen(true);
+      setCanGoBack(false);
+      setCurrentUrl(HOME_URL);
+      setActiveTab('home');
+      return;
+    }
     setCanGoBack(state.canGoBack);
     setCurrentUrl(state.url);
     const nextTab = tabForUrl(state.url);
@@ -549,7 +578,7 @@ export default function App() {
           <Pressable accessibilityRole="button" accessibilityLabel="Activer ou désactiver les notifications de sécurité" onPress={() => void (pushEnabled ? disableSecurityPush() : enableSecurityPush())} style={styles.refreshButton}>
             <Text style={styles.refreshText}>{pushEnabled ? 'Alertes ✓' : 'Alertes'}</Text>
           </Pressable>
-          {!nativeSecurityOpen ? (
+          {!nativeSecurityOpen && !nativeHomeOpen ? (
             <>
               <Pressable accessibilityRole="button" accessibilityLabel="Partager cette page SINJIRA si elle est publique" onPress={() => void shareCurrentPage()} style={styles.refreshButton}>
                 <Text style={styles.refreshText}>Partager</Text>
@@ -595,6 +624,11 @@ export default function App() {
           onTogglePush={() => void (pushEnabled ? disableSecurityPush() : enableSecurityPush())}
           onOpenPath={(path) => void navigate(path)}
           onClose={() => setNativeSecurityOpen(false)}
+        />
+      ) : nativeHomeOpen ? (
+        <NativeHomeHub
+          onOpenPath={(path) => void navigate(path)}
+          onOpenSecurity={() => setNativeSecurityOpen(true)}
         />
       ) : (
         <WebView
