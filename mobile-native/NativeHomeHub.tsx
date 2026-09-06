@@ -5,6 +5,7 @@ import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
 import { NativeMessagesHub } from './NativeMessagesHub';
 import { NativeParallelWorldHub } from './NativeParallelWorldHub';
+import { NativePersonalAiHub } from './NativePersonalAiHub';
 import { NativeProfileHub } from './NativeProfileHub';
 
 type Props = {
@@ -35,7 +36,7 @@ const mainDestinations = [
   },
   {
     label: 'Mon IA',
-    description: 'Ouvrir votre espace IA privé. Les protections renforcées restent appliquées avant tout accès sensible.',
+    description: 'Ouvrir un hub natif sans réglage, consentement ni runtime avant la surface IA privée protégée.',
     path: '/compte/mon-ia.html',
   },
 ] as const;
@@ -94,6 +95,7 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [employmentHubOpen, setEmploymentHubOpen] = useState(false);
   const [messagesHubOpen, setMessagesHubOpen] = useState(false);
   const [parallelWorldHubOpen, setParallelWorldHubOpen] = useState(false);
+  const [personalAiHubOpen, setPersonalAiHubOpen] = useState(false);
   const [profileHubOpen, setProfileHubOpen] = useState(false);
 
   if (datingHubOpen) {
@@ -118,6 +120,15 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     return (
       <NativeParallelWorldHub
         onBack={() => setParallelWorldHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
+  if (personalAiHubOpen) {
+    return (
+      <NativePersonalAiHub
+        onBack={() => setPersonalAiHubOpen(false)}
         onOpenPath={onOpenPath}
       />
     );
@@ -165,6 +176,10 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     }
     if (path === '/compte/monde-parallele.html') {
       setParallelWorldHubOpen(true);
+      return;
+    }
+    if (path === '/compte/mon-ia.html') {
+      setPersonalAiHubOpen(true);
       return;
     }
     onOpenPath(path);
