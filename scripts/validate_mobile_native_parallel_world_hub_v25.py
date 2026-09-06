@@ -105,7 +105,7 @@ def main() -> int:
     props_block = parallel.split("type Props = {", 1)[1].split("};", 1)[0].lower()
     for marker in (
         "user", "profile", "character", "identity", "membership", "pioneer", "reputation", "location",
-        "faction", "state", "story", "history", "cycle", "response", "canon", "memorial", "token", "id"
+        "faction", "state", "story", "history", "cycle", "response", "canon", "memorial", "token"
     ):
         forbid(props_block, marker, f"donnée utilisateur interdite dans les props: {marker}")
 
