@@ -22,6 +22,18 @@ import { sharePublicSinjiraUrl } from './safePublicShare';
 
 const DEFAULT_ORIGIN = 'https://www.benoitcantin.com';
 const ALLOWED_WEB_HOSTS = new Set(['www.benoitcantin.com', 'benoitcantin.com', 'sinjira.com', 'www.sinjira.com']);
+const EXTERNAL_SAFE_PROTOCOLS = new Set(['https:', 'mailto:', 'tel:']);
+const SENSITIVE_EXTERNAL_PARAMS = new Set([
+  'access_token',
+  'refresh_token',
+  'code',
+  'token',
+  'jwt',
+  'session',
+  'api_key',
+  'apikey',
+  'password',
+]);
 const PRIVATE_SHARE_PATH_PREFIXES = ['/app/', '/compte/', '/admin/', '/auth/', '/api/'] as const;
 const VAULT_PATH = '/compte/registre-personnel.html';
 const PERSONAL_AI_PATH = '/compte/mon-ia.html';
@@ -108,6 +120,17 @@ function shareableSinjiraUrl(url: string): string | null {
   } catch {
     return null;
   }
+}
+
+function hasSensitiveExternalMaterial(parsed: URL) {
+  if (parsed.username || parsed.password) return true;
+  for (const key of parsed.searchParams.keys()) {
+    if (SENSITIVE_EXTERNAL_PARAMS.has(key.toLowerCase())) return true;
+  }
+  const hash = parsed.hash.toLowerCase();
+  return Array.from(SENSITIVE_EXTERNAL_PARAMS).some((key) =>
+    hash.includes(`${key}=`) || hash.includes(`${encodeURIComponent(key)}=`),
+  );
 }
 
 function isVaultUrl(url: string) {
@@ -442,21 +465,37 @@ export default function App() {
 
   const shouldStart = (request: { url: string }) => {
     const { url } = request;
-    if (url.startsWith('about:blank')) return true;
+    if (url === 'about:blank') return true;
+
+    let parsed: URL;
     try {
-      const parsed = new URL(url);
-      if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)) {
-        if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
-          void navigate(VAULT_PATH);
-          return false;
-        }
-        return true;
-      }
+      parsed = new URL(url);
     } catch {
-      if (url.startsWith('mailto:') || url.startsWith('tel:')) void Linking.openURL(url);
+      setNativeMessage('Navigation bloquée : le lien demandé est invalide.');
       return false;
     }
-    void Linking.openURL(url);
+
+    if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)) {
+      if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
+        void navigate(VAULT_PATH);
+        return false;
+      }
+      return true;
+    }
+
+    if (!EXTERNAL_SAFE_PROTOCOLS.has(parsed.protocol)) {
+      setNativeMessage('Navigation externe bloquée : SINJIRA n’ouvre pas les schémas ou connexions non autorisés.');
+      return false;
+    }
+
+    if (parsed.protocol === 'https:' && hasSensitiveExternalMaterial(parsed)) {
+      setNativeMessage('Lien externe bloqué : des éléments de session ou d’authentification pourraient être exposés.');
+      return false;
+    }
+
+    void Linking.openURL(url).catch(() => {
+      setNativeMessage('Ce lien externe ne peut pas être ouvert de façon sûre sur cet appareil.');
+    });
     return false;
   };
 
@@ -531,7 +570,7 @@ export default function App() {
         ref={webViewRef}
         source={{ uri: currentUrl }}
         style={styles.webview}
-        originWhitelist={['https://*', 'sinjira://*']}
+        originWhitelist={['https://*']}
         sharedCookiesEnabled
         thirdPartyCookiesEnabled={false}
         domStorageEnabled

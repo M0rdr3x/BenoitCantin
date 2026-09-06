@@ -50,7 +50,7 @@ def main() -> int:
     require("const PRIVATE_SHARE_PATH_PREFIXES = ['/app/', '/compte/', '/admin/', '/auth/', '/api/'] as const;" in app,
             'liste minimale des routes privées absente ou affaiblie dans App.tsx')
 
-    share_guard = section(app, 'function shareableSinjiraUrl', 'function isVaultUrl')
+    share_guard = section(app, 'function shareableSinjiraUrl', 'function hasSensitiveExternalMaterial')
     require("parsed.protocol !== 'https:'" in share_guard,
             'le premier garde doit limiter le partage à HTTPS')
     require('!ALLOWED_WEB_HOSTS.has(parsed.hostname)' in share_guard,
