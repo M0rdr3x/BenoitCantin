@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { NativePrivacyHub } from './NativePrivacyHub';
 
 type Props = {
   onOpenPath: (path: string) => void;
@@ -13,7 +15,7 @@ const profileDestinations = [
   },
   {
     label: 'Vie privée',
-    description: 'Accéder au Centre Vie privée et aux contrôles de données existants.',
+    description: 'Ouvrir un hub natif sans données avant le Centre Vie privée existant.',
     path: '/compte/vie-privee.html',
   },
   {
@@ -54,6 +56,25 @@ function DestinationCard({
 }
 
 export function NativeProfileHub({ onOpenPath, onBack }: Props) {
+  const [privacyHubOpen, setPrivacyHubOpen] = useState(false);
+
+  if (privacyHubOpen) {
+    return (
+      <NativePrivacyHub
+        onBack={() => setPrivacyHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
+  const openProfileDestination = (path: string) => {
+    if (path === '/compte/vie-privee.html') {
+      setPrivacyHubOpen(true);
+      return;
+    }
+    onOpenPath(path);
+  };
+
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Pressable
@@ -91,7 +112,7 @@ export function NativeProfileHub({ onOpenPath, onBack }: Props) {
             key={item.path}
             label={item.label}
             description={item.description}
-            onPress={() => onOpenPath(item.path)}
+            onPress={() => openProfileDestination(item.path)}
           />
         ))}
       </View>
