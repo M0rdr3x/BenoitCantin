@@ -106,7 +106,7 @@ export function NativeSecurityHub({
               <Text style={styles.destinationTitle}>{item.label}</Text>
               <Text style={styles.destinationText}>{item.description}</Text>
             </View>
-            <Text style={styles.chevron} aria-hidden>›</Text>
+            <Text style={styles.chevron} accessible={false}>›</Text>
           </Pressable>
         ))}
       </View>
