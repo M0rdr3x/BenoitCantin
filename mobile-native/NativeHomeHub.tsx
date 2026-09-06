@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { NativeProfileHub } from './NativeProfileHub';
 
 type Props = {
   onOpenPath: (path: string) => void;
@@ -41,7 +43,7 @@ const accountDestinations = [
   },
   {
     label: 'Profil',
-    description: 'Accéder aux réglages de votre profil dans la source de vérité existante.',
+    description: 'Ouvrir un hub natif sans données avant les réglages de profil existants.',
     path: '/compte/profil.html',
   },
   {
@@ -82,6 +84,25 @@ function DestinationCard({
 }
 
 export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
+  const [profileHubOpen, setProfileHubOpen] = useState(false);
+
+  if (profileHubOpen) {
+    return (
+      <NativeProfileHub
+        onBack={() => setProfileHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
+  const openAccountDestination = (path: string) => {
+    if (path === '/compte/profil.html') {
+      setProfileHubOpen(true);
+      return;
+    }
+    onOpenPath(path);
+  };
+
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <View style={styles.hero}>
@@ -132,7 +153,7 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
             key={item.path}
             label={item.label}
             description={item.description}
-            onPress={() => onOpenPath(item.path)}
+            onPress={() => openAccountDestination(item.path)}
           />
         ))}
       </View>
