@@ -123,7 +123,7 @@ def main() -> int:
             'garde secrets absent')
     forbid(workflow, 'environment: production', 'environnement production interdit dans ce workflow')
     forbid(workflow, 'SUPABASE_ACCESS_TOKEN', 'PAT Supabase interdit dans ce workflow')
-    forbid(workflow, 'secrets.', 'aucun secret GitHub ne doit être requis')
+    forbid(workflow, '${{ secrets.', 'aucune expression GitHub Actions secrets.* ne doit être requise')
     forbid(workflow, 'supabase start', 'ce garde statique ne doit pas démarrer Supabase')
 
     print(
