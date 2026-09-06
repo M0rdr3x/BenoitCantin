@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativeAlertsHub } from './NativeAlertsHub';
+import { NativeMessagesHub } from './NativeMessagesHub';
 import { NativeProfileHub } from './NativeProfileHub';
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
 const mainDestinations = [
   {
     label: 'Messages',
-    description: 'Retrouver vos conversations dans la surface SINJIRA existante.',
+    description: 'Ouvrir un hub natif sans contenu privé avant de choisir explicitement votre identité de messagerie.',
     path: '/compte/messages.html',
   },
   {
@@ -86,7 +87,17 @@ function DestinationCard({
 
 export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [alertsHubOpen, setAlertsHubOpen] = useState(false);
+  const [messagesHubOpen, setMessagesHubOpen] = useState(false);
   const [profileHubOpen, setProfileHubOpen] = useState(false);
+
+  if (messagesHubOpen) {
+    return (
+      <NativeMessagesHub
+        onBack={() => setMessagesHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
 
   if (alertsHubOpen) {
     return (
@@ -105,6 +116,14 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
       />
     );
   }
+
+  const openMainDestination = (path: string) => {
+    if (path === '/compte/messages.html') {
+      setMessagesHubOpen(true);
+      return;
+    }
+    onOpenPath(path);
+  };
 
   const openAccountDestination = (path: string) => {
     if (path === '/compte/notifications.html') {
@@ -156,7 +175,7 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
             key={item.path}
             label={item.label}
             description={item.description}
-            onPress={() => onOpenPath(item.path)}
+            onPress={() => openMainDestination(item.path)}
           />
         ))}
       </View>
