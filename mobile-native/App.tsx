@@ -19,6 +19,8 @@ import {
 } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import { NativeHomeHub } from './NativeHomeHub';
+import { NativeModuleRouter, isNativeModulePath } from './NativeModuleRouter';
+import type { NativeModulePath } from './NativeModuleRouter';
 import { NativeSecurityHub } from './NativeSecurityHub';
 import { sharePublicSinjiraUrl } from './safePublicShare';
 
@@ -194,6 +196,7 @@ export default function App() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushToken, setPushToken] = useState('');
   const [nativeHomeOpen, setNativeHomeOpen] = useState(true);
+  const [nativeModulePath, setNativeModulePath] = useState<NativeModulePath | null>(null);
   const [nativeSecurityOpen, setNativeSecurityOpen] = useState(false);
 
   const allowedHosts = useMemo(() => new Set(ALLOWED_WEB_HOSTS), []);
@@ -377,8 +380,27 @@ export default function App() {
     return () => subscription.remove();
   }, [biometricEnabled, currentUrl]);
 
+  const openNativeModule = (path: string, tab?: TabKey) => {
+    if (!isNativeModulePath(path)) return false;
+    setNativeSecurityOpen(false);
+    setNativeHomeOpen(false);
+    setNativeModulePath(path);
+    setCanGoBack(false);
+    setActiveTab(tab ?? 'home');
+    return true;
+  };
+
+  const closeNativeModule = () => {
+    setNativeModulePath(null);
+    setNativeSecurityOpen(false);
+    setNativeHomeOpen(true);
+    setActiveTab('home');
+    setCanGoBack(false);
+  };
+
   const navigateToUrl = async (url: string, tab?: TabKey) => {
     if (isNativeHomeUrl(url)) {
+      setNativeModulePath(null);
       setNativeSecurityOpen(false);
       setNativeHomeOpen(true);
       setCurrentUrl(HOME_URL);
@@ -390,6 +412,7 @@ export default function App() {
       const approved = await requestVaultLocalGate();
       if (!approved) return;
     }
+    setNativeModulePath(null);
     setNativeSecurityOpen(false);
     setNativeHomeOpen(false);
     setCurrentUrl(url);
@@ -402,6 +425,11 @@ export default function App() {
 
   const navigate = async (path: string, tab?: TabKey) => {
     await navigateToUrl(`${ORIGIN}${path}`, tab);
+  };
+
+  const navigateFromNativeModule = async (path: string) => {
+    setNativeModulePath(null);
+    await navigate(path);
   };
 
   const shareCurrentPage = async () => {
@@ -447,6 +475,10 @@ export default function App() {
         setNativeSecurityOpen(false);
         return true;
       }
+      if (nativeModulePath) {
+        closeNativeModule();
+        return true;
+      }
       if (nativeHomeOpen) return false;
       if (canGoBack) {
         webViewRef.current?.goBack();
@@ -455,7 +487,7 @@ export default function App() {
       return false;
     });
     return () => subscription.remove();
-  }, [canGoBack, isUnlocked, biometricEnabled, nativeHomeOpen, nativeSecurityOpen]);
+  }, [canGoBack, isUnlocked, biometricEnabled, nativeHomeOpen, nativeModulePath, nativeSecurityOpen]);
 
   const toggleBiometric = async () => {
     if (biometricEnabled) {
@@ -487,6 +519,7 @@ export default function App() {
 
   const onNavigationStateChange = (state: WebViewNavigation) => {
     if (isNativeHomeUrl(state.url)) {
+      setNativeModulePath(null);
       setNativeHomeOpen(true);
       setCanGoBack(false);
       setCurrentUrl(HOME_URL);
@@ -578,7 +611,7 @@ export default function App() {
           <Pressable accessibilityRole="button" accessibilityLabel="Activer ou désactiver les notifications de sécurité" onPress={() => void (pushEnabled ? disableSecurityPush() : enableSecurityPush())} style={styles.refreshButton}>
             <Text style={styles.refreshText}>{pushEnabled ? 'Alertes ✓' : 'Alertes'}</Text>
           </Pressable>
-          {!nativeSecurityOpen && !nativeHomeOpen ? (
+          {!nativeSecurityOpen && !nativeHomeOpen && !nativeModulePath ? (
             <>
               <Pressable accessibilityRole="button" accessibilityLabel="Partager cette page SINJIRA si elle est publique" onPress={() => void shareCurrentPage()} style={styles.refreshButton}>
                 <Text style={styles.refreshText}>Partager</Text>
@@ -607,6 +640,7 @@ export default function App() {
                 setNativeSecurityOpen(true);
                 return;
               }
+              if (openNativeModule(item.path)) return;
               void navigate(item.path);
             }}
             style={styles.quickButton}
@@ -624,6 +658,12 @@ export default function App() {
           onTogglePush={() => void (pushEnabled ? disableSecurityPush() : enableSecurityPush())}
           onOpenPath={(path) => void navigate(path)}
           onClose={() => setNativeSecurityOpen(false)}
+        />
+      ) : nativeModulePath ? (
+        <NativeModuleRouter
+          path={nativeModulePath}
+          onOpenPath={(path) => void navigateFromNativeModule(path)}
+          onBack={closeNativeModule}
         />
       ) : nativeHomeOpen ? (
         <NativeHomeHub
@@ -670,7 +710,16 @@ export default function App() {
         {tabs.map((tab) => {
           const selected = tab.key === activeTab;
           return (
-            <Pressable key={tab.key} accessibilityRole="tab" accessibilityState={{ selected }} onPress={() => void navigate(tab.path, tab.key)} style={[styles.tab, selected && styles.tabSelected]}>
+            <Pressable
+              key={tab.key}
+              accessibilityRole="tab"
+              accessibilityState={{ selected }}
+              onPress={() => {
+                if (tab.key !== 'home' && openNativeModule(tab.path, tab.key)) return;
+                void navigate(tab.path, tab.key);
+              }}
+              style={[styles.tab, selected && styles.tabSelected]}
+            >
               <Text style={[styles.tabText, selected && styles.tabTextSelected]}>{tab.label}</Text>
             </Pressable>
           );
