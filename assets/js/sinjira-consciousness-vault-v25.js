@@ -1,6 +1,6 @@
 import { getSupabase, requireUser, escapeHtml, formatDate, setStatus } from './sinjira-supabase.js';
+import { getDeviceMetadata } from './sinjira-device-key-v25.js';
 
-const DEVICE_KEY_STORAGE='sinjira.security.device_key.v1';
 const VAULT_TTL_SECONDS=300;
 const MAX_CONTENT_BYTES=1024*1024;
 const HIDDEN_LOCK_DELAY_MS=60_000;
@@ -14,43 +14,6 @@ let hiddenLockTimer=null;
 let busy=false;
 
 const q=(selector)=>document.querySelector(selector);
-
-function randomDeviceKey(){
-  if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
-  const bytes=new Uint8Array(24);
-  globalThis.crypto?.getRandomValues?.(bytes);
-  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
-}
-
-function deviceKey(){
-  try{
-    let value=localStorage.getItem(DEVICE_KEY_STORAGE);
-    if(!value){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
-    return value;
-  }catch{
-    try{
-      let value=sessionStorage.getItem(DEVICE_KEY_STORAGE);
-      if(!value){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
-      return value;
-    }catch{return randomDeviceKey()}
-  }
-}
-
-function deviceMetadata(){
-  const ua=navigator.userAgent||'';
-  const platform=String(navigator.userAgentData?.platform||navigator.platform||'').slice(0,120);
-  let type='browser';
-  if(/iPad|Tablet/i.test(ua))type='tablet';
-  else if(/iPhone|iPod/i.test(ua))type='ios';
-  else if(/Android/i.test(ua))type='android';
-  const browser=/Firefox/i.test(ua)?'Firefox':/Edg\//i.test(ua)?'Edge':/Chrome|CriOS/i.test(ua)?'Chrome':/Safari/i.test(ua)?'Safari':'Navigateur';
-  return {
-    device_key:deviceKey(),
-    display_name:`${browser}${platform?` — ${platform}`:''}`.slice(0,120),
-    device_type:type,
-    platform
-  };
-}
 
 function textBytes(value){return new TextEncoder().encode(String(value||'')).byteLength}
 
@@ -119,6 +82,7 @@ function friendlyVaultError(error){
   if(code==='SECURITY_BLOCKED')return 'La protection du compte bloque temporairement l’accès au coffre. Consultez Ma sécurité avant de réessayer.';
   if(code==='VAULT_SESSION_REQUIRED'||code==='VAULT_SESSION_INVALID')return 'La session privée du Registre a expiré. Ouvrez de nouveau le coffre.';
   if(code==='REQUEST_TOO_LARGE'||code==='VAULT_ENTRY_CONTENT_INVALID')return 'Cette entrée est trop volumineuse. Le contenu d’une entrée est limité à 1 Mio.';
+  if(code==='NATIVE_DEVICE_KEY_TIMEOUT'||code==='NATIVE_DEVICE_KEY_UNAVAILABLE'||code==='NATIVE_DEVICE_KEY_INVALID')return 'La clé sécurisée de ce téléphone est indisponible. Le Registre reste fermé plutôt que de créer un nouvel appareil navigateur.';
   if(code==='AUTH_REQUIRED')return 'Reconnectez-vous avant d’ouvrir le Registre personnel.';
   if(code==='SECURITY_DECISION_INVALID'||code==='MFA_STATE_UNAVAILABLE')return 'La protection du Registre ne peut pas être vérifiée pour le moment. Aucun accès n’a été accordé.';
   return String(error?.message||'Opération du coffre refusée.');
@@ -222,7 +186,7 @@ async function openVault(){
   resetChallenge();
   status('Vérification des protections du coffre…','info');
   try{
-    const meta=deviceMetadata();
+    const meta=await getDeviceMetadata();
     const result=await invokeVault({action:'open_session',...meta,ttl_seconds:VAULT_TTL_SECONDS});
     if(!result.vault_session_id)throw Object.assign(new Error('Session privée absente.'),{code:'VAULT_OPERATION_REFUSED'});
     armVaultSession(result.vault_session_id,result.expires_in_seconds);
