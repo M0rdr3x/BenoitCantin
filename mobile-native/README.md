@@ -1,4 +1,4 @@
-# SINJIRA™ Mobile Native — V24.4.99
+# SINJIRA™ Mobile Native — V25.0
 
 Application iOS/iPadOS et Android de SINJIRA™.
 
@@ -85,6 +85,55 @@ La récupération V24.4.99 est renforcée côté Web/serveur :
 - l’appareil courant doit regagner explicitement la confiance;
 - un appareil déclaré perdu perd sa confiance et ses notifications, puis les autres sessions sont fermées.
 
+## V25.0 — migration native progressive
+
+La migration vers des surfaces React Native se fait **par frontière de risque**, sans recopier la logique métier ou les données privées déjà correctement protégées côté Web/serveur.
+
+### Partage natif sûr
+
+Le menu de partage du téléphone est maintenant réservé aux pages SINJIRA publiques :
+
+- les routes `/app`, `/compte`, `/admin`, `/auth` et `/api` ne peuvent pas être envoyées au menu de partage;
+- les paramètres de requête et fragments ne sont pas transmis;
+- le module de partage isolé ne reçoit jamais une URL privée de compte.
+
+### Frontière de navigation externe
+
+La WebView n’accepte que HTTPS. Les liens externes ne sont ouverts par le système que pour `https:`, `mailto:` et `tel:` après validation.
+
+- HTTP et les schémas arbitraires sont bloqués;
+- les URLs HTTPS externes contenant des éléments de session ou d’authentification sont refusées;
+- les deep links `sinjira://` restent traités par React Native puis normalisés vers l’origine SINJIRA approuvée.
+
+### Hub **Ma sécurité** natif
+
+Le premier écran métier migré en React Native est un hub de sécurité volontairement minimal.
+
+Il affiche uniquement l’état local déjà connu de l’application :
+
+- verrou biométrique local activé ou non;
+- notifications de sécurité activées ou non.
+
+Il donne ensuite un accès direct à :
+
+- Mes appareils;
+- Connexions récentes;
+- Mode Voyage;
+- Connexions à confirmer;
+- Préférences de sécurité.
+
+Ces opérations continuent d’ouvrir le **Centre de sécurité Web existant**. Le hub natif :
+
+- n’appelle pas Supabase directement;
+- ne possède aucun RPC de sécurité;
+- ne lit ni ne stocke les clés d’appareil;
+- ne copie aucune liste d’appareils, connexion, voyage ou challenge;
+- ne reçoit aucune donnée du Coffre ou de Mon IA;
+- ne demande aucun GPS et n’affiche aucune adresse IP;
+- conserve les contrôles AAL2 et serveur comme source de vérité unique.
+
+Cette frontière évite de créer deux implémentations de sécurité qui pourraient diverger.
+
 ## Bouclier de connexion
 
 Le moteur serveur combine plusieurs signaux : appareil nouveau ou non fiable, changement de pays approximatif lorsqu’une infrastructure de confiance le fournit, déplacement temporellement improbable, Mode Voyage et sensibilité de l’action.
@@ -147,7 +196,6 @@ Avant publication réelle :
 
 ## Prochaines migrations natives
 
-- partage natif de liens SINJIRA;
-- écrans React Native natifs pour les parcours les plus utilisés;
+- poursuivre les écrans React Native pour les parcours fréquents à faible risque, sans dupliquer les sources de vérité serveur;
 - actions de sécurité enrichies depuis les notifications après stabilisation EAS;
 - passkeys après activation du domaine/RP ID final.
