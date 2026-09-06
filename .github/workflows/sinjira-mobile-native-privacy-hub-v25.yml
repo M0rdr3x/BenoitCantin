@@ -1,0 +1,82 @@
+name: SINJIRA V25 — Hub Vie privée natif
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile-native/App.tsx'
+      - 'mobile-native/NativeHomeHub.tsx'
+      - 'mobile-native/NativeProfileHub.tsx'
+      - 'mobile-native/NativePrivacyHub.tsx'
+      - 'mobile-native/NativeSecurityHub.tsx'
+      - 'mobile-native/NATIVE_PRIVACY_HUB_V25.md'
+      - 'mobile-native/safePublicShare.ts'
+      - 'mobile-native/package.json'
+      - 'mobile-native/package-lock.json'
+      - 'mobile-native/scripts/validate-vault-mobile.mjs'
+      - 'scripts/validate_mobile_native_privacy_hub_v25.py'
+      - 'scripts/validate_mobile_native_profile_hub_v25.py'
+      - 'scripts/validate_mobile_native_home_hub_v25.py'
+      - 'scripts/validate_mobile_native_security_hub_v25.py'
+      - 'scripts/validate_mobile_navigation_boundary_v25.py'
+      - 'scripts/validate_mobile_safe_share_v25.py'
+      - 'scripts/validate_device_challenge_client_boundary.py'
+      - 'scripts/validate_no_committed_secrets.py'
+      - '.github/workflows/sinjira-mobile-native-privacy-hub-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-privacy-hub:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Valider le hub Vie privée natif V25
+        run: python3 scripts/validate_mobile_native_privacy_hub_v25.py
+
+      - name: Revalider le hub Profil natif
+        run: python3 scripts/validate_mobile_native_profile_hub_v25.py
+
+      - name: Revalider l'accueil natif V25
+        run: python3 scripts/validate_mobile_native_home_hub_v25.py
+
+      - name: Revalider le hub Sécurité natif
+        run: python3 scripts/validate_mobile_native_security_hub_v25.py
+
+      - name: Revalider la frontière challenge client
+        run: python3 scripts/validate_device_challenge_client_boundary.py
+
+      - name: Revalider la frontière de navigation mobile
+        run: python3 scripts/validate_mobile_navigation_boundary_v25.py
+
+      - name: Revalider le partage public natif
+        run: python3 scripts/validate_mobile_safe_share_v25.py
+
+      - name: Revalider l'absence de secrets suivis
+        run: python3 scripts/validate_no_committed_secrets.py
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: npm
+          cache-dependency-path: mobile-native/package.json
+
+      - name: Installer les dépendances sans scripts de cycle de vie
+        working-directory: mobile-native
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Vérifier le contrat mobile sensible existant
+        working-directory: mobile-native
+        run: npm run validate:vault
+
+      - name: Vérifier TypeScript
+        working-directory: mobile-native
+        run: npm run typecheck
