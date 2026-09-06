@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import re, subprocess, tempfile, sys
+import argparse, re, subprocess, tempfile, sys
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / 'supabase' / 'production-migration-ledger.txt'
 MIG = ROOT / 'supabase' / 'migrations'
 BUILDER = ROOT / 'scripts' / 'build_supabase_production_workspace.py'
 WORKFLOW = ROOT / '.github' / 'workflows' / 'supabase-production-preflight.yml'
+HISTORY_WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-production-migration-history-guard-v25.yml'
 ROW_RE = re.compile(r'^(\d{14})\s+([a-zA-Z0-9_]+)$')
 FILE_RE = re.compile(r'^(\d{14})_(.+)\.sql$')
 EXPECTED_COUNT = 186
@@ -28,55 +29,157 @@ EXPECTED_TAIL = [
 ]
 
 
-def ledger_rows():
+def parse_ledger_text(text, source):
     out = []
-    for i, raw in enumerate(LEDGER.read_text('utf-8').splitlines(), 1):
+    for i, raw in enumerate(text.splitlines(), 1):
         line = raw.strip()
         if not line or line.startswith('#'):
             continue
         m = ROW_RE.fullmatch(line)
         if not m:
-            raise SystemExit(f'Ledger invalide ligne {i}: {line}')
+            raise ValueError(f'Ledger invalide {source} ligne {i}: {line}')
         out.append((m.group(1), m.group(2)))
     return out
+
+
+def ledger_rows():
+    try:
+        return parse_ledger_text(LEDGER.read_text('utf-8'), 'courant')
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+
+
+def migration_version(path_text):
+    path = Path(path_text)
+    if path.parent.as_posix() != 'supabase/migrations':
+        return None
+    m = FILE_RE.fullmatch(path.name)
+    return m.group(1) if m else None
+
+
+def validate_historical_migration_diff(errors, base_ref):
+    if not base_ref:
+        return
+    proc = subprocess.run(
+        ['git', 'diff', '--name-status', '--find-renames', base_ref, 'HEAD', '--', 'supabase/migrations'],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode:
+        errors.append('Impossible de comparer les migrations au commit de base: ' + (proc.stderr or proc.stdout).strip())
+        return
+
+    for raw in proc.stdout.splitlines():
+        if not raw.strip():
+            continue
+        parts = raw.split('\t')
+        status = parts[0]
+        paths = parts[1:]
+        if not paths:
+            errors.append(f'Diff Git migration illisible: {raw}')
+            continue
+
+        historical = []
+        for path_text in paths:
+            version = migration_version(path_text)
+            if version and version <= EXPECTED_LAST:
+                historical.append(path_text)
+
+        if historical:
+            errors.append(
+                f'Migration(s) historique(s) immuable(s) modifiée(s) depuis {base_ref} '
+                f'[{status}]: ' + ', '.join(historical)
+            )
+
+
+def validate_ledger_append_only(errors, base_ref, current_rows):
+    if not base_ref:
+        return
+    proc = subprocess.run(
+        ['git', 'show', f'{base_ref}:supabase/production-migration-ledger.txt'],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode:
+        errors.append('Impossible de lire le ledger du commit de base: ' + (proc.stderr or proc.stdout).strip())
+        return
+    try:
+        base_rows = parse_ledger_text(proc.stdout, f'base {base_ref}')
+    except ValueError as exc:
+        errors.append(str(exc))
+        return
+    if len(current_rows) < len(base_rows) or current_rows[:len(base_rows)] != base_rows:
+        errors.append(
+            'Ledger production non append-only: une version déjà enregistrée a été supprimée, renommée ou réécrite.'
+        )
 
 
 def validate_production_workflow(errors):
     if not WORKFLOW.is_file():
         errors.append('Workflow Supabase production absent.')
+    else:
+        text = WORKFLOW.read_text('utf-8')
+        required = (
+            "'scripts/build_supabase_production_workspace.py'",
+            'python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase',
+            '(cd .prod-workspace && supabase link --project-ref',
+            '(cd .prod-workspace && supabase db lint --linked',
+            '(cd .prod-workspace && supabase migration list --linked',
+            '(cd .prod-workspace && supabase db push --linked --dry-run',
+            '(cd .prod-workspace && supabase db push --linked --password',
+            '(cd .prod-workspace && supabase functions deploy --project-ref',
+        )
+        for marker in required:
+            if marker not in text:
+                errors.append(f'Workflow production sans garde workspace attendu: {marker}')
+
+        direct_forbidden = (
+            '\n          supabase link --project-ref',
+            '\n          supabase db lint --linked',
+            '\n          supabase migration list --linked',
+            '\n          supabase db push --linked',
+            '\n          supabase functions deploy --project-ref',
+        )
+        for marker in direct_forbidden:
+            if marker in text:
+                errors.append(f'Commande liée exécutée directement hors workspace protégé: {marker.strip()}')
+
+        for marker in ('--include-all', 'supabase migration repair', 'supabase db reset --linked'):
+            if marker in text:
+                errors.append(f'Primitive de migration production interdite dans le workflow générique: {marker}')
+
+    if not HISTORY_WORKFLOW.is_file():
+        errors.append('Workflow de garde historique des migrations absent.')
         return
-    text = WORKFLOW.read_text('utf-8')
-    required = (
-        "'scripts/build_supabase_production_workspace.py'",
-        'python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase',
-        '(cd .prod-workspace && supabase link --project-ref',
-        '(cd .prod-workspace && supabase db lint --linked',
-        '(cd .prod-workspace && supabase migration list --linked',
-        '(cd .prod-workspace && supabase db push --linked --dry-run',
-        '(cd .prod-workspace && supabase db push --linked --password',
-        '(cd .prod-workspace && supabase functions deploy --project-ref',
-    )
-    for marker in required:
-        if marker not in text:
-            errors.append(f'Workflow production sans garde workspace attendu: {marker}')
 
-    direct_forbidden = (
-        '\n          supabase link --project-ref',
-        '\n          supabase db lint --linked',
-        '\n          supabase migration list --linked',
-        '\n          supabase db push --linked',
-        '\n          supabase functions deploy --project-ref',
+    history_text = HISTORY_WORKFLOW.read_text('utf-8')
+    history_required = (
+        'fetch-depth: 0',
+        'id: migration_base',
+        "'supabase/production-migration-ledger.txt'",
+        '${{ github.event.pull_request.base.sha }}',
+        '${{ github.event.before }}',
+        'validate_production_migration_ledger.py --base-ref "$BASE_REF"',
     )
-    for marker in direct_forbidden:
-        if marker in text:
-            errors.append(f'Commande liée exécutée directement hors workspace protégé: {marker.strip()}')
+    for marker in history_required:
+        if marker not in history_text:
+            errors.append(f'Workflow de garde historique incomplet: {marker}')
 
-    for marker in ('--include-all', 'supabase migration repair', 'supabase db reset --linked'):
-        if marker in text:
-            errors.append(f'Primitive de migration production interdite dans le workflow générique: {marker}')
+    for marker in ('supabase db push', 'supabase migration repair', 'supabase db reset', 'supabase functions deploy'):
+        if marker in history_text:
+            errors.append(f'Workflow de garde historique doit rester statique et non destructif: {marker}')
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--base-ref',
+        help='Commit Git de référence à comparer pour rendre les migrations historiques immuables.',
+    )
+    args = parser.parse_args()
+
     errors = []
     rows = ledger_rows()
     versions = [v for v, _ in rows]
@@ -97,6 +200,9 @@ def main():
         local.append((m.group(1), path.name))
     local_versions = [v for v, _ in local]
     if len(local_versions) != len(set(local_versions)): errors.append('Deux fichiers locaux partagent le même timestamp.')
+
+    validate_historical_migration_diff(errors, args.base_ref)
+    validate_ledger_append_only(errors, args.base_ref, rows)
 
     future = [(v, name) for v, name in local if v > EXPECTED_LAST]
     with tempfile.TemporaryDirectory(prefix='sinjira-ledger-') as td:
@@ -125,7 +231,10 @@ def main():
         print(f'ECHEC ledger production: {len(errors)} problème(s).')
         for err in errors: print('- ' + err)
         return 1
-    print(f'OK ledger production: {EXPECTED_COUNT} versions distantes protégées; {len(future)} migration(s) future(s) transmissible(s); workflow lié borné au workspace protégé.')
+    diff_guard = f'; historique Git protégé depuis {args.base_ref}' if args.base_ref else ''
+    print(f'OK ledger production: {EXPECTED_COUNT} versions distantes protégées; {len(future)} migration(s) future(s) transmissible(s); workflow lié borné au workspace protégé{diff_guard}.')
     return 0
 
-if __name__ == '__main__': raise SystemExit(main())
+
+if __name__ == '__main__':
+    raise SystemExit(main())

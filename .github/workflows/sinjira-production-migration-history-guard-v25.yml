@@ -1,0 +1,66 @@
+name: SINJIRA - garde historique migrations production V25
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/production-migration-ledger.txt'
+      - 'scripts/validate_production_migration_ledger.py'
+      - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/production-migration-ledger.txt'
+      - 'scripts/validate_production_migration_ledger.py'
+      - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migration-history-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout historique complet
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Déterminer la base Git
+        id: migration_base
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "ref=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            before="${{ github.event.before }}"
+            if [ -n "$before" ] && [ "$before" != "0000000000000000000000000000000000000000" ]; then
+              echo "ref=$before" >> "$GITHUB_OUTPUT"
+            else
+              echo "ref=" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "ref=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verrouiller les migrations historiques
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_REF="${{ steps.migration_base.outputs.ref }}"
+          if [ -n "$BASE_REF" ]; then
+            python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF"
+          else
+            python scripts/validate_production_migration_ledger.py
+          fi
