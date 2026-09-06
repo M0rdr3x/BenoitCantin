@@ -149,12 +149,16 @@ begin
   for update;
   if not found then raise exception 'CURRENT_DEVICE_REQUIRED' using errcode='42501'; end if;
 
-  select c.*, e.action_name into v_ch, v_action
+  select c.* into v_ch
   from public.security_connection_challenges c
-  join public.security_connection_events e on e.id=c.connection_event_id
   where c.id=p_challenge_id and c.user_id=v_user
-  for update of c;
+  for update;
   if not found then raise exception 'CHALLENGE_NOT_FOUND'; end if;
+
+  select e.action_name into v_action
+  from public.security_connection_events e
+  where e.id=v_ch.connection_event_id;
+  if not found then raise exception 'CHALLENGE_EVENT_NOT_FOUND'; end if;
 
   if v_ch.status<>'pending' or v_ch.expires_at<=now() then
     update public.security_connection_challenges
