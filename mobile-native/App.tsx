@@ -18,9 +18,11 @@ import {
   View,
 } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
+import { sharePublicSinjiraUrl } from './safePublicShare';
 
 const DEFAULT_ORIGIN = 'https://www.benoitcantin.com';
 const ALLOWED_WEB_HOSTS = new Set(['www.benoitcantin.com', 'benoitcantin.com', 'sinjira.com', 'www.sinjira.com']);
+const PRIVATE_SHARE_PATH_PREFIXES = ['/app/', '/compte/', '/admin/', '/auth/', '/api/'] as const;
 const VAULT_PATH = '/compte/registre-personnel.html';
 const PERSONAL_AI_PATH = '/compte/mon-ia.html';
 const ACCOUNT_HOME_PATH = '/compte/index.html';
@@ -89,6 +91,23 @@ function normalizeSinjiraUrl(url: string | null): string | null {
     return null;
   }
   return null;
+}
+
+function shareableSinjiraUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url, ORIGIN);
+    if (parsed.protocol !== 'https:' || !ALLOWED_WEB_HOSTS.has(parsed.hostname)) return null;
+    const pathname = parsed.pathname || '/';
+    const normalizedPath = pathname.toLowerCase();
+    const privatePath = PRIVATE_SHARE_PATH_PREFIXES.some((prefix) => {
+      const root = prefix.slice(0, -1);
+      return normalizedPath === root || normalizedPath.startsWith(prefix);
+    });
+    if (privatePath) return null;
+    return `${ORIGIN}${pathname}`;
+  } catch {
+    return null;
+  }
 }
 
 function isVaultUrl(url: string) {
@@ -338,6 +357,19 @@ export default function App() {
     await navigateToUrl(`${ORIGIN}${path}`, tab);
   };
 
+  const shareCurrentPage = async () => {
+    const shareUrl = shareableSinjiraUrl(currentUrl);
+    if (!shareUrl) {
+      setNativeMessage('Cette page reste privée. SINJIRA ne transmet aucun lien de compte, de sécurité ou de contenu sensible au menu de partage.');
+      return;
+    }
+    try {
+      await sharePublicSinjiraUrl(shareUrl);
+    } catch {
+      setNativeMessage('Le partage natif est temporairement indisponible.');
+    }
+  };
+
   useEffect(() => {
     Linking.getInitialURL().then((url) => {
       const normalized = normalizeSinjiraUrl(url);
@@ -470,6 +502,9 @@ export default function App() {
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Activer ou désactiver les notifications de sécurité" onPress={() => void (pushEnabled ? disableSecurityPush() : enableSecurityPush())} style={styles.refreshButton}>
             <Text style={styles.refreshText}>{pushEnabled ? 'Alertes ✓' : 'Alertes'}</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Partager cette page SINJIRA si elle est publique" onPress={() => void shareCurrentPage()} style={styles.refreshButton}>
+            <Text style={styles.refreshText}>Partager</Text>
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Recharger la page" onPress={() => { webViewRef.current?.reload(); setWebViewKey((value) => value + 1); }} style={styles.refreshButton}>
             <Text style={styles.refreshText}>↻</Text>

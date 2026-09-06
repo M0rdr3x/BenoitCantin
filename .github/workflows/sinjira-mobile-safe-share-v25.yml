@@ -1,0 +1,52 @@
+name: SINJIRA V25 — Partage natif mobile sûr
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile-native/App.tsx'
+      - 'mobile-native/safePublicShare.ts'
+      - 'mobile-native/package.json'
+      - 'mobile-native/tsconfig.json'
+      - 'mobile-native/scripts/validate-vault-mobile.mjs'
+      - 'scripts/validate_mobile_safe_share_v25.py'
+      - 'scripts/validate_device_challenge_client_boundary.py'
+      - 'scripts/validate_no_committed_secrets.py'
+      - '.github/workflows/sinjira-mobile-safe-share-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-safe-share:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Valider les contrats de confidentialité mobile
+        run: |
+          python3 scripts/validate_mobile_safe_share_v25.py
+          python3 scripts/validate_device_challenge_client_boundary.py
+          python3 scripts/validate_no_committed_secrets.py
+
+      - name: Configurer Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Installer les dépendances mobile sans scripts
+        working-directory: mobile-native
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Vérifier le contrat mobile historique du Coffre
+        working-directory: mobile-native
+        run: npm run validate:vault
+
+      - name: Vérifier TypeScript mobile
+        working-directory: mobile-native
+        run: npm run typecheck
