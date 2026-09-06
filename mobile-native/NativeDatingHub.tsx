@@ -85,7 +85,7 @@ export function NativeDatingHub({ onOpenPath, onBack }: Props) {
         <Text style={styles.cardKicker}>SÉPARATION DES ESPACES</Text>
         <Text style={styles.boundaryTitle}>Le Registre reste séparé</Text>
         <Text style={styles.boundaryText}>
-          Aucune donnée du Registre personnel n’est importée dans ce hub. L’option volontaire qui existe dans Rencontres reste entièrement contrôlée dans la surface Web et ne transfère jamais les données sensibles du Registre.
+          Aucune donnée du Registre personnel n’est importée dans ce hub. L’option volontaire qui existe dans Rencontres reste entièrement contrôlée dans la surface Web; ce hub n’accède jamais aux réponses brutes du Registre.
         </Text>
       </View>
 
