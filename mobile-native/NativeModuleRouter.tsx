@@ -44,5 +44,7 @@ export function NativeModuleRouter({ path, onOpenPath, onBack }: Props) {
       return <NativeAlertsHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/profil.html':
       return <NativeProfileHub onOpenPath={onOpenPath} onBack={onBack} />;
+    default:
+      return null;
   }
 }
