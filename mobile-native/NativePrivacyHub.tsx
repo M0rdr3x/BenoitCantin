@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { NativeSettingsHub } from './NativeSettingsHub';
 
 type Props = {
   onOpenPath: (path: string) => void;
@@ -23,7 +25,7 @@ const privacyDestinations = [
   },
   {
     label: 'Paramètres du compte',
-    description: 'Accéder aux préférences, à l’export et aux actions de compte dans la surface protégée existante.',
+    description: 'Ouvrir un hub natif sans préférences locales avant les actions protégées du compte.',
     path: '/compte/parametres.html',
   },
 ] as const;
@@ -46,6 +48,25 @@ function DestinationCard({ label, description, onPress }: { label: string; descr
 }
 
 export function NativePrivacyHub({ onOpenPath, onBack }: Props) {
+  const [settingsHubOpen, setSettingsHubOpen] = useState(false);
+
+  if (settingsHubOpen) {
+    return (
+      <NativeSettingsHub
+        onBack={() => setSettingsHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
+  const openPrivacyDestination = (path: string) => {
+    if (path === '/compte/parametres.html') {
+      setSettingsHubOpen(true);
+      return;
+    }
+    onOpenPath(path);
+  };
+
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Pressable
@@ -83,7 +104,7 @@ export function NativePrivacyHub({ onOpenPath, onBack }: Props) {
             key={item.path}
             label={item.label}
             description={item.description}
-            onPress={() => onOpenPath(item.path)}
+            onPress={() => openPrivacyDestination(item.path)}
           />
         ))}
       </View>
