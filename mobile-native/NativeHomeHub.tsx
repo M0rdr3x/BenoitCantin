@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { NativeAlertsHub } from './NativeAlertsHub';
 import { NativeProfileHub } from './NativeProfileHub';
 
 type Props = {
@@ -38,7 +39,7 @@ const mainDestinations = [
 const accountDestinations = [
   {
     label: 'Alertes',
-    description: 'Consulter vos notifications SINJIRA.',
+    description: 'Ouvrir un hub natif sans contenu privé avant vos avis SINJIRA.',
     path: '/compte/notifications.html',
   },
   {
@@ -84,7 +85,17 @@ function DestinationCard({
 }
 
 export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
+  const [alertsHubOpen, setAlertsHubOpen] = useState(false);
   const [profileHubOpen, setProfileHubOpen] = useState(false);
+
+  if (alertsHubOpen) {
+    return (
+      <NativeAlertsHub
+        onBack={() => setAlertsHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
 
   if (profileHubOpen) {
     return (
@@ -96,6 +107,10 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   }
 
   const openAccountDestination = (path: string) => {
+    if (path === '/compte/notifications.html') {
+      setAlertsHubOpen(true);
+      return;
+    }
     if (path === '/compte/profil.html') {
       setProfileHubOpen(true);
       return;
