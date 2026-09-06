@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
+import { NativeSecurityHub } from './NativeSecurityHub';
 import { sharePublicSinjiraUrl } from './safePublicShare';
 
 const DEFAULT_ORIGIN = 'https://www.benoitcantin.com';
@@ -181,6 +182,7 @@ export default function App() {
   const [nativeMessage, setNativeMessage] = useState('');
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushToken, setPushToken] = useState('');
+  const [nativeSecurityOpen, setNativeSecurityOpen] = useState(false);
 
   const allowedHosts = useMemo(() => new Set(ALLOWED_WEB_HOSTS), []);
 
@@ -368,6 +370,7 @@ export default function App() {
       const approved = await requestVaultLocalGate();
       if (!approved) return;
     }
+    setNativeSecurityOpen(false);
     setCurrentUrl(url);
     if (tab) setActiveTab(tab);
     else {
@@ -419,6 +422,10 @@ export default function App() {
     if (Platform.OS !== 'android') return;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (!isUnlocked && biometricEnabled) return true;
+      if (nativeSecurityOpen) {
+        setNativeSecurityOpen(false);
+        return true;
+      }
       if (canGoBack) {
         webViewRef.current?.goBack();
         return true;
@@ -426,7 +433,7 @@ export default function App() {
       return false;
     });
     return () => subscription.remove();
-  }, [canGoBack, isUnlocked, biometricEnabled]);
+  }, [canGoBack, isUnlocked, biometricEnabled, nativeSecurityOpen]);
 
   const toggleBiometric = async () => {
     if (biometricEnabled) {
@@ -542,12 +549,16 @@ export default function App() {
           <Pressable accessibilityRole="button" accessibilityLabel="Activer ou désactiver les notifications de sécurité" onPress={() => void (pushEnabled ? disableSecurityPush() : enableSecurityPush())} style={styles.refreshButton}>
             <Text style={styles.refreshText}>{pushEnabled ? 'Alertes ✓' : 'Alertes'}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Partager cette page SINJIRA si elle est publique" onPress={() => void shareCurrentPage()} style={styles.refreshButton}>
-            <Text style={styles.refreshText}>Partager</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Recharger la page" onPress={() => { webViewRef.current?.reload(); setWebViewKey((value) => value + 1); }} style={styles.refreshButton}>
-            <Text style={styles.refreshText}>↻</Text>
-          </Pressable>
+          {!nativeSecurityOpen ? (
+            <>
+              <Pressable accessibilityRole="button" accessibilityLabel="Partager cette page SINJIRA si elle est publique" onPress={() => void shareCurrentPage()} style={styles.refreshButton}>
+                <Text style={styles.refreshText}>Partager</Text>
+              </Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel="Recharger la page" onPress={() => { webViewRef.current?.reload(); setWebViewKey((value) => value + 1); }} style={styles.refreshButton}>
+                <Text style={styles.refreshText}>↻</Text>
+              </Pressable>
+            </>
+          ) : null}
         </View>
       </View>
 
@@ -559,45 +570,67 @@ export default function App() {
 
       <View style={styles.quickRail}>
         {quickLinks.map((item) => (
-          <Pressable key={item.path} accessibilityRole="button" onPress={() => void navigate(item.path)} style={styles.quickButton}>
+          <Pressable
+            key={item.path}
+            accessibilityRole="button"
+            onPress={() => {
+              if (item.label === 'Sécurité') {
+                setNativeSecurityOpen(true);
+                return;
+              }
+              void navigate(item.path);
+            }}
+            style={styles.quickButton}
+          >
             <Text style={styles.quickText}>{item.label}</Text>
           </Pressable>
         ))}
       </View>
 
-      <WebView
-        key={webViewKey}
-        ref={webViewRef}
-        source={{ uri: currentUrl }}
-        style={styles.webview}
-        originWhitelist={['https://*']}
-        sharedCookiesEnabled
-        thirdPartyCookiesEnabled={false}
-        domStorageEnabled
-        javaScriptEnabled
-        cacheEnabled
-        injectedJavaScriptBeforeContentLoaded={injectedSecurityScript}
-        startInLoadingState
-        pullToRefreshEnabled={Platform.OS === 'ios'}
-        allowsBackForwardNavigationGestures={Platform.OS === 'ios'}
-        onNavigationStateChange={onNavigationStateChange}
-        onShouldStartLoadWithRequest={shouldStart}
-        renderLoading={() => (
-          <View style={styles.loading}>
-            <ActivityIndicator size="large" />
-            <Text style={styles.loadingText}>Chargement de SINJIRA…</Text>
-          </View>
-        )}
-        renderError={() => (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorTitle}>Connexion indisponible</Text>
-            <Text style={styles.errorText}>Vérifiez votre connexion Internet, puis touchez Réessayer.</Text>
-            <Pressable accessibilityRole="button" onPress={() => setWebViewKey((value) => value + 1)} style={styles.retryButton}>
-              <Text style={styles.retryText}>Réessayer</Text>
-            </Pressable>
-          </View>
-        )}
-      />
+      {nativeSecurityOpen ? (
+        <NativeSecurityHub
+          biometricEnabled={biometricEnabled}
+          pushEnabled={pushEnabled}
+          onToggleBiometric={() => void toggleBiometric()}
+          onTogglePush={() => void (pushEnabled ? disableSecurityPush() : enableSecurityPush())}
+          onOpenPath={(path) => void navigate(path)}
+          onClose={() => setNativeSecurityOpen(false)}
+        />
+      ) : (
+        <WebView
+          key={webViewKey}
+          ref={webViewRef}
+          source={{ uri: currentUrl }}
+          style={styles.webview}
+          originWhitelist={['https://*']}
+          sharedCookiesEnabled
+          thirdPartyCookiesEnabled={false}
+          domStorageEnabled
+          javaScriptEnabled
+          cacheEnabled
+          injectedJavaScriptBeforeContentLoaded={injectedSecurityScript}
+          startInLoadingState
+          pullToRefreshEnabled={Platform.OS === 'ios'}
+          allowsBackForwardNavigationGestures={Platform.OS === 'ios'}
+          onNavigationStateChange={onNavigationStateChange}
+          onShouldStartLoadWithRequest={shouldStart}
+          renderLoading={() => (
+            <View style={styles.loading}>
+              <ActivityIndicator size="large" />
+              <Text style={styles.loadingText}>Chargement de SINJIRA…</Text>
+            </View>
+          )}
+          renderError={() => (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorTitle}>Connexion indisponible</Text>
+              <Text style={styles.errorText}>Vérifiez votre connexion Internet, puis touchez Réessayer.</Text>
+              <Pressable accessibilityRole="button" onPress={() => setWebViewKey((value) => value + 1)} style={styles.retryButton}>
+                <Text style={styles.retryText}>Réessayer</Text>
+              </Pressable>
+            </View>
+          )}
+        />
+      )}
 
       <View style={styles.bottomNav}>
         {tabs.map((tab) => {
