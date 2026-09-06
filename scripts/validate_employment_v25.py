@@ -110,22 +110,37 @@ def main()->int:
     require('aucune donnée personnelle réelle' in smoke.lower() and 'aucune candidature réelle' in smoke.lower(),
             'le caractère strictement synthétique des données doit être explicite')
 
-    # La visibilité non filtrée doit être bornée au propriétaire dans les deux sens.
-    require('liste propriétaire profil A' in smoke and 'liste propriétaire profil B' in smoke,
-            'preuve de visibilité propriétaire des profils incomplète')
-    require('liste propriétaire candidature A' in smoke and 'liste propriétaire candidature B' in smoke,
-            'preuve de visibilité propriétaire des candidatures incomplète')
+    # Les fonctions de visibilité doivent être génériques et être appelées pour A et B.
+    require('def assert_profile_visibility(' in smoke and 'f"liste propriétaire profil {label.upper()}"' in smoke,
+            'preuve générique de visibilité propriétaire des profils absente')
+    require('assert_profile_visibility(token_a, user_a, user_b, "a")' in smoke and
+            'assert_profile_visibility(token_b, user_b, user_a, "b")' in smoke,
+            'preuve de visibilité propriétaire profils non appelée dans les deux sens')
+    require('def assert_application_visibility(' in smoke and 'f"liste propriétaire candidature {label.upper()}"' in smoke,
+            'preuve générique de visibilité propriétaire des candidatures absente')
+    require('assert_application_visibility(token_a, app_a, app_b, user_a, "a")' in smoke and
+            'assert_application_visibility(token_b, app_b, app_a, user_b, "b")' in smoke,
+            'preuve de visibilité propriétaire candidatures non appelée dans les deux sens')
 
-    # SELECT/UPDATE/DELETE cross-user bidirectionnels.
-    for marker in (
-        'isolation SELECT profil autre depuis A','isolation SELECT profil autre depuis B',
-        'isolation UPDATE profil autre depuis A','isolation UPDATE profil autre depuis B',
-        'isolation DELETE profil autre depuis A','isolation DELETE profil autre depuis B',
-        'isolation SELECT candidature autre depuis A','isolation SELECT candidature autre depuis B',
-        'isolation UPDATE candidature autre depuis A','isolation UPDATE candidature autre depuis B',
-        'isolation DELETE candidature autre depuis A','isolation DELETE candidature autre depuis B',
-    ):
-        require(marker in smoke,f'preuve RLS bidirectionnelle manquante: {marker}')
+    # SELECT cross-user est inclus dans les fonctions de visibilité; UPDATE/DELETE dans les fonctions dédiées.
+    require('f"isolation SELECT profil autre depuis {label.upper()}"' in smoke,
+            'preuve SELECT profil cross-user générique absente')
+    require('f"isolation SELECT candidature autre depuis {label.upper()}"' in smoke,
+            'preuve SELECT candidature cross-user générique absente')
+    require('def assert_other_profile_write_blocked(' in smoke and
+            'f"isolation UPDATE profil autre depuis {label.upper()}"' in smoke and
+            'f"isolation DELETE profil autre depuis {label.upper()}"' in smoke,
+            'preuve UPDATE/DELETE profil cross-user générique absente')
+    require('assert_other_profile_write_blocked(token_a, user_b, "a")' in smoke and
+            'assert_other_profile_write_blocked(token_b, user_a, "b")' in smoke,
+            'preuve UPDATE/DELETE profils non appelée dans les deux sens')
+    require('def assert_other_application_write_blocked(' in smoke and
+            'f"isolation UPDATE candidature autre depuis {label.upper()}"' in smoke and
+            'f"isolation DELETE candidature autre depuis {label.upper()}"' in smoke,
+            'preuve UPDATE/DELETE candidature cross-user générique absente')
+    require('assert_other_application_write_blocked(token_a, app_b, "a")' in smoke and
+            'assert_other_application_write_blocked(token_b, app_a, "b")' in smoke,
+            'preuve UPDATE/DELETE candidatures non appelée dans les deux sens')
 
     # INSERT cross-user profil doit être tenté avant les lignes légitimes pour que le rejet
     # ne puisse pas être attribué à la clé primaire existante; candidatures dans les deux sens aussi.
