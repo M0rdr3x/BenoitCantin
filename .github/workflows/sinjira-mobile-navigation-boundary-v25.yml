@@ -1,0 +1,47 @@
+name: SINJIRA V25 — Frontière navigation mobile
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile-native/App.tsx'
+      - 'mobile-native/package.json'
+      - 'mobile-native/package-lock.json'
+      - 'scripts/validate_mobile_navigation_boundary_v25.py'
+      - '.github/workflows/sinjira-mobile-navigation-boundary-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  navigation-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Valider le contrat de navigation V25
+        run: python3 scripts/validate_mobile_navigation_boundary_v25.py
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: npm
+          cache-dependency-path: mobile-native/package.json
+
+      - name: Installer les dépendances
+        working-directory: mobile-native
+        run: npm install --no-audit --no-fund
+
+      - name: Vérifier le contrat mobile sensible existant
+        working-directory: mobile-native
+        run: npm run validate:vault
+
+      - name: Vérifier TypeScript
+        working-directory: mobile-native
+        run: npm run typecheck
