@@ -51,6 +51,17 @@ def bootstrap_device(aal2: str) -> None:
     require("device_key" not in trusted and "last_session_id" not in trusted,
             "la confiance ne doit pas révéler les secrets appareil")
 
+    devices = rpc("security_list_devices", aal2, {"p_current_device_key": DEVICE_KEY})
+    require(isinstance(devices, list) and len(devices) == 1 and isinstance(devices[0], dict),
+            "la liste assainie doit contenir le seul appareil synthétique")
+    current = devices[0]
+    require(current.get("id") == device_id and current.get("is_current") is True,
+            "la liste assainie doit reconnaître l'appareil courant")
+    require(current.get("is_trusted") is True and current.get("is_primary") is True,
+            "la liste assainie doit confirmer la confiance du premier appareil")
+    require("device_key" not in current and "last_session_id" not in current,
+            "security_list_devices ne doit jamais révéler les secrets appareil")
+
 
 def vault(token: str, action: str, **extra: Any) -> Response:
     body = {"action": action, **extra}
