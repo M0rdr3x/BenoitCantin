@@ -1,0 +1,33 @@
+name: SINJIRA V25 — Frontière client multi-appareils
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
+      - 'compte/securite.html'
+      - 'mobile-native/App.tsx'
+      - 'scripts/validate_device_challenge_client_boundary.py'
+      - 'scripts/validate_device_challenge_continuity_smoke.py'
+      - 'scripts/validate_no_committed_secrets.py'
+      - '.github/workflows/sinjira-device-challenge-client-boundary-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  client-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Verrouiller la frontière client multi-appareils
+        run: |
+          python3 scripts/validate_device_challenge_client_boundary.py
+          python3 scripts/validate_device_challenge_continuity_smoke.py
+          python3 scripts/validate_no_committed_secrets.py
