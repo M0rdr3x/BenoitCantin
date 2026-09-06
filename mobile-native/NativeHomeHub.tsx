@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativeAlertsHub } from './NativeAlertsHub';
+import { NativeEmploymentHub } from './NativeEmploymentHub';
 import { NativeMessagesHub } from './NativeMessagesHub';
 import { NativeProfileHub } from './NativeProfileHub';
 
@@ -22,7 +23,7 @@ const mainDestinations = [
   },
   {
     label: 'Emploi',
-    description: 'Ouvrir votre espace Emploi sans recopier votre profil ni vos candidatures dans le natif.',
+    description: 'Ouvrir un hub natif sans données professionnelles avant le profil et les candidatures protégés.',
     path: '/compte/emploi.html',
   },
   {
@@ -87,8 +88,18 @@ function DestinationCard({
 
 export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [alertsHubOpen, setAlertsHubOpen] = useState(false);
+  const [employmentHubOpen, setEmploymentHubOpen] = useState(false);
   const [messagesHubOpen, setMessagesHubOpen] = useState(false);
   const [profileHubOpen, setProfileHubOpen] = useState(false);
+
+  if (employmentHubOpen) {
+    return (
+      <NativeEmploymentHub
+        onBack={() => setEmploymentHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
 
   if (messagesHubOpen) {
     return (
@@ -120,6 +131,10 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const openMainDestination = (path: string) => {
     if (path === '/compte/messages.html') {
       setMessagesHubOpen(true);
+      return;
+    }
+    if (path === '/compte/emploi.html') {
+      setEmploymentHubOpen(true);
       return;
     }
     onOpenPath(path);
