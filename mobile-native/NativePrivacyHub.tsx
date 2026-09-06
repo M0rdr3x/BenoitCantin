@@ -1,44 +1,34 @@
-import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { NativePrivacyHub } from './NativePrivacyHub';
 
 type Props = {
   onOpenPath: (path: string) => void;
   onBack: () => void;
 };
 
-const profileDestinations = [
+const privacyDestinations = [
   {
-    label: 'Modifier mon profil',
-    description: 'Ouvrir le profil complet existant pour le nom affiché, la photo et les informations personnelles protégées.',
-    path: '/compte/profil.html?surface=web',
+    label: 'Exercer mes droits',
+    description: 'Ouvrir le formulaire Vie privée existant pour une demande d’accès, rectification, portabilité, suppression ou autre droit applicable.',
+    path: '/compte/vie-privee.html?surface=web',
   },
   {
-    label: 'Vie privée',
-    description: 'Ouvrir un hub natif sans données avant le Centre Vie privée existant.',
-    path: '/compte/vie-privee.html',
-  },
-  {
-    label: 'Paramètres',
-    description: 'Gérer les préférences, l’export des données et les actions de compte dans la surface Web protégée.',
-    path: '/compte/parametres.html',
+    label: 'Politique générale',
+    description: 'Consulter la politique de confidentialité publique de SINJIRA.',
+    path: '/confidentialite.html',
   },
   {
     label: 'Ma sécurité',
-    description: 'Ouvrir le Centre de sécurité existant pour les opérations qui restent contrôlées côté serveur.',
+    description: 'Pour un enjeu de sécurité ou de protection, ouvrir le Centre de sécurité existant.',
     path: '/compte/securite.html',
+  },
+  {
+    label: 'Paramètres du compte',
+    description: 'Accéder aux préférences, à l’export et aux actions de compte dans la surface protégée existante.',
+    path: '/compte/parametres.html',
   },
 ] as const;
 
-function DestinationCard({
-  label,
-  description,
-  onPress,
-}: {
-  label: string;
-  description: string;
-  onPress: () => void;
-}) {
+function DestinationCard({ label, description, onPress }: { label: string; description: string; onPress: () => void }) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -55,72 +45,53 @@ function DestinationCard({
   );
 }
 
-export function NativeProfileHub({ onOpenPath, onBack }: Props) {
-  const [privacyHubOpen, setPrivacyHubOpen] = useState(false);
-
-  if (privacyHubOpen) {
-    return (
-      <NativePrivacyHub
-        onBack={() => setPrivacyHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
-  }
-
-  const openProfileDestination = (path: string) => {
-    if (path === '/compte/vie-privee.html') {
-      setPrivacyHubOpen(true);
-      return;
-    }
-    onOpenPath(path);
-  };
-
+export function NativePrivacyHub({ onOpenPath, onBack }: Props) {
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Retour à l’accueil"
+        accessibilityLabel="Retour au profil"
         onPress={onBack}
         style={styles.backButton}
       >
-        <Text style={styles.backButtonText}>‹ Accueil</Text>
+        <Text style={styles.backButtonText}>‹ Profil</Text>
       </Pressable>
 
       <View style={styles.hero}>
         <Text style={styles.eyebrow}>L’HUMAIN AVANT TOUT</Text>
-        <Text style={styles.title}>Profil</Text>
+        <Text style={styles.title}>Vie privée</Text>
         <Text style={styles.intro}>
-          Ce hub natif ne lit, ne copie et ne conserve aucune donnée de profil. Il sert uniquement à vous orienter vers les surfaces SINJIRA qui restent la source de vérité.
+          Ce hub natif explique la frontière et vous oriente. Il ne lit aucune demande Vie privée, aucun renseignement personnel et aucun historique de votre compte.
         </Text>
       </View>
 
       <View style={styles.boundaryCard}>
-        <Text style={styles.cardKicker}>PROTÉGER SANS SURVEILLER</Text>
-        <Text style={styles.boundaryTitle}>Vos renseignements restent où ils sont protégés</Text>
+        <Text style={styles.cardKicker}>VOS DROITS RESTENT SOUS VOTRE CONTRÔLE</Text>
+        <Text style={styles.boundaryTitle}>Aucune demande n’est traitée localement</Text>
         <Text style={styles.boundaryText}>
-          Le nom affiché, le courriel, la photo, la date de naissance, la résidence, les relations et les préférences ne sont pas chargés dans cet écran. Les formulaires Web existants conservent leurs règles RLS, d’admissibilité et de sécurité.
+          Les demandes, leur état et toute vérification d’identité restent dans le Centre Vie privée Web et ses contrôles serveur. Le natif ne crée, ne modifie et ne conserve aucun dossier de vie privée.
         </Text>
       </View>
 
-      <Text style={styles.sectionTitle}>Profil et contrôles</Text>
+      <Text style={styles.sectionTitle}>Choisir une destination</Text>
       <Text style={styles.sectionText}>
-        Choisissez une destination. Le natif n’effectue aucune modification de compte lui-même.
+        Les actions réelles continuent dans les surfaces canoniques existantes.
       </Text>
       <View style={styles.destinationList}>
-        {profileDestinations.map((item) => (
+        {privacyDestinations.map((item) => (
           <DestinationCard
             key={item.path}
             label={item.label}
             description={item.description}
-            onPress={() => openProfileDestination(item.path)}
+            onPress={() => onOpenPath(item.path)}
           />
         ))}
       </View>
 
       <View style={styles.privacyNote}>
-        <Text style={styles.privacyTitle}>Aucune seconde copie du profil</Text>
+        <Text style={styles.privacyTitle}>Protéger sans surveiller</Text>
         <Text style={styles.privacyText}>
-          Cette frontière native ne possède ni stockage local de profil, ni appel Supabase, ni RPC, ni logique d’export ou de suppression. Les actions sensibles restent dans leurs modules existants.
+          Aucun GPS, aucune adresse IP brute, aucun secret, aucune pièce d’identité et aucun contenu d’une demande ne sont demandés par cet écran natif.
         </Text>
       </View>
     </ScrollView>
