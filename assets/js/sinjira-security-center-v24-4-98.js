@@ -1,42 +1,11 @@
 import { getSupabase, requireUser, escapeHtml, formatDate, setStatus } from './sinjira-supabase.js';
+import { getDeviceKey, getDeviceMetadata } from './sinjira-device-key-v25.js';
 
-const DEVICE_KEY_STORAGE = 'sinjira.security.device_key.v1';
 const MAX_RECENT = 25;
 
 function qs(sel){return document.querySelector(sel)}
 function qsa(sel){return [...document.querySelectorAll(sel)]}
 function status(message,type='info'){setStatus(qs('[data-security-center-status]'),message,type)}
-
-function randomDeviceKey(){
-  if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
-  const bytes=new Uint8Array(24);globalThis.crypto?.getRandomValues?.(bytes);
-  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
-}
-
-function deviceKey(){
-  try{
-    let value=localStorage.getItem(DEVICE_KEY_STORAGE);
-    if(!value){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
-    return value;
-  }catch{
-    try{
-      let value=sessionStorage.getItem(DEVICE_KEY_STORAGE);
-      if(!value){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
-      return value;
-    }catch{return randomDeviceKey()}
-  }
-}
-
-function deviceMetadata(){
-  const ua=navigator.userAgent||'';
-  const platform=String(navigator.userAgentData?.platform||navigator.platform||'').slice(0,120);
-  let type='browser';
-  if(/iPad|Tablet/i.test(ua))type='tablet';
-  else if(/iPhone|iPod/i.test(ua))type='ios';
-  else if(/Android/i.test(ua))type='android';
-  const browser=/Firefox/i.test(ua)?'Firefox':/Edg\//i.test(ua)?'Edge':/Chrome|CriOS/i.test(ua)?'Chrome':/Safari/i.test(ua)?'Safari':'Navigateur';
-  return {device_key:deviceKey(),display_name:`${browser}${platform?` — ${platform}`:''}`.slice(0,120),device_type:type,platform};
-}
 
 function pill(label,kind=''){return `<span class="security-pill ${kind}">${escapeHtml(label)}</span>`}
 function empty(text){return `<p class="security-empty">${escapeHtml(text)}</p>`}
@@ -47,7 +16,8 @@ async function rpc(name,args={}){
   return data;
 }
 
-async function registerContext(meta){
+async function registerContext(){
+  const meta=await getDeviceMetadata();
   const registered=await rpc('security_register_device',{
     p_device_key:meta.device_key,p_display_name:meta.display_name,p_device_type:meta.device_type,p_platform:meta.platform
   });
@@ -137,10 +107,11 @@ function fillSettings(settings){
   qsa('[data-security-setting]').forEach(input=>{const key=input.name;if(key in settings)input.checked=Boolean(settings[key])});
 }
 
-async function loadState(meta,context=null){
+async function loadState(context=null){
+  const currentDeviceKey=await getDeviceKey();
   const [settings,devices,sessions,travel,connections,events,challenges]=await Promise.all([
     rpc('security_get_settings'),
-    rpc('security_list_devices',{p_current_device_key:meta.device_key}),
+    rpc('security_list_devices',{p_current_device_key:currentDeviceKey}),
     rpc('security_list_sessions'),
     getSupabase().from('security_travel_plans').select('*').order('starts_at',{ascending:false}).limit(20).then(({data,error})=>{if(error)throw error;return data||[]}),
     getSupabase().from('security_connection_events').select('*').order('occurred_at',{ascending:false}).limit(MAX_RECENT).then(({data,error})=>{if(error)throw error;return data||[]}),
@@ -168,26 +139,28 @@ function confirmAction(message){return globalThis.confirm(message)}
 
 function friendlySecurityError(error){
   const message=error?.message||String(error||'Erreur de sécurité.');
+  if(message.includes('TRUSTED_OTHER_DEVICE_REQUIRED'))return 'Cette opération doit être confirmée depuis un autre appareil déjà fiable.';
+  if(message.includes('CURRENT_TRUSTED_DEVICE_REQUIRED'))return 'La confirmation doit venir de l’appareil fiable actuellement connecté, pas d’une clé copiée ou ancienne.';
   if(message.includes('TRUST_CONFIRMATION_REQUIRED'))return 'Cet appareil doit d’abord être autorisé depuis un autre appareil déjà fiable.';
   if(message.includes('CURRENT_DEVICE_REQUIRED'))return 'Seul l’appareil que vous utilisez actuellement peut être marqué comme fiable.';
   if(message.includes('AAL2_REQUIRED'))return 'Une vérification MFA récente est requise pour modifier la confiance des appareils.';
+  if(message.includes('NATIVE_DEVICE_KEY_'))return 'La clé sécurisée de ce téléphone est indisponible. Aucune nouvelle identité appareil navigateur n’a été créée.';
   return message;
 }
 
 async function boot(){
-  const meta=deviceMetadata();
   try{
     await requireUser();
     status('Initialisation du Centre de sécurité…');
-    const contextResult=await registerContext(meta);
-    let state=await loadState(meta,contextResult.context);
+    const contextResult=await registerContext();
+    let state=await loadState(contextResult.context);
 
-    qs('[data-security-settings-save]')?.addEventListener('click',async()=>{try{await saveSettings();state=await loadState(meta,contextResult.context)}catch(e){status(friendlySecurityError(e),'error')}});
-    qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{e.preventDefault();try{await createTravel(e.currentTarget);state=await loadState(meta,contextResult.context)}catch(err){status(friendlySecurityError(err),'error')}});
-    qs('[data-security-refresh]')?.addEventListener('click',async()=>{try{state=await loadState(meta,contextResult.context);status('État de sécurité actualisé.','success')}catch(e){status(friendlySecurityError(e),'error')}});
+    qs('[data-security-settings-save]')?.addEventListener('click',async()=>{try{await saveSettings();state=await loadState(contextResult.context)}catch(e){status(friendlySecurityError(e),'error')}});
+    qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{e.preventDefault();try{await createTravel(e.currentTarget);state=await loadState(contextResult.context)}catch(err){status(friendlySecurityError(err),'error')}});
+    qs('[data-security-refresh]')?.addEventListener('click',async()=>{try{state=await loadState(contextResult.context);status('État de sécurité actualisé.','success')}catch(e){status(friendlySecurityError(e),'error')}});
     qs('[data-security-compromised]')?.addEventListener('click',async()=>{
       if(!confirmAction('Révoquer les autres appareils SINJIRA et fermer leurs sessions ?'))return;
-      try{await rpc('security_compromise_account',{p_current_device_key:meta.device_key});await getSupabase().auth.signOut({scope:'others'});state=await loadState(meta,contextResult.context);status('Mesures d’urgence appliquées : autres appareils révoqués et autres sessions fermées.','success')}catch(e){status(friendlySecurityError(e),'error')}
+      try{const deviceKey=await getDeviceKey();await rpc('security_compromise_account',{p_current_device_key:deviceKey});await getSupabase().auth.signOut({scope:'others'});state=await loadState(contextResult.context);status('Mesures d’urgence appliquées : autres appareils révoqués et autres sessions fermées.','success')}catch(e){status(friendlySecurityError(e),'error')}
     });
 
     document.addEventListener('click',async e=>{
@@ -198,10 +171,10 @@ async function boot(){
         else if(target.dataset.deviceUntrust){if(!confirmAction('Retirer la confiance à cet appareil ?'))return;await rpc('security_set_device_trust',{p_device_id:target.dataset.deviceUntrust,p_trusted:false,p_primary:false});status('Confiance retirée.','success')}
         else if(target.dataset.deviceRevoke){if(!confirmAction('Révoquer cet appareil ? Il devra être réautorisé pour être réutilisé.'))return;await rpc('security_revoke_device',{p_device_id:target.dataset.deviceRevoke});status('Appareil révoqué.','success')}
         else if(target.dataset.travelCancel){if(!confirmAction('Annuler ce Mode Voyage ?'))return;await rpc('security_cancel_travel_plan',{p_plan_id:target.dataset.travelCancel});status('Mode Voyage annulé.','success')}
-        else if(target.dataset.challengeApprove){await rpc('security_resolve_connection_challenge',{p_challenge_id:target.dataset.challengeApprove,p_device_key:meta.device_key,p_decision:'approved'});status('Connexion autorisée.','success')}
-        else if(target.dataset.challengeDeny){await rpc('security_resolve_connection_challenge',{p_challenge_id:target.dataset.challengeDeny,p_device_key:meta.device_key,p_decision:'denied'});status('Connexion refusée. Vérifiez vos appareils si vous ne reconnaissez pas cette tentative.','success')}
+        else if(target.dataset.challengeApprove){const deviceKey=await getDeviceKey();await rpc('security_resolve_connection_challenge',{p_challenge_id:target.dataset.challengeApprove,p_device_key:deviceKey,p_decision:'approved'});status('Connexion autorisée.','success')}
+        else if(target.dataset.challengeDeny){const deviceKey=await getDeviceKey();await rpc('security_resolve_connection_challenge',{p_challenge_id:target.dataset.challengeDeny,p_device_key:deviceKey,p_decision:'denied'});status('Connexion refusée. Vérifiez vos appareils si vous ne reconnaissez pas cette tentative.','success')}
         else return;
-        state=await loadState(meta,contextResult.context);
+        state=await loadState(contextResult.context);
       }catch(err){status(friendlySecurityError(err),'error')}
     });
 
