@@ -9,9 +9,9 @@ BUILDER = ROOT / 'scripts' / 'build_supabase_production_workspace.py'
 WORKFLOW = ROOT / '.github' / 'workflows' / 'supabase-production-preflight.yml'
 ROW_RE = re.compile(r'^(\d{14})\s+([a-zA-Z0-9_]+)$')
 FILE_RE = re.compile(r'^(\d{14})_(.+)\.sql$')
-EXPECTED_COUNT = 185
+EXPECTED_COUNT = 186
 EXPECTED_FIRST = '20260809050252'
-EXPECTED_LAST = '20260905150553'
+EXPECTED_LAST = '20260906035442'
 EXPECTED_TAIL = [
     ('20260901002148', 'sinjira_v24_5_54_fracture_contribution_ownership'),
     ('20260901002241', 'sinjira_v24_5_54_fracture_contribution_atomic_finalize'),
@@ -24,6 +24,7 @@ EXPECTED_TAIL = [
     ('20260905145448', 'sinjira_v25_personal_ai_foundation'),
     ('20260905145502', 'sinjira_v25_personal_ai_rls_hardening'),
     ('20260905150553', 'sinjira_v25_personal_ai_audit_user_index'),
+    ('20260906035442', 'sinjira_v25_device_challenge_continuity_hardening'),
 ]
 
 
