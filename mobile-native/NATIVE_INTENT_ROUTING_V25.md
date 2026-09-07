@@ -105,4 +105,6 @@ Le choix du sas protège la cohérence de l’application; il ne remplace jamais
 
 Les intentions natives acceptent les formes URI usuelles à **une, deux ou trois barres** (`sinjira:/compte/...`, `sinjira://compte/...`, `sinjira:///compte/...`). Elles sont toutes ramenées à un seul chemin interne `/compte/...` avant la décision de routage. Cela évite qu’une URI triple-slash devienne accidentellement `//compte/...` et contourne le sas natif.
 
+Le garde dédié couvre explicitement les trois formes afin qu’une régression de normalisation échoue en CI avant fusion.
+
 Cette normalisation ne rend aucune nouvelle route admissible : les mêmes listes fermées, exclusions sensibles et règles `?surface=web` continuent de s’appliquer après normalisation.
