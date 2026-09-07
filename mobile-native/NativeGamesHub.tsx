@@ -12,6 +12,11 @@ const gamesDestinations = [
     path: '/compte/mes-parties.html?surface=web',
   },
   {
+    label: 'Programme Contributeur',
+    description: 'Gérer vos consentements de contribution dans la surface Web sans partager automatiquement une partie ou un commentaire libre.',
+    path: '/compte/contributions.html?surface=web',
+  },
+  {
     label: 'Ma bibliothèque',
     description: 'Choisir un jeu depuis la bibliothèque Web sans reconstruire vos droits ou votre progression dans ce sas.',
     path: '/compte/bibliotheque.html?surface=web',
@@ -51,7 +56,7 @@ export function NativeGamesHub({ onOpenPath, onBack }: Props) {
         <Text style={styles.eyebrow}>L’HUMAIN AVANT TOUT</Text>
         <Text style={styles.title}>Mes parties</Text>
         <Text style={styles.intro}>
-          Ce sas ne lit aucune partie, sauvegarde, code de partie, feuille de joueur, résultat de fin de partie ni fichier JSON. Il sert uniquement à vous orienter.
+          Ce sas ne lit aucune partie, sauvegarde, code de partie, feuille de joueur, résultat de fin de partie, fichier JSON ni préférence de contribution. Il sert uniquement à vous orienter.
         </Text>
       </View>
 
@@ -60,6 +65,14 @@ export function NativeGamesHub({ onOpenPath, onBack }: Props) {
         <Text style={styles.boundaryTitle}>Aucun état de partie local</Text>
         <Text style={styles.boundaryText}>
           Le titre, le statut, la date de mise à jour, le jeu, le code de partie, les nombres de joueurs, le mode de jeu et la durée restent dans la surface Web et les services existants.
+        </Text>
+      </View>
+
+      <View style={styles.boundaryCard}>
+        <Text style={styles.cardKicker}>CONSENTEMENT EXPLICITE</Text>
+        <Text style={styles.boundaryTitle}>Aucune contribution automatique</Text>
+        <Text style={styles.boundaryText}>
+          Ce hub ne sait pas si vous participez au Programme Contributeur, n’active aucun consentement et ne transmet aucune sauvegarde, statistique de partie ou commentaire libre. Ces choix restent volontaires et contrôlés dans la surface Web.
         </Text>
       </View>
 
@@ -89,7 +102,7 @@ export function NativeGamesHub({ onOpenPath, onBack }: Props) {
 
       <Text style={styles.sectionTitle}>Choisir une destination</Text>
       <Text style={styles.sectionText}>
-        La Web et le serveur restent la source de vérité des parties. Ce sas ne conserve aucun résumé local de votre historique de jeu.
+        La Web et le serveur restent la source de vérité des parties et des consentements de contribution. Ce sas ne conserve aucun résumé local de votre historique de jeu.
       </Text>
       <View style={styles.destinationList}>
         {gamesDestinations.map((item) => (
