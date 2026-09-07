@@ -128,7 +128,7 @@ const rejectedPaths = [
 for (const path of rejectedPaths) {
   const harness = buildNotificationHarness();
   harness.trigger(path);
-  assert.deepEqual(harness.navigatedUrls, [], `entrée notification non approuvée routée: ${String(path)}`);
+  assert.equal(harness.navigatedUrls.length, 0, `entrée notification non approuvée routée: ${String(path)}`);
 }
 
 {
@@ -137,7 +137,7 @@ for (const path of rejectedPaths) {
   harness.trigger('//evil.example/path');
   harness.trigger('/compte/messages.html?thread=123#latest');
   assert.deepEqual(
-    harness.navigatedUrls.map(({ url }) => url),
+    Array.from(harness.navigatedUrls, ({ url }) => url),
     [
       `${TEST_ORIGIN}/compte/profil.html`,
       `${TEST_ORIGIN}/compte/messages.html?thread=123#latest`,
