@@ -163,8 +163,13 @@ async function getMyCharacter(){
   return data||null;
 }
 
+async function isCurrentUserOwner(){
+  const {data,error}=await getSupabase().rpc('is_sinjira_owner',{p_user_id:user.id});
+  if(error)throw error;
+  return data===true;
+}
+
 async function tryOwnerRepair(){
-  if(String(user?.email||'').trim().toLowerCase()!=='kingtyrano@gmail.com')return null;
   const {data,error}=await getSupabase().rpc('ensure_sinjira_owner_character');
   if(error)throw error;
   if(!data?.ok)throw new Error(data?.code||'OWNER_CHARACTER_REPAIR_FAILED');
@@ -185,7 +190,7 @@ function showLocked(owner){
 (async()=>{
   try{
     user=await requireCommunityUser();
-    const owner=String(user?.email||'').trim().toLowerCase()==='kingtyrano@gmail.com';
+    const owner=await isCurrentUserOwner();
     me=await getMyCharacter();
     let repair=null;
     if(!me&&owner){repair=await tryOwnerRepair();me=await getMyCharacter();}
