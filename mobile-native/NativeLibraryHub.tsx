@@ -17,6 +17,11 @@ const libraryDestinations = [
     path: '/compte/mes-lectures.html?surface=web',
   },
   {
+    label: 'Mes playtests',
+    description: 'Consulter candidatures, invitations et participations dans la surface Web, sans admissibilité ni historique testeur copié localement.',
+    path: '/compte/playtests.html?surface=web',
+  },
+  {
     label: 'Mes licences',
     description: 'Consulter les licences et droits numériques associés au compte sans les reproduire localement.',
     path: '/compte/licences.html?surface=web',
@@ -51,7 +56,7 @@ export function NativeLibraryHub({ onOpenPath, onBack }: Props) {
         <Text style={styles.eyebrow}>L’HUMAIN AVANT TOUT</Text>
         <Text style={styles.title}>Ma bibliothèque</Text>
         <Text style={styles.intro}>
-          Ce hub natif ne lit aucun rôle, droit d’accès, licence, progression de lecture, demande testeur, document privé ni inventaire de projet. Il sert uniquement à vous orienter.
+          Ce hub natif ne lit aucun rôle, droit d’accès, licence, progression de lecture, candidature ou invitation de playtest, document privé ni inventaire de projet. Il sert uniquement à vous orienter.
         </Text>
       </View>
 
@@ -72,10 +77,18 @@ export function NativeLibraryHub({ onOpenPath, onBack }: Props) {
       </View>
 
       <View style={styles.boundaryCard}>
+        <Text style={styles.cardKicker}>PLAYTESTS PROTÉGÉS</Text>
+        <Text style={styles.boundaryTitle}>Aucune admissibilité jeunesse ou invitation dans le natif</Text>
+        <Text style={styles.boundaryText}>
+          Les candidatures, invitations, acceptations, refus, participations et vérifications d’admissibilité restent côté Web/serveur. Ce sas ne reçoit aucune donnée d’âge, de tuteur, de cohorte jeunesse, de niveau d’accès ou de décision administrative.
+        </Text>
+      </View>
+
+      <View style={styles.boundaryCard}>
         <Text style={styles.cardKicker}>AUCUNE MUTATION</Text>
         <Text style={styles.boundaryTitle}>Aucune demande testeur depuis le natif</Text>
         <Text style={styles.boundaryText}>
-          Le hub ne crée, ne modifie et n’annule aucune demande d’accès, licence, droit numérique ou contribution. Toute action de ce type reste dans les surfaces authentifiées existantes.
+          Le hub ne crée, ne modifie et n’annule aucune demande d’accès, licence, droit numérique ou participation de test. Toute action de ce type reste dans les surfaces authentifiées existantes.
         </Text>
       </View>
 
@@ -83,13 +96,13 @@ export function NativeLibraryHub({ onOpenPath, onBack }: Props) {
         <Text style={styles.cardKicker}>UNE SEULE SOURCE DE VÉRITÉ</Text>
         <Text style={styles.boundaryTitle}>Aucun cache d’inventaire privé</Text>
         <Text style={styles.boundaryText}>
-          Les projets disponibles, documents autorisés, lectures et droits numériques ne sont ni dupliqués ni mis en cache par ce composant React Native.
+          Les projets disponibles, documents autorisés, lectures, playtests et droits numériques ne sont ni dupliqués ni mis en cache par ce composant React Native.
         </Text>
       </View>
 
       <Text style={styles.sectionTitle}>Choisir une destination</Text>
       <Text style={styles.sectionText}>
-        Les contenus, droits et décisions restent dans leurs surfaces protégées. Le natif ne conserve aucun résumé local de votre bibliothèque.
+        Les contenus, droits et décisions restent dans leurs surfaces protégées. Le natif ne conserve aucun résumé local de votre bibliothèque ou de vos participations testeur.
       </Text>
       <View style={styles.destinationList}>
         {libraryDestinations.map((item) => (
