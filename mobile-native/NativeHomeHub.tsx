@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativeAlertsHub } from './NativeAlertsHub';
 import { NativeCharacterHub } from './NativeCharacterHub';
+import { NativeCommerceHub } from './NativeCommerceHub';
 import { NativeCommunityHub } from './NativeCommunityHub';
 import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
@@ -48,6 +49,11 @@ const mainDestinations = [
     label: 'Relations et famille',
     description: 'Ouvrir un hub natif sans relation privée, tranche d’âge, code parental ni lien de supervision local.',
     path: '/compte/relations.html',
+  },
+  {
+    label: 'Commerce et droits',
+    description: 'Ouvrir un hub natif sans achat, précommande, annonce, solde de jetons, licence ni donnée transactionnelle locale.',
+    path: '/compte/mes-achats.html',
   },
   {
     label: 'Mon personnage',
@@ -122,6 +128,7 @@ function DestinationCard({
 export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [alertsHubOpen, setAlertsHubOpen] = useState(false);
   const [characterHubOpen, setCharacterHubOpen] = useState(false);
+  const [commerceHubOpen, setCommerceHubOpen] = useState(false);
   const [communityHubOpen, setCommunityHubOpen] = useState(false);
   const [datingHubOpen, setDatingHubOpen] = useState(false);
   const [employmentHubOpen, setEmploymentHubOpen] = useState(false);
@@ -137,6 +144,15 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     return (
       <NativeCharacterHub
         onBack={() => setCharacterHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
+  if (commerceHubOpen) {
+    return (
+      <NativeCommerceHub
+        onBack={() => setCommerceHubOpen(false)}
         onOpenPath={onOpenPath}
       />
     );
@@ -264,6 +280,10 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     }
     if (path === '/compte/relations.html') {
       setRelationsHubOpen(true);
+      return;
+    }
+    if (path === '/compte/mes-achats.html') {
+      setCommerceHubOpen(true);
       return;
     }
     if (path === '/compte/mon-personnage.html') {
