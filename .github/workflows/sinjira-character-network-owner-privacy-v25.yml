@@ -1,0 +1,47 @@
+name: SINJIRA V25 — Confidentialité propriétaire Réseau personnage
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-community-character.js'
+      - 'CHARACTER_NETWORK_OWNER_PRIVACY_V25.md'
+      - 'scripts/validate_character_network_owner_privacy_v25.py'
+      - 'scripts/validate_owner_role_invoker.py'
+      - 'scripts/validate_owner_character_rpc_v24_5_20.py'
+      - 'scripts/validate_character_identity_rls.py'
+      - 'scripts/validate_social_user_rpc_v24_5_15.py'
+      - 'scripts/validate_no_committed_secrets.py'
+      - '.github/workflows/sinjira-character-network-owner-privacy-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  character-network-owner-privacy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Valider la confidentialité du rôle propriétaire
+        run: python3 scripts/validate_character_network_owner_privacy_v25.py
+
+      - name: Revalider le rôle propriétaire historique
+        run: python3 scripts/validate_owner_role_invoker.py
+
+      - name: Revalider la frontière de réparation propriétaire
+        run: python3 scripts/validate_owner_character_rpc_v24_5_20.py
+
+      - name: Revalider les RLS d’identité personnage
+        run: python3 scripts/validate_character_identity_rls.py
+
+      - name: Revalider les RPC sociales utilisateur
+        run: python3 scripts/validate_social_user_rpc_v24_5_15.py
+
+      - name: Revalider l’absence de secrets suivis
+        run: python3 scripts/validate_no_committed_secrets.py
