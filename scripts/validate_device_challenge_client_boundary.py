@@ -74,8 +74,18 @@ def main() -> int:
             'pont vers le stockage Web de la clé courante absent')
     require('SecureStore.getItemAsync(DEVICE_KEY_STORAGE)' in mobile,
             'lecture de la clé appareil depuis SecureStore absente')
-    require('SecureStore.setItemAsync(DEVICE_KEY_STORAGE, key)' in mobile,
-            'écriture de la clé appareil dans SecureStore absente')
+    device_store_write = (
+        'SecureStore.setItemAsync(DEVICE_KEY_STORAGE, key, '
+        '{ keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY })'
+    )
+    require(device_store_write in mobile,
+            'une nouvelle clé appareil doit être liée à cet appareil dans le Keychain iOS')
+    require(mobile.count(device_store_write) == 1,
+            'la clé appareil doit être écrite une seule fois avec la politique this-device-only')
+    forbid(mobile, 'SecureStore.setItemAsync(DEVICE_KEY_STORAGE, key);',
+           'écriture de clé appareil avec accessibilité SecureStore par défaut interdite')
+    forbid(mobile, 'WHEN_PASSCODE_SET_THIS_DEVICE_ONLY',
+           'la continuité appareil ne doit pas disparaître silencieusement si le code local est retiré')
     require('setNativeDeviceKey(key)' in mobile,
             'la clé SecureStore ne devient plus la clé native courante')
     require(
@@ -150,7 +160,8 @@ def main() -> int:
 
     print(
         'OK frontière client challenge V25: Web autorise/refuse uniquement via l’appareil courant, '
-        'mobile conserve une seule clé opaque SecureStore générée par UUID cryptographique et aucun client ne retombe sur l’auto-MFA.'
+        'mobile conserve une clé UUID SecureStore liée au dispositif physique pour les nouvelles installations '
+        'et aucun client ne retombe sur l’auto-MFA.'
     )
     return 0
 
