@@ -56,7 +56,7 @@ export function NativeGamesHub({ onOpenPath, onBack }: Props) {
         <Text style={styles.eyebrow}>L’HUMAIN AVANT TOUT</Text>
         <Text style={styles.title}>Mes parties</Text>
         <Text style={styles.intro}>
-          Ce sas ne lit aucune partie, sauvegarde, code de partie, feuille de joueur, résultat de fin de partie, fichier JSON ni préférence de contribution. Il sert uniquement à vous orienter.
+          Ce sas ne lit aucune partie, sauvegarde, code de partie, feuille de joueur, résultat de fin de partie ni fichier JSON. Il ne lit pas non plus vos préférences de contribution et sert uniquement à vous orienter.
         </Text>
       </View>
 
