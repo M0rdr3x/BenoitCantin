@@ -40,6 +40,20 @@ await postSecurityPushJson(SECURITY_PUSH_RECEIPT_URL, { ids: ['receipt-00000001'
 assert.equal(captured.url, SECURITY_PUSH_RECEIPT_URL);
 assert.deepEqual(JSON.parse(captured.init.body), { ids: ['receipt-00000001'] });
 
+let timedOutSignal = null;
+const stalledFetch = async (_url, init) => {
+  timedOutSignal = init.signal;
+  return await new Promise((resolve, reject) => {
+    init.signal.addEventListener('abort', () => reject(init.signal.reason), { once: true });
+    setTimeout(() => resolve({ ok: true, status: 200 }), SECURITY_PUSH_NETWORK_TIMEOUT_MS + 1000);
+  });
+};
+await assert.rejects(
+  () => postSecurityPushJson(SECURITY_PUSH_SEND_URL, {}, stalledFetch),
+  (error) => error?.name === 'TimeoutError',
+);
+assert.equal(timedOutSignal.aborted, true);
+
 await assert.rejects(
   () => postSecurityPushJson('https://example.com/push', {}, fakeFetch),
   /INVALID_SECURITY_PUSH_URL/,
@@ -49,4 +63,4 @@ await assert.rejects(
   /INVALID_SECURITY_PUSH_FETCH/,
 );
 
-console.log('OK security push network V25: endpoints Expo exacts, POST JSON centralisé et timeout 4s via AbortSignal testé.');
+console.log('OK security push network V25: endpoints Expo exacts, POST JSON centralisé, signal transmis et timeout 4s réellement observé.');
