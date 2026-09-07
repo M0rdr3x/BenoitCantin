@@ -4,6 +4,7 @@ import { NativeAlertsHub } from './NativeAlertsHub';
 import { NativeCharacterHub } from './NativeCharacterHub';
 import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
+import { NativeLibraryHub } from './NativeLibraryHub';
 import { NativeLifeStoryHub } from './NativeLifeStoryHub';
 import { NativeMessagesHub } from './NativeMessagesHub';
 import { NativeParallelWorldHub } from './NativeParallelWorldHub';
@@ -30,6 +31,11 @@ const mainDestinations = [
     label: 'Emploi',
     description: 'Ouvrir un hub natif sans données professionnelles avant le profil et les candidatures protégés.',
     path: '/compte/emploi.html',
+  },
+  {
+    label: 'Ma bibliothèque',
+    description: 'Ouvrir un hub natif sans rôle, licence, progression ni droit d’accès avant la bibliothèque protégée.',
+    path: '/compte/bibliotheque.html',
   },
   {
     label: 'Mon personnage',
@@ -106,6 +112,7 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [characterHubOpen, setCharacterHubOpen] = useState(false);
   const [datingHubOpen, setDatingHubOpen] = useState(false);
   const [employmentHubOpen, setEmploymentHubOpen] = useState(false);
+  const [libraryHubOpen, setLibraryHubOpen] = useState(false);
   const [lifeStoryHubOpen, setLifeStoryHubOpen] = useState(false);
   const [messagesHubOpen, setMessagesHubOpen] = useState(false);
   const [parallelWorldHubOpen, setParallelWorldHubOpen] = useState(false);
@@ -134,6 +141,15 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     return (
       <NativeEmploymentHub
         onBack={() => setEmploymentHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
+  if (libraryHubOpen) {
+    return (
+      <NativeLibraryHub
+        onBack={() => setLibraryHubOpen(false)}
         onOpenPath={onOpenPath}
       />
     );
@@ -204,6 +220,10 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     }
     if (path === '/compte/emploi.html') {
       setEmploymentHubOpen(true);
+      return;
+    }
+    if (path === '/compte/bibliotheque.html') {
+      setLibraryHubOpen(true);
       return;
     }
     if (path === '/compte/mon-personnage.html') {
