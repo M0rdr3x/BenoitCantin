@@ -68,6 +68,9 @@ for needle in (
     "from '../supabase/functions/_shared/security-push-network.mjs'",
     'assert.equal(SECURITY_PUSH_NETWORK_TIMEOUT_MS, 4000)',
     'createSecurityPushAbortSignal(15)',
+    'const stalledFetch = async',
+    "error?.name === 'TimeoutError'",
+    'assert.equal(timedOutSignal.aborted, true)',
     "postSecurityPushJson('https://example.com/push'",
     'INVALID_SECURITY_PUSH_URL',
     'INVALID_SECURITY_PUSH_FETCH',
@@ -82,4 +85,4 @@ for needle in (
 ):
     require(workflow, needle, 'workflow push')
 
-print('OK push background V25: décision sécurité synchrone, Expo hors chemin de réponse, timeout 4s, endpoints exacts et runtime local per_worker.')
+print('OK push background V25: décision sécurité synchrone, Expo hors chemin de réponse, timeout 4s réellement testé, endpoints exacts et runtime local per_worker.')
