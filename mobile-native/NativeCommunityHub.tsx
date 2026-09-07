@@ -12,6 +12,11 @@ const communityDestinations = [
     path: '/compte/communaute.html?surface=web',
   },
   {
+    label: 'Mes commentaires',
+    description: 'Consulter vos commentaires et leur état de modération dans la surface Web sans copier ici leur contenu ou leur statut.',
+    path: '/compte/mes-commentaires.html?surface=web',
+  },
+  {
     label: 'Réseau personnage',
     description: 'Ouvrir le réseau rôle-play sans relier ici votre identité réelle au personnage ni rendre le rôle-play canonique.',
     path: '/compte/reseau-personnage.html?surface=web',
@@ -83,7 +88,7 @@ export function NativeCommunityHub({ onOpenPath, onBack }: Props) {
         <Text style={styles.cardKicker}>MODÉRATION SANS EXPOSITION</Text>
         <Text style={styles.boundaryTitle}>Aucun signalement ni blocage n’est reconstruit localement</Text>
         <Text style={styles.boundaryText}>
-          Ce hub ne signale, ne bloque, ne débloque et ne modère personne. Il ne reçoit ni motif, ni preuve, ni cible, ni statut de dossier. Ces actions restent dans les mécanismes serveur prévus pour protéger les personnes.
+          Ce hub ne lit ni le contenu de vos commentaires ni leur état en attente, publié ou refusé. Il ne signale, ne bloque, ne débloque et ne modère personne; motifs, preuves, cibles et statuts restent dans les mécanismes Web/serveur prévus pour protéger les personnes.
         </Text>
       </View>
 

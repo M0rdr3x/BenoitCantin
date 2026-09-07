@@ -26,6 +26,7 @@ on:
       - 'mobile-native/NativeSettingsHub.tsx'
       - 'mobile-native/NativeSecurityHub.tsx'
       - 'mobile-native/NATIVE_ROUTE_DISPATCH_V25.md'
+      - 'mobile-native/NATIVE_SECONDARY_ROUTE_ALIASES_V25.md'
       - 'mobile-native/NATIVE_GAMES_HUB_V25.md'
       - 'mobile-native/NATIVE_CHARACTER_NETWORK_HUB_V25.md'
       - 'mobile-native/safePublicShare.ts'
@@ -33,6 +34,7 @@ on:
       - 'mobile-native/package-lock.json'
       - 'mobile-native/scripts/validate-vault-mobile.mjs'
       - 'scripts/validate_mobile_native_route_dispatch_v25.py'
+      - 'scripts/validate_mobile_native_secondary_route_aliases_v25.py'
       - 'scripts/validate_mobile_native_personal_ai_hub_v25.py'
       - 'scripts/validate_mobile_native_parallel_world_hub_v25.py'
       - 'scripts/validate_mobile_native_dating_hub_v25.py'
@@ -57,6 +59,7 @@ on:
       - 'scripts/validate_device_challenge_client_boundary.py'
       - 'scripts/validate_no_committed_secrets.py'
       - '.github/workflows/sinjira-mobile-native-character-network-hub-v25.yml'
+      - '.github/workflows/sinjira-mobile-native-secondary-route-aliases-v25.yml'
       - '.github/workflows/sinjira-mobile-native-route-dispatch-v25.yml'
   workflow_dispatch:
 
@@ -75,6 +78,9 @@ jobs:
 
       - name: Valider le routage uniforme des hubs natifs V25
         run: python3 scripts/validate_mobile_native_route_dispatch_v25.py
+
+      - name: Revalider les alias secondaires natifs
+        run: python3 scripts/validate_mobile_native_secondary_route_aliases_v25.py
 
       - name: Revalider le hub Mon IA natif
         run: python3 scripts/validate_mobile_native_personal_ai_hub_v25.py
