@@ -11,9 +11,11 @@ Le dépôt conserve deux réalités complémentaires :
 
 L’historique de reconstruction contient du SQL consolidé et des timestamps de travail qui ne correspondent pas tous au registre distant. Le workspace protégé `.prod-workspace/supabase` est donc obligatoire pour toute opération générique liée à la production.
 
-## Voie canonique — `Supabase production — prévol / synchronisation contrôlée`
+## Voie générique unique — `Supabase production — prévol / synchronisation contrôlée`
 
-Le workflow canonique est `.github/workflows/supabase-production-preflight.yml`.
+Le seul workflow générique autorisé à préparer ou appliquer une synchronisation Supabase production est `.github/workflows/supabase-production-preflight.yml`.
+
+L’ancien workflow `.github/workflows/supabase-production-safe.yml` est retiré et ne doit pas être recréé. Réduire la production à une seule voie générique évite des conditions d’écriture divergentes et rend l’audit du déploiement plus simple.
 
 Son nom de run doit rendre l’intention visible :
 
@@ -52,19 +54,6 @@ Les étapes capables de modifier la production doivent conserver ce triple verro
 `✅ APPLIQUÉ ET VÉRIFIÉ`
 
 Un run nommé `APPLICATION DEMANDÉE` n’est **pas** une preuve d’application réussie. En cas d’échec ou de synchronisation partielle, arrêter la procédure et diagnostiquer la première étape en échec.
-
-## Voie secondaire manuelle — `Synchroniser Supabase production — sécurisé`
-
-Le workflow `.github/workflows/supabase-production-safe.yml` reste une voie manuelle secondaire. Il ne doit pas devenir une voie automatique ni contourner le workflow canonique.
-
-Contraintes minimales :
-- déclenchement `workflow_dispatch` uniquement;
-- `SUPABASE_ACCESS_TOKEN` et `SUPABASE_DB_PASSWORD` obligatoires avant toute liaison distante;
-- `apply=false` = prévol uniquement;
-- `apply=true` = migrations futures et Edge Functions depuis le workspace protégé;
-- aucune primitive de réparation destructive ou de réécriture d’historique.
-
-Par défaut, préférer le workflow canonique `Supabase production — prévol / synchronisation contrôlée`, car son état `PRÉVOL` / `APPLICATION DEMANDÉE` et son verdict final sont explicitement verrouillés par le validateur du ledger.
 
 ## Rollout ciblé d’un module sensible
 
@@ -128,10 +117,11 @@ Le script `scripts/validate_production_migration_ledger.py` vérifie notamment :
 - exactitude du workspace protégé;
 - absence de DDL dans les marqueurs déjà appliqués;
 - transmission des migrations futures;
-- contrat des workflows génériques de production;
+- contrat de la voie générique unique de production;
+- absence de l’ancien workflow générique redondant;
 - cohérence de ce runbook avec la baseline du ledger et les garde-fous d’application.
 
-Le workflow `Validation du ledger Supabase production` doit être déclenché lorsqu’un changement touche ce runbook, afin qu’une documentation obsolète ne puisse pas être fusionnée silencieusement.
+Le workflow `Validation du ledger Supabase production` doit être déclenché lorsqu’un changement touche le runbook, le workflow canonique, l’ancien chemin retiré ou le garde historique, afin qu’une seconde voie d’écriture ou une documentation obsolète ne puisse pas être fusionnée silencieusement.
 
 ## Reconstruction d’une base neuve
 
