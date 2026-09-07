@@ -153,6 +153,19 @@ function hasSensitiveExternalMaterial(parsed: URL) {
   return containsSensitiveExternalAssignment(parsed.hash);
 }
 
+function isSafeTelephoneUrl(parsed: URL) {
+  if (parsed.protocol !== 'tel:' || parsed.search || parsed.hash) return false;
+  let number: string;
+  try {
+    number = decodeURIComponent(parsed.pathname);
+  } catch {
+    return false;
+  }
+  if (!/^\+?[0-9(). \-]+$/.test(number)) return false;
+  const digits = number.replace(/\D/g, '');
+  return digits.length >= 3 && digits.length <= 15;
+}
+
 function isVaultUrl(url: string) {
   try {
     const parsed = new URL(url, ORIGIN);
@@ -600,6 +613,11 @@ export default function App() {
 
     if (!EXTERNAL_SAFE_PROTOCOLS.has(parsed.protocol)) {
       setNativeMessage('Navigation externe bloquée : SINJIRA n’ouvre pas les schémas ou connexions non autorisés.');
+      return false;
+    }
+
+    if (parsed.protocol === 'tel:' && !isSafeTelephoneUrl(parsed)) {
+      setNativeMessage('Lien téléphonique bloqué : seuls les numéros ordinaires sans code de service ni commande spéciale sont autorisés.');
       return false;
     }
 
