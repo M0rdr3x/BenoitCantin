@@ -24,12 +24,12 @@ const messageDestinations = [
   {
     label: 'Comptes bloqués',
     description: 'Gérer vos blocages dans la surface de sécurité sociale existante.',
-    path: '/compte/blocages.html',
+    path: '/compte/blocages.html?surface=web',
   },
   {
     label: 'Règles de la communauté',
     description: 'Relire les règles applicables aux échanges avant ou pendant une conversation.',
-    path: '/compte/regles-communaute.html',
+    path: '/compte/regles-communaute.html?surface=web',
   },
 ] as const;
 
