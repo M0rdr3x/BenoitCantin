@@ -11,6 +11,7 @@ GAMES = ROOT / "mobile-native" / "NativeGamesHub.tsx"
 COMMUNITY = ROOT / "mobile-native" / "NativeCommunityHub.tsx"
 DOC = ROOT / "mobile-native" / "NATIVE_SECONDARY_ROUTE_ALIASES_V25.md"
 WORKFLOW = ROOT / ".github" / "workflows" / "sinjira-mobile-native-secondary-route-aliases-v25.yml"
+CENTRAL_WORKFLOW = ROOT / ".github" / "workflows" / "sinjira-mobile-native-route-dispatch-v25.yml"
 
 
 def fail(message: str) -> None:
@@ -29,15 +30,23 @@ def forbid(text: str, marker: str, message: str) -> None:
 
 
 def require_aliases(router: str, aliases: tuple[str, ...], component: str) -> None:
+    positions = []
     for path in aliases:
         require(f"'{path}'" in router, f"route secondaire absente de la liste fermée: {path}")
-        require(f"case '{path}':" in router, f"route secondaire non dispatchée: {path}")
-    require(f"return <{component} onOpenPath={{onOpenPath}} onBack={{onBack}} />;" in router,
-            f"composant de convergence absent: {component}")
+        case_marker = f"case '{path}':"
+        require(case_marker in router, f"route secondaire non dispatchée: {path}")
+        positions.append(router.index(case_marker))
+
+    first_case = min(positions)
+    expected_return = f"return <{component} onOpenPath={{onOpenPath}} onBack={{onBack}} />;"
+    return_pos = router.find("return <", first_case)
+    require(return_pos >= 0, f"aucun retour trouvé après les alias de {component}")
+    require(router.startswith(expected_return, return_pos),
+            f"les alias ne convergent pas directement vers {component}")
 
 
 def main() -> int:
-    for path in (ROUTER, LIBRARY, GAMES, COMMUNITY, DOC, WORKFLOW):
+    for path in (ROUTER, LIBRARY, GAMES, COMMUNITY, DOC, WORKFLOW, CENTRAL_WORKFLOW):
         require(path.is_file(), f"fichier manquant: {path.relative_to(ROOT)}")
 
     router = ROUTER.read_text("utf-8")
@@ -46,6 +55,7 @@ def main() -> int:
     community = COMMUNITY.read_text("utf-8")
     doc = DOC.read_text("utf-8")
     workflow = WORKFLOW.read_text("utf-8")
+    central_workflow = CENTRAL_WORKFLOW.read_text("utf-8")
 
     require("import { NativePrivacyHub } from './NativePrivacyHub';" in router,
             "hub Vie privée absent du routeur")
@@ -160,11 +170,17 @@ def main() -> int:
     for marker in required_workflow:
         require(marker in workflow, f"preuve CI manquante: {marker}")
 
-    workflow_lower = workflow.lower()
-    for marker in ("environment: production", "supabase_access_token", "${{ secrets.", "supabase start", "supabase db"):
-        forbid(workflow_lower, marker.lower(), f"production/secret interdit dans le workflow: {marker}")
+    require("python3 scripts/validate_mobile_native_secondary_route_aliases_v25.py" in central_workflow,
+            "le workflow central ne revalide pas les alias secondaires")
+    require("mobile-native/NATIVE_SECONDARY_ROUTE_ALIASES_V25.md" in central_workflow,
+            "la documentation des alias n’est pas surveillée par le workflow central")
 
-    print("OK alias secondaires natifs V25: convergence vers les hubs existants, aucune donnée secondaire locale et chemins sensibles exclus.")
+    for checked_workflow, label in ((workflow, "dédié"), (central_workflow, "central")):
+        workflow_lower = checked_workflow.lower()
+        for marker in ("environment: production", "supabase_access_token", "${{ secrets.", "supabase start", "supabase db"):
+            forbid(workflow_lower, marker.lower(), f"production/secret interdit dans le workflow {label}: {marker}")
+
+    print("OK alias secondaires natifs V25: convergence exacte vers les hubs existants, aucune donnée secondaire locale et chemins sensibles exclus.")
     return 0
 
 
