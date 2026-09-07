@@ -135,6 +135,44 @@ def validate_production_workflow(errors):
             if marker not in text:
                 errors.append(f'Workflow production sans garde workspace attendu: {marker}')
 
+        visibility_required = (
+            'name: Supabase production — prévol / synchronisation contrôlée',
+            'run-name: "Supabase production — ${{ github.event_name == \'workflow_dispatch\' && inputs.apply == true && \'APPLICATION DEMANDÉE\' || \'PRÉVOL\' }}"',
+            'name: Prévol / synchronisation contrôlée',
+            'echo "ready=false" >> "$GITHUB_OUTPUT"',
+            'if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then',
+            'exit 2',
+            '⛔ NON SYNCHRONISÉ',
+            '🟡 PRÉVOL PR',
+            '🟡 PRÉVOL SEULEMENT',
+            '🟡 PRÉVOL MANUEL SEULEMENT',
+            '✅ APPLIQUÉ ET VÉRIFIÉ',
+            '❌ ÉCHEC OU SYNCHRONISATION PARTIELLE',
+        )
+        for marker in visibility_required:
+            if marker not in text:
+                errors.append(f'Workflow production sans signal de prévol/synchronisation attendu: {marker}')
+
+        apply_gate = "if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}"
+        gated_steps = (
+            'Appliquer les migrations de production depuis le workspace protégé',
+            'Auditer les fonctions SQL après migrations',
+            'Garantir les secrets Edge Functions indispensables',
+            'Déployer toutes les Edge Functions du workspace protégé',
+            'Vérifier les Edge Functions déployées',
+            "Vérifier l'historique et le dry-run après déploiement",
+        )
+        for step_name in gated_steps:
+            marker = f'- name: {step_name}'
+            start = text.find(marker)
+            if start < 0:
+                errors.append(f'Étape de synchronisation production absente: {step_name}')
+                continue
+            next_step = text.find('\n      - name:', start + len(marker))
+            section = text[start:next_step if next_step >= 0 else len(text)]
+            if apply_gate not in section:
+                errors.append(f'Étape de synchronisation sans triple garde workflow_dispatch/apply/secrets: {step_name}')
+
         direct_forbidden = (
             '\n          supabase link --project-ref',
             '\n          supabase db lint --linked',
@@ -146,9 +184,9 @@ def validate_production_workflow(errors):
             if marker in text:
                 errors.append(f'Commande liée exécutée directement hors workspace protégé: {marker.strip()}')
 
-        for marker in ('--include-all', 'supabase migration repair', 'supabase db reset --linked'):
+        for marker in ('--include-all', 'supabase migration repair', 'supabase db reset --linked', 'continue-on-error: true'):
             if marker in text:
-                errors.append(f'Primitive de migration production interdite dans le workflow générique: {marker}')
+                errors.append(f'Primitive ou tolérance interdite dans le workflow production: {marker}')
 
     if not HISTORY_WORKFLOW.is_file():
         errors.append('Workflow de garde historique des migrations absent.')
@@ -232,7 +270,7 @@ def main():
         for err in errors: print('- ' + err)
         return 1
     diff_guard = f'; historique Git protégé depuis {args.base_ref}' if args.base_ref else ''
-    print(f'OK ledger production: {EXPECTED_COUNT} versions distantes protégées; {len(future)} migration(s) future(s) transmissible(s); workflow lié borné au workspace protégé{diff_guard}.')
+    print(f'OK ledger production: {EXPECTED_COUNT} versions distantes protégées; {len(future)} migration(s) future(s) transmissible(s); workflow lié borné au workspace protégé et signalé explicitement comme prévol/application contrôlée{diff_guard}.')
     return 0
 
 
