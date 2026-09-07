@@ -126,15 +126,29 @@ function shareableSinjiraUrl(url: string): string | null {
   }
 }
 
+function containsSensitiveExternalAssignment(value: string) {
+  let candidate = value.toLowerCase().replace(/\+/g, ' ');
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (Array.from(SENSITIVE_EXTERNAL_PARAMS).some((key) => candidate.includes(`${key}=`))) return true;
+    try {
+      const decoded = decodeURIComponent(candidate);
+      if (decoded === candidate) break;
+      candidate = decoded.toLowerCase();
+    } catch {
+      break;
+    }
+  }
+  return false;
+}
+
 function hasSensitiveExternalMaterial(parsed: URL) {
   if (parsed.username || parsed.password) return true;
-  for (const key of parsed.searchParams.keys()) {
+  if (containsSensitiveExternalAssignment(parsed.pathname)) return true;
+  for (const [key, value] of parsed.searchParams.entries()) {
     if (SENSITIVE_EXTERNAL_PARAMS.has(key.toLowerCase())) return true;
+    if (containsSensitiveExternalAssignment(value)) return true;
   }
-  const hash = parsed.hash.toLowerCase();
-  return Array.from(SENSITIVE_EXTERNAL_PARAMS).some((key) =>
-    hash.includes(`${key}=`) || hash.includes(`${encodeURIComponent(key)}=`),
-  );
+  return containsSensitiveExternalAssignment(parsed.hash);
 }
 
 function isVaultUrl(url: string) {
