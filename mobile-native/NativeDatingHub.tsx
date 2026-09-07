@@ -14,12 +14,12 @@ const datingDestinations = [
   {
     label: 'Comptes bloqués',
     description: 'Gérer vos blocages dans la surface sociale protégée existante.',
-    path: '/compte/blocages.html',
+    path: '/compte/blocages.html?surface=web',
   },
   {
     label: 'Règles de la communauté',
     description: 'Lire les règles de respect, de consentement, de confidentialité et de modération.',
-    path: '/compte/regles-communaute.html',
+    path: '/compte/regles-communaute.html?surface=web',
   },
   {
     label: 'Ma sécurité',
