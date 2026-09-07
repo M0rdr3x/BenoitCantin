@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativeAlertsHub } from './NativeAlertsHub';
 import { NativeCharacterHub } from './NativeCharacterHub';
+import { NativeCommunityHub } from './NativeCommunityHub';
 import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
 import { NativeLibraryHub } from './NativeLibraryHub';
@@ -36,6 +37,11 @@ const mainDestinations = [
     label: 'Ma bibliothèque',
     description: 'Ouvrir un hub natif sans rôle, licence, progression ni droit d’accès avant la bibliothèque protégée.',
     path: '/compte/bibliotheque.html',
+  },
+  {
+    label: 'Communauté',
+    description: 'Ouvrir un hub natif sans identité, fil social, réaction, signalement ni état de modération.',
+    path: '/compte/communaute.html',
   },
   {
     label: 'Mon personnage',
@@ -110,6 +116,7 @@ function DestinationCard({
 export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [alertsHubOpen, setAlertsHubOpen] = useState(false);
   const [characterHubOpen, setCharacterHubOpen] = useState(false);
+  const [communityHubOpen, setCommunityHubOpen] = useState(false);
   const [datingHubOpen, setDatingHubOpen] = useState(false);
   const [employmentHubOpen, setEmploymentHubOpen] = useState(false);
   const [libraryHubOpen, setLibraryHubOpen] = useState(false);
@@ -123,6 +130,15 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     return (
       <NativeCharacterHub
         onBack={() => setCharacterHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
+  if (communityHubOpen) {
+    return (
+      <NativeCommunityHub
+        onBack={() => setCommunityHubOpen(false)}
         onOpenPath={onOpenPath}
       />
     );
@@ -224,6 +240,10 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     }
     if (path === '/compte/bibliotheque.html') {
       setLibraryHubOpen(true);
+      return;
+    }
+    if (path === '/compte/communaute.html') {
+      setCommunityHubOpen(true);
       return;
     }
     if (path === '/compte/mon-personnage.html') {
