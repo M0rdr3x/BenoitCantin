@@ -4,6 +4,7 @@ import { NativeAlertsHub } from './NativeAlertsHub';
 import { NativeCharacterHub } from './NativeCharacterHub';
 import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
+import { NativeLibraryHub } from './NativeLibraryHub';
 import { NativeLifeStoryHub } from './NativeLifeStoryHub';
 import { NativeMessagesHub } from './NativeMessagesHub';
 import { NativeParallelWorldHub } from './NativeParallelWorldHub';
@@ -30,6 +31,11 @@ const mainDestinations = [
     label: 'Emploi',
     description: 'Ouvrir un hub natif sans données professionnelles avant le profil et les candidatures protégés.',
     path: '/compte/emploi.html',
+  },
+  {
+    label: 'Ma bibliothèque',
+    description: 'Ouvrir un hub natif sans rôle, licence, progression ni droit d’accès avant la bibliothèque protégée.',
+    path: '/compte/bibliotheque.html',
   },
   {
     label: 'Mon personnage',
@@ -76,22 +82,9 @@ const accountDestinations = [
   },
 ] as const;
 
-function DestinationCard({
-  label,
-  description,
-  onPress,
-}: {
-  label: string;
-  description: string;
-  onPress: () => void;
-}) {
+function DestinationCard({ label, description, onPress }: { label: string; description: string; onPress: () => void }) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Ouvrir ${label}`}
-      onPress={onPress}
-      style={styles.destinationCard}
-    >
+    <Pressable accessibilityRole="button" accessibilityLabel={`Ouvrir ${label}`} onPress={onPress} style={styles.destinationCard}>
       <View style={styles.destinationCopy}>
         <Text style={styles.destinationTitle}>{label}</Text>
         <Text style={styles.destinationText}>{description}</Text>
@@ -106,134 +99,39 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [characterHubOpen, setCharacterHubOpen] = useState(false);
   const [datingHubOpen, setDatingHubOpen] = useState(false);
   const [employmentHubOpen, setEmploymentHubOpen] = useState(false);
+  const [libraryHubOpen, setLibraryHubOpen] = useState(false);
   const [lifeStoryHubOpen, setLifeStoryHubOpen] = useState(false);
   const [messagesHubOpen, setMessagesHubOpen] = useState(false);
   const [parallelWorldHubOpen, setParallelWorldHubOpen] = useState(false);
   const [personalAiHubOpen, setPersonalAiHubOpen] = useState(false);
   const [profileHubOpen, setProfileHubOpen] = useState(false);
 
-  if (characterHubOpen) {
-    return (
-      <NativeCharacterHub
-        onBack={() => setCharacterHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
-  }
-
-  if (datingHubOpen) {
-    return (
-      <NativeDatingHub
-        onBack={() => setDatingHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
-  }
-
-  if (employmentHubOpen) {
-    return (
-      <NativeEmploymentHub
-        onBack={() => setEmploymentHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
-  }
-
-  if (lifeStoryHubOpen) {
-    return (
-      <NativeLifeStoryHub
-        onBack={() => setLifeStoryHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
-  }
-
-  if (parallelWorldHubOpen) {
-    return (
-      <NativeParallelWorldHub
-        onBack={() => setParallelWorldHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
-  }
-
-  if (personalAiHubOpen) {
-    return (
-      <NativePersonalAiHub
-        onBack={() => setPersonalAiHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
-  }
-
-  if (messagesHubOpen) {
-    return (
-      <NativeMessagesHub
-        onBack={() => setMessagesHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
-  }
-
-  if (alertsHubOpen) {
-    return (
-      <NativeAlertsHub
-        onBack={() => setAlertsHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
-  }
-
-  if (profileHubOpen) {
-    return (
-      <NativeProfileHub
-        onBack={() => setProfileHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
-  }
+  if (characterHubOpen) return <NativeCharacterHub onBack={() => setCharacterHubOpen(false)} onOpenPath={onOpenPath} />;
+  if (datingHubOpen) return <NativeDatingHub onBack={() => setDatingHubOpen(false)} onOpenPath={onOpenPath} />;
+  if (employmentHubOpen) return <NativeEmploymentHub onBack={() => setEmploymentHubOpen(false)} onOpenPath={onOpenPath} />;
+  if (libraryHubOpen) return <NativeLibraryHub onBack={() => setLibraryHubOpen(false)} onOpenPath={onOpenPath} />;
+  if (lifeStoryHubOpen) return <NativeLifeStoryHub onBack={() => setLifeStoryHubOpen(false)} onOpenPath={onOpenPath} />;
+  if (parallelWorldHubOpen) return <NativeParallelWorldHub onBack={() => setParallelWorldHubOpen(false)} onOpenPath={onOpenPath} />;
+  if (personalAiHubOpen) return <NativePersonalAiHub onBack={() => setPersonalAiHubOpen(false)} onOpenPath={onOpenPath} />;
+  if (messagesHubOpen) return <NativeMessagesHub onBack={() => setMessagesHubOpen(false)} onOpenPath={onOpenPath} />;
+  if (alertsHubOpen) return <NativeAlertsHub onBack={() => setAlertsHubOpen(false)} onOpenPath={onOpenPath} />;
+  if (profileHubOpen) return <NativeProfileHub onBack={() => setProfileHubOpen(false)} onOpenPath={onOpenPath} />;
 
   const openMainDestination = (path: string) => {
-    if (path === '/compte/messages.html') {
-      setMessagesHubOpen(true);
-      return;
-    }
-    if (path === '/compte/rencontres.html') {
-      setDatingHubOpen(true);
-      return;
-    }
-    if (path === '/compte/emploi.html') {
-      setEmploymentHubOpen(true);
-      return;
-    }
-    if (path === '/compte/mon-personnage.html') {
-      setCharacterHubOpen(true);
-      return;
-    }
-    if (path === '/compte/monde-parallele.html') {
-      setParallelWorldHubOpen(true);
-      return;
-    }
-    if (path === '/compte/mon-ia.html') {
-      setPersonalAiHubOpen(true);
-      return;
-    }
-    if (path === '/compte/histoire-de-vie.html') {
-      setLifeStoryHubOpen(true);
-      return;
-    }
+    if (path === '/compte/messages.html') { setMessagesHubOpen(true); return; }
+    if (path === '/compte/rencontres.html') { setDatingHubOpen(true); return; }
+    if (path === '/compte/emploi.html') { setEmploymentHubOpen(true); return; }
+    if (path === '/compte/bibliotheque.html') { setLibraryHubOpen(true); return; }
+    if (path === '/compte/mon-personnage.html') { setCharacterHubOpen(true); return; }
+    if (path === '/compte/monde-parallele.html') { setParallelWorldHubOpen(true); return; }
+    if (path === '/compte/mon-ia.html') { setPersonalAiHubOpen(true); return; }
+    if (path === '/compte/histoire-de-vie.html') { setLifeStoryHubOpen(true); return; }
     onOpenPath(path);
   };
 
   const openAccountDestination = (path: string) => {
-    if (path === '/compte/notifications.html') {
-      setAlertsHubOpen(true);
-      return;
-    }
-    if (path === '/compte/profil.html') {
-      setProfileHubOpen(true);
-      return;
-    }
+    if (path === '/compte/notifications.html') { setAlertsHubOpen(true); return; }
+    if (path === '/compte/profil.html') { setProfileHubOpen(true); return; }
     onOpenPath(path);
   };
 
@@ -251,44 +149,25 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
         <View style={styles.securityCopy}>
           <Text style={styles.cardKicker}>PROTÉGER SANS SURVEILLER</Text>
           <Text style={styles.securityTitle}>Ma sécurité</Text>
-          <Text style={styles.securityText}>
-            Ouvrez le hub natif pour la biométrie locale, les alertes et les raccourcis vers le Centre de sécurité.
-          </Text>
+          <Text style={styles.securityText}>Ouvrez le hub natif pour la biométrie locale, les alertes et les raccourcis vers le Centre de sécurité.</Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Ouvrir le hub Ma sécurité"
-          onPress={onOpenSecurity}
-          style={styles.primaryButton}
-        >
+        <Pressable accessibilityRole="button" accessibilityLabel="Ouvrir le hub Ma sécurité" onPress={onOpenSecurity} style={styles.primaryButton}>
           <Text style={styles.primaryButtonText}>Ma sécurité</Text>
         </Pressable>
       </View>
 
       <Text style={styles.sectionTitle}>Continuer dans SINJIRA</Text>
-      <Text style={styles.sectionText}>
-        Les données et décisions restent dans leurs modules actuels. Cet écran ne garde aucun résumé local de votre activité.
-      </Text>
+      <Text style={styles.sectionText}>Les données et décisions restent dans leurs modules actuels. Cet écran ne garde aucun résumé local de votre activité.</Text>
       <View style={styles.destinationList}>
         {mainDestinations.map((item) => (
-          <DestinationCard
-            key={item.path}
-            label={item.label}
-            description={item.description}
-            onPress={() => openMainDestination(item.path)}
-          />
+          <DestinationCard key={item.path} label={item.label} description={item.description} onPress={() => openMainDestination(item.path)} />
         ))}
       </View>
 
       <Text style={styles.sectionTitle}>Compte et protection</Text>
       <View style={styles.destinationList}>
         {accountDestinations.map((item) => (
-          <DestinationCard
-            key={item.path}
-            label={item.label}
-            description={item.description}
-            onPress={() => openAccountDestination(item.path)}
-          />
+          <DestinationCard key={item.path} label={item.label} description={item.description} onPress={() => openAccountDestination(item.path)} />
         ))}
       </View>
 
