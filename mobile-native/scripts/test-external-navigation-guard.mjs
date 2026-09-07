@@ -46,7 +46,8 @@ const runtimeSource = `${protocolLine}\n${sensitiveParams}\n${vaultPathLine}\n${
   `  return shouldStart;\n` +
   `}\n` +
   `(globalThis as any).__sinjiraNavigationRuntime = { ` +
-  `EXTERNAL_SAFE_PROTOCOLS, containsSensitiveExternalAssignment, hasSensitiveExternalMaterial, isSafeTelephoneUrl, buildShouldStartHarness };`;
+  `EXTERNAL_SAFE_PROTOCOLS, containsSensitiveExternalAssignment, hasSensitiveExternalMaterial, ` +
+  `decodeSafeMailtoComponent, isSafeMailtoUrl, isSafeTelephoneUrl, buildShouldStartHarness };`;
 
 const transpiled = ts.transpileModule(runtimeSource, {
   compilerOptions: {
@@ -78,6 +79,8 @@ const {
   EXTERNAL_SAFE_PROTOCOLS,
   containsSensitiveExternalAssignment,
   hasSensitiveExternalMaterial,
+  decodeSafeMailtoComponent,
+  isSafeMailtoUrl,
   isSafeTelephoneUrl,
   buildShouldStartHarness,
 } = runtime;
@@ -85,6 +88,7 @@ const {
 function externalPolicyAllows(rawUrl) {
   const parsed = new URL(rawUrl);
   return EXTERNAL_SAFE_PROTOCOLS.has(parsed.protocol)
+    && (parsed.protocol !== 'mailto:' || isSafeMailtoUrl(parsed))
     && (parsed.protocol !== 'tel:' || isSafeTelephoneUrl(parsed))
     && !hasSensitiveExternalMaterial(parsed);
 }
@@ -154,6 +158,57 @@ for (const candidate of sensitiveAssignments) {
   );
 }
 
+for (const candidate of [
+  'Bonjour',
+  'Bonjour%20monde',
+  'Bonjour%2520monde',
+  '100% ready',
+]) {
+  assert.notEqual(decodeSafeMailtoComponent(candidate), null, `composant mailto ordinaire bloqué: ${candidate}`);
+}
+for (const candidate of [
+  'Bonjour%0D%0ABcc%3Aattacker%40example.com',
+  'Bonjour%250D%250ABcc%253Aattacker%2540example.com',
+  'Bonjour%25250D%25250ABcc%25253Aattacker%252540example.com',
+  'Bonjour%2525250D%2525250ABcc%2525253Aattacker%25252540example.com',
+]) {
+  assert.equal(decodeSafeMailtoComponent(candidate), null, `contrôle mailto encodé non bloqué: ${candidate}`);
+}
+
+const blockedMailtoUrls = [
+  'mailto:user@example.com?bcc=attacker@example.com',
+  'mailto:user@example.com?cc=attacker@example.com',
+  'mailto:user@example.com?to=attacker@example.com',
+  'mailto:user@example.com?from=attacker@example.com',
+  'mailto:user@example.com?reply-to=attacker@example.com',
+  'mailto:user@example.com?b%2563c=attacker@example.com',
+  'mailto:user@example.com?subject=Hello%0D%0ABcc%3Aattacker%40example.com',
+  'mailto:user@example.com?subject=Hello%250D%250ABcc%253Aattacker%2540example.com',
+  'mailto:user@example.com?body=Hello%0D%0ABcc%3Aattacker%40example.com',
+  'mailto:user@example.com,user2@example.com?subject=Bonjour',
+  'mailto:user@example.com;user2@example.com?subject=Bonjour',
+  'mailto:user%0D%0ABcc%3Aattacker@example.com?subject=Bonjour',
+  'mailto:user@example.com?subject=one&subject=two',
+  'mailto:user@example.com#fragment',
+  'mailto:?subject=Sans%20destinataire',
+];
+for (const rawUrl of blockedMailtoUrls) {
+  const parsed = new URL(rawUrl);
+  assert.equal(isSafeMailtoUrl(parsed), false, `URL mailto dangereuse autorisée: ${rawUrl}`);
+}
+
+const allowedMailtoUrls = [
+  'mailto:user@example.com',
+  'mailto:user+tag@example.com?subject=Bonjour',
+  'mailto:user@example.com?subject=Session%20schedule&body=Hello',
+  'mailto:béatrice@example.com?subject=Bonjour%20Montréal',
+  'mailto:user@example.com?body=Prêt%20à%20100%25',
+];
+for (const rawUrl of allowedMailtoUrls) {
+  const parsed = new URL(rawUrl);
+  assert.equal(isSafeMailtoUrl(parsed), true, `URL mailto légitime bloquée: ${rawUrl}`);
+}
+
 const blockedTelephoneUrls = [
   'tel:*123%23',
   'tel:%2A123%23',
@@ -202,6 +257,7 @@ const blockedUrls = [
   'https://example.com/#jwt%253Dsecret',
   'https://user:password@example.com/',
   'https://example.com/?body=hello%2525252520world',
+  ...blockedMailtoUrls,
   ...blockedTelephoneUrls,
 ];
 for (const rawUrl of blockedUrls) {
@@ -213,7 +269,7 @@ const allowedUrls = [
   'https://example.com/article?topic=tokenization',
   'https://example.com/?body=Bring%20your%20password%20manager',
   'https://example.com/?redirect=https%253A%252F%252Fother.test%252Fpath',
-  'mailto:user@example.com?subject=Session%20schedule&body=Hello',
+  ...allowedMailtoUrls,
   ...allowedTelephoneUrls,
 ];
 for (const rawUrl of allowedUrls) {
@@ -308,6 +364,13 @@ for (const rawUrl of allowedUrls) {
   assert.deepEqual(harness.openedUrls, [], 'une sortie sensible ne doit jamais atteindre Linking');
 }
 
+for (const rawUrl of blockedMailtoUrls) {
+  const harness = createShouldStartHarness();
+  assert.equal(harness.shouldStart({ url: rawUrl }), false, `le mailto dangereux doit être refusé: ${rawUrl}`);
+  assert.match(harness.messages.at(-1) || '', /destinataire visible et les champs sujet\/corps sans en-tête caché/i);
+  assert.deepEqual(harness.openedUrls, [], `le mailto dangereux ne doit jamais atteindre Linking: ${rawUrl}`);
+}
+
 for (const rawUrl of blockedTelephoneUrls) {
   const harness = createShouldStartHarness();
   assert.equal(harness.shouldStart({ url: rawUrl }), false, `le tel dangereux doit être refusé: ${rawUrl}`);
@@ -318,6 +381,7 @@ for (const rawUrl of blockedTelephoneUrls) {
 for (const rawUrl of [
   'https://example.com/article',
   'mailto:user@example.com?subject=Bonjour',
+  'mailto:user@example.com?subject=Bonjour&body=Message%20simple',
   'tel:+15145551234',
   'tel:+1%20(514)%20555-1234',
 ]) {
@@ -342,6 +406,7 @@ for (const rawUrl of [
 
 console.log(
   `OK frontière navigation V25: ${blockedUrls.length} cas dangereux refusés, ` +
-  `${allowedUrls.length} cas légitimes permis, ${blockedTelephoneUrls.length} formes tel dangereuses bloquées, ` +
+  `${allowedUrls.length} cas légitimes permis, ${blockedMailtoUrls.length} formes mailto dangereuses bloquées, ` +
+  `${blockedTelephoneUrls.length} formes tel dangereuses bloquées, ` +
   `et shouldStart exécuté avec ses effets de bord critiques sur le code réel de App.tsx.`,
 );
