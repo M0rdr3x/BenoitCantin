@@ -14,6 +14,7 @@ on:
       - 'mobile-native/NativeGamesHub.tsx'
       - 'mobile-native/NativeLibraryHub.tsx'
       - 'mobile-native/NativeCommunityHub.tsx'
+      - 'mobile-native/NativeCharacterNetworkHub.tsx'
       - 'mobile-native/NativeRelationsHub.tsx'
       - 'mobile-native/NativeCommerceHub.tsx'
       - 'mobile-native/NativeLifeStoryHub.tsx'
@@ -26,6 +27,7 @@ on:
       - 'mobile-native/NativeSecurityHub.tsx'
       - 'mobile-native/NATIVE_ROUTE_DISPATCH_V25.md'
       - 'mobile-native/NATIVE_GAMES_HUB_V25.md'
+      - 'mobile-native/NATIVE_CHARACTER_NETWORK_HUB_V25.md'
       - 'mobile-native/safePublicShare.ts'
       - 'mobile-native/package.json'
       - 'mobile-native/package-lock.json'
@@ -38,6 +40,7 @@ on:
       - 'scripts/validate_mobile_native_games_hub_v25.py'
       - 'scripts/validate_mobile_native_library_hub_v25.py'
       - 'scripts/validate_mobile_native_community_hub_v25.py'
+      - 'scripts/validate_mobile_native_character_network_hub_v25.py'
       - 'scripts/validate_mobile_native_relations_hub_v25.py'
       - 'scripts/validate_mobile_native_commerce_hub_v25.py'
       - 'scripts/validate_mobile_native_life_story_hub_v25.py'
@@ -53,6 +56,7 @@ on:
       - 'scripts/validate_mobile_safe_share_v25.py'
       - 'scripts/validate_device_challenge_client_boundary.py'
       - 'scripts/validate_no_committed_secrets.py'
+      - '.github/workflows/sinjira-mobile-native-character-network-hub-v25.yml'
       - '.github/workflows/sinjira-mobile-native-route-dispatch-v25.yml'
   workflow_dispatch:
 
@@ -92,6 +96,9 @@ jobs:
 
       - name: Revalider le hub Communauté natif
         run: python3 scripts/validate_mobile_native_community_hub_v25.py
+
+      - name: Revalider le hub Réseau personnage natif
+        run: python3 scripts/validate_mobile_native_character_network_hub_v25.py
 
       - name: Revalider le hub Relations natif
         run: python3 scripts/validate_mobile_native_relations_hub_v25.py

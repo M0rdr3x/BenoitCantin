@@ -28,6 +28,7 @@ La liste fermée couvre maintenant tous les hubs de navigation déjà fusionnés
 - `/compte/bibliotheque.html` → `NativeLibraryHub`;
 - `/compte/mes-parties.html` → `NativeGamesHub`;
 - `/compte/communaute.html` → `NativeCommunityHub`;
+- `/compte/reseau-personnage.html` → `NativeCharacterNetworkHub`;
 - `/compte/relations.html` → `NativeRelationsHub`;
 - `/compte/mes-achats.html` → `NativeCommerceHub`;
 - `/compte/monde-parallele.html` → `NativeParallelWorldHub`;
@@ -44,6 +45,14 @@ Les onglets persistants et raccourcis du shell qui passent explicitement par `op
 `/compte/mes-parties.html` transporte uniquement une intention de navigation vers `NativeGamesHub`. Le routeur ne reçoit aucune sauvegarde, session, code de partie, compteur, durée, mode de jeu, `player_sheets`, `endgame_sheets` ou fichier `SINJIRA_GAME_SAVE_V1`.
 
 Les exports et imports privés restent des actions Web explicites. Le routeur ne sélectionne, ne lit, ne parse, ne copie et ne partage aucun fichier de sauvegarde.
+
+## Réseau personnage
+
+`/compte/reseau-personnage.html` transporte uniquement une intention de navigation vers `NativeCharacterNetworkHub`.
+
+Le routeur et le hub natif ne reçoivent ni identité réelle, ni identifiant de compte ou de personnage, ni profil social, publication, commentaire, réaction, relation, groupe, blocage, signalement, état de modération ou historique de consultation. Ils ne calculent aucun graphe social et ne relient jamais publiquement l’identité du compte à l’identité fictive.
+
+Les décisions de rôle propriétaire restent côté serveur. Les RPC `is_sinjira_owner` et `ensure_sinjira_owner_character` ne font pas partie du hub natif et ne sont pas reproduites dans React Native. Les publications et interactions rôle-play restent dans la surface Web protégée et ne deviennent jamais canoniques par l’effet du routage natif.
 
 ## Alias Commerce
 
@@ -85,10 +94,10 @@ Le bouton Retour Android ou le retour du hub ferme le routeur et revient à l’
 
 ## CI exhaustive
 
-Le garde central exige la présence de chaque route et de chaque composant actuellement routé. Son workflow revalide également les garde-fous dédiés des hubs Messages, Rencontres, Emploi, Bibliothèque, Mes parties, Communauté, Relations, Commerce, Monde parallèle, Mon IA, Histoire de vie, Mon personnage, Alertes et Profil, ainsi que les frontières Paramètres, Vie privée, Sécurité, navigation, partage, challenge, secrets, coffre et TypeScript.
+Le garde central exige la présence de chaque route et de chaque composant actuellement routé. Son workflow revalide également les garde-fous dédiés des hubs Messages, Rencontres, Emploi, Bibliothèque, Mes parties, Communauté, Réseau personnage, Relations, Commerce, Monde parallèle, Mon IA, Histoire de vie, Mon personnage, Alertes et Profil, ainsi que les frontières Paramètres, Vie privée, Sécurité, navigation, partage, challenge, secrets, coffre et TypeScript.
 
 L’ajout futur d’un hub au routeur doit donc être accompagné de son garde dédié et de son rechaînage dans cette validation centrale.
 
 ## Principe de sécurité
 
-**Protéger sans surveiller.** Ce routeur transporte uniquement une intention de navigation parmi une liste fermée. Il ne transporte ni profil, ni message, ni candidature, ni compatibilité, ni sauvegarde de jeu, ni relation familiale, ni achat, ni solde, ni identité narrative, ni histoire de vie, ni réglage IA, ni état de sécurité.
+**Protéger sans surveiller.** Ce routeur transporte uniquement une intention de navigation parmi une liste fermée. Il ne transporte ni profil, ni message, ni candidature, ni compatibilité, ni sauvegarde de jeu, ni relation familiale, ni achat, ni solde, ni identité réelle, ni identité de personnage, ni graphe social, ni histoire de vie, ni réglage IA, ni état de sécurité.

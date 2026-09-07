@@ -1,5 +1,6 @@
 import { NativeAlertsHub } from './NativeAlertsHub';
 import { NativeCharacterHub } from './NativeCharacterHub';
+import { NativeCharacterNetworkHub } from './NativeCharacterNetworkHub';
 import { NativeCommerceHub } from './NativeCommerceHub';
 import { NativeCommunityHub } from './NativeCommunityHub';
 import { NativeDatingHub } from './NativeDatingHub';
@@ -20,6 +21,7 @@ export const NATIVE_MODULE_PATHS = [
   '/compte/bibliotheque.html',
   '/compte/mes-parties.html',
   '/compte/communaute.html',
+  '/compte/reseau-personnage.html',
   '/compte/relations.html',
   '/compte/mes-achats.html',
   '/compte/marche.html',
@@ -59,6 +61,8 @@ export function NativeModuleRouter({ path, onOpenPath, onBack }: Props) {
       return <NativeGamesHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/communaute.html':
       return <NativeCommunityHub onOpenPath={onOpenPath} onBack={onBack} />;
+    case '/compte/reseau-personnage.html':
+      return <NativeCharacterNetworkHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/relations.html':
       return <NativeRelationsHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/mes-achats.html':
