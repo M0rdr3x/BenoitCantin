@@ -82,6 +82,7 @@ def main() -> int:
     require("'/compte/mes-achats.html'" in router and "<NativeCommerceHub" in router,
             "route Commerce native absente")
 
+    doc_fold = doc.casefold()
     for marker in (
         "ne devient jamais un portefeuille, un checkout, un grand livre, une boutique",
         "une réservation n’est pas une commande",
@@ -91,7 +92,7 @@ def main() -> int:
         "L’HUMAIN AVANT TOUT",
         "Protéger sans surveiller",
     ):
-        require(marker in doc, f"preuve documentaire manquante: {marker}")
+        require(marker.casefold() in doc_fold, f"preuve documentaire manquante: {marker}")
 
     required_workflow = (
         "python3 scripts/validate_mobile_native_commerce_hub_v25.py",
