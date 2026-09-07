@@ -7,6 +7,7 @@ on:
       - 'mobile-native/App.tsx'
       - 'mobile-native/package.json'
       - 'mobile-native/package-lock.json'
+      - 'mobile-native/scripts/test-external-navigation-guard.mjs'
       - 'scripts/validate_mobile_navigation_boundary_v25.py'
       - '.github/workflows/sinjira-mobile-navigation-boundary-v25.yml'
   workflow_dispatch:
@@ -37,6 +38,10 @@ jobs:
       - name: Installer les dépendances
         working-directory: mobile-native
         run: npm install --no-audit --no-fund
+
+      - name: Tester la frontière externe adversariale
+        working-directory: mobile-native
+        run: npm run test:navigation-guard
 
       - name: Vérifier le contrat mobile sensible existant
         working-directory: mobile-native

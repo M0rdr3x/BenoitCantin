@@ -9,6 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "validate:vault": "node scripts/validate-vault-mobile.mjs",
+    "test:navigation-guard": "node scripts/test-external-navigation-guard.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
