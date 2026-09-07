@@ -10,9 +10,12 @@ MIGRATIONS = ROOT / "supabase" / "migrations"
 BRIDGE = ROOT / "assets" / "js" / "sinjira-security-push-bridge-v24-4-98.js"
 MOBILE_APP = ROOT / "mobile-native" / "App.tsx"
 PUSH_MIGRATION = MIGRATIONS / "20260821222633_sinjira_v24_4_98_security_push.sql"
+RECEIPT_MIGRATION = MIGRATIONS / "20260907145100_sinjira_v25_security_push_receipt_queue.sql"
 APPROVED_PRODUCER = EDGE_FUNCTIONS / "security-context" / "index.ts"
 PUSH_POLICY = EDGE_FUNCTIONS / "_shared" / "security-push-policy.mjs"
+RECEIPT_POLICY = EDGE_FUNCTIONS / "_shared" / "security-push-receipts.mjs"
 PUSH_POLICY_TEST = ROOT / "scripts" / "test_security_push_policy_v25.mjs"
+RECEIPT_POLICY_TEST = ROOT / "scripts" / "test_security_push_receipts_v25.mjs"
 WORKFLOW = ROOT / ".github" / "workflows" / "sinjira-native-push-producer-boundary-v25.yml"
 
 PRODUCER_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -21,6 +24,7 @@ PRODUCER_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("sendPushNotificationsAsync", re.compile(r"\bsendPushNotificationsAsync\b")),
     ("ExpoPushMessage", re.compile(r"\bExpoPushMessage\b")),
 )
+RECEIPT_SIGNATURE = re.compile(r"exp\.host/--/api/v2/push/getReceipts", re.I)
 SERVER_SUFFIXES = {".ts", ".tsx", ".js", ".mjs", ".cjs"}
 
 
@@ -48,6 +52,7 @@ def run_self_tests() -> None:
         "Notifications.getExpoPushTokenAsync({ projectId: id })",
         "rpc('security_register_push_endpoint', { p_expo_push_token: token })",
         "create table public.security_push_endpoints (expo_push_token text not null);",
+        "const request = { ids: ['receipt-00000001'] };",
     )
     blocked = (
         "fetch('https://exp.host/--/api/v2/push/send', { method: 'POST' })",
@@ -61,6 +66,10 @@ def run_self_tests() -> None:
     for sample in blocked:
         if not producer_hits(sample):
             fail(f"auto-test faux négatif: {sample}")
+    if not RECEIPT_SIGNATURE.search("fetch('https://exp.host/--/api/v2/push/getReceipts')"):
+        fail("auto-test faux négatif sur l’API de reçus Expo")
+    if RECEIPT_SIGNATURE.search("fetch('https://exp.host/--/api/v2/push/send')"):
+        fail("auto-test faux positif sur l’API de reçus Expo")
 
 
 def validate_approved_native_push_emitter() -> None:
@@ -68,12 +77,16 @@ def validate_approved_native_push_emitter() -> None:
         fail("répertoire supabase/functions absent")
 
     producers: list[tuple[Path, list[str]]] = []
+    receipt_readers: list[Path] = []
     for path in sorted(EDGE_FUNCTIONS.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in SERVER_SUFFIXES:
             continue
-        hits = producer_hits(path.read_text(encoding="utf-8"))
+        text = path.read_text(encoding="utf-8")
+        hits = producer_hits(text)
         if hits:
             producers.append((path, hits))
+        if RECEIPT_SIGNATURE.search(text):
+            receipt_readers.append(path)
 
     if not producers:
         fail("le producteur push de sécurité attendu a disparu sans remplacement explicite")
@@ -92,16 +105,29 @@ def validate_approved_native_push_emitter() -> None:
 
     if len(producers) != 1 or producers[0][0] != APPROVED_PRODUCER:
         fail("un seul producteur Expo/native est autorisé: supabase/functions/security-context/index.ts")
+    if receipt_readers != [APPROVED_PRODUCER]:
+        names = ", ".join(str(path.relative_to(ROOT)) for path in receipt_readers) or "aucun"
+        fail(f"l’API de reçus Expo doit rester bornée à security-context; lecteurs détectés: {names}")
 
     text = read(APPROVED_PRODUCER)
     required = (
         "from '../_shared/security-push-policy.mjs'",
+        "from '../_shared/security-push-receipts.mjs'",
         "buildSecurityPushMessage(endpoint.expo_push_token, outcome)",
         "offset += SECURITY_PUSH_MAX_BATCH",
         "endpoints.slice(offset, offset + SECURITY_PUSH_MAX_BATCH)",
-        "endpointBatch[index]?.id",
+        "resolveSecurityPushTickets(tickets, endpointBatch)",
+        ".from('security_push_receipt_queue')",
+        ".upsert(resolved.receiptRows, { onConflict: 'expo_receipt_id', ignoreDuplicates: true })",
+        "processSecurityPushReceipts(service)",
+        ".limit(SECURITY_PUSH_RECEIPT_MAX_BATCH)",
+        "buildSecurityPushReceiptRequest(pending.map((row: any) => row.expo_receipt_id))",
+        "fetch('https://exp.host/--/api/v2/push/getReceipts'",
+        "resolveSecurityPushReceipts(pending, result?.data)",
+        ".in('expo_receipt_id', resolved.handledReceiptIds)",
         "fetch('https://exp.host/--/api/v2/push/send'",
         "console.warn('[security-context] Expo Push HTTP', response.status)",
+        "console.warn('[security-context] Expo Receipt HTTP', response.status)",
     )
     for needle in required:
         assert_contains(text, needle, "producteur push approuvé")
@@ -110,6 +136,7 @@ def validate_approved_native_push_emitter() -> None:
         "data: { path:",
         "await response.text()",
         "console.warn('[security-context] envoi push impossible', error)",
+        "console.warn('[security-context] lecture reçus push impossible', error)",
         "console.warn('[security-context] endpoints push indisponibles', error.message)",
     )
     for needle in forbidden:
@@ -167,6 +194,58 @@ def validate_payload_policy() -> None:
         assert_contains(test, needle, "test payload push")
 
 
+def validate_receipt_policy() -> None:
+    text = read(RECEIPT_POLICY)
+    required = (
+        "export const SECURITY_PUSH_RECEIPT_MAX_BATCH = 1000;",
+        "export function buildSecurityPushReceiptRequest(receiptIds)",
+        "throw new TypeError('INVALID_EXPO_RECEIPT_BATCH')",
+        "throw new TypeError('DUPLICATE_EXPO_RECEIPT_ID')",
+        "export function resolveSecurityPushTickets(tickets, endpointRows)",
+        "expo_receipt_id: normalizeReceiptId(ticket?.id)",
+        "export function classifySecurityPushReceipt(receipt)",
+        "return 'provider_accepted'",
+        "return 'device_not_registered'",
+        "export function resolveSecurityPushReceipts(pendingRows, receiptData)",
+        "if (!Object.hasOwn(data, receiptId)) continue;",
+        "handledReceiptIds.push(receiptId)",
+    )
+    for needle in required:
+        assert_contains(text, needle, "politique reçus push")
+
+    for forbidden in (
+        "title",
+        "body",
+        "risk_score",
+        "country_code",
+        "region_code",
+        "access_token",
+        "refresh_token",
+        "expo_push_token",
+        "user_id",
+        "security.",
+    ):
+        if forbidden in text.lower():
+            fail(f"la politique de reçus ne doit pas connaître de contenu utilisateur: {forbidden}")
+
+    test = read(RECEIPT_POLICY_TEST)
+    assert_contains(
+        test,
+        "from '../supabase/functions/_shared/security-push-receipts.mjs'",
+        "test runtime sur la vraie politique de reçus",
+    )
+    for needle in (
+        "assert.equal(SECURITY_PUSH_RECEIPT_MAX_BATCH, 1000)",
+        "resolveSecurityPushTickets(",
+        "resolveSecurityPushReceipts(pending",
+        "un reçu absent de la réponse Expo doit rester en file",
+        "DeviceNotRegistered",
+        "INVALID_EXPO_RECEIPT_BATCH",
+        "DUPLICATE_EXPO_RECEIPT_ID",
+    ):
+        assert_contains(test, needle, "test reçus push")
+
+
 def validate_bridge() -> None:
     text = read(BRIDGE)
     assert_contains(text, "rpc('security_register_push_endpoint'", "enregistrement via RPC")
@@ -175,8 +254,8 @@ def validate_bridge() -> None:
     if re.search(r"\bfetch\s*\(", text):
         fail("le bridge push ne doit pas envoyer directement le token avec fetch()")
     hits = producer_hits(text)
-    if hits:
-        fail(f"le bridge navigateur ne doit pas devenir un émetteur Expo: {', '.join(hits)}")
+    if hits or RECEIPT_SIGNATURE.search(text):
+        fail("le bridge navigateur ne doit pas communiquer directement avec les API Expo serveur")
 
 
 def validate_storage_contract() -> None:
@@ -195,24 +274,47 @@ def validate_storage_contract() -> None:
     for needle in required:
         assert_contains(text, needle, "stockage push privé")
 
+    receipt_sql = read(RECEIPT_MIGRATION)
+    receipt_required = (
+        "create table if not exists public.security_push_receipt_queue",
+        "expo_receipt_id text primary key",
+        "endpoint_id uuid not null references public.security_push_endpoints(id) on delete cascade",
+        "available_after timestamptz not null default (now() + interval '15 minutes')",
+        "expires_at timestamptz not null default (now() + interval '24 hours')",
+        "alter table public.security_push_receipt_queue enable row level security",
+        "revoke all on table public.security_push_receipt_queue from public, anon, authenticated",
+        "grant select, insert, delete on table public.security_push_receipt_queue to service_role",
+    )
+    for needle in receipt_required:
+        assert_contains(receipt_sql, needle, "file reçus push privée")
+
+    forbidden_receipt_columns = re.compile(
+        r"\b(?:title|body|path|user_id|risk_score|country_code|region_code|expo_push_token|access_token|refresh_token)\s+"
+        r"(?:text|uuid|jsonb?|integer|bigint|smallint|boolean|timestamptz)",
+        re.I,
+    )
+    if forbidden_receipt_columns.search(receipt_sql):
+        fail("la file de reçus ne doit pas persister de contenu de notification, identité utilisateur ou secret")
+
+    protected_tables = r"(?:security_push_endpoints|security_push_receipt_queue)"
     dangerous_grant = re.compile(
-        r"grant\s+(?:all(?:\s+privileges)?|select|insert|update|delete)"
-        r"(?:\s*,\s*(?:select|insert|update|delete))*"
-        r"\s+on\s+table\s+public\.security_push_endpoints\s+to\s+[^;]*\b(?:public|anon|authenticated)\b",
+        rf"grant\s+(?:all(?:\s+privileges)?|select|insert|update|delete)"
+        rf"(?:\s*,\s*(?:select|insert|update|delete))*"
+        rf"\s+on\s+table\s+public\.{protected_tables}\s+to\s+[^;]*\b(?:public|anon|authenticated)\b",
         re.I,
     )
     disable_rls = re.compile(
-        r"alter\s+table\s+public\.security_push_endpoints\s+disable\s+row\s+level\s+security",
+        rf"alter\s+table\s+public\.{protected_tables}\s+disable\s+row\s+level\s+security",
         re.I,
     )
     for path in sorted(MIGRATIONS.glob("*.sql")):
         sql = path.read_text(encoding="utf-8")
         if dangerous_grant.search(sql):
-            fail(f"ACL directe interdite sur security_push_endpoints: {path.relative_to(ROOT)}")
+            fail(f"ACL directe interdite sur stockage push privé: {path.relative_to(ROOT)}")
         if disable_rls.search(sql):
-            fail(f"RLS désactivée sur security_push_endpoints: {path.relative_to(ROOT)}")
-        if producer_hits(sql):
-            fail(f"émission Expo/native interdite dans une migration SQL: {path.relative_to(ROOT)}")
+            fail(f"RLS désactivée sur stockage push privé: {path.relative_to(ROOT)}")
+        if producer_hits(sql) or RECEIPT_SIGNATURE.search(sql):
+            fail(f"appel Expo interdit dans une migration SQL: {path.relative_to(ROOT)}")
 
 
 def validate_mobile_registration_and_receiver() -> None:
@@ -234,9 +336,11 @@ def validate_workflow() -> None:
         "supabase/functions/**",
         "supabase/migrations/**",
         "scripts/test_security_push_policy_v25.mjs",
+        "scripts/test_security_push_receipts_v25.mjs",
         "scripts/validate_native_push_producer_boundary_v25.py",
         "python3 scripts/validate_native_push_producer_boundary_v25.py",
         "node scripts/test_security_push_policy_v25.mjs",
+        "node scripts/test_security_push_receipts_v25.mjs",
     ):
         assert_contains(text, needle, "CI frontière push")
 
@@ -245,13 +349,14 @@ def main() -> None:
     run_self_tests()
     validate_approved_native_push_emitter()
     validate_payload_policy()
+    validate_receipt_policy()
     validate_bridge()
     validate_storage_contract()
     validate_mobile_registration_and_receiver()
     validate_workflow()
     print(
-        "OK native push V25: producteur unique approuvé, payload minimal testé, lots bornés à 100, "
-        "logs Expo minimisés, token derrière service_role et réception interne seulement."
+        "OK native push V25: producteur unique, payload minimal, receipts Expo bornés à 1000, "
+        "file privée 15min/24h sans contenu utilisateur, DeviceNotRegistered traité et réception interne seulement."
     )
 
 

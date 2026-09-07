@@ -1,6 +1,12 @@
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
 import { buildSecurityPushMessage, SECURITY_PUSH_MAX_BATCH } from '../_shared/security-push-policy.mjs';
+import {
+  buildSecurityPushReceiptRequest,
+  resolveSecurityPushReceipts,
+  resolveSecurityPushTickets,
+  SECURITY_PUSH_RECEIPT_MAX_BATCH,
+} from '../_shared/security-push-receipts.mjs';
 
 function safeText(value: unknown, max: number) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -28,6 +34,68 @@ function trustedGeo(req: Request) {
   const regionRaw = req.headers.get('x-sinjira-region') || '';
   const region = regionRaw ? regionRaw.slice(0, 80) : null;
   return { country, region };
+}
+
+async function processSecurityPushReceipts(service: ReturnType<typeof serviceClient>) {
+  const nowIso = new Date().toISOString();
+  const { error: cleanupError } = await service
+    .from('security_push_receipt_queue')
+    .delete()
+    .lte('expires_at', nowIso);
+  if (cleanupError) {
+    console.warn('[security-context] purge reçus push indisponible');
+  }
+
+  const { data: pending, error } = await service
+    .from('security_push_receipt_queue')
+    .select('expo_receipt_id,endpoint_id')
+    .lte('available_after', nowIso)
+    .gt('expires_at', nowIso)
+    .order('available_after', { ascending: true })
+    .limit(SECURITY_PUSH_RECEIPT_MAX_BATCH);
+  if (error) {
+    console.warn('[security-context] reçus push indisponibles');
+    return;
+  }
+  if (!pending?.length) return;
+
+  try {
+    const request = buildSecurityPushReceiptRequest(pending.map((row: any) => row.expo_receipt_id));
+    const response = await fetch('https://exp.host/--/api/v2/push/getReceipts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(request)
+    });
+    if (!response.ok) {
+      console.warn('[security-context] Expo Receipt HTTP', response.status);
+      return;
+    }
+
+    const result = await response.json().catch(() => null);
+    const resolved = resolveSecurityPushReceipts(pending, result?.data);
+    if (!resolved.handledReceiptIds.length) return;
+
+    if (resolved.invalidEndpointIds.length) {
+      const { error: disableError } = await service
+        .from('security_push_endpoints')
+        .update({ enabled: false, updated_at: new Date().toISOString() })
+        .in('id', resolved.invalidEndpointIds);
+      if (disableError) {
+        console.warn('[security-context] désactivation endpoint push indisponible');
+        return;
+      }
+    }
+
+    const { error: deleteError } = await service
+      .from('security_push_receipt_queue')
+      .delete()
+      .in('expo_receipt_id', resolved.handledReceiptIds);
+    if (deleteError) {
+      console.warn('[security-context] suppression reçus push indisponible');
+    }
+  } catch {
+    console.warn('[security-context] lecture reçus push impossible');
+  }
 }
 
 async function sendSecurityPush(service: ReturnType<typeof serviceClient>, userId: string, security: any) {
@@ -64,18 +132,27 @@ async function sendSecurityPush(service: ReturnType<typeof serviceClient>, userI
       }
       const result = await response.json().catch(() => null);
       const tickets = Array.isArray(result?.data) ? result.data : [];
-      tickets.forEach((ticket: any, index: number) => {
-        if (ticket?.status === 'error' && ticket?.details?.error === 'DeviceNotRegistered' && endpointBatch[index]?.id) {
-          invalidIds.push(endpointBatch[index].id);
+      const resolved = resolveSecurityPushTickets(tickets, endpointBatch);
+      invalidIds.push(...resolved.invalidEndpointIds);
+
+      if (resolved.receiptRows.length) {
+        const { error: queueError } = await service
+          .from('security_push_receipt_queue')
+          .upsert(resolved.receiptRows, { onConflict: 'expo_receipt_id', ignoreDuplicates: true });
+        if (queueError) {
+          console.warn('[security-context] mise en file reçus push indisponible');
         }
-      });
+      }
     } catch {
       console.warn('[security-context] envoi push impossible');
     }
   }
 
   if (invalidIds.length) {
-    await service.from('security_push_endpoints').update({ enabled: false, updated_at: new Date().toISOString() }).in('id', invalidIds);
+    await service
+      .from('security_push_endpoints')
+      .update({ enabled: false, updated_at: new Date().toISOString() })
+      .in('id', Array.from(new Set(invalidIds)));
   }
 }
 
@@ -103,6 +180,7 @@ Deno.serve(async (req) => {
     });
     if (error) throw error;
 
+    await processSecurityPushReceipts(service);
     await sendSecurityPush(service, user.id, data);
 
     return json({
