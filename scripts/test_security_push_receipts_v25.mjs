@@ -56,16 +56,19 @@ const pending = [
   { expo_receipt_id: id(11), endpoint_id: 'endpoint-a' },
   { expo_receipt_id: id(12), endpoint_id: 'endpoint-b' },
   { expo_receipt_id: id(13), endpoint_id: 'endpoint-c' },
+  { expo_receipt_id: id(14), endpoint_id: 'endpoint-d' },
 ];
 const resolved = resolveSecurityPushReceipts(pending, {
   [id(11)]: { status: 'ok' },
   [id(12)]: { status: 'error', details: { error: 'DeviceNotRegistered' } },
+  [id(14)]: { status: 'pending' },
 });
 assert.deepEqual(resolved, {
   handledReceiptIds: [id(11), id(12)],
   invalidEndpointIds: ['endpoint-b'],
 });
 assert.ok(!resolved.handledReceiptIds.includes(id(13)), 'un reçu absent de la réponse Expo doit rester en file');
+assert.ok(!resolved.handledReceiptIds.includes(id(14)), 'un reçu Expo malformé doit rester en file en fail-closed');
 
 const duplicateEndpoint = resolveSecurityPushReceipts(
   [
@@ -95,4 +98,4 @@ for (const forbidden of [
   assert.ok(!serialized.includes(forbidden), `matière non nécessaire interdite dans la file de reçus: ${forbidden}`);
 }
 
-console.log('OK security push receipts V25: tickets mappés, requêtes <=1000, reçus absents conservés, DeviceNotRegistered isolé et aucune matière de notification persistée.');
+console.log('OK security push receipts V25: tickets mappés, requêtes <=1000, reçus absents/malformés conservés, DeviceNotRegistered isolé et aucune matière de notification persistée.');
