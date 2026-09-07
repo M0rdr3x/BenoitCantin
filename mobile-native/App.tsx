@@ -128,11 +128,12 @@ function shareableSinjiraUrl(url: string): string | null {
 
 function containsSensitiveExternalAssignment(value: string) {
   let candidate = value.toLowerCase().replace(/\+/g, ' ');
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt <= 3; attempt += 1) {
     if (Array.from(SENSITIVE_EXTERNAL_PARAMS).some((key) => candidate.includes(`${key}=`))) return true;
     try {
       const decoded = decodeURIComponent(candidate);
       if (decoded === candidate) break;
+      if (attempt === 3) return true;
       candidate = decoded.toLowerCase();
     } catch {
       break;
