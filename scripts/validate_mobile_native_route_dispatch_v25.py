@@ -13,6 +13,12 @@ PERSONAL_AI_GUARD = ROOT / "scripts" / "validate_mobile_native_personal_ai_hub_v
 PARALLEL_GUARD = ROOT / "scripts" / "validate_mobile_native_parallel_world_hub_v25.py"
 DATING_GUARD = ROOT / "scripts" / "validate_mobile_native_dating_hub_v25.py"
 EMPLOYMENT_GUARD = ROOT / "scripts" / "validate_mobile_native_employment_hub_v25.py"
+LIBRARY_GUARD = ROOT / "scripts" / "validate_mobile_native_library_hub_v25.py"
+COMMUNITY_GUARD = ROOT / "scripts" / "validate_mobile_native_community_hub_v25.py"
+RELATIONS_GUARD = ROOT / "scripts" / "validate_mobile_native_relations_hub_v25.py"
+COMMERCE_GUARD = ROOT / "scripts" / "validate_mobile_native_commerce_hub_v25.py"
+LIFE_STORY_GUARD = ROOT / "scripts" / "validate_mobile_native_life_story_hub_v25.py"
+CHARACTER_GUARD = ROOT / "scripts" / "validate_mobile_native_character_hub_v25.py"
 MESSAGES_GUARD = ROOT / "scripts" / "validate_mobile_native_messages_hub_v25.py"
 ALERTS_GUARD = ROOT / "scripts" / "validate_mobile_native_alerts_hub_v25.py"
 SETTINGS_GUARD = ROOT / "scripts" / "validate_mobile_native_settings_hub_v25.py"
@@ -46,6 +52,8 @@ def main() -> int:
     for path in (
         APP, ROUTER, DOC, WORKFLOW,
         PERSONAL_AI_GUARD, PARALLEL_GUARD, DATING_GUARD, EMPLOYMENT_GUARD,
+        LIBRARY_GUARD, COMMUNITY_GUARD, RELATIONS_GUARD, COMMERCE_GUARD,
+        LIFE_STORY_GUARD, CHARACTER_GUARD,
         MESSAGES_GUARD, ALERTS_GUARD, SETTINGS_GUARD, PRIVACY_GUARD,
         PROFILE_GUARD, HOME_GUARD, SECURITY_GUARD, NAV_GUARD, SHARE_GUARD,
         CHALLENGE_GUARD, SECRET_GUARD, VAULT_GUARD,
@@ -61,8 +69,17 @@ def main() -> int:
         "/compte/messages.html",
         "/compte/rencontres.html",
         "/compte/emploi.html",
+        "/compte/bibliotheque.html",
+        "/compte/communaute.html",
+        "/compte/relations.html",
+        "/compte/mes-achats.html",
+        "/compte/marche.html",
+        "/compte/jetons.html",
+        "/compte/licences.html",
         "/compte/monde-parallele.html",
         "/compte/mon-ia.html",
+        "/compte/histoire-de-vie.html",
+        "/compte/mon-personnage.html",
         "/compte/notifications.html",
         "/compte/profil.html",
     )
@@ -70,17 +87,31 @@ def main() -> int:
         require(path in router, f"route native manquante: {path}")
 
     for marker in (
-        "NativeMessagesHub", "NativeDatingHub", "NativeEmploymentHub", "NativeParallelWorldHub",
-        "NativePersonalAiHub", "NativeAlertsHub", "NativeProfileHub",
+        "NativeMessagesHub", "NativeDatingHub", "NativeEmploymentHub", "NativeLibraryHub",
+        "NativeCommunityHub", "NativeRelationsHub", "NativeCommerceHub", "NativeParallelWorldHub",
+        "NativePersonalAiHub", "NativeLifeStoryHub", "NativeCharacterHub", "NativeAlertsHub",
+        "NativeProfileHub",
         "export function isNativeModulePath(path: string): path is NativeModulePath",
         "export function NativeModuleRouter({ path, onOpenPath, onBack }: Props)",
     ):
         require(marker in router, f"contrat routeur manquant: {marker}")
 
+    for alias in (
+        "/compte/mes-achats.html",
+        "/compte/marche.html",
+        "/compte/jetons.html",
+        "/compte/licences.html",
+    ):
+        require(f"case '{alias}':" in router,
+                f"alias Commerce non dispatché par le routeur: {alias}")
+    require(router.count("return <NativeCommerceHub") == 1,
+            "les routes Commerce doivent converger vers un seul retour NativeCommerceHub")
+
     props_block = router.split("type Props = {", 1)[1].split("};", 1)[0].lower()
     for marker in (
         "user", "profiledata", "messagecontent", "applicationdata", "matchdata", "identitydata",
-        "settingdata", "token", "device", "session", "content", "payload"
+        "settingdata", "token", "device", "session", "content", "payload", "balance", "ledger",
+        "purchase", "preorder", "listing", "license", "relationship", "story", "character"
     ):
         forbid(props_block, marker, f"donnée utilisateur interdite dans les props du routeur: {marker}")
 
@@ -141,8 +172,22 @@ def main() -> int:
     require("{ label: 'Registre perso', path: VAULT_PATH }" in app,
             "Registre doit rester dans le rail avec son gate historique")
 
-    require("ne reçoit aucune donnée utilisateur" in doc.lower(),
+    doc_fold = doc.casefold()
+    require("ne reçoit aucune donnée utilisateur" in doc_fold,
             "documentation de la frontière sans données absente")
+    for marker in (
+        "/compte/bibliotheque.html",
+        "/compte/communaute.html",
+        "/compte/relations.html",
+        "/compte/mes-achats.html",
+        "/compte/histoire-de-vie.html",
+        "/compte/mon-personnage.html",
+    ):
+        require(marker in doc, f"documentation d'une route native actuelle absente: {marker}")
+    require("/compte/marche.html" in doc and "/compte/jetons.html" in doc and "/compte/licences.html" in doc,
+            "documentation des alias Commerce absente")
+    require("intention de navigation" in doc_fold and "aucun solde" in doc_fold,
+            "documentation de la frontière des alias Commerce absente")
     require("Registre personnel" in doc and "n’est pas" in doc,
             "documentation de l'exclusion du Registre absente")
     require("Mode Voyage reste une fonctionnalité Web/serveur" in doc,
@@ -158,6 +203,12 @@ def main() -> int:
         "python3 scripts/validate_mobile_native_parallel_world_hub_v25.py",
         "python3 scripts/validate_mobile_native_dating_hub_v25.py",
         "python3 scripts/validate_mobile_native_employment_hub_v25.py",
+        "python3 scripts/validate_mobile_native_library_hub_v25.py",
+        "python3 scripts/validate_mobile_native_community_hub_v25.py",
+        "python3 scripts/validate_mobile_native_relations_hub_v25.py",
+        "python3 scripts/validate_mobile_native_commerce_hub_v25.py",
+        "python3 scripts/validate_mobile_native_life_story_hub_v25.py",
+        "python3 scripts/validate_mobile_native_character_hub_v25.py",
         "python3 scripts/validate_mobile_native_messages_hub_v25.py",
         "python3 scripts/validate_mobile_native_alerts_hub_v25.py",
         "python3 scripts/validate_mobile_native_settings_hub_v25.py",
@@ -179,8 +230,8 @@ def main() -> int:
         forbid(workflow, marker, f"production/secret interdit dans ce workflow: {marker}")
 
     print(
-        "OK routage natif V25: onglets/raccourcis vers les hubs sans données, "
-        "Registre et Mode Voyage hors routeur, Sécurité dédiée et sortie Web explicite."
+        "OK routage natif V25: tous les hubs courants sont exigés, les alias Commerce convergent sans données, "
+        "Registre et Mode Voyage restent hors routeur et Sécurité conserve son hub dédié."
     )
     return 0
 
