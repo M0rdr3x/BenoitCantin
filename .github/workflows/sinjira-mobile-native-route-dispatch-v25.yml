@@ -11,6 +11,12 @@ on:
       - 'mobile-native/NativeParallelWorldHub.tsx'
       - 'mobile-native/NativeDatingHub.tsx'
       - 'mobile-native/NativeEmploymentHub.tsx'
+      - 'mobile-native/NativeLibraryHub.tsx'
+      - 'mobile-native/NativeCommunityHub.tsx'
+      - 'mobile-native/NativeRelationsHub.tsx'
+      - 'mobile-native/NativeCommerceHub.tsx'
+      - 'mobile-native/NativeLifeStoryHub.tsx'
+      - 'mobile-native/NativeCharacterHub.tsx'
       - 'mobile-native/NativeMessagesHub.tsx'
       - 'mobile-native/NativeAlertsHub.tsx'
       - 'mobile-native/NativeProfileHub.tsx'
@@ -27,6 +33,12 @@ on:
       - 'scripts/validate_mobile_native_parallel_world_hub_v25.py'
       - 'scripts/validate_mobile_native_dating_hub_v25.py'
       - 'scripts/validate_mobile_native_employment_hub_v25.py'
+      - 'scripts/validate_mobile_native_library_hub_v25.py'
+      - 'scripts/validate_mobile_native_community_hub_v25.py'
+      - 'scripts/validate_mobile_native_relations_hub_v25.py'
+      - 'scripts/validate_mobile_native_commerce_hub_v25.py'
+      - 'scripts/validate_mobile_native_life_story_hub_v25.py'
+      - 'scripts/validate_mobile_native_character_hub_v25.py'
       - 'scripts/validate_mobile_native_messages_hub_v25.py'
       - 'scripts/validate_mobile_native_alerts_hub_v25.py'
       - 'scripts/validate_mobile_native_settings_hub_v25.py'
@@ -47,7 +59,7 @@ permissions:
 jobs:
   native-route-dispatch:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,6 +80,24 @@ jobs:
 
       - name: Revalider le hub Emploi natif
         run: python3 scripts/validate_mobile_native_employment_hub_v25.py
+
+      - name: Revalider le hub Bibliothèque natif
+        run: python3 scripts/validate_mobile_native_library_hub_v25.py
+
+      - name: Revalider le hub Communauté natif
+        run: python3 scripts/validate_mobile_native_community_hub_v25.py
+
+      - name: Revalider le hub Relations natif
+        run: python3 scripts/validate_mobile_native_relations_hub_v25.py
+
+      - name: Revalider le hub Commerce natif
+        run: python3 scripts/validate_mobile_native_commerce_hub_v25.py
+
+      - name: Revalider le hub Histoire de vie natif
+        run: python3 scripts/validate_mobile_native_life_story_hub_v25.py
+
+      - name: Revalider le hub Mon personnage natif
+        run: python3 scripts/validate_mobile_native_character_hub_v25.py
 
       - name: Revalider le hub Messages natif
         run: python3 scripts/validate_mobile_native_messages_hub_v25.py
