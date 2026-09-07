@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "mobile-native" / "App.tsx"
 ADVERSARIAL_TEST = ROOT / "mobile-native" / "scripts" / "test-external-navigation-guard.mjs"
 DEEP_LINK_TEST = ROOT / "mobile-native" / "scripts" / "test-deep-link-normalizer.mjs"
+NOTIFICATION_TEST = ROOT / "mobile-native" / "scripts" / "test-notification-navigation-boundary.mjs"
 WORKFLOW = ROOT / ".github" / "workflows" / "sinjira-mobile-navigation-boundary-v25.yml"
 PACKAGE = ROOT / "mobile-native" / "package.json"
 
@@ -20,6 +21,7 @@ def main() -> int:
     text = APP.read_text(encoding="utf-8")
     adversarial_text = ADVERSARIAL_TEST.read_text(encoding="utf-8")
     deep_link_text = DEEP_LINK_TEST.read_text(encoding="utf-8")
+    notification_text = NOTIFICATION_TEST.read_text(encoding="utf-8")
     workflow_text = WORKFLOW.read_text(encoding="utf-8")
     package_text = PACKAGE.read_text(encoding="utf-8")
 
@@ -156,6 +158,48 @@ def main() -> int:
     require("assert.equal(reparsed.hostname, 'www.benoitcantin.com'" in deep_link_text,
             "la matrice deep link doit revérifier l'hôte final après parsing")
 
+    require("Notifications.addNotificationResponseReceivedListener" in text,
+            "les réponses aux notifications doivent rester traitées par le callback natif")
+    require("typeof path === 'string' && path.startsWith('/') && !path.startsWith('//')" in text,
+            "une notification doit accepter seulement un chemin interne absolu à une barre")
+    require("await navigateToUrl(`${ORIGIN}${path}`, tab);" in text,
+            "navigate doit continuer de préfixer l'origine SINJIRA avant tout routage")
+    require("readFile(new URL('../App.tsx', import.meta.url)" in notification_text,
+            "le test notification doit extraire le callback du vrai App.tsx")
+    require("function buildNotificationHarness" in notification_text,
+            "le test notification doit construire un harness autour du vrai callback")
+    require("addNotificationResponseReceivedListener" in notification_text,
+            "le callback notification réel doit être exécuté par le test")
+    require("const navigate = async (path: string, tab?: TabKey) => {" in notification_text,
+            "le vrai navigate de App.tsx doit être extrait avec le callback notification")
+    require("acceptedPaths" in notification_text and "rejectedPaths" in notification_text,
+            "le test notification doit séparer les chemins acceptés des entrées refusées")
+    for marker in (
+        "/compte/profil.html",
+        "/compte/registre-personnel.html",
+        "/https://evil.example/path",
+        "/@evil.example/path",
+        "/%5C%5Cevil.example/path",
+        "/%2F%2Fevil.example/path",
+        "/%0Ahttps%3A%2F%2Fevil.example/path",
+        "https://evil.example/path",
+        "http://evil.example/path",
+        "sinjira://compte/profil.html",
+        "javascript:alert(1)",
+        "//evil.example/path",
+        "///evil.example/path",
+        " /compte/profil.html",
+    ):
+        require(marker in notification_text, f"cas notification obligatoire absent: {marker}")
+    require("assert.equal(reparsed.origin, TEST_ORIGIN" in notification_text,
+            "chaque chemin notification accepté doit rester épinglé à l'origine SINJIRA après parsing")
+    require("assert.equal(reparsed.username, ''" in notification_text and "assert.equal(reparsed.password, ''" in notification_text,
+            "les destinations notification ne doivent jamais produire de userinfo")
+    require("assert.equal(harness.navigatedUrls.length, 0" in notification_text,
+            "les entrées notification refusées ne doivent déclencher aucune navigation")
+    require("Array.from(harness.navigatedUrls, ({ url }) => url)" in notification_text,
+            "la comparaison multi-navigation doit normaliser le tableau issu du contexte VM")
+
     require("isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current" in text,
             "la barrière locale du Coffre doit rester active pendant la navigation")
     require("thirdPartyCookiesEnabled={false}" in text,
@@ -267,16 +311,22 @@ def main() -> int:
             "package.json doit exposer le test adversarial de navigation")
     require('"test:deep-link-normalizer": "node scripts/test-deep-link-normalizer.mjs"' in package_text,
             "package.json doit exposer le test exécutable des deep links")
+    require('"test:notification-navigation": "node scripts/test-notification-navigation-boundary.mjs"' in package_text,
+            "package.json doit exposer le test exécutable des notifications")
     require("mobile-native/scripts/test-external-navigation-guard.mjs" in workflow_text,
             "le workflow doit se déclencher lorsque le test adversarial change")
     require("mobile-native/scripts/test-deep-link-normalizer.mjs" in workflow_text,
             "le workflow doit se déclencher lorsque le test deep link change")
+    require("mobile-native/scripts/test-notification-navigation-boundary.mjs" in workflow_text,
+            "le workflow doit se déclencher lorsque le test notification change")
     require("npm run test:navigation-guard" in workflow_text,
             "le workflow frontière mobile doit exécuter le test adversarial")
     require("npm run test:deep-link-normalizer" in workflow_text,
             "le workflow frontière mobile doit exécuter le test deep link")
+    require("npm run test:notification-navigation" in workflow_text,
+            "le workflow frontière mobile doit exécuter le test notification")
 
-    print("OK navigation mobile V25: frontière externe bornée, userinfo refusé avant classification, mailto limité à un destinataire visible et subject/body sûrs, tel borné aux numéros ordinaires, deep links épinglés à l'origine par test exécutable, décodage fail-closed et décision shouldStart complète exécutée avec effets de bord en CI.")
+    print("OK navigation mobile V25: frontière externe bornée, userinfo refusé avant classification, mailto limité à un destinataire visible et subject/body sûrs, tel borné aux numéros ordinaires, deep links et chemins notification épinglés à l'origine par tests exécutables, décodage fail-closed et décision shouldStart complète exécutée avec effets de bord en CI.")
     return 0
 
 

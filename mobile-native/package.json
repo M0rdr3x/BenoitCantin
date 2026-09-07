@@ -11,6 +11,7 @@
     "validate:vault": "node scripts/validate-vault-mobile.mjs",
     "test:navigation-guard": "node scripts/test-external-navigation-guard.mjs",
     "test:deep-link-normalizer": "node scripts/test-deep-link-normalizer.mjs",
+    "test:notification-navigation": "node scripts/test-notification-navigation-boundary.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
