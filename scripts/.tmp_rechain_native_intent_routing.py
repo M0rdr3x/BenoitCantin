@@ -1,35 +1,8 @@
 from pathlib import Path
 
-root = Path('.')
-workflow_path = root / '.github/workflows/sinjira-mobile-native-route-dispatch-v25.yml'
-doc_path = root / 'mobile-native/NATIVE_ROUTE_DISPATCH_V25.md'
-
-workflow = workflow_path.read_text(encoding='utf-8')
-replacements = [
-    (
-        "      - 'mobile-native/NATIVE_ACCOUNT_ROUTE_CLASSIFICATION_V25.md'\n",
-        "      - 'mobile-native/NATIVE_ACCOUNT_ROUTE_CLASSIFICATION_V25.md'\n      - 'mobile-native/NATIVE_INTENT_ROUTING_V25.md'\n",
-    ),
-    (
-        "      - 'scripts/validate_mobile_native_account_route_classification_v25.py'\n",
-        "      - 'scripts/validate_mobile_native_account_route_classification_v25.py'\n      - 'scripts/validate_mobile_native_intent_routing_v25.py'\n",
-    ),
-    (
-        "      - '.github/workflows/sinjira-mobile-native-account-route-classification-v25.yml'\n",
-        "      - '.github/workflows/sinjira-mobile-native-account-route-classification-v25.yml'\n      - '.github/workflows/sinjira-mobile-native-intent-routing-v25.yml'\n",
-    ),
-    (
-        "      - name: Revalider la classification exhaustive des routes compte\n        run: python3 scripts/validate_mobile_native_account_route_classification_v25.py\n\n",
-        "      - name: Revalider la classification exhaustive des routes compte\n        run: python3 scripts/validate_mobile_native_account_route_classification_v25.py\n\n      - name: Revalider le routage des intentions natives\n        run: python3 scripts/validate_mobile_native_intent_routing_v25.py\n\n",
-    ),
-]
-for old, new in replacements:
-    if old not in workflow:
-        raise SystemExit(f'marqueur workflow introuvable: {old!r}')
-    workflow = workflow.replace(old, new, 1)
-workflow_path.write_text(workflow, encoding='utf-8')
-
+doc_path = Path('mobile-native/NATIVE_ROUTE_DISPATCH_V25.md')
 doc = doc_path.read_text(encoding='utf-8')
+
 old_alias_note = "Cette étape ne réécrit pas les liens profonds reçus par `Linking` ni les navigations internes déjà actives dans la WebView : ces chemins continuent de passer par `navigateToUrl` ou la navigation Web historique. Les sorties explicites des hubs avec `?surface=web` restent elles aussi des sorties Web volontaires."
 new_alias_note = "Les intentions qui passent par `navigateToUrl` sont désormais résolues de façon cohérente : une route de `NATIVE_MODULE_PATHS` sans fragment et sans `surface=web` ouvre son sas natif, tandis qu’une sortie explicite `?surface=web` reste Web. Les navigations internes déjà actives dans la WebView ne sont pas interceptées par ce lot."
 if old_alias_note not in doc:
