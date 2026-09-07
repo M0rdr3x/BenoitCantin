@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Appliquer le patch borné
+      - name: Appliquer le patch borné à navigateToUrl
         run: python3 scripts/.tmp_apply_native_intent_routing_patch.py
 
       - name: Vérifier le diff
