@@ -93,9 +93,15 @@ def main() -> int:
             "les cookies tiers doivent rester désactivés")
 
     guarded_block = text.split("const shouldStart", 1)[1].split("if (!securityReady)", 1)[0]
+    userinfo_guard_index = guarded_block.index("if (parsed.username || parsed.password)")
+    internal_guard_index = guarded_block.index("if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname))")
     protocol_guard_index = guarded_block.index("if (!EXTERNAL_SAFE_PROTOCOLS.has(parsed.protocol))")
     sensitive_guard_index = guarded_block.index("if (hasSensitiveExternalMaterial(parsed))")
     open_url_index = guarded_block.index("void Linking.openURL(url).catch")
+    require(userinfo_guard_index < internal_guard_index < protocol_guard_index,
+            "les identifiants URL doivent être refusés avant toute classification interne/externe")
+    require("les identifiants intégrés à une URL ne sont pas autorisés" in guarded_block,
+            "le refus global userinfo doit fournir un message natif explicite")
     require(protocol_guard_index < sensitive_guard_index < open_url_index,
             "le filtre sensible doit s'appliquer après l'allowlist de protocoles et avant toute ouverture OS")
 
@@ -135,6 +141,7 @@ def main() -> int:
         "about:blank",
         "pas une URL",
         "https://www.sinjira.com/compte/profil.html",
+        "https://user:password@sinjira.com/compte/profil.html",
         "https://sinjira.com/compte/profil.html?access_token=interne",
         "https://www.benoitcantin.com/compte/registre-personnel.html",
         "javascript:access_token=secret",
@@ -142,6 +149,8 @@ def main() -> int:
         "linkingRejects: true",
     ):
         require(marker in adversarial_text, f"cas shouldStart obligatoire absent: {marker}")
+    require("identifiants intégrés à une URL" in adversarial_text,
+            "le test doit vérifier le message du refus userinfo interne")
     require("assert.deepEqual(harness.openedUrls, []" in adversarial_text,
             "les refus doivent vérifier qu'aucune ouverture OS n'a lieu")
     require("assert.deepEqual(harness.openedUrls, [rawUrl]" in adversarial_text,
@@ -156,7 +165,7 @@ def main() -> int:
     require("npm run test:navigation-guard" in workflow_text,
             "le workflow frontière mobile doit exécuter le test adversarial")
 
-    print("OK navigation mobile V25: frontière externe bornée, décodage fail-closed et décision shouldStart complète exécutée avec effets de bord en CI.")
+    print("OK navigation mobile V25: frontière externe bornée, userinfo refusé avant classification, décodage fail-closed et décision shouldStart complète exécutée avec effets de bord en CI.")
     return 0
 
 
