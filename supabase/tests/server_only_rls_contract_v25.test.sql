@@ -76,16 +76,17 @@ insert into expected_server_only_rls(schema_name,table_name,presence_scope,acces
   ('public','sinjira_security_settings','production_observed','service_role_allowed'),
   ('public','social_suspensions','production_observed','service_role_allowed'),
 
-  -- Objet historique de la reconstruction cumulative V24. Le manifeste le
-  -- classe PLANNED_LOCAL_TABLES et la production vérifiée ne possède pas cette table.
-  ('public','content_versions','reconstruction_only','service_role_allowed');
+  -- Objets locaux explicitement planifiés, non revendiqués comme présents en
+  -- production tant que leurs migrations futures n'ont pas été appliquées.
+  ('public','content_versions','reconstruction_only','service_role_allowed'),
+  ('public','security_push_receipt_queue','reconstruction_only','service_role_allowed');
 
 select plan(12);
 
 select is(
   (select count(*)::int from expected_server_only_rls),
-  50,
-  'le contrat classifie les 49 tables production et l’unique table RLS reconstruction-only'
+  51,
+  'le contrat classifie les 49 tables production et deux tables RLS reconstruction-only'
 );
 
 select is(
@@ -96,8 +97,8 @@ select is(
 
 select is(
   (select count(*)::int from expected_server_only_rls where presence_scope='reconstruction_only'),
-  1,
-  'une seule table RLS sans policy est explicitement propre à la reconstruction locale'
+  2,
+  'deux tables RLS sans policy sont explicitement propres à la reconstruction locale'
 );
 
 select is(
@@ -106,8 +107,8 @@ select is(
     from expected_server_only_rls
     where presence_scope='reconstruction_only'
   ),
-  'public.content_versions'::text,
-  'content_versions reste l’unique exception RLS reconstruction-only explicitement nommée'
+  'public.content_versions, public.security_push_receipt_queue'::text,
+  'les exceptions RLS reconstruction-only sont explicitement nommées'
 );
 
 select is(
@@ -118,8 +119,8 @@ select is(
 
 select is(
   (select count(*)::int from expected_server_only_rls where access_class='service_role_allowed'),
-  36,
-  '35 tables production et content_versions peuvent conserver un CRUD direct service_role explicitement autorisé'
+  37,
+  '35 tables production et deux tables reconstruction-only peuvent conserver un CRUD direct service_role explicitement autorisé'
 );
 
 select is(
