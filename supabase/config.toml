@@ -1,5 +1,10 @@
 project_id = "gpvivleexywljowcqkru"
 
+[edge_runtime]
+# Les notifications de sécurité utilisent EdgeRuntime.waitUntil().
+# per_worker empêche le runtime local de terminer la fonction dès la réponse HTTP.
+policy = "per_worker"
+
 [auth]
 enabled = true
 # Contrat SINJIRA : la pile locale/reconstruction refuse les mots de passe < 12 caractères.
