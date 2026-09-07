@@ -4,6 +4,7 @@ import { NativeCommerceHub } from './NativeCommerceHub';
 import { NativeCommunityHub } from './NativeCommunityHub';
 import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
+import { NativeGamesHub } from './NativeGamesHub';
 import { NativeLibraryHub } from './NativeLibraryHub';
 import { NativeLifeStoryHub } from './NativeLifeStoryHub';
 import { NativeMessagesHub } from './NativeMessagesHub';
@@ -17,6 +18,7 @@ export const NATIVE_MODULE_PATHS = [
   '/compte/rencontres.html',
   '/compte/emploi.html',
   '/compte/bibliotheque.html',
+  '/compte/mes-parties.html',
   '/compte/communaute.html',
   '/compte/relations.html',
   '/compte/mes-achats.html',
@@ -53,6 +55,8 @@ export function NativeModuleRouter({ path, onOpenPath, onBack }: Props) {
       return <NativeEmploymentHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/bibliotheque.html':
       return <NativeLibraryHub onOpenPath={onOpenPath} onBack={onBack} />;
+    case '/compte/mes-parties.html':
+      return <NativeGamesHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/communaute.html':
       return <NativeCommunityHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/relations.html':
