@@ -41,6 +41,8 @@ def main() -> int:
             "les identifiants URL userinfo doivent être refusés")
     require("containsSensitiveExternalAssignment(parsed.pathname)" in text,
             "les chemins externes doivent être inspectés pour les affectations sensibles encodées")
+    require("containsSensitiveExternalAssignment(parsed.search)" in text,
+            "la query brute doit être décodée pour bloquer aussi les noms de paramètres sensibles encodés")
     require("parsed.searchParams.entries()" in text,
             "les noms et valeurs des paramètres externes doivent être inspectés")
     require("containsSensitiveExternalAssignment(value)" in text,
@@ -101,7 +103,7 @@ def main() -> int:
         require(secret_marker not in guarded_block,
                 f"la navigation externe ne doit pas transmettre le secret {secret_marker}")
 
-    print("OK navigation mobile V25: WebView HTTPS SINJIRA bornée, schémas externes arbitraires refusés, liens sinjira normalisés et matière sensible encodée bloquée dans chemins, valeurs de query et fragments externes.")
+    print("OK navigation mobile V25: WebView HTTPS SINJIRA bornée, schémas externes arbitraires refusés, liens sinjira normalisés et matière sensible encodée bloquée dans chemins, query brute, valeurs de query et fragments externes.")
     return 0
 
 

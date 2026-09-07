@@ -144,6 +144,7 @@ function containsSensitiveExternalAssignment(value: string) {
 function hasSensitiveExternalMaterial(parsed: URL) {
   if (parsed.username || parsed.password) return true;
   if (containsSensitiveExternalAssignment(parsed.pathname)) return true;
+  if (containsSensitiveExternalAssignment(parsed.search)) return true;
   for (const [key, value] of parsed.searchParams.entries()) {
     if (SENSITIVE_EXTERNAL_PARAMS.has(key.toLowerCase())) return true;
     if (containsSensitiveExternalAssignment(value)) return true;
