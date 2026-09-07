@@ -9,11 +9,17 @@ on:
       - 'mobile-native/NativeGamesHub.tsx'
       - 'mobile-native/NativeCommunityHub.tsx'
       - 'mobile-native/NativeMessagesHub.tsx'
+      - 'mobile-native/NativeDatingHub.tsx'
       - 'mobile-native/NativeCharacterHub.tsx'
       - 'mobile-native/NativeSettingsHub.tsx'
       - 'mobile-native/NativePrivacyHub.tsx'
+      - 'mobile-native/NATIVE_COMMUNITY_HUB_V25.md'
       - 'mobile-native/NATIVE_SECONDARY_ROUTE_ALIASES_V25.md'
       - 'mobile-native/NATIVE_ROUTE_DISPATCH_V25.md'
+      - 'compte/blocages.html'
+      - 'compte/regles-communaute.html'
+      - 'compte/moderation.html'
+      - 'assets/js/sinjira-moderation-appeals-v24-4-90.js'
       - 'mobile-native/safePublicShare.ts'
       - 'mobile-native/package.json'
       - 'mobile-native/package-lock.json'
@@ -24,6 +30,8 @@ on:
       - 'scripts/validate_mobile_native_games_hub_v25.py'
       - 'scripts/validate_mobile_native_community_hub_v25.py'
       - 'scripts/validate_mobile_native_messages_hub_v25.py'
+      - 'scripts/validate_mobile_native_dating_hub_v25.py'
+      - 'scripts/validate_moderation_appeals_v24_4_90.py'
       - 'scripts/validate_mobile_native_character_hub_v25.py'
       - 'scripts/validate_mobile_native_settings_hub_v25.py'
       - 'scripts/validate_mobile_native_privacy_hub_v25.py'
@@ -65,6 +73,12 @@ jobs:
 
       - name: Revalider le hub Messages
         run: python3 scripts/validate_mobile_native_messages_hub_v25.py
+
+      - name: Revalider le hub Rencontres
+        run: python3 scripts/validate_mobile_native_dating_hub_v25.py
+
+      - name: Revalider les décisions et appels humains
+        run: python3 scripts/validate_moderation_appeals_v24_4_90.py
 
       - name: Revalider le hub Mon personnage
         run: python3 scripts/validate_mobile_native_character_hub_v25.py
