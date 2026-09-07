@@ -46,7 +46,7 @@ const runtimeSource = `${protocolLine}\n${sensitiveParams}\n${vaultPathLine}\n${
   `  return shouldStart;\n` +
   `}\n` +
   `(globalThis as any).__sinjiraNavigationRuntime = { ` +
-  `EXTERNAL_SAFE_PROTOCOLS, containsSensitiveExternalAssignment, hasSensitiveExternalMaterial, buildShouldStartHarness };`;
+  `EXTERNAL_SAFE_PROTOCOLS, containsSensitiveExternalAssignment, hasSensitiveExternalMaterial, isSafeTelephoneUrl, buildShouldStartHarness };`;
 
 const transpiled = ts.transpileModule(runtimeSource, {
   compilerOptions: {
@@ -78,12 +78,15 @@ const {
   EXTERNAL_SAFE_PROTOCOLS,
   containsSensitiveExternalAssignment,
   hasSensitiveExternalMaterial,
+  isSafeTelephoneUrl,
   buildShouldStartHarness,
 } = runtime;
 
 function externalPolicyAllows(rawUrl) {
   const parsed = new URL(rawUrl);
-  return EXTERNAL_SAFE_PROTOCOLS.has(parsed.protocol) && !hasSensitiveExternalMaterial(parsed);
+  return EXTERNAL_SAFE_PROTOCOLS.has(parsed.protocol)
+    && (parsed.protocol !== 'tel:' || isSafeTelephoneUrl(parsed))
+    && !hasSensitiveExternalMaterial(parsed);
 }
 
 function createShouldStartHarness({ vaultGateOpen = true, linkingRejects = false } = {}) {
@@ -151,6 +154,34 @@ for (const candidate of sensitiveAssignments) {
   );
 }
 
+const blockedTelephoneUrls = [
+  'tel:*123%23',
+  'tel:%2A123%23',
+  'tel:+15145551234,123',
+  'tel:+15145551234;ext=123',
+  'tel:+15145551234?foo=bar',
+  'tel:+15145551234#service',
+  'tel:+1234567890123456',
+  'tel:12',
+  'tel:+1A5145551234',
+];
+for (const rawUrl of blockedTelephoneUrls) {
+  const parsed = new URL(rawUrl);
+  assert.equal(isSafeTelephoneUrl(parsed), false, `URL tel dangereuse autorisée: ${rawUrl}`);
+}
+
+const allowedTelephoneUrls = [
+  'tel:911',
+  'tel:+15145551234',
+  'tel:(514)%20555-1234',
+  'tel:+1%20(514)%20555-1234',
+  'tel:+33.1.42.68.53.00',
+];
+for (const rawUrl of allowedTelephoneUrls) {
+  const parsed = new URL(rawUrl);
+  assert.equal(isSafeTelephoneUrl(parsed), true, `URL tel légitime bloquée: ${rawUrl}`);
+}
+
 const blockedUrls = [
   'http://example.com/',
   'javascript:alert(1)',
@@ -171,6 +202,7 @@ const blockedUrls = [
   'https://example.com/#jwt%253Dsecret',
   'https://user:password@example.com/',
   'https://example.com/?body=hello%2525252520world',
+  ...blockedTelephoneUrls,
 ];
 for (const rawUrl of blockedUrls) {
   assert.equal(externalPolicyAllows(rawUrl), false, `URL dangereuse autorisée: ${rawUrl}`);
@@ -182,7 +214,7 @@ const allowedUrls = [
   'https://example.com/?body=Bring%20your%20password%20manager',
   'https://example.com/?redirect=https%253A%252F%252Fother.test%252Fpath',
   'mailto:user@example.com?subject=Session%20schedule&body=Hello',
-  'tel:+15145551234',
+  ...allowedTelephoneUrls,
 ];
 for (const rawUrl of allowedUrls) {
   assert.equal(externalPolicyAllows(rawUrl), true, `URL légitime bloquée: ${rawUrl}`);
@@ -276,10 +308,18 @@ for (const rawUrl of allowedUrls) {
   assert.deepEqual(harness.openedUrls, [], 'une sortie sensible ne doit jamais atteindre Linking');
 }
 
+for (const rawUrl of blockedTelephoneUrls) {
+  const harness = createShouldStartHarness();
+  assert.equal(harness.shouldStart({ url: rawUrl }), false, `le tel dangereux doit être refusé: ${rawUrl}`);
+  assert.match(harness.messages.at(-1) || '', /numéros ordinaires sans code de service ni commande spéciale/i);
+  assert.deepEqual(harness.openedUrls, [], `le tel dangereux ne doit jamais atteindre Linking: ${rawUrl}`);
+}
+
 for (const rawUrl of [
   'https://example.com/article',
   'mailto:user@example.com?subject=Bonjour',
   'tel:+15145551234',
+  'tel:+1%20(514)%20555-1234',
 ]) {
   const harness = createShouldStartHarness();
   assert.equal(harness.shouldStart({ url: rawUrl }), false, `la sortie OS doit être interceptée: ${rawUrl}`);
@@ -302,5 +342,6 @@ for (const rawUrl of [
 
 console.log(
   `OK frontière navigation V25: ${blockedUrls.length} cas dangereux refusés, ` +
-  `${allowedUrls.length} cas légitimes permis, et shouldStart exécuté avec ses effets de bord critiques sur le code réel de App.tsx.`,
+  `${allowedUrls.length} cas légitimes permis, ${blockedTelephoneUrls.length} formes tel dangereuses bloquées, ` +
+  `et shouldStart exécuté avec ses effets de bord critiques sur le code réel de App.tsx.`,
 );
