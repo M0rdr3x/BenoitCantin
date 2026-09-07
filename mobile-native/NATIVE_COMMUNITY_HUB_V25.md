@@ -38,6 +38,8 @@ Le hub ne permet donc pas de reconstruire un graphe de personnes bloquées, sign
 
 ## Décisions de modération et appels
 
+### Aucun dossier d’appel dans le natif
+
 Le chemin `/compte/moderation.html` peut ouvrir le sas Communauté, mais le dossier réel reste exclusivement dans `/compte/moderation.html?surface=web` et ses contrôles serveur.
 
 Le hub ne peut pas :
