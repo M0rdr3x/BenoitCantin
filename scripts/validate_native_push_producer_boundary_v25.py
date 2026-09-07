@@ -10,6 +10,10 @@ MIGRATIONS = ROOT / "supabase" / "migrations"
 BRIDGE = ROOT / "assets" / "js" / "sinjira-security-push-bridge-v24-4-98.js"
 MOBILE_APP = ROOT / "mobile-native" / "App.tsx"
 PUSH_MIGRATION = MIGRATIONS / "20260821222633_sinjira_v24_4_98_security_push.sql"
+APPROVED_PRODUCER = EDGE_FUNCTIONS / "security-context" / "index.ts"
+PUSH_POLICY = EDGE_FUNCTIONS / "_shared" / "security-push-policy.mjs"
+PUSH_POLICY_TEST = ROOT / "scripts" / "test_security_push_policy_v25.mjs"
+WORKFLOW = ROOT / ".github" / "workflows" / "sinjira-native-push-producer-boundary-v25.yml"
 
 PRODUCER_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("Expo Push API", re.compile(r"exp\.host/--/api/v2/push/send", re.I)),
@@ -59,23 +63,108 @@ def run_self_tests() -> None:
             fail(f"auto-test faux négatif: {sample}")
 
 
-def validate_no_native_push_emitter() -> None:
+def validate_approved_native_push_emitter() -> None:
     if not EDGE_FUNCTIONS.is_dir():
         fail("répertoire supabase/functions absent")
-    offenders: list[str] = []
+
+    producers: list[tuple[Path, list[str]]] = []
     for path in sorted(EDGE_FUNCTIONS.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in SERVER_SUFFIXES:
             continue
         hits = producer_hits(path.read_text(encoding="utf-8"))
         if hits:
-            offenders.append(f"{path.relative_to(ROOT)} ({', '.join(hits)})")
-    if offenders:
+            producers.append((path, hits))
+
+    if not producers:
+        fail("le producteur push de sécurité attendu a disparu sans remplacement explicite")
+
+    unexpected = [
+        f"{path.relative_to(ROOT)} ({', '.join(hits)})"
+        for path, hits in producers
+        if path != APPROVED_PRODUCER
+    ]
+    if unexpected:
         fail(
-            "un émetteur Expo/native apparaît côté serveur sans contrat de payload approuvé: "
-            + "; ".join(offenders)
-            + ". Ajouter d'abord un builder testé qui borne data.path à un chemin SINJIRA interne "
-            "et interdit secrets/identifiants sensibles."
+            "producteur Expo/native non approuvé détecté: "
+            + "; ".join(unexpected)
+            + ". Toute nouvelle surface d’émission exige un contrat de payload et des tests dédiés."
         )
+
+    if len(producers) != 1 or producers[0][0] != APPROVED_PRODUCER:
+        fail("un seul producteur Expo/native est autorisé: supabase/functions/security-context/index.ts")
+
+    text = read(APPROVED_PRODUCER)
+    required = (
+        "from '../_shared/security-push-policy.mjs'",
+        "buildSecurityPushMessage(endpoint.expo_push_token, outcome)",
+        "offset += SECURITY_PUSH_MAX_BATCH",
+        "endpoints.slice(offset, offset + SECURITY_PUSH_MAX_BATCH)",
+        "endpointBatch[index]?.id",
+        "fetch('https://exp.host/--/api/v2/push/send'",
+        "console.warn('[security-context] Expo Push HTTP', response.status)",
+    )
+    for needle in required:
+        assert_contains(text, needle, "producteur push approuvé")
+
+    forbidden = (
+        "data: { path:",
+        "await response.text()",
+        "console.warn('[security-context] envoi push impossible', error)",
+        "console.warn('[security-context] endpoints push indisponibles', error.message)",
+    )
+    for needle in forbidden:
+        if needle in text:
+            fail(f"le producteur contourne la politique minimale ou journalise trop de détails: {needle}")
+
+
+def validate_payload_policy() -> None:
+    text = read(PUSH_POLICY)
+    required = (
+        "export const SECURITY_PUSH_PATH = '/compte/securite.html';",
+        "export const SECURITY_PUSH_MAX_BATCH = 100;",
+        "export function buildSecurityPushMessage(expoPushToken, outcome)",
+        "if (token.length < 20 || token.length > 300)",
+        "throw new TypeError('INVALID_EXPO_PUSH_TOKEN')",
+        "throw new TypeError('INVALID_SECURITY_PUSH_OUTCOME')",
+        "title: SECURITY_PUSH_TITLE",
+        "body: SECURITY_PUSH_BODIES[outcome]",
+        "data: { path: SECURITY_PUSH_PATH }",
+        "channelId: 'security'",
+        "priority: 'high'",
+        "ttl: 600",
+    )
+    for needle in required:
+        assert_contains(text, needle, "politique payload push")
+
+    for forbidden in (
+        "user_id",
+        "device_id",
+        "endpoint_id",
+        "risk_score",
+        "country_code",
+        "region_code",
+        "access_token",
+        "refresh_token",
+        "security.",
+    ):
+        if forbidden in text.lower():
+            fail(f"la politique de payload ne doit pas connaître de matière sensible: {forbidden}")
+
+    test = read(PUSH_POLICY_TEST)
+    assert_contains(
+        test,
+        "from '../supabase/functions/_shared/security-push-policy.mjs'",
+        "test runtime sur le vrai builder",
+    )
+    for needle in (
+        "assert.equal(SECURITY_PUSH_MAX_BATCH, 100",
+        "assert.deepEqual(challenge",
+        "assert.deepEqual(Object.keys(blocked.data), ['path'])",
+        "INVALID_SECURITY_PUSH_OUTCOME",
+        "INVALID_EXPO_PUSH_TOKEN",
+        "le builder ne doit pas accepter directement un objet de contexte de sécurité",
+    ):
+        assert_contains(test, needle, "test payload push")
 
 
 def validate_bridge() -> None:
@@ -107,8 +196,9 @@ def validate_storage_contract() -> None:
         assert_contains(text, needle, "stockage push privé")
 
     dangerous_grant = re.compile(
-        r"grant\s+(?:all|select|insert|update|delete)(?:\s*,\s*(?:select|insert|update|delete))*"
-        r"\s+on\s+table\s+public\.security_push_endpoints\s+to\s+(?:public|anon|authenticated)\b",
+        r"grant\s+(?:all(?:\s+privileges)?|select|insert|update|delete)"
+        r"(?:\s*,\s*(?:select|insert|update|delete))*"
+        r"\s+on\s+table\s+public\.security_push_endpoints\s+to\s+[^;]*\b(?:public|anon|authenticated)\b",
         re.I,
     )
     disable_rls = re.compile(
@@ -138,15 +228,30 @@ def validate_mobile_registration_and_receiver() -> None:
         assert_contains(text, needle, "frontière mobile push")
 
 
+def validate_workflow() -> None:
+    text = read(WORKFLOW)
+    for needle in (
+        "supabase/functions/**",
+        "supabase/migrations/**",
+        "scripts/test_security_push_policy_v25.mjs",
+        "scripts/validate_native_push_producer_boundary_v25.py",
+        "python3 scripts/validate_native_push_producer_boundary_v25.py",
+        "node scripts/test_security_push_policy_v25.mjs",
+    ):
+        assert_contains(text, needle, "CI frontière push")
+
+
 def main() -> None:
     run_self_tests()
-    validate_no_native_push_emitter()
+    validate_approved_native_push_emitter()
+    validate_payload_policy()
     validate_bridge()
     validate_storage_contract()
     validate_mobile_registration_and_receiver()
+    validate_workflow()
     print(
-        "OK native push V25: aucun émetteur Expo serveur implicite, token stocké derrière service_role, "
-        "bridge limité aux RPC et réception bornée à un chemin SINJIRA interne."
+        "OK native push V25: producteur unique approuvé, payload minimal testé, lots bornés à 100, "
+        "logs Expo minimisés, token derrière service_role et réception interne seulement."
     )
 
 
