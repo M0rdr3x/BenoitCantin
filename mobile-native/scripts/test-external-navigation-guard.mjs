@@ -215,6 +215,17 @@ for (const rawUrl of allowedUrls) {
 {
   const harness = createShouldStartHarness();
   assert.equal(
+    harness.shouldStart({ url: 'https://user:password@sinjira.com/compte/profil.html' }),
+    false,
+    'les identifiants URL doivent être refusés même sur un hôte SINJIRA approuvé',
+  );
+  assert.match(harness.messages.at(-1) || '', /identifiants intégrés à une URL/i);
+  assert.deepEqual(harness.openedUrls, [], 'une URL interne avec userinfo ne doit jamais atteindre Linking');
+}
+
+{
+  const harness = createShouldStartHarness();
+  assert.equal(
     harness.shouldStart({ url: 'https://sinjira.com/compte/profil.html?access_token=interne' }),
     true,
     'la branche interne doit être décidée avant le filtre réservé aux sorties externes',
