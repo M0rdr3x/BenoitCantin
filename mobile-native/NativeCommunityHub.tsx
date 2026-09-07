@@ -27,8 +27,18 @@ const communityDestinations = [
     path: '/compte/regles-communaute.html?surface=web',
   },
   {
-    label: 'Sécurité et blocages',
-    description: 'Gérer les protections sociales dans la surface de sécurité existante sans exposer localement les personnes bloquées ou signalées.',
+    label: 'Comptes bloqués',
+    description: 'Gérer vos blocages dans la surface Web de protection sociale sans exposer ici la liste des personnes bloquées.',
+    path: '/compte/blocages.html?surface=web',
+  },
+  {
+    label: 'Décisions et appels',
+    description: 'Consulter une décision motivée ou exercer votre droit d’appel dans la surface Web protégée, avec révision humaine.',
+    path: '/compte/moderation.html?surface=web',
+  },
+  {
+    label: 'Ma sécurité',
+    description: 'Ouvrir le Centre de sécurité existant sans importer ici les données de sécurité du compte.',
     path: '/compte/securite.html',
   },
 ] as const;
@@ -85,6 +95,14 @@ export function NativeCommunityHub({ onOpenPath, onBack }: Props) {
       </View>
 
       <View style={styles.boundaryCard}>
+        <Text style={styles.cardKicker}>DROIT D’APPEL HUMAIN</Text>
+        <Text style={styles.boundaryTitle}>Aucun dossier d’appel dans le natif</Text>
+        <Text style={styles.boundaryText}>
+          Ce hub ne reçoit aucun identifiant de décision, règle appliquée, motif, durée, date limite d’appel, texte d’appel, statut, motif de révision ou niveau d’urgence. Il ne soumet, ne retire, n’examine et ne tranche aucun appel. La décision et sa révision humaine restent dans la surface Web et les mécanismes serveur prévus à cette fin.
+        </Text>
+      </View>
+
+      <View style={styles.boundaryCard}>
         <Text style={styles.cardKicker}>MODÉRATION SANS EXPOSITION</Text>
         <Text style={styles.boundaryTitle}>Aucun signalement ni blocage n’est reconstruit localement</Text>
         <Text style={styles.boundaryText}>
@@ -94,7 +112,7 @@ export function NativeCommunityHub({ onOpenPath, onBack }: Props) {
 
       <Text style={styles.sectionTitle}>Choisir une destination</Text>
       <Text style={styles.sectionText}>
-        Les identités, contenus et décisions sociales restent dans leurs surfaces existantes. Ce hub ne conserve aucun résumé local de votre activité communautaire.
+        Les identités, contenus, protections et décisions sociales restent dans leurs surfaces existantes. Ce hub ne conserve aucun résumé local de votre activité communautaire.
       </Text>
       <View style={styles.destinationList}>
         {communityDestinations.map((item) => (
