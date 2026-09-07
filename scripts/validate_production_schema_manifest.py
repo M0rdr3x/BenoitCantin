@@ -44,7 +44,8 @@ PLANNED_LOCAL_TABLES={
 'family_relationships','character_questionnaire_drafts',
 'parallel_cycles','parallel_missions','parallel_responses',
 'market_listings','market_favorites','token_ledger',
-'codex_entities','codex_relationships','content_versions'
+'codex_entities','codex_relationships','content_versions',
+'security_push_receipt_queue'
 }
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|private)\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
