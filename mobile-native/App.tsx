@@ -585,6 +585,11 @@ export default function App() {
       return false;
     }
 
+    if (parsed.username || parsed.password) {
+      setNativeMessage('Navigation bloquée : les identifiants intégrés à une URL ne sont pas autorisés.');
+      return false;
+    }
+
     if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)) {
       if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
         void navigate(VAULT_PATH);
