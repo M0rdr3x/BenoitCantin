@@ -385,7 +385,7 @@ export default function App() {
       let key = await SecureStore.getItemAsync(DEVICE_KEY_STORAGE);
       if (!key) {
         key = makeDeviceKey();
-        await SecureStore.setItemAsync(DEVICE_KEY_STORAGE, key);
+        await SecureStore.setItemAsync(DEVICE_KEY_STORAGE, key, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY });
       }
       const biometric = (await SecureStore.getItemAsync(BIOMETRIC_LOCK_STORAGE)) === '1';
       const push = (await SecureStore.getItemAsync(PUSH_OPT_IN_STORAGE)) === '1';
