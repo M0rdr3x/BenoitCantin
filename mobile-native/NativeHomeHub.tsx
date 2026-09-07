@@ -11,6 +11,7 @@ import { NativeMessagesHub } from './NativeMessagesHub';
 import { NativeParallelWorldHub } from './NativeParallelWorldHub';
 import { NativePersonalAiHub } from './NativePersonalAiHub';
 import { NativeProfileHub } from './NativeProfileHub';
+import { NativeRelationsHub } from './NativeRelationsHub';
 
 type Props = {
   onOpenPath: (path: string) => void;
@@ -42,6 +43,11 @@ const mainDestinations = [
     label: 'Communauté',
     description: 'Ouvrir un hub natif sans identité, fil social, réaction, signalement ni état de modération.',
     path: '/compte/communaute.html',
+  },
+  {
+    label: 'Relations et famille',
+    description: 'Ouvrir un hub natif sans relation privée, tranche d’âge, code parental ni lien de supervision local.',
+    path: '/compte/relations.html',
   },
   {
     label: 'Mon personnage',
@@ -125,6 +131,7 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [parallelWorldHubOpen, setParallelWorldHubOpen] = useState(false);
   const [personalAiHubOpen, setPersonalAiHubOpen] = useState(false);
   const [profileHubOpen, setProfileHubOpen] = useState(false);
+  const [relationsHubOpen, setRelationsHubOpen] = useState(false);
 
   if (characterHubOpen) {
     return (
@@ -225,6 +232,15 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     );
   }
 
+  if (relationsHubOpen) {
+    return (
+      <NativeRelationsHub
+        onBack={() => setRelationsHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
   const openMainDestination = (path: string) => {
     if (path === '/compte/messages.html') {
       setMessagesHubOpen(true);
@@ -244,6 +260,10 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     }
     if (path === '/compte/communaute.html') {
       setCommunityHubOpen(true);
+      return;
+    }
+    if (path === '/compte/relations.html') {
+      setRelationsHubOpen(true);
       return;
     }
     if (path === '/compte/mon-personnage.html') {
