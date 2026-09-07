@@ -4,7 +4,7 @@
 
 Le dossier `compte/` contient les surfaces privées, sensibles, contextuelles et historiques de SINJIRA. Une page ne doit jamais devenir implicitement « native » ou implicitement « Web » simplement parce qu’elle a été ajoutée au dépôt.
 
-Cette classification impose donc qu’**every `compte/*.html` appartienne à une catégorie explicite et unique**. Le garde CI compare les fichiers réels du dépôt à cette classification et échoue dès qu’une page apparaît sans décision architecturale.
+Cette classification impose donc que **chaque `compte/*.html` appartienne à une catégorie explicite et unique**. Le garde CI compare les fichiers réels du dépôt à cette classification et échoue dès qu’une page apparaît sans décision architecturale.
 
 **L’HUMAIN AVANT TOUT. PROTÉGER SANS SURVEILLER.**
 
