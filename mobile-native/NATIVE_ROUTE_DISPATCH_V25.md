@@ -120,6 +120,22 @@ Les flux `/compte/connexion.html`, `/compte/inscription.html`, `/compte/mot-de-p
 
 `/compte/projet.html` reste dans la navigation Web de la Bibliothèque, car son contenu dépend du projet sélectionné. `/compte/confidentialite-joueur.html` reste une page d’information Web et renvoie vers le Centre Vie privée pour les actions réelles.
 
+## Classification exhaustive du dossier `compte/`
+
+Le garde `validate_mobile_native_account_route_classification_v25.py` verrouille désormais **toutes les 42 pages HTML** directement présentes sous `compte/`.
+
+La classification est volontairement disjointe :
+
+- 31 routes appartiennent exactement à `NATIVE_MODULE_PATHS`;
+- `/compte/index.html` reste l’accueil Web de repli du compte, distinct de l’Accueil natif `/app/`;
+- `/compte/securite.html` conserve son hub natif dédié hors routeur et sa surface Web canonique;
+- `/compte/registre-personnel.html` reste une surface Web gardée avec contrôle local ponctuel puis protections serveur;
+- les cinq routes connexion/inscription/récupération/MFA restent Web;
+- `/compte/signaler-deces.html` reste une procédure Web sensible;
+- `/compte/projet.html` et `/compte/confidentialite-joueur.html` restent des pages Web contextuelle/informative.
+
+Le détail est documenté dans `NATIVE_ACCOUNT_ROUTE_CLASSIFICATION_V25.md`. Toute nouvelle page `compte/*.html` non classée fait échouer la CI. Ajouter une page au dossier exige donc une décision explicite sur sa frontière avant fusion; aucune route ne peut devenir silencieusement native ou contourner un garde existant.
+
 ## Sortie explicite vers le Web
 
 Quand une personne choisit une action Web depuis un hub natif, `App.tsx` efface d’abord l’intention de module natif, puis utilise la navigation historique. Le Web redevient alors la surface active avec ses protections existantes.
@@ -132,11 +148,11 @@ Le bouton Retour Android ou le retour du hub ferme le routeur et revient à l’
 
 ## CI exhaustive
 
-Le garde central exige la présence de chaque route primaire et de chaque composant actuellement routé. Son workflow revalide aussi le garde des alias secondaires, puis les garde-fous dédiés des hubs Messages, Rencontres, Emploi, Bibliothèque, Mes parties, Communauté, Réseau personnage, Relations, Commerce, Monde parallèle, Mon IA, Histoire de vie, Mon personnage, Alertes et Profil, ainsi que les frontières Paramètres, Vie privée, Sécurité, navigation, partage, challenge, secrets, coffre et TypeScript.
+Le garde central exige la présence de chaque route primaire et de chaque composant actuellement routé. Son workflow revalide d’abord la **classification exhaustive des 42 pages du compte**, puis le garde des alias secondaires et les garde-fous dédiés des hubs Messages, Rencontres, Emploi, Bibliothèque, Mes parties, Communauté, Réseau personnage, Relations, Commerce, Monde parallèle, Mon IA, Histoire de vie, Mon personnage, Alertes et Profil, ainsi que les frontières Paramètres, Vie privée, Sécurité, navigation, partage, challenge, secrets, coffre et TypeScript.
 
-Le workflow des alias secondaires revalide en plus le garde V24.4.90 des décisions et appels, afin de préserver les garanties humaines du serveur pendant l’évolution du routage mobile.
+Le workflow de classification se déclenche sur `compte/*.html`. Une nouvelle page de compte ne peut donc pas être fusionnée sans être classée. Le workflow des alias secondaires revalide en plus le garde V24.4.90 des décisions et appels, afin de préserver les garanties humaines du serveur pendant l’évolution du routage mobile.
 
-L’ajout futur d’un hub ou d’un alias au routeur doit donc être accompagné de sa preuve dédiée et de son rechaînage dans cette validation centrale.
+L’ajout futur d’un hub, d’un alias ou d’une page Web spéciale doit donc être accompagné de sa preuve dédiée et de son rechaînage dans cette validation centrale.
 
 ## Principe de sécurité
 
