@@ -195,8 +195,10 @@ def main() -> int:
             "chaque chemin notification accepté doit rester épinglé à l'origine SINJIRA après parsing")
     require("assert.equal(reparsed.username, ''" in notification_text and "assert.equal(reparsed.password, ''" in notification_text,
             "les destinations notification ne doivent jamais produire de userinfo")
-    require("assert.deepEqual(harness.navigatedUrls, []" in notification_text,
+    require("assert.equal(harness.navigatedUrls.length, 0" in notification_text,
             "les entrées notification refusées ne doivent déclencher aucune navigation")
+    require("Array.from(harness.navigatedUrls, ({ url }) => url)" in notification_text,
+            "la comparaison multi-navigation doit normaliser le tableau issu du contexte VM")
 
     require("isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current" in text,
             "la barrière locale du Coffre doit rester active pendant la navigation")
