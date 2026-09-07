@@ -31,11 +31,25 @@ Lectures et documents étaient déjà des destinations Web du hub Bibliothèque.
 
 Le Programme Contributeur reste volontaire. Le hub ne lit ni le choix de participation, ni l’autorisation de texte libre, ni la demande de retrait des contributions précédentes. Il ne transmet aucune sauvegarde ou statistique de partie.
 
-### Communauté
+### Communauté et protections sociales
 
-- `/compte/mes-commentaires.html` → `NativeCommunityHub`.
+- `/compte/mes-commentaires.html` → `NativeCommunityHub`;
+- `/compte/blocages.html` → `NativeCommunityHub`;
+- `/compte/regles-communaute.html` → `NativeCommunityHub`;
+- `/compte/moderation.html` → `NativeCommunityHub`.
 
-Le hub ne lit ni le contenu des commentaires ni leur état de modération (en attente, publié ou refusé). L’historique et les décisions de modération restent Web/serveur.
+Ces routes ne déplacent aucune action sociale dans React Native. Le hub ne lit ni contenu ou état de commentaire, ni liste de comptes bloqués, ni acceptation des règles, ni dossier de modération.
+
+Pour les appels, le natif ne reçoit aucun identifiant de décision, règle appliquée, exposé des motifs, durée, date limite, texte d’appel, statut, motif de révision ou urgence. Il ne soumet et ne tranche aucun appel. La décision motivée, l’appel gratuit, l’échéance serveur et la **révision humaine obligatoire** restent dans la surface Web/serveur V24.4.90.
+
+Les sorties explicites du hub utilisent :
+
+- `/compte/mes-commentaires.html?surface=web`;
+- `/compte/blocages.html?surface=web`;
+- `/compte/regles-communaute.html?surface=web`;
+- `/compte/moderation.html?surface=web`.
+
+Messages et Rencontres utilisent aussi `?surface=web` pour Blocages et Règles afin qu’un choix volontaire d’action Web ne reboucle pas vers le sas Communauté.
 
 ### Personnage
 
@@ -62,8 +76,6 @@ Les chemins suivants ne sont pas ajoutés à `NATIVE_MODULE_PATHS` :
 - `/compte/projet.html` : vue contextuelle/dynamique d’un projet, qui reste dans la navigation Web de la Bibliothèque;
 - `/compte/confidentialite-joueur.html` : page d’information de confidentialité, lisible directement sur le Web.
 
-Les pages de règles, blocages et modération restent elles aussi accessibles par leurs surfaces Web spécialisées; cette étape ne déplace aucune action de protection ou de modération dans React Native.
-
 ## Frontière technique
 
 `NativeModuleRouter` continue de recevoir uniquement :
@@ -72,7 +84,7 @@ Les pages de règles, blocages et modération restent elles aussi accessibles pa
 - `onOpenPath`;
 - `onBack`.
 
-Aucun alias n’ajoute de `user`, session, contenu, profil, rôle, consentement, candidature, invitation, progression, commentaire, statut de modération ou donnée jeunesse dans les props. Le routeur ne fait aucun appel réseau et n’utilise aucun stockage local.
+Aucun alias n’ajoute de `user`, session, contenu, profil, rôle, consentement, candidature, invitation, progression, commentaire, statut de modération, décision, appel ou donnée jeunesse dans les props. Le routeur ne fait aucun appel réseau et n’utilise aucun stockage local.
 
 Les sorties explicites des hubs vers les pages réelles utilisent `?surface=web` lorsque la destination est une surface privée Web. Ainsi, choisir une action Web ne reboucle pas automatiquement vers le sas natif.
 

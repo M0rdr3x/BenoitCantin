@@ -49,10 +49,10 @@ Les vues secondaires suivantes convergent vers une frontière native existante p
 - `/compte/messages-reels.html` et `/compte/messages-personnage.html` → `NativeMessagesHub`;
 - `/compte/mes-lectures.html`, `/compte/documents.html` et `/compte/playtests.html` → `NativeLibraryHub`;
 - `/compte/contributions.html` → `NativeGamesHub`;
-- `/compte/mes-commentaires.html` → `NativeCommunityHub`;
+- `/compte/mes-commentaires.html`, `/compte/blocages.html`, `/compte/regles-communaute.html` et `/compte/moderation.html` → `NativeCommunityHub`;
 - `/compte/mes-personnages.html` → `NativeCharacterHub`.
 
-Ces alias ne transportent que l’intention de navigation. Le routeur ne transporte aucun message, choix d’identité, progression de lecture, document, candidature ou invitation de playtest, donnée jeunesse, consentement de contribution, sauvegarde, commentaire, état de modération ou identité de personnage.
+Ces alias ne transportent que l’intention de navigation. Le routeur ne transporte aucun message, choix d’identité, progression de lecture, document, candidature ou invitation de playtest, donnée jeunesse, consentement de contribution, sauvegarde, commentaire, liste de blocages, acceptation des règles, décision de modération, dossier d’appel ou identité de personnage.
 
 Le détail de ces convergences et leurs exclusions est verrouillé par `NATIVE_SECONDARY_ROUTE_ALIASES_V25.md` et `validate_mobile_native_secondary_route_aliases_v25.py`.
 
@@ -68,9 +68,15 @@ Lectures, ressources et playtests convergent vers `NativeLibraryHub`. Les droits
 
 Le natif ne reçoit aucune donnée d’âge, de tuteur ou de cohorte jeunesse. Une invitation ou une candidature n’est jamais acceptée, refusée ou approuvée par le routeur.
 
-## Communauté et commentaires
+## Communauté, protections sociales et appels
 
-`/compte/mes-commentaires.html` converge vers `NativeCommunityHub`. Le routeur et le hub ne lisent ni le texte des commentaires, ni leur statut en attente, publié ou refusé. La modération reste dans sa source Web/serveur.
+`/compte/mes-commentaires.html`, `/compte/blocages.html`, `/compte/regles-communaute.html` et `/compte/moderation.html` convergent vers `NativeCommunityHub`.
+
+Le routeur et le hub ne lisent ni texte ou état de commentaire, ni liste de personnes bloquées, ni état d’acceptation des règles. Ils ne reçoivent aucun identifiant de décision, règle appliquée, exposé des motifs, durée, date limite, texte d’appel, statut, motif de révision ou niveau d’urgence.
+
+Toute action réelle utilise une sortie Web explicite avec `?surface=web`. Le natif ne soumet, ne retire, n’examine et ne tranche aucun appel. Les garanties V24.4.90 restent côté Web/serveur : décision humaine motivée, appel gratuit, délai d’appel serveur, masquage réversible et **révision humaine obligatoire**. Le natif et l’IA ne remplacent jamais cette révision humaine.
+
+Les destinations Blocages et Règles depuis `NativeMessagesHub` et `NativeDatingHub` utilisent elles aussi `?surface=web`, afin qu’un choix explicite de gestion ne reboucle pas vers le sas Communauté.
 
 ## Réseau personnage
 
@@ -128,8 +134,10 @@ Le bouton Retour Android ou le retour du hub ferme le routeur et revient à l’
 
 Le garde central exige la présence de chaque route primaire et de chaque composant actuellement routé. Son workflow revalide aussi le garde des alias secondaires, puis les garde-fous dédiés des hubs Messages, Rencontres, Emploi, Bibliothèque, Mes parties, Communauté, Réseau personnage, Relations, Commerce, Monde parallèle, Mon IA, Histoire de vie, Mon personnage, Alertes et Profil, ainsi que les frontières Paramètres, Vie privée, Sécurité, navigation, partage, challenge, secrets, coffre et TypeScript.
 
+Le workflow des alias secondaires revalide en plus le garde V24.4.90 des décisions et appels, afin de préserver les garanties humaines du serveur pendant l’évolution du routage mobile.
+
 L’ajout futur d’un hub ou d’un alias au routeur doit donc être accompagné de sa preuve dédiée et de son rechaînage dans cette validation centrale.
 
 ## Principe de sécurité
 
-**Protéger sans surveiller.** Ce routeur transporte uniquement une intention de navigation parmi une liste fermée. Il ne transporte ni profil, ni message, ni candidature, ni invitation, ni compatibilité, ni sauvegarde de jeu, ni consentement de contribution, ni progression, ni document, ni commentaire, ni état de modération, ni relation familiale, ni achat, ni solde, ni identité réelle, ni identité de personnage, ni graphe social, ni histoire de vie, ni réglage IA, ni état de sécurité.
+**Protéger sans surveiller.** Ce routeur transporte uniquement une intention de navigation parmi une liste fermée. Il ne transporte ni profil, ni message, ni candidature, ni invitation, ni compatibilité, ni sauvegarde de jeu, ni consentement de contribution, ni progression, ni document, ni commentaire, ni liste de blocages, ni décision ou appel de modération, ni relation familiale, ni achat, ni solde, ni identité réelle, ni identité de personnage, ni graphe social, ni histoire de vie, ni réglage IA, ni état de sécurité.

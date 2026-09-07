@@ -30,6 +30,9 @@ export const NATIVE_MODULE_PATHS = [
   '/compte/contributions.html',
   '/compte/communaute.html',
   '/compte/mes-commentaires.html',
+  '/compte/blocages.html',
+  '/compte/regles-communaute.html',
+  '/compte/moderation.html',
   '/compte/reseau-personnage.html',
   '/compte/relations.html',
   '/compte/mes-achats.html',
@@ -79,6 +82,9 @@ export function NativeModuleRouter({ path, onOpenPath, onBack }: Props) {
       return <NativeGamesHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/communaute.html':
     case '/compte/mes-commentaires.html':
+    case '/compte/blocages.html':
+    case '/compte/regles-communaute.html':
+    case '/compte/moderation.html':
       return <NativeCommunityHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/reseau-personnage.html':
       return <NativeCharacterNetworkHub onOpenPath={onOpenPath} onBack={onBack} />;
