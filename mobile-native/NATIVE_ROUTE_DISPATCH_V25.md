@@ -36,17 +36,19 @@ La liste fermée couvre maintenant tous les hubs de navigation déjà fusionnés
 - `/compte/notifications.html` → `NativeAlertsHub`;
 - `/compte/profil.html` → `NativeProfileHub`.
 
-Les onglets persistants et raccourcis dont le chemin appartient à cette liste passent par le routeur avant toute sortie Web.
+Les onglets persistants et raccourcis du shell qui passent explicitement par `openNativeModule` utilisent cette liste fermée avant toute sortie Web.
 
 ## Alias Commerce
 
-Le Commerce possède une seule frontière native. Les chemins directs suivants sont donc aussi des alias vers `NativeCommerceHub` :
+Le Commerce possède une seule frontière native. Les chemins directs suivants sont donc aussi des alias vers `NativeCommerceHub` lorsqu’un appel du shell passe par `openNativeModule` :
 
 - `/compte/marche.html`;
 - `/compte/jetons.html`;
 - `/compte/licences.html`.
 
-Ces alias transportent uniquement une **intention de navigation**. Ils ne transportent aucun solde de Jetons, mouvement de grand livre, brouillon d’annonce, prix, localisation approximative, précommande, préférence commerciale, licence ou droit numérique. Le même composant de sas est utilisé pour éviter qu’une entrée directe contourne la frontière Commerce.
+Ces alias transportent uniquement une **intention de navigation**. Ils ne transportent aucun solde de Jetons, mouvement de grand livre, brouillon d’annonce, prix, localisation approximative, précommande, préférence commerciale, licence ou droit numérique. Le même composant de sas est utilisé pour éviter de créer une logique native commerciale parallèle.
+
+Cette étape ne réécrit pas les liens profonds reçus par `Linking` ni les navigations internes déjà actives dans la WebView : ces chemins continuent de passer par `navigateToUrl` ou la navigation Web historique. Les sorties explicites des hubs avec `?surface=web` restent elles aussi des sorties Web volontaires.
 
 ## Chemins volontairement exclus
 
@@ -68,7 +70,7 @@ Mode Voyage reste une fonctionnalité Web/serveur. Le routeur ne reçoit ni dest
 
 Quand une personne choisit une action Web depuis un hub natif, `App.tsx` efface d’abord l’intention de module natif, puis utilise la navigation historique. Le Web redevient alors la surface active avec ses protections existantes.
 
-Un lien ou raccourci dont le chemin exact appartient à `NATIVE_MODULE_PATHS` est intercepté par le routeur natif. Les autres liens profonds, notifications et états Web précis restent gérés par `navigateToUrl`; le routeur n’intercepte pas arbitrairement des URLs externes ou des variantes non autorisées.
+Les liens profonds, notifications et autres navigations historiques restent gérés par `navigateToUrl`; cette étape n’intercepte pas arbitrairement des URLs externes ou des états Web précis.
 
 ## Retour et partage
 
