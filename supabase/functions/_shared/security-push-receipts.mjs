@@ -76,8 +76,11 @@ export function resolveSecurityPushReceipts(pendingRows, receiptData) {
     if (!currentEndpointId) throw new TypeError('INVALID_PUSH_ENDPOINT_ID');
     if (!Object.hasOwn(data, receiptId)) continue;
 
+    const classification = classifySecurityPushReceipt(data[receiptId]);
+    if (classification === 'invalid') continue;
+
     handledReceiptIds.push(receiptId);
-    if (classifySecurityPushReceipt(data[receiptId]) === 'device_not_registered') {
+    if (classification === 'device_not_registered') {
       invalidEndpointIds.push(currentEndpointId);
     }
   }
