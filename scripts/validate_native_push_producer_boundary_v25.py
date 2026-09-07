@@ -11,7 +11,8 @@ BRIDGE = ROOT / "assets" / "js" / "sinjira-security-push-bridge-v24-4-98.js"
 MOBILE_APP = ROOT / "mobile-native" / "App.tsx"
 PUSH_MIGRATION = MIGRATIONS / "20260821222633_sinjira_v24_4_98_security_push.sql"
 RECEIPT_MIGRATION = MIGRATIONS / "20260907145100_sinjira_v25_security_push_receipt_queue.sql"
-APPROVED_PRODUCER = EDGE_FUNCTIONS / "security-context" / "index.ts"
+APPROVED_ORCHESTRATOR = EDGE_FUNCTIONS / "security-context" / "index.ts"
+APPROVED_TRANSPORT = EDGE_FUNCTIONS / "_shared" / "security-push-network.mjs"
 PUSH_POLICY = EDGE_FUNCTIONS / "_shared" / "security-push-policy.mjs"
 RECEIPT_POLICY = EDGE_FUNCTIONS / "_shared" / "security-push-receipts.mjs"
 PUSH_POLICY_TEST = ROOT / "scripts" / "test_security_push_policy_v25.mjs"
@@ -76,43 +77,54 @@ def validate_approved_native_push_emitter() -> None:
     if not EDGE_FUNCTIONS.is_dir():
         fail("répertoire supabase/functions absent")
 
-    producers: list[tuple[Path, list[str]]] = []
-    receipt_readers: list[Path] = []
+    transports: list[tuple[Path, list[str]]] = []
+    receipt_transports: list[Path] = []
     for path in sorted(EDGE_FUNCTIONS.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in SERVER_SUFFIXES:
             continue
         text = path.read_text(encoding="utf-8")
         hits = producer_hits(text)
         if hits:
-            producers.append((path, hits))
+            transports.append((path, hits))
         if RECEIPT_SIGNATURE.search(text):
-            receipt_readers.append(path)
+            receipt_transports.append(path)
 
-    if not producers:
-        fail("le producteur push de sécurité attendu a disparu sans remplacement explicite")
+    if not transports:
+        fail("le transport Expo de sécurité attendu a disparu sans remplacement explicite")
 
     unexpected = [
         f"{path.relative_to(ROOT)} ({', '.join(hits)})"
-        for path, hits in producers
-        if path != APPROVED_PRODUCER
+        for path, hits in transports
+        if path != APPROVED_TRANSPORT
     ]
     if unexpected:
         fail(
-            "producteur Expo/native non approuvé détecté: "
+            "transport Expo/native non approuvé détecté: "
             + "; ".join(unexpected)
-            + ". Toute nouvelle surface d’émission exige un contrat de payload et des tests dédiés."
+            + ". Toute nouvelle surface réseau exige un contrat de payload et des tests dédiés."
         )
 
-    if len(producers) != 1 or producers[0][0] != APPROVED_PRODUCER:
-        fail("un seul producteur Expo/native est autorisé: supabase/functions/security-context/index.ts")
-    if receipt_readers != [APPROVED_PRODUCER]:
-        names = ", ".join(str(path.relative_to(ROOT)) for path in receipt_readers) or "aucun"
-        fail(f"l’API de reçus Expo doit rester bornée à security-context; lecteurs détectés: {names}")
+    if len(transports) != 1 or transports[0][0] != APPROVED_TRANSPORT:
+        fail("un seul transport Expo/native est autorisé: supabase/functions/_shared/security-push-network.mjs")
+    if receipt_transports != [APPROVED_TRANSPORT]:
+        names = ", ".join(str(path.relative_to(ROOT)) for path in receipt_transports) or "aucun"
+        fail(f"l’API de reçus Expo doit rester bornée au transport partagé approuvé; lecteurs détectés: {names}")
 
-    text = read(APPROVED_PRODUCER)
+    transport_text = read(APPROVED_TRANSPORT)
+    for needle in (
+        "export const SECURITY_PUSH_SEND_URL = 'https://exp.host/--/api/v2/push/send';",
+        "export const SECURITY_PUSH_RECEIPT_URL = 'https://exp.host/--/api/v2/push/getReceipts';",
+        "export async function postSecurityPushJson(url, payload, fetchImpl = globalThis.fetch)",
+        "if (!SECURITY_PUSH_NETWORK_URLS.has(url))",
+        "signal: createSecurityPushAbortSignal()",
+    ):
+        assert_contains(transport_text, needle, "transport Expo approuvé")
+
+    text = read(APPROVED_ORCHESTRATOR)
     required = (
         "from '../_shared/security-push-policy.mjs'",
         "from '../_shared/security-push-receipts.mjs'",
+        "from '../_shared/security-push-network.mjs'",
         "buildSecurityPushMessage(endpoint.expo_push_token, outcome)",
         "offset += SECURITY_PUSH_MAX_BATCH",
         "endpoints.slice(offset, offset + SECURITY_PUSH_MAX_BATCH)",
@@ -122,26 +134,28 @@ def validate_approved_native_push_emitter() -> None:
         "processSecurityPushReceipts(service)",
         ".limit(SECURITY_PUSH_RECEIPT_MAX_BATCH)",
         "buildSecurityPushReceiptRequest(pending.map((row: any) => row.expo_receipt_id))",
-        "fetch('https://exp.host/--/api/v2/push/getReceipts'",
+        "postSecurityPushJson(SECURITY_PUSH_RECEIPT_URL, request)",
         "resolveSecurityPushReceipts(pending, result?.data)",
         ".in('expo_receipt_id', resolved.handledReceiptIds)",
-        "fetch('https://exp.host/--/api/v2/push/send'",
+        "postSecurityPushJson(SECURITY_PUSH_SEND_URL, messages)",
         "console.warn('[security-context] Expo Push HTTP', response.status)",
         "console.warn('[security-context] Expo Receipt HTTP', response.status)",
     )
     for needle in required:
-        assert_contains(text, needle, "producteur push approuvé")
+        assert_contains(text, needle, "orchestrateur push approuvé")
 
     forbidden = (
         "data: { path:",
         "await response.text()",
+        "fetch('https://exp.host/--/api/v2/push/send'",
+        "fetch('https://exp.host/--/api/v2/push/getReceipts'",
         "console.warn('[security-context] envoi push impossible', error)",
         "console.warn('[security-context] lecture reçus push impossible', error)",
         "console.warn('[security-context] endpoints push indisponibles', error.message)",
     )
     for needle in forbidden:
         if needle in text:
-            fail(f"le producteur contourne la politique minimale ou journalise trop de détails: {needle}")
+            fail(f"l’orchestrateur contourne la politique minimale, le transport approuvé ou journalise trop de détails: {needle}")
 
 
 def validate_payload_policy() -> None:
@@ -337,10 +351,14 @@ def validate_workflow() -> None:
         "supabase/migrations/**",
         "scripts/test_security_push_policy_v25.mjs",
         "scripts/test_security_push_receipts_v25.mjs",
+        "scripts/test_security_push_network_v25.mjs",
         "scripts/validate_native_push_producer_boundary_v25.py",
+        "scripts/validate_security_push_background_v25.py",
         "python3 scripts/validate_native_push_producer_boundary_v25.py",
+        "python3 scripts/validate_security_push_background_v25.py",
         "node scripts/test_security_push_policy_v25.mjs",
         "node scripts/test_security_push_receipts_v25.mjs",
+        "node scripts/test_security_push_network_v25.mjs",
     ):
         assert_contains(text, needle, "CI frontière push")
 
@@ -355,7 +373,7 @@ def main() -> None:
     validate_mobile_registration_and_receiver()
     validate_workflow()
     print(
-        "OK native push V25: producteur unique, payload minimal, receipts Expo bornés à 1000, "
+        "OK native push V25: orchestrateur unique, transport Expo unique, payload minimal, receipts bornés à 1000, "
         "file privée 15min/24h sans contenu utilisateur, DeviceNotRegistered traité et réception interne seulement."
     )
 
