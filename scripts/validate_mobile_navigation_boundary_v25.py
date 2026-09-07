@@ -39,8 +39,10 @@ def main() -> int:
             "les pages SINJIRA internes doivent rester bornées à HTTPS + hôtes approuvés")
     require("!EXTERNAL_SAFE_PROTOCOLS.has(parsed.protocol)" in text,
             "les protocoles externes inconnus doivent être refusés explicitement")
-    require("parsed.protocol === 'https:' && hasSensitiveExternalMaterial(parsed)" in text,
-            "les URLs HTTPS externes portant de la matière sensible doivent être refusées")
+    require("if (hasSensitiveExternalMaterial(parsed))" in text,
+            "toutes les sorties externes permises doivent être filtrées pour la matière sensible")
+    require("parsed.protocol === 'https:' && hasSensitiveExternalMaterial(parsed)" not in text,
+            "le filtre sensible ne doit pas être limité aux seules URLs HTTPS externes")
     require("void Linking.openURL(url).catch" in text,
             "l'ouverture OS doit être située derrière les gardes et gérer les erreurs")
     require("void Linking.openURL(url);" not in text,
@@ -68,6 +70,12 @@ def main() -> int:
             "les cookies tiers doivent rester désactivés")
 
     guarded_block = text.split("const shouldStart", 1)[1].split("if (!securityReady)", 1)[0]
+    protocol_guard_index = guarded_block.index("if (!EXTERNAL_SAFE_PROTOCOLS.has(parsed.protocol))")
+    sensitive_guard_index = guarded_block.index("if (hasSensitiveExternalMaterial(parsed))")
+    open_url_index = guarded_block.index("void Linking.openURL(url).catch")
+    require(protocol_guard_index < sensitive_guard_index < open_url_index,
+            "le filtre sensible doit s'appliquer après l'allowlist de protocoles et avant toute ouverture OS")
+
     for secret_marker in (
         "nativeDeviceKey",
         "WEB_DEVICE_KEY_STORAGE",
@@ -80,7 +88,7 @@ def main() -> int:
         require(secret_marker not in guarded_block,
                 f"la navigation externe ne doit pas transmettre le secret {secret_marker}")
 
-    print("OK navigation mobile V25: WebView HTTPS SINJIRA bornée, schémas externes arbitraires refusés, liens sinjira normalisés et URLs externes sensibles bloquées.")
+    print("OK navigation mobile V25: WebView HTTPS SINJIRA bornée, schémas externes arbitraires refusés, liens sinjira normalisés et toutes les sorties externes permises filtrées pour la matière sensible.")
     return 0
 
 
