@@ -2,6 +2,7 @@ from pathlib import Path
 
 path = Path('mobile-native/App.tsx')
 text = path.read_text(encoding='utf-8')
+start_marker = "  const navigateToUrl = async (url: string, tab?: TabKey) => {\n"
 needle = """    if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
 """
 insert = """    let internalIntent: URL | null = null;
@@ -30,8 +31,13 @@ insert = """    let internalIntent: URL | null = null;
     }
 
 """
-if text.count(needle) != 1:
-    raise SystemExit(f'expected exactly one vault marker, found {text.count(needle)}')
 if 'internalIntent.searchParams.get(\'surface\')' in text:
     raise SystemExit('native intent routing patch already present')
-path.write_text(text.replace(needle, insert + needle), encoding='utf-8')
+start = text.find(start_marker)
+if start < 0:
+    raise SystemExit('navigateToUrl marker not found')
+head, tail = text[:start], text[start:]
+if needle not in tail:
+    raise SystemExit('vault marker not found after navigateToUrl')
+tail = tail.replace(needle, insert + needle, 1)
+path.write_text(head + tail, encoding='utf-8')
