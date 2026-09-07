@@ -582,7 +582,7 @@ export default function App() {
       return false;
     }
 
-    if (parsed.protocol === 'https:' && hasSensitiveExternalMaterial(parsed)) {
+    if (hasSensitiveExternalMaterial(parsed)) {
       setNativeMessage('Lien externe bloqué : des éléments de session ou d’authentification pourraient être exposés.');
       return false;
     }
