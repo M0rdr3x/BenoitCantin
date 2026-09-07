@@ -126,6 +126,29 @@ def main() -> int:
         require(marker in adversarial_text, f"cas adversarial obligatoire absent: {marker}")
     require("hello%2525252520world" in adversarial_text,
             "le test doit verrouiller l'échec sûr lorsque le budget de décodage est dépassé")
+
+    require("'  const shouldStart = (request: { url: string }) => {'" in adversarial_text,
+            "le test doit extraire et exécuter le vrai shouldStart de App.tsx")
+    require("function buildShouldStartHarness" in adversarial_text,
+            "le test doit construire un harness d'effets de bord autour de shouldStart")
+    for marker in (
+        "about:blank",
+        "pas une URL",
+        "https://www.sinjira.com/compte/profil.html",
+        "https://sinjira.com/compte/profil.html?access_token=interne",
+        "https://www.benoitcantin.com/compte/registre-personnel.html",
+        "javascript:access_token=secret",
+        "https://example.com/?access_token=secret",
+        "linkingRejects: true",
+    ):
+        require(marker in adversarial_text, f"cas shouldStart obligatoire absent: {marker}")
+    require("assert.deepEqual(harness.openedUrls, []" in adversarial_text,
+            "les refus doivent vérifier qu'aucune ouverture OS n'a lieu")
+    require("assert.deepEqual(harness.openedUrls, [rawUrl]" in adversarial_text,
+            "les sorties externes propres doivent vérifier une ouverture OS unique")
+    require("assert.deepEqual(harness.navigatedPaths, ['/compte/registre-personnel.html'])" in adversarial_text,
+            "le test doit verrouiller l'interception locale du Registre")
+
     require('"test:navigation-guard": "node scripts/test-external-navigation-guard.mjs"' in package_text,
             "package.json doit exposer le test adversarial de navigation")
     require("mobile-native/scripts/test-external-navigation-guard.mjs" in workflow_text,
@@ -133,7 +156,7 @@ def main() -> int:
     require("npm run test:navigation-guard" in workflow_text,
             "le workflow frontière mobile doit exécuter le test adversarial")
 
-    print("OK navigation mobile V25: frontière externe bornée, troisième décodage vérifié, sur-encodage refusé et tests adversariaux runtime branchés en CI.")
+    print("OK navigation mobile V25: frontière externe bornée, décodage fail-closed et décision shouldStart complète exécutée avec effets de bord en CI.")
     return 0
 
 

@@ -23,17 +23,32 @@ const sensitiveParams = requireSlice(
   '\n]);',
   'paramètres sensibles',
 ) + '\n]);';
+const vaultPathLine = requireSlice(
+  "const VAULT_PATH = '/compte/registre-personnel.html';",
+  '\n',
+  'chemin Registre personnel',
+);
 const guardFunctions = requireSlice(
   'function containsSensitiveExternalAssignment(value: string)',
   '\nfunction isVaultUrl',
   'garde externe',
 );
+const shouldStartFunction = requireSlice(
+  '  const shouldStart = (request: { url: string }) => {',
+  '\n\n  if (!securityReady)',
+  'décision shouldStart',
+);
 
-const guardSource = `${protocolLine}\n${sensitiveParams}\n${guardFunctions}\n` +
-  `(globalThis as any).__sinjiraExternalGuard = { ` +
-  `EXTERNAL_SAFE_PROTOCOLS, containsSensitiveExternalAssignment, hasSensitiveExternalMaterial };`;
+const runtimeSource = `${protocolLine}\n${sensitiveParams}\n${vaultPathLine}\n${guardFunctions}\n` +
+  `function buildShouldStartHarness(deps: any) {\n` +
+  `  const { allowedHosts, isVaultUrl, vaultLocalGateUntilRef, navigate, setNativeMessage, Linking } = deps;\n` +
+  `${shouldStartFunction}\n` +
+  `  return shouldStart;\n` +
+  `}\n` +
+  `(globalThis as any).__sinjiraNavigationRuntime = { ` +
+  `EXTERNAL_SAFE_PROTOCOLS, containsSensitiveExternalAssignment, hasSensitiveExternalMaterial, buildShouldStartHarness };`;
 
-const transpiled = ts.transpileModule(guardSource, {
+const transpiled = ts.transpileModule(runtimeSource, {
   compilerOptions: {
     target: ts.ScriptTarget.ES2022,
     module: ts.ModuleKind.ES2022,
@@ -45,7 +60,7 @@ const transpiled = ts.transpileModule(guardSource, {
 const compileErrors = (transpiled.diagnostics || []).filter(
   (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
 );
-assert.equal(compileErrors.length, 0, 'le garde extrait de App.tsx doit compiler sans erreur');
+assert.equal(compileErrors.length, 0, 'la frontière extraite de App.tsx doit compiler sans erreur');
 
 const sandbox = {
   URL,
@@ -54,20 +69,64 @@ const sandbox = {
   console,
 };
 vm.runInNewContext(transpiled.outputText, sandbox, {
-  filename: 'App.external-navigation-guard.runtime.js',
+  filename: 'App.external-navigation-boundary.runtime.js',
 });
 
-const guard = sandbox.__sinjiraExternalGuard;
-assert.ok(guard, 'le garde runtime extrait doit être disponible');
+const runtime = sandbox.__sinjiraNavigationRuntime;
+assert.ok(runtime, 'la frontière runtime extraite doit être disponible');
 const {
   EXTERNAL_SAFE_PROTOCOLS,
   containsSensitiveExternalAssignment,
   hasSensitiveExternalMaterial,
-} = guard;
+  buildShouldStartHarness,
+} = runtime;
 
 function externalPolicyAllows(rawUrl) {
   const parsed = new URL(rawUrl);
   return EXTERNAL_SAFE_PROTOCOLS.has(parsed.protocol) && !hasSensitiveExternalMaterial(parsed);
+}
+
+function createShouldStartHarness({ vaultGateOpen = true, linkingRejects = false } = {}) {
+  const messages = [];
+  const openedUrls = [];
+  const navigatedPaths = [];
+  const allowedHosts = new Set([
+    'www.benoitcantin.com',
+    'benoitcantin.com',
+    'sinjira.com',
+    'www.sinjira.com',
+  ]);
+  const vaultLocalGateUntilRef = {
+    current: vaultGateOpen ? Number.MAX_SAFE_INTEGER : 0,
+  };
+  const isVaultUrl = (rawUrl) => {
+    try {
+      return new URL(rawUrl, 'https://www.benoitcantin.com').pathname === '/compte/registre-personnel.html';
+    } catch {
+      return false;
+    }
+  };
+  const navigate = async (path) => {
+    navigatedPaths.push(path);
+  };
+  const setNativeMessage = (message) => {
+    messages.push(message);
+  };
+  const Linking = {
+    openURL: (rawUrl) => {
+      openedUrls.push(rawUrl);
+      return linkingRejects ? Promise.reject(new Error('simulated Linking failure')) : Promise.resolve();
+    },
+  };
+  const shouldStart = buildShouldStartHarness({
+    allowedHosts,
+    isVaultUrl,
+    vaultLocalGateUntilRef,
+    navigate,
+    setNativeMessage,
+    Linking,
+  });
+  return { shouldStart, messages, openedUrls, navigatedPaths };
 }
 
 for (const protocol of ['https:', 'mailto:', 'tel:']) {
@@ -129,7 +188,108 @@ for (const rawUrl of allowedUrls) {
   assert.equal(externalPolicyAllows(rawUrl), true, `URL légitime bloquée: ${rawUrl}`);
 }
 
+{
+  const harness = createShouldStartHarness();
+  assert.equal(harness.shouldStart({ url: 'about:blank' }), true, 'about:blank doit rester interne à la WebView');
+  assert.deepEqual(harness.messages, [], 'about:blank ne doit produire aucun message');
+  assert.deepEqual(harness.openedUrls, [], 'about:blank ne doit jamais ouvrir le système');
+}
+
+{
+  const harness = createShouldStartHarness();
+  assert.equal(harness.shouldStart({ url: 'pas une URL' }), false, 'une URL invalide doit être refusée');
+  assert.match(harness.messages.at(-1) || '', /lien demandé est invalide/i);
+  assert.deepEqual(harness.openedUrls, [], 'une URL invalide ne doit jamais atteindre Linking');
+}
+
+{
+  const harness = createShouldStartHarness();
+  assert.equal(
+    harness.shouldStart({ url: 'https://www.sinjira.com/compte/profil.html' }),
+    true,
+    'un hôte SINJIRA HTTPS approuvé doit rester dans la WebView',
+  );
+  assert.deepEqual(harness.openedUrls, [], 'un lien SINJIRA interne ne doit jamais être envoyé à Linking');
+}
+
+{
+  const harness = createShouldStartHarness();
+  assert.equal(
+    harness.shouldStart({ url: 'https://sinjira.com/compte/profil.html?access_token=interne' }),
+    true,
+    'la branche interne doit être décidée avant le filtre réservé aux sorties externes',
+  );
+  assert.deepEqual(harness.openedUrls, [], 'une URL SINJIRA interne sensible ne doit jamais sortir vers le système');
+}
+
+{
+  const harness = createShouldStartHarness({ vaultGateOpen: false });
+  assert.equal(
+    harness.shouldStart({ url: 'https://www.benoitcantin.com/compte/registre-personnel.html' }),
+    false,
+    'le Registre doit être intercepté lorsque la barrière locale a expiré',
+  );
+  assert.deepEqual(harness.navigatedPaths, ['/compte/registre-personnel.html']);
+  assert.deepEqual(harness.openedUrls, [], 'le Registre ne doit jamais être envoyé à Linking');
+}
+
+{
+  const harness = createShouldStartHarness({ vaultGateOpen: true });
+  assert.equal(
+    harness.shouldStart({ url: 'https://www.benoitcantin.com/compte/registre-personnel.html' }),
+    true,
+    'le Registre peut rester dans la WebView pendant la fenêtre locale valide',
+  );
+  assert.deepEqual(harness.navigatedPaths, []);
+}
+
+{
+  const harness = createShouldStartHarness();
+  assert.equal(
+    harness.shouldStart({ url: 'javascript:access_token=secret' }),
+    false,
+    'un protocole interdit doit être refusé avant toute tentative externe',
+  );
+  assert.match(harness.messages.at(-1) || '', /schémas ou connexions non autorisés/i);
+  assert.deepEqual(harness.openedUrls, [], 'un protocole interdit ne doit jamais atteindre Linking');
+}
+
+{
+  const harness = createShouldStartHarness();
+  assert.equal(
+    harness.shouldStart({ url: 'https://example.com/?access_token=secret' }),
+    false,
+    'une sortie HTTPS contenant de la matière sensible doit être refusée',
+  );
+  assert.match(harness.messages.at(-1) || '', /session ou d.authentification/i);
+  assert.deepEqual(harness.openedUrls, [], 'une sortie sensible ne doit jamais atteindre Linking');
+}
+
+for (const rawUrl of [
+  'https://example.com/article',
+  'mailto:user@example.com?subject=Bonjour',
+  'tel:+15145551234',
+]) {
+  const harness = createShouldStartHarness();
+  assert.equal(harness.shouldStart({ url: rawUrl }), false, `la sortie OS doit être interceptée: ${rawUrl}`);
+  assert.deepEqual(harness.openedUrls, [rawUrl], `la sortie propre doit atteindre Linking exactement une fois: ${rawUrl}`);
+  assert.deepEqual(harness.messages, [], `la sortie propre ne doit pas afficher de blocage: ${rawUrl}`);
+}
+
+{
+  const harness = createShouldStartHarness({ linkingRejects: true });
+  const rawUrl = 'https://example.com/article';
+  assert.equal(harness.shouldStart({ url: rawUrl }), false);
+  assert.deepEqual(harness.openedUrls, [rawUrl]);
+  await Promise.resolve();
+  assert.match(
+    harness.messages.at(-1) || '',
+    /ne peut pas être ouvert de façon sûre/i,
+    'un échec Linking doit être transformé en message sûr',
+  );
+}
+
 console.log(
-  `OK garde navigation externe V25: ${blockedUrls.length} cas dangereux refusés, ` +
-  `${allowedUrls.length} cas légitimes permis, protocoles et encodages imbriqués vérifiés sur le code runtime de App.tsx.`,
+  `OK frontière navigation V25: ${blockedUrls.length} cas dangereux refusés, ` +
+  `${allowedUrls.length} cas légitimes permis, et shouldStart exécuté avec ses effets de bord critiques sur le code réel de App.tsx.`,
 );
