@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / 'assets' / 'js' / 'sinjira-security-center-v24-4-98.js'
 SECURITY_PAGE = ROOT / 'compte' / 'securite.html'
 MOBILE = ROOT / 'mobile-native' / 'App.tsx'
+MOBILE_PACKAGE = ROOT / 'mobile-native' / 'package.json'
 SERVER_GUARD = ROOT / 'scripts' / 'validate_device_challenge_continuity_smoke.py'
 WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-device-challenge-client-boundary-v25.yml'
 
@@ -26,12 +28,13 @@ def forbid(text: str, marker: str, message: str) -> None:
 
 
 def main() -> int:
-    for path in (WEB, SECURITY_PAGE, MOBILE, SERVER_GUARD, WORKFLOW):
+    for path in (WEB, SECURITY_PAGE, MOBILE, MOBILE_PACKAGE, SERVER_GUARD, WORKFLOW):
         require(path.is_file(), f'fichier manquant: {path.relative_to(ROOT)}')
 
     web = WEB.read_text('utf-8')
     page = SECURITY_PAGE.read_text('utf-8')
     mobile = MOBILE.read_text('utf-8')
+    mobile_package = json.loads(MOBILE_PACKAGE.read_text('utf-8'))
     server_guard = SERVER_GUARD.read_text('utf-8')
     workflow = WORKFLOW.read_text('utf-8')
 
@@ -61,6 +64,10 @@ def main() -> int:
     # Mobile: une seule clé opaque propre à cette installation est conservée dans SecureStore.
     require("import * as SecureStore from 'expo-secure-store';" in mobile,
             'Expo SecureStore absent du client mobile')
+    require("import * as Crypto from 'expo-crypto';" in mobile,
+            'Expo Crypto absent de la génération de clé appareil')
+    require(mobile_package.get('dependencies', {}).get('expo-crypto') == '~57.0.2',
+            'expo-crypto doit rester épinglé à la version compatible SDK 57 attendue')
     require("const DEVICE_KEY_STORAGE = 'sinjira_native_device_key_v1';" in mobile,
             'emplacement SecureStore de la clé native absent ou modifié sans revue')
     require("const WEB_DEVICE_KEY_STORAGE = 'sinjira.security.device_key.v1';" in mobile,
@@ -77,6 +84,20 @@ def main() -> int:
     )
     require("const [nativeDeviceKey, setNativeDeviceKey] = useState('');" in mobile,
             'état unique de la clé native absent')
+
+    device_key_start = mobile.find('function makeDeviceKey() {')
+    require(device_key_start >= 0, 'générateur de clé appareil absent')
+    device_key_end = mobile.find('\n}\n', device_key_start)
+    require(device_key_end > device_key_start, 'générateur de clé appareil illisible')
+    device_key_body = mobile[device_key_start:device_key_end + 2]
+    require('return Crypto.randomUUID();' in device_key_body,
+            'la clé appareil doit être générée par Crypto.randomUUID()')
+    forbid(device_key_body, 'Math.random',
+           'Math.random est interdit pour générer la clé de continuité appareil')
+    forbid(device_key_body, 'Date.now',
+           'la clé appareil ne doit pas tirer son entropie de l’horloge')
+    forbid(device_key_body, 'globalThis.crypto',
+           'le générateur ne doit pas dépendre d’un fallback Web crypto optionnel')
 
     # Aucun client n’implémente directement la voie MFA, ne choisit une autre clé,
     # ni n’embarque une surface privilégiée serveur/production.
@@ -108,6 +129,7 @@ def main() -> int:
         "assets/js/sinjira-security-center-v24-4-98.js",
         "compte/securite.html",
         "mobile-native/App.tsx",
+        "mobile-native/package.json",
         "scripts/validate_device_challenge_client_boundary.py",
         "scripts/validate_device_challenge_continuity_smoke.py",
     )
@@ -128,7 +150,7 @@ def main() -> int:
 
     print(
         'OK frontière client challenge V25: Web autorise/refuse uniquement via l’appareil courant, '
-        'mobile conserve une seule clé opaque dans SecureStore et aucun client ne retombe sur l’auto-MFA.'
+        'mobile conserve une seule clé opaque SecureStore générée par UUID cryptographique et aucun client ne retombe sur l’auto-MFA.'
     )
     return 0
 
