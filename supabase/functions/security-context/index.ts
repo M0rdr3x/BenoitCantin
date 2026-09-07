@@ -1,6 +1,12 @@
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
 import { buildSecurityPushMessage, SECURITY_PUSH_MAX_BATCH } from '../_shared/security-push-policy.mjs';
+import {
+  SECURITY_PUSH_RECEIPT_URL,
+  SECURITY_PUSH_SEND_URL,
+  postSecurityPushJson,
+} from '../_shared/security-push-network.mjs';
 import {
   buildSecurityPushReceiptRequest,
   resolveSecurityPushReceipts,
@@ -61,11 +67,7 @@ async function processSecurityPushReceipts(service: ReturnType<typeof serviceCli
 
   try {
     const request = buildSecurityPushReceiptRequest(pending.map((row: any) => row.expo_receipt_id));
-    const response = await fetch('https://exp.host/--/api/v2/push/getReceipts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(request)
-    });
+    const response = await postSecurityPushJson(SECURITY_PUSH_RECEIPT_URL, request);
     if (!response.ok) {
       console.warn('[security-context] Expo Receipt HTTP', response.status);
       return;
@@ -121,11 +123,7 @@ async function sendSecurityPush(service: ReturnType<typeof serviceClient>, userI
     );
 
     try {
-      const response = await fetch('https://exp.host/--/api/v2/push/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(messages)
-      });
+      const response = await postSecurityPushJson(SECURITY_PUSH_SEND_URL, messages);
       if (!response.ok) {
         console.warn('[security-context] Expo Push HTTP', response.status);
         continue;
@@ -156,6 +154,19 @@ async function sendSecurityPush(service: ReturnType<typeof serviceClient>, userI
   }
 }
 
+async function runSecurityPushBackground(
+  service: ReturnType<typeof serviceClient>,
+  userId: string,
+  security: any,
+) {
+  try {
+    await processSecurityPushReceipts(service);
+    await sendSecurityPush(service, userId, security);
+  } catch {
+    console.warn('[security-context] tâche push de fond impossible');
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ ok: false, error: 'Méthode non autorisée.' }, 405);
@@ -180,8 +191,7 @@ Deno.serve(async (req) => {
     });
     if (error) throw error;
 
-    await processSecurityPushReceipts(service);
-    await sendSecurityPush(service, user.id, data);
+    EdgeRuntime.waitUntil(runSecurityPushBackground(service, user.id, data));
 
     return json({
       ok: true,
