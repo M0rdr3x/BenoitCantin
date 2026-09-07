@@ -96,7 +96,7 @@ Le Commerce possède une seule frontière native. Les chemins directs suivants s
 
 Ces alias transportent uniquement une **intention de navigation**. Ils ne transportent aucun solde de Jetons, mouvement de grand livre, brouillon d’annonce, prix, localisation approximative, précommande, préférence commerciale, licence ou droit numérique. Le même composant de sas est utilisé pour éviter de créer une logique native commerciale parallèle.
 
-Cette étape ne réécrit pas les liens profonds reçus par `Linking` ni les navigations internes déjà actives dans la WebView : ces chemins continuent de passer par `navigateToUrl` ou la navigation Web historique. Les sorties explicites des hubs avec `?surface=web` restent elles aussi des sorties Web volontaires.
+Les intentions qui passent par `navigateToUrl` sont désormais résolues de façon cohérente : une route de `NATIVE_MODULE_PATHS` sans fragment et sans `surface=web` ouvre son sas natif, tandis qu’une sortie explicite `?surface=web` reste Web. Les navigations internes déjà actives dans la WebView ne sont pas interceptées par ce lot.
 
 ## Chemins volontairement exclus
 
@@ -136,11 +136,23 @@ La classification est volontairement disjointe :
 
 Le détail est documenté dans `NATIVE_ACCOUNT_ROUTE_CLASSIFICATION_V25.md`. Toute nouvelle page `compte/*.html` non classée fait échouer la CI. Ajouter une page au dossier exige donc une décision explicite sur sa frontière avant fusion; aucune route ne peut devenir silencieusement native ou contourner un garde existant.
 
+## Routage des intentions du shell, liens profonds et notifications
+
+`navigateToUrl` applique maintenant la classification avant d’ouvrir une WebView. Une URL interne vers une route de `NATIVE_MODULE_PATHS`, sans fragment et sans `surface=web`, converge vers `openNativeModule`. L’URL exacte `/compte/securite.html`, sans recherche ni fragment, ouvre le `NativeSecurityHub` dédié.
+
+Les fragments Sécurité restent Web afin de préserver les vues précises des appareils, connexions, Mode Voyage, confirmations et préférences. Le Registre reste hors routeur et conserve son gate local ponctuel puis ses protections serveur.
+
+`Linking.getInitialURL`, l’écouteur `Linking` et les réponses aux notifications passent déjà par `navigateToUrl` ou `navigate`; ils bénéficient donc de la même décision de surface. Le paramètre `surface=web` ne donne aucun droit : il choisit seulement la surface d’interface et ne remplace jamais authentification, RLS, AAL2, moteur de risque ou RPC.
+
+Ce lot ne modifie pas `shouldStart` pour convertir les clics internes de la WebView en navigation native. Cette limite évite de casser un état Web contextuel déjà ouvert.
+
+Le contrat complet est documenté dans `NATIVE_INTENT_ROUTING_V25.md` et verrouillé par `validate_mobile_native_intent_routing_v25.py`.
+
 ## Sortie explicite vers le Web
 
 Quand une personne choisit une action Web depuis un hub natif, `App.tsx` efface d’abord l’intention de module natif, puis utilise la navigation historique. Le Web redevient alors la surface active avec ses protections existantes.
 
-Les liens profonds, notifications et autres navigations historiques restent gérés par `navigateToUrl`; cette étape n’intercepte pas arbitrairement des URLs externes ou des états Web précis.
+Les liens profonds et notifications restent gérés par `navigateToUrl`/`navigate`, mais les chemins classés natifs convergent maintenant vers leur sas avant toute WebView. Les URLs externes, les fragments Web et les pages volontairement exclues du routeur conservent leur comportement historique.
 
 ## Retour et partage
 
@@ -148,7 +160,7 @@ Le bouton Retour Android ou le retour du hub ferme le routeur et revient à l’
 
 ## CI exhaustive
 
-Le garde central exige la présence de chaque route primaire et de chaque composant actuellement routé. Son workflow revalide d’abord la **classification exhaustive des 42 pages du compte**, puis le garde des alias secondaires et les garde-fous dédiés des hubs Messages, Rencontres, Emploi, Bibliothèque, Mes parties, Communauté, Réseau personnage, Relations, Commerce, Monde parallèle, Mon IA, Histoire de vie, Mon personnage, Alertes et Profil, ainsi que les frontières Paramètres, Vie privée, Sécurité, navigation, partage, challenge, secrets, coffre et TypeScript.
+Le garde central exige la présence de chaque route primaire et de chaque composant actuellement routé. Son workflow revalide d’abord la **classification exhaustive des 42 pages du compte**, puis le **routage des intentions natives**, puis le garde des alias secondaires et les garde-fous dédiés des hubs Messages, Rencontres, Emploi, Bibliothèque, Mes parties, Communauté, Réseau personnage, Relations, Commerce, Monde parallèle, Mon IA, Histoire de vie, Mon personnage, Alertes et Profil, ainsi que les frontières Paramètres, Vie privée, Sécurité, navigation, partage, challenge, secrets, coffre et TypeScript.
 
 Le workflow de classification se déclenche sur `compte/*.html`. Une nouvelle page de compte ne peut donc pas être fusionnée sans être classée. Le workflow des alias secondaires revalide en plus le garde V24.4.90 des décisions et appels, afin de préserver les garanties humaines du serveur pendant l’évolution du routage mobile.
 
