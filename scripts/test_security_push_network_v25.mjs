@@ -14,7 +14,7 @@ assert.throws(() => createSecurityPushAbortSignal(1.5), /INVALID_SECURITY_PUSH_T
 
 const shortSignal = createSecurityPushAbortSignal(15);
 assert.equal(shortSignal.aborted, false);
-await new Promise((resolve) => shortSignal.addEventListener('abort', resolve, { once: true }));
+await new Promise((resolve) => setTimeout(resolve, 30));
 assert.equal(shortSignal.aborted, true);
 
 let captured = null;
