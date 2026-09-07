@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,6 +39,29 @@ doc = read(DOC)
 central_doc = read(CENTRAL_DOC)
 workflow = read(WORKFLOW)
 central_workflow = read(CENTRAL_WORKFLOW)
+
+# Le schéma mobile doit accepter les formes URI natives usuelles sans produire un chemin //.
+normalize_start = app.find('function normalizeSinjiraUrl(url: string | null): string | null {')
+normalize_end = app.find('\nfunction shareableSinjiraUrl', normalize_start + 1) if normalize_start >= 0 else -1
+if normalize_start < 0 or normalize_end < 0:
+    errors.append('App.tsx: normalizeSinjiraUrl introuvable')
+    normalize_block = ''
+else:
+    normalize_block = app[normalize_start:normalize_end]
+
+require(normalize_block, r"if (/^sinjira:\/+/i.test(url)) {", 'normalizeSinjiraUrl')
+require(normalize_block, r"url.replace(/^sinjira:\/+/i, '/')", 'normalizeSinjiraUrl')
+forbid(normalize_block, "url.startsWith('sinjira://')", 'normalizeSinjiraUrl')
+forbid(normalize_block, r"url.replace(/^sinjira:\/\//, '/')", 'normalizeSinjiraUrl')
+
+for raw in [
+    'sinjira:/compte/messages.html',
+    'sinjira://compte/messages.html',
+    'sinjira:///compte/messages.html',
+]:
+    relative = re.sub(r'^sinjira:/+', '/', raw, flags=re.IGNORECASE)
+    if relative != '/compte/messages.html':
+        errors.append(f'normalisation schéma sinjira invalide pour {raw}: {relative}')
 
 # Le résolveur doit être situé dans navigateToUrl, avant le gate Registre.
 start = app.find('  const navigateToUrl = async (url: string, tab?: TabKey) => {')
