@@ -36,15 +36,41 @@ La liste fermée couvre maintenant tous les hubs de navigation déjà fusionnés
 - `/compte/histoire-de-vie.html` → `NativeLifeStoryHub`;
 - `/compte/mon-personnage.html` → `NativeCharacterHub`;
 - `/compte/notifications.html` → `NativeAlertsHub`;
-- `/compte/profil.html` → `NativeProfileHub`.
+- `/compte/profil.html` → `NativeProfileHub`;
+- `/compte/vie-privee.html` → `NativePrivacyHub`;
+- `/compte/parametres.html` → `NativeSettingsHub`.
 
 Les onglets persistants et raccourcis du shell qui passent explicitement par `openNativeModule` utilisent cette liste fermée avant toute sortie Web.
 
-## Mes parties
+## Alias secondaires
 
-`/compte/mes-parties.html` transporte uniquement une intention de navigation vers `NativeGamesHub`. Le routeur ne reçoit aucune sauvegarde, session, code de partie, compteur, durée, mode de jeu, `player_sheets`, `endgame_sheets` ou fichier `SINJIRA_GAME_SAVE_V1`.
+Les vues secondaires suivantes convergent vers une frontière native existante plutôt que de créer un nouveau hub :
 
-Les exports et imports privés restent des actions Web explicites. Le routeur ne sélectionne, ne lit, ne parse, ne copie et ne partage aucun fichier de sauvegarde.
+- `/compte/messages-reels.html` et `/compte/messages-personnage.html` → `NativeMessagesHub`;
+- `/compte/mes-lectures.html`, `/compte/documents.html` et `/compte/playtests.html` → `NativeLibraryHub`;
+- `/compte/contributions.html` → `NativeGamesHub`;
+- `/compte/mes-commentaires.html` → `NativeCommunityHub`;
+- `/compte/mes-personnages.html` → `NativeCharacterHub`.
+
+Ces alias ne transportent que l’intention de navigation. Le routeur ne transporte aucun message, choix d’identité, progression de lecture, document, candidature ou invitation de playtest, donnée jeunesse, consentement de contribution, sauvegarde, commentaire, état de modération ou identité de personnage.
+
+Le détail de ces convergences et leurs exclusions est verrouillé par `NATIVE_SECONDARY_ROUTE_ALIASES_V25.md` et `validate_mobile_native_secondary_route_aliases_v25.py`.
+
+## Mes parties et Programme Contributeur
+
+`/compte/mes-parties.html` et l’alias `/compte/contributions.html` transportent uniquement une intention de navigation vers `NativeGamesHub`. Le routeur ne reçoit aucune sauvegarde, session, code de partie, compteur, durée, mode de jeu, `player_sheets`, `endgame_sheets`, fichier `SINJIRA_GAME_SAVE_V1` ou préférence du Programme Contributeur.
+
+Les exports, imports et consentements de contribution restent des actions Web explicites. Le natif n’active aucun partage, n’autorise aucun commentaire libre et ne retire aucune contribution précédente.
+
+## Bibliothèque et playtests
+
+Lectures, ressources et playtests convergent vers `NativeLibraryHub`. Les droits réels, progressions, documents autorisés, candidatures, invitations, participations et décisions d’admissibilité restent côté Web/serveur.
+
+Le natif ne reçoit aucune donnée d’âge, de tuteur ou de cohorte jeunesse. Une invitation ou une candidature n’est jamais acceptée, refusée ou approuvée par le routeur.
+
+## Communauté et commentaires
+
+`/compte/mes-commentaires.html` converge vers `NativeCommunityHub`. Le routeur et le hub ne lisent ni le texte des commentaires, ni leur statut en attente, publié ou refusé. La modération reste dans sa source Web/serveur.
 
 ## Réseau personnage
 
@@ -74,13 +100,19 @@ Cette étape ne réécrit pas les liens profonds reçus par `Linking` ni les nav
 
 Le routeur ne reçoit, ne stocke et n’exporte aucun contenu du Registre.
 
-### Sécurité
+### Sécurité et Mode Voyage
 
 Le raccourci Sécurité continue d’ouvrir directement `NativeSecurityHub`, qui possède déjà sa frontière native spécifique. Il n’est pas dupliqué dans le routeur de modules.
 
-### Mode Voyage
-
 Mode Voyage reste une fonctionnalité Web/serveur. Le routeur ne reçoit ni destination, ni période, ni plan de voyage et ne stocke aucune donnée de déplacement.
+
+### Authentification, MFA et décès
+
+Les flux `/compte/connexion.html`, `/compte/inscription.html`, `/compte/mot-de-passe-oublie.html`, `/compte/reinitialiser-mot-de-passe.html` et `/compte/mfa.html` restent hors du routeur de modules. La procédure `/compte/signaler-deces.html` reste elle aussi Web/serveur en raison de ses vérifications sensibles.
+
+### Pages contextuelles ou informatives
+
+`/compte/projet.html` reste dans la navigation Web de la Bibliothèque, car son contenu dépend du projet sélectionné. `/compte/confidentialite-joueur.html` reste une page d’information Web et renvoie vers le Centre Vie privée pour les actions réelles.
 
 ## Sortie explicite vers le Web
 
@@ -94,10 +126,10 @@ Le bouton Retour Android ou le retour du hub ferme le routeur et revient à l’
 
 ## CI exhaustive
 
-Le garde central exige la présence de chaque route et de chaque composant actuellement routé. Son workflow revalide également les garde-fous dédiés des hubs Messages, Rencontres, Emploi, Bibliothèque, Mes parties, Communauté, Réseau personnage, Relations, Commerce, Monde parallèle, Mon IA, Histoire de vie, Mon personnage, Alertes et Profil, ainsi que les frontières Paramètres, Vie privée, Sécurité, navigation, partage, challenge, secrets, coffre et TypeScript.
+Le garde central exige la présence de chaque route primaire et de chaque composant actuellement routé. Son workflow revalide aussi le garde des alias secondaires, puis les garde-fous dédiés des hubs Messages, Rencontres, Emploi, Bibliothèque, Mes parties, Communauté, Réseau personnage, Relations, Commerce, Monde parallèle, Mon IA, Histoire de vie, Mon personnage, Alertes et Profil, ainsi que les frontières Paramètres, Vie privée, Sécurité, navigation, partage, challenge, secrets, coffre et TypeScript.
 
-L’ajout futur d’un hub au routeur doit donc être accompagné de son garde dédié et de son rechaînage dans cette validation centrale.
+L’ajout futur d’un hub ou d’un alias au routeur doit donc être accompagné de sa preuve dédiée et de son rechaînage dans cette validation centrale.
 
 ## Principe de sécurité
 
-**Protéger sans surveiller.** Ce routeur transporte uniquement une intention de navigation parmi une liste fermée. Il ne transporte ni profil, ni message, ni candidature, ni compatibilité, ni sauvegarde de jeu, ni relation familiale, ni achat, ni solde, ni identité réelle, ni identité de personnage, ni graphe social, ni histoire de vie, ni réglage IA, ni état de sécurité.
+**Protéger sans surveiller.** Ce routeur transporte uniquement une intention de navigation parmi une liste fermée. Il ne transporte ni profil, ni message, ni candidature, ni invitation, ni compatibilité, ni sauvegarde de jeu, ni consentement de contribution, ni progression, ni document, ni commentaire, ni état de modération, ni relation familiale, ni achat, ni solde, ni identité réelle, ni identité de personnage, ni graphe social, ni histoire de vie, ni réglage IA, ni état de sécurité.
