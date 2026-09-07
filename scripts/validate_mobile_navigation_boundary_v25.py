@@ -26,14 +26,27 @@ def main() -> int:
     ):
         require(marker in text, f"paramètre sensible absent du garde: {marker}")
 
+    require("function containsSensitiveExternalAssignment(value: string)" in text,
+            "le détecteur d'affectations sensibles encodées doit exister")
+    require("value.toLowerCase().replace(/\\+/g, ' ')" in text,
+            "le détecteur doit normaliser la casse et les plus avant inspection")
+    require("attempt < 3" in text and "decodeURIComponent(candidate)" in text,
+            "le détecteur doit décoder de façon bornée les valeurs URL imbriquées")
+    require("candidate.includes(`${key}=`)" in text,
+            "le détecteur doit reconnaître les affectations sensibles après normalisation")
+
     require("function hasSensitiveExternalMaterial(parsed: URL)" in text,
             "le filtre de matière d'authentification externe doit exister")
     require("parsed.username || parsed.password" in text,
             "les identifiants URL userinfo doivent être refusés")
-    require("parsed.searchParams.keys()" in text,
-            "les paramètres de requête externes doivent être inspectés")
-    require("parsed.hash.toLowerCase()" in text,
-            "le fragment externe doit être inspecté")
+    require("containsSensitiveExternalAssignment(parsed.pathname)" in text,
+            "les chemins externes doivent être inspectés pour les affectations sensibles encodées")
+    require("parsed.searchParams.entries()" in text,
+            "les noms et valeurs des paramètres externes doivent être inspectés")
+    require("containsSensitiveExternalAssignment(value)" in text,
+            "les valeurs de query, dont subject/body mailto, doivent être filtrées")
+    require("containsSensitiveExternalAssignment(parsed.hash)" in text,
+            "le fragment externe doit être filtré après décodage borné")
 
     require("parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)" in text,
             "les pages SINJIRA internes doivent rester bornées à HTTPS + hôtes approuvés")
@@ -88,7 +101,7 @@ def main() -> int:
         require(secret_marker not in guarded_block,
                 f"la navigation externe ne doit pas transmettre le secret {secret_marker}")
 
-    print("OK navigation mobile V25: WebView HTTPS SINJIRA bornée, schémas externes arbitraires refusés, liens sinjira normalisés et toutes les sorties externes permises filtrées pour la matière sensible.")
+    print("OK navigation mobile V25: WebView HTTPS SINJIRA bornée, schémas externes arbitraires refusés, liens sinjira normalisés et matière sensible encodée bloquée dans chemins, valeurs de query et fragments externes.")
     return 0
 
 
