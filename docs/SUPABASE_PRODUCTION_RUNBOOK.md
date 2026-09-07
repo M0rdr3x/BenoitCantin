@@ -9,47 +9,64 @@ Le dépôt conserve deux réalités complémentaires :
 - `supabase/migrations/` : historique **fonctionnel de reconstruction**, utilisé pour recréer/tester une base neuve;
 - `supabase/production-migration-ledger.txt` : versions **réellement enregistrées** dans la production liée.
 
-L’historique de reconstruction contient du SQL consolidé et des timestamps de travail qui ne correspondent pas tous au registre distant. Le workspace protégé est donc obligatoire pour toute opération générique liée à la production.
+L’historique de reconstruction contient du SQL consolidé et des timestamps de travail qui ne correspondent pas tous au registre distant. Le workspace protégé `.prod-workspace/supabase` est donc obligatoire pour toute opération générique liée à la production.
 
-## Workflows autorisés
+## Voie canonique — `Supabase production — prévol / synchronisation contrôlée`
 
-### 1. `Prévol Supabase production — lecture seule`
+Le workflow canonique est `.github/workflows/supabase-production-preflight.yml`.
 
-Usage : audit seulement.
+Son nom de run doit rendre l’intention visible :
 
-Ce workflow peut :
+- push ou pull request : `Supabase production — PRÉVOL`;
+- lancement manuel avec `apply=false` : prévol seulement;
+- lancement manuel avec `apply=true` : `Supabase production — APPLICATION DEMANDÉE`.
+
+### Push et pull request
+
+Un push ou une pull request ne doit jamais modifier Supabase production.
+
+Le workflow peut :
 - valider le dépôt;
 - construire le workspace protégé;
-- lier la copie temporaire à Supabase;
-- exécuter `db lint`;
-- comparer le ledger;
-- exécuter `db push --dry-run`.
+- effectuer les vérifications distantes si les secrets GitHub Actions requis sont disponibles;
+- exécuter lint, inventaire, comparaison du ledger et `db push --dry-run` depuis le workspace protégé.
 
-Il **ne doit jamais** :
-- exécuter un `db push` réel;
-- modifier les secrets;
-- déployer les Edge Functions;
-- modifier les données ou le schéma de production.
+Si les secrets de connexion sont absents sur un push ou une pull request, les étapes distantes sont ignorées et le run reste un prévol local non destructif. Cet état signifie **NON SYNCHRONISÉ**, pas « production validée à distance ».
 
-### 2. `Synchroniser Supabase production — sécurisé`
+### Lancement manuel `apply=false`
 
-Usage : voie GitHub Actions générique autorisée pour appliquer de nouvelles migrations ou redéployer les Edge Functions lorsqu’un rollout ciblé dédié n’est pas utilisé.
+Un lancement manuel de prévol exige les secrets de connexion afin que les contrôles distants soient réellement exécutés. `apply=false` interdit toute écriture.
 
-Avant application, ce workflow :
-1. valide le schéma reconstructible;
-2. valide **toutes** les versions déjà enregistrées dans le ledger;
-3. construit `.prod-workspace/supabase`;
-4. remplace les migrations déjà appliquées par des marqueurs no-op aux timestamps exacts de production;
-5. copie uniquement les migrations futures dont la version est supérieure au dernier timestamp du ledger;
-6. effectue lint + `migration list` + dry-run;
-7. n’écrit que si `apply=true`;
-8. refait lint + ledger + dry-run après application.
+Un run vert avec `apply=false` signifie **prévol réussi**, pas « production modifiée ».
 
-Un workflow vert avec `apply=false` signifie **prévol réussi**, pas « production modifiée ».
+### Lancement manuel `apply=true`
 
-La production n’est considérée synchronisée par ce workflow que s’il a été lancé avec `apply=true` et que sa vérification finale est verte.
+L’application réelle n’est autorisée que si les trois conditions sont réunies :
 
-### 3. Rollout ciblé d’un module sensible
+1. événement `workflow_dispatch`;
+2. `apply=true`;
+3. secrets de connexion détectés comme prêts.
+
+Les étapes capables de modifier la production doivent conserver ce triple verrou. La production n’est considérée synchronisée que lorsque le résumé final affiche exactement :
+
+`✅ APPLIQUÉ ET VÉRIFIÉ`
+
+Un run nommé `APPLICATION DEMANDÉE` n’est **pas** une preuve d’application réussie. En cas d’échec ou de synchronisation partielle, arrêter la procédure et diagnostiquer la première étape en échec.
+
+## Voie secondaire manuelle — `Synchroniser Supabase production — sécurisé`
+
+Le workflow `.github/workflows/supabase-production-safe.yml` reste une voie manuelle secondaire. Il ne doit pas devenir une voie automatique ni contourner le workflow canonique.
+
+Contraintes minimales :
+- déclenchement `workflow_dispatch` uniquement;
+- `SUPABASE_ACCESS_TOKEN` et `SUPABASE_DB_PASSWORD` obligatoires avant toute liaison distante;
+- `apply=false` = prévol uniquement;
+- `apply=true` = migrations futures et Edge Functions depuis le workspace protégé;
+- aucune primitive de réparation destructive ou de réécriture d’historique.
+
+Par défaut, préférer le workflow canonique `Supabase production — prévol / synchronisation contrôlée`, car son état `PRÉVOL` / `APPLICATION DEMANDÉE` et son verdict final sont explicitement verrouillés par le validateur du ledger.
+
+## Rollout ciblé d’un module sensible
 
 Un rollout ciblé validé (par exemple Coffre des consciences, Emploi ou Mon IA) peut être appliqué séparément si son contrat impose une migration précise et un périmètre plus étroit que le workflow générique.
 
@@ -63,11 +80,11 @@ Dans ce cas :
 6. vérifications SQL/Edge/advisors post-déploiement;
 7. **réconciliation immédiate du ledger** avec les versions distantes réellement générées avant toute future synchronisation générique.
 
-Ne jamais substituer à cette procédure un `db push --include-all`, `migration repair`, `db reset --linked` ou un déploiement global d’Edge Functions.
+Ne jamais substituer à cette procédure un `db push --include-all`, `supabase migration repair`, `supabase db reset --linked` ou un déploiement global d’Edge Functions non borné.
 
 ## Secrets GitHub Actions requis
 
-À configurer dans :
+À configurer hors dépôt dans :
 
 `GitHub → Settings → Secrets and variables → Actions`
 
@@ -77,22 +94,24 @@ Secrets de connexion indispensables :
 
 Secrets optionnels :
 - `RESEND_API_KEY` — courriels transactionnels;
-- `OPENAI_API_KEY` — génération IA optionnelle;
+- `OPENAI_API_KEY` — génération IA optionnelle dans les workflows qui l’autorisent explicitement.
 
 Variable optionnelle :
 - `OPENAI_CHARACTER_MODEL`
 
-**Ne jamais écrire la valeur d’un secret dans le dépôt, une issue, un log, une PR ou un message de documentation.**
+**Ne jamais écrire la valeur d’un secret dans le dépôt, une issue, un log, une PR, un message de documentation ou une sortie de commande.**
+
+L’absence des secrets de connexion ne doit jamais être contournée par un token commité, un fichier `.env` ajouté au dépôt, une valeur collée dans une commande ou une autre voie d’écriture improvisée.
 
 ## Ledger de production
 
 Le fichier `supabase/production-migration-ledger.txt` contient les versions déjà appliquées dans `gpvivleexywljowcqkru`.
 
-État réconcilié au 2026-09-05 :
+État hébergé vérifié au **2026-09-07** :
 
-- `185` versions distantes;
+- `186` versions distantes;
 - première version : `20260809050252_sinjira_universal_platform`;
-- dernière version : `20260905150553_sinjira_v25_personal_ai_audit_user_index`.
+- dernière version : `20260906035442_sinjira_v25_device_challenge_continuity_hardening`.
 
 Règles :
 - ne jamais modifier rétroactivement une version déjà enregistrée;
@@ -108,7 +127,11 @@ Le script `scripts/validate_production_migration_ledger.py` vérifie notamment :
 - suffixe V24.5.54/V25 exact;
 - exactitude du workspace protégé;
 - absence de DDL dans les marqueurs déjà appliqués;
-- transmission des migrations futures.
+- transmission des migrations futures;
+- contrat des workflows génériques de production;
+- cohérence de ce runbook avec la baseline du ledger et les garde-fous d’application.
+
+Le workflow `Validation du ledger Supabase production` doit être déclenché lorsqu’un changement touche ce runbook, afin qu’une documentation obsolète ne puisse pas être fusionnée silencieusement.
 
 ## Reconstruction d’une base neuve
 
@@ -121,6 +144,8 @@ Les migrations V22 restaurées depuis le registre de production sont intentionne
 ## Vérifications post-déploiement minimales
 
 Après toute application réelle, vérifier :
+- le ledger distant et le dry-run final depuis le workspace protégé;
+- l’inventaire des Edge Functions attendu;
 - `get_sinjira_server_version()` = version plateforme attendue;
 - `get_sinjira_runtime_health().ok = true`;
 - `fracture_engine_health().ok = true` et version moteur attendue;
@@ -134,31 +159,25 @@ Après toute application réelle, vérifier :
 
 ## Avertissement Auth actuel — mots de passe compromis
 
-Au 2026-09-05, le Security Advisor signale encore :
+Au 2026-09-07, le Security Advisor peut encore signaler :
 
 `auth_leaked_password_protection` — **Leaked Password Protection Disabled**.
 
-Ce WARN est **ouvert**. Ne jamais écrire qu’il est corrigé tant que le Security Advisor le retourne.
-
-### Ce que fait le réglage
-
-Supabase Auth peut refuser les mots de passe connus comme compromis en les vérifiant contre le service Pwned Passwords de HaveIBeenPwned. Selon la documentation Supabase actuelle, cette protection est disponible sur le **plan Pro et supérieur**.
+Ce point reste ouvert tant que la protection n’est pas effectivement activée et vérifiée. La fonctionnalité Supabase correspondante peut nécessiter un plan payant; **ne jamais activer un plan payant sans autorisation explicite**.
 
 Ce réglage est un paramètre du service Auth hébergé : ce n’est pas une migration PostgreSQL et il ne doit pas être simulé par du SQL, une policy RLS ou une modification de `auth.users`.
 
-### Procédure d’activation autorisée
-
-La connexion Supabase utilisée par l’assistant n’expose actuellement aucune mutation de configuration Auth pour ce réglage. L’activation doit donc être faite dans le Dashboard Supabase par un opérateur autorisé :
+### Procédure d’activation autorisée après autorisation explicite
 
 1. ouvrir le projet `gpvivleexywljowcqkru`;
-2. ouvrir **Authentication / Auth settings**, section du fournisseur **Email**;
-3. conserver ou renforcer les exigences de mot de passe existantes — ne pas abaisser la longueur minimale de `12` utilisée par la configuration SINJIRA;
-4. activer **Prevent the use of leaked passwords / Leaked password protection**;
+2. ouvrir les réglages Authentication/Auth du fournisseur Email;
+3. conserver ou renforcer les exigences de mot de passe existantes — ne pas abaisser la longueur minimale de `12` utilisée par SINJIRA;
+4. activer la protection contre les mots de passe compromis si le plan et l’autorisation le permettent;
 5. enregistrer le réglage;
-6. rouvrir **Security Advisor**;
+6. rouvrir Security Advisor;
 7. confirmer que `auth_leaked_password_protection` / `Leaked Password Protection Disabled` n’apparaît plus.
 
-Si l’option n’est pas disponible, vérifier d’abord le niveau de plan du projet. Ne pas contourner la limitation par une implémentation maison non auditée dans le client.
+Ne pas contourner une limitation de plan par une implémentation maison non auditée dans le client.
 
 ### Critère de fermeture
 
@@ -167,13 +186,7 @@ Ce point n’est fermé que lorsque **les deux** conditions sont vraies :
 - le Dashboard indique la protection activée;
 - une nouvelle lecture du Security Advisor ne contient plus `auth_leaked_password_protection`.
 
-Après fermeture, consigner la date et le résultat du Security Advisor dans une PR documentaire dédiée. Ne jamais consigner de mot de passe, token ou secret utilisé pendant la vérification.
-
-### Effet sur les utilisateurs existants
-
-Renforcer la politique ne nécessite pas de modifier directement les hashes de mot de passe. Ne pas forcer une réinitialisation massive depuis SQL. Toute expérience de récupération/changement de mot de passe doit continuer à préserver l’accès des utilisateurs légitimes et les mécanismes de récupération sécurisés.
-
-Référence officielle : `https://supabase.com/docs/guides/auth/password-security`.
+Ne jamais consigner de mot de passe, token ou secret utilisé pendant la vérification.
 
 ## MFA globale
 
@@ -181,7 +194,7 @@ Ne pas imposer une MFA globale avant validation complète du parcours d’enrôl
 
 ## En cas de divergence de migrations
 
-Ne pas utiliser `migration repair` ou modifier `supabase_migrations.schema_migrations` à l’aveugle.
+Ne pas utiliser `supabase migration repair`, `supabase db reset --linked`, `db push --include-all` ou modifier `supabase_migrations.schema_migrations` à l’aveugle.
 
 Procédure :
 1. arrêter toute application;
