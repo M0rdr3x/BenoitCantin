@@ -9,13 +9,14 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 MOBILE = ROOT / "mobile-native"
 ACCOUNT_DIR = ROOT / "compte"
+APP = MOBILE / "App.tsx"
 ROUTER = MOBILE / "NativeModuleRouter.tsx"
 DOC = MOBILE / "NATIVE_HUB_DESTINATION_CONTRACT_V25.md"
 WORKFLOW = ROOT / ".github" / "workflows" / "sinjira-mobile-native-hub-destinations-v25.yml"
 CENTRAL_WORKFLOW = ROOT / ".github" / "workflows" / "sinjira-mobile-native-route-dispatch-v25.yml"
 
+VAULT_PATH = "/compte/registre-personnel.html"
 SENSITIVE_WEB_ONLY = {
-    "/compte/registre-personnel.html",
     "/compte/connexion.html",
     "/compte/inscription.html",
     "/compte/mot-de-passe-oublie.html",
@@ -59,10 +60,17 @@ def validate_account_destination(source: str, literal: str, account_pages: set[s
     parsed = urlsplit(literal)
     route = parsed.path
     require(route in account_pages, f"{source}: page compte inconnue: {literal}")
+    pairs = parse_qsl(parsed.query, keep_blank_values=True)
+
+    if route == VAULT_PATH:
+        require(source == "NativeHomeHub.tsx",
+                f"{source}: le Registre personnel n'est permis que depuis l'accueil natif gardé")
+        require(not pairs and not parsed.fragment and literal == VAULT_PATH,
+                f"{source}: le lien Registre doit rester exact et sans paramètre/fragment: {literal}")
+        return "vault-guarded-home"
+
     require(route not in SENSITIVE_WEB_ONLY,
             f"{source}: surface sensible interdite dans un tableau de destinations natif: {literal}")
-
-    pairs = parse_qsl(parsed.query, keep_blank_values=True)
 
     if route in natives:
         require(not parsed.fragment,
@@ -86,7 +94,7 @@ def validate_account_destination(source: str, literal: str, account_pages: set[s
 
 
 def main() -> int:
-    for path in (MOBILE, ACCOUNT_DIR, ROUTER, DOC, WORKFLOW, CENTRAL_WORKFLOW):
+    for path in (MOBILE, ACCOUNT_DIR, APP, ROUTER, DOC, WORKFLOW, CENTRAL_WORKFLOW):
         require(path.exists(), f"élément manquant: {path.relative_to(ROOT)}")
 
     account_pages = {f"/compte/{path.name}" for path in ACCOUNT_DIR.glob("*.html") if path.is_file()}
@@ -94,6 +102,14 @@ def main() -> int:
             f"inventaire compte attendu à 42 pages, trouvé {len(account_pages)}")
     natives = native_routes()
     require(len(natives) == 31, f"31 routes natives attendues, trouvé {len(natives)}")
+
+    app = APP.read_text(encoding="utf-8")
+    for marker in (
+        "const VAULT_PATH = '/compte/registre-personnel.html';",
+        "if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current)",
+        "const approved = await requestVaultLocalGate();",
+    ):
+        require(marker in app, f"gate local Registre absent d'App.tsx: {marker}")
 
     hub_files = sorted(MOBILE.glob("Native*Hub.tsx"))
     require(len(hub_files) >= 18, f"inventaire de hubs inattendu: {len(hub_files)}")
@@ -103,6 +119,7 @@ def main() -> int:
         "web-explicit": 0,
         "security-native": 0,
         "security-web-fragment": 0,
+        "vault-guarded-home": 0,
         "public-internal": 0,
     }
     unique_literals: set[tuple[str, str]] = set()
@@ -137,6 +154,8 @@ def main() -> int:
     require(counts["security-native"] > 0, "aucune transition vers le hub Sécurité détectée")
     require(counts["security-web-fragment"] >= 5,
             "les cinq ancres Web Sécurité doivent rester visibles dans le graphe")
+    require(counts["vault-guarded-home"] == 1,
+            f"un seul lien Registre gardé est attendu depuis l'accueil, trouvé {counts['vault-guarded-home']}")
 
     docs = DOC.read_text(encoding="utf-8").casefold()
     for marker in (
@@ -144,6 +163,7 @@ def main() -> int:
         "protéger sans surveiller",
         "surface=web",
         "registre personnel",
+        "uniquement depuis l’accueil",
         "authentification et mfa",
         "signalement de décès",
         "cinq ancres sécurité",
@@ -187,7 +207,7 @@ def main() -> int:
         f"{counts['native']} transitions natives; "
         f"{counts['web-explicit']} sorties Web explicites; "
         f"{counts['security-web-fragment']} ancres Sécurité; "
-        "surfaces Registre/auth/MFA/décès exclues."
+        "1 accès Registre limité à l'accueil gardé; auth/MFA/décès exclus."
     )
     return 0
 
