@@ -60,6 +60,31 @@ def main() -> int:
     require("containsSensitiveExternalAssignment(parsed.hash)" in text,
             "le fragment externe doit être filtré après décodage borné")
 
+    require("function decodeSafeMailtoComponent(value: string)" in text,
+            "mailto doit avoir un décodeur borné dédié")
+    require("value.replace(/\\+/g, ' ')" in text,
+            "le décodeur mailto doit normaliser les plus en espaces")
+    require("/[\\u0000-\\u001F\\u007F]/.test(candidate)" in text,
+            "mailto doit refuser les caractères de contrôle après chaque décodage")
+    require("/%[0-9a-f]{2}/i.test(candidate)" in text,
+            "mailto doit détecter les couches d'encodage restantes")
+    require("if (attempt === 3) return null;" in text,
+            "mailto doit échouer de façon sûre au-delà du budget de décodage")
+    require("function isSafeMailtoUrl(parsed: URL)" in text,
+            "le protocole mailto doit avoir un garde structurel dédié")
+    require("parsed.protocol !== 'mailto:' || parsed.hash" in text,
+            "mailto doit refuser les fragments")
+    require("recipient.length > 320" in text and "recipient.lastIndexOf('@')" in text,
+            "mailto doit exiger un destinataire unique borné")
+    require("/[,\\s;<>?\"\\\\&#/:]/.test(recipient)" in text,
+            "mailto doit refuser listes, espaces et séparateurs de réinterprétation dans le destinataire")
+    require("key !== 'subject' && key !== 'body'" in text,
+            "mailto doit limiter la query aux seuls champs subject et body")
+    require("seen.has(key)" in text,
+            "mailto doit refuser les champs subject/body dupliqués")
+    require("value.length > 200" in text and "value.length > 4000" in text,
+            "mailto doit borner la taille du sujet et du corps")
+
     require("function isSafeTelephoneUrl(parsed: URL)" in text,
             "le protocole tel doit avoir un garde structurel dédié")
     require("parsed.protocol !== 'tel:' || parsed.search || parsed.hash" in text,
@@ -141,16 +166,19 @@ def main() -> int:
     internal_guard_index = guarded_block.index("if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname))")
     protocol_guard_index = guarded_block.index("if (!EXTERNAL_SAFE_PROTOCOLS.has(parsed.protocol))")
     telephone_guard_index = guarded_block.index("if (parsed.protocol === 'tel:' && !isSafeTelephoneUrl(parsed))")
+    mailto_guard_index = guarded_block.index("if (parsed.protocol === 'mailto:' && !isSafeMailtoUrl(parsed))")
     sensitive_guard_index = guarded_block.index("if (hasSensitiveExternalMaterial(parsed))")
     open_url_index = guarded_block.index("void Linking.openURL(url).catch")
     require(userinfo_guard_index < internal_guard_index < protocol_guard_index,
             "les identifiants URL doivent être refusés avant toute classification interne/externe")
     require("les identifiants intégrés à une URL ne sont pas autorisés" in guarded_block,
             "le refus global userinfo doit fournir un message natif explicite")
-    require(protocol_guard_index < telephone_guard_index < sensitive_guard_index < open_url_index,
-            "le garde tel puis le filtre sensible doivent s'appliquer avant toute ouverture OS")
+    require(protocol_guard_index < telephone_guard_index < mailto_guard_index < sensitive_guard_index < open_url_index,
+            "les gardes tel et mailto puis le filtre sensible doivent s'appliquer avant toute ouverture OS")
     require("numéros ordinaires sans code de service ni commande spéciale" in guarded_block,
             "le refus tel doit fournir un message natif explicite")
+    require("destinataire visible et les champs sujet/corps sans en-tête caché" in guarded_block,
+            "le refus mailto doit fournir un message natif explicite")
 
     for secret_marker in (
         "nativeDeviceKey",
@@ -171,6 +199,14 @@ def main() -> int:
         "access%2525255Ftoken=secret",
         "body=access_token%25253Dsecret",
         "mailto:user@example.com?body=refresh_token%25253Dsecret",
+        "mailto:user@example.com?bcc=attacker@example.com",
+        "mailto:user@example.com?cc=attacker@example.com",
+        "mailto:user@example.com?b%2563c=attacker@example.com",
+        "subject=Hello%0D%0ABcc%3Aattacker%40example.com",
+        "subject=Hello%250D%250ABcc%253Aattacker%2540example.com",
+        "mailto:user@example.com,user2@example.com?subject=Bonjour",
+        "mailto:user@example.com?subject=one&subject=two",
+        "mailto:user+tag@example.com?subject=Bonjour",
         "https://user:password@example.com/",
         "javascript:alert(1)",
         "tel:+15145551234",
@@ -188,7 +224,11 @@ def main() -> int:
     ):
         require(marker in adversarial_text, f"cas adversarial obligatoire absent: {marker}")
     require("hello%2525252520world" in adversarial_text,
-            "le test doit verrouiller l'échec sûr lorsque le budget de décodage est dépassé")
+            "le test doit verrouiller l'échec sûr lorsque le budget de décodage sensible est dépassé")
+    require("decodeSafeMailtoComponent" in adversarial_text and "isSafeMailtoUrl" in adversarial_text,
+            "le test adversarial doit exécuter le garde mailto réel de App.tsx")
+    require("blockedMailtoUrls" in adversarial_text and "allowedMailtoUrls" in adversarial_text,
+            "le test doit séparer clairement les formes mailto dangereuses et légitimes")
     require("isSafeTelephoneUrl" in adversarial_text,
             "le test adversarial doit exécuter le garde tel réel de App.tsx")
     require("blockedTelephoneUrls" in adversarial_text and "allowedTelephoneUrls" in adversarial_text,
@@ -212,6 +252,8 @@ def main() -> int:
         require(marker in adversarial_text, f"cas shouldStart obligatoire absent: {marker}")
     require("identifiants intégrés à une URL" in adversarial_text,
             "le test doit vérifier le message du refus userinfo interne")
+    require("destinataire visible et les champs sujet/corps sans en-tête caché" in adversarial_text,
+            "le test doit vérifier le message du refus mailto")
     require("numéros ordinaires sans code de service ni commande spéciale" in adversarial_text,
             "le test doit vérifier le message du refus tel")
     require("assert.deepEqual(harness.openedUrls, []" in adversarial_text,
@@ -234,7 +276,7 @@ def main() -> int:
     require("npm run test:deep-link-normalizer" in workflow_text,
             "le workflow frontière mobile doit exécuter le test deep link")
 
-    print("OK navigation mobile V25: frontière externe bornée, userinfo refusé avant classification, tel borné aux numéros ordinaires, deep links épinglés à l'origine par test exécutable, décodage fail-closed et décision shouldStart complète exécutée avec effets de bord en CI.")
+    print("OK navigation mobile V25: frontière externe bornée, userinfo refusé avant classification, mailto limité à un destinataire visible et subject/body sûrs, tel borné aux numéros ordinaires, deep links épinglés à l'origine par test exécutable, décodage fail-closed et décision shouldStart complète exécutée avec effets de bord en CI.")
     return 0
 
 
