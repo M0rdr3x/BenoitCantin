@@ -81,6 +81,15 @@ def main() -> int:
             "Commerce non importé dans le routeur")
     require("'/compte/mes-achats.html'" in router and "<NativeCommerceHub" in router,
             "route Commerce native absente")
+    for alias in (
+        "/compte/marche.html",
+        "/compte/jetons.html",
+        "/compte/licences.html",
+    ):
+        require(f"case '{alias}':" in router,
+                f"alias Commerce absent du routeur natif: {alias}")
+    require(router.count("return <NativeCommerceHub") == 1,
+            "les alias Commerce doivent converger vers une seule implémentation du hub")
 
     doc_fold = doc.casefold()
     for marker in (
