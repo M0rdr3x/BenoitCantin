@@ -62,8 +62,8 @@ def main() -> int:
 
     require("function decodeSafeMailtoComponent(value: string)" in text,
             "mailto doit avoir un décodeur borné dédié")
-    require("value.replace(/\\+/g, ' ')" in text,
-            "le décodeur mailto doit normaliser les plus en espaces")
+    require("let candidate = value;" in text,
+            "le décodeur mailto doit préserver le plus littéral des adresses; URLSearchParams normalise déjà la query")
     require("/[\\u0000-\\u001F\\u007F]/.test(candidate)" in text,
             "mailto doit refuser les caractères de contrôle après chaque décodage")
     require("/%[0-9a-f]{2}/i.test(candidate)" in text,
