@@ -1,0 +1,29 @@
+name: SINJIRA V25 — Frontière producteur push natif
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+      - 'supabase/migrations/**'
+      - 'assets/js/sinjira-security-push-bridge-v24-4-98.js'
+      - 'mobile-native/App.tsx'
+      - 'scripts/validate_native_push_producer_boundary_v25.py'
+      - '.github/workflows/sinjira-native-push-producer-boundary-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-push-producer-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Valider la frontière du producteur push natif
+        run: python3 scripts/validate_native_push_producer_boundary_v25.py
