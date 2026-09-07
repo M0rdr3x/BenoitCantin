@@ -9,9 +9,12 @@ ROUTER = ROOT / "mobile-native" / "NativeModuleRouter.tsx"
 LIBRARY = ROOT / "mobile-native" / "NativeLibraryHub.tsx"
 GAMES = ROOT / "mobile-native" / "NativeGamesHub.tsx"
 COMMUNITY = ROOT / "mobile-native" / "NativeCommunityHub.tsx"
+MESSAGES = ROOT / "mobile-native" / "NativeMessagesHub.tsx"
+DATING = ROOT / "mobile-native" / "NativeDatingHub.tsx"
 DOC = ROOT / "mobile-native" / "NATIVE_SECONDARY_ROUTE_ALIASES_V25.md"
 WORKFLOW = ROOT / ".github" / "workflows" / "sinjira-mobile-native-secondary-route-aliases-v25.yml"
 CENTRAL_WORKFLOW = ROOT / ".github" / "workflows" / "sinjira-mobile-native-route-dispatch-v25.yml"
+MODERATION_APPEALS_GUARD = ROOT / "scripts" / "validate_moderation_appeals_v24_4_90.py"
 
 
 def fail(message: str) -> None:
@@ -46,13 +49,15 @@ def require_aliases(router: str, aliases: tuple[str, ...], component: str) -> No
 
 
 def main() -> int:
-    for path in (ROUTER, LIBRARY, GAMES, COMMUNITY, DOC, WORKFLOW, CENTRAL_WORKFLOW):
+    for path in (ROUTER, LIBRARY, GAMES, COMMUNITY, MESSAGES, DATING, DOC, WORKFLOW, CENTRAL_WORKFLOW, MODERATION_APPEALS_GUARD):
         require(path.is_file(), f"fichier manquant: {path.relative_to(ROOT)}")
 
     router = ROUTER.read_text("utf-8")
     library = LIBRARY.read_text("utf-8")
     games = GAMES.read_text("utf-8")
     community = COMMUNITY.read_text("utf-8")
+    messages = MESSAGES.read_text("utf-8")
+    dating = DATING.read_text("utf-8")
     doc = DOC.read_text("utf-8")
     workflow = WORKFLOW.read_text("utf-8")
     central_workflow = CENTRAL_WORKFLOW.read_text("utf-8")
@@ -72,7 +77,12 @@ def main() -> int:
         "/compte/playtests.html",
     ), "NativeLibraryHub")
     require_aliases(router, ("/compte/contributions.html",), "NativeGamesHub")
-    require_aliases(router, ("/compte/mes-commentaires.html",), "NativeCommunityHub")
+    require_aliases(router, (
+        "/compte/mes-commentaires.html",
+        "/compte/blocages.html",
+        "/compte/regles-communaute.html",
+        "/compte/moderation.html",
+    ), "NativeCommunityHub")
     require_aliases(router, ("/compte/mes-personnages.html",), "NativeCharacterHub")
     require_aliases(router, ("/compte/vie-privee.html",), "NativePrivacyHub")
     require_aliases(router, ("/compte/parametres.html",), "NativeSettingsHub")
@@ -95,12 +105,31 @@ def main() -> int:
     require("n’active aucun consentement" in games and "commentaire libre" in games,
             "consentement/texte libre non explicitement exclus du hub Jeux")
 
-    require("/compte/mes-commentaires.html?surface=web" in community,
-            "sortie Mes commentaires explicite absente")
+    for destination in (
+        "/compte/mes-commentaires.html?surface=web",
+        "/compte/blocages.html?surface=web",
+        "/compte/regles-communaute.html?surface=web",
+        "/compte/moderation.html?surface=web",
+    ):
+        require(destination in community, f"sortie Communauté explicite absente: {destination}")
     require("état en attente, publié ou refusé" in community,
             "état de modération des commentaires non explicitement exclu")
+    require("Aucun dossier d’appel dans le natif" in community,
+            "frontière du dossier d’appel absente du hub Communauté")
+    require("date limite d’appel" in community and "révision humaine restent dans la surface Web" in community,
+            "données d’appel ou révision humaine insuffisamment bornées")
 
-    for text, label in ((router, "routeur"), (library, "Bibliothèque"), (games, "Jeux"), (community, "Communauté")):
+    for label, text in (("Messages", messages), ("Rencontres", dating)):
+        for destination in (
+            "/compte/blocages.html?surface=web",
+            "/compte/regles-communaute.html?surface=web",
+        ):
+            require(destination in text, f"sortie Web explicite absente dans {label}: {destination}")
+
+    for text, label in (
+        (router, "routeur"), (library, "Bibliothèque"), (games, "Jeux"),
+        (community, "Communauté"), (messages, "Messages"), (dating, "Rencontres"),
+    ):
         for marker in (
             "WebView", "SecureStore", "AsyncStorage", "LocalAuthentication", "Notifications", "expo-",
             "supabase", "fetch(", "XMLHttpRequest", "rpc(", "/rest/v1/", "/functions/v1/",
@@ -108,10 +137,15 @@ def main() -> int:
         ):
             forbid(text, marker, f"capacité interdite dans {label}: {marker}")
 
+    for text, label in ((router, "routeur"), (community, "Communauté"), (messages, "Messages"), (dating, "Rencontres")):
+        for marker in ("moderation_my_decisions", "moderation_submit_appeal"):
+            forbid(text, marker, f"RPC d’appel interdit dans {label}: {marker}")
+
     props = router.split("type Props = {", 1)[1].split("};", 1)[0].lower()
     for marker in (
         "user", "session", "content", "payload", "consent", "comment", "moderation", "invite",
         "playtest", "age", "guardian", "progress", "document", "identity", "characterdata",
+        "decision", "appeal", "reason", "deadline", "urgency", "review",
     ):
         forbid(props, marker, f"donnée secondaire interdite dans les props du routeur: {marker}")
 
@@ -138,6 +172,10 @@ def main() -> int:
         "playtests.html",
         "contributions.html",
         "mes-commentaires.html",
+        "blocages.html",
+        "regles-communaute.html",
+        "moderation.html",
+        "révision humaine obligatoire",
         "mes-personnages.html",
         "vie-privee.html",
         "parametres.html",
@@ -157,6 +195,8 @@ def main() -> int:
         "python3 scripts/validate_mobile_native_games_hub_v25.py",
         "python3 scripts/validate_mobile_native_community_hub_v25.py",
         "python3 scripts/validate_mobile_native_messages_hub_v25.py",
+        "python3 scripts/validate_mobile_native_dating_hub_v25.py",
+        "python3 scripts/validate_moderation_appeals_v24_4_90.py",
         "python3 scripts/validate_mobile_native_character_hub_v25.py",
         "python3 scripts/validate_mobile_native_settings_hub_v25.py",
         "python3 scripts/validate_mobile_native_privacy_hub_v25.py",
@@ -180,7 +220,7 @@ def main() -> int:
         for marker in ("environment: production", "supabase_access_token", "${{ secrets.", "supabase start", "supabase db"):
             forbid(workflow_lower, marker.lower(), f"production/secret interdit dans le workflow {label}: {marker}")
 
-    print("OK alias secondaires natifs V25: convergence exacte vers les hubs existants, aucune donnée secondaire locale et chemins sensibles exclus.")
+    print("OK alias secondaires natifs V25: protections sociales convergent sans données locales; appels restent Web/serveur avec révision humaine.")
     return 0
 
 
