@@ -99,4 +99,4 @@ Aucune de ces routes n’est ajoutée à `NATIVE_MODULE_PATHS` par ce changement
 
 Le routeur reçoit une intention d’URL, pas des données métier. Il ne reçoit ni message, profil, historique, candidature, compatibilité, sauvegarde, commentaire, relation, achat, solde, identité de personnage, souvenir, réglage IA, décision de modération, donnée de voyage ou contenu du Registre.
 
-Le choix du sas protège la cohérence de l’application; il ne remplace jamais les décisions et contrôles humains ou serveur qui protègent les personnes.
+Le choix du sas protège la cohérence de l’application; il ne remplace jamais une décision humaine, une **révision humaine** obligatoire, ni les contrôles serveur qui protègent les personnes. Il ne décide ni d’un appel de modération, ni d’un décès, ni du canon, ni d’un autre changement irréversible.
