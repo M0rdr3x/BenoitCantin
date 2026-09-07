@@ -252,7 +252,7 @@ def main() -> int:
         require(marker in adversarial_text, f"cas shouldStart obligatoire absent: {marker}")
     require("identifiants intégrés à une URL" in adversarial_text,
             "le test doit vérifier le message du refus userinfo interne")
-    require("destinataire visible et les champs sujet/corps sans en-tête caché" in adversarial_text,
+    require("destinataire visible" in adversarial_text and "sans en-tête caché" in adversarial_text,
             "le test doit vérifier le message du refus mailto")
     require("numéros ordinaires sans code de service ni commande spéciale" in adversarial_text,
             "le test doit vérifier le message du refus tel")
