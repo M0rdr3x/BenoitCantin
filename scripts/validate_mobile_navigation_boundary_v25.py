@@ -58,6 +58,17 @@ def main() -> int:
     require("containsSensitiveExternalAssignment(parsed.hash)" in text,
             "le fragment externe doit être filtré après décodage borné")
 
+    require("function isSafeTelephoneUrl(parsed: URL)" in text,
+            "le protocole tel doit avoir un garde structurel dédié")
+    require("parsed.protocol !== 'tel:' || parsed.search || parsed.hash" in text,
+            "les URL tel doivent refuser query et fragment")
+    require("decodeURIComponent(parsed.pathname)" in text,
+            "le numéro tel doit être contrôlé après décodage URL")
+    require("/^\\+?[0-9(). \\-]+$/.test(number)" in text,
+            "tel doit accepter seulement chiffres, plus initial et séparateurs visuels ordinaires")
+    require("digits.length >= 3 && digits.length <= 15" in text,
+            "tel doit borner les numéros à 3–15 chiffres")
+
     require("parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)" in text,
             "les pages SINJIRA internes doivent rester bornées à HTTPS + hôtes approuvés")
     require("!EXTERNAL_SAFE_PROTOCOLS.has(parsed.protocol)" in text,
@@ -96,14 +107,17 @@ def main() -> int:
     userinfo_guard_index = guarded_block.index("if (parsed.username || parsed.password)")
     internal_guard_index = guarded_block.index("if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname))")
     protocol_guard_index = guarded_block.index("if (!EXTERNAL_SAFE_PROTOCOLS.has(parsed.protocol))")
+    telephone_guard_index = guarded_block.index("if (parsed.protocol === 'tel:' && !isSafeTelephoneUrl(parsed))")
     sensitive_guard_index = guarded_block.index("if (hasSensitiveExternalMaterial(parsed))")
     open_url_index = guarded_block.index("void Linking.openURL(url).catch")
     require(userinfo_guard_index < internal_guard_index < protocol_guard_index,
             "les identifiants URL doivent être refusés avant toute classification interne/externe")
     require("les identifiants intégrés à une URL ne sont pas autorisés" in guarded_block,
             "le refus global userinfo doit fournir un message natif explicite")
-    require(protocol_guard_index < sensitive_guard_index < open_url_index,
-            "le filtre sensible doit s'appliquer après l'allowlist de protocoles et avant toute ouverture OS")
+    require(protocol_guard_index < telephone_guard_index < sensitive_guard_index < open_url_index,
+            "le garde tel puis le filtre sensible doivent s'appliquer avant toute ouverture OS")
+    require("numéros ordinaires sans code de service ni commande spéciale" in guarded_block,
+            "le refus tel doit fournir un message natif explicite")
 
     for secret_marker in (
         "nativeDeviceKey",
@@ -127,11 +141,25 @@ def main() -> int:
         "https://user:password@example.com/",
         "javascript:alert(1)",
         "tel:+15145551234",
+        "tel:*123%23",
+        "tel:%2A123%23",
+        "tel:+15145551234,123",
+        "tel:+15145551234;ext=123",
+        "tel:+15145551234?foo=bar",
+        "tel:+15145551234#service",
+        "tel:+1234567890123456",
+        "tel:12",
+        "tel:+1%20(514)%20555-1234",
+        "tel:+33.1.42.68.53.00",
         "topic=tokenization",
     ):
         require(marker in adversarial_text, f"cas adversarial obligatoire absent: {marker}")
     require("hello%2525252520world" in adversarial_text,
             "le test doit verrouiller l'échec sûr lorsque le budget de décodage est dépassé")
+    require("isSafeTelephoneUrl" in adversarial_text,
+            "le test adversarial doit exécuter le garde tel réel de App.tsx")
+    require("blockedTelephoneUrls" in adversarial_text and "allowedTelephoneUrls" in adversarial_text,
+            "le test doit séparer clairement les formes tel dangereuses et légitimes")
 
     require("'  const shouldStart = (request: { url: string }) => {'" in adversarial_text,
             "le test doit extraire et exécuter le vrai shouldStart de App.tsx")
@@ -151,6 +179,8 @@ def main() -> int:
         require(marker in adversarial_text, f"cas shouldStart obligatoire absent: {marker}")
     require("identifiants intégrés à une URL" in adversarial_text,
             "le test doit vérifier le message du refus userinfo interne")
+    require("numéros ordinaires sans code de service ni commande spéciale" in adversarial_text,
+            "le test doit vérifier le message du refus tel")
     require("assert.deepEqual(harness.openedUrls, []" in adversarial_text,
             "les refus doivent vérifier qu'aucune ouverture OS n'a lieu")
     require("assert.deepEqual(harness.openedUrls, [rawUrl]" in adversarial_text,
@@ -165,7 +195,7 @@ def main() -> int:
     require("npm run test:navigation-guard" in workflow_text,
             "le workflow frontière mobile doit exécuter le test adversarial")
 
-    print("OK navigation mobile V25: frontière externe bornée, userinfo refusé avant classification, décodage fail-closed et décision shouldStart complète exécutée avec effets de bord en CI.")
+    print("OK navigation mobile V25: frontière externe bornée, userinfo refusé avant classification, tel borné aux numéros ordinaires, décodage fail-closed et décision shouldStart complète exécutée avec effets de bord en CI.")
     return 0
 
 
