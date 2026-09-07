@@ -94,8 +94,8 @@ type TabKey = (typeof tabs)[number]['key'];
 
 function normalizeSinjiraUrl(url: string | null): string | null {
   if (!url) return null;
-  if (url.startsWith('sinjira://')) {
-    const relativePath = url.replace(/^sinjira:\/\//, '/');
+  if (/^sinjira:\/+/i.test(url)) {
+    const relativePath = url.replace(/^sinjira:\/+/i, '/');
     return `${ORIGIN}${relativePath}`;
   }
   try {

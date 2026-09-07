@@ -100,3 +100,11 @@ Aucune de ces routes n’est ajoutée à `NATIVE_MODULE_PATHS` par ce changement
 Le routeur reçoit une intention d’URL, pas des données métier. Il ne reçoit ni message, profil, historique, candidature, compatibilité, sauvegarde, commentaire, relation, achat, solde, identité de personnage, souvenir, réglage IA, décision de modération, donnée de voyage ou contenu du Registre.
 
 Le choix du sas protège la cohérence de l’application; il ne remplace jamais une décision humaine, une **révision humaine** obligatoire, ni les contrôles serveur qui protègent les personnes. Il ne décide ni d’un appel de modération, ni d’un décès, ni du canon, ni d’un autre changement irréversible.
+
+## Normalisation du schéma mobile `sinjira:`
+
+Les intentions natives acceptent les formes URI usuelles à **une, deux ou trois barres** (`sinjira:/compte/...`, `sinjira://compte/...`, `sinjira:///compte/...`). Elles sont toutes ramenées à un seul chemin interne `/compte/...` avant la décision de routage. Cela évite qu’une URI triple-slash devienne accidentellement `//compte/...` et contourne le sas natif.
+
+Le garde dédié couvre explicitement les trois formes afin qu’une régression de normalisation échoue en CI avant fusion.
+
+Cette normalisation ne rend aucune nouvelle route admissible : les mêmes listes fermées, exclusions sensibles et règles `?surface=web` continuent de s’appliquer après normalisation.

@@ -53,8 +53,12 @@ def main() -> int:
     require("originWhitelist={['*']}" not in text and "http://*" not in text,
             "aucune whitelist WebView globale ou HTTP n'est permise")
 
-    require("if (url.startsWith('sinjira://'))" in text and "normalizeSinjiraUrl" in text,
-            "les deep links sinjira:// doivent rester normalisés côté natif")
+    require("function normalizeSinjiraUrl(url: string | null): string | null" in text,
+            "le normaliseur des deep links SINJIRA doit rester côté natif")
+    require("if (/^sinjira:\\/+/i.test(url))" in text,
+            "les deep links sinjira: à une, deux ou trois barres doivent rester reconnus côté natif")
+    require("url.replace(/^sinjira:\\/+/i, '/')" in text,
+            "les deep links sinjira: doivent être ramenés à un seul chemin interne")
     require("Linking.getInitialURL()" in text and "Linking.addEventListener('url'" in text,
             "les deep links doivent rester traités par React Native Linking")
 
@@ -76,7 +80,7 @@ def main() -> int:
         require(secret_marker not in guarded_block,
                 f"la navigation externe ne doit pas transmettre le secret {secret_marker}")
 
-    print("OK navigation mobile V25: WebView HTTPS SINJIRA bornée, schémas externes arbitraires refusés et URLs externes sensibles bloquées.")
+    print("OK navigation mobile V25: WebView HTTPS SINJIRA bornée, schémas externes arbitraires refusés, liens sinjira normalisés et URLs externes sensibles bloquées.")
     return 0
 
 
