@@ -6,6 +6,7 @@ import { NativeCommerceHub } from './NativeCommerceHub';
 import { NativeCommunityHub } from './NativeCommunityHub';
 import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
+import { NativeGamesHub } from './NativeGamesHub';
 import { NativeLibraryHub } from './NativeLibraryHub';
 import { NativeLifeStoryHub } from './NativeLifeStoryHub';
 import { NativeMessagesHub } from './NativeMessagesHub';
@@ -39,6 +40,11 @@ const mainDestinations = [
     label: 'Ma bibliothèque',
     description: 'Ouvrir un hub natif sans rôle, licence, progression ni droit d’accès avant la bibliothèque protégée.',
     path: '/compte/bibliotheque.html',
+  },
+  {
+    label: 'Mes parties',
+    description: 'Ouvrir un hub natif sans sauvegarde, code de partie, feuille de joueur ni fichier JSON local.',
+    path: '/compte/mes-parties.html',
   },
   {
     label: 'Communauté',
@@ -132,6 +138,7 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [communityHubOpen, setCommunityHubOpen] = useState(false);
   const [datingHubOpen, setDatingHubOpen] = useState(false);
   const [employmentHubOpen, setEmploymentHubOpen] = useState(false);
+  const [gamesHubOpen, setGamesHubOpen] = useState(false);
   const [libraryHubOpen, setLibraryHubOpen] = useState(false);
   const [lifeStoryHubOpen, setLifeStoryHubOpen] = useState(false);
   const [messagesHubOpen, setMessagesHubOpen] = useState(false);
@@ -180,6 +187,15 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     return (
       <NativeEmploymentHub
         onBack={() => setEmploymentHubOpen(false)}
+        onOpenPath={onOpenPath}
+      />
+    );
+  }
+
+  if (gamesHubOpen) {
+    return (
+      <NativeGamesHub
+        onBack={() => setGamesHubOpen(false)}
         onOpenPath={onOpenPath}
       />
     );
@@ -272,6 +288,10 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
     }
     if (path === '/compte/bibliotheque.html') {
       setLibraryHubOpen(true);
+      return;
+    }
+    if (path === '/compte/mes-parties.html') {
+      setGamesHubOpen(true);
       return;
     }
     if (path === '/compte/communaute.html') {
