@@ -1,5 +1,6 @@
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
+import { buildSecurityPushMessage, SECURITY_PUSH_MAX_BATCH } from '../_shared/security-push-policy.mjs';
 
 function safeText(value: unknown, max: number) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -30,7 +31,8 @@ function trustedGeo(req: Request) {
 }
 
 async function sendSecurityPush(service: ReturnType<typeof serviceClient>, userId: string, security: any) {
-  if (!security || !['challenge', 'block'].includes(String(security.outcome || ''))) return;
+  const outcome = String(security?.outcome || '');
+  if (!['challenge', 'block'].includes(outcome)) return;
 
   const { data: endpoints, error } = await service
     .from('security_push_endpoints')
@@ -38,48 +40,42 @@ async function sendSecurityPush(service: ReturnType<typeof serviceClient>, userI
     .eq('user_id', userId)
     .eq('enabled', true);
   if (error) {
-    console.warn('[security-context] endpoints push indisponibles', error.message);
+    console.warn('[security-context] endpoints push indisponibles');
     return;
   }
   if (!endpoints?.length) return;
 
-  const challenged = security.outcome === 'challenge';
-  const messages = endpoints.map((endpoint: any) => ({
-    to: endpoint.expo_push_token,
-    sound: null,
-    title: 'Sécurité SINJIRA',
-    body: challenged
-      ? 'Une connexion inhabituelle demande votre attention.'
-      : 'SINJIRA a bloqué une tentative nécessitant votre attention.',
-    data: { path: '/compte/securite.html' },
-    channelId: 'security',
-    priority: 'high',
-    ttl: 600
-  }));
+  const invalidIds: string[] = [];
+  for (let offset = 0; offset < endpoints.length; offset += SECURITY_PUSH_MAX_BATCH) {
+    const endpointBatch = endpoints.slice(offset, offset + SECURITY_PUSH_MAX_BATCH);
+    const messages = endpointBatch.map((endpoint: any) =>
+      buildSecurityPushMessage(endpoint.expo_push_token, outcome)
+    );
 
-  try {
-    const response = await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(messages)
-    });
-    if (!response.ok) {
-      console.warn('[security-context] Expo Push HTTP', response.status, await response.text());
-      return;
-    }
-    const result = await response.json().catch(() => null);
-    const tickets = Array.isArray(result?.data) ? result.data : [];
-    const invalidIds: string[] = [];
-    tickets.forEach((ticket: any, index: number) => {
-      if (ticket?.status === 'error' && ticket?.details?.error === 'DeviceNotRegistered' && endpoints[index]?.id) {
-        invalidIds.push(endpoints[index].id);
+    try {
+      const response = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(messages)
+      });
+      if (!response.ok) {
+        console.warn('[security-context] Expo Push HTTP', response.status);
+        continue;
       }
-    });
-    if (invalidIds.length) {
-      await service.from('security_push_endpoints').update({ enabled: false, updated_at: new Date().toISOString() }).in('id', invalidIds);
+      const result = await response.json().catch(() => null);
+      const tickets = Array.isArray(result?.data) ? result.data : [];
+      tickets.forEach((ticket: any, index: number) => {
+        if (ticket?.status === 'error' && ticket?.details?.error === 'DeviceNotRegistered' && endpointBatch[index]?.id) {
+          invalidIds.push(endpointBatch[index].id);
+        }
+      });
+    } catch {
+      console.warn('[security-context] envoi push impossible');
     }
-  } catch (error) {
-    console.warn('[security-context] envoi push impossible', error);
+  }
+
+  if (invalidIds.length) {
+    await service.from('security_push_endpoints').update({ enabled: false, updated_at: new Date().toISOString() }).in('id', invalidIds);
   }
 }
 
