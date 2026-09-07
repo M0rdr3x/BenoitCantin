@@ -153,6 +153,43 @@ function hasSensitiveExternalMaterial(parsed: URL) {
   return containsSensitiveExternalAssignment(parsed.hash);
 }
 
+function decodeSafeMailtoComponent(value: string) {
+  let candidate = value.replace(/\+/g, ' ');
+  for (let attempt = 0; attempt <= 3; attempt += 1) {
+    if (/[\u0000-\u001F\u007F]/.test(candidate)) return null;
+    if (!/%[0-9a-f]{2}/i.test(candidate)) return candidate;
+    try {
+      const decoded = decodeURIComponent(candidate);
+      if (decoded === candidate) return candidate;
+      if (attempt === 3) return null;
+      candidate = decoded;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function isSafeMailtoUrl(parsed: URL) {
+  if (parsed.protocol !== 'mailto:' || parsed.hash) return false;
+  const recipient = decodeSafeMailtoComponent(parsed.pathname);
+  if (!recipient || recipient.length > 320 || /[,\s;<>?"\\&#/:]/.test(recipient)) return false;
+  const atIndex = recipient.indexOf('@');
+  if (atIndex <= 0 || atIndex !== recipient.lastIndexOf('@') || atIndex === recipient.length - 1) return false;
+
+  const seen = new Set<string>();
+  for (const [rawKey, rawValue] of parsed.searchParams.entries()) {
+    const key = decodeSafeMailtoComponent(rawKey)?.toLowerCase();
+    if (!key || (key !== 'subject' && key !== 'body') || seen.has(key)) return false;
+    seen.add(key);
+    const value = decodeSafeMailtoComponent(rawValue);
+    if (value === null) return false;
+    if (key === 'subject' && value.length > 200) return false;
+    if (key === 'body' && value.length > 4000) return false;
+  }
+  return true;
+}
+
 function isSafeTelephoneUrl(parsed: URL) {
   if (parsed.protocol !== 'tel:' || parsed.search || parsed.hash) return false;
   let number: string;
@@ -618,6 +655,11 @@ export default function App() {
 
     if (parsed.protocol === 'tel:' && !isSafeTelephoneUrl(parsed)) {
       setNativeMessage('Lien téléphonique bloqué : seuls les numéros ordinaires sans code de service ni commande spéciale sont autorisés.');
+      return false;
+    }
+
+    if (parsed.protocol === 'mailto:' && !isSafeMailtoUrl(parsed)) {
+      setNativeMessage('Lien courriel bloqué : SINJIRA autorise seulement un destinataire visible et les champs sujet/corps sans en-tête caché.');
       return false;
     }
 
