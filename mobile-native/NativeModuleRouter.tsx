@@ -20,6 +20,9 @@ export const NATIVE_MODULE_PATHS = [
   '/compte/communaute.html',
   '/compte/relations.html',
   '/compte/mes-achats.html',
+  '/compte/marche.html',
+  '/compte/jetons.html',
+  '/compte/licences.html',
   '/compte/monde-parallele.html',
   '/compte/mon-ia.html',
   '/compte/histoire-de-vie.html',
@@ -55,6 +58,9 @@ export function NativeModuleRouter({ path, onOpenPath, onBack }: Props) {
     case '/compte/relations.html':
       return <NativeRelationsHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/mes-achats.html':
+    case '/compte/marche.html':
+    case '/compte/jetons.html':
+    case '/compte/licences.html':
       return <NativeCommerceHub onOpenPath={onOpenPath} onBack={onBack} />;
     case '/compte/monde-parallele.html':
       return <NativeParallelWorldHub onOpenPath={onOpenPath} onBack={onBack} />;
