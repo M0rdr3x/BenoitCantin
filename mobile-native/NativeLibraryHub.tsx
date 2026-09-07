@@ -56,7 +56,7 @@ export function NativeLibraryHub({ onOpenPath, onBack }: Props) {
         <Text style={styles.eyebrow}>L’HUMAIN AVANT TOUT</Text>
         <Text style={styles.title}>Ma bibliothèque</Text>
         <Text style={styles.intro}>
-          Ce hub natif ne lit aucun rôle, droit d’accès, licence, progression de lecture, candidature ou invitation de playtest, document privé ni inventaire de projet. Il sert uniquement à vous orienter.
+          Ce hub natif ne lit aucun rôle, droit d’accès, licence, progression de lecture, demande testeur, document privé ni inventaire de projet. Il ne lit pas non plus vos candidatures, invitations, participations ou critères d’admissibilité de playtest.
         </Text>
       </View>
 
