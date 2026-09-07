@@ -7,6 +7,7 @@ on:
       - 'assets/js/sinjira-security-center-v24-4-98.js'
       - 'compte/securite.html'
       - 'mobile-native/App.tsx'
+      - 'mobile-native/package.json'
       - 'scripts/validate_device_challenge_client_boundary.py'
       - 'scripts/validate_device_challenge_continuity_smoke.py'
       - 'scripts/validate_no_committed_secrets.py'
