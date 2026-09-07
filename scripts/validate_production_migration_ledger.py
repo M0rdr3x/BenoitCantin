@@ -7,7 +7,10 @@ LEDGER = ROOT / 'supabase' / 'production-migration-ledger.txt'
 MIG = ROOT / 'supabase' / 'migrations'
 BUILDER = ROOT / 'scripts' / 'build_supabase_production_workspace.py'
 WORKFLOW = ROOT / '.github' / 'workflows' / 'supabase-production-preflight.yml'
+SAFE_WORKFLOW = ROOT / '.github' / 'workflows' / 'supabase-production-safe.yml'
 HISTORY_WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-production-migration-history-guard-v25.yml'
+VALIDATION_WORKFLOW = ROOT / '.github' / 'workflows' / 'validate-production-ledger.yml'
+RUNBOOK = ROOT / 'docs' / 'SUPABASE_PRODUCTION_RUNBOOK.md'
 ROW_RE = re.compile(r'^(\d{14})\s+([a-zA-Z0-9_]+)$')
 FILE_RE = re.compile(r'^(\d{14})_(.+)\.sql$')
 EXPECTED_COUNT = 186
@@ -116,9 +119,22 @@ def validate_ledger_append_only(errors, base_ref, current_rows):
         )
 
 
+def validate_step_gate(errors, text, step_names, expected_gate, workflow_label):
+    for step_name in step_names:
+        marker = f'- name: {step_name}'
+        start = text.find(marker)
+        if start < 0:
+            errors.append(f'Étape de synchronisation {workflow_label} absente: {step_name}')
+            continue
+        next_step = text.find('\n      - name:', start + len(marker))
+        section = text[start:next_step if next_step >= 0 else len(text)]
+        if expected_gate not in section:
+            errors.append(f'Étape de synchronisation {workflow_label} sans garde attendue: {step_name}')
+
+
 def validate_production_workflow(errors):
     if not WORKFLOW.is_file():
-        errors.append('Workflow Supabase production absent.')
+        errors.append('Workflow Supabase production canonique absent.')
     else:
         text = WORKFLOW.read_text('utf-8')
         required = (
@@ -154,24 +170,20 @@ def validate_production_workflow(errors):
                 errors.append(f'Workflow production sans signal de prévol/synchronisation attendu: {marker}')
 
         apply_gate = "if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}"
-        gated_steps = (
-            'Appliquer les migrations de production depuis le workspace protégé',
-            'Auditer les fonctions SQL après migrations',
-            'Garantir les secrets Edge Functions indispensables',
-            'Déployer toutes les Edge Functions du workspace protégé',
-            'Vérifier les Edge Functions déployées',
-            "Vérifier l'historique et le dry-run après déploiement",
+        validate_step_gate(
+            errors,
+            text,
+            (
+                'Appliquer les migrations de production depuis le workspace protégé',
+                'Auditer les fonctions SQL après migrations',
+                'Garantir les secrets Edge Functions indispensables',
+                'Déployer toutes les Edge Functions du workspace protégé',
+                'Vérifier les Edge Functions déployées',
+                "Vérifier l'historique et le dry-run après déploiement",
+            ),
+            apply_gate,
+            'canonique',
         )
-        for step_name in gated_steps:
-            marker = f'- name: {step_name}'
-            start = text.find(marker)
-            if start < 0:
-                errors.append(f'Étape de synchronisation production absente: {step_name}')
-                continue
-            next_step = text.find('\n      - name:', start + len(marker))
-            section = text[start:next_step if next_step >= 0 else len(text)]
-            if apply_gate not in section:
-                errors.append(f'Étape de synchronisation sans triple garde workflow_dispatch/apply/secrets: {step_name}')
 
         direct_forbidden = (
             '\n          supabase link --project-ref',
@@ -188,26 +200,103 @@ def validate_production_workflow(errors):
             if marker in text:
                 errors.append(f'Primitive ou tolérance interdite dans le workflow production: {marker}')
 
+    if not SAFE_WORKFLOW.is_file():
+        errors.append('Workflow Supabase production secondaire absent.')
+    else:
+        safe_text = SAFE_WORKFLOW.read_text('utf-8')
+        safe_required = (
+            'name: Synchroniser Supabase production — sécurisé',
+            'workflow_dispatch:',
+            'SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}',
+            'SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}',
+            "test -n \"${SUPABASE_ACCESS_TOKEN:-}\"",
+            "test -n \"${SUPABASE_DB_PASSWORD:-}\"",
+            'python scripts/build_supabase_production_workspace.py --output "$GITHUB_WORKSPACE/.prod-workspace/supabase"',
+            'if: ${{ inputs.apply != true }}',
+            '🟡 Prévol uniquement : aucune écriture.',
+            '✅ Appliqué et vérifié',
+            '❌ Application non confirmée',
+        )
+        for marker in safe_required:
+            if marker not in safe_text:
+                errors.append(f'Workflow production secondaire sans garde attendu: {marker}')
+        if re.search(r'^\s*(push|pull_request)\s*:', safe_text, flags=re.MULTILINE):
+            errors.append('Workflow production secondaire doit rester exclusivement manuel (workflow_dispatch).')
+        validate_step_gate(
+            errors,
+            safe_text,
+            (
+                'Appliquer uniquement les migrations futures',
+                'Configurer les secrets Edge indispensables',
+                'Déployer les Edge Functions depuis le workspace protégé',
+                'Vérification finale',
+            ),
+            'if: ${{ inputs.apply == true }}',
+            'secondaire',
+        )
+        for marker in ('--include-all', 'supabase migration repair', 'supabase db reset --linked', 'continue-on-error: true'):
+            if marker in safe_text:
+                errors.append(f'Primitive ou tolérance interdite dans le workflow production secondaire: {marker}')
+
     if not HISTORY_WORKFLOW.is_file():
         errors.append('Workflow de garde historique des migrations absent.')
+    else:
+        history_text = HISTORY_WORKFLOW.read_text('utf-8')
+        history_required = (
+            'fetch-depth: 0',
+            'id: migration_base',
+            "'supabase/production-migration-ledger.txt'",
+            '${{ github.event.pull_request.base.sha }}',
+            '${{ github.event.before }}',
+            'validate_production_migration_ledger.py --base-ref "$BASE_REF"',
+        )
+        for marker in history_required:
+            if marker not in history_text:
+                errors.append(f'Workflow de garde historique incomplet: {marker}')
+
+        for marker in ('supabase db push', 'supabase migration repair', 'supabase db reset', 'supabase functions deploy'):
+            if marker in history_text:
+                errors.append(f'Workflow de garde historique doit rester statique et non destructif: {marker}')
+
+
+def validate_runbook(errors):
+    if not RUNBOOK.is_file():
+        errors.append('Runbook Supabase production absent.')
         return
 
-    history_text = HISTORY_WORKFLOW.read_text('utf-8')
-    history_required = (
-        'fetch-depth: 0',
-        'id: migration_base',
-        "'supabase/production-migration-ledger.txt'",
-        '${{ github.event.pull_request.base.sha }}',
-        '${{ github.event.before }}',
-        'validate_production_migration_ledger.py --base-ref "$BASE_REF"',
+    text = RUNBOOK.read_text('utf-8')
+    required = (
+        'Supabase production — prévol / synchronisation contrôlée',
+        'Supabase production — PRÉVOL',
+        'Supabase production — APPLICATION DEMANDÉE',
+        'Synchroniser Supabase production — sécurisé',
+        '`workflow_dispatch`',
+        '`apply=true`',
+        '`SUPABASE_ACCESS_TOKEN`',
+        '`SUPABASE_DB_PASSWORD`',
+        '`✅ APPLIQUÉ ET VÉRIFIÉ`',
+        f'`{EXPECTED_COUNT}` versions distantes',
+        f'`{EXPECTED_FIRST}_sinjira_universal_platform`',
+        f'`{EXPECTED_LAST}_sinjira_v25_device_challenge_continuity_hardening`',
+        '`db push --include-all`',
+        '`supabase migration repair`',
+        '`supabase db reset --linked`',
+        'ne jamais activer un plan payant sans autorisation explicite',
     )
-    for marker in history_required:
-        if marker not in history_text:
-            errors.append(f'Workflow de garde historique incomplet: {marker}')
+    for marker in required:
+        if marker not in text:
+            errors.append(f'Runbook Supabase production obsolète ou incomplet: {marker}')
 
-    for marker in ('supabase db push', 'supabase migration repair', 'supabase db reset', 'supabase functions deploy'):
-        if marker in history_text:
-            errors.append(f'Workflow de garde historique doit rester statique et non destructif: {marker}')
+    if re.search(r'^\s*(SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD)\s*=\s*\S+', text, flags=re.MULTILINE):
+        errors.append('Runbook Supabase production contient une affectation de secret interdite.')
+
+    if not VALIDATION_WORKFLOW.is_file():
+        errors.append('Workflow de validation du ledger absent.')
+        return
+    validation_text = VALIDATION_WORKFLOW.read_text('utf-8')
+    runbook_path_marker = "- 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'"
+    if validation_text.count(runbook_path_marker) < 2:
+        errors.append('Le runbook Supabase doit déclencher la validation du ledger sur PR et push main.')
 
 
 def main():
@@ -264,13 +353,14 @@ def main():
                 if not (out / 'migrations' / name).exists(): errors.append(f'Migration future absente du workspace: {name}')
 
     validate_production_workflow(errors)
+    validate_runbook(errors)
 
     if errors:
         print(f'ECHEC ledger production: {len(errors)} problème(s).')
         for err in errors: print('- ' + err)
         return 1
     diff_guard = f'; historique Git protégé depuis {args.base_ref}' if args.base_ref else ''
-    print(f'OK ledger production: {EXPECTED_COUNT} versions distantes protégées; {len(future)} migration(s) future(s) transmissible(s); workflow lié borné au workspace protégé et signalé explicitement comme prévol/application contrôlée{diff_guard}.')
+    print(f'OK ledger production: {EXPECTED_COUNT} versions distantes protégées; {len(future)} migration(s) future(s) transmissible(s); deux voies génériques bornées; runbook aligné sur la baseline et signalé explicitement comme prévol/application contrôlée{diff_guard}.')
     return 0
 
 
