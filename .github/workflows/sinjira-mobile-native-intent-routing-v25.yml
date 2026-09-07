@@ -1,0 +1,92 @@
+name: SINJIRA V25 — Routage intentions natives
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile-native/App.tsx'
+      - 'mobile-native/NativeModuleRouter.tsx'
+      - 'mobile-native/NativeSecurityHub.tsx'
+      - 'mobile-native/NativeHomeHub.tsx'
+      - 'mobile-native/NATIVE_INTENT_ROUTING_V25.md'
+      - 'mobile-native/NATIVE_ACCOUNT_ROUTE_CLASSIFICATION_V25.md'
+      - 'mobile-native/NATIVE_ROUTE_DISPATCH_V25.md'
+      - 'mobile-native/NATIVE_SECONDARY_ROUTE_ALIASES_V25.md'
+      - 'mobile-native/package.json'
+      - 'mobile-native/package-lock.json'
+      - 'mobile-native/scripts/validate-vault-mobile.mjs'
+      - 'scripts/validate_mobile_native_intent_routing_v25.py'
+      - 'scripts/validate_mobile_native_account_route_classification_v25.py'
+      - 'scripts/validate_mobile_native_route_dispatch_v25.py'
+      - 'scripts/validate_mobile_native_secondary_route_aliases_v25.py'
+      - 'scripts/validate_mobile_native_home_hub_v25.py'
+      - 'scripts/validate_mobile_native_security_hub_v25.py'
+      - 'scripts/validate_mobile_navigation_boundary_v25.py'
+      - 'scripts/validate_mobile_safe_share_v25.py'
+      - 'scripts/validate_device_challenge_client_boundary.py'
+      - 'scripts/validate_no_committed_secrets.py'
+      - '.github/workflows/sinjira-mobile-native-intent-routing-v25.yml'
+      - '.github/workflows/sinjira-mobile-native-route-dispatch-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-intent-routing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Valider le routage des intentions natives V25
+        run: python3 scripts/validate_mobile_native_intent_routing_v25.py
+
+      - name: Revalider la classification exhaustive des routes compte
+        run: python3 scripts/validate_mobile_native_account_route_classification_v25.py
+
+      - name: Revalider le routeur natif central
+        run: python3 scripts/validate_mobile_native_route_dispatch_v25.py
+
+      - name: Revalider les alias secondaires
+        run: python3 scripts/validate_mobile_native_secondary_route_aliases_v25.py
+
+      - name: Revalider l'accueil natif
+        run: python3 scripts/validate_mobile_native_home_hub_v25.py
+
+      - name: Revalider le hub Sécurité natif
+        run: python3 scripts/validate_mobile_native_security_hub_v25.py
+
+      - name: Revalider la frontière de navigation
+        run: python3 scripts/validate_mobile_navigation_boundary_v25.py
+
+      - name: Revalider le partage public natif
+        run: python3 scripts/validate_mobile_safe_share_v25.py
+
+      - name: Revalider la frontière challenge client
+        run: python3 scripts/validate_device_challenge_client_boundary.py
+
+      - name: Revalider l'absence de secrets suivis
+        run: python3 scripts/validate_no_committed_secrets.py
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: npm
+          cache-dependency-path: mobile-native/package.json
+
+      - name: Installer les dépendances sans scripts de cycle de vie
+        working-directory: mobile-native
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Vérifier le contrat mobile sensible existant
+        working-directory: mobile-native
+        run: npm run validate:vault
+
+      - name: Vérifier TypeScript
+        working-directory: mobile-native
+        run: npm run typecheck
