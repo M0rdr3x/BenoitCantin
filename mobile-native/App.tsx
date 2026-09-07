@@ -804,5 +804,5 @@ const styles = StyleSheet.create({
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 10, marginHorizontal: 2 },
   tabSelected: { backgroundColor: '#1b2340' },
   tabText: { color: '#8e98b7', fontSize: 11, fontWeight: '700' },
-  tabTextSelected: { color: '#ffffff', fontSize: 11, fontWeight: '700' },
+  tabTextSelected: { color: '#ffffff' },
 });
