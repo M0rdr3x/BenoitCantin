@@ -6,11 +6,14 @@ on:
     paths:
       - 'supabase/functions/**'
       - 'supabase/migrations/**'
+      - 'supabase/config.toml'
       - 'assets/js/sinjira-security-push-bridge-v24-4-98.js'
       - 'mobile-native/App.tsx'
       - 'scripts/test_security_push_policy_v25.mjs'
       - 'scripts/test_security_push_receipts_v25.mjs'
+      - 'scripts/test_security_push_network_v25.mjs'
       - 'scripts/validate_native_push_producer_boundary_v25.py'
+      - 'scripts/validate_security_push_background_v25.py'
       - '.github/workflows/sinjira-native-push-producer-boundary-v25.yml'
   workflow_dispatch:
 
@@ -30,8 +33,14 @@ jobs:
       - name: Valider la frontière du producteur push natif
         run: python3 scripts/validate_native_push_producer_boundary_v25.py
 
+      - name: Valider la tâche push de fond
+        run: python3 scripts/validate_security_push_background_v25.py
+
       - name: Tester le payload push réel
         run: node scripts/test_security_push_policy_v25.mjs
 
       - name: Tester les reçus push réels
         run: node scripts/test_security_push_receipts_v25.mjs
+
+      - name: Tester le réseau Expo borné
+        run: node scripts/test_security_push_network_v25.mjs
