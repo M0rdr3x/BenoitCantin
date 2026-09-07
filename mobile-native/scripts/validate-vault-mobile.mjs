@@ -36,7 +36,7 @@ requireMarkers(app, [
   'injectedJavaScriptBeforeContentLoaded={injectedSecurityScript}',
   "const DEVICE_KEY_STORAGE = 'sinjira_native_device_key_v1';",
   'SecureStore.getItemAsync(DEVICE_KEY_STORAGE)',
-  'SecureStore.setItemAsync(DEVICE_KEY_STORAGE, key)',
+  'SecureStore.setItemAsync(DEVICE_KEY_STORAGE, key, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY })',
   'Application mobile · V25.0',
 ], 'contrat mobile V25 du Registre personnel');
 
