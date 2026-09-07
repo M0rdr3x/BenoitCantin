@@ -5,6 +5,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "mobile-native" / "App.tsx"
+ADVERSARIAL_TEST = ROOT / "mobile-native" / "scripts" / "test-external-navigation-guard.mjs"
+WORKFLOW = ROOT / ".github" / "workflows" / "sinjira-mobile-navigation-boundary-v25.yml"
+PACKAGE = ROOT / "mobile-native" / "package.json"
 
 
 def require(condition: bool, message: str) -> None:
@@ -14,6 +17,9 @@ def require(condition: bool, message: str) -> None:
 
 def main() -> int:
     text = APP.read_text(encoding="utf-8")
+    adversarial_text = ADVERSARIAL_TEST.read_text(encoding="utf-8")
+    workflow_text = WORKFLOW.read_text(encoding="utf-8")
+    package_text = PACKAGE.read_text(encoding="utf-8")
 
     require("const EXTERNAL_SAFE_PROTOCOLS = new Set(['https:', 'mailto:', 'tel:']);" in text,
             "les seuls protocoles externes permis doivent être HTTPS, mailto et tel")
@@ -30,8 +36,10 @@ def main() -> int:
             "le détecteur d'affectations sensibles encodées doit exister")
     require("value.toLowerCase().replace(/\\+/g, ' ')" in text,
             "le détecteur doit normaliser la casse et les plus avant inspection")
-    require("attempt < 3" in text and "decodeURIComponent(candidate)" in text,
-            "le détecteur doit décoder de façon bornée les valeurs URL imbriquées")
+    require("attempt <= 3" in text and "decodeURIComponent(candidate)" in text,
+            "le détecteur doit vérifier le résultat du troisième décodage URL")
+    require("if (attempt === 3) return true;" in text,
+            "un encodage qui dépasse le budget de décodage doit échouer de façon sûre")
     require("candidate.includes(`${key}=`)" in text,
             "le détecteur doit reconnaître les affectations sensibles après normalisation")
 
@@ -103,7 +111,29 @@ def main() -> int:
         require(secret_marker not in guarded_block,
                 f"la navigation externe ne doit pas transmettre le secret {secret_marker}")
 
-    print("OK navigation mobile V25: WebView HTTPS SINJIRA bornée, schémas externes arbitraires refusés, liens sinjira normalisés et matière sensible encodée bloquée dans chemins, query brute, valeurs de query et fragments externes.")
+    require("readFile(new URL('../App.tsx', import.meta.url)" in adversarial_text,
+            "le test adversarial doit exécuter le garde extrait du vrai App.tsx")
+    for marker in (
+        "access%25255Ftoken=secret",
+        "access%2525255Ftoken=secret",
+        "body=access_token%25253Dsecret",
+        "mailto:user@example.com?body=refresh_token%25253Dsecret",
+        "https://user:password@example.com/",
+        "javascript:alert(1)",
+        "tel:+15145551234",
+        "topic=tokenization",
+    ):
+        require(marker in adversarial_text, f"cas adversarial obligatoire absent: {marker}")
+    require("hello%2525252520world" in adversarial_text,
+            "le test doit verrouiller l'échec sûr lorsque le budget de décodage est dépassé")
+    require('"test:navigation-guard": "node scripts/test-external-navigation-guard.mjs"' in package_text,
+            "package.json doit exposer le test adversarial de navigation")
+    require("mobile-native/scripts/test-external-navigation-guard.mjs" in workflow_text,
+            "le workflow doit se déclencher lorsque le test adversarial change")
+    require("npm run test:navigation-guard" in workflow_text,
+            "le workflow frontière mobile doit exécuter le test adversarial")
+
+    print("OK navigation mobile V25: frontière externe bornée, troisième décodage vérifié, sur-encodage refusé et tests adversariaux runtime branchés en CI.")
     return 0
 
 
