@@ -3,6 +3,7 @@ import {
   buildSecurityPushReceiptRequest,
   classifySecurityPushReceipt,
   resolveSecurityPushReceipts,
+  resolveSecurityPushTickets,
   SECURITY_PUSH_RECEIPT_MAX_BATCH,
 } from '../supabase/functions/_shared/security-push-receipts.mjs';
 
@@ -19,6 +20,25 @@ assert.throws(
 assert.throws(() => buildSecurityPushReceiptRequest(['short']), /INVALID_EXPO_RECEIPT_ID/);
 assert.throws(() => buildSecurityPushReceiptRequest([id(1), id(1)]), /DUPLICATE_EXPO_RECEIPT_ID/);
 assert.equal(buildSecurityPushReceiptRequest([`  ${id(3)}  `]).ids[0], id(3));
+
+const ticketResolution = resolveSecurityPushTickets(
+  [
+    { status: 'ok', id: id(31) },
+    { status: 'error', details: { error: 'DeviceNotRegistered' } },
+    { status: 'ok', id: 'short' },
+    { status: 'error', details: { error: 'MessageRateExceeded' } },
+  ],
+  [
+    { id: 'endpoint-31' },
+    { id: 'endpoint-32' },
+    { id: 'endpoint-33' },
+    { id: 'endpoint-34' },
+  ],
+);
+assert.deepEqual(ticketResolution, {
+  receiptRows: [{ expo_receipt_id: id(31), endpoint_id: 'endpoint-31' }],
+  invalidEndpointIds: ['endpoint-32'],
+});
 
 assert.equal(classifySecurityPushReceipt({ status: 'ok' }), 'provider_accepted');
 assert.equal(
@@ -71,8 +91,8 @@ for (const forbidden of [
   'session',
   'jwt',
 ]) {
-  const serialized = JSON.stringify({ pending, resolved }).toLowerCase();
+  const serialized = JSON.stringify({ pending, resolved, ticketResolution }).toLowerCase();
   assert.ok(!serialized.includes(forbidden), `matière non nécessaire interdite dans la file de reçus: ${forbidden}`);
 }
 
-console.log('OK security push receipts V25: requêtes <=1000, reçus absents conservés, DeviceNotRegistered isolé et aucune matière de notification persistée.');
+console.log('OK security push receipts V25: tickets mappés, requêtes <=1000, reçus absents conservés, DeviceNotRegistered isolé et aucune matière de notification persistée.');
