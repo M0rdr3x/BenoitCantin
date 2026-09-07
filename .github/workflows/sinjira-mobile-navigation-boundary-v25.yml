@@ -8,6 +8,7 @@ on:
       - 'mobile-native/package.json'
       - 'mobile-native/package-lock.json'
       - 'mobile-native/scripts/test-external-navigation-guard.mjs'
+      - 'mobile-native/scripts/test-deep-link-normalizer.mjs'
       - 'scripts/validate_mobile_navigation_boundary_v25.py'
       - '.github/workflows/sinjira-mobile-navigation-boundary-v25.yml'
   workflow_dispatch:
@@ -42,6 +43,10 @@ jobs:
       - name: Tester la frontière externe adversariale
         working-directory: mobile-native
         run: npm run test:navigation-guard
+
+      - name: Tester les deep links natifs
+        working-directory: mobile-native
+        run: npm run test:deep-link-normalizer
 
       - name: Vérifier le contrat mobile sensible existant
         working-directory: mobile-native

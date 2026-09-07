@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "mobile-native" / "App.tsx"
 ADVERSARIAL_TEST = ROOT / "mobile-native" / "scripts" / "test-external-navigation-guard.mjs"
+DEEP_LINK_TEST = ROOT / "mobile-native" / "scripts" / "test-deep-link-normalizer.mjs"
 WORKFLOW = ROOT / ".github" / "workflows" / "sinjira-mobile-navigation-boundary-v25.yml"
 PACKAGE = ROOT / "mobile-native" / "package.json"
 
@@ -18,6 +19,7 @@ def require(condition: bool, message: str) -> None:
 def main() -> int:
     text = APP.read_text(encoding="utf-8")
     adversarial_text = ADVERSARIAL_TEST.read_text(encoding="utf-8")
+    deep_link_text = DEEP_LINK_TEST.read_text(encoding="utf-8")
     workflow_text = WORKFLOW.read_text(encoding="utf-8")
     package_text = PACKAGE.read_text(encoding="utf-8")
 
@@ -97,6 +99,37 @@ def main() -> int:
             "les deep links sinjira: doivent être ramenés à un seul chemin interne")
     require("Linking.getInitialURL()" in text and "Linking.addEventListener('url'" in text,
             "les deep links doivent rester traités par React Native Linking")
+
+    require("readFile(new URL('../App.tsx', import.meta.url)" in deep_link_text,
+            "le test deep link doit extraire le normaliseur du vrai App.tsx")
+    require("function normalizeSinjiraUrl(url: string | null): string | null {" in deep_link_text,
+            "le test deep link doit rechercher la fonction réelle par sa signature")
+    require("safeCustomSchemeCases" in deep_link_text and "approvedHttpsCases" in deep_link_text,
+            "le test deep link doit distinguer schéma natif et HTTPS approuvé")
+    require("rejectedInputs" in deep_link_text,
+            "le test deep link doit couvrir explicitement les entrées refusées")
+    for marker in (
+        "sinjira:/compte/profil.html",
+        "sinjira://compte/profil.html",
+        "sinjira:///compte/profil.html",
+        "sinjira:///////compte/profil.html?tab=1#bio",
+        "sinjira://evil.example/path",
+        "sinjira://user@evil.example/path",
+        "sinjira://%2F%2Fevil.example/path",
+        "sinjira://%5C%5Cevil.example/path",
+        "https://user:password@sinjira.com/compte/profil.html",
+        "https://evil.example/compte/profil.html",
+        "http://sinjira.com/compte/profil.html",
+        "//evil.example/compte/profil.html",
+        "sinjira:compte/profil.html",
+    ):
+        require(marker in deep_link_text, f"cas deep link obligatoire absent: {marker}")
+    require("assert.equal(parsed.origin, TEST_ORIGIN" in deep_link_text,
+            "chaque deep link accepté doit prouver qu'il reste épinglé à l'origine SINJIRA")
+    require("assert.equal(parsed.username, ''" in deep_link_text and "assert.equal(parsed.password, ''" in deep_link_text,
+            "le résultat normalisé doit éliminer tout userinfo")
+    require("assert.equal(reparsed.hostname, 'www.benoitcantin.com'" in deep_link_text,
+            "la matrice deep link doit revérifier l'hôte final après parsing")
 
     require("isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current" in text,
             "la barrière locale du Coffre doit rester active pendant la navigation")
@@ -190,12 +223,18 @@ def main() -> int:
 
     require('"test:navigation-guard": "node scripts/test-external-navigation-guard.mjs"' in package_text,
             "package.json doit exposer le test adversarial de navigation")
+    require('"test:deep-link-normalizer": "node scripts/test-deep-link-normalizer.mjs"' in package_text,
+            "package.json doit exposer le test exécutable des deep links")
     require("mobile-native/scripts/test-external-navigation-guard.mjs" in workflow_text,
             "le workflow doit se déclencher lorsque le test adversarial change")
+    require("mobile-native/scripts/test-deep-link-normalizer.mjs" in workflow_text,
+            "le workflow doit se déclencher lorsque le test deep link change")
     require("npm run test:navigation-guard" in workflow_text,
             "le workflow frontière mobile doit exécuter le test adversarial")
+    require("npm run test:deep-link-normalizer" in workflow_text,
+            "le workflow frontière mobile doit exécuter le test deep link")
 
-    print("OK navigation mobile V25: frontière externe bornée, userinfo refusé avant classification, tel borné aux numéros ordinaires, décodage fail-closed et décision shouldStart complète exécutée avec effets de bord en CI.")
+    print("OK navigation mobile V25: frontière externe bornée, userinfo refusé avant classification, tel borné aux numéros ordinaires, deep links épinglés à l'origine par test exécutable, décodage fail-closed et décision shouldStart complète exécutée avec effets de bord en CI.")
     return 0
 
 
