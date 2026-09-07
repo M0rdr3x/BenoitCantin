@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import * as Crypto from 'expo-crypto';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as Notifications from 'expo-notifications';
 import * as SecureStore from 'expo-secure-store';
@@ -237,9 +238,7 @@ function tabForUrl(url: string): TabKey | null {
 }
 
 function makeDeviceKey() {
-  const cryptoObject = globalThis.crypto as Crypto | undefined;
-  if (cryptoObject?.randomUUID) return cryptoObject.randomUUID();
-  return `sinjira-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+  return Crypto.randomUUID();
 }
 
 function projectId() {
