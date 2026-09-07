@@ -585,6 +585,11 @@ export default function App() {
       return false;
     }
 
+    if (parsed.username || parsed.password) {
+      setNativeMessage('Navigation bloquée : les identifiants intégrés à une URL ne sont pas autorisés.');
+      return false;
+    }
+
     if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)) {
       if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
         void navigate(VAULT_PATH);
@@ -799,5 +804,5 @@ const styles = StyleSheet.create({
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 10, marginHorizontal: 2 },
   tabSelected: { backgroundColor: '#1b2340' },
   tabText: { color: '#8e98b7', fontSize: 11, fontWeight: '700' },
-  tabTextSelected: { color: '#ffffff' },
+  tabTextSelected: { color: '#ffffff', fontSize: 11, fontWeight: '700' },
 });
