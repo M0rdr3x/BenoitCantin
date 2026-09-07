@@ -20,12 +20,13 @@ Le routeur ne reçoit aucune donnée utilisateur et ne possède aucune source de
 
 ## Modules routés nativement
 
-La liste fermée couvre maintenant tous les hubs de navigation déjà fusionnés :
+La liste fermée couvre maintenant tous les hubs de navigation déjà fusionnés ou ajoutés avec leur garde dédié :
 
 - `/compte/messages.html` → `NativeMessagesHub`;
 - `/compte/rencontres.html` → `NativeDatingHub`;
 - `/compte/emploi.html` → `NativeEmploymentHub`;
 - `/compte/bibliotheque.html` → `NativeLibraryHub`;
+- `/compte/mes-parties.html` → `NativeGamesHub`;
 - `/compte/communaute.html` → `NativeCommunityHub`;
 - `/compte/relations.html` → `NativeRelationsHub`;
 - `/compte/mes-achats.html` → `NativeCommerceHub`;
@@ -37,6 +38,12 @@ La liste fermée couvre maintenant tous les hubs de navigation déjà fusionnés
 - `/compte/profil.html` → `NativeProfileHub`.
 
 Les onglets persistants et raccourcis du shell qui passent explicitement par `openNativeModule` utilisent cette liste fermée avant toute sortie Web.
+
+## Mes parties
+
+`/compte/mes-parties.html` transporte uniquement une intention de navigation vers `NativeGamesHub`. Le routeur ne reçoit aucune sauvegarde, session, code de partie, compteur, durée, mode de jeu, `player_sheets`, `endgame_sheets` ou fichier `SINJIRA_GAME_SAVE_V1`.
+
+Les exports et imports privés restent des actions Web explicites. Le routeur ne sélectionne, ne lit, ne parse, ne copie et ne partage aucun fichier de sauvegarde.
 
 ## Alias Commerce
 
@@ -78,10 +85,10 @@ Le bouton Retour Android ou le retour du hub ferme le routeur et revient à l’
 
 ## CI exhaustive
 
-Le garde central exige la présence de chaque route et de chaque composant actuellement routé. Son workflow revalide également les garde-fous dédiés des hubs Messages, Rencontres, Emploi, Bibliothèque, Communauté, Relations, Commerce, Monde parallèle, Mon IA, Histoire de vie, Mon personnage, Alertes et Profil, ainsi que les frontières Paramètres, Vie privée, Sécurité, navigation, partage, challenge, secrets, coffre et TypeScript.
+Le garde central exige la présence de chaque route et de chaque composant actuellement routé. Son workflow revalide également les garde-fous dédiés des hubs Messages, Rencontres, Emploi, Bibliothèque, Mes parties, Communauté, Relations, Commerce, Monde parallèle, Mon IA, Histoire de vie, Mon personnage, Alertes et Profil, ainsi que les frontières Paramètres, Vie privée, Sécurité, navigation, partage, challenge, secrets, coffre et TypeScript.
 
 L’ajout futur d’un hub au routeur doit donc être accompagné de son garde dédié et de son rechaînage dans cette validation centrale.
 
 ## Principe de sécurité
 
-**Protéger sans surveiller.** Ce routeur transporte uniquement une intention de navigation parmi une liste fermée. Il ne transporte ni profil, ni message, ni candidature, ni compatibilité, ni relation familiale, ni achat, ni solde, ni identité narrative, ni histoire de vie, ni réglage IA, ni état de sécurité.
+**Protéger sans surveiller.** Ce routeur transporte uniquement une intention de navigation parmi une liste fermée. Il ne transporte ni profil, ni message, ni candidature, ni compatibilité, ni sauvegarde de jeu, ni relation familiale, ni achat, ni solde, ni identité narrative, ni histoire de vie, ni réglage IA, ni état de sécurité.
