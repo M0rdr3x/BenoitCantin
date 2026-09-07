@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativeAlertsHub } from './NativeAlertsHub';
 import { NativeCharacterHub } from './NativeCharacterHub';
+import { NativeCommerceHub } from './NativeCommerceHub';
 import { NativeCommunityHub } from './NativeCommunityHub';
 import { NativeDatingHub } from './NativeDatingHub';
 import { NativeEmploymentHub } from './NativeEmploymentHub';
@@ -48,6 +49,11 @@ const mainDestinations = [
     label: 'Relations et famille',
     description: 'Ouvrir un hub natif sans relation privée, tranche d’âge, code parental ni lien de supervision local.',
     path: '/compte/relations.html',
+  },
+  {
+    label: 'Commerce et droits',
+    description: 'Ouvrir un hub natif sans achat, précommande, annonce, solde de jetons, licence ni donnée transactionnelle locale.',
+    path: '/compte/mes-achats.html',
   },
   {
     label: 'Mon personnage',
@@ -122,6 +128,7 @@ function DestinationCard({
 export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [alertsHubOpen, setAlertsHubOpen] = useState(false);
   const [characterHubOpen, setCharacterHubOpen] = useState(false);
+  const [commerceHubOpen, setCommerceHubOpen] = useState(false);
   const [communityHubOpen, setCommunityHubOpen] = useState(false);
   const [datingHubOpen, setDatingHubOpen] = useState(false);
   const [employmentHubOpen, setEmploymentHubOpen] = useState(false);
@@ -134,166 +141,63 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
   const [relationsHubOpen, setRelationsHubOpen] = useState(false);
 
   if (characterHubOpen) {
-    return (
-      <NativeCharacterHub
-        onBack={() => setCharacterHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
+    return <NativeCharacterHub onBack={() => setCharacterHubOpen(false)} onOpenPath={onOpenPath} />;
   }
-
+  if (commerceHubOpen) {
+    return <NativeCommerceHub onBack={() => setCommerceHubOpen(false)} onOpenPath={onOpenPath} />;
+  }
   if (communityHubOpen) {
-    return (
-      <NativeCommunityHub
-        onBack={() => setCommunityHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
+    return <NativeCommunityHub onBack={() => setCommunityHubOpen(false)} onOpenPath={onOpenPath} />;
   }
-
   if (datingHubOpen) {
-    return (
-      <NativeDatingHub
-        onBack={() => setDatingHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
+    return <NativeDatingHub onBack={() => setDatingHubOpen(false)} onOpenPath={onOpenPath} />;
   }
-
   if (employmentHubOpen) {
-    return (
-      <NativeEmploymentHub
-        onBack={() => setEmploymentHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
+    return <NativeEmploymentHub onBack={() => setEmploymentHubOpen(false)} onOpenPath={onOpenPath} />;
   }
-
   if (libraryHubOpen) {
-    return (
-      <NativeLibraryHub
-        onBack={() => setLibraryHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
+    return <NativeLibraryHub onBack={() => setLibraryHubOpen(false)} onOpenPath={onOpenPath} />;
   }
-
   if (lifeStoryHubOpen) {
-    return (
-      <NativeLifeStoryHub
-        onBack={() => setLifeStoryHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
+    return <NativeLifeStoryHub onBack={() => setLifeStoryHubOpen(false)} onOpenPath={onOpenPath} />;
   }
-
   if (parallelWorldHubOpen) {
-    return (
-      <NativeParallelWorldHub
-        onBack={() => setParallelWorldHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
+    return <NativeParallelWorldHub onBack={() => setParallelWorldHubOpen(false)} onOpenPath={onOpenPath} />;
   }
-
   if (personalAiHubOpen) {
-    return (
-      <NativePersonalAiHub
-        onBack={() => setPersonalAiHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
+    return <NativePersonalAiHub onBack={() => setPersonalAiHubOpen(false)} onOpenPath={onOpenPath} />;
   }
-
   if (messagesHubOpen) {
-    return (
-      <NativeMessagesHub
-        onBack={() => setMessagesHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
+    return <NativeMessagesHub onBack={() => setMessagesHubOpen(false)} onOpenPath={onOpenPath} />;
   }
-
   if (alertsHubOpen) {
-    return (
-      <NativeAlertsHub
-        onBack={() => setAlertsHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
+    return <NativeAlertsHub onBack={() => setAlertsHubOpen(false)} onOpenPath={onOpenPath} />;
   }
-
   if (profileHubOpen) {
-    return (
-      <NativeProfileHub
-        onBack={() => setProfileHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
+    return <NativeProfileHub onBack={() => setProfileHubOpen(false)} onOpenPath={onOpenPath} />;
   }
-
   if (relationsHubOpen) {
-    return (
-      <NativeRelationsHub
-        onBack={() => setRelationsHubOpen(false)}
-        onOpenPath={onOpenPath}
-      />
-    );
+    return <NativeRelationsHub onBack={() => setRelationsHubOpen(false)} onOpenPath={onOpenPath} />;
   }
 
   const openMainDestination = (path: string) => {
-    if (path === '/compte/messages.html') {
-      setMessagesHubOpen(true);
-      return;
-    }
-    if (path === '/compte/rencontres.html') {
-      setDatingHubOpen(true);
-      return;
-    }
-    if (path === '/compte/emploi.html') {
-      setEmploymentHubOpen(true);
-      return;
-    }
-    if (path === '/compte/bibliotheque.html') {
-      setLibraryHubOpen(true);
-      return;
-    }
-    if (path === '/compte/communaute.html') {
-      setCommunityHubOpen(true);
-      return;
-    }
-    if (path === '/compte/relations.html') {
-      setRelationsHubOpen(true);
-      return;
-    }
-    if (path === '/compte/mon-personnage.html') {
-      setCharacterHubOpen(true);
-      return;
-    }
-    if (path === '/compte/monde-parallele.html') {
-      setParallelWorldHubOpen(true);
-      return;
-    }
-    if (path === '/compte/mon-ia.html') {
-      setPersonalAiHubOpen(true);
-      return;
-    }
-    if (path === '/compte/histoire-de-vie.html') {
-      setLifeStoryHubOpen(true);
-      return;
-    }
+    if (path === '/compte/messages.html') { setMessagesHubOpen(true); return; }
+    if (path === '/compte/rencontres.html') { setDatingHubOpen(true); return; }
+    if (path === '/compte/emploi.html') { setEmploymentHubOpen(true); return; }
+    if (path === '/compte/bibliotheque.html') { setLibraryHubOpen(true); return; }
+    if (path === '/compte/communaute.html') { setCommunityHubOpen(true); return; }
+    if (path === '/compte/relations.html') { setRelationsHubOpen(true); return; }
+    if (path === '/compte/mes-achats.html') { setCommerceHubOpen(true); return; }
+    if (path === '/compte/mon-personnage.html') { setCharacterHubOpen(true); return; }
+    if (path === '/compte/monde-parallele.html') { setParallelWorldHubOpen(true); return; }
+    if (path === '/compte/mon-ia.html') { setPersonalAiHubOpen(true); return; }
+    if (path === '/compte/histoire-de-vie.html') { setLifeStoryHubOpen(true); return; }
     onOpenPath(path);
   };
 
   const openAccountDestination = (path: string) => {
-    if (path === '/compte/notifications.html') {
-      setAlertsHubOpen(true);
-      return;
-    }
-    if (path === '/compte/profil.html') {
-      setProfileHubOpen(true);
-      return;
-    }
+    if (path === '/compte/notifications.html') { setAlertsHubOpen(true); return; }
+    if (path === '/compte/profil.html') { setProfileHubOpen(true); return; }
     onOpenPath(path);
   };
 
@@ -315,12 +219,7 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
             Ouvrez le hub natif pour la biométrie locale, les alertes et les raccourcis vers le Centre de sécurité.
           </Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Ouvrir le hub Ma sécurité"
-          onPress={onOpenSecurity}
-          style={styles.primaryButton}
-        >
+        <Pressable accessibilityRole="button" accessibilityLabel="Ouvrir le hub Ma sécurité" onPress={onOpenSecurity} style={styles.primaryButton}>
           <Text style={styles.primaryButtonText}>Ma sécurité</Text>
         </Pressable>
       </View>
@@ -331,24 +230,14 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity }: Props) {
       </Text>
       <View style={styles.destinationList}>
         {mainDestinations.map((item) => (
-          <DestinationCard
-            key={item.path}
-            label={item.label}
-            description={item.description}
-            onPress={() => openMainDestination(item.path)}
-          />
+          <DestinationCard key={item.path} label={item.label} description={item.description} onPress={() => openMainDestination(item.path)} />
         ))}
       </View>
 
       <Text style={styles.sectionTitle}>Compte et protection</Text>
       <View style={styles.destinationList}>
         {accountDestinations.map((item) => (
-          <DestinationCard
-            key={item.path}
-            label={item.label}
-            description={item.description}
-            onPress={() => openAccountDestination(item.path)}
-          />
+          <DestinationCard key={item.path} label={item.label} description={item.description} onPress={() => openAccountDestination(item.path)} />
         ))}
       </View>
 
