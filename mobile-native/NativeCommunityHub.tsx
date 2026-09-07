@@ -86,7 +86,7 @@ export function NativeCommunityHub({ onOpenPath, onBack }: Props) {
 
       <View style={styles.boundaryCard}>
         <Text style={styles.cardKicker}>MODÉRATION SANS EXPOSITION</Text>
-        <Text style={styles.boundaryTitle}>Aucun état de commentaire n’est reconstruit localement</Text>
+        <Text style={styles.boundaryTitle}>Aucun signalement ni blocage n’est reconstruit localement</Text>
         <Text style={styles.boundaryText}>
           Ce hub ne lit ni le contenu de vos commentaires ni leur état en attente, publié ou refusé. Il ne signale, ne bloque, ne débloque et ne modère personne; motifs, preuves, cibles et statuts restent dans les mécanismes Web/serveur prévus pour protéger les personnes.
         </Text>
