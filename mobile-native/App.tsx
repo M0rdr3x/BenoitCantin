@@ -154,7 +154,7 @@ function hasSensitiveExternalMaterial(parsed: URL) {
 }
 
 function decodeSafeMailtoComponent(value: string) {
-  let candidate = value.replace(/\+/g, ' ');
+  let candidate = value;
   for (let attempt = 0; attempt <= 3; attempt += 1) {
     if (/[\u0000-\u001F\u007F]/.test(candidate)) return null;
     if (!/%[0-9a-f]{2}/i.test(candidate)) return candidate;
