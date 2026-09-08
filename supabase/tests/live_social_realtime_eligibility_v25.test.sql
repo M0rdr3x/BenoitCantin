@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
 
-select plan(4);
+select plan(6);
 
 select ok(
   exists(
@@ -57,6 +57,16 @@ select ok(
       and with_check ilike '%sinjira_my_age_band%'
   ),
   'garde restrictive d écriture interdit le maintien Realtime après perte d éligibilité'
+);
+
+select ok(
+  not (select prosecdef from pg_proc where oid='public.social_live_is_room_member(uuid)'::regprocedure),
+  'helper membership public reste SECURITY INVOKER'
+);
+
+select ok(
+  has_function_privilege('authenticated','public.social_live_is_room_member(uuid)','EXECUTE'),
+  'authenticated peut appeler le helper uniquement avec ses propres droits RLS'
 );
 
 select * from finish();
