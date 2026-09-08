@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict';
-import {
+import {readFile} from 'node:fs/promises';
+
+const parserUrl=new URL('../assets/js/sinjira-live-command-parser-v25.js',import.meta.url);
+const parserSource=await readFile(parserUrl,'utf8');
+const parserModule=await import(`data:text/javascript;base64,${Buffer.from(parserSource).toString('base64')}`);
+const {
   liveCommandRpcSpec,
   liveTopic,
   normalizeLiveRoomId,
   parseLiveInput
-} from '../assets/js/sinjira-live-command-parser-v25.js';
+}=parserModule;
 
 const room='11111111-2222-4333-8444-555555555555';
 
