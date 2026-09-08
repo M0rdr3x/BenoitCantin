@@ -12,6 +12,8 @@ LOCAL_VALIDATE = "- name: Vérifier le dépôt Supabase"
 BUILD_WORKSPACE = "- name: Construire le workspace production protégé"
 INSTALL_CLI = "- name: Installer Supabase CLI"
 
+MANUAL_AUTH_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' }}"
+REMOTE_PREFLIGHT_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}"
 APPLY_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}"
 
 REMOTE_REQUIREMENTS = {
@@ -29,6 +31,25 @@ REMOTE_REQUIREMENTS = {
     "Vérifier les Edge Functions déployées": ("SUPABASE_ACCESS_TOKEN",),
     "Vérifier l'historique et le dry-run après déploiement": ("SUPABASE_ACCESS_TOKEN", "SUPABASE_DB_PASSWORD"),
 }
+
+REMOTE_PREFLIGHT_STEPS = (
+    "Auditer l’inventaire Edge Functions de production",
+    "Lier le projet de production dans le workspace protégé",
+    "Exporter l'historique exact des migrations de production",
+    "Publier l'historique distant comme artefact de prévol",
+    "Auditer les fonctions SQL déjà en production",
+    "Comparer l'historique des migrations",
+    "Prévisualiser les migrations sans modifier la production",
+)
+
+MUTATING_OR_POST_APPLY_STEPS = (
+    "Appliquer les migrations de production depuis le workspace protégé",
+    "Auditer les fonctions SQL après migrations",
+    "Garantir les secrets Edge Functions indispensables",
+    "Déployer toutes les Edge Functions du workspace protégé",
+    "Vérifier les Edge Functions déployées",
+    "Vérifier l'historique et le dry-run après déploiement",
+)
 
 
 def step_block(text: str, name: str) -> str:
@@ -86,6 +107,24 @@ def validate_text(text: str) -> list[str]:
     if "python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase" not in build_block:
         errors.append("Le builder fail-closed du workspace production est absent.")
 
+    auth_block = step_block(text, "Détecter les secrets de connexion Supabase")
+    if MANUAL_AUTH_GUARD not in auth_block:
+        errors.append("Les secrets de connexion production doivent être accessibles uniquement en workflow_dispatch manuel.")
+
+    for name in REMOTE_PREFLIGHT_STEPS:
+        block = step_block(text, name)
+        if not block:
+            errors.append(f"Étape de préflight distant obligatoire absente: {name}")
+        elif REMOTE_PREFLIGHT_GUARD not in block:
+            errors.append(f"Étape distante accessible hors lancement manuel: {name}")
+
+    for name in MUTATING_OR_POST_APPLY_STEPS:
+        block = step_block(text, name)
+        if not block:
+            errors.append(f"Étape apply obligatoire absente: {name}")
+        elif APPLY_GUARD not in block:
+            errors.append(f"Étape apply sans triple garde workflow_dispatch + apply=true + auth: {name}")
+
     for name, required in REMOTE_REQUIREMENTS.items():
         block = step_block(text, name)
         if not block:
@@ -103,8 +142,6 @@ def validate_text(text: str) -> list[str]:
         errors.append("Le mot de passe DB ne doit pas être exposé à l'étape des secrets Edge Functions.")
 
     apply_block = step_block(text, "Appliquer les migrations de production depuis le workspace protégé")
-    if APPLY_GUARD not in apply_block:
-        errors.append("La garde manuelle apply=true/auth du db push production a été modifiée.")
     if "(cd .prod-workspace && supabase db push --linked --password \"$SUPABASE_DB_PASSWORD\")" not in apply_block:
         errors.append("Le db push production doit rester borné au workspace protégé.")
 
@@ -112,6 +149,18 @@ def validate_text(text: str) -> list[str]:
     for line in secret_ref_lines:
         if not re.match(r"^ {10}(SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|OPTIONAL_RESEND_API_KEY):", line):
             errors.append(f"Référence de secret hors env d'étape: {line.strip()}")
+
+    summary = step_block(text, "ÉTAT PRODUCTION")
+    for marker in (
+        "🟡 PRÉVOL PR",
+        "🟡 PRÉVOL SEULEMENT",
+        "aucun secret production exposé au run PR",
+        "aucun secret production exposé au run push",
+        "🟡 PRÉVOL MANUEL SEULEMENT",
+        "✅ APPLIQUÉ ET VÉRIFIÉ",
+    ):
+        if marker not in summary:
+            errors.append(f"Résumé production sans frontière de confiance attendue: {marker}")
 
     return errors
 
@@ -129,8 +178,9 @@ def main() -> int:
     print("Contrat sécurité préflight Supabase production: OK")
     print("- lot/ledger/workspace vérifiés avant Supabase CLI")
     print("- aucun secret au niveau du job")
-    print("- secrets bornés aux seules étapes distantes")
-    print("- db push protégé par workflow_dispatch + apply=true + auth")
+    print("- PR/push strictement locaux, sans secrets production")
+    print("- préflight distant réservé à workflow_dispatch")
+    print("- écritures protégées par workflow_dispatch + apply=true + auth")
     return 0
 
 
