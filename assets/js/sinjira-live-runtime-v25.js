@@ -116,7 +116,7 @@ export async function openLiveRealtimeSession({
   if(sessionError)throw sessionError;
   const accessToken=sessionData?.session?.access_token;
   if(!accessToken)throw new Error('AUTH_REQUIRED');
-  supabase.realtime.setAuth(accessToken);
+  await supabase.realtime.setAuth(accessToken);
 
   // Clé aléatoire éphémère de connexion, distincte de l'UUID du compte.
   const presenceKey=`session-${crypto.randomUUID()}`;
