@@ -1,11 +1,19 @@
 import {getSupabase} from './sinjira-supabase.js';
 import {socialErrorMessage} from './sinjira-social-common.js?v=24.4.79';
-import {executeLiveInput,openLiveRealtimeSession} from './sinjira-live-runtime-v25.js';
+import {openSocialReport} from './sinjira-social-safety-v24-4-79.js?v=24.4.79';
+import {
+  executeLiveInput,
+  loadLiveInvites,
+  loadLiveMessages,
+  openLiveRealtimeSession,
+  respondLiveInvite
+} from './sinjira-live-runtime-v25.js';
 import {
   liveCommandHelp,
   livePresenceLabel,
   liveRoomAccessLabel,
   liveUiErrorMessage,
+  normalizeLiveInvites,
   normalizeLiveMe,
   normalizeLiveRooms
 } from './sinjira-live-ui-model-v25.js';
@@ -29,14 +37,28 @@ function formatTime(value){
   return new Intl.DateTimeFormat('fr-CA',{hour:'2-digit',minute:'2-digit'}).format(date);
 }
 
-function renderMessage(message){
-  const article=node('article','v25-live-message');
+function formatDate(value){
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return '';
+  return new Intl.DateTimeFormat('fr-CA',{dateStyle:'medium',timeStyle:'short'}).format(date);
+}
+
+function renderMessage(message,{onReport=()=>{}}={}){
+  const article=node('article',`v25-live-message${message?.own?' is-own':''}`);
   article.dataset.messageId=String(message?.id||'');
   const head=node('div','v25-live-message-head');
-  head.append(node('strong','',String(message?.author_label||'Membre SINJIRA')));
+  const identity=node('div','v25-live-message-identity');
+  identity.append(node('strong','',String(message?.author_label||'Membre SINJIRA')));
   const time=node('time','',formatTime(message?.created_at));
   if(message?.created_at)time.dateTime=String(message.created_at);
-  head.append(time);
+  identity.append(time);
+  head.append(identity);
+  if(message?.own!==true){
+    const report=button('Signaler','v25-live-message-report');
+    report.setAttribute('aria-label',`Signaler le message de ${String(message?.author_label||'ce membre')}`);
+    report.addEventListener('click',()=>onReport(message));
+    head.append(report);
+  }
   const body=node('p','v25-live-message-body',String(message?.body||''));
   article.append(head,body);
   return article;
@@ -95,16 +117,23 @@ export function createLiveUi(root,{supabase=getSupabase()}={}){
   main.append(liveHead,status,log,composer);
 
   const mePanel=node('aside','v25-live-me');
-  mePanel.setAttribute('aria-label','Mon état En direct');
+  mePanel.setAttribute('aria-label','Mon état et mes invitations En direct');
   const meKicker=node('span','v25-social-kicker','Mon état');
   const meLabel=node('strong','v25-live-me-label','Membre SINJIRA');
   const meCounts=node('p','v25-live-muted','0 salon créé · 0 salon rejoint');
-  mePanel.append(meKicker,meLabel,meCounts);
+  const inviteDivider=node('div','v25-live-divider');
+  const inviteHead=node('div','v25-live-invite-head');
+  inviteHead.append(node('span','v25-social-kicker','Invitations'),node('p','v25-live-muted','Salons privés qui vous sont proposés.'));
+  const invitesList=node('div','v25-live-invite-list');
+  invitesList.setAttribute('role','list');
+  const inviteRefresh=button('Actualiser les invitations','btn btn-secondary btn-small');
+  mePanel.append(meKicker,meLabel,meCounts,inviteDivider,inviteHead,invitesList,inviteRefresh);
 
   shell.append(roomsPanel,main,mePanel);
   root.replaceChildren(shell);
 
   let rooms=[];
+  let invites=[];
   let currentRoom=null;
   let session=null;
   const seenMessageIds=new Set();
@@ -121,11 +150,31 @@ export function createLiveUi(root,{supabase=getSupabase()}={}){
     return liveUiErrorMessage(error)||socialErrorMessage(error,fallback);
   }
 
+  async function refreshCurrentMessages(){
+    if(!currentRoom)return;
+    const messages=await loadLiveMessages(currentRoom.roomId,{supabase});
+    renderMessages(messages);
+  }
+
+  function reportMessage(message){
+    if(message?.own===true)return;
+    openSocialReport({
+      network:'live',
+      targetType:'message',
+      targetId:String(message?.id||''),
+      label:'ce message En direct',
+      statusNode:status,
+      onDone:async({blocked})=>{
+        if(blocked)await refreshCurrentMessages();
+      }
+    });
+  }
+
   function appendMessage(message,{focus=false}={}){
     const id=String(message?.id||'');
     if(id&&seenMessageIds.has(id))return;
     if(id)seenMessageIds.add(id);
-    const element=renderMessage(message);
+    const element=renderMessage(message,{onReport:reportMessage});
     log.append(element);
     while(log.children.length>120){
       const first=log.firstElementChild;
@@ -173,6 +222,52 @@ export function createLiveUi(root,{supabase=getSupabase()}={}){
     }
   }
 
+  function renderInvites(){
+    invitesList.replaceChildren();
+    if(!invites.length){
+      invitesList.append(node('p','v25-live-empty','Aucune invitation en attente.'));
+      return;
+    }
+    for(const invite of invites){
+      const card=node('article','v25-live-invite-card');
+      card.setAttribute('role','listitem');
+      const name=node('strong','',invite.roomName);
+      const from=node('p','v25-live-muted',`Invité par ${invite.inviterLabel}`);
+      const expiry=node('p','v25-live-invite-expiry',invite.expiresAt?`Expire ${formatDate(invite.expiresAt)}`:'');
+      const actions=node('div','v25-live-invite-actions');
+      const accept=button('Accepter','btn btn-primary btn-small');
+      const decline=button('Refuser','btn btn-secondary btn-small');
+      const respond=async shouldAccept=>{
+        accept.disabled=true;decline.disabled=true;
+        try{
+          const result=await respondLiveInvite(invite.inviteId,shouldAccept,{supabase});
+          if(result?.status==='accepted'){
+            await Promise.all([refreshRooms(),refreshMe(),refreshInvites()]);
+            const roomId=String(result.room_id||invite.roomId);
+            const room=rooms.find(item=>item.roomId===roomId);
+            if(room)await connectRoom(room);
+            else setStatus('Invitation acceptée. Le salon sera visible après actualisation.','success');
+          }else if(result?.status==='declined'){
+            await refreshInvites();
+            setStatus('Invitation refusée.','success');
+          }else{
+            await refreshInvites();
+            setStatus('Cette invitation n’est plus disponible.','error');
+          }
+        }catch(error){
+          setStatus(safeError(error),'error');
+        }finally{
+          accept.disabled=false;decline.disabled=false;
+        }
+      };
+      accept.addEventListener('click',()=>respond(true));
+      decline.addEventListener('click',()=>respond(false));
+      actions.append(accept,decline);
+      card.append(name,from,expiry,actions);
+      invitesList.append(card);
+    }
+  }
+
   async function refreshRooms(){
     const result=await executeLiveInput('/rooms',{supabase});
     rooms=normalizeLiveRooms(result.data);
@@ -183,6 +278,13 @@ export function createLiveUi(root,{supabase=getSupabase()}={}){
   async function refreshMe(){
     const result=await executeLiveInput('/me',{supabase});
     updateMe(result.data);
+  }
+
+  async function refreshInvites(){
+    const result=await loadLiveInvites({supabase});
+    invites=normalizeLiveInvites(result);
+    renderInvites();
+    return invites;
   }
 
   async function closeSession(){
@@ -286,7 +388,16 @@ export function createLiveUi(root,{supabase=getSupabase()}={}){
     finally{refreshButton.disabled=false;}
   });
 
-  const ready=Promise.all([refreshRooms(),refreshMe()])
+  inviteRefresh.addEventListener('click',async()=>{
+    inviteRefresh.disabled=true;
+    try{
+      await refreshInvites();
+      setStatus('Invitations actualisées.','success');
+    }catch(error){setStatus(safeError(error),'error');}
+    finally{inviteRefresh.disabled=false;}
+  });
+
+  const ready=Promise.all([refreshRooms(),refreshMe(),refreshInvites()])
     .then(()=>{setStatus('En direct prêt. Choisissez un salon.','success');})
     .catch(error=>{setStatus(safeError(error),'error');throw error;});
 
@@ -297,6 +408,6 @@ export function createLiveUi(root,{supabase=getSupabase()}={}){
       await closeSession();
       root.replaceChildren();
     },
-    refresh:async()=>Promise.all([refreshRooms(),refreshMe()])
+    refresh:async()=>Promise.all([refreshRooms(),refreshMe(),refreshInvites()])
   };
 }

@@ -8,12 +8,14 @@ const {
   livePresenceLabel,
   liveRoomAccessLabel,
   liveUiErrorMessage,
+  normalizeLiveInvites,
   normalizeLiveMe,
   normalizeLiveRooms
 }=mod;
 
 const roomId='11111111-2222-4333-8444-555555555555';
 const otherId='aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+const inviteId='99999999-8888-4777-8666-555555555555';
 
 assert.deepEqual(normalizeLiveMe({
   profile_label:'  Alex  ',owned_rooms:2,joined_rooms:4,user_id:'secret'
@@ -36,6 +38,23 @@ assert.equal(Object.hasOwn(rooms[0],'owner_user_id'),false);
 assert.equal(Object.hasOwn(rooms[1],'user_id'),false);
 assert.equal(rooms[1].visibility,'private');
 
+const invites=normalizeLiveInvites({invites:[
+  {invite_id:inviteId,room_id:otherId,room_slug:'salon-prive',room_name:'Salon privé',inviter_label:'Camille',created_at:'2026-09-08T12:00:00Z',expires_at:'2026-09-15T12:00:00Z',inviter_user_id:'secret'},
+  {invite_id:inviteId,room_id:otherId,room_slug:'doublon',room_name:'Doublon',inviter_label:'Autre'},
+  {invite_id:'bad',room_id:roomId,room_slug:'invalide',room_name:'Ignoré'}
+]});
+assert.equal(invites.length,1);
+assert.deepEqual(invites[0],{
+  inviteId,
+  roomId:otherId,
+  roomSlug:'salon-prive',
+  roomName:'Salon privé',
+  inviterLabel:'Camille',
+  createdAt:'2026-09-08T12:00:00Z',
+  expiresAt:'2026-09-15T12:00:00Z'
+});
+assert.equal(Object.hasOwn(invites[0],'inviter_user_id'),false);
+
 assert.equal(livePresenceLabel(0),'Personne en ligne dans ce salon');
 assert.equal(livePresenceLabel(1),'1 présence active');
 assert.equal(livePresenceLabel(4),'4 présences actives');
@@ -50,6 +69,7 @@ assert.equal(liveRoomAccessLabel({visibility:'private',joined:true}),'Salon priv
 assert.equal(liveCommandHelp(),'/join <salon> · /rooms · /me');
 assert.match(liveUiErrorMessage(new Error('LIVE_COMMAND_UNKNOWN')),/Commande inconnue/);
 assert.match(liveUiErrorMessage(new Error('SOCIAL_LIVE_ROOM_UNAVAILABLE')),/pas disponible/);
+assert.match(liveUiErrorMessage(new Error('SOCIAL_LIVE_INVITE_UNAVAILABLE')),/invitation/);
 assert.equal(liveUiErrorMessage(new Error('AUTRE_ERREUR')),null);
 
-console.log('OK modèle UI En direct V25: données bornées, UUID utilisateurs ignorés, présence agrégée et commandes explicites.');
+console.log('OK modèle UI En direct V25: données bornées, UUID utilisateurs ignorés, invitations minimisées, présence agrégée et commandes explicites.');
