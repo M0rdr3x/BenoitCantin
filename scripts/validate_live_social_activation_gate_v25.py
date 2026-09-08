@@ -45,6 +45,11 @@ MODULE_IMPORT_RE = re.compile(
     r'(?:\bfrom\s*|\bimport\s*(?:\(\s*)?)["\']([^"\']+)["\']',
     re.IGNORECASE,
 )
+CSS_COMMENT_RE = re.compile(r'/\*.*?\*/', re.DOTALL)
+CSS_IMPORT_RE = re.compile(
+    r'@import\s+(?:url\(\s*)?(?:["\']([^"\']+)["\']|([^\s);]+))\s*\)?',
+    re.IGNORECASE,
+)
 LIVE_MODULE_NAME_RE = re.compile(r'(sinjira-live-[A-Za-z0-9_-]+\.js)', re.IGNORECASE)
 LIVE_STYLE_NAME_RE = re.compile(r'(v25-live-[A-Za-z0-9_-]+\.css)', re.IGNORECASE)
 LEDGER_ROW_RE = re.compile(r'^(\d{14})\s+[A-Za-z0-9_]+$')
@@ -60,6 +65,7 @@ FORBIDDEN_WORKFLOW_MARKERS = (
 )
 REQUIRED_WORKFLOW_MARKERS = (
     "'assets/js/**/*.js'",
+    "'assets/css/**/*.css'",
     "'**/*.html'",
     'scripts/test_live_social_activation_gate_v25.py',
     'scripts/validate_live_social_activation_gate_v25.py',
@@ -67,14 +73,16 @@ REQUIRED_WORKFLOW_MARKERS = (
 
 
 class _MountedAssetParser(HTMLParser):
-    """Extrait les scripts/styles réellement référencés et le JS inline exécutable."""
+    """Extrait les assets référencés et les scripts/styles inline exécutables."""
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.script_srcs = []
         self.style_hrefs = []
         self.inline_scripts = []
+        self.inline_styles = []
         self._inline_script_parts = None
+        self._inline_style_parts = None
 
     def handle_starttag(self, tag, attrs):
         attrs = {str(key).lower(): value for key, value in attrs if key}
@@ -90,15 +98,23 @@ class _MountedAssetParser(HTMLParser):
             href = attrs.get('href')
             if href:
                 self.style_hrefs.append(href)
+        elif tag == 'style':
+            self._inline_style_parts = []
 
     def handle_data(self, data):
         if self._inline_script_parts is not None:
             self._inline_script_parts.append(data)
+        if self._inline_style_parts is not None:
+            self._inline_style_parts.append(data)
 
     def handle_endtag(self, tag):
-        if str(tag).lower() == 'script' and self._inline_script_parts is not None:
+        tag = str(tag).lower()
+        if tag == 'script' and self._inline_script_parts is not None:
             self.inline_scripts.append(''.join(self._inline_script_parts))
             self._inline_script_parts = None
+        elif tag == 'style' and self._inline_style_parts is not None:
+            self.inline_styles.append(''.join(self._inline_style_parts))
+            self._inline_style_parts = None
 
 
 def parse_ledger_versions(text):
@@ -192,6 +208,54 @@ def _walk_inline_js_imports(root, base_dir, html_rel, source, mounts):
             )
 
 
+def _css_import_references(source):
+    source = CSS_COMMENT_RE.sub('', source)
+    for match in CSS_IMPORT_RE.finditer(source):
+        reference = match.group(1) or match.group(2)
+        if reference:
+            yield reference
+
+
+def _walk_local_css_imports(root, entry, html_rel, mounts, visited, chain):
+    try:
+        entry_rel = entry.relative_to(root).as_posix()
+    except ValueError:
+        return
+    if entry_rel in visited or not entry.is_file() or entry.suffix.lower() != '.css':
+        return
+    visited.add(entry_rel)
+    source = entry.read_text('utf-8', errors='ignore')
+    current_chain = chain + (entry_rel,)
+    for reference in _css_import_references(source):
+        cleaned = _clean_asset_reference(reference)
+        live_match = LIVE_STYLE_NAME_RE.search(cleaned)
+        if live_match:
+            mounts.add((html_rel, f"{live_match.group(1)} via {' -> '.join(current_chain)}"))
+            continue
+        target = _resolve_local_asset(root, entry.parent, reference)
+        if target is not None and target.suffix.lower() == '.css':
+            _walk_local_css_imports(root, target, html_rel, mounts, visited, current_chain)
+
+
+def _walk_inline_css_imports(root, base_dir, html_rel, source, mounts):
+    for reference in _css_import_references(source):
+        cleaned = _clean_asset_reference(reference)
+        live_match = LIVE_STYLE_NAME_RE.search(cleaned)
+        if live_match:
+            mounts.add((html_rel, f'{live_match.group(1)} via style inline'))
+            continue
+        target = _resolve_local_asset(root, base_dir, reference)
+        if target is not None and target.suffix.lower() == '.css':
+            _walk_local_css_imports(
+                root,
+                target,
+                html_rel,
+                mounts,
+                set(),
+                (f'{html_rel}::<style-inline>',),
+            )
+
+
 def find_html_mounts(root):
     root = Path(root).resolve()
     mounts = set()
@@ -216,9 +280,16 @@ def find_html_mounts(root):
             live_match = LIVE_STYLE_NAME_RE.search(_clean_asset_reference(reference))
             if live_match:
                 mounts.add((html_rel, live_match.group(1)))
+                continue
+            style = _resolve_local_asset(root, path.parent, reference)
+            if style is not None:
+                _walk_local_css_imports(root, style, html_rel, mounts, set(), ())
 
         for source in parser.inline_scripts:
             _walk_inline_js_imports(root, path.parent, html_rel, source, mounts)
+
+        for source in parser.inline_styles:
+            _walk_inline_css_imports(root, path.parent, html_rel, source, mounts)
 
     return tuple(sorted(mounts))
 
@@ -346,7 +417,7 @@ def main():
         print(
             'OK garde activation En direct V25: dark launch maintenu; '
             f"{len(verdict['missing_versions'])}/8 migrations En direct non prouvées dans le ledger production; "
-            'aucun montage direct, transitif ou inline détecté.'
+            'aucun montage direct, transitif JS/CSS ou inline détecté.'
         )
     elif verdict['status'] == 'READY_NOT_MOUNTED':
         print('OK garde activation En direct V25: preuve production complète; interface encore non montée.')
