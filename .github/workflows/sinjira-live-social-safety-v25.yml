@@ -7,6 +7,8 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/tests/live_social_moderation_v25.test.sql'
       - 'supabase/tests/live_social_private_invites_v25.test.sql'
+      - 'supabase/tests/minor_exploitation_safety_v24_4_82.test.sql'
+      - 'supabase/tests/server_only_rls_contract_v25.test.sql'
       - 'scripts/validate_live_social_safety_v25.py'
       - 'scripts/validate_live_social_foundation_v25.py'
       - 'scripts/validate_production_schema_manifest.py'
@@ -47,6 +49,12 @@ jobs:
 
       - name: Tester les invitations privées avec pgTAP
         run: supabase test db supabase/tests/live_social_private_invites_v25.test.sql --local
+
+      - name: Rejouer la protection mineurs et exploitation
+        run: supabase test db supabase/tests/minor_exploitation_safety_v24_4_82.test.sql --local
+
+      - name: Rejouer la frontière server-only RLS
+        run: supabase test db supabase/tests/server_only_rls_contract_v25.test.sql --local
 
       - name: Rejouer la frontière advisor sécurité
         run: supabase test db supabase/tests/security_advisor_contract_v24_5_24.test.sql --local
