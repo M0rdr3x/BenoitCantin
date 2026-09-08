@@ -1,0 +1,45 @@
+name: SINJIRA V25 — Interface En direct dark launch
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-live-ui-model-v25.js'
+      - 'assets/js/sinjira-live-ui-v25.js'
+      - 'assets/css/v25-live-ui.css'
+      - 'scripts/test_live_social_ui_model_v25.mjs'
+      - 'scripts/validate_live_social_ui_v25.py'
+      - '.github/workflows/sinjira-live-social-ui-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-social-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Vérifier la syntaxe des modules UI
+        run: |
+          cp assets/js/sinjira-live-ui-model-v25.js /tmp/sinjira-live-ui-model-v25.mjs
+          cp assets/js/sinjira-live-ui-v25.js /tmp/sinjira-live-ui-v25.mjs
+          node --check /tmp/sinjira-live-ui-model-v25.mjs
+          node --check /tmp/sinjira-live-ui-v25.mjs
+
+      - name: Tester le modèle UI En direct
+        run: node scripts/test_live_social_ui_model_v25.mjs
+
+      - name: Valider l interface et les frontières En direct
+        run: |
+          python scripts/validate_live_social_ui_v25.py
+          python scripts/validate_live_social_runtime_v25.py
+          python scripts/validate_live_social_typed_commands_v25.py
+          python scripts/validate_live_social_foundation_v25.py
+          python scripts/validate_live_social_safety_v25.py
+          python scripts/validate_social_home_v25.py
