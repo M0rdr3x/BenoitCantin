@@ -183,6 +183,74 @@ with TemporaryDirectory() as tmp:
         'style En direct futur/non guillemeté non détecté',
     )
 
+# Un CSS normal monté ne doit pas pouvoir importer un CSS live en contournant le garde.
+with TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    (root / 'compte').mkdir()
+    (root / 'assets' / 'css').mkdir(parents=True)
+    (root / 'compte' / 'communaute.html').write_text(
+        '<link rel=stylesheet href=../assets/css/community.css>',
+        encoding='utf-8',
+    )
+    (root / 'assets' / 'css' / 'community.css').write_text(
+        "@import url('./helper.css');\n",
+        encoding='utf-8',
+    )
+    (root / 'assets' / 'css' / 'helper.css').write_text(
+        "@import './v25-live-future.css' screen;\n",
+        encoding='utf-8',
+    )
+    mounts = gate.find_html_mounts(root)
+    check(
+        any(
+            path == 'compte/communaute.html'
+            and 'v25-live-future.css' in asset
+            and 'assets/css/community.css -> assets/css/helper.css' in asset
+            for path, asset in mounts
+        ),
+        'import CSS En direct transitif non détecté',
+    )
+
+# Un style inline peut lui aussi importer directement ou transitivement un CSS live.
+with TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    (root / 'compte').mkdir()
+    (root / 'assets' / 'css').mkdir(parents=True)
+    (root / 'compte' / 'communaute.html').write_text(
+        '<style>@import "../assets/css/helper.css";</style>',
+        encoding='utf-8',
+    )
+    (root / 'assets' / 'css' / 'helper.css').write_text(
+        "@import url('./v25-live-inline-v25.css');\n",
+        encoding='utf-8',
+    )
+    mounts = gate.find_html_mounts(root)
+    check(
+        any(
+            path == 'compte/communaute.html'
+            and 'v25-live-inline-v25.css' in asset
+            and '::<style-inline>' in asset
+            and 'assets/css/helper.css' in asset
+            for path, asset in mounts
+        ),
+        'import CSS inline transitif non détecté',
+    )
+
+# Les commentaires CSS ne doivent pas créer de faux montage live.
+with TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    (root / 'compte').mkdir()
+    (root / 'assets' / 'css').mkdir(parents=True)
+    (root / 'compte' / 'communaute.html').write_text(
+        '<link rel=stylesheet href=../assets/css/community.css>',
+        encoding='utf-8',
+    )
+    (root / 'assets' / 'css' / 'community.css').write_text(
+        "/* @import './v25-live-comment.css'; */\nbody{display:block}\n",
+        encoding='utf-8',
+    )
+    check(not gate.find_html_mounts(root), 'commentaire CSS ne doit pas être un montage')
+
 # Les commentaires HTML et les simples chaînes JS ne sont pas des montages.
 with TemporaryDirectory() as tmp:
     root = Path(tmp)
@@ -199,4 +267,4 @@ with TemporaryDirectory() as tmp:
     )
     check(not gate.find_html_mounts(root), 'commentaire HTML ou simple mention JS ne doit pas être un montage')
 
-print('OK tests garde activation En direct V25: 8 migrations, 5 tables, convergence manifeste, HTML valide guillemeté/non guillemeté, imports inline et transitifs fail-closed couverts.')
+print('OK tests garde activation En direct V25: 8 migrations, 5 tables, convergence manifeste, HTML valide guillemeté/non guillemeté, imports JS/CSS inline et transitifs fail-closed couverts.')
