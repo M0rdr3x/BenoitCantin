@@ -7,6 +7,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
+      - 'supabase/production-reviewed-migration-batch.txt'
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/validate_production_migration_ledger.py'
@@ -20,6 +21,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
+      - 'supabase/production-reviewed-migration-batch.txt'
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/validate_production_migration_ledger.py'
@@ -45,5 +47,5 @@ jobs:
           python-version: '3.12'
       - name: Vérifier la reconstruction des tables production
         run: python scripts/validate_production_schema_manifest.py
-      - name: Vérifier le ledger, le runbook et la voie production unique
+      - name: Vérifier le ledger, le lot revu, le runbook et la voie production unique
         run: python scripts/validate_production_migration_ledger.py
