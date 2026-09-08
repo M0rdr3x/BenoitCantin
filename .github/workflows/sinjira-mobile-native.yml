@@ -39,5 +39,8 @@ jobs:
       - name: Vérifier le contrat mobile V25 sensible
         run: npm run validate:vault
 
+      - name: Tester la liaison du token push à l’installation
+        run: npm run test:push-installation-binding
+
       - name: Vérifier TypeScript
         run: npm run typecheck
