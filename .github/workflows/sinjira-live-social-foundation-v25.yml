@@ -1,0 +1,54 @@
+name: SINJIRA V25 — Fondation En direct sécurisée
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/live_social_foundation_v25.test.sql'
+      - 'supabase/tests/live_social_realtime_eligibility_v25.test.sql'
+      - 'scripts/validate_live_social_foundation_v25.py'
+      - 'scripts/validate_social_home_v25.py'
+      - 'scripts/validate_supabase.py'
+      - 'compte/communaute.html'
+      - '.github/workflows/sinjira-live-social-foundation-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-social-foundation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Contrats statiques En direct et social existant
+        run: |
+          python scripts/validate_live_social_foundation_v25.py
+          python scripts/validate_social_home_v25.py
+          python scripts/validate_supabase.py
+          python scripts/validate_production_migration_ledger.py
+          python scripts/validate_production_schema_manifest.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+
+      - name: Démarrer Supabase local complet
+        run: supabase start
+
+      - name: Tester la fondation En direct avec pgTAP
+        run: supabase test db supabase/tests/live_social_foundation_v25.test.sql --local
+
+      - name: Tester l'éligibilité Realtime avec pgTAP
+        run: supabase test db supabase/tests/live_social_realtime_eligibility_v25.test.sql --local
+
+      - name: Arrêter Supabase local
+        if: always()
+        run: supabase stop --no-backup || true
