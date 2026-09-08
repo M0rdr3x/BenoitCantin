@@ -238,19 +238,14 @@ begin
     insert into public.social_live_room_members(room_id,user_id,role)
     values(v_room.id,v_user,'member');
 
+    -- Si une invitation directe existait déjà, la fermer évite qu'elle reste
+    -- pendante après l'accès par code. Sinon, aucune nouvelle relation ciblée
+    -- inviter→invité n'est créée.
     update private.social_live_room_invites i
     set status='accepted',responded_at=now()
     where i.room_id=v_room.id
       and i.invitee_user_id=v_user
       and i.status='pending';
-
-    if not found then
-      insert into private.social_live_room_invites(
-        room_id,inviter_user_id,invitee_user_id,status,expires_at,responded_at
-      ) values (
-        v_room.id,v_code.creator_user_id,v_user,'accepted',v_code.expires_at,now()
-      );
-    end if;
   end if;
 
   update private.social_live_room_share_codes
