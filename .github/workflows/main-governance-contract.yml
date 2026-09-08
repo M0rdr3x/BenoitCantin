@@ -4,12 +4,14 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'README.md'
       - '.github/workflows/main-governance.yml'
       - '.github/workflows/main-governance-contract.yml'
       - 'scripts/validate_main_governance_contract.py'
   push:
     branches: [main]
     paths:
+      - 'README.md'
       - '.github/workflows/main-governance.yml'
       - '.github/workflows/main-governance-contract.yml'
       - 'scripts/validate_main_governance_contract.py'
