@@ -1,0 +1,43 @@
+name: SINJIRA V25 — Runtime En direct dark launch
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-live-command-parser-v25.js'
+      - 'assets/js/sinjira-live-runtime-v25.js'
+      - 'scripts/test_live_social_command_parser_v25.mjs'
+      - 'scripts/validate_live_social_runtime_v25.py'
+      - '.github/workflows/sinjira-live-social-runtime-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-social-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Vérifier la syntaxe JavaScript ES module
+        run: |
+          cp assets/js/sinjira-live-command-parser-v25.js /tmp/sinjira-live-command-parser-v25.mjs
+          cp assets/js/sinjira-live-runtime-v25.js /tmp/sinjira-live-runtime-v25.mjs
+          node --check /tmp/sinjira-live-command-parser-v25.mjs
+          node --check /tmp/sinjira-live-runtime-v25.mjs
+
+      - name: Tester le mapping fermé des commandes
+        run: node scripts/test_live_social_command_parser_v25.mjs
+
+      - name: Valider le dark launch En direct
+        run: |
+          python scripts/validate_live_social_runtime_v25.py
+          python scripts/validate_live_social_typed_commands_v25.py
+          python scripts/validate_live_social_foundation_v25.py
+          python scripts/validate_live_social_safety_v25.py
+          python scripts/validate_social_home_v25.py
