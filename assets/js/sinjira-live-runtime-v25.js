@@ -17,6 +17,13 @@ function cleanOptionalUuid(value,code='SOCIAL_LIVE_ID_INVALID'){
   return id;
 }
 
+async function currentSessionUserId(supabase){
+  const {data,error}=await supabase.auth.getSession();
+  if(error)throw error;
+  const id=String(data?.session?.user?.id||'').toLowerCase();
+  return UUID_RE.test(id)?id:null;
+}
+
 async function enrichMessages(rows,supabase){
   const safeRows=Array.isArray(rows)?rows:[];
   const userIds=[...new Set(safeRows.map(row=>String(row?.user_id||'')).filter(id=>UUID_RE.test(id)))];
@@ -31,9 +38,10 @@ async function enrichMessages(rows,supabase){
       labels.set(profile.user_id,String(profile.display_name||profile.pseudo||'Membre SINJIRA').trim()||'Membre SINJIRA');
     }
   }
+  const selfId=await currentSessionUserId(supabase);
   return safeRows.map(row=>{
     const {user_id,...message}=row;
-    return {...message,author_label:labels.get(user_id)||'Membre SINJIRA'};
+    return {...message,author_label:labels.get(user_id)||'Membre SINJIRA',own:!!selfId&&String(user_id).toLowerCase()===selfId};
   });
 }
 
@@ -47,8 +55,7 @@ export async function loadLiveMessages(roomId,{supabase=getSupabase(),limit=100}
     .order('created_at',{ascending:false})
     .limit(capped);
   if(error)throw error;
-  const enriched=await enrichMessages((data||[]).reverse(),supabase);
-  return enriched;
+  return enrichMessages((data||[]).reverse(),supabase);
 }
 
 export async function sendLiveMessage(roomId,body,{replyTo=null,supabase=getSupabase()}={}){
@@ -65,6 +72,24 @@ export async function sendLiveMessage(roomId,body,{replyTo=null,supabase=getSupa
   if(error)throw error;
   const [message]=await enrichMessages([data],supabase);
   return message;
+}
+
+export async function loadLiveInvites({supabase=getSupabase(),limit=20}={}){
+  const capped=Math.max(1,Math.min(Number(limit)||20,50));
+  const {data,error}=await supabase.rpc('social_live_my_invites',{p_limit:capped});
+  if(error)throw error;
+  return data||{ok:true,invites:[]};
+}
+
+export async function respondLiveInvite(inviteId,accept,{supabase=getSupabase()}={}){
+  const id=cleanOptionalUuid(inviteId,'SOCIAL_LIVE_INVITE_ID_INVALID');
+  if(!id)throw new Error('SOCIAL_LIVE_INVITE_ID_INVALID');
+  const {data,error}=await supabase.rpc('social_live_invite_respond',{
+    p_invite_id:id,
+    p_accept:accept===true
+  });
+  if(error)throw error;
+  return data||{ok:false,status:'unavailable'};
 }
 
 export async function executeLiveInput(value,{roomId=null,supabase=getSupabase()}={}){
