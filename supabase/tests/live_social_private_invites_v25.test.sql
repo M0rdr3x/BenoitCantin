@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(27);
+select plan(29);
 
 select has_table('private','social_live_room_invites','table privée invitations live présente');
 select ok((select relrowsecurity from pg_class where oid='private.social_live_room_invites'::regclass),'RLS invitations active');
@@ -11,6 +11,13 @@ select ok(not has_table_privilege('authenticated','private.social_live_room_invi
 select ok(not has_table_privilege('authenticated','private.social_live_room_invites','INSERT'),'authenticated n insère pas directement les invitations');
 select ok(not has_table_privilege('authenticated','private.social_live_room_invites','UPDATE'),'authenticated ne modifie pas directement les invitations');
 select ok(not has_table_privilege('authenticated','private.social_live_room_invites','DELETE'),'authenticated ne supprime pas directement les invitations');
+select ok(
+  not has_table_privilege('service_role','private.social_live_room_invites','SELECT')
+  and not has_table_privilege('service_role','private.social_live_room_invites','INSERT')
+  and not has_table_privilege('service_role','private.social_live_room_invites','UPDATE')
+  and not has_table_privilege('service_role','private.social_live_room_invites','DELETE'),
+  'invitations restent strict_no_direct même pour service_role'
+);
 
 select ok(
   exists(
@@ -109,6 +116,14 @@ select ok(
   position('latitude' in lower(pg_get_functiondef('sinjira_social_user_internal.social_live_invite_create(uuid,uuid)'::regprocedure)))=0
   and position('longitude' in lower(pg_get_functiondef('sinjira_social_user_internal.social_live_invite_create(uuid,uuid)'::regprocedure)))=0,
   'invitations ne collectent pas GPS'
+);
+
+select ok(
+  exists(
+    select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='private' and p.proname='sinjira_live_message_content_policy_guard' and p.prosecdef
+  ),
+  'garde contenu live existe hors schéma public'
 );
 
 select * from finish();
