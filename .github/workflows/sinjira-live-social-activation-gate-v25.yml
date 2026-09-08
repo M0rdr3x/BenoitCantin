@@ -11,7 +11,7 @@ on:
       - 'scripts/validate_live_social_activation_gate_v25.py'
       - 'scripts/test_live_social_activation_gate_v25.py'
       - 'assets/js/**/*.js'
-      - 'assets/css/v25-live*.css'
+      - 'assets/css/**/*.css'
       - '**/*.html'
       - '.github/workflows/sinjira-live-social-activation-gate-v25.yml'
   push:
@@ -24,7 +24,7 @@ on:
       - 'scripts/validate_live_social_activation_gate_v25.py'
       - 'scripts/test_live_social_activation_gate_v25.py'
       - 'assets/js/**/*.js'
-      - 'assets/css/v25-live*.css'
+      - 'assets/css/**/*.css'
       - '**/*.html'
       - '.github/workflows/sinjira-live-social-activation-gate-v25.yml'
   workflow_dispatch:
