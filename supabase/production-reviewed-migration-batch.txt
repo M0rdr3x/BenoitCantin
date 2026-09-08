@@ -1,0 +1,16 @@
+# SINJIRA™ — lot de migrations Supabase production explicitement revu.
+# Format: <timestamp> <nom_sans_timestamp_ni_extension> <git_blob_sha1>
+#
+# Ce fichier est fail-closed : toute migration locale postérieure au dernier
+# timestamp du production-migration-ledger.txt doit apparaître ici, dans l'ordre,
+# avec l'empreinte Git exacte de son contenu. Toute divergence bloque le builder
+# et le préflight avant toute connexion ou écriture production.
+20260907145100 sinjira_v25_security_push_receipt_queue 4c6a4726610aa80517abe420048c00f62feb492e
+20260908120000 sinjira_v25_live_social_foundation 3c33b5e2cc294a80407a5889d91b9de4efea8f76
+20260908121000 sinjira_v25_live_social_realtime_eligibility 772de5e4ceeeb0a6745efa6436d3977134abf918
+20260908122000 sinjira_v25_live_social_helper_invoker a23e14bccd042baa3da957329a8c8368c9cfcb4a
+20260908130000 sinjira_v25_live_social_moderation 21138a4bb307824c9ae454b0e317c74c6be5d2da
+20260908131000 sinjira_v25_live_social_private_invites 56a4d456ffa5e88828ce2cfb519887ceeeec5f32
+20260908132000 sinjira_v25_live_social_safety_convergence 3e62002a418fa26585507f98472e7b0da8b01073
+20260908140000 sinjira_v25_live_social_typed_commands 96028abd8e5a34fd9b661a25b58270ea3fb721cf
+20260908150000 sinjira_v25_live_social_share_codes 67e8cad4d3707fff084f6c2a3401407d5069e111
