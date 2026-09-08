@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import importlib.util
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / 'scripts' / 'validate_live_social_activation_gate_v25.py'
@@ -36,7 +37,7 @@ check(not current['errors'], 'dark launch non monté doit être valide')
 
 premature = verdict(mounts=MOUNT)
 check(premature['status'] == 'INVALID', 'montage prématuré doit être invalide')
-check(any('Montage HTML En direct interdit' in error for error in premature['errors']), 'erreur montage manquante')
+check(any('Montage En direct direct ou transitif interdit' in error for error in premature['errors']), 'erreur montage manquante')
 
 one_table = frozenset({sorted(LIVE)[0]})
 partial = verdict(production=one_table, planned=LIVE - one_table)
@@ -83,4 +84,47 @@ check(gate.STYLE_MOUNT_RE.search('<link rel="stylesheet" href="/assets/css/v25-l
 check(not gate.SCRIPT_MOUNT_RE.search('<p>sinjira-live-invites-ui-v25.js</p>'), 'mention texte invitations ne doit pas être un mount')
 check(not gate.SCRIPT_MOUNT_RE.search('<p>sinjira-live-community-bridge-v25.js</p>'), 'mention texte pont Communauté ne doit pas être un mount')
 
-print('OK tests garde activation En direct V25: 8 migrations, 5 tables, convergence manifeste et tous les montages UI dark-launch fail-closed couverts, pont Communauté inclus.')
+# Le garde doit suivre un graphe d’import local depuis un script réellement monté.
+with TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    (root / 'compte').mkdir()
+    (root / 'assets' / 'js').mkdir(parents=True)
+    (root / 'compte' / 'communaute.html').write_text(
+        '<script type="module" src="../assets/js/community.js?v=1"></script>',
+        encoding='utf-8',
+    )
+    (root / 'assets' / 'js' / 'community.js').write_text(
+        "import './helper.js';\n",
+        encoding='utf-8',
+    )
+    (root / 'assets' / 'js' / 'helper.js').write_text(
+        "export async function open(){ return import('./sinjira-live-community-bridge-v25.js'); }\n",
+        encoding='utf-8',
+    )
+    mounts = gate.find_html_mounts(root)
+    check(
+        any(
+            path == 'compte/communaute.html'
+            and 'sinjira-live-community-bridge-v25.js' in asset
+            and 'assets/js/community.js -> assets/js/helper.js' in asset
+            for path, asset in mounts
+        ),
+        'import En direct transitif depuis un runtime monté non détecté',
+    )
+
+# Une simple chaîne sans syntaxe import ne doit pas être considérée comme activation.
+with TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    (root / 'compte').mkdir()
+    (root / 'assets' / 'js').mkdir(parents=True)
+    (root / 'compte' / 'communaute.html').write_text(
+        '<script type="module" src="../assets/js/community.js"></script>',
+        encoding='utf-8',
+    )
+    (root / 'assets' / 'js' / 'community.js').write_text(
+        "const roadmap='sinjira-live-community-bridge-v25.js';\n",
+        encoding='utf-8',
+    )
+    check(not gate.find_html_mounts(root), 'simple mention JS ne doit pas être un montage transitif')
+
+print('OK tests garde activation En direct V25: 8 migrations, 5 tables, convergence manifeste, montages directs et imports transitifs depuis les runtimes HTML fail-closed couverts.')

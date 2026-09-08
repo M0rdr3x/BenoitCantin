@@ -38,6 +38,15 @@ STYLE_MOUNT_RE = re.compile(
     r'(v25-live-(?:ui|share-codes|invites)\.css)[^"\']*["\']',
     re.IGNORECASE,
 )
+HTML_SCRIPT_SRC_RE = re.compile(
+    r'<script\b[^>]*\bsrc\s*=\s*["\']([^"\']+)["\']',
+    re.IGNORECASE,
+)
+MODULE_IMPORT_RE = re.compile(
+    r'(?:\bfrom\s*|\bimport\s*(?:\(\s*)?)["\']([^"\']+)["\']',
+    re.IGNORECASE,
+)
+LIVE_MODULE_NAME_RE = re.compile(r'(sinjira-live-[A-Za-z0-9_-]+\.js)', re.IGNORECASE)
 LEDGER_ROW_RE = re.compile(r'^(\d{14})\s+[A-Za-z0-9_]+$')
 FORBIDDEN_WORKFLOW_MARKERS = (
     'SUPABASE_ACCESS_TOKEN',
@@ -48,6 +57,12 @@ FORBIDDEN_WORKFLOW_MARKERS = (
     'migration repair',
     'db reset',
     'inputs.apply',
+)
+REQUIRED_WORKFLOW_MARKERS = (
+    "'assets/js/**/*.js'",
+    "'**/*.html'",
+    'scripts/test_live_social_activation_gate_v25.py',
+    'scripts/validate_live_social_activation_gate_v25.py',
 )
 
 
@@ -82,15 +97,66 @@ def parse_manifest_collection(source, name):
     raise ValueError(f'Collection manifeste absente: {name}')
 
 
+def _clean_asset_reference(value):
+    return str(value).split('#', 1)[0].split('?', 1)[0].strip()
+
+
+def _resolve_local_asset(root, base_dir, reference):
+    cleaned = _clean_asset_reference(reference)
+    lower = cleaned.lower()
+    if not cleaned or lower.startswith(('http://', 'https://', '//', 'data:', 'blob:')):
+        return None
+    candidate = (root / cleaned.lstrip('/')) if cleaned.startswith('/') else (base_dir / cleaned)
+    try:
+        resolved = candidate.resolve()
+        resolved.relative_to(root.resolve())
+    except (OSError, ValueError):
+        return None
+    return resolved
+
+
+def _walk_local_js_imports(root, entry, html_rel, mounts, visited, chain):
+    try:
+        entry_rel = entry.relative_to(root).as_posix()
+    except ValueError:
+        return
+    if entry_rel in visited or not entry.is_file() or entry.suffix.lower() != '.js':
+        return
+    visited.add(entry_rel)
+    source = entry.read_text('utf-8', errors='ignore')
+    current_chain = chain + (entry_rel,)
+    for match in MODULE_IMPORT_RE.finditer(source):
+        reference = match.group(1)
+        live_match = LIVE_MODULE_NAME_RE.search(_clean_asset_reference(reference))
+        if live_match:
+            asset = live_match.group(1)
+            mounts.add((html_rel, f"{asset} via {' -> '.join(current_chain)}"))
+            continue
+        target = _resolve_local_asset(root, entry.parent, reference)
+        if target is not None and target.suffix.lower() == '.js':
+            _walk_local_js_imports(root, target, html_rel, mounts, visited, current_chain)
+
+
 def find_html_mounts(root):
-    mounts = []
+    root = Path(root).resolve()
+    mounts = set()
     for path in sorted(root.rglob('*.html')):
         text = path.read_text('utf-8', errors='ignore')
-        assets = [match.group(1) for match in SCRIPT_MOUNT_RE.finditer(text)]
-        assets.extend(match.group(1) for match in STYLE_MOUNT_RE.finditer(text))
-        for asset in sorted(set(assets)):
-            mounts.append((path.relative_to(root).as_posix(), asset))
-    return tuple(mounts)
+        html_rel = path.relative_to(root).as_posix()
+        for match in SCRIPT_MOUNT_RE.finditer(text):
+            mounts.add((html_rel, match.group(1)))
+        for match in STYLE_MOUNT_RE.finditer(text):
+            mounts.add((html_rel, match.group(1)))
+
+        # Suivre aussi les imports locaux depuis chaque script réellement monté.
+        # Cela bloque un contournement du dark launch par import statique/dynamique
+        # depuis un runtime déjà présent dans une page, même via plusieurs helpers.
+        for match in HTML_SCRIPT_SRC_RE.finditer(text):
+            script = _resolve_local_asset(root, path.parent, match.group(1))
+            if script is None:
+                continue
+            _walk_local_js_imports(root, script, html_rel, mounts, set(), ())
+    return tuple(sorted(mounts))
 
 
 def evaluate_activation(*, ledger_versions, production_tables, planned_tables, mounts):
@@ -133,7 +199,7 @@ def evaluate_activation(*, ledger_versions, production_tables, planned_tables, m
 
     if mounts and not activation_ready:
         rendered = ', '.join(f'{path}:{asset}' for path, asset in mounts)
-        errors.append('Montage HTML En direct interdit sans preuve production complète: ' + rendered)
+        errors.append('Montage En direct direct ou transitif interdit sans preuve production complète: ' + rendered)
 
     if errors:
         status = 'INVALID'
@@ -169,9 +235,13 @@ def validate_workflow_static(errors):
         errors.append('Workflow du garde activation En direct absent.')
         return
     text = WORKFLOW.read_text('utf-8')
+    lower = text.lower()
     for marker in FORBIDDEN_WORKFLOW_MARKERS:
-        if marker.lower() in text.lower():
+        if marker.lower() in lower:
             errors.append(f'Workflow garde activation contient une primitive/secret interdit: {marker}')
+    for marker in REQUIRED_WORKFLOW_MARKERS:
+        if marker.lower() not in lower:
+            errors.append(f'Workflow garde activation ne couvre pas son contrat: {marker}')
 
 
 def main():
@@ -212,12 +282,12 @@ def main():
         print(
             'OK garde activation En direct V25: dark launch maintenu; '
             f"{len(verdict['missing_versions'])}/8 migrations En direct non prouvées dans le ledger production; "
-            'aucun montage HTML détecté.'
+            'aucun montage direct ou transitif détecté.'
         )
     elif verdict['status'] == 'READY_NOT_MOUNTED':
         print('OK garde activation En direct V25: preuve production complète; interface encore non montée.')
     else:
-        print('OK garde activation En direct V25: preuve production complète et montage HTML autorisé.')
+        print('OK garde activation En direct V25: preuve production complète et montage En direct autorisé.')
     return 0
 
 
