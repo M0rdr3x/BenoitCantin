@@ -159,12 +159,24 @@
   var moduleProbe = doc.createElement('script');
   var supportsModules = 'noModule' in moduleProbe;
   if (supportsModules) {
-    var runtimes = [
-      ['v2431Runtime', '/assets/js/v24-3-1-runtime.js?v=24.4.12'],
-      ['v2432Runtime', '/assets/js/v24-3-2-runtime.js?v=24.4.12'],
-      ['v2433Runtime', '/assets/js/v24-3-3-runtime.js?v=24.4.12'],
-      ['v2436Runtime', '/assets/js/v24-3-6-runtime.js?v=24.4.12']
-    ];
+    var currentPath = String(window.location.pathname || '/').replace(/\/+$/, '') || '/';
+    var runtimes = [];
+    var legacyStatusSelector = '[data-private-profile-status],[data-social-status],[data-fracture-status],[data-fracture-access-status],[data-character-network-lock],[data-relation-status],[data-market-account-status],[data-token-ledger],[data-token-balance]';
+    var isRegistry = currentPath.indexOf('/projets/sinjira/registre') === 0;
+    var isAccount = currentPath === '/compte' || currentPath.indexOf('/compte/') === 0;
+    var isAdmin = currentPath.indexOf('/admin/sinjira') === 0;
+    var isFracture = currentPath.indexOf('/projets/sinjira/jeux/fracture-du-reseau-mere') === 0;
+    var hasLegacyStatus = Boolean(doc.querySelector(legacyStatusSelector));
+
+    if (isRegistry) {
+      runtimes.push(['v2431Runtime', '/assets/js/v24-3-1-runtime.js?v=24.4.12']);
+    }
+    if (isAdmin || currentPath.indexOf('/compte/reseau-personnage') === 0 || hasLegacyStatus) {
+      runtimes.push(['v2432Runtime', '/assets/js/v24-3-2-runtime.js?v=24.4.12']);
+    }
+    if (isAccount || isAdmin || isFracture || hasLegacyStatus) {
+      runtimes.push(['v2433Runtime', '/assets/js/v24-3-3-runtime.js?v=24.4.12']);
+    }
 
     function runtimeSelector(key) {
       return 'script[data-' + key.replace(/[A-Z]/g, function (match) {
