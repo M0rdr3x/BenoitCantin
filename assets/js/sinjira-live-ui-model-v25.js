@@ -42,6 +42,32 @@ export function normalizeLiveRooms(payload){
   return rooms;
 }
 
+export function normalizeLiveInvites(payload){
+  const raw=Array.isArray(payload?.invites)?payload.invites:[];
+  const seen=new Set();
+  const invites=[];
+  for(const row of raw){
+    const inviteId=String(row?.invite_id||'').trim().toLowerCase();
+    const roomId=String(row?.room_id||'').trim().toLowerCase();
+    const roomSlug=String(row?.room_slug||'').trim().toLowerCase();
+    const roomName=String(row?.room_name||'').trim().slice(0,80);
+    const inviterLabel=String(row?.inviter_label||'Membre SINJIRA').trim().slice(0,120)||'Membre SINJIRA';
+    if(!UUID_RE.test(inviteId)||!UUID_RE.test(roomId)||!SLUG_RE.test(roomSlug)||!roomName||seen.has(inviteId))continue;
+    seen.add(inviteId);
+    invites.push({
+      inviteId,
+      roomId,
+      roomSlug,
+      roomName,
+      inviterLabel,
+      createdAt:String(row?.created_at||''),
+      expiresAt:String(row?.expires_at||'')
+    });
+    if(invites.length>=50)break;
+  }
+  return invites;
+}
+
 export function livePresenceLabel(value){
   const count=boundedInt(value,999);
   if(count===0)return 'Personne en ligne dans ce salon';
@@ -73,6 +99,8 @@ export function liveUiErrorMessage(error){
   if(raw.includes('SOCIAL_LIVE_RATE_LIMIT'))return 'Vous envoyez des messages trop rapidement. Réessayez dans quelques instants.';
   if(raw.includes('SOCIAL_LIVE_DUPLICATE_MESSAGE'))return 'Ce message vient déjà d’être envoyé.';
   if(raw.includes('SOCIAL_LIVE_MEMBERSHIP_REQUIRED'))return 'Vous devez être membre du salon pour écrire.';
+  if(raw.includes('SOCIAL_LIVE_INVITE_UNAVAILABLE'))return 'Cette invitation n’est plus disponible.';
+  if(raw.includes('SOCIAL_LIVE_INVITE_ID_INVALID'))return 'Cette invitation n’est pas valide.';
   if(raw.includes('SOCIAL_LIVE_REALTIME_TIMEOUT'))return 'La connexion En direct prend trop de temps. Réessayez.';
   if(raw.includes('AUTH_REQUIRED'))return 'Votre session doit être renouvelée avant d’utiliser En direct.';
   return null;
