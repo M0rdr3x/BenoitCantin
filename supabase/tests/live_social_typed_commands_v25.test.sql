@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
 
-select plan(31);
+select plan(33);
 
 -- Trois commandes nommées, aucune fonction générique qui interprète du texte.
 select has_function('public','social_live_join_public_room',array['text'],'RPC /join présente');
