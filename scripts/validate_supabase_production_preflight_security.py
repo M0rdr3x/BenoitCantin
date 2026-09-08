@@ -11,8 +11,10 @@ WORKFLOW = ROOT / ".github" / "workflows" / "supabase-production-preflight.yml"
 LOCAL_VALIDATE = "- name: Vérifier le dépôt Supabase"
 BUILD_WORKSPACE = "- name: Construire le workspace production protégé"
 INSTALL_CLI = "- name: Installer Supabase CLI"
+VERIFY_CLI = "- name: Vérifier Supabase CLI"
 
-MANUAL_AUTH_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' }}"
+MANUAL_ONLY_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' }}"
+MANUAL_AUTH_GUARD = MANUAL_ONLY_GUARD
 REMOTE_PREFLIGHT_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}"
 APPLY_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}"
 
@@ -80,6 +82,7 @@ def validate_text(text: str) -> list[str]:
         "validation locale": text.find(LOCAL_VALIDATE),
         "workspace protégé": text.find(BUILD_WORKSPACE),
         "installation CLI": text.find(INSTALL_CLI),
+        "vérification CLI": text.find(VERIFY_CLI),
     }
     for label, pos in positions.items():
         if pos < 0:
@@ -90,6 +93,8 @@ def validate_text(text: str) -> list[str]:
             errors.append("La validation locale doit précéder l'installation Supabase CLI.")
         if not positions["workspace protégé"] < positions["installation CLI"]:
             errors.append("Le workspace fail-closed doit être construit avant l'installation Supabase CLI.")
+        if not positions["installation CLI"] < positions["vérification CLI"]:
+            errors.append("La vérification Supabase CLI doit suivre son installation.")
 
     local_block = step_block(text, "Vérifier le dépôt Supabase")
     for command in (
@@ -106,6 +111,14 @@ def validate_text(text: str) -> list[str]:
     build_block = step_block(text, "Construire le workspace production protégé")
     if "python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase" not in build_block:
         errors.append("Le builder fail-closed du workspace production est absent.")
+
+    install_cli_block = step_block(text, "Installer Supabase CLI")
+    if MANUAL_ONLY_GUARD not in install_cli_block:
+        errors.append("L'installation Supabase CLI doit être réservée à workflow_dispatch manuel.")
+
+    verify_cli_block = step_block(text, "Vérifier Supabase CLI")
+    if MANUAL_ONLY_GUARD not in verify_cli_block:
+        errors.append("La vérification Supabase CLI doit être réservée à workflow_dispatch manuel.")
 
     auth_block = step_block(text, "Détecter les secrets de connexion Supabase")
     if MANUAL_AUTH_GUARD not in auth_block:
@@ -178,7 +191,8 @@ def main() -> int:
     print("Contrat sécurité préflight Supabase production: OK")
     print("- lot/ledger/workspace vérifiés avant Supabase CLI")
     print("- aucun secret au niveau du job")
-    print("- PR/push strictement locaux, sans secrets production")
+    print("- PR/push strictement locaux, sans secrets production ni Supabase CLI")
+    print("- installation/vérification Supabase CLI réservées à workflow_dispatch")
     print("- préflight distant réservé à workflow_dispatch")
     print("- écritures protégées par workflow_dispatch + apply=true + auth")
     return 0
