@@ -8,6 +8,7 @@ on:
       - 'supabase/tests/live_social_moderation_v25.test.sql'
       - 'supabase/tests/live_social_private_invites_v25.test.sql'
       - 'supabase/tests/minor_exploitation_safety_v24_4_82.test.sql'
+      - 'supabase/tests/global_safety_compliance_v24_4_83.test.sql'
       - 'supabase/tests/server_only_rls_contract_v25.test.sql'
       - 'scripts/validate_live_social_safety_v25.py'
       - 'scripts/validate_live_social_foundation_v25.py'
@@ -52,6 +53,9 @@ jobs:
 
       - name: Rejouer la protection mineurs et exploitation
         run: supabase test db supabase/tests/minor_exploitation_safety_v24_4_82.test.sql --local
+
+      - name: Rejouer la conformité sécurité globale
+        run: supabase test db supabase/tests/global_safety_compliance_v24_4_83.test.sql --local
 
       - name: Rejouer la frontière server-only RLS
         run: supabase test db supabase/tests/server_only_rls_contract_v25.test.sql --local
