@@ -78,8 +78,10 @@ insert into expected_server_only_rls(schema_name,table_name,presence_scope,acces
 
   -- Objets locaux explicitement planifiés, non revendiqués comme présents en
   -- production tant que leurs migrations futures n'ont pas été appliquées.
-  -- Les invitations live sont plus sensibles : aucun CRUD direct, même service_role.
+  -- Les invitations et codes live sont plus sensibles : aucun CRUD direct,
+  -- même pour service_role.
   ('private','social_live_room_invites','reconstruction_only','strict_no_direct'),
+  ('private','social_live_room_share_codes','reconstruction_only','strict_no_direct'),
   ('public','content_versions','reconstruction_only','service_role_allowed'),
   ('public','security_push_receipt_queue','reconstruction_only','service_role_allowed');
 
@@ -87,8 +89,8 @@ select plan(12);
 
 select is(
   (select count(*)::int from expected_server_only_rls),
-  52,
-  'le contrat classifie les 49 tables production et trois tables RLS reconstruction-only'
+  53,
+  'le contrat classifie les 49 tables production et quatre tables RLS reconstruction-only'
 );
 
 select is(
@@ -99,8 +101,8 @@ select is(
 
 select is(
   (select count(*)::int from expected_server_only_rls where presence_scope='reconstruction_only'),
-  3,
-  'trois tables RLS sans policy sont explicitement propres à la reconstruction locale'
+  4,
+  'quatre tables RLS sans policy sont explicitement propres à la reconstruction locale'
 );
 
 select is(
@@ -109,14 +111,14 @@ select is(
     from expected_server_only_rls
     where presence_scope='reconstruction_only'
   ),
-  'private.social_live_room_invites, public.content_versions, public.security_push_receipt_queue'::text,
+  'private.social_live_room_invites, private.social_live_room_share_codes, public.content_versions, public.security_push_receipt_queue'::text,
   'les exceptions RLS reconstruction-only sont explicitement nommées'
 );
 
 select is(
   (select count(*)::int from expected_server_only_rls where access_class='strict_no_direct'),
-  15,
-  '14 tables production ultra-sensibles et les invitations live interdisent le CRUD direct service_role'
+  16,
+  '14 tables production ultra-sensibles et deux tables live privées interdisent le CRUD direct service_role'
 );
 
 select is(

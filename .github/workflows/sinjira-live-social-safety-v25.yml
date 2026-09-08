@@ -7,10 +7,12 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/tests/live_social_moderation_v25.test.sql'
       - 'supabase/tests/live_social_private_invites_v25.test.sql'
+      - 'supabase/tests/live_social_share_codes_v25.test.sql'
       - 'supabase/tests/minor_exploitation_safety_v24_4_82.test.sql'
       - 'supabase/tests/global_safety_compliance_v24_4_83.test.sql'
       - 'supabase/tests/server_only_rls_contract_v25.test.sql'
       - 'scripts/validate_live_social_safety_v25.py'
+      - 'scripts/validate_live_social_share_codes_v25.py'
       - 'scripts/validate_live_social_foundation_v25.py'
       - 'scripts/validate_production_schema_manifest.py'
       - '.github/workflows/sinjira-live-social-safety-v25.yml'
@@ -32,6 +34,7 @@ jobs:
       - name: Contrats statiques sécurité En direct
         run: |
           python scripts/validate_live_social_safety_v25.py
+          python scripts/validate_live_social_share_codes_v25.py
           python scripts/validate_live_social_foundation_v25.py
           python scripts/validate_supabase.py
           python scripts/validate_production_migration_ledger.py
@@ -50,6 +53,9 @@ jobs:
 
       - name: Tester les invitations privées avec pgTAP
         run: supabase test db supabase/tests/live_social_private_invites_v25.test.sql --local
+
+      - name: Tester les codes de partage privés avec pgTAP
+        run: supabase test db supabase/tests/live_social_share_codes_v25.test.sql --local
 
       - name: Rejouer la protection mineurs et exploitation
         run: supabase test db supabase/tests/minor_exploitation_safety_v24_4_82.test.sql --local
