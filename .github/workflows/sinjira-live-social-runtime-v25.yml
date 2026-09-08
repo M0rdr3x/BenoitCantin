@@ -24,10 +24,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Vérifier la syntaxe JavaScript
+      - name: Vérifier la syntaxe JavaScript ES module
         run: |
-          node --check assets/js/sinjira-live-command-parser-v25.js
-          node --check assets/js/sinjira-live-runtime-v25.js
+          cp assets/js/sinjira-live-command-parser-v25.js /tmp/sinjira-live-command-parser-v25.mjs
+          cp assets/js/sinjira-live-runtime-v25.js /tmp/sinjira-live-runtime-v25.mjs
+          node --check /tmp/sinjira-live-command-parser-v25.mjs
+          node --check /tmp/sinjira-live-runtime-v25.mjs
 
       - name: Tester le mapping fermé des commandes
         run: node scripts/test_live_social_command_parser_v25.mjs
