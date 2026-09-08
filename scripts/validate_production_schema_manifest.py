@@ -45,7 +45,8 @@ PLANNED_LOCAL_TABLES={
 'parallel_cycles','parallel_missions','parallel_responses',
 'market_listings','market_favorites','token_ledger',
 'codex_entities','codex_relationships','content_versions',
-'security_push_receipt_queue'
+'security_push_receipt_queue',
+'social_live_rooms','social_live_room_members','social_live_messages'
 }
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|private)\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
