@@ -112,12 +112,84 @@ with TemporaryDirectory() as tmp:
         'import En direct transitif depuis un runtime monté non détecté',
     )
 
-# Une simple chaîne sans syntaxe import ne doit pas être considérée comme activation.
+# Un src HTML valide sans guillemets doit aussi être détecté, y compris pour un futur module live.
+with TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    (root / 'compte').mkdir()
+    (root / 'compte' / 'communaute.html').write_text(
+        '<script type=module src=../assets/js/sinjira-live-future-v25.js></script>',
+        encoding='utf-8',
+    )
+    mounts = gate.find_html_mounts(root)
+    check(
+        ('compte/communaute.html', 'sinjira-live-future-v25.js') in mounts,
+        'src En direct non guillemeté ou nouveau module non détecté',
+    )
+
+# Les imports inline exécutables ne doivent pas contourner le dark launch.
+with TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    (root / 'compte').mkdir()
+    (root / 'compte' / 'communaute.html').write_text(
+        '<script type="module">import("../assets/js/sinjira-live-community-bridge-v25.js");</script>',
+        encoding='utf-8',
+    )
+    mounts = gate.find_html_mounts(root)
+    check(
+        any(
+            path == 'compte/communaute.html'
+            and asset == 'sinjira-live-community-bridge-v25.js via script inline'
+            for path, asset in mounts
+        ),
+        'import En direct inline non détecté',
+    )
+
+# Un import inline vers un helper local doit être suivi transitivement.
 with TemporaryDirectory() as tmp:
     root = Path(tmp)
     (root / 'compte').mkdir()
     (root / 'assets' / 'js').mkdir(parents=True)
     (root / 'compte' / 'communaute.html').write_text(
+        '<script type="module">import "../assets/js/helper.js";</script>',
+        encoding='utf-8',
+    )
+    (root / 'assets' / 'js' / 'helper.js').write_text(
+        "export * from './sinjira-live-ui-v25.js';\n",
+        encoding='utf-8',
+    )
+    mounts = gate.find_html_mounts(root)
+    check(
+        any(
+            path == 'compte/communaute.html'
+            and 'sinjira-live-ui-v25.js' in asset
+            and '::<script-inline>' in asset
+            and 'assets/js/helper.js' in asset
+            for path, asset in mounts
+        ),
+        'import inline transitif vers En direct non détecté',
+    )
+
+# Les CSS live, même futurs et avec href non guillemeté, restent interdits avant convergence.
+with TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    (root / 'compte').mkdir()
+    (root / 'compte' / 'communaute.html').write_text(
+        '<link rel=stylesheet href=../assets/css/v25-live-future.css>',
+        encoding='utf-8',
+    )
+    mounts = gate.find_html_mounts(root)
+    check(
+        ('compte/communaute.html', 'v25-live-future.css') in mounts,
+        'style En direct futur/non guillemeté non détecté',
+    )
+
+# Les commentaires HTML et les simples chaînes JS ne sont pas des montages.
+with TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    (root / 'compte').mkdir()
+    (root / 'assets' / 'js').mkdir(parents=True)
+    (root / 'compte' / 'communaute.html').write_text(
+        '<!-- <script src=../assets/js/sinjira-live-ui-v25.js></script> -->\n'
         '<script type="module" src="../assets/js/community.js"></script>',
         encoding='utf-8',
     )
@@ -125,6 +197,6 @@ with TemporaryDirectory() as tmp:
         "const roadmap='sinjira-live-community-bridge-v25.js';\n",
         encoding='utf-8',
     )
-    check(not gate.find_html_mounts(root), 'simple mention JS ne doit pas être un montage transitif')
+    check(not gate.find_html_mounts(root), 'commentaire HTML ou simple mention JS ne doit pas être un montage')
 
-print('OK tests garde activation En direct V25: 8 migrations, 5 tables, convergence manifeste, montages directs et imports transitifs depuis les runtimes HTML fail-closed couverts.')
+print('OK tests garde activation En direct V25: 8 migrations, 5 tables, convergence manifeste, HTML valide guillemeté/non guillemeté, imports inline et transitifs fail-closed couverts.')
