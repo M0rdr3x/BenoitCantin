@@ -23,6 +23,7 @@ import { NativeHomeHub } from './NativeHomeHub';
 import { NativeModuleRouter, isNativeModulePath } from './NativeModuleRouter';
 import type { NativeModulePath } from './NativeModuleRouter';
 import { NativeSecurityHub } from './NativeSecurityHub';
+import { reusablePushTokenForInstallation } from './pushInstallationBinding';
 import { sharePublicSinjiraUrl } from './safePublicShare';
 
 const DEFAULT_ORIGIN = 'https://www.benoitcantin.com';
@@ -60,6 +61,7 @@ const DEVICE_KEY_STORAGE = 'sinjira_native_device_key_v1';
 const BIOMETRIC_LOCK_STORAGE = 'sinjira_biometric_lock_v1';
 const PUSH_OPT_IN_STORAGE = 'sinjira_security_push_opt_in_v1';
 const PUSH_TOKEN_STORAGE = 'sinjira_security_push_token_v1';
+const PUSH_DEVICE_KEY_STORAGE = 'sinjira_security_push_device_key_v1';
 const WEB_DEVICE_KEY_STORAGE = 'sinjira.security.device_key.v1';
 const WEB_PUSH_TOKEN_STORAGE = 'sinjira.security.push_token.v1';
 const WEB_PUSH_ENABLED_STORAGE = 'sinjira.security.push_enabled.v1';
@@ -340,7 +342,11 @@ export default function App() {
     }
   };
 
-  const enableSecurityPush = async (quiet = false) => {
+  const enableSecurityPush = async (quiet = false, deviceKey = nativeDeviceKey) => {
+    if (!deviceKey) {
+      if (!quiet) setNativeMessage('L’identité locale de cet appareil n’est pas encore prête. Réessayez dans un instant.');
+      return false;
+    }
     const id = projectId();
     if (!id) {
       if (!quiet) setNativeMessage('Les notifications push seront disponibles dès que le projet mobile sera relié à EAS avec son identifiant de projet.');
@@ -361,8 +367,9 @@ export default function App() {
       return false;
     }
     const token = (await Notifications.getExpoPushTokenAsync({ projectId: id })).data;
+    await SecureStore.setItemAsync(PUSH_TOKEN_STORAGE, token, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY });
+    await SecureStore.setItemAsync(PUSH_DEVICE_KEY_STORAGE, deviceKey, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY });
     await SecureStore.setItemAsync(PUSH_OPT_IN_STORAGE, '1');
-    await SecureStore.setItemAsync(PUSH_TOKEN_STORAGE, token);
     setPushEnabled(true);
     setPushToken(token);
     syncPushToWeb(true, token);
@@ -373,6 +380,7 @@ export default function App() {
   const disableSecurityPush = async () => {
     await SecureStore.deleteItemAsync(PUSH_OPT_IN_STORAGE);
     await SecureStore.deleteItemAsync(PUSH_TOKEN_STORAGE);
+    await SecureStore.deleteItemAsync(PUSH_DEVICE_KEY_STORAGE);
     setPushEnabled(false);
     setPushToken('');
     syncPushToWeb(false, '');
@@ -389,7 +397,18 @@ export default function App() {
       }
       const biometric = (await SecureStore.getItemAsync(BIOMETRIC_LOCK_STORAGE)) === '1';
       const push = (await SecureStore.getItemAsync(PUSH_OPT_IN_STORAGE)) === '1';
-      const token = (await SecureStore.getItemAsync(PUSH_TOKEN_STORAGE)) || '';
+      const storedToken = (await SecureStore.getItemAsync(PUSH_TOKEN_STORAGE)) || '';
+      const boundDeviceKey = (await SecureStore.getItemAsync(PUSH_DEVICE_KEY_STORAGE)) || '';
+      const token = reusablePushTokenForInstallation({
+        optedIn: push,
+        token: storedToken,
+        boundDeviceKey,
+        currentDeviceKey: key,
+      });
+      if (!token && (storedToken || boundDeviceKey)) {
+        await SecureStore.deleteItemAsync(PUSH_TOKEN_STORAGE);
+        await SecureStore.deleteItemAsync(PUSH_DEVICE_KEY_STORAGE);
+      }
       if (cancelled) return;
       setNativeDeviceKey(key);
       setBiometricEnabled(biometric);
@@ -398,7 +417,7 @@ export default function App() {
       if (biometric) await unlockWithBiometrics();
       else setIsUnlocked(true);
       if (!cancelled) setSecurityReady(true);
-      if (push && !token) void enableSecurityPush(true);
+      if (push && !token) void enableSecurityPush(true, key);
     })().catch(() => {
       if (!cancelled) {
         setNativeMessage('Le stockage sécurisé local est indisponible.');

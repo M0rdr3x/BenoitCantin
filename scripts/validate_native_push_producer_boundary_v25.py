@@ -335,7 +335,11 @@ def validate_mobile_registration_and_receiver() -> None:
     text = read(MOBILE_APP)
     required = (
         "Notifications.getExpoPushTokenAsync({ projectId: id })",
-        "SecureStore.setItemAsync(PUSH_TOKEN_STORAGE, token)",
+        "SecureStore.setItemAsync(PUSH_TOKEN_STORAGE, token, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY })",
+        "SecureStore.setItemAsync(PUSH_DEVICE_KEY_STORAGE, deviceKey, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY })",
+        "const token = reusablePushTokenForInstallation({",
+        "if (!token && (storedToken || boundDeviceKey)) {",
+        "if (push && !token) void enableSecurityPush(true, key);",
         "syncPushToWeb(true, token)",
         "Notifications.addNotificationResponseReceivedListener",
         "typeof path === 'string' && path.startsWith('/') && !path.startsWith('//')",
