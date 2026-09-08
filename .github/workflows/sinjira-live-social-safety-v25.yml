@@ -1,0 +1,56 @@
+name: SINJIRA V25 — Sécurité En direct et invitations privées
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/live_social_moderation_v25.test.sql'
+      - 'supabase/tests/live_social_private_invites_v25.test.sql'
+      - 'scripts/validate_live_social_safety_v25.py'
+      - 'scripts/validate_live_social_foundation_v25.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - '.github/workflows/sinjira-live-social-safety-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-social-safety:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Contrats statiques sécurité En direct
+        run: |
+          python scripts/validate_live_social_safety_v25.py
+          python scripts/validate_live_social_foundation_v25.py
+          python scripts/validate_supabase.py
+          python scripts/validate_production_migration_ledger.py
+          python scripts/validate_production_schema_manifest.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+
+      - name: Démarrer Supabase local complet
+        run: supabase start
+
+      - name: Tester la modération live avec pgTAP
+        run: supabase test db supabase/tests/live_social_moderation_v25.test.sql --local
+
+      - name: Tester les invitations privées avec pgTAP
+        run: supabase test db supabase/tests/live_social_private_invites_v25.test.sql --local
+
+      - name: Rejouer la frontière advisor sécurité
+        run: supabase test db supabase/tests/security_advisor_contract_v24_5_24.test.sql --local
+
+      - name: Arrêter Supabase local
+        if: always()
+        run: supabase stop --no-backup || true
