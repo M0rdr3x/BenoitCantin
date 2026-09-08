@@ -48,26 +48,28 @@ def main() -> int:
         'social_live_share_code_rate_limit',
         'social_live_share_code_active_limit',
         'insert into public.social_live_room_members',
-        'insert into private.social_live_room_invites',
+        'update private.social_live_room_invites',
+        'invitee_user_id=v_user',
         "set status='used',closed_at=now()",
         'language sql security invoker',
     ):
         require(marker in ml, f'marqueur migration absent: {marker}')
 
-    # Un code de partage ne doit jamais devenir un annuaire social ou une passerelle
-    # vers l'identité technique privée.
+    # Un code de partage ne doit jamais devenir un annuaire social, une passerelle
+    # vers l'identité technique privée, ni fabriquer une relation ciblée.
     redeem_body = ml.split('social_live_share_code_redeem(', 1)[1]
     for forbidden in (
         'social_profiles',
         'account_identities',
         'redeemed_by_user_id',
+        'insert into private.social_live_room_invites',
         'inet_client_addr(',
         'request.headers',
         'latitude',
         'longitude',
         'gps',
     ):
-        require(forbidden not in redeem_body, f'collecte/résolution interdite dans le rachat: {forbidden}')
+        require(forbidden not in redeem_body, f'collecte/résolution/relation interdite dans le rachat: {forbidden}')
 
     # Le secret brut et l'identité du rédempteur ne sont jamais des colonnes durables.
     table_def = ml.split('create table if not exists private.social_live_room_share_codes', 1)[1].split(');', 1)[0]
@@ -85,10 +87,14 @@ def main() -> int:
         'gen_random_bytes(32)',
         "digest(v_raw,'sha256')",
         'social_live_share_code_unavailable',
+        'update private.social_live_room_invites',
+        "position('insert into private.social_live_room_invites'",
+        "invitee_user_id=v_user",
         'social_profiles',
         'account_identities',
         'aucun uuid utilisateur',
         'sans persister l identité du rédempteur',
+        'sans fabriquer de relation ciblée',
     ):
         require(marker in tl, f'contrat pgTAP absent: {marker}')
 
@@ -101,7 +107,7 @@ def main() -> int:
     for forbidden in ('--linked', 'supabase_access_token', 'supabase_db_password', 'inputs.apply', 'db push'):
         require(forbidden not in wl, f'workflow ne doit pas viser production: {forbidden}')
 
-    print('OK En direct V25: codes bearer 256 bits, SHA-256 seul en stockage, 24 h, usage unique, strict-no-direct, sans identité de rédempteur/annuaire/UUID/IP/GPS et testés uniquement sur Supabase local.')
+    print('OK En direct V25: codes bearer 256 bits, SHA-256 seul en stockage, 24 h, usage unique, strict-no-direct, sans identité de rédempteur/annuaire/relation ciblée/UUID/IP/GPS et testés uniquement sur Supabase local.')
     return 0
 
 
