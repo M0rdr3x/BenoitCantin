@@ -69,6 +69,25 @@ grant insert(room_id,body,reply_to) on public.social_live_messages to authentica
 
 grant all on table public.social_live_rooms,public.social_live_room_members,public.social_live_messages to service_role;
 
+-- Helper self-only SECURITY DEFINER : casse la récursion RLS rooms <-> memberships
+-- sans permettre de tester l'adhésion d'un autre utilisateur.
+create or replace function public.social_live_is_room_member(p_room_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path=pg_catalog,public
+as $$
+  select auth.uid() is not null
+    and exists(
+      select 1 from public.social_live_room_members m
+      where m.room_id=p_room_id and m.user_id=auth.uid()
+    );
+$$;
+
+revoke all on function public.social_live_is_room_member(uuid) from public,anon;
+grant execute on function public.social_live_is_room_member(uuid) to authenticated,service_role;
+
 -- Création de salon : identité et cohorte viennent uniquement du serveur.
 create or replace function public.social_live_room_insert_guard()
 returns trigger
@@ -266,10 +285,7 @@ using (
   and (
     visibility='public'
     or owner_user_id=(select auth.uid())
-    or exists(
-      select 1 from public.social_live_room_members m
-      where m.room_id=social_live_rooms.id and m.user_id=(select auth.uid())
-    )
+    or public.social_live_is_room_member(id)
   )
 );
 
