@@ -1,0 +1,26 @@
+/* SINJIRA V25 — interface En direct, dark launch non chargée par HTML */
+.v25-live-shell{display:grid;grid-template-columns:minmax(180px,230px) minmax(0,1fr) minmax(170px,220px);gap:14px;min-height:560px}
+.v25-live-rooms,.v25-live-main,.v25-live-me{border:1px solid rgba(150,165,210,.15);border-radius:22px;background:rgba(11,15,29,.97);box-shadow:0 18px 48px rgba(0,0,0,.18)}
+.v25-live-rooms,.v25-live-me{padding:16px;align-self:start}.v25-live-main{min-width:0;display:grid;grid-template-rows:auto auto minmax(260px,1fr) auto;overflow:hidden}
+.v25-live-panel-head{display:grid;gap:7px;margin-bottom:12px}.v25-live-muted{margin:0;color:var(--muted);font-size:.78rem;line-height:1.45}
+.v25-live-room-list{display:grid;gap:7px;max-height:430px;overflow:auto;margin:8px -4px 12px;padding:0 4px}.v25-live-room-row{min-width:0}
+.v25-live-room-button{width:100%;display:grid;gap:3px;text-align:left;padding:10px 11px;border:1px solid rgba(150,165,210,.12);border-radius:13px;background:rgba(255,255,255,.025);color:inherit;font:inherit;font-weight:850;cursor:pointer}
+.v25-live-room-button:hover,.v25-live-room-button[aria-pressed="true"]{border-color:rgba(145,248,238,.34);background:rgba(145,248,238,.07)}
+.v25-live-room-button:focus-visible,.v25-live-composer textarea:focus-visible{outline:2px solid #91f8ee;outline-offset:2px}
+.v25-live-room-meta{font-size:.68rem;font-weight:750;color:var(--muted)}
+.v25-live-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border-bottom:1px solid rgba(150,165,210,.11)}
+.v25-live-title{margin:0 0 4px;font-size:1.12rem}.v25-live-presence{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid rgba(145,248,238,.18);border-radius:999px;font-size:.72rem;font-weight:850;white-space:nowrap}
+.v25-live-presence:before{content:"";width:7px;height:7px;border-radius:50%;background:#91f8ee;box-shadow:0 0 12px rgba(145,248,238,.65)}
+.v25-live-status-line{padding:9px 18px;border-bottom:1px solid rgba(150,165,210,.08);font-size:.76rem;color:var(--muted)}
+.v25-live-status-line[data-status-type="success"]{color:#b9fff3}.v25-live-status-line[data-status-type="error"]{color:#ffd0d9}
+.v25-live-log{min-height:260px;max-height:520px;overflow:auto;padding:14px 18px;display:grid;align-content:start;gap:9px;scrollbar-gutter:stable}
+.v25-live-message{max-width:min(86%,650px);padding:10px 12px;border:1px solid rgba(150,165,210,.1);border-radius:15px;background:rgba(255,255,255,.025)}
+.v25-live-message-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:5px}.v25-live-message-head strong{font-size:.82rem}.v25-live-message-head time{font-size:.66rem;color:var(--muted)}
+.v25-live-message-body{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.9rem;line-height:1.5}.v25-live-empty{margin:auto;padding:24px;color:var(--muted);font-size:.82rem;text-align:center}
+.v25-live-composer{padding:12px 14px 14px;border-top:1px solid rgba(150,165,210,.11);background:rgba(8,12,24,.7)}
+.v25-live-composer textarea{width:100%;min-height:66px;resize:vertical;padding:11px 12px;border:1px solid rgba(150,165,210,.16);border-radius:14px;background:rgba(255,255,255,.035);color:inherit;font:inherit;line-height:1.45}
+.v25-live-composer-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:9px}.v25-live-help{font-size:.7rem;color:var(--muted)}
+.v25-live-me{display:grid;gap:8px}.v25-live-me-label{font-size:.95rem;overflow-wrap:anywhere}
+@media(max-width:980px){.v25-live-shell{grid-template-columns:minmax(180px,220px) minmax(0,1fr)}.v25-live-me{grid-column:1/-1;grid-template-columns:auto 1fr;align-items:center}.v25-live-me .v25-live-muted{grid-column:1/-1}}
+@media(max-width:700px){.v25-live-shell{grid-template-columns:1fr;min-height:0}.v25-live-rooms,.v25-live-main,.v25-live-me{border-radius:18px}.v25-live-room-list{max-height:240px}.v25-live-log{max-height:440px}.v25-live-head{align-items:flex-start;flex-direction:column}.v25-live-presence{white-space:normal}.v25-live-message{max-width:100%}.v25-live-composer-meta{align-items:stretch;flex-direction:column}.v25-live-composer-meta .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){.v25-live-room-button{scroll-behavior:auto}}
