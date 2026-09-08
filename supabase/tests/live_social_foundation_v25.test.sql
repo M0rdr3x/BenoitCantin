@@ -57,8 +57,8 @@ select ok(position('SOCIAL_LIVE_AUTHOR_MISMATCH' in pg_get_functiondef('public.s
 -- Realtime : Broadcast minimal serveur + Presence privée, jamais un faux payload client de message.
 select ok(exists(select 1 from pg_trigger where tgrelid='public.social_live_messages'::regclass and tgname='social_live_message_notify_trigger' and not tgisinternal),'trigger Realtime message présent');
 select ok(position('realtime.send' in pg_get_functiondef('public.social_live_notify_message_insert()'::regprocedure))>0,'notification utilise Realtime Broadcast serveur');
-select ok(position("'message_id'" in pg_get_functiondef('public.social_live_notify_message_insert()'::regprocedure))>0,'Broadcast contient identifiant message');
-select ok(position("'body'" in pg_get_functiondef('public.social_live_notify_message_insert()'::regprocedure))=0,'Broadcast ne contient jamais le corps du message');
+select ok(position('''message_id''' in pg_get_functiondef('public.social_live_notify_message_insert()'::regprocedure))>0,'Broadcast contient identifiant message');
+select ok(position('''body''' in pg_get_functiondef('public.social_live_notify_message_insert()'::regprocedure))=0,'Broadcast ne contient jamais le corps du message');
 select ok(not has_function_privilege('authenticated','public.social_live_notify_message_insert()','EXECUTE'),'client ne peut pas invoquer le trigger Broadcast');
 
 -- Realtime Authorization : les politiques restrictives protègent le namespace sinjira-live:*.
