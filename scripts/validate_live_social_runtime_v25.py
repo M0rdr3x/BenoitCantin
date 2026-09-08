@@ -20,7 +20,7 @@ def main():
     test=NODE_TEST.read_text('utf-8')
     community=COMMUNITY.read_text('utf-8')
     workflow=WORKFLOW.read_text('utf-8')
-    pl=parser.lower(); rl=runtime.lower(); cl=community.lower()
+    pl=parser.lower(); rl=runtime.lower(); cl=community.lower(); tl=test.lower()
 
     for marker in (
         "case 'join'", "rpc:'social_live_join_public_room'",
@@ -56,17 +56,18 @@ def main():
     require('innerhtml' not in rl and 'insertadjacenthtml' not in rl,'runtime ne doit pas injecter HTML')
     require('document.cookie' not in rl,'runtime ne doit pas lire les cookies')
     require('console.log' not in rl,'runtime ne doit pas journaliser messages ou jetons')
-    require("access_token" in rl and 'console' not in rl,'jeton seulement utilisé pour authentifier Realtime')
+    require('access_token' in rl and 'console' not in rl,'jeton seulement utilisé pour authentifier Realtime')
 
     for marker in (
-        "parseLiveInput('/join salon-test')",
-        "parseLiveInput('/rooms')",
-        "parseLiveInput('/me')",
-        "parseLiveInput('/drop table users')",
+        "parseliveinput('/join salon-test')",
+        "parseliveinput('/rooms')",
+        "parseliveinput('/me')",
+        "parseliveinput('/drop table users')",
         "'/rpc evil_function'",
-        'liveroomid(room.touppercase())' if False else 'normalizeliveroomid(room.touppercase())'
+        'normalizeliveroomid(room.touppercase())',
+        'data:text/javascript;base64'
     ):
-        require(marker.lower() in test.lower(),f'test parseur absent: {marker}')
+        require(marker in tl,f'test parseur absent: {marker}')
 
     # Dark launch: aucune page HTML ne charge encore le runtime tant que #240 bloque le backend hébergé.
     html='\n'.join(p.read_text('utf-8',errors='ignore').lower() for p in ROOT.rglob('*.html'))
@@ -75,8 +76,10 @@ def main():
     require('prochaine étape' in cl and 'realtime' in cl,'carte Communauté doit rester en état feuille de route')
 
     for marker in (
-        'node --check assets/js/sinjira-live-command-parser-v25.js',
-        'node --check assets/js/sinjira-live-runtime-v25.js',
+        'cp assets/js/sinjira-live-command-parser-v25.js /tmp/sinjira-live-command-parser-v25.mjs',
+        'cp assets/js/sinjira-live-runtime-v25.js /tmp/sinjira-live-runtime-v25.mjs',
+        'node --check /tmp/sinjira-live-command-parser-v25.mjs',
+        'node --check /tmp/sinjira-live-runtime-v25.mjs',
         'node scripts/test_live_social_command_parser_v25.mjs',
         'python scripts/validate_live_social_runtime_v25.py',
         'python scripts/validate_live_social_typed_commands_v25.py',
