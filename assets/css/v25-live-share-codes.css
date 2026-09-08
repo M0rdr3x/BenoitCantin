@@ -1,0 +1,16 @@
+/* SINJIRA V25 — codes privés En direct, dark launch non chargé par HTML */
+.v25-live-shell-share{margin-top:14px}
+.v25-live-share-shell{display:grid;gap:14px;padding:16px;border:1px solid rgba(150,165,210,.15);border-radius:22px;background:rgba(11,15,29,.97);box-shadow:0 18px 48px rgba(0,0,0,.18)}
+.v25-live-share-head{display:grid;gap:6px}.v25-live-share-title{margin:0;font-size:1.08rem}.v25-live-share-subtitle{margin:0;font-size:.9rem}
+.v25-live-share-status{padding:9px 11px;border:1px solid rgba(150,165,210,.1);border-radius:12px;color:var(--muted);font-size:.76rem}.v25-live-share-status[data-status-type="success"]{color:#b9fff3}.v25-live-share-status[data-status-type="error"]{color:#ffd0d9}
+.v25-live-share-section{display:grid;gap:9px;padding:12px;border:1px solid rgba(150,165,210,.1);border-radius:16px;background:rgba(255,255,255,.02)}
+.v25-live-share-label{display:grid;gap:6px;font-size:.74rem;font-weight:750}.v25-live-share-label select,.v25-live-share-label input{width:100%;min-height:42px;padding:9px 10px;border:1px solid rgba(150,165,210,.16);border-radius:12px;background:rgba(255,255,255,.035);color:inherit;font:inherit}
+.v25-live-share-label select:focus-visible,.v25-live-share-label input:focus-visible,.v25-live-share-actions .btn:focus-visible,.v25-live-share-card .btn:focus-visible{outline:2px solid #91f8ee;outline-offset:2px}
+.v25-live-share-reveal{display:grid;gap:8px;padding:11px;border:1px solid rgba(145,248,238,.2);border-radius:14px;background:rgba(145,248,238,.045)}.v25-live-share-reveal[hidden]{display:none}
+.v25-live-share-secret{display:block;padding:10px;border-radius:10px;background:rgba(0,0,0,.24);font-size:.8rem;line-height:1.5;overflow-wrap:anywhere;user-select:all}
+.v25-live-share-expiry{margin:0;color:var(--muted);font-size:.68rem}.v25-live-share-actions{display:flex;flex-wrap:wrap;gap:7px}
+.v25-live-share-redeem{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px}.v25-live-share-redeem .btn{min-height:42px}
+.v25-live-share-list-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.v25-live-share-list{display:grid;gap:8px;max-height:330px;overflow:auto}
+.v25-live-share-card{display:grid;gap:5px;padding:10px;border:1px solid rgba(160,137,255,.18);border-radius:13px;background:rgba(160,137,255,.04)}.v25-live-share-card strong{font-size:.82rem}.v25-live-share-card .btn{justify-self:start}
+@media(max-width:700px){.v25-live-share-shell{border-radius:18px}.v25-live-share-redeem{grid-template-columns:1fr}.v25-live-share-redeem .btn,.v25-live-share-actions .btn{width:100%}.v25-live-share-actions{display:grid}}
+@media(prefers-reduced-motion:reduce){.v25-live-share-list{scroll-behavior:auto}}
