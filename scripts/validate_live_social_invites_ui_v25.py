@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import importlib.util
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -14,13 +15,20 @@ def require(condition,message):
         raise SystemExit(f'ERREUR UI invitations privées En direct V25: {message}')
 
 
+def load_gate():
+    spec=importlib.util.spec_from_file_location('sinjira_live_activation_gate_v25',GATE)
+    require(spec is not None and spec.loader is not None,'garde activation illisible')
+    module=importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def main():
     ui=UI.read_text('utf-8')
     css=CSS.read_text('utf-8')
     shell=SHELL.read_text('utf-8')
     workflow=WORKFLOW.read_text('utf-8')
-    gate=GATE.read_text('utf-8')
-    ul=ui.lower(); cl=css.lower(); sl=shell.lower(); wl=workflow.lower(); gl=gate.lower()
+    ul=ui.lower(); cl=css.lower(); sl=shell.lower(); wl=workflow.lower()
 
     for marker in (
         "import {listmyliveinvites,respondtoliveinvite} from './sinjira-live-invites-client-v25.js'",
@@ -91,10 +99,20 @@ def main():
     for forbidden in ('supabase_access_token','supabase_db_password','--linked','db push','inputs.apply'):
         require(forbidden not in wl,f'workflow UI ne doit jamais viser production: {forbidden}')
 
-    require('invites-ui-v25' in gl,'garde activation ne détecte pas le montage JS des invitations')
-    require('v25-live-invites' in gl,'garde activation ne détecte pas le montage CSS des invitations')
+    # Vérifier le comportement du garde, pas une chaîne littérale de son implémentation.
+    gate=load_gate()
+    script_match=gate.SCRIPT_MOUNT_RE.search(
+        '<script type="module" src="/assets/js/sinjira-live-invites-ui-v25.js"></script>'
+    )
+    style_match=gate.STYLE_MOUNT_RE.search(
+        '<link rel="stylesheet" href="/assets/css/v25-live-invites.css">'
+    )
+    require(script_match is not None,'garde activation ne détecte pas le montage JS des invitations')
+    require(style_match is not None,'garde activation ne détecte pas le montage CSS des invitations')
+    require(script_match.group(1).lower()=='sinjira-live-invites-ui-v25.js','garde JS capture le mauvais asset invitations')
+    require(style_match.group(1).lower()=='v25-live-invites.css','garde CSS capture le mauvais asset invitations')
 
-    print('OK UI invitations privées En direct V25: réception/acceptation/refus seulement, rendu texte sûr, aucune saisie UUID et dark launch protégé par le garde production.')
+    print('OK UI invitations privées En direct V25: réception/acceptation/refus seulement, rendu texte sûr, aucune saisie UUID et dark launch protégé par le garde production testé comportementalement.')
     return 0
 
 
