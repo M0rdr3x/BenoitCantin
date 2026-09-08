@@ -1,0 +1,12 @@
+.v25-live-invites-shell{display:grid;gap:1rem;padding:1rem;border:1px solid var(--border,#d9dde3);border-radius:1rem;background:var(--surface,#fff)}
+.v25-live-invites-head{display:grid;gap:.35rem}
+.v25-live-invites-title,.v25-live-invites-subtitle{margin:0}
+.v25-live-invites-status{min-height:1.5rem;font-size:.95rem}
+.v25-live-invites-status[data-status-type="error"]{font-weight:700}
+.v25-live-invites-list-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.v25-live-invites-list{display:grid;gap:.75rem}
+.v25-live-invite-card{display:grid;gap:.45rem;padding:.85rem;border:1px solid var(--border,#d9dde3);border-radius:.85rem;background:var(--surface-soft,#f7f8fa)}
+.v25-live-invite-room{font-size:1rem}
+.v25-live-invite-expiry{margin:0;font-size:.9rem}
+.v25-live-invite-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+@media (max-width:640px){.v25-live-invites-shell{padding:.85rem}.v25-live-invite-actions .btn{flex:1 1 8rem}}
