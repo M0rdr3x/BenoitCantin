@@ -50,8 +50,8 @@ select ok(
 select ok(
   exists(select 1 from information_schema.columns where table_schema='private' and table_name='social_live_room_share_codes' and column_name='expires_at')
   and exists(select 1 from information_schema.columns where table_schema='private' and table_name='social_live_room_share_codes' and column_name='closed_at')
-  and exists(select 1 from information_schema.columns where table_schema='private' and table_name='social_live_room_share_codes' and column_name='redeemed_by_user_id'),
-  'expiration et consommation explicites'
+  and not exists(select 1 from information_schema.columns where table_schema='private' and table_name='social_live_room_share_codes' and column_name='redeemed_by_user_id'),
+  'expiration/fermeture explicites et identité du rédempteur non persistée'
 );
 
 select ok(not (select prosecdef from pg_proc where oid='public.social_live_share_code_create(uuid)'::regprocedure),'wrapper création code SECURITY INVOKER');
@@ -145,9 +145,9 @@ select ok(
   'rachat crée adhésion et trace invitation acceptée côté serveur'
 );
 select ok(
-  position("set status='used'" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
-  and position('redeemed_by_user_id=v_user' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0,
-  'code consommé à usage unique dans la transaction'
+  position("set status='used',closed_at=now()" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
+  and position('redeemed_by_user_id' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))=0,
+  'code consommé sans persister l identité du rédempteur'
 );
 select ok(
   position('social_profiles' in lower(pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure)))=0
