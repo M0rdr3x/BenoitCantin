@@ -62,15 +62,21 @@ def main():
         require(forbidden not in joined,f'voie de fuite/persistance/commande interdite: {forbidden}')
     require('fetch(' not in joined,'UI doit réutiliser le client RPC, sans fetch parallèle')
 
+    # Le shell compose maintenant trois modules dark-launch. Le validateur des codes
+    # privés doit suivre cette composition sans perdre les garanties historiques.
     for marker in (
         "import {createliveui} from './sinjira-live-ui-v25.js'",
         "import {createlivesharecodesui} from './sinjira-live-share-codes-ui-v25.js'",
+        "import {createliveinvitesui} from './sinjira-live-invites-ui-v25.js'",
         'const live=createliveui(liveroot,{supabase})',
         'const share=createlivesharecodesui(shareroot,{',
+        'const invites=createliveinvitesui(invitesroot,{',
         'onjoined:async()=>',
+        'onaccepted:async()=>',
         'await live.refresh()',
-        'promise.all([live.ready,share.ready])',
-        'promise.all([live.destroy(),share.destroy()])'
+        'promise.all([live.ready,share.ready,invites.ready])',
+        'promise.all([live.refresh(),share.refresh(),invites.refresh()])',
+        'promise.all([live.destroy(),share.destroy(),invites.destroy()])'
     ):
         require(marker in sl,f'composition dark-launch absente: {marker}')
 
@@ -107,7 +113,7 @@ def main():
     for forbidden in ('supabase_access_token','supabase_db_password','--linked','db push','inputs.apply'):
         require(forbidden not in wl,f'workflow UI ne doit jamais viser production: {forbidden}')
 
-    print('OK UI codes privés En direct V25: création/copie/masquage/révocation/rachat séparés des commandes, secret non persisté et composition maintenue en dark launch.')
+    print('OK UI codes privés En direct V25: création/copie/masquage/révocation/rachat séparés des commandes, secret non persisté et composition live/share/invites maintenue en dark launch.')
     return 0
 
 

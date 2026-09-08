@@ -84,9 +84,11 @@ except ValueError:
 else:
     raise AssertionError('ledger sans nom de migration aurait dû être refusé')
 
-# Les balises HTML sont détectées, une simple mention texte ne l’est pas.
-check(gate.SCRIPT_MOUNT_RE.search('<script type="module" src="/assets/js/sinjira-live-ui-shell-v25.js"></script>'), 'script mount non détecté')
-check(gate.STYLE_MOUNT_RE.search('<link rel="stylesheet" href="/assets/css/v25-live-share-codes.css">'), 'style mount non détecté')
-check(not gate.SCRIPT_MOUNT_RE.search('<p>sinjira-live-ui-shell-v25.js</p>'), 'mention texte ne doit pas être un mount')
+# Les balises HTML En direct sont détectées, y compris les invitations, une simple mention texte ne l’est pas.
+check(gate.SCRIPT_MOUNT_RE.search('<script type="module" src="/assets/js/sinjira-live-ui-shell-v25.js"></script>'), 'script shell mount non détecté')
+check(gate.SCRIPT_MOUNT_RE.search('<script type="module" src="/assets/js/sinjira-live-invites-ui-v25.js"></script>'), 'script invitations mount non détecté')
+check(gate.STYLE_MOUNT_RE.search('<link rel="stylesheet" href="/assets/css/v25-live-share-codes.css">'), 'style codes mount non détecté')
+check(gate.STYLE_MOUNT_RE.search('<link rel="stylesheet" href="/assets/css/v25-live-invites.css">'), 'style invitations mount non détecté')
+check(not gate.SCRIPT_MOUNT_RE.search('<p>sinjira-live-invites-ui-v25.js</p>'), 'mention texte invitations ne doit pas être un mount')
 
-print('OK tests garde activation En direct V25: 8 migrations, 5 tables, convergence manifeste et montage HTML fail-closed couverts.')
+print('OK tests garde activation En direct V25: 8 migrations, 5 tables, convergence manifeste et tous les montages UI dark-launch fail-closed couverts.')

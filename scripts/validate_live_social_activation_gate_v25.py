@@ -30,12 +30,12 @@ LIVE_TABLES = frozenset({
 
 SCRIPT_MOUNT_RE = re.compile(
     r'<script\b[^>]*\bsrc\s*=\s*["\'][^"\']*'
-    r'(sinjira-live-(?:ui-shell-v25|ui-v25|share-codes-ui-v25)\.js)[^"\']*["\']',
+    r'(sinjira-live-(?:ui-shell-v25|ui-v25|share-codes-ui-v25|invites-ui-v25)\.js)[^"\']*["\']',
     re.IGNORECASE,
 )
 STYLE_MOUNT_RE = re.compile(
     r'<link\b[^>]*\bhref\s*=\s*["\'][^"\']*'
-    r'(v25-live-(?:ui|share-codes)\.css)[^"\']*["\']',
+    r'(v25-live-(?:ui|share-codes|invites)\.css)[^"\']*["\']',
     re.IGNORECASE,
 )
 LEDGER_ROW_RE = re.compile(r'^(\d{14})\s+[A-Za-z0-9_]+$')
