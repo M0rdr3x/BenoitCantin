@@ -9,4 +9,12 @@
 .v25-live-invite-room{font-size:1rem}
 .v25-live-invite-expiry{margin:0;font-size:.9rem}
 .v25-live-invite-actions{display:flex;gap:.5rem;flex-wrap:wrap}
-@media (max-width:640px){.v25-live-invites-shell{padding:.85rem}.v25-live-invite-actions .btn{flex:1 1 8rem}}
+.v25-live-invite-target-shell{display:grid;gap:.85rem;padding:1rem;border:1px solid var(--border,#d9dde3);border-radius:1rem;background:var(--surface,#fff)}
+.v25-live-invite-target-head{display:grid;gap:.35rem}
+.v25-live-invite-target-title{margin:0}
+.v25-live-invite-target-status{min-height:1.5rem;font-size:.95rem}
+.v25-live-invite-target-status[data-status-type="error"]{font-weight:700}
+.v25-live-invite-target-controls{display:flex;align-items:end;gap:.75rem;flex-wrap:wrap}
+.v25-live-invite-target-label{display:grid;gap:.35rem;min-width:min(100%,18rem);font-weight:700}
+.v25-live-invite-target-label select{min-height:2.5rem;max-width:100%}
+@media (max-width:640px){.v25-live-invites-shell,.v25-live-invite-target-shell{padding:.85rem}.v25-live-invite-actions .btn,.v25-live-invite-target-controls .btn{flex:1 1 8rem}.v25-live-invite-target-label{width:100%}}

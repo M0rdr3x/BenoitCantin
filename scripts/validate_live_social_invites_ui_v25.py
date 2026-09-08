@@ -31,7 +31,9 @@ def main():
     ul=ui.lower(); cl=css.lower(); sl=shell.lower(); wl=workflow.lower()
 
     for marker in (
-        "import {listmyliveinvites,respondtoliveinvite} from './sinjira-live-invites-client-v25.js'",
+        "import {executeliveinput} from './sinjira-live-runtime-v25.js'",
+        "import {normalizeliverooms} from './sinjira-live-ui-model-v25.js'",
+        "import {createliveinvite,listmyliveinvites,respondtoliveinvite} from './sinjira-live-invites-client-v25.js'",
         'createliveinvitesui(',
         'listmyliveinvites({limit:20,supabase})',
         'respondtoliveinvite(item.inviteid,accept,{supabase})',
@@ -40,24 +42,44 @@ def main():
         "if(result.status==='accepted')await promise.resolve(onaccepted(result))",
         "node('p','v25-live-muted',`#${item.roomslug} · invitation de ${item.inviterlabel}`)"
     ):
-        require(marker in ul,f'contrat UI manquant: {marker}')
+        require(marker in ul,f'contrat UI réception manquant: {marker}')
 
-    # Réception seulement : aucun formulaire de destinataire, création ou révocation d'invitation.
+    # Envoi contextuel : la cible vient uniquement d'un contexte social déjà affiché.
+    for marker in (
+        'createliveinvitetargetui(',
+        "const targetid=string(targetuserid||'').trim().tolowercase()",
+        "if(!uuid_re.test(targetid))throw new error('social_live_invitee_unavailable')",
+        "const publiclabel=string(targetlabel||'').trim().slice(0,80)||'membre sinjira™'",
+        "executeliveinput('/rooms',{supabase})",
+        "filter(room=>room.visibility==='private'&&room.owned===true)",
+        'createliveinvite(roomid,targetid,{supabase})',
+        'await promise.resolve(onsent({roomid}))',
+        "setstatus('invitation privée envoyée.','success')"
+    ):
+        require(marker in ul,f'contrat envoi contextuel manquant: {marker}')
+
+    # Aucune recherche/énumération de personnes et aucune saisie d'identité.
     for forbidden in (
-        'createliveinvite(',
-        'revokeliveinvite(',
         "createelement('input')",
         'contenteditable',
-        '.innerhtml',
-        'insertadjacenthtml',
-        'document.write',
+        'social_profiles',
+        '.ilike(',
+        '.like(',
+        '.neq(',
+        'display_name',
+        'pseudo',
+        'dataset.target',
+        'dataset.user',
+        "setattribute('data-user",
+        "setattribute('data-target",
         'inviter_user_id',
         'invitee_user_id',
         'owner_user_id'
     ):
-        require(forbidden not in ul,f'primitive UI ou identité privée interdite: {forbidden}')
+        require(forbidden not in ul,f'annuaire, saisie ou identité technique interdite: {forbidden}')
 
     for forbidden in (
+        '.innerhtml','outerhtml','insertadjacenthtml','document.write',
         'localstorage','sessionstorage','indexeddb','document.cookie','urlsearchparams',
         'location.href','location.search','location.hash','history.pushstate','history.replacestate',
         'console.log','console.error','console.warn','sendbeacon(','fetch('
@@ -69,6 +91,9 @@ def main():
         '.v25-live-invites-list',
         '.v25-live-invite-card',
         '.v25-live-invite-actions',
+        '.v25-live-invite-target-shell',
+        '.v25-live-invite-target-controls',
+        '.v25-live-invite-target-label',
         '@media (max-width:640px)'
     ):
         require(marker in cl,f'style UI absent: {marker}')
@@ -83,6 +108,10 @@ def main():
         'promise.all([live.destroy(),share.destroy(),invites.destroy()])'
     ):
         require(marker in sl,f'composition shell incomplète: {marker}')
+
+    # L'envoi contextuel n'est pas auto-monté dans le shell : le contexte hôte devra
+    # fournir explicitement la personne déjà affichée lorsque la production sera prête.
+    require('createliveinvitetargetui' not in sl,'envoi contextuel ne doit pas être monté sans cible explicite')
 
     # Dark launch strict : ni l'UI ni sa feuille de style ne sont montées par HTML.
     html='\n'.join(p.read_text('utf-8',errors='ignore').lower() for p in ROOT.rglob('*.html'))
@@ -112,7 +141,7 @@ def main():
     require(script_match.group(1).lower()=='sinjira-live-invites-ui-v25.js','garde JS capture le mauvais asset invitations')
     require(style_match.group(1).lower()=='v25-live-invites.css','garde CSS capture le mauvais asset invitations')
 
-    print('OK UI invitations privées En direct V25: réception/acceptation/refus seulement, rendu texte sûr, aucune saisie UUID et dark launch protégé par le garde production testé comportementalement.')
+    print('OK UI invitations privées En direct V25: réception/réponse et envoi contextuel sans annuaire, saisie UUID, URL, persistance ou montage prématuré.')
     return 0
 
 
