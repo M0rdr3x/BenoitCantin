@@ -12,6 +12,24 @@ Le portail met volontairement en avant trois portes principales :
 
 D’autres prototypes ou expériences peuvent rester présents dans l’historique du dépôt pour continuité technique, sans faire partie du focus public actuel.
 
+## Principes obligatoires
+
+### L'humain avant tout
+
+Les choix de conception, de sécurité et d'évolution du projet doivent placer la personne, sa dignité et sa sécurité avant les objectifs techniques, commerciaux ou d'automatisation.
+
+### Protéger sans surveiller
+
+La sécurité doit être obtenue avec le moins de collecte et de surveillance possible. Une mesure de protection ne doit pas devenir un prétexte pour suivre inutilement les personnes.
+
+### Solaire : surfaces déjà artificialisées d'abord
+
+Pour tout projet solaire soutenu, proposé, conçu, recommandé ou intégré par ce portail et ses projets, la priorité est obligatoire : **installer d'abord les panneaux sur les toitures de bâtiments, les stationnements avec ombrières solaires et, lorsque pertinent, les autres surfaces ou friches déjà artificialisées et adaptées**.
+
+Une installation solaire ne doit pas servir de justification pour détruire, défricher ou convertir une forêt, une terre agricole productive, un milieu humide ou un habitat naturel. Ces espaces doivent être protégés avant d'envisager une nouvelle emprise au sol pour produire de l'énergie solaire.
+
+Cette règle constitue un critère de conception et de décision du projet, et non une simple préférence.
+
 ## SINJIRA™
 
 Chemin principal : `projets/sinjira/`

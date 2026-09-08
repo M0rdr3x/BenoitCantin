@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 GOVERNANCE = ROOT / '.github' / 'workflows' / 'main-governance.yml'
 CONTRACT_WORKFLOW = ROOT / '.github' / 'workflows' / 'main-governance-contract.yml'
+README = ROOT / 'README.md'
 
 
 def require(errors, condition, message):
@@ -48,6 +49,30 @@ def validate_governance_text(text):
     return errors
 
 
+def validate_project_principles(text):
+    errors = []
+    lower = text.lower()
+
+    for marker, message in (
+        ('## principes obligatoires', 'section Principes obligatoires absente du README canonique'),
+        ("### l'humain avant tout", "principe L'humain avant tout absent"),
+        ('### protéger sans surveiller', 'principe Protéger sans surveiller absent'),
+        ("### solaire : surfaces déjà artificialisées d'abord", 'principe solaire surfaces artificialisées d’abord absent'),
+        ('la priorité est obligatoire', 'caractère obligatoire de la priorité solaire absent'),
+        ('toitures de bâtiments', 'priorité solaire sur les toitures absente'),
+        ('stationnements avec ombrières solaires', 'priorité solaire sur les stationnements absente'),
+        ('friches déjà artificialisées', 'priorité solaire sur les friches artificialisées absente'),
+        ('une forêt', 'protection des forêts absente du principe solaire'),
+        ('une terre agricole productive', 'protection des terres agricoles absente du principe solaire'),
+        ('un milieu humide', 'protection des milieux humides absente du principe solaire'),
+        ('un habitat naturel', 'protection des habitats naturels absente du principe solaire'),
+        ('non une simple préférence', 'le principe solaire doit rester un critère obligatoire, pas une préférence'),
+    ):
+        require(errors, marker in lower, message)
+
+    return errors
+
+
 def validate_contract_workflow(text):
     errors = []
     lower = text.lower()
@@ -55,6 +80,7 @@ def validate_contract_workflow(text):
     require(errors, re.search(r'(?m)^\s{2}pull_request:\s*$', text) is not None, 'le contrat doit tourner sur les PR vers main')
     require(errors, re.search(r'(?m)^\s{2}push:\s*$', text) is not None, 'le contrat doit aussi tourner après push sur main')
     require(errors, lower.count('branches: [main]') >= 2, 'PR et push doivent tous deux cibler main')
+    require(errors, lower.count("- 'readme.md'") >= 2, 'README.md doit déclencher le contrat sur PR et push main')
     require(errors, 'python scripts/validate_main_governance_contract.py --self-test' in text, 'auto-tests du validateur absents')
     require(errors, 'python scripts/validate_main_governance_contract.py' in text, 'validation du workflow réel absente')
     require(errors, re.search(r'(?m)^\s{2}contents:\s*read\s*$', text) is not None, 'workflow contrat: contents doit être read')
@@ -62,19 +88,35 @@ def validate_contract_workflow(text):
     return errors
 
 
-def run_self_tests(canonical):
-    cases = {
-        'sans push main': canonical.replace('  push:\n    branches: [main]\n', ''),
-        'avec filtre paths': canonical.replace('    branches: [main]\n', '    branches: [main]\n    paths: ["scripts/**"]\n', 1),
-        'sans échec': canonical.replace('core.setFailed(', 'core.info(', 1),
-        'PR non fusionnée': canonical.replace("pr.merged_at && pr.base?.ref === 'main'", "pr.base?.ref === 'main'", 1),
-        'permission écriture': canonical.replace('contents: read', 'contents: write', 1),
-        'contrôle protection retiré': canonical.replace("process.env.GITHUB_REF_PROTECTED === 'true'", "'true' === 'true'", 1),
+def run_self_tests(governance, readme):
+    governance_cases = {
+        'sans push main': governance.replace('  push:\n    branches: [main]\n', ''),
+        'avec filtre paths': governance.replace('    branches: [main]\n', '    branches: [main]\n    paths: ["scripts/**"]\n', 1),
+        'sans échec': governance.replace('core.setFailed(', 'core.info(', 1),
+        'PR non fusionnée': governance.replace("pr.merged_at && pr.base?.ref === 'main'", "pr.base?.ref === 'main'", 1),
+        'permission écriture': governance.replace('contents: read', 'contents: write', 1),
+        'contrôle protection retiré': governance.replace("process.env.GITHUB_REF_PROTECTED === 'true'", "'true' === 'true'", 1),
     }
-    for name, mutated in cases.items():
+    for name, mutated in governance_cases.items():
         if not validate_governance_text(mutated):
             raise SystemExit(f'ERREUR auto-test gouvernance main: mutation non détectée: {name}')
-    print(f'OK auto-tests gouvernance main: {len(cases)} affaiblissements critiques détectés.')
+
+    principle_cases = {
+        'humain retiré': readme.replace("### L'humain avant tout", '### Principe retiré', 1),
+        'protéger sans surveiller retiré': readme.replace('### Protéger sans surveiller', '### Principe retiré', 1),
+        'solaire non obligatoire': readme.replace('la priorité est obligatoire', 'la priorité est souhaitable', 1),
+        'toitures retirées': readme.replace('toitures de bâtiments', 'surfaces disponibles', 1),
+        'stationnements retirés': readme.replace('stationnements avec ombrières solaires', 'espaces disponibles', 1),
+        'forêts non protégées': readme.replace('une forêt', 'un espace', 1),
+        'terres agricoles non protégées': readme.replace('une terre agricole productive', 'une parcelle', 1),
+        'préférence seulement': readme.replace('non une simple préférence', 'une simple préférence', 1),
+    }
+    for name, mutated in principle_cases.items():
+        if not validate_project_principles(mutated):
+            raise SystemExit(f'ERREUR auto-test principes obligatoires: mutation non détectée: {name}')
+
+    total = len(governance_cases) + len(principle_cases)
+    print(f'OK auto-tests gouvernance main: {total} affaiblissements critiques détectés.')
 
 
 def main():
@@ -83,11 +125,13 @@ def main():
     args = parser.parse_args()
 
     governance = GOVERNANCE.read_text('utf-8')
+    readme = README.read_text('utf-8')
     if args.self_test:
-        run_self_tests(governance)
+        run_self_tests(governance, readme)
         return 0
 
     errors = validate_governance_text(governance)
+    errors.extend(validate_project_principles(readme))
     if not CONTRACT_WORKFLOW.is_file():
         errors.append('workflow de contrat main-governance-contract.yml absent')
     else:
@@ -98,7 +142,7 @@ def main():
             print(f'ERREUR contrat gouvernance main: {error}')
         return 1
 
-    print('OK contrat gouvernance main: tout push main est surveillé, les pushes sans PR échouent, permissions lecture seule et alerte protection serveur conservées.')
+    print('OK contrat gouvernance main: pushes main surveillés, principes obligatoires conservés, permissions lecture seule et alerte protection serveur conservées.')
     return 0
 
 
