@@ -51,13 +51,33 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         )
         self.assertRejected(bad, "workspace fail-closed")
 
-    def test_apply_guard_removal_is_rejected(self):
+    def test_auth_secrets_on_pr_or_push_are_rejected(self):
         bad = self.valid.replace(
-            "if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}",
+            "        if: ${{ github.event_name == 'workflow_dispatch' }}\n        env:\n",
+            "        env:\n",
+            1,
+        )
+        self.assertRejected(bad, "uniquement en workflow_dispatch manuel")
+
+    def test_remote_preflight_on_pr_or_push_is_rejected(self):
+        bad = self.valid.replace(
+            "if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}",
             "if: ${{ steps.auth.outputs.ready == 'true' }}",
             1,
         )
-        self.assertRejected(bad, "garde manuelle apply=true/auth")
+        self.assertRejected(bad, "accessible hors lancement manuel")
+
+    def test_apply_guard_removal_is_rejected(self):
+        marker = "      - name: Appliquer les migrations de production depuis le workspace protégé\n"
+        start = self.valid.index(marker)
+        tail = self.valid[start:]
+        bad_tail = tail.replace(
+            "if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}",
+            "if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}",
+            1,
+        )
+        bad = self.valid[:start] + bad_tail
+        self.assertRejected(bad, "triple garde workflow_dispatch + apply=true + auth")
 
     def test_workspace_builder_removal_is_rejected(self):
         bad = self.valid.replace(
@@ -76,6 +96,14 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad_tail = tail.replace(block, "", 1)
         bad = self.valid[:start] + bad_tail
         self.assertRejected(bad, "SUPABASE_DB_PASSWORD non borné")
+
+    def test_pr_summary_must_prove_no_secret_exposure(self):
+        bad = self.valid.replace(
+            "aucun secret production exposé au run PR",
+            "préflight PR",
+            1,
+        )
+        self.assertRejected(bad, "aucun secret production exposé au run PR")
 
 
 if __name__ == "__main__":
