@@ -47,10 +47,10 @@ select ok(exists(select 1 from pg_policies where schemaname='public' and tablena
 
 -- Garde-fous anti-spam/anti-raid sans IP/GPS.
 select ok(position('pg_advisory_xact_lock' in pg_get_functiondef('public.social_live_room_insert_guard()'::regprocedure))>0,'création salon sérialisée par compte');
-select ok(position("interval '1 hour'" in pg_get_functiondef('public.social_live_room_insert_guard()'::regprocedure))>0,'création salon bornée dans le temps');
+select ok(position('interval ''1 hour''' in pg_get_functiondef('public.social_live_room_insert_guard()'::regprocedure))>0,'création salon bornée dans le temps');
 select ok(position('pg_advisory_xact_lock' in pg_get_functiondef('public.social_live_member_insert_guard()'::regprocedure))>0,'adhésion sérialisée par compte');
-select ok(position("interval '10 seconds'" in pg_get_functiondef('public.social_live_message_insert_guard()'::regprocedure))>0,'limite rafale messages présente');
-select ok(position("interval '1 minute'" in pg_get_functiondef('public.social_live_message_insert_guard()'::regprocedure))>0,'limite minute messages présente');
+select ok(position('interval ''10 seconds''' in pg_get_functiondef('public.social_live_message_insert_guard()'::regprocedure))>0,'limite rafale messages présente');
+select ok(position('interval ''1 minute''' in pg_get_functiondef('public.social_live_message_insert_guard()'::regprocedure))>0,'limite minute messages présente');
 select ok(position('SOCIAL_LIVE_DUPLICATE_MESSAGE' in pg_get_functiondef('public.social_live_message_insert_guard()'::regprocedure))>0,'anti-duplication message présente');
 select ok(position('SOCIAL_LIVE_AUTHOR_MISMATCH' in pg_get_functiondef('public.social_live_message_insert_guard()'::regprocedure))>0,'garde anti-usurpation présente');
 
