@@ -1,0 +1,67 @@
+name: SINJIRA V25 — Garde activation En direct
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/migrations/**'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_live_social_activation_gate_v25.py'
+      - 'scripts/test_live_social_activation_gate_v25.py'
+      - 'assets/js/sinjira-live-*.js'
+      - 'assets/css/v25-live*.css'
+      - '**/*.html'
+      - '.github/workflows/sinjira-live-social-activation-gate-v25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/migrations/**'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_live_social_activation_gate_v25.py'
+      - 'scripts/test_live_social_activation_gate_v25.py'
+      - 'assets/js/sinjira-live-*.js'
+      - 'assets/css/v25-live*.css'
+      - '**/*.html'
+      - '.github/workflows/sinjira-live-social-activation-gate-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  activation-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Tester les états du garde En direct
+        run: python scripts/test_live_social_activation_gate_v25.py
+
+      - name: Vérifier le garde d activation En direct
+        run: python scripts/validate_live_social_activation_gate_v25.py
+
+      - name: Vérifier le ledger production canonique
+        run: python scripts/validate_production_migration_ledger.py
+
+      - name: Vérifier le manifeste de schéma production
+        run: python scripts/validate_production_schema_manifest.py
+
+      - name: Interdire toute voie de déploiement dans ce garde
+        shell: bash
+        run: |
+          set -euo pipefail
+          file='.github/workflows/sinjira-live-social-activation-gate-v25.yml'
+          if grep -Eiq 'SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|db push|--linked|functions deploy|migration repair|db reset|inputs\.apply' "$file"; then
+            echo 'ERREUR: le garde activation En direct doit rester purement statique et sans secret.' >&2
+            exit 1
+          fi
+          echo 'OK: garde activation purement statique, sans secret ni primitive de déploiement.'
