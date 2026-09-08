@@ -9,6 +9,7 @@ INV = ROOT / 'supabase' / 'migrations' / '20260908131000_sinjira_v25_live_social
 CONVERGENCE = ROOT / 'supabase' / 'migrations' / '20260908132000_sinjira_v25_live_social_safety_convergence.sql'
 MOD_TEST = ROOT / 'supabase' / 'tests' / 'live_social_moderation_v25.test.sql'
 INV_TEST = ROOT / 'supabase' / 'tests' / 'live_social_private_invites_v25.test.sql'
+GLOBAL_TEST = ROOT / 'supabase' / 'tests' / 'global_safety_compliance_v24_4_83.test.sql'
 WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-live-social-safety-v25.yml'
 
 
@@ -23,10 +24,12 @@ def main() -> int:
     convergence = CONVERGENCE.read_text('utf-8')
     mod_test = MOD_TEST.read_text('utf-8')
     inv_test = INV_TEST.read_text('utf-8')
+    global_test = GLOBAL_TEST.read_text('utf-8')
     workflow = WORKFLOW.read_text('utf-8')
     ml = moderation.lower()
     il = invites.lower()
     cl = convergence.lower()
+    gl = global_test.lower()
 
     for marker in (
         "check (network in ('real','character','live'))",
@@ -89,6 +92,8 @@ def main() -> int:
     require("not (select prosecdef from pg_proc where oid='public.social_live_invite_create" in inv_test.lower(), 'test wrapper invitation invoker absent')
     require("not has_table_privilege('authenticated','private.social_live_room_invites','select')" in inv_test.lower(), 'test absence CRUD direct invitations absent')
     require("not has_table_privilege('service_role','private.social_live_room_invites','select')" in inv_test.lower(), 'test strict_no_direct service_role absent')
+    require("tgname='sinjira_content_policy_guard'" in gl and ",15," in gl, 'conformité globale doit compter la 15e garde En direct')
+    require('les 15 gardes v24.4.82 + en direct restent actives' in gl, 'libellé conformité globale En direct absent')
 
     for marker in (
         'python scripts/validate_live_social_safety_v25.py',
@@ -99,6 +104,7 @@ def main() -> int:
         'supabase test db supabase/tests/live_social_moderation_v25.test.sql --local',
         'supabase test db supabase/tests/live_social_private_invites_v25.test.sql --local',
         'supabase test db supabase/tests/minor_exploitation_safety_v24_4_82.test.sql --local',
+        'supabase test db supabase/tests/global_safety_compliance_v24_4_83.test.sql --local',
         'supabase test db supabase/tests/server_only_rls_contract_v25.test.sql --local',
         'supabase test db supabase/tests/security_advisor_contract_v24_5_24.test.sql --local',
         'supabase stop --no-backup',
@@ -108,7 +114,7 @@ def main() -> int:
     for forbidden in ('--linked', 'SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD', 'inputs.apply', 'db push'):
         require(forbidden not in workflow, f'workflow ne doit pas viser production: {forbidden}')
 
-    print('OK En direct V25: modération live conserve V24.4.82, garde contenu mineurs/exploitation actif, invitations strict server-only, wrappers INVOKER, anti-raid et aucune collecte IP/GPS; production non touchée.')
+    print('OK En direct V25: modération live conserve V24.4.82, conformité globale inclut la 15e garde, invitations strict server-only, wrappers INVOKER, anti-raid et aucune collecte IP/GPS; production non touchée.')
     return 0
 
 
