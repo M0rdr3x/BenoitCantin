@@ -30,7 +30,7 @@ LIVE_TABLES = frozenset({
 
 SCRIPT_MOUNT_RE = re.compile(
     r'<script\b[^>]*\bsrc\s*=\s*["\'][^"\']*'
-    r'(sinjira-live-(?:ui-shell-v25|ui-v25|share-codes-ui-v25|invites-ui-v25)\.js)[^"\']*["\']',
+    r'(sinjira-live-(?:ui-shell-v25|ui-v25|share-codes-ui-v25|invites-ui-v25|community-bridge-v25)\.js)[^"\']*["\']',
     re.IGNORECASE,
 )
 STYLE_MOUNT_RE = re.compile(
