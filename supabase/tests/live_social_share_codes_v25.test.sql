@@ -75,7 +75,7 @@ select ok(has_function_privilege('authenticated','public.social_live_share_code_
 
 select ok(
   position('owner_user_id=v_user' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_create(uuid)'::regprocedure))>0
-  and position("visibility='private'" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_create(uuid)'::regprocedure))>0,
+  and position($q$visibility='private'$q$ in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_create(uuid)'::regprocedure))>0,
   'création réservée au propriétaire d un salon privé'
 );
 select ok(position('sinjira_age_band' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_create(uuid)'::regprocedure))>0,'création vérifie la cohorte du propriétaire');
@@ -92,11 +92,11 @@ select ok(
 );
 select ok(
   position('gen_random_bytes(32)' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_create(uuid)'::regprocedure))>0
-  and position("digest(v_raw,'sha256')" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_create(uuid)'::regprocedure))>0,
+  and position($q$digest(v_raw,'sha256')$q$ in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_create(uuid)'::regprocedure))>0,
   'secret 256 bits et SHA-256 côté serveur'
 );
 select ok(
-  position("'display_once',true" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_create(uuid)'::regprocedure))>0,
+  position($q$'display_once',true$q$ in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_create(uuid)'::regprocedure))>0,
   'secret annoncé comme affiché une seule fois'
 );
 select ok(
@@ -111,12 +111,12 @@ select ok(
 );
 select ok(
   position('creator_user_id=v_user' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_revoke(uuid)'::regprocedure))>0
-  and position("status='active'" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_revoke(uuid)'::regprocedure))>0,
+  and position($q$status='active'$q$ in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_revoke(uuid)'::regprocedure))>0,
   'révocation self-only d un code actif'
 );
 select ok(
-  position("^[a-f0-9]{64}$" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
-  and position("digest(v_raw,'sha256')" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
+  position($q$^[a-f0-9]{64}$$q$ in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
+  and position($q$digest(v_raw,'sha256')$q$ in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
   and position('SOCIAL_LIVE_SHARE_CODE_UNAVAILABLE' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0,
   'rachat valide un secret hex 256 bits et utilise une erreur générique'
 );
@@ -127,7 +127,7 @@ select ok(
 );
 select ok(
   position('owner_user_id=v_code.creator_user_id' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
-  and position("visibility='private'" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
+  and position($q$visibility='private'$q$ in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
   and position('v_code.creator_user_id=v_user' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0,
   'rachat reste lié au propriétaire, au salon privé et interdit l auto-rachat'
 );
@@ -142,12 +142,12 @@ select ok(
   position('insert into public.social_live_room_members' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
   and position('update private.social_live_room_invites' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
   and position('invitee_user_id=v_user' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
-  and position("status='accepted'" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
+  and position($q$status='accepted'$q$ in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
   and position('insert into private.social_live_room_invites' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))=0,
   'rachat crée adhésion, ferme une invitation existante sans fabriquer de relation ciblée'
 );
 select ok(
-  position("set status='used',closed_at=now()" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
+  position($q$set status='used',closed_at=now()$q$ in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
   and position('redeemed_by_user_id' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))=0,
   'code consommé sans persister l identité du rédempteur'
 );
