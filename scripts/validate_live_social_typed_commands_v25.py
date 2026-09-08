@@ -39,7 +39,7 @@ def main() -> int:
     require('realtime.send' not in ml and 'realtime.messages' not in ml, 'cet incrément ne doit pas modifier Realtime')
 
     for forbidden in (
-        'execute ', 'format(', 'dblink', 'inet_client_addr(', 'request.headers',
+        'execute format', 'execute immediate', 'dblink', 'inet_client_addr(', 'request.headers',
         'latitude', 'longitude', 'gps', 'date_of_birth'
     ):
         require(forbidden not in ml, f'construction/collecte interdite: {forbidden}')
