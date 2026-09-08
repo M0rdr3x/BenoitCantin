@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'assets/js/sinjira-live-runtime-v25.js'
       - 'assets/js/sinjira-live-ui-model-v25.js'
       - 'assets/js/sinjira-live-ui-v25.js'
       - 'assets/css/v25-live-ui.css'
