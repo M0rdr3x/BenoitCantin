@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import ast
 import re
+from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +29,8 @@ LIVE_TABLES = frozenset({
     'social_live_room_share_codes',
 })
 
+# Conservées pour les tests/contrats historiques; find_html_mounts() utilise aussi
+# HTMLParser afin de couvrir les attributs HTML valides non guillemetés.
 SCRIPT_MOUNT_RE = re.compile(
     r'<script\b[^>]*\bsrc\s*=\s*["\'][^"\']*'
     r'(sinjira-live-(?:ui-shell-v25|ui-v25|share-codes-ui-v25|invites-ui-v25|community-bridge-v25)\.js)[^"\']*["\']',
@@ -38,15 +41,12 @@ STYLE_MOUNT_RE = re.compile(
     r'(v25-live-(?:ui|share-codes|invites)\.css)[^"\']*["\']',
     re.IGNORECASE,
 )
-HTML_SCRIPT_SRC_RE = re.compile(
-    r'<script\b[^>]*\bsrc\s*=\s*["\']([^"\']+)["\']',
-    re.IGNORECASE,
-)
 MODULE_IMPORT_RE = re.compile(
     r'(?:\bfrom\s*|\bimport\s*(?:\(\s*)?)["\']([^"\']+)["\']',
     re.IGNORECASE,
 )
 LIVE_MODULE_NAME_RE = re.compile(r'(sinjira-live-[A-Za-z0-9_-]+\.js)', re.IGNORECASE)
+LIVE_STYLE_NAME_RE = re.compile(r'(v25-live-[A-Za-z0-9_-]+\.css)', re.IGNORECASE)
 LEDGER_ROW_RE = re.compile(r'^(\d{14})\s+[A-Za-z0-9_]+$')
 FORBIDDEN_WORKFLOW_MARKERS = (
     'SUPABASE_ACCESS_TOKEN',
@@ -64,6 +64,41 @@ REQUIRED_WORKFLOW_MARKERS = (
     'scripts/test_live_social_activation_gate_v25.py',
     'scripts/validate_live_social_activation_gate_v25.py',
 )
+
+
+class _MountedAssetParser(HTMLParser):
+    """Extrait les scripts/styles réellement référencés et le JS inline exécutable."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.script_srcs = []
+        self.style_hrefs = []
+        self.inline_scripts = []
+        self._inline_script_parts = None
+
+    def handle_starttag(self, tag, attrs):
+        attrs = {str(key).lower(): value for key, value in attrs if key}
+        tag = str(tag).lower()
+        if tag == 'script':
+            src = attrs.get('src')
+            if src:
+                self.script_srcs.append(src)
+                self._inline_script_parts = None
+            else:
+                self._inline_script_parts = []
+        elif tag == 'link':
+            href = attrs.get('href')
+            if href:
+                self.style_hrefs.append(href)
+
+    def handle_data(self, data):
+        if self._inline_script_parts is not None:
+            self._inline_script_parts.append(data)
+
+    def handle_endtag(self, tag):
+        if str(tag).lower() == 'script' and self._inline_script_parts is not None:
+            self.inline_scripts.append(''.join(self._inline_script_parts))
+            self._inline_script_parts = None
 
 
 def parse_ledger_versions(text):
@@ -137,25 +172,54 @@ def _walk_local_js_imports(root, entry, html_rel, mounts, visited, chain):
             _walk_local_js_imports(root, target, html_rel, mounts, visited, current_chain)
 
 
+def _walk_inline_js_imports(root, base_dir, html_rel, source, mounts):
+    for match in MODULE_IMPORT_RE.finditer(source):
+        reference = match.group(1)
+        cleaned = _clean_asset_reference(reference)
+        live_match = LIVE_MODULE_NAME_RE.search(cleaned)
+        if live_match:
+            mounts.add((html_rel, f'{live_match.group(1)} via script inline'))
+            continue
+        target = _resolve_local_asset(root, base_dir, reference)
+        if target is not None and target.suffix.lower() == '.js':
+            _walk_local_js_imports(
+                root,
+                target,
+                html_rel,
+                mounts,
+                set(),
+                (f'{html_rel}::<script-inline>',),
+            )
+
+
 def find_html_mounts(root):
     root = Path(root).resolve()
     mounts = set()
     for path in sorted(root.rglob('*.html')):
         text = path.read_text('utf-8', errors='ignore')
         html_rel = path.relative_to(root).as_posix()
-        for match in SCRIPT_MOUNT_RE.finditer(text):
-            mounts.add((html_rel, match.group(1)))
-        for match in STYLE_MOUNT_RE.finditer(text):
-            mounts.add((html_rel, match.group(1)))
+        parser = _MountedAssetParser()
+        parser.feed(text)
+        parser.close()
 
-        # Suivre aussi les imports locaux depuis chaque script réellement monté.
-        # Cela bloque un contournement du dark launch par import statique/dynamique
-        # depuis un runtime déjà présent dans une page, même via plusieurs helpers.
-        for match in HTML_SCRIPT_SRC_RE.finditer(text):
-            script = _resolve_local_asset(root, path.parent, match.group(1))
-            if script is None:
+        for reference in parser.script_srcs:
+            cleaned = _clean_asset_reference(reference)
+            live_match = LIVE_MODULE_NAME_RE.search(cleaned)
+            if live_match:
+                mounts.add((html_rel, live_match.group(1)))
                 continue
-            _walk_local_js_imports(root, script, html_rel, mounts, set(), ())
+            script = _resolve_local_asset(root, path.parent, reference)
+            if script is not None:
+                _walk_local_js_imports(root, script, html_rel, mounts, set(), ())
+
+        for reference in parser.style_hrefs:
+            live_match = LIVE_STYLE_NAME_RE.search(_clean_asset_reference(reference))
+            if live_match:
+                mounts.add((html_rel, live_match.group(1)))
+
+        for source in parser.inline_scripts:
+            _walk_inline_js_imports(root, path.parent, html_rel, source, mounts)
+
     return tuple(sorted(mounts))
 
 
@@ -282,7 +346,7 @@ def main():
         print(
             'OK garde activation En direct V25: dark launch maintenu; '
             f"{len(verdict['missing_versions'])}/8 migrations En direct non prouvées dans le ledger production; "
-            'aucun montage direct ou transitif détecté.'
+            'aucun montage direct, transitif ou inline détecté.'
         )
     elif verdict['status'] == 'READY_NOT_MOUNTED':
         print('OK garde activation En direct V25: preuve production complète; interface encore non montée.')
