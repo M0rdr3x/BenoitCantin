@@ -78,6 +78,8 @@ insert into expected_server_only_rls(schema_name,table_name,presence_scope,acces
 
   -- Objets locaux explicitement planifiés, non revendiqués comme présents en
   -- production tant que leurs migrations futures n'ont pas été appliquées.
+  -- Les invitations live sont plus sensibles : aucun CRUD direct, même service_role.
+  ('private','social_live_room_invites','reconstruction_only','strict_no_direct'),
   ('public','content_versions','reconstruction_only','service_role_allowed'),
   ('public','security_push_receipt_queue','reconstruction_only','service_role_allowed');
 
@@ -85,8 +87,8 @@ select plan(12);
 
 select is(
   (select count(*)::int from expected_server_only_rls),
-  51,
-  'le contrat classifie les 49 tables production et deux tables RLS reconstruction-only'
+  52,
+  'le contrat classifie les 49 tables production et trois tables RLS reconstruction-only'
 );
 
 select is(
@@ -97,8 +99,8 @@ select is(
 
 select is(
   (select count(*)::int from expected_server_only_rls where presence_scope='reconstruction_only'),
-  2,
-  'deux tables RLS sans policy sont explicitement propres à la reconstruction locale'
+  3,
+  'trois tables RLS sans policy sont explicitement propres à la reconstruction locale'
 );
 
 select is(
@@ -107,14 +109,14 @@ select is(
     from expected_server_only_rls
     where presence_scope='reconstruction_only'
   ),
-  'public.content_versions, public.security_push_receipt_queue'::text,
+  'private.social_live_room_invites, public.content_versions, public.security_push_receipt_queue'::text,
   'les exceptions RLS reconstruction-only sont explicitement nommées'
 );
 
 select is(
   (select count(*)::int from expected_server_only_rls where access_class='strict_no_direct'),
-  14,
-  '14 tables ultra-sensibles interdisent aussi le CRUD direct service_role'
+  15,
+  '14 tables production ultra-sensibles et les invitations live interdisent le CRUD direct service_role'
 );
 
 select is(
@@ -204,7 +206,7 @@ select is(
       )
   ),
   0,
-  'les 14 tables ultra-sensibles restent sans CRUD direct même pour service_role'
+  'les tables strict_no_direct restent sans CRUD direct même pour service_role'
 );
 
 select is(
