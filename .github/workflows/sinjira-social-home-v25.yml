@@ -1,0 +1,36 @@
+name: SINJIRA V25 — Fil social Communauté
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'compte/communaute.html'
+      - 'assets/css/v25-social-home.css'
+      - 'assets/js/sinjira-community-real.js'
+      - 'scripts/validate_social_home_v25.py'
+      - '.github/workflows/sinjira-social-home-v25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compte/communaute.html'
+      - 'assets/css/v25-social-home.css'
+      - 'assets/js/sinjira-community-real.js'
+      - 'scripts/validate_social_home_v25.py'
+      - '.github/workflows/sinjira-social-home-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  social-home-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Valider le fil social V25
+        run: python3 scripts/validate_social_home_v25.py
