@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / 'supabase' / 'production-migration-ledger.txt'
 MIGRATIONS = ROOT / 'supabase' / 'migrations'
 MANIFEST = ROOT / 'scripts' / 'validate_production_schema_manifest.py'
+WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-live-social-activation-gate-v25.yml'
 
 REQUIRED_MIGRATIONS = (
     ('20260908120000', 'sinjira_v25_live_social_foundation'),
@@ -19,26 +20,14 @@ REQUIRED_MIGRATIONS = (
     ('20260908150000', 'sinjira_v25_live_social_share_codes'),
 )
 
-LIVE_PUBLIC_TABLES = frozenset({
-    'public.social_live_rooms',
-    'public.social_live_room_members',
-    'public.social_live_messages',
+LIVE_TABLES = frozenset({
+    'social_live_rooms',
+    'social_live_room_members',
+    'social_live_messages',
+    'social_live_room_invites',
+    'social_live_room_share_codes',
 })
-LIVE_PRIVATE_TABLES = frozenset({
-    'private.social_live_room_guards',
-    'private.social_live_room_invites',
-    'private.social_live_room_share_codes',
-})
-LIVE_TABLES = LIVE_PUBLIC_TABLES | LIVE_PRIVATE_TABLES
 
-MOUNT_ASSETS = (
-    'sinjira-live-ui-shell-v25.js',
-    'sinjira-live-ui-v25.js',
-    'sinjira-live-share-codes-ui-v25.js',
-    'v25-live-ui.css',
-    'v25-live-share-codes.css',
-)
-LEDGER_ROW_RE = re.compile(r'^(\d{14})\s+[A-Za-z0-9_]+$')
 SCRIPT_MOUNT_RE = re.compile(
     r'<script\b[^>]*\bsrc\s*=\s*["\'][^"\']*'
     r'(sinjira-live-(?:ui-shell-v25|ui-v25|share-codes-ui-v25)\.js)[^"\']*["\']',
@@ -48,6 +37,17 @@ STYLE_MOUNT_RE = re.compile(
     r'<link\b[^>]*\bhref\s*=\s*["\'][^"\']*'
     r'(v25-live-(?:ui|share-codes)\.css)[^"\']*["\']',
     re.IGNORECASE,
+)
+LEDGER_ROW_RE = re.compile(r'^(\d{14})\s+[A-Za-z0-9_]+$')
+FORBIDDEN_WORKFLOW_MARKERS = (
+    'SUPABASE_ACCESS_TOKEN',
+    'SUPABASE_DB_PASSWORD',
+    'db push',
+    '--linked',
+    'functions deploy',
+    'migration repair',
+    'db reset',
+    'inputs.apply',
 )
 
 
@@ -93,28 +93,29 @@ def find_html_mounts(root):
     return tuple(mounts)
 
 
-def evaluate_activation(*, ledger_versions, production_public, production_private, planned, mounts):
+def evaluate_activation(*, ledger_versions, production_tables, planned_tables, mounts):
     required_versions = frozenset(version for version, _ in REQUIRED_MIGRATIONS)
     ledger = frozenset(ledger_versions)
-    prod_public = frozenset(production_public)
-    prod_private = frozenset(production_private)
-    planned = frozenset(planned)
+    production = frozenset(production_tables)
+    planned = frozenset(planned_tables)
     mounts = tuple(mounts)
 
     missing_versions = tuple(version for version, _ in REQUIRED_MIGRATIONS if version not in ledger)
-    missing_public = tuple(sorted(LIVE_PUBLIC_TABLES - prod_public))
-    missing_private = tuple(sorted(LIVE_PRIVATE_TABLES - prod_private))
+    missing_production = tuple(sorted(LIVE_TABLES - production))
     still_planned = tuple(sorted(LIVE_TABLES & planned))
-    promoted = (LIVE_PUBLIC_TABLES & prod_public) | (LIVE_PRIVATE_TABLES & prod_private)
+    promoted = LIVE_TABLES & production
 
     ledger_ready = required_versions.issubset(ledger)
-    schema_ready = not missing_public and not missing_private and not still_planned
+    schema_ready = not missing_production and not still_planned
     activation_ready = ledger_ready and schema_ready
     errors = []
 
-    overlap = (prod_public | prod_private) & planned & LIVE_TABLES
+    overlap = production & planned & LIVE_TABLES
     if overlap:
-        errors.append('Tables En direct à la fois production et PLANNED: ' + ', '.join(sorted(overlap)))
+        errors.append(
+            'Tables En direct à la fois production et PLANNED_LOCAL_TABLES: '
+            + ', '.join(sorted(overlap))
+        )
 
     if promoted and not ledger_ready:
         errors.append(
@@ -122,14 +123,12 @@ def evaluate_activation(*, ledger_versions, production_public, production_privat
             'migrations manquantes: ' + ', '.join(missing_versions)
         )
 
-    if ledger_ready and (missing_public or missing_private or still_planned):
+    if ledger_ready and not schema_ready:
         detail = []
-        if missing_public:
-            detail.append('public non classées production: ' + ', '.join(missing_public))
-        if missing_private:
-            detail.append('private non classées production: ' + ', '.join(missing_private))
+        if missing_production:
+            detail.append('non classées EXPECTED_TABLES: ' + ', '.join(missing_production))
         if still_planned:
-            detail.append('encore PLANNED: ' + ', '.join(still_planned))
+            detail.append('encore PLANNED_LOCAL_TABLES: ' + ', '.join(still_planned))
         errors.append('Ledger En direct complet mais manifeste production non convergé: ' + '; '.join(detail))
 
     if mounts and not activation_ready:
@@ -151,8 +150,7 @@ def evaluate_activation(*, ledger_versions, production_public, production_privat
         'ledger_ready': ledger_ready,
         'schema_ready': schema_ready,
         'missing_versions': missing_versions,
-        'missing_public': missing_public,
-        'missing_private': missing_private,
+        'missing_production': missing_production,
         'still_planned': still_planned,
         'mounts': mounts,
         'errors': tuple(errors),
@@ -166,9 +164,20 @@ def validate_required_migration_files(errors):
             errors.append(f'Migration En direct requise absente: {path.relative_to(ROOT)}')
 
 
+def validate_workflow_static(errors):
+    if not WORKFLOW.is_file():
+        errors.append('Workflow du garde activation En direct absent.')
+        return
+    text = WORKFLOW.read_text('utf-8')
+    for marker in FORBIDDEN_WORKFLOW_MARKERS:
+        if marker.lower() in text.lower():
+            errors.append(f'Workflow garde activation contient une primitive/secret interdit: {marker}')
+
+
 def main():
     structural_errors = []
     validate_required_migration_files(structural_errors)
+    validate_workflow_static(structural_errors)
 
     try:
         ledger_versions = parse_ledger_versions(LEDGER.read_text('utf-8'))
@@ -178,21 +187,18 @@ def main():
 
     try:
         manifest_source = MANIFEST.read_text('utf-8')
-        production_public = parse_manifest_collection(manifest_source, 'PRODUCTION_DB_TABLES')
-        production_private = parse_manifest_collection(manifest_source, 'PRODUCTION_PRIVATE_TABLES')
-        planned = parse_manifest_collection(manifest_source, 'PLANNED_LOCAL_TABLES')
+        production_tables = parse_manifest_collection(manifest_source, 'EXPECTED_TABLES')
+        planned_tables = parse_manifest_collection(manifest_source, 'PLANNED_LOCAL_TABLES')
     except (OSError, SyntaxError, ValueError) as exc:
         structural_errors.append(f'Manifeste production illisible: {exc}')
-        production_public = frozenset()
-        production_private = frozenset()
-        planned = frozenset()
+        production_tables = frozenset()
+        planned_tables = frozenset()
 
     mounts = find_html_mounts(ROOT)
     verdict = evaluate_activation(
         ledger_versions=ledger_versions,
-        production_public=production_public,
-        production_private=production_private,
-        planned=planned,
+        production_tables=production_tables,
+        planned_tables=planned_tables,
         mounts=mounts,
     )
     errors = structural_errors + list(verdict['errors'])
