@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(17);
+select plan(21);
 
 select ok(
   pg_get_constraintdef((select oid from pg_constraint where conrelid='public.social_reports'::regclass and conname='social_reports_network_check')) ilike '%live%',
@@ -62,6 +62,30 @@ select ok(
 select ok(
   position('interval ''1 hour''' in pg_get_functiondef('sinjira_social_user_internal.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,
   'limite temporelle de signalement conservée'
+);
+
+-- Invariants sécurité V24.4.82 : ne jamais les perdre lors d'une extension réseau.
+select ok(
+  position('private.sinjira_report_reason_allowed' in pg_get_functiondef('sinjira_social_user_internal.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,
+  'motifs sécurité mineur/exploitation restent autorisés par le helper canonique'
+);
+select ok(
+  position('has_accepted_community_rules' in pg_get_functiondef('sinjira_social_user_internal.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))=0,
+  'signaler un danger ne dépend pas de l acceptation des règles'
+);
+select ok(
+  position('priority_safety' in pg_get_functiondef('sinjira_social_user_internal.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,
+  'signalements sécurité conservent le marqueur de priorité'
+);
+select ok(
+  exists(
+    select 1 from pg_trigger
+    where tgrelid='public.social_live_messages'::regclass
+      and tgname='sinjira_content_policy_guard'
+      and not tgisinternal
+  )
+  and position('sinjira_content_policy_code' in pg_get_functiondef('private.sinjira_live_message_content_policy_guard()'::regprocedure))>0,
+  'messages live réutilisent le garde contenu V24.4.82'
 );
 
 select ok(
