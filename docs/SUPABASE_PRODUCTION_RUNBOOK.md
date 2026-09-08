@@ -25,21 +25,24 @@ Son nom de run doit rendre l’intention visible :
 
 ### Push et pull request
 
-Un push ou une pull request ne doit jamais modifier Supabase production.
+Un push ou une pull request ne doit jamais recevoir les secrets de connexion Supabase production, exécuter un contrôle distant authentifié ni modifier Supabase production.
 
-Le workflow peut :
-- valider le dépôt;
+Sur ces événements, le workflow reste **strictement local**. Il peut seulement :
+- valider le dépôt, le ledger, le lot revu et les contrats de sécurité;
 - construire le workspace protégé;
-- effectuer les vérifications distantes si les secrets GitHub Actions requis sont disponibles;
-- exécuter lint, inventaire, comparaison du ledger et `db push --dry-run` depuis le workspace protégé.
+- installer/vérifier les outils nécessaires aux contrôles locaux, sans authentification production.
 
-Si les secrets de connexion sont absents sur un push ou une pull request, les étapes distantes sont ignorées et le run reste un prévol local non destructif. Cet état signifie **NON SYNCHRONISÉ**, pas « production validée à distance ».
+Les étapes qui référencent `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` ou un autre secret production doivent être inaccessibles sur `pull_request` et `push`, même pour une branche interne au dépôt. Cette séparation reste obligatoire indépendamment des protections de branche GitHub.
+
+Un run vert de PR ou de push signifie **prévol local réussi**, pas « production validée à distance » et pas « production synchronisée ».
 
 ### Lancement manuel `apply=false`
 
-Un lancement manuel de prévol exige les secrets de connexion afin que les contrôles distants soient réellement exécutés. `apply=false` interdit toute écriture.
+Le lancement manuel `workflow_dispatch` avec `apply=false` est la seule voie générique autorisée à utiliser les secrets de connexion pour un prévol distant en lecture/non destructif.
 
-Un run vert avec `apply=false` signifie **prévol réussi**, pas « production modifiée ».
+Il exige les secrets de connexion afin que les contrôles distants soient réellement exécutés. Il peut lier le workspace protégé, lire l’inventaire et l’historique, exécuter les lints et `db push --dry-run`, mais `apply=false` interdit toute écriture.
+
+Un run vert avec `apply=false` signifie **prévol distant réussi**, pas « production modifiée ».
 
 ### Lancement manuel `apply=true`
 
