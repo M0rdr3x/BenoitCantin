@@ -10,6 +10,7 @@ on:
       - 'supabase/production-reviewed-migration-batch.txt'
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
       - 'scripts/build_supabase_production_workspace.py'
+      - 'scripts/test_production_reviewed_migration_batch.py'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/validate_production_schema_manifest.py'
       - '.github/workflows/supabase-production-preflight.yml'
@@ -24,6 +25,7 @@ on:
       - 'supabase/production-reviewed-migration-batch.txt'
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
       - 'scripts/build_supabase_production_workspace.py'
+      - 'scripts/test_production_reviewed_migration_batch.py'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/validate_production_schema_manifest.py'
       - '.github/workflows/supabase-production-preflight.yml'
@@ -45,6 +47,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Prouver que le lot de migrations revu échoue en fermeture sûre
+        run: python scripts/test_production_reviewed_migration_batch.py
       - name: Vérifier la reconstruction des tables production
         run: python scripts/validate_production_schema_manifest.py
       - name: Vérifier le ledger, le lot revu, le runbook et la voie production unique
