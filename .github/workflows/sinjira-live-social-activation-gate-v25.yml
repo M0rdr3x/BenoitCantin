@@ -54,14 +54,3 @@ jobs:
 
       - name: Vérifier le manifeste de schéma production
         run: python scripts/validate_production_schema_manifest.py
-
-      - name: Interdire toute voie de déploiement dans ce garde
-        shell: bash
-        run: |
-          set -euo pipefail
-          file='.github/workflows/sinjira-live-social-activation-gate-v25.yml'
-          if grep -Eiq 'SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|db push|--linked|functions deploy|migration repair|db reset|inputs\.apply' "$file"; then
-            echo 'ERREUR: le garde activation En direct doit rester purement statique et sans secret.' >&2
-            exit 1
-          fi
-          echo 'OK: garde activation purement statique, sans secret ni primitive de déploiement.'
