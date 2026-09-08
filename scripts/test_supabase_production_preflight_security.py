@@ -9,6 +9,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from validate_supabase_production_preflight_security import validate_text  # noqa: E402
 
 WORKFLOW = ROOT / ".github" / "workflows" / "supabase-production-preflight.yml"
+MANUAL_ONLY_GUARD = "        if: ${{ github.event_name == 'workflow_dispatch' }}\n"
 
 
 class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
@@ -23,6 +24,13 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
             any(fragment in error for error in errors),
             f"Erreur attendue contenant {fragment!r}; reçu: {errors}",
         )
+
+    def without_step_guard(self, name: str) -> str:
+        marker = f"      - name: {name}\n"
+        start = self.valid.index(marker)
+        tail = self.valid[start:]
+        self.assertIn(MANUAL_ONLY_GUARD, tail)
+        return self.valid[:start] + tail.replace(MANUAL_ONLY_GUARD, "", 1)
 
     def test_current_workflow_is_accepted(self):
         self.assertEqual(validate_text(self.valid), [])
@@ -51,12 +59,16 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         )
         self.assertRejected(bad, "workspace fail-closed")
 
+    def test_cli_install_on_pr_or_push_is_rejected(self):
+        bad = self.without_step_guard("Installer Supabase CLI")
+        self.assertRejected(bad, "installation Supabase CLI doit être réservée")
+
+    def test_cli_verification_on_pr_or_push_is_rejected(self):
+        bad = self.without_step_guard("Vérifier Supabase CLI")
+        self.assertRejected(bad, "vérification Supabase CLI doit être réservée")
+
     def test_auth_secrets_on_pr_or_push_are_rejected(self):
-        bad = self.valid.replace(
-            "        if: ${{ github.event_name == 'workflow_dispatch' }}\n        env:\n",
-            "        env:\n",
-            1,
-        )
+        bad = self.without_step_guard("Détecter les secrets de connexion Supabase")
         self.assertRejected(bad, "uniquement en workflow_dispatch manuel")
 
     def test_remote_preflight_on_pr_or_push_is_rejected(self):
