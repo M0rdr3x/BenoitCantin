@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/live_social_foundation_v25.test.sql'
+      - 'supabase/tests/live_social_realtime_eligibility_v25.test.sql'
       - 'scripts/validate_live_social_foundation_v25.py'
       - 'scripts/validate_social_home_v25.py'
       - 'scripts/validate_supabase.py'
@@ -44,6 +45,9 @@ jobs:
 
       - name: Tester la fondation En direct avec pgTAP
         run: supabase test db supabase/tests/live_social_foundation_v25.test.sql --local
+
+      - name: Tester l'éligibilité Realtime avec pgTAP
+        run: supabase test db supabase/tests/live_social_realtime_eligibility_v25.test.sql --local
 
       - name: Arrêter Supabase local
         if: always()
