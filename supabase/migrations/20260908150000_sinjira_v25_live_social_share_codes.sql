@@ -12,13 +12,11 @@ create table if not exists private.social_live_room_share_codes (
     check (status in ('active','used','revoked','expired')),
   created_at timestamptz not null default now(),
   expires_at timestamptz not null default (now()+interval '24 hours'),
-  redeemed_by_user_id uuid references auth.users(id) on delete set null,
   closed_at timestamptz,
   check (expires_at>created_at),
   check (
-    (status='active' and redeemed_by_user_id is null and closed_at is null)
-    or (status='used' and redeemed_by_user_id is not null and closed_at is not null)
-    or (status in ('revoked','expired') and redeemed_by_user_id is null and closed_at is not null)
+    (status='active' and closed_at is null)
+    or (status in ('used','revoked','expired') and closed_at is not null)
   )
 );
 
@@ -256,7 +254,7 @@ begin
   end if;
 
   update private.social_live_room_share_codes
-  set status='used',redeemed_by_user_id=v_user,closed_at=now()
+  set status='used',closed_at=now()
   where id=v_code.id;
 
   return jsonb_build_object(
@@ -304,10 +302,10 @@ grant execute on function public.social_live_share_code_revoke(uuid) to authenti
 grant execute on function public.social_live_share_code_redeem(text) to authenticated,service_role;
 
 comment on table private.social_live_room_share_codes is
-'Codes bearer privés En direct : SHA-256 seulement, 24 h, usage unique, aucun annuaire ni présence persistée.';
+'Codes bearer privés En direct : SHA-256 seulement, 24 h, usage unique, aucun annuaire ni présence persistée; identité du rédempteur non stockée.';
 comment on function public.social_live_share_code_create(uuid) is
 'Crée un code d invitation En direct privé à usage unique; le secret brut est retourné une seule fois au propriétaire.';
 comment on function public.social_live_share_code_list(uuid,integer) is
 'Liste self-only les métadonnées de codes du propriétaire sans secret, hash ni identité du rédempteur.';
 comment on function public.social_live_share_code_redeem(text) is
-'Consomme un code bearer privé après revalidation cohorte, blocage, suspension et règles; aucun UUID utilisateur n est retourné.';
+'Consomme un code bearer privé après revalidation cohorte, blocage, suspension et règles; aucun UUID utilisateur n est retourné ni persisté dans la table de codes.';
