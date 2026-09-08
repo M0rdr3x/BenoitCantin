@@ -9,9 +9,7 @@ gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)
 
 VERSIONS = tuple(version for version, _ in gate.REQUIRED_MIGRATIONS)
-PUBLIC = gate.LIVE_PUBLIC_TABLES
-PRIVATE = gate.LIVE_PRIVATE_TABLES
-ALL = gate.LIVE_TABLES
+LIVE = gate.LIVE_TABLES
 MOUNT = (('compte/communaute.html', 'sinjira-live-ui-shell-v25.js'),)
 
 
@@ -20,21 +18,21 @@ def check(condition, message):
         raise AssertionError(message)
 
 
-def verdict(*, ledger=(), public=(), private=(), planned=ALL, mounts=()):
+def verdict(*, ledger=(), production=(), planned=LIVE, mounts=()):
     return gate.evaluate_activation(
         ledger_versions=ledger,
-        production_public=public,
-        production_private=private,
-        planned=planned,
+        production_tables=production,
+        planned_tables=planned,
         mounts=mounts,
     )
 
 
-# État actuel attendu: dark launch sans erreur, rien de monté.
+# État actuel attendu : dark launch sans erreur, rien de monté.
 current = verdict()
 check(current['status'] == 'DARK_LAUNCH_BLOCKED_AS_EXPECTED', 'état dark launch attendu')
 check(current['activation_ready'] is False, 'activation ne doit pas être prête')
 check(len(current['missing_versions']) == 8, 'les 8 migrations doivent être exigées')
+check(set(current['missing_production']) == set(LIVE), 'les 5 tables En direct doivent rester hors production')
 check(not current['errors'], 'dark launch non monté doit être valide')
 
 # Un montage prématuré doit échouer.
@@ -43,15 +41,15 @@ check(premature['status'] == 'INVALID', 'montage prématuré doit être invalide
 check(any('Montage HTML En direct interdit' in error for error in premature['errors']), 'erreur montage manquante')
 
 # Une promotion partielle du manifeste avant le ledger doit échouer, même sans montage.
-partial_public = frozenset({next(iter(PUBLIC))})
-partial = verdict(public=partial_public, planned=ALL - partial_public)
+one_table = frozenset({sorted(LIVE)[0]})
+partial = verdict(production=one_table, planned=LIVE - one_table)
 check(partial['status'] == 'INVALID', 'promotion partielle doit être invalide')
 check(any('Promotion schéma En direct interdite' in error for error in partial['errors']), 'erreur promotion partielle manquante')
 
-# Une table ne peut pas être production et PLANNED à la fois.
-overlap = verdict(public=partial_public, planned=ALL)
+# Une table ne peut pas être EXPECTED_TABLES et PLANNED_LOCAL_TABLES à la fois.
+overlap = verdict(production=one_table, planned=LIVE)
 check(overlap['status'] == 'INVALID', 'chevauchement prod/planned doit être invalide')
-check(any('à la fois production et PLANNED' in error for error in overlap['errors']), 'erreur chevauchement manquante')
+check(any('à la fois production et PLANNED_LOCAL_TABLES' in error for error in overlap['errors']), 'erreur chevauchement manquante')
 
 # Ledger complet sans convergence du manifeste doit échouer.
 ledger_only = verdict(ledger=VERSIONS)
@@ -60,16 +58,21 @@ check(ledger_only['ledger_ready'] is True, 'ledger devrait être prêt')
 check(ledger_only['schema_ready'] is False, 'schéma ne devrait pas être prêt')
 check(any('manifeste production non convergé' in error for error in ledger_only['errors']), 'erreur manifeste manquante')
 
-# État prêt sans montage: autorisé mais non activé.
-ready = verdict(ledger=VERSIONS, public=PUBLIC, private=PRIVATE, planned=frozenset())
+# État prêt sans montage : autorisé mais non activé.
+ready = verdict(ledger=VERSIONS, production=LIVE, planned=frozenset())
 check(ready['status'] == 'READY_NOT_MOUNTED', 'preuve complète non montée attendue')
 check(ready['activation_ready'] is True, 'activation devrait être prête')
 check(not ready['errors'], 'preuve complète ne doit pas produire d’erreur')
 
-# État prêt + montage: le garde autorise alors explicitement le montage.
-mounted = verdict(ledger=VERSIONS, public=PUBLIC, private=PRIVATE, planned=frozenset(), mounts=MOUNT)
+# État prêt + montage : le garde autorise alors explicitement le montage.
+mounted = verdict(ledger=VERSIONS, production=LIVE, planned=frozenset(), mounts=MOUNT)
 check(mounted['status'] == 'READY_MOUNTED', 'montage avec preuve complète attendu')
 check(not mounted['errors'], 'montage prêt ne doit pas produire d’erreur')
+
+# Le parser manifeste lit les vraies constantes du dépôt, sans supposer de schéma SQL.
+manifest_sample = "EXPECTED_TABLES={'social_live_rooms','profiles'}\nPLANNED_LOCAL_TABLES={'foo'}\n"
+check(gate.parse_manifest_collection(manifest_sample, 'EXPECTED_TABLES') == frozenset({'social_live_rooms', 'profiles'}), 'parser EXPECTED_TABLES incorrect')
+check(gate.parse_manifest_collection(manifest_sample, 'PLANNED_LOCAL_TABLES') == frozenset({'foo'}), 'parser PLANNED_LOCAL_TABLES incorrect')
 
 # Le parser ledger doit ignorer commentaires/vides et refuser les lignes libres.
 parsed = gate.parse_ledger_versions('# preuve\n20260908120000 sinjira_v25_live_social_foundation\n\n20260908121000 sinjira_v25_live_social_realtime_eligibility\n')
@@ -86,4 +89,4 @@ check(gate.SCRIPT_MOUNT_RE.search('<script type="module" src="/assets/js/sinjira
 check(gate.STYLE_MOUNT_RE.search('<link rel="stylesheet" href="/assets/css/v25-live-share-codes.css">'), 'style mount non détecté')
 check(not gate.SCRIPT_MOUNT_RE.search('<p>sinjira-live-ui-shell-v25.js</p>'), 'mention texte ne doit pas être un mount')
 
-print('OK tests garde activation En direct V25: 8 migrations, convergence manifeste et montage HTML fail-closed couverts.')
+print('OK tests garde activation En direct V25: 8 migrations, 5 tables, convergence manifeste et montage HTML fail-closed couverts.')
