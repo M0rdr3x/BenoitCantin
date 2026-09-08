@@ -53,6 +53,7 @@ def main():
     require('sinjira-live-community-bridge-v25.js' not in html,'pont chargé par HTML avant preuve production')
 
     for marker in (
+        'assets/js/sinjira-community-real.js',
         'assets/js/sinjira-live-community-bridge-v25.js',
         'scripts/test_live_social_community_bridge_v25.mjs',
         'scripts/validate_live_social_community_bridge_v25.py',
@@ -70,7 +71,7 @@ def main():
     require(match is not None,'garde activation ne détecte pas le pont Communauté')
     require(match.group(1).lower()=='sinjira-live-community-bridge-v25.js','garde capture le mauvais asset pour le pont')
 
-    print('OK pont Communauté → En direct V25: contexte social borné, aucun annuaire/UUID exposé, aucun montage prématuré et garde production étendu.')
+    print('OK pont Communauté → En direct V25: contexte social borné, aucun annuaire/UUID exposé, aucun montage prématuré, CI du fil couverte et garde production étendu.')
     return 0
 
 
