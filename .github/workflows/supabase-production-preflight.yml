@@ -90,6 +90,7 @@ jobs:
 
       - name: Détecter les secrets de connexion Supabase
         id: auth
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -103,14 +104,11 @@ jobs:
           fi
           echo "ready=false" >> "$GITHUB_OUTPUT"
           echo "Prévol distant non exécuté : SUPABASE_ACCESS_TOKEN et/ou SUPABASE_DB_PASSWORD absent(s)." >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Le lancement manuel exige les deux secrets GitHub Actions."
-            exit 2
-          fi
-          echo "CI non destructive : aucune écriture Supabase n'est tentée et l'absence de secrets n'échoue pas la validation." >> "$GITHUB_STEP_SUMMARY"
+          echo "Le lancement manuel exige les deux secrets GitHub Actions."
+          exit 2
 
       - name: Auditer l’inventaire Edge Functions de production
-        if: ${{ steps.auth.outputs.ready == 'true' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         shell: bash
@@ -156,7 +154,7 @@ jobs:
           test "$missing" -eq 0
 
       - name: Lier le projet de production dans le workspace protégé
-        if: ${{ steps.auth.outputs.ready == 'true' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -166,7 +164,7 @@ jobs:
           (cd .prod-workspace && supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD")
 
       - name: Exporter l'historique exact des migrations de production
-        if: ${{ steps.auth.outputs.ready == 'true' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -190,7 +188,7 @@ jobs:
           test "$count" -gt 0
 
       - name: Publier l'historique distant comme artefact de prévol
-        if: ${{ steps.auth.outputs.ready == 'true' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: supabase-production-migrations-${{ github.run_id }}
@@ -199,7 +197,7 @@ jobs:
           retention-days: 7
 
       - name: Auditer les fonctions SQL déjà en production
-        if: ${{ steps.auth.outputs.ready == 'true' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -213,7 +211,7 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comparer l'historique des migrations
-        if: ${{ steps.auth.outputs.ready == 'true' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -227,7 +225,7 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Prévisualiser les migrations sans modifier la production
-        if: ${{ steps.auth.outputs.ready == 'true' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -349,12 +347,12 @@ jobs:
         run: |
           set -euo pipefail
           echo '## ÉTAT PRODUCTION' >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.auth.outputs.ready }}" != "true" ]; then
-            echo '⛔ NON SYNCHRONISÉ : les secrets de connexion Supabase ne sont pas disponibles au workflow. Aucune écriture de production n’a eu lieu.' >> "$GITHUB_STEP_SUMMARY"
-          elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo '🟡 PRÉVOL PR : workspace protégé construit; historique distant exporté, production auditée et dry-run exécuté si les secrets sont disponibles; aucune écriture de production.' >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo '🟡 PRÉVOL PR : validations locales et workspace protégé uniquement; aucun secret production exposé au run PR et aucune opération distante.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
-            echo '🟡 PRÉVOL SEULEMENT : workspace protégé + audit/dry-run; aucune migration ni Edge Function appliquée.' >> "$GITHUB_STEP_SUMMARY"
+            echo '🟡 PRÉVOL SEULEMENT : validations locales et workspace protégé uniquement; aucun secret production exposé au run push et aucune opération distante.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ steps.auth.outputs.ready }}" != "true" ]; then
+            echo '⛔ NON SYNCHRONISÉ : les secrets de connexion Supabase ne sont pas disponibles au lancement manuel. Aucune écriture de production n’a eu lieu.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ inputs.apply }}" != "true" ]; then
             echo '🟡 PRÉVOL MANUEL SEULEMENT : aucune modification de production, car apply=false.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ steps.final_verify.outcome }}" = "success" ]; then
