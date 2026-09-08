@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import sys
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from validate_supabase_production_preflight_security import validate_text  # noqa: E402
+
+WORKFLOW = ROOT / ".github" / "workflows" / "supabase-production-preflight.yml"
+
+
+class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.valid = WORKFLOW.read_text(encoding="utf-8")
+
+    def assertRejected(self, text: str, fragment: str):
+        errors = validate_text(text)
+        self.assertTrue(errors, "La mutation dangereuse aurait dû être refusée.")
+        self.assertTrue(
+            any(fragment in error for error in errors),
+            f"Erreur attendue contenant {fragment!r}; reçu: {errors}",
+        )
+
+    def test_current_workflow_is_accepted(self):
+        self.assertEqual(validate_text(self.valid), [])
+
+    def test_job_level_secret_is_rejected(self):
+        bad = self.valid.replace(
+            "    env:\n      PROJECT_ID:",
+            "    env:\n      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n      PROJECT_ID:",
+            1,
+        )
+        self.assertRejected(bad, "Secret interdit au niveau jobs.sync.env")
+
+    def test_cli_before_workspace_is_rejected(self):
+        bad = self.valid.replace(
+            "- name: Installer Supabase CLI",
+            "- name: TEMP INSTALL",
+            1,
+        ).replace(
+            "- name: Construire le workspace production protégé",
+            "- name: Installer Supabase CLI",
+            1,
+        ).replace(
+            "- name: TEMP INSTALL",
+            "- name: Construire le workspace production protégé",
+            1,
+        )
+        self.assertRejected(bad, "workspace fail-closed")
+
+    def test_apply_guard_removal_is_rejected(self):
+        bad = self.valid.replace(
+            "if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}",
+            "if: ${{ steps.auth.outputs.ready == 'true' }}",
+            1,
+        )
+        self.assertRejected(bad, "garde manuelle apply=true/auth")
+
+    def test_workspace_builder_removal_is_rejected(self):
+        bad = self.valid.replace(
+            "python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase",
+            "echo builder-retire",
+            1,
+        )
+        self.assertRejected(bad, "builder fail-closed")
+
+    def test_remote_step_without_scoped_secret_is_rejected(self):
+        block = "          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}\n"
+        marker = "      - name: Lier le projet de production dans le workspace protégé\n"
+        start = self.valid.index(marker)
+        tail = self.valid[start:]
+        self.assertIn(block, tail)
+        bad_tail = tail.replace(block, "", 1)
+        bad = self.valid[:start] + bad_tail
+        self.assertRejected(bad, "SUPABASE_DB_PASSWORD non borné")
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

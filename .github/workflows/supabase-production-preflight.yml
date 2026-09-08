@@ -11,6 +11,8 @@ on:
       - 'scripts/validate_social_rls_contract.py'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/build_supabase_production_workspace.py'
+      - 'scripts/validate_supabase_production_preflight_security.py'
+      - 'scripts/test_supabase_production_preflight_security.py'
       - '.github/workflows/supabase-production-preflight.yml'
   pull_request:
     branches: [ main ]
@@ -21,6 +23,8 @@ on:
       - 'scripts/validate_social_rls_contract.py'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/build_supabase_production_workspace.py'
+      - 'scripts/validate_supabase_production_preflight_security.py'
+      - 'scripts/test_supabase_production_preflight_security.py'
       - '.github/workflows/supabase-production-preflight.yml'
   workflow_dispatch:
     inputs:
@@ -43,10 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_ID: gpvivleexywljowcqkru
-      OPTIONAL_RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -58,12 +59,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Installer Supabase CLI
-        uses: supabase/setup-cli@v2
-        with:
-          version: 2.111.0
-          github-token: ${{ github.token }}
-
       - name: Vérifier le dépôt Supabase
         shell: bash
         run: |
@@ -72,7 +67,6 @@ jobs:
           python scripts/validate_edge_function_inventory.py
           python scripts/validate_social_rls_contract.py
           python scripts/validate_production_migration_ledger.py
-          supabase --version
 
       - name: Construire le workspace production protégé
         shell: bash
@@ -82,10 +76,23 @@ jobs:
           python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase
           test -f .prod-workspace/supabase/config.toml
           test -d .prod-workspace/supabase/migrations
-          echo "Workspace production protégé construit depuis le ledger canonique." >> "$GITHUB_STEP_SUMMARY"
+          echo "Workspace production protégé construit depuis le ledger canonique et le lot revu." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.111.0
+          github-token: ${{ github.token }}
+
+      - name: Vérifier Supabase CLI
+        shell: bash
+        run: supabase --version
 
       - name: Détecter les secrets de connexion Supabase
         id: auth
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
@@ -104,6 +111,8 @@ jobs:
 
       - name: Auditer l’inventaire Edge Functions de production
         if: ${{ steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -148,6 +157,9 @@ jobs:
 
       - name: Lier le projet de production dans le workspace protégé
         if: ${{ steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
@@ -155,6 +167,9 @@ jobs:
 
       - name: Exporter l'historique exact des migrations de production
         if: ${{ steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
@@ -185,6 +200,9 @@ jobs:
 
       - name: Auditer les fonctions SQL déjà en production
         if: ${{ steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
@@ -196,6 +214,9 @@ jobs:
 
       - name: Comparer l'historique des migrations
         if: ${{ steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
@@ -207,6 +228,9 @@ jobs:
 
       - name: Prévisualiser les migrations sans modifier la production
         if: ${{ steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
@@ -218,6 +242,9 @@ jobs:
 
       - name: Appliquer les migrations de production depuis le workspace protégé
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
@@ -225,6 +252,9 @@ jobs:
 
       - name: Auditer les fonctions SQL après migrations
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
@@ -236,6 +266,9 @@ jobs:
 
       - name: Garantir les secrets Edge Functions indispensables
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          OPTIONAL_RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         shell: bash
         run: |
           set -euo pipefail
@@ -260,6 +293,8 @@ jobs:
 
       - name: Déployer toutes les Edge Functions du workspace protégé
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -267,6 +302,8 @@ jobs:
 
       - name: Vérifier les Edge Functions déployées
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -291,6 +328,9 @@ jobs:
       - name: Vérifier l'historique et le dry-run après déploiement
         id: final_verify
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
