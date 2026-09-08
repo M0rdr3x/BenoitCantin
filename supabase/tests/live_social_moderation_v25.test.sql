@@ -32,7 +32,7 @@ select ok(
 );
 
 select ok(
-  position("p_network='live'" in pg_get_functiondef('sinjira_social_user_internal.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,
+  position('p_network=''live''' in pg_get_functiondef('sinjira_social_user_internal.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,
   'implémentation reconnaît explicitement live'
 );
 select ok(
@@ -44,15 +44,15 @@ select ok(
   'reporter live doit être membre du salon'
 );
 select ok(
-  position("p_target_type<>'message'" in pg_get_functiondef('sinjira_social_user_internal.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,
+  position('p_target_type<>''message''' in pg_get_functiondef('sinjira_social_user_internal.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,
   'live ne permet que le signalement de messages dans cet incrément'
 );
 select ok(
-  position("'snapshot_source','server'" in pg_get_functiondef('sinjira_social_user_internal.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,
+  position('''snapshot_source'',''server''' in pg_get_functiondef('sinjira_social_user_internal.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,
   'preuve de signalement reconstruite côté serveur'
 );
 select ok(
-  position("'identity_data_included',false" in pg_get_functiondef('sinjira_social_user_internal.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,
+  position('''identity_data_included'',false' in pg_get_functiondef('sinjira_social_user_internal.social_report_content(text,text,uuid,text,text,boolean)'::regprocedure))>0,
   'snapshot n inclut pas de donnée identité supplémentaire'
 );
 select ok(
