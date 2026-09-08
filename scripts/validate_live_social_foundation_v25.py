@@ -31,6 +31,8 @@ def main() -> int:
         'alter table public.social_live_messages enable row level security',
         'default auth.uid()',
         'default public.sinjira_my_age_band()',
+        'public.social_live_is_room_member(p_room_id uuid)',
+        'or public.social_live_is_room_member(id)',
         'social_live_rooms_read',
         'social_live_members_public_join',
         'social_live_messages_read',
@@ -52,8 +54,7 @@ def main() -> int:
     ):
         require(marker.lower() in low, f'marqueur migration absent: {marker}')
 
-    require('create table' not in low.split('presence éphémère', 1)[-1] or 'social_live_presence' not in low,
-            'Presence ne doit pas devenir une table persistante')
+    require('social_live_presence' not in low, 'Presence ne doit pas devenir une table persistante')
     require('grant insert(owner_user_id' not in low, 'owner_user_id ne doit jamais être injectable')
     require('grant insert(audience' not in low, 'audience ne doit jamais être injectable')
     require('grant insert(room_id,user_id' not in low, 'user_id adhésion ne doit jamais être injectable')
@@ -73,6 +74,7 @@ def main() -> int:
         "to_regclass('public.social_live_presence') is null",
         "not has_column_privilege('authenticated','public.social_live_rooms','owner_user_id','insert')",
         "not has_column_privilege('authenticated','public.social_live_messages','user_id','insert')",
+        "qual ilike '%social_live_is_room_member%'",
         "permissive='restrictive'",
         "with_check not ilike '%broadcast%'",
     ):
@@ -93,7 +95,7 @@ def main() -> int:
     require('Prochaine étape · Realtime sécurisé' in community, 'la carte #249 doit rester en aperçu avant preuve CI/runtime')
     require('Cette carte n’affiche pas de faux statut en direct' in community, 'aucun faux temps réel avant activation du runtime')
 
-    print('OK En direct V25: fondation RLS fail-closed, identité serveur, anti-spam par compte, Broadcast minimal et Presence privée; production non touchée.')
+    print('OK En direct V25: fondation RLS fail-closed, helper sans récursion, identité serveur, anti-spam par compte, Broadcast minimal et Presence privée; production non touchée.')
     return 0
 
 
