@@ -140,9 +140,11 @@ select ok(
 );
 select ok(
   position('insert into public.social_live_room_members' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
-  and position('insert into private.social_live_room_invites' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
-  and position("status='accepted'" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0,
-  'rachat crée adhésion et trace invitation acceptée côté serveur'
+  and position('update private.social_live_room_invites' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
+  and position('invitee_user_id=v_user' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
+  and position("status='accepted'" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
+  and position('insert into private.social_live_room_invites' in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))=0,
+  'rachat crée adhésion, ferme une invitation existante sans fabriquer de relation ciblée'
 );
 select ok(
   position("set status='used',closed_at=now()" in pg_get_functiondef('sinjira_social_user_internal.social_live_share_code_redeem(text)'::regprocedure))>0
