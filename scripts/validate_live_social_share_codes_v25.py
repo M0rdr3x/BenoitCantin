@@ -49,7 +49,7 @@ def main() -> int:
         'social_live_share_code_active_limit',
         'insert into public.social_live_room_members',
         'insert into private.social_live_room_invites',
-        "set status='used',redeemed_by_user_id=v_user,closed_at=now()",
+        "set status='used',closed_at=now()",
         'language sql security invoker',
     ):
         require(marker in ml, f'marqueur migration absent: {marker}')
@@ -60,6 +60,7 @@ def main() -> int:
     for forbidden in (
         'social_profiles',
         'account_identities',
+        'redeemed_by_user_id',
         'inet_client_addr(',
         'request.headers',
         'latitude',
@@ -68,24 +69,26 @@ def main() -> int:
     ):
         require(forbidden not in redeem_body, f'collecte/résolution interdite dans le rachat: {forbidden}')
 
-    # Le secret brut est un résultat éphémère de création, jamais une colonne durable.
+    # Le secret brut et l'identité du rédempteur ne sont jamais des colonnes durables.
     table_def = ml.split('create table if not exists private.social_live_room_share_codes', 1)[1].split(');', 1)[0]
-    for forbidden_column in ('\n  code text', '\n  raw_code ', '\n  secret ', '\n  token '):
-        require(forbidden_column not in table_def, f'colonne secret brute interdite: {forbidden_column.strip()}')
+    for forbidden_column in ('\n  code text', '\n  raw_code ', '\n  secret ', '\n  token ', 'redeemed_by_user_id'):
+        require(forbidden_column not in table_def, f'colonne sensible interdite: {forbidden_column.strip()}')
 
     require('select plan(37);' in tl, 'plan pgTAP attendu à 37 assertions')
     for marker in (
         "not has_table_privilege('authenticated','private.social_live_room_share_codes','select')",
         "not has_table_privilege('service_role','private.social_live_room_share_codes','select')",
         "column_name in ('code','raw_code','secret','token')",
+        "column_name='redeemed_by_user_id'",
         "not (select prosecdef from pg_proc where oid='public.social_live_share_code_create(uuid)'::regprocedure)",
         "not (select prosecdef from pg_proc where oid='public.social_live_share_code_redeem(text)'::regprocedure)",
         'gen_random_bytes(32)',
         "digest(v_raw,'sha256')",
-        "social_live_share_code_unavailable",
+        'social_live_share_code_unavailable',
         'social_profiles',
         'account_identities',
         'aucun uuid utilisateur',
+        'sans persister l identité du rédempteur',
     ):
         require(marker in tl, f'contrat pgTAP absent: {marker}')
 
@@ -98,7 +101,7 @@ def main() -> int:
     for forbidden in ('--linked', 'supabase_access_token', 'supabase_db_password', 'inputs.apply', 'db push'):
         require(forbidden not in wl, f'workflow ne doit pas viser production: {forbidden}')
 
-    print('OK En direct V25: codes bearer 256 bits, SHA-256 seul en stockage, 24 h, usage unique, strict-no-direct, sans annuaire/UUID/IP/GPS et testés uniquement sur Supabase local.')
+    print('OK En direct V25: codes bearer 256 bits, SHA-256 seul en stockage, 24 h, usage unique, strict-no-direct, sans identité de rédempteur/annuaire/UUID/IP/GPS et testés uniquement sur Supabase local.')
     return 0
 
 
