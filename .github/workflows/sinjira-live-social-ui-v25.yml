@@ -13,8 +13,10 @@ on:
       - 'assets/js/sinjira-live-share-codes-ui-v25.js'
       - 'assets/js/sinjira-live-invites-model-v25.js'
       - 'assets/js/sinjira-live-invites-client-v25.js'
+      - 'assets/js/sinjira-live-invites-ui-v25.js'
       - 'assets/css/v25-live-ui.css'
       - 'assets/css/v25-live-share-codes.css'
+      - 'assets/css/v25-live-invites.css'
       - 'scripts/test_live_social_ui_model_v25.mjs'
       - 'scripts/test_live_social_share_codes_client_v25.mjs'
       - 'scripts/test_live_social_invites_client_v25.mjs'
@@ -22,6 +24,7 @@ on:
       - 'scripts/validate_live_social_share_codes_client_v25.py'
       - 'scripts/validate_live_social_share_codes_ui_v25.py'
       - 'scripts/validate_live_social_invites_client_v25.py'
+      - 'scripts/validate_live_social_invites_ui_v25.py'
       - '.github/workflows/sinjira-live-social-ui-v25.yml'
   workflow_dispatch:
 
@@ -48,6 +51,7 @@ jobs:
           cp assets/js/sinjira-live-share-codes-ui-v25.js /tmp/sinjira-live-share-codes-ui-v25.mjs
           cp assets/js/sinjira-live-invites-model-v25.js /tmp/sinjira-live-invites-model-v25.mjs
           cp assets/js/sinjira-live-invites-client-v25.js /tmp/sinjira-live-invites-client-v25.mjs
+          cp assets/js/sinjira-live-invites-ui-v25.js /tmp/sinjira-live-invites-ui-v25.mjs
           node --check /tmp/sinjira-live-ui-model-v25.mjs
           node --check /tmp/sinjira-live-ui-v25.mjs
           node --check /tmp/sinjira-live-ui-shell-v25.mjs
@@ -56,6 +60,7 @@ jobs:
           node --check /tmp/sinjira-live-share-codes-ui-v25.mjs
           node --check /tmp/sinjira-live-invites-model-v25.mjs
           node --check /tmp/sinjira-live-invites-client-v25.mjs
+          node --check /tmp/sinjira-live-invites-ui-v25.mjs
 
       - name: Tester le modèle UI En direct
         run: |
@@ -69,6 +74,7 @@ jobs:
           python scripts/validate_live_social_share_codes_client_v25.py
           python scripts/validate_live_social_share_codes_ui_v25.py
           python scripts/validate_live_social_invites_client_v25.py
+          python scripts/validate_live_social_invites_ui_v25.py
           python scripts/validate_live_social_runtime_v25.py
           python scripts/validate_live_social_typed_commands_v25.py
           python scripts/validate_live_social_foundation_v25.py
