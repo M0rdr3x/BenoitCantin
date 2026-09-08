@@ -104,8 +104,12 @@ jobs:
           fi
           echo "ready=false" >> "$GITHUB_OUTPUT"
           echo "Prévol distant non exécuté : SUPABASE_ACCESS_TOKEN et/ou SUPABASE_DB_PASSWORD absent(s)." >> "$GITHUB_STEP_SUMMARY"
-          echo "Le lancement manuel exige les deux secrets GitHub Actions."
-          exit 2
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Le lancement manuel exige les deux secrets GitHub Actions."
+            exit 2
+          fi
+          echo "Refus fail-closed : une étape authentifiée ne doit jamais atteindre ce point hors workflow_dispatch."
+          exit 3
 
       - name: Auditer l’inventaire Edge Functions de production
         if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}
