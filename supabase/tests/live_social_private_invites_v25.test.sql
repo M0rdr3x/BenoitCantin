@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(29);
+select plan(30);
 
 select has_table('private','social_live_room_invites','table privée invitations live présente');
 select ok((select relrowsecurity from pg_class where oid='private.social_live_room_invites'::regclass),'RLS invitations active');
