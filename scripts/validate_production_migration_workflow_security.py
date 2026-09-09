@@ -39,10 +39,13 @@ def validate_action_integrity(text: str, label: str, *, require_full_history: bo
     )
     require("python-version: '3.12'" in text, f'{label}: Python doit rester figé à 3.12.')
 
-    uses = [line.strip() for line in active.splitlines() if line.strip().startswith('uses: ')]
-    require(uses, f'{label}: aucune action réutilisable détectée.')
-    for line in uses:
-        target = line.split('uses:', 1)[1].strip().split()[0]
+    targets = []
+    for line in active.splitlines():
+        match = re.match(r'^(?:-\s*)?uses:\s+(\S+)', line.strip())
+        if match:
+            targets.append(match.group(1))
+    require(targets, f'{label}: aucune action réutilisable détectée.')
+    for target in targets:
         require(
             re.search(r'@[0-9a-f]{40}$', target) is not None,
             f'{label}: référence d’action non immuable: {target}',
