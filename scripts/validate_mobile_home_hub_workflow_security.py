@@ -26,9 +26,10 @@ INSTALL = 'npm install --ignore-scripts --no-audit --no-fund'
 VAULT = 'npm run validate:vault'
 TYPECHECK = 'npm run typecheck'
 GUARD_PATH = "      - 'scripts/validate_mobile_home_hub_workflow_security.py'"
+HOME_VALIDATOR_PATH = "      - 'scripts/validate_mobile_native_home_hub_v25.py'"
 PUSH_PATHS = (
     "      - 'mobile-native/**'",
-    "      - 'scripts/validate_mobile_native_home_hub_v25.py'",
+    HOME_VALIDATOR_PATH,
     "      - 'scripts/validate_mobile_native_security_hub_v25.py'",
     "      - 'scripts/validate_mobile_navigation_boundary_v25.py'",
     "      - 'scripts/validate_mobile_safe_share_v25.py'",
@@ -62,6 +63,7 @@ def validate_text(text: str) -> None:
     require('push:\n    branches: [ main ]' in text, 'Le push main doit rester couvert tant que #135 n’est pas prouvé.')
     require('workflow_dispatch:' in text, 'Le déclenchement manuel historique doit rester disponible.')
     require(text.count(GUARD_PATH) == 2, 'Le garde CI doit déclencher exactement les frontières PR et push.')
+    require(text.count(HOME_VALIDATOR_PATH) == 2, 'Le validateur Accueil doit déclencher exactement les frontières PR et push.')
     for path in PUSH_PATHS:
         require(path in text, f'Frontière push main absente: {path.strip()}')
 
@@ -116,7 +118,7 @@ def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
         ('workflow dispatch retiré', text.replace('  workflow_dispatch:\n', '', 1)),
         ('garde PR retiré', text.replace(GUARD_PATH + '\n', '', 1)),
         ('push mobile retiré', text.replace("      - 'mobile-native/**'\n", '', 1)),
-        ('push validateurs retiré', text.replace("      - 'scripts/validate_mobile_native_home_hub_v25.py'\n", '', 1)),
+        ('push validateurs retiré', text.replace(HOME_VALIDATOR_PATH + '\n', '', 1)),
         ('push workflows retiré', text.replace("      - '.github/workflows/sinjira-mobile-native-*.yml'\n", '', 1)),
         ('auto-test retiré', text.replace(f'        run: {SELF_TEST}\n', '', 1)),
         ('contrat retiré', text.replace(f'        run: {SELF_CHECK}\n', '', 1)),
