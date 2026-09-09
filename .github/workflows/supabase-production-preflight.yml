@@ -79,12 +79,14 @@ jobs:
           echo "Workspace production protégé construit depuis le ledger canonique et le lot revu." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Installer Supabase CLI
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         uses: supabase/setup-cli@v2
         with:
           version: 2.111.0
           github-token: ${{ github.token }}
 
       - name: Vérifier Supabase CLI
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         shell: bash
         run: supabase --version
 

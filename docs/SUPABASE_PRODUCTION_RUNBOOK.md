@@ -29,8 +29,9 @@ Un push ou une pull request ne doit jamais recevoir les secrets de connexion Sup
 
 Sur ces événements, le workflow reste **strictement local**. Il peut seulement :
 - valider le dépôt, le ledger, le lot revu et les contrats de sécurité;
-- construire le workspace protégé;
-- installer/vérifier les outils nécessaires aux contrôles locaux, sans authentification production.
+- construire le workspace protégé.
+
+La Supabase CLI elle-même ne doit être ni installée ni vérifiée sur `pull_request` ou `push`; son installation et sa vérification sont réservées au lancement manuel `workflow_dispatch`.
 
 Les étapes qui référencent `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` ou un autre secret production doivent être inaccessibles sur `pull_request` et `push`, même pour une branche interne au dépôt. Cette séparation reste obligatoire indépendamment des protections de branche GitHub.
 
