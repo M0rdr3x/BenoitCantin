@@ -56,7 +56,7 @@ jobs:
         run: python scripts/validate_sensitive_aal2_workflow_security.py
 
       - name: Vérifier le contrat du smoke AAL2
-        run: python scripts/validate_sensitive_aal2_smoke.py
+        run: python3 scripts/validate_sensitive_aal2_smoke.py
 
       - name: Installer Supabase CLI
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
