@@ -16,6 +16,7 @@ class RecoveryDrillSecurityTests(unittest.TestCase):
         cls.baseline = WORKFLOW.read_text(encoding='utf-8', errors='strict')
 
     def assertRejected(self, mutated: str) -> None:
+        self.assertNotEqual(mutated, self.baseline, 'La mutation de test doit réellement modifier le workflow.')
         with self.assertRaises(AssertionError):
             guard.validate_text(mutated)
 
@@ -31,11 +32,34 @@ class RecoveryDrillSecurityTests(unittest.TestCase):
             )
         )
 
+    def test_mobile_setup_python_reference_is_rejected(self) -> None:
+        self.assertRejected(
+            self.baseline.replace(
+                f'actions/setup-python@{guard.SETUP_PYTHON_SHA}',
+                'actions/setup-python@v6',
+                1,
+            )
+        )
+
     def test_mobile_supabase_action_reference_is_rejected(self) -> None:
         self.assertRejected(
             self.baseline.replace(
                 f'supabase/setup-cli@{guard.SETUP_CLI_SHA}',
                 'supabase/setup-cli@v2',
+                1,
+            )
+        )
+
+    def test_mobile_runner_is_rejected(self) -> None:
+        self.assertRejected(
+            self.baseline.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1)
+        )
+
+    def test_broad_python_version_is_rejected(self) -> None:
+        self.assertRejected(
+            self.baseline.replace(
+                f"python-version: '{guard.PYTHON_VERSION}'",
+                "python-version: '3.12'",
                 1,
             )
         )
@@ -67,11 +91,29 @@ class RecoveryDrillSecurityTests(unittest.TestCase):
             )
         )
 
+    def test_remote_project_ref_is_rejected(self) -> None:
+        self.assertRejected(
+            self.baseline.replace(
+                'supabase test db',
+                'supabase test db --project-ref gpvivleexywljowcqkru',
+                1,
+            )
+        )
+
     def test_secret_reference_is_rejected(self) -> None:
         self.assertRejected(
             self.baseline.replace(
-                'runs-on: ubuntu-latest',
-                'runs-on: ubuntu-latest\n    env:\n      TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}',
+                'runs-on: ubuntu-24.04',
+                'runs-on: ubuntu-24.04\n    env:\n      TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}',
+                1,
+            )
+        )
+
+    def test_production_environment_is_rejected(self) -> None:
+        self.assertRejected(
+            self.baseline.replace(
+                '    timeout-minutes: 30',
+                '    timeout-minutes: 30\n    environment: production',
                 1,
             )
         )
@@ -80,6 +122,14 @@ class RecoveryDrillSecurityTests(unittest.TestCase):
         self.assertRejected(
             self.baseline.replace(
                 "      - 'scripts/validate_recovery_drill_security.py'\n",
+                '',
+            )
+        )
+
+    def test_test_path_trigger_cannot_be_removed(self) -> None:
+        self.assertRejected(
+            self.baseline.replace(
+                "      - 'scripts/test_recovery_drill_security.py'\n",
                 '',
             )
         )
