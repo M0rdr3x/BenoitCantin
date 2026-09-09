@@ -6,6 +6,26 @@ on:
     paths:
       - 'scripts/smoke_conscience_vault_functional_local.py'
       - 'scripts/validate_conscience_vault_functional_smoke.py'
+      - 'scripts/validate_conscience_vault_workflow_security.py'
+      - 'scripts/smoke_sensitive_aal2_local.py'
+      - 'scripts/validate_sensitive_aal2_smoke.py'
+      - 'scripts/validate_conscience_vault_edge_v25.py'
+      - 'scripts/validate_conscience_vault_web_v25.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'supabase/tests/personal_consciousness_vault_v25.test.sql'
+      - 'supabase/functions/conscience-vault/**'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'supabase/functions/_shared/cors.ts'
+      - 'supabase/migrations/**conscience**.sql'
+      - 'supabase/migrations/**security**.sql'
+      - 'supabase/config.toml'
+      - '.github/workflows/sinjira-conscience-vault-functional-v25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/smoke_conscience_vault_functional_local.py'
+      - 'scripts/validate_conscience_vault_functional_smoke.py'
+      - 'scripts/validate_conscience_vault_workflow_security.py'
       - 'scripts/smoke_sensitive_aal2_local.py'
       - 'scripts/validate_sensitive_aal2_smoke.py'
       - 'scripts/validate_conscience_vault_edge_v25.py'
@@ -26,13 +46,24 @@ permissions:
 
 jobs:
   conscience-vault-functional:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat CI Coffre AAL2
+        run: python scripts/validate_conscience_vault_workflow_security.py --self-test
+
+      - name: Vérifier le contrat CI Coffre AAL2
+        run: python scripts/validate_conscience_vault_workflow_security.py
 
       - name: Valider les contrats Coffre et AAL2
         run: |
@@ -43,7 +74,7 @@ jobs:
           python3 scripts/validate_production_schema_manifest.py
 
       - name: Installer Supabase CLI
-        uses: supabase/setup-cli@v2
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
         with:
           version: 2.111.0
 
