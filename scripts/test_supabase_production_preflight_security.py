@@ -7,13 +7,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from validate_supabase_production_preflight_security import (  # noqa: E402
-    SUPABASE_SETUP_CLI_SHA,
+    PINNED_ACTIONS,
     validate_text,
 )
 
 WORKFLOW = ROOT / ".github" / "workflows" / "supabase-production-preflight.yml"
 MANUAL_ONLY_GUARD = "        if: ${{ github.event_name == 'workflow_dispatch' }}\n"
-PINNED_SETUP_CLI = f"supabase/setup-cli@{SUPABASE_SETUP_CLI_SHA}"
 
 
 class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
@@ -71,10 +70,18 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = self.without_step_guard("Vérifier Supabase CLI")
         self.assertRejected(bad, "vérification Supabase CLI doit être réservée")
 
-    def test_moving_setup_cli_ref_is_rejected(self):
-        self.assertIn(PINNED_SETUP_CLI, self.valid)
-        bad = self.valid.replace(PINNED_SETUP_CLI, "supabase/setup-cli@v2", 1)
-        self.assertRejected(bad, "épinglée au SHA vérifié")
+    def test_all_reusable_actions_are_pinned(self):
+        aliases = {
+            "actions/checkout": "v6",
+            "actions/setup-python": "v6",
+            "supabase/setup-cli": "v2",
+            "actions/upload-artifact": "v4",
+        }
+        for action, sha in PINNED_ACTIONS.items():
+            pinned = f"{action}@{sha}"
+            self.assertIn(pinned, self.valid)
+            bad = self.valid.replace(pinned, f"{action}@{aliases[action]}", 1)
+            self.assertRejected(bad, f"L'action {action} doit être épinglée")
 
     def test_auth_secrets_on_pr_or_push_are_rejected(self):
         bad = self.without_step_guard("Détecter les secrets de connexion Supabase")
