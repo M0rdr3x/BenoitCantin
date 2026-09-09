@@ -16,7 +16,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  workflow-contract:
+    name: Contrat sécurité CI navigateur
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Auto-tester les frontières du workflow navigateur
+        run: python3 scripts/validate_e2e_workflow_security.py --self-test
+
+      - name: Vérifier les frontières du workflow navigateur
+        run: python3 scripts/validate_e2e_workflow_security.py
+
   browser-smoke:
+    needs: workflow-contract
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     name: Navigation ${{ matrix.browser }}
     runs-on: ubuntu-latest
@@ -30,10 +47,12 @@ jobs:
         browser: [chromium, firefox, webkit]
     steps:
       - name: Récupérer le dépôt
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
 
       - name: Configurer Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
 
@@ -81,21 +100,24 @@ jobs:
           if [ -f /tmp/sinjira-http.pid ]; then kill "$(cat /tmp/sinjira-http.pid)" || true; fi
 
   lighthouse-mobile:
+    needs: workflow-contract
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     name: Lighthouse mobile Chromium
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Récupérer le dépôt
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
 
       - name: Configurer Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
 
       - name: Configurer Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: '22'
           package-manager-cache: false
