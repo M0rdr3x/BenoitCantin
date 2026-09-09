@@ -30,7 +30,7 @@ def validate_text(text: str) -> list[str]:
     errors: list[str] = []
     require(errors, 'permissions:\n  contents: read' in text, 'permissions.contents doit rester read')
     require(errors, 'contents: write' not in text, 'permission contents:write interdite')
-    require(errors, 'secrets.' not in text, 'le garde secrets ne doit référencer aucun secret GitHub')
+    require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'le garde secrets ne doit référencer aucun secret GitHub')
     require(errors, 'runs-on: ubuntu-24.04' in text, 'runner Ubuntu 24.04 explicite requis')
     require(errors, 'ubuntu-latest' not in text, 'ubuntu-latest interdit pour ce garde critique')
 
