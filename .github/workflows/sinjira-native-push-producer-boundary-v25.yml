@@ -2,7 +2,7 @@ name: SINJIRA V25 — Frontière producteur push natif
 
 on:
   pull_request:
-    branches: [main]
+    branches: [ main ]
     paths:
       - 'supabase/functions/**'
       - 'supabase/migrations/**'
@@ -14,6 +14,22 @@ on:
       - 'scripts/test_security_push_network_v25.mjs'
       - 'scripts/validate_native_push_producer_boundary_v25.py'
       - 'scripts/validate_security_push_background_v25.py'
+      - 'scripts/validate_native_push_producer_workflow_security.py'
+      - '.github/workflows/sinjira-native-push-producer-boundary-v25.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'supabase/functions/**'
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+      - 'assets/js/sinjira-security-push-bridge-v24-4-98.js'
+      - 'mobile-native/App.tsx'
+      - 'scripts/test_security_push_policy_v25.mjs'
+      - 'scripts/test_security_push_receipts_v25.mjs'
+      - 'scripts/test_security_push_network_v25.mjs'
+      - 'scripts/validate_native_push_producer_boundary_v25.py'
+      - 'scripts/validate_security_push_background_v25.py'
+      - 'scripts/validate_native_push_producer_workflow_security.py'
       - '.github/workflows/sinjira-native-push-producer-boundary-v25.yml'
   workflow_dispatch:
 
@@ -22,19 +38,35 @@ permissions:
 
 jobs:
   native-push-producer-boundary:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat CI producteur push natif
+        run: python3 scripts/validate_native_push_producer_workflow_security.py --self-test
+
+      - name: Vérifier le contrat CI producteur push natif
+        run: python3 scripts/validate_native_push_producer_workflow_security.py
 
       - name: Valider la frontière du producteur push natif
         run: python3 scripts/validate_native_push_producer_boundary_v25.py
 
       - name: Valider la tâche push de fond
         run: python3 scripts/validate_security_push_background_v25.py
+
+      - name: Configurer Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
 
       - name: Tester le payload push réel
         run: node scripts/test_security_push_policy_v25.mjs
