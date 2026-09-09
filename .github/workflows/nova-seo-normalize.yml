@@ -8,30 +8,128 @@ on:
       - '.github/workflows/nova-seo-normalize.yml'
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: nova-seo-normalize-reference-documents
+  cancel-in-progress: false
 
 jobs:
   normalize:
-    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'M0rdr3x/BenoitCantin' && github.ref == 'refs/heads/nova-a1-reference-documents' }}
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      changed: ${{ steps.patch.outputs.changed }}
+      patch_b64: ${{ steps.patch.outputs.patch_b64 }}
     steps:
-      - name: Récupérer le dépôt
-        uses: actions/checkout@v6
+      - name: Récupérer le commit déclencheur sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          ref: nova-a1-reference-documents
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
       - name: Configurer Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
-          python-version: '3.12'
+          python-version: '3.12.14'
+
       - name: Normaliser les métadonnées Nova
-        run: python scripts/normalize_nova_seo.py
-      - name: Enregistrer les corrections
+        run: python3 scripts/normalize_nova_seo.py
+
+      - name: Préparer un correctif HTML borné
+        id: patch
+        shell: bash
         run: |
-          if git diff --quiet; then
-            echo "Aucun changement SEO nécessaire."
+          set -euo pipefail
+          mapfile -d '' -t changed_files < <(git diff --name-only -z)
+          if ((${#changed_files[@]} == 0)); then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            echo 'patch_b64=' >> "$GITHUB_OUTPUT"
             exit 0
           fi
+
+          if ((${#changed_files[@]} > 24)); then
+            echo "Trop de fichiers modifiés par la normalisation SEO: ${#changed_files[@]}" >&2
+            exit 1
+          fi
+
+          for path in "${changed_files[@]}"; do
+            case "$path" in
+              projets/projet-nova/*.html) ;;
+              *)
+                echo "Modification hors frontière Nova HTML interdite: $path" >&2
+                exit 1
+                ;;
+            esac
+            test -f "$path"
+            test ! -L "$path"
+          done
+
+          git diff --check
+          patch_b64="$(git diff --binary -- projets/projet-nova/*.html | base64 -w0)"
+          test -n "$patch_b64"
+          if ((${#patch_b64} > 900000)); then
+            echo 'Correctif SEO trop volumineux pour la frontière CI.' >&2
+            exit 1
+          fi
+
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
+          echo "patch_b64=$patch_b64" >> "$GITHUB_OUTPUT"
+
+  commit:
+    needs: normalize
+    if: ${{ needs.normalize.outputs.changed == 'true' && github.repository == 'M0rdr3x/BenoitCantin' && github.ref == 'refs/heads/nova-a1-reference-documents' }}
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer uniquement la branche cible pour l'écriture
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: nova-a1-reference-documents
+          persist-credentials: true
+
+      - name: Appliquer le correctif borné sans exécuter de code du dépôt
+        shell: bash
+        env:
+          NOVA_SEO_PATCH_B64: ${{ needs.normalize.outputs.patch_b64 }}
+        run: |
+          set -euo pipefail
+          test -n "$NOVA_SEO_PATCH_B64"
+          printf '%s' "$NOVA_SEO_PATCH_B64" | base64 --decode > /tmp/nova-seo.patch
+          git apply --check /tmp/nova-seo.patch
+          git apply /tmp/nova-seo.patch
+
+          mapfile -d '' -t changed_files < <(git diff --name-only -z)
+          test "${#changed_files[@]}" -gt 0
+          test "${#changed_files[@]}" -le 24
+          for path in "${changed_files[@]}"; do
+            case "$path" in
+              projets/projet-nova/*.html) ;;
+              *)
+                echo "Écriture hors frontière Nova HTML interdite: $path" >&2
+                exit 1
+                ;;
+            esac
+            test -f "$path"
+            test ! -L "$path"
+          done
+          git diff --check
+
+      - name: Enregistrer uniquement les corrections HTML Nova
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add projets/projet-nova/*.html
+          git add -- projets/projet-nova/*.html
+          if git diff --cached --quiet; then
+            echo 'Aucun changement SEO à enregistrer.'
+            exit 0
+          fi
           git commit -m "Projet Nova A1 — normalise les métadonnées SEO [seo-autofix]"
           git push origin HEAD:nova-a1-reference-documents
