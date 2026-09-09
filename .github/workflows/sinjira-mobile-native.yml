@@ -43,11 +43,10 @@ jobs:
         working-directory: .
         run: python3 scripts/validate_mobile_native_root_workflow_security.py
 
-      - name: Configurer Node.js
+      - name: Configurer Node.js sans cache implicite
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: '22.23.2'
-          cache: false
 
       - name: Installer les dépendances sans scripts de cycle de vie
         run: npm install --ignore-scripts --no-audit --no-fund
