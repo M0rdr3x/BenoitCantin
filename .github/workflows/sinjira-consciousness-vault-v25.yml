@@ -20,6 +20,7 @@ on:
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'scripts/validate_v25_production_deploy_workflow.py'
+      - 'scripts/validate_v25_production_verification_workflow_security.py'
       - 'scripts/validate_consciousness_vault_workflow_security.py'
       - '.github/workflows/sinjira-consciousness-vault-v25.yml'
       - '.github/workflows/sinjira-v25-production-deploy.yml'
@@ -42,6 +43,7 @@ on:
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'scripts/validate_v25_production_deploy_workflow.py'
+      - 'scripts/validate_v25_production_verification_workflow_security.py'
       - 'scripts/validate_consciousness_vault_workflow_security.py'
       - '.github/workflows/sinjira-consciousness-vault-v25.yml'
       - '.github/workflows/sinjira-v25-production-deploy.yml'
@@ -70,6 +72,12 @@ jobs:
 
       - name: Vérifier le contrat CI du Coffre des consciences
         run: python3 scripts/validate_consciousness_vault_workflow_security.py
+
+      - name: Auto-tester le vérificateur production V25 en lecture seule
+        run: python3 scripts/validate_v25_production_verification_workflow_security.py --self-test
+
+      - name: Vérifier le contrat du vérificateur production V25
+        run: python3 scripts/validate_v25_production_verification_workflow_security.py
 
       - name: Vérifier les contrats de sécurité du coffre
         shell: bash
