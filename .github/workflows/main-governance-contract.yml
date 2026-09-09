@@ -30,8 +30,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
       - name: Auto-tester les invariants de gouvernance
-        run: python scripts/validate_main_governance_contract.py --self-test
+        run: python3 scripts/validate_main_governance_contract.py --self-test
 
       - name: Vérifier le contrat de gouvernance main
-        run: python scripts/validate_main_governance_contract.py
+        run: python3 scripts/validate_main_governance_contract.py
