@@ -61,7 +61,7 @@ def run_self_tests(text: str) -> None:
         'secret ajouté': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-24.04\n    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}', 1),
         'runner mobile': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1),
         'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
-        'auto-test retiré': text.replace('      - name: Auto-tester le contrat du garde secrets\n        run: python scripts/validate_secret_guard_workflow_security.py --self-test\n\n', '', 1),
+        'auto-test retiré': text.replace('        run: python scripts/validate_secret_guard_workflow_security.py --self-test\n', '', 1),
     }
     for name, mutated in cases.items():
         if not validate_text(mutated):
