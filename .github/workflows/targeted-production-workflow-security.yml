@@ -1,0 +1,44 @@
+name: Sécurité — workflows production ciblés
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/sinjira-v25-production-deploy.yml'
+      - '.github/workflows/sinjira-v25-employment-production.yml'
+      - '.github/workflows/sinjira-v25-personal-ai-production-readiness.yml'
+      - '.github/workflows/sinjira-v25-auth-password-hardening.yml'
+      - '.github/workflows/targeted-production-workflow-security.yml'
+      - 'scripts/validate_targeted_production_workflow_security.py'
+      - 'scripts/test_targeted_production_workflow_security.py'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/sinjira-v25-production-deploy.yml'
+      - '.github/workflows/sinjira-v25-employment-production.yml'
+      - '.github/workflows/sinjira-v25-personal-ai-production-readiness.yml'
+      - '.github/workflows/sinjira-v25-auth-password-hardening.yml'
+      - '.github/workflows/targeted-production-workflow-security.yml'
+      - 'scripts/validate_targeted_production_workflow_security.py'
+      - 'scripts/test_targeted_production_workflow_security.py'
+
+permissions:
+  contents: read
+
+jobs:
+  security-contract:
+    name: Portée des secrets et actions immuables
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6 vérifié le 2026-09-08
+        with:
+          persist-credentials: false
+
+      - name: Valider les frontières production ciblées
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_targeted_production_workflow_security.py
+          python3 scripts/test_targeted_production_workflow_security.py
