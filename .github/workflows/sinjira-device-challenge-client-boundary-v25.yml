@@ -9,6 +9,19 @@ on:
       - 'mobile-native/App.tsx'
       - 'mobile-native/package.json'
       - 'scripts/validate_device_challenge_client_boundary.py'
+      - 'scripts/validate_device_challenge_client_boundary_workflow_security.py'
+      - 'scripts/validate_device_challenge_continuity_smoke.py'
+      - 'scripts/validate_no_committed_secrets.py'
+      - '.github/workflows/sinjira-device-challenge-client-boundary-v25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
+      - 'compte/securite.html'
+      - 'mobile-native/App.tsx'
+      - 'mobile-native/package.json'
+      - 'scripts/validate_device_challenge_client_boundary.py'
+      - 'scripts/validate_device_challenge_client_boundary_workflow_security.py'
       - 'scripts/validate_device_challenge_continuity_smoke.py'
       - 'scripts/validate_no_committed_secrets.py'
       - '.github/workflows/sinjira-device-challenge-client-boundary-v25.yml'
@@ -19,13 +32,24 @@ permissions:
 
 jobs:
   client-boundary:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat CI frontière client appareils
+        run: python scripts/validate_device_challenge_client_boundary_workflow_security.py --self-test
+
+      - name: Vérifier le contrat CI frontière client appareils
+        run: python scripts/validate_device_challenge_client_boundary_workflow_security.py
 
       - name: Verrouiller la frontière client multi-appareils
         run: |
