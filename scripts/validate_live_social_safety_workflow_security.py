@@ -12,6 +12,7 @@ SETUP_PYTHON = 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1'
 SETUP_CLI = 'supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf'
 SELF_TEST = 'python scripts/validate_live_social_safety_workflow_security.py --self-test'
 SELF_CHECK = 'python scripts/validate_live_social_safety_workflow_security.py'
+SELF_CHECK_LINE = f'        run: {SELF_CHECK}\n'
 
 TRIGGER_PATHS = (
     "'supabase/production-migration-ledger.txt'",
@@ -115,7 +116,7 @@ def validate_text(text: str) -> None:
 
     if SELF_TEST not in text:
         fail('auto-test du contrat CI absent')
-    if f'run: {SELF_CHECK}' not in text:
+    if SELF_CHECK_LINE not in text:
         fail('validation réelle du contrat CI absente')
     for marker in STATIC_CHECKS:
         if marker not in text:
@@ -129,11 +130,11 @@ def validate_text(text: str) -> None:
     if 'if: always()' not in text or 'run: supabase stop --no-backup || true' not in text:
         fail('arrêt Supabase local always absent')
 
+    static_index = text.index(STATIC_CHECKS[0])
     start_index = text.index('run: supabase start')
     first_test = min(text.index(marker) for marker in PGTAP_CHECKS)
     last_test = max(text.index(marker) for marker in PGTAP_CHECKS)
     stop_index = text.index('run: supabase stop --no-backup || true')
-    static_index = text.index(STATIC_CHECKS[0])
     if not static_index < start_index < first_test <= last_test < stop_index:
         fail('ordre statique -> start -> pgTAP -> stop non respecté')
 
@@ -164,8 +165,8 @@ def mutations(text: str):
     yield 'chemin ledger retiré', text.replace("      - 'supabase/production-migration-ledger.txt'\n", '', 2)
     yield 'chemin advisor retiré', text.replace("      - 'supabase/tests/security_advisor_contract_v24_5_24.test.sql'\n", '', 2)
     yield 'chemin contrat retiré', text.replace("      - 'scripts/validate_live_social_safety_workflow_security.py'\n", '', 2)
-    yield 'auto-test retiré', text.replace(f'run: {SELF_TEST}', 'run: echo auto-test-retire', 1)
-    yield 'contrat réel retiré', text.replace(f'run: {SELF_CHECK}\n', 'run: echo contrat-retire\n', 1)
+    yield 'auto-test retiré', text.replace(f'        run: {SELF_TEST}\n', '        run: echo auto-test-retire\n', 1)
+    yield 'contrat réel retiré', text.replace(SELF_CHECK_LINE, '        run: echo contrat-retire\n', 1)
     yield 'validateur sécurité retiré', text.replace('python scripts/validate_live_social_safety_v25.py', 'echo safety-retire', 1)
     yield 'pgTAP modération retiré', text.replace(PGTAP_CHECKS[0], 'echo moderation-retire', 1)
     yield 'pgTAP advisor retiré', text.replace(PGTAP_CHECKS[-1], 'echo advisor-retire', 1)
