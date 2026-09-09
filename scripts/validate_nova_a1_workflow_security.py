@@ -13,6 +13,8 @@ SETUP_PYTHON = 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1'
 PYTHON_VERSION = '3.12.14'
 SELF_TEST = 'python3 scripts/validate_nova_a1_workflow_security.py --self-test'
 SELF_CHECK = 'python3 scripts/validate_nova_a1_workflow_security.py'
+SEO_SELF_TEST = 'python3 scripts/validate_nova_seo_workflow_security.py --self-test'
+SEO_CHECK = 'python3 scripts/validate_nova_seo_workflow_security.py'
 PROJECT_CHECK = 'python3 scripts/check_nova_a1.py'
 
 
@@ -40,8 +42,11 @@ def validate_text(text: str) -> None:
     for path in (
         "      - 'projets/projet-nova/**'",
         "      - 'scripts/check_nova_a1.py'",
+        "      - 'scripts/normalize_nova_seo.py'",
         "      - 'scripts/validate_nova_a1_workflow_security.py'",
+        "      - 'scripts/validate_nova_seo_workflow_security.py'",
         "      - '.github/workflows/nova-a1.yml'",
+        "      - '.github/workflows/nova-seo-normalize.yml'",
     ):
         require(text.count(path) >= 2, f'Le chemin doit couvrir PR et push: {path.strip()}')
 
@@ -85,12 +90,22 @@ def validate_text(text: str) -> None:
     found = [marker for marker in forbidden if marker in active]
     require(not found, f'Surface distante, écriture ou contournement interdit: {found}')
 
-    for command in (SELF_TEST, SELF_CHECK, PROJECT_CHECK):
+    commands = (SELF_TEST, SELF_CHECK, SEO_SELF_TEST, SEO_CHECK, PROJECT_CHECK)
+    for command in commands:
         require(command in text, f'Commande attendue absente: {command}')
 
-    positions = [text.find(SELF_TEST), text.find(SELF_CHECK + '\n'), text.find(PROJECT_CHECK)]
+    positions = [
+        text.find(SELF_TEST),
+        text.find(SELF_CHECK + '\n'),
+        text.find(SEO_SELF_TEST),
+        text.find(SEO_CHECK + '\n'),
+        text.find(PROJECT_CHECK),
+    ]
     require(min(positions) >= 0, 'Ordre des validations impossible à établir.')
-    require(positions == sorted(positions), 'Ordre attendu: auto-test, contrat CI, validation Projet Nova.')
+    require(
+        positions == sorted(positions),
+        'Ordre attendu: auto-test Nova, contrat Nova, auto-test SEO, contrat SEO, validation Projet Nova.',
+    )
 
 
 def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
@@ -108,11 +123,16 @@ def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
         ('push Git', text.replace(PROJECT_CHECK, PROJECT_CHECK + '\n      - run: git push origin HEAD:main', 1)),
         ('continue-on-error', text.replace(PROJECT_CHECK, PROJECT_CHECK + '\n        continue-on-error: true', 1)),
         ('set -x', text.replace(PROJECT_CHECK, PROJECT_CHECK + '\n      - run: set -x', 1)),
-        ('chemin validateur PR/push supprimé', text.replace("      - 'scripts/validate_nova_a1_workflow_security.py'\n", '', 1)),
+        ('chemin validateur Nova supprimé', text.replace("      - 'scripts/validate_nova_a1_workflow_security.py'\n", '', 1)),
         ('chemin projet supprimé', text.replace("      - 'projets/projet-nova/**'\n", '', 1)),
-        ('auto-test retiré', text.replace(f'        run: {SELF_TEST}\n', '', 1)),
-        ('contrat retiré', text.replace(f'        run: {SELF_CHECK}\n', '', 1)),
+        ('auto-test Nova retiré', text.replace(f'        run: {SELF_TEST}\n', '', 1)),
+        ('contrat Nova retiré', text.replace(f'        run: {SELF_CHECK}\n', '', 1)),
         ('validation projet retirée', text.replace(f'        run: {PROJECT_CHECK}\n', '', 1)),
+        ('chemin normaliseur SEO supprimé', text.replace("      - 'scripts/normalize_nova_seo.py'\n", '', 1)),
+        ('chemin validateur SEO supprimé', text.replace("      - 'scripts/validate_nova_seo_workflow_security.py'\n", '', 1)),
+        ('chemin workflow SEO supprimé', text.replace("      - '.github/workflows/nova-seo-normalize.yml'\n", '', 1)),
+        ('auto-test SEO retiré', text.replace(f'        run: {SEO_SELF_TEST}\n', '', 1)),
+        ('contrat SEO retiré', text.replace(f'        run: {SEO_CHECK}\n', '', 1)),
     )
 
 
@@ -138,7 +158,7 @@ def main() -> int:
     validate_text(text)
     print(
         'OK Projet Nova A1: runner/Python/actions immuables, credentials Git non persistés, '
-        'permissions lecture seule et aucune opération distante ou production.'
+        'permissions lecture seule, contrat SEO chaîné et aucune opération distante ou production.'
     )
     return 0
 
