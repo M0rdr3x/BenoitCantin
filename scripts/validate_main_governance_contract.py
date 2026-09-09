@@ -9,6 +9,10 @@ CONTRACT_WORKFLOW = ROOT / '.github' / 'workflows' / 'main-governance-contract.y
 README = ROOT / 'README.md'
 GITHUB_SCRIPT_SHA = 'ed597411d8f924073f98dfc5c65a23a2325f34cd'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
+SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
+RUNNER = 'ubuntu-24.04'
+PYTHON_VERSION = '3.12.14'
+TIMEOUT_MINUTES = 5
 
 
 def require(errors, condition, message):
@@ -36,6 +40,14 @@ def validate_immutable_actions(errors, text, label):
         )
 
 
+def validate_common_local_ci(errors, text, label):
+    lower = text.lower()
+    require(errors, 'secrets.' not in text, f'{label}: secret GitHub interdit')
+    require(errors, 'environment: production' not in lower, f'{label}: environnement production interdit')
+    require(errors, 'continue-on-error: true' not in lower, f'{label}: continue-on-error=true interdit')
+    require(errors, 'continue-on-error:true' not in lower, f'{label}: continue-on-error=true interdit')
+
+
 def validate_governance_text(text):
     errors = []
     lower = text.lower()
@@ -49,17 +61,29 @@ def validate_governance_text(text):
     for forbidden in ('paths:', 'paths-ignore:', 'branches-ignore:'):
         require(errors, forbidden not in lower, f'filtre de déclenchement interdit: {forbidden}')
 
+    require(errors, f'runs-on: {RUNNER}' in text, f'workflow gouvernance main: runner doit rester {RUNNER}')
+    require(
+        errors,
+        f'timeout-minutes: {TIMEOUT_MINUTES}' in text,
+        f'workflow gouvernance main: timeout doit rester {TIMEOUT_MINUTES} minutes',
+    )
     require(errors, re.search(r'(?m)^permissions:\s*$', text) is not None, 'permissions explicites absentes')
     require(errors, re.search(r'(?m)^\s{2}contents:\s*read\s*$', text) is not None, 'contents doit rester en lecture seule')
     require(errors, re.search(r'(?m)^\s{2}pull-requests:\s*read\s*$', text) is not None, 'pull-requests doit rester en lecture seule')
     require(errors, re.search(r'(?im)^\s*[a-z0-9_-]+:\s*write\s*$', text) is None, 'permission write interdite dans le workflow de détection')
 
+    expected_action = f'actions/github-script@{GITHUB_SCRIPT_SHA}'
     require(
         errors,
-        f'uses: actions/github-script@{GITHUB_SCRIPT_SHA}' in text,
+        f'uses: {expected_action}' in text,
         'actions/github-script doit rester épinglé au SHA vérifié',
     )
     validate_immutable_actions(errors, text, 'workflow gouvernance main')
+    require(
+        errors,
+        action_targets(text) == [expected_action],
+        'workflow gouvernance main: exactement github-script est autorisé comme action réutilisable',
+    )
 
     for marker, message in (
         ('repos.listPullRequestsAssociatedWithCommit', 'association commit → PR non vérifiée'),
@@ -69,12 +93,11 @@ def validate_governance_text(text):
         ('core.setFailed(', 'un push direct doit faire échouer le job'),
         ("process.env.GITHUB_REF_PROTECTED === 'true'", 'état serveur GITHUB_REF_PROTECTED non contrôlé'),
         ("core.warning('La branche main n’est pas protégée", 'alerte main non protégée absente'),
+        ('Cette alerte ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'la limite de preuve serveur doit rester explicite'),
     ):
         require(errors, marker in text, message)
 
-    for forbidden in ('continue-on-error: true', 'continue-on-error:true'):
-        require(errors, forbidden not in lower, 'le contrôle ne doit jamais être rendu non bloquant')
-
+    validate_common_local_ci(errors, text, 'workflow gouvernance main')
     return errors
 
 
@@ -109,37 +132,63 @@ def validate_contract_workflow(text):
     require(errors, re.search(r'(?m)^\s{2}pull_request:\s*$', text) is not None, 'le contrat doit tourner sur les PR vers main')
     require(errors, re.search(r'(?m)^\s{2}push:\s*$', text) is not None, 'le contrat doit aussi tourner après push sur main')
     require(errors, lower.count('branches: [main]') >= 2, 'PR et push doivent tous deux cibler main')
-    require(errors, lower.count("- 'readme.md'") >= 2, 'README.md doit déclencher le contrat sur PR et push main')
-    require(errors, 'python scripts/validate_main_governance_contract.py --self-test' in text, 'auto-tests du validateur absents')
-    require(errors, 'python scripts/validate_main_governance_contract.py' in text, 'validation du workflow réel absente')
-    require(errors, re.search(r'(?m)^\s{2}contents:\s*read\s*$', text) is not None, 'workflow contrat: contents doit être read')
-    require(errors, re.search(r'(?im)^\s*[a-z0-9_-]+:\s*write\s*$', text) is None, 'workflow contrat: permission write interdite')
+    for path in (
+        'README.md',
+        '.github/workflows/main-governance.yml',
+        '.github/workflows/main-governance-contract.yml',
+        'scripts/validate_main_governance_contract.py',
+    ):
+        require(errors, text.count(f"      - '{path}'") >= 2, f'workflow contrat: {path} doit déclencher PR et push main')
+
+    require(errors, f'runs-on: {RUNNER}' in text, f'workflow contrat: runner doit rester {RUNNER}')
     require(
         errors,
-        f'uses: actions/checkout@{CHECKOUT_SHA}' in text,
-        'workflow contrat: actions/checkout doit rester épinglé au SHA vérifié',
+        f'timeout-minutes: {TIMEOUT_MINUTES}' in text,
+        f'workflow contrat: timeout doit rester {TIMEOUT_MINUTES} minutes',
     )
+    require(errors, 'python3 scripts/validate_main_governance_contract.py --self-test' in text, 'auto-tests du validateur absents')
+    require(errors, 'python3 scripts/validate_main_governance_contract.py' in text, 'validation du workflow réel absente')
+    require(errors, re.search(r'(?m)^\s{2}contents:\s*read\s*$', text) is not None, 'workflow contrat: contents doit être read')
+    require(errors, re.search(r'(?im)^\s*[a-z0-9_-]+:\s*write\s*$', text) is None, 'workflow contrat: permission write interdite')
+
+    checkout = f'actions/checkout@{CHECKOUT_SHA}'
+    setup_python = f'actions/setup-python@{SETUP_PYTHON_SHA}'
+    require(errors, f'uses: {checkout}' in text, 'workflow contrat: actions/checkout doit rester épinglé au SHA vérifié')
     require(errors, 'persist-credentials: false' in text, 'workflow contrat: credentials Git ne doivent pas être persistés')
     require(errors, 'persist-credentials: true' not in text, 'workflow contrat: persist-credentials=true interdit')
+    require(errors, f'uses: {setup_python}' in text, 'workflow contrat: actions/setup-python doit rester épinglé au SHA vérifié')
+    require(errors, f"python-version: '{PYTHON_VERSION}'" in text, f'workflow contrat: Python doit rester {PYTHON_VERSION}')
     validate_immutable_actions(errors, text, 'workflow contrat gouvernance main')
+    require(
+        errors,
+        action_targets(text) == [checkout, setup_python],
+        'workflow contrat: seules checkout et setup-python sont autorisées comme actions réutilisables',
+    )
+    validate_common_local_ci(errors, text, 'workflow contrat gouvernance main')
     return errors
+
+
+def assert_mutation_changed(label, original, mutated):
+    if original == mutated:
+        raise SystemExit(f'ERREUR auto-test gouvernance main: mutation inopérante: {label}')
 
 
 def run_self_tests(governance, readme, contract):
     governance_cases = {
         'sans push main': governance.replace('  push:\n    branches: [main]\n', ''),
         'avec filtre paths': governance.replace('    branches: [main]\n', '    branches: [main]\n    paths: ["scripts/**"]\n', 1),
+        'runner mobile': governance.replace(f'runs-on: {RUNNER}', 'runs-on: ubuntu-latest', 1),
+        'timeout retiré': governance.replace(f'    timeout-minutes: {TIMEOUT_MINUTES}\n', '', 1),
         'sans échec': governance.replace('core.setFailed(', 'core.info(', 1),
         'PR non fusionnée': governance.replace("pr.merged_at && pr.base?.ref === 'main'", "pr.base?.ref === 'main'", 1),
         'permission écriture': governance.replace('contents: read', 'contents: write', 1),
         'contrôle protection retiré': governance.replace("process.env.GITHUB_REF_PROTECTED === 'true'", "'true' === 'true'", 1),
-        'github-script mobile': governance.replace(
-            f'actions/github-script@{GITHUB_SCRIPT_SHA}',
-            'actions/github-script@v8',
-            1,
-        ),
+        'limite preuve serveur retirée': governance.replace('Cette alerte ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'Protection serveur confirmée.', 1),
+        'github-script mobile': governance.replace(f'actions/github-script@{GITHUB_SCRIPT_SHA}', 'actions/github-script@v8', 1),
+        'secret injecté': governance.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n    steps:\n', 1),
     }
     for name, mutated in governance_cases.items():
+        assert_mutation_changed(name, governance, mutated)
         if not validate_governance_text(mutated):
             raise SystemExit(f'ERREUR auto-test gouvernance main: mutation non détectée: {name}')
 
@@ -154,19 +203,22 @@ def run_self_tests(governance, readme, contract):
         'préférence seulement': readme.replace('non une simple préférence', 'une simple préférence', 1),
     }
     for name, mutated in principle_cases.items():
+        assert_mutation_changed(name, readme, mutated)
         if not validate_project_principles(mutated):
             raise SystemExit(f'ERREUR auto-test principes obligatoires: mutation non détectée: {name}')
 
     contract_cases = {
-        'checkout mobile': contract.replace(
-            f'actions/checkout@{CHECKOUT_SHA}',
-            'actions/checkout@v6',
-            1,
-        ),
+        'runner mobile contrat': contract.replace(f'runs-on: {RUNNER}', 'runs-on: ubuntu-latest', 1),
+        'timeout contrat retiré': contract.replace(f'    timeout-minutes: {TIMEOUT_MINUTES}\n', '', 1),
+        'checkout mobile': contract.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
+        'setup-python mobile': contract.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
+        'python non figé': contract.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
         'credentials persistés': contract.replace('persist-credentials: false', 'persist-credentials: true', 1),
         'permission écriture contrat': contract.replace('contents: read', 'contents: write', 1),
+        'secret contrat injecté': contract.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n    steps:\n', 1),
     }
     for name, mutated in contract_cases.items():
+        assert_mutation_changed(name, contract, mutated)
         if not validate_contract_workflow(mutated):
             raise SystemExit(f'ERREUR auto-test contrat gouvernance main: mutation non détectée: {name}')
 
@@ -200,7 +252,11 @@ def main():
             print(f'ERREUR contrat gouvernance main: {error}')
         return 1
 
-    print('OK contrat gouvernance main: pushes main surveillés, principes obligatoires conservés, permissions lecture seule, actions immuables et alerte protection serveur conservées.')
+    print(
+        'OK contrat gouvernance main: détection locale des pushes main, principes obligatoires, '
+        'runtimes/actions immuables et alerte GITHUB_REF_PROTECTED conservés; '
+        'ce contrat ne prouve pas la protection serveur de main.'
+    )
     return 0
 
 
