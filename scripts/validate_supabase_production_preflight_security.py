@@ -13,6 +13,8 @@ BUILD_WORKSPACE = "- name: Construire le workspace production protégé"
 INSTALL_CLI = "- name: Installer Supabase CLI"
 VERIFY_CLI = "- name: Vérifier Supabase CLI"
 
+SUPABASE_SETUP_CLI_SHA = "3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf"
+SUPABASE_SETUP_CLI_USE = f"uses: supabase/setup-cli@{SUPABASE_SETUP_CLI_SHA}"
 MANUAL_ONLY_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' }}"
 MANUAL_AUTH_GUARD = MANUAL_ONLY_GUARD
 REMOTE_PREFLIGHT_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}"
@@ -115,6 +117,11 @@ def validate_text(text: str) -> list[str]:
     install_cli_block = step_block(text, "Installer Supabase CLI")
     if MANUAL_ONLY_GUARD not in install_cli_block:
         errors.append("L'installation Supabase CLI doit être réservée à workflow_dispatch manuel.")
+    if SUPABASE_SETUP_CLI_USE not in install_cli_block:
+        errors.append(
+            "L'action supabase/setup-cli doit être épinglée au SHA vérifié "
+            f"{SUPABASE_SETUP_CLI_SHA}, jamais à une branche ou un tag mobile."
+        )
 
     verify_cli_block = step_block(text, "Vérifier Supabase CLI")
     if MANUAL_ONLY_GUARD not in verify_cli_block:
@@ -193,6 +200,7 @@ def main() -> int:
     print("- aucun secret au niveau du job")
     print("- PR/push strictement locaux, sans secrets production ni Supabase CLI")
     print("- installation/vérification Supabase CLI réservées à workflow_dispatch")
+    print(f"- supabase/setup-cli épinglé au SHA vérifié {SUPABASE_SETUP_CLI_SHA}")
     print("- préflight distant réservé à workflow_dispatch")
     print("- écritures protégées par workflow_dispatch + apply=true + auth")
     return 0
