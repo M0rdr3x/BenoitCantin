@@ -20,6 +20,29 @@ on:
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'scripts/validate_v25_production_deploy_workflow.py'
+      - 'scripts/validate_consciousness_vault_workflow_security.py'
+      - '.github/workflows/sinjira-consciousness-vault-v25.yml'
+      - '.github/workflows/sinjira-v25-production-deploy.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/personal_consciousness_vault_v25.test.sql'
+      - 'supabase/functions/conscience-vault/**'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'supabase/config.toml'
+      - 'compte/registre-personnel.html'
+      - 'compte/index.html'
+      - 'compte/histoire-de-vie.html'
+      - 'assets/js/sinjira-consciousness-vault-v25.js'
+      - 'assets/css/sinjira-consciousness-vault-v25.css'
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
+      - 'scripts/validate_conscience_vault_edge_v25.py'
+      - 'scripts/validate_conscience_vault_web_v25.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_v25_production_deploy_workflow.py'
+      - 'scripts/validate_consciousness_vault_workflow_security.py'
       - '.github/workflows/sinjira-consciousness-vault-v25.yml'
       - '.github/workflows/sinjira-v25-production-deploy.yml'
   workflow_dispatch:
@@ -29,13 +52,24 @@ permissions:
 
 jobs:
   consciousness-vault-pgtap:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat CI du Coffre des consciences
+        run: python3 scripts/validate_consciousness_vault_workflow_security.py --self-test
+
+      - name: Vérifier le contrat CI du Coffre des consciences
+        run: python3 scripts/validate_consciousness_vault_workflow_security.py
 
       - name: Vérifier les contrats de sécurité du coffre
         shell: bash
@@ -48,7 +82,7 @@ jobs:
           python3 scripts/validate_v25_production_deploy_workflow.py
 
       - name: Installer Supabase CLI
-        uses: supabase/setup-cli@v2
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
         with:
           version: 2.111.0
           github-token: ${{ github.token }}
