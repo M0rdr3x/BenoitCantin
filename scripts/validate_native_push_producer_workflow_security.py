@@ -49,6 +49,10 @@ def active_text(text: str) -> str:
     return '\n'.join(line for line in text.splitlines() if not line.strip().startswith('#'))
 
 
+def run_line(command: str) -> str:
+    return f'        run: {command}\n'
+
+
 def validate_text(text: str) -> None:
     active = active_text(text)
     require('pull_request:\n    branches: [ main ]' in text, 'Les PR doivent rester ciblées vers main.')
@@ -71,9 +75,10 @@ def validate_text(text: str) -> None:
     require('cache:' not in active and 'cache-dependency-path:' not in active, 'Aucun cache package-manager n’est nécessaire pour ces tests sans installation.')
 
     commands = (SELF_TEST, SELF_CHECK, *HISTORICAL)
-    for command in commands:
-        require(f'run: {command}' in text, f'Commande de preuve absente: {command}')
-    positions = [text.find(f'run: {command}') for command in commands]
+    lines = [run_line(command) for command in commands]
+    for command, line in zip(commands, lines, strict=True):
+        require(line in text, f'Commande de preuve exacte absente: {command}')
+    positions = [text.find(line) for line in lines]
     require(min(positions) >= 0 and positions == sorted(positions), 'Ordre des preuves push natif modifié.')
 
     forbidden = (
@@ -110,13 +115,13 @@ def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
         ('push main retiré', text.replace('  push:\n    branches: [ main ]\n', '  push:\n    branches: [ mobile ]\n', 1)),
         ('chemin functions retiré', text.replace("      - 'supabase/functions/**'\n", '', 1)),
         ('chemin contrat retiré', text.replace("      - 'scripts/validate_native_push_producer_workflow_security.py'\n", '', 1)),
-        ('auto-test retiré', text.replace(f'        run: {SELF_TEST}\n', '', 1)),
-        ('contrat retiré', text.replace(f'        run: {SELF_CHECK}\n', '', 1)),
-        ('frontière retirée', text.replace(f'        run: {HISTORICAL[0]}\n', '', 1)),
-        ('background retiré', text.replace(f'        run: {HISTORICAL[1]}\n', '', 1)),
-        ('payload retiré', text.replace(f'        run: {HISTORICAL[2]}\n', '', 1)),
-        ('reçus retirés', text.replace(f'        run: {HISTORICAL[3]}\n', '', 1)),
-        ('réseau retiré', text.replace(f'        run: {HISTORICAL[4]}\n', '', 1)),
+        ('auto-test retiré', text.replace(run_line(SELF_TEST), '', 1)),
+        ('contrat retiré', text.replace(run_line(SELF_CHECK), '', 1)),
+        ('frontière retirée', text.replace(run_line(HISTORICAL[0]), '', 1)),
+        ('background retiré', text.replace(run_line(HISTORICAL[1]), '', 1)),
+        ('payload retiré', text.replace(run_line(HISTORICAL[2]), '', 1)),
+        ('reçus retirés', text.replace(run_line(HISTORICAL[3]), '', 1)),
+        ('réseau retiré', text.replace(run_line(HISTORICAL[4]), '', 1)),
     )
 
 
