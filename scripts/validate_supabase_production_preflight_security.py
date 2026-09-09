@@ -13,7 +13,13 @@ BUILD_WORKSPACE = "- name: Construire le workspace production protégé"
 INSTALL_CLI = "- name: Installer Supabase CLI"
 VERIFY_CLI = "- name: Vérifier Supabase CLI"
 
-SUPABASE_SETUP_CLI_SHA = "3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf"
+PINNED_ACTIONS = {
+    "actions/checkout": "d23441a48e516b6c34aea4fa41551a30e30af803",
+    "actions/setup-python": "ece7cb06caefa5fff74198d8649806c4678c61a1",
+    "supabase/setup-cli": "3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf",
+    "actions/upload-artifact": "ea165f8d65b6e75b540449e92b4886f43607fa02",
+}
+SUPABASE_SETUP_CLI_SHA = PINNED_ACTIONS["supabase/setup-cli"]
 SUPABASE_SETUP_CLI_USE = f"uses: supabase/setup-cli@{SUPABASE_SETUP_CLI_SHA}"
 MANUAL_ONLY_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' }}"
 MANUAL_AUTH_GUARD = MANUAL_ONLY_GUARD
@@ -79,6 +85,14 @@ def validate_text(text: str) -> list[str]:
         for secret in ("SUPABASE_ACCESS_TOKEN", "SUPABASE_DB_PASSWORD", "OPTIONAL_RESEND_API_KEY", "secrets."):
             if secret in job_env:
                 errors.append(f"Secret interdit au niveau jobs.sync.env: {secret}")
+
+    for action, sha in PINNED_ACTIONS.items():
+        expected = f"uses: {action}@{sha}"
+        if expected not in text:
+            errors.append(
+                f"L'action {action} doit être épinglée au SHA vérifié {sha}, "
+                "jamais à une branche ou un tag mobile."
+            )
 
     positions = {
         "validation locale": text.find(LOCAL_VALIDATE),
@@ -199,8 +213,8 @@ def main() -> int:
     print("- lot/ledger/workspace vérifiés avant Supabase CLI")
     print("- aucun secret au niveau du job")
     print("- PR/push strictement locaux, sans secrets production ni Supabase CLI")
+    print("- toutes les actions réutilisables du workflow production sont épinglées à des SHA vérifiés")
     print("- installation/vérification Supabase CLI réservées à workflow_dispatch")
-    print(f"- supabase/setup-cli épinglé au SHA vérifié {SUPABASE_SETUP_CLI_SHA}")
     print("- préflight distant réservé à workflow_dispatch")
     print("- écritures protégées par workflow_dispatch + apply=true + auth")
     return 0

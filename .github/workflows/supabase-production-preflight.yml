@@ -50,12 +50,12 @@ jobs:
       PROJECT_ID: gpvivleexywljowcqkru
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6 vérifié le 2026-09-08
         with:
           persist-credentials: false
 
       - name: Configurer Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6 vérifié le 2026-09-08
         with:
           python-version: '3.12'
 
@@ -195,7 +195,7 @@ jobs:
 
       - name: Publier l'historique distant comme artefact de prévol
         if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4 vérifié le 2026-09-08
         with:
           name: supabase-production-migrations-${{ github.run_id }}
           path: /tmp/supabase-production-migrations
