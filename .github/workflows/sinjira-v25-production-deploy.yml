@@ -24,7 +24,7 @@ env:
 jobs:
   verify-v25-consciousness-vault:
     name: Vérifier le coffre V25 en production
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     environment: production
 
@@ -55,11 +55,16 @@ jobs:
           }
 
       - name: Checkout de main
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6 vérifié le 2026-09-08
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           ref: main
           persist-credentials: false
           fetch-depth: 1
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
 
       - name: Vérifier les contrats statiques V25
         shell: bash
@@ -69,6 +74,7 @@ jobs:
           python3 scripts/validate_edge_function_inventory.py
           python3 scripts/validate_production_schema_manifest.py
           python3 scripts/validate_v25_production_deploy_workflow.py
+          python3 scripts/validate_v25_production_verification_workflow_security.py
 
       - name: Vérifier l'historique V25 en lecture seule
         shell: bash
@@ -134,7 +140,7 @@ jobs:
           PY
 
       - name: Installer Supabase CLI pour l'inventaire Edge
-        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # branche v2 vérifiée le 2026-09-08
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
         with:
           version: 2.111.0
           github-token: ${{ github.token }}
