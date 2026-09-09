@@ -10,6 +10,13 @@ WORKFLOW = ROOT / '.github/workflows/e2e-site.yml'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
 SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 SETUP_NODE_SHA = '249970729cb0ef3589644e2896645e5dc5ba9c38'
+PYTHON_VERSION = '3.12.14'
+NODE_VERSION = '22.23.2'
+LIGHTHOUSE_VERSION = '13.4.1'
+PLAYWRIGHT_IMAGE = (
+    'mcr.microsoft.com/playwright/python:v1.61.0-noble'
+    '@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69'
+)
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -43,6 +50,15 @@ def validate_text(text: str) -> list[str]:
     for target in targets:
         require(errors, re.search(r'@[0-9a-f]{40}$', target) is not None, f'référence d’action non immuable: {target}')
 
+    require(errors, text.count('runs-on: ubuntu-24.04') == 3, 'les trois jobs E2E doivent rester sur Ubuntu 24.04 explicite')
+    require(errors, 'runs-on: ubuntu-latest' not in text, 'ubuntu-latest est interdit pour les tests E2E reproductibles')
+    require(errors, f'image: {PLAYWRIGHT_IMAGE}' in text, 'l’image Playwright doit être épinglée au digest Microsoft vérifié')
+    require(errors, 'image: mcr.microsoft.com/playwright/python:v1.61.0-noble\n' not in text, 'le tag Playwright sans digest est interdit')
+    require(errors, text.count(f"python-version: '{PYTHON_VERSION}'") == 2, f'Python doit rester figé à {PYTHON_VERSION}')
+    require(errors, f"node-version: '{NODE_VERSION}'" in text, f'Node doit rester figé à {NODE_VERSION}')
+    require(errors, f'npx --yes lighthouse@{LIGHTHOUSE_VERSION} ' in text, f'Lighthouse doit rester figé à {LIGHTHOUSE_VERSION}')
+    require(errors, 'npx --yes lighthouse http' not in text, 'Lighthouse sans version explicite est interdit')
+
     require(errors, '  workflow-contract:\n' in text, 'job workflow-contract absent')
     require(errors, 'python3 scripts/validate_e2e_workflow_security.py --self-test' in text, 'auto-tests du contrat E2E absents')
     require(errors, 'python3 scripts/validate_e2e_workflow_security.py' in text, 'validation du contrat E2E absente')
@@ -61,6 +77,11 @@ def run_self_tests(text: str) -> None:
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
         'secret ajouté': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-24.04\n    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}', 1),
         'dépendance contrat retirée': text.replace('    needs: workflow-contract\n', '', 1),
+        'runner mobile': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1),
+        'image Playwright sans digest': text.replace(PLAYWRIGHT_IMAGE, 'mcr.microsoft.com/playwright/python:v1.61.0-noble', 1),
+        'Python non figé': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
+        'Node non figé': text.replace(f"node-version: '{NODE_VERSION}'", "node-version: '22'", 1),
+        'Lighthouse non figé': text.replace(f'lighthouse@{LIGHTHOUSE_VERSION}', 'lighthouse', 1),
     }
     for name, mutated in cases.items():
         if not validate_text(mutated):
@@ -83,7 +104,10 @@ def main() -> int:
         for error in errors:
             print(f'ERREUR sécurité E2E: {error}')
         return 1
-    print('OK sécurité E2E: actions immuables, credentials Git non persistés, aucun secret et contrat préalable obligatoire.')
+    print(
+        'OK sécurité E2E: actions immuables, credentials Git non persistés, aucun secret, '
+        'Ubuntu/Python/Node/Lighthouse figés et image Playwright épinglée au digest.'
+    )
     return 0
 
 
