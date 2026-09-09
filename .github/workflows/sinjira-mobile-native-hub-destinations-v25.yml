@@ -2,7 +2,7 @@ name: SINJIRA V25 — Destinations hubs natifs
 
 on:
   pull_request:
-    branches: [main]
+    branches: [ main ]
     paths:
       - 'compte/*.html'
       - 'mobile-native/App.tsx'
@@ -22,8 +22,21 @@ on:
       - 'scripts/validate_mobile_safe_share_v25.py'
       - 'scripts/validate_device_challenge_client_boundary.py'
       - 'scripts/validate_no_committed_secrets.py'
+      - 'scripts/validate_mobile_hub_destinations_workflow_security.py'
       - '.github/workflows/sinjira-mobile-native-hub-destinations-v25.yml'
       - '.github/workflows/sinjira-mobile-native-route-dispatch-v25.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'compte/*.html'
+      - 'mobile-native/**'
+      - 'scripts/validate_mobile_native_*.py'
+      - 'scripts/validate_mobile_navigation_boundary_v25.py'
+      - 'scripts/validate_mobile_safe_share_v25.py'
+      - 'scripts/validate_device_challenge_client_boundary.py'
+      - 'scripts/validate_no_committed_secrets.py'
+      - 'scripts/validate_mobile_hub_destinations_workflow_security.py'
+      - '.github/workflows/sinjira-mobile-native-*.yml'
   workflow_dispatch:
 
 permissions:
@@ -31,13 +44,25 @@ permissions:
 
 jobs:
   native-hub-destinations:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Auto-tester le contrat CI des destinations des hubs natifs
+        run: python3 scripts/validate_mobile_hub_destinations_workflow_security.py --self-test
+
+      - name: Vérifier le contrat CI des destinations des hubs natifs
+        run: python3 scripts/validate_mobile_hub_destinations_workflow_security.py
 
       - name: Valider le contrat des destinations des hubs natifs V25
         run: python3 scripts/validate_mobile_native_hub_destinations_v25.py
@@ -63,12 +88,11 @@ jobs:
       - name: Revalider l'absence de secrets suivis
         run: python3 scripts/validate_no_committed_secrets.py
 
-      - name: Node.js
-        uses: actions/setup-node@v4
+      - name: Configurer Node.js sans cache implicite
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
-          node-version: '22.13.0'
-          cache: npm
-          cache-dependency-path: mobile-native/package.json
+          node-version: '22.23.2'
+          check-latest: false
 
       - name: Installer les dépendances sans scripts de cycle de vie
         working-directory: mobile-native
