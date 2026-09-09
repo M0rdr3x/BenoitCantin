@@ -11,6 +11,7 @@ on:
       - '.github/workflows/targeted-production-workflow-security.yml'
       - 'scripts/validate_targeted_production_workflow_security.py'
       - 'scripts/test_targeted_production_workflow_security.py'
+      - 'scripts/validate_targeted_production_ci_workflow_security.py'
   pull_request:
     branches: [ main ]
     paths:
@@ -21,6 +22,7 @@ on:
       - '.github/workflows/targeted-production-workflow-security.yml'
       - 'scripts/validate_targeted_production_workflow_security.py'
       - 'scripts/test_targeted_production_workflow_security.py'
+      - 'scripts/validate_targeted_production_ci_workflow_security.py'
 
 permissions:
   contents: read
@@ -28,13 +30,24 @@ permissions:
 jobs:
   security-contract:
     name: Portée des secrets et actions immuables
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6 vérifié le 2026-09-08
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le méta-garde production ciblé
+        run: python3 scripts/validate_targeted_production_ci_workflow_security.py --self-test
+
+      - name: Vérifier le méta-garde production ciblé
+        run: python3 scripts/validate_targeted_production_ci_workflow_security.py
 
       - name: Valider les frontières production ciblées
         shell: bash
