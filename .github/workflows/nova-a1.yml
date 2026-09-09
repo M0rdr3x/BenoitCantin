@@ -6,15 +6,21 @@ on:
     paths:
       - 'projets/projet-nova/**'
       - 'scripts/check_nova_a1.py'
+      - 'scripts/normalize_nova_seo.py'
       - 'scripts/validate_nova_a1_workflow_security.py'
+      - 'scripts/validate_nova_seo_workflow_security.py'
       - '.github/workflows/nova-a1.yml'
+      - '.github/workflows/nova-seo-normalize.yml'
   push:
     branches: [ main ]
     paths:
       - 'projets/projet-nova/**'
       - 'scripts/check_nova_a1.py'
+      - 'scripts/normalize_nova_seo.py'
       - 'scripts/validate_nova_a1_workflow_security.py'
+      - 'scripts/validate_nova_seo_workflow_security.py'
       - '.github/workflows/nova-a1.yml'
+      - '.github/workflows/nova-seo-normalize.yml'
   workflow_dispatch:
 
 permissions:
@@ -40,6 +46,12 @@ jobs:
 
       - name: Vérifier le contrat CI Projet Nova
         run: python3 scripts/validate_nova_a1_workflow_security.py
+
+      - name: Auto-tester la frontière d'écriture SEO Nova
+        run: python3 scripts/validate_nova_seo_workflow_security.py --self-test
+
+      - name: Vérifier la frontière d'écriture SEO Nova
+        run: python3 scripts/validate_nova_seo_workflow_security.py
 
       - name: Vérifier Projet Nova
         run: python3 scripts/check_nova_a1.py
