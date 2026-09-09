@@ -2,14 +2,16 @@ name: Validation mobile native SINJIRA
 
 on:
   pull_request:
+    branches: [ main ]
     paths:
       - 'mobile-native/**'
+      - 'scripts/validate_mobile_native_root_workflow_security.py'
       - '.github/workflows/sinjira-mobile-native.yml'
   push:
-    branches:
-      - main
+    branches: [ main ]
     paths:
       - 'mobile-native/**'
+      - 'scripts/validate_mobile_native_root_workflow_security.py'
       - '.github/workflows/sinjira-mobile-native.yml'
 
 permissions:
@@ -17,24 +19,38 @@ permissions:
 
 jobs:
   typecheck:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     defaults:
       run:
         working-directory: mobile-native
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Node.js
-        uses: actions/setup-node@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          node-version: '22.13.0'
-          cache: npm
-          cache-dependency-path: mobile-native/package.json
+          persist-credentials: false
 
-      - name: Installer les dépendances
-        run: npm install --no-audit --no-fund
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat CI mobile natif
+        working-directory: .
+        run: python3 scripts/validate_mobile_native_root_workflow_security.py --self-test
+
+      - name: Vérifier le contrat CI mobile natif
+        working-directory: .
+        run: python3 scripts/validate_mobile_native_root_workflow_security.py
+
+      - name: Configurer Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          cache: false
+
+      - name: Installer les dépendances sans scripts de cycle de vie
+        run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Vérifier le contrat mobile V25 sensible
         run: npm run validate:vault
