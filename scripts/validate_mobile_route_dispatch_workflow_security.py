@@ -47,6 +47,7 @@ VALIDATORS = (
 INSTALL = 'npm install --ignore-scripts --no-audit --no-fund'
 VAULT = 'npm run validate:vault'
 TYPECHECK = 'npm run typecheck'
+GUARD_PATH = "      - 'scripts/validate_mobile_route_dispatch_workflow_security.py'"
 PUSH_PATHS = (
     "      - 'compte/*.html'",
     "      - 'mobile-native/**'",
@@ -55,7 +56,7 @@ PUSH_PATHS = (
     "      - 'scripts/validate_mobile_safe_share_v25.py'",
     "      - 'scripts/validate_device_challenge_client_boundary.py'",
     "      - 'scripts/validate_no_committed_secrets.py'",
-    "      - 'scripts/validate_mobile_route_dispatch_workflow_security.py'",
+    GUARD_PATH,
     "      - '.github/workflows/sinjira-mobile-native-*.yml'",
 )
 
@@ -82,7 +83,7 @@ def validate_text(text: str) -> None:
     require('pull_request:\n    branches: [ main ]' in text, 'Les PR doivent rester ciblées vers main.')
     require('push:\n    branches: [ main ]' in text, 'Le push main doit rester couvert tant que #135 n’est pas prouvé.')
     require('workflow_dispatch:' in text, 'Le déclenchement manuel historique doit rester disponible.')
-    require("      - 'scripts/validate_mobile_route_dispatch_workflow_security.py'" in text, 'Le garde CI doit déclencher sa propre PR.')
+    require(text.count(GUARD_PATH) == 2, 'Le garde CI doit déclencher PR et push exactement une fois chacun.')
     for path in PUSH_PATHS:
         require(path in text, f'Frontière push main absente: {path.strip()}')
 
@@ -135,7 +136,7 @@ def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
         ('production injectée', text.replace('    timeout-minutes: 12\n', '    timeout-minutes: 12\n    environment: production\n', 1)),
         ('push main retiré', text.replace('  push:\n    branches: [ main ]\n', '  push:\n    branches: [ mobile ]\n', 1)),
         ('workflow dispatch retiré', text.replace('  workflow_dispatch:\n', '', 1)),
-        ('garde PR retiré', text.replace("      - 'scripts/validate_mobile_route_dispatch_workflow_security.py'\n", '', 1)),
+        ('garde PR retiré', text.replace(GUARD_PATH + '\n', '', 1)),
         ('push mobile retiré', text.replace("      - 'mobile-native/**'\n", '', 1)),
         ('push validateurs retiré', text.replace("      - 'scripts/validate_mobile_native_*.py'\n", '', 1)),
         ('push workflows retiré', text.replace("      - '.github/workflows/sinjira-mobile-native-*.yml'\n", '', 1)),
