@@ -7,6 +7,20 @@ on:
       - 'assets/js/sinjira-community-character.js'
       - 'CHARACTER_NETWORK_OWNER_PRIVACY_V25.md'
       - 'scripts/validate_character_network_owner_privacy_v25.py'
+      - 'scripts/validate_character_network_owner_privacy_workflow_security.py'
+      - 'scripts/validate_owner_role_invoker.py'
+      - 'scripts/validate_owner_character_rpc_v24_5_20.py'
+      - 'scripts/validate_character_identity_rls.py'
+      - 'scripts/validate_social_user_rpc_v24_5_15.py'
+      - 'scripts/validate_no_committed_secrets.py'
+      - '.github/workflows/sinjira-character-network-owner-privacy-v25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-community-character.js'
+      - 'CHARACTER_NETWORK_OWNER_PRIVACY_V25.md'
+      - 'scripts/validate_character_network_owner_privacy_v25.py'
+      - 'scripts/validate_character_network_owner_privacy_workflow_security.py'
       - 'scripts/validate_owner_role_invoker.py'
       - 'scripts/validate_owner_character_rpc_v24_5_20.py'
       - 'scripts/validate_character_identity_rls.py'
@@ -20,13 +34,24 @@ permissions:
 
 jobs:
   character-network-owner-privacy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat CI confidentialité Réseau personnage
+        run: python scripts/validate_character_network_owner_privacy_workflow_security.py --self-test
+
+      - name: Vérifier le contrat CI confidentialité Réseau personnage
+        run: python scripts/validate_character_network_owner_privacy_workflow_security.py
 
       - name: Valider la confidentialité du rôle propriétaire
         run: python3 scripts/validate_character_network_owner_privacy_v25.py
