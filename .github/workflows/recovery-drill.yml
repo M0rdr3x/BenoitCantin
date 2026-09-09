@@ -8,6 +8,8 @@ on:
       - 'supabase/tests/**'
       - 'supabase/config.toml'
       - '.github/workflows/recovery-drill.yml'
+      - 'scripts/validate_recovery_drill_security.py'
+      - 'scripts/test_recovery_drill_security.py'
   pull_request:
     branches: [ main ]
     types: [opened, synchronize, reopened, ready_for_review]
@@ -16,6 +18,8 @@ on:
       - 'supabase/tests/**'
       - 'supabase/config.toml'
       - '.github/workflows/recovery-drill.yml'
+      - 'scripts/validate_recovery_drill_security.py'
+      - 'scripts/test_recovery_drill_security.py'
   workflow_dispatch:
   schedule:
     - cron: '17 10 * * 1'
@@ -34,12 +38,21 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Récupérer le dépôt
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Vérifier le contrat de sécurité du recovery drill
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_recovery_drill_security.py
+          python3 scripts/test_recovery_drill_security.py
 
       - name: Installer Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
         with:
-          version: latest
+          version: 2.111.0
 
       - name: Vérifier la présence des contrats V25 server-only et performance
         shell: bash
