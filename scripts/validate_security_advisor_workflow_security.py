@@ -13,6 +13,10 @@ SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 PYTHON_VERSION = '3.12.14'
 CONTRACT_TRIGGER = "      - 'scripts/validate_security_advisor_workflow_security.py'"
 MIGRATION_TRIGGER = "      - 'supabase/migrations/**'"
+CONTRACT_STEP = (
+    '      - name: Vérifier le contrat CI advisor sécurité\n'
+    '        run: python scripts/validate_security_advisor_workflow_security.py\n'
+)
 
 
 def fail(message: str) -> None:
@@ -32,7 +36,7 @@ def validate_text(text: str) -> None:
         f'uses: actions/setup-python@{SETUP_PYTHON_SHA}',
         f"python-version: '{PYTHON_VERSION}'",
         'python scripts/validate_security_advisor_workflow_security.py --self-test',
-        'python scripts/validate_security_advisor_workflow_security.py',
+        CONTRACT_STEP,
         'python scripts/validate_security_advisor_contract_v24_5_24.py',
     ]
     for needle in required:
@@ -101,12 +105,7 @@ def self_test(text: str) -> None:
             '',
             1,
         ),
-        'contrat CI retiré': text.replace(
-            '      - name: Vérifier le contrat CI advisor sécurité\n'
-            '        run: python scripts/validate_security_advisor_workflow_security.py\n\n',
-            '',
-            1,
-        ),
+        'contrat CI retiré': text.replace(CONTRACT_STEP + '\n', '', 1),
         'validateur historique retiré': text.replace(
             '        run: python scripts/validate_security_advisor_contract_v24_5_24.py\n',
             '',
