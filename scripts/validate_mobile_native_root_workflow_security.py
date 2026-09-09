@@ -60,8 +60,7 @@ def validate_text(text: str) -> None:
     require('persist-credentials: false' in text, 'Les credentials Git ne doivent pas être persistés.')
     require("python-version: '3.12.14'" in text, 'Python doit rester figé à 3.12.14.')
     require("node-version: '22.23.2'" in text, 'Node doit rester figé à 22.23.2.')
-    require('cache: false' in text, 'Le cache setup-node doit rester désactivé tant qu’aucun lockfile revu n’est suivi.')
-    require('cache: npm' not in active, 'Le cache npm est interdit sans lockfile suivi.')
+    require('cache:' not in active, 'Aucune option cache setup-node ne doit être présente tant qu’aucun lockfile revu n’est suivi.')
     require('cache-dependency-path:' not in active, 'Aucun faux chemin de lockfile ne doit être configuré.')
 
     require(f'run: {SELF_TEST}' in text, 'L’auto-test du contrat CI est absent.')
@@ -113,6 +112,7 @@ def validate_repo_state() -> None:
 
 
 def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
+    node_version = "          node-version: '22.23.2'\n"
     return (
         ('runner mobile', text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1)),
         ('checkout mutable', text.replace(CHECKOUT, 'actions/checkout@v4', 1)),
@@ -122,8 +122,8 @@ def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
         ('Node large', text.replace("node-version: '22.23.2'", "node-version: '22'", 1)),
         ('credentials persistés', text.replace('persist-credentials: false', 'persist-credentials: true', 1)),
         ('permissions write', text.replace('contents: read', 'contents: write', 1)),
-        ('cache npm', text.replace('cache: false', 'cache: npm', 1)),
-        ('faux lockfile cache', text.replace('          cache: false\n', "          cache: npm\n          cache-dependency-path: mobile-native/package-lock.json\n", 1)),
+        ('cache npm ajouté', text.replace(node_version, node_version + '          cache: npm\n', 1)),
+        ('faux lockfile cache', text.replace(node_version, node_version + '          cache: npm\n          cache-dependency-path: mobile-native/package-lock.json\n', 1)),
         ('scripts npm réactivés', text.replace(INSTALL, 'npm install --no-audit --no-fund', 1)),
         ('timeout retiré', text.replace('    timeout-minutes: 10\n', '', 1)),
         ('secret injecté', text.replace('    steps:\n', '    steps:\n      - run: echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}"\n', 1)),
@@ -166,7 +166,7 @@ def main() -> int:
     validate_repo_state()
     print(
         'OK mobile natif racine: runner/Python/Node/actions immuables, Git en lecture seule, '
-        'scripts npm désactivés et aucun cache npm tant qu’un lockfile revu n’est pas suivi.'
+        'scripts npm désactivés et aucune configuration cache tant qu’un lockfile revu n’est pas suivi.'
     )
     return 0
 
