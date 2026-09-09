@@ -2,6 +2,7 @@ name: SINJIRA V24.5.23 — Profil privé modifiable
 
 on:
   pull_request:
+    branches: [main]
     paths:
       - 'compte/profil.html'
       - 'assets/js/sinjira-private-profile-v24-5-23.js'
@@ -10,9 +11,30 @@ on:
       - 'supabase/production-migration-ledger.txt'
       - 'supabase/tests/private_profile_editing_v24_5_23.test.sql'
       - 'scripts/validate_private_profile_editing_v24_5_23.py'
+      - 'scripts/validate_private_profile_workflow_security.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/validate_rls_helper_rpc_v24_5_22.py'
+      - 'scripts/validate_security_contract.py'
+      - 'scripts/validate_free_only_mode.py'
+      - 'PRIVATE_PROFILE_EDITING_V24_5_23.md'
+      - '.github/workflows/sinjira-private-profile-v24-5-23.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compte/profil.html'
+      - 'assets/js/sinjira-private-profile-v24-5-23.js'
+      - 'supabase/migrations/20260823035659_sinjira_v24_5_14_private_profile_editing.sql'
+      - 'supabase/migrations/20260823040936_sinjira_v24_5_23_private_profile_schema_convergence.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/tests/private_profile_editing_v24_5_23.test.sql'
+      - 'scripts/validate_private_profile_editing_v24_5_23.py'
+      - 'scripts/validate_private_profile_workflow_security.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_rls_helper_rpc_v24_5_22.py'
+      - 'scripts/validate_security_contract.py'
+      - 'scripts/validate_free_only_mode.py'
       - 'PRIVATE_PROFILE_EDITING_V24_5_23.md'
       - '.github/workflows/sinjira-private-profile-v24-5-23.yml'
   workflow_dispatch:
@@ -23,11 +45,24 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - name: Récupérer le dépôt
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          python-version: '3.12'
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat CI profil privé
+        run: python scripts/validate_private_profile_workflow_security.py --self-test
+
+      - name: Vérifier le contrat CI profil privé
+        run: python scripts/validate_private_profile_workflow_security.py
+
       - name: Contrat Profil privé V24.5.23
         run: python scripts/validate_private_profile_editing_v24_5_23.py
       - name: Manifeste schéma production
