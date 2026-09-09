@@ -15,6 +15,8 @@ on:
       - 'scripts/validate_production_schema_manifest.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
+      - 'scripts/validate_production_migration_workflow_security.py'
+      - 'scripts/test_production_migration_workflow_security.py'
       - '.github/workflows/supabase-production-preflight.yml'
       - '.github/workflows/supabase-production-safe.yml'
       - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
@@ -32,6 +34,8 @@ on:
       - 'scripts/validate_production_schema_manifest.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
+      - 'scripts/validate_production_migration_workflow_security.py'
+      - 'scripts/test_production_migration_workflow_security.py'
       - '.github/workflows/supabase-production-preflight.yml'
       - '.github/workflows/supabase-production-safe.yml'
       - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
@@ -47,10 +51,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
+      - name: Prouver l'intégrité des workflows de garde migrations
+        run: python scripts/test_production_migration_workflow_security.py
+      - name: Vérifier l'intégrité des workflows de garde migrations
+        run: python scripts/validate_production_migration_workflow_security.py
       - name: Prouver que le lot de migrations revu échoue en fermeture sûre
         run: python scripts/test_production_reviewed_migration_batch.py
       - name: Prouver le cloisonnement du préflight Supabase production
