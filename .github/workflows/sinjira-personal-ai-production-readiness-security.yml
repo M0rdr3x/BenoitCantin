@@ -1,0 +1,56 @@
+name: SINJIRA V25 — Contrat sécurité production-readiness Mon IA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-v25-personal-ai-production-readiness.yml'
+      - '.github/workflows/sinjira-personal-ai-production-readiness-security.yml'
+      - '.github/workflows/targeted-production-workflow-security.yml'
+      - 'scripts/validate_personal_ai_production_readiness_workflow_security.py'
+      - 'scripts/validate_targeted_production_workflow_security.py'
+      - 'scripts/validate_personal_ai_v25.py'
+      - 'scripts/validate_personal_ai_production_readiness.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'supabase/tests/personal_ai_v25.test.sql'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-v25-personal-ai-production-readiness.yml'
+      - '.github/workflows/sinjira-personal-ai-production-readiness-security.yml'
+      - '.github/workflows/targeted-production-workflow-security.yml'
+      - 'scripts/validate_personal_ai_production_readiness_workflow_security.py'
+      - 'scripts/validate_targeted_production_workflow_security.py'
+      - 'scripts/validate_personal_ai_v25.py'
+      - 'scripts/validate_personal_ai_production_readiness.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'supabase/tests/personal_ai_v25.test.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Auto-tester le contrat production-readiness Mon IA
+        run: python3 scripts/validate_personal_ai_production_readiness_workflow_security.py --self-test
+
+      - name: Vérifier le contrat production-readiness Mon IA
+        run: python3 scripts/validate_personal_ai_production_readiness_workflow_security.py
+
+      - name: Revalider les workflows production ciblés
+        run: python3 scripts/validate_targeted_production_workflow_security.py
