@@ -13,6 +13,8 @@ SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 PYTHON_VERSION = '3.12.14'
 CONTRACT_TRIGGER = "      - 'scripts/validate_device_challenge_client_boundary_workflow_security.py'"
 CLIENT_TRIGGER = "      - 'mobile-native/App.tsx'"
+REBIND_VALIDATOR_TRIGGER = "      - 'scripts/validate_device_trust_session_rebind.py'"
+REBIND_MIGRATION_TRIGGER = "      - 'supabase/migrations/20260910150000_sinjira_v25_device_trust_session_rebind_security_hardening.sql'"
 SELF_TEST_STEP = (
     '      - name: Auto-tester le contrat CI frontière client appareils\n'
     '        run: python scripts/validate_device_challenge_client_boundary_workflow_security.py --self-test\n'
@@ -23,6 +25,8 @@ CONTRACT_STEP = (
 )
 CLIENT_CHECK = '          python3 scripts/validate_device_challenge_client_boundary.py\n'
 SERVER_CHECK = '          python3 scripts/validate_device_challenge_continuity_smoke.py\n'
+REBIND_SELF_TEST = '          python3 scripts/validate_device_trust_session_rebind.py --self-test\n'
+REBIND_CHECK = '          python3 scripts/validate_device_trust_session_rebind.py\n'
 SECRET_CHECK = '          python3 scripts/validate_no_committed_secrets.py\n'
 
 
@@ -46,16 +50,22 @@ def validate_text(text: str) -> None:
         CONTRACT_STEP,
         CLIENT_CHECK,
         SERVER_CHECK,
+        REBIND_SELF_TEST,
+        REBIND_CHECK,
         SECRET_CHECK,
     ]
     for needle in required:
         if needle not in text:
             fail(f'élément obligatoire absent: {needle}')
 
-    if text.count(CONTRACT_TRIGGER) != 2:
-        fail('le contrat CI doit déclencher le workflow sur PR et push')
-    if text.count(CLIENT_TRIGGER) != 2:
-        fail('le client mobile doit déclencher le workflow sur PR et push')
+    for trigger, label in (
+        (CONTRACT_TRIGGER, 'contrat CI'),
+        (CLIENT_TRIGGER, 'client mobile'),
+        (REBIND_VALIDATOR_TRIGGER, 'validateur rebind'),
+        (REBIND_MIGRATION_TRIGGER, 'migration rebind'),
+    ):
+        if text.count(trigger) != 2:
+            fail(f'{label} doit déclencher le workflow sur PR et push')
 
     forbidden = [
         'ubuntu-latest',
@@ -120,10 +130,14 @@ def self_test(text: str) -> None:
         'push main retiré': text.replace('  push:\n    branches: [main]\n', '', 1),
         'déclencheur contrat retiré': text.replace(CONTRACT_TRIGGER + '\n', '', 1),
         'déclencheur mobile retiré': text.replace(CLIENT_TRIGGER + '\n', '', 1),
+        'déclencheur validateur rebind retiré': text.replace(REBIND_VALIDATOR_TRIGGER + '\n', '', 1),
+        'déclencheur migration rebind retiré': text.replace(REBIND_MIGRATION_TRIGGER + '\n', '', 1),
         'auto-test retiré': text.replace(SELF_TEST_STEP + '\n', '', 1),
         'contrat CI retiré': text.replace(CONTRACT_STEP + '\n', '', 1),
         'garde client retiré': text.replace(CLIENT_CHECK, '', 1),
         'garde serveur retiré': text.replace(SERVER_CHECK, '', 1),
+        'auto-test rebind retiré': text.replace(REBIND_SELF_TEST, '', 1),
+        'garde rebind retiré': text.replace(REBIND_CHECK, '', 1),
         'garde secrets retiré': text.replace(SECRET_CHECK, '', 1),
         'timeout modifié': text.replace('timeout-minutes: 5', 'timeout-minutes: 30', 1),
     }
