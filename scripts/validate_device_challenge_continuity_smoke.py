@@ -7,8 +7,10 @@ ROOT = Path(__file__).resolve().parents[1]
 SMOKE = ROOT / 'scripts' / 'smoke_device_challenge_continuity_local.py'
 HELPER = ROOT / 'scripts' / 'smoke_sensitive_aal2_local.py'
 MIGRATION = ROOT / 'supabase' / 'migrations' / '20260905163000_sinjira_v25_device_challenge_continuity_hardening.sql'
+SESSION_BINDING_MIGRATION = ROOT / 'supabase' / 'migrations' / '20260910193000_sinjira_v25_device_challenge_session_binding.sql'
 BOUNDARY = ROOT / 'supabase' / 'migrations' / '20260822201257_sinjira_v24_5_10_security_rpc_boundary.sql'
 PGTAP = ROOT / 'supabase' / 'tests' / 'device_challenge_continuity_v25.test.sql'
+SESSION_BINDING_PGTAP = ROOT / 'supabase' / 'tests' / 'device_challenge_session_binding_v25.test.sql'
 EDGE = ROOT / 'supabase' / 'functions' / 'conscience-vault' / 'index.ts'
 WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-device-challenge-continuity-v25.yml'
 
@@ -24,14 +26,19 @@ def require(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    for path in (SMOKE, HELPER, MIGRATION, BOUNDARY, PGTAP, EDGE, WORKFLOW):
+    for path in (
+        SMOKE, HELPER, MIGRATION, SESSION_BINDING_MIGRATION, BOUNDARY,
+        PGTAP, SESSION_BINDING_PGTAP, EDGE, WORKFLOW,
+    ):
         require(path.is_file(), f'fichier manquant: {path.relative_to(ROOT)}')
 
     smoke = SMOKE.read_text('utf-8')
     helper = HELPER.read_text('utf-8')
     migration = MIGRATION.read_text('utf-8')
+    session_binding_migration = SESSION_BINDING_MIGRATION.read_text('utf-8')
     boundary = BOUNDARY.read_text('utf-8')
     pgtap = PGTAP.read_text('utf-8')
+    session_binding_pgtap = SESSION_BINDING_PGTAP.read_text('utf-8')
     edge = EDGE.read_text('utf-8')
     workflow = WORKFLOW.read_text('utf-8')
 
@@ -87,7 +94,7 @@ def main() -> int:
     require('register_device(aal2_b2, DEVICE_B' not in smoke,
             'B2 ne doit pas dépendre d’un enregistrement client préalable pour fermer le rejeu')
 
-    # Durcissement SQL : implémentations internes uniquement, liées à la session courante.
+    # Durcissement SQL historique : implémentations internes uniquement, liées à la session courante.
     require('create or replace function sinjira_security_internal.security_resolve_connection_challenge(' in migration,
             'résolveur standard interne non durci')
     require('create or replace function sinjira_security_internal.security_resolve_connection_challenge_mfa(' in migration,
@@ -111,17 +118,40 @@ def main() -> int:
     require('grant execute on function sinjira_security_internal.security_resolve_connection_challenge' in migration,
             'grant interne nécessaire aux wrappers absent')
 
+    # Nouveau contrat session-aware : session serveur validée, challenge lié, anciens chemins fermés.
+    for marker in (
+        'request_session_id uuid references auth.sessions(id) on delete set null',
+        'create or replace function private.security_rebind_service_session(',
+        'from auth.sessions s',
+        'create or replace function private.security_challenge_request_session_guard()',
+        "new.status := 'expired'",
+        "raise exception 'CHALLENGE_SESSION_REQUIRED'",
+        "raise exception 'CHALLENGE_SESSION_MISMATCH'",
+        'create or replace function public.service_security_evaluate_context_session(',
+        'create or replace function public.service_conscience_evaluate_access_session(',
+        'and c.request_session_id=p_session_id',
+        'c.request_session_id=v_session',
+        'revoke execute on function public.service_conscience_evaluate_access(uuid,text,text,text,text,text,text)',
+    ):
+        require(marker in session_binding_migration, f'liaison SQL challenge/session manquante: {marker}')
+
     # La frontière V24.5.10 reste en place : public = SECURITY INVOKER, interne = privilégié.
     require("alter function public.%I(%s) set schema sinjira_security_internal" in boundary,
             'frontière RPC sécurité historique introuvable')
     require("security invoker set search_path = ''" in boundary,
             'wrappers public SECURITY INVOKER non garantis par la migration de frontière')
 
-    # pgTAP introspecte les mêmes invariants sans modifier les 32 tests historiques du Coffre.
+    # Les deux pgTAP doivent exister : continuité historique + liaison session-aware additive.
     require('select plan(12);' in pgtap, 'le contrat pgTAP challenge doit contenir 12 assertions')
     for marker in ('last_session_id=v_session', 'CURRENT_TRUSTED_DEVICE_REQUIRED',
                    "v_action=''conscience_vault''", 'TRUSTED_OTHER_DEVICE_REQUIRED', 'resolver.id<>v_row.id'):
-        require(marker in pgtap, f'assertion pgTAP manquante: {marker}')
+        require(marker in pgtap, f'assertion pgTAP challenge manquante: {marker}')
+    require('select plan(12);' in session_binding_pgtap,
+            'le contrat pgTAP liaison challenge/session doit contenir 12 assertions')
+    for marker in ('request_session_id', 'service_security_evaluate_context_session',
+                   'service_conscience_evaluate_access_session', 'CHALLENGE_SESSION_REQUIRED',
+                   'CHALLENGE_SESSION_MISMATCH', 'c.request_session_id=v_session'):
+        require(marker in session_binding_pgtap, f'assertion pgTAP session-aware manquante: {marker}')
 
     # Edge : le challenge du Coffre reste visible comme protection et ne crée pas de capacité avant approbation.
     require("code: 'SECURITY_CHALLENGE_REQUIRED'" in edge, 'code Edge de challenge absent')
@@ -145,10 +175,12 @@ def main() -> int:
     require('pull_request:' in workflow and 'workflow_dispatch:' in workflow, 'déclencheurs CI incomplets')
     require('supabase start' in workflow and 'supabase db start' not in workflow,
             'pile Supabase locale complète obligatoire')
-    require('supabase test db supabase/tests/personal_consciousness_vault_v25.test.sql --local' in workflow,
-            'socle pgTAP Coffre 32 absent')
-    require('supabase test db supabase/tests/device_challenge_continuity_v25.test.sql --local' in workflow,
-            'pgTAP challenge V25 absent')
+    base_pg = 'supabase test db supabase/tests/personal_consciousness_vault_v25.test.sql --local'
+    challenge_pg = 'supabase test db supabase/tests/device_challenge_continuity_v25.test.sql --local'
+    session_pg = 'supabase test db supabase/tests/device_challenge_session_binding_v25.test.sql --local'
+    require(base_pg in workflow, 'socle pgTAP Coffre 32 absent')
+    require(challenge_pg in workflow, 'pgTAP challenge V25 absent')
+    require(session_pg in workflow, 'pgTAP liaison challenge/session absent')
     require('python3 scripts/validate_device_challenge_continuity_smoke.py' in workflow,
             'validateur challenge non exécuté')
     require('python3 scripts/smoke_device_challenge_continuity_local.py' in workflow,
@@ -160,11 +192,14 @@ def main() -> int:
     require('SUPABASE_ACCESS_TOKEN' not in workflow, 'PAT production interdit')
     require(not set(re.findall(r'secrets\.([A-Z0-9_]+)', workflow)), 'secrets GitHub interdits dans ce workflow')
 
-    pg_index = workflow.index('supabase test db supabase/tests/device_challenge_continuity_v25.test.sql --local')
+    base_index = workflow.index(base_pg)
+    challenge_index = workflow.index(challenge_pg)
+    session_index = workflow.index(session_pg)
     smoke_index = workflow.index('python3 scripts/smoke_device_challenge_continuity_local.py')
-    require(pg_index < smoke_index, 'pgTAP challenge doit passer avant le smoke HTTP')
+    require(base_index < challenge_index < session_index < smoke_index,
+            'ordre attendu: pgTAP Coffre, challenge, liaison session, puis smoke HTTP')
 
-    print('OK challenge appareils V25: session courante, autre appareil fiable, non-rejeu après nouvelle session, auto-MFA Coffre interdite, retry stable et refus final couverts sans privilège.')
+    print('OK challenge appareils V25: session courante, liaison challenge/session pgTAP, non-rejeu après nouvelle session, auto-MFA Coffre interdite, retry stable et refus final couverts sans privilège.')
     return 0
 
 
