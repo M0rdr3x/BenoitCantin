@@ -14,6 +14,7 @@ on:
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
       - '.github/workflows/supabase-production-preflight.yml'
+      - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
   pull_request:
     branches: [ main ]
     paths:
@@ -26,6 +27,7 @@ on:
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
       - '.github/workflows/supabase-production-preflight.yml'
+      - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
   workflow_dispatch:
     inputs:
       apply:
@@ -33,21 +35,24 @@ on:
         required: true
         type: boolean
         default: false
+      confirmation:
+        description: "Pour apply=true, saisir exactement APPLY-SUPABASE-PRODUCTION"
+        required: true
+        type: string
+        default: "PREFLIGHT_ONLY"
 
 permissions:
   contents: read
 
 concurrency:
-  group: supabase-production-${{ github.ref }}
+  group: supabase-production-${{ github.event_name == 'workflow_dispatch' && 'manual' || github.ref }}
   cancel-in-progress: false
 
 jobs:
-  sync:
+  local-preflight:
     name: Prévol / synchronisation contrôlée
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
-    env:
-      PROJECT_ID: gpvivleexywljowcqkru
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6 vérifié le 2026-09-08
@@ -89,6 +94,62 @@ jobs:
           test -f .prod-workspace/supabase/config.toml
           test -d .prod-workspace/supabase/migrations
           echo "Workspace production protégé construit depuis le ledger canonique et le lot revu." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: ÉTAT PRODUCTION LOCAL
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo '🟡 PRÉVOL PR : validations locales et workspace protégé uniquement; aucun secret production exposé au run PR et aucune opération distante.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo '🟡 PRÉVOL SEULEMENT : validations locales et workspace protégé uniquement; aucun secret production exposé au run push et aucune opération distante.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Prévol local terminé; la frontière distante reste séparée.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  remote-preflight:
+    name: Prévol distant Supabase production
+    needs: local-preflight
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PROJECT_ID: gpvivleexywljowcqkru
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6 vérifié le 2026-09-08
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6 vérifié le 2026-09-08
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier l'intention manuelle
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.apply }}" = "true" ]; then
+            if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+              echo "Refus: apply=true est autorisé uniquement depuis refs/heads/main."
+              exit 64
+            fi
+            if [ "${{ inputs.confirmation }}" != "APPLY-SUPABASE-PRODUCTION" ]; then
+              echo "Refus: confirmation textuelle de production invalide."
+              exit 65
+            fi
+          fi
+
+      - name: Reconstruire le workspace production protégé
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .prod-workspace
+          python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase
+          test -f .prod-workspace/supabase/config.toml
+          test -d .prod-workspace/supabase/migrations
 
       - name: Installer Supabase CLI
         if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -133,7 +194,6 @@ jobs:
         run: |
           set -euo pipefail
           supabase functions list --project-ref "$PROJECT_ID" | tee /tmp/sinjira-functions-before.txt
-
           missing=0
           while IFS= read -r name; do
             [ -z "$name" ] && continue
@@ -142,15 +202,7 @@ jobs:
               missing=1
             fi
           done < <(find .prod-workspace/supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name '_*' -printf '%f\n' | sort)
-
-          retired=(
-            admin-reader
-            generate-sinjira-character
-            admin-literary
-            validate-phone-v22
-            guardian-create-youth-v22
-            create-youth-account
-          )
+          retired=(admin-reader generate-sinjira-character admin-literary validate-phone-v22 guardian-create-youth-v22 create-youth-account)
           retired_found=0
           for name in "${retired[@]}"; do
             if grep -Fq "$name" /tmp/sinjira-functions-before.txt; then
@@ -158,17 +210,7 @@ jobs:
               retired_found=$((retired_found+1))
             fi
           done
-
-          {
-            echo '### Inventaire Edge Functions production'
-            if [ "$missing" -eq 0 ]; then echo '- Toutes les fonctions canoniques du workspace protégé sont présentes.'; else echo '- Des fonctions canoniques sont absentes.'; fi
-            if [ "$retired_found" -eq 0 ]; then
-              echo '- Aucun des six anciens slugs connus n’est physiquement déployé.'
-            else
-              echo "- $retired_found ancien(s) slug(s) restent physiquement présents comme stubs neutralisés 410. Leur présence est informative tant que la suppression physique n’est pas disponible; aucun appel actif n’est autorisé par le validateur du dépôt."
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
-
+          echo "Fonctions retirées physiquement présentes avant synchronisation: $retired_found" >> "$GITHUB_STEP_SUMMARY"
           test "$missing" -eq 0
 
       - name: Lier le projet de production dans le workspace protégé
@@ -256,6 +298,91 @@ jobs:
           cat /tmp/sinjira-dry-run.txt >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
+      - name: ÉTAT PRÉVOL DISTANT
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.auth.outputs.ready }}" != "true" ]; then
+            echo '⛔ NON SYNCHRONISÉ : les secrets de connexion Supabase ne sont pas disponibles au lancement manuel. Aucune écriture de production n’a eu lieu.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ inputs.apply }}" != "true" ]; then
+            echo '🟡 PRÉVOL MANUEL SEULEMENT : aucune modification de production, car apply=false.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '🟡 PRÉVOL MANUEL VALIDÉ : apply=true confirmé; l’application reste séparée derrière l’environment GitHub production.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  apply-production:
+    name: Application Supabase production
+    needs: [local-preflight, remote-preflight]
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && inputs.confirmation == 'APPLY-SUPABASE-PRODUCTION' && github.ref == 'refs/heads/main' }}
+    environment: production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PROJECT_ID: gpvivleexywljowcqkru
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6 vérifié le 2026-09-08
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6 vérifié le 2026-09-08
+        with:
+          python-version: '3.12.14'
+
+      - name: Reconstruire le workspace production après la frontière d'environnement
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_supabase.py
+          python scripts/validate_edge_function_inventory.py
+          python scripts/validate_social_rls_contract.py
+          python scripts/validate_production_migration_ledger.py
+          rm -rf .prod-workspace
+          python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase
+          test -f .prod-workspace/supabase/config.toml
+          test -d .prod-workspace/supabase/migrations
+
+      - name: Installer Supabase CLI pour l'application
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # branche v2 vérifiée le 2026-09-08
+        with:
+          version: 2.111.0
+          github-token: ${{ github.token }}
+
+      - name: Vérifier Supabase CLI pour l'application
+        shell: bash
+        run: supabase --version
+
+      - name: Détecter les secrets de connexion Supabase pour l'application
+        id: auth
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${SUPABASE_ACCESS_TOKEN:-}" ] && [ -n "${SUPABASE_DB_PASSWORD:-}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          echo "Refus fail-closed : secrets Supabase production absents après la frontière d'environnement."
+          exit 2
+
+      - name: Revalider la cible production après approbation
+        if: ${{ steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd .prod-workspace && supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD")
+          (cd .prod-workspace && supabase db lint --linked --schema public --level error --fail-on error) | tee /tmp/sinjira-db-lint-approval.txt
+          (cd .prod-workspace && supabase migration list --linked --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-migrations-approval.txt
+          (cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run-approval.txt
+
       - name: Appliquer les migrations de production depuis le workspace protégé
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
         env:
@@ -329,7 +456,6 @@ jobs:
             [ -z "$name" ] && continue
             if ! grep -Fq "$name" /tmp/sinjira-functions.txt; then echo "Edge Function manquante après déploiement: $name"; missing=1; fi
           done < <(find .prod-workspace/supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name '_*' -printf '%f\n' | sort)
-
           retired=(admin-reader generate-sinjira-character admin-literary validate-phone-v22 guardian-create-youth-v22 create-youth-account)
           retired_found=0
           for name in "${retired[@]}"; do
@@ -365,15 +491,7 @@ jobs:
         run: |
           set -euo pipefail
           echo '## ÉTAT PRODUCTION' >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo '🟡 PRÉVOL PR : validations locales et workspace protégé uniquement; aucun secret production exposé au run PR et aucune opération distante.' >> "$GITHUB_STEP_SUMMARY"
-          elif [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
-            echo '🟡 PRÉVOL SEULEMENT : validations locales et workspace protégé uniquement; aucun secret production exposé au run push et aucune opération distante.' >> "$GITHUB_STEP_SUMMARY"
-          elif [ "${{ steps.auth.outputs.ready }}" != "true" ]; then
-            echo '⛔ NON SYNCHRONISÉ : les secrets de connexion Supabase ne sont pas disponibles au lancement manuel. Aucune écriture de production n’a eu lieu.' >> "$GITHUB_STEP_SUMMARY"
-          elif [ "${{ inputs.apply }}" != "true" ]; then
-            echo '🟡 PRÉVOL MANUEL SEULEMENT : aucune modification de production, car apply=false.' >> "$GITHUB_STEP_SUMMARY"
-          elif [ "${{ steps.final_verify.outcome }}" = "success" ]; then
+          if [ "${{ steps.final_verify.outcome }}" = "success" ]; then
             echo '✅ APPLIQUÉ ET VÉRIFIÉ : migrations appliquées depuis le workspace protégé, Edge Functions contrôlées, historique relu et dry-run final réussi sans étape restante.' >> "$GITHUB_STEP_SUMMARY"
           else
             echo '❌ ÉCHEC OU SYNCHRONISATION PARTIELLE : apply=true a été demandé mais la vérification finale n’est pas verte. Ne pas considérer la production synchronisée; consulter la première étape en échec.' >> "$GITHUB_STEP_SUMMARY"
