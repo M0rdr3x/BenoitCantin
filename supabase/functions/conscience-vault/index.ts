@@ -79,6 +79,28 @@ function validUuid(value: unknown) {
   return typeof value === 'string' && UUID_RE.test(value);
 }
 
+/**
+ * requiredVaultUser() a déjà validé ce JWT et son AAL2. On ne fait ici que lire
+ * le session_id du même jeton vérifié; le RPC session-aware le revérifie ensuite
+ * dans auth.sessions. Une valeur de session provenant du JSON client est ignorée.
+ */
+function sessionIdFromVerifiedToken(token: string) {
+  const parts = token.split('.');
+  if (parts.length !== 3) throw new Error('AUTH_REQUIRED');
+
+  try {
+    const raw = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = raw.padEnd(Math.ceil(raw.length / 4) * 4, '=');
+    const bytes = Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
+    const payload = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    const sessionId = typeof payload?.session_id === 'string' ? payload.session_id : '';
+    if (!UUID_RE.test(sessionId)) throw new Error('AUTH_REQUIRED');
+    return sessionId;
+  } catch {
+    throw new Error('AUTH_REQUIRED');
+  }
+}
+
 function byteLength(value: string) {
   return new TextEncoder().encode(value).byteLength;
 }
@@ -180,7 +202,8 @@ Deno.serve(async (req) => {
 
   try {
     // AAL2 est vérifié à CHAQUE appel. Une capacité de coffre ne remplace jamais le JWT.
-    const { user, service } = await requiredVaultUser(req);
+    const { user, service, token } = await requiredVaultUser(req);
+    const sessionId = sessionIdFromVerifiedToken(token);
     const body = await readBoundedJson(req);
 
     // L'identité vient exclusivement du JWT vérifié par requiredVaultUser().
@@ -200,16 +223,17 @@ Deno.serve(async (req) => {
       }
 
       const geo = trustedGeo(req);
-      // Le wrapper SQL fixe lui-même l'action conscience_vault et maintient le challenge
-      // d'appareil fiable entre les retries. L'Edge ne peut donc pas diminuer le scope.
-      const { data: security, error: securityError } = await service.rpc('service_conscience_evaluate_access', {
+      // Le RPC fixe lui-même l'action conscience_vault. La session provient du JWT
+      // déjà validé et est revérifiée dans auth.sessions avant le calcul de risque.
+      const { data: security, error: securityError } = await service.rpc('service_conscience_evaluate_access_session', {
         p_user_id: user.id,
         p_device_key: deviceKey,
         p_display_name: safeText(body.display_name, 120) || 'Appareil SINJIRA',
         p_device_type: safeDeviceType(body.device_type),
         p_platform: safeText(body.platform, 120),
         p_country_code: geo.country,
-        p_region_code: geo.region
+        p_region_code: geo.region,
+        p_session_id: sessionId
       });
       if (securityError) throw new Error('SECURITY_DECISION_INVALID');
 
