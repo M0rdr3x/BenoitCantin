@@ -10,6 +10,25 @@ on:
       - 'scripts/validate_sensitive_aal2_smoke.py'
       - 'scripts/validate_personal_ai_v25.py'
       - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_personal_ai_functional_workflow_security.py'
+      - 'supabase/tests/personal_ai_v25.test.sql'
+      - 'supabase/functions/personal-ai/**'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'supabase/functions/_shared/cors.ts'
+      - 'supabase/migrations/**personal_ai**.sql'
+      - 'supabase/migrations/**security**.sql'
+      - 'supabase/config.toml'
+      - '.github/workflows/sinjira-personal-ai-functional-v25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/smoke_personal_ai_functional_local.py'
+      - 'scripts/validate_personal_ai_functional_smoke.py'
+      - 'scripts/smoke_sensitive_aal2_local.py'
+      - 'scripts/validate_sensitive_aal2_smoke.py'
+      - 'scripts/validate_personal_ai_v25.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_personal_ai_functional_workflow_security.py'
       - 'supabase/tests/personal_ai_v25.test.sql'
       - 'supabase/functions/personal-ai/**'
       - 'supabase/functions/_shared/auth.ts'
@@ -25,30 +44,46 @@ permissions:
 
 jobs:
   personal-ai-functional:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
 
-      - name: Valider les contrats Mon IA et AAL2
-        run: |
-          python3 scripts/validate_personal_ai_v25.py
-          python3 scripts/validate_sensitive_aal2_smoke.py
-          python3 scripts/validate_personal_ai_functional_smoke.py
-          python3 scripts/validate_production_schema_manifest.py
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat CI fonctionnel Mon IA
+        run: python3 scripts/validate_personal_ai_functional_workflow_security.py --self-test
+
+      - name: Vérifier le contrat CI fonctionnel Mon IA
+        run: python3 scripts/validate_personal_ai_functional_workflow_security.py
+
+      - name: Valider le contrat Mon IA V25
+        run: python3 scripts/validate_personal_ai_v25.py
+
+      - name: Valider le smoke AAL2 partagé
+        run: python3 scripts/validate_sensitive_aal2_smoke.py
+
+      - name: Valider le smoke fonctionnel Mon IA
+        run: python3 scripts/validate_personal_ai_functional_smoke.py
+
+      - name: Valider la classification du schéma
+        run: python3 scripts/validate_production_schema_manifest.py
 
       - name: Installer Supabase CLI
-        uses: supabase/setup-cli@v2
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
         with:
           version: 2.111.0
 
       - name: Démarrer Supabase local complet
         run: supabase start
 
-      - name: Tester Mon IA avec pgTAP
+      - name: Tester Mon IA avec pgTAP local
         run: supabase test db supabase/tests/personal_ai_v25.test.sql --local
 
       - name: Tester le parcours fonctionnel Mon IA derrière AAL2
