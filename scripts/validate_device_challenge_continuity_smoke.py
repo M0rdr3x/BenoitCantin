@@ -35,7 +35,7 @@ def main() -> int:
     edge = EDGE.read_text('utf-8')
     workflow = WORKFLOW.read_text('utf-8')
 
-    # Le test traverse GoTrue réel et trois sessions distinctes du même compte synthétique.
+    # Le test traverse GoTrue réel et plusieurs sessions distinctes du même compte synthétique.
     require('from smoke_sensitive_aal2_local import' in smoke, 'helper AAL2 partagé absent')
     for marker in ('enroll_totp', 'verify_totp', 'sign_in', 'get("aal") == "aal2"'):
         require(marker in smoke, f'preuve Auth/TOTP manquante: {marker}')
@@ -71,6 +71,21 @@ def main() -> int:
             'C révoqué doit être bloqué sans réémission de challenge')
     require('"device_key" not in' in smoke and '"last_session_id" not in' in smoke,
             'le smoke doit vérifier la non-exposition des secrets appareil')
+
+    # Non-rejeu session-aware : B1 est approuvé, puis B2 réutilise la même device_key
+    # sans enregistrement préalable. L'Edge + SQL doivent réassocier côté serveur et
+    # refuser que l'approbation de B1 élève la confiance de B2.
+    for marker in (
+        'aal1_b2 = sign_in(email, password)',
+        'aal2_b2 = verify_totp(aal1_b2, factor_id, secret)',
+        'vault_open(aal2_b2, DEVICE_B, "Appareil B nouvelle session")',
+        'challenge_b2 != challenge_b',
+        'élévation de confiance B2 avec approbation B1',
+        'TRUST_CONFIRMATION_REQUIRED',
+    ):
+        require(marker in smoke, f'preuve de non-rejeu multi-session manquante: {marker}')
+    require('register_device(aal2_b2, DEVICE_B' not in smoke,
+            'B2 ne doit pas dépendre d’un enregistrement client préalable pour fermer le rejeu')
 
     # Durcissement SQL : implémentations internes uniquement, liées à la session courante.
     require('create or replace function sinjira_security_internal.security_resolve_connection_challenge(' in migration,
@@ -112,6 +127,10 @@ def main() -> int:
     require("code: 'SECURITY_CHALLENGE_REQUIRED'" in edge, 'code Edge de challenge absent')
     require("decision.outcome === 'challenge'" in edge, 'branche challenge Edge absente')
     require("service.rpc('service_conscience_open_session'" in edge, 'ouverture de capacité serveur absente')
+    require("service.rpc('service_conscience_evaluate_access_session'" in edge,
+            'le Registre doit utiliser le wrapper session-aware')
+    require('p_session_id: authSessionId' in edge,
+            'la session JWT vérifiée doit être transmise au wrapper du Registre')
 
     # Aucun privilège de test ni accès production.
     forbidden = (
@@ -145,7 +164,7 @@ def main() -> int:
     smoke_index = workflow.index('python3 scripts/smoke_device_challenge_continuity_local.py')
     require(pg_index < smoke_index, 'pgTAP challenge doit passer avant le smoke HTTP')
 
-    print('OK challenge appareils V25: session courante, autre appareil fiable, auto-MFA Coffre interdite, retry stable et refus final couverts sans privilège.')
+    print('OK challenge appareils V25: session courante, autre appareil fiable, non-rejeu après nouvelle session, auto-MFA Coffre interdite, retry stable et refus final couverts sans privilège.')
     return 0
 
 
