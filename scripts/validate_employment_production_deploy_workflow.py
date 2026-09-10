@@ -4,18 +4,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/sinjira-v25-employment-production.yml'
+PRODUCTION_URL = 'https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/database/migrations'
+TOKEN_REF = 'SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}'
 
 
-def require(text: str, markers: list[str], label: str) -> None:
-    missing = [marker for marker in markers if marker not in text]
-    if missing:
-        raise AssertionError(f'{label}: marqueurs absents: {missing}')
-
-
-def forbid(text: str, markers: list[str], label: str) -> None:
-    found = [marker for marker in markers if marker in text]
-    if found:
-        raise AssertionError(f'{label}: marqueurs interdits: {found}')
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise AssertionError(message)
 
 
 def top_level_block(text: str, start: str, end: str) -> str:
@@ -29,7 +24,7 @@ def top_level_block(text: str, start: str, end: str) -> str:
 
 
 def trigger_keys(block: str) -> set[str]:
-    keys = set()
+    keys: set[str] = set()
     for line in block.splitlines()[1:]:
         match = re.match(r'^  ([A-Za-z0-9_-]+):(?:\s|$)', line)
         if match:
@@ -37,59 +32,115 @@ def trigger_keys(block: str) -> set[str]:
     return keys
 
 
-def main() -> int:
-    if not WORKFLOW.is_file():
-        raise AssertionError(f'Workflow absent: {WORKFLOW.relative_to(ROOT)}')
+def step_blocks(text: str) -> dict[str, str]:
+    matches = list(re.finditer(r'(?m)^      - name: (.+)$', text))
+    blocks: dict[str, str] = {}
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        blocks[match.group(1).strip()] = text[match.start():end]
+    return blocks
 
+
+def main() -> int:
+    require(WORKFLOW.is_file(), f'Workflow absent: {WORKFLOW.relative_to(ROOT)}')
     workflow = WORKFLOW.read_text('utf-8', errors='strict')
     active = '\n'.join(line for line in workflow.splitlines() if not line.strip().startswith('#'))
     triggers = top_level_block(workflow, 'on:\n', '\npermissions:')
 
-    if trigger_keys(triggers) != {'workflow_dispatch'}:
-        raise AssertionError('La vérification Emploi production doit rester strictement manuelle.')
+    require(
+        trigger_keys(triggers) == {'workflow_dispatch'},
+        'La vérification Emploi production doit rester strictement manuelle.',
+    )
 
-    require(workflow, [
+    required = (
         'name: SINJIRA V25 — Vérification production Emploi',
         'VERIFY-SINJIRA-V25-EMPLOYMENT',
+        'permissions:\n  contents: read',
         'environment: production',
-        'SUPABASE_PROJECT_REF: gpvivleexywljowcqkru',
+        'test "$GITHUB_REF" = "refs/heads/main"',
         'EXPECTED_REMOTE_BASELINE: "20260905131659"',
         'EXPECTED_REMOTE_BASELINE_NAME: sinjira_v25_conscience_vault_audit_session_index',
         'EXPECTED_EMPLOYMENT_VERSION: "20260905133130"',
         'EXPECTED_EMPLOYMENT_NAME: sinjira_v25_employment_foundation',
-        'SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}',
         'ref: main',
         'persist-credentials: false',
-        '/projects/$SUPABASE_PROJECT_REF/database/migrations',
-        "if observed != employment:",
-        "if len(matches) != 1:",
+        "curl --proto '=https' --fail-with-body --silent --show-error --request GET",
+        f'--url "{PRODUCTION_URL}"',
+        'Authorization: Bearer $SUPABASE_ACCESS_TOKEN',
+        "Vérifier l'historique Emploi sans secret",
+        'MIGRATION_HISTORY="$RUNNER_TEMP/employment-production-migrations.json"',
+        'if observed != employment:',
+        'if len(matches) != 1:',
         'Aucune migration, aucune Edge Function et aucun secret',
         'Emploi reste séparé du Registre personnel',
-    ], 'contrat post-déploiement Emploi')
+    )
+    for marker in required:
+        require(marker in workflow, f'contrat post-déploiement Emploi: marqueur absent: {marker}')
 
-    forbid(active, [
+    forbidden = (
+        'SUPABASE_PROJECT_REF',
+        'SUPABASE_MANAGEMENT_API',
         'DEPLOY-SINJIRA-V25-EMPLOYMENT',
-        '--request POST',
         'SUPABASE_DB_PASSWORD',
+        '--request POST', '--request PUT', '--request PATCH', '--request DELETE',
+        'curl -X POST', 'curl -X PUT', 'curl -X PATCH', 'curl -X DELETE',
+        '--location', '--proxy', '--connect-to', '--resolve', '--upload-file',
+        '--data ', '--data=', '--data-binary', '--form ',
+        'supabase link',
         'supabase db push',
         'supabase functions deploy',
         'supabase secrets set',
-        'continue-on-error: true',
+        'supabase migration repair',
+        '--include-all',
+        '--linked',
+        '--no-verify-jwt',
+        'continue-on-error:',
         'set -x',
-    ], 'la vérification Emploi doit rester en lecture seule')
+        'gh api',
+        'git push',
+    )
+    for marker in forbidden:
+        require(marker not in active, f'la vérification Emploi doit rester en lecture seule: {marker}')
 
-    if active.count('/projects/$SUPABASE_PROJECT_REF/database/migrations') != 1:
-        raise AssertionError('Le workflow Emploi doit effectuer une seule lecture de l’historique distant.')
+    require(active.count(PRODUCTION_URL) == 1, 'Une seule URL production Supabase littérale est autorisée.')
+    require(len(re.findall(r'(?m)^\s*curl\b', active)) == 1, 'Le workflow Emploi doit effectuer un seul appel curl distant.')
+
+    secret_lines = [line for line in workflow.splitlines() if '${{ secrets.' in line]
+    require(
+        secret_lines == [f'          {TOKEN_REF}'],
+        'SUPABASE_ACCESS_TOKEN doit être l unique secret et rester borné à une seule env d étape.',
+    )
+
+    blocks = step_blocks(workflow)
+    download = blocks.get("Télécharger l'historique Emploi en lecture seule", '')
+    require(download, 'Étape de téléchargement Emploi bornée absente.')
+    require(TOKEN_REF in download, 'Le token doit être injecté uniquement dans l étape GET.')
+    require(PRODUCTION_URL in download, 'Le GET doit cibler l URL Supabase exacte.')
+    require("--proto '=https'" in download and '--request GET' in download, 'Le GET doit imposer HTTPS et la méthode GET.')
+
+    parser = blocks.get("Vérifier l'historique Emploi sans secret", '')
+    require(parser, 'Étape de parsing Emploi sans secret absente.')
+    require(
+        'SUPABASE_ACCESS_TOKEN' not in parser and '${{ secrets.' not in parser,
+        'Le parsing de l historique Emploi ne doit recevoir aucun secret.',
+    )
+    require(
+        'MIGRATION_HISTORY="$RUNNER_TEMP/employment-production-migrations.json"' in parser,
+        'Le parsing doit consommer uniquement le fichier temporaire produit par le GET borné.',
+    )
 
     contracts = active.find('Vérifier les contrats Emploi')
-    history = active.find("Vérifier l'historique Emploi en lecture seule")
+    download_pos = active.find("Télécharger l'historique Emploi en lecture seule")
+    parser_pos = active.find("Vérifier l'historique Emploi sans secret")
     summary = active.find('Résumé lecture seule')
-    if min(contracts, history, summary) < 0 or not contracts < history < summary:
-        raise AssertionError('Ordre attendu: contrats locaux, historique distant, résumé lecture seule.')
+    require(
+        min(contracts, download_pos, parser_pos, summary) >= 0 and contracts < download_pos < parser_pos < summary,
+        'Ordre attendu: contrats locaux, GET distant, parsing sans secret, résumé lecture seule.',
+    )
 
     print(
-        'OK production Emploi V25: vérification manuelle lecture seule, '
-        'version distante figée et séparation Mon IA préservée.'
+        'OK production Emploi V25: vérification manuelle, GET HTTPS Supabase exact, '
+        'secret borné à une étape, parsing séparé sans secret et version distante figée.'
     )
     return 0
 
