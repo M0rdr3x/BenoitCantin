@@ -91,6 +91,10 @@ def step_block(job: str, name: str) -> str:
     return job[start:] if following < 0 else job[start:following]
 
 
+def has_exact_line(block: str, line: str) -> bool:
+    return line in block.splitlines()
+
+
 def require_step_env(errors: list[str], job: str, name: str, required: tuple[str, ...]) -> None:
     block = step_block(job, name)
     if not block:
@@ -186,8 +190,8 @@ def validate_text(text: str) -> list[str]:
 
     remote = jobs["remote-preflight"]
     if remote:
-        if REMOTE_JOB_GUARD not in remote:
-            errors.append("Le prévol distant doit être réservé au workflow_dispatch manuel.")
+        if not has_exact_line(remote, REMOTE_JOB_GUARD):
+            errors.append("Le prévol distant doit être réservé au workflow_dispatch manuel au niveau exact du job.")
         if "environment: production" in remote:
             errors.append("Le prévol distant non mutant ne doit pas franchir la frontière d'application production.")
         intent = step_block(remote, "Vérifier l'intention manuelle")
@@ -220,11 +224,11 @@ def validate_text(text: str) -> list[str]:
 
     apply = jobs["apply-production"]
     if apply:
-        if APPLY_JOB_GUARD not in apply:
-            errors.append("Le job d'application doit exiger workflow_dispatch + apply=true + confirmation + main.")
-        if "    environment: production\n" not in apply:
+        if not has_exact_line(apply, APPLY_JOB_GUARD):
+            errors.append("Le job d'application doit exiger workflow_dispatch + apply=true + confirmation + main au niveau exact du job.")
+        if not has_exact_line(apply, "    environment: production"):
             errors.append("Le job d'application doit être attaché à l'environment GitHub production.")
-        if "    needs: [local-preflight, remote-preflight]\n" not in apply:
+        if not has_exact_line(apply, "    needs: [local-preflight, remote-preflight]"):
             errors.append("L'application doit dépendre des prévols local et distant.")
         if "python scripts/validate_production_migration_ledger.py" not in apply:
             errors.append("L'application doit revalider le ledger après la frontière d'environment.")
