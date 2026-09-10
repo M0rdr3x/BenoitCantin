@@ -16,12 +16,10 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SUPABASE_PROJECT_REF: gpvivleexywljowcqkru
   EXPECTED_REMOTE_BASELINE: "20260905131659"
   EXPECTED_REMOTE_BASELINE_NAME: sinjira_v25_conscience_vault_audit_session_index
   EXPECTED_EMPLOYMENT_VERSION: "20260905133130"
   EXPECTED_EMPLOYMENT_NAME: sinjira_v25_employment_foundation
-  SUPABASE_MANAGEMENT_API: https://api.supabase.com/v1
 
 jobs:
   verify-employment-v25:
@@ -40,19 +38,14 @@ jobs:
             exit 1
           }
 
-      - name: Vérifier la confirmation et le jeton
+      - name: Vérifier la confirmation humaine
         shell: bash
         env:
           VERIFY_CONFIRMATION: ${{ inputs.confirmation }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           test "$VERIFY_CONFIRMATION" = "VERIFY-SINJIRA-V25-EMPLOYMENT" || {
             echo "Confirmation invalide; aucune vérification production Emploi n'est exécutée." >&2
-            exit 1
-          }
-          test -n "${SUPABASE_ACCESS_TOKEN:-}" || {
-            echo "Secret SUPABASE_ACCESS_TOKEN manquant." >&2
             exit 1
           }
 
@@ -77,20 +70,24 @@ jobs:
           python3 scripts/validate_employment_production_deploy_workflow.py
           python3 scripts/validate_production_schema_manifest.py
 
-      - name: Vérifier l'historique Emploi en lecture seule
+      - name: Télécharger l'historique Emploi en lecture seule
         shell: bash
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
-          history="$RUNNER_TEMP/employment-production-migrations.json"
-          curl --fail-with-body --silent --show-error \
-            "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/database/migrations" \
+          test -n "${SUPABASE_ACCESS_TOKEN:-}"
+          curl --proto '=https' --fail-with-body --silent --show-error --request GET \
+            --url "https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/database/migrations" \
             --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             --header 'Accept: application/json' \
-            --output "$history"
+            --output "$RUNNER_TEMP/employment-production-migrations.json"
 
-          MIGRATION_HISTORY="$history" python3 - <<'PY'
+      - name: Vérifier l'historique Emploi sans secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          MIGRATION_HISTORY="$RUNNER_TEMP/employment-production-migrations.json" python3 - <<'PY'
           import json
           import os
           from pathlib import Path
