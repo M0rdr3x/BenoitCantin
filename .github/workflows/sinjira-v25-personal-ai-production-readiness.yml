@@ -16,8 +16,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SUPABASE_PROJECT_REF: gpvivleexywljowcqkru
-  SUPABASE_MANAGEMENT_API: https://api.supabase.com/v1
   EMPLOYMENT_VERSION: "20260905133130"
   EMPLOYMENT_NAME: sinjira_v25_employment_foundation
   PERSONAL_AI_FOUNDATION_VERSION: "20260905145448"
@@ -44,15 +42,13 @@ jobs:
             exit 1
           }
 
-      - name: Vérifier la confirmation et le jeton
+      - name: Vérifier la confirmation humaine
         shell: bash
         env:
           VERIFY_CONFIRMATION: ${{ inputs.confirmation }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           test "$VERIFY_CONFIRMATION" = "VERIFY-SINJIRA-V25-PERSONAL-AI"
-          test -n "${SUPABASE_ACCESS_TOKEN:-}"
 
       - name: Checkout de main
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6 vérifié le 2026-09-08
@@ -74,20 +70,24 @@ jobs:
           python3 scripts/validate_personal_ai_production_readiness.py
           python3 scripts/validate_production_schema_manifest.py
 
-      - name: Vérifier l'historique distant en lecture seule
+      - name: Télécharger l'historique distant en lecture seule
         shell: bash
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
-          history="$RUNNER_TEMP/personal-ai-production-migrations.json"
-          curl --fail-with-body --silent --show-error \
-            "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/database/migrations" \
+          test -n "${SUPABASE_ACCESS_TOKEN:-}"
+          curl --proto '=https' --fail-with-body --silent --show-error --request GET \
+            --url "https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/database/migrations" \
             --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             --header 'Accept: application/json' \
-            --output "$history"
+            --output "$RUNNER_TEMP/personal-ai-production-migrations.json"
 
-          MIGRATION_HISTORY="$history" python3 - <<'PY'
+      - name: Vérifier l'historique distant sans secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          MIGRATION_HISTORY="$RUNNER_TEMP/personal-ai-production-migrations.json" python3 - <<'PY'
           import json, os
           from pathlib import Path
 
