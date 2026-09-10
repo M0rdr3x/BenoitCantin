@@ -18,6 +18,29 @@ on:
       - 'scripts/validate_personal_ai_postdeployment_workflow.py'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_personal_ai_contract_workflow_security.py'
+      - 'docs/sinjira-v25-personal-ai-production-readiness.md'
+      - 'docs/sinjira-v25-personal-ai-production-deployment-2026-09-05.md'
+      - '.github/workflows/sinjira-personal-ai-v25.yml'
+      - '.github/workflows/sinjira-v25-personal-ai-production-readiness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compte/mon-ia.html'
+      - 'compte/index.html'
+      - 'assets/js/sinjira-personal-ai-v25.js'
+      - 'mobile-native/**'
+      - 'supabase/functions/personal-ai/**'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'supabase/config.toml'
+      - 'supabase/migrations/**personal_ai**.sql'
+      - 'supabase/tests/personal_ai_v25.test.sql'
+      - 'scripts/validate_personal_ai_v25.py'
+      - 'scripts/validate_personal_ai_production_readiness.py'
+      - 'scripts/validate_personal_ai_postdeployment_workflow.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_personal_ai_contract_workflow_security.py'
       - 'docs/sinjira-v25-personal-ai-production-readiness.md'
       - 'docs/sinjira-v25-personal-ai-production-deployment-2026-09-05.md'
       - '.github/workflows/sinjira-personal-ai-v25.yml'
@@ -29,29 +52,51 @@ permissions:
 
 jobs:
   personal-ai-contract:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat CI Mon IA
+        run: python3 scripts/validate_personal_ai_contract_workflow_security.py --self-test
+
+      - name: Vérifier le contrat CI Mon IA
+        run: python3 scripts/validate_personal_ai_contract_workflow_security.py
+
       - name: Valider le contrat Mon IA V25
-        run: |
-          python3 scripts/validate_personal_ai_v25.py
-          python3 scripts/validate_personal_ai_production_readiness.py
-          python3 scripts/validate_personal_ai_postdeployment_workflow.py
+        run: python3 scripts/validate_personal_ai_v25.py
+
+      - name: Valider la préparation production Mon IA
+        run: python3 scripts/validate_personal_ai_production_readiness.py
+
+      - name: Valider le workflow post-déploiement Mon IA
+        run: python3 scripts/validate_personal_ai_postdeployment_workflow.py
+
       - name: Valider l'inventaire Edge
         run: python3 scripts/validate_edge_function_inventory.py
+
       - name: Valider la classification du schéma
         run: python3 scripts/validate_production_schema_manifest.py
+
       - name: Installer Supabase CLI
-        uses: supabase/setup-cli@v2
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
         with:
           version: 2.111.0
+
       - name: Démarrer Supabase local
         run: supabase db start
-      - name: Tester Mon IA avec pgTAP
+
+      - name: Tester Mon IA avec pgTAP local
         run: supabase test db supabase/tests/personal_ai_v25.test.sql --local
+
       - name: Arrêter Supabase local
         if: always()
         run: supabase stop --no-backup || true
