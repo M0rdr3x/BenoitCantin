@@ -23,6 +23,14 @@ Son nom de run doit rendre l’intention visible :
 - lancement manuel avec `apply=false` : prévol seulement;
 - lancement manuel avec `apply=true` : `Supabase production — APPLICATION DEMANDÉE`.
 
+Le workflow canonique sépare désormais trois frontières dans le même fichier :
+
+1. `local-preflight` — validations strictement locales, sans secret production et sans Supabase CLI;
+2. `remote-preflight` — lancement manuel uniquement, avec lectures distantes, lint et `db push --dry-run`, sans écriture;
+3. `apply-production` — seule zone générique autorisée à écrire, uniquement après le prévol local et distant, avec confirmation explicite et rattachement à l’Environment GitHub `production`.
+
+Cette séparation est volontaire : un contrôle qui lit la production ne doit pas automatiquement posséder le droit de la modifier.
+
 ### Push et pull request
 
 Un push ou une pull request ne doit jamais recevoir les secrets de connexion Supabase production, exécuter un contrôle distant authentifié ni modifier Supabase production.
@@ -43,17 +51,35 @@ Le lancement manuel `workflow_dispatch` avec `apply=false` est la seule voie gé
 
 Il exige les secrets de connexion afin que les contrôles distants soient réellement exécutés. Il peut lier le workspace protégé, lire l’inventaire et l’historique, exécuter les lints et `db push --dry-run`, mais `apply=false` interdit toute écriture.
 
+La valeur de confirmation par défaut est `PREFLIGHT_ONLY`. Elle doit rester non mutante.
+
 Un run vert avec `apply=false` signifie **prévol distant réussi**, pas « production modifiée ».
 
 ### Lancement manuel `apply=true`
 
-L’application réelle n’est autorisée que si les trois conditions sont réunies :
+L’application réelle n’est autorisée que si toutes les conditions suivantes sont réunies :
 
 1. événement `workflow_dispatch`;
 2. `apply=true`;
-3. secrets de connexion détectés comme prêts.
+3. le champ `confirmation` vaut exactement `APPLY-SUPABASE-PRODUCTION`;
+4. le workflow est lancé depuis `main` (`refs/heads/main`), jamais depuis une branche de travail;
+5. le prévol local et le prévol distant sont tous deux réussis;
+6. les secrets de connexion sont détectés comme prêts;
+7. le job d’écriture franchit l’Environment GitHub `production` avant toute mutation.
 
-Les étapes capables de modifier la production doivent conserver ce triple verrou. La production n’est considérée synchronisée que lorsque le résumé final affiche exactement :
+Le job `apply-production` reconstruit ensuite le workspace protégé et revalide le dépôt, le ledger, la cible liée, le lint SQL, l’historique distant et un nouveau `db push --dry-run` **après** la frontière de l’Environment. Aucune écriture ne doit précéder cette revalidation.
+
+Les étapes capables de modifier la production conservent en plus leur garde locale `workflow_dispatch + apply=true + auth`. Ce verrou redondant est intentionnel : retirer la garde d’une étape ne doit pas suffire à la rendre exécutable ailleurs.
+
+### Frontière humaine de l’Environment `production`
+
+Le rattachement `environment: production` permet à GitHub d’appliquer les protections configurées pour cet Environment, notamment des reviewers requis lorsque le plan et les réglages du dépôt le permettent.
+
+**Le YAML ne peut pas prouver à lui seul qu’un reviewer obligatoire est configuré dans les réglages GitHub.** Tant que ce réglage n’a pas été vérifié côté dépôt, ne pas présenter l’Environment comme une approbation humaine garantie. La confirmation textuelle `APPLY-SUPABASE-PRODUCTION` reste donc obligatoire même si une règle de reviewer est ensuite ajoutée.
+
+Principe SINJIRA : l’humain garde la décision finale avant toute écriture sensible. Aucun automatisme, agent ou tâche récurrente ne doit transformer un prévol vert en application automatique.
+
+La production n’est considérée synchronisée que lorsque le résumé final affiche exactement :
 
 `✅ APPLIQUÉ ET VÉRIFIÉ`
 
@@ -95,6 +121,8 @@ Variable optionnelle :
 **Ne jamais écrire la valeur d’un secret dans le dépôt, une issue, un log, une PR, un message de documentation ou une sortie de commande.**
 
 L’absence des secrets de connexion ne doit jamais être contournée par un token commité, un fichier `.env` ajouté au dépôt, une valeur collée dans une commande ou une autre voie d’écriture improvisée.
+
+Le prévol distant utilise ces secrets sous forme d’`env` borné aux étapes qui en ont besoin. Le job d’application réévalue leur présence après la frontière `production`; aucun secret de connexion ne doit être promu au niveau global du workflow ou d’un job entier.
 
 ## Ledger de production
 
