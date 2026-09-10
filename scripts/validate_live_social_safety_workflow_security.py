@@ -4,15 +4,15 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
+from live_social_supabase_ci_security import self_test as common_self_test
+from live_social_supabase_ci_security import validate_baseline
+
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-live-social-safety-v25.yml'
-
-CHECKOUT = 'actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803'
-SETUP_PYTHON = 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1'
-SETUP_CLI = 'supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf'
 SELF_TEST = 'python scripts/validate_live_social_safety_workflow_security.py --self-test'
 SELF_CHECK = 'python scripts/validate_live_social_safety_workflow_security.py'
 SELF_CHECK_LINE = f'        run: {SELF_CHECK}\n'
+COMMON_TRIGGER = "      - 'scripts/live_social_supabase_ci_security.py'\n"
 
 TRIGGER_PATHS = (
     "'supabase/production-migration-ledger.txt'",
@@ -30,6 +30,7 @@ TRIGGER_PATHS = (
     "'scripts/validate_supabase.py'",
     "'scripts/validate_production_migration_ledger.py'",
     "'scripts/validate_production_schema_manifest.py'",
+    "'scripts/live_social_supabase_ci_security.py'",
     "'scripts/validate_live_social_safety_workflow_security.py'",
     "'.github/workflows/sinjira-live-social-safety-v25.yml'",
 )
@@ -53,148 +54,62 @@ PGTAP_CHECKS = (
     'supabase test db supabase/tests/security_advisor_contract_v24_5_24.test.sql --local',
 )
 
-FORBIDDEN = (
-    '${{ secrets.',
-    'SUPABASE_ACCESS_TOKEN',
-    'SUPABASE_DB_PASSWORD',
-    'environment: production',
-    'supabase db push',
-    'db push',
-    '--linked',
-    'supabase link',
-    'functions deploy',
-    'migration repair',
-    'inputs.apply',
-    '--no-verify-jwt',
-)
-
 
 def fail(message: str) -> None:
     raise ValueError(message)
 
 
-def section(text: str, start: str, end: str) -> str:
-    begin = text.find(start)
-    if begin < 0:
-        fail(f'section absente: {start.strip()}')
-    finish = text.find(end, begin + len(start))
-    if finish < 0:
-        fail(f'fin de section absente: {end.strip()}')
-    return text[begin:finish]
+def require_once(text: str, marker: str, label: str) -> None:
+    if text.count(marker) != 1:
+        fail(f'{label} doit apparaître exactement une fois')
 
 
 def validate_text(text: str) -> None:
-    if 'permissions:\n  contents: read' not in text:
-        fail('permissions contents: read absentes')
-    if 'runs-on: ubuntu-24.04' not in text or 'ubuntu-latest' in text:
-        fail('runner Ubuntu non figé à 24.04')
-    if 'timeout-minutes: 20' not in text:
-        fail('timeout 20 minutes absent')
+    validate_baseline(text, timeout_minutes=20, trigger_paths=TRIGGER_PATHS)
 
-    for action in (CHECKOUT, SETUP_PYTHON, SETUP_CLI):
-        if action not in text:
-            fail(f'action épinglée absente: {action}')
-    for mutable in ('actions/checkout@v', 'actions/setup-python@v', 'supabase/setup-cli@v'):
-        if mutable in text:
-            fail(f'action mobile interdite: {mutable}')
-    if 'persist-credentials: false' not in text:
-        fail('credentials Git persistés')
-    if "python-version: '3.12.14'" not in text:
-        fail('Python 3.12.14 non figé')
-    if 'version: 2.111.0' not in text:
-        fail('Supabase CLI 2.111.0 non figé')
-
-    pr = section(text, '  pull_request:', '  push:')
-    push = section(text, '  push:', '  workflow_dispatch:')
-    if 'branches: [main]' not in pr or 'branches: [main]' not in push:
-        fail('couverture main PR/push incomplète')
-    for marker in TRIGGER_PATHS:
-        if marker not in pr:
-            fail(f'chemin PR manquant: {marker}')
-        if marker not in push:
-            fail(f'chemin push main manquant: {marker}')
-
-    if SELF_TEST not in text:
-        fail('auto-test du contrat CI absent')
-    if SELF_CHECK_LINE not in text:
-        fail('validation réelle du contrat CI absente')
+    require_once(text, SELF_TEST, 'auto-test contrat')
+    require_once(text, SELF_CHECK_LINE, 'validation réelle contrat')
     for marker in STATIC_CHECKS:
-        if marker not in text:
-            fail(f'validateur statique historique absent: {marker}')
-
-    if 'run: supabase start' not in text or 'supabase db start' in text:
-        fail('pile Supabase locale complète non garantie')
+        require_once(text, marker, f'validateur statique {marker}')
     for marker in PGTAP_CHECKS:
-        if marker not in text:
-            fail(f'preuve pgTAP absente: {marker}')
-    if 'if: always()' not in text or 'run: supabase stop --no-backup || true' not in text:
-        fail('arrêt Supabase local always absent')
+        require_once(text, marker, f'preuve pgTAP {marker}')
 
     static_index = text.index(STATIC_CHECKS[0])
     start_index = text.index('run: supabase start')
-    first_test = min(text.index(marker) for marker in PGTAP_CHECKS)
-    last_test = max(text.index(marker) for marker in PGTAP_CHECKS)
+    test_indexes = [text.index(marker) for marker in PGTAP_CHECKS]
     stop_index = text.index('run: supabase stop --no-backup || true')
-    if not static_index < start_index < first_test <= last_test < stop_index:
-        fail('ordre statique -> start -> pgTAP -> stop non respecté')
-
-    for marker in FORBIDDEN:
-        if marker in text:
-            fail(f'capacité distante/secret interdit: {marker}')
+    if not static_index < start_index < test_indexes[0]:
+        fail('contrats statiques ou démarrage Supabase mal ordonnés')
+    if test_indexes != sorted(test_indexes) or not test_indexes[-1] < stop_index:
+        fail('ordre modération -> invitations -> codes -> mineurs -> conformité -> RLS -> advisor -> stop non respecté')
 
 
-def remove_push(text: str) -> str:
-    begin = text.index('  push:')
-    end = text.index('  workflow_dispatch:', begin)
-    return text[:begin] + text[end:]
-
-
-def mutations(text: str):
-    yield 'checkout mobile', text.replace(CHECKOUT, 'actions/checkout@v6', 1)
-    yield 'setup-python mobile', text.replace(SETUP_PYTHON, 'actions/setup-python@v6', 1)
-    yield 'setup-cli mobile', text.replace(SETUP_CLI, 'supabase/setup-cli@v2', 1)
-    yield 'credentials persistés', text.replace('persist-credentials: false', 'persist-credentials: true', 1)
-    yield 'runner latest', text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1)
-    yield 'python large', text.replace("python-version: '3.12.14'", "python-version: '3.12'", 1)
-    yield 'permissions écriture', text.replace('contents: read', 'contents: write', 1)
-    yield 'cli dérive', text.replace('version: 2.111.0', 'version: latest', 1)
-    yield 'secret GitHub', text + '\nenv:\n  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n'
-    yield 'db push distant', text + '\n# supabase db push --linked\n'
-    yield 'environnement production', text.replace('jobs:\n', 'jobs:\n  # environment: production\n', 1)
-    yield 'push main retiré', remove_push(text)
-    yield 'chemin ledger retiré', text.replace("      - 'supabase/production-migration-ledger.txt'\n", '', 2)
-    yield 'chemin advisor retiré', text.replace("      - 'supabase/tests/security_advisor_contract_v24_5_24.test.sql'\n", '', 2)
-    yield 'chemin contrat retiré', text.replace("      - 'scripts/validate_live_social_safety_workflow_security.py'\n", '', 2)
+def extra_mutations(text: str):
+    yield 'déclencheur commun retiré', text.replace(COMMON_TRIGGER, '', 2)
+    yield 'déclencheur ledger retiré', text.replace("      - 'supabase/production-migration-ledger.txt'\n", '', 2)
+    yield 'déclencheur migrations retiré', text.replace("      - 'supabase/migrations/**'\n", '', 2)
+    yield 'déclencheur modération retiré', text.replace("      - 'supabase/tests/live_social_moderation_v25.test.sql'\n", '', 2)
+    yield 'déclencheur codes retiré', text.replace("      - 'supabase/tests/live_social_share_codes_v25.test.sql'\n", '', 2)
+    yield 'déclencheur protection mineurs retiré', text.replace("      - 'supabase/tests/minor_exploitation_safety_v24_4_82.test.sql'\n", '', 2)
+    yield 'déclencheur conformité globale retiré', text.replace("      - 'supabase/tests/global_safety_compliance_v24_4_83.test.sql'\n", '', 2)
+    yield 'déclencheur server-only retiré', text.replace("      - 'supabase/tests/server_only_rls_contract_v25.test.sql'\n", '', 2)
+    yield 'déclencheur advisor retiré', text.replace("      - 'supabase/tests/security_advisor_contract_v24_5_24.test.sql'\n", '', 2)
+    yield 'déclencheur contrat retiré', text.replace("      - 'scripts/validate_live_social_safety_workflow_security.py'\n", '', 2)
     yield 'auto-test retiré', text.replace(f'        run: {SELF_TEST}\n', '        run: echo auto-test-retire\n', 1)
     yield 'contrat réel retiré', text.replace(SELF_CHECK_LINE, '        run: echo contrat-retire\n', 1)
-    yield 'validateur sécurité retiré', text.replace('python scripts/validate_live_social_safety_v25.py', 'echo safety-retire', 1)
-    yield 'pgTAP modération retiré', text.replace(PGTAP_CHECKS[0], 'echo moderation-retire', 1)
-    yield 'pgTAP advisor retiré', text.replace(PGTAP_CHECKS[-1], 'echo advisor-retire', 1)
-    yield 'arrêt non always', text.replace('if: always()', 'if: success()', 1)
-    yield 'arrêt Supabase retiré', text.replace('run: supabase stop --no-backup || true', 'run: echo stop-retire', 1)
-    yield 'JWT désactivé', text + '\n# --no-verify-jwt\n'
+    for index, marker in enumerate(STATIC_CHECKS):
+        yield f'validateur statique {index + 1} retiré', text.replace(marker, f'echo static-{index + 1}-retire', 1)
+    for index, marker in enumerate(PGTAP_CHECKS):
+        yield f'preuve pgTAP {index + 1} retirée', text.replace(marker, f'echo pgtap-{index + 1}-retire', 1)
 
 
 def self_test(text: str) -> None:
-    validate_text(text)
-    detected = 0
-    total = 0
-    for name, mutated in mutations(text):
-        total += 1
-        try:
-            validate_text(mutated)
-        except ValueError:
-            detected += 1
-        else:
-            raise SystemExit(f'ECHEC auto-test CI En direct: mutation non détectée: {name}')
-    if detected != total:
-        raise SystemExit(f'ECHEC auto-test CI En direct: {detected}/{total} mutations détectées')
-    print(f'OK: {detected} mutations critiques détectées')
+    common_self_test(text, validate_text, extra_mutations(text), label='sécurité En direct')
 
 
 def main() -> int:
     if not WORKFLOW.is_file():
-        print('ECHEC CI En direct: workflow absent', file=sys.stderr)
+        print('ECHEC CI sécurité En direct: workflow absent', file=sys.stderr)
         return 1
     text = WORKFLOW.read_text('utf-8')
     try:

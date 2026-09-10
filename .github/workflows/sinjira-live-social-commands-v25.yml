@@ -17,6 +17,7 @@ on:
       - 'scripts/validate_supabase.py'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/live_social_supabase_ci_security.py'
       - 'scripts/validate_live_social_commands_workflow_security.py'
       - '.github/workflows/sinjira-live-social-commands-v25.yml'
   push:
@@ -35,6 +36,7 @@ on:
       - 'scripts/validate_supabase.py'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/live_social_supabase_ci_security.py'
       - 'scripts/validate_live_social_commands_workflow_security.py'
       - '.github/workflows/sinjira-live-social-commands-v25.yml'
   workflow_dispatch:
