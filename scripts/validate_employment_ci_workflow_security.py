@@ -55,19 +55,35 @@ def exact_line_count(text: str, line: str) -> int:
     return text.splitlines().count(line)
 
 
+def trigger_keys(on_block: str) -> set[str]:
+    keys: set[str] = set()
+    for line in on_block.splitlines()[1:]:
+        match = re.match(r"^  ([A-Za-z0-9_-]+):(?:\s|$)", line)
+        if match:
+            keys.add(match.group(1))
+    return keys
+
+
+def mutate_block(text: str, start: str, end: str, old: str, new: str) -> str:
+    section = block(text, start, end)
+    if old not in section:
+        return text
+    return text.replace(section, section.replace(old, new, 1), 1)
+
+
 def validate(text: str) -> None:
+    on = block(text, "on:\n", "\npermissions:")
+    if trigger_keys(on) != {"pull_request", "push", "workflow_dispatch"}:
+        fail("déclencheurs autorisés exactement: pull_request + push + workflow_dispatch")
+
     pr = block(text, "  pull_request:", "  push:")
     push = block(text, "  push:", "  workflow_dispatch:")
-
     for trigger_name, trigger in (("pull_request", pr), ("push", push)):
         if "    branches: [main]" not in trigger:
             fail(f"{trigger_name} doit rester borné à main")
         for path in CRITICAL_PATHS:
             if f"      - {path}" not in trigger:
                 fail(f"path critique absent de {trigger_name}: {path}")
-
-    if "  workflow_dispatch:" not in text:
-        fail("workflow_dispatch local absent")
 
     required = (
         "name: SINJIRA V25 — Emploi",
@@ -185,8 +201,15 @@ def validate(text: str) -> None:
 def mutations(text: str):
     yield "push main retiré", text.replace("  push:\n    branches: [main]\n", "  push:\n    branches: [develop]\n", 1)
     yield "PR main retirée", text.replace("  pull_request:\n    branches: [main]\n", "  pull_request:\n    branches: [develop]\n", 1)
-    yield "path garde PR retiré", text.replace("      - 'scripts/validate_employment_ci_workflow_security.py'\n", "", 1)
-    yield "path garde push retiré", text.replace("      - 'scripts/validate_employment_ci_workflow_security.py'\n", "", 2)
+    yield "trigger supplémentaire", text.replace("  workflow_dispatch:\n", "  pull_request_target:\n  workflow_dispatch:\n", 1)
+    yield "path garde PR retiré", mutate_block(
+        text, "  pull_request:", "  push:",
+        "      - 'scripts/validate_employment_ci_workflow_security.py'\n", "",
+    )
+    yield "path garde push retiré", mutate_block(
+        text, "  push:", "  workflow_dispatch:",
+        "      - 'scripts/validate_employment_ci_workflow_security.py'\n", "",
+    )
     yield "workflow_dispatch retiré", text.replace("  workflow_dispatch:\n", "", 1)
     yield "runner mutable", text.replace("runs-on: ubuntu-24.04", "runs-on: ubuntu-latest", 1)
     yield "checkout mutable", text.replace(CHECKOUT, "actions/checkout@v6", 1)
@@ -199,16 +222,16 @@ def mutations(text: str):
     yield "permissions écriture", text.replace("contents: read", "contents: write", 1)
     yield "environment production", text.replace("    timeout-minutes: 25", "    timeout-minutes: 25\n    environment: production", 1)
     yield "secret production", text.replace("    steps:\n", "    env:\n      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n    steps:\n", 1)
-    yield "service role", text + "\n# active marker\n    env:\n      SERVICE_ROLE_KEY: x\n"
-    yield "project production", text + "\n# gpvivleexywljowcqkru\n"
-    yield "endpoint production", text + "\n# api.supabase.com\n"
+    yield "service role", text.replace("run: supabase start", "run: echo SERVICE_ROLE_KEY\n      - run: supabase start", 1)
+    yield "project production", text.replace("run: supabase start", "run: echo gpvivleexywljowcqkru\n      - run: supabase start", 1)
+    yield "endpoint production", text.replace("run: supabase start", "run: echo api.supabase.com\n      - run: supabase start", 1)
     yield "supabase link", text.replace("run: supabase start", "run: supabase link --project-ref demo\n      - run: supabase start", 1)
     yield "db push", text.replace("run: supabase start", "run: supabase db push --linked\n      - run: supabase start", 1)
     yield "functions deploy", text.replace("run: supabase start", "run: supabase functions deploy employment\n      - run: supabase start", 1)
     yield "functions list", text.replace("run: supabase start", "run: supabase functions list --project-ref demo\n      - run: supabase start", 1)
     yield "secrets set", text.replace("run: supabase start", "run: supabase secrets set X=Y\n      - run: supabase start", 1)
     yield "migration repair", text.replace("run: supabase start", "run: supabase migration repair 1 --status applied\n      - run: supabase start", 1)
-    yield "jwt bypass", text + "\n# --no-verify-jwt\n"
+    yield "jwt bypass", text.replace("run: supabase start", "run: echo --no-verify-jwt\n      - run: supabase start", 1)
     yield "curl réseau", text.replace("run: supabase start", "run: curl https://example.com\n      - run: supabase start", 1)
     yield "wget réseau", text.replace("run: supabase start", "run: wget https://example.com\n      - run: supabase start", 1)
     yield "gh api", text.replace("run: supabase start", "run: gh api /repos/x/y\n      - run: supabase start", 1)
