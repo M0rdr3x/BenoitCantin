@@ -212,6 +212,23 @@ def main() -> int:
     require(blocked_security.get("challenge_id") in (None, ""),
             "C révoqué ne doit pas recevoir un nouveau challenge")
 
+    # Rejouer la clé d'un appareil fiable depuis une autre session AAL1 doit réassocier
+    # l'identité technique sans transporter la confiance ni le statut principal.
+    rebound_a = register_device(aal1_c, DEVICE_A, "Clé A rejouée depuis la session C")
+    require(rebound_a.get("id") == device_a.get("id"),
+            "la réassociation doit conserver l'identité de ligne de l'appareil A")
+    require(rebound_a.get("is_trusted") is False,
+            "une device_key copiée ne doit jamais transporter la confiance vers une autre session")
+    require(rebound_a.get("is_primary") is False,
+            "le statut principal doit tomber avec la confiance lors d'une réassociation")
+    retrust_rebound = rpc_response("security_set_device_trust", aal1_c, {
+        "p_device_id": device_a["id"],
+        "p_trusted": True,
+        "p_primary": True,
+    })
+    expect_rpc_refused(retrust_rebound, "AAL2_REQUIRED",
+                       "restauration AAL1 de la confiance après réassociation")
+
     # Nettoyage de la capacité synthétique B; aucune donnée intime n’a été créée.
     cleanup_b = request("POST", "/functions/v1/conscience-vault", token=aal2_b, body={
         "action": "revoke_session",
@@ -221,7 +238,8 @@ def main() -> int:
 
     print(
         "OK smoke challenge appareils V25: retry pending stable, auto-approbation MFA du Coffre refusée, "
-        "approbation liée à un autre appareil courant fiable, clé d’un autre appareil insuffisante et refus final bloquant vérifiés."
+        "approbation liée à un autre appareil courant fiable, clé copiée incapable de transporter la confiance, "
+        "réassociation fail-closed et refus final bloquant vérifiés."
     )
     return 0
 
