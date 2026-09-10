@@ -48,6 +48,7 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
+          check-latest: false
 
       - name: Auto-tester le contrat CI AAL2 admin
         run: python scripts/validate_admin_aal2_workflow_security.py --self-test
