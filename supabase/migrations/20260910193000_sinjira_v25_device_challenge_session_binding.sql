@@ -104,13 +104,22 @@ as $$
 declare
   v_bound_session uuid;
 begin
-  -- Une liaison existante est immuable. Le seul enrichissement permis est NULL -> session
-  -- pendant que le challenge est encore pending, afin de lier atomiquement un challenge
-  -- tout juste créé par le moteur historique au contexte serveur vérifié.
+  -- Une liaison ne peut jamais être remplacée par une autre session.
+  -- La seule réduction autorisée est session -> NULL (notamment via le FK
+  -- ON DELETE SET NULL) : elle invalide la preuve et expire tout challenge pending.
   if old.request_session_id is not null
      and new.request_session_id is distinct from old.request_session_id then
+    if new.request_session_id is null then
+      if old.status='pending' then
+        new.status := 'expired';
+      end if;
+      return new;
+    end if;
     raise exception 'CHALLENGE_SESSION_IMMUTABLE' using errcode='42501';
   end if;
+
+  -- L'enrichissement NULL -> session est permis uniquement pendant pending,
+  -- afin de lier atomiquement le challenge créé par le moteur historique.
   if old.status <> 'pending'
      and new.request_session_id is distinct from old.request_session_id then
     raise exception 'CHALLENGE_SESSION_IMMUTABLE' using errcode='42501';
