@@ -31,13 +31,16 @@ def verdict(*, ledger=(), production=(), planned=LIVE, mounts=()):
 current = verdict()
 check(current['status'] == 'DARK_LAUNCH_BLOCKED_AS_EXPECTED', 'état dark launch attendu')
 check(current['activation_ready'] is False, 'activation ne doit pas être prête')
+check(current['technical_ready'] is False, 'préparation technique ne doit pas être prête')
+check(current['human_activation_required'] is True, 'activation humaine doit rester requise')
+check(current['activation_policy'] == 'HUMAN_REVIEW_REQUIRED', 'politique activation humaine attendue')
 check(len(current['missing_versions']) == 8, 'les 8 migrations doivent être exigées')
 check(set(current['missing_production']) == set(LIVE), 'les 5 tables En direct doivent rester hors production')
 check(not current['errors'], 'dark launch non monté doit être valide')
 
 premature = verdict(mounts=MOUNT)
 check(premature['status'] == 'INVALID', 'montage prématuré doit être invalide')
-check(any('Montage En direct direct ou transitif interdit' in error for error in premature['errors']), 'erreur montage manquante')
+check(any('activation humaine explicite et séparée requise' in error for error in premature['errors']), 'erreur activation humaine manquante')
 
 one_table = frozenset({sorted(LIVE)[0]})
 partial = verdict(production=one_table, planned=LIVE - one_table)
@@ -52,16 +55,22 @@ ledger_only = verdict(ledger=VERSIONS)
 check(ledger_only['status'] == 'INVALID', 'ledger seul ne suffit pas')
 check(ledger_only['ledger_ready'] is True, 'ledger devrait être prêt')
 check(ledger_only['schema_ready'] is False, 'schéma ne devrait pas être prêt')
+check(ledger_only['technical_ready'] is False, 'ledger seul ne rend pas techniquement prêt')
+check(ledger_only['activation_ready'] is False, 'ledger seul ne doit jamais autoriser activation')
 check(any('manifeste production non convergé' in error for error in ledger_only['errors']), 'erreur manifeste manquante')
 
 ready = verdict(ledger=VERSIONS, production=LIVE, planned=frozenset())
-check(ready['status'] == 'READY_NOT_MOUNTED', 'preuve complète non montée attendue')
-check(ready['activation_ready'] is True, 'activation devrait être prête')
-check(not ready['errors'], 'preuve complète ne doit pas produire d’erreur')
+check(ready['status'] == 'TECHNICALLY_READY_DARK_LAUNCH', 'convergence technique doit rester en dark launch')
+check(ready['technical_ready'] is True, 'préparation technique complète attendue')
+check(ready['activation_ready'] is False, 'convergence technique ne doit jamais valoir autorisation humaine')
+check(ready['human_activation_required'] is True, 'décision humaine séparée toujours requise')
+check(not ready['errors'], 'convergence technique non montée ne doit pas produire d’erreur')
 
 mounted = verdict(ledger=VERSIONS, production=LIVE, planned=frozenset(), mounts=MOUNT)
-check(mounted['status'] == 'READY_MOUNTED', 'montage avec preuve complète attendu')
-check(not mounted['errors'], 'montage prêt ne doit pas produire d’erreur')
+check(mounted['status'] == 'INVALID', 'montage public doit rester invalide même après convergence technique')
+check(mounted['technical_ready'] is True, 'le montage interdit ne doit pas effacer la preuve technique')
+check(mounted['activation_ready'] is False, 'montage ne doit jamais créer une autorisation implicite')
+check(any('activation humaine explicite et séparée requise' in error for error in mounted['errors']), 'montage convergé doit exiger activation humaine')
 
 manifest_sample = "EXPECTED_TABLES={'social_live_rooms','profiles'}\nPLANNED_LOCAL_TABLES={'foo'}\n"
 check(gate.parse_manifest_collection(manifest_sample, 'EXPECTED_TABLES') == frozenset({'social_live_rooms', 'profiles'}), 'parser EXPECTED_TABLES incorrect')
@@ -169,7 +178,7 @@ with TemporaryDirectory() as tmp:
         'import inline transitif vers En direct non détecté',
     )
 
-# Les CSS live, même futurs et avec href non guillemeté, restent interdits avant convergence.
+# Les CSS live, même futurs et avec href non guillemeté, restent interdits.
 with TemporaryDirectory() as tmp:
     root = Path(tmp)
     (root / 'compte').mkdir()
@@ -267,4 +276,4 @@ with TemporaryDirectory() as tmp:
     )
     check(not gate.find_html_mounts(root), 'commentaire HTML ou simple mention JS ne doit pas être un montage')
 
-print('OK tests garde activation En direct V25: 8 migrations, 5 tables, convergence manifeste, HTML valide guillemeté/non guillemeté, imports JS/CSS inline et transitifs fail-closed couverts.')
+print('OK tests garde activation En direct V25: 8 migrations, 5 tables, convergence technique séparée de l’autorisation humaine, montage public fail-closed, HTML guillemeté/non guillemeté, imports JS/CSS inline et transitifs couverts.')
