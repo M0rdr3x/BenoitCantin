@@ -11,6 +11,24 @@ on:
       - 'supabase/tests/employment_v25.test.sql'
       - 'scripts/smoke_employment_auth_local.py'
       - 'scripts/validate_employment_v25.py'
+      - 'scripts/validate_employment_ci_workflow_security.py'
+      - 'scripts/validate_employment_production_deploy_workflow.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'docs/sinjira-v25-employment-production-readiness.md'
+      - 'docs/sinjira-v25-employment-production-deployment-2026-09-05.md'
+      - '.github/workflows/sinjira-employment-v25.yml'
+      - '.github/workflows/sinjira-v25-employment-production.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compte/emploi.html'
+      - 'compte/index.html'
+      - 'assets/js/sinjira-employment-v25.js'
+      - 'supabase/migrations/**employment**.sql'
+      - 'supabase/tests/employment_v25.test.sql'
+      - 'scripts/smoke_employment_auth_local.py'
+      - 'scripts/validate_employment_v25.py'
+      - 'scripts/validate_employment_ci_workflow_security.py'
       - 'scripts/validate_employment_production_deploy_workflow.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'docs/sinjira-v25-employment-production-readiness.md'
@@ -24,26 +42,47 @@ permissions:
 
 jobs:
   employment-contract:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Auto-tester la frontière CI Emploi
+        run: python3 scripts/validate_employment_ci_workflow_security.py --self-test
+
+      - name: Vérifier la frontière CI Emploi
+        run: python3 scripts/validate_employment_ci_workflow_security.py
+
       - name: Valider le contrat Emploi V25
+        shell: bash
         run: |
+          set -euo pipefail
           python3 scripts/validate_employment_v25.py
           python3 scripts/validate_employment_production_deploy_workflow.py
+
       - name: Valider la classification du schéma
         run: python3 scripts/validate_production_schema_manifest.py
+
       - name: Installer Supabase CLI
-        uses: supabase/setup-cli@v2
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
         with:
           version: 2.111.0
+
       - name: Démarrer Supabase local complet
         run: supabase start
+
       - name: Tester Emploi avec pgTAP
         run: supabase test db supabase/tests/employment_v25.test.sql --local
+
       - name: Tester Auth et isolation RLS Emploi par HTTP
         shell: bash
         run: |
@@ -56,6 +95,7 @@ jobs:
           SINJIRA_LOCAL_API_URL="$API_URL" \
           SINJIRA_LOCAL_ANON_KEY="$ANON_KEY" \
             python3 scripts/smoke_employment_auth_local.py
+
       - name: Arrêter Supabase local
         if: always()
         run: supabase stop --no-backup || true
