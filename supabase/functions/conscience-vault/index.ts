@@ -203,7 +203,7 @@ Deno.serve(async (req) => {
   try {
     // AAL2 est vérifié à CHAQUE appel. Une capacité de coffre ne remplace jamais le JWT.
     const { user, service, token } = await requiredVaultUser(req);
-    const sessionId = sessionIdFromVerifiedToken(token);
+    const authSessionId = sessionIdFromVerifiedToken(token);
     const body = await readBoundedJson(req);
 
     // L'identité vient exclusivement du JWT vérifié par requiredVaultUser().
@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
         p_platform: safeText(body.platform, 120),
         p_country_code: geo.country,
         p_region_code: geo.region,
-        p_session_id: sessionId
+        p_session_id: authSessionId
       });
       if (securityError) throw new Error('SECURITY_DECISION_INVALID');
 
