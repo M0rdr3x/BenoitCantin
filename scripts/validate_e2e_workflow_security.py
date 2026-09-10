@@ -19,6 +19,8 @@ PLAYWRIGHT_IMAGE = (
 )
 SELF_TEST_COMMAND = 'python3 scripts/validate_e2e_workflow_security.py --self-test'
 VALIDATE_COMMAND = 'python3 scripts/validate_e2e_workflow_security.py'
+SELF_TEST_RUN_LINE = f'run: {SELF_TEST_COMMAND}'
+VALIDATE_RUN_LINE = f'run: {VALIDATE_COMMAND}'
 LITERATURE_TEST_COMMAND = 'python tests/e2e/test_literature_site.py'
 
 
@@ -76,8 +78,8 @@ def validate_text(text: str) -> list[str]:
     )
 
     require(errors, '  workflow-contract:\n' in text, 'job workflow-contract absent')
-    require(errors, count_exact_stripped(text, SELF_TEST_COMMAND) == 1, 'auto-test exact du contrat E2E absent ou dupliqué')
-    require(errors, count_exact_stripped(text, VALIDATE_COMMAND) == 1, 'validation exacte du contrat E2E absente ou dupliquée')
+    require(errors, count_exact_stripped(text, SELF_TEST_RUN_LINE) == 1, 'auto-test exact du contrat E2E absent ou dupliqué')
+    require(errors, count_exact_stripped(text, VALIDATE_RUN_LINE) == 1, 'validation exacte du contrat E2E absente ou dupliquée')
     require(errors, count_exact_stripped(text, 'needs: workflow-contract') == 2, 'les deux jobs navigateur doivent dépendre exactement du contrat de sécurité')
     require(errors, text.count('python tests/e2e/test_public_site.py') == 2, 'le smoke test public doit couvrir le dépôt local et le site déployé')
     require(errors, count_exact_stripped(text, LITERATURE_TEST_COMMAND) == 2, 'le contrat Littérature doit couvrir le dépôt local et le site déployé')
@@ -88,6 +90,13 @@ def validate_text(text: str) -> list[str]:
 
 
 def run_self_tests(text: str) -> None:
+    baseline_errors = validate_text(text)
+    if baseline_errors:
+        raise SystemExit(
+            'ERREUR auto-test E2E: le baseline doit être valide avant les mutations: '
+            + ' | '.join(baseline_errors)
+        )
+
     cases = {
         'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
         'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
@@ -112,7 +121,7 @@ def run_self_tests(text: str) -> None:
             raise SystemExit(f'ERREUR auto-test E2E: mutation non appliquée: {name}')
         if not validate_text(mutated):
             raise SystemExit(f'ERREUR auto-test E2E: mutation non détectée: {name}')
-    print(f'OK auto-tests E2E: {len(cases)} affaiblissements critiques détectés.')
+    print(f'OK auto-tests E2E: baseline valide + {len(cases)} affaiblissements critiques détectés.')
 
 
 def main() -> int:
