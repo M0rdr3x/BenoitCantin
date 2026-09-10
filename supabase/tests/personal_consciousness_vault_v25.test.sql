@@ -44,9 +44,12 @@ select ok(has_function_privilege('service_role',
 select ok(not has_function_privilege('authenticated',
   'public.service_conscience_evaluate_access(uuid,text,text,text,text,text,text)','EXECUTE'),
   'authenticated ne peut pas evaluer directement le contexte du coffre');
-select ok(has_function_privilege('service_role',
-  'public.service_conscience_evaluate_access(uuid,text,text,text,text,text,text)','EXECUTE'),
-  'service_role peut utiliser le wrapper de risque et de challenge du coffre');
+select ok(
+  not has_function_privilege('service_role',
+    'public.service_conscience_evaluate_access(uuid,text,text,text,text,text,text)','EXECUTE')
+  and has_function_privilege('service_role',
+    'public.service_conscience_evaluate_access_session(uuid,text,text,text,text,text,text,uuid)','EXECUTE'),
+  'service_role utilise uniquement le wrapper de risque session-aware du coffre');
 
 -- Les helpers privés ne constituent pas une porte de derrière pour service_role.
 select ok(not has_function_privilege('service_role',
@@ -63,20 +66,22 @@ select ok(not exists(
     and column_name in ('content','content_payload','payload','body','summary','text','ciphertext')
 ), 'audit du coffre ne contient aucune colonne de contenu intime');
 
--- Tous les RPC de coffre sont SECURITY DEFINER avec search_path explicite.
+-- Tous les RPC de coffre, y compris le wrapper session-aware, restent SECURITY DEFINER
+-- avec search_path explicite. L'ancien wrapper est conservé mais son EXECUTE service_role
+-- est révoqué par la migration de liaison challenge/session.
 select ok(
-  (select count(*)=7 and bool_and(p.prosecdef)
+  (select count(*)=8 and bool_and(p.prosecdef)
    from pg_proc p
    join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='public' and p.proname like 'service_conscience_%'),
-  'les sept RPC de coffre sont SECURITY DEFINER'
+  'les huit RPC de coffre sont SECURITY DEFINER'
 );
 select ok(
-  (select count(*)=7 and bool_and(array_to_string(p.proconfig,',') like '%search_path=%')
+  (select count(*)=8 and bool_and(array_to_string(p.proconfig,',') like '%search_path=%')
    from pg_proc p
    join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='public' and p.proname like 'service_conscience_%'),
-  'les sept RPC de coffre figent leur search_path'
+  'les huit RPC de coffre figent leur search_path'
 );
 
 -- Le navigateur ne peut plus lire device_key directement; il passe par une RPC assainie.

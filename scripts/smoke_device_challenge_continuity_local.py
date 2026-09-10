@@ -174,6 +174,29 @@ def main() -> int:
         "B après approbation par A",
     )
 
+    # Nouvelle session B2 : aucune étape préalable de security_register_device n'est faite.
+    # conscience-vault doit transmettre la session JWT au serveur, réassocier l'appareil et
+    # refuser l'approbation de B1. Un nouveau challenge exact doit être émis.
+    aal1_b2 = sign_in(email, password)
+    require(jwt_claims(aal1_b2).get("aal") == "aal1", "B2: session AAL1 attendue avant TOTP")
+    aal2_b2 = verify_totp(aal1_b2, factor_id, secret)
+    require(jwt_claims(aal2_b2).get("aal") == "aal2", "B2: JWT AAL2 absent")
+    challenge_b2 = expect_challenge(
+        vault_open(aal2_b2, DEVICE_B, "Appareil B nouvelle session"),
+        "reissued",
+        "B2 après approbation de B1",
+    )
+    require(challenge_b2 != challenge_b,
+            "une nouvelle session ne doit jamais réutiliser le challenge approuvé de la session précédente")
+
+    retrust_b2 = rpc_response("security_set_device_trust", aal2_b2, {
+        "p_device_id": device_b["id"],
+        "p_trusted": True,
+        "p_primary": False,
+    })
+    expect_rpc_refused(retrust_b2, "TRUST_CONFIRMATION_REQUIRED",
+                       "élévation de confiance B2 avec approbation B1")
+
     # Appareil C : une troisième session prouve qu’une clé A copiée ne suffit pas.
     aal1_c = sign_in(email, password)
     require(jwt_claims(aal1_c).get("aal") == "aal1", "appareil C: session AAL1 attendue avant TOTP")
@@ -238,8 +261,8 @@ def main() -> int:
 
     print(
         "OK smoke challenge appareils V25: retry pending stable, auto-approbation MFA du Coffre refusée, "
-        "approbation liée à un autre appareil courant fiable, clé copiée incapable de transporter la confiance, "
-        "réassociation fail-closed et refus final bloquant vérifiés."
+        "approbation liée à un autre appareil courant fiable, approbation ancienne non rejouable après nouvelle session, "
+        "clé copiée incapable de transporter la confiance, réassociation fail-closed et refus final bloquant vérifiés."
     )
     return 0
 
