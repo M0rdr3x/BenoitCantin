@@ -193,10 +193,10 @@ def validate_text(text: str) -> None:
     if exact_line_count(text, '        if: always()') != 1 or exact_line_count(text, f'        {STOP}') != 1:
         fail('arrêt Supabase local always doit rester exact et unique')
 
-    self_test_index = text.index(SELF_TEST_LINE)
-    self_check_index = text.index(SELF_CHECK_LINE)
-    prod_self_test_index = text.index(PROD_SELF_TEST_LINE)
-    prod_self_check_index = text.index(PROD_SELF_CHECK_LINE)
+    self_test_index = text.index(SELF_TEST_LINE + '\n')
+    self_check_index = text.index(SELF_CHECK_LINE + '\n')
+    prod_self_test_index = text.index(PROD_SELF_TEST_LINE + '\n')
+    prod_self_check_index = text.index(PROD_SELF_CHECK_LINE + '\n')
     static_indexes = [text.index(marker) for marker in STATIC_CHECKS]
     cli_index = text.index(f'uses: {SETUP_CLI}')
     start_index = text.index(DB_START)
@@ -268,8 +268,6 @@ def mutations(text: str):
 def self_test(text: str) -> None:
     validate_text(text)
 
-    # Les commentaires sont inertes : le garde doit raisonner sur les capacités actives,
-    # pas produire de faux positifs à partir de documentation ou d'exemples commentés.
     benign_comments = text + (
         '\n# environment: production\n'
         '# SUPABASE_ACCESS_TOKEN\n'
