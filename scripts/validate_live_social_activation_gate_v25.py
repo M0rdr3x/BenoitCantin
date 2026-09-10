@@ -29,6 +29,10 @@ LIVE_TABLES = frozenset({
     'social_live_room_share_codes',
 })
 
+# Une convergence technique n'est jamais une autorisation de publication.
+# L'activation publique d'En direct reste une décision humaine séparée et explicite.
+PUBLIC_ACTIVATION_POLICY = 'HUMAN_REVIEW_REQUIRED'
+
 # Conservées pour les tests/contrats historiques; find_html_mounts() utilise aussi
 # HTMLParser afin de couvrir les attributs HTML valides non guillemetés.
 SCRIPT_MOUNT_RE = re.compile(
@@ -308,7 +312,13 @@ def evaluate_activation(*, ledger_versions, production_tables, planned_tables, m
 
     ledger_ready = required_versions.issubset(ledger)
     schema_ready = not missing_production and not still_planned
-    activation_ready = ledger_ready and schema_ready
+    technical_ready = ledger_ready and schema_ready
+
+    # La convergence technique est une information de préparation, jamais une
+    # autorisation de publier. Il n'existe volontairement aucun flag automatisé
+    # capable de transformer cette preuve en décision humaine.
+    activation_ready = False
+    human_activation_required = True
     errors = []
 
     overlap = production & planned & LIVE_TABLES
@@ -332,22 +342,26 @@ def evaluate_activation(*, ledger_versions, production_tables, planned_tables, m
             detail.append('encore PLANNED_LOCAL_TABLES: ' + ', '.join(still_planned))
         errors.append('Ledger En direct complet mais manifeste production non convergé: ' + '; '.join(detail))
 
-    if mounts and not activation_ready:
+    if mounts:
         rendered = ', '.join(f'{path}:{asset}' for path, asset in mounts)
-        errors.append('Montage En direct direct ou transitif interdit sans preuve production complète: ' + rendered)
+        errors.append(
+            'Montage En direct public interdit: convergence technique insuffisante; '
+            'activation humaine explicite et séparée requise: ' + rendered
+        )
 
     if errors:
         status = 'INVALID'
-    elif activation_ready and mounts:
-        status = 'READY_MOUNTED'
-    elif activation_ready:
-        status = 'READY_NOT_MOUNTED'
+    elif technical_ready:
+        status = 'TECHNICALLY_READY_DARK_LAUNCH'
     else:
         status = 'DARK_LAUNCH_BLOCKED_AS_EXPECTED'
 
     return {
         'status': status,
         'activation_ready': activation_ready,
+        'technical_ready': technical_ready,
+        'human_activation_required': human_activation_required,
+        'activation_policy': PUBLIC_ACTIVATION_POLICY,
         'ledger_ready': ledger_ready,
         'schema_ready': schema_ready,
         'missing_versions': missing_versions,
@@ -419,10 +433,11 @@ def main():
             f"{len(verdict['missing_versions'])}/8 migrations En direct non prouvées dans le ledger production; "
             'aucun montage direct, transitif JS/CSS ou inline détecté.'
         )
-    elif verdict['status'] == 'READY_NOT_MOUNTED':
-        print('OK garde activation En direct V25: preuve production complète; interface encore non montée.')
     else:
-        print('OK garde activation En direct V25: preuve production complète et montage En direct autorisé.')
+        print(
+            'OK garde activation En direct V25: convergence technique complète; '
+            'dark launch maintenu et activation publique toujours soumise à une décision humaine explicite séparée.'
+        )
     return 0
 
 
