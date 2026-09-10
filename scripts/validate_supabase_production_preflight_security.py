@@ -12,6 +12,10 @@ LOCAL_VALIDATE = "- name: Vérifier le dépôt Supabase"
 BUILD_WORKSPACE = "- name: Construire le workspace production protégé"
 INSTALL_CLI = "- name: Installer Supabase CLI"
 VERIFY_CLI = "- name: Vérifier Supabase CLI"
+SELF_TEST = "python scripts/test_supabase_production_preflight_security.py"
+SELF_CHECK = "python scripts/validate_supabase_production_preflight_security.py"
+EXPECTED_RUNNER = "    runs-on: ubuntu-24.04"
+EXPECTED_PYTHON = "          python-version: '3.12.14'"
 
 PINNED_ACTIONS = {
     "actions/checkout": "d23441a48e516b6c34aea4fa41551a30e30af803",
@@ -80,6 +84,26 @@ def validate_text(text: str) -> list[str]:
         errors.append("Bloc jobs.sync.steps introuvable.")
         return errors
 
+    if "permissions:\n  contents: read\n" not in text:
+        errors.append("Le workflow doit conserver permissions.contents en lecture seule.")
+    if "contents: write" in text:
+        errors.append("Une permission contents: write est interdite dans le prévol production.")
+
+    if text.count(EXPECTED_RUNNER) != 1:
+        errors.append("Le job sync doit utiliser exactement ubuntu-24.04.")
+    if "ubuntu-latest" in text:
+        errors.append("ubuntu-latest est interdit pour ce workflow production sensible.")
+    if text.count(EXPECTED_PYTHON) != 1:
+        errors.append("Python doit être figé exactement à 3.12.14.")
+
+    if "          persist-credentials: false" not in text:
+        errors.append("Checkout doit conserver persist-credentials: false.")
+
+    if "continue-on-error:" in text:
+        errors.append("continue-on-error est interdit dans ce workflow production fail-closed.")
+    if re.search(r"(^|\n)\s*set\s+-x(?:\s|$)", text):
+        errors.append("set -x est interdit afin de réduire le risque d'exposition de secrets.")
+
     if 0 <= job_env_at < steps_at:
         job_env = text[job_env_at:steps_at]
         for secret in ("SUPABASE_ACCESS_TOKEN", "SUPABASE_DB_PASSWORD", "OPTIONAL_RESEND_API_KEY", "secrets."):
@@ -94,8 +118,32 @@ def validate_text(text: str) -> list[str]:
                 "jamais à une branche ou un tag mobile."
             )
 
+    setup_python_at = text.find(f"uses: actions/setup-python@{PINNED_ACTIONS['actions/setup-python']}")
+    self_test_at = text.find(SELF_TEST)
+    self_check_at = text.find(SELF_CHECK)
+    local_validate_at = text.find(LOCAL_VALIDATE)
+    for label, pos in (
+        ("setup Python", setup_python_at),
+        ("auto-test du contrat sécurité", self_test_at),
+        ("validation du contrat sécurité", self_check_at),
+        ("validation locale Supabase", local_validate_at),
+    ):
+        if pos < 0:
+            errors.append(f"Étape locale obligatoire absente: {label}")
+    if min(setup_python_at, self_test_at, self_check_at, local_validate_at) >= 0:
+        if not setup_python_at < self_test_at < self_check_at < local_validate_at:
+            errors.append("L'ordre doit rester Python → auto-test sécurité → contrat sécurité → validations Supabase.")
+
+    for trigger_path in (
+        "      - 'scripts/validate_supabase_production_preflight_security.py'",
+        "      - 'scripts/test_supabase_production_preflight_security.py'",
+        "      - '.github/workflows/supabase-production-preflight.yml'",
+    ):
+        if text.count(trigger_path) < 2:
+            errors.append(f"Chemin critique absent des déclencheurs PR/push: {trigger_path.strip()}")
+
     positions = {
-        "validation locale": text.find(LOCAL_VALIDATE),
+        "validation locale": local_validate_at,
         "workspace protégé": text.find(BUILD_WORKSPACE),
         "installation CLI": text.find(INSTALL_CLI),
         "vérification CLI": text.find(VERIFY_CLI),
@@ -210,6 +258,8 @@ def main() -> int:
             print(f"- {error}")
         return 1
     print("Contrat sécurité préflight Supabase production: OK")
+    print("- runner Ubuntu 24.04 et Python 3.12.14 figés; checkout sans credentials persistés")
+    print("- contrat sécurité auto-testé et validé avant les validations Supabase")
     print("- lot/ledger/workspace vérifiés avant Supabase CLI")
     print("- aucun secret au niveau du job")
     print("- PR/push strictement locaux, sans secrets production ni Supabase CLI")
