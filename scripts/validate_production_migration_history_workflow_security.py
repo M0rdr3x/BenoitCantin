@@ -11,8 +11,8 @@ CHECKOUT = "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803"
 SETUP_PYTHON = "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1"
 RUNNER = "    runs-on: ubuntu-24.04"
 PYTHON_VERSION = "          python-version: '3.12.14'"
-SELF_TEST = "python3 scripts/validate_production_migration_history_workflow_security.py --self-test"
-SELF_CHECK = "python3 scripts/validate_production_migration_history_workflow_security.py"
+SELF_TEST_RUN = "        run: python3 scripts/validate_production_migration_history_workflow_security.py --self-test"
+SELF_CHECK_RUN = "        run: python3 scripts/validate_production_migration_history_workflow_security.py"
 LEDGER_CHECK = "python scripts/validate_production_migration_ledger.py"
 TRIGGER_PATH = "      - 'scripts/validate_production_migration_history_workflow_security.py'"
 
@@ -48,8 +48,8 @@ def validate_text(text: str) -> list[str]:
     if text.count(TRIGGER_PATH) < 2:
         errors.append("Le validateur sécurité doit déclencher les contrôles sur push et pull_request.")
 
-    self_test_at = text.find(SELF_TEST)
-    self_check_at = text.find(SELF_CHECK)
+    self_test_at = text.find(SELF_TEST_RUN)
+    self_check_at = text.find(SELF_CHECK_RUN + "\n")
     ledger_step_at = text.find("      - name: Verrouiller les migrations historiques")
     if self_test_at < 0:
         errors.append("L'auto-test mutationnel du garde sécurité est absent.")
@@ -88,8 +88,8 @@ def self_test(valid: str) -> int:
         ("credentials checkout", valid.replace("persist-credentials: false", "persist-credentials: true", 1)),
         ("historique superficiel", valid.replace("fetch-depth: 0", "fetch-depth: 1", 1)),
         ("permission écriture", valid.replace("contents: read", "contents: write", 1)),
-        ("auto-test retiré", valid.replace(SELF_TEST, "echo self-test-retire", 1)),
-        ("validation retirée", valid.replace(SELF_CHECK, "echo validation-retire", 1)),
+        ("auto-test retiré", valid.replace(SELF_TEST_RUN, "        run: echo self-test-retire", 1)),
+        ("validation retirée", valid.replace(SELF_CHECK_RUN + "\n", "        run: echo validation-retire\n", 1)),
         ("base PR retirée", valid.replace('echo "ref=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"', "echo ref= >> \"$GITHUB_OUTPUT\"", 1)),
         ("base push retirée", valid.replace('before="${{ github.event.before }}"', 'before=""', 1)),
         ("base-ref ledger retiré", valid.replace('python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF"', LEDGER_CHECK, 1)),
