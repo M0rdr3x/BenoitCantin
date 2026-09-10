@@ -16,10 +16,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SUPABASE_PROJECT_REF: gpvivleexywljowcqkru
   EXPECTED_REMOTE_BASELINE: "20260901002241"
   EXPECTED_REMOTE_BASELINE_NAME: sinjira_v24_5_54_fracture_contribution_atomic_finalize
-  SUPABASE_MANAGEMENT_API: https://api.supabase.com/v1
 
 jobs:
   verify-v25-consciousness-vault:
@@ -38,19 +36,14 @@ jobs:
             exit 1
           }
 
-      - name: Vérifier la confirmation et le jeton
+      - name: Vérifier la confirmation
         shell: bash
         env:
           VERIFY_CONFIRMATION: ${{ inputs.confirmation }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           test "$VERIFY_CONFIRMATION" = "VERIFY-SINJIRA-V25" || {
             echo "Confirmation invalide; aucune vérification production n'est exécutée." >&2
-            exit 1
-          }
-          test -n "${SUPABASE_ACCESS_TOKEN:-}" || {
-            echo "Secret SUPABASE_ACCESS_TOKEN manquant." >&2
             exit 1
           }
 
@@ -65,6 +58,7 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
+          check-latest: false
 
       - name: Vérifier les contrats statiques V25
         shell: bash
@@ -76,20 +70,31 @@ jobs:
           python3 scripts/validate_v25_production_deploy_workflow.py
           python3 scripts/validate_v25_production_verification_workflow_security.py
 
-      - name: Vérifier l'historique V25 en lecture seule
+      - name: Télécharger l'historique V25 en lecture seule
         shell: bash
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || {
+            echo "Secret SUPABASE_ACCESS_TOKEN manquant." >&2
+            exit 1
+          }
           history="$RUNNER_TEMP/v25-migrations.json"
           curl --fail-with-body --silent --show-error \
-            "$SUPABASE_MANAGEMENT_API/projects/$SUPABASE_PROJECT_REF/database/migrations" \
+            --proto '=https' \
+            --tlsv1.2 \
+            --request GET \
             --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             --header 'Accept: application/json' \
-            --output "$history"
+            --output "$history" \
+            "https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/database/migrations"
 
-          MIGRATION_HISTORY="$history" python3 - <<'PY'
+      - name: Valider l'historique V25 sans secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          MIGRATION_HISTORY="$RUNNER_TEMP/v25-migrations.json" python3 - <<'PY'
           import json
           import os
           from pathlib import Path
@@ -145,14 +150,18 @@ jobs:
           version: 2.111.0
           github-token: ${{ github.token }}
 
-      - name: Vérifier la présence de conscience-vault
+      - name: Vérifier la présence de conscience-vault en lecture seule
         shell: bash
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || {
+            echo "Secret SUPABASE_ACCESS_TOKEN manquant." >&2
+            exit 1
+          }
           functions_list="$RUNNER_TEMP/v25-functions-list.txt"
-          supabase functions list --project-ref "$SUPABASE_PROJECT_REF" | tee "$functions_list"
+          supabase functions list --project-ref "gpvivleexywljowcqkru" | tee "$functions_list"
           grep -Fq 'conscience-vault' "$functions_list" || {
             echo "conscience-vault absente de production." >&2
             exit 1
