@@ -13,10 +13,13 @@ on:
       - 'scripts/validate_conscience_vault_edge_v25.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'supabase/tests/device_challenge_continuity_v25.test.sql'
+      - 'supabase/tests/device_challenge_session_binding_v25.test.sql'
       - 'supabase/tests/personal_consciousness_vault_v25.test.sql'
       - 'supabase/functions/conscience-vault/**'
+      - 'supabase/functions/security-context/**'
       - 'supabase/functions/_shared/auth.ts'
       - 'supabase/functions/_shared/cors.ts'
+      - 'supabase/migrations/20260910193000_sinjira_v25_device_challenge_session_binding.sql'
       - 'supabase/migrations/**security**.sql'
       - 'supabase/migrations/**challenge**.sql'
       - 'supabase/migrations/**conscience**.sql'
@@ -34,10 +37,13 @@ on:
       - 'scripts/validate_conscience_vault_edge_v25.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'supabase/tests/device_challenge_continuity_v25.test.sql'
+      - 'supabase/tests/device_challenge_session_binding_v25.test.sql'
       - 'supabase/tests/personal_consciousness_vault_v25.test.sql'
       - 'supabase/functions/conscience-vault/**'
+      - 'supabase/functions/security-context/**'
       - 'supabase/functions/_shared/auth.ts'
       - 'supabase/functions/_shared/cors.ts'
+      - 'supabase/migrations/20260910193000_sinjira_v25_device_challenge_session_binding.sql'
       - 'supabase/migrations/**security**.sql'
       - 'supabase/migrations/**challenge**.sql'
       - 'supabase/migrations/**conscience**.sql'
@@ -62,6 +68,7 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
+          check-latest: false
 
       - name: Auto-tester le contrat CI continuité appareils
         run: python scripts/validate_device_challenge_continuity_workflow_security.py --self-test
@@ -95,6 +102,9 @@ jobs:
 
       - name: Tester le contrat challenge appareils avec pgTAP
         run: supabase test db supabase/tests/device_challenge_continuity_v25.test.sql --local
+
+      - name: Tester la liaison challenge-session avec pgTAP
+        run: supabase test db supabase/tests/device_challenge_session_binding_v25.test.sql --local
 
       - name: Tester le parcours multi-appareils derrière AAL2
         shell: bash
