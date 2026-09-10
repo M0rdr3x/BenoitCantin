@@ -16,6 +16,27 @@ on:
       - 'scripts/validate_mobile_safe_share_v25.py'
       - 'scripts/validate_device_challenge_client_boundary.py'
       - 'scripts/validate_no_committed_secrets.py'
+      - 'scripts/validate_mobile_commerce_hub_workflow_security.py'
+      - 'mobile-native/package.json'
+      - 'mobile-native/package-lock.json'
+      - 'mobile-native/scripts/validate-vault-mobile.mjs'
+      - '.github/workflows/sinjira-mobile-native-commerce-hub-v25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'mobile-native/NativeCommerceHub.tsx'
+      - 'mobile-native/NativeHomeHub.tsx'
+      - 'mobile-native/NativeModuleRouter.tsx'
+      - 'mobile-native/NATIVE_COMMERCE_HUB_V25.md'
+      - 'scripts/validate_mobile_native_commerce_hub_v25.py'
+      - 'scripts/validate_mobile_native_route_dispatch_v25.py'
+      - 'scripts/validate_mobile_native_home_hub_v25.py'
+      - 'scripts/validate_mobile_native_library_hub_v25.py'
+      - 'scripts/validate_mobile_navigation_boundary_v25.py'
+      - 'scripts/validate_mobile_safe_share_v25.py'
+      - 'scripts/validate_device_challenge_client_boundary.py'
+      - 'scripts/validate_no_committed_secrets.py'
+      - 'scripts/validate_mobile_commerce_hub_workflow_security.py'
       - 'mobile-native/package.json'
       - 'mobile-native/package-lock.json'
       - 'mobile-native/scripts/validate-vault-mobile.mjs'
@@ -27,13 +48,24 @@ permissions:
 
 jobs:
   native-commerce-hub:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat CI du hub Commerce
+        run: python3 scripts/validate_mobile_commerce_hub_workflow_security.py --self-test
+
+      - name: Vérifier le contrat CI du hub Commerce
+        run: python3 scripts/validate_mobile_commerce_hub_workflow_security.py
 
       - name: Valider le hub Commerce natif V25
         run: python3 scripts/validate_mobile_native_commerce_hub_v25.py
@@ -59,12 +91,10 @@ jobs:
       - name: Revalider l'absence de secrets suivis
         run: python3 scripts/validate_no_committed_secrets.py
 
-      - name: Node.js
-        uses: actions/setup-node@v4
+      - name: Configurer Node.js sans cache implicite
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
-          node-version: '22.13.0'
-          cache: npm
-          cache-dependency-path: mobile-native/package.json
+          node-version: '22.23.2'
 
       - name: Installer les dépendances sans scripts de cycle de vie
         working-directory: mobile-native
