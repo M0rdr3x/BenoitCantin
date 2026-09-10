@@ -17,6 +17,7 @@ on:
       - 'scripts/test_supabase_production_preflight_security.py'
       - 'scripts/validate_production_migration_workflow_security.py'
       - 'scripts/test_production_migration_workflow_security.py'
+      - 'scripts/validate_production_migration_history_workflow_security.py'
       - '.github/workflows/supabase-production-preflight.yml'
       - '.github/workflows/supabase-production-safe.yml'
       - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
@@ -36,6 +37,7 @@ on:
       - 'scripts/test_supabase_production_preflight_security.py'
       - 'scripts/validate_production_migration_workflow_security.py'
       - 'scripts/test_production_migration_workflow_security.py'
+      - 'scripts/validate_production_migration_history_workflow_security.py'
       - '.github/workflows/supabase-production-preflight.yml'
       - '.github/workflows/supabase-production-safe.yml'
       - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
@@ -48,7 +50,7 @@ permissions:
 jobs:
   validate-ledger:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -56,7 +58,11 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
-          python-version: '3.12'
+          python-version: '3.12.14'
+      - name: Prouver l'intégrité dédiée du garde historique migrations
+        run: python scripts/validate_production_migration_history_workflow_security.py --self-test
+      - name: Vérifier l'intégrité dédiée du garde historique migrations
+        run: python scripts/validate_production_migration_history_workflow_security.py
       - name: Prouver l'intégrité des workflows de garde migrations
         run: python scripts/test_production_migration_workflow_security.py
       - name: Vérifier l'intégrité des workflows de garde migrations

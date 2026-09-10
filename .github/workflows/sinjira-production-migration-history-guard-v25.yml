@@ -7,6 +7,7 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
       - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_production_migration_history_workflow_security.py'
       - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
   pull_request:
     branches: [ main ]
@@ -14,6 +15,7 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
       - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_production_migration_history_workflow_security.py'
       - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
   workflow_dispatch:
 
@@ -22,7 +24,7 @@ permissions:
 
 jobs:
   migration-history-guard:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Checkout historique complet
@@ -34,7 +36,15 @@ jobs:
       - name: Configurer Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
-          python-version: '3.12'
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat sécurité du garde historique
+        shell: bash
+        run: python3 scripts/validate_production_migration_history_workflow_security.py --self-test
+
+      - name: Vérifier le contrat sécurité du garde historique
+        shell: bash
+        run: python3 scripts/validate_production_migration_history_workflow_security.py
 
       - name: Déterminer la base Git
         id: migration_base
