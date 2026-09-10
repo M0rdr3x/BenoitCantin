@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   migration-history-guard:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Checkout historique complet
@@ -34,7 +34,8 @@ jobs:
       - name: Configurer Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
-          python-version: '3.12'
+          python-version: '3.12.14'
+          check-latest: false
 
       - name: Déterminer la base Git
         id: migration_base
