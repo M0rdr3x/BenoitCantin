@@ -44,7 +44,7 @@ concurrency:
 jobs:
   sync:
     name: Prévol / synchronisation contrôlée
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
       PROJECT_ID: gpvivleexywljowcqkru
@@ -57,7 +57,19 @@ jobs:
       - name: Configurer Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6 vérifié le 2026-09-08
         with:
-          python-version: '3.12'
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat sécurité du prévol production
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/test_supabase_production_preflight_security.py
+
+      - name: Vérifier le contrat sécurité du prévol production
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_supabase_production_preflight_security.py
 
       - name: Vérifier le dépôt Supabase
         shell: bash

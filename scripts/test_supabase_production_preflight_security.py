@@ -8,6 +8,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from validate_supabase_production_preflight_security import (  # noqa: E402
     PINNED_ACTIONS,
+    SELF_CHECK,
+    SELF_TEST,
     validate_text,
 )
 
@@ -21,6 +23,7 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         cls.valid = WORKFLOW.read_text(encoding="utf-8")
 
     def assertRejected(self, text: str, fragment: str):
+        self.assertNotEqual(text, self.valid, "La mutation doit réellement modifier le workflow.")
         errors = validate_text(text)
         self.assertTrue(errors, "La mutation dangereuse aurait dû être refusée.")
         self.assertTrue(
@@ -37,6 +40,50 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
 
     def test_current_workflow_is_accepted(self):
         self.assertEqual(validate_text(self.valid), [])
+
+    def test_runner_latest_is_rejected(self):
+        bad = self.valid.replace("    runs-on: ubuntu-24.04", "    runs-on: ubuntu-latest", 1)
+        self.assertRejected(bad, "ubuntu-24.04")
+
+    def test_broad_python_is_rejected(self):
+        bad = self.valid.replace("          python-version: '3.12.14'", "          python-version: '3.12'", 1)
+        self.assertRejected(bad, "3.12.14")
+
+    def test_persisted_checkout_credentials_are_rejected(self):
+        bad = self.valid.replace("          persist-credentials: false", "          persist-credentials: true", 1)
+        self.assertRejected(bad, "persist-credentials: false")
+
+    def test_contents_write_is_rejected(self):
+        bad = self.valid.replace("  contents: read", "  contents: write", 1)
+        self.assertRejected(bad, "lecture seule")
+
+    def test_self_test_removal_is_rejected(self):
+        bad = self.valid.replace(SELF_TEST, "echo auto-test-retire", 1)
+        self.assertRejected(bad, "auto-test du contrat sécurité")
+
+    def test_self_check_removal_is_rejected(self):
+        bad = self.valid.replace(SELF_CHECK, "echo contrat-retire", 1)
+        self.assertRejected(bad, "validation du contrat sécurité")
+
+    def test_self_checks_order_is_rejected_when_swapped(self):
+        temporary = "python scripts/__temp_preflight_security__.py"
+        bad = self.valid.replace(SELF_TEST, temporary, 1)
+        bad = bad.replace(SELF_CHECK, SELF_TEST, 1)
+        bad = bad.replace(temporary, SELF_CHECK, 1)
+        self.assertRejected(bad, "ordre doit rester Python")
+
+    def test_continue_on_error_is_rejected(self):
+        bad = self.valid.replace("    timeout-minutes: 25", "    timeout-minutes: 25\n    continue-on-error: true", 1)
+        self.assertRejected(bad, "continue-on-error")
+
+    def test_shell_trace_is_rejected(self):
+        bad = self.valid.replace("          set -euo pipefail", "          set -x", 1)
+        self.assertRejected(bad, "set -x")
+
+    def test_critical_trigger_path_removal_is_rejected(self):
+        marker = "      - 'scripts/test_supabase_production_preflight_security.py'\n"
+        bad = self.valid.replace(marker, "", 1)
+        self.assertRejected(bad, "Chemin critique absent")
 
     def test_job_level_secret_is_rejected(self):
         bad = self.valid.replace(
