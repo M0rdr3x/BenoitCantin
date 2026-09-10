@@ -77,7 +77,11 @@ jobs:
           BASE_URL: http://127.0.0.1:4173/
           BROWSER: ${{ matrix.browser }}
         run: |
-          if python tests/e2e/test_public_site.py; then
+          run_suite() {
+            python tests/e2e/test_public_site.py &&
+            python tests/e2e/test_literature_site.py
+          }
+          if run_suite; then
             exit 0
           fi
           if [ "$BROWSER" != "firefox" ]; then
@@ -85,14 +89,16 @@ jobs:
           fi
           echo "::warning::Premier passage Firefox en échec; une seule relance bornée est autorisée pour absorber un timeout moteur isolé."
           sleep 2
-          python tests/e2e/test_public_site.py
+          run_suite
 
       - name: Tester le site public déployé avec ${{ matrix.browser }}
         if: github.event_name != 'pull_request'
         env:
           BASE_URL: https://www.benoitcantin.com/
           BROWSER: ${{ matrix.browser }}
-        run: python tests/e2e/test_public_site.py
+        run: |
+          python tests/e2e/test_public_site.py
+          python tests/e2e/test_literature_site.py
 
       - name: Arrêter le serveur local
         if: always()
@@ -120,7 +126,6 @@ jobs:
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: '22.23.2'
-          package-manager-cache: false
 
       - name: Démarrer le site statique local
         run: |
