@@ -41,6 +41,7 @@ def main() -> int:
     migration = read('supabase/migrations/20260902223000_sinjira_v25_0_personal_consciousness_vault.sql')
     continuity = read('supabase/migrations/20260902231500_sinjira_v25_0_conscience_vault_challenge_continuity.sql')
     device_hardening = read('supabase/migrations/20260903213000_sinjira_v25_0_device_key_privacy_and_trust_hardening.sql')
+    session_binding = read('supabase/migrations/20260910193000_sinjira_v25_device_challenge_session_binding.sql')
 
     require(auth, [
         'getAuthenticatorAssuranceLevel(token)',
@@ -69,6 +70,9 @@ def main() -> int:
     require(edge, [
         "import { requiredVaultUser } from '../_shared/auth.ts'",
         'await requiredVaultUser(req)',
+        'const { user, service, token } = await requiredVaultUser(req)',
+        'const authSessionId = sessionIdFromVerifiedToken(token)',
+        "payload?.session_id",
         'async function readBoundedJson(req: Request)',
         "contentType !== 'application/json'",
         'req.body.getReader()',
@@ -80,7 +84,8 @@ def main() -> int:
         "'Referrer-Policy': 'no-referrer'",
         "['user_id', 'target_user_id', 'subject_user_id']",
         "throw new Error('CLIENT_IDENTITY_FORBIDDEN')",
-        "service.rpc('service_conscience_evaluate_access'",
+        "service.rpc('service_conscience_evaluate_access_session'",
+        'p_session_id: authSessionId',
         "security?.risk_model_version !== 'v25.0'",
         'security?.mandatory_step_up !== true',
         'security?.requires_step_up !== true',
@@ -103,6 +108,7 @@ def main() -> int:
     ], 'contrat Edge du Registre personnel')
 
     forbid(edge, [
+        "service.rpc('service_conscience_evaluate_access'",
         "service.rpc('security_evaluate_context'",
         'requiredSensitiveUser',
         ".schema('private')",
@@ -118,12 +124,14 @@ def main() -> int:
         'body?.country_code',
         'body.region_code',
         'body?.region_code',
+        'body.session_id',
+        'body?.session_id',
         'console.log(body',
         'console.log(parsed',
         'console.log(payload',
         'console.error(error',
         'console.error(error)',
-    ], 'aucun contournement, corps non borné ou journal de contenu dans Edge')
+    ], 'aucun contournement, corps non borné, session client ou journal de contenu dans Edge')
 
     config_block = function_block(
         config,
@@ -165,7 +173,29 @@ def main() -> int:
         'revoke all on function public.service_conscience_evaluate_access(uuid,text,text,text,text,text,text)',
         'grant execute on function public.service_conscience_evaluate_access(uuid,text,text,text,text,text,text)',
         'to service_role',
-    ], 'continuité du challenge appareil fiable')
+    ], 'continuité historique du challenge appareil fiable')
+
+    require(session_binding, [
+        'add column if not exists request_session_id uuid references auth.sessions(id) on delete set null',
+        'create or replace function private.security_rebind_service_session(',
+        'from auth.sessions s',
+        'is_trusted=false',
+        'is_primary=false',
+        "set status='expired'",
+        'create or replace function private.security_challenge_request_session_guard()',
+        "raise exception 'CHALLENGE_SESSION_REQUIRED'",
+        "raise exception 'CHALLENGE_SESSION_MISMATCH'",
+        'create trigger security_connection_challenge_session_guard',
+        'create or replace function public.service_security_evaluate_context_session(',
+        'perform private.security_rebind_service_session(p_user_id,p_device_key,p_session_id)',
+        'set request_session_id=p_session_id',
+        'create or replace function public.service_conscience_evaluate_access_session(',
+        'and c.request_session_id=p_session_id',
+        'and last_session_id = p_session_id',
+        'revoke execute on function public.service_conscience_evaluate_access(uuid,text,text,text,text,text,text)',
+        'from service_role',
+        'c.request_session_id=v_session',
+    ], 'liaison fail-closed challenge/session V25')
 
     require(device_hardening, [
         'revoke select on table public.security_devices from authenticated',
@@ -233,7 +263,7 @@ def main() -> int:
         'devices.find(d=>d.device_key',
     ], 'le navigateur ne lit ni ne compare device_key')
 
-    print('OK coffre V25: JWT + AAL2 obligatoire, corps borné, no-store, identité dérivée, scope serveur conscience_vault, approbation par autre appareil fiable, device_key non exposé et confiance appareil confirmée.')
+    print('OK coffre V25: JWT + AAL2 obligatoire, session JWT liée côté serveur au challenge, corps borné, no-store, identité dérivée, scope conscience_vault, autre appareil fiable et device_key non exposé.')
     return 0
 
 
