@@ -257,6 +257,8 @@ export default function App() {
   const [webViewKey, setWebViewKey] = useState(0);
   const [nativeDeviceKey, setNativeDeviceKey] = useState('');
   const [securityReady, setSecurityReady] = useState(false);
+  const [securityStorageFailed, setSecurityStorageFailed] = useState(false);
+  const [securityBootstrapAttempt, setSecurityBootstrapAttempt] = useState(0);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [nativeMessage, setNativeMessage] = useState('');
@@ -389,6 +391,9 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
+    setSecurityReady(false);
+    setSecurityStorageFailed(false);
+    setIsUnlocked(false);
     (async () => {
       let key = await SecureStore.getItemAsync(DEVICE_KEY_STORAGE);
       if (!key) {
@@ -414,21 +419,24 @@ export default function App() {
       setBiometricEnabled(biometric);
       setPushEnabled(push);
       setPushToken(token);
+      setSecurityStorageFailed(false);
       if (biometric) await unlockWithBiometrics();
       else setIsUnlocked(true);
       if (!cancelled) setSecurityReady(true);
       if (push && !token) void enableSecurityPush(true, key);
     })().catch(() => {
       if (!cancelled) {
-        setNativeMessage('Le stockage sécurisé local est indisponible.');
-        setIsUnlocked(true);
+        setNativeDeviceKey('');
+        setIsUnlocked(false);
+        setSecurityStorageFailed(true);
+        setNativeMessage('Le stockage sécurisé local est indisponible. SINJIRA reste verrouillé.');
         setSecurityReady(true);
       }
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [securityBootstrapAttempt]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
@@ -699,6 +707,31 @@ export default function App() {
         <View style={styles.loading}>
           <ActivityIndicator size="large" />
           <Text style={styles.loadingText}>Préparation sécurisée de SINJIRA…</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (securityStorageFailed) {
+    return (
+      <SafeAreaView style={styles.root}>
+        <StatusBar style="light" />
+        <View style={styles.lockScreen}>
+          <Text style={styles.lockTitle}>Stockage sécurisé indisponible</Text>
+          <Text style={styles.lockText}>SINJIRA reste verrouillé parce que l’identité locale de cet appareil ne peut pas être lue de façon sûre.</Text>
+          <Text style={styles.lockNote}>Aucune donnée du compte n’est ouverte. Réessayez lorsque le stockage sécurisé de votre téléphone est de nouveau disponible.</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Réessayer l’initialisation sécurisée"
+            onPress={() => {
+              setNativeMessage('');
+              setSecurityReady(false);
+              setSecurityBootstrapAttempt((value) => value + 1);
+            }}
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryText}>Réessayer</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
