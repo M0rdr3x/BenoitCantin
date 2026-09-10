@@ -1,0 +1,59 @@
+name: Site — Personnalité publique V25
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'ARCHITECTURE_DES_UNIVERS.md'
+      - 'projets/sinjira/index.html'
+      - 'projets/projet-nova/index.html'
+      - 'projets/futurax/index.html'
+      - 'projets/lumina/index.html'
+      - 'projets/chroniques-des-mondes-fractures/index.html'
+      - 'assets/js/site-personality-v25.js'
+      - 'assets/css/site-personality-v25.css'
+      - 'docs/SITE_PERSONALITY_V25.md'
+      - 'scripts/validate_site_personality_v25.py'
+      - '.github/workflows/site-personality-v25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'ARCHITECTURE_DES_UNIVERS.md'
+      - 'projets/sinjira/index.html'
+      - 'projets/projet-nova/index.html'
+      - 'projets/futurax/index.html'
+      - 'projets/lumina/index.html'
+      - 'projets/chroniques-des-mondes-fractures/index.html'
+      - 'assets/js/site-personality-v25.js'
+      - 'assets/css/site-personality-v25.css'
+      - 'docs/SITE_PERSONALITY_V25.md'
+      - 'scripts/validate_site_personality_v25.py'
+      - '.github/workflows/site-personality-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  personality-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Auto-tester le contrat de personnalité
+        run: python3 scripts/validate_site_personality_v25.py --self-test
+
+      - name: Vérifier les six portes et la frontière de confidentialité
+        run: python3 scripts/validate_site_personality_v25.py
