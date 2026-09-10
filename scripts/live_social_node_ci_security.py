@@ -11,6 +11,7 @@ SETUP_PYTHON = 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1'
 SETUP_NODE = 'actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38'
 PYTHON_VERSION = "python-version: '3.12.14'"
 NODE_VERSION = "node-version: '22.23.2'"
+PACKAGE_MANAGER_CACHE_OFF = 'package-manager-cache: false'
 
 FORBIDDEN = (
     '${{ secrets.',
@@ -39,9 +40,6 @@ FORBIDDEN = (
     'pnpm install',
     'yarn install',
     'npx ',
-    'cache:',
-    'cache-dependency-path:',
-    'package-manager-cache:',
 )
 
 
@@ -81,6 +79,12 @@ def validate_baseline(text: str, *, timeout_minutes: int, trigger_paths: Iterabl
         fail('Python 3.12.14 non figé')
     if NODE_VERSION not in text:
         fail('Node 22.23.2 non figé')
+    if text.count(PACKAGE_MANAGER_CACHE_OFF) != 1:
+        fail('cache automatique setup-node doit être explicitement désactivé une seule fois')
+    if re.search(r'^\s*cache\s*:', text, flags=re.MULTILINE):
+        fail('cache package-manager explicite interdit')
+    if re.search(r'^\s*cache-dependency-path\s*:', text, flags=re.MULTILINE):
+        fail('cache-dependency-path interdit')
 
     uses_targets = re.findall(r'^\s*-?\s*uses:\s+(\S+)\s*$', text, flags=re.MULTILINE)
     if len(uses_targets) != 3:
@@ -122,9 +126,10 @@ def generic_mutations(text: str):
     yield 'Node large', text.replace(NODE_VERSION, "node-version: '22'", 1)
     yield 'permission contents write', text.replace('contents: read', 'contents: write', 1)
     yield 'permissions write-all', text.replace('permissions:\n  contents: read', 'permissions: write-all', 1)
-    yield 'cache setup-node', text.replace(NODE_VERSION, NODE_VERSION + "\n          cache: 'npm'", 1)
+    yield 'cache automatique réactivé', text.replace(PACKAGE_MANAGER_CACHE_OFF, 'package-manager-cache: true', 1)
+    yield 'cache npm', text.replace(NODE_VERSION, NODE_VERSION + "\n          cache: 'npm'", 1)
+    yield 'cache false ambigu', text.replace(NODE_VERSION, NODE_VERSION + '\n          cache: false', 1)
     yield 'cache dependency path', text.replace(NODE_VERSION, NODE_VERSION + '\n          cache-dependency-path: package.json', 1)
-    yield 'package manager cache', text.replace(NODE_VERSION, NODE_VERSION + '\n          package-manager-cache: true', 1)
     yield 'secret GitHub', text + '\nenv:\n  BAD: ${{ secrets.BAD }}\n'
     yield 'token GitHub explicite', text + '\nenv:\n  GITHUB_TOKEN: ${{ github.token }}\n'
     yield 'secret Supabase', text + '\nenv:\n  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n'
