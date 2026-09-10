@@ -32,6 +32,38 @@ CRITICAL_PATHS = (
     "'.github/workflows/sinjira-v25-employment-production.yml'",
 )
 
+FORBIDDEN_ACTIVE = (
+    "ubuntu-latest",
+    "contents: write",
+    "persist-credentials: true",
+    "environment: production",
+    "${{ secrets.",
+    "SUPABASE_ACCESS_TOKEN",
+    "SUPABASE_DB_PASSWORD",
+    "SERVICE_ROLE",
+    "service_role",
+    "gpvivleexywljowcqkru",
+    "api.supabase.com",
+    "supabase link",
+    "supabase db push",
+    "supabase functions deploy",
+    "supabase functions list",
+    "supabase secrets set",
+    "supabase migration repair",
+    "supabase db reset --linked",
+    "--linked",
+    "--no-verify-jwt",
+    "continue-on-error:",
+    "set -x",
+    "curl ",
+    "wget ",
+    "gh api",
+    "git push",
+    "${{ github.token }}",
+    "GITHUB_TOKEN:",
+    "GH_TOKEN:",
+)
+
 
 def fail(message: str) -> None:
     raise ValueError(message)
@@ -91,15 +123,10 @@ def validate(text: str) -> None:
         "  employment-contract:",
         "    runs-on: ubuntu-24.04",
         "    timeout-minutes: 25",
-        f"uses: {CHECKOUT}",
         "          persist-credentials: false",
-        f"uses: {SETUP_PYTHON}",
         "          python-version: '3.12.14'",
         "          check-latest: false",
-        f"uses: {SETUP_CLI}",
         "          version: 2.111.0",
-        f"run: {SELF_TEST}",
-        f"run: {SELF_CHECK}",
         "python3 scripts/validate_employment_v25.py",
         "python3 scripts/validate_employment_production_deploy_workflow.py",
         "run: python3 scripts/validate_production_schema_manifest.py",
@@ -117,38 +144,7 @@ def validate(text: str) -> None:
             fail(f"marqueur obligatoire absent: {marker}")
 
     active = active_text(text)
-    forbidden = (
-        "ubuntu-latest",
-        "contents: write",
-        "persist-credentials: true",
-        "environment: production",
-        "${{ secrets.",
-        "SUPABASE_ACCESS_TOKEN",
-        "SUPABASE_DB_PASSWORD",
-        "SERVICE_ROLE",
-        "service_role",
-        "gpvivleexywljowcqkru",
-        "api.supabase.com",
-        "supabase link",
-        "supabase db push",
-        "supabase functions deploy",
-        "supabase functions list",
-        "supabase secrets set",
-        "supabase migration repair",
-        "supabase db reset --linked",
-        "--linked",
-        "--no-verify-jwt",
-        "continue-on-error:",
-        "set -x",
-        "curl ",
-        "wget ",
-        "gh api",
-        "git push",
-        "${{ github.token }}",
-        "GITHUB_TOKEN:",
-        "GH_TOKEN:",
-    )
-    for marker in forbidden:
+    for marker in FORBIDDEN_ACTIVE:
         if marker in active:
             fail(f"capacité distante/affaiblissement interdit dans la CI locale: {marker}")
 
@@ -159,20 +155,19 @@ def validate(text: str) -> None:
     if exact_line_count(text, "          persist-credentials: false") != 1:
         fail("checkout doit désactiver les credentials exactement une fois")
 
-    uses = re.findall(r"(?m)^\s*uses:\s*([^\s#]+)", text)
+    # GitHub Actions autorise à la fois « uses: » dans un step nommé et « - uses: »
+    # comme step compact. Les deux formes doivent donc être soumises à la whitelist.
+    uses = re.findall(r"(?m)^\s*(?:-\s*)?uses:\s*([^\s#]+)", text)
     unexpected = [value for value in uses if value not in ALLOWED_USES]
     if unexpected:
         fail("action réutilisable non autorisée/non épinglée: " + ", ".join(unexpected))
     if uses.count(CHECKOUT) != 1 or uses.count(SETUP_PYTHON) != 1 or uses.count(SETUP_CLI) != 1:
         fail("checkout, setup-python et setup-cli doivent chacun apparaître exactement une fois")
 
-    if text.count(SELF_TEST) != 1 or text.count(SELF_CHECK) != 2:
-        # SELF_CHECK est aussi un préfixe de SELF_TEST; ce contrôle protège les deux lignes attendues.
-        fail("auto-test et vérification du garde Emploi doivent chacun rester uniques")
-    self_test_line = f"        run: {SELF_TEST}\n"
-    self_check_line = f"        run: {SELF_CHECK}\n"
-    if self_test_line not in text or self_check_line not in text:
-        fail("lignes exactes auto-test/garde Emploi absentes")
+    self_test_line = f"        run: {SELF_TEST}"
+    self_check_line = f"        run: {SELF_CHECK}"
+    if exact_line_count(text, self_test_line) != 1 or exact_line_count(text, self_check_line) != 1:
+        fail("auto-test et vérification du garde Emploi doivent chacun rester une ligne exacte unique")
     if text.index(self_test_line) > text.index(self_check_line):
         fail("l'auto-test du garde Emploi doit précéder sa vérification réelle")
 
@@ -202,14 +197,8 @@ def mutations(text: str):
     yield "push main retiré", text.replace("  push:\n    branches: [main]\n", "  push:\n    branches: [develop]\n", 1)
     yield "PR main retirée", text.replace("  pull_request:\n    branches: [main]\n", "  pull_request:\n    branches: [develop]\n", 1)
     yield "trigger supplémentaire", text.replace("  workflow_dispatch:\n", "  pull_request_target:\n  workflow_dispatch:\n", 1)
-    yield "path garde PR retiré", mutate_block(
-        text, "  pull_request:", "  push:",
-        "      - 'scripts/validate_employment_ci_workflow_security.py'\n", "",
-    )
-    yield "path garde push retiré", mutate_block(
-        text, "  push:", "  workflow_dispatch:",
-        "      - 'scripts/validate_employment_ci_workflow_security.py'\n", "",
-    )
+    yield "path garde PR retiré", mutate_block(text, "  pull_request:", "  push:", "      - 'scripts/validate_employment_ci_workflow_security.py'\n", "")
+    yield "path garde push retiré", mutate_block(text, "  push:", "  workflow_dispatch:", "      - 'scripts/validate_employment_ci_workflow_security.py'\n", "")
     yield "workflow_dispatch retiré", text.replace("  workflow_dispatch:\n", "", 1)
     yield "runner mutable", text.replace("runs-on: ubuntu-24.04", "runs-on: ubuntu-latest", 1)
     yield "checkout mutable", text.replace(CHECKOUT, "actions/checkout@v6", 1)
@@ -238,7 +227,8 @@ def mutations(text: str):
     yield "git push", text.replace("run: supabase start", "run: git push origin main\n      - run: supabase start", 1)
     yield "continue on error", text.replace("    timeout-minutes: 25", "    timeout-minutes: 25\n    continue-on-error: true", 1)
     yield "shell trace", text.replace("set -euo pipefail", "set -x", 1)
-    yield "action inconnue", text.replace("    steps:\n", "    steps:\n      - uses: owner/action@v1\n", 1)
+    yield "action inconnue compacte", text.replace("    steps:\n", "    steps:\n      - uses: owner/action@v1\n", 1)
+    yield "action inconnue nommée", text.replace("    steps:\n", "    steps:\n      - name: Action inconnue\n        uses: owner/action@deadbeef\n", 1)
     yield "auto-test retiré", text.replace(f"        run: {SELF_TEST}\n", "        run: python3 -V\n", 1)
     yield "garde réel retiré", text.replace(f"        run: {SELF_CHECK}\n", "        run: python3 -V\n", 1)
     yield "validateur métier retiré", text.replace("python3 scripts/validate_employment_v25.py", "python3 -V", 1)
