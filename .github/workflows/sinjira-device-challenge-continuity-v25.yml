@@ -7,6 +7,7 @@ on:
       - 'scripts/smoke_device_challenge_continuity_local.py'
       - 'scripts/validate_device_challenge_continuity_smoke.py'
       - 'scripts/validate_device_challenge_continuity_workflow_security.py'
+      - 'scripts/validate_device_session_rebind_hardening.py'
       - 'scripts/smoke_sensitive_aal2_local.py'
       - 'scripts/validate_sensitive_aal2_smoke.py'
       - 'scripts/validate_conscience_vault_edge_v25.py'
@@ -27,6 +28,7 @@ on:
       - 'scripts/smoke_device_challenge_continuity_local.py'
       - 'scripts/validate_device_challenge_continuity_smoke.py'
       - 'scripts/validate_device_challenge_continuity_workflow_security.py'
+      - 'scripts/validate_device_session_rebind_hardening.py'
       - 'scripts/smoke_sensitive_aal2_local.py'
       - 'scripts/validate_sensitive_aal2_smoke.py'
       - 'scripts/validate_conscience_vault_edge_v25.py'
@@ -66,6 +68,12 @@ jobs:
 
       - name: Vérifier le contrat CI continuité appareils
         run: python scripts/validate_device_challenge_continuity_workflow_security.py
+
+      - name: Auto-tester la réassociation de session appareil
+        run: python3 scripts/validate_device_session_rebind_hardening.py --self-test
+
+      - name: Vérifier la réassociation de session appareil
+        run: python3 scripts/validate_device_session_rebind_hardening.py
 
       - name: Valider les contrats sécurité statiques
         run: |
