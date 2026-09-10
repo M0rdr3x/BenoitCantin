@@ -14,6 +14,8 @@ SUPABASE_SETUP_SHA = '3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf'
 PYTHON_VERSION = '3.12.14'
 SUPABASE_VERSION = '2.111.0'
 CONTRACT_TRIGGER = "      - 'scripts/validate_device_challenge_continuity_workflow_security.py'"
+REBIND_TRIGGER = "      - 'scripts/validate_device_session_rebind_hardening.py'"
+SECURITY_MIGRATION_TRIGGER = "      - 'supabase/migrations/**security**.sql'"
 CHALLENGE_TRIGGER = "      - 'supabase/tests/device_challenge_continuity_v25.test.sql'"
 SELF_TEST_STEP = (
     '      - name: Auto-tester le contrat CI continuité appareils\n'
@@ -22,6 +24,14 @@ SELF_TEST_STEP = (
 CONTRACT_STEP = (
     '      - name: Vérifier le contrat CI continuité appareils\n'
     '        run: python scripts/validate_device_challenge_continuity_workflow_security.py\n'
+)
+REBIND_SELF_TEST_STEP = (
+    '      - name: Auto-tester la réassociation de session appareil\n'
+    '        run: python3 scripts/validate_device_session_rebind_hardening.py --self-test\n'
+)
+REBIND_CONTRACT_STEP = (
+    '      - name: Vérifier la réassociation de session appareil\n'
+    '        run: python3 scripts/validate_device_session_rebind_hardening.py\n'
 )
 
 
@@ -45,6 +55,8 @@ def validate_text(text: str) -> None:
         f'version: {SUPABASE_VERSION}',
         SELF_TEST_STEP,
         CONTRACT_STEP,
+        REBIND_SELF_TEST_STEP,
+        REBIND_CONTRACT_STEP,
         'python3 scripts/validate_conscience_vault_edge_v25.py',
         'python3 scripts/validate_sensitive_aal2_smoke.py',
         'python3 scripts/validate_device_challenge_continuity_smoke.py',
@@ -61,6 +73,10 @@ def validate_text(text: str) -> None:
 
     if text.count(CONTRACT_TRIGGER) != 2:
         fail('le contrat CI doit déclencher le workflow sur PR et push')
+    if text.count(REBIND_TRIGGER) != 2:
+        fail('le contrat de réassociation doit déclencher le workflow sur PR et push')
+    if text.count(SECURITY_MIGRATION_TRIGGER) != 2:
+        fail('les migrations sécurité doivent déclencher le workflow sur PR et push')
     if text.count(CHALLENGE_TRIGGER) != 2:
         fail('le contrat pgTAP challenge doit déclencher PR et push')
 
@@ -96,11 +112,12 @@ def validate_text(text: str) -> None:
         if '@' not in target or not re.fullmatch(r'[0-9a-f]{40}', target.rsplit('@', 1)[1]):
             fail(f'référence action non immuable: {target}')
 
+    rebind_contract = text.index('python3 scripts/validate_device_session_rebind_hardening.py\n')
     base_pg = text.index('supabase test db supabase/tests/personal_consciousness_vault_v25.test.sql --local')
     challenge_pg = text.index('supabase test db supabase/tests/device_challenge_continuity_v25.test.sql --local')
     smoke = text.index('python3 scripts/smoke_device_challenge_continuity_local.py')
-    if not (base_pg < challenge_pg < smoke):
-        fail('ordre attendu: pgTAP Coffre, pgTAP challenge, puis smoke HTTP')
+    if not (rebind_contract < base_pg < challenge_pg < smoke):
+        fail('ordre attendu: contrat rebind, pgTAP Coffre, pgTAP challenge, puis smoke HTTP')
 
 
 def self_test(text: str) -> None:
@@ -130,9 +147,13 @@ def self_test(text: str) -> None:
         ),
         'push main retiré': text.replace('  push:\n    branches: [main]\n', '', 1),
         'déclencheur contrat retiré': text.replace(CONTRACT_TRIGGER + '\n', '', 1),
+        'déclencheur rebind retiré': text.replace(REBIND_TRIGGER + '\n', '', 1),
+        'déclencheur migrations sécurité retiré': text.replace(SECURITY_MIGRATION_TRIGGER + '\n', '', 1),
         'déclencheur challenge retiré': text.replace(CHALLENGE_TRIGGER + '\n', '', 1),
         'auto-test retiré': text.replace(SELF_TEST_STEP + '\n', '', 1),
         'contrat CI retiré': text.replace(CONTRACT_STEP + '\n', '', 1),
+        'auto-test rebind retiré': text.replace(REBIND_SELF_TEST_STEP + '\n', '', 1),
+        'contrat rebind retiré': text.replace(REBIND_CONTRACT_STEP + '\n', '', 1),
         'validateur challenge retiré': text.replace(
             '          python3 scripts/validate_device_challenge_continuity_smoke.py\n',
             '',
