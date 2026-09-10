@@ -183,6 +183,8 @@ def main() -> int:
         'is_primary=false',
         "set status='expired'",
         'create or replace function private.security_challenge_request_session_guard()',
+        'new.request_session_id is null',
+        "new.status := 'expired'",
         "raise exception 'CHALLENGE_SESSION_REQUIRED'",
         "raise exception 'CHALLENGE_SESSION_MISMATCH'",
         'create trigger security_connection_challenge_session_guard',
