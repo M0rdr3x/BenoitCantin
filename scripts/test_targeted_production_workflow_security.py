@@ -93,7 +93,7 @@ class TargetedProductionWorkflowSecurityTests(unittest.TestCase):
     def test_remote_step_without_scoped_token_is_rejected(self):
         filename = "sinjira-v25-employment-production.yml"
         text = self.workflows[filename]
-        marker = "      - name: Vérifier l'historique Emploi en lecture seule\n"
+        marker = "      - name: Télécharger l'historique Emploi en lecture seule\n"
         start = text.index(marker)
         tail = text[start:]
         env_line = "          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n"
