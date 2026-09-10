@@ -86,6 +86,36 @@ forbidMarkers(failure, [
   'enableSecurityPush(',
 ], 'échec SecureStore ne peut ni déverrouiller ni propager une identité/token');
 
+const biometricUnlock = blockBetween(
+  app,
+  '  const unlockWithBiometrics = async () => {',
+  '  const requestVaultLocalGate = async () => {',
+  'déverrouillage biométrique'
+);
+const biometricUnavailable = blockBetween(
+  biometricUnlock,
+  '      if (!hardware || !enrolled) {',
+  '      const result = await LocalAuthentication.authenticateAsync({',
+  'biométrie indisponible'
+);
+requireMarkers(biometricUnavailable, [
+  'setIsUnlocked(false);',
+  "setNativeMessage('La protection biométrique locale est indisponible. SINJIRA reste verrouillé. Réactivez la biométrie dans les réglages de l’appareil, puis réessayez.');",
+  'return false;',
+], 'un verrou biométrique configuré doit échouer fermé');
+forbidMarkers(biometricUnavailable, [
+  'SecureStore.deleteItemAsync(BIOMETRIC_LOCK_STORAGE)',
+  'setBiometricEnabled(false);',
+  'setIsUnlocked(true);',
+  'return true;',
+], 'la perte de biométrie ne peut jamais supprimer ni contourner le verrou');
+
+requireMarkers(app, [
+  'accessibilityLabel="Ouvrir les réglages de sécurité de l’appareil"',
+  'Linking.openSettings()',
+  'Ouvrir les réglages',
+], 'récupération humaine du verrou biométrique');
+
 requireMarkers(app, [
   "const PERSONAL_AI_PATH = '/compte/mon-ia.html';",
   "{ key: 'ai', label: 'Mon IA', path: PERSONAL_AI_PATH }",
@@ -164,4 +194,4 @@ if (config?.expo?.ios?.buildNumber !== '25000') throw new Error('app.json: build
 if (config?.expo?.android?.versionCode !== 25000) throw new Error('app.json: versionCode Android 25000 requis');
 if (config?.expo?.scheme !== 'sinjira') throw new Error('app.json: schéma sinjira requis pour les liens profonds');
 
-console.log('OK mobile V25: SecureStore fail-closed avec retry, Emploi, Mon IA et Mode Voyage présents; Registre protégé; aucune donnée privée du coffre, de l IA ou du voyage dans le natif.');
+console.log('OK mobile V25: SecureStore et verrou biométrique fail-closed avec récupération explicite; Registre protégé; aucune donnée privée du coffre, de l IA ou du voyage dans le natif.');
