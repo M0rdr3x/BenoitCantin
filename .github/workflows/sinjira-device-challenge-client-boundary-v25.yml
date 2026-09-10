@@ -11,7 +11,9 @@ on:
       - 'scripts/validate_device_challenge_client_boundary.py'
       - 'scripts/validate_device_challenge_client_boundary_workflow_security.py'
       - 'scripts/validate_device_challenge_continuity_smoke.py'
+      - 'scripts/validate_device_trust_session_rebind.py'
       - 'scripts/validate_no_committed_secrets.py'
+      - 'supabase/migrations/20260910150000_sinjira_v25_device_trust_session_rebind_security_hardening.sql'
       - '.github/workflows/sinjira-device-challenge-client-boundary-v25.yml'
   push:
     branches: [main]
@@ -23,7 +25,9 @@ on:
       - 'scripts/validate_device_challenge_client_boundary.py'
       - 'scripts/validate_device_challenge_client_boundary_workflow_security.py'
       - 'scripts/validate_device_challenge_continuity_smoke.py'
+      - 'scripts/validate_device_trust_session_rebind.py'
       - 'scripts/validate_no_committed_secrets.py'
+      - 'supabase/migrations/20260910150000_sinjira_v25_device_trust_session_rebind_security_hardening.sql'
       - '.github/workflows/sinjira-device-challenge-client-boundary-v25.yml'
   workflow_dispatch:
 
@@ -55,4 +59,6 @@ jobs:
         run: |
           python3 scripts/validate_device_challenge_client_boundary.py
           python3 scripts/validate_device_challenge_continuity_smoke.py
+          python3 scripts/validate_device_trust_session_rebind.py --self-test
+          python3 scripts/validate_device_trust_session_rebind.py
           python3 scripts/validate_no_committed_secrets.py
