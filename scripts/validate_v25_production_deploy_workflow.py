@@ -5,6 +5,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/sinjira-v25-production-deploy.yml'
 
+MANAGEMENT_URL = 'https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/database/migrations'
+FUNCTIONS_CMD = 'supabase functions list --project-ref "gpvivleexywljowcqkru" | tee "$functions_list"'
+TOKEN_LINE = '          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}'
 EXPECTED_NAMES = [
     'sinjira_v25_0_security_risk_model_convergence',
     'sinjira_v25_0_personal_consciousness_vault',
@@ -37,10 +40,7 @@ def top_level_block(text: str, start: str, end: str) -> str:
 
 
 def active_text(text: str) -> str:
-    return '\n'.join(
-        raw for raw in text.splitlines()
-        if not raw.strip().startswith('#')
-    )
+    return '\n'.join(raw for raw in text.splitlines() if not raw.strip().startswith('#'))
 
 
 def trigger_keys(block: str) -> set[str]:
@@ -50,6 +50,15 @@ def trigger_keys(block: str) -> set[str]:
         if match:
             keys.add(match.group(1))
     return keys
+
+
+def step_blocks(text: str) -> dict[str, str]:
+    matches = list(re.finditer(r'(?m)^      - name: (.+)$', text))
+    result = {}
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        result[match.group(1).strip()] = text[match.start():end]
+    return result
 
 
 def main() -> int:
@@ -72,17 +81,20 @@ def main() -> int:
         'Saisir exactement VERIFY-SINJIRA-V25',
         'test "$VERIFY_CONFIRMATION" = "VERIFY-SINJIRA-V25"',
         'environment: production',
-        'SUPABASE_PROJECT_REF: gpvivleexywljowcqkru',
         'EXPECTED_REMOTE_BASELINE: "20260901002241"',
         'EXPECTED_REMOTE_BASELINE_NAME: sinjira_v24_5_54_fracture_contribution_atomic_finalize',
-        'SUPABASE_MANAGEMENT_API: https://api.supabase.com/v1',
-        'SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}',
         'ref: main',
         'persist-credentials: false',
-        '/projects/$SUPABASE_PROJECT_REF/database/migrations',
+        "python-version: '3.12.14'",
+        'check-latest: false',
+        "--proto '=https'",
+        '--tlsv1.2',
+        '--request GET',
+        MANAGEMENT_URL,
         '--header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"',
+        'MIGRATION_HISTORY="$RUNNER_TEMP/v25-migrations.json" python3 - <<\'PY\'',
         'after_names[:len(required)] != required',
-        'supabase functions list --project-ref "$SUPABASE_PROJECT_REF"',
+        FUNCTIONS_CMD,
         "grep -Fq 'conscience-vault'",
         'Aucune migration, aucun secret et aucune Edge Function',
     ], 'contrat de vérification post-déploiement V25')
@@ -91,24 +103,65 @@ def main() -> int:
         require(workflow, [f'"{name}"'], f'nom distant V25 {name}')
 
     forbid(active, [
+        'SUPABASE_PROJECT_REF:',
+        'SUPABASE_MANAGEMENT_API:',
+        '$SUPABASE_PROJECT_REF',
+        '$SUPABASE_MANAGEMENT_API',
         '--request POST',
+        '--request PUT',
+        '--request PATCH',
+        '--request DELETE',
+        '--data',
+        '--form',
+        '--upload-file',
+        '--location',
+        '--proxy',
+        '--connect-to',
+        '--resolve',
         'supabase functions deploy',
         'supabase db push',
-        'continue-on-error: true',
+        'supabase link',
+        'supabase secrets set',
+        'supabase migration repair',
+        '--linked',
+        '--no-verify-jwt',
+        'continue-on-error:',
         'set -x',
-    ], 'la vérification post-déploiement doit rester en lecture seule')
+    ], 'la vérification post-déploiement doit rester en lecture seule et non redirigeable')
 
-    if active.count('/projects/$SUPABASE_PROJECT_REF/database/migrations') != 1:
-        raise AssertionError('Le workflow doit effectuer une seule lecture explicite de l’historique distant.')
+    token_lines = [line for line in workflow.splitlines() if 'secrets.SUPABASE_ACCESS_TOKEN' in line]
+    if len(token_lines) != 2 or any(line != TOKEN_LINE for line in token_lines):
+        raise AssertionError('Le token Supabase doit être borné à exactement deux env d’étape.')
 
-    history = active.find('/projects/$SUPABASE_PROJECT_REF/database/migrations')
-    functions = active.find('supabase functions list --project-ref "$SUPABASE_PROJECT_REF"')
-    if min(history, functions) < 0 or not history < functions:
-        raise AssertionError('Ordre attendu: historique de migrations, puis inventaire Edge en lecture seule.')
+    steps = step_blocks(workflow)
+    confirmation = steps.get('Vérifier la confirmation', '')
+    download = steps.get("Télécharger l'historique V25 en lecture seule", '')
+    parse = steps.get("Valider l'historique V25 sans secret", '')
+    inventory = steps.get('Vérifier la présence de conscience-vault en lecture seule', '')
+    if not all((confirmation, download, parse, inventory)):
+        raise AssertionError('Étapes de frontière production V25 incomplètes.')
+    if 'SUPABASE_ACCESS_TOKEN' in confirmation or 'secrets.' in confirmation:
+        raise AssertionError('La confirmation ne doit pas recevoir le token Supabase.')
+    if TOKEN_LINE not in download or TOKEN_LINE not in inventory:
+        raise AssertionError('Les deux lectures distantes doivent recevoir chacune leur token borné.')
+    if 'SUPABASE_ACCESS_TOKEN' in parse or 'secrets.' in parse:
+        raise AssertionError('Le parsing de l’historique doit rester sans secret.')
+
+    if active.count(MANAGEMENT_URL) != 1 or active.count('curl ') != 1:
+        raise AssertionError('Le workflow doit effectuer une seule lecture HTTP vers l’endpoint migrations exact.')
+    remote_supabase = [line.strip() for line in active.splitlines() if line.strip().startswith('supabase ')]
+    if remote_supabase != [FUNCTIONS_CMD]:
+        raise AssertionError(f'Inventaire Supabase inattendu: {remote_supabase}')
+
+    history = active.find(MANAGEMENT_URL)
+    parsing = active.find("Valider l'historique V25 sans secret")
+    functions = active.find(FUNCTIONS_CMD)
+    if min(history, parsing, functions) < 0 or not history < parsing < functions:
+        raise AssertionError('Ordre attendu: GET migrations, parsing sans secret, puis inventaire Edge.')
 
     print(
-        'OK vérification V25: manuel uniquement, production en lecture seule, '
-        'cinq migrations obligatoires présentes dans l’ordre et conscience-vault inventoriée.'
+        'OK vérification V25: manuel uniquement, GET HTTPS Supabase exact, '
+        'token borné à deux lectures, parsing sans secret, cinq migrations ordonnées et conscience-vault inventoriée.'
     )
     return 0
 
