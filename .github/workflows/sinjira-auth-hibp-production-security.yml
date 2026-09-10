@@ -1,0 +1,63 @@
+name: SINJIRA V25 — Contrat sécurité HIBP production
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-v25-auth-password-hardening.yml'
+      - '.github/workflows/sinjira-auth-hibp-production-security.yml'
+      - '.github/workflows/targeted-production-workflow-security.yml'
+      - 'scripts/validate_auth_hibp_production_workflow_security.py'
+      - 'scripts/validate_auth_password_hardening_workflow.py'
+      - 'scripts/validate_targeted_production_workflow_security.py'
+      - 'scripts/test_targeted_production_workflow_security.py'
+      - 'docs/sinjira-v25-hosted-auth-password-security.md'
+      - 'supabase/config.toml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-v25-auth-password-hardening.yml'
+      - '.github/workflows/sinjira-auth-hibp-production-security.yml'
+      - '.github/workflows/targeted-production-workflow-security.yml'
+      - 'scripts/validate_auth_hibp_production_workflow_security.py'
+      - 'scripts/validate_auth_password_hardening_workflow.py'
+      - 'scripts/validate_targeted_production_workflow_security.py'
+      - 'scripts/test_targeted_production_workflow_security.py'
+      - 'docs/sinjira-v25-hosted-auth-password-security.md'
+      - 'supabase/config.toml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Auto-tester le contrat HIBP production
+        run: python3 scripts/validate_auth_hibp_production_workflow_security.py --self-test
+
+      - name: Vérifier le contrat HIBP production
+        run: python3 scripts/validate_auth_hibp_production_workflow_security.py
+
+      - name: Revalider le contrat Auth historique
+        run: python3 scripts/validate_auth_password_hardening_workflow.py
+
+      - name: Revalider les frontières production ciblées
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_targeted_production_workflow_security.py
+          python3 scripts/test_targeted_production_workflow_security.py
