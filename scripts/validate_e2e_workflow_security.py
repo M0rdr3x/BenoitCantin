@@ -17,11 +17,18 @@ PLAYWRIGHT_IMAGE = (
     'mcr.microsoft.com/playwright/python:v1.61.0-noble'
     '@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69'
 )
+SELF_TEST_COMMAND = 'python3 scripts/validate_e2e_workflow_security.py --self-test'
+VALIDATE_COMMAND = 'python3 scripts/validate_e2e_workflow_security.py'
+LITERATURE_TEST_COMMAND = 'python tests/e2e/test_literature_site.py'
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
     if not condition:
         errors.append(message)
+
+
+def count_exact_stripped(text: str, target: str) -> int:
+    return sum(1 for line in text.splitlines() if line.strip() == target)
 
 
 def action_targets(text: str) -> list[str]:
@@ -38,6 +45,8 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'permissions:\n  contents: read' in text, 'permissions.contents doit rester read')
     require(errors, 'contents: write' not in text, 'permission contents:write interdite')
     require(errors, 'secrets.' not in text, 'aucun secret GitHub ne doit être référencé par les tests navigateur')
+    require(errors, 'continue-on-error:' not in text, 'continue-on-error est interdit dans le workflow navigateur')
+    require(errors, 'set -x' not in text, 'set -x est interdit afin de ne pas élargir les traces CI')
 
     require(errors, text.count(f'uses: actions/checkout@{CHECKOUT_SHA}') == 3, 'les trois checkouts doivent être épinglés au SHA vérifié')
     require(errors, text.count('persist-credentials: false') == 3, 'les trois checkouts doivent désactiver la persistance des credentials')
@@ -59,10 +68,19 @@ def validate_text(text: str) -> list[str]:
     require(errors, f'npx --yes lighthouse@{LIGHTHOUSE_VERSION} ' in text, f'Lighthouse doit rester figé à {LIGHTHOUSE_VERSION}')
     require(errors, 'npx --yes lighthouse http' not in text, 'Lighthouse sans version explicite est interdit')
 
+    cache_input = re.search(r'^\s*(?:cache|package-manager-cache|cache-dependency-path):\s*', text, re.MULTILINE)
+    require(
+        errors,
+        cache_input is None,
+        'aucune entrée de cache de gestionnaire de paquets n’est permise sans lockfile npm approuvé',
+    )
+
     require(errors, '  workflow-contract:\n' in text, 'job workflow-contract absent')
-    require(errors, 'python3 scripts/validate_e2e_workflow_security.py --self-test' in text, 'auto-tests du contrat E2E absents')
-    require(errors, 'python3 scripts/validate_e2e_workflow_security.py' in text, 'validation du contrat E2E absente')
-    require(errors, text.count('needs: workflow-contract') == 2, 'les deux jobs navigateur doivent dépendre du contrat de sécurité')
+    require(errors, count_exact_stripped(text, SELF_TEST_COMMAND) == 1, 'auto-test exact du contrat E2E absent ou dupliqué')
+    require(errors, count_exact_stripped(text, VALIDATE_COMMAND) == 1, 'validation exacte du contrat E2E absente ou dupliquée')
+    require(errors, count_exact_stripped(text, 'needs: workflow-contract') == 2, 'les deux jobs navigateur doivent dépendre exactement du contrat de sécurité')
+    require(errors, text.count('python tests/e2e/test_public_site.py') == 2, 'le smoke test public doit couvrir le dépôt local et le site déployé')
+    require(errors, count_exact_stripped(text, LITERATURE_TEST_COMMAND) == 2, 'le contrat Littérature doit couvrir le dépôt local et le site déployé')
 
     for marker in ('browser-smoke:', 'lighthouse-mobile:'):
         require(errors, marker in text, f'job E2E attendu absent: {marker}')
@@ -82,8 +100,16 @@ def run_self_tests(text: str) -> None:
         'Python non figé': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
         'Node non figé': text.replace(f"node-version: '{NODE_VERSION}'", "node-version: '22'", 1),
         'Lighthouse non figé': text.replace(f'lighthouse@{LIGHTHOUSE_VERSION}', 'lighthouse', 1),
+        'cache npm ajouté': text.replace(f"node-version: '{NODE_VERSION}'", f"node-version: '{NODE_VERSION}'\n          cache: npm", 1),
+        'cache false ajouté': text.replace(f"node-version: '{NODE_VERSION}'", f"node-version: '{NODE_VERSION}'\n          package-manager-cache: false", 1),
+        'test Littérature retiré': text.replace(f'            {LITERATURE_TEST_COMMAND}\n', '', 1),
+        'validation contrat retirée': text.replace(f'run: {VALIDATE_COMMAND}\n', 'run: echo validation-retirée\n', 1),
+        'continue-on-error ajouté': text.replace('timeout-minutes: 5', 'timeout-minutes: 5\n    continue-on-error: true', 1),
+        'set -x ajouté': text.replace('          run_suite() {', '          set -x\n          run_suite() {', 1),
     }
     for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test E2E: mutation non appliquée: {name}')
         if not validate_text(mutated):
             raise SystemExit(f'ERREUR auto-test E2E: mutation non détectée: {name}')
     print(f'OK auto-tests E2E: {len(cases)} affaiblissements critiques détectés.')
@@ -106,7 +132,7 @@ def main() -> int:
         return 1
     print(
         'OK sécurité E2E: actions immuables, credentials Git non persistés, aucun secret, '
-        'Ubuntu/Python/Node/Lighthouse figés et image Playwright épinglée au digest.'
+        'Ubuntu/Python/Node/Lighthouse figés, aucun cache npm sans lockfile et contrat Littérature actif.'
     )
     return 0
 
