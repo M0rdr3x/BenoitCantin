@@ -32,17 +32,21 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Installer Supabase CLI
-        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
-          version: 2.111.0
-          github-token: ${{ github.token }}
+          python-version: '3.12.14'
 
       - name: Auto-tester le contrat CI du moteur de risque
         run: python scripts/validate_security_risk_workflow_security.py --self-test
 
       - name: Vérifier le contrat CI du moteur de risque
         run: python scripts/validate_security_risk_workflow_security.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
 
       - name: Démarrer PostgreSQL Supabase local et appliquer les migrations
         shell: bash
