@@ -1,6 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { corsHeaders, json } from '../_shared/cors.ts';
-import { requiredUser, serviceClient } from '../_shared/auth.ts';
+import { bearerToken, requiredUser, serviceClient } from '../_shared/auth.ts';
 import { buildSecurityPushMessage, SECURITY_PUSH_MAX_BATCH } from '../_shared/security-push-policy.mjs';
 import {
   SECURITY_PUSH_RECEIPT_URL,
@@ -14,6 +14,8 @@ import {
   SECURITY_PUSH_RECEIPT_MAX_BATCH,
 } from '../_shared/security-push-receipts.mjs';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function safeText(value: unknown, max: number) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
 }
@@ -21,6 +23,29 @@ function safeText(value: unknown, max: number) {
 function safeDeviceType(value: unknown) {
   const type = safeText(value, 20);
   return ['browser', 'ios', 'android', 'tablet', 'other'].includes(type) ? type : 'other';
+}
+
+/**
+ * Le JWT a déjà été validé par requiredUser() avant cet appel. On lit seulement
+ * le session_id du même jeton validé; la base le revérifie ensuite dans auth.sessions.
+ * Aucune session fournie par le JSON client n'est acceptée.
+ */
+function sessionIdFromVerifiedRequest(req: Request) {
+  const token = bearerToken(req);
+  const parts = token.split('.');
+  if (parts.length !== 3) throw new Error('AUTH_REQUIRED');
+
+  try {
+    const raw = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = raw.padEnd(Math.ceil(raw.length / 4) * 4, '=');
+    const bytes = Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
+    const payload = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    const sessionId = typeof payload?.session_id === 'string' ? payload.session_id : '';
+    if (!UUID_RE.test(sessionId)) throw new Error('AUTH_REQUIRED');
+    return sessionId;
+  } catch {
+    throw new Error('AUTH_REQUIRED');
+  }
 }
 
 /**
@@ -173,13 +198,14 @@ Deno.serve(async (req) => {
 
   try {
     const user = await requiredUser(req);
+    const sessionId = sessionIdFromVerifiedRequest(req);
     const body = await req.json().catch(() => ({}));
     const deviceKey = safeText(body?.device_key, 128);
     if (deviceKey.length < 16) return json({ ok: false, error: 'Identifiant d’appareil invalide.' }, 400);
 
     const geo = trustedGeo(req);
     const service = serviceClient();
-    const { data, error } = await service.rpc('security_evaluate_context', {
+    const { data, error } = await service.rpc('service_security_evaluate_context_session', {
       p_user_id: user.id,
       p_device_key: deviceKey,
       p_display_name: safeText(body?.display_name, 120) || 'Appareil SINJIRA',
@@ -187,7 +213,8 @@ Deno.serve(async (req) => {
       p_platform: safeText(body?.platform, 120),
       p_country_code: geo.country,
       p_region_code: geo.region,
-      p_action: safeText(body?.action, 80) || 'session'
+      p_action: safeText(body?.action, 80) || 'session',
+      p_session_id: sessionId
     });
     if (error) throw error;
 
