@@ -14,6 +14,14 @@ function forbidMarkers(text, markers, label) {
   if (found.length) throw new Error(`${label}: marqueurs interdits: ${found.join(', ')}`);
 }
 
+function blockBetween(text, startMarker, endMarker, label) {
+  const start = text.indexOf(startMarker);
+  if (start < 0) throw new Error(`${label}: début absent: ${startMarker}`);
+  const end = text.indexOf(endMarker, start + startMarker.length);
+  if (end < 0) throw new Error(`${label}: fin absente: ${endMarker}`);
+  return text.slice(start, end);
+}
+
 const app = read('App.tsx');
 const config = JSON.parse(read('app.json'));
 
@@ -39,6 +47,44 @@ requireMarkers(app, [
   'SecureStore.setItemAsync(DEVICE_KEY_STORAGE, key, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY })',
   'Application mobile · V25.0',
 ], 'contrat mobile V25 du Registre personnel');
+
+requireMarkers(app, [
+  'const [securityStorageFailed, setSecurityStorageFailed] = useState(false);',
+  'const [securityBootstrapAttempt, setSecurityBootstrapAttempt] = useState(0);',
+  'setSecurityStorageFailed(false);',
+  'setSecurityStorageFailed(true);',
+  'if (securityStorageFailed) {',
+  'Stockage sécurisé indisponible',
+  'SINJIRA reste verrouillé parce que l’identité locale de cet appareil ne peut pas être lue de façon sûre.',
+  'setSecurityBootstrapAttempt((value) => value + 1);',
+  '}, [securityBootstrapAttempt]);',
+], 'SecureStore doit échouer fermé avec récupération explicite');
+
+const bootstrap = blockBetween(
+  app,
+  '  useEffect(() => {\n    let cancelled = false;\n    setSecurityReady(false);',
+  '  }, [securityBootstrapAttempt]);',
+  'bootstrap SecureStore'
+);
+const failure = blockBetween(
+  bootstrap,
+  '    })().catch(() => {',
+  '    });\n    return () => {',
+  'échec SecureStore'
+);
+requireMarkers(failure, [
+  "setNativeDeviceKey('');",
+  'setIsUnlocked(false);',
+  'setSecurityStorageFailed(true);',
+  'setSecurityReady(true);',
+  "setNativeMessage('Le stockage sécurisé local est indisponible. SINJIRA reste verrouillé.');",
+], 'échec SecureStore fail-closed');
+forbidMarkers(failure, [
+  'setIsUnlocked(true);',
+  'setNativeDeviceKey(key);',
+  'setPushToken(token);',
+  'enableSecurityPush(',
+], 'échec SecureStore ne peut ni déverrouiller ni propager une identité/token');
 
 requireMarkers(app, [
   "const PERSONAL_AI_PATH = '/compte/mon-ia.html';",
@@ -118,4 +164,4 @@ if (config?.expo?.ios?.buildNumber !== '25000') throw new Error('app.json: build
 if (config?.expo?.android?.versionCode !== 25000) throw new Error('app.json: versionCode Android 25000 requis');
 if (config?.expo?.scheme !== 'sinjira') throw new Error('app.json: schéma sinjira requis pour les liens profonds');
 
-console.log('OK mobile V25: Emploi, Mon IA et accès direct Mode Voyage présents; Registre personnel protégé; aucune donnée privée du coffre, de l IA ou du voyage dans le natif.');
+console.log('OK mobile V25: SecureStore fail-closed avec retry, Emploi, Mon IA et Mode Voyage présents; Registre protégé; aucune donnée privée du coffre, de l IA ou du voyage dans le natif.');
