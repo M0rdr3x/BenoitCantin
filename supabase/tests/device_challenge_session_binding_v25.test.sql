@@ -84,8 +84,14 @@ select ok(
   ) like '%CHALLENGE_SESSION_REQUIRED%'
   and pg_get_functiondef(
     'private.security_challenge_request_session_guard()'::regprocedure
-  ) like '%CHALLENGE_SESSION_MISMATCH%',
-  'la résolution d’un challenge ancien ou réassocié échoue fermée'
+  ) like '%CHALLENGE_SESSION_MISMATCH%'
+  and pg_get_functiondef(
+    'private.security_challenge_request_session_guard()'::regprocedure
+  ) like '%new.request_session_id is null%'
+  and pg_get_functiondef(
+    'private.security_challenge_request_session_guard()'::regprocedure
+  ) like '%new.status := ''expired''%',
+  'la résolution d’un challenge ancien ou réassocié échoue fermée et la suppression de session expire un pending'
 );
 
 select ok(
