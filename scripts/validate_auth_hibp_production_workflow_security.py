@@ -64,7 +64,6 @@ def errors(text: str) -> list[str]:
         "if plan not in eligible:",
         "Activation HIBP bloquée avant PATCH",
         "password_min_length",
-        "minimum < 12",
         'stable.pop("password_hibp_enabled", None)',
         "auth-config-before.sha256",
         "after_digest != before_digest",
@@ -121,6 +120,8 @@ def errors(text: str) -> list[str]:
         out.append("/config/auth doit apparaître exactement pour GET avant, PATCH, GET après")
     if text.count(ADVISOR_ENDPOINT) != 1:
         out.append("un unique endpoint Security Advisor est attendu")
+    if text.count("minimum < 12") != 2:
+        out.append("password_min_length doit être vérifié à >=12 avant et après le PATCH")
 
     secret_refs = set(re.findall(r"secrets\.([A-Z0-9_]+)", text))
     if secret_refs != {"SUPABASE_ACCESS_TOKEN"}:
