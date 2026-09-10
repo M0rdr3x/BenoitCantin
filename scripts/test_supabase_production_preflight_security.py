@@ -65,20 +65,11 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = self.valid.replace(SELF_CHECK, "echo contrat-retire", 1)
         self.assertRejected(bad, "validation du contrat sécurité")
 
-    def test_self_checks_must_precede_supabase_validation(self):
-        bad = self.valid.replace(
-            "      - name: Vérifier le contrat sécurité du prévol production",
-            "      - name: TEMP CONTRAT",
-            1,
-        ).replace(
-            "      - name: Vérifier le dépôt Supabase",
-            "      - name: Vérifier le contrat sécurité du prévol production",
-            1,
-        ).replace(
-            "      - name: TEMP CONTRAT",
-            "      - name: Vérifier le dépôt Supabase",
-            1,
-        )
+    def test_self_checks_order_is_rejected_when_swapped(self):
+        temporary = "python scripts/__temp_preflight_security__.py"
+        bad = self.valid.replace(SELF_TEST, temporary, 1)
+        bad = bad.replace(SELF_CHECK, SELF_TEST, 1)
+        bad = bad.replace(temporary, SELF_CHECK, 1)
         self.assertRejected(bad, "ordre doit rester Python")
 
     def test_continue_on_error_is_rejected(self):
