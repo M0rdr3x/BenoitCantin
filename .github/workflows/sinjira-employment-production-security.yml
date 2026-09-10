@@ -1,0 +1,64 @@
+name: SINJIRA V25 — Contrat sécurité vérification production Emploi
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-v25-employment-production.yml'
+      - '.github/workflows/sinjira-employment-production-security.yml'
+      - '.github/workflows/targeted-production-workflow-security.yml'
+      - 'scripts/validate_employment_production_verification_workflow_security.py'
+      - 'scripts/validate_employment_production_deploy_workflow.py'
+      - 'scripts/validate_employment_v25.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_targeted_production_workflow_security.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-v25-employment-production.yml'
+      - '.github/workflows/sinjira-employment-production-security.yml'
+      - '.github/workflows/targeted-production-workflow-security.yml'
+      - 'scripts/validate_employment_production_verification_workflow_security.py'
+      - 'scripts/validate_employment_production_deploy_workflow.py'
+      - 'scripts/validate_employment_v25.py'
+      - 'scripts/validate_production_schema_manifest.py'
+      - 'scripts/validate_targeted_production_workflow_security.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Auto-tester le contrat production Emploi
+        run: python3 scripts/validate_employment_production_verification_workflow_security.py --self-test
+
+      - name: Vérifier le contrat production Emploi
+        run: python3 scripts/validate_employment_production_verification_workflow_security.py
+
+      - name: Revalider le contrat Emploi historique
+        run: python3 scripts/validate_employment_production_deploy_workflow.py
+
+      - name: Revalider Emploi V25 et le schéma attendu
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_employment_v25.py
+          python3 scripts/validate_production_schema_manifest.py
+
+      - name: Revalider les frontières production ciblées
+        run: python3 scripts/validate_targeted_production_workflow_security.py
