@@ -118,7 +118,7 @@ def validate_text(text: str) -> None:
         fail('le garde dark launch ne doit cibler aucun environment GitHub')
     if re.search(r'^\s*[A-Za-z0-9_-]+:\s*write\s*$', text, flags=re.MULTILINE):
         fail('permission GitHub en écriture détectée')
-    if re.search(r'^\s*set\s+-[A-Za-z]*x[A-Za-z]*\b', text, flags=re.MULTILINE):
+    if re.search(r'^\s*(?:run:\s*)?set\s+-[A-Za-z]*x[A-Za-z]*\b', text, flags=re.MULTILINE):
         fail('trace shell set -x interdite')
 
     network_or_write_patterns = (
