@@ -58,8 +58,8 @@ def validate(path: Path) -> list[str]:
         if marker in source.lower():
             errors.append(f'Garde security-context violé: {label}.')
 
-    parsed_pos = source.find('readLimitedJson(req)')
-    auth_pos = source.find('requiredUser(req)')
+    parsed_pos = source.find('const parsed = await readLimitedJson(req)')
+    auth_pos = source.find('const user = await requiredUser(req)')
     if parsed_pos >= 0 and auth_pos >= 0 and auth_pos > parsed_pos:
         errors.append('Le corps ne doit pas être lu avant la validation de l’utilisateur JWT.')
 
