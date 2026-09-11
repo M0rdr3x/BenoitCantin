@@ -128,8 +128,8 @@ Deno.serve(async (req) => {
         'Access-Control-Expose-Headers': 'Content-Disposition, Content-Length',
       },
     });
-  } catch (error) {
-    console.error('[life-story-delivery]', error instanceof Error ? error.message : 'DELIVERY_ERROR');
+  } catch {
+    console.error('[life-story-delivery]', { code: 'LIFE_STORY_DELIVERY_FAILED' });
     return errorResponse(req, 500);
   }
 });
