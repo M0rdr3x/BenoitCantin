@@ -2,6 +2,7 @@ import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel} from '.
 
 const status=document.querySelector('[data-library-status]');
 const rows=value=>Array.isArray(value)?value:[];
+const BOOK_ONE_SLUG='sinjira-livre-01-la-cendre-du-jugement';
 
 function cover(project){
   if(project.cover_url)return project.cover_url;
@@ -69,15 +70,22 @@ function renderReads(libraryRows){
   }).join('')||'<div class="notice"><strong>Aucun roman suivi.</strong><p>Les romans ajoutés à votre bibliothèque apparaîtront ici avec leur progression.</p></div>';
 }
 
+function entitlementCard(row){
+  const product=row.products;
+  if(!product)return '';
+  const name=escapeHtml(product.name||product.slug||'Produit SINJIRA™');
+  const source=escapeHtml(row.source||'compte');
+  if(product.slug===BOOK_ONE_SLUG){
+    return `<article class="account-card"><span class="eyebrow">Droit numérique reconnu</span><h2>${name}</h2><p>${escapeHtml(product.product_type||'Accès')} · source ${source}</p><p>Ce droit est réellement associé au compte. Il ne publie pas le PDF intégral : la disponibilité du fichier complet est contrôlée séparément par la diffusion privée du Livre I.</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Voir mes licences</a><a class="btn btn-secondary" href="/projets/sinjira/romans/">Page du roman</a></div></article>`;
+  }
+  return `<article class="account-card"><span class="eyebrow">Droit numérique</span><h2>${name}</h2><p>${escapeHtml(product.product_type||'Accès')} · source ${source}</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Voir mes licences</a></div></article>`;
+}
+
 function renderEntitlements(entitlements,isOwner){
   const box=document.querySelector('[data-library-entitlements]');
   if(!box)return;
-  const cards=entitlements.map(row=>{
-    const product=row.products;
-    if(!product)return '';
-    return `<article class="account-card"><span class="eyebrow">Droit numérique</span><h2>${escapeHtml(product.name||product.slug||'Produit SINJIRA™')}</h2><p>${escapeHtml(product.product_type||'Accès')} · source ${escapeHtml(row.source||'compte')}</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Voir mes licences</a></div></article>`;
-  }).join('');
-  box.innerHTML=cards||`<article class="account-card"><span class="eyebrow">Droits numériques</span><h2>${isOwner?'Accès propriétaire actif':'Aucune licence numérique explicite'}</h2><p>${isOwner?'Votre rôle propriétaire conserve l’accès universel côté serveur, indépendamment des licences individuelles.':'Les produits activés ou attribués à votre compte apparaîtront ici.'}</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Gérer mes licences</a></div></article>`;
+  const cards=entitlements.map(entitlementCard).join('');
+  box.innerHTML=cards||`<article class="account-card"><span class="eyebrow">Droits numériques</span><h2>${isOwner?'Rôle propriétaire actif · aucun droit produit explicite':'Aucune licence numérique explicite'}</h2><p>${isOwner?'Le rôle propriétaire reste distinct des droits numériques. Aucun produit n’est marqué comme possédé sans entitlement réellement attribué au compte.':'Les produits activés ou attribués à votre compte apparaîtront ici.'}</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Gérer mes licences</a></div></article>`;
 }
 
 async function init(){
