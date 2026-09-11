@@ -57,8 +57,11 @@ def main()->int:
         'grant delete on table public.playtest_participants to authenticated'
     ],'migration Playtests')
 
+    # La console admin passe désormais par requiredAdmin(req), qui fournit le client
+    # serveur uniquement après validation JWT/admin/MFA. Les opérations historiques
+    # Playtests doivent néanmoins rester présentes et exclusivement côté serveur.
     require(admin,[
-        "serviceClient()",
+        "requiredAdmin(req)",
         "action==='save_playtest'",
         "service.from('playtests').upsert",
         "action==='review_playtest_participant'",
@@ -92,7 +95,7 @@ def main()->int:
     forbid(client,['service_role','stripe','checkout','api.openai.com'],'client Playtests')
     require(ledger,['20260818042852 sinjira_v24_4_64_playtest_self_service_hardening'],'ledger Playtests')
 
-    print('OK Playtests V24.4.64+: ACL minimales, niveau requis imposé, historique participant visible et retrait self-only sans auto-approbation directe.')
+    print('OK Playtests V24.4.64+: ACL minimales, niveau requis imposé, historique participant visible, admin JWT/MFA et retrait self-only sans auto-approbation directe.')
     return 0
 
 
