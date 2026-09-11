@@ -13,6 +13,7 @@ on:
       - 'scripts/validate_admin_reports_request_security.py'
       - 'scripts/validate_admin_license_codes_security.py'
       - 'scripts/validate_admin_console_request_security.py'
+      - 'scripts/validate_admin_sinjira_v18_request_security.py'
       - '.github/workflows/sinjira-public-edge-auth-guard.yml'
   push:
     branches: [ main ]
@@ -26,6 +27,7 @@ on:
       - 'scripts/validate_admin_reports_request_security.py'
       - 'scripts/validate_admin_license_codes_security.py'
       - 'scripts/validate_admin_console_request_security.py'
+      - 'scripts/validate_admin_sinjira_v18_request_security.py'
       - '.github/workflows/sinjira-public-edge-auth-guard.yml'
   workflow_dispatch:
 
@@ -69,3 +71,7 @@ jobs:
         run: python scripts/validate_admin_console_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de admin-console
         run: python scripts/validate_admin_console_request_security.py
+      - name: Auto-tester admin-sinjira-v18
+        run: python scripts/validate_admin_sinjira_v18_request_security.py --self-test
+      - name: Vérifier la confidentialité et les décisions humaines de admin-sinjira-v18
+        run: python scripts/validate_admin_sinjira_v18_request_security.py
