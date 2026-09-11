@@ -17,6 +17,8 @@
     "delivery": "authenticated_private_storage_only",
     "private_endpoint": "get-private-book-url",
     "entitlement_table": "user_entitlements",
+    "entitlement_client_mutation_allowed": false,
+    "entitlement_anonymous_read_allowed": false,
     "product_slug": "sinjira-livre-01-la-cendre-du-jugement",
     "activation_env": "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED",
     "signed_url_seconds": 300,
