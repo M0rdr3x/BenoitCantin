@@ -1,7 +1,7 @@
 import {corsHeaders} from '../_shared/cors.ts';
 import {requiredUser,serviceClient} from '../_shared/auth.ts';
 
-const VERSION='24.4.50';
+const VERSION='24.4.49';
 const MAX_REQUEST_BYTES=4096;
 const MIN_CODE_LENGTH=12;
 const MAX_CODE_LENGTH=80;
