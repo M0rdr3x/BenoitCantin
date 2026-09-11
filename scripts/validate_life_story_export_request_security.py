@@ -18,7 +18,7 @@ REQUIRED = {
     'désactivation cache historique': "'Pragma': 'no-cache'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
     'référent masqué': "'Referrer-Policy': 'no-referrer'",
-    'frontière Histoire de vie': 'assertLifeStoryBoundary(record)',
+    'frontière Histoire de vie': 'assertLifeStoryBoundary(record);',
     'interdiction Registre': 'registry_access_prohibited',
     'jeton de remise en fragment': '`${DELIVERY_PAGE}#${raw}`',
     'stockage du hash du jeton': 'token_hash: tokenHash',
