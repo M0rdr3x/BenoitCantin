@@ -18,6 +18,7 @@ on:
       - 'scripts/validate_admin_sinjira_v18_request_security.py'
       - 'scripts/validate_admin_analytics_request_security.py'
       - 'scripts/validate_admin_users_privacy.py'
+      - 'scripts/validate_character_questionnaire_security.py'
       - '.github/workflows/sinjira-public-edge-auth-guard.yml'
   push:
     branches: [ main ]
@@ -36,6 +37,7 @@ on:
       - 'scripts/validate_admin_sinjira_v18_request_security.py'
       - 'scripts/validate_admin_analytics_request_security.py'
       - 'scripts/validate_admin_users_privacy.py'
+      - 'scripts/validate_character_questionnaire_security.py'
       - '.github/workflows/sinjira-public-edge-auth-guard.yml'
   workflow_dispatch:
 
@@ -99,3 +101,7 @@ jobs:
         run: python scripts/validate_admin_users_privacy.py --self-test
       - name: Vérifier la confidentialité et la minimisation de admin-users
         run: python scripts/validate_admin_users_privacy.py
+      - name: Auto-tester le questionnaire privé du Registre
+        run: python scripts/validate_character_questionnaire_security.py --self-test
+      - name: Vérifier la confidentialité et l’unicité du questionnaire du Registre
+        run: python scripts/validate_character_questionnaire_security.py

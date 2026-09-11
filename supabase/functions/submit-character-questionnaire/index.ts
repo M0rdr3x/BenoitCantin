@@ -1,14 +1,45 @@
-import {corsHeaders,json} from '../_shared/cors.ts';
+import {corsHeaders} from '../_shared/cors.ts';
 import {requiredUser,serviceClient} from '../_shared/auth.ts';
 import {SINJIRA_CANON_PUBLIC_GUIDE} from '../_shared/sinjira-canon-public.ts';
 import {loadSinjiraCanonContext,canonPrompt} from '../_shared/sinjira-canon-context.ts';
 
 const VERSION='24.5.2';
+const MAX_REQUEST_BYTES=2*1024*1024;
+const MAX_ANSWERS_CHARS=500000;
 // Ces deux intégrations restent préparées mais inactives. Une activation future
 // exige une décision explicite distincte sur le fournisseur, les données et le coût.
 const PAID_EXTERNAL_SERVICES_ENABLED=false;
 const REMOTE_AI_ENABLED=false;
 const PRIVATE_KEYS=['prenom_legal','nom_legal','courriel','telephone','date_naissance','region','courriel_retrait','nom_signature','parent_nom','parent_courriel','parent_telephone','parent_signature','compte_courriel','compte_pseudo'];
+const SAFE_LOG_CODES=new Set([
+  'AUTH_REQUIRED','MFA_SETUP_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE','SECURITY_STATE_UNAVAILABLE',
+  'REQUEST_TOO_LARGE','JSON_REQUIRED','INVALID_JSON','CHARACTER_STATE_LOOKUP_FAILED',
+  'CHARACTER_SUBMISSION_WRITE_FAILED','OWNER_CHARACTER_REPAIR_FAILED','CHARACTER_GENERATION_FAILED'
+]);
+const PRIVATE_HEADERS={
+  ...corsHeaders,
+  'Content-Type':'application/json; charset=utf-8',
+  'Cache-Control':'private, no-store, max-age=0',
+  'Pragma':'no-cache',
+  'X-Content-Type-Options':'nosniff',
+  'Referrer-Policy':'no-referrer'
+};
+
+function privateJson(data:unknown,status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS})}
+function safeLogCode(error:unknown,fallback='CHARACTER_QUESTIONNAIRE_FAILED'){const code=error instanceof Error?error.message:'';return SAFE_LOG_CODES.has(code)?code:fallback}
+async function readBoundedJson(req:Request){
+  const rawLength=req.headers.get('content-length');
+  if(rawLength){const declared=Number(rawLength);if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE')}
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json')throw new Error('JSON_REQUIRED');
+  const raw=await req.text();
+  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+  let body:unknown;
+  try{body=JSON.parse(raw||'{}')}catch{throw new Error('INVALID_JSON')}
+  if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('INVALID_JSON');
+  return body as Record<string,unknown>;
+}
+
 const escapeHtml=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]||c));
 const labelize=(k:string)=>k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
 function creativePayload(src:Record<string,unknown>){const out:Record<string,unknown>={};for(const [k,v] of Object.entries(src||{})){if(PRIVATE_KEYS.includes(k)||k.startsWith('parent_')||k.startsWith('photo'))continue;out[k]=v}return out}
@@ -18,10 +49,83 @@ const schema={type:'object',additionalProperties:false,required:['character_name
 
 async function generate(answers:Record<string,unknown>,service:any){if(!REMOTE_AI_ENABLED)return null;const key=Deno.env.get('OPENAI_API_KEY');if(!key)return null;const model=Deno.env.get('OPENAI_CHARACTER_MODEL')||'gpt-5';const contexts=await loadSinjiraCanonContext(service),privateCanon=canonPrompt(contexts);const res=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model,store:false,input:[{role:'system',content:`Tu aides Benoit Cantin à préparer un brouillon de personnage ORIGINAL pour SINJIRA.\n\nRÈGLES PUBLIQUES :\n${SINJIRA_CANON_PUBLIC_GUIDE}\n\nCONTEXTE CANONIQUE PRIVÉ FOURNI PAR LE SERVEUR :\n${privateCanon}\n\nContraintes obligatoires :\n- Les éléments SECRET_AUTEUR servent uniquement de garde-fous de continuité. Ne les révèle jamais.\n- Les éléments À ARBITRER ne sont jamais tranchés automatiquement.\n- Le Roman 1 — La Cendre du Jugement est verrouillé.\n- Ne duplique aucun personnage canonique.\n- Aucune magie ni superpouvoir n’est établi.\n- Transforme fortement identité, contexte, apparence et biographie.\n- Ne copie aucune personne publique ni personnage existant.\n- Ne produis jamais de coordonnées personnelles.\n- Le résultat reste PROVISOIRE avant validation explicite de Benoit Cantin.`},{role:'user',content:JSON.stringify(creativePayload(answers))}],text:{format:{type:'json_schema',name:'sinjira_character_bible',strict:true,schema}}})});if(!res.ok)throw new Error(`OPENAI_${res.status}`);const data=await res.json();return {model,bible:JSON.parse(data.output_text)}}
 
-async function notify(service:any,sub:any,user:any,p:any,answers:Record<string,unknown>,updated=false){let internal=false,adminEmail=false,participantEmail=false;try{const {error}=await service.from('admin_notifications').insert({notification_type:'character_submission',title:updated?'Questionnaire SINJIRA™ mis à jour':'Nouveau questionnaire SINJIRA™',body:`${updated?'Mise à jour':'Nouvelle participation'} de ${p?.pseudo||p?.display_name||user.email||'un membre'}.`,related_user_id:user.id,related_entity_type:'character_submission',related_entity_id:sub.id});internal=!error}catch(e){console.warn('admin notification unavailable',e)}if(!PAID_EXTERNAL_SERVICES_ENABLED)return {internal,adminEmail,participantEmail};const resend=Deno.env.get('RESEND_API_KEY'),from=Deno.env.get('REPORT_FROM_EMAIL');if(!resend||!from)return {internal,adminEmail,participantEmail};const adminTo=Deno.env.get('CHARACTER_REPORT_TO_EMAIL')||Deno.env.get('FRACTURE_REPORT_TO_EMAIL')||'kingtyrano@gmail.com';try{const r=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${resend}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[adminTo],subject:updated?'SINJIRA™ — questionnaire personnage mis à jour':'SINJIRA™ — nouveau questionnaire personnage',html:`<p>${updated?'Un questionnaire':'Une nouvelle participation'} a été ${updated?'mis à jour':'enregistrée'}.</p><p><strong>Compte :</strong> ${escapeHtml(p?.pseudo||p?.display_name||'Compte SINJIRA™')}<br><strong>Courriel :</strong> ${escapeHtml(user.email||'')}<br><strong>Dossier :</strong> ${escapeHtml(sub.id)}</p><p>Consultez l’administration SINJIRA™ pour le dossier complet.</p>`})});adminEmail=r.ok;if(!r.ok)console.warn('admin resend',await r.text())}catch(e){console.warn('admin email failed',e)}if(user.email){try{const r=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${resend}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[user.email],subject:updated?'SINJIRA™ — copie de votre questionnaire mis à jour':'SINJIRA™ — copie de votre participation au Registre',html:`<h2>Votre participation est enregistrée</h2><p>Bonjour ${escapeHtml(p?.pseudo||p?.display_name||'membre SINJIRA™')},</p><p>Votre questionnaire du Registre des Consciences a bien été ${updated?'mis à jour':'enregistré'} dans SINJIRA™.</p><p><strong>Numéro de dossier :</strong> ${escapeHtml(sub.id)}</p><p>Pour votre protection, cette copie ne contient ni coordonnées privées, ni renseignements parentaux, ni photographie.</p>${participantSummary(answers)}<p style="margin-top:24px">Votre personnage reste provisoire jusqu’à validation par Benoit Cantin.</p>`})});participantEmail=r.ok;if(!r.ok)console.warn('participant resend',await r.text())}catch(e){console.warn('participant email failed',e)}}return {internal,adminEmail,participantEmail}}
+async function notify(service:any,sub:any,user:any,p:any,answers:Record<string,unknown>,updated=false){
+  let internal=false,adminEmail=false,participantEmail=false;
+  try{const {error}=await service.from('admin_notifications').insert({notification_type:'character_submission',title:updated?'Questionnaire SINJIRA™ mis à jour':'Nouveau questionnaire SINJIRA™',body:`${updated?'Mise à jour':'Nouvelle participation'} de ${p?.pseudo||p?.display_name||user.email||'un membre'}.`,related_user_id:user.id,related_entity_type:'character_submission',related_entity_id:sub.id});internal=!error;if(error)console.warn('[submit-character-questionnaire]','ADMIN_NOTIFICATION_FAILED')}catch{console.warn('[submit-character-questionnaire]','ADMIN_NOTIFICATION_FAILED')}
+  if(!PAID_EXTERNAL_SERVICES_ENABLED)return {internal,adminEmail,participantEmail};
+  const resend=Deno.env.get('RESEND_API_KEY'),from=Deno.env.get('REPORT_FROM_EMAIL');if(!resend||!from)return {internal,adminEmail,participantEmail};
+  const adminTo=Deno.env.get('CHARACTER_REPORT_TO_EMAIL')||Deno.env.get('FRACTURE_REPORT_TO_EMAIL')||'kingtyrano@gmail.com';
+  try{const r=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${resend}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[adminTo],subject:updated?'SINJIRA™ — questionnaire personnage mis à jour':'SINJIRA™ — nouveau questionnaire personnage',html:`<p>${updated?'Un questionnaire':'Une nouvelle participation'} a été ${updated?'mis à jour':'enregistrée'}.</p><p><strong>Compte :</strong> ${escapeHtml(p?.pseudo||p?.display_name||'Compte SINJIRA™')}<br><strong>Courriel :</strong> ${escapeHtml(user.email||'')}<br><strong>Dossier :</strong> ${escapeHtml(sub.id)}</p><p>Consultez l’administration SINJIRA™ pour le dossier complet.</p>`})});adminEmail=r.ok;if(!r.ok)console.warn('[submit-character-questionnaire]','ADMIN_EMAIL_FAILED')}catch{console.warn('[submit-character-questionnaire]','ADMIN_EMAIL_FAILED')}
+  if(user.email){try{const r=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${resend}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[user.email],subject:updated?'SINJIRA™ — copie de votre questionnaire mis à jour':'SINJIRA™ — copie de votre participation au Registre',html:`<h2>Votre participation est enregistrée</h2><p>Bonjour ${escapeHtml(p?.pseudo||p?.display_name||'membre SINJIRA™')},</p><p>Votre questionnaire du Registre des Consciences a bien été ${updated?'mis à jour':'enregistré'} dans SINJIRA™.</p><p><strong>Numéro de dossier :</strong> ${escapeHtml(sub.id)}</p><p>Pour votre protection, cette copie ne contient ni coordonnées privées, ni renseignements parentaux, ni photographie.</p>${participantSummary(answers)}<p style="margin-top:24px">Votre personnage reste provisoire jusqu’à validation par Benoit Cantin.</p>`})});participantEmail=r.ok;if(!r.ok)console.warn('[submit-character-questionnaire]','PARTICIPANT_EMAIL_FAILED')}catch{console.warn('[submit-character-questionnaire]','PARTICIPANT_EMAIL_FAILED')}}
+  return {internal,adminEmail,participantEmail};
+}
 
 function successPayload(submissionId:string,extra:Record<string,unknown>,n:{internal:boolean,adminEmail:boolean,participantEmail:boolean}){return {ok:true,persisted:true,version:VERSION,submission_id:submissionId,admin_notification_created:n.internal,admin_email_sent:n.adminEmail,participant_email_sent:n.participantEmail,notification_created:n.internal,notification_sent:n.adminEmail,remote_ai_enabled:REMOTE_AI_ENABLED,paid_external_services_enabled:PAID_EXTERNAL_SERVICES_ENABLED,...extra}}
 
-Deno.serve(async(req)=>{if(req.method==='OPTIONS')return new Response('ok',{headers:corsHeaders});if(req.method!=='POST')return json({ok:false,error:'Méthode non autorisée.',version:VERSION},405);try{const user=await requiredUser(req),service=serviceClient(),body=await req.json();if(body?.health===true)return json({ok:true,version:VERSION,persisted:false,remote_ai_enabled:REMOTE_AI_ENABLED,paid_external_services_enabled:PAID_EXTERNAL_SERVICES_ENABLED});const answers=body?.answers;if(!answers||typeof answers!=='object'||Array.isArray(answers))return json({ok:false,error:'Réponses du questionnaire manquantes.',version:VERSION},400);if(JSON.stringify(answers).length>500000)return json({ok:false,error:'Questionnaire trop volumineux.',version:VERSION},413);const photo_path=body?.photo_path||null,manual_only=body?.manual_only!==false,update_existing=body?.update_existing===true;if(photo_path&&(!String(photo_path).startsWith(`${user.id}/`)||String(photo_path).includes('..')))return json({ok:false,error:'Photo de dossier invalide.',version:VERSION},400);const owner=String(user?.email||'').trim().toLowerCase()==='kingtyrano@gmail.com';const [{data:p},{data:existingSubmission},{data:existingCharacter}]=await Promise.all([service.from('profiles').select('pseudo,display_name').eq('user_id',user.id).maybeSingle(),service.from('character_submissions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1).maybeSingle(),service.from('characters').select('id,status,submission_id').eq('user_id',user.id).order('updated_at',{ascending:false}).limit(1).maybeSingle()]);if((existingSubmission||existingCharacter)&&!(owner&&update_existing))return json({ok:false,error:'Ce Compte SINJIRA possède déjà une demande ou son unique personnage. Modifiez votre dossier existant au lieu d’en créer un deuxième.',code:'ONE_CHARACTER_PER_ACCOUNT',version:VERSION},409);
-if(owner&&update_existing&&(existingSubmission||existingCharacter)){let sub=existingSubmission;if(existingSubmission){const {data:updated,error}=await service.from('character_submissions').update({account_pseudo:p?.pseudo||p?.display_name||'AbyssTime',account_email:user.email||'',source_payload:answers,photo_path:photo_path||existingSubmission.photo_path||null,status:existingCharacter?'assigned':'submitted',source_purged_at:null}).eq('id',existingSubmission.id).select('*').single();if(error)throw error;sub=updated}else{const {data:created,error}=await service.from('character_submissions').insert({user_id:user.id,account_pseudo:p?.pseudo||p?.display_name||'AbyssTime',account_email:user.email||'',source_payload:answers,photo_path:photo_path||null,status:existingCharacter?'assigned':'submitted'}).select('*').single();if(error)throw error;sub=created}try{await service.rpc('ensure_sinjira_owner_character')}catch(e){console.warn('owner repair rpc unavailable',e)}const n=await notify(service,sub,user,p,answers,true);return json(successPayload(sub.id,{character_id:existingCharacter?.id||null,ai_generated:false,updated_existing:true},n))}
-const {data:sub,error}=await service.from('character_submissions').insert({user_id:user.id,account_pseudo:p?.pseudo||p?.display_name||'',account_email:user.email||'',source_payload:answers,photo_path:photo_path||null,status:'submitted'}).select('*').single();if(error)throw error;const n=await notify(service,sub,user,p,answers,false);let generated=null;if(manual_only!==true&&REMOTE_AI_ENABLED){try{generated=await generate(answers,service)}catch(e){await service.from('character_generation_runs').insert({submission_id:sub.id,status:'failed',error_text:String(e?.message||e)})}}if(generated){const b=generated.bible,{data:ch,error:ce}=await service.from('characters').insert({submission_id:sub.id,user_id:user.id,public_name:b.character_name,public_description:b.personality_summary,status:'author_review',bible:b,ai_generated:true,visible_to_user:true,canon_status:'PROVISOIRE',canon_version:'v1.0'}).select('*').single();if(ce)throw ce;await service.from('character_submissions').update({status:'ai_draft'}).eq('id',sub.id);await service.from('character_generation_runs').insert({submission_id:sub.id,character_id:ch.id,model:generated.model,status:'completed'});return json(successPayload(sub.id,{character_id:ch.id,ai_generated:true},n))}return json(successPayload(sub.id,{ai_generated:false},n))}catch(e){console.error(e);if(e?.message==='AUTH_REQUIRED')return json({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED',version:VERSION},401);if(e?.message==='MFA_SETUP_REQUIRED')return json({ok:false,error:'Activez d’abord l’authentification à deux facteurs dans Ma sécurité pour accéder au Registre avec la protection renforcée.',code:'MFA_SETUP_REQUIRED',version:VERSION},403);if(e?.message==='MFA_REQUIRED')return json({ok:false,error:'Une vérification renforcée est requise avant cette opération du Registre.',code:'MFA_REQUIRED',version:VERSION},403);if(e?.message==='MFA_STATE_UNAVAILABLE'||e?.message==='SECURITY_STATE_UNAVAILABLE')return json({ok:false,error:'L’état de sécurité de votre compte ne peut pas être vérifié pour le moment. Réessayez plus tard.',code:e.message,version:VERSION},503);return json({ok:false,error:'Impossible de transmettre le questionnaire.',version:VERSION},500)}});
+Deno.serve(async(req)=>{
+  if(req.method==='OPTIONS')return new Response('ok',{headers:corsHeaders});
+  if(req.method!=='POST')return privateJson({ok:false,error:'Méthode non autorisée.',version:VERSION},405);
+  try{
+    const user=await requiredUser(req);
+    const service=serviceClient();
+    const body=await readBoundedJson(req);
+    if(body.health===true)return privateJson({ok:true,version:VERSION,persisted:false,remote_ai_enabled:REMOTE_AI_ENABLED,paid_external_services_enabled:PAID_EXTERNAL_SERVICES_ENABLED});
+    const answers=body.answers;
+    if(!answers||typeof answers!=='object'||Array.isArray(answers))return privateJson({ok:false,error:'Réponses du questionnaire manquantes.',version:VERSION},400);
+    if(JSON.stringify(answers).length>MAX_ANSWERS_CHARS)return privateJson({ok:false,error:'Questionnaire trop volumineux.',version:VERSION},413);
+    const photo_path=body.photo_path||null,manual_only=body.manual_only!==false,update_existing=body.update_existing===true;
+    if(photo_path&&(!String(photo_path).startsWith(`${user.id}/`)||String(photo_path).includes('..')))return privateJson({ok:false,error:'Photo de dossier invalide.',version:VERSION},400);
+    const owner=String(user?.email||'').trim().toLowerCase()==='kingtyrano@gmail.com';
+    const [profileResult,submissionResult,characterResult]=await Promise.all([
+      service.from('profiles').select('pseudo,display_name').eq('user_id',user.id).maybeSingle(),
+      service.from('character_submissions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1).maybeSingle(),
+      service.from('characters').select('id,status,submission_id').eq('user_id',user.id).order('updated_at',{ascending:false}).limit(1).maybeSingle()
+    ]);
+    if(submissionResult.error||characterResult.error)throw new Error('CHARACTER_STATE_LOOKUP_FAILED');
+    const p=profileResult.data||null,existingSubmission=submissionResult.data,existingCharacter=characterResult.data;
+    if((existingSubmission||existingCharacter)&&!(owner&&update_existing))return privateJson({ok:false,error:'Ce Compte SINJIRA possède déjà une demande ou son unique personnage. Modifiez votre dossier existant au lieu d’en créer un deuxième.',code:'ONE_CHARACTER_PER_ACCOUNT',version:VERSION},409);
+
+    if(owner&&update_existing&&(existingSubmission||existingCharacter)){
+      let sub=existingSubmission;
+      if(existingSubmission){
+        const {data:updated,error}=await service.from('character_submissions').update({account_pseudo:p?.pseudo||p?.display_name||'AbyssTime',account_email:user.email||'',source_payload:answers,photo_path:photo_path||existingSubmission.photo_path||null,status:existingCharacter?'assigned':'submitted',source_purged_at:null}).eq('id',existingSubmission.id).select('*').single();
+        if(error)throw new Error('CHARACTER_SUBMISSION_WRITE_FAILED');sub=updated;
+      }else{
+        const {data:created,error}=await service.from('character_submissions').insert({user_id:user.id,account_pseudo:p?.pseudo||p?.display_name||'AbyssTime',account_email:user.email||'',source_payload:answers,photo_path:photo_path||null,status:existingCharacter?'assigned':'submitted'}).select('*').single();
+        if(error)throw new Error('CHARACTER_SUBMISSION_WRITE_FAILED');sub=created;
+      }
+      try{const {error}=await service.rpc('ensure_sinjira_owner_character');if(error)console.warn('[submit-character-questionnaire]','OWNER_CHARACTER_REPAIR_FAILED')}catch{console.warn('[submit-character-questionnaire]','OWNER_CHARACTER_REPAIR_FAILED')}
+      const n=await notify(service,sub,user,p,answers as Record<string,unknown>,true);
+      return privateJson(successPayload(sub.id,{character_id:existingCharacter?.id||null,ai_generated:false,updated_existing:true},n));
+    }
+
+    const {data:sub,error}=await service.from('character_submissions').insert({user_id:user.id,account_pseudo:p?.pseudo||p?.display_name||'',account_email:user.email||'',source_payload:answers,photo_path:photo_path||null,status:'submitted'}).select('*').single();
+    if(error)throw new Error('CHARACTER_SUBMISSION_WRITE_FAILED');
+    const n=await notify(service,sub,user,p,answers as Record<string,unknown>,false);
+    let generated=null;
+    if(manual_only!==true&&REMOTE_AI_ENABLED){
+      try{generated=await generate(answers as Record<string,unknown>,service)}
+      catch{await service.from('character_generation_runs').insert({submission_id:sub.id,status:'failed',error_text:'CHARACTER_GENERATION_FAILED'});console.warn('[submit-character-questionnaire]','CHARACTER_GENERATION_FAILED')}
+    }
+    if(generated){
+      const b=generated.bible,{data:ch,error:ce}=await service.from('characters').insert({submission_id:sub.id,user_id:user.id,public_name:b.character_name,public_description:b.personality_summary,status:'author_review',bible:b,ai_generated:true,visible_to_user:true,canon_status:'PROVISOIRE',canon_version:'v1.0'}).select('*').single();
+      if(ce)throw new Error('CHARACTER_SUBMISSION_WRITE_FAILED');
+      await service.from('character_submissions').update({status:'ai_draft'}).eq('id',sub.id);
+      await service.from('character_generation_runs').insert({submission_id:sub.id,character_id:ch.id,model:generated.model,status:'completed'});
+      return privateJson(successPayload(sub.id,{character_id:ch.id,ai_generated:true},n));
+    }
+    return privateJson(successPayload(sub.id,{ai_generated:false},n));
+  }catch(e){
+    console.error('[submit-character-questionnaire]',safeLogCode(e));
+    if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED',version:VERSION},401);
+    if(e?.message==='MFA_SETUP_REQUIRED')return privateJson({ok:false,error:'Activez d’abord l’authentification à deux facteurs dans Ma sécurité pour accéder au Registre avec la protection renforcée.',code:'MFA_SETUP_REQUIRED',version:VERSION},403);
+    if(e?.message==='MFA_REQUIRED')return privateJson({ok:false,error:'Une vérification renforcée est requise avant cette opération du Registre.',code:'MFA_REQUIRED',version:VERSION},403);
+    if(e?.message==='MFA_STATE_UNAVAILABLE'||e?.message==='SECURITY_STATE_UNAVAILABLE')return privateJson({ok:false,error:'L’état de sécurité de votre compte ne peut pas être vérifié pour le moment. Réessayez plus tard.',code:e.message,version:VERSION},503);
+    if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Questionnaire trop volumineux.',code:'REQUEST_TOO_LARGE',version:VERSION},413);
+    if(e?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED',version:VERSION},415);
+    if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON',version:VERSION},400);
+    if(e?.message==='CHARACTER_STATE_LOOKUP_FAILED')return privateJson({ok:false,error:'L’état de votre dossier ne peut pas être vérifié pour le moment.',code:'CHARACTER_STATE_LOOKUP_FAILED',version:VERSION},503);
+    if(e?.message==='CHARACTER_SUBMISSION_WRITE_FAILED')return privateJson({ok:false,error:'Impossible d’enregistrer le questionnaire pour le moment.',code:'CHARACTER_SUBMISSION_WRITE_FAILED',version:VERSION},500);
+    return privateJson({ok:false,error:'Impossible de transmettre le questionnaire.',code:'CHARACTER_QUESTIONNAIRE_FAILED',version:VERSION},500);
+  }
+});
