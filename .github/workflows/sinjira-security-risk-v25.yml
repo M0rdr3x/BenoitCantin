@@ -54,7 +54,7 @@ jobs:
           set -euo pipefail
           supabase db start
 
-      - name: Exécuter les 20 assertions pgTAP V25
+      - name: Exécuter les 27 assertions pgTAP V25
         shell: bash
         run: |
           set -euo pipefail

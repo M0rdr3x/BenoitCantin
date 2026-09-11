@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 
-select plan(20);
+select plan(27);
 
 -- Provenance du score : la version du modèle doit être conservée sur chaque événement.
 select ok(
@@ -148,6 +148,82 @@ select is(
   private.security_risk_score_v25(false,false,false,false,false,false,false,false,false,false)->>'model_version',
   'v25.0',
   'le moteur annonce explicitement sa version v25.0'
+);
+
+-- Contrat Mode Voyage V25 : les valeurs enregistrées doivent être exactement celles
+-- que le moteur peut comparer aux codes pays fournis par l’infrastructure de confiance.
+select ok(
+  to_regprocedure('private.security_is_iso_country_code_v25(text)') is not null,
+  'le validateur ISO du Mode Voyage existe côté serveur'
+);
+select ok(
+  private.security_is_iso_country_code_v25('MA')
+  and private.security_is_iso_country_code_v25('ma'),
+  'le validateur accepte un vrai code ISO et normalise la casse'
+);
+select ok(
+  not private.security_is_iso_country_code_v25('ZZ')
+  and not private.security_is_iso_country_code_v25('France')
+  and not private.security_is_iso_country_code_v25(null),
+  'les pseudo-codes, noms libres et valeurs nulles sont refusés'
+);
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)',
+    'EXECUTE'
+  ),
+  'le Mode Voyage reste réservé au propriétaire authentifié'
+);
+select ok(
+  (select not p.prosecdef
+     and array_to_string(p.proconfig,',') like '%search_path=%'
+   from pg_proc p
+   join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public'
+     and p.proname='security_create_travel_plan'
+     and pg_get_function_identity_arguments(p.oid)='p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_destinations text[], p_multi_country boolean'
+   limit 1)
+  and
+  (select p.prosecdef
+     and array_to_string(p.proconfig,',') like '%search_path=%'
+   from pg_proc p
+   join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='sinjira_security_internal'
+     and p.proname='security_create_travel_plan'
+     and pg_get_function_identity_arguments(p.oid)='p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_destinations text[], p_multi_country boolean'
+   limit 1),
+  'le Mode Voyage sépare wrapper public INVOKER et implémentation interne DEFINER'
+);
+select ok(
+  pg_get_functiondef('sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
+    like '%INVALID_TRAVEL_COUNTRY_CODE%'
+  and pg_get_functiondef('sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
+    like '%select distinct upper(trim(x)) as code%'
+  and pg_get_functiondef('sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
+    like '%cardinality(v_dest) > 1%'
+  and pg_get_functiondef('sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
+    like '%interval ''7 days''%'
+  and pg_get_functiondef('sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
+    like '%interval ''180 days''%',
+  'l’implémentation interne normalise, déduplique, dérive multi-pays et borne période/rétention'
+);
+select ok(
+  pg_get_functiondef('public.security_evaluate_context(uuid,text,text,text,text,text,text,text)'::regprocedure)
+    like '%upper(trim(d))=v_country%'
+  and pg_get_functiondef('public.security_evaluate_context(uuid,text,text,text,text,text,text,text)'::regprocedure)
+    like '%if v_impossible_travel then%'
+  and pg_get_functiondef('public.security_evaluate_context(uuid,text,text,text,text,text,text,text)'::regprocedure)
+    like '%v_force_challenge := true%'
+  and pg_get_functiondef('public.security_evaluate_context(uuid,text,text,text,text,text,text,text)'::regprocedure)
+    like '%v_travel_match%'
+  ,
+  'le Mode Voyage correspond aux codes pays sans neutraliser le voyage impossible'
 );
 
 select * from finish();
