@@ -181,28 +181,37 @@ select ok(
   'le Mode Voyage reste réservé au propriétaire authentifié'
 );
 select ok(
-  (select p.prosecdef
+  (select not p.prosecdef
      and array_to_string(p.proconfig,',') like '%search_path=%'
    from pg_proc p
    join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='public'
      and p.proname='security_create_travel_plan'
      and pg_get_function_identity_arguments(p.oid)='p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_destinations text[], p_multi_country boolean'
+   limit 1)
+  and
+  (select p.prosecdef
+     and array_to_string(p.proconfig,',') like '%search_path=%'
+   from pg_proc p
+   join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='sinjira_security_internal'
+     and p.proname='security_create_travel_plan'
+     and pg_get_function_identity_arguments(p.oid)='p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_destinations text[], p_multi_country boolean'
    limit 1),
-  'le RPC Mode Voyage reste SECURITY DEFINER avec search_path fixe'
+  'le Mode Voyage sépare wrapper public INVOKER et implémentation interne DEFINER'
 );
 select ok(
-  pg_get_functiondef('public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
+  pg_get_functiondef('sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
     like '%INVALID_TRAVEL_COUNTRY_CODE%'
-  and pg_get_functiondef('public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
+  and pg_get_functiondef('sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
     like '%select distinct upper(trim(x)) as code%'
-  and pg_get_functiondef('public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
+  and pg_get_functiondef('sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
     like '%cardinality(v_dest) > 1%'
-  and pg_get_functiondef('public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
+  and pg_get_functiondef('sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
     like '%interval ''7 days''%'
-  and pg_get_functiondef('public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
+  and pg_get_functiondef('sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure)
     like '%interval ''180 days''%',
-  'le RPC normalise, déduplique, dérive multi-pays et borne période/rétention'
+  'l’implémentation interne normalise, déduplique, dérive multi-pays et borne période/rétention'
 );
 select ok(
   pg_get_functiondef('public.security_evaluate_context(uuid,text,text,text,text,text,text,text)'::regprocedure)
