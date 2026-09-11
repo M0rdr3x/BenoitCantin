@@ -6,7 +6,9 @@ on:
     paths:
       - 'projets/sinjira/**'
       - 'assets/**'
+      - 'supabase/config.toml'
       - 'supabase/functions/get-document-url/**'
+      - 'supabase/functions/get-private-book-url/**'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
       - '.github/workflows/sinjira-livre-i-private-delivery.yml'
       - 'sitemap.xml'
@@ -18,7 +20,9 @@ on:
     paths:
       - 'projets/sinjira/**'
       - 'assets/**'
+      - 'supabase/config.toml'
       - 'supabase/functions/get-document-url/**'
+      - 'supabase/functions/get-private-book-url/**'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
       - '.github/workflows/sinjira-livre-i-private-delivery.yml'
       - 'sitemap.xml'
@@ -52,5 +56,5 @@ jobs:
       - name: Auto-tester le validateur
         run: python3 scripts/validate_sinjira_livre_i_delivery.py --self-test
 
-      - name: Vérifier le contrat et les actifs publics
+      - name: Vérifier le contrat, JWT, entitlements et actifs publics
         run: python3 scripts/validate_sinjira_livre_i_delivery.py
