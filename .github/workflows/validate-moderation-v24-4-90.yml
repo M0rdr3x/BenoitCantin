@@ -2,6 +2,7 @@ name: Validation modération et appels V24.4.90
 
 on:
   pull_request:
+    branches: [main]
     paths:
       - 'supabase/migrations/**'
       - 'supabase/functions/admin-social-v20/**'
@@ -9,6 +10,8 @@ on:
       - 'assets/js/sinjira-moderation-appeals-v24-4-90.js'
       - 'compte/moderation.html'
       - 'scripts/validate_moderation_appeals_v24_4_90.py'
+      - 'scripts/validate_admin_social_request_security.py'
+      - 'scripts/validate_moderation_workflow_security.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'supabase/production-migration-ledger.txt'
       - '.github/workflows/validate-moderation-v24-4-90.yml'
@@ -21,28 +24,57 @@ on:
       - 'assets/js/sinjira-moderation-appeals-v24-4-90.js'
       - 'compte/moderation.html'
       - 'scripts/validate_moderation_appeals_v24_4_90.py'
+      - 'scripts/validate_admin_social_request_security.py'
+      - 'scripts/validate_moderation_workflow_security.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'supabase/production-migration-ledger.txt'
+      - '.github/workflows/validate-moderation-v24-4-90.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   moderation-contract:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - name: Récupérer le dépôt
-        uses: actions/checkout@v6
-      - name: Configurer Python
-        uses: actions/setup-python@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          python-version: '3.12'
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Configurer Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+
+      - name: Auto-tester le contrat CI modération
+        run: python scripts/validate_moderation_workflow_security.py --self-test
+
+      - name: Vérifier le contrat CI modération
+        run: python scripts/validate_moderation_workflow_security.py
+
+      - name: Auto-tester la sécurité HTTP de la modération
+        run: python scripts/validate_admin_social_request_security.py --self-test
+
+      - name: Vérifier la sécurité HTTP de la modération
+        run: python scripts/validate_admin_social_request_security.py
+
       - name: Valider le contrat de modération et appels
         run: python scripts/validate_moderation_appeals_v24_4_90.py
+
       - name: Valider le ledger production
         run: python scripts/validate_production_migration_ledger.py
+
       - name: Valider le manifeste du schéma production
         run: python scripts/validate_production_schema_manifest.py
+
       - name: Vérifier la syntaxe des clients JavaScript
         run: |
           node --check assets/js/sinjira-admin-social-v20.js
