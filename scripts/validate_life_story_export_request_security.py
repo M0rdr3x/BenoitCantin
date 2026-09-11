@@ -25,10 +25,23 @@ REQUIRED = {
     'transport humain/manual': "transport: 'manual_or_future_sender'",
     'réponse privée succès': 'return privateJson({ ok: true,',
     'réponse privée erreur': "return privateJson({ ok: false, error: 'Opération Histoire de vie refusée.'",
+    'allowlist des erreurs métier': 'const SAFE_ERROR_CODES = new Set([',
+    'classification des erreurs': 'const { code, status } = classifyExportError(error);',
+    'fallback backend fixe': "'LIFE_STORY_EXPORT_FAILED'",
+    'log erreur sanitizé': "console.error('[life-story-export]', { code });",
+    'code auth sûr': "'AUTH_REQUIRED'",
+    'code admin sûr': "'ADMIN_REQUIRED'",
+    'code MFA sûr': "'MFA_REQUIRED'",
+    'code frontière sûr': "'SOURCE_BOUNDARY_VIOLATION'",
+    'code export générable sûr': "'EXPORT_NOT_GENERATABLE'",
+    'code export généré sûr': "'EXPORT_NOT_GENERATED'",
+    'code destinataires sûr': "'NO_RECIPIENTS'",
 }
 
 REQUIRED_PATTERNS = {
     'requête bornée exactement à 4096 octets': re.compile(r'\bMAX_REQUEST_BYTES\s*=\s*4_?096\s*;'),
+    'erreur backend inconnue en HTTP 500': re.compile(r"code\s*===\s*['\"]LIFE_STORY_EXPORT_FAILED['\"]\s*\?\s*500"),
+    'fallback imposé après allowlist': re.compile(r"SAFE_ERROR_CODES\.has\(candidate\)\s*\?\s*candidate\s*:\s*['\"]LIFE_STORY_EXPORT_FAILED['\"]"),
 }
 
 FORBIDDEN = {
@@ -37,6 +50,10 @@ FORBIDDEN = {
     'jeton dans la query string': '?token=',
     'lecture du Registre reader_characters': 'reader_characters',
     'lecture du Registre registry_account_links': 'registry_account_links',
+    'message backend brut converti en code': 'String(error?.message',
+    'message backend brut converti en code direct': 'String(error.message',
+    'objet erreur brut journalisé': "console.error('[life-story-export]', error)",
+    'objet erreur brut journalisé guillemets doubles': 'console.error("[life-story-export]", error)',
 }
 
 
@@ -83,12 +100,22 @@ const PRIVATE_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
 };
+const SAFE_ERROR_CODES = new Set([
+ 'AUTH_REQUIRED', 'ADMIN_REQUIRED', 'MFA_REQUIRED', 'SOURCE_BOUNDARY_VIOLATION',
+ 'EXPORT_NOT_GENERATABLE', 'EXPORT_NOT_GENERATED', 'NO_RECIPIENTS',
+]);
 function privateJson(data, status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS})}
 async function readLimitedJson(req){
  const rawLength=req.headers.get('content-length');
  const raw=await req.text();
  new TextEncoder().encode(raw).byteLength;
  return {body:{}};
+}
+function classifyExportError(error) {
+ const candidate = typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string' ? error.message : '';
+ const code = SAFE_ERROR_CODES.has(candidate) ? candidate : 'LIFE_STORY_EXPORT_FAILED';
+ const status = code === 'AUTH_REQUIRED' ? 401 : code === 'ADMIN_REQUIRED' || code === 'MFA_REQUIRED' ? 403 : code === 'LIFE_STORY_EXPORT_FAILED' ? 500 : 400;
+ return { code, status };
 }
 function assertLifeStoryBoundary(record){
  if(record.registry_access_prohibited !== true) throw new Error('SOURCE_BOUNDARY_VIOLATION');
@@ -110,7 +137,9 @@ Deno.serve(async (req) => {
   if(!body) return privateJson({},400);
   return privateJson({ ok: true, rows, responseLinks, result });
  } catch (error) {
-  return privateJson({ ok: false, error: 'Opération Histoire de vie refusée.', code: String(error) }, 400);
+  const { code, status } = classifyExportError(error);
+  console.error('[life-story-export]', { code });
+  return privateJson({ ok: false, error: 'Opération Histoire de vie refusée.', code }, status);
  }
 });
 privateJson({});
@@ -159,9 +188,41 @@ privateJson({});
         if not any('avant la validation administrateur' in item for item in auth_order):
             raise AssertionError('La lecture du corps avant l’admin/JWT doit être bloquée.')
 
+        path.write_text(safe.replace(
+            "const code = SAFE_ERROR_CODES.has(candidate) ? candidate : 'LIFE_STORY_EXPORT_FAILED';",
+            "const code = candidate || 'LIFE_STORY_EXPORT_FAILED';",
+        ), encoding='utf-8')
+        allowlist = validate(path)
+        if not any('fallback imposé après allowlist' in item for item in allowlist):
+            raise AssertionError('Le contournement de l’allowlist des erreurs doit être bloqué.')
+
+        path.write_text(safe.replace(
+            'const { code, status } = classifyExportError(error);',
+            "const code = String(error?.message || 'EXPORT_ERROR'); const status = 400;",
+        ), encoding='utf-8')
+        raw_message = validate(path)
+        if not any('message backend brut' in item for item in raw_message):
+            raise AssertionError('Une erreur backend brute convertie en code doit être bloquée.')
+
+        path.write_text(safe.replace(
+            "console.error('[life-story-export]', { code });",
+            "console.error('[life-story-export]', error);",
+        ), encoding='utf-8')
+        raw_log = validate(path)
+        if not any('objet erreur brut journalisé' in item for item in raw_log):
+            raise AssertionError('La journalisation brute d’une erreur backend doit être bloquée.')
+
+        path.write_text(safe.replace(
+            "code === 'LIFE_STORY_EXPORT_FAILED' ? 500",
+            "code === 'LIFE_STORY_EXPORT_FAILED' ? 400",
+        ), encoding='utf-8')
+        fallback_status = validate(path)
+        if not any('HTTP 500' in item for item in fallback_status):
+            raise AssertionError('Une erreur backend inconnue ne doit pas être reclassée en erreur client 400.')
+
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='Valide les bornes HTTP et la confidentialité de life-story-export.')
+    parser = argparse.ArgumentParser(description='Valide les bornes HTTP, la confidentialité et la sanitisation des erreurs de life-story-export.')
     parser.add_argument('--self-test', action='store_true')
     args = parser.parse_args()
     if args.self_test:
@@ -175,7 +236,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK life-story-export: admin/JWT avant corps, JSON 4 KiB, réponses no-store et frontière Histoire de vie préservée.')
+    print('OK life-story-export: admin/JWT avant corps, JSON 4 KiB, réponses no-store, frontière Histoire de vie et erreurs backend sanitizées.')
     return 0
 
 
