@@ -24,29 +24,24 @@ select ok(
   not has_function_privilege('anon','public.redeem_sinjira_activation(text,uuid)','execute'),
   'anon ne peut pas exécuter directement la RPC activation'
 );
-select like(
-  pg_get_functiondef('public.redeem_sinjira_activation(text,uuid)'::regprocedure),
-  '%for update%',
+select ok(
+  pg_get_functiondef('public.redeem_sinjira_activation(text,uuid)'::regprocedure) ilike '%for update%',
   'le code activation est verrouillé transactionnellement'
 );
-select like(
-  pg_get_functiondef('public.redeem_sinjira_activation(text,uuid)'::regprocedure),
-  '%c.status <> ''unused''%',
+select ok(
+  pg_get_functiondef('public.redeem_sinjira_activation(text,uuid)'::regprocedure) ilike '%c.status <> ''unused''%',
   'tout code qui n est plus unused est refusé'
 );
-select like(
-  pg_get_functiondef('public.redeem_sinjira_activation(text,uuid)'::regprocedure),
-  '%insert into public.user_entitlements%',
+select ok(
+  pg_get_functiondef('public.redeem_sinjira_activation(text,uuid)'::regprocedure) ilike '%insert into public.user_entitlements%',
   'la RPC attribue le droit numérique côté serveur'
 );
-select like(
-  pg_get_functiondef('public.redeem_sinjira_activation(text,uuid)'::regprocedure),
-  '%on conflict (user_id,product_id) do nothing%',
+select ok(
+  pg_get_functiondef('public.redeem_sinjira_activation(text,uuid)'::regprocedure) ilike '%on conflict (user_id,product_id) do nothing%',
   'l attribution est idempotente par utilisateur et produit'
 );
-select like(
-  pg_get_functiondef('public.redeem_sinjira_activation(text,uuid)'::regprocedure),
-  '%redeemed_by=p_user_id%',
+select ok(
+  pg_get_functiondef('public.redeem_sinjira_activation(text,uuid)'::regprocedure) ilike '%redeemed_by=p_user_id%',
   'le code consommé est lié à l utilisateur fourni par le serveur'
 );
 
