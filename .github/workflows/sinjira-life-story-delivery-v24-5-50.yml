@@ -33,6 +33,12 @@ jobs:
       - name: Vérifier le contrat CI Histoire de vie
         run: python scripts/validate_life_story_delivery_workflow_security.py
 
+      - name: Auto-tester la sécurité HTTP de life-story-export
+        run: python scripts/validate_life_story_export_request_security.py --self-test
+
+      - name: Vérifier la sécurité HTTP de life-story-export
+        run: python scripts/validate_life_story_export_request_security.py
+
       - name: Vérifier V24.5.50
         run: |
           python scripts/validate_life_story_delivery_v24_5_50.py
