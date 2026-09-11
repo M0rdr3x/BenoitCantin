@@ -10,9 +10,17 @@ const PRIVATE_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer'
 };
+const SAFE_LOG_CODES = new Set([
+  'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE'
+]);
 
 function privateJson(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: PRIVATE_HEADERS });
+}
+
+function adminUsersLogCode(error: unknown) {
+  const code = error instanceof Error ? error.message : '';
+  return SAFE_LOG_CODES.has(code) ? code : 'ADMIN_USERS_BACKEND_FAILED';
 }
 
 Deno.serve(async(req)=>{
@@ -38,7 +46,7 @@ Deno.serve(async(req)=>{
     }));
     return privateJson({ok:true,users});
   }catch(e){
-    console.error('[admin-users]',e?.message||'ADMIN_USERS_FAILED');
+    console.error('[admin-users]',adminUsersLogCode(e));
     if(e?.message==='AUTH_REQUIRED') return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
     if(e?.message==='ADMIN_REQUIRED') return privateJson({ok:false,error:'Accès administrateur refusé.',code:'ADMIN_REQUIRED'},403);
     if(e?.message==='MFA_REQUIRED') return privateJson({ok:false,error:'MFA_REQUIRED',code:'MFA_REQUIRED'},403);
