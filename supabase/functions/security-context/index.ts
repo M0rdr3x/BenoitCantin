@@ -1,5 +1,5 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
-import { corsHeaders, json } from '../_shared/cors.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 import { bearerToken, requiredUser, serviceClient } from '../_shared/auth.ts';
 import { buildSecurityPushMessage, SECURITY_PUSH_MAX_BATCH } from '../_shared/security-push-policy.mjs';
 import {
@@ -15,6 +15,40 @@ import {
 } from '../_shared/security-push-receipts.mjs';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const MAX_REQUEST_BYTES = 4096;
+const PRIVATE_HEADERS = {
+  ...corsHeaders,
+  'Content-Type': 'application/json; charset=utf-8',
+  'Cache-Control': 'private, no-store, max-age=0',
+  'Pragma': 'no-cache',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer',
+};
+
+function privateJson(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), { status, headers: PRIVATE_HEADERS });
+}
+
+async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
+  const rawLength = req.headers.get('content-length');
+  if (rawLength) {
+    const declared = Number(rawLength);
+    if (!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES) {
+      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+    }
+  }
+
+  const raw = await req.text();
+  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
+    return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+  }
+
+  try {
+    return { body: JSON.parse(raw || '{}') };
+  } catch {
+    return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
+  }
+}
 
 function safeText(value: unknown, max: number) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -194,14 +228,16 @@ async function runSecurityPushBackground(
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return json({ ok: false, error: 'Méthode non autorisée.' }, 405);
+  if (req.method !== 'POST') return privateJson({ ok: false, error: 'Méthode non autorisée.' }, 405);
 
   try {
     const user = await requiredUser(req);
     const sessionId = sessionIdFromVerifiedRequest(req);
-    const body = await req.json().catch(() => ({}));
+    const parsed = await readLimitedJson(req);
+    if (parsed.response) return parsed.response;
+    const body = parsed.body || {};
     const deviceKey = safeText(body?.device_key, 128);
-    if (deviceKey.length < 16) return json({ ok: false, error: 'Identifiant d’appareil invalide.' }, 400);
+    if (deviceKey.length < 16) return privateJson({ ok: false, error: 'Identifiant d’appareil invalide.' }, 400);
 
     const geo = trustedGeo(req);
     const service = serviceClient();
@@ -220,7 +256,7 @@ Deno.serve(async (req) => {
 
     EdgeRuntime.waitUntil(runSecurityPushBackground(service, user.id, data));
 
-    return json({
+    return privateJson({
       ok: true,
       security: data,
       geo_mode: geo.country ? 'trusted_coarse' : 'disabled',
@@ -233,7 +269,7 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error('[security-context]', error);
-    if (error?.message === 'AUTH_REQUIRED') return json({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
-    return json({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 500);
+    if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
+    return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 500);
   }
 });
