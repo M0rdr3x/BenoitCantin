@@ -10,9 +10,19 @@ const PRIVATE_HEADERS={
   'X-Content-Type-Options':'nosniff',
   'Referrer-Policy':'no-referrer'
 };
+const SAFE_LOG_CODES=new Set([
+  'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE',
+  'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON',
+  'PLAYTEST_ACCESS_GRANT_FAILED','PLAYTEST_REVIEW_ROLLBACK_FAILED'
+]);
 
 function privateJson(data:unknown,status=200){
   return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS});
+}
+
+function adminConsoleLogCode(error:unknown){
+  const code=error instanceof Error?error.message:'';
+  return SAFE_LOG_CODES.has(code)?code:'ADMIN_CONSOLE_BACKEND_FAILED';
 }
 
 async function readBoundedJson(req:Request){
@@ -21,7 +31,7 @@ async function readBoundedJson(req:Request){
   const declaredRaw=req.headers.get('content-length');
   if(declaredRaw){
     const declared=Number(declaredRaw);
-    if(Number.isFinite(declared)&&declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+    if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   }
   const raw=await req.text();
   if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
@@ -180,13 +190,20 @@ Deno.serve(async(req)=>{
       const state=['approved','refused','completed'].includes(body.status)?body.status:'refused';
       const {data:row,error:findError}=await service.from('playtest_participants').select('*,playtests(project_id)')
         .eq('playtest_id',body.playtest_id).eq('user_id',body.user_id).single();if(findError)throw findError;
+      const previousReview={status:row.status,reviewed_by:row.reviewed_by??null,reviewed_at:row.reviewed_at??null};
       const {error}=await service.from('playtest_participants').update({
         status:state,reviewed_by:user.id,reviewed_at:new Date().toISOString()
       }).eq('playtest_id',body.playtest_id).eq('user_id',body.user_id);if(error)throw error;
       if(state==='approved'){
-        await service.from('project_access').upsert({
+        const {error:grantError}=await service.from('project_access').upsert({
           user_id:body.user_id,project_id:row.playtests.project_id,access_level:'tester',granted_by:user.id,source:'playtest'
         },{onConflict:'user_id,project_id'});
+        if(grantError){
+          const {error:rollbackError}=await service.from('playtest_participants').update(previousReview)
+            .eq('playtest_id',body.playtest_id).eq('user_id',body.user_id);
+          if(rollbackError)throw new Error('PLAYTEST_REVIEW_ROLLBACK_FAILED');
+          throw new Error('PLAYTEST_ACCESS_GRANT_FAILED');
+        }
       }
       return privateJson({ok:true});
     }
@@ -238,7 +255,7 @@ Deno.serve(async(req)=>{
 
     return privateJson({ok:false,error:'Action inconnue.',code:'UNKNOWN_ACTION'},400);
   }catch(e){
-    console.error('[admin-console]',e);
+    console.error('[admin-console]',adminConsoleLogCode(e));
     if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
     if(e?.message==='ADMIN_REQUIRED')return privateJson({ok:false,error:'Accès administrateur refusé.',code:'ADMIN_REQUIRED'},403);
     if(e?.message==='MFA_REQUIRED')return privateJson({ok:false,error:'MFA_REQUIRED',code:'MFA_REQUIRED'},403);
@@ -246,6 +263,8 @@ Deno.serve(async(req)=>{
     if(e?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED'},415);
     if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
     if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
+    if(e?.message==='PLAYTEST_ACCESS_GRANT_FAILED')return privateJson({ok:false,error:'L’accès testeur n’a pas pu être accordé; la décision du participant a été restaurée.',code:'PLAYTEST_ACCESS_GRANT_FAILED'},503);
+    if(e?.message==='PLAYTEST_REVIEW_ROLLBACK_FAILED')return privateJson({ok:false,error:'Échec de cohérence lors de la révision du participant.',code:'PLAYTEST_REVIEW_ROLLBACK_FAILED'},500);
     return privateJson({ok:false,error:'Erreur administration SINJIRA.',code:'ADMIN_CONSOLE_FAILED'},500);
   }
 });
