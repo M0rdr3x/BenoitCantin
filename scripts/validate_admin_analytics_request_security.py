@@ -106,12 +106,12 @@ def self_test() -> None:
             'const body = await readLimitedJson(req);\n    const { service } = await requiredAdmin(req);',
             1,
         ),
-        'POST retiré': real.replace("if (req.method !== 'POST')", "if (false && req.method !== 'POST')", 1),
+        'POST retiré': real.replace("if (req.method !== 'POST')", 'if (false)', 1),
         'slug non borné': real.replace(GAME_SLUG_MARKER, 'const GAME_SLUG_RE = /^.*$/;', 1),
         'donnée inutile réintroduite': real.replace(".select('metrics,feedback')", ".select('metrics,feedback,created_at')", 1),
         'limite lignes augmentée': real.replace('.limit(10000)', '.limit(100000)', 1),
         'réponse analytique cacheable': real.replace('return privateJson({\n      ok: true,\n      analytics: {', 'return new Response(JSON.stringify({\n      ok: true,\n      analytics: {', 1),
-        'MFA retiré': real.replace("if (error?.message === 'MFA_REQUIRED')", "if (false && error?.message === 'MFA_REQUIRED')", 1),
+        'MFA retiré': real.replace("error?.message === 'MFA_REQUIRED'", "error?.message === 'MFA_BYPASSED'", 1),
     }
 
     with TemporaryDirectory() as tmp:
