@@ -31,8 +31,8 @@ select like(
 );
 select like(
   pg_get_functiondef('public.redeem_sinjira_activation(text,uuid)'::regprocedure),
-  '%status=''unused''%',
-  'seul un code inutilisé peut être activé'
+  '%c.status <> ''unused''%',
+  'tout code qui n est plus unused est refusé'
 );
 select like(
   pg_get_functiondef('public.redeem_sinjira_activation(text,uuid)'::regprocedure),
