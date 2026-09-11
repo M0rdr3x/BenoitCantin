@@ -14,6 +14,15 @@ const PRIVATE_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
 };
+const SAFE_ERROR_CODES = new Set([
+  'AUTH_REQUIRED',
+  'ADMIN_REQUIRED',
+  'MFA_REQUIRED',
+  'SOURCE_BOUNDARY_VIOLATION',
+  'EXPORT_NOT_GENERATABLE',
+  'EXPORT_NOT_GENERATED',
+  'NO_RECIPIENTS',
+]);
 
 function privateJson(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: PRIVATE_HEADERS });
@@ -56,6 +65,20 @@ function hex(bytes: Uint8Array) { return [...bytes].map((b) => b.toString(16).pa
 async function sha256Hex(value: Uint8Array | string) {
   const bytes = typeof value === 'string' ? new TextEncoder().encode(value) : value;
   return hex(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)));
+}
+function classifyExportError(error: unknown) {
+  const candidate = typeof error === 'object' && error !== null && 'message' in error && typeof (error as { message?: unknown }).message === 'string'
+    ? (error as { message: string }).message
+    : '';
+  const code = SAFE_ERROR_CODES.has(candidate) ? candidate : 'LIFE_STORY_EXPORT_FAILED';
+  const status = code === 'AUTH_REQUIRED'
+    ? 401
+    : code === 'ADMIN_REQUIRED' || code === 'MFA_REQUIRED'
+      ? 403
+      : code === 'LIFE_STORY_EXPORT_FAILED'
+        ? 500
+        : 400;
+  return { code, status };
 }
 function assertLifeStoryBoundary(record: any) {
   const snapshot = record?.content_snapshot;
@@ -182,9 +205,8 @@ Deno.serve(async (req) => {
 
     return privateJson({ ok: false, error: 'Action inconnue.' }, 400);
   } catch (error) {
-    console.error('[life-story-export]', error);
-    const code = String(error?.message || 'EXPORT_ERROR');
-    const status = code.includes('AUTH_REQUIRED') ? 401 : code.includes('ADMIN_REQUIRED') ? 403 : code.includes('MFA_REQUIRED') ? 403 : 400;
+    const { code, status } = classifyExportError(error);
+    console.error('[life-story-export]', { code });
     return privateJson({ ok: false, error: 'Opération Histoire de vie refusée.', code }, status);
   }
 });
