@@ -1,10 +1,44 @@
 import { PDFDocument, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1';
-import { corsHeaders, json } from '../_shared/cors.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 import { requiredAdmin } from '../_shared/auth.ts';
 
 const BUCKET = 'sinjira-life-story-exports';
 const DELIVERY_PAGE = 'https://www.benoitcantin.com/histoire-de-vie/remise.html';
 const DAY = 24 * 60 * 60 * 1000;
+const MAX_REQUEST_BYTES = 4096;
+const PRIVATE_HEADERS = {
+  ...corsHeaders,
+  'Content-Type': 'application/json; charset=utf-8',
+  'Cache-Control': 'private, no-store, max-age=0',
+  'Pragma': 'no-cache',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer',
+};
+
+function privateJson(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), { status, headers: PRIVATE_HEADERS });
+}
+
+async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
+  const rawLength = req.headers.get('content-length');
+  if (rawLength) {
+    const declared = Number(rawLength);
+    if (!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES) {
+      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+    }
+  }
+
+  const raw = await req.text();
+  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
+    return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+  }
+
+  try {
+    return { body: JSON.parse(raw || '{}') };
+  } catch {
+    return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
+  }
+}
 
 function safeText(value: unknown, max = 10000) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -81,20 +115,22 @@ async function buildPdf(snapshot: any) {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return json({ ok: false, error: 'Méthode non autorisée.' }, 405);
+  if (req.method !== 'POST') return privateJson({ ok: false, error: 'Méthode non autorisée.' }, 405);
   try {
     const { service } = await requiredAdmin(req);
-    const body = await req.json().catch(() => ({}));
+    const parsed = await readLimitedJson(req);
+    if (parsed.response) return parsed.response;
+    const body = parsed.body || {};
     const action = safeText(body?.action, 40);
     const exportId = safeText(body?.export_id, 80);
-    if (!exportId) return json({ ok: false, error: 'Export requis.' }, 400);
+    if (!exportId) return privateJson({ ok: false, error: 'Export requis.' }, 400);
 
     if (action === 'generate') {
       const { data: record, error } = await service.rpc('admin_life_story_get_export', { p_export_id: exportId });
       if (error) throw error;
       if (!record || !['prepared', 'generated'].includes(record.status)) throw new Error('EXPORT_NOT_GENERATABLE');
       assertLifeStoryBoundary(record);
-      if (record.status === 'generated' && record.storage_path) return json({ ok: true, export_id: exportId, status: 'generated', sha256: record.sha256 });
+      if (record.status === 'generated' && record.storage_path) return privateJson({ ok: true, export_id: exportId, status: 'generated', sha256: record.sha256 });
       const bytes = await buildPdf(record.content_snapshot);
       const digest = await sha256Hex(bytes);
       const path = `${record.subject_user_id}/${record.case_id}/${exportId}.pdf`;
@@ -102,7 +138,7 @@ Deno.serve(async (req) => {
       if (uploadError) throw uploadError;
       const { error: markError } = await service.rpc('service_life_story_mark_export_generated', { p_export_id: exportId, p_storage_path: path, p_sha256: digest });
       if (markError) throw markError;
-      return json({ ok: true, export_id: exportId, status: 'generated', sha256: digest });
+      return privateJson({ ok: true, export_id: exportId, status: 'generated', sha256: digest });
     }
 
     if (action === 'create_delivery_links') {
@@ -123,13 +159,13 @@ Deno.serve(async (req) => {
       }
       const { error: insertError } = await service.from('life_story_delivery_links').insert(rows);
       if (insertError) throw insertError;
-      return json({ ok: true, export_id: exportId, links: responseLinks, transport: 'manual_or_future_sender', note: 'Les liens sont retournés une seule fois. Le jeton reste dans le fragment du navigateur et aucun courriel externe n est envoyé automatiquement.' });
+      return privateJson({ ok: true, export_id: exportId, links: responseLinks, transport: 'manual_or_future_sender', note: 'Les liens sont retournés une seule fois. Le jeton reste dans le fragment du navigateur et aucun courriel externe n est envoyé automatiquement.' });
     }
 
     if (action === 'revoke') {
       const { error } = await service.rpc('admin_life_story_revoke_export', { p_export_id: exportId });
       if (error) throw error;
-      return json({ ok: true, export_id: exportId, status: 'revoked' });
+      return privateJson({ ok: true, export_id: exportId, status: 'revoked' });
     }
 
     if (action === 'purge') {
@@ -141,14 +177,14 @@ Deno.serve(async (req) => {
       }
       const { error: markError } = await service.rpc('service_life_story_mark_export_purged', { p_export_id: exportId });
       if (markError) throw markError;
-      return json({ ok: true, export_id: exportId, status: 'purged' });
+      return privateJson({ ok: true, export_id: exportId, status: 'purged' });
     }
 
-    return json({ ok: false, error: 'Action inconnue.' }, 400);
+    return privateJson({ ok: false, error: 'Action inconnue.' }, 400);
   } catch (error) {
     console.error('[life-story-export]', error);
     const code = String(error?.message || 'EXPORT_ERROR');
     const status = code.includes('AUTH_REQUIRED') ? 401 : code.includes('ADMIN_REQUIRED') ? 403 : code.includes('MFA_REQUIRED') ? 403 : 400;
-    return json({ ok: false, error: 'Opération Histoire de vie refusée.', code }, status);
+    return privateJson({ ok: false, error: 'Opération Histoire de vie refusée.', code }, status);
   }
 });
