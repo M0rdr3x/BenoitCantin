@@ -22,7 +22,6 @@ REQUIRED = {
     'source humaine': "decision_source:'human_admin'",
     'appel humain': "a==='review_appeal'",
     'renversement d’appel': "outcome==='reversed'",
-    'mesure réversible': 'reversible:true',
     'raison d’appel bornée': 'reason.length<20||reason.length>4000',
     'MFA fermé': "e?.message==='MFA_STATE_UNAVAILABLE'",
 }
@@ -61,6 +60,8 @@ def validate(path: Path) -> list[str]:
     elif auth_pos > body_pos:
         errors.append('Le corps ne doit pas être lu avant la validation admin/JWT/AAL2.')
 
+    if source.count('reversible:true') != 2:
+        errors.append('Les deux mesures de modération actives doivent rester explicitement réversibles.')
     if source.count('privateJson(') < 12:
         errors.append('Les réponses de modération doivent rester uniformément privées et non cachables.')
     return errors
