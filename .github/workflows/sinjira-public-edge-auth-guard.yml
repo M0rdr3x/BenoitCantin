@@ -9,6 +9,7 @@ on:
       - 'scripts/validate_public_edge_auth.py'
       - 'scripts/validate_public_edge_auth_workflow_security.py'
       - 'scripts/validate_license_redemption_security.py'
+      - 'scripts/validate_security_context_request_security.py'
       - '.github/workflows/sinjira-public-edge-auth-guard.yml'
   push:
     branches: [ main ]
@@ -18,6 +19,7 @@ on:
       - 'scripts/validate_public_edge_auth.py'
       - 'scripts/validate_public_edge_auth_workflow_security.py'
       - 'scripts/validate_license_redemption_security.py'
+      - 'scripts/validate_security_context_request_security.py'
       - '.github/workflows/sinjira-public-edge-auth-guard.yml'
   workflow_dispatch:
 
@@ -45,3 +47,7 @@ jobs:
         run: python scripts/validate_license_redemption_security.py --self-test
       - name: Vérifier l’activation sécurisée des licences
         run: python scripts/validate_license_redemption_security.py
+      - name: Auto-tester security-context
+        run: python scripts/validate_security_context_request_security.py --self-test
+      - name: Vérifier les bornes et la confidentialité de security-context
+        run: python scripts/validate_security_context_request_security.py
