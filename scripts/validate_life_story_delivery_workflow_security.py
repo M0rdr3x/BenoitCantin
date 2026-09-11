@@ -26,12 +26,12 @@ def validate_text(text: str) -> None:
         'persist-credentials: false',
         f'uses: actions/setup-python@{SETUP_PYTHON_SHA}',
         f"python-version: '{PYTHON_VERSION}'",
-        'python scripts/validate_life_story_delivery_workflow_security.py --self-test',
-        'python scripts/validate_life_story_delivery_workflow_security.py',
-        'python scripts/validate_life_story_delivery_error_security.py --self-test',
-        'python scripts/validate_life_story_delivery_error_security.py',
-        'python scripts/validate_life_story_export_request_security.py --self-test',
-        'python scripts/validate_life_story_export_request_security.py',
+        '        run: python scripts/validate_life_story_delivery_workflow_security.py --self-test\n',
+        '        run: python scripts/validate_life_story_delivery_workflow_security.py\n',
+        '        run: python scripts/validate_life_story_delivery_error_security.py --self-test\n',
+        '        run: python scripts/validate_life_story_delivery_error_security.py\n',
+        '        run: python scripts/validate_life_story_export_request_security.py --self-test\n',
+        '        run: python scripts/validate_life_story_export_request_security.py\n',
         'python scripts/validate_life_story_delivery_v24_5_50.py',
         'python scripts/validate_edge_function_inventory.py',
         'python scripts/validate_life_story_legacy_v24_5_2.py',
@@ -39,7 +39,7 @@ def validate_text(text: str) -> None:
     ]
     for needle in required:
         if needle not in text:
-            fail(f'élément obligatoire absent: {needle}')
+            fail(f'élément obligatoire absent: {needle.strip()}')
 
     forbidden = [
         'ubuntu-latest',
@@ -92,6 +92,12 @@ def self_test(text: str) -> None:
         'auto-test workflow retiré': text.replace(
             '      - name: Auto-tester le contrat CI Histoire de vie\n'
             '        run: python scripts/validate_life_story_delivery_workflow_security.py --self-test\n\n',
+            '',
+            1,
+        ),
+        'garde workflow retiré': text.replace(
+            '      - name: Vérifier le contrat CI Histoire de vie\n'
+            '        run: python scripts/validate_life_story_delivery_workflow_security.py\n\n',
             '',
             1,
         ),
