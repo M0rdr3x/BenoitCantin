@@ -13,6 +13,7 @@ PYTHON_VERSION = '3.12.14'
 ADMIN_REPORTS_TRIGGER = "      - 'scripts/validate_admin_reports_request_security.py'\n"
 ADMIN_LICENSE_TRIGGER = "      - 'scripts/validate_admin_license_codes_security.py'\n"
 ADMIN_CONSOLE_TRIGGER = "      - 'scripts/validate_admin_console_request_security.py'\n"
+ADMIN_V18_TRIGGER = "      - 'scripts/validate_admin_sinjira_v18_request_security.py'\n"
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -63,6 +64,8 @@ def validate_text(text: str) -> list[str]:
         'python scripts/validate_admin_license_codes_security.py\n',
         'python scripts/validate_admin_console_request_security.py --self-test',
         'python scripts/validate_admin_console_request_security.py\n',
+        'python scripts/validate_admin_sinjira_v18_request_security.py --self-test',
+        'python scripts/validate_admin_sinjira_v18_request_security.py\n',
         "- 'scripts/validate_public_edge_auth_workflow_security.py'",
     ]
     for marker in required:
@@ -81,6 +84,11 @@ def validate_text(text: str) -> list[str]:
         errors,
         text.count(ADMIN_CONSOLE_TRIGGER) == 2,
         'le validateur admin-console doit déclencher le workflow sur pull_request et push',
+    )
+    require(
+        errors,
+        text.count(ADMIN_V18_TRIGGER) == 2,
+        'le validateur admin-sinjira-v18 doit déclencher le workflow sur pull_request et push',
     )
     return errors
 
@@ -104,6 +112,9 @@ def run_self_tests(text: str) -> None:
         'auto-test admin-console retiré': text.replace('        run: python scripts/validate_admin_console_request_security.py --self-test\n', '', 1),
         'contrôle admin-console retiré': text.replace('        run: python scripts/validate_admin_console_request_security.py\n', '', 1),
         'déclencheur admin-console retiré': text.replace(ADMIN_CONSOLE_TRIGGER, '', 1),
+        'auto-test admin-sinjira-v18 retiré': text.replace('        run: python scripts/validate_admin_sinjira_v18_request_security.py --self-test\n', '', 1),
+        'contrôle admin-sinjira-v18 retiré': text.replace('        run: python scripts/validate_admin_sinjira_v18_request_security.py\n', '', 1),
+        'déclencheur admin-sinjira-v18 retiré': text.replace(ADMIN_V18_TRIGGER, '', 1),
     }
     for name, mutated in cases.items():
         if mutated == text:
