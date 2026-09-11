@@ -7,9 +7,12 @@ on:
       - 'projets/sinjira/**'
       - 'assets/**'
       - 'supabase/config.toml'
+      - 'supabase/migrations/**'
+      - 'supabase/tests/livre_i_entitlements_read_only_a1.test.sql'
       - 'supabase/functions/get-document-url/**'
       - 'supabase/functions/get-private-book-url/**'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
+      - 'scripts/validate_livre_i_entitlement_boundary.py'
       - '.github/workflows/sinjira-livre-i-private-delivery.yml'
       - 'sitemap.xml'
       - 'robots.txt'
@@ -21,9 +24,12 @@ on:
       - 'projets/sinjira/**'
       - 'assets/**'
       - 'supabase/config.toml'
+      - 'supabase/migrations/**'
+      - 'supabase/tests/livre_i_entitlements_read_only_a1.test.sql'
       - 'supabase/functions/get-document-url/**'
       - 'supabase/functions/get-private-book-url/**'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
+      - 'scripts/validate_livre_i_entitlement_boundary.py'
       - '.github/workflows/sinjira-livre-i-private-delivery.yml'
       - 'sitemap.xml'
       - 'robots.txt'
@@ -53,8 +59,14 @@ jobs:
         with:
           python-version: '3.12.14'
 
-      - name: Auto-tester le validateur
+      - name: Auto-tester le validateur de diffusion
         run: python3 scripts/validate_sinjira_livre_i_delivery.py --self-test
 
       - name: Vérifier le contrat, JWT, entitlements et actifs publics
         run: python3 scripts/validate_sinjira_livre_i_delivery.py
+
+      - name: Auto-tester la frontière des droits numériques
+        run: python3 scripts/validate_livre_i_entitlement_boundary.py --self-test
+
+      - name: Vérifier la lecture seule des droits numériques
+        run: python3 scripts/validate_livre_i_entitlement_boundary.py
