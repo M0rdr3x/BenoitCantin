@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/sinjira-public-edge-auth-guard.yml'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
-SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198dfc5c65a23a2325f34cd'
+SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 PYTHON_VERSION = '3.12.14'
 ADMIN_REPORTS_TRIGGER = "      - 'scripts/validate_admin_reports_request_security.py'\n"
 ADMIN_LICENSE_TRIGGER = "      - 'scripts/validate_admin_license_codes_security.py'\n"
