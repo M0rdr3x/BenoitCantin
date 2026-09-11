@@ -11,6 +11,7 @@ on:
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
       - 'scripts/validate_admin_reports_request_security.py'
+      - 'scripts/validate_admin_license_codes_security.py'
       - '.github/workflows/sinjira-public-edge-auth-guard.yml'
   push:
     branches: [ main ]
@@ -22,6 +23,7 @@ on:
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
       - 'scripts/validate_admin_reports_request_security.py'
+      - 'scripts/validate_admin_license_codes_security.py'
       - '.github/workflows/sinjira-public-edge-auth-guard.yml'
   workflow_dispatch:
 
@@ -57,3 +59,7 @@ jobs:
         run: python scripts/validate_admin_reports_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de admin-reports
         run: python scripts/validate_admin_reports_request_security.py
+      - name: Auto-tester admin-license-codes
+        run: python scripts/validate_admin_license_codes_security.py --self-test
+      - name: Vérifier la confidentialité des codes d’activation admin
+        run: python scripts/validate_admin_license_codes_security.py
