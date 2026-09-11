@@ -150,6 +150,10 @@ jobs:
         run: python scripts/validate_admin_v18_privacy_security.py --self-test
       - name: Vérifier la confidentialité et les purges admin V18
         run: python scripts/validate_admin_v18_privacy_security.py
+      - name: Auto-tester la cohérence et les logs admin-console
+        run: python scripts/validate_admin_console_security.py --self-test
+      - name: Vérifier la cohérence et les logs admin-console
+        run: python scripts/validate_admin_console_security.py
       - name: Vérifier le moteur Fracture Online
         run: python scripts/validate_fracture_engine.py
       - name: Vérifier l’isolation des identités Fracture
