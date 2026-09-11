@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -11,11 +12,8 @@ EDGE = ROOT / 'supabase/functions/redeem-license-code/index.ts'
 REQUIRED = {
     'POST uniquement': "req.method!=='POST'",
     'authentification obligatoire': 'requiredUser(req)',
-    'requête bornée': 'MAX_REQUEST_BYTES=4096',
     'lecture JSON bornée': 'readLimitedJson(req)',
     'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
-    'longueur minimale du code': 'MIN_CODE_LENGTH=12',
-    'longueur maximale du code': 'MAX_CODE_LENGTH=80',
     'secret serveur du code': "Deno.env.get('SINJIRA_LICENSE_PEPPER')",
     'client serveur': 'serviceClient()',
     'RPC canonique': "s.rpc('redeem_sinjira_activation'",
@@ -23,6 +21,12 @@ REQUIRED = {
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options':'nosniff'",
     'référent masqué': "'Referrer-Policy':'no-referrer'",
+}
+
+REQUIRED_PATTERNS = {
+    'requête bornée exactement à 4096 octets': re.compile(r'\bMAX_REQUEST_BYTES\s*=\s*4_?096\s*;'),
+    'longueur minimale du code exactement à 12': re.compile(r'\bMIN_CODE_LENGTH\s*=\s*12\s*;'),
+    'longueur maximale du code exactement à 80': re.compile(r'\bMAX_CODE_LENGTH\s*=\s*80\s*;'),
 }
 
 FORBIDDEN = {
@@ -41,6 +45,9 @@ def validate(path: Path) -> list[str]:
     for label, marker in REQUIRED.items():
         if marker not in source:
             errors.append(f'Garde licence absent: {label}.')
+    for label, pattern in REQUIRED_PATTERNS.items():
+        if not pattern.search(source):
+            errors.append(f'Garde licence absent ou affaibli: {label}.')
     for label, marker in FORBIDDEN.items():
         if marker in source:
             errors.append(f'Garde licence violé: {label}.')
@@ -88,10 +95,15 @@ Deno.serve(async req=>{
         if not any('réponse privée' in item for item in cache):
             raise AssertionError('La suppression de no-store doit être bloquée.')
 
-        path.write_text(safe.replace('MAX_CODE_LENGTH=80', 'MAX_CODE_LENGTH=8000'), encoding='utf-8')
+        path.write_text(safe.replace('MAX_CODE_LENGTH=80;', 'MAX_CODE_LENGTH=8000;'), encoding='utf-8')
         length = validate(path)
         if not any('longueur maximale' in item for item in length):
             raise AssertionError('Une longueur maximale affaiblie doit être bloquée.')
+
+        path.write_text(safe.replace('MAX_REQUEST_BYTES=4096;', 'MAX_REQUEST_BYTES=40960;'), encoding='utf-8')
+        body_size = validate(path)
+        if not any('4096 octets' in item for item in body_size):
+            raise AssertionError('Une limite de corps affaiblie doit être bloquée.')
 
 
 def main() -> int:
