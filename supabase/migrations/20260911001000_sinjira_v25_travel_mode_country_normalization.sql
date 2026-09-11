@@ -29,7 +29,9 @@ $$;
 revoke all on function private.security_is_iso_country_code_v25(text) from public, anon, authenticated;
 grant execute on function private.security_is_iso_country_code_v25(text) to service_role;
 
-create or replace function public.security_create_travel_plan(
+-- Depuis V24.5.10, les RPC publiques du Centre de sécurité sont uniquement
+-- SECURITY INVOKER. L'implémentation privilégiée reste hors du schéma API.
+create or replace function sinjira_security_internal.security_create_travel_plan(
   p_starts_at timestamptz,
   p_ends_at timestamptz,
   p_destinations text[],
@@ -38,7 +40,7 @@ create or replace function public.security_create_travel_plan(
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, public, private
+set search_path = pg_catalog, public, private, auth, sinjira_security_internal
 as $$
 declare
   v_user uuid := auth.uid();
@@ -105,14 +107,35 @@ begin
 end;
 $$;
 
+revoke all on function sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)
+from public, anon;
+grant execute on function sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)
+to authenticated, service_role;
+
+create or replace function public.security_create_travel_plan(
+  p_starts_at timestamptz,
+  p_ends_at timestamptz,
+  p_destinations text[],
+  p_multi_country boolean default false
+)
+returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $$
+  select sinjira_security_internal.security_create_travel_plan($1,$2,$3,$4)
+$$;
+
 revoke all on function public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)
 from public, anon;
 grant execute on function public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)
-to authenticated;
+to authenticated, service_role;
 
 comment on function private.security_is_iso_country_code_v25(text) is
   'Validation locale et déterministe des codes pays ISO alpha-2 du Mode Voyage. Aucune géolocalisation ni appel réseau.';
+comment on function sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean) is
+  'Implémentation privilégiée Mode Voyage V25: validation ISO alpha-2, normalisation/déduplication, période <= 180 jours, rétention cible +7 jours.';
 comment on function public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean) is
-  'Mode Voyage V25: pays ISO alpha-2 normalisés/dédupliqués, période <= 180 jours, suppression cible 7 jours après fin; aucune donnée GPS ou itinéraire précis.';
+  'Wrapper SECURITY INVOKER du Mode Voyage V25; aucune logique privilégiée dans le schéma API public.';
 
 commit;
