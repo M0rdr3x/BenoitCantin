@@ -12,6 +12,7 @@ BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
 SUPPORTED_BROWSERS = {"chromium", "firefox", "webkit"}
 LITERATURE_ROUTE = "projets/sinjira/romans/"
 READER_ROUTE = "projets/sinjira/romans/lire-demo.html"
+SITEMAP_ROUTE = "sitemap.xml"
 DEMO_ROUTE = "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
 DEMO_BASENAME = "SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
 FULL_BASENAME = "SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf"
@@ -126,6 +127,14 @@ def run() -> None:
         pdf_head = context.request.head(urljoin(BASE_URL, DEMO_ROUTE), timeout=30_000)
         assert_true(pdf_head.status < 400, f"{BROWSER_NAME}: PDF démo public inaccessible (HTTP {pdf_head.status})")
 
+        sitemap_response = context.request.get(urljoin(BASE_URL, SITEMAP_ROUTE), timeout=30_000)
+        assert_true(sitemap_response.status < 400, f"{BROWSER_NAME}: sitemap inaccessible (HTTP {sitemap_response.status})")
+        sitemap_text = sitemap_response.text()
+        reader_loc = f"<loc>{READER_CANONICAL}</loc>"
+        assert_true(sitemap_text.count(reader_loc) == 1, f"{BROWSER_NAME}: canonical du lecteur absente ou dupliquée dans le sitemap")
+        assert_true(DEMO_BASENAME not in sitemap_text, f"{BROWSER_NAME}: le PDF démo ne doit pas être indexé directement par le sitemap")
+        assert_true(FULL_BASENAME not in sitemap_text, f"{BROWSER_NAME}: édition intégrale exposée dans le sitemap")
+
         reader_url = urljoin(BASE_URL, READER_ROUTE)
         response = page.goto(reader_url, wait_until="domcontentloaded", timeout=30_000)
         assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: lecteur démo inaccessible")
@@ -197,7 +206,7 @@ def run() -> None:
         mobile.close()
         context.close()
         browser.close()
-        print(f"OK littérature {BROWSER_NAME}: fiche, SEO, lecteur 83 pages, frontière intégrale et mobile vérifiés.")
+        print(f"OK littérature {BROWSER_NAME}: fiche, SEO, sitemap, lecteur 83 pages, frontière intégrale et mobile vérifiés.")
 
 
 if __name__ == "__main__":
