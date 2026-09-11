@@ -17,6 +17,7 @@ REQUIRED = {
     'POST uniquement': "req.method!=='POST'",
     'admin explicite': 'requiredAdmin(req)',
     'lecture JSON bornée': 'readLimitedJson(req)',
+    'content-type JSON strict': "if(contentType!=='application/json')throw new Error('JSON_REQUIRED');",
     'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
@@ -26,9 +27,15 @@ REQUIRED = {
     'hash SHA-256': "crypto.subtle.digest('SHA-256',raw)",
     'persistance hash seulement': 'rows.push({batch_id:batch.id,code_hash:await digest(code,pepper),product_slug:productSlug})',
     'insertion lignes hashées': "s.from('activation_codes').insert(rows)",
+    'rollback lot si insertion codes échoue': "s.from('license_batches').delete().eq('id',batch.id)",
+    'échec insertion codes explicite': "throw new Error('LICENSE_CODES_INSERT_FAILED')",
+    'échec rollback explicite': "throw new Error('LICENSE_BATCH_ROLLBACK_FAILED')",
+    'log sanitizé': "console.error('[admin-license-codes]',safeLogCode(e));",
+    'fallback log fixe': "return SAFE_LOG_CODES.has(code)?code:'LICENSE_BATCH_FAILED';",
     'codes bruts réponse privée': 'return privateJson({ok:true,batch,codes,warning:',
     'avertissement usage unique': 'Les codes bruts sont retournés une seule fois.',
     'MFA fermé': "e?.message==='MFA_STATE_UNAVAILABLE'",
+    'JSON requis réponse explicite': "e?.message==='JSON_REQUIRED'",
 }
 
 FORBIDDEN = {
@@ -37,6 +44,7 @@ FORBIDDEN = {
     'import helper JSON générique': 'json} from',
     'auth admin indirecte': 'requiredUser(req)',
     'service client recréé': 'serviceClient()',
+    'log objet erreur brut': "console.error('[admin-license-codes]',e);",
 }
 
 
@@ -71,8 +79,14 @@ def validate(path: Path) -> list[str]:
 
     pepper_pos = source.find("Deno.env.get('SINJIRA_LICENSE_PEPPER')")
     insert_pos = source.find("s.from('activation_codes').insert(rows)")
+    rollback_pos = source.find("s.from('license_batches').delete().eq('id',batch.id)")
+    success_pos = source.find('return privateJson({ok:true,batch,codes,warning:')
     if pepper_pos < 0 or insert_pos < 0 or pepper_pos > insert_pos:
         errors.append('Le pepper serveur doit être disponible avant toute persistance des hash de codes.')
+    if insert_pos < 0 or rollback_pos < 0 or rollback_pos < insert_pos:
+        errors.append('Le rollback du lot doit suivre l’échec potentiel de l’insertion des codes.')
+    if success_pos < 0 or rollback_pos < 0 or rollback_pos > success_pos:
+        errors.append('Le rollback doit être défini avant toute réponse de génération réussie.')
 
     return errors
 
@@ -85,6 +99,7 @@ def self_test() -> None:
 
     cases = {
         'json direct': real.replace('const body=await readLimitedJson(req);', 'const body=await req.json();', 1),
+        'content-type JSON retiré': real.replace("  if(contentType!=='application/json')throw new Error('JSON_REQUIRED');\n", '', 1),
         'no-store retiré': real.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),
         'limite requête affaiblie': real.replace('MAX_REQUEST_BYTES=4096;', 'MAX_REQUEST_BYTES=40960;', 1),
         'quantité augmentée': real.replace('MAX_QUANTITY=5000;', 'MAX_QUANTITY=50000;', 1),
@@ -98,6 +113,9 @@ def self_test() -> None:
         'pepper renommé': real.replace("Deno.env.get('SINJIRA_LICENSE_PEPPER')", "Deno.env.get('OTHER_PEPPER')", 1),
         'version dérivée': real.replace("const VERSION='24.4.49';", "const VERSION='24.4.50';", 1),
         'réponse codes cacheable': real.replace('return privateJson({ok:true,batch,codes,warning:', 'return json({ok:true,batch,codes,warning:', 1),
+        'rollback lot retiré': real.replace("      const {error:rollbackError}=await s.from('license_batches').delete().eq('id',batch.id);\n", '', 1),
+        'échec rollback masqué': real.replace("      if(rollbackError)throw new Error('LICENSE_BATCH_ROLLBACK_FAILED');\n", '', 1),
+        'log brut réintroduit': real.replace("console.error('[admin-license-codes]',safeLogCode(e));", "console.error('[admin-license-codes]',e);", 1),
     }
 
     with TemporaryDirectory() as tmp:
@@ -112,7 +130,7 @@ def self_test() -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='Valide la confidentialité des codes d’activation administrateur.')
+    parser = argparse.ArgumentParser(description='Valide la confidentialité et la cohérence des codes d’activation administrateur.')
     parser.add_argument('--self-test', action='store_true')
     args = parser.parse_args()
     if args.self_test:
@@ -125,7 +143,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK licences admin: admin/JWT/AAL2 avant corps, JSON 4 KiB, codes no-store et persistance hashée uniquement.')
+    print('OK licences admin: admin/JWT/AAL2 avant corps, JSON strict 4 KiB, codes no-store, persistance hashée et rollback du lot obligatoires.')
     return 0
 
 

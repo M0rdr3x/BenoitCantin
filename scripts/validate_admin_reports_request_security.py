@@ -13,6 +13,7 @@ REQUIRED = {
     'POST uniquement': "req.method !== 'POST'",
     'admin explicite': 'requiredAdmin(req)',
     'lecture JSON bornée': 'readLimitedJson(req)',
+    'content-type JSON strict': "if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');",
     'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma': 'no-cache'",
@@ -22,6 +23,12 @@ REQUIRED = {
     'limite historique rapports préservée': '.limit(2000)',
     'erreur MFA fermée': "error?.message === 'MFA_STATE_UNAVAILABLE'",
     'réponse privée rapports': 'return privateJson({\n        ok:true,\n        reports,',
+    'dashboard fail-closed': "throw new Error('REPORT_DASHBOARD_QUERY_FAILED')",
+    'profils fail-closed': "throw new Error('REPORT_PROFILES_LOOKUP_FAILED')",
+    'comptes Auth fail-closed': "throw new Error('REPORT_OWNER_LOOKUP_FAILED')",
+    'log sanitizé': "console.error('[admin-reports]', safeLogCode(error));",
+    'fallback log fixe': "return SAFE_LOG_CODES.has(code) ? code : 'ADMIN_REPORTS_FAILED';",
+    'JSON requis réponse explicite': "error?.message === 'JSON_REQUIRED'",
 }
 
 FORBIDDEN = {
@@ -29,6 +36,7 @@ FORBIDDEN = {
     'helper JSON générique cacheable': 'return json(',
     'import helper JSON générique': "import { corsHeaders, json }",
     'auth admin indirecte par requiredUser': 'requiredUser(req)',
+    'log objet erreur brut': "console.error('[admin-reports]', error);",
 }
 
 LIMIT_RE = re.compile(r'\bMAX_REQUEST_BYTES\s*=\s*4_?096\s*;')
@@ -58,7 +66,22 @@ def validate(path: Path) -> list[str]:
     elif auth_pos > body_pos:
         errors.append('Le corps ne doit pas être lu avant la validation admin/JWT/AAL2.')
 
-    if source.count('privateJson(') < 10:
+    dashboard_check = source.find("if (reports.error || active.error || finished.error) throw new Error('REPORT_DASHBOARD_QUERY_FAILED');")
+    dashboard_return = source.find('dashboard:{')
+    if dashboard_check < 0 or dashboard_return < 0 or dashboard_check > dashboard_return:
+        errors.append('Les erreurs du tableau de bord doivent être vérifiées avant de fabriquer les compteurs.')
+
+    profile_check = source.find("if (profileResult.error) throw new Error('REPORT_PROFILES_LOOKUP_FAILED');")
+    profile_map = source.find('const profileMap = new Map')
+    if profile_check < 0 or profile_map < 0 or profile_check > profile_map:
+        errors.append('Les erreurs de profils doivent être vérifiées avant de construire les identités.')
+
+    owner_check = source.find("if (ownerError) throw new Error('REPORT_OWNER_LOOKUP_FAILED');")
+    email_set = source.find('if (data?.user?.email) emails.set(id, data.user.email);')
+    if owner_check < 0 or email_set < 0 or owner_check > email_set:
+        errors.append('Les erreurs Auth doivent être vérifiées avant d’exposer les courriels administrateur.')
+
+    if source.count('privateJson(') < 14:
         errors.append('Les réponses administratives doivent rester uniformément privées et non cachables.')
     return errors
 
@@ -71,6 +94,7 @@ def self_test() -> None:
 
     cases = {
         'json direct': real.replace('const body = await readLimitedJson(req);', 'const body = await req.json();', 1),
+        'content-type JSON retiré': real.replace("  if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');\n", '', 1),
         'no-store retiré': real.replace("'Cache-Control': 'private, no-store, max-age=0',", '', 1),
         'limite affaiblie': real.replace('MAX_REQUEST_BYTES = 4096;', 'MAX_REQUEST_BYTES = 40960;', 1),
         'admin explicite retiré': real.replace('const { service } = await requiredAdmin(req);', 'const user = await requiredUser(req); const service = serviceClient();', 1),
@@ -80,6 +104,10 @@ def self_test() -> None:
             1,
         ),
         'réponse cacheable': real.replace('return privateJson({\n        ok:true,\n        reports,', 'return json({\n        ok:true,\n        reports,', 1),
+        'erreur dashboard ignorée': real.replace("      if (reports.error || active.error || finished.error) throw new Error('REPORT_DASHBOARD_QUERY_FAILED');\n", '', 1),
+        'erreur profils ignorée': real.replace("      if (profileResult.error) throw new Error('REPORT_PROFILES_LOOKUP_FAILED');\n", '', 1),
+        'erreur Auth ignorée': real.replace("        if (ownerError) throw new Error('REPORT_OWNER_LOOKUP_FAILED');\n", '', 1),
+        'log brut réintroduit': real.replace("console.error('[admin-reports]', safeLogCode(error));", "console.error('[admin-reports]', error);", 1),
     }
 
     with TemporaryDirectory() as tmp:
@@ -94,7 +122,7 @@ def self_test() -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='Valide la confidentialité et les bornes HTTP de admin-reports.')
+    parser = argparse.ArgumentParser(description='Valide la confidentialité, les bornes HTTP et la cohérence fail-closed de admin-reports.')
     parser.add_argument('--self-test', action='store_true')
     args = parser.parse_args()
     if args.self_test:
@@ -107,7 +135,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK admin-reports: admin/JWT/AAL2 avant corps, JSON 4 KiB et réponses privées no-store.')
+    print('OK admin-reports: admin/JWT/AAL2 avant corps, JSON strict 4 KiB, lectures fail-closed et réponses privées no-store.')
     return 0
 
 
