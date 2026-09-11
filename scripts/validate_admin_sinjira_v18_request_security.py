@@ -88,8 +88,8 @@ def validate(path: Path) -> list[str]:
     elif any(ttl > 600 for ttl in signed_ttls):
         errors.append('Les liens signés des sources personnages ne doivent pas dépasser 600 secondes.')
 
-    if source.count('return new Response(') != 1:
-        errors.append('Une réponse métier contourne privateJson; seul OPTIONS peut retourner directement new Response.')
+    if source.count('return new Response(') != 2:
+        errors.append('Une réponse métier contourne privateJson; seuls le helper privateJson et OPTIONS peuvent utiliser directement new Response.')
 
     for marker in PRIVATE_RESPONSE_MARKERS:
         if marker not in source:
