@@ -16,6 +16,8 @@ V18_SELF = 'python scripts/validate_admin_v18_privacy_security.py --self-test'
 V18_VALIDATE = 'python scripts/validate_admin_v18_privacy_security.py'
 ADMIN_CONSOLE_SELF = 'python scripts/validate_admin_console_security.py --self-test'
 ADMIN_CONSOLE_VALIDATE = 'python scripts/validate_admin_console_security.py'
+ADMIN_PRIVATE_READS_SELF = 'python scripts/validate_admin_private_reads_security.py --self-test'
+ADMIN_PRIVATE_READS_VALIDATE = 'python scripts/validate_admin_private_reads_security.py'
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -67,6 +69,8 @@ def validate_text(text: str) -> list[str]:
     require(errors, exact_run_count(text, V18_VALIDATE) == 1, 'validation admin V18 absente ou dupliquée')
     require(errors, exact_run_count(text, ADMIN_CONSOLE_SELF) == 1, 'auto-test admin-console absent ou dupliqué')
     require(errors, exact_run_count(text, ADMIN_CONSOLE_VALIDATE) == 1, 'validation admin-console absente ou dupliquée')
+    require(errors, exact_run_count(text, ADMIN_PRIVATE_READS_SELF) == 1, 'auto-test lectures admin privées absent ou dupliqué')
+    require(errors, exact_run_count(text, ADMIN_PRIVATE_READS_VALIDATE) == 1, 'validation lectures admin privées absente ou dupliquée')
     return errors
 
 
@@ -86,6 +90,8 @@ def run_self_tests(text: str) -> None:
         'validation V18 retirée': text.replace(f'        run: {V18_VALIDATE}\n', '', 1),
         'auto-test admin-console retiré': text.replace(f'        run: {ADMIN_CONSOLE_SELF}\n', '', 1),
         'validation admin-console retirée': text.replace(f'        run: {ADMIN_CONSOLE_VALIDATE}\n', '', 1),
+        'auto-test lectures admin privées retiré': text.replace(f'        run: {ADMIN_PRIVATE_READS_SELF}\n', '', 1),
+        'validation lectures admin privées retirée': text.replace(f'        run: {ADMIN_PRIVATE_READS_VALIDATE}\n', '', 1),
     }
     for name, mutated in cases.items():
         if mutated == text:
@@ -110,7 +116,7 @@ def main() -> int:
         for error in errors:
             print(f'ERREUR sécurité validation site: {error}')
         return 1
-    print('OK sécurité validation site: actions immuables, runtimes figés, credentials non persistés, contrat préalable et gardes admin V18/admin-console obligatoires.')
+    print('OK sécurité validation site: actions immuables, runtimes figés, credentials non persistés et gardes admin V18/admin-console/lectures privées obligatoires.')
     return 0
 
 
