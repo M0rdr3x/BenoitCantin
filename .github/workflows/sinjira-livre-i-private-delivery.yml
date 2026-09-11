@@ -6,6 +6,8 @@ on:
     paths:
       - 'projets/sinjira/**'
       - 'assets/**'
+      - 'compte/bibliotheque.html'
+      - 'compte/licences.html'
       - 'supabase/config.toml'
       - 'supabase/migrations/**'
       - 'supabase/tests/livre_i_entitlements_read_only_a1.test.sql'
@@ -13,6 +15,7 @@ on:
       - 'supabase/functions/get-private-book-url/**'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
       - 'scripts/validate_livre_i_entitlement_boundary.py'
+      - 'scripts/validate_livre_i_entitlement_ui.py'
       - '.github/workflows/sinjira-livre-i-private-delivery.yml'
       - 'sitemap.xml'
       - 'robots.txt'
@@ -23,6 +26,8 @@ on:
     paths:
       - 'projets/sinjira/**'
       - 'assets/**'
+      - 'compte/bibliotheque.html'
+      - 'compte/licences.html'
       - 'supabase/config.toml'
       - 'supabase/migrations/**'
       - 'supabase/tests/livre_i_entitlements_read_only_a1.test.sql'
@@ -30,6 +35,7 @@ on:
       - 'supabase/functions/get-private-book-url/**'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
       - 'scripts/validate_livre_i_entitlement_boundary.py'
+      - 'scripts/validate_livre_i_entitlement_ui.py'
       - '.github/workflows/sinjira-livre-i-private-delivery.yml'
       - 'sitemap.xml'
       - 'robots.txt'
@@ -70,3 +76,9 @@ jobs:
 
       - name: Vérifier la lecture seule des droits numériques
         run: python3 scripts/validate_livre_i_entitlement_boundary.py
+
+      - name: Auto-tester la clarté UI des droits Livre I
+        run: python3 scripts/validate_livre_i_entitlement_ui.py --self-test
+
+      - name: Vérifier rôle propriétaire, droits réels et diffusion non activée
+        run: python3 scripts/validate_livre_i_entitlement_ui.py

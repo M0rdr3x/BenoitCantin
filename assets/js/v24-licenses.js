@@ -3,6 +3,7 @@ import {getSupabase,requireUser,setStatus,escapeHtml,formatDate,SINJIRA_CONFIG} 
 const form=document.querySelector('[data-license-redeem-form]');
 const status=document.querySelector('[data-license-status]');
 const list=document.querySelector('[data-license-list]');
+const BOOK_ONE_SLUG='sinjira-livre-01-la-cendre-du-jugement';
 
 function serverMissing(error){
   const code=String(error?.code||'');
@@ -12,6 +13,19 @@ function serverMissing(error){
 function freeModeCard(){
   if(SINJIRA_CONFIG.freeOnlyMode!==true)return '';
   return '<article class="v24-panel"><span class="v24-badge live">Mode gratuit verrouillé</span><h3>Aucun achat requis sur le site</h3><p>Paiements, IA distante, publication commerciale et achats de jetons sont désactivés. L’activation d’un code physique existant reste disponible.</p></article>';
+}
+function ownerRoleCard(){
+  return '<article class="v24-panel v24-owner-access"><span class="v24-badge live">Rôle propriétaire vérifié</span><h3>Rôle de gestion SINJIRA™</h3><p>Le rôle propriétaire ouvre les espaces et fonctions prévus pour la gestion du projet. Il ne crée pas automatiquement un droit numérique sur chaque produit : seuls les droits réellement attribués au compte sont affichés ci-dessous.</p></article>';
+}
+function entitlementCard(row){
+  const product=row.products||{};
+  const name=escapeHtml(product.name||product.slug||'Produit SINJIRA™');
+  const source=escapeHtml(row.source||'licence');
+  const granted=row.granted_at?`<small>Attribué le ${escapeHtml(formatDate(row.granted_at))}</small>`:'';
+  if(product.slug===BOOK_ONE_SLUG){
+    return `<article class="v24-panel"><span class="v24-badge live">Droit numérique reconnu</span><h3>${name}</h3><p>Source : ${source}. Ce droit est associé à votre compte. L’édition intégrale n’est jamais exposée ici par un lien public : sa disponibilité est contrôlée séparément par la diffusion privée du Livre I.</p>${granted}<div class="hero-actions"><a class="btn btn-secondary" href="/projets/sinjira/romans/">Page du roman</a></div></article>`;
+  }
+  return `<article class="v24-panel"><span class="v24-badge live">Possédé</span><h3>${name}</h3><p>Source : ${source}</p>${granted}</article>`;
 }
 
 if(form&&list){
@@ -25,31 +39,21 @@ if(form&&list){
 
   async function render(){
     const freeCard=freeModeCard();
-    if(owner){
-      form.hidden=true;
-      const ownerCard='<article class="v24-panel v24-owner-access"><span class="v24-badge live">Compte propriétaire vérifié</span><h3>Accès total SINJIRA™</h3><p>AbyssTime dispose d’un accès permanent à tous les romans, jeux, licences, tests, projets et futurs contenus SINJIRA™. Aucun code d’activation n’est requis.</p></article>';
-      const {data,error}=await s.from('products').select('slug,name,product_type,active').eq('active',true).order('name');
-      if(error){
-        list.innerHTML=freeCard+ownerCard+'<div class="v2433-server-note"><strong>Catalogue serveur en attente</strong><br>L’accès propriétaire reste actif même si le catalogue détaillé n’est pas encore synchronisé.</div>';
-        return;
-      }
-      const products=Array.isArray(data)?data:[];
-      list.innerHTML=freeCard+ownerCard+(products.length?products.map(x=>`<article class="v24-panel"><span class="v24-badge live">Accès propriétaire</span><h3>${escapeHtml(x.name||x.slug||'Produit SINJIRA™')}</h3><p>${escapeHtml(x.product_type||'contenu')}</p></article>`).join(''):'<div class="v24-empty">Le catalogue ne contient encore aucun produit actif; l’accès propriétaire universel reste néanmoins actif.</div>');
-      return;
-    }
-
+    const roleCard=owner?ownerRoleCard():'';
     const {data,error}=await s.from('user_entitlements').select('source,granted_at,products(slug,name,product_type)').eq('user_id',user.id).order('granted_at',{ascending:false});
     if(error){
-      list.innerHTML=freeCard+(serverMissing(error)?'<div class="v2433-server-note"><strong>Licences en préparation</strong><br>Le serveur des droits d’accès doit encore être synchronisé. Aucun droit existant n’est supprimé pendant cette attente.</div>':'<div class="v24-empty">Impossible de lire les licences pour le moment.</div>');
+      list.innerHTML=freeCard+roleCard+(serverMissing(error)?'<div class="v2433-server-note"><strong>Licences en préparation</strong><br>Le serveur des droits d’accès doit encore être synchronisé. Aucun droit existant n’est supprimé pendant cette attente.</div>':'<div class="v24-empty">Impossible de lire les licences pour le moment.</div>');
       return;
     }
     const rows=Array.isArray(data)?data:[];
-    list.innerHTML=freeCard+(rows.length?rows.map(x=>`<article class="v24-panel"><span class="v24-badge live">Possédé</span><h3>${escapeHtml(x.products?.name||x.products?.slug||'Produit SINJIRA™')}</h3><p>Source : ${escapeHtml(x.source||'licence')}</p>${x.granted_at?`<small>Attribué le ${escapeHtml(formatDate(x.granted_at))}</small>`:''}</article>`).join(''):'<div class="v24-empty">Aucune licence liée à ce compte.</div>');
+    const empty=owner
+      ?'<div class="v24-empty">Aucun droit numérique explicite n’est attribué à ce compte pour le moment. Le rôle propriétaire reste actif pour les fonctions qui lui sont réservées, sans inventer de possession produit.</div>'
+      :'<div class="v24-empty">Aucune licence liée à ce compte.</div>';
+    list.innerHTML=freeCard+roleCard+(rows.length?rows.map(entitlementCard).join(''):empty);
   }
 
   form.addEventListener('submit',async e=>{
     e.preventDefault();
-    if(owner)return;
     const code=String(new FormData(form).get('code')||'').trim();
     if(!code){setStatus(status,'Entrez un code d’activation.','error');return}
     const {data,error}=await s.functions.invoke('redeem-license-code',{body:{code}});
