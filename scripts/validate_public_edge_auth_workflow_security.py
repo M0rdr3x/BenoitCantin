@@ -10,6 +10,7 @@ WORKFLOW = ROOT / '.github/workflows/sinjira-public-edge-auth-guard.yml'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
 SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 PYTHON_VERSION = '3.12.14'
+ADMIN_REPORTS_TRIGGER = "      - 'scripts/validate_admin_reports_request_security.py'\n"
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -57,10 +58,14 @@ def validate_text(text: str) -> list[str]:
         'python scripts/validate_admin_reports_request_security.py --self-test',
         'python scripts/validate_admin_reports_request_security.py\n',
         "- 'scripts/validate_public_edge_auth_workflow_security.py'",
-        "- 'scripts/validate_admin_reports_request_security.py'",
     ]
     for marker in required:
         require(errors, marker in text, f'contrôle CI obligatoire absent: {marker.strip()}')
+    require(
+        errors,
+        text.count(ADMIN_REPORTS_TRIGGER) == 2,
+        'le validateur admin-reports doit déclencher le workflow sur pull_request et push',
+    )
     return errors
 
 
@@ -76,7 +81,7 @@ def run_self_tests(text: str) -> None:
         'contrôle public retiré': text.replace('        run: python scripts/validate_public_edge_auth.py\n', '', 1),
         'auto-test admin-reports retiré': text.replace('        run: python scripts/validate_admin_reports_request_security.py --self-test\n', '', 1),
         'contrôle admin-reports retiré': text.replace('        run: python scripts/validate_admin_reports_request_security.py\n', '', 1),
-        'déclencheur admin-reports retiré': text.replace("      - 'scripts/validate_admin_reports_request_security.py'\n", '', 1),
+        'déclencheur admin-reports retiré': text.replace(ADMIN_REPORTS_TRIGGER, '', 1),
     }
     for name, mutated in cases.items():
         if mutated == text:
