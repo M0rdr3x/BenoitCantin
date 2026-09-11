@@ -51,6 +51,10 @@ async function fetchTemplateBytes(){
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
+  const contentType=(req.headers.get('content-type')||'').toLowerCase();
+  if(!contentType.startsWith('application/json')){
+    return { response: privateJson({ ok:false, error:'Type de contenu non autorisé.', function_version:FUNCTION_VERSION }, 415) };
+  }
   const rawLength = req.headers.get('content-length');
   if (rawLength) {
     const declaredLength = Number(rawLength);
@@ -156,7 +160,7 @@ async function recordDelivery(userId: string, sessionId: unknown, delivery: 'dow
     session_id: ownedSession.id,
     delivery
   });
-  if (error) console.warn('[SINJIRA report] journalisation non bloquante:', error.message);
+  if (error) console.warn('[SINJIRA report]', { code:'REPORT_DELIVERY_RECORD_FAILED' });
 }
 
 Deno.serve(async (req) => {
@@ -214,15 +218,14 @@ Deno.serve(async (req) => {
     });
 
     if (!resendResponse.ok) {
-      const details = await resendResponse.text();
-      console.error('Resend:', details);
+      console.error('[SINJIRA report]', { code:'REPORT_EMAIL_PROVIDER_FAILED', status:resendResponse.status });
       return privateJson({ ok: false, error: 'Le courriel n’a pas pu être envoyé.', function_version: FUNCTION_VERSION }, 502);
     }
 
     await recordDelivery(user.id, body?.session_id, 'email');
     return privateJson({ ok: true, emailed: true, function_version: FUNCTION_VERSION });
-  } catch (error) {
-    console.error(error);
+  } catch {
+    console.error('[SINJIRA report]', { code:'SEND_GAME_REPORT_FAILED' });
     return privateJson({ ok: false, error: 'Erreur lors de la génération du rapport.', function_version: FUNCTION_VERSION }, 500);
   }
 });
