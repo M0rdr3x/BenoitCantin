@@ -12,6 +12,8 @@ SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 SETUP_NODE_SHA = '249970729cb0ef3589644e2896645e5dc5ba9c38'
 PYTHON_VERSION = '3.12.14'
 NODE_VERSION = '22.23.2'
+V18_SELF = 'python scripts/validate_admin_v18_privacy_security.py --self-test'
+V18_VALIDATE = 'python scripts/validate_admin_v18_privacy_security.py'
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -26,6 +28,11 @@ def action_targets(text: str) -> list[str]:
         if match:
             targets.append(match.group(1))
     return targets
+
+
+def exact_run_count(text: str, command: str) -> int:
+    target = f'run: {command}'
+    return sum(1 for line in text.splitlines() if line.strip() == target)
 
 
 def validate_text(text: str) -> list[str]:
@@ -54,6 +61,8 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'python3 scripts/validate_site_workflow_security.py\n' in text, 'validation du contrat absente')
     require(errors, text.count('needs: workflow-contract') == 1, 'le job validate doit dépendre du contrat')
     require(errors, 'python scripts/validate_site.py' in text, 'validation principale du site absente')
+    require(errors, exact_run_count(text, V18_SELF) == 1, 'auto-test admin V18 absent ou dupliqué')
+    require(errors, exact_run_count(text, V18_VALIDATE) == 1, 'validation admin V18 absente ou dupliquée')
     return errors
 
 
@@ -69,8 +78,12 @@ def run_self_tests(text: str) -> None:
         'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
         'node large': text.replace(f"node-version: '{NODE_VERSION}'", "node-version: '22'", 1),
         'dépendance contrat retirée': text.replace('    needs: workflow-contract\n', '', 1),
+        'auto-test V18 retiré': text.replace(f'        run: {V18_SELF}\n', '', 1),
+        'validation V18 retirée': text.replace(f'        run: {V18_VALIDATE}\n', '', 1),
     }
     for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test validation site: mutation sans effet: {name}')
         if not validate_text(mutated):
             raise SystemExit(f'ERREUR auto-test validation site: mutation non détectée: {name}')
     print(f'OK auto-tests validation site: {len(cases)} affaiblissements critiques détectés.')
@@ -91,7 +104,7 @@ def main() -> int:
         for error in errors:
             print(f'ERREUR sécurité validation site: {error}')
         return 1
-    print('OK sécurité validation site: actions immuables, runtimes figés, credentials non persistés et contrat préalable obligatoire.')
+    print('OK sécurité validation site: actions immuables, runtimes figés, credentials non persistés, contrat préalable et garde admin V18 obligatoires.')
     return 0
 
 
