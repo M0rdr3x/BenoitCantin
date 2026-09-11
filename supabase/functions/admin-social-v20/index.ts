@@ -10,9 +10,26 @@ const PRIVATE_HEADERS={
   'X-Content-Type-Options':'nosniff',
   'Referrer-Policy':'no-referrer'
 };
+const SAFE_LOG_CODES=new Set([
+  'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE',
+  'REQUEST_TOO_LARGE','INVALID_JSON','UNSUPPORTED_MEDIA_TYPE',
+  'CONTENT_TARGET_NOT_REVERSIBLE','TARGET_USER_NOT_FOUND',
+  'DATING_REPORT_HAS_NO_REMOVABLE_PUBLIC_CONTENT','INVALID_APPEAL_OUTCOME',
+  'APPEAL_REVIEW_REASON_LENGTH'
+]);
 
 function privateJson(data:unknown,status=200){
   return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS});
+}
+
+function requireJsonContentType(req:Request){
+  const contentType=(req.headers.get('content-type')||'').toLowerCase();
+  if(!contentType.startsWith('application/json'))throw new Error('UNSUPPORTED_MEDIA_TYPE');
+}
+
+function moderationLogCode(error:unknown){
+  const code=error instanceof Error?error.message:'';
+  return SAFE_LOG_CODES.has(code)?code:'MODERATION_BACKEND_FAILED';
 }
 
 async function readLimitedJson(req:Request){
@@ -89,7 +106,7 @@ async function notifyDecision(s:any,userId:string|null,decisionId:string,title:s
     related_entity_type:'moderation_decision',related_entity_id:decisionId,
     action_path:'/compte/moderation.html'
   });
-  if(error)console.error('[SINJIRA moderation notification]',error);
+  if(error)console.error('[SINJIRA moderation notification]','NOTIFICATION_WRITE_FAILED');
 }
 
 async function createDecision(s:any,adminId:string,r:any,b:any,action:'hide_content'|'suspend_social'){
@@ -163,6 +180,7 @@ Deno.serve(async(req)=>{
   if(req.method!=='POST')return privateJson({ok:false,error:'Méthode non autorisée.'},405);
   try{
     const {user,service:s}=await requiredAdmin(req);
+    requireJsonContentType(req);
     const b=await readLimitedJson(req);
     const a=typeof b.action==='string'?b.action.trim().slice(0,64):'';
     if(a==='dashboard'){
@@ -200,12 +218,13 @@ Deno.serve(async(req)=>{
     if(a==='review_appeal')return privateJson(await reviewAppeal(s,user.id,b));
     return privateJson({ok:false,error:'Action inconnue.'},400);
   }catch(e){
-    console.error('[admin-social-v20]',e);
+    console.error('[admin-social-v20]',moderationLogCode(e));
     if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
     if(e?.message==='ADMIN_REQUIRED')return privateJson({ok:false,error:'Administration refusée.',code:'ADMIN_REQUIRED'},403);
     if(e?.message==='MFA_REQUIRED')return privateJson({ok:false,error:'MFA_REQUIRED',code:'MFA_REQUIRED'},403);
     if(e?.message==='MFA_STATE_UNAVAILABLE')return privateJson({ok:false,error:'État MFA temporairement indisponible.',code:'MFA_STATE_UNAVAILABLE'},503);
     if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
+    if(e?.message==='UNSUPPORTED_MEDIA_TYPE')return privateJson({ok:false,error:'Content-Type application/json requis.',code:'UNSUPPORTED_MEDIA_TYPE'},415);
     if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
     return privateJson({ok:false,error:'Erreur de modération sociale.',code:'MODERATION_FAILED'},500);
   }
