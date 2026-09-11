@@ -12,9 +12,18 @@ const PRIVATE_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer'
 };
+const SAFE_LOG_CODES = new Set([
+  'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE',
+  'REQUEST_TOO_LARGE','JSON_REQUIRED','INVALID_JSON','INVALID_GAME_SLUG'
+]);
 
 function privateJson(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: PRIVATE_HEADERS });
+}
+
+function adminAnalyticsLogCode(error: unknown) {
+  const code = error instanceof Error ? error.message : '';
+  return SAFE_LOG_CODES.has(code) ? code : 'ADMIN_ANALYTICS_BACKEND_FAILED';
 }
 
 async function readLimitedJson(req: Request) {
@@ -125,7 +134,7 @@ Deno.serve(async (req) => {
       }
     });
   } catch (error) {
-    console.error('[admin-analytics]', error?.message || 'ANALYTICS_FAILED');
+    console.error('[admin-analytics]', adminAnalyticsLogCode(error));
     if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
     if (error?.message === 'ADMIN_REQUIRED') return privateJson({ ok: false, error: 'Accès administrateur refusé.', code: 'ADMIN_REQUIRED' }, 403);
     if (error?.message === 'MFA_REQUIRED') return privateJson({ ok: false, error: 'MFA_REQUIRED', code: 'MFA_REQUIRED' }, 403);

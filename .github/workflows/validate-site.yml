@@ -154,6 +154,10 @@ jobs:
         run: python scripts/validate_admin_console_security.py --self-test
       - name: Vérifier la cohérence et les logs admin-console
         run: python scripts/validate_admin_console_security.py
+      - name: Auto-tester les lectures admin privées
+        run: python scripts/validate_admin_private_reads_security.py --self-test
+      - name: Vérifier les lectures admin privées
+        run: python scripts/validate_admin_private_reads_security.py
       - name: Vérifier le moteur Fracture Online
         run: python scripts/validate_fracture_engine.py
       - name: Vérifier l’isolation des identités Fracture
