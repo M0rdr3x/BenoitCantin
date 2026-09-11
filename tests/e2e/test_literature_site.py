@@ -17,6 +17,10 @@ DEMO_BASENAME = "SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
 FULL_BASENAME = "SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf"
 CANONICAL = "https://www.benoitcantin.com/projets/sinjira/romans/"
 READER_CANONICAL = "https://www.benoitcantin.com/projets/sinjira/romans/lire-demo.html"
+BOOK_NAME = "SINJIRA™ — Livre I : La Cendre du Jugement"
+READER_WORK_NAME = f"{BOOK_NAME} — Démo officielle"
+COVER_URL = "https://www.benoitcantin.com/assets/media/sinjira-livre-1-cover.webp"
+COVER_ALT = "Couverture de SINJIRA™ — Livre I : La Cendre du Jugement"
 
 
 def assert_true(value, message: str) -> None:
@@ -106,7 +110,7 @@ def run() -> None:
         books = [node for node in graph if node.get("@type") == "Book"]
         assert_true(len(books) == 1, f"{BROWSER_NAME}: provenance JSON-LD Book absente ou dupliquée")
         book = books[0]
-        assert_true(book.get("name") == "SINJIRA™ — Livre I : La Cendre du Jugement", f"{BROWSER_NAME}: nom JSON-LD du Livre I incorrect")
+        assert_true(book.get("name") == BOOK_NAME, f"{BROWSER_NAME}: nom JSON-LD du Livre I incorrect")
         assert_true(book.get("inLanguage") == "fr-CA", f"{BROWSER_NAME}: langue JSON-LD du Livre I incorrecte")
         demo_part = book.get("hasPart") or {}
         assert_true(demo_part.get("isAccessibleForFree") is True, f"{BROWSER_NAME}: gratuité de la démo non déclarée")
@@ -131,6 +135,34 @@ def run() -> None:
             page.locator('link[rel="canonical"]').get_attribute("href") == READER_CANONICAL,
             f"{BROWSER_NAME}: canonical lecteur incorrecte",
         )
+        assert_true(
+            page.locator('meta[name="twitter:image"]').get_attribute("content") == COVER_URL,
+            f"{BROWSER_NAME}: image Twitter du lecteur incorrecte",
+        )
+        assert_true(
+            page.locator('meta[name="twitter:image:alt"]').get_attribute("content") == COVER_ALT,
+            f"{BROWSER_NAME}: alternative de l’image Twitter du lecteur absente ou incorrecte",
+        )
+
+        reader_graph = json_ld_graph(page)
+        reader_works = [
+            node for node in reader_graph
+            if node.get("@type") == "CreativeWork" and node.get("@id") == f"{READER_CANONICAL}#demo"
+        ]
+        assert_true(len(reader_works) == 1, f"{BROWSER_NAME}: JSON-LD de la démo lecteur absent ou dupliqué")
+        reader_work = reader_works[0]
+        assert_true(reader_work.get("name") == READER_WORK_NAME, f"{BROWSER_NAME}: nom JSON-LD du lecteur incorrect")
+        assert_true(reader_work.get("url") == READER_CANONICAL, f"{BROWSER_NAME}: URL JSON-LD du lecteur incorrecte")
+        assert_true(reader_work.get("inLanguage") == "fr-CA", f"{BROWSER_NAME}: langue JSON-LD du lecteur incorrecte")
+        assert_true(reader_work.get("isAccessibleForFree") is True, f"{BROWSER_NAME}: gratuité JSON-LD du lecteur absente")
+        author = reader_work.get("author") or {}
+        assert_true(author.get("@type") == "Person" and author.get("name") == "Benoit Cantin", f"{BROWSER_NAME}: auteur JSON-LD du lecteur incorrect")
+        parent_book = reader_work.get("isPartOf") or {}
+        assert_true(parent_book.get("@type") == "Book", f"{BROWSER_NAME}: rattachement JSON-LD du lecteur au Livre I absent")
+        assert_true(parent_book.get("name") == BOOK_NAME, f"{BROWSER_NAME}: Livre I parent JSON-LD incorrect")
+        assert_true(parent_book.get("url") == CANONICAL, f"{BROWSER_NAME}: URL du Livre I parent incorrecte")
+        assert_true(FULL_BASENAME not in page.content(), f"{BROWSER_NAME}: nom du fichier intégral exposé dans le lecteur")
+
         assert_true(page.locator('input[data-reader-page-number][aria-label="Numéro de page"]').count() == 1, f"{BROWSER_NAME}: champ de page lecteur non nommé")
         assert_true(page.locator("input[data-reader-page-number]").get_attribute("max") == "83", f"{BROWSER_NAME}: maximum du lecteur différent de 83")
         assert_true(page.locator('[data-reader-resume][aria-live="polite"]').count() == 1, f"{BROWSER_NAME}: reprise lecteur non annoncée aux aides techniques")
