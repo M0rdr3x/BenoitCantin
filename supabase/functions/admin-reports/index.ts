@@ -1,22 +1,54 @@
-import { corsHeaders, json } from '../_shared/cors.ts';
-import { requiredUser, serviceClient } from '../_shared/auth.ts';
+import { corsHeaders } from '../_shared/cors.ts';
+import { requiredAdmin } from '../_shared/auth.ts';
 
-async function requireAdmin(req: Request) {
-  const user = await requiredUser(req);
-  const service = serviceClient();
-  const { data, error } = await service.rpc('is_sinjira_admin', { p_user_id: user.id });
-  if (error || !data) throw new Error('ADMIN_REQUIRED');
-  return { user, service };
+const MAX_REQUEST_BYTES = 4096;
+const PRIVATE_HEADERS = {
+  ...corsHeaders,
+  'Content-Type': 'application/json; charset=utf-8',
+  'Cache-Control': 'private, no-store, max-age=0',
+  'Pragma': 'no-cache',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer'
+};
+
+function privateJson(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), { status, headers: PRIVATE_HEADERS });
+}
+
+async function readLimitedJson(req: Request): Promise<Record<string, unknown>> {
+  const rawLength = req.headers.get('content-length');
+  if (rawLength) {
+    const declared = Number(rawLength);
+    if (!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES) {
+      throw new Error('REQUEST_TOO_LARGE');
+    }
+  }
+
+  const raw = await req.text();
+  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
+    throw new Error('REQUEST_TOO_LARGE');
+  }
+
+  let body: unknown;
+  try {
+    body = JSON.parse(raw || '{}');
+  } catch {
+    throw new Error('INVALID_JSON');
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    throw new Error('INVALID_JSON');
+  }
+  return body as Record<string, unknown>;
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return json({ ok:false, error:'Méthode non autorisée.' }, 405);
+  if (req.method !== 'POST') return privateJson({ ok:false, error:'Méthode non autorisée.' }, 405);
 
   try {
-    const { service } = await requireAdmin(req);
-    const body = await req.json();
-    const action = String(body?.action || '');
+    const { service } = await requiredAdmin(req);
+    const body = await readLimitedJson(req);
+    const action = typeof body.action === 'string' ? body.action.trim().slice(0, 64) : '';
 
     if (action === 'dashboard') {
       const [
@@ -29,7 +61,7 @@ Deno.serve(async (req) => {
         service.from('fracture_parties').select('id', { count:'exact', head:true }).eq('status','finished')
       ]);
 
-      return json({
+      return privateJson({
         ok:true,
         dashboard:{
           game_reports: reports.count || 0,
@@ -97,7 +129,7 @@ Deno.serve(async (req) => {
         else ties++;
       }
 
-      return json({
+      return privateJson({
         ok:true,
         reports,
         summary:{
@@ -109,11 +141,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    return json({ ok:false, error:'Action inconnue.' }, 400);
+    return privateJson({ ok:false, error:'Action inconnue.' }, 400);
   } catch (error) {
-    console.error(error);
-    if (error?.message === 'AUTH_REQUIRED') return json({ ok:false, error:'Connexion requise.' }, 401);
-    if (error?.message === 'ADMIN_REQUIRED') return json({ ok:false, error:'Accès administrateur refusé.' }, 403);
-    return json({ ok:false, error:'Erreur rapports administrateur.' }, 500);
+    console.error('[admin-reports]', error);
+    if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok:false, error:'Connexion requise.', code:'AUTH_REQUIRED' }, 401);
+    if (error?.message === 'ADMIN_REQUIRED') return privateJson({ ok:false, error:'Accès administrateur refusé.', code:'ADMIN_REQUIRED' }, 403);
+    if (error?.message === 'MFA_REQUIRED') return privateJson({ ok:false, error:'MFA_REQUIRED', code:'MFA_REQUIRED' }, 403);
+    if (error?.message === 'MFA_STATE_UNAVAILABLE') return privateJson({ ok:false, error:'État MFA temporairement indisponible.', code:'MFA_STATE_UNAVAILABLE' }, 503);
+    if (error?.message === 'REQUEST_TOO_LARGE') return privateJson({ ok:false, error:'Requête trop volumineuse.', code:'REQUEST_TOO_LARGE' }, 413);
+    if (error?.message === 'INVALID_JSON') return privateJson({ ok:false, error:'JSON invalide.', code:'INVALID_JSON' }, 400);
+    return privateJson({ ok:false, error:'Erreur rapports administrateur.' }, 500);
   }
 });
