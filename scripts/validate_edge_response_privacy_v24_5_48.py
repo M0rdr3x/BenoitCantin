@@ -46,8 +46,18 @@ def main()->int:
     for marker in report_markers:
         if marker not in report: errors.append(f'send-game-report: garde-fou absent: {marker}')
 
+    doc_limit_match=re.search(r'\bMAX_REQUEST_BYTES\s*=\s*([0-9_]+)\s*;',docurl)
+    if not doc_limit_match:
+        errors.append('get-document-url: plafond MAX_REQUEST_BYTES absent.')
+    else:
+        try:
+            doc_limit=int(doc_limit_match.group(1).replace('_',''))
+        except ValueError:
+            doc_limit=0
+        if doc_limit<=0 or doc_limit>8*1024:
+            errors.append('get-document-url: MAX_REQUEST_BYTES doit rester positif et au plus égal à 8 KiB.')
+
     doc_markers=[
-        'MAX_REQUEST_BYTES=8_192',
         'UUID_RE=',
         'TextEncoder().encode(raw).byteLength',
         "doc.status!=='approved'",
