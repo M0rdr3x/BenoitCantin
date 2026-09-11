@@ -28,6 +28,10 @@ def validate_text(text: str) -> None:
         f"python-version: '{PYTHON_VERSION}'",
         'python scripts/validate_life_story_delivery_workflow_security.py --self-test',
         'python scripts/validate_life_story_delivery_workflow_security.py',
+        'python scripts/validate_life_story_delivery_error_security.py --self-test',
+        'python scripts/validate_life_story_delivery_error_security.py',
+        'python scripts/validate_life_story_export_request_security.py --self-test',
+        'python scripts/validate_life_story_export_request_security.py',
         'python scripts/validate_life_story_delivery_v24_5_50.py',
         'python scripts/validate_edge_function_inventory.py',
         'python scripts/validate_life_story_legacy_v24_5_2.py',
@@ -85,9 +89,33 @@ def self_test(text: str) -> None:
             '      - name: Mauvaise opération distante\n        run: supabase db push --linked\n\n      - name: Vérifier V24.5.50\n',
             1,
         ),
-        'auto-test retiré': text.replace(
+        'auto-test workflow retiré': text.replace(
             '      - name: Auto-tester le contrat CI Histoire de vie\n'
             '        run: python scripts/validate_life_story_delivery_workflow_security.py --self-test\n\n',
+            '',
+            1,
+        ),
+        'auto-test erreurs remise retiré': text.replace(
+            '      - name: Auto-tester la confidentialité des erreurs de remise\n'
+            '        run: python scripts/validate_life_story_delivery_error_security.py --self-test\n\n',
+            '',
+            1,
+        ),
+        'garde erreurs remise retiré': text.replace(
+            '      - name: Vérifier la confidentialité des erreurs de remise\n'
+            '        run: python scripts/validate_life_story_delivery_error_security.py\n\n',
+            '',
+            1,
+        ),
+        'auto-test export retiré': text.replace(
+            '      - name: Auto-tester la sécurité HTTP de life-story-export\n'
+            '        run: python scripts/validate_life_story_export_request_security.py --self-test\n\n',
+            '',
+            1,
+        ),
+        'garde export retiré': text.replace(
+            '      - name: Vérifier la sécurité HTTP de life-story-export\n'
+            '        run: python scripts/validate_life_story_export_request_security.py\n\n',
             '',
             1,
         ),
