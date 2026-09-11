@@ -11,9 +11,20 @@ const PRIVATE_HEADERS={
   'X-Content-Type-Options':'nosniff',
   'Referrer-Policy':'no-referrer'
 };
+const SAFE_LOG_CODES=new Set([
+  'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE',
+  'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON','SOURCE_PURGED',
+  'SOURCE_PURGE_CONFIRMATION_REQUIRED','SOURCE_PURGE_STORAGE_FAILED',
+  'CANON_CONFIRMATION_REQUIRED','NOTIFICATION_ID_REQUIRED','ROMAN1_LOCKED'
+]);
 
 function privateJson(data:unknown,status=200){
   return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS});
+}
+
+function adminV18LogCode(error:unknown){
+  const code=error instanceof Error?error.message:'';
+  return SAFE_LOG_CODES.has(code)?code:'ADMIN_V18_BACKEND_FAILED';
 }
 
 async function readBoundedJson(req:Request){
@@ -98,7 +109,7 @@ Deno.serve(async(req)=>{
       const checks:any={};
       for(const table of ['profiles','game_sessions','novel_comments','character_submissions','characters']){
         const {count,error}=await s.from(table).select('*',{count:'exact',head:true});
-        checks[table]={ok:!error,count:count||0,error:error?.message||null};
+        checks[table]={ok:!error,count:count||0,code:error?'CHECK_FAILED':null};
       }
       return privateJson({ok:true,checks,remote_ai:false,free_only:true});
     }
@@ -129,8 +140,13 @@ Deno.serve(async(req)=>{
     }
 
     if(a==='purge_submission_source'){
-      const {data:sub,error}=await s.from('character_submissions').select('photo_path').eq('id',b.submission_id).single();if(error)throw error;
-      if(sub.photo_path)await s.storage.from('sinjira-character-sources').remove([sub.photo_path]);
+      if(b.author_confirmed_source_purge!==true)throw new Error('SOURCE_PURGE_CONFIRMATION_REQUIRED');
+      const {data:sub,error}=await s.from('character_submissions').select('photo_path,source_purged_at').eq('id',b.submission_id).single();if(error)throw error;
+      if(sub.source_purged_at)throw new Error('SOURCE_PURGED');
+      if(sub.photo_path){
+        const {error:storageError}=await s.storage.from('sinjira-character-sources').remove([sub.photo_path]);
+        if(storageError)throw new Error('SOURCE_PURGE_STORAGE_FAILED');
+      }
       const {error:e}=await s.from('character_submissions').update({source_payload:null,photo_path:null,source_purged_at:new Date().toISOString()}).eq('id',b.submission_id);if(e)throw e;
       await audit(s,user.id,'purge_submission_source','character_submission',b.submission_id,'Données sources personnelles supprimées');
       return privateJson({ok:true});
@@ -164,7 +180,7 @@ Deno.serve(async(req)=>{
 
     return privateJson({ok:false,error:'Action inconnue.',code:'UNKNOWN_ACTION'},400);
   }catch(e){
-    console.error('[admin-sinjira-v18]',e);
+    console.error('[admin-sinjira-v18]',adminV18LogCode(e));
     if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
     if(e?.message==='ADMIN_REQUIRED')return privateJson({ok:false,error:'Administration refusée.',code:'ADMIN_REQUIRED'},403);
     if(e?.message==='MFA_REQUIRED')return privateJson({ok:false,error:'MFA_REQUIRED',code:'MFA_REQUIRED'},403);
@@ -172,7 +188,9 @@ Deno.serve(async(req)=>{
     if(e?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED'},415);
     if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
     if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
-    if(e?.message==='SOURCE_PURGED')return privateJson({ok:false,error:'Les données sources ont déjà été supprimées.'},409);
+    if(e?.message==='SOURCE_PURGE_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmation explicite requise avant suppression définitive des sources.',code:'SOURCE_PURGE_CONFIRMATION_REQUIRED'},409);
+    if(e?.message==='SOURCE_PURGED')return privateJson({ok:false,error:'Les données sources ont déjà été supprimées.',code:'SOURCE_PURGED'},409);
+    if(e?.message==='SOURCE_PURGE_STORAGE_FAILED')return privateJson({ok:false,error:'La suppression du fichier source a échoué; les références ont été conservées.',code:'SOURCE_PURGE_STORAGE_FAILED'},503);
     if(e?.message==='CANON_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmez explicitement que ce personnage est établi par un manuscrit officiel finalisé avant de le passer CANON.'},409);
     if(e?.message==='NOTIFICATION_ID_REQUIRED')return privateJson({ok:false,error:'Identifiant de notification requis.'},400);
     if(e?.message==='ROMAN1_LOCKED')return privateJson({ok:false,error:'Le Roman 1 est verrouillé. Pour y attribuer rétroactivement un nouveau personnage, confirmez explicitement la décision auteur / retcon.'},409);
