@@ -10,6 +10,7 @@ on:
       - 'scripts/validate_public_edge_auth_workflow_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
+      - 'scripts/validate_admin_reports_request_security.py'
       - '.github/workflows/sinjira-public-edge-auth-guard.yml'
   push:
     branches: [ main ]
@@ -20,6 +21,7 @@ on:
       - 'scripts/validate_public_edge_auth_workflow_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
+      - 'scripts/validate_admin_reports_request_security.py'
       - '.github/workflows/sinjira-public-edge-auth-guard.yml'
   workflow_dispatch:
 
@@ -51,3 +53,7 @@ jobs:
         run: python scripts/validate_security_context_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de security-context
         run: python scripts/validate_security_context_request_security.py
+      - name: Auto-tester admin-reports
+        run: python scripts/validate_admin_reports_request_security.py --self-test
+      - name: Vérifier les bornes et la confidentialité de admin-reports
+        run: python scripts/validate_admin_reports_request_security.py
