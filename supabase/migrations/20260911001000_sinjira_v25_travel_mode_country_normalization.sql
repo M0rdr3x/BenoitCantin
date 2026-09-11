@@ -44,7 +44,7 @@ declare
   v_user uuid := auth.uid();
   v_row public.security_travel_plans;
   v_dest text[];
-  v_invalid text;
+  v_has_invalid boolean := false;
 begin
   if v_user is null then
     raise exception 'AUTH_REQUIRED' using errcode='42501';
@@ -59,14 +59,15 @@ begin
     raise exception 'INVALID_TRAVEL_PERIOD' using errcode='22023';
   end if;
 
-  select trim(x)
-    into v_invalid
-  from unnest(coalesce(p_destinations,'{}'::text[])) x
-  where trim(x) = ''
-     or not private.security_is_iso_country_code_v25(x)
-  limit 1;
+  select exists(
+    select 1
+    from unnest(coalesce(p_destinations,'{}'::text[])) x
+    where x is null
+       or trim(x) = ''
+       or not private.security_is_iso_country_code_v25(x)
+  ) into v_has_invalid;
 
-  if v_invalid is not null then
+  if v_has_invalid then
     raise exception 'INVALID_TRAVEL_COUNTRY_CODE' using errcode='22023';
   end if;
 
