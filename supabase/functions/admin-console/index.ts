@@ -1,12 +1,36 @@
-import { corsHeaders, json } from '../_shared/cors.ts';
-import { requiredUser, serviceClient } from '../_shared/auth.ts';
+import { corsHeaders } from '../_shared/cors.ts';
+import { requiredAdmin } from '../_shared/auth.ts';
 
-async function adminContext(req:Request){
-  const user=await requiredUser(req),service=serviceClient();
-  const {data}=await service.from('internal_admin_users').select('user_id').eq('user_id',user.id).maybeSingle();
-  if(!data)throw new Error('ADMIN_REQUIRED');
-  return {user,service};
+const MAX_REQUEST_BYTES=32768;
+const PRIVATE_HEADERS={
+  ...corsHeaders,
+  'Content-Type':'application/json; charset=utf-8',
+  'Cache-Control':'private, no-store, max-age=0',
+  'Pragma':'no-cache',
+  'X-Content-Type-Options':'nosniff',
+  'Referrer-Policy':'no-referrer'
+};
+
+function privateJson(data:unknown,status=200){
+  return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS});
 }
+
+async function readBoundedJson(req:Request){
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json')throw new Error('JSON_REQUIRED');
+  const declaredRaw=req.headers.get('content-length');
+  if(declaredRaw){
+    const declared=Number(declaredRaw);
+    if(Number.isFinite(declared)&&declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+  }
+  const raw=await req.text();
+  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+  let body:unknown;
+  try{body=JSON.parse(raw)}catch{throw new Error('INVALID_JSON')}
+  if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('INVALID_JSON');
+  return body as Record<string,any>;
+}
+
 function safeName(v:string){
   return String(v||'document').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
     .replace(/[^a-z0-9._-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,120)||'document';
@@ -14,10 +38,10 @@ function safeName(v:string){
 
 Deno.serve(async(req)=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:corsHeaders});
-  if(req.method!=='POST')return json({ok:false,error:'Méthode non autorisée.'},405);
+  if(req.method!=='POST')return privateJson({ok:false,error:'Méthode non autorisée.',code:'METHOD_NOT_ALLOWED'},405);
   try{
-    const {user,service}=await adminContext(req);
-    const body=await req.json(),action=String(body?.action||'');
+    const {user,service}=await requiredAdmin(req);
+    const body=await readBoundedJson(req),action=String(body?.action||'');
 
     if(action==='dashboard'){
       const [users,projects,documents,requests,playtests,contributions]=await Promise.all([
@@ -28,7 +52,7 @@ Deno.serve(async(req)=>{
         service.from('playtests').select('id',{count:'exact',head:true}).in('status',['open','active']),
         service.from('internal_gameplay_contributions').select('id',{count:'exact',head:true})
       ]);
-      return json({ok:true,dashboard:{
+      return privateJson({ok:true,dashboard:{
         users:users.data?.users?.length||0,projects:projects.count||0,approved_documents:documents.count||0,
         pending_requests:requests.count||0,open_playtests:playtests.count||0,contributions:contributions.count||0
       }});
@@ -36,7 +60,7 @@ Deno.serve(async(req)=>{
 
     if(action==='list_projects'){
       const {data,error}=await service.from('projects').select('*').order('sort_order');
-      if(error)throw error;return json({ok:true,projects:data||[]});
+      if(error)throw error;return privateJson({ok:true,projects:data||[]});
     }
 
     if(action==='save_project'){
@@ -48,14 +72,14 @@ Deno.serve(async(req)=>{
         allow_tester_requests:p.allow_tester_requests!==false,sort_order:Number(p.sort_order||100)
       };
       if(p.id)payload.id=p.id;
-      if(!payload.slug||!payload.name)return json({ok:false,error:'Nom et slug requis.'},400);
+      if(!payload.slug||!payload.name)return privateJson({ok:false,error:'Nom et slug requis.'},400);
       const {data,error}=await service.from('projects').upsert(payload).select('*').single();
-      if(error)throw error;return json({ok:true,project:data});
+      if(error)throw error;return privateJson({ok:true,project:data});
     }
 
     if(action==='list_documents'){
       const {data,error}=await service.from('documents').select('*,projects(name,slug)').order('created_at',{ascending:false});
-      if(error)throw error;return json({ok:true,documents:data||[]});
+      if(error)throw error;return privateJson({ok:true,documents:data||[]});
     }
 
     if(action==='prepare_document_upload'){
@@ -73,18 +97,18 @@ Deno.serve(async(req)=>{
         sort_order:Number(x.sort_order||100),created_by:user.id
       }).select('*').single();
       if(rowError){await service.storage.from(bucket).remove([path]);throw rowError}
-      return json({ok:true,document:row,upload:{path,token:upload.token,bucket}});
+      return privateJson({ok:true,document:row,upload:{path,token:upload.token,bucket}});
     }
 
     if(action==='finalize_document'||action==='set_document_status'){
       const documentId=body.document_id,desired=action==='finalize_document'
         ?(['review','approved'].includes(body.status)?body.status:'review')
         :body.status;
-      if(!['draft','review','approved','archived'].includes(desired))return json({ok:false,error:'Statut invalide.'},400);
+      if(!['draft','review','approved','archived'].includes(desired))return privateJson({ok:false,error:'Statut invalide.'},400);
       const update:any={status:desired};
       if(desired==='approved'){update.approved_by=user.id;update.approved_at=new Date().toISOString()}
       const {data,error}=await service.from('documents').update(update).eq('id',documentId).select('*').single();
-      if(error)throw error;return json({ok:true,document:data});
+      if(error)throw error;return privateJson({ok:true,document:data});
     }
 
     if(action==='list_access_requests'){
@@ -92,7 +116,7 @@ Deno.serve(async(req)=>{
       if(error)throw error;
       const ids=[...new Set((data||[]).map((x:any)=>x.user_id))],users:any[]=[];
       for(const id of ids){const {data:u}=await service.auth.admin.getUserById(id);if(u?.user)users.push({id,email:u.user.email})}
-      return json({ok:true,requests:data||[],users});
+      return privateJson({ok:true,requests:data||[],users});
     }
 
     if(action==='review_access_request'){
@@ -105,7 +129,7 @@ Deno.serve(async(req)=>{
       }
       const {error}=await service.from('access_requests').update({
         status:decision,reviewed_by:user.id,reviewed_at:new Date().toISOString(),review_note:String(body.review_note||'').slice(0,1500)
-      }).eq('id',r.id);if(error)throw error;return json({ok:true});
+      }).eq('id',r.id);if(error)throw error;return privateJson({ok:true});
     }
 
     if(action==='list_users'){
@@ -115,7 +139,7 @@ Deno.serve(async(req)=>{
       ]);
       const pmap=new Map((profiles||[]).map((p:any)=>[p.user_id,p]));
       const adminIds=new Set((await service.from('internal_admin_users').select('user_id')).data?.map((a:any)=>a.user_id)||[]);
-      return json({ok:true,users:(authData.users||[]).map((u:any)=>({
+      return privateJson({ok:true,users:(authData.users||[]).map((u:any)=>({
         id:u.id,email:u.email,created_at:u.created_at,last_sign_in_at:u.last_sign_in_at,
         pseudo:pmap.get(u.id)?.pseudo||'',display_name:pmap.get(u.id)?.display_name||'',avatar_path:pmap.get(u.id)?.avatar_path||null,
         is_admin:adminIds.has(u.id),
@@ -128,17 +152,17 @@ Deno.serve(async(req)=>{
         user_id:body.user_id,project_id:body.project_id,access_level:body.access_level==='tester'?'tester':'player',
         granted_by:user.id,source:'manual'
       },{onConflict:'user_id,project_id'});
-      if(error)throw error;return json({ok:true});
+      if(error)throw error;return privateJson({ok:true});
     }
 
     if(action==='revoke_access'){
       const {error}=await service.from('project_access').delete().eq('user_id',body.user_id).eq('project_id',body.project_id);
-      if(error)throw error;return json({ok:true});
+      if(error)throw error;return privateJson({ok:true});
     }
 
     if(action==='list_playtests'){
       const {data,error}=await service.from('playtests').select('*,projects(name,slug),playtest_participants(*)').order('created_at',{ascending:false});
-      if(error)throw error;return json({ok:true,playtests:data||[]});
+      if(error)throw error;return privateJson({ok:true,playtests:data||[]});
     }
 
     if(action==='save_playtest'){
@@ -149,7 +173,7 @@ Deno.serve(async(req)=>{
       };
       if(p.id)payload.id=p.id;
       const {data,error}=await service.from('playtests').upsert(payload).select('*').single();
-      if(error)throw error;return json({ok:true,playtest:data});
+      if(error)throw error;return privateJson({ok:true,playtest:data});
     }
 
     if(action==='review_playtest_participant'){
@@ -164,7 +188,7 @@ Deno.serve(async(req)=>{
           user_id:body.user_id,project_id:row.playtests.project_id,access_level:'tester',granted_by:user.id,source:'playtest'
         },{onConflict:'user_id,project_id'});
       }
-      return json({ok:true});
+      return privateJson({ok:true});
     }
 
     if(action==='list_extensions'){
@@ -177,7 +201,7 @@ Deno.serve(async(req)=>{
         game_slug:r.game_slug,idea:String(r.feedback?.extension_idea||'').trim(),
         favorite:String(r.feedback?.favorite_mechanic||'').trim(),unclear:String(r.feedback?.unclear_text||'').trim(),created_at:r.created_at
       })).filter((x:any)=>x.idea||x.favorite||x.unclear);
-      return json({ok:true,extensions:extensions||[],signals});
+      return privateJson({ok:true,extensions:extensions||[],signals});
     }
 
     if(action==='save_extension'){
@@ -187,7 +211,7 @@ Deno.serve(async(req)=>{
       };
       if(e.id)payload.id=e.id;
       const {data,error}=await service.from('extensions').upsert(payload).select('*').single();
-      if(error)throw error;return json({ok:true,extension:data});
+      if(error)throw error;return privateJson({ok:true,extension:data});
     }
 
     if(action==='analytics'){
@@ -209,14 +233,19 @@ Deno.serve(async(req)=>{
         g.average_rating=g.rc?Math.round(g.ratings/g.rc*10)/10:null;
         delete g.players;delete g.pc;delete g.duration;delete g.dc;delete g.ratings;delete g.rc;
       }
-      return json({ok:true,analytics:byGame});
+      return privateJson({ok:true,analytics:byGame});
     }
 
-    return json({ok:false,error:'Action inconnue.'},400);
+    return privateJson({ok:false,error:'Action inconnue.',code:'UNKNOWN_ACTION'},400);
   }catch(e){
-    console.error(e);
-    if(e?.message==='AUTH_REQUIRED')return json({ok:false,error:'Connexion requise.'},401);
-    if(e?.message==='ADMIN_REQUIRED')return json({ok:false,error:'Accès administrateur refusé.'},403);
-    return json({ok:false,error:'Erreur administration SINJIRA.'},500);
+    console.error('[admin-console]',e);
+    if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
+    if(e?.message==='ADMIN_REQUIRED')return privateJson({ok:false,error:'Accès administrateur refusé.',code:'ADMIN_REQUIRED'},403);
+    if(e?.message==='MFA_REQUIRED')return privateJson({ok:false,error:'MFA_REQUIRED',code:'MFA_REQUIRED'},403);
+    if(e?.message==='MFA_STATE_UNAVAILABLE')return privateJson({ok:false,error:'État MFA temporairement indisponible.',code:'MFA_STATE_UNAVAILABLE'},503);
+    if(e?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED'},415);
+    if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
+    if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
+    return privateJson({ok:false,error:'Erreur administration SINJIRA.',code:'ADMIN_CONSOLE_FAILED'},500);
   }
 });
