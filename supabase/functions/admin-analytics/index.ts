@@ -1,5 +1,57 @@
-import { corsHeaders, json } from '../_shared/cors.ts';
-import { requiredUser, serviceClient } from '../_shared/auth.ts';
+import { corsHeaders } from '../_shared/cors.ts';
+import { requiredAdmin } from '../_shared/auth.ts';
+
+const MAX_REQUEST_BYTES = 4096;
+const DEFAULT_GAME_SLUG = 'fracture-du-reseau-mere';
+const GAME_SLUG_RE = /^[a-z0-9][a-z0-9_-]{0,79}$/;
+const PRIVATE_HEADERS = {
+  ...corsHeaders,
+  'Content-Type': 'application/json; charset=utf-8',
+  'Cache-Control': 'private, no-store, max-age=0',
+  'Pragma': 'no-cache',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer'
+};
+
+function privateJson(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), { status, headers: PRIVATE_HEADERS });
+}
+
+async function readLimitedJson(req: Request) {
+  const declaredRaw = req.headers.get('content-length');
+  if (declaredRaw) {
+    const declared = Number(declaredRaw);
+    if (!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES) {
+      throw new Error('REQUEST_TOO_LARGE');
+    }
+  }
+
+  const raw = await req.text();
+  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
+    throw new Error('REQUEST_TOO_LARGE');
+  }
+  if (!raw.trim()) return {};
+
+  const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
+  if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');
+
+  let body: unknown;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    throw new Error('INVALID_JSON');
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('INVALID_JSON');
+  return body as Record<string, unknown>;
+}
+
+function gameSlugFrom(body: Record<string, unknown>) {
+  const candidate = body.game_slug == null || body.game_slug === ''
+    ? DEFAULT_GAME_SLUG
+    : String(body.game_slug).trim();
+  if (!GAME_SLUG_RE.test(candidate)) throw new Error('INVALID_GAME_SLUG');
+  return candidate;
+}
 
 function increment(map: Record<string, number>, key: string) {
   const normalized = key || 'Non indiqué';
@@ -8,28 +60,21 @@ function increment(map: Record<string, number>, key: string) {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method !== 'POST') return privateJson({ ok: false, error: 'Méthode non autorisée.', code: 'METHOD_NOT_ALLOWED' }, 405);
+
   try {
-    const user = await requiredUser(req);
-    const body = await req.json().catch(() => ({}));
-    const gameSlug = body?.game_slug || 'fracture-du-reseau-mere';
-    const service = serviceClient();
-
-    const { data: admin } = await service
-      .from('internal_admin_users')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (!admin) return json({ ok: false, error: 'Accès administrateur refusé.' }, 403);
+    const { service } = await requiredAdmin(req);
+    const body = await readLimitedJson(req);
+    const gameSlug = gameSlugFrom(body);
 
     const { data: rows = [], error } = await service
       .from('internal_gameplay_contributions')
-      .select('metrics,feedback,created_at')
+      .select('metrics,feedback')
       .eq('game_slug', gameSlug)
       .order('created_at', { ascending: false })
       .limit(10000);
 
-    if (error) return json({ ok: false, error: 'Impossible de charger les données.' }, 500);
+    if (error) throw error;
 
     const results: Record<string, number> = {};
     const difficulty: Record<string, number> = {};
@@ -67,7 +112,7 @@ Deno.serve(async (req) => {
       .slice(0, 20)
       .map(([card, count]) => ({ card, count }));
 
-    return json({
+    return privateJson({
       ok: true,
       analytics: {
         total_contributions: rows.length,
@@ -80,8 +125,15 @@ Deno.serve(async (req) => {
       }
     });
   } catch (error) {
-    if (error?.message === 'AUTH_REQUIRED') return json({ ok: false, error: 'Connexion requise.' }, 401);
-    console.error(error);
-    return json({ ok: false, error: 'Erreur d’analyse.' }, 500);
+    console.error('[admin-analytics]', error?.message || 'ANALYTICS_FAILED');
+    if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
+    if (error?.message === 'ADMIN_REQUIRED') return privateJson({ ok: false, error: 'Accès administrateur refusé.', code: 'ADMIN_REQUIRED' }, 403);
+    if (error?.message === 'MFA_REQUIRED') return privateJson({ ok: false, error: 'MFA_REQUIRED', code: 'MFA_REQUIRED' }, 403);
+    if (error?.message === 'MFA_STATE_UNAVAILABLE') return privateJson({ ok: false, error: 'État MFA temporairement indisponible.', code: 'MFA_STATE_UNAVAILABLE' }, 503);
+    if (error?.message === 'REQUEST_TOO_LARGE') return privateJson({ ok: false, error: 'Requête trop volumineuse.', code: 'REQUEST_TOO_LARGE' }, 413);
+    if (error?.message === 'JSON_REQUIRED') return privateJson({ ok: false, error: 'Corps JSON requis.', code: 'JSON_REQUIRED' }, 415);
+    if (error?.message === 'INVALID_JSON') return privateJson({ ok: false, error: 'JSON invalide.', code: 'INVALID_JSON' }, 400);
+    if (error?.message === 'INVALID_GAME_SLUG') return privateJson({ ok: false, error: 'Identifiant de jeu invalide.', code: 'INVALID_GAME_SLUG' }, 400);
+    return privateJson({ ok: false, error: 'Erreur d’analyse.', code: 'ANALYTICS_FAILED' }, 500);
   }
 });
