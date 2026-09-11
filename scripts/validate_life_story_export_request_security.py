@@ -106,9 +106,9 @@ Deno.serve(async (req) => {
   const tokenHash='b';
   const rows=[{token_hash: tokenHash}];
   const responseLinks=[{download_url:`${DELIVERY_PAGE}#${raw}`}];
-  const transport = 'manual_or_future_sender';
+  const result={transport: 'manual_or_future_sender'};
   if(!body) return privateJson({},400);
-  return privateJson({ ok: true, rows, responseLinks, transport });
+  return privateJson({ ok: true, rows, responseLinks, result });
  } catch (error) {
   return privateJson({ ok: false, error: 'Opération Histoire de vie refusée.', code: String(error) }, 400);
  }
