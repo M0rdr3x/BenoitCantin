@@ -10,6 +10,7 @@ WORKFLOW = ROOT / '.github/workflows/sinjira-public-edge-auth-guard.yml'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
 SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 PYTHON_VERSION = '3.12.14'
+ADMIN_REPORTS_TRIGGER = "      - 'scripts/validate_admin_reports_request_security.py'\n"
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -46,10 +47,25 @@ def validate_text(text: str) -> list[str]:
     for target in targets:
         require(errors, re.search(r'@[0-9a-f]{40}$', target) is not None, f'référence d’action non immuable: {target}')
 
-    require(errors, 'python scripts/validate_public_edge_auth_workflow_security.py --self-test' in text, 'auto-tests du contrat absents')
-    require(errors, 'python scripts/validate_public_edge_auth_workflow_security.py\n' in text, 'validation du contrat absente')
-    require(errors, 'python scripts/validate_public_edge_auth.py' in text, 'validation verify_jwt=false absente')
-    require(errors, "- 'scripts/validate_public_edge_auth_workflow_security.py'" in text, 'le nouveau contrat doit déclencher ce workflow')
+    required = [
+        'python scripts/validate_public_edge_auth_workflow_security.py --self-test',
+        'python scripts/validate_public_edge_auth_workflow_security.py\n',
+        'python scripts/validate_public_edge_auth.py',
+        'python scripts/validate_license_redemption_security.py --self-test',
+        'python scripts/validate_license_redemption_security.py\n',
+        'python scripts/validate_security_context_request_security.py --self-test',
+        'python scripts/validate_security_context_request_security.py\n',
+        'python scripts/validate_admin_reports_request_security.py --self-test',
+        'python scripts/validate_admin_reports_request_security.py\n',
+        "- 'scripts/validate_public_edge_auth_workflow_security.py'",
+    ]
+    for marker in required:
+        require(errors, marker in text, f'contrôle CI obligatoire absent: {marker.strip()}')
+    require(
+        errors,
+        text.count(ADMIN_REPORTS_TRIGGER) == 2,
+        'le validateur admin-reports doit déclencher le workflow sur pull_request et push',
+    )
     return errors
 
 
@@ -63,8 +79,13 @@ def run_self_tests(text: str) -> None:
         'runner mobile': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1),
         'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
         'contrôle public retiré': text.replace('        run: python scripts/validate_public_edge_auth.py\n', '', 1),
+        'auto-test admin-reports retiré': text.replace('        run: python scripts/validate_admin_reports_request_security.py --self-test\n', '', 1),
+        'contrôle admin-reports retiré': text.replace('        run: python scripts/validate_admin_reports_request_security.py\n', '', 1),
+        'déclencheur admin-reports retiré': text.replace(ADMIN_REPORTS_TRIGGER, '', 1),
     }
     for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test garde Edge public: mutation sans effet: {name}')
         if not validate_text(mutated):
             raise SystemExit(f'ERREUR auto-test garde Edge public: mutation non détectée: {name}')
     print(f'OK auto-tests garde Edge public: {len(cases)} affaiblissements critiques détectés.')
@@ -85,7 +106,7 @@ def main() -> int:
         for error in errors:
             print(f'ERREUR sécurité garde Edge public: {error}')
         return 1
-    print('OK sécurité garde Edge public: actions immuables, runtime figé, credentials non persistés et contrôle verify_jwt conservé.')
+    print('OK sécurité garde Edge public: actions immuables, runtime figé, credentials non persistés et contrôles Edge sensibles conservés.')
     return 0
 
 
