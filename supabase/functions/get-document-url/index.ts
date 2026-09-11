@@ -1,7 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
-const MAX_REQUEST_BYTES=8_192;
+const MAX_REQUEST_BYTES=512;
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ranks:Record<string,number>={public:1,account:10,player:20,tester:30,admin:100};
 const PRIVATE_JSON_HEADERS={
@@ -23,6 +23,10 @@ function externalUrlAllowed(value:string){
 }
 
 async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
+  const contentType=(req.headers.get('content-type')||'').toLowerCase();
+  if(!contentType.startsWith('application/json')){
+    return {response:privateJson({ok:false,error:'Type de contenu non autorisé.'},415)};
+  }
   const rawLength=req.headers.get('content-length');
   if(rawLength){
     const declared=Number(rawLength);
@@ -43,7 +47,7 @@ Deno.serve(async(req)=>{
   try{
     const parsed=await readLimitedJson(req);
     if(parsed.response)return parsed.response;
-    const document_id=String(parsed.body?.document_id||'').trim();
+    const document_id=typeof parsed.body?.document_id==='string'?parsed.body.document_id.trim():'';
     if(!UUID_RE.test(document_id))return privateJson({ok:false,error:'Document manquant ou invalide.'},400);
 
     const service=serviceClient(),user=await optionalUser(req);
@@ -80,8 +84,8 @@ Deno.serve(async(req)=>{
     const {data:signed,error:signedError}=await service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
     if(signedError||!signed?.signedUrl)return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
     return privateJson({ok:true,url:signed.signedUrl,protected:true,expires_in:600});
-  }catch(e){
-    console.error(e);
+  }catch{
+    console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});
     return privateJson({ok:false,error:'Erreur lors de l’accès au document.'},500);
   }
 });
