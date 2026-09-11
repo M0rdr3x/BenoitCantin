@@ -45,15 +45,15 @@ def validate(root: Path, contract_path: Path, sql_test_path: Path, frontend_path
         sql_test = ''
 
     required_sql = {
-        'RLS active': "relrowsecurity",
+        'RLS active': 'relrowsecurity',
         'SELECT authenticated': "has_table_privilege('authenticated','public.user_entitlements','select')",
         'INSERT interdit': "not has_table_privilege('authenticated','public.user_entitlements','insert')",
         'UPDATE interdit': "not has_table_privilege('authenticated','public.user_entitlements','update')",
         'DELETE interdit': "not has_table_privilege('authenticated','public.user_entitlements','delete')",
         'lecture anonyme interdite': "not has_table_privilege('anon','public.user_entitlements','select')",
         'absence politique de mutation': "cmd in ('INSERT','UPDATE','DELETE','ALL')",
-        'liaison auth.uid': "ilike '%auth.uid()%'","+
-"        'liaison user_id': "ilike '%user_id%'",
+        'liaison auth.uid': "ilike '%auth.uid()%'",
+        'liaison user_id': "ilike '%user_id%'",
     }
     for label, marker in required_sql.items():
         if marker not in sql_test:
