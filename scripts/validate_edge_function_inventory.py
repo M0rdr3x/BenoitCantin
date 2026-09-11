@@ -11,8 +11,8 @@ CANONICAL = {
     "admin-analytics", "admin-console", "admin-license-codes", "admin-reports",
     "admin-sinjira-v18", "admin-social-v20", "admin-users", "conscience-vault",
     "delete-player-account", "fracture-engine-gateway", "get-document-url",
-    "life-story-delivery", "life-story-export", "personal-ai", "redeem-license-code",
-    "revoke-my-contributions", "security-context", "send-game-report",
+    "get-private-book-url", "life-story-delivery", "life-story-export", "personal-ai",
+    "redeem-license-code", "revoke-my-contributions", "security-context", "send-game-report",
     "send-player-sheet", "submit-character-questionnaire", "submit-fracture-endgame",
     "submit-game-contribution",
 }
@@ -57,6 +57,14 @@ JWT_SENSITIVE_GUARDS = {
         "CLIENT_IDENTITY_FORBIDDEN", "ai_private", "Cache-Control", "private, no-store",
         "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
         "conversation_enabled", "source_retrieval_enabled",
+    ),
+    "get-private-book-url": (
+        "req.method!=='POST'", "requiredUser(req)", "user_entitlements",
+        ".eq('user_id',user.id)", ".eq('product_id',product.id)",
+        "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED", "SINJIRA_LIVRE_I_PRIVATE_BUCKET",
+        "SINJIRA_LIVRE_I_PRIVATE_PATH", "SIGNED_URL_SECONDS=300", "createSignedUrl",
+        "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
+        "Referrer-Policy", "no-referrer",
     ),
     "delete-player-account": (
         "req.method !== 'POST'", "MAX_REQUEST_BYTES=1024", "readBoundedJson", "TextEncoder",
@@ -164,6 +172,11 @@ def main() -> int:
         if "await req.json()" in source or "await req.json (" in source:
             errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
 
+    book_source = read_tree_text(FUNCTIONS / "get-private-book-url")
+    for forbidden in ("external_url", "getPublicUrl("):
+        if forbidden in book_source:
+            errors.append(f"get-private-book-url: repli public interdit: {forbidden}.")
+
     vault_source = read_tree_text(FUNCTIONS / "conscience-vault")
     if "service.rpc('security_evaluate_context'" in vault_source or 'service.rpc("security_evaluate_context"' in vault_source:
         errors.append("conscience-vault: l Edge doit passer par service_conscience_evaluate_access pour conserver les challenges entre retries.")
@@ -212,7 +225,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 22 fonctions canoniques, JWT/custom auth cohérents, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 23 fonctions canoniques, JWT/custom auth cohérents, porte Livre I entitlement privée, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
