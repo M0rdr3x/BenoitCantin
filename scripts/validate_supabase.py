@@ -73,8 +73,10 @@ def main()->int:
     if not registry.exists():fail(errors,'Edge Function du Registre absente.')
     else:
         t=read(registry)
-        for needle in ("persisted:true","version:VERSION","admin_notification_created","admin_email_sent","participant_email_sent","body?.health===true"):
+        for needle in ("persisted:true","version:VERSION","admin_notification_created","admin_email_sent","participant_email_sent"):
             if needle not in t:fail(errors,f'Contrat Registre incomplet: {needle}')
+        if "body.health===true" not in t and "body?.health===true" not in t:
+            fail(errors,'Contrat Registre incomplet: endpoint health authentifié absent.')
         if f"const VERSION='{REGISTRY_EXPECTED}'" not in t:fail(errors,f'Version Edge Registre différente de {REGISTRY_EXPECTED}.')
 
     config=read(CONFIG) if CONFIG.exists() else ''
