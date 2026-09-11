@@ -1,17 +1,39 @@
-import {corsHeaders,json} from '../_shared/cors.ts';
-import {requiredUser,serviceClient} from '../_shared/auth.ts';
+import {corsHeaders} from '../_shared/cors.ts';
+import {requiredAdmin} from '../_shared/auth.ts';
+
+const MAX_REQUEST_BYTES=8192;
+const PRIVATE_HEADERS={
+  ...corsHeaders,
+  'Content-Type':'application/json; charset=utf-8',
+  'Cache-Control':'private, no-store, max-age=0',
+  'Pragma':'no-cache',
+  'X-Content-Type-Options':'nosniff',
+  'Referrer-Policy':'no-referrer'
+};
+
+function privateJson(data:unknown,status=200){
+  return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS});
+}
+
+async function readLimitedJson(req:Request){
+  const rawLength=req.headers.get('content-length');
+  if(rawLength){
+    const declared=Number(rawLength);
+    if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+  }
+  const raw=await req.text();
+  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+  let body:any;
+  try{body=JSON.parse(raw||'{}');}
+  catch{throw new Error('INVALID_JSON');}
+  if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('INVALID_JSON');
+  return body;
+}
 
 const targetTables:any={
   real:{post:['social_real_posts','user_id'],comment:['social_real_comments','user_id'],message:['social_real_messages','sender_user_id']},
   character:{post:['social_character_posts','user_id'],comment:['social_character_comments','user_id'],message:['social_character_messages','sender_user_id']}
 };
-
-async function ctx(req:Request){
-  const user=await requiredUser(req),s=serviceClient();
-  const {data}=await s.rpc('is_sinjira_admin',{p_user_id:user.id});
-  if(!data)throw new Error('ADMIN_REQUIRED');
-  return {user,s};
-}
 
 async function canonicalUser(s:any,table:string,idColumn:string,userColumn:string,id:string){
   const {data,error}=await s.from(table).select(userColumn).eq(idColumn,id).maybeSingle();
@@ -138,47 +160,53 @@ async function reviewAppeal(s:any,adminId:string,b:any){
 
 Deno.serve(async(req)=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:corsHeaders});
-  if(req.method!=='POST')return json({ok:false,error:'Méthode non autorisée.'},405);
+  if(req.method!=='POST')return privateJson({ok:false,error:'Méthode non autorisée.'},405);
   try{
-    const {user,s}=await ctx(req),b=await req.json(),a=String(b.action||'');
+    const {user,service:s}=await requiredAdmin(req);
+    const b=await readLimitedJson(req);
+    const a=typeof b.action==='string'?b.action.trim().slice(0,64):'';
     if(a==='dashboard'){
       const [{count:open},{count:susp},{count:appeals}]=await Promise.all([
         s.from('social_reports').select('id',{count:'exact',head:true}).eq('status','open'),
         s.from('social_suspensions').select('user_id',{count:'exact',head:true}).or(`until_at.is.null,until_at.gt.${new Date().toISOString()}`),
         s.schema('private').from('moderation_appeals').select('id',{count:'exact',head:true}).eq('status','pending')
       ]);
-      return json({ok:true,dashboard:{open_reports:open||0,active_suspensions:susp||0,pending_appeals:appeals||0}});
+      return privateJson({ok:true,dashboard:{open_reports:open||0,active_suspensions:susp||0,pending_appeals:appeals||0}});
     }
     if(a==='list_reports'){
       const {data,error}=await s.from('social_reports').select('*').eq('status','open').order('created_at',{ascending:false}).limit(300);
       if(error)throw error;
-      return json({ok:true,reports:data||[]});
+      return privateJson({ok:true,reports:data||[]});
     }
-    if(a==='list_appeals')return json({ok:true,appeals:await listAppeals(s)});
+    if(a==='list_appeals')return privateJson({ok:true,appeals:await listAppeals(s)});
     if(a==='resolve_report'){
       const {error}=await s.from('social_reports').update({status:'resolved',reviewed_at:new Date().toISOString(),reviewed_by:user.id}).eq('id',b.report_id);
       if(error)throw error;
-      return json({ok:true});
+      return privateJson({ok:true});
     }
     if(a==='restrict_reported_content'||a==='remove_reported_content'){
       const {data:r,error}=await s.from('social_reports').select('*').eq('id',b.report_id).single();
       if(error)throw error;
       if(r.snapshot?.source==='dating')throw new Error('DATING_REPORT_HAS_NO_REMOVABLE_PUBLIC_CONTENT');
       const decision=await createDecision(s,user.id,r,b,'hide_content');
-      return json({ok:true,decision_id:decision.id,reversible:true});
+      return privateJson({ok:true,decision_id:decision.id,reversible:true});
     }
     if(a==='suspend_reported_user'){
       const {data:r,error}=await s.from('social_reports').select('*').eq('id',b.report_id).single();
       if(error)throw error;
       const decision=await createDecision(s,user.id,r,b,'suspend_social');
-      return json({ok:true,decision_id:decision.id,until_at:decision.ends_at,reversible:true});
+      return privateJson({ok:true,decision_id:decision.id,until_at:decision.ends_at,reversible:true});
     }
-    if(a==='review_appeal')return json(await reviewAppeal(s,user.id,b));
-    return json({ok:false,error:'Action inconnue.'},400);
+    if(a==='review_appeal')return privateJson(await reviewAppeal(s,user.id,b));
+    return privateJson({ok:false,error:'Action inconnue.'},400);
   }catch(e){
-    console.error(e);
-    if(e?.message==='AUTH_REQUIRED')return json({ok:false,error:'Connexion requise.'},401);
-    if(e?.message==='ADMIN_REQUIRED')return json({ok:false,error:'Administration refusée.'},403);
-    return json({ok:false,error:e?.message||'Erreur de modération sociale.'},500);
+    console.error('[admin-social-v20]',e);
+    if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
+    if(e?.message==='ADMIN_REQUIRED')return privateJson({ok:false,error:'Administration refusée.',code:'ADMIN_REQUIRED'},403);
+    if(e?.message==='MFA_REQUIRED')return privateJson({ok:false,error:'MFA_REQUIRED',code:'MFA_REQUIRED'},403);
+    if(e?.message==='MFA_STATE_UNAVAILABLE')return privateJson({ok:false,error:'État MFA temporairement indisponible.',code:'MFA_STATE_UNAVAILABLE'},503);
+    if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
+    if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
+    return privateJson({ok:false,error:'Erreur de modération sociale.',code:'MODERATION_FAILED'},500);
   }
 });
