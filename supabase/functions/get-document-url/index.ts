@@ -105,8 +105,7 @@ Deno.serve(async(req)=>{
       }
     }else if(doc.projects?.visibility==='public')userRank=1;
 
-    const requiredRank=typeof doc.access_level==='string'?(ranks[doc.access_level]??999):999;
-    if(userRank<requiredRank){
+    if(userRank<(ranks[doc.access_level]||999)){
       return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
     }
 
