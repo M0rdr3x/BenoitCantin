@@ -158,8 +158,15 @@ def main() -> int:
     require(isinstance(entries, list) and len(entries) == 1 and entries[0].get("content_payload") == CONTENT_2,
             "entrée doit persister après rotation de capacité")
 
-    require(ok(aal2, "delete_entry", vault_session_id=session2, entry_id=entry_id).get("deleted") is True,
-            "suppression entrée non confirmée")
+    expect_code(vault(aal2, "delete_entry", vault_session_id=session2, entry_id=entry_id),
+                409, "VAULT_DELETE_CONFIRMATION_REQUIRED", "suppression sans confirmation humaine")
+    entries = ok(aal2, "list_entries", vault_session_id=session2).get("entries")
+    require(isinstance(entries, list) and len(entries) == 1 and entries[0].get("id") == entry_id,
+            "l’entrée doit rester intacte après une suppression non confirmée")
+
+    require(ok(aal2, "delete_entry", vault_session_id=session2, entry_id=entry_id,
+               human_confirmed_delete=True).get("deleted") is True,
+            "suppression entrée confirmée non appliquée")
     require(ok(aal2, "list_entries", vault_session_id=session2).get("entries") == [], "Coffre doit être vide après suppression")
 
     require(ok(aal2, "revoke_session", vault_session_id=session2).get("revoked") is True,
@@ -168,7 +175,7 @@ def main() -> int:
                 "capacité révoquée")
     expect_code(vault(aal2, "list_entries"), 403, "VAULT_SESSION_REQUIRED", "capacité absente")
 
-    print("OK smoke Coffre V25: TOTP/AAL2 réel, premier appareil courant fiable sans privilège, capacité 60 s, CRUD synthétique, rotation, révocation et suppression vérifiées sans contenu intime réel.")
+    print("OK smoke Coffre V25: TOTP/AAL2 réel, premier appareil courant fiable sans privilège, capacité 60 s, CRUD synthétique, suppression refusée sans confirmation puis appliquée avec confirmation humaine, rotation et révocation vérifiées sans contenu intime réel.")
     return 0
 
 
