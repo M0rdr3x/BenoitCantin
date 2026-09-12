@@ -74,15 +74,15 @@ JWT_SENSITIVE_GUARDS = {
         "CONFIRM_PHRASE='SUPPRIMER MON COMPTE'",
     ),
     "revoke-my-contributions": (
-        "req.method !== 'POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
-        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "body.all===true",
+        "req.method !== 'POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "req.body.getReader()",
+        "reader.cancel", "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "body.all===true",
         "AMBIGUOUS_SCOPE", "SESSION_REQUIRED", "revokeAll ? null : sessionId",
         "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
         "Referrer-Policy", "no-referrer",
     ),
     "submit-game-contribution": (
-        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
-        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "INVALID_SESSION",
+        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "req.body.getReader()",
+        "reader.cancel", "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "INVALID_SESSION",
         "p_user_id:user.id", "select('id,game_slug,play_mode,human_player_count,effective_player_count,player_count,duration_minutes')",
         "submitted:true", "Cache-Control", "private, no-store", "X-Content-Type-Options",
         "nosniff", "Referrer-Policy", "no-referrer",
@@ -172,6 +172,11 @@ def main() -> int:
         if "await req.json()" in source or "await req.json (" in source:
             errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
 
+    for slug in ("revoke-my-contributions", "submit-game-contribution"):
+        source = read_tree_text(FUNCTIONS / slug)
+        if "await req.text()" in source or "await req.text (" in source:
+            errors.append(f"{slug}: lecture texte intégrale avant contrôle de taille interdite; utiliser le flux Request.body.")
+
     book_source = read_tree_text(FUNCTIONS / "get-private-book-url")
     for forbidden in ("external_url", "getPublicUrl("):
         if forbidden in book_source:
@@ -225,7 +230,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 23 fonctions canoniques, JWT/custom auth cohérents, porte Livre I entitlement privée, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 23 fonctions canoniques, JWT/custom auth cohérents, porte Livre I entitlement privée, actions sensibles bornées/no-store, corps contribution bornés pendant la lecture, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
