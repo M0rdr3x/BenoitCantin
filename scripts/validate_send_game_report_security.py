@@ -11,9 +11,11 @@ EDGE = ROOT / 'supabase/functions/send-game-report/index.ts'
 
 REQUIRED = {
     'POST uniquement': "req.method !== 'POST'",
-    'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture corps par texte': 'const raw = await req.text();',
-    'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'normalisation MIME exacte': ".split(';',1)[0].trim().toLowerCase()",
+    'JSON exact': "contentType!=='application/json'",
+    'lecture bornée par flux': 'req.body?.getReader()',
+    'annulation au dépassement': 'reader.cancel()',
+    'décodage UTF-8 strict': "new TextDecoder('utf-8',{fatal:true})",
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
     'référent masqué': "'Referrer-Policy': 'no-referrer'",
@@ -36,6 +38,8 @@ REQUIRED_PATTERNS = {
 
 FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
+    'texte intégral avant borne': 'await req.text()',
+    'MIME JSON par préfixe': "startsWith('application/json')",
     'message erreur backend brut': 'error.message',
     'stack erreur brute': 'error.stack',
     'objet erreur brut console.error': 'console.error(error)',
@@ -108,10 +112,20 @@ async function fetchTemplateBytes(){
  return bytes;
 }
 async function readLimitedJson(req){
- const contentType=(req.headers.get('content-type')||'').toLowerCase();
- if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};
- const raw = await req.text();
- if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES) return {response:new Response('',{status:413})};
+ const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+ if(contentType!=='application/json') return {response:new Response('',{status:415})};
+ const reader=req.body?.getReader();
+ if(!reader)return {body:{}};
+ const chunks=[]; let total=0;
+ while(true){
+  const {done,value}=await reader.read(); if(done)break; if(!value)continue;
+  total+=value.byteLength;
+  if(total>MAX_REQUEST_BYTES){try{await reader.cancel()}catch{} return {response:new Response('',{status:413})}}
+  chunks.push(value);
+ }
+ const bytes=new Uint8Array(total); let offset=0;
+ for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
+ const raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
  return {body:JSON.parse(raw||'{}')};
 }
 async function recordDelivery(){
@@ -148,8 +162,10 @@ Deno.serve(async(req)=>{
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
 
         mutations = {
-            'content-type retiré': safe.replace(" if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};\n", ''),
-            'req.json direct': safe.replace(' const raw = await req.text();', ' const bodyDirect = await req.json();'),
+            'MIME JSON par préfixe': safe.replace("if(contentType!=='application/json')", "if(!contentType.startsWith('application/json'))"),
+            'req.text intégral': safe.replace(' const reader=req.body?.getReader();', ' const raw=await req.text();'),
+            'req.json direct': safe.replace(' const reader=req.body?.getReader();', ' const bodyDirect = await req.json();'),
+            'annulation retirée': safe.replace('try{await reader.cancel()}catch{} ', ''),
             'no-store retiré': safe.replace("  'Cache-Control': 'private, no-store, max-age=0',\n", ''),
             'services payants activés': safe.replace('PAID_EXTERNAL_SERVICES_ENABLED=false', 'PAID_EXTERNAL_SERVICES_ENABLED=true'),
             'log livraison brut': safe.replace("console.warn('[SINJIRA report]', { code:'REPORT_DELIVERY_RECORD_FAILED' });", "console.warn('[SINJIRA report]', error.message);"),
@@ -180,7 +196,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK send-game-report: POST JSON borné, réponses no-store, PDF validé, transport payant désactivé et logs backend sanitizés.')
+    print('OK send-game-report: POST JSON exact borné pendant la lecture, réponses no-store, PDF validé, transport payant désactivé et logs backend sanitizés.')
     return 0
 
 
