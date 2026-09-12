@@ -164,10 +164,10 @@ Deno.serve(async (req) => {
     if (error?.message === 'ADMIN_REQUIRED') return privateJson({ ok: false, error: 'Accès administrateur refusé.', code: 'ADMIN_REQUIRED' }, 403);
     if (error?.message === 'MFA_REQUIRED') return privateJson({ ok: false, error: 'MFA_REQUIRED', code: 'MFA_REQUIRED' }, 403);
     if (error?.message === 'MFA_STATE_UNAVAILABLE') return privateJson({ ok: false, error: 'État MFA temporairement indisponible.', code: 'MFA_STATE_UNAVAILABLE' }, 503);
-    if (error?.message === 'REQUEST_TOO_LARGE') return privateJson({ ok: false, error: 'Requête trop volumineuse.', code:'REQUEST_TOO_LARGE' }, 413);
-    if (error?.message === 'JSON_REQUIRED') return privateJson({ ok: false, error: 'Corps JSON requis.', code:'JSON_REQUIRED' }, 415);
-    if (error?.message === 'INVALID_JSON') return privateJson({ ok: false, error: 'JSON invalide.', code:'INVALID_JSON' }, 400);
-    if (error?.message === 'INVALID_GAME_SLUG') return privateJson({ ok: false, error: 'Identifiant de jeu invalide.', code:'INVALID_GAME_SLUG' }, 400);
-    return privateJson({ ok: false, error: 'Erreur d’analyse.', code:'ANALYTICS_FAILED' }, 500);
+    if (error?.message === 'REQUEST_TOO_LARGE') return privateJson({ ok: false, error: 'Requête trop volumineuse.', code: 'REQUEST_TOO_LARGE' }, 413);
+    if (error?.message === 'JSON_REQUIRED') return privateJson({ ok: false, error: 'Corps JSON requis.', code: 'JSON_REQUIRED' }, 415);
+    if (error?.message === 'INVALID_JSON') return privateJson({ ok: false, error: 'JSON invalide.', code: 'INVALID_JSON' }, 400);
+    if (error?.message === 'INVALID_GAME_SLUG') return privateJson({ ok: false, error: 'Identifiant de jeu invalide.', code: 'INVALID_GAME_SLUG' }, 400);
+    return privateJson({ ok: false, error: 'Erreur d’analyse.', code: 'ANALYTICS_FAILED' }, 500);
   }
 });
