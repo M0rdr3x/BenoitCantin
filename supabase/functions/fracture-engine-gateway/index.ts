@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, json } from '../_shared/cors.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 
 const GATEWAY_VERSION='24.4.15';
 const MAX_BODY_BYTES=32_000;
@@ -13,7 +13,20 @@ const ALLOWED_ACTIONS=new Set([
   'fracture_engine_submit_accusation'
 ]);
 
+const PRIVATE_HEADERS={
+  ...corsHeaders,
+  'Content-Type':'application/json; charset=utf-8',
+  'Cache-Control':'private, no-store, max-age=0',
+  'Pragma':'no-cache',
+  'X-Content-Type-Options':'nosniff',
+  'Referrer-Policy':'no-referrer'
+};
+
 type JsonRecord=Record<string,unknown>;
+
+function privateJson(data:unknown,status=200){
+  return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS});
+}
 
 function asInt(value:unknown,name:string){
   const n=Number(value);
@@ -78,48 +91,79 @@ function publicError(message:string){
   return 'Action refusée par le moteur de jeu.';
 }
 
+async function readLimitedJson(req:Request):Promise<{body?:JsonRecord;response?:Response}>{
+  const contentType=(req.headers.get('content-type')||'').toLowerCase();
+  if(!contentType.startsWith('application/json')){
+    return {response:privateJson({ok:false,error:'Content-Type application/json requis.',gateway_version:GATEWAY_VERSION},415)};
+  }
+
+  const rawLength=req.headers.get('content-length');
+  if(rawLength!==null){
+    const declaredLength=Number(rawLength);
+    if(Number.isFinite(declaredLength)&&declaredLength>MAX_BODY_BYTES){
+      return {response:privateJson({ok:false,error:'Requête trop volumineuse.',gateway_version:GATEWAY_VERSION},413)};
+    }
+  }
+
+  const raw=await req.text();
+  if(new TextEncoder().encode(raw).byteLength>MAX_BODY_BYTES){
+    return {response:privateJson({ok:false,error:'Requête trop volumineuse.',gateway_version:GATEWAY_VERSION},413)};
+  }
+
+  let parsed:unknown;
+  try{
+    parsed=JSON.parse(raw||'{}');
+  }catch{
+    return {response:privateJson({ok:false,error:'JSON invalide.',gateway_version:GATEWAY_VERSION},400)};
+  }
+  if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)){
+    return {response:privateJson({ok:false,error:'Corps JSON invalide.',gateway_version:GATEWAY_VERSION},400)};
+  }
+  return {body:parsed as JsonRecord};
+}
+
 Deno.serve(async(req)=>{
   if(req.method==='OPTIONS') return new Response('ok',{headers:corsHeaders});
-  if(req.method!=='POST') return json({ok:false,error:'Méthode non autorisée.',gateway_version:GATEWAY_VERSION},405);
-
-  const declaredLength=Number(req.headers.get('content-length')||0);
-  if(declaredLength>MAX_BODY_BYTES) return json({ok:false,error:'Requête trop volumineuse.',gateway_version:GATEWAY_VERSION},413);
+  if(req.method!=='POST') return privateJson({ok:false,error:'Méthode non autorisée.',gateway_version:GATEWAY_VERSION},405);
 
   const authorization=req.headers.get('Authorization')||'';
-  if(!authorization.startsWith('Bearer ')) return json({ok:false,error:'Connexion requise.',gateway_version:GATEWAY_VERSION},401);
+  if(!authorization.startsWith('Bearer ')) return privateJson({ok:false,error:'Connexion requise.',gateway_version:GATEWAY_VERSION},401);
 
   const supabaseUrl=Deno.env.get('SUPABASE_URL');
   const anonKey=Deno.env.get('SUPABASE_ANON_KEY');
   if(!supabaseUrl||!anonKey){
-    console.error('[Fracture gateway] variables Supabase intégrées absentes');
-    return json({ok:false,error:'Service de jeu indisponible.',gateway_version:GATEWAY_VERSION},503);
+    console.error('[fracture-engine-gateway]',{code:'FRACTURE_GATEWAY_CONFIG_MISSING'});
+    return privateJson({ok:false,error:'Service de jeu indisponible.',gateway_version:GATEWAY_VERSION},503);
   }
 
   try{
-    const body=await req.json();
-    const action=String(body?.action||'');
-    if(!ALLOWED_ACTIONS.has(action)) return json({ok:false,error:'Action non autorisée.',gateway_version:GATEWAY_VERSION},400);
-
-    const rawArgs=(body?.args&&typeof body.args==='object'&&!Array.isArray(body.args))?body.args as JsonRecord:{};
-    const partyCode=String(rawArgs.p_party_code||'').trim().toUpperCase();
-    if(!PARTY_RE.test(partyCode)) return json({ok:false,error:'Code de partie invalide.',gateway_version:GATEWAY_VERSION},400);
-
     const client=createClient(supabaseUrl,anonKey,{
       global:{headers:{Authorization:authorization}},
       auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}
     });
 
-    // Une vérification explicite empêche tout appel avec un JWT invalide même si
-    // la configuration de la fonction était accidentellement assouplie plus tard.
+    // Vérification explicite avant toute lecture du corps : un JWT invalide ne
+    // peut pas forcer le serveur à parser ou tamponner une requête applicative.
     const token=authorization.slice(7);
     const {data:userData,error:userError}=await client.auth.getUser(token);
-    if(userError||!userData?.user) return json({ok:false,error:'Session invalide ou expirée.',gateway_version:GATEWAY_VERSION},401);
+    if(userError||!userData?.user) return privateJson({ok:false,error:'Session invalide ou expirée.',gateway_version:GATEWAY_VERSION},401);
+
+    const parsed=await readLimitedJson(req);
+    if(parsed.response) return parsed.response;
+    const body=parsed.body||{};
+
+    const action=String(body.action||'');
+    if(!ALLOWED_ACTIONS.has(action)) return privateJson({ok:false,error:'Action non autorisée.',gateway_version:GATEWAY_VERSION},400);
+
+    const rawArgs=(body.args&&typeof body.args==='object'&&!Array.isArray(body.args))?body.args as JsonRecord:{};
+    const partyCode=String(rawArgs.p_party_code||'').trim().toUpperCase();
+    if(!PARTY_RE.test(partyCode)) return privateJson({ok:false,error:'Code de partie invalide.',gateway_version:GATEWAY_VERSION},400);
 
     const args=normalizeArgs(action,rawArgs,partyCode);
     const {error:actionError}=await client.rpc(action,args);
     if(actionError){
-      console.warn('[Fracture gateway action]',action,actionError.message);
-      return json({ok:false,error:publicError(actionError.message),gateway_version:GATEWAY_VERSION},400);
+      console.warn('[fracture-engine-gateway]',{code:'FRACTURE_ACTION_REJECTED',action});
+      return privateJson({ok:false,error:publicError(actionError.message||''),gateway_version:GATEWAY_VERSION},400);
     }
 
     // On ignore volontairement la réponse brute de l'action. Elle ne traverse
@@ -127,17 +171,17 @@ Deno.serve(async(req)=>{
     // de confidentialité qui retire identités et soupçons non autorisés.
     const {data:state,error:stateError}=await client.rpc('fracture_engine_get_state_safe',{p_party_code:partyCode});
     if(stateError){
-      console.error('[Fracture gateway state]',stateError.message);
-      return json({ok:false,error:'La partie a été modifiée, mais son nouvel état ne peut pas être chargé.',gateway_version:GATEWAY_VERSION},502);
+      console.error('[fracture-engine-gateway]',{code:'FRACTURE_STATE_LOAD_FAILED'});
+      return privateJson({ok:false,error:'La partie a été modifiée, mais son nouvel état ne peut pas être chargé.',gateway_version:GATEWAY_VERSION},502);
     }
 
     if(state&&typeof state==='object'&&!Array.isArray(state)){
-      return json({...state,gateway_version:GATEWAY_VERSION});
+      return privateJson({...state,gateway_version:GATEWAY_VERSION});
     }
-    return json({ok:false,error:'État de partie invalide.',gateway_version:GATEWAY_VERSION},502);
+    return privateJson({ok:false,error:'État de partie invalide.',gateway_version:GATEWAY_VERSION},502);
   }catch(error){
-    const message=error instanceof Error?error.message:String(error);
-    console.error('[Fracture gateway]',message);
-    return json({ok:false,error:publicError(message),gateway_version:GATEWAY_VERSION},400);
+    const message=error instanceof Error?error.message:'';
+    console.error('[fracture-engine-gateway]',{code:'FRACTURE_GATEWAY_REQUEST_REJECTED'});
+    return privateJson({ok:false,error:publicError(message),gateway_version:GATEWAY_VERSION},400);
   }
 });
