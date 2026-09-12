@@ -173,11 +173,7 @@ Deno.serve(async (req) => {
     }
 
     if (submitResult?.already_submitted === true) {
-      return privateJson({
-        ok: false,
-        error: 'Cette fin de partie a déjà été transmise.',
-        repaired_partial_state: submitResult?.repaired_partial_state === true
-      }, 409);
+      return privateJson({ ok: false, error: 'Cette fin de partie a déjà été transmise.' }, 409);
     }
 
     let email_sent = false;
