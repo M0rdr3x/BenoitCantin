@@ -119,6 +119,7 @@ function friendlyVaultError(error){
   if(code==='SECURITY_BLOCKED')return 'La protection du compte bloque temporairement l’accès au coffre. Consultez Ma sécurité avant de réessayer.';
   if(code==='VAULT_SESSION_REQUIRED'||code==='VAULT_SESSION_INVALID')return 'La session privée du Registre a expiré. Ouvrez de nouveau le coffre.';
   if(code==='REQUEST_TOO_LARGE'||code==='VAULT_ENTRY_CONTENT_INVALID')return 'Cette entrée est trop volumineuse. Le contenu d’une entrée est limité à 1 Mio.';
+  if(code==='VAULT_DELETE_CONFIRMATION_REQUIRED')return 'La suppression définitive doit être confirmée explicitement.';
   if(code==='AUTH_REQUIRED')return 'Reconnectez-vous avant d’ouvrir le Registre personnel.';
   if(code==='SECURITY_DECISION_INVALID'||code==='MFA_STATE_UNAVAILABLE')return 'La protection du Registre ne peut pas être vérifiée pour le moment. Aucun accès n’a été accordé.';
   return String(error?.message||'Opération du coffre refusée.');
@@ -306,7 +307,7 @@ async function saveEntry(form){
 async function deleteEntry(entryId){
   if(!globalThis.confirm('Supprimer définitivement cette entrée du Registre personnel ? Cette action ne crée pas de copie dans l’Histoire de vie.'))return;
   const sessionId=requireVaultSession();
-  await invokeVault({action:'delete_entry',vault_session_id:sessionId,entry_id:entryId});
+  await invokeVault({action:'delete_entry',vault_session_id:sessionId,entry_id:entryId,human_confirmed_delete:true});
   entries=entries.filter(item=>item.id!==entryId);
   renderEntries();
   cancelEdit();

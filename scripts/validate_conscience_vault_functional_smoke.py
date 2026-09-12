@@ -65,6 +65,20 @@ def main() -> int:
     require('CLIENT_IDENTITY_FORBIDDEN' in smoke and 'user_id=' in smoke,
             'identité client injectée non testée')
 
+    # Une suppression physique doit d'abord être refusée sans preuve humaine,
+    # laisser l'entrée intacte, puis réussir uniquement avec confirmation explicite.
+    require('VAULT_DELETE_CONFIRMATION_REQUIRED' in smoke,
+            'le refus de suppression sans confirmation humaine doit être testé')
+    require('human_confirmed_delete=True' in smoke,
+            'la suppression confirmée explicitement doit être testée')
+    require('l’entrée doit rester intacte après une suppression non confirmée' in smoke,
+            'la conservation de l’entrée après refus doit être vérifiée')
+    unconfirmed_index = smoke.index('VAULT_DELETE_CONFIRMATION_REQUIRED')
+    intact_index = smoke.index('l’entrée doit rester intacte après une suppression non confirmée')
+    confirmed_index = smoke.index('human_confirmed_delete=True')
+    require(unconfirmed_index < intact_index < confirmed_index,
+            'ordre obligatoire: refus sans confirmation → entrée intacte → suppression confirmée')
+
     # Le contenu de test doit être explicitement synthétique et non intime.
     require('CONTENT_1 = "Donnée synthétique de test local — aucune information personnelle réelle."' in smoke,
             'marqueur synthétique initial inattendu')
@@ -96,6 +110,8 @@ def main() -> int:
             'surface Edge Coffre inattendue')
     require("if (!validUuid(sessionId)) throw new Error('VAULT_SESSION_REQUIRED')" in edge,
             'capacité obligatoire avant opérations Coffre absente')
+    require("body.human_confirmed_delete !== true" in edge and 'VAULT_DELETE_CONFIRMATION_REQUIRED' in edge,
+            'le verrou serveur de suppression humaine explicite doit rester actif')
     require('identity_from_verified_jwt: true' in edge, 'preuve identité JWT absente de la réponse Edge')
     require('raw_ip_stored: false' in edge and 'gps_used: false' in edge,
             'garanties IP brute/GPS absentes de la réponse Edge')
@@ -127,7 +143,7 @@ def main() -> int:
     smoke_index = workflow.index('python3 scripts/smoke_conscience_vault_functional_local.py')
     require(pg_index < smoke_index, 'pgTAP doit passer avant le smoke HTTP')
 
-    print('OK smoke fonctionnel Coffre V25: AAL2 réel, appareil fiable légitime, capacité courte, CRUD synthétique, rotation/révocation et confidentialité sans privilège.')
+    print('OK smoke fonctionnel Coffre V25: AAL2 réel, appareil fiable légitime, capacité courte, CRUD synthétique, suppression irréversible refusée sans confirmation puis confirmée explicitement, rotation/révocation et confidentialité sans privilège.')
     return 0
 
 
