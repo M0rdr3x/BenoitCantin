@@ -7,6 +7,8 @@ const ALLOWED_ORIGINS = new Set([
   'https://benoitcantin.com',
 ]);
 
+class RequestBodyTooLargeError extends Error {}
+
 function serverKey() {
   const modern = Deno.env.get('SUPABASE_SECRET_KEYS');
   if (modern) {
@@ -85,7 +87,7 @@ async function readBoundedBody(req: Request) {
     total += value.byteLength;
     if (total > MAX_REQUEST_BYTES) {
       try { await reader.cancel(); } catch { /* La réponse 413 reste prioritaire. */ }
-      throw new RangeError('REQUEST_BODY_TOO_LARGE');
+      throw new RequestBodyTooLargeError();
     }
     chunks.push(value);
   }
@@ -123,7 +125,7 @@ Deno.serve(async (req) => {
     try {
       rawBody = await readBoundedBody(req);
     } catch (bodyError) {
-      if (bodyError instanceof RangeError && bodyError.message === 'REQUEST_BODY_TOO_LARGE') return errorResponse(req, 413);
+      if (bodyError instanceof RequestBodyTooLargeError) return errorResponse(req, 413);
       if (bodyError instanceof TypeError) return errorResponse(req, 400);
       throw bodyError;
     }
@@ -148,10 +150,7 @@ Deno.serve(async (req) => {
     const expiresAt = Date.parse(String(link.expires_at ?? ''));
     const maxDownloads = parseNonNegativeInteger(link.max_downloads);
     const downloadCount = parseNonNegativeInteger(link.download_count);
-    if (!Number.isFinite(expiresAt) || maxDownloads === null || maxDownloads < 1 || downloadCount === null) {
-      console.error('[life-story-delivery]', { code: 'INVALID_DELIVERY_LINK_METADATA', linkId: link.id });
-      return errorResponse(req);
-    }
+    if (!Number.isFinite(expiresAt) || maxDownloads === null || maxDownloads < 1 || downloadCount === null) return errorResponse(req);
     if (link.revoked_at || expiresAt <= Date.now() || downloadCount >= maxDownloads) return errorResponse(req);
 
     const { data: record, error: exportError } = await service
