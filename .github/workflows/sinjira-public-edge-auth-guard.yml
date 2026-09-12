@@ -13,6 +13,7 @@ on:
       - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_send_game_report_security.py'
       - 'scripts/validate_send_player_sheet_security.py'
+      - 'scripts/validate_delete_player_account_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
       - 'scripts/validate_admin_reports_request_security.py'
@@ -37,6 +38,7 @@ on:
       - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_send_game_report_security.py'
       - 'scripts/validate_send_player_sheet_security.py'
+      - 'scripts/validate_delete_player_account_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
       - 'scripts/validate_admin_reports_request_security.py'
@@ -87,6 +89,10 @@ jobs:
         run: python scripts/validate_send_player_sheet_security.py --self-test
       - name: Vérifier la frontière privée de send-player-sheet
         run: python scripts/validate_send_player_sheet_security.py
+      - name: Auto-tester delete-player-account
+        run: python scripts/validate_delete_player_account_security.py --self-test
+      - name: Vérifier la suppression privée du compte joueur
+        run: python scripts/validate_delete_player_account_security.py
       - name: Auto-tester le contrat d’activation licence
         run: python scripts/validate_license_redemption_security.py --self-test
       - name: Vérifier l’activation sécurisée des licences
