@@ -190,6 +190,7 @@ function errorCode(error: unknown) {
     'VAULT_ENTRY_ID_INVALID',
     'VAULT_ENTRY_TYPE_INVALID',
     'VAULT_ENTRY_CONTENT_INVALID',
+    'VAULT_DELETE_CONFIRMATION_REQUIRED',
     'VAULT_TTL_INVALID',
     'SECURITY_DECISION_INVALID'
   ]);
@@ -333,6 +334,7 @@ Deno.serve(async (req) => {
     if (action === 'delete_entry') {
       const id = safeText(body.entry_id, 80);
       if (!validUuid(id)) throw new Error('VAULT_ENTRY_ID_INVALID');
+      if (body.human_confirmed_delete !== true) throw new Error('VAULT_DELETE_CONFIRMATION_REQUIRED');
       const { data: deleted, error } = await service.rpc('service_conscience_delete_entry', {
         p_user_id: user.id,
         p_session_id: sessionId,
@@ -380,6 +382,9 @@ Deno.serve(async (req) => {
     }
     if (code === 'CLIENT_IDENTITY_FORBIDDEN') {
       return privateJson({ ok: false, error: 'L’identité du compte ne peut pas être fournie par le client.', code }, 400);
+    }
+    if (code === 'VAULT_DELETE_CONFIRMATION_REQUIRED') {
+      return privateJson({ ok: false, error: 'La suppression définitive doit être confirmée explicitement.', code }, 409);
     }
     if (code === 'VAULT_TTL_INVALID' || code === 'VAULT_ENTRY_ID_INVALID' || code === 'VAULT_ENTRY_TYPE_INVALID' || code === 'VAULT_ENTRY_CONTENT_INVALID') {
       return privateJson({ ok: false, error: 'Données de coffre invalides.', code }, 400);
