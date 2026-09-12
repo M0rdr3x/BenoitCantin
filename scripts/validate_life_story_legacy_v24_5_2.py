@@ -160,7 +160,13 @@ def main() -> int:
         'create_delivery_links', 'crypto.getRandomValues(new Uint8Array(32))',
         'token_hash', 'max_downloads: 3',
         "transport: 'manual_or_future_sender'",
+        "req.headers.get('content-type')", ".split(';', 1)[0]",
+        "contentType !== 'application/json'", "'UNSUPPORTED_MEDIA_TYPE'", '415',
     ], 'Edge export')
+    content_type_gate = export.find("contentType !== 'application/json'")
+    body_read = export.find('await req.text()')
+    if content_type_gate < 0 or body_read < 0 or content_type_gate > body_read:
+        errors.append('Edge export: le Content-Type JSON doit être vérifié avant toute lecture du corps.')
     forbid(errors, export, REGISTRY_MARKERS, 'Edge export')
     if ".from('life_story_entries')" in export or '.from("life_story_entries")' in export:
         errors.append('Edge export: le générateur doit lire uniquement l’instantané serveur, pas les souvenirs sources.')
