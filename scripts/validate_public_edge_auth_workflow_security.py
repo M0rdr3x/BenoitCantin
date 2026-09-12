@@ -11,6 +11,7 @@ CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
 SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 PYTHON_VERSION = '3.12.14'
 GET_DOCUMENT_TRIGGER = "      - 'scripts/validate_get_document_url_security.py'\n"
+GET_PRIVATE_BOOK_TRIGGER = "      - 'scripts/validate_get_private_book_url_security.py'\n"
 SEND_GAME_REPORT_TRIGGER = "      - 'scripts/validate_send_game_report_security.py'\n"
 SEND_PLAYER_SHEET_TRIGGER = "      - 'scripts/validate_send_player_sheet_security.py'\n"
 ADMIN_REPORTS_TRIGGER = "      - 'scripts/validate_admin_reports_request_security.py'\n"
@@ -65,6 +66,8 @@ def validate_text(text: str) -> list[str]:
         'python scripts/validate_public_edge_auth.py',
         'python scripts/validate_get_document_url_security.py --self-test',
         'python scripts/validate_get_document_url_security.py\n',
+        'python scripts/validate_get_private_book_url_security.py --self-test',
+        'python scripts/validate_get_private_book_url_security.py\n',
         'python scripts/validate_send_game_report_security.py --self-test',
         'python scripts/validate_send_game_report_security.py\n',
         'python scripts/validate_send_player_sheet_security.py --self-test',
@@ -96,6 +99,7 @@ def validate_text(text: str) -> list[str]:
     for marker in required:
         require(errors, marker in text, f'contrôle CI obligatoire absent: {marker.strip()}')
     require(errors, text.count(GET_DOCUMENT_TRIGGER) == 2, 'le validateur get-document-url doit déclencher le workflow sur pull_request et push')
+    require(errors, text.count(GET_PRIVATE_BOOK_TRIGGER) == 2, 'le validateur Livre I privé doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(SEND_GAME_REPORT_TRIGGER) == 2, 'le validateur send-game-report doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(SEND_PLAYER_SHEET_TRIGGER) == 2, 'le validateur send-player-sheet doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(ADMIN_REPORTS_TRIGGER) == 2, 'le validateur admin-reports doit déclencher le workflow sur pull_request et push')
@@ -124,6 +128,9 @@ def run_self_tests(text: str) -> None:
         'auto-test get-document-url retiré': text.replace('        run: python scripts/validate_get_document_url_security.py --self-test\n', '', 1),
         'contrôle get-document-url retiré': text.replace('        run: python scripts/validate_get_document_url_security.py\n', '', 1),
         'déclencheur get-document-url retiré': text.replace(GET_DOCUMENT_TRIGGER, '', 1),
+        'auto-test Livre I retiré': text.replace('        run: python scripts/validate_get_private_book_url_security.py --self-test\n', '', 1),
+        'contrôle Livre I retiré': text.replace('        run: python scripts/validate_get_private_book_url_security.py\n', '', 1),
+        'déclencheur Livre I retiré': text.replace(GET_PRIVATE_BOOK_TRIGGER, '', 1),
         'auto-test send-game-report retiré': text.replace('        run: python scripts/validate_send_game_report_security.py --self-test\n', '', 1),
         'contrôle send-game-report retiré': text.replace('        run: python scripts/validate_send_game_report_security.py\n', '', 1),
         'déclencheur send-game-report retiré': text.replace(SEND_GAME_REPORT_TRIGGER, '', 1),
