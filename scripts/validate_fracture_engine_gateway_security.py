@@ -136,7 +136,7 @@ def self_test() -> None:
         raise AssertionError('Le cas réel sain doit passer: ' + ' | '.join(clean))
 
     source_mutations = {
-        'content-type retiré': source.replace("    return {response:privateJson({ok:false,error:'Content-Type application/json requis.',gateway_version:GATEWAY_VERSION},415)};\n", '', 1),
+        'content-type retiré': source.replace("contentType.startsWith('application/json')", "contentType.startsWith('text/plain')", 1),
         'req.json direct': source.replace('const raw=await req.text();', 'const raw=JSON.stringify(await req.json());', 1),
         'mesure UTF-8 retirée': source.replace('new TextEncoder().encode(raw).byteLength', 'raw.length', 1),
         'limite augmentée': source.replace('MAX_BODY_BYTES=32_000;', 'MAX_BODY_BYTES=320_000;', 1),
