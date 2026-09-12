@@ -230,7 +230,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 23 fonctions canoniques, JWT/custom auth cohérents, porte Livre I entitlement privée, actions sensibles bornées/no-store, corps contribution bornés pendant la lecture, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 23 fonctions canoniques, JWT/custom auth cohérents, porte Livre I entitlement privée, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
