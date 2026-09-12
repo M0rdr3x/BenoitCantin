@@ -82,13 +82,21 @@ def main()->int:
                 dormant_errors.append(f'{path.relative_to(ROOT)}: IA distante sans REMOTE_AI_ENABLED=false')
     if dormant_errors:raise AssertionError('Intégrations externes préparées mais non verrouillées:\n- '+'\n- '.join(dormant_errors))
 
-    # Contrat renforcé sur les quatre chemins historiques connus.
+    # Contrat renforcé sur les chemins historiques connus. Les trois implémentations
+    # legacy restent verrouillées par marqueurs exacts; Fracture utilise désormais un
+    # formatage lisible, donc son contrat est vérifié sémantiquement par regex afin de
+    # ne jamais confondre espaces de style et activation d'un fournisseur payant.
     for path,markers in {
         'supabase/functions/send-game-report/index.ts':['const PAID_EXTERNAL_SERVICES_ENABLED=false','PAID_EXTERNAL_SERVICE_DISABLED'],
         'supabase/functions/send-player-sheet/index.ts':['const PAID_EXTERNAL_SERVICES_ENABLED=false','PAID_EXTERNAL_SERVICE_DISABLED'],
-        'supabase/functions/submit-fracture-endgame/index.ts':['const PAID_EXTERNAL_SERVICES_ENABLED=false','if(PAID_EXTERNAL_SERVICES_ENABLED&&resend&&from)'],
         'supabase/functions/submit-character-questionnaire/index.ts':['const PAID_EXTERNAL_SERVICES_ENABLED=false','const REMOTE_AI_ENABLED=false','if(!REMOTE_AI_ENABLED)return null','if(!PAID_EXTERNAL_SERVICES_ENABLED)return']
     }.items():require(text(path),markers,path)
+
+    fracture=text('supabase/functions/submit-fracture-endgame/index.ts')
+    if not re.search(r'const\s+PAID_EXTERNAL_SERVICES_ENABLED\s*=\s*false\s*;',fracture):
+        raise AssertionError('submit-fracture-endgame: PAID_EXTERNAL_SERVICES_ENABLED doit rester compilé à false.')
+    if not re.search(r'if\s*\(\s*PAID_EXTERNAL_SERVICES_ENABLED\s*&&\s*resend\s*&&\s*from\s*\)',fracture):
+        raise AssertionError('submit-fracture-endgame: le transport Resend doit rester conditionné par le verrou payant explicite.')
 
     # Aucun workflow ne doit synchroniser de secret d'IA distante. La présence éventuelle
     # d'un ancien secret courriel ne peut pas activer les fonctions car les verrous serveur
