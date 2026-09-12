@@ -29,6 +29,16 @@ function privateJson(data: unknown, status = 200) {
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
+  const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
+  if (contentType !== 'application/json') {
+    return {
+      response: privateJson(
+        { ok: false, error: 'Content-Type application/json requis.', code: 'UNSUPPORTED_MEDIA_TYPE' },
+        415,
+      ),
+    };
+  }
+
   const rawLength = req.headers.get('content-length');
   if (rawLength) {
     const declared = Number(rawLength);
