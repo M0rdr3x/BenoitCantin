@@ -127,7 +127,7 @@ def main() -> int:
     if 'await req.text()' in delivery or '.json()' in delivery:
         errors.append('La remise ne doit pas matérialiser un corps non borné via req.text()/req.json().')
     content_type_pos = delivery.find("if (type !== 'application/json')")
-    body_pos = delivery.find('req.body?.getReader()')
+    body_pos = delivery.find('rawBody = await readBoundedBody(req)')
     if content_type_pos < 0 or body_pos < 0 or content_type_pos > body_pos:
         errors.append('Le media type JSON exact doit être validé avant toute lecture du corps.')
     if "searchparams.get('token')" in delivery.lower() or 'searchparams.get("token")' in delivery.lower():
