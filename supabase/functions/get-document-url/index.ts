@@ -93,7 +93,8 @@ Deno.serve(async(req)=>{
   try{
     const parsed=await readLimitedJson(req);
     if(parsed.response)return parsed.response;
-    const document_id=parsed.body!.document_id.trim();
+    const documentIdValue=parsed.body?.document_id;
+    const document_id=typeof documentIdValue==='string'?documentIdValue.trim():'';
     if(!UUID_RE.test(document_id))return privateJson({ok:false,error:'Document manquant ou invalide.'},400);
 
     const service=serviceClient(),user=await optionalUser(req);
