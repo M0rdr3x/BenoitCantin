@@ -77,8 +77,11 @@ Deno.serve(async (req) => {
     const requestUrl = new URL(req.url);
     if (requestUrl.search) return errorResponse(req, 400);
 
-    const type = (req.headers.get('content-type') || '').toLowerCase();
-    if (!type.startsWith('application/json')) return errorResponse(req, 415);
+    const type = (req.headers.get('content-type') || '')
+      .split(';', 1)[0]
+      .trim()
+      .toLowerCase();
+    if (type !== 'application/json') return errorResponse(req, 415);
     const declaredLength = Number(req.headers.get('content-length') || '0');
     if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BYTES) return errorResponse(req, 413);
 
