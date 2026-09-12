@@ -35,9 +35,34 @@ async function readLimitedJson(req: Request) {
     }
   }
 
-  const raw = await req.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
-    throw new Error('REQUEST_TOO_LARGE');
+  const reader = req.body?.getReader();
+  if (!reader) return {};
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    total += value.byteLength;
+    if (total > MAX_REQUEST_BYTES) {
+      try { await reader.cancel(); } catch { /* Le rejet de taille reste prioritaire. */ }
+      throw new Error('REQUEST_TOO_LARGE');
+    }
+    chunks.push(value);
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  let raw: string;
+  try {
+    raw = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    throw new Error('INVALID_JSON');
   }
   if (!raw.trim()) return {};
 
@@ -139,10 +164,10 @@ Deno.serve(async (req) => {
     if (error?.message === 'ADMIN_REQUIRED') return privateJson({ ok: false, error: 'Accès administrateur refusé.', code: 'ADMIN_REQUIRED' }, 403);
     if (error?.message === 'MFA_REQUIRED') return privateJson({ ok: false, error: 'MFA_REQUIRED', code: 'MFA_REQUIRED' }, 403);
     if (error?.message === 'MFA_STATE_UNAVAILABLE') return privateJson({ ok: false, error: 'État MFA temporairement indisponible.', code: 'MFA_STATE_UNAVAILABLE' }, 503);
-    if (error?.message === 'REQUEST_TOO_LARGE') return privateJson({ ok: false, error: 'Requête trop volumineuse.', code: 'REQUEST_TOO_LARGE' }, 413);
-    if (error?.message === 'JSON_REQUIRED') return privateJson({ ok: false, error: 'Corps JSON requis.', code: 'JSON_REQUIRED' }, 415);
-    if (error?.message === 'INVALID_JSON') return privateJson({ ok: false, error: 'JSON invalide.', code: 'INVALID_JSON' }, 400);
-    if (error?.message === 'INVALID_GAME_SLUG') return privateJson({ ok: false, error: 'Identifiant de jeu invalide.', code: 'INVALID_GAME_SLUG' }, 400);
-    return privateJson({ ok: false, error: 'Erreur d’analyse.', code: 'ANALYTICS_FAILED' }, 500);
+    if (error?.message === 'REQUEST_TOO_LARGE') return privateJson({ ok: false, error: 'Requête trop volumineuse.', code:'REQUEST_TOO_LARGE' }, 413);
+    if (error?.message === 'JSON_REQUIRED') return privateJson({ ok: false, error: 'Corps JSON requis.', code:'JSON_REQUIRED' }, 415);
+    if (error?.message === 'INVALID_JSON') return privateJson({ ok: false, error: 'JSON invalide.', code:'INVALID_JSON' }, 400);
+    if (error?.message === 'INVALID_GAME_SLUG') return privateJson({ ok: false, error: 'Identifiant de jeu invalide.', code:'INVALID_GAME_SLUG' }, 400);
+    return privateJson({ ok: false, error: 'Erreur d’analyse.', code:'ANALYTICS_FAILED' }, 500);
   }
 });
