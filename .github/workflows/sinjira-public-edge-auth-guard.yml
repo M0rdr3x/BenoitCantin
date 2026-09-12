@@ -11,6 +11,7 @@ on:
       - 'scripts/validate_public_edge_auth_workflow_security.py'
       - 'scripts/validate_get_document_url_security.py'
       - 'scripts/validate_send_game_report_security.py'
+      - 'scripts/validate_send_player_sheet_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
       - 'scripts/validate_admin_reports_request_security.py'
@@ -33,6 +34,7 @@ on:
       - 'scripts/validate_public_edge_auth_workflow_security.py'
       - 'scripts/validate_get_document_url_security.py'
       - 'scripts/validate_send_game_report_security.py'
+      - 'scripts/validate_send_player_sheet_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
       - 'scripts/validate_admin_reports_request_security.py'
@@ -75,6 +77,10 @@ jobs:
         run: python scripts/validate_send_game_report_security.py --self-test
       - name: Vérifier la frontière publique de send-game-report
         run: python scripts/validate_send_game_report_security.py
+      - name: Auto-tester send-player-sheet
+        run: python scripts/validate_send_player_sheet_security.py --self-test
+      - name: Vérifier la frontière privée de send-player-sheet
+        run: python scripts/validate_send_player_sheet_security.py
       - name: Auto-tester le contrat d’activation licence
         run: python scripts/validate_license_redemption_security.py --self-test
       - name: Vérifier l’activation sécurisée des licences
