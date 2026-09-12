@@ -58,8 +58,18 @@ begin
 
   -- Réparation idempotente des anciennes finalisations partielles :
   -- si la contribution existe déjà, on termine seulement les marqueurs manquants.
+  -- Une partie archivée est un état humain/terminal intentionnel et ne doit jamais
+  -- être rétrogradée vers "finished" par une simple répétition de requête.
   if v_contribution_id is not null then
-    v_repaired := v_report.submitted_at is null or v_party.status <> 'finished';
+    if v_party.status = 'archived' then
+      return jsonb_build_object(
+        'contribution_id', v_contribution_id,
+        'already_submitted', true,
+        'repaired_partial_state', false
+      );
+    end if;
+
+    v_repaired := v_report.submitted_at is null or v_party.status = 'in_progress';
 
     update public.fracture_endgame_reports
     set submitted_at = coalesce(submitted_at, now())
@@ -67,7 +77,7 @@ begin
 
     update public.fracture_parties
     set status = 'finished'
-    where id = p_party_id;
+    where id = p_party_id and status = 'in_progress';
 
     update public.game_sessions
     set status = 'finished', finished_at = coalesce(finished_at, now())
@@ -127,4 +137,4 @@ grant execute on function public.service_submit_fracture_endgame(uuid,uuid,times
 to service_role;
 
 comment on function public.service_submit_fracture_endgame(uuid,uuid,timestamptz,uuid,timestamptz,jsonb,jsonb) is
-  'Finalisation transactionnelle service_role de Fracture: contribution interne et états rapport/partie/sessions, avec réparation idempotente des anciennes écritures partielles.';
+  'Finalisation transactionnelle service_role de Fracture: contribution interne et états rapport/partie/sessions, avec réparation idempotente des anciennes écritures partielles sans modifier une partie archivée.';
