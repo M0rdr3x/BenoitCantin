@@ -11,9 +11,11 @@ EDGE = ROOT / 'supabase/functions/get-document-url/index.ts'
 
 REQUIRED = {
     'POST uniquement': "req.method!=='POST'",
-    'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture bornée par texte': 'const raw=await req.text();',
-    'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'normalisation MIME exacte': ".split(';',1)[0].trim().toLowerCase()",
+    'JSON exact': "contentType!=='application/json'",
+    'lecture bornée par flux': 'req.body?.getReader()',
+    'annulation au dépassement': 'reader.cancel()',
+    'décodage UTF-8 strict': "new TextDecoder('utf-8',{fatal:true})",
     'UUID strict': 'const UUID_RE=',
     'document_id chaîne uniquement': "typeof parsed.body?.document_id==='string'",
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
@@ -36,6 +38,8 @@ REQUIRED_PATTERNS = {
 
 FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
+    'texte intégral avant borne': 'await req.text()',
+    'MIME JSON par préfixe': "startsWith('application/json')",
     'coercition arbitraire document_id': "String(parsed.body?.document_id",
     'objet erreur brut': 'console.error(e)',
     'objet error brut': 'console.error(error)',
@@ -87,10 +91,20 @@ const PRIVATE_JSON_HEADERS={
 function privateJson(data,status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_JSON_HEADERS});}
 function externalUrlAllowed(url){return true;}
 async function readLimitedJson(req){
- const contentType=(req.headers.get('content-type')||'').toLowerCase();
- if(!contentType.startsWith('application/json')) return {response:privateJson({},415)};
- const raw=await req.text();
- if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)return {response:privateJson({},413)};
+ const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+ if(contentType!=='application/json') return {response:privateJson({},415)};
+ const reader=req.body?.getReader();
+ if(!reader)return {body:{}};
+ const chunks=[]; let total=0;
+ while(true){
+  const {done,value}=await reader.read(); if(done)break; if(!value)continue;
+  total+=value.byteLength;
+  if(total>MAX_REQUEST_BYTES){try{await reader.cancel()}catch{} return {response:privateJson({},413)}}
+  chunks.push(value);
+ }
+ const bytes=new Uint8Array(total); let offset=0;
+ for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
+ const raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
  return {body:JSON.parse(raw||'{}')};
 }
 Deno.serve(async(req)=>{
@@ -121,8 +135,10 @@ Deno.serve(async(req)=>{
 
         mutations = {
             'limite augmentée': safe.replace('MAX_REQUEST_BYTES=512;', 'MAX_REQUEST_BYTES=8192;'),
-            'type JSON retiré': safe.replace("if(!contentType.startsWith('application/json')) return {response:privateJson({},415)};", ''),
-            'req.json direct': safe.replace('const raw=await req.text();', 'const body=await req.json();'),
+            'MIME JSON par préfixe': safe.replace("if(contentType!=='application/json')", "if(!contentType.startsWith('application/json'))"),
+            'req.text intégral': safe.replace(' const reader=req.body?.getReader();', ' const raw=await req.text();'),
+            'req.json direct': safe.replace(' const reader=req.body?.getReader();', ' const body=await req.json();'),
+            'annulation retirée': safe.replace('try{await reader.cancel()}catch{} ', ''),
             'coercition document_id': safe.replace("typeof parsed.body?.document_id==='string'?parsed.body.document_id.trim():''", "String(parsed.body?.document_id||'').trim()"),
             'no-store retiré': safe.replace(" 'Cache-Control':'private, no-store, max-age=0',\n", ''),
             'TTL signé augmenté': safe.replace('createSignedUrl(doc.storage_path,600)', 'createSignedUrl(doc.storage_path,3600)'),
@@ -150,7 +166,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK get-document-url: POST JSON 512 octets, UUID typé, réponses no-store, accès serveur conservé, lien signé 600 s et logs sanitizés.')
+    print('OK get-document-url: POST JSON exact, 512 octets bornés pendant la lecture, UUID typé, réponses no-store, accès serveur conservé, lien signé 600 s et logs sanitizés.')
     return 0
 
 
