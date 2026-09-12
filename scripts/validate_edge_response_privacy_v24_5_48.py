@@ -35,7 +35,10 @@ def main()->int:
 
     report_markers=[
         'MAX_REQUEST_BYTES=220_000',
-        'TextEncoder().encode(raw).byteLength',
+        'req.body?.getReader()',
+        'reader.cancel()',
+        "new TextDecoder('utf-8',{fatal:true})",
+        "contentType!=='application/json'",
         "'Cache-Control': 'private, no-store, max-age=0'",
         "'Referrer-Policy': 'no-referrer'",
         "'X-Content-Type-Options': 'nosniff'",
@@ -59,7 +62,10 @@ def main()->int:
 
     doc_markers=[
         'UUID_RE=',
-        'TextEncoder().encode(raw).byteLength',
+        'req.body?.getReader()',
+        'reader.cancel()',
+        "new TextDecoder('utf-8',{fatal:true})",
+        "contentType!=='application/json'",
         "doc.status!=='approved'",
         "doc.projects?.status!=='active'",
         'externalUrlAllowed',
@@ -72,6 +78,11 @@ def main()->int:
     ]
     for marker in doc_markers:
         if marker not in docurl: errors.append(f'get-document-url: garde-fou absent: {marker}')
+
+    for slug, source in (('send-game-report',report),('get-document-url',docurl)):
+        for forbidden in ('await req.text()', 'await req.json()', "startsWith('application/json')"):
+            if forbidden in source:
+                errors.append(f'{slug}: lecture non bornée ou MIME JSON par préfixe interdit: {forbidden}')
 
     if ".select('*" in docurl_low or ".select(\"*" in docurl_low:
         errors.append('get-document-url ne doit plus sélectionner toutes les colonnes du document.')
@@ -106,7 +117,7 @@ def main()->int:
         print(f'ECHEC V24.5.48 confidentialité Edge: {len(errors)} problème(s).')
         for error in errors: print('- '+error)
         return 1
-    print('OK V24.5.48: liens signés et PDF no-store, taille réelle bornée, URL sûres, services payants désactivés et aucune migration V24.5.48.')
+    print('OK V24.5.48: liens signés et PDF no-store, corps bornés pendant la lecture avec MIME JSON exact, URL sûres, services payants désactivés et aucune migration V24.5.48.')
     return 0
 
 if __name__=='__main__':
