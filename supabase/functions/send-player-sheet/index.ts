@@ -141,6 +141,7 @@ Deno.serve(async(req)=>{
     const filename=mode==='solo'?'SINJIRA_Fracture_Mode_Solo_3_Joueurs.pdf':'SINJIRA_Fracture_Fiche_Joueur.pdf';
     const sent=await fetch('https://api.resend.com/emails',{
       method:'POST',
+      redirect:'error',
       headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},
       body:JSON.stringify({
         from,
