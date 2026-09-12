@@ -48,8 +48,11 @@ async function readBoundedJson(req: Request) {
   const bytes = new Uint8Array(total);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  let raw: string;
+  try { raw = new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+  catch { throw new Error('INVALID_JSON'); }
   try {
-    const parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error();
     return parsed as Record<string, unknown>;
   } catch { throw new Error('INVALID_JSON'); }
