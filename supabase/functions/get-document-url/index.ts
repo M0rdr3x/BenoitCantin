@@ -98,7 +98,7 @@ Deno.serve(async(req)=>{
         const {data:accessRank}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
         const normalizedRank=Number(accessRank??0);
         if(!Number.isFinite(normalizedRank)||normalizedRank<0){
-          console.error('[get-document-url]',{code:'INVALID_PROJECT_ACCESS_RANK',projectId:doc.project_id,userId:user.id});
+          console.error('[get-document-url]',{code:'INVALID_PROJECT_ACCESS_RANK'});
           return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
         }
         userRank=normalizedRank;
