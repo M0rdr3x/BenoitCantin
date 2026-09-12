@@ -19,6 +19,8 @@ ADMIN_V18_TRIGGER = "      - 'scripts/validate_admin_sinjira_v18_request_securit
 ADMIN_ANALYTICS_TRIGGER = "      - 'scripts/validate_admin_analytics_request_security.py'\n"
 ADMIN_USERS_TRIGGER = "      - 'scripts/validate_admin_users_privacy.py'\n"
 CHARACTER_QUESTIONNAIRE_TRIGGER = "      - 'scripts/validate_character_questionnaire_security.py'\n"
+FRACTURE_ENDGAME_TRIGGER = "      - 'scripts/validate_fracture_endgame_atomic_security.py'\n"
+FRACTURE_ENDGAME_MIGRATION_TRIGGER = "      - 'supabase/migrations/20260911225500_sinjira_v25_fracture_endgame_atomic_submit.sql'\n"
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -81,6 +83,8 @@ def validate_text(text: str) -> list[str]:
         'python scripts/validate_admin_users_privacy.py\n',
         'python scripts/validate_character_questionnaire_security.py --self-test',
         'python scripts/validate_character_questionnaire_security.py\n',
+        'python scripts/validate_fracture_endgame_atomic_security.py --self-test',
+        'python scripts/validate_fracture_endgame_atomic_security.py\n',
         "- 'scripts/validate_public_edge_auth_workflow_security.py'",
     ]
     for marker in required:
@@ -94,6 +98,8 @@ def validate_text(text: str) -> list[str]:
     require(errors, text.count(ADMIN_ANALYTICS_TRIGGER) == 2, 'le validateur admin-analytics doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(ADMIN_USERS_TRIGGER) == 2, 'le validateur admin-users doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(CHARACTER_QUESTIONNAIRE_TRIGGER) == 2, 'le validateur questionnaire Registre doit déclencher le workflow sur pull_request et push')
+    require(errors, text.count(FRACTURE_ENDGAME_TRIGGER) == 2, 'le validateur fin de partie Fracture doit déclencher le workflow sur pull_request et push')
+    require(errors, text.count(FRACTURE_ENDGAME_MIGRATION_TRIGGER) == 2, 'la migration atomique Fracture doit déclencher le workflow sur pull_request et push')
     return errors
 
 
@@ -134,6 +140,10 @@ def run_self_tests(text: str) -> None:
         'auto-test questionnaire retiré': text.replace('        run: python scripts/validate_character_questionnaire_security.py --self-test\n', '', 1),
         'contrôle questionnaire retiré': text.replace('        run: python scripts/validate_character_questionnaire_security.py\n', '', 1),
         'déclencheur questionnaire retiré': text.replace(CHARACTER_QUESTIONNAIRE_TRIGGER, '', 1),
+        'auto-test fin Fracture retiré': text.replace('        run: python scripts/validate_fracture_endgame_atomic_security.py --self-test\n', '', 1),
+        'contrôle fin Fracture retiré': text.replace('        run: python scripts/validate_fracture_endgame_atomic_security.py\n', '', 1),
+        'déclencheur validateur fin Fracture retiré': text.replace(FRACTURE_ENDGAME_TRIGGER, '', 1),
+        'déclencheur migration fin Fracture retiré': text.replace(FRACTURE_ENDGAME_MIGRATION_TRIGGER, '', 1),
     }
     for name, mutated in cases.items():
         if mutated == text:
