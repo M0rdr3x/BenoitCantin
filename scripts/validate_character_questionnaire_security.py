@@ -17,7 +17,13 @@ REQUIRED = {
     'auth utilisateur explicite': 'requiredUser(req)',
     'lecture JSON bornée': 'readBoundedJson(req)',
     'content-type JSON strict': "if(contentType!=='application/json')throw new Error('JSON_REQUIRED');",
-    'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'Content-Length numérique strict': "!/^\\d+$/.test(normalizedLength)",
+    'Content-Length entier sûr': '!Number.isSafeInteger(declared)',
+    'corps obligatoire': "if(!req.body)throw new Error('INVALID_JSON');",
+    'lecture par flux': 'req.body.getReader()',
+    'annulation au dépassement': 'reader.cancel()',
+    'borne pendant le flux': 'if(total>MAX_REQUEST_BYTES)',
+    'UTF-8 strict': "new TextDecoder('utf-8',{fatal:true})",
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
     'nosniff': "'X-Content-Type-Options':'nosniff'",
@@ -48,6 +54,7 @@ REQUIRED = {
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
+    'lecture texte intégrale non bornée': 'await req.text()',
     'helper JSON générique': 'return json(',
     'import helper JSON générique': 'corsHeaders,json',
     'log erreur principal brut': 'console.error(e)',
@@ -86,6 +93,13 @@ def validate(path: Path) -> list[str]:
     elif auth_pos > body_pos:
         errors.append('Le questionnaire ne doit pas être lu avant auth/JWT/MFA.')
 
+    reader_pos = source.find('req.body.getReader()')
+    bound_pos = source.find('if(total>MAX_REQUEST_BYTES)', reader_pos)
+    decode_pos = source.find("new TextDecoder('utf-8',{fatal:true})", bound_pos)
+    parse_pos = source.find("JSON.parse(raw||'{}')", decode_pos)
+    if reader_pos < 0 or bound_pos < reader_pos or decode_pos < bound_pos or parse_pos < decode_pos:
+        errors.append('Le questionnaire doit borner le flux avant décodage UTF-8 strict et parsing JSON.')
+
     state_check = source.find("if(submissionResult.error||characterResult.error)throw new Error('CHARACTER_STATE_LOOKUP_FAILED');")
     uniqueness = source.find("code:'ONE_CHARACTER_PER_ACCOUNT'")
     if state_check < 0 or uniqueness < 0 or state_check > uniqueness:
@@ -108,7 +122,11 @@ def self_test() -> None:
 
     cases = {
         'json direct': real.replace('const body=await readBoundedJson(req);', 'const body=await req.json();', 1),
+        'texte intégral': real.replace('const reader=req.body.getReader();', 'const unsafe=await req.text();\n  const reader=req.body.getReader();', 1),
         'content-type retiré': real.replace("  if(contentType!=='application/json')throw new Error('JSON_REQUIRED');\n", '', 1),
+        'Content-Length permissif': real.replace("    if(!/^\\d+$/.test(normalizedLength))throw new Error('REQUEST_TOO_LARGE');\n", '', 1),
+        'annulation retirée': real.replace('        try{await reader.cancel()}catch{/* Le rejet de taille reste prioritaire. */}\n', '', 1),
+        'UTF-8 permissif': real.replace("new TextDecoder('utf-8',{fatal:true})", "new TextDecoder('utf-8')", 1),
         'no-store retiré': real.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),
         'limite HTTP augmentée': real.replace('MAX_REQUEST_BYTES=2*1024*1024;', 'MAX_REQUEST_BYTES=20*1024*1024;', 1),
         'limite réponses augmentée': real.replace('MAX_ANSWERS_CHARS=500000;', 'MAX_ANSWERS_CHARS=5000000;', 1),
@@ -156,7 +174,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK questionnaire Registre: auth/MFA avant corps, JSON 2 MiB, réponses privées, unicité fail-closed, IA distante désactivée et canon humain préservé.')
+    print('OK questionnaire Registre: auth/MFA avant corps, JSON exact 2 MiB borné en streaming, UTF-8 strict, réponses privées, unicité fail-closed, IA distante désactivée et canon humain préservé.')
     return 0
 
 
