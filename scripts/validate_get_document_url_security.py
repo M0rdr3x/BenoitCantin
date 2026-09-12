@@ -16,15 +16,23 @@ REQUIRED = {
     'lecture bornée par flux': 'req.body?.getReader()',
     'annulation au dépassement': 'reader.cancel()',
     'décodage UTF-8 strict': "new TextDecoder('utf-8',{fatal:true})",
+    'objet JSON uniquement': 'function isRecord(value:unknown)',
+    'une seule clé JSON': 'Object.keys(body).length!==1',
+    'document_id typé dans le JSON': "typeof body.document_id!=='string'",
     'UUID strict': 'const UUID_RE=',
-    'document_id chaîne uniquement': "typeof parsed.body?.document_id==='string'",
+    'document_id chaîne uniquement': "typeof documentIdValue==='string'",
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options':'nosniff'",
     'référent masqué': "'Referrer-Policy':'no-referrer'",
     'auth optionnelle': 'optionalUser(req)',
     'document approuvé': "doc.status!=='approved'",
     'projet actif': "doc.projects?.status!=='active'",
+    'admin booléen exact': 'if(isAdmin===true)userRank=100;',
     'rang projet serveur': "service.rpc('project_access_rank'",
+    'rang projet numérique': 'Number.isFinite(normalizedRank)',
+    'rang projet non négatif': 'normalizedRank<0',
+    'niveau inconnu refusé': '(ranks[doc.access_level]??999)',
+    'storage path typé': "typeof doc.storage_path!=='string'",
     'validation URL externe': 'externalUrlAllowed(url)',
     'lien signé 600 secondes': 'createSignedUrl(doc.storage_path,600)',
     'TTL réponse 600 secondes': 'expires_in:600',
@@ -41,6 +49,8 @@ FORBIDDEN = {
     'texte intégral avant borne': 'await req.text()',
     'MIME JSON par préfixe': "startsWith('application/json')",
     'coercition arbitraire document_id': "String(parsed.body?.document_id",
+    'admin truthy permissif': 'if(isAdmin)userRank=100',
+    'rang RPC coercé sans validation': 'Number(accessRank||0)',
     'objet erreur brut': 'console.error(e)',
     'objet error brut': 'console.error(error)',
     'message erreur brut': 'error.message',
@@ -71,6 +81,11 @@ def validate(path: Path) -> list[str]:
     if read_pos < 0 or lookup_pos < 0 or read_pos > lookup_pos:
         errors.append('La requête doit être validée avant toute lecture de documents via service role.')
 
+    rank_validation_pos = source.find('Number.isFinite(normalizedRank)')
+    rank_assignment_pos = source.find('userRank=normalizedRank')
+    if rank_validation_pos < 0 or rank_assignment_pos < 0 or rank_validation_pos > rank_assignment_pos:
+        errors.append('Le rang projet doit être validé avant son utilisation dans la décision ACL.')
+
     signed_pos = source.find('createSignedUrl(doc.storage_path,600)')
     response_ttl_pos = source.find('expires_in:600', signed_pos)
     if signed_pos < 0 or response_ttl_pos < signed_pos:
@@ -83,6 +98,7 @@ def self_test() -> None:
     safe = """
 const MAX_REQUEST_BYTES=512;
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ranks={public:1,account:10,player:20,tester:30,admin:100};
 const PRIVATE_JSON_HEADERS={
  'Cache-Control':'private, no-store, max-age=0',
  'X-Content-Type-Options':'nosniff',
@@ -90,11 +106,12 @@ const PRIVATE_JSON_HEADERS={
 };
 function privateJson(data,status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_JSON_HEADERS});}
 function externalUrlAllowed(url){return true;}
+function isRecord(value:unknown){return !!value&&typeof value==='object'&&!Array.isArray(value);}
 async function readLimitedJson(req){
  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
  if(contentType!=='application/json') return {response:privateJson({},415)};
  const reader=req.body?.getReader();
- if(!reader)return {body:{}};
+ if(!reader)return {response:privateJson({},400)};
  const chunks=[]; let total=0;
  while(true){
   const {done,value}=await reader.read(); if(done)break; if(!value)continue;
@@ -105,19 +122,35 @@ async function readLimitedJson(req){
  const bytes=new Uint8Array(total); let offset=0;
  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
  const raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
- return {body:JSON.parse(raw||'{}')};
+ let body:unknown; try{body=JSON.parse(raw)}catch{return {response:privateJson({},400)}}
+ if(!isRecord(body)||Object.keys(body).length!==1||typeof body.document_id!=='string')return {response:privateJson({},400)};
+ return {body};
 }
 Deno.serve(async(req)=>{
  if(req.method!=='POST')return privateJson({},405);
  try{
   const parsed=await readLimitedJson(req);
-  const document_id=typeof parsed.body?.document_id==='string'?parsed.body.document_id.trim():'';
+  const documentIdValue=parsed.body?.document_id;
+  const document_id=typeof documentIdValue==='string'?documentIdValue.trim():'';
   if(!UUID_RE.test(document_id))return privateJson({},400);
   const service=serviceClient(),user=await optionalUser(req);
-  const {data:doc}=await service.from('documents').select('status,projects(status)').eq('id',document_id).maybeSingle();
+  const {data:doc}=await service.from('documents').select('project_id,status,access_level,storage_bucket,storage_path,projects(status)').eq('id',document_id).maybeSingle();
   if(doc.status!=='approved'||doc.projects?.status!=='active')return privateJson({},404);
-  await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user?.id});
+  let userRank=0;
+  if(user){
+   const {data:isAdmin}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
+   if(isAdmin===true)userRank=100;
+   else{
+    const {data:accessRank}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
+    const normalizedRank=Number(accessRank??0);
+    if(!Number.isFinite(normalizedRank)||normalizedRank<0)return privateJson({},403);
+    userRank=normalizedRank;
+   }
+  }
+  const requiredRank=typeof doc.access_level==='string'?(ranks[doc.access_level]??999):999;
+  if(userRank<requiredRank)return privateJson({},403);
   const url='https://example.test'; if(!externalUrlAllowed(url))return privateJson({},500);
+  if(!doc.storage_bucket||typeof doc.storage_path!=='string'||!doc.storage_path)return privateJson({},500);
   const signed=await service.storage.from('x').createSignedUrl(doc.storage_path,600);
   return privateJson({ok:true,url:signed.signedUrl,expires_in:600});
  }catch{
@@ -139,7 +172,12 @@ Deno.serve(async(req)=>{
             'req.text intégral': safe.replace(' const reader=req.body?.getReader();', ' const raw=await req.text();'),
             'req.json direct': safe.replace(' const reader=req.body?.getReader();', ' const body=await req.json();'),
             'annulation retirée': safe.replace('try{await reader.cancel()}catch{} ', ''),
-            'coercition document_id': safe.replace("typeof parsed.body?.document_id==='string'?parsed.body.document_id.trim():''", "String(parsed.body?.document_id||'').trim()"),
+            'clé JSON inattendue acceptée': safe.replace('Object.keys(body).length!==1||', ''),
+            'coercition document_id': safe.replace("typeof documentIdValue==='string'?documentIdValue.trim():''", "String(parsed.body?.document_id||'').trim()"),
+            'admin truthy permissif': safe.replace('if(isAdmin===true)userRank=100;', 'if(isAdmin)userRank=100;'),
+            'rang non fini accepté': safe.replace('!Number.isFinite(normalizedRank)||', ''),
+            'fallback niveau inconnu retiré': safe.replace('(ranks[doc.access_level]??999)', 'ranks[doc.access_level]'),
+            'storage path non typé': safe.replace("typeof doc.storage_path!=='string'||", ''),
             'no-store retiré': safe.replace(" 'Cache-Control':'private, no-store, max-age=0',\n", ''),
             'TTL signé augmenté': safe.replace('createSignedUrl(doc.storage_path,600)', 'createSignedUrl(doc.storage_path,3600)'),
             'log brut': safe.replace("}catch{\n  console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});", "}catch(error){\n  console.error(error);"),
@@ -153,7 +191,7 @@ Deno.serve(async(req)=>{
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='Valide la frontière publique de get-document-url.')
+    parser = argparse.ArgumentParser(description='Valide la frontière publique et les décisions ACL de get-document-url.')
     parser.add_argument('--self-test', action='store_true')
     args = parser.parse_args()
     if args.self_test:
@@ -166,7 +204,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK get-document-url: POST JSON exact, 512 octets bornés pendant la lecture, UUID typé, réponses no-store, accès serveur conservé, lien signé 600 s et logs sanitizés.')
+    print('OK get-document-url: POST JSON exact et allowlisté, 512 octets bornés pendant la lecture, UUID typé, ACL fail-closed, réponses no-store, lien signé 600 s et logs sanitizés.')
     return 0
 
 
