@@ -7,6 +7,8 @@ const ALLOWED_ORIGINS = new Set([
   'https://benoitcantin.com',
 ]);
 
+const REQUEST_BODY_TOO_LARGE = 'REQUEST_BODY_TOO_LARGE';
+
 function serverKey() {
   const modern = Deno.env.get('SUPABASE_SECRET_KEYS');
   if (modern) {
@@ -67,6 +69,37 @@ function hasPdfSignature(bytes: ArrayBuffer) {
   const head = new Uint8Array(bytes, 0, 5);
   return String.fromCharCode(...head) === '%PDF-';
 }
+function parseNonNegativeInteger(value: unknown) {
+  if (typeof value === 'number') return Number.isSafeInteger(value) && value >= 0 ? value : null;
+  if (typeof value !== 'string' || !/^\d+$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+async function readRequestBody(req: Request) {
+  if (!req.body) return '';
+  const reader = req.body.getReader();
+  const decoder = new TextDecoder();
+  let totalBytes = 0;
+  let body = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_REQUEST_BYTES) {
+        await reader.cancel();
+        throw new Error(REQUEST_BODY_TOO_LARGE);
+      }
+      body += decoder.decode(value, { stream: true });
+    }
+    body += decoder.decode();
+    return body;
+  } finally {
+    reader.releaseLock();
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return preflight(req);
@@ -77,13 +110,26 @@ Deno.serve(async (req) => {
     const requestUrl = new URL(req.url);
     if (requestUrl.search) return errorResponse(req, 400);
 
-    const type = (req.headers.get('content-type') || '').toLowerCase();
-    if (!type.startsWith('application/json')) return errorResponse(req, 415);
-    const declaredLength = Number(req.headers.get('content-length') || '0');
-    if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BYTES) return errorResponse(req, 413);
+    const type = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
+    if (type !== 'application/json') return errorResponse(req, 415);
 
-    const rawBody = await req.text();
-    if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) return errorResponse(req, 413);
+    const declaredLengthRaw = req.headers.get('content-length');
+    if (declaredLengthRaw !== null) {
+      const normalizedLength = declaredLengthRaw.trim();
+      if (!/^\d+$/.test(normalizedLength)) return errorResponse(req, 400);
+      const declaredLength = Number(normalizedLength);
+      if (!Number.isSafeInteger(declaredLength)) return errorResponse(req, 400);
+      if (declaredLength > MAX_REQUEST_BYTES) return errorResponse(req, 413);
+    }
+
+    let rawBody: string;
+    try {
+      rawBody = await readRequestBody(req);
+    } catch (bodyError) {
+      if (bodyError instanceof Error && bodyError.message === REQUEST_BODY_TOO_LARGE) return errorResponse(req, 413);
+      throw bodyError;
+    }
+
     let payload: unknown;
     try { payload = JSON.parse(rawBody); } catch { return errorResponse(req, 400); }
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return errorResponse(req, 400);
@@ -99,14 +145,23 @@ Deno.serve(async (req) => {
       .select('id,export_id,expires_at,max_downloads,download_count,revoked_at')
       .eq('token_hash', hash)
       .maybeSingle();
-    if (error || !link || link.revoked_at || new Date(link.expires_at).getTime() <= Date.now() || Number(link.download_count) >= Number(link.max_downloads)) return errorResponse(req);
+    if (error || !link) return errorResponse(req);
+
+    const expiresAt = Date.parse(String(link.expires_at ?? ''));
+    const maxDownloads = parseNonNegativeInteger(link.max_downloads);
+    const downloadCount = parseNonNegativeInteger(link.download_count);
+    if (!Number.isFinite(expiresAt) || maxDownloads === null || maxDownloads < 1 || downloadCount === null) {
+      console.error('[life-story-delivery]', { code: 'INVALID_DELIVERY_LINK_METADATA', linkId: link.id });
+      return errorResponse(req);
+    }
+    if (link.revoked_at || expiresAt <= Date.now() || downloadCount >= maxDownloads) return errorResponse(req);
 
     const { data: record, error: exportError } = await service
       .from('life_story_exports')
       .select('status,storage_bucket,storage_path,audience')
       .eq('id', link.export_id)
       .maybeSingle();
-    if (exportError || !record || !['generated', 'delivered'].includes(record.status) || record.storage_bucket !== 'sinjira-life-story-exports' || !record.storage_path) return errorResponse(req);
+    if (exportError || !record || !['generated', 'delivered'].includes(record.status) || record.storage_bucket !== 'sinjira-life-story-exports' || typeof record.storage_path !== 'string' || !record.storage_path) return errorResponse(req);
 
     const { data: file, error: downloadError } = await service.storage.from('sinjira-life-story-exports').download(record.storage_path);
     if (downloadError || !file) return errorResponse(req, 410);
@@ -123,7 +178,7 @@ Deno.serve(async (req) => {
       status: 200,
       headers: {
         ...responseHeaders(req, 'application/pdf'),
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `attachment; filename=\"${filename}\"`,
         'Content-Length': String(bytes.byteLength),
         'Access-Control-Expose-Headers': 'Content-Disposition, Content-Length',
       },
