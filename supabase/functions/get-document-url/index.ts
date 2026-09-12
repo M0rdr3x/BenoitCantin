@@ -2,6 +2,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
 const MAX_REQUEST_BYTES=512;
+const REQUEST_BODY_TOO_LARGE='REQUEST_BODY_TOO_LARGE';
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ranks:Record<string,number>={public:1,account:10,player:20,tester:30,admin:100};
 const PRIVATE_JSON_HEADERS={
@@ -22,23 +23,68 @@ function externalUrlAllowed(value:string){
   try{return new URL(value).protocol==='https:'}catch{return false}
 }
 
-async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+function isRecord(value:unknown):value is Record<string,unknown>{
+  return !!value&&typeof value==='object'&&!Array.isArray(value);
+}
+
+async function readRequestBody(req:Request){
+  if(!req.body)return '';
+  const reader=req.body.getReader();
+  const decoder=new TextDecoder();
+  let totalBytes=0,raw='';
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(!value)continue;
+      totalBytes+=value.byteLength;
+      if(totalBytes>MAX_REQUEST_BYTES){
+        await reader.cancel();
+        throw new Error(REQUEST_BODY_TOO_LARGE);
+      }
+      raw+=decoder.decode(value,{stream:true});
+    }
+    raw+=decoder.decode();
+    return raw;
+  }finally{
+    reader.releaseLock();
+  }
+}
+
+async function readLimitedJson(req:Request):Promise<{body?:Record<string,unknown>;response?:Response}>{
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json'){
     return {response:privateJson({ok:false,error:'Type de contenu non autorisé.'},415)};
   }
   const rawLength=req.headers.get('content-length');
-  if(rawLength){
-    const declared=Number(rawLength);
-    if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES){
+  if(rawLength!==null){
+    const normalized=rawLength.trim();
+    if(!/^\d+$/.test(normalized)){
+      return {response:privateJson({ok:false,error:'Requête invalide.'},400)};
+    }
+    const declared=Number(normalized);
+    if(!Number.isSafeInteger(declared)){
+      return {response:privateJson({ok:false,error:'Requête invalide.'},400)};
+    }
+    if(declared>MAX_REQUEST_BYTES){
       return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
     }
   }
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
-    return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
+  let raw:string;
+  try{
+    raw=await readRequestBody(req);
+  }catch(error){
+    if(error instanceof Error&&error.message===REQUEST_BODY_TOO_LARGE){
+      return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
+    }
+    throw error;
   }
-  try{return {body:JSON.parse(raw||'{}')}}catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
+  let parsed:unknown;
+  try{parsed=JSON.parse(raw)}catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
+  if(!isRecord(parsed)||Object.keys(parsed).length!==1||typeof parsed.document_id!=='string'){
+    return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
+  }
+  return {body:parsed};
 }
 
 Deno.serve(async(req)=>{
@@ -47,7 +93,7 @@ Deno.serve(async(req)=>{
   try{
     const parsed=await readLimitedJson(req);
     if(parsed.response)return parsed.response;
-    const document_id=typeof parsed.body?.document_id==='string'?parsed.body.document_id.trim():'';
+    const document_id=parsed.body!.document_id.trim();
     if(!UUID_RE.test(document_id))return privateJson({ok:false,error:'Document manquant ou invalide.'},400);
 
     const service=serviceClient(),user=await optionalUser(req);
@@ -63,14 +109,20 @@ Deno.serve(async(req)=>{
     let userRank=0;
     if(user){
       const {data:isAdmin}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
-      if(isAdmin)userRank=100;
+      if(isAdmin===true)userRank=100;
       else{
         const {data:accessRank}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
-        userRank=Number(accessRank||0);
+        const normalizedRank=Number(accessRank??0);
+        if(!Number.isFinite(normalizedRank)||normalizedRank<0){
+          console.error('[get-document-url]',{code:'INVALID_PROJECT_ACCESS_RANK',projectId:doc.project_id,userId:user.id});
+          return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
+        }
+        userRank=normalizedRank;
       }
     }else if(doc.projects?.visibility==='public')userRank=1;
 
-    if(userRank<(ranks[doc.access_level]||999)){
+    const requiredRank=typeof doc.access_level==='string'?(ranks[doc.access_level]??999):999;
+    if(userRank<requiredRank){
       return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
     }
 
