@@ -58,6 +58,8 @@ SQL_REQUIRED = {
     'rapport lié au compte': 'where id = p_report_id and party_id = p_party_id and owner_user_id = p_user_id',
     'détection contribution existante': "c.source_kind = 'fracture_endgame'",
     'réparation idempotente': "'already_submitted', true",
+    'archive préservée': "if v_party.status = 'archived' then",
+    'réparation partie seulement active': "where id = p_party_id and status = 'in_progress';",
     'partie active': "if v_party.status <> 'in_progress' then raise exception 'fracture_party_not_active'; end if;",
     'rapport non soumis': "if v_report.submitted_at is not null then raise exception 'fracture_endgame_inconsistent'; end if;",
     'snapshot partie': "v_party.updated_at is distinct from p_party_updated_at",
@@ -114,7 +116,6 @@ def validate(edge_path: Path, migration_path: Path) -> list[str]:
     if re.search(r'grant\s+execute\s+on\s+function\s+public\.service_submit_fracture_endgame\([^;]+\)\s+to\s+(?:public|anon|authenticated)\b', sql_lower, re.S):
         errors.append('La RPC transactionnelle ne doit être exécutable ni publiquement ni par authenticated.')
 
-    # Les quatre écritures doivent rester dans la même fonction SQL, jamais être réintroduites côté Edge.
     for table in (
         'public.internal_gameplay_contributions',
         'public.fracture_endgame_reports',
@@ -151,11 +152,12 @@ def self_test() -> None:
     sql_cases = {
         'service_role retiré': real_sql.replace("  if coalesce(auth.jwt()->>'role','') <> 'service_role' then\n    raise exception 'SERVICE_ROLE_REQUIRED';\n  end if;\n", '', 1),
         'verrou partie retiré': real_sql.replace('  for update;\n', ';\n', 1),
+        'archive non préservée': real_sql.replace("    if v_party.status = 'archived' then\n", "    if false then\n", 1),
         'snapshot partie retiré': real_sql.replace("  if p_party_updated_at is null or v_party.updated_at is distinct from p_party_updated_at then\n    raise exception 'FRACTURE_PARTY_CHANGED';\n  end if;\n", '', 1),
         'snapshot rapport retiré': real_sql.replace("  if p_report_updated_at is null or v_report.updated_at is distinct from p_report_updated_at then\n    raise exception 'FRACTURE_ENDGAME_REPORT_CHANGED';\n  end if;\n", '', 1),
         'insert contribution retiré': real_sql.replace('  insert into public.internal_gameplay_contributions(', '  insert into public.removed_contributions(', 1),
         'sessions non finalisées': real_sql.replace('update public.game_sessions', 'update public.removed_game_sessions'),
-        'idempotence retirée': real_sql.replace("      'already_submitted', true,", "      'already_submitted', false,", 1),
+        'idempotence retirée': real_sql.replace("        'already_submitted', true,", "        'already_submitted', false,", 1),
         'ACL service élargie': real_sql.replace('to service_role;', 'to authenticated;', 1),
         'révocation retirée': real_sql.replace('from public, anon, authenticated;', 'from public;', 1),
     }
@@ -196,7 +198,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK fin de partie Fracture: auth avant corps, JSON 4 KiB, lectures fail-closed, réponses privées et finalisation SQL atomique service_role.')
+    print('OK fin de partie Fracture: auth avant corps, JSON 4 KiB, lectures fail-closed, réponses privées, archive préservée et finalisation SQL atomique service_role.')
     return 0
 
 
