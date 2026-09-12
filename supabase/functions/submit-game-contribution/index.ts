@@ -11,6 +11,13 @@ const PRIVATE_HEADERS={
   'X-Content-Type-Options':'nosniff',
   'Referrer-Policy':'no-referrer'
 };
+const SAFE_LOG_CODES=new Set([
+  'AUTH_REQUIRED',
+  'JSON_REQUIRED',
+  'REQUEST_TOO_LARGE',
+  'INVALID_JSON',
+  'CONTRIBUTION_SOURCE_LOOKUP_FAILED'
+]);
 
 function privateJson(data:unknown,status=200){
   return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS});
@@ -33,6 +40,11 @@ async function readBoundedJson(req:Request){
   return body as Record<string,unknown>;
 }
 
+function contributionLogCode(error:unknown){
+  const code=error instanceof Error?error.message:'';
+  return SAFE_LOG_CODES.has(code)?code:'GAME_CONTRIBUTION_FAILED';
+}
+
 const clean=(v:unknown,max=160)=>String(v??'').trim().slice(0,max);
 
 Deno.serve(async(req)=>{
@@ -45,13 +57,19 @@ Deno.serve(async(req)=>{
     if(!UUID_RE.test(sessionId))return privateJson({ok:false,error:'Partie invalide.',code:'INVALID_SESSION'},400);
 
     const s=serviceClient();
-    const [{data:consent},{data:session},{data:endgame}]=await Promise.all([
+    const [consentResult,sessionResult,endgameResult]=await Promise.all([
       s.from('research_consents').select('participate').eq('user_id',user.id).maybeSingle(),
       s.from('game_sessions')
         .select('id,game_slug,play_mode,human_player_count,effective_player_count,player_count,duration_minutes')
         .eq('id',sessionId).eq('user_id',user.id).maybeSingle(),
       s.from('endgame_sheets').select('fields').eq('session_id',sessionId).eq('user_id',user.id).maybeSingle()
     ]);
+    if(consentResult.error||sessionResult.error||endgameResult.error){
+      throw new Error('CONTRIBUTION_SOURCE_LOOKUP_FAILED');
+    }
+    const consent=consentResult.data;
+    const session=sessionResult.data;
+    const endgame=endgameResult.data;
 
     if(!consent?.participate)return privateJson({ok:false,error:'Activez d’abord le Programme Contributeur dans votre compte.',code:'CONTRIBUTION_CONSENT_REQUIRED'},403);
     if(!session||!endgame)return privateJson({ok:false,error:'Sauvegardez d’abord la Feuille de fin de partie.',code:'ENDGAME_REQUIRED'},400);
@@ -100,11 +118,12 @@ Deno.serve(async(req)=>{
 
     return privateJson({ok:true,submitted:true,source:'endgame_only'});
   }catch(e){
-    console.error('[submit-game-contribution]',e);
-    if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
-    if(e?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED'},415);
-    if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
-    if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
+    const code=contributionLogCode(e);
+    console.error('[submit-game-contribution]',{code});
+    if(code==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code},401);
+    if(code==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code},415);
+    if(code==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code},413);
+    if(code==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code},400);
     return privateJson({ok:false,error:'Erreur de transmission.',code:'SUBMISSION_FAILED'},500);
   }
 });
