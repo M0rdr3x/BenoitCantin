@@ -22,7 +22,11 @@ function externalUrlAllowed(value:string){
   try{return new URL(value).protocol==='https:'}catch{return false}
 }
 
-async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
+function isRecord(value:unknown):value is Record<string,unknown>{
+  return !!value&&typeof value==='object'&&!Array.isArray(value);
+}
+
+async function readLimitedJson(req:Request):Promise<{body?:Record<string,unknown>;response?:Response}>{
   const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
   if(contentType!=='application/json'){
     return {response:privateJson({ok:false,error:'Type de contenu non autorisé.'},415)};
@@ -36,7 +40,7 @@ async function readLimitedJson(req:Request):Promise<{body?:any;response?:Respons
   }
 
   const reader=req.body?.getReader();
-  if(!reader)return {body:{}};
+  if(!reader)return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
   const chunks:Uint8Array[]=[];
   let total=0;
   while(true){
@@ -58,7 +62,12 @@ async function readLimitedJson(req:Request):Promise<{body?:any;response?:Respons
   try{raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes)}catch{
     return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
   }
-  try{return {body:JSON.parse(raw||'{}')}}catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
+  let body:unknown;
+  try{body=JSON.parse(raw)}catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
+  if(!isRecord(body)||Object.keys(body).length!==1||typeof body.document_id!=='string'){
+    return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
+  }
+  return {body};
 }
 
 Deno.serve(async(req)=>{
@@ -67,7 +76,8 @@ Deno.serve(async(req)=>{
   try{
     const parsed=await readLimitedJson(req);
     if(parsed.response)return parsed.response;
-    const document_id=typeof parsed.body?.document_id==='string'?parsed.body.document_id.trim():'';
+    const documentIdValue=parsed.body?.document_id;
+    const document_id=typeof documentIdValue==='string'?documentIdValue.trim():'';
     if(!UUID_RE.test(document_id))return privateJson({ok:false,error:'Document manquant ou invalide.'},400);
 
     const service=serviceClient(),user=await optionalUser(req);
@@ -83,14 +93,20 @@ Deno.serve(async(req)=>{
     let userRank=0;
     if(user){
       const {data:isAdmin}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
-      if(isAdmin)userRank=100;
+      if(isAdmin===true)userRank=100;
       else{
         const {data:accessRank}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
-        userRank=Number(accessRank||0);
+        const normalizedRank=Number(accessRank??0);
+        if(!Number.isFinite(normalizedRank)||normalizedRank<0){
+          console.error('[get-document-url]',{code:'INVALID_PROJECT_ACCESS_RANK',projectId:doc.project_id,userId:user.id});
+          return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
+        }
+        userRank=normalizedRank;
       }
     }else if(doc.projects?.visibility==='public')userRank=1;
 
-    if(userRank<(ranks[doc.access_level]||999)){
+    const requiredRank=typeof doc.access_level==='string'?(ranks[doc.access_level]??999):999;
+    if(userRank<requiredRank){
       return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
     }
 
@@ -99,7 +115,7 @@ Deno.serve(async(req)=>{
       if(!externalUrlAllowed(url))return privateJson({ok:false,error:'URL de document non autorisée.'},500);
       return privateJson({ok:true,url,protected:false,expires_in:null});
     }
-    if(!doc.storage_bucket||!doc.storage_path)return privateJson({ok:false,error:'Fichier non configuré.'},500);
+    if(!doc.storage_bucket||typeof doc.storage_path!=='string'||!doc.storage_path)return privateJson({ok:false,error:'Fichier non configuré.'},500);
 
     const {data:signed,error:signedError}=await service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
     if(signedError||!signed?.signedUrl)return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
