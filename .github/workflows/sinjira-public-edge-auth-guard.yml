@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/config.toml'
       - 'supabase/functions/**'
+      - 'supabase/migrations/20260911225500_sinjira_v25_fracture_endgame_atomic_submit.sql'
       - 'scripts/validate_public_edge_auth.py'
       - 'scripts/validate_public_edge_auth_workflow_security.py'
       - 'scripts/validate_get_document_url_security.py'
@@ -19,12 +20,14 @@ on:
       - 'scripts/validate_admin_analytics_request_security.py'
       - 'scripts/validate_admin_users_privacy.py'
       - 'scripts/validate_character_questionnaire_security.py'
+      - 'scripts/validate_fracture_endgame_atomic_security.py'
       - '.github/workflows/sinjira-public-edge-auth-guard.yml'
   push:
     branches: [ main ]
     paths:
       - 'supabase/config.toml'
       - 'supabase/functions/**'
+      - 'supabase/migrations/20260911225500_sinjira_v25_fracture_endgame_atomic_submit.sql'
       - 'scripts/validate_public_edge_auth.py'
       - 'scripts/validate_public_edge_auth_workflow_security.py'
       - 'scripts/validate_get_document_url_security.py'
@@ -38,6 +41,7 @@ on:
       - 'scripts/validate_admin_analytics_request_security.py'
       - 'scripts/validate_admin_users_privacy.py'
       - 'scripts/validate_character_questionnaire_security.py'
+      - 'scripts/validate_fracture_endgame_atomic_security.py'
       - '.github/workflows/sinjira-public-edge-auth-guard.yml'
   workflow_dispatch:
 
@@ -105,3 +109,7 @@ jobs:
         run: python scripts/validate_character_questionnaire_security.py --self-test
       - name: Vérifier la confidentialité et l’unicité du questionnaire du Registre
         run: python scripts/validate_character_questionnaire_security.py
+      - name: Auto-tester la finalisation atomique Fracture
+        run: python scripts/validate_fracture_endgame_atomic_security.py --self-test
+      - name: Vérifier la frontière et la transaction de fin de partie Fracture
+        run: python scripts/validate_fracture_endgame_atomic_security.py
