@@ -109,6 +109,8 @@ def validate(edge_path: Path, migration_path: Path) -> list[str]:
     for label, marker in SQL_REQUIRED.items():
         if marker not in sql_lower:
             errors.append(f'Garde SQL Fracture absent: {label}.')
+    if sql_lower.count("'already_submitted', true") < 2:
+        errors.append('Les deux chemins de doublon Fracture doivent rester explicitement idempotents.')
     if sql_lower.count('for update;') < 2:
         errors.append('La RPC doit verrouiller au moins la partie et le rapport avec FOR UPDATE.')
     if re.search(r'\n\s*exception\s+when\b', sql_lower):
@@ -157,7 +159,7 @@ def self_test() -> None:
         'snapshot rapport retiré': real_sql.replace("  if p_report_updated_at is null or v_report.updated_at is distinct from p_report_updated_at then\n    raise exception 'FRACTURE_ENDGAME_REPORT_CHANGED';\n  end if;\n", '', 1),
         'insert contribution retiré': real_sql.replace('  insert into public.internal_gameplay_contributions(', '  insert into public.removed_contributions(', 1),
         'sessions non finalisées': real_sql.replace('update public.game_sessions', 'update public.removed_game_sessions'),
-        'idempotence retirée': real_sql.replace("        'already_submitted', true,", "        'already_submitted', false,", 1),
+        'idempotence retirée': real_sql.replace("'already_submitted', true", "'already_submitted', false"),
         'ACL service élargie': real_sql.replace('to service_role;', 'to authenticated;', 1),
         'révocation retirée': real_sql.replace('from public, anon, authenticated;', 'from public;', 1),
     }
