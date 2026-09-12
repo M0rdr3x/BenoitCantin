@@ -25,7 +25,8 @@ REQUIRED = {
     'taille texte bornée': 'const MAX_TEXT=6000;',
     'origine modèle fixe': "const TEMPLATE_ORIGIN='https://www.benoitcantin.com';",
     'préfixe modèle fixe': "const TEMPLATE_PATH_PREFIX='/projets/sinjira/jeux/fracture-du-reseau-mere/documents/';",
-    'redirections refusées': "redirect:'error'",
+    'redirections modèle refusées': "fetch(templateUrl(mode),{cache:'no-store',redirect:'error'})",
+    'redirections fournisseur refusées': "const sent=await fetch('https://api.resend.com/emails',{\n      method:'POST',\n      redirect:'error',",
     'signature PDF vérifiée': "!=='%PDF-'",
     'destinataire compte': 'to:[user.email]',
     'log fournisseur fixe': "console.error('[send-player-sheet]',{code:'PLAYER_SHEET_EMAIL_PROVIDER_FAILED',status:sent.status});",
@@ -149,20 +150,32 @@ def self_test() -> None:
     if clean:
         raise AssertionError('Le cas réel sain doit passer: ' + ' | '.join(clean))
 
+    paid_block = """    if(!PAID_EXTERNAL_SERVICES_ENABLED){
+      return privateJson({ok:false,error:'Le transport courriel externe est préparé mais désactivé.',code:'PAID_EXTERNAL_SERVICE_DISABLED',function_version:FUNCTION_VERSION},503);
+    }
+
+    const parsed=await readLimitedJson(req);
+    if(parsed.response)return parsed.response;
+"""
+    moved_paid_block = """    const parsed=await readLimitedJson(req);
+    if(parsed.response)return parsed.response;
+
+    if(!PAID_EXTERNAL_SERVICES_ENABLED){
+      return privateJson({ok:false,error:'Le transport courriel externe est préparé mais désactivé.',code:'PAID_EXTERNAL_SERVICE_DISABLED',function_version:FUNCTION_VERSION},503);
+    }
+"""
+
     source_mutations = {
         'service payant activé': source.replace('PAID_EXTERNAL_SERVICES_ENABLED=false', 'PAID_EXTERNAL_SERVICES_ENABLED=true', 1),
-        'garde payant après corps': source.replace(
-            "    const parsed=await readLimitedJson(req);\n    if(parsed.response)return parsed.response;",
-            "    const earlyParsed=await readLimitedJson(req);\n    if(earlyParsed.response)return earlyParsed.response;\n    const parsed=earlyParsed;",
-            1,
-        ).replace('    if(!PAID_EXTERNAL_SERVICES_ENABLED){', '    if(!PAID_EXTERNAL_SERVICES_ENABLED&&parsed){', 1),
+        'garde payant après corps': source.replace(paid_block, moved_paid_block, 1),
         'requiredUser retiré': source.replace('const user=await requiredUser(req);', "const user={email:'bypass@example.test'};", 1),
         'req.json direct': source.replace('const raw=await req.text();', 'const raw=JSON.stringify(await req.json());', 1),
         'content-type affaibli': source.replace("contentType.startsWith('application/json')", "contentType.startsWith('text/plain')", 1),
         'limite requête augmentée': source.replace('MAX_REQUEST_BYTES=220_000;', 'MAX_REQUEST_BYTES=2_200_000;', 1),
         'mesure UTF-8 retirée': source.replace('new TextEncoder().encode(raw).byteLength', 'raw.length', 1),
         'no-store retiré': source.replace("  'Cache-Control':'private, no-store, max-age=0',\n", '', 1),
-        'redirections autorisées': source.replace("redirect:'error'", "redirect:'follow'", 1),
+        'redirections modèle autorisées': source.replace("fetch(templateUrl(mode),{cache:'no-store',redirect:'error'})", "fetch(templateUrl(mode),{cache:'no-store',redirect:'follow'})", 1),
+        'redirections fournisseur autorisées': source.replace("      redirect:'error',", "      redirect:'follow',", 1),
         'limite modèle augmentée': source.replace('MAX_TEMPLATE_BYTES=15*1024*1024;', 'MAX_TEMPLATE_BYTES=150*1024*1024;', 1),
         'signature PDF retirée': source.replace("  if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('PLAYER_SHEET_TEMPLATE_NOT_PDF');\n", '', 1),
         'origine modèle relâchée': source.replace('url.origin!==TEMPLATE_ORIGIN', 'false', 1),
