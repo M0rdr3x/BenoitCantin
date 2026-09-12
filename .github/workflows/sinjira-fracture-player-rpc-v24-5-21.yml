@@ -6,6 +6,9 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
       - 'supabase/tests/**'
+      - 'supabase/functions/fracture-engine-gateway/index.ts'
+      - 'supabase/functions/submit-fracture-endgame/index.ts'
+      - 'scripts/validate_fracture_edge_request_security.py'
       - 'scripts/validate_fracture_player_rpc_v24_5_21.py'
       - 'scripts/validate_owner_character_rpc_v24_5_20.py'
       - 'scripts/validate_production_migration_ledger.py'
@@ -33,6 +36,10 @@ jobs:
         run: python scripts/validate_owner_character_rpc_v24_5_20.py
       - name: Moteur Fracture historique
         run: python scripts/validate_fracture_engine.py
+      - name: Auto-tester la sécurité HTTP des Edge Fracture
+        run: python scripts/validate_fracture_edge_request_security.py --self-test
+      - name: Vérifier la sécurité HTTP des Edge Fracture
+        run: python scripts/validate_fracture_edge_request_security.py
       - name: Isolation des identités Fracture
         run: python scripts/validate_fracture_identity_isolation.py
       - name: Cohérence de version Fracture
