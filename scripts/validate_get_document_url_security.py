@@ -31,11 +31,12 @@ REQUIRED = {
     'rang projet serveur': "service.rpc('project_access_rank'",
     'rang projet numérique': 'Number.isFinite(normalizedRank)',
     'rang projet non négatif': 'normalizedRank<0',
-    'niveau inconnu refusé': '(ranks[doc.access_level]??999)',
+    'niveau inconnu refusé': 'if(userRank<(ranks[doc.access_level]||999))',
     'storage path typé': "typeof doc.storage_path!=='string'",
     'validation URL externe': 'externalUrlAllowed(url)',
     'lien signé 600 secondes': 'createSignedUrl(doc.storage_path,600)',
     'TTL réponse 600 secondes': 'expires_in:600',
+    'log ACL à code fixe': "console.error('[get-document-url]',{code:'INVALID_PROJECT_ACCESS_RANK'});",
     'log à code fixe': "console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});",
 }
 
@@ -51,6 +52,7 @@ FORBIDDEN = {
     'coercition arbitraire document_id': "String(parsed.body?.document_id",
     'admin truthy permissif': 'if(isAdmin)userRank=100',
     'rang RPC coercé sans validation': 'Number(accessRank||0)',
+    'log ACL avec identifiant utilisateur': "code:'INVALID_PROJECT_ACCESS_RANK',",
     'objet erreur brut': 'console.error(e)',
     'objet error brut': 'console.error(error)',
     'message erreur brut': 'error.message',
@@ -143,12 +145,11 @@ Deno.serve(async(req)=>{
    else{
     const {data:accessRank}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
     const normalizedRank=Number(accessRank??0);
-    if(!Number.isFinite(normalizedRank)||normalizedRank<0)return privateJson({},403);
+    if(!Number.isFinite(normalizedRank)||normalizedRank<0){console.error('[get-document-url]',{code:'INVALID_PROJECT_ACCESS_RANK'});return privateJson({},403)}
     userRank=normalizedRank;
    }
   }
-  const requiredRank=typeof doc.access_level==='string'?(ranks[doc.access_level]??999):999;
-  if(userRank<requiredRank)return privateJson({},403);
+  if(userRank<(ranks[doc.access_level]||999))return privateJson({},403);
   const url='https://example.test'; if(!externalUrlAllowed(url))return privateJson({},500);
   if(!doc.storage_bucket||typeof doc.storage_path!=='string'||!doc.storage_path)return privateJson({},500);
   const signed=await service.storage.from('x').createSignedUrl(doc.storage_path,600);
@@ -176,8 +177,9 @@ Deno.serve(async(req)=>{
             'coercition document_id': safe.replace("typeof documentIdValue==='string'?documentIdValue.trim():''", "String(parsed.body?.document_id||'').trim()"),
             'admin truthy permissif': safe.replace('if(isAdmin===true)userRank=100;', 'if(isAdmin)userRank=100;'),
             'rang non fini accepté': safe.replace('!Number.isFinite(normalizedRank)||', ''),
-            'fallback niveau inconnu retiré': safe.replace('(ranks[doc.access_level]??999)', 'ranks[doc.access_level]'),
+            'fallback niveau inconnu retiré': safe.replace('(ranks[doc.access_level]||999)', 'ranks[doc.access_level]'),
             'storage path non typé': safe.replace("typeof doc.storage_path!=='string'||", ''),
+            'log ACL avec identifiant': safe.replace("{code:'INVALID_PROJECT_ACCESS_RANK'}", "{code:'INVALID_PROJECT_ACCESS_RANK',userId:user.id}"),
             'no-store retiré': safe.replace(" 'Cache-Control':'private, no-store, max-age=0',\n", ''),
             'TTL signé augmenté': safe.replace('createSignedUrl(doc.storage_path,600)', 'createSignedUrl(doc.storage_path,3600)'),
             'log brut': safe.replace("}catch{\n  console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});", "}catch(error){\n  console.error(error);"),
