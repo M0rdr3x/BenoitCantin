@@ -140,7 +140,7 @@ async function readLimitedJson(req){
   if(done)break;
   if(!value)continue;
   total+=value.byteLength;
-  if(total>MAX_REQUEST_BYTES){await reader.cancel('REQUEST_TOO_LARGE');return {response:privateJson({},413)}}
+  if (total > MAX_REQUEST_BYTES) {await reader.cancel('REQUEST_TOO_LARGE');return {response:privateJson({},413)}}
   chunks.push(value);
  }
  const bytes=new Uint8Array(total);
@@ -199,7 +199,7 @@ privateJson({});
             'Content-Length permissif': safe.replace("if(!/^\\d+$/.test(normalizedLength)) return {response:privateJson({},413)};\n", '', 1),
             'entier sûr retiré': safe.replace('!Number.isSafeInteger(declared)||', '', 1),
             'annulation retirée': safe.replace("await reader.cancel('REQUEST_TOO_LARGE');", '', 1),
-            'borne streaming retirée': safe.replace('if(total>MAX_REQUEST_BYTES)', 'if(false)', 1),
+            'borne streaming retirée': safe.replace('if (total > MAX_REQUEST_BYTES)', 'if (false)', 1),
             'UTF-8 permissif': safe.replace("new TextDecoder('utf-8', { fatal: true })", "new TextDecoder('utf-8')", 1),
             'no-store retiré': safe.replace("'Cache-Control': 'private, no-store, max-age=0',", '', 1),
             'limite HTTP augmentée': safe.replace('MAX_REQUEST_BYTES = 4096;', 'MAX_REQUEST_BYTES = 40960;', 1),
