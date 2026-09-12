@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
       status: 200,
       headers: {
         ...responseHeaders(req, 'application/pdf'),
-        'Content-Disposition': `attachment; filename=\"${filename}\"`,
+        'Content-Disposition': `attachment; filename="${filename}"`,
         'Content-Length': String(bytes.byteLength),
         'Access-Control-Expose-Headers': 'Content-Disposition, Content-Length',
       },
