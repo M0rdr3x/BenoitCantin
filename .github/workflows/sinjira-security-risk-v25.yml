@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/security_risk_model_v25.test.sql'
+      - 'supabase/tests/security_travel_scope_v25.test.sql'
       - 'supabase/config.toml'
       - 'scripts/validate_security_risk_workflow_security.py'
       - '.github/workflows/sinjira-security-risk-v25.yml'
@@ -14,6 +15,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/security_risk_model_v25.test.sql'
+      - 'supabase/tests/security_travel_scope_v25.test.sql'
       - 'supabase/config.toml'
       - 'scripts/validate_security_risk_workflow_security.py'
       - '.github/workflows/sinjira-security-risk-v25.yml'
@@ -54,11 +56,12 @@ jobs:
           set -euo pipefail
           supabase db start
 
-      - name: Exécuter les 27 assertions pgTAP V25
+      - name: Exécuter les contrats pgTAP V25
         shell: bash
         run: |
           set -euo pipefail
           supabase test db supabase/tests/security_risk_model_v25.test.sql --local
+          supabase test db supabase/tests/security_travel_scope_v25.test.sql --local
 
       - name: Arrêter la base locale
         if: always()
