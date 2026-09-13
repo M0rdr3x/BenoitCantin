@@ -44,26 +44,27 @@ select ok(
       true,false,false,false,false,false,true,false,false,true
     )->'reasons' ? 'travel_match'
   ),
-  'travel_match n’est pas journalisé comme réduction sans anomalie géographique'
+  'le scoreur n’utilise pas travel_match comme raison de réduction globale'
 );
 
--- Le comportement historique reste disponible uniquement lorsqu’un composant
--- géographique inattendu est effectivement présent dans l’appel déterministe.
+-- Même dans un appel synthétique contradictoire où unexpected_region et travel_match
+-- sont vrais ensemble, le scoreur ne compense rien. Le chemin réel neutralise
+-- unexpected_region avant le scoreur lorsqu’un voyage actif correspond.
 select is(
   (private.security_risk_score_v25(
     false,true,false,false,false,false,false,false,false,true
   )->>'score')::integer,
-  5::integer,
-  'la réduction Mode Voyage reste bornée au composant région/pays inattendu'
+  20::integer,
+  'travel_match ne réduit pas directement le composant géographique dans le scoreur'
 );
 
 select ok(
-  (
+  not (
     private.security_risk_score_v25(
       false,true,false,false,false,false,false,false,false,true
     )->'reasons' ? 'travel_match'
   ),
-  'travel_match n’apparaît que lorsqu’il compense un signal géographique'
+  'travel_match reste hors des raisons de score; l’évaluateur porte l’exception géographique'
 );
 
 select ok(
