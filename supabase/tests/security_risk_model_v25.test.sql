@@ -106,16 +106,18 @@ select is(
   'score 50 appartient à la bande high'
 );
 
--- Même avec Mode Voyage, une action sensible garde son poids propre : 30 + 20 + 20 - 15 = 55.
+-- Le scoreur n’accorde aucun bonus Mode Voyage : 30 + 20 + 20 = 70.
+-- Dans le chemin réel, security_evaluate_context neutralise unexpected_region avant
+-- le calcul lorsqu’un voyage actif correspond.
 select is(
   (private.security_risk_score_v25(true,true,false,false,false,false,true,false,false,true)->>'score')::integer,
-  55::integer,
-  'Mode Voyage réduit de 15 sans supprimer le risque sensible'
+  70::integer,
+  'Mode Voyage ne réduit directement aucun signal dans le scoreur'
 );
 select is(
   private.security_risk_score_v25(true,true,false,false,false,false,true,false,false,true)->>'band',
   'high',
-  'score 55 reste high'
+  'score 70 reste high'
 );
 
 -- Voyage impossible + récupération récente + changement de facteur : 30 + 25 + 25 = 80.
@@ -130,14 +132,14 @@ select is(
   'score 80 appartient à la bande critical'
 );
 
--- Les réductions ne peuvent jamais produire un score négatif.
+-- Les réductions d’appareil ne peuvent jamais produire un score négatif.
 select is(
   (private.security_risk_score_v25(false,false,false,false,false,false,false,true,true,true)->>'score')::integer,
   0::integer,
-  'appareil principal, fiable et voyage correspondant sont bornés à 0'
+  'appareil principal et fiable restent bornés à 0, sans bonus voyage'
 );
 
--- Tous les signaux positifs, même avec les réductions, sont bornés à 100.
+-- Tous les signaux positifs, même avec les réductions d’appareil, sont bornés à 100.
 select is(
   (private.security_risk_score_v25(true,true,true,true,true,true,true,true,true,true)->>'score')::integer,
   100::integer,
