@@ -64,13 +64,11 @@ begin
     v_reasons := array_append(v_reasons,'trusted_device');
   end if;
 
-  -- Le Mode Voyage est une exception géographique, pas un bonus de confiance global.
-  -- security_evaluate_context neutralise déjà unexpected_region quand un voyage actif
-  -- correspond. Cette garde empêche toute réduction des signaux non géographiques.
-  if coalesce(p_travel_match,false) and coalesce(p_unexpected_region,false) then
-    v_score := v_score - 15;
-    v_reasons := array_append(v_reasons,'travel_match');
-  end if;
+  -- p_travel_match reste dans la signature pour compatibilité V25, mais n'accorde
+  -- plus aucun bonus de confiance global. Le chemin réel security_evaluate_context
+  -- neutralise uniquement unexpected_region lorsqu'un voyage actif correspond.
+  -- Le voyage impossible et tous les autres signaux conservent donc leur poids.
+  perform p_travel_match;
 
   v_score := greatest(0,least(100,v_score));
   v_band := case
@@ -100,6 +98,6 @@ grant execute on function private.security_risk_score_v25(
 comment on function private.security_risk_score_v25(
   boolean,boolean,boolean,boolean,boolean,boolean,boolean,boolean,boolean,boolean
 ) is
-  'Moteur de risque V25: le Mode Voyage ne peut réduire que le composant géographique; il ne réduit jamais les autres signaux de risque.';
+  'Moteur de risque V25: le Mode Voyage n’accorde aucun bonus global; seul security_evaluate_context peut neutraliser l’anomalie géographique correspondante.';
 
 commit;
