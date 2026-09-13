@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Contrat fail-closed du Mode Voyage V25 : réduction limitée au risque géographique."""
+"""Contrat fail-closed du Mode Voyage V25 : effet limité au signal géographique."""
 
 from __future__ import annotations
 
@@ -9,15 +9,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MIGRATION = ROOT / 'supabase/migrations/20260913030500_sinjira_v25_travel_mode_geo_scope_hardening.sql'
-TEST = ROOT / 'supabase/tests/security_travel_scope_v25.test.sql'
+RISK_TEST = ROOT / 'supabase/tests/security_risk_model_v25.test.sql'
+TRAVEL_TEST = ROOT / 'supabase/tests/security_travel_scope_v25.test.sql'
 WORKFLOW = ROOT / '.github/workflows/sinjira-security-risk-v25.yml'
 BATCH = ROOT / 'supabase/production-reviewed-migration-batch.txt'
 LEDGER = ROOT / 'supabase/production-migration-ledger.txt'
 
 MIGRATION_VERSION = '20260913030500'
 MIGRATION_NAME = 'sinjira_v25_travel_mode_geo_scope_hardening'
-SAFE_CONDITION = "if coalesce(p_travel_match,false) and coalesce(p_unexpected_region,false) then"
-TEST_COMMAND = 'supabase test db supabase/tests/security_travel_scope_v25.test.sql --local'
+TRAVEL_TEST_TRIGGER = "- 'supabase/tests/security_travel_scope_v25.test.sql'"
+GUARD_TRIGGER = "- 'scripts/validate_security_travel_scope_v25.py'"
+TRAVEL_TEST_COMMAND = 'supabase test db supabase/tests/security_travel_scope_v25.test.sql --local'
 SELF_TEST_COMMAND = 'run: python scripts/validate_security_travel_scope_v25.py --self-test'
 VALIDATE_COMMAND = 'run: python scripts/validate_security_travel_scope_v25.py'
 
@@ -26,19 +28,30 @@ def fail(message: str) -> None:
     raise ValueError(message)
 
 
+def lines(text: str) -> list[str]:
+    return [line.strip() for line in text.splitlines()]
+
+
 def git_blob_sha(text: str) -> str:
     data = text.encode('utf-8')
     return hashlib.sha1(f'blob {len(data)}\0'.encode('ascii') + data).hexdigest()
 
 
-def validate_texts(migration: str, test: str, workflow: str, batch: str, ledger: str) -> None:
+def validate_texts(
+    migration: str,
+    risk_test: str,
+    travel_test: str,
+    workflow: str,
+    batch: str,
+    ledger: str,
+) -> None:
     required_migration = (
         'create or replace function private.security_risk_score_v25(',
         'immutable',
         'set search_path = pg_catalog, private',
-        SAFE_CONDITION,
         "v_score := v_score - 15;",
-        "v_reasons := array_append(v_reasons,'travel_match');",
+        "v_reasons := array_append(v_reasons,'trusted_device');",
+        'perform p_travel_match;',
         'from public, anon, authenticated;',
         ') to service_role;',
         "'model_version','v25.0'",
@@ -47,36 +60,49 @@ def validate_texts(migration: str, test: str, workflow: str, batch: str, ledger:
         if needle not in migration:
             fail(f'migration: invariant absent: {needle}')
 
-    if "if coalesce(p_travel_match,false) then" in migration:
-        fail('migration: réduction globale Mode Voyage interdite')
-    if migration.count('v_score := v_score - 15;') != 2:
-        fail('migration: seules les réductions appareil fiable et voyage géographique sont attendues')
-    for forbidden in ('ip_address', 'raw_ip', 'latitude', 'longitude', 'gps_lat', 'gps_lon'):
+    if migration.count('v_score := v_score - 15;') != 1:
+        fail('migration: seule la réduction appareil fiable (-15) est autorisée dans le scoreur')
+    if "v_reasons := array_append(v_reasons,'travel_match');" in migration:
+        fail('migration: travel_match ne doit plus modifier les raisons de score')
+    if 'if coalesce(p_travel_match,false)' in migration:
+        fail('migration: travel_match ne doit plus commander une réduction du scoreur')
+    for forbidden in ('ip_address', 'raw_ip', 'gps_lat', 'gps_lon', 'latitude numeric', 'longitude numeric'):
         if forbidden in migration.lower():
-            fail(f'migration: collecte de localisation interdite détectée: {forbidden}')
+            fail(f'migration: collecte précise interdite détectée: {forbidden}')
 
-    required_test = (
+    required_risk_test = (
+        "70::integer,\n  'Mode Voyage ne réduit directement aucun signal dans le scoreur'",
+        "'score 70 reste high'",
+        "'appareil principal et fiable restent bornés à 0, sans bonus voyage'",
+    )
+    for needle in required_risk_test:
+        if needle not in risk_test:
+            fail(f'contrat risque V25: preuve geo-only absente: {needle}')
+
+    required_travel_test = (
         'select plan(8);',
         "50::integer,\n  'Mode Voyage ne réduit ni appareil inconnu ni action sensible'",
         "25::integer,\n  'Mode Voyage ne réduit pas une récupération récente'",
         "30::integer,\n  'Mode Voyage ne réduit pas le signal voyage impossible'",
+        "20::integer,\n  'travel_match ne réduit pas directement le composant géographique dans le scoreur'",
         "v_unexpected_region := v_previous.country_code <> v_country and not v_travel_match",
         "v_force_challenge := true",
     )
-    for needle in required_test:
-        if needle not in test:
-            fail(f'test pgTAP: preuve absente: {needle}')
+    for needle in required_travel_test:
+        if needle not in travel_test:
+            fail(f'pgTAP Mode Voyage: preuve absente: {needle}')
 
-    trigger_test = "      - 'supabase/tests/security_travel_scope_v25.test.sql'"
-    trigger_guard = "      - 'scripts/validate_security_travel_scope_v25.py'"
-    if workflow.count(trigger_test) != 2:
+    workflow_lines = lines(workflow)
+    if workflow_lines.count(TRAVEL_TEST_TRIGGER) != 2:
         fail('workflow: le test Mode Voyage doit déclencher PR + push main')
-    if workflow.count(trigger_guard) != 2:
+    if workflow_lines.count(GUARD_TRIGGER) != 2:
         fail('workflow: le garde Mode Voyage doit déclencher PR + push main')
-    if workflow.count(TEST_COMMAND) != 1:
+    if workflow_lines.count(TRAVEL_TEST_COMMAND) != 1:
         fail('workflow: commande pgTAP Mode Voyage absente ou dupliquée')
-    if workflow.count(SELF_TEST_COMMAND) != 1 or workflow.count(VALIDATE_COMMAND) != 1:
-        fail('workflow: auto-test et validation Mode Voyage requis exactement une fois')
+    if workflow_lines.count(SELF_TEST_COMMAND) != 1:
+        fail('workflow: auto-test Mode Voyage requis exactement une fois')
+    if workflow_lines.count(VALIDATE_COMMAND) != 1:
+        fail('workflow: validation Mode Voyage requise exactement une fois')
 
     expected_batch_line = f'{MIGRATION_VERSION} {MIGRATION_NAME} {git_blob_sha(migration)}'
     if batch.splitlines().count(expected_batch_line) != 1:
@@ -85,43 +111,72 @@ def validate_texts(migration: str, test: str, workflow: str, batch: str, ledger:
         fail('registre production: la migration locale ne doit pas être marquée comme déployée')
 
 
-def load() -> tuple[str, str, str, str, str]:
+def load() -> tuple[str, str, str, str, str, str]:
     return tuple(
         path.read_text(encoding='utf-8')
-        for path in (MIGRATION, TEST, WORKFLOW, BATCH, LEDGER)
+        for path in (MIGRATION, RISK_TEST, TRAVEL_TEST, WORKFLOW, BATCH, LEDGER)
     )
 
 
-def self_test(values: tuple[str, str, str, str, str]) -> None:
-    migration, test, workflow, batch, ledger = values
+def self_test(values: tuple[str, str, str, str, str, str]) -> None:
+    migration, risk_test, travel_test, workflow, batch, ledger = values
     validate_texts(*values)
+    global_bonus = migration.replace(
+        '  perform p_travel_match;\n',
+        "  if coalesce(p_travel_match,false) then\n"
+        "    v_score := v_score - 15;\n"
+        "    v_reasons := array_append(v_reasons,'travel_match');\n"
+        "  end if;\n",
+        1,
+    )
     mutations = {
-        'réduction globale': (
-            migration.replace(SAFE_CONDITION, 'if coalesce(p_travel_match,false) then', 1),
-            test, workflow, batch, ledger,
-        ),
-        'preuve appareil/action supprimée': (
+        'bonus voyage global': (global_bonus, risk_test, travel_test, workflow, batch, ledger),
+        'ancien contrat score 55': (
             migration,
-            test.replace('50::integer,', '35::integer,', 1),
-            workflow, batch, ledger,
+            risk_test.replace('70::integer,', '55::integer,', 1),
+            travel_test,
+            workflow,
+            batch,
+            ledger,
         ),
-        'pgTAP non exécuté': (
-            migration, test,
-            workflow.replace('          ' + TEST_COMMAND + '\n', '', 1),
-            batch, ledger,
+        'preuve appareil/action affaiblie': (
+            migration,
+            risk_test,
+            travel_test.replace('50::integer,', '35::integer,', 1),
+            workflow,
+            batch,
+            ledger,
+        ),
+        'pgTAP Mode Voyage non exécuté': (
+            migration,
+            risk_test,
+            travel_test,
+            workflow.replace('          ' + TRAVEL_TEST_COMMAND + '\n', '', 1),
+            batch,
+            ledger,
         ),
         'garde non déclenché': (
-            migration, test,
+            migration,
+            risk_test,
+            travel_test,
             workflow.replace("      - 'scripts/validate_security_travel_scope_v25.py'\n", '', 1),
-            batch, ledger,
+            batch,
+            ledger,
         ),
         'empreinte migration falsifiée': (
-            migration, test, workflow,
+            migration,
+            risk_test,
+            travel_test,
+            workflow,
             batch.replace(git_blob_sha(migration), '0' * 40, 1),
             ledger,
         ),
         'faux déploiement production': (
-            migration, test, workflow, batch,
+            migration,
+            risk_test,
+            travel_test,
+            workflow,
+            batch,
             ledger + f'\n{MIGRATION_VERSION} {MIGRATION_NAME}\n',
         ),
     }
@@ -143,7 +198,7 @@ def main() -> None:
         self_test(values)
     else:
         validate_texts(*values)
-        print('OK Mode Voyage V25: réduction strictement géographique, pgTAP branché, blob revu et production inchangée.')
+        print('OK Mode Voyage V25: aucun bonus global, exception géographique dans l’évaluateur, blob revu et production inchangée.')
 
 
 if __name__ == '__main__':
