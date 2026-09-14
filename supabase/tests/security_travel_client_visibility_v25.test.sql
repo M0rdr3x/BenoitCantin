@@ -5,7 +5,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(13);
+select plan(22);
 
 select ok(
   (select c.relrowsecurity
@@ -117,6 +117,81 @@ select ok(
       and tablename = 'security_travel_plans'
       and policyname = 'security_travel_plans_read_own'),
   'la politique conserve la sémantique PostgreSQL attendue'
+);
+
+select ok(
+  to_regprocedure('public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)') is not null,
+  'le wrapper public de création existe'
+);
+
+select ok(
+  not (select p.prosecdef
+         from pg_catalog.pg_proc p
+        where p.oid = 'public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure),
+  'le wrapper public de création reste SECURITY INVOKER'
+);
+
+select ok(
+  position('jsonb_build_object' in lower(pg_catalog.pg_get_functiondef(
+    'public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure
+  ))) > 0,
+  'le wrapper de création construit une réponse explicite'
+);
+
+select ok(
+  position('delete_after' in lower(pg_catalog.pg_get_functiondef(
+    'public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure
+  ))) = 0
+  and position('user_id' in lower(pg_catalog.pg_get_functiondef(
+    'public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure
+  ))) = 0
+  and position('created_at' in lower(pg_catalog.pg_get_functiondef(
+    'public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure
+  ))) = 0
+  and position('updated_at' in lower(pg_catalog.pg_get_functiondef(
+    'public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure
+  ))) = 0,
+  'le wrapper de création ne réexpose aucune métadonnée interne'
+);
+
+select ok(
+  not has_function_privilege('anon', 'public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)', 'EXECUTE'),
+  'la création reste réservée aux comptes authentifiés'
+);
+
+select ok(
+  to_regprocedure('public.security_cancel_travel_plan(uuid)') is not null,
+  'le wrapper public d’annulation existe'
+);
+
+select ok(
+  not (select p.prosecdef
+         from pg_catalog.pg_proc p
+        where p.oid = 'public.security_cancel_travel_plan(uuid)'::regprocedure),
+  'le wrapper public d’annulation reste SECURITY INVOKER'
+);
+
+select ok(
+  position('jsonb_build_object' in lower(pg_catalog.pg_get_functiondef(
+    'public.security_cancel_travel_plan(uuid)'::regprocedure
+  ))) > 0
+  and position('delete_after' in lower(pg_catalog.pg_get_functiondef(
+    'public.security_cancel_travel_plan(uuid)'::regprocedure
+  ))) = 0
+  and position('user_id' in lower(pg_catalog.pg_get_functiondef(
+    'public.security_cancel_travel_plan(uuid)'::regprocedure
+  ))) = 0
+  and position('destinations' in lower(pg_catalog.pg_get_functiondef(
+    'public.security_cancel_travel_plan(uuid)'::regprocedure
+  ))) = 0,
+  'le wrapper d’annulation ne renvoie que l’accusé minimal'
+);
+
+select ok(
+  not has_function_privilege('anon', 'public.security_cancel_travel_plan(uuid)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.security_cancel_travel_plan(uuid)', 'EXECUTE'),
+  'l’annulation reste réservée aux comptes authentifiés'
 );
 
 select * from finish();
