@@ -4,12 +4,14 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
       - 'assets/js/sinjira-security-v24-4-99.js'
       - 'scripts/validate_security_travel_visibility_v25.py'
       - '.github/workflows/sinjira-security-travel-visibility-v25.yml'
   push:
     branches: [main]
     paths:
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
       - 'assets/js/sinjira-security-v24-4-99.js'
       - 'scripts/validate_security_travel_visibility_v25.py'
       - '.github/workflows/sinjira-security-travel-visibility-v25.yml'
@@ -33,6 +35,9 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
+
+      - name: Vérifier la syntaxe du contrôleur
+        run: node --check assets/js/sinjira-security-center-v24-4-98.js
 
       - name: Auto-tester le contrat
         run: python3 scripts/validate_security_travel_visibility_v25.py --self-test
