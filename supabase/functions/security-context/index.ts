@@ -60,6 +60,25 @@ function safeDeviceType(value: unknown) {
 }
 
 /**
+ * Le moteur de risque conserve sa réponse complète côté serveur pour le push et
+ * les décisions internes. La frontière HTTP publique n'expose que ce dont le
+ * flux de connexion a besoin : l'issue et, uniquement pour un défi, son id.
+ */
+function publicSecurityResult(data: unknown) {
+  const source = data && typeof data === 'object' && !Array.isArray(data)
+    ? data as Record<string, unknown>
+    : {};
+  const outcome = typeof source.outcome === 'string' && source.outcome.trim()
+    ? source.outcome.trim()
+    : 'allow';
+  const result: { outcome: string; challenge_id?: string } = { outcome };
+  if (outcome === 'challenge' && typeof source.challenge_id === 'string' && UUID_RE.test(source.challenge_id)) {
+    result.challenge_id = source.challenge_id;
+  }
+  return result;
+}
+
+/**
  * Le JWT a déjà été validé par requiredUser() avant cet appel. On lit seulement
  * le session_id du même jeton validé; la base le revérifie ensuite dans auth.sessions.
  * Aucune session fournie par le JSON client n'est acceptée.
@@ -258,18 +277,13 @@ Deno.serve(async (req) => {
 
     return privateJson({
       ok: true,
-      security: data,
-      geo_mode: geo.country ? 'trusted_coarse' : 'disabled',
-      privacy: {
-        raw_ip_stored: false,
-        gps_used: false,
-        geo_reused_for_ads: false,
-        push_reveals_location: false
-      }
+      security: publicSecurityResult(data),
+      geo_mode: geo.country ? 'trusted_coarse' : 'disabled'
     });
   } catch (error) {
-    console.error('[security-context]', error);
-    if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
+    const authRequired = error instanceof Error && error.message === 'AUTH_REQUIRED';
+    console.error('[security-context] request failed', authRequired ? 'AUTH_REQUIRED' : 'UNEXPECTED');
+    if (authRequired) return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
     return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 500);
   }
 });
