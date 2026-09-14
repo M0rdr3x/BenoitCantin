@@ -6,6 +6,8 @@ on:
     paths:
       - 'supabase/migrations/20260821222514_sinjira_v24_4_98_account_security_center.sql'
       - 'supabase/migrations/20260821222615_sinjira_v24_4_98_security_rpc.sql'
+      - 'supabase/migrations/20260822201257_sinjira_v24_5_10_security_rpc_boundary.sql'
+      - 'supabase/migrations/20260911001000_sinjira_v25_travel_mode_country_normalization.sql'
       - 'supabase/tests/security_travel_self_only_v25.test.sql'
       - 'scripts/validate_security_travel_self_only_v25.py'
       - '.github/workflows/sinjira-security-travel-self-only-v25.yml'
@@ -14,6 +16,8 @@ on:
     paths:
       - 'supabase/migrations/20260821222514_sinjira_v24_4_98_account_security_center.sql'
       - 'supabase/migrations/20260821222615_sinjira_v24_4_98_security_rpc.sql'
+      - 'supabase/migrations/20260822201257_sinjira_v24_5_10_security_rpc_boundary.sql'
+      - 'supabase/migrations/20260911001000_sinjira_v25_travel_mode_country_normalization.sql'
       - 'supabase/tests/security_travel_self_only_v25.test.sql'
       - 'scripts/validate_security_travel_self_only_v25.py'
       - '.github/workflows/sinjira-security-travel-self-only-v25.yml'
