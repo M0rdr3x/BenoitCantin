@@ -171,8 +171,8 @@ def validate_text(
         str(TABLE_MIGRATION), str(BASE_RPC_MIGRATION), str(BOUNDARY_MIGRATION),
         str(CREATE_V25_MIGRATION), str(SQL_TEST),
     ):
-        require(errors, watched.lower() in flow,
-                f"workflow must watch authoritative self-only source: {watched}")
+        require(errors, flow.count(watched.lower()) >= 2,
+                f"workflow must watch authoritative self-only source on PR and push: {watched}")
     require(errors, "permissions: contents: read" in flow,
             "workflow permissions must stay read-only")
     require(errors, "python3 scripts/validate_security_travel_self_only_v25.py --self-test" in flow,
