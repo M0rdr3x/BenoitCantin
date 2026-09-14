@@ -26,6 +26,15 @@ def extract_function(source: str, signature_start: str) -> str:
     return source[start:] if next_start < 0 else source[start:next_start]
 
 
+def extract_named_policy(source: str, policy_name: str) -> str:
+    marker = f"create policy {policy_name.lower()} "
+    start = source.lower().find(marker)
+    if start < 0:
+        return ""
+    next_policy = source.lower().find("drop policy if exists ", start + len(marker))
+    return source[start:] if next_policy < 0 else source[start:next_policy]
+
+
 def require(errors: list[str], condition: bool, message: str) -> None:
     if not condition:
         errors.append(message)
@@ -36,6 +45,7 @@ def validate_text(table_sql: str, rpc_sql: str, test_sql: str, workflow: str) ->
     table = squash(table_sql)
     test = squash(test_sql)
     flow = squash(workflow)
+    travel_policy = squash(extract_named_policy(table_sql, "security_travel_plans_read_own"))
 
     require(errors, "create table if not exists public.security_travel_plans" in table,
             "security_travel_plans table definition missing")
@@ -53,9 +63,10 @@ def validate_text(table_sql: str, rpc_sql: str, test_sql: str, workflow: str) ->
             "authenticated must not receive direct UPDATE on travel plans")
     require(errors, "grant delete on table public.security_travel_plans to authenticated" not in table,
             "authenticated must not receive direct DELETE on travel plans")
-    require(errors, "create policy security_travel_plans_read_own on public.security_travel_plans" in table,
-            "self-only travel SELECT policy missing")
-    require(errors, "for select to authenticated using ((select auth.uid()) = user_id);" in table,
+    require(errors, bool(travel_policy), "self-only travel SELECT policy missing")
+    require(errors, "on public.security_travel_plans" in travel_policy,
+            "self-only policy must stay attached to security_travel_plans")
+    require(errors, "for select to authenticated using ((select auth.uid()) = user_id);" in travel_policy,
             "travel SELECT policy must bind auth.uid() to user_id")
 
     create_fn = squash(extract_function(
@@ -141,8 +152,6 @@ def validate_text(table_sql: str, rpc_sql: str, test_sql: str, workflow: str) ->
             "self-only CI must never deploy to Supabase")
 
     forbidden_precision = ("gps", "latitude", "longitude", "hotel", "flight", "itineraire", "itinéraire")
-    # The authoritative migrations may mention forbidden concepts only in explicit privacy comments;
-    # the new self-only test/workflow must not introduce fields or processing for them.
     new_guard_text = squash(test_sql + "\n" + workflow)
     for token in forbidden_precision:
         require(errors, token not in new_guard_text,
