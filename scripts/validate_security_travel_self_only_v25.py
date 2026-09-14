@@ -155,27 +155,70 @@ def load(path: Path) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
+def mutate_once(source: str, pattern: str, replacement: str, label: str) -> str:
+    mutated, count = re.subn(pattern, replacement, source, count=1, flags=re.IGNORECASE | re.DOTALL)
+    if count != 1:
+        raise ValueError(f"self-test setup failed; mutation did not match exactly once: {label}")
+    return mutated
+
+
 def run_self_test(table_sql: str, rpc_sql: str, test_sql: str, workflow: str) -> list[str]:
+    try:
+        rls_disabled = mutate_once(
+            table_sql,
+            r"alter\s+table\s+public\.security_travel_plans\s+enable\s+row\s+level\s+security\s*;",
+            "alter table public.security_travel_plans disable row level security;",
+            "RLS disabled",
+        )
+        policy_widened = mutate_once(
+            table_sql,
+            r"(create\s+policy\s+security_travel_plans_read_own\s+on\s+public\.security_travel_plans\s+for\s+select\s+to\s+authenticated\s+)using\s*\(\(select\s+auth\.uid\(\)\)\s*=\s*user_id\)\s*;",
+            r"\1using (true);",
+            "read policy widened",
+        )
+        create_owner_detached = mutate_once(
+            rpc_sql,
+            r"(create\s+or\s+replace\s+function\s+public\.security_create_travel_plan\([\s\S]*?v_user\s+uuid\s*:=\s*)auth\.uid\(\)\s*;",
+            r"\1gen_random_uuid();",
+            "create owner detached",
+        )
+        cancel_owner_removed = mutate_once(
+            rpc_sql,
+            r"(create\s+or\s+replace\s+function\s+public\.security_cancel_travel_plan\([\s\S]*?where\s+id\s*=\s*p_plan_id\s+)and\s+user_id\s*=\s*v_user(\s+and\s+status\s*=\s*'active')",
+            r"\1\2",
+            "cancel owner filter removed",
+        )
+        anon_create_exposed = mutate_once(
+            rpc_sql,
+            r"revoke\s+all\s+on\s+function\s+public\.security_create_travel_plan\(timestamptz\s*,\s*timestamptz\s*,\s*text\[\]\s*,\s*boolean\)\s+from\s+public\s*,\s*anon\s*;",
+            "grant execute on function public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean) to anon;",
+            "anonymous create exposed",
+        )
+        sql_contract_weakened = mutate_once(
+            test_sql,
+            r"SELF_ONLY_DIRECT_DML_FORBIDDEN",
+            "DIRECT_DML_CHECK_REMOVED",
+            "SQL contract weakened",
+        )
+        workflow_self_test_skipped = mutate_once(
+            workflow,
+            r"python3\s+scripts/validate_security_travel_self_only_v25\.py\s+--self-test",
+            "python3 scripts/validate_security_travel_self_only_v25.py",
+            "validator self-test skipped",
+        )
+    except ValueError as exc:
+        return [str(exc)]
+
     mutations = [
-        ("RLS disabled", table_sql.replace(
-            "alter table public.security_travel_plans enable row level security;",
-            "alter table public.security_travel_plans disable row level security;", 1), rpc_sql, test_sql, workflow),
-        ("read policy widened", table_sql.replace(
-            "using ((select auth.uid()) = user_id);", "using (true);", 1), rpc_sql, test_sql, workflow),
+        ("RLS disabled", rls_disabled, rpc_sql, test_sql, workflow),
+        ("read policy widened", policy_widened, rpc_sql, test_sql, workflow),
         ("direct INSERT granted", table_sql + "\ngrant insert on table public.security_travel_plans to authenticated;\n",
          rpc_sql, test_sql, workflow),
-        ("create owner detached", table_sql, rpc_sql.replace(
-            "v_user uuid := auth.uid();", "v_user uuid := gen_random_uuid();", 1), test_sql, workflow),
-        ("cancel owner filter removed", table_sql, rpc_sql.replace(
-            "where id=p_plan_id and user_id=v_user and status='active'",
-            "where id=p_plan_id and status='active'", 1), test_sql, workflow),
-        ("anonymous create exposed", table_sql, rpc_sql.replace(
-            "revoke all on function public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean) from public, anon;",
-            "grant execute on function public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean) to anon;", 1),
-         test_sql, workflow),
-        ("SQL contract weakened", table_sql, rpc_sql, test_sql.replace(
-            "SELF_ONLY_DIRECT_DML_FORBIDDEN", "DIRECT_DML_CHECK_REMOVED", 1), workflow),
-        ("validator self-test skipped", table_sql, rpc_sql, test_sql, workflow.replace(" --self-test", "", 1)),
+        ("create owner detached", table_sql, create_owner_detached, test_sql, workflow),
+        ("cancel owner filter removed", table_sql, cancel_owner_removed, test_sql, workflow),
+        ("anonymous create exposed", table_sql, anon_create_exposed, test_sql, workflow),
+        ("SQL contract weakened", table_sql, rpc_sql, sql_contract_weakened, workflow),
+        ("validator self-test skipped", table_sql, rpc_sql, test_sql, workflow_self_test_skipped),
     ]
     failures: list[str] = []
     for name, mutated_table, mutated_rpc, mutated_test, mutated_workflow in mutations:
