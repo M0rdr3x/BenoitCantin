@@ -35,6 +35,14 @@ def policy_expression(migration: str) -> str:
     return squash(match.group(1)) if match else ""
 
 
+def extract_function(source: str, signature_start: str) -> str:
+    start = source.lower().find(signature_start.lower())
+    if start < 0:
+        return ""
+    next_start = source.lower().find("create or replace function ", start + len(signature_start))
+    return source[start:] if next_start < 0 else source[start:next_start]
+
+
 def require(errors: list[str], condition: bool, message: str) -> None:
     if not condition:
         errors.append(message)
@@ -46,6 +54,12 @@ def validate(migration: str, test_sql: str, workflow: str, reviewed: str) -> lis
     test = squash(test_sql)
     flow = squash(workflow)
     policy = policy_expression(migration)
+    create_fn = squash(extract_function(
+        migration, "create or replace function public.security_create_travel_plan("
+    ))
+    cancel_fn = squash(extract_function(
+        migration, "create or replace function public.security_cancel_travel_plan("
+    ))
 
     require(errors,
             "alter table public.security_travel_plans enable row level security;" in mig,
@@ -84,8 +98,56 @@ def validate(migration: str, test_sql: str, workflow: str, reviewed: str) -> lis
             "delete_after" not in policy,
             "retention deadline must never authorize browser visibility")
 
+    require(errors, bool(create_fn), "public travel creation wrapper missing")
+    require(errors,
+            "security invoker" in create_fn and "set search_path = ''" in create_fn,
+            "public travel creation wrapper must remain SECURITY INVOKER with empty search_path")
+    require(errors,
+            "sinjira_security_internal.security_create_travel_plan($1,$2,$3,$4)" in create_fn,
+            "public travel creation wrapper must delegate to the internal implementation")
+    require(errors,
+            "jsonb_build_object" in create_fn,
+            "public travel creation wrapper must build an explicit response")
+    for key in ("id", "status", "starts_at", "ends_at", "destinations"):
+        require(errors,
+                f"'{key}', result->'{key}'" in create_fn,
+                f"public travel creation response must include only required key: {key}")
+    for key in ("delete_after", "user_id", "created_at", "updated_at", "cancelled_at", "multi_country"):
+        require(errors,
+                f"result->'{key}'" not in create_fn,
+                f"public travel creation response must not expose internal key: {key}")
+    require(errors,
+            "revoke all on function public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean) from public, anon;" in mig,
+            "anonymous/public creation RPC execution must stay revoked")
+    require(errors,
+            "grant execute on function public.security_create_travel_plan(timestamptz,timestamptz,text[],boolean) to authenticated, service_role;" in mig,
+            "creation RPC grant must stay limited to authenticated and service_role")
+
+    require(errors, bool(cancel_fn), "public travel cancellation wrapper missing")
+    require(errors,
+            "security invoker" in cancel_fn and "set search_path = ''" in cancel_fn,
+            "public travel cancellation wrapper must remain SECURITY INVOKER with empty search_path")
+    require(errors,
+            "sinjira_security_internal.security_cancel_travel_plan($1)" in cancel_fn,
+            "public travel cancellation wrapper must delegate to the internal implementation")
+    require(errors,
+            "jsonb_build_object" in cancel_fn
+            and "'id', result->'id'" in cancel_fn
+            and "'status', result->'status'" in cancel_fn,
+            "public travel cancellation wrapper must return only an explicit acknowledgement")
+    for key in ("delete_after", "user_id", "created_at", "updated_at", "cancelled_at", "destinations", "starts_at", "ends_at"):
+        require(errors,
+                f"result->'{key}'" not in cancel_fn,
+                f"public travel cancellation response must not expose internal key: {key}")
+    require(errors,
+            "revoke all on function public.security_cancel_travel_plan(uuid) from public, anon;" in mig,
+            "anonymous/public cancellation RPC execution must stay revoked")
+    require(errors,
+            "grant execute on function public.security_cancel_travel_plan(uuid) to authenticated, service_role;" in mig,
+            "cancellation RPC grant must stay limited to authenticated and service_role")
+
     required_test_markers = (
-        "select plan(13)",
+        "select plan(22)",
         "relrowsecurity",
         "has_table_privilege('authenticated', 'public.security_travel_plans', 'select')",
         "has_table_privilege('anon', 'public.security_travel_plans', 'select')",
@@ -97,6 +159,11 @@ def validate(migration: str, test_sql: str, workflow: str, reviewed: str) -> lis
         "statement_timestamp()",
         "delete_after",
         "service_role",
+        "security_create_travel_plan(timestamptz,timestamptz,text[],boolean)",
+        "security_cancel_travel_plan(uuid)",
+        "jsonb_build_object",
+        "has_function_privilege('anon'",
+        "has_function_privilege('authenticated'",
         "select * from finish()",
         "rollback;",
     )
@@ -166,6 +233,11 @@ def self_test(migration: str, test_sql: str, workflow: str, reviewed: str) -> li
              test_sql, workflow, reviewed),
             ("direct update granted", migration + "\ngrant update on table public.security_travel_plans to authenticated;\n",
              test_sql, workflow, reviewed),
+            ("creation response leaks retention", replace_once(
+                migration,
+                "    'destinations', result->'destinations'\n",
+                "    'destinations', result->'destinations',\n    'delete_after', result->'delete_after'\n",
+                "creation response leak"), test_sql, workflow, reviewed),
             ("SQL contract weakened", migration, replace_once(
                 test_sql,
                 "statement_timestamp()",
@@ -213,7 +285,7 @@ def main() -> int:
         for error in errors:
             print(f"ERROR: {error}")
         return 1
-    print("Mode Voyage retained-row client visibility boundary: OK")
+    print("Mode Voyage retained-row client visibility and RPC response boundary: OK")
     return 0
 
 
