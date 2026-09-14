@@ -92,7 +92,7 @@ function ensurePreview(form){
 
   const privacy = document.createElement('p');
   privacy.className = 'v24-feature-note';
-  privacy.textContent = 'Aucune donnée n’est envoyée au serveur avant votre confirmation. Seuls ces codes pays, cette période et l’indication multi-pays seront transmis — jamais de GPS, d’adresse, d’hôtel, de vol ou de trajet quotidien.';
+  privacy.textContent = 'Aucune donnée de ce voyage n’est envoyée au serveur avant votre confirmation. Seuls ces codes pays, cette période et l’indication multi-pays seront transmis — jamais de GPS, d’adresse, d’hôtel, de vol ou de trajet quotidien.';
 
   preview.append(heading, list, privacy);
   const submit = qs(SUBMIT_SELECTOR, form);
