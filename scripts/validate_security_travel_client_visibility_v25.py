@@ -111,7 +111,7 @@ def validate(migration: str, test_sql: str, workflow: str, reviewed: str) -> lis
     for key in ("id", "status", "starts_at", "ends_at", "destinations"):
         require(errors,
                 f"'{key}', result->'{key}'" in create_fn,
-                f"public travel creation response must include only required key: {key}")
+                f"public travel creation response must include required key: {key}")
     for key in ("delete_after", "user_id", "created_at", "updated_at", "cancelled_at", "multi_country"):
         require(errors,
                 f"result->'{key}'" not in create_fn,
@@ -174,7 +174,9 @@ def validate(migration: str, test_sql: str, workflow: str, reviewed: str) -> lis
             "permissions: contents: read" in flow,
             "workflow permissions must stay read-only")
     for path in (str(MIGRATION), str(SQL_TEST), str(WORKFLOW), str(REVIEWED)):
-        require(errors, path.lower() in flow, f"workflow must watch {path}")
+        require(errors,
+                flow.count(path.lower()) == 2,
+                f"workflow must watch {path} on pull_request and push")
     require(errors,
             "python3 scripts/validate_security_travel_client_visibility_v25.py --self-test" in flow,
             "workflow must mutation-test the visibility guard")
@@ -203,6 +205,12 @@ def load(path: Path) -> str:
 def replace_once(source: str, old: str, new: str, label: str) -> str:
     if source.count(old) != 1:
         raise ValueError(f"self-test setup failed for {label}: expected one exact match")
+    return source.replace(old, new, 1)
+
+
+def replace_one_of_two(source: str, old: str, new: str, label: str) -> str:
+    if source.count(old) != 2:
+        raise ValueError(f"self-test setup failed for {label}: expected two exact matches")
     return source.replace(old, new, 1)
 
 
@@ -248,7 +256,7 @@ def self_test(migration: str, test_sql: str, workflow: str, reviewed: str) -> li
                 f"{MIGRATION_ID} {git_blob_sha(migration)}",
                 f"{MIGRATION_ID} {'0' * 40}",
                 "review fingerprint")),
-            ("migration path unwatched", migration, test_sql, replace_once(
+            ("migration path unwatched on one trigger", migration, test_sql, replace_one_of_two(
                 workflow,
                 f"      - '{MIGRATION}'",
                 "      - 'supabase/migrations/UNWATCHED.sql'",
