@@ -65,8 +65,10 @@ def validate(controller: str, workflow: str) -> list[str]:
             "Mode Voyage rendering must use DOM nodes")
     require(errors, ".textContent=" in render_dense,
             "Mode Voyage values must be written via textContent")
-    require(errors, "travelSafeItem" in render,
-            "core travel renderer must remain compatible with the #422 safe-item boundary")
+    require(errors, "article.dataset.travelSafeItem='true';" in render_dense,
+            "each Mode Voyage card must remain compatible with the #422 safe-item boundary")
+    require(errors, "emptyState.dataset.travelSafeItem='true';" in render_dense,
+            "empty Mode Voyage state must remain compatible with the #422 safe-item boundary")
     require(errors, "AucunModeVoyageactifoufutur." in render_dense,
             "empty state must not imply retained travel history")
     require(errors, "Actifmaintenant" in render_dense and "Àvenir" in render_dense,
