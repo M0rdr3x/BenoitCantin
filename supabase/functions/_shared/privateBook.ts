@@ -15,6 +15,15 @@ export function privateBookStorageConfig(){
 }
 
 export async function requirePrivateBookAccess(service:any,userId:string):Promise<PrivateBookAccess>{
+  // L'auteur/propriétaire est une identité de gestion vérifiée côté serveur.
+  // Son accès au Livre I ne dépend pas de l'état commercial du produit et ne
+  // crée jamais de ligne user_entitlements.
+  const {data:isOwner,error:ownerError}=await service.rpc('is_sinjira_owner',{p_user_id:userId});
+  if(ownerError)throw new Error('BOOK_ACCESS_CHECK_FAILED');
+  if(isOwner===true)return 'owner';
+
+  // Pour toute autre personne, l'accès vient exclusivement d'un droit produit
+  // actif réellement attribué au compte.
   const {data:product,error:productError}=await service
     .from('products')
     .select('id,slug,active')
@@ -31,10 +40,6 @@ export async function requirePrivateBookAccess(service:any,userId:string):Promis
     .maybeSingle();
   if(entitlementError)throw new Error('BOOK_ACCESS_CHECK_FAILED');
   if(entitlement)return 'entitlement';
-
-  const {data:isOwner,error:ownerError}=await service.rpc('is_sinjira_owner',{p_user_id:userId});
-  if(ownerError)throw new Error('BOOK_ACCESS_CHECK_FAILED');
-  if(isOwner===true)return 'owner';
 
   throw new Error('BOOK_ACCESS_DENIED');
 }
