@@ -40,10 +40,18 @@ def validate_text(download:str,reader:str,helper:str,config:str)->list[str]:
     )
     for marker in helper_required:
         require(errors,marker in helper,f'Helper Livre I absent: {marker}')
-    require(errors,helper.find(".from('user_entitlements')")<helper.find("service.rpc('is_sinjira_owner'"),
-            'Le droit produit doit être vérifié avant le repli propriétaire serveur.')
+
+    owner_pos=helper.find("service.rpc('is_sinjira_owner'")
+    owner_allow_pos=helper.find("if(isOwner===true)return 'owner'")
+    product_pos=helper.find(".from('products')")
+    entitlement_pos=helper.find(".from('user_entitlements')")
+    require(errors,0<=owner_pos<owner_allow_pos<product_pos<entitlement_pos,
+            'Le rôle auteur vérifié serveur doit être évalué avant toute dépendance au produit commercial.')
+
     for forbidden in ('getPublicUrl(', 'external_url', 'clientRole', 'is_owner_from_client'):
         require(errors,forbidden not in helper,f'Helper Livre I interdit: {forbidden}')
+    for mutation in ('.insert(', '.update(', '.upsert(', '.delete('):
+        require(errors,mutation not in helper,f'Helper Livre I ne doit jamais muter un droit ou un rôle: {mutation}')
 
     for name,source in (('download',download),('reader',reader)):
         for marker in (
@@ -122,14 +130,26 @@ def self_test()->None:
         "    const storage=privateBookStorageConfig();\n    await requirePrivateBookAccess(service,user.id);",
         1,
     )
+    owner_block="""  const {data:isOwner,error:ownerError}=await service.rpc('is_sinjira_owner',{p_user_id:userId});
+  if(ownerError)throw new Error('BOOK_ACCESS_CHECK_FAILED');
+  if(isOwner===true)return 'owner';
+
+"""
+    helper_owner_after_product=helper.replace(owner_block,'',1).replace(
+        "  if(productError||!product)throw new Error('BOOK_UNAVAILABLE');\n\n",
+        "  if(productError||!product)throw new Error('BOOK_UNAVAILABLE');\n\n"+owner_block,
+        1,
+    )
     mutations=[
         ('auth téléchargement retirée',download.replace('const user=await requiredUser(req);',"const user={id:'bypass'};",1),reader,helper,config),
         ('auth lecteur retirée',download,reader.replace('const user=await requiredUser(req);',"const user={id:'bypass'};",1),helper,config),
         ('autorisation lecteur retirée',download,reader.replace('await requirePrivateBookAccess(service,user.id);','',1),helper,config),
         ('stockage révélé avant autorisation',download,reader_storage_before_access,helper,config),
+        ('auteur dépend du produit commercial',download,reader,helper_owner_after_product,config),
         ('entitlement user retiré',download,reader,helper.replace("    .eq('user_id',userId)\n",'',1),config),
         ('owner serveur retiré',download,reader,helper.replace("  const {data:isOwner,error:ownerError}=await service.rpc('is_sinjira_owner',{p_user_id:userId});\n",'',1),config),
         ('TTL élargi',download,reader,helper.replace('LIVRE_I_SIGNED_URL_SECONDS=300','LIVRE_I_SIGNED_URL_SECONDS=3600',1),config),
+        ('mutation entitlement ajoutée',download,reader,helper+"\nservice.from('user_entitlements').insert({});\n",config),
         ('repli public',download,reader,helper+"\nservice.storage.from('x').getPublicUrl('x');\n",config),
         ('reader force download',download,reader.replace('LIVRE_I_SIGNED_URL_SECONDS);',"LIVRE_I_SIGNED_URL_SECONDS,{download:'x.pdf'});",1),helper,config),
         ('jwt reader désactivé',download,reader,helper,config.replace('[functions.get-private-book-reading-url]\nverify_jwt = true','[functions.get-private-book-reading-url]\nverify_jwt = false',1)),
@@ -149,7 +169,7 @@ def main()->int:
     errors=validate()
     if errors:
         print(f'ÉCHEC Livre I privé: {len(errors)} problème(s).');[print('- '+e) for e in errors];return 1
-    print('OK Livre I privé: achat ou rôle auteur vérifié serveur avant révélation du stockage, téléchargement et lecture web signés 300 s, aucun repli public.')
+    print('OK Livre I privé: auteur serveur indépendant du statut commercial; acheteurs par entitlement actif; stockage révélé seulement après autorisation; URLs signées 300 s.')
     return 0
 
 if __name__=='__main__':raise SystemExit(main())
