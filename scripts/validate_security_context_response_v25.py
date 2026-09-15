@@ -78,9 +78,9 @@ def validate(source: str, workflow: str) -> list[str]:
                 errors.append(f"Champ interne interdit dans la projection publique: {field}.")
         fallback_markers = (
             ": 'allow';",
-            '|| \'allow\'',
-            '?? \'allow\'',
-            'return { outcome: \'allow\' }; // fallback',
+            "|| 'allow'",
+            "?? 'allow'",
+            "return { outcome: 'allow' }; // fallback",
         )
         for marker in fallback_markers:
             if marker in helper:
@@ -155,7 +155,7 @@ def self_test(source: str, workflow: str) -> None:
         ("authentification retirée", source.replace("const user = await requiredUser(req);", "const user = { id: 'unsafe' };", 1), workflow),
         ("session vérifiée retirée", source.replace("const sessionId = sessionIdFromVerifiedRequest(req);", "const sessionId = 'unsafe';", 1), workflow),
         ("RPC retirée", source.replace("service_security_evaluate_context_session", "unsafe_context_rpc", 1), workflow),
-        ("erreur brute journalisée", source.replace("console.error('[security-context] request failed', authRequired ? 'AUTH_REQUIRED' : 'UNEXPECTED');", "console.error('[security-context]', error);", 1), workflow),
+        ("erreur brute journalisée", source.replace("console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });", "console.error('[security-context]', error);", 1), workflow),
         ("issue inconnue acceptée", source.replace("if (!SECURITY_OUTCOMES.has(outcome)) return null;", "if (!SECURITY_OUTCOMES.has(outcome)) return { outcome: 'allow' };", 1), workflow),
         ("RPC nulle transformée en allow", source.replace("const outcome = typeof source.outcome === 'string' ? source.outcome.trim() : '';", "const outcome = typeof source.outcome === 'string' ? source.outcome.trim() : 'allow';", 1), workflow),
         ("défi sans identifiant accepté", source.replace("if (!challengeId || !UUID_RE.test(challengeId)) return null;", "if (!challengeId) return { outcome: 'challenge', challenge_id: '00000000-0000-4000-8000-000000000000' };", 1), workflow),
