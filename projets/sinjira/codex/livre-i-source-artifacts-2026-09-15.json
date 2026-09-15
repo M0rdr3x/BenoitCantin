@@ -1,0 +1,37 @@
+{
+  "schema": "sinjira.livre-i.source-artifacts.v1",
+  "verified_on": "2026-09-15",
+  "state": "staged_source_files_not_deployed",
+  "principle": "L’HUMAIN AVANT TOUT. PROTÉGER SANS SURVEILLER.",
+  "production_deployment_authorized": false,
+  "full_edition": {
+    "pages": 1066,
+    "sha256": "cd5eb783ff16311d819c7e0153b3c5fcecacce10d47b999b5c427e20065c781a",
+    "public_repository_allowed": false,
+    "storage_target": "private_storage_only",
+    "note": "Empreinte du PDF intégral fourni pour la prochaine synchronisation privée. Aucun octet de cette édition n’est ajouté au dépôt public."
+  },
+  "demo_source": {
+    "pages": 83,
+    "sha256": "43f2fa19ebc8299fb23c0aa09c010518ddc705d53985964fe1c5fe9331c05eab",
+    "note": "Empreinte du PDF démo source fourni."
+  },
+  "demo_optimized_candidate": {
+    "pages": 83,
+    "sha256": "4e129163b466a996507521091f58384acbbf3b03872079ba75b2cbea47becee9",
+    "profile": "screen-web-optimized",
+    "verified_visual_sample": true,
+    "deployment_authorized": false,
+    "note": "Candidat web optimisé à 83 pages, vérifié visuellement sur un échantillon; non publié par cette tranche."
+  },
+  "cover_front_source": {
+    "sha256": "1861ad785685b21518e65c3469739727a3546ddf2bdecfa2e2b5834d1d565ff1",
+    "dimensions": "1024x1536",
+    "deployment_authorized": false
+  },
+  "cover_back_source": {
+    "sha256": "fb44a442bead4a9af6f46cd3e5109ce2d9245fac7ce775fb2e1c3459a6f314c7",
+    "dimensions": "1024x1536",
+    "deployment_authorized": false
+  }
+}
