@@ -49,9 +49,9 @@ def validate_text(download:str,reader:str,helper:str,config:str)->list[str]:
         for marker in (
             "req.method!=='POST'",
             'const user=await requiredUser(req);',
-            'const storage=privateBookStorageConfig();',
             'const service=serviceClient();',
             'await requirePrivateBookAccess(service,user.id);',
+            'const storage=privateBookStorageConfig();',
             "'Cache-Control':'private, no-store, max-age=0'",
             "'Pragma':'no-cache'",
             "'X-Content-Type-Options':'nosniff'",
@@ -60,12 +60,12 @@ def validate_text(download:str,reader:str,helper:str,config:str)->list[str]:
         ):
             require(errors,marker in source,f'{name}: garde absent: {marker}')
         auth=source.find('const user=await requiredUser(req);')
-        storage=source.find('const storage=privateBookStorageConfig();')
         service=source.find('const service=serviceClient();')
         access=source.find('await requirePrivateBookAccess(service,user.id);')
+        storage=source.find('const storage=privateBookStorageConfig();')
         signed=source.find('.createSignedUrl(storage.storagePath,LIVRE_I_SIGNED_URL_SECONDS')
-        require(errors,0<=auth<storage<service<access<signed,
-                f'{name}: ordre auth -> stockage -> service -> autorisation -> URL signée invalide')
+        require(errors,0<=auth<service<access<storage<signed,
+                f'{name}: ordre auth -> service -> autorisation -> stockage -> URL signée invalide')
         require(errors,'getPublicUrl(' not in source and 'external_url' not in source,
                 f'{name}: aucun repli public/externe permis')
         require(errors,"console.error(error)" not in source and 'console.error(signedError)' not in source,
@@ -117,10 +117,16 @@ def self_test()->None:
     if (baseline:=validate_text(*values)):
         raise AssertionError('Le cas réel sain doit passer: '+' | '.join(baseline))
     download,reader,helper,config=values
+    reader_storage_before_access=reader.replace(
+        "    await requirePrivateBookAccess(service,user.id);\n\n    // L'état de la livraison privée n'est révélé qu'à un compte déjà autorisé.\n    const storage=privateBookStorageConfig();",
+        "    const storage=privateBookStorageConfig();\n    await requirePrivateBookAccess(service,user.id);",
+        1,
+    )
     mutations=[
         ('auth téléchargement retirée',download.replace('const user=await requiredUser(req);',"const user={id:'bypass'};",1),reader,helper,config),
         ('auth lecteur retirée',download,reader.replace('const user=await requiredUser(req);',"const user={id:'bypass'};",1),helper,config),
         ('autorisation lecteur retirée',download,reader.replace('await requirePrivateBookAccess(service,user.id);','',1),helper,config),
+        ('stockage révélé avant autorisation',download,reader_storage_before_access,helper,config),
         ('entitlement user retiré',download,reader,helper.replace("    .eq('user_id',userId)\n",'',1),config),
         ('owner serveur retiré',download,reader,helper.replace("  const {data:isOwner,error:ownerError}=await service.rpc('is_sinjira_owner',{p_user_id:userId});\n",'',1),config),
         ('TTL élargi',download,reader,helper.replace('LIVRE_I_SIGNED_URL_SECONDS=300','LIVRE_I_SIGNED_URL_SECONDS=3600',1),config),
@@ -143,7 +149,7 @@ def main()->int:
     errors=validate()
     if errors:
         print(f'ÉCHEC Livre I privé: {len(errors)} problème(s).');[print('- '+e) for e in errors];return 1
-    print('OK Livre I privé: achat ou rôle auteur vérifié serveur, téléchargement et lecture web signés 300 s, aucun repli public.')
+    print('OK Livre I privé: achat ou rôle auteur vérifié serveur avant révélation du stockage, téléchargement et lecture web signés 300 s, aucun repli public.')
     return 0
 
 if __name__=='__main__':raise SystemExit(main())
