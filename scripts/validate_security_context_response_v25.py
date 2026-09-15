@@ -74,7 +74,8 @@ def validate(source: str, workflow: str) -> list[str]:
     else:
         response = source[response_start:response_end]
         for field in ("risk_score", "risk_reasons", "country", "region", "city", "latitude", "longitude"):
-            if field in response:
+            serialized_keys = (f"{field}:", f"'{field}':", f'"{field}":')
+            if any(marker in response for marker in serialized_keys):
                 errors.append(f"Champ interne exposé dans la réponse HTTP: {field}.")
         if "privacy:" in response:
             errors.append("La réponse publique contient encore le bloc documentaire privacy inutile au flux.")
@@ -118,6 +119,7 @@ def self_test(source: str, workflow: str) -> None:
         ("score de risque public", source.replace("const result: { outcome: string; challenge_id?: string } = { outcome };", "const result: any = { outcome, risk_score: source.risk_score };", 1), workflow),
         ("raisons de risque publiques", source.replace("const result: { outcome: string; challenge_id?: string } = { outcome };", "const result: any = { outcome, risk_reasons: source.risk_reasons };", 1), workflow),
         ("pays dans la projection", source.replace("const result: { outcome: string; challenge_id?: string } = { outcome };", "const result: any = { outcome, country: source.country };", 1), workflow),
+        ("pays sérialisé dans la réponse", source.replace("geo_mode: geo.country ? 'trusted_coarse' : 'disabled'", "country: geo.country,\n      geo_mode: geo.country ? 'trusted_coarse' : 'disabled'", 1), workflow),
         ("IP brute", source.replace("const countryRaw = req.headers.get('cf-ipcountry') || '';", "const countryRaw = req.headers.get('cf-ipcountry') || '';\n  const ip = req.headers.get('x-forwarded-for');", 1), workflow),
         ("authentification retirée", source.replace("const user = await requiredUser(req);", "const user = { id: 'unsafe' };", 1), workflow),
         ("session vérifiée retirée", source.replace("const sessionId = sessionIdFromVerifiedRequest(req);", "const sessionId = 'unsafe';", 1), workflow),
