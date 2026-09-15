@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+"""Fail-closed guard for SINJIRA V25 Mode Voyage client visibility convergence."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+MIGRATION = Path("supabase/migrations/20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql")
+SQL_TEST = Path("supabase/tests/security_travel_client_visibility_v25.test.sql")
+WORKFLOW = Path(".github/workflows/sinjira-security-travel-client-visibility-v25.yml")
+LEDGER = Path("supabase/production-migration-ledger.txt")
+STAMP = "20260914223000"
+EXPECTED_BLOB_SHA = "b08af7275d0d89b122505da413458fa9a24d2603"
+
+
+def squash(value: str) -> str:
+    return re.sub(r"\s+", " ", value.lower()).strip()
+
+
+def git_blob_sha(text: str) -> str:
+    data = text.encode("utf-8")
+    return hashlib.sha1(f"blob {len(data)}\0".encode("ascii") + data).hexdigest()
+
+
+def function(source: str, marker: str) -> str:
+    start = source.lower().find(marker.lower())
+    if start < 0:
+        return ""
+    nxt = source.lower().find("create or replace function ", start + len(marker))
+    return source[start:] if nxt < 0 else source[start:nxt]
+
+
+def validate(migration: str, test_sql: str, workflow: str, ledger: str) -> list[str]:
+    errors: list[str] = []
+    mig = squash(migration)
+    test = squash(test_sql)
+    flow = workflow.lower()
+
+    if git_blob_sha(migration) != EXPECTED_BLOB_SHA:
+        errors.append("migration visibility: empreinte A1 inattendue")
+
+    required_migration = (
+        "alter table public.security_travel_plans enable row level security;",
+        "revoke all on table public.security_travel_plans from public, anon, authenticated;",
+        "grant select on table public.security_travel_plans to authenticated;",
+        "create policy security_travel_plans_read_own",
+        "to authenticated",
+        "(select auth.uid()) = user_id",
+        "status = 'active'",
+        "ends_at >= statement_timestamp()",
+    )
+    for needle in required_migration:
+        if needle not in mig:
+            errors.append(f"migration visibilité: invariant absent: {needle}")
+
+    policy = re.search(
+        r"create\s+policy\s+security_travel_plans_read_own[\s\S]*?using\s*\(([\s\S]*?)\)\s*;",
+        migration,
+        flags=re.IGNORECASE,
+    )
+    policy_text = squash(policy.group(1)) if policy else ""
+    if not policy_text:
+        errors.append("politique SELECT Mode Voyage absente")
+    elif "delete_after" in policy_text:
+        errors.append("la rétention ne doit jamais autoriser une lecture client")
+
+    for verb in ("insert", "update", "delete"):
+        if f"grant {verb} on table public.security_travel_plans to authenticated" in mig:
+            errors.append(f"écriture directe authenticated interdite: {verb}")
+    if "grant select on table public.security_travel_plans to anon" in mig:
+        errors.append("anon ne doit jamais lire les voyages")
+
+    create_fn = squash(function(migration, "create or replace function public.security_create_travel_plan("))
+    cancel_fn = squash(function(migration, "create or replace function public.security_cancel_travel_plan("))
+    if "security invoker" not in create_fn or "set search_path = ''" not in create_fn:
+        errors.append("wrapper création: SECURITY INVOKER/search_path requis")
+    if "sinjira_security_internal.security_create_travel_plan($1,$2,$3,$4)" not in create_fn:
+        errors.append("wrapper création: délégation interne absente")
+    for key in ("id", "status", "starts_at", "ends_at", "destinations"):
+        if f"'{key}', result->'{key}'" not in create_fn:
+            errors.append(f"wrapper création: clé requise absente: {key}")
+    for key in ("delete_after", "user_id", "created_at", "updated_at", "cancelled_at", "multi_country"):
+        if f"result->'{key}'" in create_fn:
+            errors.append(f"wrapper création: métadonnée interne exposée: {key}")
+
+    if "security invoker" not in cancel_fn or "set search_path = ''" not in cancel_fn:
+        errors.append("wrapper annulation: SECURITY INVOKER/search_path requis")
+    if "sinjira_security_internal.security_cancel_travel_plan($1)" not in cancel_fn:
+        errors.append("wrapper annulation: délégation interne absente")
+    if "'id', result->'id'" not in cancel_fn or "'status', result->'status'" not in cancel_fn:
+        errors.append("wrapper annulation: accusé minimal absent")
+    for key in ("delete_after", "user_id", "created_at", "updated_at", "cancelled_at", "destinations", "starts_at", "ends_at"):
+        if f"result->'{key}'" in cancel_fn:
+            errors.append(f"wrapper annulation: métadonnée interne exposée: {key}")
+
+    for marker in (
+        "select plan(22)", "relrowsecurity", "security_travel_plans_read_own", "auth.uid()",
+        "status", "active", "ends_at", "statement_timestamp()", "delete_after", "service_role",
+        "security_create_travel_plan(timestamptz,timestamptz,text[],boolean)",
+        "security_cancel_travel_plan(uuid)", "jsonb_build_object", "select * from finish()", "rollback;",
+    ):
+        if marker not in test:
+            errors.append(f"contrat pgTAP visibilité incomplet: {marker}")
+
+    for path in (MIGRATION, SQL_TEST, LEDGER, Path("scripts/validate_security_travel_client_visibility_v25.py"), WORKFLOW):
+        if flow.count(str(path).lower()) < 2:
+            errors.append(f"workflow: chemin critique non surveillé sur PR + push: {path}")
+    required_commands = (
+        "python3 scripts/validate_security_travel_client_visibility_v25.py --self-test",
+        "python3 scripts/validate_security_travel_client_visibility_v25.py",
+        "supabase test db supabase/tests/security_travel_client_visibility_v25.test.sql --local",
+    )
+    for command in required_commands:
+        if command not in workflow:
+            errors.append(f"workflow: commande absente: {command}")
+    if "permissions:\n  contents: read" not in workflow:
+        errors.append("workflow: permissions lecture seule requises")
+    if "production-reviewed-migration-batch.txt" in flow:
+        errors.append("workflow: le lot production reviewed doit rester hors convergence")
+    if "supabase db push" in flow or "supabase functions deploy" in flow:
+        errors.append("workflow: tout déploiement Supabase est interdit")
+
+    if re.search(rf"^{STAMP}\s+", ledger, flags=re.MULTILINE):
+        errors.append("ledger production: migration de visibilité marquée déployée")
+    return errors
+
+
+def load(path: Path) -> str:
+    return (ROOT / path).read_text(encoding="utf-8")
+
+
+def replace_once(source: str, old: str, new: str) -> str:
+    if source.count(old) != 1:
+        raise ValueError(f"mutation attendue une fois: {old}")
+    return source.replace(old, new, 1)
+
+
+def self_test(values: tuple[str, str, str, str]) -> list[str]:
+    migration, test_sql, workflow, ledger = values
+    cases = []
+    try:
+        cases = [
+            (replace_once(migration, "alter table public.security_travel_plans enable row level security;", "alter table public.security_travel_plans disable row level security;"), test_sql, workflow, ledger),
+            (replace_once(migration, "(select auth.uid()) = user_id", "true"), test_sql, workflow, ledger),
+            (replace_once(migration, "and status = 'active'", ""), test_sql, workflow, ledger),
+            (replace_once(migration, "and ends_at >= statement_timestamp()", "and delete_after >= statement_timestamp()"), test_sql, workflow, ledger),
+            (migration + "\ngrant select on table public.security_travel_plans to anon;\n", test_sql, workflow, ledger),
+            (migration + "\ngrant update on table public.security_travel_plans to authenticated;\n", test_sql, workflow, ledger),
+            (replace_once(migration, "    'destinations', result->'destinations'\n", "    'destinations', result->'destinations',\n    'delete_after', result->'delete_after'\n"), test_sql, workflow, ledger),
+            (migration, replace_once(test_sql, "statement_timestamp()", "clock_timestamp()"), workflow, ledger),
+            (migration + "\n-- mutation non revue\n", test_sql, workflow, ledger),
+            (migration, test_sql, workflow.replace("      - 'supabase/migrations/20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql'", "      - 'supabase/migrations/UNWATCHED.sql'", 1), ledger),
+            (migration, test_sql, replace_once(workflow, "python3 scripts/validate_security_travel_client_visibility_v25.py --self-test", "python3 scripts/validate_security_travel_client_visibility_v25.py --help"), ledger),
+            (migration, test_sql, workflow, ledger + "\n20260914223000 sinjira_v25_travel_mode_client_visibility_boundary\n"),
+        ]
+    except ValueError as exc:
+        return [str(exc)]
+
+    failures = []
+    for index, mutated in enumerate(cases, start=1):
+        if not validate(*mutated):
+            failures.append(f"mutation {index} non détectée")
+    return failures
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--self-test", action="store_true")
+    args = parser.parse_args()
+    values = (load(MIGRATION), load(SQL_TEST), load(WORKFLOW), load(LEDGER))
+    errors = self_test(values) if args.self_test else validate(*values)
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}")
+        return 1
+    print("Mode Voyage client visibility: A1 fail-closed, empreinte verrouillée, production intacte")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

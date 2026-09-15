@@ -1,0 +1,46 @@
+name: SINJIRA V25 — Vue éphémère Mode Voyage
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
+      - 'assets/js/sinjira-security-v24-4-99.js'
+      - 'scripts/validate_security_travel_visibility_v25.py'
+      - '.github/workflows/sinjira-security-travel-visibility-v25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
+      - 'assets/js/sinjira-security-v24-4-99.js'
+      - 'scripts/validate_security_travel_visibility_v25.py'
+      - '.github/workflows/sinjira-security-travel-visibility-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Vérifier la vue Mode Voyage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier la syntaxe du contrôleur
+        run: node --check assets/js/sinjira-security-center-v24-4-98.js
+
+      - name: Auto-tester le contrat
+        run: python3 scripts/validate_security_travel_visibility_v25.py --self-test
+
+      - name: Vérifier le contrat
+        run: python3 scripts/validate_security_travel_visibility_v25.py
