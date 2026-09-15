@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Garde-fou A1 : la réponse publique de security-context reste minimale."""
+"""Garde-fou A1 : security-context reste minimal et refuse toute décision ambiguë."""
 
 from __future__ import annotations
 
@@ -20,10 +20,18 @@ def validate(source: str, workflow: str) -> list[str]:
         "RPC de décision serveur": "service_security_evaluate_context_session",
         "géolocalisation explicitement activée": "SINJIRA_TRUST_GEO_HEADERS",
         "réponse privée sans cache": "'Cache-Control': 'private, no-store, max-age=0'",
-        "allowlist publique": "function publicSecurityResult(data: unknown)",
-        "projection de l'issue": "const result: { outcome: string; challenge_id?: string } = { outcome };",
-        "challenge limité au défi": "if (outcome === 'challenge'",
-        "projection utilisée sur HTTP": "security: publicSecurityResult(data)",
+        "issues canoniques exactes": "const SECURITY_OUTCOMES = new Set(['allow', 'challenge', 'block']);",
+        "projection typée fail-closed": "function publicSecurityResult(data: unknown): PublicSecurityResult | null",
+        "absence de fallback implicite": "const outcome = typeof source.outcome === 'string' ? source.outcome.trim() : '';",
+        "issue inconnue rejetée": "if (!SECURITY_OUTCOMES.has(outcome)) return null;",
+        "UUID de défi normalisé": "const challengeId = typeof source.challenge_id === 'string' ? source.challenge_id.trim() : '';",
+        "défi incomplet rejeté": "if (!challengeId || !UUID_RE.test(challengeId)) return null;",
+        "défi public minimal": "return { outcome: 'challenge', challenge_id: challengeId };",
+        "allow/block publics minimaux": "return { outcome: outcome as 'allow' | 'block' };",
+        "projection calculée avant succès": "const publicSecurity = publicSecurityResult(data);",
+        "projection obligatoire": "if (!publicSecurity) {",
+        "réponse fail-closed générique": "return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 503);",
+        "projection utilisée sur HTTP": "security: publicSecurity",
         "objet complet conservé pour le push interne": "runSecurityPushBackground(service, user.id, data)",
     }
     for label, fragment in required_source.items():
@@ -44,6 +52,8 @@ def validate(source: str, workflow: str) -> list[str]:
             errors.append(f"Interdit: {label}.")
 
     helper_start = source.find("function publicSecurityResult(data: unknown)")
+    if helper_start < 0:
+        helper_start = source.find("function publicSecurityResult(data: unknown): PublicSecurityResult | null")
     helper_end = source.find("function sessionIdFromVerifiedRequest", helper_start)
     if helper_start < 0 or helper_end < 0:
         errors.append("Impossible d'isoler publicSecurityResult().")
@@ -66,8 +76,27 @@ def validate(source: str, workflow: str) -> list[str]:
         for field in forbidden_public_fields:
             if field in helper:
                 errors.append(f"Champ interne interdit dans la projection publique: {field}.")
+        fallback_markers = (
+            ": 'allow';",
+            '|| \'allow\'',
+            '?? \'allow\'',
+            'return { outcome: \'allow\' }; // fallback',
+        )
+        for marker in fallback_markers:
+            if marker in helper:
+                errors.append("La projection contient un fallback implicite vers allow.")
+                break
 
-    response_start = source.find("return privateJson({\n      ok: true")
+    projection_pos = source.find("const publicSecurity = publicSecurityResult(data);")
+    reject_pos = source.find("if (!publicSecurity) {", projection_pos)
+    push_pos = source.find("EdgeRuntime.waitUntil(runSecurityPushBackground(service, user.id, data));")
+    success_pos = source.find("return privateJson({\n      ok: true")
+    if min(projection_pos, reject_pos, push_pos, success_pos) < 0:
+        errors.append("Impossible de vérifier l'ordre fail-closed de security-context.")
+    elif not (projection_pos < reject_pos < push_pos < success_pos):
+        errors.append("La décision publique doit être validée avant le push de fond et avant toute réponse de succès.")
+
+    response_start = success_pos
     response_end = source.find("\n    });", response_start)
     if response_start < 0 or response_end < 0:
         errors.append("Impossible d'isoler la réponse HTTP de succès.")
@@ -114,24 +143,37 @@ def validate(source: str, workflow: str) -> list[str]:
 
 
 def self_test(source: str, workflow: str) -> None:
+    fail_closed_block = """    const publicSecurity = publicSecurityResult(data);\n    if (!publicSecurity) {\n      console.warn('[security-context] décision serveur invalide');\n      return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 503);\n    }\n\n    EdgeRuntime.waitUntil(runSecurityPushBackground(service, user.id, data));"""
+    reordered_block = """    EdgeRuntime.waitUntil(runSecurityPushBackground(service, user.id, data));\n\n    const publicSecurity = publicSecurityResult(data);\n    if (!publicSecurity) {\n      console.warn('[security-context] décision serveur invalide');\n      return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 503);\n    }"""
+
     mutations: list[tuple[str, str, str]] = [
-        ("réponse RPC brute", source.replace("security: publicSecurityResult(data)", "security: data", 1), workflow),
-        ("score de risque public", source.replace("const result: { outcome: string; challenge_id?: string } = { outcome };", "const result: any = { outcome, risk_score: source.risk_score };", 1), workflow),
-        ("raisons de risque publiques", source.replace("const result: { outcome: string; challenge_id?: string } = { outcome };", "const result: any = { outcome, risk_reasons: source.risk_reasons };", 1), workflow),
-        ("pays dans la projection", source.replace("const result: { outcome: string; challenge_id?: string } = { outcome };", "const result: any = { outcome, country: source.country };", 1), workflow),
+        ("réponse RPC brute", source.replace("security: publicSecurity", "security: data", 1), workflow),
+        ("score de risque public", source.replace("return { outcome: outcome as 'allow' | 'block' };", "return { outcome: outcome as 'allow' | 'block', risk_score: source.risk_score } as any;", 1), workflow),
+        ("raisons de risque publiques", source.replace("return { outcome: outcome as 'allow' | 'block' };", "return { outcome: outcome as 'allow' | 'block', risk_reasons: source.risk_reasons } as any;", 1), workflow),
         ("pays sérialisé dans la réponse", source.replace("geo_mode: geo.country ? 'trusted_coarse' : 'disabled'", "country: geo.country,\n      geo_mode: geo.country ? 'trusted_coarse' : 'disabled'", 1), workflow),
         ("IP brute", source.replace("const countryRaw = req.headers.get('cf-ipcountry') || '';", "const countryRaw = req.headers.get('cf-ipcountry') || '';\n  const ip = req.headers.get('x-forwarded-for');", 1), workflow),
         ("authentification retirée", source.replace("const user = await requiredUser(req);", "const user = { id: 'unsafe' };", 1), workflow),
         ("session vérifiée retirée", source.replace("const sessionId = sessionIdFromVerifiedRequest(req);", "const sessionId = 'unsafe';", 1), workflow),
         ("RPC retirée", source.replace("service_security_evaluate_context_session", "unsafe_context_rpc", 1), workflow),
         ("erreur brute journalisée", source.replace("console.error('[security-context] request failed', authRequired ? 'AUTH_REQUIRED' : 'UNEXPECTED');", "console.error('[security-context]', error);", 1), workflow),
-        ("allowlist contournée", source.replace("security: publicSecurityResult(data)", "security: { outcome: data?.outcome, ...data }", 1), workflow),
+        ("issue inconnue acceptée", source.replace("if (!SECURITY_OUTCOMES.has(outcome)) return null;", "if (!SECURITY_OUTCOMES.has(outcome)) return { outcome: 'allow' };", 1), workflow),
+        ("RPC nulle transformée en allow", source.replace("const outcome = typeof source.outcome === 'string' ? source.outcome.trim() : '';", "const outcome = typeof source.outcome === 'string' ? source.outcome.trim() : 'allow';", 1), workflow),
+        ("défi sans identifiant accepté", source.replace("if (!challengeId || !UUID_RE.test(challengeId)) return null;", "if (!challengeId) return { outcome: 'challenge', challenge_id: '00000000-0000-4000-8000-000000000000' };", 1), workflow),
+        ("UUID de défi non vérifié", source.replace("if (!challengeId || !UUID_RE.test(challengeId)) return null;", "if (!challengeId) return null;", 1), workflow),
+        ("allow retiré du contrat", source.replace("new Set(['allow', 'challenge', 'block'])", "new Set(['challenge', 'block'])", 1), workflow),
+        ("block retiré du contrat", source.replace("new Set(['allow', 'challenge', 'block'])", "new Set(['allow', 'challenge'])", 1), workflow),
+        ("validation fail-closed retirée", source.replace("if (!publicSecurity) {", "if (false) {", 1), workflow),
+        ("503 fail-closed retiré", source.replace("}, 503);", "});", 1), workflow),
+        ("push lancé avant validation", source.replace(fail_closed_block, reordered_block, 1), workflow),
         ("auto-test CI retiré", source, workflow.replace("python3 scripts/validate_security_context_response_v25.py --self-test", "echo self-test-retiré", 1)),
         ("chemin Edge retiré d'un trigger", source, workflow.replace("      - 'supabase/functions/security-context/index.ts'", "      - 'supabase/functions/security-context/index.disabled'", 1)),
     ]
 
     undetected: list[str] = []
     for name, mutated_source, mutated_workflow in mutations:
+        if mutated_source == source and mutated_workflow == workflow:
+            undetected.append(f"{name} (mutation non appliquée)")
+            continue
         if not validate(mutated_source, mutated_workflow):
             undetected.append(name)
     if undetected:
@@ -157,7 +199,7 @@ def main() -> None:
             print(f"ERREUR: {error}")
         raise SystemExit(1)
 
-    print("OK: security-context expose seulement outcome/challenge_id et geo_mode; le détail du risque reste serveur.")
+    print("OK: security-context est minimal et fail-closed sur toute décision RPC ambiguë.")
 
 
 if __name__ == "__main__":
