@@ -26,13 +26,15 @@ Deno.serve(async(req)=>{
 
   try{
     const user=await requiredUser(req);
+    const service=serviceClient();
+    await requirePrivateBookAccess(service,user.id);
+
+    // Ne révèle l'état d'activation ou de configuration du stockage qu'après
+    // authentification ET autorisation du compte pour ce Livre I.
     const storage=privateBookStorageConfig();
     if(!storage.enabled){
       return privateJson({ok:false,available:false,error:'La diffusion privée du Livre I n’est pas activée.'},503);
     }
-
-    const service=serviceClient();
-    await requirePrivateBookAccess(service,user.id);
 
     const {data:signed,error:signedError}=await service.storage
       .from(storage.bucket)
