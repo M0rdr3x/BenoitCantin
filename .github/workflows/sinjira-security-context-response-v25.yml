@@ -1,17 +1,21 @@
-name: SINJIRA V25 — Réponse minimale security-context
+name: SINJIRA V25 — Frontières security-context
 
 on:
   pull_request:
     branches: [main]
     paths:
       - 'supabase/functions/security-context/index.ts'
+      - 'scripts/validate_security_context_request_security.py'
       - 'scripts/validate_security_context_response_v25.py'
+      - '.github/workflows/sinjira-security-context-request-v25.yml'
       - '.github/workflows/sinjira-security-context-response-v25.yml'
   push:
     branches: [main]
     paths:
       - 'supabase/functions/security-context/index.ts'
+      - 'scripts/validate_security_context_request_security.py'
       - 'scripts/validate_security_context_response_v25.py'
+      - '.github/workflows/sinjira-security-context-request-v25.yml'
       - '.github/workflows/sinjira-security-context-response-v25.yml'
   workflow_dispatch:
 
@@ -20,7 +24,7 @@ permissions:
 
 jobs:
   validate:
-    name: Vérifier la minimisation de la réponse security-context
+    name: Vérifier les frontières security-context
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -34,10 +38,18 @@ jobs:
         with:
           python-version: '3.12.14'
 
-      - name: Vérifier la syntaxe du garde-fou
-        run: python3 -m py_compile scripts/validate_security_context_response_v25.py
+      - name: Vérifier la syntaxe des garde-fous
+        run: |
+          python3 -m py_compile scripts/validate_security_context_request_security.py
+          python3 -m py_compile scripts/validate_security_context_response_v25.py
 
-      - name: Auto-tester le garde-fou
+      - name: Auto-tester la frontière de requête
+        run: python3 scripts/validate_security_context_request_security.py --self-test
+
+      - name: Vérifier la frontière de requête
+        run: python3 scripts/validate_security_context_request_security.py
+
+      - name: Auto-tester la frontière de réponse
         run: python3 scripts/validate_security_context_response_v25.py --self-test
 
       - name: Vérifier la frontière de réponse publique
