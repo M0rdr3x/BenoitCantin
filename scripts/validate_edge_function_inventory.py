@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from pathlib import Path
 import re
 import tomllib
@@ -11,7 +10,7 @@ CANONICAL = {
     "admin-analytics", "admin-console", "admin-license-codes", "admin-reports",
     "admin-sinjira-v18", "admin-social-v20", "admin-users", "conscience-vault",
     "delete-player-account", "fracture-engine-gateway", "get-document-url",
-    "get-private-book-url", "life-story-delivery", "life-story-export", "personal-ai",
+    "get-private-book-url", "get-private-book-reading-url", "life-story-delivery", "life-story-export", "personal-ai",
     "redeem-license-code", "revoke-my-contributions", "security-context", "send-game-report",
     "send-player-sheet", "submit-character-questionnaire", "submit-fracture-endgame",
     "submit-game-contribution",
@@ -44,6 +43,13 @@ CUSTOM_AUTH = {
     ),
 }
 
+PRIVATE_BOOK_ENDPOINT_GUARDS = (
+    "req.method!=='POST'", "requiredUser(req)", "privateBookStorageConfig()",
+    "requirePrivateBookAccess(service,user.id)", "createSignedUrl",
+    "LIVRE_I_SIGNED_URL_SECONDS", "Cache-Control", "private, no-store",
+    "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
+)
+
 JWT_SENSITIVE_GUARDS = {
     "conscience-vault": (
         "req.method !== 'POST'", "MAX_REQUEST_BYTES", "readBoundedJson", "req.body.getReader()",
@@ -58,14 +64,8 @@ JWT_SENSITIVE_GUARDS = {
         "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
         "conversation_enabled", "source_retrieval_enabled",
     ),
-    "get-private-book-url": (
-        "req.method!=='POST'", "requiredUser(req)", "user_entitlements",
-        ".eq('user_id',user.id)", ".eq('product_id',product.id)",
-        "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED", "SINJIRA_LIVRE_I_PRIVATE_BUCKET",
-        "SINJIRA_LIVRE_I_PRIVATE_PATH", "SIGNED_URL_SECONDS=300", "createSignedUrl",
-        "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
-        "Referrer-Policy", "no-referrer",
-    ),
+    "get-private-book-url": PRIVATE_BOOK_ENDPOINT_GUARDS,
+    "get-private-book-reading-url": PRIVATE_BOOK_ENDPOINT_GUARDS,
     "delete-player-account": (
         "req.method !== 'POST'", "MAX_REQUEST_BYTES=1024", "readBoundedJson", "TextEncoder",
         "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "Cache-Control", "private, no-store",
@@ -172,10 +172,32 @@ def main() -> int:
         if "await req.json()" in source or "await req.json (" in source:
             errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
 
-    book_source = read_tree_text(FUNCTIONS / "get-private-book-url")
-    for forbidden in ("external_url", "getPublicUrl("):
-        if forbidden in book_source:
-            errors.append(f"get-private-book-url: repli public interdit: {forbidden}.")
+    book_helper = (FUNCTIONS / "_shared" / "privateBook.ts").read_text("utf-8", errors="ignore") if (FUNCTIONS / "_shared" / "privateBook.ts").is_file() else ""
+    for marker in (
+        "LIVRE_I_PRODUCT_SLUG='sinjira-livre-01-la-cendre-du-jugement'",
+        "LIVRE_I_SIGNED_URL_SECONDS=300",
+        "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED",
+        "SINJIRA_LIVRE_I_PRIVATE_BUCKET",
+        "SINJIRA_LIVRE_I_PRIVATE_PATH",
+        "user_entitlements", ".eq('user_id',userId)", ".eq('product_id',product.id)",
+        "service.rpc('is_sinjira_owner',{p_user_id:userId})", "if(isOwner===true)return 'owner'",
+    ):
+        if marker not in book_helper:
+            errors.append(f"Livre I helper: garde-fou d'accès manquant: {marker}.")
+    for forbidden in ("external_url", "getPublicUrl(", "clientRole"):
+        if forbidden in book_helper:
+            errors.append(f"Livre I helper: repli/assertion client interdit: {forbidden}.")
+
+    book_download_source = read_tree_text(FUNCTIONS / "get-private-book-url")
+    book_reader_source = read_tree_text(FUNCTIONS / "get-private-book-reading-url")
+    if "{download:'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf'}" not in book_download_source:
+        errors.append("get-private-book-url: le téléchargement privé doit conserver Content-Disposition via l'option download.")
+    if "{download:" in book_reader_source or "download:'" in book_reader_source:
+        errors.append("get-private-book-reading-url: le lecteur ne doit pas forcer le téléchargement.")
+    for source_name, source in (("get-private-book-url", book_download_source), ("get-private-book-reading-url", book_reader_source)):
+        for forbidden in ("external_url", "getPublicUrl("):
+            if forbidden in source:
+                errors.append(f"{source_name}: repli public interdit: {forbidden}.")
 
     vault_source = read_tree_text(FUNCTIONS / "conscience-vault")
     if "service.rpc('security_evaluate_context'" in vault_source or 'service.rpc("security_evaluate_context"' in vault_source:
@@ -225,7 +247,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 23 fonctions canoniques, JWT/custom auth cohérents, porte Livre I entitlement privée, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 24 fonctions canoniques, JWT/custom auth cohérents, Livre I lecture/téléchargement privés derrière entitlement ou rôle auteur vérifié serveur, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 

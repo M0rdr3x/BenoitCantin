@@ -29,19 +29,18 @@ Deno.serve(async(req)=>{
     const service=serviceClient();
     await requirePrivateBookAccess(service,user.id);
 
-    // Ne révèle l'état d'activation ou de configuration du stockage qu'après
-    // authentification ET autorisation du compte pour ce Livre I.
+    // L'état de la livraison privée n'est révélé qu'à un compte déjà autorisé.
     const storage=privateBookStorageConfig();
     if(!storage.enabled){
-      return privateJson({ok:false,available:false,error:'La diffusion privée du Livre I n’est pas activée.'},503);
+      return privateJson({ok:false,available:false,error:'La lecture privée du Livre I n’est pas activée.'},503);
     }
 
     const {data:signed,error:signedError}=await service.storage
       .from(storage.bucket)
-      .createSignedUrl(storage.storagePath,LIVRE_I_SIGNED_URL_SECONDS,{download:'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf'});
+      .createSignedUrl(storage.storagePath,LIVRE_I_SIGNED_URL_SECONDS);
     if(signedError||!signed?.signedUrl){
-      console.error('[get-private-book-url]',{code:'BOOK_SIGNED_URL_FAILED'});
-      return privateJson({ok:false,error:'Impossible de préparer le téléchargement sécurisé.'},500);
+      console.error('[get-private-book-reading-url]',{code:'BOOK_READER_SIGNED_URL_FAILED'});
+      return privateJson({ok:false,error:'Impossible de préparer la lecture sécurisée.'},500);
     }
 
     return privateJson({
@@ -57,14 +56,14 @@ Deno.serve(async(req)=>{
     if(message==='BOOK_ACCESS_DENIED')return privateJson({ok:false,error:'Votre compte ne possède pas ce livre.'},403);
     if(message==='BOOK_UNAVAILABLE')return privateJson({ok:false,error:'Livre indisponible.'},503);
     if(message==='BOOK_ACCESS_CHECK_FAILED'){
-      console.error('[get-private-book-url]',{code:'BOOK_ACCESS_CHECK_FAILED'});
+      console.error('[get-private-book-reading-url]',{code:'BOOK_READER_ACCESS_CHECK_FAILED'});
       return privateJson({ok:false,error:'Impossible de vérifier votre droit d’accès.'},500);
     }
     if(message==='PRIVATE_STORAGE_NOT_CONFIGURED'){
-      console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_STORAGE_NOT_CONFIGURED'});
-      return privateJson({ok:false,error:'Diffusion privée non configurée.'},503);
+      console.error('[get-private-book-reading-url]',{code:'BOOK_READER_STORAGE_NOT_CONFIGURED'});
+      return privateJson({ok:false,error:'Lecture privée non configurée.'},503);
     }
-    console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_DELIVERY_FAILED'});
-    return privateJson({ok:false,error:'Erreur lors de la préparation du téléchargement.'},500);
+    console.error('[get-private-book-reading-url]',{code:'BOOK_READER_FAILED'});
+    return privateJson({ok:false,error:'Erreur lors de la préparation de la lecture.'},500);
   }
 });

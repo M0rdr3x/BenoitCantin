@@ -13,9 +13,13 @@ on:
       - 'supabase/tests/livre_i_entitlements_read_only_a1.test.sql'
       - 'supabase/functions/get-document-url/**'
       - 'supabase/functions/get-private-book-url/**'
+      - 'supabase/functions/get-private-book-reading-url/**'
+      - 'supabase/functions/_shared/privateBook.ts'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
+      - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_livre_i_entitlement_boundary.py'
       - 'scripts/validate_livre_i_entitlement_ui.py'
+      - 'scripts/validate_livre_i_source_artifacts.py'
       - '.github/workflows/sinjira-livre-i-private-delivery.yml'
       - 'sitemap.xml'
       - 'robots.txt'
@@ -33,9 +37,13 @@ on:
       - 'supabase/tests/livre_i_entitlements_read_only_a1.test.sql'
       - 'supabase/functions/get-document-url/**'
       - 'supabase/functions/get-private-book-url/**'
+      - 'supabase/functions/get-private-book-reading-url/**'
+      - 'supabase/functions/_shared/privateBook.ts'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
+      - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_livre_i_entitlement_boundary.py'
       - 'scripts/validate_livre_i_entitlement_ui.py'
+      - 'scripts/validate_livre_i_source_artifacts.py'
       - '.github/workflows/sinjira-livre-i-private-delivery.yml'
       - 'sitemap.xml'
       - 'robots.txt'
@@ -65,11 +73,31 @@ jobs:
         with:
           python-version: '3.12.14'
 
+      - name: Vérifier la syntaxe des garde-fous Livre I
+        run: |
+          python3 -m py_compile scripts/validate_sinjira_livre_i_delivery.py
+          python3 -m py_compile scripts/validate_get_private_book_url_security.py
+          python3 -m py_compile scripts/validate_livre_i_entitlement_boundary.py
+          python3 -m py_compile scripts/validate_livre_i_entitlement_ui.py
+          python3 -m py_compile scripts/validate_livre_i_source_artifacts.py
+
       - name: Auto-tester le validateur de diffusion
         run: python3 scripts/validate_sinjira_livre_i_delivery.py --self-test
 
-      - name: Vérifier le contrat, JWT, entitlements et actifs publics
+      - name: Vérifier contrat, actifs publics et lecture privée
         run: python3 scripts/validate_sinjira_livre_i_delivery.py
+
+      - name: Auto-tester la fidélité des artéfacts source
+        run: python3 scripts/validate_livre_i_source_artifacts.py --self-test
+
+      - name: Vérifier les artéfacts source et le candidat démo
+        run: python3 scripts/validate_livre_i_source_artifacts.py
+
+      - name: Auto-tester les portes privées lecture et téléchargement
+        run: python3 scripts/validate_get_private_book_url_security.py --self-test
+
+      - name: Vérifier achat ou auteur côté serveur
+        run: python3 scripts/validate_get_private_book_url_security.py
 
       - name: Auto-tester la frontière des droits numériques
         run: python3 scripts/validate_livre_i_entitlement_boundary.py --self-test
@@ -80,5 +108,8 @@ jobs:
       - name: Auto-tester la clarté UI des droits Livre I
         run: python3 scripts/validate_livre_i_entitlement_ui.py --self-test
 
-      - name: Vérifier rôle propriétaire, droits réels et diffusion non activée
+      - name: Vérifier rôle propriétaire distinct et actions privées protégées
         run: python3 scripts/validate_livre_i_entitlement_ui.py
+
+      - name: Vérifier la syntaxe du lecteur privé
+        run: node --check assets/js/sinjira-private-book-reader.js
