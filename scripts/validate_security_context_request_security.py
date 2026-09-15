@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
 EDGE = ROOT / 'supabase/functions/security-context/index.ts'
+WORKFLOW = ROOT / '.github/workflows/sinjira-security-context-request-v25.yml'
 
 REQUIRED = {
     'POST uniquement': "req.method !== 'POST'",
@@ -23,7 +24,7 @@ REQUIRED = {
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
     'référent masqué': "'Referrer-Policy': 'no-referrer'",
-    'géolocalisation explicite opt-in infrastructure': "Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true'",
+    'géolocalisation explicitement opt-in infrastructure': "Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true'",
     'pays approximatif seulement': "req.headers.get('cf-ipcountry')",
     'région approximative seulement': "req.headers.get('x-sinjira-region')",
     'RPC contexte session canonique': "service.rpc('service_security_evaluate_context_session'",
@@ -53,13 +54,35 @@ FORBIDDEN = {
     'longitude précise': 'longitude',
 }
 
+WORKFLOW_REQUIRED = {
+    'permissions lecture seule': 'contents: read',
+    'runner épinglé': 'runs-on: ubuntu-24.04',
+    'Python épinglé': "python-version: '3.12.14'",
+    'auto-test exécuté': 'python3 scripts/validate_security_context_request_security.py --self-test',
+    'validation exécutée': 'python3 scripts/validate_security_context_request_security.py',
+}
 
-def validate(path: Path) -> list[str]:
+WATCHED_PATHS = (
+    'supabase/functions/security-context/index.ts',
+    'scripts/validate_security_context_request_security.py',
+    '.github/workflows/sinjira-security-context-request-v25.yml',
+)
+
+CHECKOUT_SHA = 'actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803'
+SETUP_PYTHON_SHA = 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1'
+
+
+def validate(path: Path, workflow_path: Path = WORKFLOW) -> list[str]:
     errors: list[str] = []
     try:
         source = path.read_text('utf-8', errors='ignore')
     except OSError as exc:
         return [f'Fonction security-context illisible: {exc}']
+
+    try:
+        workflow = workflow_path.read_text('utf-8', errors='ignore')
+    except OSError as exc:
+        return [f'Workflow security-context illisible: {exc}']
 
     for label, marker in REQUIRED.items():
         if marker not in source:
@@ -82,12 +105,30 @@ def validate(path: Path) -> list[str]:
     if source.count('privateJson(') < 6:
         errors.append('Les réponses sensibles doivent rester uniformément privées et non cachables.')
 
+    for label, marker in WORKFLOW_REQUIRED.items():
+        if marker not in workflow:
+            errors.append(f'Workflow security-context absent ou affaibli: {label}.')
+
+    if 'permissions:\n  contents: write' in workflow:
+        errors.append('Le workflow security-context ne doit pas obtenir contents: write.')
+
+    for watched in WATCHED_PATHS:
+        if workflow.count(watched) < 2:
+            errors.append(f'Le workflow doit surveiller {watched} sur pull_request et push.')
+
+    if CHECKOUT_SHA not in workflow:
+        errors.append('actions/checkout doit rester épinglé au SHA revu.')
+    if SETUP_PYTHON_SHA not in workflow:
+        errors.append('actions/setup-python doit rester épinglé au SHA revu.')
+
     return errors
 
 
 def self_test() -> None:
     with TemporaryDirectory() as raw:
-        path = Path(raw) / 'index.ts'
+        root = Path(raw)
+        path = root / 'index.ts'
+        workflow_path = root / 'workflow.yml'
         safe = """
 const MAX_REQUEST_BYTES = 4096;
 const PRIVATE_HEADERS = {
@@ -144,12 +185,38 @@ Deno.serve(async (req) => {
  }
 });
 """
+        safe_workflow = f"""name: test
+on:
+  pull_request:
+    paths:
+      - '{WATCHED_PATHS[0]}'
+      - '{WATCHED_PATHS[1]}'
+      - '{WATCHED_PATHS[2]}'
+  push:
+    paths:
+      - '{WATCHED_PATHS[0]}'
+      - '{WATCHED_PATHS[1]}'
+      - '{WATCHED_PATHS[2]}'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: {CHECKOUT_SHA}
+      - uses: {SETUP_PYTHON_SHA}
+        with:
+          python-version: '3.12.14'
+      - run: python3 scripts/validate_security_context_request_security.py --self-test
+      - run: python3 scripts/validate_security_context_request_security.py
+"""
         path.write_text(safe, encoding='utf-8')
-        clean = validate(path)
+        workflow_path.write_text(safe_workflow, encoding='utf-8')
+        clean = validate(path, workflow_path)
         if clean:
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
 
-        mutations = {
+        source_mutations = {
             'lecture JSON directe': safe.replace(' const reader = req.body?.getReader();', ' const bodyDirect = await req.json();'),
             'lecture texte intégrale': safe.replace(' const reader = req.body?.getReader();', ' const rawDirect = await req.text();'),
             'MIME JSON par préfixe': safe.replace("if (contentType !== 'application/json')", "if (!contentType.startsWith('application/json'))"),
@@ -163,21 +230,38 @@ Deno.serve(async (req) => {
             'corps avant auth': safe.replace('  const user = await requiredUser(req);\n  const sessionId = sessionIdFromVerifiedRequest(req);\n  const parsed = await readLimitedJson(req);', '  const parsed = await readLimitedJson(req);\n  const user = await requiredUser(req);\n  const sessionId = sessionIdFromVerifiedRequest(req);'),
             'corps avant session': safe.replace('  const sessionId = sessionIdFromVerifiedRequest(req);\n  const parsed = await readLimitedJson(req);', '  const parsed = await readLimitedJson(req);\n  const sessionId = sessionIdFromVerifiedRequest(req);'),
         }
-        for label, mutated in mutations.items():
+        for label, mutated in source_mutations.items():
             if mutated == safe:
                 raise AssertionError(f'Mutation sans effet: {label}')
             path.write_text(mutated, encoding='utf-8')
-            if not validate(path):
+            workflow_path.write_text(safe_workflow, encoding='utf-8')
+            if not validate(path, workflow_path):
                 raise AssertionError(f'Régression non détectée: {label}')
+
+        path.write_text(safe, encoding='utf-8')
+        workflow_mutations = {
+            'permissions écriture': safe_workflow.replace('contents: read', 'contents: write', 1),
+            'checkout non épinglé': safe_workflow.replace(CHECKOUT_SHA, 'actions/checkout@main', 1),
+            'setup-python non épinglé': safe_workflow.replace(SETUP_PYTHON_SHA, 'actions/setup-python@main', 1),
+            'auto-test retiré': safe_workflow.replace('python3 scripts/validate_security_context_request_security.py --self-test', 'echo self-test-retiré', 1),
+            'validation retirée': safe_workflow.replace('python3 scripts/validate_security_context_request_security.py\n', 'echo validation-retirée\n', 1),
+            'trigger fonction retiré': safe_workflow.replace(f"      - '{WATCHED_PATHS[0]}'", "      - 'supabase/functions/security-context/index.disabled'", 1),
+        }
+        for label, mutated_workflow in workflow_mutations.items():
+            if mutated_workflow == safe_workflow:
+                raise AssertionError(f'Mutation workflow sans effet: {label}')
+            workflow_path.write_text(mutated_workflow, encoding='utf-8')
+            if not validate(path, workflow_path):
+                raise AssertionError(f'Régression workflow non détectée: {label}')
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='Valide les bornes HTTP, les logs et la confidentialité de security-context.')
+    parser = argparse.ArgumentParser(description='Valide les bornes HTTP, les logs, la confidentialité et le workflow CI de security-context.')
     parser.add_argument('--self-test', action='store_true')
     args = parser.parse_args()
     if args.self_test:
         self_test()
-        print('OK auto-test security-context.')
+        print('OK auto-test security-context: code et workflow protégés.')
         return 0
 
     errors = validate(EDGE)
@@ -186,7 +270,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK security-context: JWT/session avant corps, JSON exact borné à 4 KiB pendant la lecture, logs fixes, réponses no-store et aucune IP brute/GPS.')
+    print('OK security-context: JWT/session avant corps, JSON exact borné à 4 KiB pendant la lecture, logs fixes, no-store, aucune IP brute/GPS et workflow CI verrouillé.')
     return 0
 
 
