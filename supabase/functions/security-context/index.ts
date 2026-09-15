@@ -15,6 +15,7 @@ import {
 } from '../_shared/security-push-receipts.mjs';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SECURITY_OUTCOMES = new Set(['allow', 'challenge', 'block']);
 const MAX_REQUEST_BYTES = 4096;
 const PRIVATE_HEADERS = {
   ...corsHeaders,
@@ -25,11 +26,26 @@ const PRIVATE_HEADERS = {
   'Referrer-Policy': 'no-referrer',
 };
 
+type PublicSecurityResult =
+  | { outcome: 'allow' }
+  | { outcome: 'block' }
+  | { outcome: 'challenge'; challenge_id: string };
+
 function privateJson(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: PRIVATE_HEADERS });
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
+  const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
+  if (contentType !== 'application/json') {
+    return {
+      response: privateJson(
+        { ok: false, error: 'Content-Type application/json requis.', code: 'UNSUPPORTED_MEDIA_TYPE' },
+        415,
+      ),
+    };
+  }
+
   const rawLength = req.headers.get('content-length');
   if (rawLength) {
     const declared = Number(rawLength);
@@ -38,9 +54,40 @@ async function readLimitedJson(req: Request): Promise<{ body?: any; response?: R
     }
   }
 
-  const raw = await req.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
-    return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+  const reader = req.body?.getReader();
+  if (!reader) return { body: {} };
+
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+
+    total += value.byteLength;
+    if (total > MAX_REQUEST_BYTES) {
+      try {
+        await reader.cancel();
+      } catch {
+        // Le rejet 413 reste prioritaire; aucune erreur de transport n'est exposée.
+      }
+      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+    }
+    chunks.push(value);
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  let raw: string;
+  try {
+    raw = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
   }
 
   try {
@@ -57,6 +104,30 @@ function safeText(value: unknown, max: number) {
 function safeDeviceType(value: unknown) {
   const type = safeText(value, 20);
   return ['browser', 'ios', 'android', 'tablet', 'other'].includes(type) ? type : 'other';
+}
+
+/**
+ * Le moteur de risque conserve sa réponse complète côté serveur pour le push et
+ * les décisions internes. La frontière HTTP publique n'expose que ce dont le
+ * flux de connexion a besoin : l'issue et, uniquement pour un défi, son id.
+ *
+ * Toute réponse moteur absente, inconnue ou incomplète est rejetée : aucune
+ * valeur implicite ne peut transformer une erreur de contrat en autorisation.
+ */
+function publicSecurityResult(data: unknown): PublicSecurityResult | null {
+  const source = data && typeof data === 'object' && !Array.isArray(data)
+    ? data as Record<string, unknown>
+    : {};
+  const outcome = typeof source.outcome === 'string' ? source.outcome.trim() : '';
+  if (!SECURITY_OUTCOMES.has(outcome)) return null;
+
+  if (outcome === 'challenge') {
+    const challengeId = typeof source.challenge_id === 'string' ? source.challenge_id.trim() : '';
+    if (!challengeId || !UUID_RE.test(challengeId)) return null;
+    return { outcome: 'challenge', challenge_id: challengeId };
+  }
+
+  return { outcome: outcome as 'allow' | 'block' };
 }
 
 /**
@@ -254,22 +325,25 @@ Deno.serve(async (req) => {
     });
     if (error) throw error;
 
+    const publicSecurity = publicSecurityResult(data);
+    if (!publicSecurity) {
+      console.warn('[security-context] décision serveur invalide');
+      return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 503);
+    }
+
     EdgeRuntime.waitUntil(runSecurityPushBackground(service, user.id, data));
 
     return privateJson({
       ok: true,
-      security: data,
-      geo_mode: geo.country ? 'trusted_coarse' : 'disabled',
-      privacy: {
-        raw_ip_stored: false,
-        gps_used: false,
-        geo_reused_for_ads: false,
-        push_reveals_location: false
-      }
+      security: publicSecurity,
+      geo_mode: geo.country ? 'trusted_coarse' : 'disabled'
     });
   } catch (error) {
-    console.error('[security-context]', error);
-    if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
+    const code = error instanceof Error ? error.message : '';
+    if (code === 'AUTH_REQUIRED') {
+      return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
+    }
+    console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });
     return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 500);
   }
 });
