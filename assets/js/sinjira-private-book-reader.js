@@ -37,11 +37,15 @@ function savePage(){
   if(resume)resume.textContent=`Page ${current} sauvegardée sur cet appareil.`;
 }
 
+async function requireReaderUser(){
+  return requireUser('/compte/connexion.html');
+}
+
 async function requestReadingUrl(force=false){
   if(!force&&signedUrl&&Date.now()<refreshAt)return signedUrl;
   if(accessPromise)return accessPromise;
   accessPromise=(async()=>{
-    await requireUser('/compte/connexion.html?next=/projets/sinjira/romans/lire-integral.html');
+    await requireReaderUser();
     const {data,error}=await getSupabase().functions.invoke(READER_FUNCTION);
     if(error||!data?.ok||!data?.url)throw new Error(data?.error||'Impossible de préparer la lecture privée.');
     const ttl=Math.max(60,Math.min(300,Number(data.expires_in)||300));
@@ -77,7 +81,7 @@ async function downloadBook(button){
   const previous=button.textContent;
   button.textContent='Préparation…';
   try{
-    await requireUser('/compte/connexion.html?next=/projets/sinjira/romans/lire-integral.html');
+    await requireReaderUser();
     const {data,error}=await getSupabase().functions.invoke(DOWNLOAD_FUNCTION);
     if(error||!data?.ok||!data?.url)throw new Error(data?.error||'Téléchargement indisponible.');
     location.assign(String(data.url));
