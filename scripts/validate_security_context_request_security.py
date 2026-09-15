@@ -58,8 +58,17 @@ WORKFLOW_REQUIRED = {
     'permissions lecture seule': 'contents: read',
     'runner épinglé': 'runs-on: ubuntu-24.04',
     'Python épinglé': "python-version: '3.12.14'",
-    'auto-test exécuté': 'python3 scripts/validate_security_context_request_security.py --self-test',
-    'validation exécutée': 'python3 scripts/validate_security_context_request_security.py',
+}
+
+WORKFLOW_COMMAND_PATTERNS = {
+    'auto-test exécuté': re.compile(
+        r'^\s*(?:-\s*)?run:\s+python3 scripts/validate_security_context_request_security\.py --self-test\s*$',
+        re.MULTILINE,
+    ),
+    'validation exécutée': re.compile(
+        r'^\s*(?:-\s*)?run:\s+python3 scripts/validate_security_context_request_security\.py\s*$',
+        re.MULTILINE,
+    ),
 }
 
 WATCHED_PATHS = (
@@ -107,6 +116,9 @@ def validate(path: Path, workflow_path: Path = WORKFLOW) -> list[str]:
 
     for label, marker in WORKFLOW_REQUIRED.items():
         if marker not in workflow:
+            errors.append(f'Workflow security-context absent ou affaibli: {label}.')
+    for label, pattern in WORKFLOW_COMMAND_PATTERNS.items():
+        if not pattern.search(workflow):
             errors.append(f'Workflow security-context absent ou affaibli: {label}.')
 
     if 'permissions:\n  contents: write' in workflow:
@@ -243,8 +255,16 @@ jobs:
             'permissions écriture': safe_workflow.replace('contents: read', 'contents: write', 1),
             'checkout non épinglé': safe_workflow.replace(CHECKOUT_SHA, 'actions/checkout@main', 1),
             'setup-python non épinglé': safe_workflow.replace(SETUP_PYTHON_SHA, 'actions/setup-python@main', 1),
-            'auto-test retiré': safe_workflow.replace('python3 scripts/validate_security_context_request_security.py --self-test', 'echo self-test-retiré', 1),
-            'validation retirée': safe_workflow.replace('python3 scripts/validate_security_context_request_security.py\n', 'echo validation-retirée\n', 1),
+            'auto-test retiré': safe_workflow.replace(
+                '      - run: python3 scripts/validate_security_context_request_security.py --self-test\n',
+                '      - run: echo self-test-retiré\n',
+                1,
+            ),
+            'validation retirée': safe_workflow.replace(
+                '      - run: python3 scripts/validate_security_context_request_security.py\n',
+                '      - run: echo validation-retirée\n',
+                1,
+            ),
             'trigger fonction retiré': safe_workflow.replace(f"      - '{WATCHED_PATHS[0]}'", "      - 'supabase/functions/security-context/index.disabled'", 1),
         }
         for label, mutated_workflow in workflow_mutations.items():
