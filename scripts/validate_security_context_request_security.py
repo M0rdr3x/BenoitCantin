@@ -24,8 +24,6 @@ REQUIRED = {
     'RPC contexte session canonique': "service.rpc('service_security_evaluate_context_session'",
     'session imposée au RPC': 'p_session_id: sessionId',
     'réponse succès privée': 'return privateJson({\n      ok: true,',
-    'contrat confidentialité IP': 'raw_ip_stored: false',
-    'contrat confidentialité GPS': 'gps_used: false',
 }
 
 REQUIRED_PATTERNS = {
@@ -38,6 +36,11 @@ FORBIDDEN = {
     'lecture IP brute Cloudflare': 'cf-connecting-ip',
     'lecture IP brute proxy': 'x-forwarded-for',
     'lecture IP brute générique': 'x-real-ip',
+    'géolocalisation GPS navigateur': 'navigator.geolocation',
+    'géolocalisation GPS getCurrentPosition': 'getcurrentposition',
+    'géolocalisation GPS watchPosition': 'watchposition',
+    'latitude précise': 'latitude',
+    'longitude précise': 'longitude',
 }
 
 
@@ -104,10 +107,8 @@ Deno.serve(async (req) => {
  const service=serviceClient();
  const {data}=await service.rpc('service_security_evaluate_context_session',{p_session_id: sessionId});
  if(!data)return privateJson({},500);
- const privacy={raw_ip_stored: false,gps_used: false};
  return privateJson({
       ok: true,
-      privacy,
       geo
  });
 });
@@ -138,6 +139,11 @@ privateJson({});
         raw_ip = validate(path)
         if not any('IP brute' in item for item in raw_ip):
             raise AssertionError('La lecture d’une IP brute doit être bloquée.')
+
+        path.write_text(safe.replace("const region=req.headers.get('x-sinjira-region');", "const region=req.headers.get('x-sinjira-region');\n const latitude = 48.0;"), encoding='utf-8')
+        gps = validate(path)
+        if not any('latitude précise' in item for item in gps):
+            raise AssertionError('Une collecte GPS précise doit être bloquée.')
 
         path.write_text(safe.replace('const user = await requiredUser(req);\n const sessionId', 'const parsed = await readLimitedJson(req);\n const user = await requiredUser(req);\n const sessionId').replace(' const parsed = await readLimitedJson(req);\n if (parsed.response)', ' if (parsed.response)'), encoding='utf-8')
         auth_order = validate(path)
