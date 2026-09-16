@@ -118,8 +118,9 @@ def validate_texts(reviewed: str, ledger: str, workflow: str) -> None:
         if command in workflow:
             fail(f"workflow A1: commande production interdite: {command}")
 
+    workflow_lines = [line.strip() for line in workflow.splitlines()]
     for command in REQUIRED_COMMANDS:
-        if workflow.count(command) != 1:
+        if workflow_lines.count(command) != 1:
             fail(f"workflow A1: commande requise absente ou dupliquée: {command}")
 
     for relative in REQUIRED_TRIGGERS:
@@ -168,7 +169,7 @@ def self_test(values: tuple[str, str, str]) -> None:
         "validateur Livre I retiré": (
             reviewed,
             ledger,
-            workflow.replace("      python3 scripts/validate_sinjira_livre_i_delivery.py\n", "", 1),
+            workflow.replace("          python3 scripts/validate_sinjira_livre_i_delivery.py\n", "", 1),
         ),
         "migration non surveillée": (
             reviewed,
