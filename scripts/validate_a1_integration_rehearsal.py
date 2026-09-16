@@ -23,6 +23,10 @@ REQUIRED_FILES = (
     ".github/workflows/sinjira-security-risk-v25.yml",
     ".github/workflows/sinjira-livre-i-private-delivery.yml",
     ".github/workflows/sinjira-account-life-story-a1.yml",
+    ".github/workflows/sinjira-live-social-foundation-v25.yml",
+    ".github/workflows/sinjira-live-social-safety-v25.yml",
+    ".github/workflows/sinjira-live-social-commands-v25.yml",
+    ".github/workflows/sinjira-live-social-activation-gate-v25.yml",
     "scripts/validate_edge_function_inventory.py",
     "scripts/validate_security_context_request_security.py",
     "scripts/validate_security_context_response_v25.py",
@@ -36,6 +40,16 @@ REQUIRED_FILES = (
     "scripts/validate_life_story_export_request_security.py",
     "scripts/validate_life_story_legacy_v24_5_2.py",
     "scripts/validate_life_story_delivery_v24_5_50.py",
+    "scripts/validate_live_social_foundation_workflow_security.py",
+    "scripts/validate_live_social_foundation_v25.py",
+    "scripts/validate_live_social_safety_workflow_security.py",
+    "scripts/validate_live_social_safety_v25.py",
+    "scripts/validate_live_social_share_codes_v25.py",
+    "scripts/validate_live_social_commands_workflow_security.py",
+    "scripts/validate_live_social_typed_commands_v25.py",
+    "scripts/validate_live_social_activation_gate_workflow_security.py",
+    "scripts/test_live_social_activation_gate_v25.py",
+    "scripts/validate_live_social_activation_gate_v25.py",
     "supabase/functions/security-context/index.ts",
     "supabase/functions/_shared/privateBook.ts",
     "supabase/functions/get-private-book-url/index.ts",
@@ -59,6 +73,20 @@ REQUIRED_COMMANDS = (
     "python3 scripts/validate_life_story_export_request_security.py",
     "python3 scripts/validate_life_story_legacy_v24_5_2.py",
     "python3 scripts/validate_life_story_delivery_v24_5_50.py",
+    "python3 scripts/validate_live_social_foundation_workflow_security.py --self-test",
+    "python3 scripts/validate_live_social_foundation_workflow_security.py",
+    "python3 scripts/validate_live_social_foundation_v25.py",
+    "python3 scripts/validate_live_social_safety_workflow_security.py --self-test",
+    "python3 scripts/validate_live_social_safety_workflow_security.py",
+    "python3 scripts/validate_live_social_safety_v25.py",
+    "python3 scripts/validate_live_social_share_codes_v25.py",
+    "python3 scripts/validate_live_social_commands_workflow_security.py --self-test",
+    "python3 scripts/validate_live_social_commands_workflow_security.py",
+    "python3 scripts/validate_live_social_typed_commands_v25.py",
+    "python3 scripts/validate_live_social_activation_gate_workflow_security.py --self-test",
+    "python3 scripts/validate_live_social_activation_gate_workflow_security.py",
+    "python3 scripts/test_live_social_activation_gate_v25.py",
+    "python3 scripts/validate_live_social_activation_gate_v25.py",
 )
 
 REQUIRED_TRIGGERS = (
@@ -66,6 +94,14 @@ REQUIRED_TRIGGERS = (
     "supabase/production-reviewed-migration-batch.txt",
     "supabase/production-migration-ledger.txt",
     ".github/workflows/sinjira-a1-integration-rehearsal.yml",
+    "scripts/validate_live_social_*.py",
+    "scripts/test_live_social_activation_gate_v25.py",
+    "supabase/migrations/20260908*_sinjira_v25_live_social_*.sql",
+    "supabase/tests/live_social_*.test.sql",
+    "assets/js/sinjira-live-*.js",
+    "assets/css/v25-live-*.css",
+    "compte/communaute.html",
+    ".github/workflows/sinjira-live-social-*.yml",
 )
 
 FORBIDDEN_WORKFLOW_COMMANDS = (
@@ -178,6 +214,11 @@ def self_test(values: tuple[str, str, str]) -> None:
             ledger,
             workflow.replace("          python3 scripts/validate_sinjira_livre_i_delivery.py\n", "", 1),
         ),
+        "validateur En direct retiré": (
+            reviewed,
+            ledger,
+            workflow.replace("          python3 scripts/validate_live_social_activation_gate_v25.py\n", "", 1),
+        ),
         "migration non surveillée": (
             reviewed,
             ledger,
@@ -205,7 +246,7 @@ def main() -> None:
         validate_texts(*values)
         print(
             "OK répétition A1: convergences critiques présentes, workflow lecture seule, "
-            "aucune promotion reviewed/deployed des migrations Mode Voyage."
+            "aucune promotion reviewed/deployed des migrations Mode Voyage, En direct dark-launch validé."
         )
 
 
