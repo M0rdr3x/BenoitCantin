@@ -27,7 +27,9 @@ def main() -> int:
         "req.method !== 'POST'",
         'MAX_REQUEST_BYTES=2048',
         'readBoundedJson',
-        'TextEncoder',
+        'req.body.getReader()',
+        'reader.cancel',
+        "new TextDecoder('utf-8',{fatal:true})",
         'JSON_REQUIRED',
         'REQUEST_TOO_LARGE',
         'INVALID_JSON',
@@ -50,6 +52,8 @@ def main() -> int:
 
     if 'await req.json()' in source:
         errors.append('Lecture JSON directe non bornée interdite.')
+    if 'await req.text()' in source:
+        errors.append('Lecture texte intégrale avant contrôle de taille interdite; utiliser le flux Request.body.')
     if "body?.all ? null : (body?.session_id || null)" in source:
         errors.append('La portée globale implicite historique est interdite.')
 
@@ -81,7 +85,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK V24.5.52: révocation JWT, portée globale explicite, session UUID obligatoire sinon, POST JSON 2 KiB, réponses privées no-store, aucune migration ni service payant.')
+    print('OK V24.5.52: révocation JWT, portée globale explicite, session UUID obligatoire sinon, POST JSON 2 KiB borné pendant la lecture, réponses privées no-store, aucune migration ni service payant.')
     return 0
 
 

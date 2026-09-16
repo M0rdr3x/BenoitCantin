@@ -26,12 +26,15 @@ CUSTOM_AUTH = {
     "get-document-url": (
         "optionalUser", "project_access_rank", "doc.status!=='approved'",
         "doc.projects?.status!=='active'", "createSignedUrl", "MAX_REQUEST_BYTES", "UUID_RE",
-        "externalUrlAllowed", "TextEncoder", "Cache-Control", "no-store", "Referrer-Policy",
+        "externalUrlAllowed", "readLimitedJson", "req.body?.getReader()", "reader.cancel",
+        "new TextDecoder('utf-8',{fatal:true})", "contentType!=='application/json'",
+        "Cache-Control", "no-store", "Referrer-Policy",
     ),
     "send-game-report": (
-        "optionalUser", "!user?.email", "to: [user.email]", "MAX_REQUEST_BYTES", "TextEncoder",
-        "PAID_EXTERNAL_SERVICES_ENABLED=false", "MAX_TEMPLATE_BYTES=15*1024*1024",
-        "TEMPLATE_ORIGIN='https://www.benoitcantin.com'",
+        "optionalUser", "!user?.email", "to: [user.email]", "MAX_REQUEST_BYTES", "readLimitedJson",
+        "req.body?.getReader()", "reader.cancel", "new TextDecoder('utf-8',{fatal:true})",
+        "contentType!=='application/json'", "PAID_EXTERNAL_SERVICES_ENABLED=false",
+        "MAX_TEMPLATE_BYTES=15*1024*1024", "TEMPLATE_ORIGIN='https://www.benoitcantin.com'",
         "TEMPLATE_PATH_PREFIX='/projets/sinjira/jeux/fracture-du-reseau-mere/documents/'",
         "redirect:'error'", "REPORT_TEMPLATE_TOO_LARGE", "%PDF-", "Cache-Control", "no-store",
         "Referrer-Policy",
@@ -74,16 +77,17 @@ JWT_SENSITIVE_GUARDS = {
         "CONFIRM_PHRASE='SUPPRIMER MON COMPTE'",
     ),
     "revoke-my-contributions": (
-        "req.method !== 'POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
-        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "body.all===true",
-        "AMBIGUOUS_SCOPE", "SESSION_REQUIRED", "revokeAll ? null : sessionId",
-        "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
-        "Referrer-Policy", "no-referrer",
+        "req.method !== 'POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "req.body.getReader()",
+        "reader.cancel", "new TextDecoder('utf-8',{fatal:true})", "JSON_REQUIRED", "REQUEST_TOO_LARGE",
+        "INVALID_JSON", "UUID_RE", "body.all===true", "AMBIGUOUS_SCOPE", "SESSION_REQUIRED",
+        "revokeAll ? null : sessionId", "Cache-Control", "private, no-store",
+        "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
     ),
     "submit-game-contribution": (
-        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
-        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "INVALID_SESSION",
-        "p_user_id:user.id", "select('id,game_slug,play_mode,human_player_count,effective_player_count,player_count,duration_minutes')",
+        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "req.body.getReader()",
+        "reader.cancel", "new TextDecoder('utf-8',{fatal:true})", "JSON_REQUIRED", "REQUEST_TOO_LARGE",
+        "INVALID_JSON", "UUID_RE", "INVALID_SESSION", "p_user_id:user.id",
+        "select('id,game_slug,play_mode,human_player_count,effective_player_count,player_count,duration_minutes')",
         "submitted:true", "Cache-Control", "private, no-store", "X-Content-Type-Options",
         "nosniff", "Referrer-Policy", "no-referrer",
     ),
@@ -164,6 +168,12 @@ def main() -> int:
             if marker not in source:
                 errors.append(f"{slug}: garde-fou custom auth/access manquant: {marker}.")
 
+    for slug in ("get-document-url", "send-game-report"):
+        source = read_tree_text(FUNCTIONS / slug)
+        for forbidden in ("await req.text()", "await req.json()", "startsWith('application/json')"):
+            if forbidden in source:
+                errors.append(f"{slug}: frontière HTTP non bornée ou MIME par préfixe interdite: {forbidden}.")
+
     for slug, markers in JWT_SENSITIVE_GUARDS.items():
         source = read_tree_text(FUNCTIONS / slug)
         for marker in markers:
@@ -171,6 +181,11 @@ def main() -> int:
                 errors.append(f"{slug}: garde-fou HTTP/destructif manquant: {marker}.")
         if "await req.json()" in source or "await req.json (" in source:
             errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
+
+    for slug in ("revoke-my-contributions", "submit-game-contribution"):
+        source = read_tree_text(FUNCTIONS / slug)
+        if "await req.text()" in source or "await req.text (" in source:
+            errors.append(f"{slug}: lecture texte intégrale avant contrôle de taille interdite; utiliser le flux Request.body.")
 
     book_source = read_tree_text(FUNCTIONS / "get-private-book-url")
     for forbidden in ("external_url", "getPublicUrl("):
@@ -225,7 +240,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 23 fonctions canoniques, JWT/custom auth cohérents, porte Livre I entitlement privée, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 23 fonctions canoniques, JWT/custom auth cohérents, frontières document/rapport/contributions bornées pendant la lecture avec MIME JSON exact ou contrat JSON dédié, porte Livre I entitlement privée, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
