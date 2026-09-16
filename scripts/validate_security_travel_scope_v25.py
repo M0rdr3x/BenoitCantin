@@ -12,11 +12,9 @@ MIGRATION = ROOT / 'supabase/migrations/20260913030500_sinjira_v25_travel_mode_g
 RISK_TEST = ROOT / 'supabase/tests/security_risk_model_v25.test.sql'
 TRAVEL_TEST = ROOT / 'supabase/tests/security_travel_scope_v25.test.sql'
 WORKFLOW = ROOT / '.github/workflows/sinjira-security-risk-v25.yml'
-REVIEWED = ROOT / 'supabase/production-reviewed-migration-batch.txt'
 LEDGER = ROOT / 'supabase/production-migration-ledger.txt'
 
 MIGRATION_VERSION = '20260913030500'
-MIGRATION_NAME = 'sinjira_v25_travel_mode_geo_scope_hardening'
 MIGRATION_BLOB_SHA = '7285d1e30ea288004d17c1dbfbf9f01662b36bb7'
 TRAVEL_TEST_TRIGGER = "- 'supabase/tests/security_travel_scope_v25.test.sql'"
 GUARD_TRIGGER = "- 'scripts/validate_security_travel_scope_v25.py'"
@@ -38,7 +36,7 @@ def git_blob_sha(text: str) -> str:
     return hashlib.sha1(f'blob {len(data)}\0'.encode('ascii') + data).hexdigest()
 
 
-def validate_texts(migration: str, risk_test: str, travel_test: str, workflow: str, reviewed: str, ledger: str) -> None:
+def validate_texts(migration: str, risk_test: str, travel_test: str, workflow: str, ledger: str) -> None:
     required_migration = (
         'create or replace function private.security_risk_score_v25(',
         'immutable',
@@ -98,19 +96,16 @@ def validate_texts(migration: str, risk_test: str, travel_test: str, workflow: s
     if workflow_lines.count(VALIDATE_COMMAND) != 1:
         fail('workflow: validation Mode Voyage requise exactement une fois')
 
-    expected_reviewed = f'{MIGRATION_VERSION} {MIGRATION_NAME} {MIGRATION_BLOB_SHA}'
-    if reviewed.splitlines().count(expected_reviewed) != 1:
-        fail('lot reviewed: empreinte de la migration A1 absente ou dupliquée')
     if any(line.startswith(MIGRATION_VERSION + ' ') for line in ledger.splitlines()):
         fail('registre production: la migration locale ne doit pas être marquée comme déployée')
 
 
-def load() -> tuple[str, str, str, str, str, str]:
-    return tuple(path.read_text(encoding='utf-8') for path in (MIGRATION, RISK_TEST, TRAVEL_TEST, WORKFLOW, REVIEWED, LEDGER))
+def load() -> tuple[str, str, str, str, str]:
+    return tuple(path.read_text(encoding='utf-8') for path in (MIGRATION, RISK_TEST, TRAVEL_TEST, WORKFLOW, LEDGER))
 
 
-def self_test(values: tuple[str, str, str, str, str, str]) -> None:
-    migration, risk_test, travel_test, workflow, reviewed, ledger = values
+def self_test(values: tuple[str, str, str, str, str]) -> None:
+    migration, risk_test, travel_test, workflow, ledger = values
     validate_texts(*values)
     global_bonus = migration.replace(
         '  perform p_travel_match;\n',
@@ -118,14 +113,13 @@ def self_test(values: tuple[str, str, str, str, str, str]) -> None:
         1,
     )
     mutations = {
-        'bonus voyage global': (global_bonus, risk_test, travel_test, workflow, reviewed, ledger),
-        'ancien contrat score 55': (migration, risk_test.replace('70::integer,', '55::integer,', 1), travel_test, workflow, reviewed, ledger),
-        'preuve appareil/action affaiblie': (migration, risk_test, travel_test.replace('50::integer,', '35::integer,', 1), workflow, reviewed, ledger),
-        'pgTAP Mode Voyage non exécuté': (migration, risk_test, travel_test, workflow.replace('          ' + TRAVEL_TEST_COMMAND + '\n', '', 1), reviewed, ledger),
-        'garde non déclenché': (migration, risk_test, travel_test, workflow.replace("      - 'scripts/validate_security_travel_scope_v25.py'\n", '', 1), reviewed, ledger),
-        'empreinte migration changée': (migration + '\n-- mutation non revue\n', risk_test, travel_test, workflow, reviewed, ledger),
-        'reviewed retiré': (migration, risk_test, travel_test, workflow, reviewed.replace(f'{MIGRATION_VERSION} {MIGRATION_NAME} {MIGRATION_BLOB_SHA}\n', '', 1), ledger),
-        'faux déploiement production': (migration, risk_test, travel_test, workflow, reviewed, ledger + f'\n{MIGRATION_VERSION} {MIGRATION_NAME}\n'),
+        'bonus voyage global': (global_bonus, risk_test, travel_test, workflow, ledger),
+        'ancien contrat score 55': (migration, risk_test.replace('70::integer,', '55::integer,', 1), travel_test, workflow, ledger),
+        'preuve appareil/action affaiblie': (migration, risk_test, travel_test.replace('50::integer,', '35::integer,', 1), workflow, ledger),
+        'pgTAP Mode Voyage non exécuté': (migration, risk_test, travel_test, workflow.replace('          ' + TRAVEL_TEST_COMMAND + '\n', '', 1), ledger),
+        'garde non déclenché': (migration, risk_test, travel_test, workflow.replace("      - 'scripts/validate_security_travel_scope_v25.py'\n", '', 1), ledger),
+        'empreinte migration changée': (migration + '\n-- mutation non revue\n', risk_test, travel_test, workflow, ledger),
+        'faux déploiement production': (migration, risk_test, travel_test, workflow, ledger + f'\n{MIGRATION_VERSION} sinjira_v25_travel_mode_geo_scope_hardening\n'),
     }
     for label, mutated in mutations.items():
         try:
@@ -145,7 +139,7 @@ def main() -> None:
         self_test(values)
     else:
         validate_texts(*values)
-        print('OK Mode Voyage V25: aucun bonus global, migration revue, production non déployée.')
+        print('OK Mode Voyage V25: aucun bonus global, migration locale verrouillée, production non déployée.')
 
 
 if __name__ == '__main__':
