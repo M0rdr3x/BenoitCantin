@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import re
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,7 +17,6 @@ def edge_errors(source: str) -> list[str]:
     errors: list[str] = []
     markers = (
         "req.method !== 'POST'",
-        'MAX_REQUEST_BYTES=1024',
         'readBoundedJson',
         "contentType!=='application/json'",
         "const declaredRaw=req.headers.get('content-length');",
@@ -47,6 +47,9 @@ def edge_errors(source: str) -> list[str]:
     for marker in markers:
         if marker not in source:
             errors.append(f'Garde-fou V24.5.51 absent: {marker}')
+
+    if not re.search(r'\bMAX_REQUEST_BYTES\s*=\s*1_?024\s*;', source):
+        errors.append('La borne de suppression doit rester exactement à 1 024 octets.')
 
     for forbidden in ('await req.json()', 'await req.text()'):
         if forbidden in source:
