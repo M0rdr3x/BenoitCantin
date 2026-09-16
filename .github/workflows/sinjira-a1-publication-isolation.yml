@@ -1,0 +1,46 @@
+name: SINJIRA A1 — Isolation publication et production
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'scripts/validate_a1_publication_isolation.py'
+      - 'supabase/production-reviewed-migration-batch.txt'
+      - 'supabase/production-migration-ledger.txt'
+      - 'projets/sinjira/codex/livre-i-delivery-contract.json'
+      - 'projets/sinjira/romans/**'
+      - '.github/workflows/sinjira-a1-publication-isolation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-a1-publication-isolation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publication-production-isolation:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.ref == 'a1/integration-rehearsal'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Compiler le garde d'isolation A1
+        run: python3 -m py_compile scripts/validate_a1_publication_isolation.py
+
+      - name: Auto-tester le garde d'isolation A1
+        run: python3 scripts/validate_a1_publication_isolation.py --self-test
+
+      - name: Vérifier l'isolation publication et production
+        run: python3 scripts/validate_a1_publication_isolation.py
