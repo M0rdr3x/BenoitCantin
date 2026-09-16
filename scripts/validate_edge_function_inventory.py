@@ -67,7 +67,9 @@ JWT_SENSITIVE_GUARDS = {
         "Referrer-Policy", "no-referrer",
     ),
     "delete-player-account": (
-        "req.method !== 'POST'", "MAX_REQUEST_BYTES=1024", "readBoundedJson", "TextEncoder",
+        "req.method !== 'POST'", "readBoundedJson", "req.body.getReader()",
+        "reader.cancel('REQUEST_TOO_LARGE')", "new TextDecoder('utf-8',{fatal:true})",
+        "!/^\\d+$/.test(normalizedLength)", "Number.isSafeInteger(declared)",
         "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "Cache-Control", "private, no-store",
         "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
         "privacy_service_can_delete_user", "MFA_REQUIRED", "OWNER_OR_ADMIN_DELETE_BLOCKED",
@@ -172,6 +174,16 @@ def main() -> int:
         if "await req.json()" in source or "await req.json (" in source:
             errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
 
+    delete_source = read_tree_text(FUNCTIONS / "delete-player-account")
+    if not re.search(r"\bMAX_REQUEST_BYTES\s*=\s*1_?024\s*;", delete_source):
+        errors.append("delete-player-account: la borne destructive doit rester exactement à 1 024 octets.")
+    if "await req.text()" in delete_source or "await req.text (" in delete_source:
+        errors.append("delete-player-account: lecture texte directe non bornée interdite.")
+    delete_auth = delete_source.find("const user = await requiredUser(req);")
+    delete_body = delete_source.find("const body=await readBoundedJson(req);")
+    if delete_auth < 0 or delete_body < 0 or delete_auth > delete_body:
+        errors.append("delete-player-account: requiredUser/JWT doit précéder la lecture applicative du corps.")
+
     book_source = read_tree_text(FUNCTIONS / "get-private-book-url")
     for forbidden in ("external_url", "getPublicUrl("):
         if forbidden in book_source:
@@ -225,7 +237,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 23 fonctions canoniques, JWT/custom auth cohérents, porte Livre I entitlement privée, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 23 fonctions canoniques, JWT/custom auth cohérents, porte Livre I entitlement privée, suppression destructive bornée à 1 KiB en streaming avec JWT avant corps, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
