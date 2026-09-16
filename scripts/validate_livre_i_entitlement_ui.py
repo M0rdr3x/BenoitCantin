@@ -11,8 +11,13 @@ CONTRACT = ROOT / 'projets/sinjira/codex/livre-i-delivery-contract.json'
 LICENSES = ROOT / 'assets/js/v24-licenses.js'
 LIBRARY = ROOT / 'assets/js/sinjira-library-v24-4-61.js'
 LIBRARY_HTML = ROOT / 'compte/bibliotheque.html'
+READER_JS = ROOT / 'assets/js/sinjira-private-book-reader.js'
+READER_HTML = ROOT / 'projets/sinjira/romans/lire-integral.html'
+ROMAN_HTML = ROOT / 'projets/sinjira/romans/index.html'
+DEMO_HTML = ROOT / 'projets/sinjira/romans/lire-demo.html'
 
 BOOK_SLUG = 'sinjira-livre-01-la-cendre-du-jugement'
+READER_PATH = '/projets/sinjira/romans/lire-integral.html'
 FULL_BASENAME = 'SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf'
 
 FORBIDDEN_PROMISES = (
@@ -22,24 +27,50 @@ FORBIDDEN_PROMISES = (
     'accès total sinjira',
 )
 
+BROKEN_COVER_REFS = (
+    'sinjira-livre01-couverture-avant.png',
+    'sinjira-livre01-couverture-arriere.png',
+)
+
 
 def read(path: Path) -> str:
     return path.read_text('utf-8', errors='ignore')
 
 
-def validate(contract_path: Path, licenses_path: Path, library_path: Path, library_html_path: Path) -> list[str]:
+def validate(
+    contract_path: Path = CONTRACT,
+    licenses_path: Path = LICENSES,
+    library_path: Path = LIBRARY,
+    library_html_path: Path = LIBRARY_HTML,
+    reader_js_path: Path = READER_JS,
+    reader_html_path: Path = READER_HTML,
+    roman_html_path: Path = ROMAN_HTML,
+    demo_html_path: Path = DEMO_HTML,
+) -> list[str]:
     errors: list[str] = []
     try:
         contract = json.loads(read(contract_path))
-    except Exception as exc:
-        return [f'Contrat Livre I illisible: {exc}']
-
-    try:
         licenses = read(licenses_path)
         library = read(library_path)
         library_html = read(library_html_path)
-    except OSError as exc:
-        return [f'Interface entitlement illisible: {exc}']
+        reader_js = read(reader_js_path)
+        reader_html = read(reader_html_path)
+        roman_html = read(roman_html_path)
+        demo_html = read(demo_html_path)
+    except (OSError, ValueError) as exc:
+        return [f'Interface Livre I illisible: {exc}']
+
+    full = contract.get('full_edition') or {}
+    if contract.get('publication_state') != 'prepared_not_deployed':
+        errors.append('Le parcours A1 doit rester prepared_not_deployed avant autorisation de production.')
+    if full.get('production_deployment_authorized') is not False:
+        errors.append('Le contrat ne doit pas autoriser le déploiement production depuis cette tranche.')
+    if full.get('reader_progress_storage') != 'local_device_only':
+        errors.append('La progression intégrale doit rester locale à l’appareil par défaut.')
+    if full.get('owner_role_creates_entitlement') is not False:
+        errors.append('Le rôle auteur/propriétaire ne doit jamais fabriquer un entitlement produit.')
+    if full.get('client_role_assertion_allowed') is not False:
+        errors.append('Une affirmation de rôle côté client ne doit jamais autoriser le Livre I.')
 
     required = {
         'Licences: slug Livre I': (licenses, BOOK_SLUG),
@@ -50,27 +81,79 @@ def validate(contract_path: Path, licenses_path: Path, library_path: Path, libra
         'Bibliothèque: source user_entitlements': (library, "from('user_entitlements')"),
         'Licences: frontière de diffusion privée expliquée': (licenses, 'diffusion privée'),
         'Bibliothèque: frontière de diffusion privée expliquée': (library, 'diffusion privée'),
-        'Bibliothèque: rôle propriétaire séparé des produits': (library_html, 'Le rôle propriétaire reste distinct des droits numériques attribués aux produits.'),
+        'Bibliothèque HTML: rôle propriétaire séparé des produits': (
+            library_html,
+            'Le rôle propriétaire reste distinct des droits numériques attribués aux produits.',
+        ),
+        'Bibliothèque: chemin lecteur privé': (library, READER_PATH),
+        'Bibliothèque: téléchargement via fonction privée': (library, "functions.invoke(PRIVATE_DOWNLOAD_FUNCTION)"),
+        'Bibliothèque: carte auteur explicite': (library, 'Accès auteur'),
+        'Lecteur: session obligatoire': (reader_js, "requireUser('/compte/connexion.html')"),
+        'Lecteur: fonction URL lecture privée': (reader_js, "functions.invoke(READER_FUNCTION)"),
+        'Lecteur: fonction téléchargement privée': (reader_js, "functions.invoke(DOWNLOAD_FUNCTION)"),
+        'Lecteur: progression locale': (reader_js, 'localStorage.setItem(STORAGE_KEY'),
+        'Lecteur HTML: non indexable': (reader_html, 'content="noindex,nofollow,noarchive"'),
+        'Lecteur HTML: politique no-referrer': (reader_html, 'content="no-referrer" name="referrer"'),
+        'Lecteur HTML: total de pages contrôlé': (reader_html, 'data-reader-total-pages="1066"'),
+        'Roman: lien lecteur intégral': (roman_html, 'href="lire-integral.html"'),
+        'Démo: lien lecteur intégral': (demo_html, 'href="lire-integral.html"'),
     }
     for label, (text, marker) in required.items():
         if marker not in text:
             errors.append(f'{label} absent.')
 
-    combined = '\n'.join((licenses, library, library_html)).lower()
+    combined_account = '\n'.join((licenses, library, library_html)).lower()
     for phrase in FORBIDDEN_PROMISES:
-        if phrase in combined:
+        if phrase in combined_account:
             errors.append(f'Promesse propriétaire trop large interdite: {phrase}.')
 
     if "from('products').select('slug,name,product_type,active')" in licenses:
-        errors.append('La page Licences ne doit plus fabriquer la possession propriétaire depuis tout le catalogue actif.')
+        errors.append('La page Licences ne doit pas fabriquer la possession propriétaire depuis tout le catalogue actif.')
 
-    state = str(contract.get('publication_state') or '')
-    if state == 'not_activated':
-        for label, text in (('Licences', licenses), ('Bibliothèque', library), ('Bibliothèque HTML', library_html)):
-            if "functions.invoke('get-private-book-url'" in text or 'functions.invoke("get-private-book-url"' in text:
-                errors.append(f'{label}: appel à la diffusion privée interdit tant que publication_state=not_activated.')
-            if FULL_BASENAME in text:
-                errors.append(f'{label}: nom du PDF intégral interdit dans l’interface tant que la diffusion n’est pas activée.')
+    # Le navigateur peut afficher une carte auteur obtenue depuis un RPC de présentation,
+    # mais la porte de lecture elle-même ne doit jamais décider avec un rôle/email client.
+    for forbidden in (
+        'isSinjiraOwner',
+        'kingtyrano@gmail.com',
+        'clientRole',
+        'is_owner_from_client',
+        ".from('profiles')",
+    ):
+        if forbidden in reader_js:
+            errors.append(f'Lecteur privé: autorisation client interdite ({forbidden}).')
+
+    # Protéger sans surveiller : aucune écriture serveur de progression dans le lecteur intégral.
+    for forbidden in (
+        "from('sinjira_reader_library')",
+        "from('reader_library')",
+        '.insert(',
+        '.update(',
+        '.upsert(',
+    ):
+        if forbidden in reader_js:
+            errors.append(f'Lecteur privé: progression serveur/écriture interdite ({forbidden}).')
+
+    # Les pages publiques peuvent pointer vers la porte privée, mais ne doivent jamais
+    # appeler directement les fonctions privées ni embarquer une URL intégrale.
+    for label, text in (('Roman', roman_html), ('Démo', demo_html)):
+        if 'functions.invoke(' in text:
+            errors.append(f'{label}: appel direct à une Edge Function privée interdit dans la page publique.')
+        if FULL_BASENAME in text:
+            errors.append(f'{label}: nom du PDF intégral interdit dans la page publique.')
+        for broken in BROKEN_COVER_REFS:
+            if broken in text:
+                errors.append(f'{label}: référence de couverture inexistante interdite ({broken}).')
+
+    for label, text in (('Lecteur HTML', reader_html), ('Lecteur JS', reader_js), ('Bibliothèque', library)):
+        if FULL_BASENAME in text:
+            errors.append(f'{label}: nom statique du fichier intégral interdit.')
+        if 'getPublicUrl(' in text:
+            errors.append(f'{label}: URL publique Storage interdite.')
+
+    if 'location.assign(String(data.url))' not in library:
+        errors.append('Bibliothèque: le téléchargement doit utiliser uniquement l’URL temporaire renvoyée par le serveur.')
+    if 'location.assign(String(data.url))' not in reader_js:
+        errors.append('Lecteur: le téléchargement doit utiliser uniquement l’URL temporaire renvoyée par le serveur.')
 
     return errors
 
@@ -78,63 +161,107 @@ def validate(contract_path: Path, licenses_path: Path, library_path: Path, libra
 def self_test() -> None:
     with TemporaryDirectory() as raw:
         root = Path(raw)
-        contract = root / 'contract.json'
-        licenses = root / 'licenses.js'
-        library = root / 'library.js'
-        html = root / 'library.html'
-        contract.write_text(json.dumps({'publication_state':'not_activated'}), encoding='utf-8')
-        licenses.write_text(
+        paths = {
+            'contract': root / 'contract.json',
+            'licenses': root / 'licenses.js',
+            'library': root / 'library.js',
+            'library_html': root / 'library.html',
+            'reader_js': root / 'reader.js',
+            'reader_html': root / 'reader.html',
+            'roman': root / 'roman.html',
+            'demo': root / 'demo.html',
+        }
+        paths['contract'].write_text(json.dumps({
+            'publication_state': 'prepared_not_deployed',
+            'full_edition': {
+                'production_deployment_authorized': False,
+                'reader_progress_storage': 'local_device_only',
+                'owner_role_creates_entitlement': False,
+                'client_role_assertion_allowed': False,
+            },
+        }), encoding='utf-8')
+        paths['licenses'].write_text(
             f"const BOOK='{BOOK_SLUG}'; s.from('user_entitlements'); 'Droit numérique reconnu'; 'diffusion privée';",
             encoding='utf-8',
         )
-        library.write_text(
-            f"const BOOK='{BOOK_SLUG}'; s.from('user_entitlements'); 'Droit numérique reconnu'; 'diffusion privée';",
+        paths['library'].write_text(
+            f"const BOOK='{BOOK_SLUG}'; const PRIVATE_READER_PATH='{READER_PATH}'; const PRIVATE_DOWNLOAD_FUNCTION='get-private-book-url'; "
+            "s.from('user_entitlements'); 'Droit numérique reconnu'; 'diffusion privée'; 'Accès auteur'; "
+            "s.functions.invoke(PRIVATE_DOWNLOAD_FUNCTION); location.assign(String(data.url));",
             encoding='utf-8',
         )
-        html.write_text('Le rôle propriétaire reste distinct des droits numériques attribués aux produits.', encoding='utf-8')
+        paths['library_html'].write_text(
+            'Le rôle propriétaire reste distinct des droits numériques attribués aux produits.',
+            encoding='utf-8',
+        )
+        paths['reader_js'].write_text(
+            "requireUser('/compte/connexion.html'); functions.invoke(READER_FUNCTION); functions.invoke(DOWNLOAD_FUNCTION); "
+            "localStorage.setItem(STORAGE_KEY,String(current)); location.assign(String(data.url));",
+            encoding='utf-8',
+        )
+        paths['reader_html'].write_text(
+            '<meta content="noindex,nofollow,noarchive" name="robots"><meta content="no-referrer" name="referrer">'
+            '<body data-reader-total-pages="1066"></body>',
+            encoding='utf-8',
+        )
+        paths['roman'].write_text('<a href="lire-integral.html">Lire</a>', encoding='utf-8')
+        paths['demo'].write_text('<a href="lire-integral.html">Lire</a>', encoding='utf-8')
 
-        clean = validate(contract, licenses, library, html)
+        args = tuple(paths[key] for key in ('contract', 'licenses', 'library', 'library_html', 'reader_js', 'reader_html', 'roman', 'demo'))
+        clean = validate(*args)
         if clean:
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
 
-        licenses.write_text(read(licenses) + "\ns.functions.invoke('get-private-book-url');", encoding='utf-8')
-        premature = validate(contract, licenses, library, html)
-        if not any('not_activated' in item for item in premature):
-            raise AssertionError('Un appel prématuré à get-private-book-url doit être bloqué.')
+        paths['reader_js'].write_text(read(paths['reader_js']) + '\nisSinjiraOwner(user);', encoding='utf-8')
+        client_owner = validate(*args)
+        if not any('autorisation client interdite' in item for item in client_owner):
+            raise AssertionError('Une autorisation auteur côté client doit être bloquée.')
 
-        licenses.write_text(
-            f"const BOOK='{BOOK_SLUG}'; s.from('user_entitlements'); 'Droit numérique reconnu'; 'diffusion privée'; 'Accès permanent à tous les romans';",
+        paths['reader_js'].write_text(
+            "requireUser('/compte/connexion.html'); functions.invoke(READER_FUNCTION); functions.invoke(DOWNLOAD_FUNCTION); "
+            "localStorage.setItem(STORAGE_KEY,String(current)); location.assign(String(data.url)); "
+            "s.from('sinjira_reader_library').upsert({last_page:1});",
             encoding='utf-8',
         )
-        promise = validate(contract, licenses, library, html)
+        tracking = validate(*args)
+        if not any('progression serveur/écriture interdite' in item for item in tracking):
+            raise AssertionError('Une synchronisation silencieuse de progression doit être bloquée.')
+
+        paths['reader_js'].write_text(
+            "requireUser('/compte/connexion.html'); functions.invoke(READER_FUNCTION); functions.invoke(DOWNLOAD_FUNCTION); "
+            "localStorage.setItem(STORAGE_KEY,String(current)); location.assign(String(data.url));",
+            encoding='utf-8',
+        )
+        paths['roman'].write_text('<a href="lire-integral.html">Lire</a> sinjira-livre01-couverture-avant.png', encoding='utf-8')
+        broken = validate(*args)
+        if not any('référence de couverture inexistante' in item for item in broken):
+            raise AssertionError('Une couverture cassée doit être bloquée.')
+
+        paths['roman'].write_text('<a href="lire-integral.html">Lire</a>', encoding='utf-8')
+        paths['licenses'].write_text(read(paths['licenses']) + " 'Accès permanent à tous les romans';", encoding='utf-8')
+        promise = validate(*args)
         if not any('Promesse propriétaire' in item for item in promise):
             raise AssertionError('Une promesse propriétaire universelle doit être bloquée.')
 
-        licenses.write_text(
-            f"const BOOK='{BOOK_SLUG}'; s.from('user_entitlements'); 'Droit numérique reconnu'; 'diffusion privée'; s.from('products').select('slug,name,product_type,active');",
-            encoding='utf-8',
-        )
-        catalog = validate(contract, licenses, library, html)
-        if not any('tout le catalogue actif' in item for item in catalog):
-            raise AssertionError('La possession ne doit pas être déduite du catalogue actif.')
+    print('OK auto-test UI Livre I V2: rôle serveur, progression locale et actifs publics protégés.')
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='Valide la séparation rôle propriétaire / entitlement dans l’interface Livre I.')
+    parser = argparse.ArgumentParser(description='Valide l’interface du lecteur privé du Livre I.')
     parser.add_argument('--self-test', action='store_true')
     args = parser.parse_args()
     if args.self_test:
         self_test()
-        print('OK auto-test UI entitlement Livre I.')
         return 0
 
-    errors = validate(CONTRACT, LICENSES, LIBRARY, LIBRARY_HTML)
+    errors = validate()
     if errors:
-        print(f'ÉCHEC UI entitlement Livre I: {len(errors)} problème(s).')
+        print(f'ÉCHEC UI Livre I: {len(errors)} problème(s).')
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK UI entitlement Livre I: rôle propriétaire distinct, droits réels affichés, aucune diffusion intégrale prématurée.')
+
+    print('OK UI Livre I V2: rôle auteur non auto-déclaré, progression locale, pages publiques sans intégrale et actions privées temporaires.')
     return 0
 
 

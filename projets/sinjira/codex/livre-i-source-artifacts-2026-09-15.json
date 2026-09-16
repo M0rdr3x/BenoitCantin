@@ -1,0 +1,57 @@
+{
+  "schema": "sinjira.livre-i.source-artifacts.v2",
+  "verified_on": "2026-09-15",
+  "state": "staged_source_files_not_deployed",
+  "principle": "L’HUMAIN AVANT TOUT. PROTÉGER SANS SURVEILLER.",
+  "production_deployment_authorized": false,
+  "full_edition": {
+    "pages": 1066,
+    "sha256": "cd5eb783ff16311d819c7e0153b3c5fcecacce10d47b999b5c427e20065c781a",
+    "public_repository_allowed": false,
+    "storage_target": "private_storage_only",
+    "note": "Empreinte du PDF intégral fourni pour la prochaine synchronisation privée. Aucun octet de cette édition n’est ajouté au dépôt public."
+  },
+  "demo_source": {
+    "pages": 83,
+    "sha256": "43f2fa19ebc8299fb23c0aa09c010518ddc705d53985964fe1c5fe9331c05eab",
+    "text_extract_sha256": "74bd791170e6697c15edac9d1df4c5418e439d6c5abeac8824575648922921a3",
+    "note": "Empreinte du PDF démo source fourni."
+  },
+  "demo_web_candidate": {
+    "pages": 83,
+    "bytes": 3473299,
+    "sha256": "b42353031681fa206e7cf85ca39d342a8b59a6e092755fd5c61def4d899666c2",
+    "profile": "faithful-web",
+    "text_extract_sha256": "74bd791170e6697c15edac9d1df4c5418e439d6c5abeac8824575648922921a3",
+    "text_extract_matches_source": true,
+    "render_compare": {
+      "engine": "pdftoppm",
+      "dpi": 72,
+      "pages_compared": 83,
+      "changed_pages": [1, 83],
+      "max_channel_delta": 6
+    },
+    "deployment_authorized": false,
+    "note": "Candidat web fidèle : 83 pages, extraction texte identique à la source et comparaison visuelle intégrale effectuée. Non publié par cette tranche."
+  },
+  "rejected_demo_candidates": [
+    {
+      "sha256": "21bea0722660f085d947d02d6b868eb2a6033f8b921d83d6786a512d829588a3",
+      "bytes": 1698862,
+      "reason": "text_extraction_not_faithful",
+      "text_extract_sha256": "ae790e11e05f4f2cb511d6f3c332983a568e916706b0745dafd619dcb041489c"
+    }
+  ],
+  "cover_front_source": {
+    "sha256": "1861ad785685b21518e65c3469739727a3546ddf2bdecfa2e2b5834d1d565ff1",
+    "dimensions": "1024x1536",
+    "deployment_authorized": false,
+    "web_derivatives_prepared": true
+  },
+  "cover_back_source": {
+    "sha256": "fb44a442bead4a9af6f46cd3e5109ce2d9245fac7ce775fb2e1c3459a6f314c7",
+    "dimensions": "1024x1536",
+    "deployment_authorized": false,
+    "web_derivatives_prepared": true
+  }
+}
