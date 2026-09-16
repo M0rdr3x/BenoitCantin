@@ -16,7 +16,10 @@ REQUIRED = {
     'admin/JWT/AAL2 explicite': 'requiredAdmin(req)',
     'lecture JSON bornée': 'readBoundedJson(req)',
     'contrôle Content-Length': "req.headers.get('content-length')",
-    'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'Content-Length fail-closed': '!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES',
+    'lecture bornée par flux': 'req.body?.getReader()',
+    'annulation au dépassement': 'reader.cancel()',
+    'décodage UTF-8 strict': "new TextDecoder('utf-8',{fatal:true})",
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
     'nosniff': "'X-Content-Type-Options':'nosniff'",
@@ -42,6 +45,7 @@ REQUIRED = {
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
+    'lecture texte intégrale avant borne': 'await req.text()',
     'helper JSON générique cacheable': 'return json(',
     'import helper JSON générique': 'corsHeaders,json',
     'auth utilisateur simple': 'requiredUser(req)',
@@ -115,6 +119,14 @@ def self_test() -> None:
 
     cases = {
         'json direct': real.replace('const b=await readBoundedJson(req)', 'const b=await req.json()', 1),
+        'texte intégral réintroduit': real.replace('const reader=req.body?.getReader();', 'const rawDirect=await req.text();', 1),
+        'annulation retirée': real.replace('try{await reader.cancel()}catch{/* Le rejet de taille reste prioritaire. */}', '', 1),
+        'décodage non strict': real.replace("new TextDecoder('utf-8',{fatal:true})", "new TextDecoder('utf-8')", 1),
+        'Content-Length permissif': real.replace(
+            "if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');",
+            "if(Number.isFinite(declared)&&declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');",
+            1,
+        ),
         'no-store retiré': real.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),
         'limite augmentée': real.replace('MAX_REQUEST_BYTES=262144;', 'MAX_REQUEST_BYTES=1048576;', 1),
         'admin explicite retiré': real.replace("const {user,service:s}=await requiredAdmin(req);", "const user=await requiredUser(req),s=serviceClient();", 1),
@@ -160,7 +172,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK admin-sinjira-v18: admin/JWT/AAL2 avant corps, JSON 256 KiB, réponses no-store, sources privées et décisions CANON/retcon humaines conservées.')
+    print('OK admin-sinjira-v18: admin/JWT/AAL2 avant corps, JSON 256 KiB borné pendant la lecture, réponses no-store, sources privées et décisions CANON/retcon humaines conservées.')
     return 0
 
 
