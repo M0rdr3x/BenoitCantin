@@ -84,6 +84,13 @@ def has_version(text: str, version: str) -> bool:
     return any(line.strip().startswith(version + " ") for line in text.splitlines())
 
 
+def normalize_workflow_line(line: str) -> str:
+    value = line.strip()
+    if value.startswith("run: "):
+        value = value[5:].strip()
+    return value
+
+
 def validate_files() -> None:
     for relative in REQUIRED_FILES:
         if not (ROOT / relative).is_file():
@@ -118,7 +125,7 @@ def validate_texts(reviewed: str, ledger: str, workflow: str) -> None:
         if command in workflow:
             fail(f"workflow A1: commande production interdite: {command}")
 
-    workflow_lines = [line.strip() for line in workflow.splitlines()]
+    workflow_lines = [normalize_workflow_line(line) for line in workflow.splitlines()]
     for command in REQUIRED_COMMANDS:
         if workflow_lines.count(command) != 1:
             fail(f"workflow A1: commande requise absente ou dupliquée: {command}")
