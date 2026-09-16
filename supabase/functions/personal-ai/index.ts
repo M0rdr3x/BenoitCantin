@@ -21,8 +21,13 @@ function privateJson(data: unknown, status = 200) {
 async function readBoundedJson(req: Request) {
   const type = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
   if (type !== 'application/json') throw new Error('JSON_REQUIRED');
-  const declared = Number(req.headers.get('content-length') || 0);
-  if (Number.isFinite(declared) && declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
+  const rawLength = req.headers.get('content-length');
+  if (rawLength !== null) {
+    const normalizedLength = rawLength.trim();
+    if (!/^\d+$/.test(normalizedLength)) throw new Error('REQUEST_TOO_LARGE');
+    const declared = Number(normalizedLength);
+    if (!Number.isSafeInteger(declared) || declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
+  }
   if (!req.body) throw new Error('INVALID_JSON');
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -43,8 +48,11 @@ async function readBoundedJson(req: Request) {
   const bytes = new Uint8Array(total);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  let raw: string;
+  try { raw = new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+  catch { throw new Error('INVALID_JSON'); }
   try {
-    const parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error();
     return parsed as Record<string, unknown>;
   } catch { throw new Error('INVALID_JSON'); }

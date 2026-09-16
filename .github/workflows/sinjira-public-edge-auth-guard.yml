@@ -19,6 +19,8 @@ on:
       - 'scripts/validate_send_player_sheet_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
+      - 'scripts/validate_conscience_vault_edge_v25.py'
+      - 'scripts/validate_personal_ai_v25.py'
       - 'scripts/validate_admin_reports_request_security.py'
       - 'scripts/validate_admin_license_codes_security.py'
       - 'scripts/validate_admin_console_request_security.py'
@@ -51,6 +53,8 @@ on:
       - 'scripts/validate_send_player_sheet_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
+      - 'scripts/validate_conscience_vault_edge_v25.py'
+      - 'scripts/validate_personal_ai_v25.py'
       - 'scripts/validate_admin_reports_request_security.py'
       - 'scripts/validate_admin_license_codes_security.py'
       - 'scripts/validate_admin_console_request_security.py'
@@ -119,6 +123,10 @@ jobs:
         run: python scripts/validate_security_context_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de security-context
         run: python scripts/validate_security_context_request_security.py
+      - name: Vérifier la frontière du Coffre des consciences
+        run: python scripts/validate_conscience_vault_edge_v25.py
+      - name: Vérifier la frontière Mon IA
+        run: python scripts/validate_personal_ai_v25.py
       - name: Auto-tester admin-reports
         run: python scripts/validate_admin_reports_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de admin-reports
