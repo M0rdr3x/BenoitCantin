@@ -69,13 +69,13 @@ jobs:
       - name: Valider le contrat de modération et appels
         run: python scripts/validate_moderation_appeals_v24_4_90.py
 
+      - name: Vérifier la syntaxe des clients JavaScript
+        run: |
+          node --check assets/js/sinjira-admin-social-v20.js
+          node --check assets/js/sinjira-moderation-appeals-v24-4-90.js
+
       - name: Valider le ledger production
         run: python scripts/validate_production_migration_ledger.py
 
       - name: Valider le manifeste du schéma production
         run: python scripts/validate_production_schema_manifest.py
-
-      - name: Vérifier la syntaxe des clients JavaScript
-        run: |
-          node --check assets/js/sinjira-admin-social-v20.js
-          node --check assets/js/sinjira-moderation-appeals-v24-4-90.js
