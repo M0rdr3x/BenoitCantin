@@ -9,9 +9,12 @@ on:
       - 'supabase/migrations/20260911225500_sinjira_v25_fracture_endgame_atomic_submit.sql'
       - 'scripts/validate_public_edge_auth.py'
       - 'scripts/validate_public_edge_auth_workflow_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_get_document_url_security.py'
       - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_send_game_report_security.py'
+      - 'scripts/validate_contribution_revocation_v24_5_52.py'
+      - 'scripts/validate_game_contribution_v24_5_53.py'
       - 'scripts/validate_send_player_sheet_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
@@ -33,9 +36,12 @@ on:
       - 'supabase/migrations/20260911225500_sinjira_v25_fracture_endgame_atomic_submit.sql'
       - 'scripts/validate_public_edge_auth.py'
       - 'scripts/validate_public_edge_auth_workflow_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_get_document_url_security.py'
       - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_send_game_report_security.py'
+      - 'scripts/validate_contribution_revocation_v24_5_52.py'
+      - 'scripts/validate_game_contribution_v24_5_53.py'
       - 'scripts/validate_send_player_sheet_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
@@ -71,6 +77,8 @@ jobs:
         run: python scripts/validate_public_edge_auth_workflow_security.py
       - name: Vérifier les exceptions verify_jwt=false
         run: python scripts/validate_public_edge_auth.py
+      - name: Vérifier l’inventaire Edge convergé
+        run: python scripts/validate_edge_function_inventory.py
       - name: Auto-tester get-document-url
         run: python scripts/validate_get_document_url_security.py --self-test
       - name: Vérifier la frontière publique de get-document-url
@@ -83,6 +91,10 @@ jobs:
         run: python scripts/validate_send_game_report_security.py --self-test
       - name: Vérifier la frontière publique de send-game-report
         run: python scripts/validate_send_game_report_security.py
+      - name: Vérifier la révocation contribution bornée
+        run: python scripts/validate_contribution_revocation_v24_5_52.py
+      - name: Vérifier la soumission contribution bornée
+        run: python scripts/validate_game_contribution_v24_5_53.py
       - name: Auto-tester send-player-sheet
         run: python scripts/validate_send_player_sheet_security.py --self-test
       - name: Vérifier la frontière privée de send-player-sheet
