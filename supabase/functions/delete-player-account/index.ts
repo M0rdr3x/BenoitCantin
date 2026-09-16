@@ -37,17 +37,47 @@ async function readBoundedJson(req:Request){
   if(contentType!=='application/json')throw new Error('JSON_REQUIRED');
 
   const declaredRaw=req.headers.get('content-length');
-  if(declaredRaw){
-    const declared=Number(declaredRaw);
-    if(Number.isFinite(declared)&&declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+  if(declaredRaw!==null){
+    const normalizedLength=declaredRaw.trim();
+    if(!/^\d+$/.test(normalizedLength))throw new Error('REQUEST_TOO_LARGE');
+    const declared=Number(normalizedLength);
+    if(!Number.isSafeInteger(declared)||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   }
 
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+  if(!req.body)throw new Error('INVALID_JSON');
+  const reader=req.body.getReader();
+  const chunks:Uint8Array[]=[];
+  let total=0;
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(!value)continue;
+      total+=value.byteLength;
+      if(total>MAX_REQUEST_BYTES){
+        await reader.cancel('REQUEST_TOO_LARGE').catch(()=>undefined);
+        throw new Error('REQUEST_TOO_LARGE');
+      }
+      chunks.push(value);
+    }
+  }finally{
+    reader.releaseLock();
+  }
+
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){
+    bytes.set(chunk,offset);
+    offset+=chunk.byteLength;
+  }
+
+  let raw:string;
+  try{raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}
+  catch{throw new Error('INVALID_JSON');}
 
   let body:unknown;
-  try{ body=JSON.parse(raw); }
-  catch{ throw new Error('INVALID_JSON'); }
+  try{body=JSON.parse(raw);}
+  catch{throw new Error('INVALID_JSON');}
   if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('INVALID_JSON');
   return body as Record<string,unknown>;
 }
