@@ -23,8 +23,8 @@ function privateJson(data:unknown,status=200){
 }
 
 function requireJsonContentType(req:Request){
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json'))throw new Error('UNSUPPORTED_MEDIA_TYPE');
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json')throw new Error('UNSUPPORTED_MEDIA_TYPE');
 }
 
 function moderationLogCode(error:unknown){
@@ -38,8 +38,27 @@ async function readLimitedJson(req:Request){
     const declared=Number(rawLength);
     if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   }
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+  const reader=req.body?.getReader();
+  if(!reader)throw new Error('INVALID_JSON');
+  const chunks:Uint8Array[]=[];
+  let total=0;
+  while(true){
+    const {done,value}=await reader.read();
+    if(done)break;
+    if(!value)continue;
+    total+=value.byteLength;
+    if(total>MAX_REQUEST_BYTES){
+      try{await reader.cancel()}catch{/* Le rejet de taille reste prioritaire. */}
+      throw new Error('REQUEST_TOO_LARGE');
+    }
+    chunks.push(value);
+  }
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
+  let raw:string;
+  try{raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes)}
+  catch{throw new Error('INVALID_JSON')}
   let body:any;
   try{body=JSON.parse(raw||'{}');}
   catch{throw new Error('INVALID_JSON');}

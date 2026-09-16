@@ -15,7 +15,9 @@ REQUIRED = {
     'admin explicite': 'requiredAdmin(req)',
     'lecture JSON bornée': 'readBoundedJson(req)',
     'contrôle Content-Length': "req.headers.get('content-length')",
-    'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'lecture bornée par flux': 'req.body?.getReader()',
+    'annulation au dépassement': 'reader.cancel()',
+    'décodage UTF-8 strict': "new TextDecoder('utf-8',{fatal:true})",
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
     'nosniff': "'X-Content-Type-Options':'nosniff'",
@@ -34,6 +36,7 @@ REQUIRED = {
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
+    'lecture texte intégrale avant borne': 'await req.text()',
     'helper JSON générique cacheable': 'return json(',
     'import helper JSON générique': "corsHeaders, json",
     'auth admin indirecte': 'requiredUser(req)',
@@ -84,6 +87,9 @@ def self_test() -> None:
 
     cases = {
         'json direct': real.replace('const body=await readBoundedJson(req)', 'const body=await req.json()', 1),
+        'texte intégral réintroduit': real.replace('const reader=req.body?.getReader();', 'const rawDirect=await req.text();', 1),
+        'annulation retirée': real.replace('try{await reader.cancel()}catch{/* Le rejet de taille reste prioritaire. */}', '', 1),
+        'décodage non strict': real.replace("new TextDecoder('utf-8',{fatal:true})", "new TextDecoder('utf-8')", 1),
         'no-store retiré': real.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),
         'limite affaiblie': real.replace('MAX_REQUEST_BYTES=32768;', 'MAX_REQUEST_BYTES=327680;', 1),
         'admin explicite retiré': real.replace('const {user,service}=await requiredAdmin(req);', 'const user=await requiredUser(req),service=serviceClient();', 1),
@@ -125,7 +131,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK admin-console: admin/JWT/AAL2 avant corps, JSON 32 KiB, réponses no-store et jeton upload signé privé.')
+    print('OK admin-console: admin/JWT/AAL2 avant corps, JSON 32 KiB borné pendant la lecture, réponses no-store et jeton upload signé privé.')
     return 0
 
 

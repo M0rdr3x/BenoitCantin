@@ -18,8 +18,12 @@ on:
       - 'scripts/validate_admin_reports_request_security.py'
       - 'scripts/validate_admin_license_codes_security.py'
       - 'scripts/validate_admin_console_request_security.py'
+      - 'scripts/validate_admin_console_security.py'
       - 'scripts/validate_admin_sinjira_v18_request_security.py'
+      - 'scripts/validate_admin_v18_privacy_security.py'
       - 'scripts/validate_admin_analytics_request_security.py'
+      - 'scripts/validate_admin_private_reads_security.py'
+      - 'scripts/validate_admin_social_request_security.py'
       - 'scripts/validate_admin_users_privacy.py'
       - 'scripts/validate_character_questionnaire_security.py'
       - 'scripts/validate_fracture_endgame_atomic_security.py'
@@ -42,8 +46,12 @@ on:
       - 'scripts/validate_admin_reports_request_security.py'
       - 'scripts/validate_admin_license_codes_security.py'
       - 'scripts/validate_admin_console_request_security.py'
+      - 'scripts/validate_admin_console_security.py'
       - 'scripts/validate_admin_sinjira_v18_request_security.py'
+      - 'scripts/validate_admin_v18_privacy_security.py'
       - 'scripts/validate_admin_analytics_request_security.py'
+      - 'scripts/validate_admin_private_reads_security.py'
+      - 'scripts/validate_admin_social_request_security.py'
       - 'scripts/validate_admin_users_privacy.py'
       - 'scripts/validate_character_questionnaire_security.py'
       - 'scripts/validate_fracture_endgame_atomic_security.py'
@@ -107,14 +115,30 @@ jobs:
         run: python scripts/validate_admin_console_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de admin-console
         run: python scripts/validate_admin_console_request_security.py
+      - name: Auto-tester le contrat global admin-console
+        run: python scripts/validate_admin_console_security.py --self-test
+      - name: Vérifier le contrat global admin-console
+        run: python scripts/validate_admin_console_security.py
       - name: Auto-tester admin-sinjira-v18
         run: python scripts/validate_admin_sinjira_v18_request_security.py --self-test
       - name: Vérifier la confidentialité et les décisions humaines de admin-sinjira-v18
         run: python scripts/validate_admin_sinjira_v18_request_security.py
+      - name: Auto-tester le contrat global admin V18
+        run: python scripts/validate_admin_v18_privacy_security.py --self-test
+      - name: Vérifier le contrat global admin V18
+        run: python scripts/validate_admin_v18_privacy_security.py
       - name: Auto-tester admin-analytics
         run: python scripts/validate_admin_analytics_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de admin-analytics
         run: python scripts/validate_admin_analytics_request_security.py
+      - name: Auto-tester les lectures admin privées
+        run: python scripts/validate_admin_private_reads_security.py --self-test
+      - name: Vérifier les lectures admin privées
+        run: python scripts/validate_admin_private_reads_security.py
+      - name: Auto-tester admin-social-v20
+        run: python scripts/validate_admin_social_request_security.py --self-test
+      - name: Vérifier la frontière HTTP de la modération admin V20
+        run: python scripts/validate_admin_social_request_security.py
       - name: Auto-tester admin-users
         run: python scripts/validate_admin_users_privacy.py --self-test
       - name: Vérifier la confidentialité et la minimisation de admin-users
