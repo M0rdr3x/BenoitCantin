@@ -130,6 +130,38 @@ def run() -> None:
 
             page.goto(urljoin(BASE_URL, "compte/inscription.html"), wait_until="domcontentloaded", timeout=30_000)
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à l'inscription")
+            assert_true(page.locator('[data-signup-session-warning]').count() == 1, f"{BROWSER_NAME}: garde de session inscription absente")
+            assert_true(page.locator('[data-signup-session-signout]').count() == 1, f"{BROWSER_NAME}: action de séparation de session absente")
+
+            # Régression réelle du parcours signalé par un parent : une date donnant exactement
+            # 11 ans doit ouvrir le parcours enfant supervisé, exiger le code adulte et masquer
+            # le Programme Contributeur. Le calcul se fait dans le même fuseau que le navigateur.
+            child_birth = page.evaluate(
+                """() => {
+                    const d = new Date();
+                    d.setFullYear(d.getFullYear() - 11);
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${day}`;
+                }"""
+            )
+            page.locator('#signup-birth-date').fill(child_birth)
+            page.wait_for_function(
+                """() => {
+                    const guide = document.querySelector('[data-child-guardian-guide]');
+                    const wrap = document.querySelector('[data-guardian-code-wrap]');
+                    const code = document.querySelector('[data-guardian-code]');
+                    const contributor = document.querySelector('[data-contributor-panel]');
+                    return guide && !guide.hidden && wrap && !wrap.hidden && code && code.required === true && contributor && contributor.hidden;
+                }""",
+                timeout=10_000,
+            )
+            assert_true(page.locator('[data-child-guardian-guide]').is_visible(), f"{BROWSER_NAME}: guide parental 11 ans absent")
+            assert_true(page.locator('[data-guardian-code-wrap]').is_visible(), f"{BROWSER_NAME}: champ code parental 11 ans absent")
+            assert_true(page.locator('[data-guardian-code]').get_attribute('required') is not None, f"{BROWSER_NAME}: code parental 11 ans non obligatoire")
+            assert_true(page.locator('[data-contributor-panel]').is_hidden(), f"{BROWSER_NAME}: Programme Contributeur exposé à 11 ans")
+
             page.goto(urljoin(BASE_URL, "compte/reinitialiser-mot-de-passe.html"), wait_until="domcontentloaded", timeout=30_000)
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à la réinitialisation")
 
