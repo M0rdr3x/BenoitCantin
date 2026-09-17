@@ -121,7 +121,7 @@ function bindFeed(posts){
       return;
     }
 
-    const {data:enabled,error:enabledError}=await s.rpc('sinjira_junior_community_enabled',{p_user_id:user.id});
+    const {data:enabled,error:enabledError}=await s.rpc('sinjira_junior_community_enabled');
     if(enabledError)throw enabledError;
     if(enabled!==true){
       const message='Ton parent ou tuteur doit activer la Communauté Junior dans Relations avant que tu puisses entrer ici.';
@@ -130,7 +130,7 @@ function bindFeed(posts){
       return;
     }
 
-    const {data:accepted,error:rulesError}=await s.rpc('has_accepted_junior_community_rules',{p_user_id:user.id});
+    const {data:accepted,error:rulesError}=await s.rpc('has_accepted_junior_community_rules');
     if(rulesError)throw rulesError;
     if(accepted!==true){
       location.replace('/compte/regles-communaute-junior.html?next=%2Fcompte%2Fcommunaute-junior.html');
