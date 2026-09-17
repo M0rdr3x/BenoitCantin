@@ -14,7 +14,7 @@ const button=document.querySelector('[data-junior-rules-accept]');
       return;
     }
 
-    const {data:enabled,error:enabledError}=await s.rpc('sinjira_junior_community_enabled',{p_user_id:user.id});
+    const {data:enabled,error:enabledError}=await s.rpc('sinjira_junior_community_enabled');
     if(enabledError)throw enabledError;
     if(enabled!==true){
       if(button)button.disabled=true;
@@ -22,7 +22,7 @@ const button=document.querySelector('[data-junior-rules-accept]');
       return;
     }
 
-    const {data:accepted,error:acceptedError}=await s.rpc('has_accepted_junior_community_rules',{p_user_id:user.id});
+    const {data:accepted,error:acceptedError}=await s.rpc('has_accepted_junior_community_rules');
     if(acceptedError)throw acceptedError;
     if(accepted===true){
       if(button){button.disabled=true;button.textContent='Règles Junior déjà acceptées';}
