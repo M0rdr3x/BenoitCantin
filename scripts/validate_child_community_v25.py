@@ -14,6 +14,8 @@ RELATIONS=ROOT/'assets/js/v24-relations.js'
 RELATIONS_HTML=ROOT/'compte/relations.html'
 WORKFLOW=ROOT/'.github/workflows/sinjira-child-community-v25.yml'
 BROWSER_TEST=ROOT/'tests/e2e/test_child_community.py'
+ADMIN_EDGE=ROOT/'supabase/functions/admin-social-v20/index.ts'
+ADMIN_CLIENT=ROOT/'assets/js/sinjira-admin-social-v20.js'
 
 errors=[]
 
@@ -42,6 +44,8 @@ relations=read(RELATIONS)
 relations_html=read(RELATIONS_HTML)
 workflow=read(WORKFLOW) if WORKFLOW.exists() else ''
 browser_test=read(BROWSER_TEST)
+admin_edge=read(ADMIN_EDGE)
+admin_client=read(ADMIN_CLIENT)
 
 m=compact(mig)
 t=compact(test)
@@ -55,6 +59,8 @@ r=compact(relations)
 rh=relations_html.lower()
 w=workflow.lower()
 bt=browser_test.lower()
+ae=compact(admin_edge)
+ac=compact(admin_client)
 
 # Serveur : surface distincte, tables non accessibles directement et garde parentale.
 for table in ('junior_community_guardian_consents','junior_community_posts','junior_community_comments'):
@@ -136,6 +142,15 @@ for marker,msg in (
     ('à13anslecomptequitteautomatiquementlabandejunior','Le test ne prouve pas la sortie Junior à 13 ans.'),
 ):
     req(marker in t,msg)
+
+# Modération humaine : les signalements Junior doivent être résolus sur les tables Junior
+# et les décisions hide_content doivent rester réversibles via moderation_content_visible.
+req("public.moderation_content_visible('real','post',p.id)" in m and "public.moderation_content_visible('real','comment',c.id)" in m,'Le fil Junior ne respecte pas les décisions de modération réversibles.')
+req("snap.source==='junior_community'" in ae,'La fonction admin ne reconnaît pas les signalements Junior.')
+req("canonicaluser(s,'junior_community_posts','id','author_user_id'" in ae,'La modération ne résout pas l auteur d une publication Junior.')
+req("canonicaluser(s,'junior_community_comments','id','author_user_id'" in ae,'La modération ne résout pas l auteur d un commentaire Junior.')
+req("r.snapshot?.source==='junior_community'" in ae and "junior_community_posts" in ae and "junior_community_comments" in ae,'La preuve de modération Junior ne charge pas le contenu cible borné.')
+req("isjunior=x.snapshot?.source==='junior_community'" in ac and "communautéjunior" in ac,'L interface admin n identifie pas clairement la Communauté Junior.')
 
 # Preuve navigateur isolée : aucun appel production, identité pseudonymisée et RPC seulement.
 req('page.route(' in browser_test and '@supabase/supabase-js@2/+esm' in browser_test,'La preuve navigateur Junior n intercepte pas le client Supabase.')
