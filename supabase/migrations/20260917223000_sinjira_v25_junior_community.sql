@@ -73,26 +73,28 @@ as $$ select public.sinjira_age_band(auth.uid()); $$;
 revoke all on function public.sinjira_my_age_band() from public,anon;
 grant execute on function public.sinjira_my_age_band() to authenticated,service_role;
 
-create or replace function public.sinjira_is_junior(p_user_id uuid default auth.uid())
+-- Helpers arbitraires strictement privés. Un enfant authentifié ne peut jamais
+-- sonder l'âge, l'activation Junior ou l'acceptation des règles d'un autre compte par UUID.
+create or replace function private.sinjira_is_junior(p_user_id uuid)
 returns boolean
 language sql
 stable
 security definer
 set search_path=public
-as $$
+as $
   select p_user_id is not null and public.sinjira_age_band(p_user_id)='child';
-$$;
-revoke all on function public.sinjira_is_junior(uuid) from public,anon;
-grant execute on function public.sinjira_is_junior(uuid) to authenticated,service_role;
+$;
+revoke all on function private.sinjira_is_junior(uuid) from public,anon,authenticated;
+grant execute on function private.sinjira_is_junior(uuid) to service_role;
 
-create or replace function public.sinjira_junior_community_enabled(p_user_id uuid default auth.uid())
+create or replace function private.sinjira_junior_community_enabled(p_user_id uuid)
 returns boolean
 language sql
 stable
 security definer
-set search_path=public
-as $$
-  select public.sinjira_is_junior(p_user_id)
+set search_path=public,private
+as $
+  select private.sinjira_is_junior(p_user_id)
     and exists(
       select 1
       from public.guardian_links g
@@ -104,26 +106,47 @@ as $$
         and g.status='verified'
         and public.sinjira_age_band(g.guardian_user_id)='adult'
     );
-$$;
-revoke all on function public.sinjira_junior_community_enabled(uuid) from public,anon;
-grant execute on function public.sinjira_junior_community_enabled(uuid) to authenticated,service_role;
+$;
+revoke all on function private.sinjira_junior_community_enabled(uuid) from public,anon,authenticated;
+grant execute on function private.sinjira_junior_community_enabled(uuid) to service_role;
 
-create or replace function public.has_accepted_junior_community_rules(p_user_id uuid default auth.uid())
+create or replace function private.has_accepted_junior_community_rules(p_user_id uuid)
 returns boolean
 language sql
 stable
 security definer
 set search_path=public
-as $$
+as $
   select exists(
     select 1
     from public.community_rule_acceptances a
     where a.user_id=p_user_id
       and a.rules_version='sinjira-junior-rules-v1-2026-09-17'
   );
-$$;
-revoke all on function public.has_accepted_junior_community_rules(uuid) from public,anon;
-grant execute on function public.has_accepted_junior_community_rules(uuid) to authenticated,service_role;
+$;
+revoke all on function private.has_accepted_junior_community_rules(uuid) from public,anon,authenticated;
+grant execute on function private.has_accepted_junior_community_rules(uuid) to service_role;
+
+-- Les deux RPC publiques d'état sont self-only et n'acceptent aucun UUID utilisateur.
+create or replace function public.sinjira_junior_community_enabled()
+returns boolean
+language sql
+stable
+security definer
+set search_path=pg_catalog,public,private
+as $ select private.sinjira_junior_community_enabled(auth.uid()); $;
+revoke all on function public.sinjira_junior_community_enabled() from public,anon;
+grant execute on function public.sinjira_junior_community_enabled() to authenticated,service_role;
+
+create or replace function public.has_accepted_junior_community_rules()
+returns boolean
+language sql
+stable
+security definer
+set search_path=pg_catalog,public,private
+as $ select private.has_accepted_junior_community_rules(auth.uid()); $;
+revoke all on function public.has_accepted_junior_community_rules() from public,anon;
+grant execute on function public.has_accepted_junior_community_rules() to authenticated,service_role;
 
 create or replace function private.sinjira_junior_alias(p_user_id uuid)
 returns text
@@ -181,9 +204,9 @@ as $$
 declare uid uuid:=auth.uid();
 begin
   if uid is null then raise exception 'AUTH_REQUIRED'; end if;
-  if not public.sinjira_is_junior(uid) then raise exception 'JUNIOR_COMMUNITY_11_12_ONLY'; end if;
-  if not public.sinjira_junior_community_enabled(uid) then raise exception 'JUNIOR_GUARDIAN_CONSENT_REQUIRED'; end if;
-  if coalesce(p_require_rules,true) and not public.has_accepted_junior_community_rules(uid) then
+  if not private.sinjira_is_junior(uid) then raise exception 'JUNIOR_COMMUNITY_11_12_ONLY'; end if;
+  if not private.sinjira_junior_community_enabled(uid) then raise exception 'JUNIOR_GUARDIAN_CONSENT_REQUIRED'; end if;
+  if coalesce(p_require_rules,true) and not private.has_accepted_junior_community_rules(uid) then
     raise exception 'JUNIOR_RULES_REQUIRED';
   end if;
   if public.social_is_suspended(uid) then raise exception 'SOCIAL_SUSPENDED'; end if;
@@ -313,8 +336,8 @@ begin
     from public.junior_community_posts p
     where p.status='active'
       and public.moderation_content_visible('real','post',p.id)
-      and public.sinjira_is_junior(p.author_user_id)
-      and public.sinjira_junior_community_enabled(p.author_user_id)
+      and private.sinjira_is_junior(p.author_user_id)
+      and private.sinjira_junior_community_enabled(p.author_user_id)
       and not public.social_is_blocked(uid,p.author_user_id)
     order by p.created_at desc
     limit least(greatest(coalesce(p_limit,30),1),50)
@@ -366,7 +389,7 @@ begin
   select p.author_user_id into author_id
   from public.junior_community_posts p
   where p.id=p_post_id and p.status='active';
-  if author_id is null or not public.sinjira_is_junior(author_id) or not public.sinjira_junior_community_enabled(author_id) then
+  if author_id is null or not private.sinjira_is_junior(author_id) or not private.sinjira_junior_community_enabled(author_id) then
     raise exception 'JUNIOR_POST_UNAVAILABLE';
   end if;
   if public.social_is_blocked(uid,author_id) then raise exception 'JUNIOR_POST_UNAVAILABLE'; end if;
@@ -439,8 +462,8 @@ declare
   details text:=nullif(btrim(coalesce(p_details,'')),'');
 begin
   if uid is null then raise exception 'AUTH_REQUIRED'; end if;
-  if not public.sinjira_is_junior(uid) then raise exception 'JUNIOR_COMMUNITY_11_12_ONLY'; end if;
-  if not public.sinjira_junior_community_enabled(uid) then raise exception 'JUNIOR_GUARDIAN_CONSENT_REQUIRED'; end if;
+  if not private.sinjira_is_junior(uid) then raise exception 'JUNIOR_COMMUNITY_11_12_ONLY'; end if;
+  if not private.sinjira_junior_community_enabled(uid) then raise exception 'JUNIOR_GUARDIAN_CONSENT_REQUIRED'; end if;
   if coalesce(p_target_type,'') not in('post','comment') then raise exception 'JUNIOR_REPORT_TARGET_INVALID'; end if;
   if not private.sinjira_report_reason_allowed(coalesce(p_reason,'other')) then raise exception 'SOCIAL_REPORT_REASON_INVALID'; end if;
   if details is not null and char_length(details)>1200 then raise exception 'SOCIAL_REPORT_DETAILS_TOO_LONG'; end if;
@@ -456,7 +479,7 @@ begin
     from public.junior_community_comments c where c.id=p_target_id and c.status='active';
   end if;
 
-  if author_id is null or author_id=uid or not public.sinjira_is_junior(author_id) then
+  if author_id is null or author_id=uid or not private.sinjira_is_junior(author_id) then
     raise exception 'JUNIOR_REPORT_TARGET_UNAVAILABLE';
   end if;
 
@@ -502,7 +525,7 @@ begin
   ) x;
 
   return jsonb_build_object(
-    'enabled',public.sinjira_junior_community_enabled(p_child_user_id),
+    'enabled',private.sinjira_junior_community_enabled(p_child_user_id),
     'age_band',public.sinjira_age_band(p_child_user_id),
     'posts',(select count(*) from public.junior_community_posts p where p.author_user_id=p_child_user_id and p.status='active'),
     'comments',(select count(*) from public.junior_community_comments c where c.author_user_id=p_child_user_id and c.status='active'),
@@ -515,7 +538,7 @@ $$;
 revoke all on function public.junior_guardian_summary(uuid) from public,anon;
 grant execute on function public.junior_guardian_summary(uuid) to authenticated;
 
-comment on function public.sinjira_junior_community_enabled(uuid) is
+comment on function public.sinjira_junior_community_enabled() is
 'Communauté Junior activée uniquement pour un compte child 11–12 avec lien tuteur vérifié et consentement Junior non révoqué.';
 comment on function public.junior_community_feed(integer) is
 'Fil Junior pseudonymisé: aucun UUID auteur, nom réel, avatar, courriel ou coordonnée n est renvoyé au client.';
