@@ -84,6 +84,11 @@ async function reportTargetUser(s:any,r:any){
     if(!profileId)return null;
     return canonicalUser(s,'dating_profiles','id','user_id',profileId);
   }
+  if(snap.source==='junior_community'){
+    if(r.target_type==='post')return canonicalUser(s,'junior_community_posts','id','author_user_id',r.target_id);
+    if(r.target_type==='comment')return canonicalUser(s,'junior_community_comments','id','author_user_id',r.target_id);
+    return null;
+  }
   if(r.network==='real'){
     if(r.target_type==='post')return canonicalUser(s,'social_real_posts','id','user_id',r.target_id);
     if(r.target_type==='comment')return canonicalUser(s,'social_real_comments','id','user_id',r.target_id);
@@ -100,6 +105,13 @@ async function reportTargetUser(s:any,r:any){
 }
 
 async function targetSnapshot(s:any,r:any){
+  if(r.snapshot?.source==='junior_community'){
+    const table=r.target_type==='post'?'junior_community_posts':r.target_type==='comment'?'junior_community_comments':null;
+    if(!table)return null;
+    const {data,error}=await s.from(table).select('id,body,status,created_at,updated_at').eq('id',r.target_id).maybeSingle();
+    if(error)throw error;
+    return data||null;
+  }
   const pair=targetTables?.[r.network]?.[r.target_type];
   if(!pair)return null;
   const {data,error}=await s.from(pair[0]).select('*').eq('id',r.target_id).maybeSingle();
