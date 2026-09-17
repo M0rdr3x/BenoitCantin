@@ -19,6 +19,7 @@ on:
       - 'avis-legal.html'
       - 'docs/compliance/**'
       - 'scripts/validate_global_safety_compliance_v24_4_83.py'
+      - 'scripts/validate_child_guardian_signup_v25.py'
       - 'scripts/validate_data_control_v24_4_69.py'
       - '.github/workflows/validate-global-safety-v24-4-83.yml'
   push:
@@ -40,6 +41,7 @@ on:
       - 'avis-legal.html'
       - 'docs/compliance/**'
       - 'scripts/validate_global_safety_compliance_v24_4_83.py'
+      - 'scripts/validate_child_guardian_signup_v25.py'
       - 'scripts/validate_data_control_v24_4_69.py'
       - '.github/workflows/validate-global-safety-v24-4-83.yml'
 
@@ -48,16 +50,27 @@ permissions:
 
 jobs:
   compliance-contract:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
     steps:
-      - name: Récupérer le dépôt
-        uses: actions/checkout@v4
-      - name: Configurer Python
-        uses: actions/setup-python@v5
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          python-version: '3.12'
-      - name: Valider le contrat V24.4.83
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Compiler les validateurs
+        run: >-
+          python -m py_compile
+          scripts/validate_global_safety_compliance_v24_4_83.py
+          scripts/validate_child_guardian_signup_v25.py
+          scripts/validate_data_control_v24_4_69.py
+      - name: Valider le contrat V24.4.83 et sa convergence V25
         run: python scripts/validate_global_safety_compliance_v24_4_83.py
+      - name: Valider le compte enfant supervisé V25
+        run: python scripts/validate_child_guardian_signup_v25.py
       - name: Vérifier le contrôle des données et suppressions
         run: python scripts/validate_data_control_v24_4_69.py
       - name: Vérifier la syntaxe JavaScript
