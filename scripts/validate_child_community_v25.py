@@ -120,7 +120,7 @@ for route in ('messages.html','rencontres.html','reseau-personnage.html','marche
 req("ageband==='child'" in co and "communaute-junior.html" in co,'La Communauté générale ne redirige pas un compte child.')
 
 # Tests comportementaux.
-req('selectplan(32);' in t,'Plan pgTAP Junior inattendu.')
+req('selectplan(33);' in t,'Plan pgTAP Junior inattendu.')
 for marker,msg in (
     ('aucunselectdirectsurpublicationsjunior','Le test ne prouve pas l absence de SELECT direct.'),
     ('leparentactiveexplicitementlacommunautéjunior','Le test ne prouve pas l opt-in parent.'),
