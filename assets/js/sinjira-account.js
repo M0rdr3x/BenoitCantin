@@ -78,6 +78,37 @@ async function initAdminNavigation(){
   document.querySelectorAll('[data-admin-nav],[data-admin-entry]').forEach(node=>{node.hidden=false});
 }
 
+async function initAgeAccessNavigation(){
+  if(!isSinjiraBackendConfigured()) return;
+  const {data:{user},error:userError}=await getSupabase().auth.getUser();
+  if(userError||!user) return;
+  const {data:ageBand,error}=await getSupabase().rpc('sinjira_my_age_band');
+  if(error||ageBand!=='child') return;
+
+  document.querySelectorAll('a[href$="communaute.html"]').forEach(link=>{
+    link.href='communaute-junior.html';
+    link.textContent='Communauté Junior';
+  });
+
+  const hiddenRoutes=new Set([
+    'messages.html',
+    'rencontres.html',
+    'reseau-personnage.html',
+    'marche.html',
+    'jetons.html',
+    'mes-achats.html',
+    'contributions.html'
+  ]);
+  document.querySelectorAll('.account-nav a').forEach(link=>{
+    const href=(link.getAttribute('href')||'').split('?')[0].split('#')[0];
+    if(hiddenRoutes.has(href))link.hidden=true;
+  });
+
+  document.querySelectorAll('[data-contribution-status]').forEach(node=>{
+    node.textContent='Programme Contributeur indisponible pour les comptes de 11–12 ans.';
+  });
+}
+
 
 async function signup(){
   const form=document.querySelector('[data-signup-form]'); if(!form)return;
@@ -267,6 +298,7 @@ async function settings(){
 document.querySelectorAll('[data-logout]').forEach(b=>b.addEventListener('click',signOut));
 backendNotice();
 initAdminNavigation().catch(()=>{});
+initAgeAccessNavigation().catch(()=>{});
 (async()=>{try{
   if(page==='signup')await signup();else if(page==='login')await login();else if(page==='forgot')await forgot();else if(page==='reset')await reset();
   else if(page==='dashboard')await dashboard();else if(page==='games')await games();else if(page==='profile')await profilePage();else if(page==='contributions')await contributions();else if(page==='settings')await settings();
