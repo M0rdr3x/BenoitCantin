@@ -137,6 +137,7 @@ req("s.rpc('junior_guardian_summary'" in r,'Relations ne peut pas lire le résum
 req("ageband!=='child'" in a and "link.href='communaute-junior.html'" in a,'La navigation du compte ne route pas child vers Junior.')
 for route in ('messages.html','rencontres.html','reseau-personnage.html','marche.html','jetons.html','mes-achats.html','contributions.html'):
     req(f"'{route}'" in a,f'Route sensible non masquée pour child: {route}')
+req("hiddenroutes.has(currentleaf)" in a and "communaute-junior.html?from=restricted" in a,'Un compte child peut encore ouvrir directement une route sensible masquée.')
 req("ageband==='child'" in co and "communaute-junior.html" in co,'La Communauté générale ne redirige pas un compte child.')
 
 # Tests comportementaux.
