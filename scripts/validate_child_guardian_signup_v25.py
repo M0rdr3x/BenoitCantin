@@ -73,12 +73,16 @@ req("ifyears<13then" in m and 'c:=false;' in m and 'f:=false;' in m,
     "Le serveur ne neutralise pas le Programme Contributeur pour les 11–12 ans.")
 req('constmin_account_age=11;' in j and 'if(age<min_account_age)' in j,
     "Le client n'applique pas le seuil de 11 ans.")
-req('guardianinput.required=number.isinteger(age)&&age>=min_account_age&&age<14;' in j,
+req('constguardianrequired=number.isinteger(age)&&age>=min_account_age&&age<14;' in j,
+    "Le client ne calcule pas explicitement l'autorisation parentale obligatoire de 11 à 13 ans.")
+req('guardianinput.required=guardianrequired;' in j,
     "Le client n'exige pas le code parental de 11 à 13 ans.")
 req('constchild=age<13;' in j and "account_age_band:child?'child_11_12'" in j,
     "Le client ne marque pas distinctement le compte enfant 11–12.")
 req("constcontributor=!child&&d.get('initial_contributor_opt_in')==='yes';" in j,
     "Le client pourrait encore activer le Programme Contributeur pour un enfant.")
+req('contributorpanel.hidden=child;' in j,
+    "Le formulaire continue d'exposer le Programme Contributeur à un compte enfant 11–12.")
 req('age<18&&!iscanada(residencecountry)' in j,
     "La porte Canada jeunesse n'est plus appliquée côté client.")
 
@@ -109,15 +113,23 @@ req('moins de 11 ans' in h and '11–12 ans' in h and '13 ans' in h and '14–17
     "L'interface n'explique pas clairement les bandes d'âge.")
 req('comptes de 11 à 17 ans' in h and 'canada' in h,
     "L'interface n'explique pas la porte Canada pour les comptes jeunesse.")
-req('v24-signup.js?v=25.0.1&amp;rev=child-11' in h,
-    "La version du client d'inscription enfant n'est pas invalidée.")
+req('data-child-guardian-guide' in h and 'parent / tuteur : générer le code' in h,
+    "Le formulaire enfant n'offre pas de chemin clair vers la génération du code parental.")
+req('connexion.html?next=%2fcompte%2frelations.html' in h,
+    "Le raccourci parent ne revient pas vers les outils de supervision.")
+req('déconnectez le compte parent' in h,
+    "Le formulaire n'explique pas la séparation de session parent/enfant.")
+req('data-contributor-panel' in h,
+    "Le panneau Contributeur ne peut pas être masqué pour un compte enfant.")
+req('v24-signup.js?v=25.0.1&amp;rev=child-11-flow' in h,
+    "La version du client d'inscription enfant n'est pas invalidée après le correctif UX.")
 req('réservés aux personnes de 13 ans et plus' not in h,
     "Un ancien message 13+ global subsiste dans l'interface.")
 
-# Le pgTAP ne se contente plus d'inspecter les fonctions : il crée un vrai parent,
-# un code, puis un compte ayant exactement 11 ans et vérifie les effets persistés.
-req('selectplan(16);' in t,
-    "Le plan pgTAP comportemental enfant supervisé est inattendu.")
+# Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
+# la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
+req('selectplan(20);' in t,
+    "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
     ("youth-abcd123456", "Le test ne crée pas de code parental déterministe."),
@@ -126,6 +138,9 @@ for marker, message in (
     ("public.sinjira_parent_can_supervise", "Le test ne vérifie pas la supervision parentale."),
     ("notpublic.sinjira_can_social_interact", "Le test ne vérifie pas la coupure sociale avant 13 ans."),
     ("participate=falseandshare_free_text=false", "Le test ne vérifie pas la neutralisation du Programme Contributeur."),
+    ("interval'13years'+interval'1day'", "Le test ne vérifie pas la veille du 13e anniversaire."),
+    ("lejourdes13anslaclassificationdevientyouthautomatiquement", "Le test ne vérifie pas la bascule automatique vers youth à 13 ans."),
+    ("lecontratsocialjeunessepeutsappliquerautomatiquementàpartirde13ans", "Le test ne vérifie pas la réouverture contrôlée du contrat social à 13 ans."),
     ("sinjira_minimum_age_11", "Le test ne prouve pas le refus des moins de 11 ans."),
     ("guardian_authorization_required_under_14", "Le test ne prouve pas le refus à 11 ans sans code parental."),
     ("youth_jurisdiction_not_enabled", "Le test ne prouve pas la porte Canada jeunesse."),
@@ -138,4 +153,4 @@ if errors:
         print('- ' + error)
     raise SystemExit(1)
 
-print('OK V25: contrat, parcours parent et test comportemental présents pour un compte ayant exactement 11 ans, avec code adulte, lien vérifié, social désactivé et contribution neutralisée.')
+print('OK V25: compte enfant 11 ans, parcours parent, minimisation et transition automatique child -> youth à 13 ans sont verrouillés par le contrat et les tests.')
