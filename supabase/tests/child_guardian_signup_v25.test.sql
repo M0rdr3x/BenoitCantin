@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(16);
+select plan(20);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -45,6 +45,18 @@ select is(public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),'child
 select ok(public.sinjira_parent_can_supervise('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011'),'le parent peut superviser le compte enfant');
 select ok(not public.sinjira_can_social_interact('20000000-0000-4000-8000-000000000011','20000000-0000-4000-8000-000000000011'),'les fonctions sociales restent coupées pour la bande child');
 select ok(exists(select 1 from public.research_consents where user_id='20000000-0000-4000-8000-000000000011' and participate=false and share_free_text=false),'le Programme Contributeur est neutralisé côté serveur pour 11 ans');
+
+update public.account_safety_profiles
+set date_of_birth=(current_date-interval '13 years'+interval '1 day')::date
+where user_id='20000000-0000-4000-8000-000000000011';
+select is(public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),'child','la veille des 13 ans reste classée child');
+
+update public.account_safety_profiles
+set date_of_birth=(current_date-interval '13 years')::date
+where user_id='20000000-0000-4000-8000-000000000011';
+select is(public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),'youth','le jour des 13 ans la classification devient youth automatiquement');
+select ok(public.sinjira_parent_can_supervise('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011'),'le lien parental vérifié continue de permettre la supervision à 13 ans');
+select ok(public.sinjira_can_social_interact('20000000-0000-4000-8000-000000000011','20000000-0000-4000-8000-000000000011'),'le contrat social jeunesse peut s appliquer automatiquement à partir de 13 ans');
 
 select throws_ok($$
   insert into auth.users(id,email,raw_user_meta_data)
