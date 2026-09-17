@@ -20,9 +20,10 @@ let ageBand='unverified';
 function serverMissing(error){const code=String(error?.code||''),text=String(error?.message||'');return code==='PGRST205'||code==='PGRST202'||/family_relationships|guardian_signup_invites|guardian_links|relation .* does not exist|schema cache|Could not find/i.test(text)}
 function normalizeCode(v=''){return String(v).trim().toUpperCase().replace(/\s+/g,'')}
 function configureGuardianTools(){
+  const pending=['child_pending','youth_pending'].includes(ageBand);
   if(guardianAdultTools)guardianAdultTools.hidden=ageBand!=='adult';
-  if(guardianYouthTools)guardianYouthTools.hidden=ageBand!=='youth_pending';
-  if(guardianNeutralTools)guardianNeutralTools.hidden=['adult','youth_pending'].includes(ageBand);
+  if(guardianYouthTools)guardianYouthTools.hidden=!pending;
+  if(guardianNeutralTools)guardianNeutralTools.hidden=ageBand==='adult'||pending;
 }
 async function refreshAgeBand(){
   const {data,error}=await s.rpc('sinjira_my_age_band');
@@ -49,7 +50,7 @@ async function renderGuardian(){
   if(linksResult.error){guardianLinks.innerHTML='<div class="v24-empty">Impossible de charger les liens de supervision.</div>';return}
   const rows=linksResult.data||[];
   guardianLinks.innerHTML=rows.length?rows.map(x=>{
-    const mine=x.guardian_user_id===user.id?'Tuteur / parent':'Compte jeunesse';
+    const mine=x.guardian_user_id===user.id?'Tuteur / parent':'Compte enfant / jeunesse';
     const active=x.status==='verified';
     return `<article class="v24-panel"><strong>${escapeHtml(mine)} · ${escapeHtml(x.status||'—')}</strong><p>Rôle : ${escapeHtml(x.guardian_role||'parent/tuteur')}</p><small>${x.can_view_contact_metadata?'Métadonnées de contact autorisées':'Métadonnées de contact non autorisées'} · aucun contenu privé de message</small>${active?`<div class="hero-actions"><button class="btn btn-secondary btn-small" type="button" data-revoke-guardian-link="${escapeHtml(x.id)}">Révoquer ce lien</button></div>`:''}</article>`;
   }).join(''):'<div class="v24-empty">Aucun lien de supervision.</div>';
@@ -67,7 +68,7 @@ guardianButton?.addEventListener('click',async()=>{
   const {data,error}=await s.rpc('create_guardian_signup_invite');
   guardianButton.disabled=false;
   if(error){setStatus(guardianStatus,'Impossible de générer le code parental. Vérifiez que votre compte est adulte et que les exigences de sécurité sont satisfaites.','error');return}
-  setStatus(guardianStatus,`Code créé : ${String(data||'')}. Il est à usage unique et expire automatiquement.`,'success');
+  setStatus(guardianStatus,`Code créé : ${String(data||'')}. Copiez-le dans l’inscription de l’enfant. Il est à usage unique et expire automatiquement.`,'success');
   await renderGuardian();
 });
 
@@ -79,7 +80,7 @@ redeemButton?.addEventListener('click',async()=>{
   redeemButton.disabled=false;
   if(error||!data?.ok){setStatus(guardianStatus,'Ce code est invalide, expiré, déjà utilisé ou ne peut pas être associé à ce compte.','error');return}
   if(redeemInput)redeemInput.value='';
-  await refreshAgeBand();setStatus(guardianStatus,'Lien parental vérifié. Les protections jeunesse utilisent maintenant cette supervision.','success');await renderGuardian();
+  await refreshAgeBand();setStatus(guardianStatus,'Lien parental vérifié. Les protections enfant/jeunesse utilisent maintenant cette supervision.','success');await renderGuardian();
 });
 
 if(form&&list){
