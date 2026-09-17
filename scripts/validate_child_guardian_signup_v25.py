@@ -10,6 +10,7 @@ BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
 RELATIONS_JS = ROOT / 'assets/js/v24-relations.js'
 SIGNUP_HTML = ROOT / 'compte/inscription.html'
 RELATIONS_HTML = ROOT / 'compte/relations.html'
+BROWSER_TEST = ROOT / 'tests/e2e/test_public_site.py'
 
 errors = []
 
@@ -34,6 +35,7 @@ backend_js = read(BACKEND_JS)
 relations_js = read(RELATIONS_JS)
 signup_html = read(SIGNUP_HTML)
 relations_html = read(RELATIONS_HTML)
+browser_test = read(BROWSER_TEST)
 
 m = compact(mig)
 t = compact(test)
@@ -43,6 +45,7 @@ b = compact(backend_js)
 r = compact(relations_js)
 h = signup_html.lower()
 rh = relations_html.lower()
+bt = compact(browser_test)
 
 # Autorité serveur et seuil minimal.
 req("ifyears<11thenraiseexception'sinjira_minimum_age_11'" in m,
@@ -141,6 +144,19 @@ req('v24-signup.js?v=25.0.1&amp;rev=child-11-flow-session' in h,
 req('réservés aux personnes de 13 ans et plus' not in h,
     "Un ancien message 13+ global subsiste dans l'interface.")
 
+# Régression navigateur : avant toute promotion, Playwright doit vérifier le comportement visible
+# qui avait échoué dans le vrai parcours utilisateur, pas seulement la présence du code source.
+req("d.setfullyear(d.getfullyear()-11)" in bt and "locator('#signup-birth-date').fill(child_birth)" in bt,
+    "Le test navigateur ne simule plus une date donnant exactement 11 ans.")
+req("[data-child-guardian-guide]" in bt and "[data-guardian-code-wrap]" in bt,
+    "Le test navigateur ne vérifie plus l'ouverture du parcours parental à 11 ans.")
+req("code.required===true" in bt,
+    "Le test navigateur ne prouve plus que le code parental devient obligatoire.")
+req("contributor&&contributor.hidden" in bt and "[data-contributor-panel]" in bt,
+    "Le test navigateur ne prouve plus que le Programme Contributeur disparaît à 11 ans.")
+req("[data-signup-session-warning]" in bt and "[data-signup-session-signout]" in bt,
+    "Le test navigateur ne protège plus la séparation de session parent/enfant.")
+
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
 req('selectplan(20);' in t,
@@ -168,4 +184,4 @@ if errors:
         print('- ' + error)
     raise SystemExit(1)
 
-print('OK V25: compte enfant 11 ans, parcours parent, séparation de session, minimisation et transition automatique child -> youth à 13 ans sont verrouillés par le contrat et les tests.')
+print('OK V25: compte enfant 11 ans, parcours parent, séparation de session, minimisation, régression navigateur et transition automatique child -> youth à 13 ans sont verrouillés par le contrat et les tests.')
