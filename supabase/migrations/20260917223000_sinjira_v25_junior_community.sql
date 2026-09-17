@@ -307,10 +307,12 @@ begin
         from public.junior_community_comments c
         where c.post_id=p.id
           and c.status='active'
+          and public.moderation_content_visible('real','comment',c.id)
           and not public.social_is_blocked(uid,c.author_user_id)
       ) comments
     from public.junior_community_posts p
     where p.status='active'
+      and public.moderation_content_visible('real','post',p.id)
       and public.sinjira_is_junior(p.author_user_id)
       and public.sinjira_junior_community_enabled(p.author_user_id)
       and not public.social_is_blocked(uid,p.author_user_id)
