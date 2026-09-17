@@ -101,7 +101,8 @@ async function initAgeAccessNavigation(){
   ]);
   document.querySelectorAll('.account-nav a').forEach(link=>{
     const href=(link.getAttribute('href')||'').split('?')[0].split('#')[0];
-    if(hiddenRoutes.has(href))link.hidden=true;
+    const leaf=href.split('/').filter(Boolean).pop()||href;
+    if(hiddenRoutes.has(leaf))link.hidden=true;
   });
 
   document.querySelectorAll('[data-contribution-status]').forEach(node=>{
