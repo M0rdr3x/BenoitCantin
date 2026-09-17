@@ -13,6 +13,7 @@ COMMUNITY=ROOT/'assets/js/sinjira-community-real.js'
 RELATIONS=ROOT/'assets/js/v24-relations.js'
 RELATIONS_HTML=ROOT/'compte/relations.html'
 WORKFLOW=ROOT/'.github/workflows/sinjira-child-community-v25.yml'
+BROWSER_TEST=ROOT/'tests/e2e/test_child_community.py'
 
 errors=[]
 
@@ -40,6 +41,7 @@ community=read(COMMUNITY)
 relations=read(RELATIONS)
 relations_html=read(RELATIONS_HTML)
 workflow=read(WORKFLOW) if WORKFLOW.exists() else ''
+browser_test=read(BROWSER_TEST)
 
 m=compact(mig)
 t=compact(test)
@@ -52,6 +54,7 @@ co=compact(community)
 r=compact(relations)
 rh=relations_html.lower()
 w=workflow.lower()
+bt=browser_test.lower()
 
 # Serveur : surface distincte, tables non accessibles directement et garde parentale.
 for table in ('junior_community_guardian_consents','junior_community_posts','junior_community_comments'):
@@ -134,6 +137,14 @@ for marker,msg in (
 ):
     req(marker in t,msg)
 
+# Preuve navigateur isolée : aucun appel production, identité pseudonymisée et RPC seulement.
+req('page.route(' in browser_test and '@supabase/supabase-js@2/+esm' in browser_test,'La preuve navigateur Junior n intercepte pas le client Supabase.')
+req('private-child@example.test' in browser_test and 'child-test-11' in browser_test,'La preuve navigateur ne contient pas les sentinelles de données privées.')
+req('private-child@example.test" not in text' in browser_test and 'child-test-11" not in text' in browser_test,'La preuve navigateur ne vérifie pas l absence de données privées dans le DOM.')
+req('not production_requests' in bt,'La preuve navigateur ne bloque pas les appels vers Supabase production.')
+req('junior_community_create_post' in browser_test and 'junior_community_create_comment' in browser_test,'La preuve navigateur ne couvre pas publication + commentaire.')
+req('sinjira_junior_external_contact_forbidden' in bt,'La preuve navigateur ne couvre pas le blocage des liens externes.')
+
 # CI locale uniquement, lecture seule et sans capacité de production.
 if workflow:
     req('permissions:\n  contents: read' in workflow,'Le workflow Junior doit rester contents:read.')
@@ -143,6 +154,8 @@ if workflow:
     for forbidden in ('supabase db push','supabase link','supabase functions deploy','supabase secrets set'):
         req(forbidden not in w,f'Commande production interdite dans le workflow Junior: {forbidden}')
     req('supabase db reset' in w and 'supabase test db supabase/tests/child_community_v25.test.sql' in w,'Le workflow Junior ne rejoue pas la base et le pgTAP local.')
+    req('python tests/e2e/test_child_community.py' in w,'Le workflow Junior ne lance pas la preuve navigateur isolée.')
+    req('mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:' in w,'L image Playwright Junior n est pas épinglée par digest.')
 
 if errors:
     print(f'ECHEC Communauté Junior V25: {len(errors)} problème(s).')
