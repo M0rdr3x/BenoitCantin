@@ -3,6 +3,8 @@ import {getSupabase,SINJIRA_CONFIG,isSinjiraBackendConfigured,setStatus} from '.
 const form=document.querySelector('[data-signup-form]');
 const status=document.querySelector('[data-account-status]');
 const backend=document.querySelector('[data-backend-state]');
+const sessionWarning=document.querySelector('[data-signup-session-warning]');
+const sessionSignOut=document.querySelector('[data-signup-session-signout]');
 const birthInput=form?.querySelector('[data-signup-birth-date]');
 const guardianWrap=form?.querySelector('[data-guardian-code-wrap]');
 const guardianGuide=form?.querySelector('[data-child-guardian-guide]');
@@ -12,6 +14,8 @@ const contributorInput=form?.querySelector('[name="initial_contributor_opt_in"]'
 const shareFreeTextInput=form?.querySelector('[name="share_free_text"]');
 const GUARDIAN_CODE_RE=/^YOUTH-[A-Z0-9]{10}$/;
 const MIN_ACCOUNT_AGE=11;
+let busyState=false;
+let sessionBoundaryState='checking';
 
 function parseBirthDate(dateString){
   const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateString||''));
@@ -42,15 +46,41 @@ function nextDestination(def='/compte/index.html'){
 }
 function normalizeGuardianCode(value=''){return String(value).trim().toUpperCase().replace(/\s+/g,'')}
 function isCanada(value=''){return ['canada','ca','can'].includes(String(value).trim().toLowerCase())}
-function setBusy(busy){
-  form?.setAttribute('aria-busy',busy?'true':'false');
+function syncSubmitState(){
   const submit=form?.querySelector('[type="submit"]');
-  if(submit)submit.disabled=Boolean(busy);
+  if(submit)submit.disabled=busyState||sessionBoundaryState!=='clear';
+}
+function setBusy(busy){
+  busyState=Boolean(busy);
+  form?.setAttribute('aria-busy',busyState?'true':'false');
+  syncSubmitState();
 }
 function ready(){
   const ok=isSinjiraBackendConfigured();
   if(backend)backend.textContent=ok?'Service de comptes sécurisé actif.':'Service de comptes temporairement indisponible.';
   return ok;
+}
+async function refreshSessionBoundary(){
+  if(!isSinjiraBackendConfigured()){
+    sessionBoundaryState='clear';
+    if(sessionWarning)sessionWarning.hidden=true;
+    syncSubmitState();
+    return sessionBoundaryState;
+  }
+  sessionBoundaryState='checking';
+  syncSubmitState();
+  try{
+    const {data,error}=await getSupabase().auth.getSession();
+    if(error)throw error;
+    sessionBoundaryState=data?.session?.user?'active':'clear';
+    if(sessionWarning)sessionWarning.hidden=sessionBoundaryState!=='active';
+  }catch(error){
+    console.warn('[SINJIRA signup session boundary]',error?.message||error);
+    sessionBoundaryState='error';
+    if(sessionWarning)sessionWarning.hidden=false;
+  }
+  syncSubmitState();
+  return sessionBoundaryState;
 }
 function syncYouthControls(){
   const age=ageOn(String(birthInput?.value||''));
@@ -82,12 +112,40 @@ if(birthInput){
   birthInput.addEventListener('change',syncYouthControls);
   birthInput.addEventListener('input',syncYouthControls);
 }
+sessionSignOut?.addEventListener('click',async()=>{
+  if(!isSinjiraBackendConfigured())return;
+  sessionSignOut.disabled=true;
+  try{
+    const {error}=await getSupabase().auth.signOut({scope:'local'});
+    if(error)throw error;
+    const boundary=await refreshSessionBoundary();
+    if(boundary==='clear')setStatus(status,'La session précédente est déconnectée. Vous pouvez maintenant créer ce nouveau compte sans mélanger les identités.','success');
+    else setStatus(status,'La session active n’a pas pu être séparée de façon sûre. Réessayez avant de créer un nouveau compte.','error');
+  }catch(error){
+    console.warn('[SINJIRA signup local signout]',error?.message||error);
+    sessionBoundaryState='error';
+    if(sessionWarning)sessionWarning.hidden=false;
+    syncSubmitState();
+    setStatus(status,'Impossible de déconnecter la session active de façon sûre. Aucun nouveau compte ne sera créé tant que cette séparation n’est pas confirmée.','error');
+  }finally{sessionSignOut.disabled=false}
+});
 syncYouthControls();
 ready();
+syncSubmitState();
+await refreshSessionBoundary();
 
 if(form){
   form.addEventListener('submit',async e=>{
     e.preventDefault();
+    const boundary=await refreshSessionBoundary();
+    if(boundary==='active'){
+      setStatus(status,'Un compte est déjà connecté dans ce navigateur. Déconnectez d’abord la session active pour éviter de mélanger le compte du parent et le nouveau compte.','error');
+      return;
+    }
+    if(boundary==='error'){
+      setStatus(status,'SINJIRA™ ne peut pas confirmer que la session du navigateur est libre. Par sécurité, la création d’un nouveau compte est bloquée pour le moment.','error');
+      return;
+    }
     if(!form.checkValidity()){form.reportValidity();return}
     if(!ready()){
       setStatus(status,'Le service de comptes SINJIRA™ est temporairement indisponible.','error');
