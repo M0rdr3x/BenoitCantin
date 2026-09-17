@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(33);
+select plan(35);
 
 select ok(to_regprocedure('public.sinjira_junior_community_enabled(uuid)') is not null,'garde d activation Junior existe');
 select ok(to_regprocedure('public.junior_community_feed(integer)') is not null,'RPC fil Junior existe');
@@ -87,6 +87,26 @@ select set_config('request.jwt.claim.sub','73000000-0000-4000-8000-000000000012'
 select ok(public.junior_community_feed(30)::text like '%J aime explorer les histoires de SINJIRA%','le second enfant voit la publication du premier');
 select ok(position('Nom Réel Enfant Un' in public.junior_community_feed(30)::text)=0,'le vrai pseudo/profil du premier enfant n est pas exposé');
 select ok(position('72000000-0000-4000-8000-000000000011' in public.junior_community_feed(30)::text)=0,'l UUID auteur n est pas exposé au fil Junior');
+
+insert into private.moderation_decisions(
+  subject_user_id,network,target_type,target_id,action,policy_rule,statement_of_reasons,urgency
+)
+values(
+  '72000000-0000-4000-8000-000000000011',
+  'real',
+  'post',
+  (select id from junior_test_ids where name='post1'),
+  'hide_content',
+  'Règles Communauté Junior',
+  'Test automatique : masquage humain réversible d une publication Junior signalée.',
+  'standard'
+);
+select ok(position('J aime explorer les histoires de SINJIRA' in public.junior_community_feed(30)::text)=0,'une décision humaine hide_content masque la publication Junior');
+update private.moderation_decisions
+set status='reversed',reversed_at=now(),reversal_reason='Test automatique : décision renversée après révision humaine.'
+where target_id=(select id from junior_test_ids where name='post1')
+  and network='real' and target_type='post' and action='hide_content';
+select ok(public.junior_community_feed(30)::text like '%J aime explorer les histoires de SINJIRA%','une décision renversée rend la publication Junior visible à nouveau');
 
 insert into junior_test_ids(name,id)
 select 'comment1',(public.junior_community_create_comment((select id from junior_test_ids where name='post1'),'Moi aussi, surtout les jeux!')->>'id')::uuid;
