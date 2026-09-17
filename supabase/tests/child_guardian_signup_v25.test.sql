@@ -2,22 +2,76 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(12);
+select plan(16);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
 select ok(to_regprocedure('public.sinjira_age_band(uuid)') is not null,'classification d âge existe');
 select ok(to_regprocedure('public.sinjira_parent_can_supervise(uuid,uuid)') is not null,'contrôle de supervision existe');
 
-select ok(position('SINJIRA_MINIMUM_AGE_11' in pg_get_functiondef('public.enforce_sinjira_account_safety_age()'::regprocedure))>0,'le profil de sécurité accepte à partir de 11 ans');
-select ok(position('SINJIRA_MINIMUM_AGE_11' in pg_get_functiondef('public.handle_new_sinjira_user()'::regprocedure))>0,'la création serveur applique le minimum de 11 ans');
-select ok(position('GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14' in pg_get_functiondef('public.handle_new_sinjira_user()'::regprocedure))>0,'les 11 à 13 ans exigent une autorisation parentale');
-select ok(position('YOUTH_JURISDICTION_NOT_ENABLED' in pg_get_functiondef('public.handle_new_sinjira_user()'::regprocedure))>0,'la porte de juridiction jeunesse reste active');
+insert into auth.users(id,email,raw_user_meta_data)
+values(
+  '10000000-0000-4000-8000-000000000001',
+  'guardian-child11@example.test',
+  jsonb_build_object(
+    'birth_date',(current_date-interval '35 years')::date::text,
+    'date_of_birth',(current_date-interval '35 years')::date::text,
+    'gender','Homme','sex','male','pseudo','Parent test','display_name','Parent test','residence_country','Canada'
+  )
+);
 
-select ok(position($q$interval '11 years'$q$ in pg_get_functiondef('public.sinjira_age_band(uuid)'::regprocedure))>0,'la bande d âge distingue les moins de 11 ans');
-select ok(position($q$interval '13 years'$q$ in pg_get_functiondef('public.sinjira_age_band(uuid)'::regprocedure))>0,'les 11 à 12 ans ont une bande enfant distincte');
-select ok(position($q$then 'child'$q$ in pg_get_functiondef('public.sinjira_age_band(uuid)'::regprocedure))>0,'un enfant supervisé reçoit la bande child');
-select ok(position($q$'child'$q$ in pg_get_functiondef('public.sinjira_parent_can_supervise(uuid,uuid)'::regprocedure))>0 and position($q$'youth'$q$ in pg_get_functiondef('public.sinjira_parent_can_supervise(uuid,uuid)'::regprocedure))>0,'le parent peut superviser enfant et jeunesse');
+select is(public.sinjira_age_band('10000000-0000-4000-8000-000000000001'),'adult','le parent de test est classé adulte');
+
+insert into public.guardian_signup_invites(guardian_user_id,invite_code,expires_at)
+values('10000000-0000-4000-8000-000000000001','YOUTH-ABCD123456',now()+interval '1 day');
+
+insert into auth.users(id,email,raw_user_meta_data)
+values(
+  '20000000-0000-4000-8000-000000000011',
+  'child11@example.test',
+  jsonb_build_object(
+    'birth_date',(current_date-interval '11 years')::date::text,
+    'date_of_birth',(current_date-interval '11 years')::date::text,
+    'gender','Homme','sex','male','pseudo','Enfant 11','display_name','Enfant 11','residence_country','Canada',
+    'guardian_code','YOUTH-ABCD123456','initial_contributor_opt_in',true,'initial_share_free_text',true
+  )
+);
+
+select ok(exists(select 1 from public.profiles where user_id='20000000-0000-4000-8000-000000000011'),'le compte enfant crée son profil');
+select is((select date_of_birth from public.account_safety_profiles where user_id='20000000-0000-4000-8000-000000000011'),(current_date-interval '11 years')::date,'la date de naissance exacte de 11 ans est conservée');
+select ok(exists(select 1 from public.guardian_links where minor_user_id='20000000-0000-4000-8000-000000000011' and guardian_user_id='10000000-0000-4000-8000-000000000001' and status='verified'),'le lien parent enfant est créé et vérifié');
+select ok(exists(select 1 from public.guardian_signup_invites where invite_code='YOUTH-ABCD123456' and used_at is not null and minor_user_id='20000000-0000-4000-8000-000000000011'),'le code parental est consommé une seule fois par le compte enfant');
+select is(public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),'child','un compte ayant exactement 11 ans devient child');
+select ok(public.sinjira_parent_can_supervise('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011'),'le parent peut superviser le compte enfant');
+select ok(not public.sinjira_can_social_interact('20000000-0000-4000-8000-000000000011','20000000-0000-4000-8000-000000000011'),'les fonctions sociales restent coupées pour la bande child');
+select ok(exists(select 1 from public.research_consents where user_id='20000000-0000-4000-8000-000000000011' and participate=false and share_free_text=false),'le Programme Contributeur est neutralisé côté serveur pour 11 ans');
+
+select throws_ok($$
+  insert into auth.users(id,email,raw_user_meta_data)
+  values(
+    '30000000-0000-4000-8000-000000000010',
+    'child10@example.test',
+    jsonb_build_object('birth_date',(current_date-interval '10 years')::date::text,'gender','Homme','pseudo','Enfant 10','residence_country','Canada')
+  )
+$$,'P0001','SINJIRA_MINIMUM_AGE_11','un enfant de 10 ans est refusé');
+
+select throws_ok($$
+  insert into auth.users(id,email,raw_user_meta_data)
+  values(
+    '40000000-0000-4000-8000-000000000011',
+    'child11-no-guardian@example.test',
+    jsonb_build_object('birth_date',(current_date-interval '11 years')::date::text,'gender','Homme','pseudo','Sans parent','residence_country','Canada')
+  )
+$$,'P0001','GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14','un compte de 11 ans sans code parental est refusé');
+
+select throws_ok($$
+  insert into auth.users(id,email,raw_user_meta_data)
+  values(
+    '50000000-0000-4000-8000-000000000011',
+    'child11-outside-canada@example.test',
+    jsonb_build_object('birth_date',(current_date-interval '11 years')::date::text,'gender','Homme','pseudo','Hors Canada','residence_country','France','guardian_code','YOUTH-ABCD123456')
+  )
+$$,'P0001','YOUTH_JURISDICTION_NOT_ENABLED','un compte jeunesse hors Canada reste refusé');
 
 select * from finish();
 rollback;
