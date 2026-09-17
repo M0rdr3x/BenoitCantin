@@ -6,7 +6,10 @@ MIG = ROOT / 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_sign
 TEST = ROOT / 'supabase/tests/child_guardian_signup_v25.test.sql'
 YOUTH_BASE = ROOT / 'supabase/migrations/20260816140000_sinjira_v24_4_12_youth_safety.sql'
 SIGNUP_JS = ROOT / 'assets/js/v24-signup.js'
+BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
+RELATIONS_JS = ROOT / 'assets/js/v24-relations.js'
 SIGNUP_HTML = ROOT / 'compte/inscription.html'
+RELATIONS_HTML = ROOT / 'compte/relations.html'
 
 errors = []
 
@@ -27,13 +30,19 @@ mig = read(MIG)
 test = read(TEST)
 youth_base = read(YOUTH_BASE)
 signup_js = read(SIGNUP_JS)
+backend_js = read(BACKEND_JS)
+relations_js = read(RELATIONS_JS)
 signup_html = read(SIGNUP_HTML)
+relations_html = read(RELATIONS_HTML)
 
 m = compact(mig)
 t = compact(test)
 y = compact(youth_base)
 j = compact(signup_js)
+b = compact(backend_js)
+r = compact(relations_js)
 h = signup_html.lower()
+rh = relations_html.lower()
 
 # Autorité serveur et seuil minimal.
 req("ifyears<11thenraiseexception'sinjira_minimum_age_11'" in m,
@@ -73,6 +82,26 @@ req("constcontributor=!child&&d.get('initial_contributor_opt_in')==='yes';" in j
 req('age<18&&!iscanada(residencecountry)' in j,
     "La porte Canada jeunesse n'est plus appliquée côté client.")
 
+# Les messages communs doivent refléter 11 ans et détecter explicitement un serveur encore ancien.
+req("guardian_authorization_required_under_14" in b and '11à13ans' in b,
+    "Le message commun d'autorisation parentale n'est pas aligné sur 11–13 ans.")
+req('sinjira_minimum_age_11' in b and 'àpartirde11ans' in b,
+    "Le message commun du seuil minimum 11 ans est absent.")
+req('sinjira_minimum_age_(?:12|13)' in b and 'ancianerègled’âge' not in b,
+    "Le détecteur de règle serveur héritée 12/13 ans est absent.")
+req('synchronisationdumoduleenfant11ans' in b,
+    "Le diagnostic d'un serveur encore ancien n'est pas explicite.")
+
+# Parcours parent : le code doit être générable avant l'inscription, et child_pending doit être reconnu.
+req("s.rpc('create_guardian_signup_invite')" in r,
+    "L'interface parent ne génère plus le code d'inscription.")
+req("['child_pending','youth_pending'].includes(ageband)" in r,
+    "L'interface de supervision ne reconnaît pas child_pending.")
+req('data-create-guardian-code' in rh and 'de 11 à 13 ans' in rh,
+    "La page Relations n'explique pas le code parental obligatoire de 11 à 13 ans.")
+req('ouvrir l’inscription' in rh and 'v24-relations.js?v=25.0.1&amp;rev=child-guardian' in rh,
+    "Le parcours parent vers l'inscription ou son invalidation de cache est incomplet.")
+
 # Interface et invalidation de cache.
 req('compte disponible à partir de 11 ans' in h,
     "L'interface n'explique pas le seuil de 11 ans.")
@@ -109,4 +138,4 @@ if errors:
         print('- ' + error)
     raise SystemExit(1)
 
-print('OK V25: contrat et test comportemental présents pour un compte ayant exactement 11 ans, avec code adulte, lien vérifié, social désactivé et contribution neutralisée.')
+print('OK V25: contrat, parcours parent et test comportemental présents pour un compte ayant exactement 11 ans, avec code adulte, lien vérifié, social désactivé et contribution neutralisée.')
