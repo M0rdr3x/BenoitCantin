@@ -1,0 +1,72 @@
+name: SINJIRA V25 — Communauté Junior 11-12
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'supabase/migrations/20260917223000_sinjira_v25_junior_community.sql'
+      - 'supabase/tests/child_community_v25.test.sql'
+      - 'compte/communaute-junior.html'
+      - 'compte/regles-communaute-junior.html'
+      - 'compte/relations.html'
+      - 'assets/js/sinjira-community-junior-v25.js'
+      - 'assets/js/sinjira-community-junior-rules-v25.js'
+      - 'assets/js/sinjira-community-real.js'
+      - 'assets/js/sinjira-account.js'
+      - 'assets/js/v24-relations.js'
+      - 'scripts/validate_child_community_v25.py'
+      - '.github/workflows/sinjira-child-community-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-child-community-v25-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  junior-community-local-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier le contrat statique Communauté Junior
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/validate_child_community_v25.py
+          python scripts/validate_child_community_v25.py
+          node --check assets/js/sinjira-community-junior-v25.js
+          node --check assets/js/sinjira-community-junior-rules-v25.js
+          node --check assets/js/sinjira-community-real.js
+          node --check assets/js/sinjira-account.js
+          node --check assets/js/v24-relations.js
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+
+      - name: Démarrer une pile Supabase locale propre
+        run: supabase start
+
+      - name: Reconstruire la base locale depuis zéro
+        run: supabase db reset
+
+      - name: Exécuter le test pgTAP Communauté Junior
+        run: supabase test db supabase/tests/child_community_v25.test.sql
+
+      - name: Arrêter et supprimer la pile locale
+        if: always()
+        run: supabase stop --no-backup
