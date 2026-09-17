@@ -70,6 +70,14 @@ req("public.sinjira_age_band(p_user_id)='child'" in m,'La Communauté Junior n e
 req('public.sinjira_parent_can_supervise(uid,p_child_user_id)' in m,'Le parent ne doit pas pouvoir activer Junior sans lien de supervision vérifié.')
 req('junior_community_guardian_consents' in m and 'revoked_atisnull' in m,'Le consentement parent Junior révocable est absent.')
 req("'sinjira-junior-rules-v1-2026-09-17'" in m,'Version de règles Junior absente.')
+req('createorreplacefunctionprivate.sinjira_is_junior(p_user_iduuid)' in m,'Le helper arbitraire de bande Junior n est pas privé.')
+req('createorreplacefunctionprivate.sinjira_junior_community_enabled(p_user_iduuid)' in m,'Le helper arbitraire d activation Junior n est pas privé.')
+req('createorreplacefunctionprivate.has_accepted_junior_community_rules(p_user_iduuid)' in m,'Le helper arbitraire de règles Junior n est pas privé.')
+req('createorreplacefunctionpublic.sinjira_junior_community_enabled()' in m,'Le RPC self-only d activation Junior est absent.')
+req('createorreplacefunctionpublic.has_accepted_junior_community_rules()' in m,'Le RPC self-only des règles Junior est absent.')
+req('createorreplacefunctionpublic.sinjira_junior_community_enabled(p_user_iduuid' not in m,'Un RPC public permet encore de sonder l activation Junior par UUID.')
+req('createorreplacefunctionpublic.has_accepted_junior_community_rules(p_user_iduuid' not in m,'Un RPC public permet encore de sonder les règles Junior par UUID.')
+req('createorreplacefunctionpublic.sinjira_is_junior(p_user_iduuid' not in m,'Un RPC public permet encore de sonder la bande Junior par UUID.')
 
 # Minimisation identité et séparation sociale.
 req("'explorateur-'||upper(substr(md5(" in m,'Le pseudonyme Junior généré côté serveur est absent.')
@@ -111,6 +119,9 @@ for marker,msg in (
 req("s.rpc('junior_community_feed'" in c,'Le client Junior n utilise pas le RPC de fil.')
 req("s.rpc('junior_community_create_post'" in c,'Le client Junior ne publie pas via RPC.')
 req("s.rpc('junior_community_report_content'" in c,'Le client Junior ne signale pas via RPC.')
+req("s.rpc('sinjira_junior_community_enabled')" in c,'Le client Junior n utilise pas le RPC self-only d activation.')
+req("s.rpc('has_accepted_junior_community_rules')" in c,'Le client Junior n utilise pas le RPC self-only des règles.')
+req("p_user_id:user.id" not in c and "p_user_id:user.id" not in rc,'Les clients Junior transmettent encore leur UUID aux RPC d état self-only.')
 req(".from('junior_community_" not in client.lower(),'Le client Junior contourne les RPC avec un accès table direct.')
 req("if(band!=='child')" in c,'Le client Junior ne vérifie pas la bande child.')
 req("location.replace('/compte/communaute.html')" in c,'Le client Junior ne renvoie pas les autres âges vers leur communauté.')
@@ -129,10 +140,13 @@ for route in ('messages.html','rencontres.html','reseau-personnage.html','marche
 req("ageband==='child'" in co and "communaute-junior.html" in co,'La Communauté générale ne redirige pas un compte child.')
 
 # Tests comportementaux.
-req('selectplan(35);' in t,'Plan pgTAP Junior inattendu.')
+req('selectplan(43);' in t,'Plan pgTAP Junior inattendu.')
 for marker,msg in (
     ('aucunselectdirectsurpublicationsjunior','Le test ne prouve pas l absence de SELECT direct.'),
     ('leparentactiveexplicitementlacommunautéjunior','Le test ne prouve pas l opt-in parent.'),
+    ('aucunrpcpublicnepermetdesonderlactivationjuniorparuuid','Le test ne prouve pas la frontière self-only de l activation Junior.'),
+    ('aucunrpcpublicnepermetdesonderlesrèglesjuniorparuuid','Le test ne prouve pas la frontière self-only des règles Junior.'),
+    ('aucunrpcpublicnepermetdesonderlabandejuniorparuuid','Le test ne prouve pas la frontière self-only de la bande Junior.'),
     ('levraipseudo/profildupremierenfantnestpasexposé','Le test ne prouve pas la pseudonymisation.'),
     ('luuidauteurnestpasexposé','Le test ne prouve pas la minimisation UUID.'),
     ('unlienexterneestrefusécôtéserveur','Le test ne prouve pas le blocage de liens.'),
