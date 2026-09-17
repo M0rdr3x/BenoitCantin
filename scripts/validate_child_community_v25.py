@@ -129,7 +129,7 @@ for route in ('messages.html','rencontres.html','reseau-personnage.html','marche
 req("ageband==='child'" in co and "communaute-junior.html" in co,'La Communauté générale ne redirige pas un compte child.')
 
 # Tests comportementaux.
-req('selectplan(33);' in t,'Plan pgTAP Junior inattendu.')
+req('selectplan(35);' in t,'Plan pgTAP Junior inattendu.')
 for marker,msg in (
     ('aucunselectdirectsurpublicationsjunior','Le test ne prouve pas l absence de SELECT direct.'),
     ('leparentactiveexplicitementlacommunautéjunior','Le test ne prouve pas l opt-in parent.'),
@@ -137,6 +137,8 @@ for marker,msg in (
     ('luuidauteurnestpasexposé','Le test ne prouve pas la minimisation UUID.'),
     ('unlienexterneestrefusécôtéserveur','Le test ne prouve pas le blocage de liens.'),
     ('unadultenepeutpaslirelefiljunior','Le test ne prouve pas l isolation adulte.'),
+    ('unedécisionhumainehide_contentmasquelapublicationjunior','Le test ne prouve pas le masquage humain réversible.'),
+    ('unedécisionrenverséerendlapublicationjuniorvisibleànouveau','Le test ne prouve pas la restauration après appel/révision.'),
     ('lamessagerieetlesréseauxsociauxhistoriquesrestentfermés','Le test ne prouve pas l absence de messagerie.'),
     ('lerésuméparentnedonnepasaccèsaucontenu','Le test ne prouve pas la supervision sans surveillance.'),
     ('à13anslecomptequitteautomatiquementlabandejunior','Le test ne prouve pas la sortie Junior à 13 ans.'),
