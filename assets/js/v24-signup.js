@@ -5,7 +5,9 @@ const status=document.querySelector('[data-account-status]');
 const backend=document.querySelector('[data-backend-state]');
 const birthInput=form?.querySelector('[data-signup-birth-date]');
 const guardianWrap=form?.querySelector('[data-guardian-code-wrap]');
+const guardianGuide=form?.querySelector('[data-child-guardian-guide]');
 const guardianInput=form?.querySelector('[data-guardian-code]');
+const contributorPanel=form?.querySelector('[data-contributor-panel]');
 const contributorInput=form?.querySelector('[name="initial_contributor_opt_in"]');
 const shareFreeTextInput=form?.querySelector('[name="share_free_text"]');
 const GUARDIAN_CODE_RE=/^YOUTH-[A-Z0-9]{10}$/;
@@ -54,11 +56,17 @@ function syncYouthControls(){
   const age=ageOn(String(birthInput?.value||''));
   const minor=Number.isInteger(age)&&age>=MIN_ACCOUNT_AGE&&age<18;
   const child=Number.isInteger(age)&&age>=MIN_ACCOUNT_AGE&&age<13;
+  const guardianRequired=Number.isInteger(age)&&age>=MIN_ACCOUNT_AGE&&age<14;
+  if(guardianGuide)guardianGuide.hidden=!guardianRequired;
   if(guardianWrap&&guardianInput){
     guardianWrap.hidden=!minor;
-    guardianInput.required=Number.isInteger(age)&&age>=MIN_ACCOUNT_AGE&&age<14;
+    guardianInput.required=guardianRequired;
     guardianInput.setAttribute('aria-required',guardianInput.required?'true':'false');
     if(!minor)guardianInput.value='';
+  }
+  if(contributorPanel){
+    contributorPanel.hidden=child;
+    if(child)contributorPanel.open=false;
   }
   if(contributorInput){
     contributorInput.disabled=child;
@@ -103,8 +111,8 @@ if(form){
     if(age>120){setStatus(status,'La date de naissance indiquée n’est pas valide.','error');return}
     if(age<18&&!isCanada(residenceCountry)){setStatus(status,'Pour le moment, les comptes jeunesse de 11 à 17 ans sont disponibles uniquement pour les personnes résidant au Canada. Les autres juridictions jeunesse resteront fermées jusqu’à leur validation spécifique.','error');return}
     if(!['Femme','Homme'].includes(gender)){setStatus(status,'Choisissez Femme ou Homme pour ce profil.','error');return}
-    if(age<14&&!guardianCode){setStatus(status,'De 11 à 13 ans, un code d’autorisation créé par un parent ou tuteur adulte est obligatoire.','error');return}
-    if(guardianCode&&!GUARDIAN_CODE_RE.test(guardianCode)){setStatus(status,'Le code parental doit respecter le format YOUTH-XXXXXXXXXX.','error');return}
+    if(age<14&&!guardianCode){setStatus(status,'De 11 à 13 ans, un code parental est obligatoire. Le parent ou tuteur adulte doit se connecter à son Compte SINJIRA™, ouvrir Relations, générer un code à usage unique, puis vous le remettre.','error');return}
+    if(guardianCode&&!GUARDIAN_CODE_RE.test(guardianCode)){setStatus(status,'Le code parental doit respecter le format YOUTH-XXXXXXXXXX. Utilisez le code à usage unique généré depuis le compte adulte du parent ou tuteur.','error');return}
     const minor=age<18;
     const child=age<13;
     const languages=String(d.get('languages')||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,12);
@@ -144,7 +152,7 @@ if(form){
       if(error){
         const raw=String(error.message||'');
         if(/GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14|INVALID_OR_EXPIRED_GUARDIAN_CODE|ADULT_GUARDIAN_REQUIRED/i.test(raw)){
-          setStatus(status,'Le code d’autorisation parentale est absent, expiré ou invalide. Demandez au parent ou tuteur d’en générer un nouveau depuis son Compte SINJIRA™.','error');
+          setStatus(status,'Le code parental est absent, expiré, déjà utilisé ou ne provient pas d’un compte adulte valide. Le parent ou tuteur doit en générer un nouveau depuis Compte SINJIRA™ → Relations.','error');
         }else if(/SINJIRA_MINIMUM_AGE_11/i.test(raw)){
           setStatus(status,'Les Comptes SINJIRA™ supervisés sont disponibles à partir de 11 ans.','error');
         }else if(/YOUTH_JURISDICTION_NOT_ENABLED/i.test(raw)){
