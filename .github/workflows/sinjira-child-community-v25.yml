@@ -16,6 +16,7 @@ on:
       - 'assets/js/sinjira-account.js'
       - 'assets/js/v24-relations.js'
       - 'scripts/validate_child_community_v25.py'
+      - 'tests/e2e/test_child_community.py'
       - '.github/workflows/sinjira-child-community-v25.yml'
   workflow_dispatch:
 
@@ -70,3 +71,51 @@ jobs:
       - name: Arrêter et supprimer la pile locale
         if: always()
         run: supabase stop --no-backup
+
+  junior-community-browser-proof:
+    needs: junior-community-local-proof
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    timeout-minutes: 12
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier la syntaxe de la preuve navigateur Junior
+        run: python -m py_compile tests/e2e/test_child_community.py
+
+      - name: Installer le client Playwright épinglé
+        run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
+
+      - name: Démarrer le site statique local
+        run: |
+          set -euo pipefail
+          python -m http.server 4173 --bind 127.0.0.1 > /tmp/sinjira-junior-http.log 2>&1 &
+          echo $! > /tmp/sinjira-junior-http.pid
+          i=0
+          while [ "$i" -lt 20 ]; do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/compte/communaute-junior.html', timeout=1).read(1)" >/dev/null 2>&1; then exit 0; fi
+            i=$((i + 1))
+            sleep 1
+          done
+          cat /tmp/sinjira-junior-http.log
+          exit 1
+
+      - name: Tester la Communauté Junior sans service distant
+        env:
+          BASE_URL: http://127.0.0.1:4173/
+        run: python tests/e2e/test_child_community.py
+
+      - name: Arrêter le serveur local
+        if: always()
+        run: |
+          if [ -f /tmp/sinjira-junior-http.pid ]; then kill "$(cat /tmp/sinjira-junior-http.pid)" || true; fi
