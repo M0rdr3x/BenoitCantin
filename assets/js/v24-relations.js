@@ -10,6 +10,7 @@ const guardianLinks=document.querySelector('[data-guardian-links]');
 const guardianAdultTools=document.querySelector('[data-guardian-adult-tools]');
 const guardianYouthTools=document.querySelector('[data-guardian-youth-tools]');
 const guardianNeutralTools=document.querySelector('[data-guardian-neutral-tools]');
+const juniorCommunityChildren=document.querySelector('[data-junior-community-children]');
 const redeemInput=document.querySelector('[data-redeem-guardian-code]');
 const redeemButton=document.querySelector('[data-redeem-guardian-code-button]');
 const user=await requireUser();
@@ -29,6 +30,53 @@ async function refreshAgeBand(){
   const {data,error}=await s.rpc('sinjira_my_age_band');
   if(!error&&typeof data==='string')ageBand=data;
   configureGuardianTools();
+}
+
+async function renderJuniorCommunityChildren(){
+  if(!juniorCommunityChildren||ageBand!=='adult')return;
+  const {data,error}=await s.rpc('guardian_junior_community_children');
+  if(error){
+    juniorCommunityChildren.innerHTML='<div class="v24-empty">Le contrôle Communauté Junior sera disponible lorsque le module serveur sera synchronisé.</div>';
+    return;
+  }
+  const rows=Array.isArray(data)?data:[];
+  juniorCommunityChildren.innerHTML=rows.length?rows.map(row=>{
+    const enabled=row.enabled===true;
+    return `<article class="v24-panel"><strong>${escapeHtml(row.label||'Compte enfant')} · ${escapeHtml(row.junior_alias||'Pseudonyme Junior')}</strong><p>${enabled?'Communauté Junior activée':'Communauté Junior désactivée'}</p><small>11–12 ans · aucun message privé · contenu non visible automatiquement au parent.</small><div class="hero-actions"><button class="btn ${enabled?'btn-secondary':'btn-primary'} btn-small" type="button" data-junior-community-toggle="${escapeHtml(row.minor_user_id)}" data-junior-enabled="${enabled?'true':'false'}">${enabled?'Désactiver':'Activer'} la Communauté Junior</button><button class="btn btn-secondary btn-small" type="button" data-junior-community-summary="${escapeHtml(row.minor_user_id)}">Voir le résumé de sécurité</button></div><div class="v24-feature-note" data-junior-summary-for="${escapeHtml(row.minor_user_id)}" hidden></div></article>`;
+  }).join(''):'<div class="v24-empty">Aucun compte enfant 11–12 ans lié et vérifié.</div>';
+
+  juniorCommunityChildren.querySelectorAll('[data-junior-community-toggle]').forEach(button=>button.addEventListener('click',async()=>{
+    const childId=button.dataset.juniorCommunityToggle;
+    const next=button.dataset.juniorEnabled!=='true';
+    if(next&&!confirm('Activer la Communauté Junior pour ce compte enfant? L’enfant devra aussi accepter les règles Junior.'))return;
+    if(!next&&!confirm('Désactiver la Communauté Junior? Le compte enfant perdra immédiatement l’accès au fil Junior.'))return;
+    button.disabled=true;
+    const {data:result,error:toggleError}=await s.rpc('guardian_set_junior_community',{p_child_user_id:childId,p_enabled:next});
+    if(toggleError||!result?.ok){
+      button.disabled=false;
+      setStatus(guardianStatus,'Impossible de modifier l’accès à la Communauté Junior pour le moment.','error');
+      return;
+    }
+    setStatus(guardianStatus,next?'Communauté Junior activée. L’enfant doit maintenant accepter les règles Junior.':'Communauté Junior désactivée.','success');
+    await renderJuniorCommunityChildren();
+  }));
+
+  juniorCommunityChildren.querySelectorAll('[data-junior-community-summary]').forEach(button=>button.addEventListener('click',async()=>{
+    const childId=button.dataset.juniorCommunitySummary;
+    const target=juniorCommunityChildren.querySelector(`[data-junior-summary-for="${CSS.escape(childId)}"]`);
+    button.disabled=true;
+    const {data:summary,error:summaryError}=await s.rpc('junior_guardian_summary',{p_child_user_id:childId});
+    button.disabled=false;
+    if(summaryError||!summary){
+      if(target){target.hidden=false;target.textContent='Résumé temporairement indisponible.';}
+      return;
+    }
+    if(target){
+      const last=summary.last_activity_at?formatDate(summary.last_activity_at):'aucune activité';
+      target.hidden=false;
+      target.textContent=`Résumé seulement : ${Number(summary.posts||0)} publication(s), ${Number(summary.comments||0)} commentaire(s), dernière activité : ${last}. Le contenu reste privé à l’enfant et à la Communauté Junior.`;
+    }
+  }));
 }
 
 async function renderGuardian(){
@@ -54,6 +102,7 @@ async function renderGuardian(){
     const active=x.status==='verified';
     return `<article class="v24-panel"><strong>${escapeHtml(mine)} · ${escapeHtml(x.status||'—')}</strong><p>Rôle : ${escapeHtml(x.guardian_role||'parent/tuteur')}</p><small>${x.can_view_contact_metadata?'Métadonnées de contact autorisées':'Métadonnées de contact non autorisées'} · aucun contenu privé de message</small>${active?`<div class="hero-actions"><button class="btn btn-secondary btn-small" type="button" data-revoke-guardian-link="${escapeHtml(x.id)}">Révoquer ce lien</button></div>`:''}</article>`;
   }).join(''):'<div class="v24-empty">Aucun lien de supervision.</div>';
+  await renderJuniorCommunityChildren();
   guardianLinks.querySelectorAll('[data-revoke-guardian-link]').forEach(button=>button.addEventListener('click',async()=>{
     if(!confirm('Révoquer ce lien de supervision? Les fonctions jeunesse qui exigent un tuteur vérifié pourront être limitées.'))return;
     button.disabled=true;
