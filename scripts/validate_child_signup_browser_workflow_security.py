@@ -26,6 +26,10 @@ def require(errors: list[str], condition: bool, message: str) -> None:
         errors.append(message)
 
 
+def count_exact_stripped(text: str, target: str) -> int:
+    return sum(1 for line in text.splitlines() if line.strip() == target)
+
+
 def action_targets(text: str) -> list[str]:
     targets = []
     for line in text.splitlines():
@@ -61,9 +65,9 @@ def validate_text(text: str, browser_test: str) -> list[str]:
     require(errors, '  workflow-contract:\n' in text, 'job workflow-contract absent')
     require(errors, '  browser-proof:\n' in text, 'job browser-proof absent')
     require(errors, text.count('needs: workflow-contract') == 1, 'browser-proof doit dépendre exactement une fois du contrat')
-    require(errors, text.count(f'run: {SELF_TEST_COMMAND}') == 1, 'auto-test sécurité absent ou dupliqué')
-    require(errors, text.count(f'run: {VALIDATE_COMMAND}') == 1, 'validation sécurité absente ou dupliquée')
-    require(errors, text.count(f'run: {BROWSER_COMMAND}') == 1, 'preuve navigateur enfant absente ou dupliquée')
+    require(errors, count_exact_stripped(text, f'run: {SELF_TEST_COMMAND}') == 1, 'auto-test sécurité absent ou dupliqué')
+    require(errors, count_exact_stripped(text, f'run: {VALIDATE_COMMAND}') == 1, 'validation sécurité absente ou dupliquée')
+    require(errors, count_exact_stripped(text, f'run: {BROWSER_COMMAND}') == 1, 'preuve navigateur enfant absente ou dupliquée')
     require(errors, 'BASE_URL: http://127.0.0.1:4173/' in text, 'BASE_URL de la preuve doit rester locale')
     require(errors, "--bind 127.0.0.1" in text, 'serveur de test doit rester lié à loopback')
     require(errors, text.count('if: always()') == 1, 'seul le nettoyage serveur peut utiliser if: always()')
