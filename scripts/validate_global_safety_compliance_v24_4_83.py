@@ -65,14 +65,14 @@ req('privacy_service_can_delete_user' in hold_test and 'privacy_export_my_extend
 
 # Le client courant doit refléter la convergence V25, sans affaiblir les autres protections jeunesse.
 req('constmin_account_age=11;' in signupcompact and 'if(age<min_account_age)' in signupcompact,'JavaScript inscription pas aligné sur le minimum courant de 11 ans.')
-req('guardianinput.required=number.isinteger(age)&&age>=min_account_age&&age<14;' in signupcompact,'Code parental 11–13 ans non exigé dans le client.')
+req('constguardianrequired=number.isinteger(age)&&age>=min_account_age&&age<14;' in signupcompact and 'guardianinput.required=guardianrequired;' in signupcompact,'Code parental 11–13 ans non exigé dans le client.')
 req('age<18&&!iscanada(residencecountry)' in signupcompact,'Gate jeunesse Canada absent côté client.')
 req("account_age_band:child?'child_11_12'" in signupcompact,'Bande enfant 11–12 absente des métadonnées client.')
 req("constcontributor=!child&&d.get('initial_contributor_opt_in')==='yes';" in signupcompact,'Programme Contributeur non neutralisé côté client pour les enfants.')
 req('compte disponible à partir de 11 ans' in signup_html.lower() and 'moins de 11 ans' in signup_html.lower(),'Interface inscription pas alignée sur le minimum courant de 11 ans.')
 req('11–12 ans' in signup_html.lower() and 'fonctions sociales sont désactivées' in signup_html.lower(),'Interface enfant supervisé incomplète.')
 req('comptes de 11 à 17 ans' in signup_html.lower() and 'canada' in signup_html.lower(),'Gate jeunesse Canada non expliqué à l’inscription.')
-req('v24-signup.js?v=25.0.1&amp;rev=child-11' in signup_html,'Version du client inscription enfant non invalidée.')
+req('v24-signup.js?v=25.0.1&amp;rev=child-11-flow' in signup_html,'Version du client inscription enfant non invalidée.')
 req('réservés aux personnes de 13 ans et plus' not in signup_html.lower(),'Ancien message global 13+ encore présent dans l’interface.')
 
 for phrase in ('registre interne','cinq ans','30 jours','13 ans','comptes jeunesse 13–17 ans','canada','rencontres sinjira™ est strictement 18+','ia distante payante est désactivée','paiements en ligne','responsable de la protection des renseignements personnels','gouvernance-vie-privee.html','formspree','états-unis','canada central'):
@@ -93,7 +93,7 @@ for phrase in ('confidentialité élevée','efvp','legal holds','21 jours','fonc
 req('paid_sexual_content' in v82.lower() and 'human_trafficking' in v82.lower() and 'dating_profiles_adult_only' in v82.lower(),'Le contrat V24.4.82 de sécurité n’est plus présent.')
 req('select plan(31);' in test,'Plan pgTAP V83 inattendu.')
 req('YOUTH_JURISDICTION_NOT_ENABLED' in test and "'sinjira_content_policy_guard'" in test and "'dating_profiles_adult_only'" in test,'Les tests V83 ne protègent pas les gates jeunesse/V82.')
-req('select plan(12);' in child_test and 'SINJIRA_MINIMUM_AGE_11' in child_test and "then 'child'" in child_test,'Le pgTAP V25 enfant supervisé est incomplet.')
+req('select plan(20);' in child_test and 'SINJIRA_MINIMUM_AGE_11' in child_test and "'child','la veille des 13 ans" in child_test and "'youth','le jour des 13 ans" in child_test and 'guardian_authorization_required_under_14' in child_test,'Le pgTAP V25 enfant supervisé est incomplet.')
 for paid in ('stripe','paypal','openai_api_key','paymentintent','google places api','mapbox token'):
     req(paid not in alltext,f'V83/V25 introduit une intégration payante/interdite: {paid}')
 if errors:
