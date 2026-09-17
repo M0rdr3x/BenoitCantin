@@ -99,6 +99,11 @@ async function initAgeAccessNavigation(){
     'mes-achats.html',
     'contributions.html'
   ]);
+  const currentLeaf=location.pathname.split('/').filter(Boolean).pop()||'index.html';
+  if(hiddenRoutes.has(currentLeaf)){
+    location.replace('/compte/communaute-junior.html?from=restricted');
+    return;
+  }
   document.querySelectorAll('.account-nav a').forEach(link=>{
     const href=(link.getAttribute('href')||'').split('?')[0].split('#')[0];
     const leaf=href.split('/').filter(Boolean).pop()||href;
