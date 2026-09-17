@@ -1,4 +1,4 @@
-import {getSupabase,requireCommunityUser,escapeHtml,formatDate,avatarUrl,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.79';
+import {getSupabase,requireUser,requireCommunityUser,escapeHtml,formatDate,avatarUrl,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.79';
 import {editOwnContent,deleteOwnContent,editedSuffix} from './sinjira-social-self-content.js?v=24.4.72';
 import {openSocialReport} from './sinjira-social-safety-v24-4-79.js?v=24.4.79';
 
@@ -150,6 +150,12 @@ function bind(posts,comments){
 
 (async()=>{
   try{
+    const gateUser=await requireUser('/compte/connexion.html');
+    const {data:ageBand,error:ageError}=await getSupabase().rpc('sinjira_my_age_band');
+    if(!ageError&&ageBand==='child'){
+      location.replace('/compte/communaute-junior.html');
+      return;
+    }
     user=await requireCommunityUser();
     const {data,error}=await getSupabase().from('social_profiles').select('*').eq('user_id',user.id).maybeSingle();
     if(error)throw error;
