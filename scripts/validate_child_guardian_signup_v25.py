@@ -30,7 +30,7 @@ signup_js = read(SIGNUP_JS)
 signup_html = read(SIGNUP_HTML)
 
 m = compact(mig)
-t = test.lower()
+t = compact(test)
 y = compact(youth_base)
 j = compact(signup_js)
 h = signup_html.lower()
@@ -60,7 +60,7 @@ req("public.sinjira_age_band(p_a)='youth'andpublic.sinjira_age_band(p_b)='youth'
     "L'isolation sociale jeunesse historique n'est plus prouvée.")
 
 # Minimisation : pas de Programme Contributeur pour 11–12 ans.
-req("ifyears<13then" in m and 'c:=false;' in mig.lower() and 'f:=false;' in mig.lower(),
+req("ifyears<13then" in m and 'c:=false;' in m and 'f:=false;' in m,
     "Le serveur ne neutralise pas le Programme Contributeur pour les 11–12 ans.")
 req('constmin_account_age=11;' in j and 'if(age<min_account_age)' in j,
     "Le client n'applique pas le seuil de 11 ans.")
@@ -85,17 +85,23 @@ req('v24-signup.js?v=25.0.1&amp;rev=child-11' in h,
 req('réservés aux personnes de 13 ans et plus' not in h,
     "Un ancien message 13+ global subsiste dans l'interface.")
 
-# Le pgTAP dédié doit couvrir les invariants clés.
-req('select plan(12);' in t,
-    "Le plan pgTAP enfant supervisé est inattendu.")
-for marker in (
-    'sinjira_minimum_age_11',
-    'guardian_authorization_required_under_14',
-    'youth_jurisdiction_not_enabled',
-    "then 'child'",
-    "in ('child', 'youth')",
+# Le pgTAP ne se contente plus d'inspecter les fonctions : il crée un vrai parent,
+# un code, puis un compte ayant exactement 11 ans et vérifie les effets persistés.
+req('selectplan(16);' in t,
+    "Le plan pgTAP comportemental enfant supervisé est inattendu.")
+for marker, message in (
+    ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
+    ("youth-abcd123456", "Le test ne crée pas de code parental déterministe."),
+    ("interval'11years'", "Le test ne couvre pas une date donnant exactement 11 ans."),
+    ("public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),'child'", "Le test ne vérifie pas la bande child."),
+    ("public.sinjira_parent_can_supervise", "Le test ne vérifie pas la supervision parentale."),
+    ("notpublic.sinjira_can_social_interact", "Le test ne vérifie pas la coupure sociale avant 13 ans."),
+    ("participate=falseandshare_free_text=false", "Le test ne vérifie pas la neutralisation du Programme Contributeur."),
+    ("sinjira_minimum_age_11", "Le test ne prouve pas le refus des moins de 11 ans."),
+    ("guardian_authorization_required_under_14", "Le test ne prouve pas le refus à 11 ans sans code parental."),
+    ("youth_jurisdiction_not_enabled", "Le test ne prouve pas la porte Canada jeunesse."),
 ):
-    req(marker in t, f'Test pgTAP enfant incomplet: {marker}')
+    req(marker in t, message)
 
 if errors:
     print(f'ECHEC compte enfant supervisé V25: {len(errors)} problème(s).')
@@ -103,4 +109,4 @@ if errors:
         print('- ' + error)
     raise SystemExit(1)
 
-print('OK V25: compte enfant 11–12 supervisé, code adulte obligatoire, Canada jeunesse, social désactivé avant 13 ans et contribution neutralisée.')
+print('OK V25: contrat et test comportemental présents pour un compte ayant exactement 11 ans, avec code adulte, lien vérifié, social désactivé et contribution neutralisée.')
