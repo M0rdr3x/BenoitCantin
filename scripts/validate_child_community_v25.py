@@ -67,7 +67,7 @@ req("'explorateur-'||upper(substr(md5(" in m,'Le pseudonyme Junior généré cô
 feed_section=m[m.find('createorreplacefunctionpublic.junior_community_feed'):m.find('createorreplacefunctionpublic.junior_community_create_post')]
 req('profiles' not in feed_section and 'social_profiles' not in feed_section,'Le fil Junior ne doit pas lire les profils réels.')
 req("'author_alias',private.sinjira_junior_alias" in m,'Le fil ne renvoie pas le pseudonyme Junior.')
-req("'mine',p.author_user_id=uid" in m and "'mine',c.author_user_id=uid" in m,'Le client doit recevoir seulement un indicateur own/mine, pas l identité auteur.')
+req('p.author_user_id=uidmine' in m and "'mine',c.author_user_id=uid" in m,'Le client doit recevoir seulement un indicateur own/mine, pas l identité auteur.')
 req('social_real_messages' not in m and 'social_character_messages' not in m,'La migration Junior ne doit créer aucune messagerie privée.')
 req('public.sinjira_can_social_interact' not in feed_section,'Le fil Junior ne doit pas réutiliser la frontière sociale youth/adulte.')
 
@@ -103,7 +103,7 @@ req("s.rpc('junior_community_feed'" in c,'Le client Junior n utilise pas le RPC 
 req("s.rpc('junior_community_create_post'" in c,'Le client Junior ne publie pas via RPC.')
 req("s.rpc('junior_community_report_content'" in c,'Le client Junior ne signale pas via RPC.')
 req(".from('junior_community_" not in client.lower(),'Le client Junior contourne les RPC avec un accès table direct.')
-req("ageband!=='child'" in c,'Le client Junior ne vérifie pas la bande child.')
+req("if(band!=='child')" in c,'Le client Junior ne vérifie pas la bande child.')
 req("location.replace('/compte/communaute.html')" in c,'Le client Junior ne renvoie pas les autres âges vers leur communauté.')
 
 # Règles Junior et activation parent.
