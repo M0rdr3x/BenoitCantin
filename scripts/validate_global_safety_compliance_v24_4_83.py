@@ -69,10 +69,14 @@ req('constguardianrequired=number.isinteger(age)&&age>=min_account_age&&age<14;'
 req('age<18&&!iscanada(residencecountry)' in signupcompact,'Gate jeunesse Canada absent côté client.')
 req("account_age_band:child?'child_11_12'" in signupcompact,'Bande enfant 11–12 absente des métadonnées client.')
 req("constcontributor=!child&&d.get('initial_contributor_opt_in')==='yes';" in signupcompact,'Programme Contributeur non neutralisé côté client pour les enfants.')
+req("getsupabase().auth.getsession()" in signupcompact and "getsupabase().auth.signout({scope:'local'})" in signupcompact,'Frontière de session parent/enfant absente du client d’inscription.')
+req("if(boundary==='active')" in signupcompact and "if(boundary==='error')" in signupcompact,'La création de compte n’est pas bloquée fail-closed lorsque la session navigateur n’est pas libre.')
+req("submit.disabled=busystate||sessionboundarystate!=='clear';" in signupcompact,'Le bouton de création n’est pas verrouillé pendant la vérification de session.')
 req('compte disponible à partir de 11 ans' in signup_html.lower() and 'moins de 11 ans' in signup_html.lower(),'Interface inscription pas alignée sur le minimum courant de 11 ans.')
 req('11–12 ans' in signup_html.lower() and 'fonctions sociales sont désactivées' in signup_html.lower(),'Interface enfant supervisé incomplète.')
 req('comptes de 11 à 17 ans' in signup_html.lower() and 'canada' in signup_html.lower(),'Gate jeunesse Canada non expliqué à l’inscription.')
-req('v24-signup.js?v=25.0.1&amp;rev=child-11-flow' in signup_html,'Version du client inscription enfant non invalidée.')
+req('data-signup-session-warning' in signup_html.lower() and 'data-signup-session-signout' in signup_html.lower(),'Interface de séparation de session parent/enfant absente.')
+req('v24-signup.js?v=25.0.1&amp;rev=child-11-flow-session' in signup_html,'Version du client inscription enfant non invalidée.')
 req('réservés aux personnes de 13 ans et plus' not in signup_html.lower(),'Ancien message global 13+ encore présent dans l’interface.')
 
 for phrase in ('registre interne','cinq ans','30 jours','13 ans','comptes jeunesse 13–17 ans','canada','rencontres sinjira™ est strictement 18+','ia distante payante est désactivée','paiements en ligne','responsable de la protection des renseignements personnels','gouvernance-vie-privee.html','formspree','états-unis','canada central'):
@@ -98,4 +102,4 @@ for paid in ('stripe','paypal','openai_api_key','paymentintent','google places a
     req(paid not in alltext,f'V83/V25 introduit une intégration payante/interdite: {paid}')
 if errors:
     print(f'ECHEC conformité V24.4.83 + convergence enfant V25: {len(errors)} problème(s).'); [print('- '+e) for e in errors]; raise SystemExit(1)
-print('OK V24.4.83 + V25: historique V83 intact, compte enfant 11–12 supervisé convergé, Canada jeunesse, droits/incidents/legal holds/escalade, sans service payant.')
+print('OK V24.4.83 + V25: historique V83 intact, compte enfant 11–12 supervisé convergé, séparation de session, Canada jeunesse, droits/incidents/legal holds/escalade, sans service payant.')
