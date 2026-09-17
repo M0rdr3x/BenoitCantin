@@ -86,6 +86,19 @@ req('contributorpanel.hidden=child;' in j,
 req('age<18&&!iscanada(residencecountry)' in j,
     "La porte Canada jeunesse n'est plus appliquée côté client.")
 
+# Frontière de session : aucune création de compte enfant ne doit réutiliser implicitement
+# la session du parent ou d'un autre compte déjà connecté dans le navigateur.
+req("getsupabase().auth.getsession()" in j and "sessionboundarystate=data?.session?.user?'active':'clear';" in j,
+    "Le client ne détecte plus une session déjà active avant l'inscription.")
+req("getsupabase().auth.signout({scope:'local'})" in j,
+    "Le parcours d'inscription ne permet plus de séparer localement la session parent/enfant.")
+req("if(boundary==='active')" in j and 'éviterdemélangerlecompteduparentetlenouveaucompte' in j,
+    "La soumission n'est plus bloquée lorsqu'un autre compte est déjà connecté.")
+req("if(boundary==='error')" in j and 'parsécurité,lacréationd’unnouveaucompteestbloquée' in j,
+    "La vérification de session n'est plus fail-closed.")
+req("submit.disabled=busystate||sessionboundarystate!=='clear';" in j,
+    "Le bouton de création n'est plus verrouillé tant que la frontière de session n'est pas claire.")
+
 # Les messages communs doivent refléter 11 ans et détecter explicitement un serveur encore ancien.
 req("guardian_authorization_required_under_14" in b and '11à13ans' in b,
     "Le message commun d'autorisation parentale n'est pas aligné sur 11–13 ans.")
@@ -119,10 +132,12 @@ req('connexion.html?next=%2fcompte%2frelations.html' in h,
     "Le raccourci parent ne revient pas vers les outils de supervision.")
 req('déconnectez le compte parent' in h,
     "Le formulaire n'explique pas la séparation de session parent/enfant.")
+req('data-signup-session-warning' in h and 'data-signup-session-signout' in h and 'déconnecter la session active' in h,
+    "L'interface n'affiche plus la frontière de session lorsqu'un compte est déjà connecté.")
 req('data-contributor-panel' in h,
     "Le panneau Contributeur ne peut pas être masqué pour un compte enfant.")
-req('v24-signup.js?v=25.0.1&amp;rev=child-11-flow' in h,
-    "La version du client d'inscription enfant n'est pas invalidée après le correctif UX.")
+req('v24-signup.js?v=25.0.1&amp;rev=child-11-flow-session' in h,
+    "La version du client d'inscription enfant n'est pas invalidée après le durcissement de session.")
 req('réservés aux personnes de 13 ans et plus' not in h,
     "Un ancien message 13+ global subsiste dans l'interface.")
 
@@ -153,4 +168,4 @@ if errors:
         print('- ' + error)
     raise SystemExit(1)
 
-print('OK V25: compte enfant 11 ans, parcours parent, minimisation et transition automatique child -> youth à 13 ans sont verrouillés par le contrat et les tests.')
+print('OK V25: compte enfant 11 ans, parcours parent, séparation de session, minimisation et transition automatique child -> youth à 13 ans sont verrouillés par le contrat et les tests.')
