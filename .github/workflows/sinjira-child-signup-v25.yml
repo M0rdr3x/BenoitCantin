@@ -12,6 +12,7 @@ on:
       - 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
       - 'supabase/tests/child_guardian_signup_v25.test.sql'
       - 'scripts/validate_child_guardian_signup_v25.py'
+      - 'tests/e2e/test_public_site.py'
       - '.github/workflows/sinjira-child-signup-v25.yml'
   workflow_dispatch:
 
@@ -42,6 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m py_compile scripts/validate_child_guardian_signup_v25.py
+          python -m py_compile tests/e2e/test_public_site.py
           python scripts/validate_child_guardian_signup_v25.py
           node --check assets/js/v24-signup.js
           node --check assets/js/v24-relations.js
