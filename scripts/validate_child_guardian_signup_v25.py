@@ -119,7 +119,7 @@ req("['child_pending','youth_pending'].includes(ageband)" in r,
     "L'interface de supervision ne reconnaît pas child_pending.")
 req('data-create-guardian-code' in rh and 'de 11 à 13 ans' in rh,
     "La page Relations n'explique pas le code parental obligatoire de 11 à 13 ans.")
-req('ouvrir l’inscription' in rh and 'v24-relations.js?v=25.0.1&amp;rev=child-guardian' in rh,
+req('ouvrir l’inscription' in rh and 'v24-relations.js?v=25.0.2&amp;rev=junior-community' in rh,
     "Le parcours parent vers l'inscription ou son invalidation de cache est incomplet.")
 
 # Interface et invalidation de cache.
