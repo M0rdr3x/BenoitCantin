@@ -2,11 +2,19 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(35);
+select plan(43);
 
 select ok(to_regprocedure('public.sinjira_junior_community_enabled(uuid)') is not null,'garde d activation Junior existe');
 select ok(to_regprocedure('public.junior_community_feed(integer)') is not null,'RPC fil Junior existe');
 select ok(to_regprocedure('public.guardian_set_junior_community(uuid,boolean)') is not null,'RPC parent activation Junior existe');
+select ok(to_regprocedure('public.sinjira_junior_community_enabled()') is not null,'RPC état Junior self-only existe');
+select ok(to_regprocedure('public.sinjira_junior_community_enabled(uuid)') is null,'aucun RPC public ne permet de sonder l activation Junior par UUID');
+select ok(to_regprocedure('public.has_accepted_junior_community_rules()') is not null,'RPC règles Junior self-only existe');
+select ok(to_regprocedure('public.has_accepted_junior_community_rules(uuid)') is null,'aucun RPC public ne permet de sonder les règles Junior par UUID');
+select ok(to_regprocedure('public.sinjira_is_junior(uuid)') is null,'aucun RPC public ne permet de sonder la bande Junior par UUID');
+select ok(not has_function_privilege('authenticated','private.sinjira_is_junior(uuid)','EXECUTE'),'auth: aucun EXECUTE sur le helper privé de bande Junior');
+select ok(not has_function_privilege('authenticated','private.sinjira_junior_community_enabled(uuid)','EXECUTE'),'auth: aucun EXECUTE sur le helper privé d activation Junior');
+select ok(not has_function_privilege('authenticated','private.has_accepted_junior_community_rules(uuid)','EXECUTE'),'auth: aucun EXECUTE sur le helper privé de règles Junior');
 
 select ok(not has_table_privilege('authenticated','public.junior_community_posts','SELECT'),'auth: aucun SELECT direct sur publications Junior');
 select ok(not has_table_privilege('authenticated','public.junior_community_posts','INSERT'),'auth: aucun INSERT direct sur publications Junior');
@@ -68,7 +76,8 @@ select is(
   true,
   'le parent active explicitement la Communauté Junior pour le second enfant'
 );
-select ok(public.sinjira_junior_community_enabled('72000000-0000-4000-8000-000000000011'),'l accès Junior est actif après consentement parental');
+select set_config('request.jwt.claim.sub','72000000-0000-4000-8000-000000000011',true);
+select ok(public.sinjira_junior_community_enabled(),'l accès Junior self-only est actif après consentement parental');
 
 select set_config('request.jwt.claim.sub','72000000-0000-4000-8000-000000000011',true);
 select ok((public.junior_community_accept_rules()->>'ok')::boolean,'le premier enfant accepte les règles Junior');
@@ -179,7 +188,7 @@ set date_of_birth=(current_date-interval '13 years')::date
 where user_id='72000000-0000-4000-8000-000000000011';
 
 select is(public.sinjira_age_band('72000000-0000-4000-8000-000000000011'),'youth','à 13 ans le compte quitte automatiquement la bande Junior');
-select ok(not public.sinjira_junior_community_enabled('72000000-0000-4000-8000-000000000011'),'l activation Junior devient automatiquement inactive à 13 ans');
+select ok(not public.sinjira_junior_community_enabled(),'l activation Junior self-only devient automatiquement inactive à 13 ans');
 select throws_ok(
   $$select public.junior_community_feed(30)$$,
   'P0001',
