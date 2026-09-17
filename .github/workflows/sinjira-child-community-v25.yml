@@ -15,6 +15,8 @@ on:
       - 'assets/js/sinjira-community-real.js'
       - 'assets/js/sinjira-account.js'
       - 'assets/js/v24-relations.js'
+      - 'assets/js/sinjira-admin-social-v20.js'
+      - 'supabase/functions/admin-social-v20/index.ts'
       - 'scripts/validate_child_community_v25.py'
       - 'tests/e2e/test_child_community.py'
       - '.github/workflows/sinjira-child-community-v25.yml'
@@ -53,6 +55,7 @@ jobs:
           node --check assets/js/sinjira-community-real.js
           node --check assets/js/sinjira-account.js
           node --check assets/js/v24-relations.js
+          node --check assets/js/sinjira-admin-social-v20.js
 
       - name: Installer Supabase CLI
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
