@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(32);
+select plan(33);
 
 select ok(to_regprocedure('public.sinjira_junior_community_enabled(uuid)') is not null,'garde d activation Junior existe');
 select ok(to_regprocedure('public.junior_community_feed(integer)') is not null,'RPC fil Junior existe');
