@@ -8,9 +8,11 @@ on:
       - 'supabase/migrations/20260917223000_sinjira_v25_junior_community.sql'
       - 'supabase/migrations/20260918010000_sinjira_v25_child_sensitive_boundary.sql'
       - 'supabase/migrations/20260918013000_sinjira_v25_child_content_rating.sql'
+      - 'supabase/migrations/20260918020000_sinjira_v25_account_capabilities.sql'
       - 'supabase/tests/child_community_v25.test.sql'
       - 'supabase/tests/child_sensitive_boundary_v25.test.sql'
       - 'supabase/tests/child_content_rating_v25.test.sql'
+      - 'supabase/tests/account_capabilities_v25.test.sql'
       - 'compte/*.html'
       - 'assets/js/sinjira-community-junior-v25.js'
       - 'assets/js/sinjira-community-junior-rules-v25.js'
@@ -35,6 +37,7 @@ on:
       - 'scripts/validate_child_access_matrix_v25.py'
       - 'scripts/validate_child_sensitive_boundary_v25.py'
       - 'scripts/validate_child_content_rating_v25.py'
+      - 'scripts/validate_account_capabilities_v25.py'
       - 'scripts/validate_mobile_native_home_hub_v25.py'
       - 'docs/SINJIRA_CHILD_ACCESS_MATRIX_V25.md'
       - 'tests/e2e/test_child_community.py'
@@ -67,11 +70,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m py_compile scripts/validate_child_community_v25.py scripts/validate_child_access_matrix_v25.py scripts/validate_child_sensitive_boundary_v25.py scripts/validate_child_content_rating_v25.py scripts/validate_mobile_native_home_hub_v25.py
+          python -m py_compile scripts/validate_child_community_v25.py scripts/validate_child_access_matrix_v25.py scripts/validate_child_sensitive_boundary_v25.py scripts/validate_child_content_rating_v25.py scripts/validate_account_capabilities_v25.py scripts/validate_mobile_native_home_hub_v25.py
           python scripts/validate_child_community_v25.py
           python scripts/validate_child_access_matrix_v25.py
           python scripts/validate_child_sensitive_boundary_v25.py
           python scripts/validate_child_content_rating_v25.py
+          python scripts/validate_account_capabilities_v25.py
           python scripts/validate_mobile_native_home_hub_v25.py
           node --check assets/js/sinjira-community-junior-v25.js
           node --check assets/js/sinjira-community-junior-rules-v25.js
@@ -102,6 +106,9 @@ jobs:
 
       - name: Exécuter le test pgTAP classement contenu 11–12 ans
         run: supabase test db supabase/tests/child_content_rating_v25.test.sql
+
+      - name: Exécuter le test pgTAP capacités self-only du compte
+        run: supabase test db supabase/tests/account_capabilities_v25.test.sql
 
       - name: Arrêter et supprimer la pile locale
         if: always()
