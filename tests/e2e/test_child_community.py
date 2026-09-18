@@ -22,7 +22,7 @@ def run():
         page.on("pageerror",lambda error: errors.append(str(error)))
         page.on("request",lambda request: production_requests.append(request.url) if "supabase.co" in request.url else None)
 
-        page.route(
+        context.route(
             "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm",
             lambda route: route.fulfill(
                 status=200,
@@ -38,6 +38,16 @@ let posts=[{
   comments:[]
 }];
 const user={id:'child-test-11',email:'private-child@example.test'};
+function query(data=[]){
+  const api={
+    select:()=>api,eq:()=>api,neq:()=>api,in:()=>api,or:()=>api,order:()=>api,limit:()=>api,
+    insert:()=>api,update:()=>api,upsert:()=>api,delete:()=>api,
+    maybeSingle:async()=>({data:null,error:null}),
+    single:async()=>({data:null,error:null}),
+    then:(resolve,reject)=>Promise.resolve({data,error:null}).then(resolve,reject)
+  };
+  return api;
+}
 export function createClient(){
   return {
     auth:{
@@ -65,7 +75,8 @@ export function createClient(){
       if(name==='junior_community_delete_comment')return {data:true,error:null};
       if(name==='junior_community_report_content')return {data:{ok:true,blocked:true},error:null};
       return {data:null,error:null};
-    }
+    },
+    from:()=>query([])
   };
 }
 """
@@ -98,12 +109,21 @@ export function createClient(){
         page.locator("[data-junior-post-form] button[type='submit']").click()
         page.wait_for_function("document.querySelector('[data-junior-status]')?.innerText.includes('liens, coordonnées')",timeout=10000)
 
+        restricted=context.new_page()
+        restricted.on("pageerror",lambda error: errors.append("route:"+str(error)))
+        restricted.on("request",lambda request: production_requests.append(request.url) if "supabase.co" in request.url else None)
+        response=restricted.goto(urljoin(BASE_URL,"compte/bibliotheque.html"),wait_until="domcontentloaded",timeout=30000)
+        assert_true(response is not None and response.status<400,"Route Bibliothèque inaccessible pendant le test")
+        restricted.wait_for_url("**/compte/communaute-junior.html?from=restricted&module=bibliotheque.html",timeout=10000)
+        restricted.wait_for_function("document.querySelector('[data-junior-access-note]')?.hidden === false",timeout=10000)
+        assert_true("pas encore certifiée" in restricted.locator("[data-junior-access-note]").inner_text(),"Le repli Junior n explique pas la restriction")
+
         assert_true(not production_requests,"Le test Junior a tenté de joindre Supabase production: "+" | ".join(production_requests[:3]))
         assert_true(not errors,"Erreurs JavaScript Junior: "+" | ".join(errors[:5]))
 
         context.close()
         browser.close()
-        print("OK navigateur Junior: pseudonyme uniquement, aucun identifiant privé, publication/commentaire via RPC et blocage des liens externes.")
+        print("OK navigateur Junior: identité protégée, publication/commentaire via RPC, liens externes bloqués et routes non certifiées redirigées fail-closed.")
 
 
 if __name__=="__main__":
