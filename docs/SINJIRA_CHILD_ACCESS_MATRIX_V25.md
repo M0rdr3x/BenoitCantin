@@ -1,0 +1,124 @@
+# SINJIRA™ V25 — Matrice d'accès 11–12 ans
+
+## Principe
+
+**L'humain avant tout. Protéger sans surveiller.**
+
+Un compte `child` correspond à un membre de 11 ou 12 ans avec supervision parentale/tuteur vérifiée. Pour cette tranche d'âge, une page du compte ne doit jamais devenir accessible par accident parce qu'elle a simplement été ajoutée au dépôt.
+
+La règle V25 est donc **fail-closed** : chaque page `compte/*.html` appartient à une catégorie explicite. Toute nouvelle page non classée doit échouer en CI et reste inaccessible aux comptes 11–12 ans jusqu'à décision.
+
+Cette matrice est une frontière de navigation et de produit. Elle ne remplace pas les contrôles serveur : les fonctions sensibles doivent aussi rester protégées par RLS, RPC, triggers ou Edge Functions.
+
+## Catégorie A — autorisé 11–12 ans
+
+Ces surfaces sont privées, de sécurité, de création personnelle ou propres à la Communauté Junior.
+
+- `index.html` — accueil du compte;
+- `blocages.html` — personnes masquées / sécurité sociale;
+- `communaute-junior.html` — fil Junior 11–12 ans;
+- `confidentialite-joueur.html` — information vie privée;
+- `histoire-de-vie.html` — espace personnel privé;
+- `moderation.html` — décisions et appels concernant son propre compte;
+- `mon-personnage.html` — création privée de son personnage;
+- `mes-personnages.html` — consultation de ses personnages;
+- `notifications.html` — notifications de son compte;
+- `parametres.html` — préférences du compte;
+- `profil.html` — profil de son propre compte; il n'est pas utilisé comme identité dans le fil Junior;
+- `registre-personnel.html` — registre privé protégé;
+- `regles-communaute-junior.html` — règles spécifiques Junior;
+- `relations.html` — lien parent/tuteur et relations privées;
+- `securite.html` — sécurité du compte, appareils et protections;
+- `vie-privee.html` — centre de vie privée.
+
+## Catégorie B — authentification et récupération autorisées
+
+Ces pages restent disponibles parce qu'elles servent à établir ou récupérer l'accès au compte, pas à ouvrir un module métier.
+
+- `connexion.html`;
+- `inscription.html`;
+- `mot-de-passe-oublie.html`;
+- `reinitialiser-mot-de-passe.html`;
+- `mfa.html`.
+
+## Catégorie C — redirection vers l'équivalent Junior
+
+- `communaute.html` → `communaute-junior.html`;
+- `regles-communaute.html` → `regles-communaute-junior.html`.
+
+Un compte 11–12 ans ne doit jamais rester dans la communauté générale pendant que la détection d'âge est en cours.
+
+## Catégorie D — restreint 11–12 ans jusqu'à revue dédiée
+
+Ces surfaces ne sont pas ouvertes à un compte `child`. Certaines pourront être réouvertes plus tard lorsqu'un contrat d'âge, de contenu ou de responsabilité aura été prouvé.
+
+### Contenu et jeux non encore classés par âge
+
+- `bibliotheque.html`;
+- `documents.html`;
+- `mes-lectures.html`;
+- `mes-parties.html`;
+- `projet.html`.
+
+La prochaine condition pour les rouvrir est un classement d'âge explicite des projets/documents et une preuve serveur empêchant un contenu non classé d'être délivré à un enfant.
+
+### Social général et communication
+
+- `messages.html`;
+- `messages-reels.html`;
+- `messages-personnage.html`;
+- `mes-commentaires.html`;
+- `reseau-personnage.html`;
+- `rencontres.html`.
+
+La Communauté Junior ne crée aucune messagerie privée. Rencontres reste strictement 18+.
+
+### Commerce, argent et licences
+
+- `jetons.html`;
+- `licences.html`;
+- `marche.html`;
+- `mes-achats.html`.
+
+Une future ouverture éventuelle exige un parcours parental distinct; le simple fait d'être supervisé ne constitue pas une autorisation d'achat.
+
+### Participation, travail et modules non encore certifiés
+
+- `contributions.html`;
+- `emploi.html`;
+- `playtests.html`;
+- `mon-ia.html`;
+- `monde-parallele.html`;
+- `signaler-deces.html`.
+
+Le Programme Contributeur reste neutralisé côté serveur pour 11–12 ans. Emploi, Mon IA, Monde parallèle, playtests et procédure de décès demandent chacun une revue spécifique avant toute ouverture Junior.
+
+## Comportement de navigation
+
+Pour un compte `child` :
+
+1. les liens de navigation vers une surface restreinte sont masqués;
+2. une URL directe vers une surface restreinte est redirigée vers `/compte/communaute-junior.html?from=restricted&module=...`;
+3. la page Junior explique qu'une section non certifiée n'est pas encore disponible;
+4. une nouvelle page `compte/*.html` non présente dans cette matrice est **restreinte par défaut**;
+5. la communauté générale et ses règles sont remplacées par leurs versions Junior.
+
+## Invariants serveur
+
+La navigation n'est jamais considérée comme une barrière de sécurité suffisante. Les invariants suivants restent obligatoires :
+
+- aucune messagerie privée pour la bande `child`;
+- aucune interaction sociale historique via `sinjira_can_social_interact`;
+- Rencontres 18+ côté serveur;
+- Programme Contributeur forcé à `false` pour 11–12 ans;
+- Communauté Junior via RPC bornées uniquement, sans accès table direct;
+- aucun UUID auteur, nom réel, avatar ou courriel dans le fil Junior;
+- activation Communauté Junior révocable par un parent/tuteur vérifié;
+- sortie automatique de la bande Junior à 13 ans;
+- les nouvelles surfaces restreintes doivent recevoir leur propre garde serveur avant d'être déplacées en catégorie A.
+
+## Couverture
+
+La matrice couvre exactement les **44** fichiers HTML présents directement sous `compte/` au moment de cette révision.
+
+Toute divergence entre le dossier réel, cette classification et les ensembles utilisés par `sinjira-account.js` doit faire échouer la validation CI.
