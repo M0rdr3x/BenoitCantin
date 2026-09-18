@@ -81,6 +81,15 @@ Deno.serve(async(req)=>{
     if(!UUID_RE.test(document_id))return privateJson({ok:false,error:'Document manquant ou invalide.'},400);
 
     const service=serviceClient(),user=await optionalUser(req);
+    let ageBand='unverified';
+    if(user){
+      const {data:band,error:bandError}=await service.rpc('sinjira_age_band',{p_user_id:user.id});
+      if(bandError){
+        console.error('[get-document-url]',{code:'AGE_BAND_UNAVAILABLE'});
+        return privateJson({ok:false,error:'La vérification de sécurité du compte est temporairement indisponible.'},503);
+      }
+      ageBand=String(band||'unverified');
+    }
     const {data:doc,error}=await service
       .from('documents')
       .select('project_id,status,access_level,external_url,storage_bucket,storage_path,projects(id,visibility,status)')
@@ -88,6 +97,10 @@ Deno.serve(async(req)=>{
       .maybeSingle();
     if(error||!doc||doc.status!=='approved'||doc.projects?.status!=='active'){
       return privateJson({ok:false,error:'Document introuvable ou non approuvé.'},404);
+    }
+
+    if(ageBand==='child'&&doc.access_level!=='public'){
+      return privateJson({ok:false,error:'Ce document n’est pas encore disponible pour les comptes de 11–12 ans.'},403);
     }
 
     let userRank=0;
