@@ -48,7 +48,7 @@ as $$
       case
         when exists(
           select 1 from public.guardian_links g
-          where g.minor_user_id=s.user_id and g.status='verified'
+          where g.minor_user_id=s.user_id and g.status='verified' and g.revoked_at is null
         ) then 'child'
         else 'child_pending'
       end
@@ -56,7 +56,7 @@ as $$
       case
         when exists(
           select 1 from public.guardian_links g
-          where g.minor_user_id=s.user_id and g.status='verified'
+          where g.minor_user_id=s.user_id and g.status='verified' and g.revoked_at is null
         ) then 'youth'
         else 'youth_pending'
       end
@@ -86,6 +86,7 @@ as $$
       where g.guardian_user_id=p_parent
         and g.minor_user_id=p_child
         and g.status='verified'
+        and g.revoked_at is null
     );
 $$;
 revoke all on function public.sinjira_parent_can_supervise(uuid,uuid) from public,anon,authenticated;

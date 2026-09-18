@@ -64,6 +64,8 @@ req("interval'13years'then" in m and "then'child'" in m and "else'child_pending'
     "La bande enfant 11–12 ans n'est pas définie distinctement.")
 req("public.sinjira_age_band(p_child)in('child','youth')" in m,
     "La supervision parentale ne couvre pas enfant + jeunesse.")
+req("g.status='verified'andg.revoked_atisnull" in m,
+    "La bande supervisée ne vérifie pas revoked_at en plus du statut verified.")
 req('revokeallonfunctionpublic.sinjira_age_band(uuid)frompublic,anon,authenticated' in m and 'grantexecuteonfunctionpublic.sinjira_age_band(uuid)toservice_role' in m,
     "La cohorte UUID arbitraire est réexposée aux comptes authentifiés.")
 req('revokeallonfunctionpublic.sinjira_my_age_band()frompublic,anon,authenticated' in m and 'grantexecuteonfunctionpublic.sinjira_my_age_band()toanon,authenticated,service_role' in m,
@@ -165,7 +167,7 @@ req("[data-signup-session-warning]" in bt and "[data-signup-session-signout]" in
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(24);' in t,
+req('selectplan(26);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
@@ -185,6 +187,8 @@ for marker, message in (
     ("authenticatedpeutlireuniquementsaproprebandeâge", "Le test ne prouve pas le wrapper self-only de cohorte."),
     ("anonpeutévalueruniquementsaproprebandeself-onlypourlesrlspubliques", "Le test ne prouve pas l'accès anon borné au wrapper self-only requis par les RLS publiques."),
     ("authenticatednepeutpassonderunerelationparent/enfantarbitraire", "Le test ne prouve pas la confidentialité du helper de supervision."),
+    ("revoked_atseulsuffitàretirerlabandesuperviséemêmesistatusestencoreverified", "Le test ne prouve pas le fail-closed sur revoked_at pour la bande âge."),
+    ("revoked_atseulsuffitàretirerl supervisionparentale".replace(" ",""), "Le test ne prouve pas le fail-closed sur revoked_at pour la supervision."),
 ):
     req(marker in t, message)
 
