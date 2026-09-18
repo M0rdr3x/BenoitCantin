@@ -124,7 +124,7 @@ const childTabs = [
   { key: 'home', label: 'Accueil', path: '/app/' },
   { key: 'junior', label: 'Junior', path: '/compte/communaute-junior.html' },
   { key: 'library', label: 'Bibliothèque', path: '/compte/bibliotheque.html' },
-  { key: 'profile', label: 'Profil', path: '/compte/profil.html' },
+  { key: 'junior-profile', label: 'Profil', path: '/compte/profil.html' },
   { key: 'security', label: 'Sécurité', path: '/compte/securite.html' },
 ] as const;
 

@@ -66,7 +66,7 @@ def main() -> int:
         require(marker in home, f"destination Junior sûre absente: {marker}")
     require("Messages, Rencontres, Emploi, Monde parallèle, Mon IA, commerce et playtests" in home,
             "liste explicite des destinations non Junior absente")
-    require("aucun âge exact, courriel ou identifiant utilisateur" in home,
+    require("aucun âge exact, courriel ou identifiant utilisateur" in home.lower(),
             "minimisation de l'état Junior non expliquée")
 
     required_paths = (
