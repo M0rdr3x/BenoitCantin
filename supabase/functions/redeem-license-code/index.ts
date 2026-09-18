@@ -83,13 +83,17 @@ Deno.serve(async req=>{
   if(req.method!=='POST')return privateJson({ok:false,error:'Méthode non autorisée.'},405);
   try{
     const user=await requiredUser(req);
+    const ageService=serviceClient();
+    const {data:ageBand,error:ageError}=await ageService.rpc('sinjira_age_band',{p_user_id:user.id});
+    if(ageError)return privateJson({ok:false,error:'La vérification de sécurité du compte est temporairement indisponible.',code:'AGE_STATE_UNAVAILABLE'},503);
+    if(ageBand==='child')return privateJson({ok:false,error:'L’activation de licences n’est pas disponible pour les comptes de 11–12 ans.',code:'CHILD_ACTION_NOT_AVAILABLE_11_12'},403);
     const parsed=await readLimitedJson(req);
     if(parsed.response)return parsed.response;
     const body=parsed.body||{};
 
     const pepper=Deno.env.get('SINJIRA_LICENSE_PEPPER');
     if(!pepper)return privateJson({ok:false,error:'Service de licence indisponible.',code:'LICENSE_PEPPER_MISSING'},503);
-    const s=serviceClient();
+    const s=ageService;
     const health=await licenseHealth(s);
     if(!health.ok)return privateJson({ok:false,error:'Service de licence indisponible.',code:'LICENSE_SCHEMA_UNAVAILABLE'},503);
 
