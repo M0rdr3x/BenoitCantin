@@ -99,7 +99,7 @@ Deno.serve(async(req)=>{
       return privateJson({ok:false,error:'Document introuvable ou non approuvé.'},404);
     }
 
-    if(ageBand==='child'&&doc.access_level!=='public'){
+    if(ageBand==='child'&&(doc.access_level!=='public'||doc.projects?.visibility!=='public')){
       return privateJson({ok:false,error:'Ce document n’est pas encore disponible pour les comptes de 11–12 ans.'},403);
     }
 
