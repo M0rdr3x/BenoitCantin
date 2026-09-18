@@ -170,12 +170,14 @@ req("r.snapshot?.source==='junior_community'" in ae and "junior_community_posts"
 req("isjunior=x.snapshot?.source==='junior_community'" in ac and "communautéjunior" in ac,'L interface admin n identifie pas clairement la Communauté Junior.')
 
 # Preuve navigateur isolée : aucun appel production, identité pseudonymisée et RPC seulement.
-req('page.route(' in browser_test and '@supabase/supabase-js@2/+esm' in browser_test,'La preuve navigateur Junior n intercepte pas le client Supabase.')
+req(('page.route(' in browser_test or 'context.route(' in browser_test) and '@supabase/supabase-js@2/+esm' in browser_test,'La preuve navigateur Junior n intercepte pas le client Supabase.')
 req('private-child@example.test' in browser_test and 'child-test-11' in browser_test,'La preuve navigateur ne contient pas les sentinelles de données privées.')
 req('private-child@example.test" not in text' in browser_test and 'child-test-11" not in text' in browser_test,'La preuve navigateur ne vérifie pas l absence de données privées dans le DOM.')
 req('not production_requests' in bt,'La preuve navigateur ne bloque pas les appels vers Supabase production.')
 req('junior_community_create_post' in browser_test and 'junior_community_create_comment' in browser_test,'La preuve navigateur ne couvre pas publication + commentaire.')
 req('sinjira_junior_external_contact_forbidden' in bt,'La preuve navigateur ne couvre pas le blocage des liens externes.')
+req('compte/bibliotheque.html' in browser_test and 'from=restricted&module=bibliotheque.html' in browser_test,'La preuve navigateur ne couvre pas une URL directe vers un module enfant non certifié.')
+req('data-junior-access-note' in browser_test,'La preuve navigateur ne vérifie pas le message de repli Junior.')
 
 # CI locale uniquement, lecture seule et sans capacité de production.
 if workflow:
