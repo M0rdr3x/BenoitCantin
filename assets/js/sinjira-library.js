@@ -1,7 +1,7 @@
 import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabel,isSinjiraOwner} from './sinjira-supabase.js';
 
 const page=document.body.dataset.libraryPage||'',status=document.querySelector('[data-library-status]');
-let user=null,owner=false;
+let user=null,owner=false,childMode=false;
 const rows=v=>Array.isArray(v)?v:[];
 function cover(p){if(p.cover_url)return p.cover_url;if(p.slug==='fracture-du-reseau-mere')return '/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp';if(p.slug==='reseau-mere-resistance')return '/assets/media/sinjira-reseau-mere-resistance-officiel.webp';return '/assets/media/sinjira-emblem.webp'}
 async function openDoc(id){
@@ -40,21 +40,28 @@ async function documents(){
   filter.innerHTML='<option value="">Tous les projets</option>'+names.map(n=>`<option>${escapeHtml(n)}</option>`).join('');
   const list=document.querySelector('[data-documents-list]'),render=()=>{
     const filtered=filter.value?docRows.filter(x=>x.projects?.name===filter.value):docRows;
-    list.innerHTML=filtered.map(d=>`<article class="document-card"><div><span class="eyebrow">${escapeHtml(d.projects?.name||'SINJIRA')}</span><h2>${escapeHtml(d.title)}</h2><p>${escapeHtml(d.description||'')}</p></div><div class="document-meta"><span>Version ${escapeHtml(d.version||'—')}</span><span>${escapeHtml(roleLabel(d.access_level))}</span><span>${escapeHtml(d.document_type||'Document')}</span></div><button class="btn btn-primary" type="button" data-open-document="${d.id}">Ouvrir le document</button></article>`).join('')||'<div class="notice"><strong>Aucun document approuvé pour ce filtre.</strong></div>';bindDocs(list);
+    list.innerHTML=filtered.map(d=>`<article class="document-card"><div><span class="eyebrow">${escapeHtml(d.projects?.name||'SINJIRA')}</span><h2>${escapeHtml(d.title)}</h2><p>${escapeHtml(d.description||'')}</p></div><div class="document-meta"><span>Version ${escapeHtml(d.version||'—')}</span><span>${childMode?'Approuvé 11–12 ans':escapeHtml(roleLabel(d.access_level))}</span><span>${escapeHtml(d.document_type||'Document')}</span></div><button class="btn btn-primary" type="button" data-open-document="${d.id}">Ouvrir le document</button></article>`).join('')||`<div class="notice"><strong>${childMode?'Aucun document approuvé 11–12 ans pour ce filtre.':'Aucun document approuvé pour ce filtre.'}</strong></div>`;bindDocs(list);
   };filter.addEventListener('change',render);render();
 }
 async function project(){
   const slug=new URLSearchParams(location.search).get('slug');if(!slug){location.href='/compte/bibliotheque.html';return}
-  const s=getSupabase(),[{data:p,error},{data:access}]=await Promise.all([s.from('projects').select('*').eq('slug',slug).maybeSingle(),s.from('project_access').select('*').eq('user_id',user.id)]);
-  if(error||!p){setStatus(status,'Projet introuvable ou non accessible.','error');return}
+  const s=getSupabase(),projectRequest=s.from('projects').select('*').eq('slug',slug).maybeSingle();
+  const accessRequest=childMode?Promise.resolve({data:[],error:null}):s.from('project_access').select('*').eq('user_id',user.id);
+  const [{data:p,error},{data:access}]=await Promise.all([projectRequest,accessRequest]);
+  if(error||!p){setStatus(status,childMode?'Ce projet n’est pas approuvé pour les comptes de 11–12 ans.':'Projet introuvable ou non accessible.','error');return}
   document.querySelector('[data-project-name]').textContent=p.name;document.querySelector('[data-project-description]').textContent=p.description||'';document.querySelector('[data-project-status]').textContent=projectStatusLabel(p.status);
   const img=document.querySelector('[data-project-cover]');img.src=cover(p);img.alt=`Visuel de ${p.name}`;
-  const a=rows(access).find(x=>x.project_id===p.id);document.querySelector('[data-project-role]').textContent=owner?'Propriétaire · accès total':a?.access_level==='tester'?'Testeur approuvé':p.visibility==='restricted'?'Joueur approuvé':'Compte joueur';
-  document.querySelector('[data-project-actions]').innerHTML=`${p.public_path?`<a class="btn btn-secondary" href="${escapeHtml(p.public_path)}">Page publique</a>`:''}${p.play_path?`<a class="btn btn-primary" href="${escapeHtml(p.play_path)}">Jouer</a>`:''}`;
+  const a=rows(access).find(x=>x.project_id===p.id);document.querySelector('[data-project-role]').textContent=childMode?'Approuvé 11–12 ans':owner?'Propriétaire · accès total':a?.access_level==='tester'?'Testeur approuvé':p.visibility==='restricted'?'Joueur approuvé':'Compte joueur';
+  document.querySelector('[data-project-actions]').innerHTML=`${p.public_path?`<a class="btn btn-secondary" href="${escapeHtml(p.public_path)}">Page publique</a>`:''}${!childMode&&p.play_path?`<a class="btn btn-primary" href="${escapeHtml(p.play_path)}">Jouer</a>`:''}`;
   const {data:docs}=await s.from('documents').select('id,title,description,version,document_type,access_level').eq('project_id',p.id).eq('status','approved').order('sort_order');
-  const dl=document.querySelector('[data-project-documents]');dl.innerHTML=rows(docs).map(d=>`<article class="document-row"><div><strong>${escapeHtml(d.title)}</strong><span>${escapeHtml(d.description||'')}</span></div><div class="document-row-meta"><small>v${escapeHtml(d.version||'—')}</small><small>${escapeHtml(roleLabel(d.access_level))}</small><button class="btn btn-secondary btn-small" type="button" data-open-document="${d.id}">Ouvrir</button></div></article>`).join('')||'<p>Aucun document approuvé accessible.</p>';bindDocs(dl);
+  const dl=document.querySelector('[data-project-documents]');dl.innerHTML=rows(docs).map(d=>`<article class="document-row"><div><strong>${escapeHtml(d.title)}</strong><span>${escapeHtml(d.description||'')}</span></div><div class="document-row-meta"><small>v${escapeHtml(d.version||'—')}</small><small>${childMode?'Approuvé 11–12 ans':escapeHtml(roleLabel(d.access_level))}</small><button class="btn btn-secondary btn-small" type="button" data-open-document="${d.id}">Ouvrir</button></div></article>`).join('')||'<p>Aucun document approuvé accessible.</p>';bindDocs(dl);
+  const playtests=document.querySelector('[data-project-playtests]');
+  if(childMode){
+    if(playtests)playtests.innerHTML='<p>Les playtests ne sont pas disponibles pour les comptes de 11–12 ans.</p>';
+    return;
+  }
   const {data:pts}=await s.from('playtests').select('id,title,description,status,starts_at,ends_at,max_participants').eq('project_id',p.id).in('status',['open','active']).order('starts_at');
-  document.querySelector('[data-project-playtests]').innerHTML=rows(pts).map(x=>`<article class="playtest-card"><span class="status-badge">${x.status==='active'?'En cours':'Ouvert'}</span><h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.description||'')}</p><a class="btn btn-secondary" href="/compte/playtests.html#${encodeURIComponent(x.id)}">Voir le playtest</a></article>`).join('')||'<p>Aucun playtest ouvert.</p>';
+  if(playtests)playtests.innerHTML=rows(pts).map(x=>`<article class="playtest-card"><span class="status-badge">${x.status==='active'?'En cours':'Ouvert'}</span><h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.description||'')}</p><a class="btn btn-secondary" href="/compte/playtests.html#${encodeURIComponent(x.id)}">Voir le playtest</a></article>`).join('')||'<p>Aucun playtest ouvert.</p>';
 }
 async function playtests(){
   const s=getSupabase(),[pr,mr]=await Promise.all([
@@ -64,4 +71,18 @@ async function playtests(){
   list.innerHTML=pts.map(x=>{const m=map.get(x.id);return `<article class="account-game-card" id="${x.id}"><div class="account-game-card-top"><span class="status-badge">${x.status==='active'?'En cours':'Candidatures ouvertes'}</span><span>${escapeHtml(x.projects?.name||'')}</span></div><h2>${escapeHtml(x.title)}</h2><p>${escapeHtml(x.description||'')}</p><p><strong>Accès requis :</strong> ${escapeHtml(roleLabel(x.required_access||'tester'))}</p><div class="hero-actions">${m?`<span class="role-chip">${escapeHtml({applied:'Candidature envoyée',approved:'Approuvé',refused:'Refusé',completed:'Complété'}[m]||m)}</span>`:`<button class="btn btn-primary" type="button" data-apply-playtest="${x.id}">Poser ma candidature</button>`}</div></article>`}).join('')||'<div class="notice"><strong>Aucun playtest ouvert.</strong></div>';
   list.querySelectorAll('[data-apply-playtest]').forEach(b=>b.addEventListener('click',async()=>{const msg=prompt('Message de candidature (facultatif).')||'';const {error}=await s.from('playtest_participants').insert({playtest_id:b.dataset.applyPlaytest,user_id:user.id,status:'applied',application_message:msg.slice(0,1500)});if(error){setStatus(status,error.message,'error');return}b.outerHTML='<span class="role-chip">Candidature envoyée</span>';setStatus(status,'Candidature transmise.','success')}));
 }
-(async()=>{user=await requireUser();owner=isSinjiraOwner(user);try{if(page==='library')await library();else if(page==='documents')await documents();else if(page==='project')await project();else if(page==='playtests')await playtests()}catch(e){setStatus(status,e?.message||'Une erreur est survenue.','error')}})();
+(async()=>{
+  user=await requireUser();owner=isSinjiraOwner(user);
+  const {data:ageBand,error:ageError}=await getSupabase().rpc('sinjira_my_age_band');
+  if(ageError){setStatus(status,'Impossible de vérifier la tranche d’âge du compte.','error');return}
+  childMode=ageBand==='child';
+  try{
+    if(page==='library')await library();
+    else if(page==='documents')await documents();
+    else if(page==='project')await project();
+    else if(page==='playtests'){
+      if(childMode){location.replace('/compte/bibliotheque.html?from=playtests');return}
+      await playtests();
+    }
+  }catch(e){setStatus(status,e?.message||'Une erreur est survenue.','error')}
+})();
