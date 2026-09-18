@@ -196,7 +196,7 @@ select is(
 select set_config('request.jwt.claim.sub','72000000-0000-4000-8000-000000000011',true);
 select ok(not public.sinjira_junior_community_enabled(),'la révocation parentale désactive immédiatement l état self-only');
 select throws_ok(
-  $select public.junior_community_feed(30)$,
+  $revocation$select public.junior_community_feed(30)$revocation$,
   'P0001',
   'JUNIOR_GUARDIAN_CONSENT_REQUIRED',
   'après révocation le fil Junior est immédiatement refusé côté serveur'
