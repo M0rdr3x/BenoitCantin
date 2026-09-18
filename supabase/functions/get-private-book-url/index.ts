@@ -27,6 +27,9 @@ Deno.serve(async(req)=>{
   try{
     const user=await requiredUser(req);
     const service=serviceClient();
+    const {data:ageBand,error:ageError}=await service.rpc('sinjira_age_band',{p_user_id:user.id});
+    if(ageError)throw new Error('BOOK_AGE_STATE_UNAVAILABLE');
+    if(ageBand==='child')throw new Error('BOOK_NOT_AVAILABLE_11_12');
     await requirePrivateBookAccess(service,user.id);
 
     // Ne révèle l'état d'activation ou de configuration du stockage qu'après
@@ -54,6 +57,8 @@ Deno.serve(async(req)=>{
   }catch(error){
     const message=error instanceof Error?error.message:'';
     if(message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.'},401);
+    if(message==='BOOK_NOT_AVAILABLE_11_12')return privateJson({ok:false,error:'Ce contenu privé n’est pas encore classé pour les comptes de 11–12 ans.'},403);
+    if(message==='BOOK_AGE_STATE_UNAVAILABLE')return privateJson({ok:false,error:'La vérification d’âge du compte est temporairement indisponible.'},503);
     if(message==='BOOK_ACCESS_DENIED')return privateJson({ok:false,error:'Votre compte ne possède pas ce livre.'},403);
     if(message==='BOOK_UNAVAILABLE')return privateJson({ok:false,error:'Livre indisponible.'},503);
     if(message==='BOOK_ACCESS_CHECK_FAILED'){
