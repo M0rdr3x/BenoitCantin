@@ -81,7 +81,7 @@ async function playtests(){
     else if(page==='documents')await documents();
     else if(page==='project')await project();
     else if(page==='playtests'){
-      if(childMode){location.replace('/compte/bibliotheque.html?from=playtests');return}
+      if(childMode)return;
       await playtests();
     }
   }catch(e){setStatus(status,e?.message||'Une erreur est survenue.','error')}
