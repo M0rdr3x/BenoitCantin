@@ -12,9 +12,12 @@ Cette matrice est une frontière de navigation et de produit. Elle ne remplace p
 
 ## Catégorie A — autorisé 11–12 ans
 
-Ces surfaces sont privées, de sécurité, de création personnelle ou propres à la Communauté Junior.
+Ces surfaces sont privées, de sécurité, de création personnelle, propres à la Communauté Junior ou bornées par un classement de contenu explicite.
 
 - `index.html` — accueil du compte;
+- `bibliotheque.html` — bibliothèque filtrée côté serveur : seuls les projets explicitement `approved_11_12` sont visibles; aucun achat, licence, demande testeur ou lecture privée non classée;
+- `documents.html` — documents filtrés côté serveur : le document **et** son projet doivent tous deux être explicitement approuvés 11–12 ans;
+- `projet.html` — fiche d'un projet approuvé 11–12 ans; aucun bouton de jeu ou playtest n'est présenté au compte enfant tant que ces parcours n'ont pas leur propre certification;
 - `blocages.html` — personnes masquées / sécurité sociale;
 - `communaute-junior.html` — fil Junior 11–12 ans;
 - `confidentialite-joueur.html` — information vie privée;
@@ -52,15 +55,12 @@ Un compte 11–12 ans ne doit jamais rester dans la communauté générale penda
 
 Ces surfaces ne sont pas ouvertes à un compte `child`. Certaines pourront être réouvertes plus tard lorsqu'un contrat d'âge, de contenu ou de responsabilité aura été prouvé.
 
-### Contenu et jeux non encore classés par âge
+### Contenu et jeux encore fermés
 
-- `bibliotheque.html`;
-- `documents.html`;
 - `mes-lectures.html`;
-- `mes-parties.html`;
-- `projet.html`.
+- `mes-parties.html`.
 
-La prochaine condition pour les rouvrir est un classement d'âge explicite des projets/documents et une preuve serveur empêchant un contenu non classé d'être délivré à un enfant.
+La Bibliothèque, Documents et Projet ont maintenant un classement humain explicite. Le défaut `unreviewed` reste fermé. Aucun projet ou document existant n'est automatiquement approuvé parce qu'il était déjà public, associé au compte ou accessible à un adulte. Les lectures privées et parties restent fermées jusqu'à leur propre contrat d'âge.
 
 ### Social général et communication
 
@@ -115,7 +115,9 @@ La navigation n'est jamais considérée comme une barrière de sécurité suffis
 - aucun UUID auteur, nom réel, avatar ou courriel dans le fil Junior;
 - activation Communauté Junior révocable par un parent/tuteur vérifié;
 - sortie automatique de la bande Junior à 13 ans;
-- les nouvelles surfaces restreintes doivent recevoir leur propre garde serveur avant d'être déplacées en catégorie A.
+- les nouvelles surfaces restreintes doivent recevoir leur propre garde serveur avant d'être déplacées en catégorie A;
+- pour Bibliothèque/Documents/Projet, `unreviewed` et `blocked_11_12` restent fermés; seul `approved_11_12` ouvre le contenu;
+- l'approbation 11–12 est une décision humaine distincte pour le projet et pour chaque document; elle enregistre le réviseur et l'heure de décision.
 
 ## Couverture
 
