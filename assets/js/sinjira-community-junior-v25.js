@@ -5,6 +5,9 @@ const status=document.querySelector('[data-junior-status]');
 const feed=document.querySelector('[data-junior-feed]');
 const form=document.querySelector('[data-junior-post-form]');
 let user=null;
+const accessNote=document.querySelector('[data-junior-access-note]');
+const accessParams=new URLSearchParams(location.search);
+if(accessNote&&accessParams.get('from')==='restricted')accessNote.hidden=false;
 
 function juniorMessage(error,fallback='Action impossible pour le moment.'){
   const message=String(error?.message||error||'').toUpperCase();
