@@ -50,6 +50,7 @@ for edge_name,edge_text in (('téléchargement Livre I',bd),('lecture Livre I',b
     req("ageband==='child'" in edge_text and 'book_not_available_11_12' in edge_text,f'{edge_name}: contenu privé non classé encore ouvert aux 11–12 ans.')
 
 req('selectplan(12);' in t,'Plan pgTAP frontière child inattendu.')
+req("with_checkilike'%sinjira_my_age_band%'" in t,'Le pgTAP Playtests ne vérifie pas la cohorte self-only.')
 for marker in ('emploiportelagardechild','marchéportelagardechild','demandestesteurportentlagardechild','précommandesportentlagardechild','documentsprivéstiennentcomptedelabandeâge','playtestsrefusentchildcôtérls','uneseulepolitiqueselectplaytestsresteactive','lapolitiqueselectplaytestscanoniqueexclutexplicitementchild','uneseulepolitiqueselectparticipationsplaytestsresteactive','lalecturedesparticipationsplaytestsexclutexplicitementchild'):
     req(marker in t,f'Preuve pgTAP absente: {marker}')
 

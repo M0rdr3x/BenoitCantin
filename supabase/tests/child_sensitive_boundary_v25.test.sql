@@ -10,7 +10,7 @@ select ok(exists(select 1 from pg_trigger where tgname='sinjira_child_sensitive_
 select ok(exists(select 1 from pg_trigger where tgname='sinjira_child_sensitive_write_guard' and tgrelid='public.access_requests'::regclass and not tgisinternal),'demandes testeur portent la garde child');
 select ok(exists(select 1 from pg_trigger where tgname='sinjira_child_sensitive_write_guard' and tgrelid='public.product_preorders'::regclass and not tgisinternal),'précommandes portent la garde child');
 select ok((select qual ilike '%sinjira_my_age_band%' from pg_policies where schemaname='public' and tablename='documents' and policyname='approved documents visible by access'),'documents privés tiennent compte de la bande âge');
-select ok((select with_check ilike '%sinjira_age_band%' from pg_policies where schemaname='public' and tablename='playtest_participants' and policyname='participants own apply'),'playtests refusent child côté RLS');
+select ok((select with_check ilike '%sinjira_my_age_band%' from pg_policies where schemaname='public' and tablename='playtest_participants' and policyname='participants own apply'),'playtests refusent child côté RLS');
 select is(
   (select count(*) from pg_policies where schemaname='public' and tablename='playtests' and cmd='SELECT'),
   1::bigint,
