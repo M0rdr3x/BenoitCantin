@@ -27,19 +27,19 @@ m=compact(mig); t=compact(test); d=compact(doc); a=compact(ai)
 l=compact(license_edge); bd=compact(book_download); br=compact(book_read)
 
 req('createorreplacefunctionprivate.sinjira_child_sensitive_write_guard()' in m,'Garde serveur child absente.')
-req("public.sinjira_age_band(uid)='child'" in m,'La garde sensible ne vérifie pas la bande child.')
+req("public.sinjira_age_band(uid)" in m and "coalesce(band,'unverified')notin('adult','youth')" in m,'La garde sensible ne ferme pas les bandes non standard.')
 req("raiseexception'child_action_not_available_11_12'" in m,'Code de refus child absent.')
-req("tg_table_name='playtest_participants'" in m and "public.sinjira_age_band(new.user_id)='child'" in m and "child_target_not_available_11_12" in m,'Une invitation Playtest adulte/admin peut encore cibler un compte child.')
+req("tg_table_name='playtest_participants'" in m and "public.sinjira_age_band(new.user_id)" in m and "account_target_not_available_restricted" in m,'Une invitation Playtest adulte/admin peut encore cibler une bande non standard.')
 for table in ('access_requests','playtest_participants','parallel_responses','parallel_character_state','market_listings','market_favorites','license_redemptions','product_preorders','orders','order_items','employment_profiles','employment_applications','game_sessions','player_sheets','endgame_sheets','novel_comments','reader_comments','sinjira_novel_comments'):
     req(f"'{table}'" in m,f'Table sensible non couverte: {table}')
 req('createorreplacefunctionprivate.sinjira_child_research_consent_guard()' in m,'Garde contribution child absente.')
-req('new.participate:=false' in m and 'new.share_free_text:=false' in m,'Contribution child non forcée à OFF.')
-req("public.sinjira_my_age_band()<>'child'" in m,'Politiques projet/document/playtest sans garde child self-only.')
+req('new.participate:=false' in m and 'new.share_free_text:=false' in m and "coalesce(band,'unverified')notin('adult','youth')" in m,'Contribution des bandes non standard non forcée à OFF.')
+req("public.sinjira_my_age_band()in('adult','youth')" in m,'Politiques sensibles sans garde fail-closed adult/youth.')
 req('droppolicyifexistsplaytests_read_authorizedonpublic.playtests' in m and 'createpolicyplaytests_read_authorizedonpublic.playtestsforselecttoauthenticated' in m,'L ancienne politique SELECT Playtests n est pas remplacée canoniquement.')
 req('droppolicyifexistsplaytest_participants_read_authorizedonpublic.playtest_participants' in m and 'createpolicyplaytest_participants_read_authorizedonpublic.playtest_participantsforselecttoauthenticated' in m,'La lecture des participations Playtests ne remplace pas la politique héritée.')
 req('droppolicyifexists"participantsownselect"onpublic.playtest_participants' in m,'La politique historique "participants own select" n est pas retirée.')
-req("public.sinjira_my_age_band()<>'child'and(public.is_sinjira_admin" in m,'La politique Playtests canonique ne ferme pas child avant les exceptions admin/historique.')
-req("access_level='public'" in m and "p.visibility='public'" in m,'Documents child ne sont pas limités aux documents publics de projets publics.')
+req("public.sinjira_my_age_band()in('adult','youth')and(public.is_sinjira_admin" in m,'La politique Playtests canonique n exige pas une bande standard avant les exceptions admin/historique.')
+req("public.sinjira_my_age_band()='child'" in m and "access_level='public'" in m and "p.visibility='public'" in m,'Documents child ne sont pas limités aux documents publics de projets publics.')
 
 req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in d,'get-document-url ne vérifie pas l âge serveur.')
 req("ageband==='child'" in d and "doc.child_access_status!=='approved_11_12'" in d and "doc.projects?.child_access_status!=='approved_11_12'" in d,'get-document-url ne revérifie pas le classement 11–12 document + projet.')
@@ -52,7 +52,7 @@ for edge_name,edge_text in (('téléchargement Livre I',bd),('lecture Livre I',b
 
 req('selectplan(13);' in t,'Plan pgTAP frontière child inattendu.')
 req("with_checkilike'%sinjira_my_age_band%'" in t,'Le pgTAP Playtests ne vérifie pas la cohorte self-only.')
-for marker in ('emploiportelagardechild','marchéportelagardechild','demandestesteurportentlagardechild','précommandesportentlagardechild','documentsprivéstiennentcomptedelabandeâge','playtestsrefusentchildcôtérls','uneseulepolitiqueselectplaytestsresteactive','lapolitiqueselectplaytestscanoniqueexclutexplicitementchild','uneseulepolitiqueselectparticipationsplaytestsresteactive','lalecturedesparticipationsplaytestsexclutexplicitementchild','unadulte/adminnepeutpascibleruncomptechilddansuneparticipationplaytest'):
+for marker in ('emploiportelagardechild','marchéportelagardechild','demandestesteurportentlagardechild','précommandesportentlagardechild','documentsprivéstiennentcomptedelabandeâge','playtestsrestentréservésauxbandesstandardcôtérls','uneseulepolitiqueselectplaytestsresteactive','lapolitiqueselectplaytestscanoniqueexigeunebandestandard','uneseulepolitiqueselectparticipationsplaytestsresteactive','lalecturedesparticipationsplaytestsexigeunebandestandard','unadulte/adminnepeutpascibleruncomptechilddansuneparticipationplaytest'):
     req(marker in t,f'Preuve pgTAP absente: {marker}')
 
 if errors:

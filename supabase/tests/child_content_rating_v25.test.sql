@@ -50,8 +50,8 @@ select is(
   1::bigint,
   'une seule politique SELECT documents reste active pour éviter un OR permissif'
 );
-select ok((select qual ilike '%sinjira_my_age_band%' from pg_policies where schemaname='public' and tablename='projects' and policyname='projects readable when accessible'),'RLS projets borne explicitement la bande child');
-select ok((select qual ilike '%sinjira_my_age_band%' from pg_policies where schemaname='public' and tablename='documents' and policyname='approved documents visible by access'),'RLS documents borne explicitement la bande child');
+select ok((select qual ilike '%sinjira_my_age_band%' and qual ilike '%adult%' and qual ilike '%youth%' and qual ilike '%child%' from pg_policies where schemaname='public' and tablename='projects' and policyname='projects readable when accessible'),'RLS projets sépare standard, child et bandes restreintes');
+select ok((select qual ilike '%sinjira_my_age_band%' and qual ilike '%adult%' and qual ilike '%youth%' and qual ilike '%child%' from pg_policies where schemaname='public' and tablename='documents' and policyname='approved documents visible by access'),'RLS documents sépare standard, child et bandes restreintes');
 select ok((select qual ilike '%child_access_status%' from pg_policies where schemaname='public' and tablename='projects' and policyname='projects readable when accessible'),'RLS projets contient le classement 11–12');
 select ok((select qual ilike '%sinjira_child_document_available%' from pg_policies where schemaname='public' and tablename='documents' and policyname='approved documents visible by access'),'RLS documents impose la double approbation');
 

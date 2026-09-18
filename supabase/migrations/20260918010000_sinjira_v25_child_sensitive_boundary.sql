@@ -8,17 +8,28 @@ language plpgsql
 security definer
 set search_path=pg_catalog,public,private
 as $child$
-declare uid uuid:=auth.uid();
+declare
+  uid uuid:=auth.uid();
+  band text;
+  target_band text;
 begin
-  if uid is not null and public.sinjira_age_band(uid)='child' then
-    raise exception 'CHILD_ACTION_NOT_AVAILABLE_11_12' using errcode='42501';
+  if uid is not null then
+    band:=public.sinjira_age_band(uid);
+    if band='child' then
+      raise exception 'CHILD_ACTION_NOT_AVAILABLE_11_12' using errcode='42501';
+    elsif coalesce(band,'unverified') not in ('adult','youth') then
+      raise exception 'ACCOUNT_ACTION_NOT_AVAILABLE_RESTRICTED' using errcode='42501';
+    end if;
   end if;
 
   -- Un adulte/admin ne peut pas créer ou maintenir une participation Playtest
-  -- ciblant un compte 11–12. DELETE reste permis pour nettoyer l historique.
+  -- ciblant un compte child ou une bande restreinte. DELETE reste permis pour nettoyage.
   if tg_table_name='playtest_participants' and tg_op<>'DELETE' then
-    if public.sinjira_age_band(new.user_id)='child' then
+    target_band:=public.sinjira_age_band(new.user_id);
+    if target_band='child' then
       raise exception 'CHILD_TARGET_NOT_AVAILABLE_11_12' using errcode='42501';
+    elsif coalesce(target_band,'unverified') not in ('adult','youth') then
+      raise exception 'ACCOUNT_TARGET_NOT_AVAILABLE_RESTRICTED' using errcode='42501';
     end if;
   end if;
 
@@ -55,9 +66,14 @@ language plpgsql
 security definer
 set search_path=pg_catalog,public,private
 as $child$
-declare uid uuid:=auth.uid();
+declare
+  uid uuid:=auth.uid();
+  band text;
 begin
-  if uid is not null and public.sinjira_age_band(uid)='child' then
+  if uid is not null then
+    band:=public.sinjira_age_band(uid);
+  end if;
+  if uid is not null and coalesce(band,'unverified') not in ('adult','youth') then
     new.participate:=false;
     new.share_free_text:=false;
     new.consented_at:=null;
@@ -81,7 +97,7 @@ using(
     visibility='public'
     or (
       (select auth.uid()) is not null
-      and public.sinjira_my_age_band()<>'child'
+      and public.sinjira_my_age_band() in ('adult','youth')
       and (visibility='account' or public.project_access_rank(id,(select auth.uid()))>=20)
     )
   )
@@ -94,9 +110,10 @@ using(
   and public.project_access_rank(project_id,(select auth.uid()))>=public.document_access_rank(access_level)
   and (
     (select auth.uid()) is null
-    or public.sinjira_my_age_band()<>'child'
+    or public.sinjira_my_age_band() in ('adult','youth')
     or (
-      access_level='public'
+      public.sinjira_my_age_band()='child'
+      and access_level='public'
       and exists(
         select 1 from public.projects p
         where p.id=project_id and p.visibility='public' and p.status<>'draft'
@@ -114,7 +131,7 @@ drop policy if exists playtests_read_authorized on public.playtests;
 create policy playtests_read_authorized on public.playtests for select to authenticated
 using(
   (select auth.uid()) is not null
-  and public.sinjira_my_age_band()<>'child'
+  and public.sinjira_my_age_band() in ('adult','youth')
   and (
     public.is_sinjira_admin((select auth.uid()))
     or exists(
@@ -143,7 +160,7 @@ drop policy if exists playtest_participants_read_authorized on public.playtest_p
 create policy playtest_participants_read_authorized on public.playtest_participants for select to authenticated
 using(
   (select auth.uid()) is not null
-  and public.sinjira_my_age_band()<>'child'
+  and public.sinjira_my_age_band() in ('adult','youth')
   and (
     (select auth.uid())=user_id
     or public.is_sinjira_admin((select auth.uid()))
@@ -154,7 +171,7 @@ drop policy if exists "requests own insert" on public.access_requests;
 create policy "requests own insert" on public.access_requests for insert to authenticated
 with check(
   (select auth.uid())=user_id
-  and public.sinjira_my_age_band()<>'child'
+  and public.sinjira_my_age_band() in ('adult','youth')
   and status='pending'
 );
 
@@ -162,7 +179,7 @@ drop policy if exists "participants own apply" on public.playtest_participants;
 create policy "participants own apply" on public.playtest_participants for insert to authenticated
 with check(
   (select auth.uid())=user_id
-  and public.sinjira_my_age_band()<>'child'
+  and public.sinjira_my_age_band() in ('adult','youth')
   and status='applied'
 );
 
