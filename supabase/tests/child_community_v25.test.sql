@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(43);
+select plan(48);
 
 select ok(to_regprocedure('private.sinjira_junior_community_enabled(uuid)') is not null,'garde privée d activation Junior existe');
 select ok(to_regprocedure('public.junior_community_feed(integer)') is not null,'RPC fil Junior existe');
@@ -184,6 +184,34 @@ select ok(
 select ok(
   position('Une publication du deuxième enfant' in public.junior_community_feed(30)::text)=0,
   'le contenu de la personne bloquée disparaît du fil'
+);
+
+select set_config('request.jwt.claim.sub','71000000-0000-4000-8000-000000000001',true);
+select is(
+  (public.guardian_set_junior_community('72000000-0000-4000-8000-000000000011',false)->>'enabled')::boolean,
+  false,
+  'le parent peut révoquer immédiatement la Communauté Junior'
+);
+
+select set_config('request.jwt.claim.sub','72000000-0000-4000-8000-000000000011',true);
+select ok(not public.sinjira_junior_community_enabled(),'la révocation parentale désactive immédiatement l état self-only');
+select throws_ok(
+  $select public.junior_community_feed(30)$,
+  'P0001',
+  'JUNIOR_GUARDIAN_CONSENT_REQUIRED',
+  'après révocation le fil Junior est immédiatement refusé côté serveur'
+);
+
+select set_config('request.jwt.claim.sub','71000000-0000-4000-8000-000000000001',true);
+select is(
+  (public.guardian_set_junior_community('72000000-0000-4000-8000-000000000011',true)->>'enabled')::boolean,
+  true,
+  'le parent peut réactiver la Communauté Junior'
+);
+select set_config('request.jwt.claim.sub','72000000-0000-4000-8000-000000000011',true);
+select ok(
+  public.sinjira_junior_community_enabled() and public.has_accepted_junior_community_rules(),
+  'la réactivation restaure l accès sans redemander des règles dont la version n a pas changé'
 );
 
 update public.account_safety_profiles

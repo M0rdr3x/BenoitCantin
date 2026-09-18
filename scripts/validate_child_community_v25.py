@@ -151,7 +151,10 @@ req("if(!child_11_12_allowed_routes.has(leaf))link.hidden=true" in a,'La navigat
 req("capabilities.child_11_12===true" in co and "communaute-junior.html" in co and "capabilities.general_community!==true" in co,'La Communauté générale n est pas bornée par les capacités serveur.')
 
 # Tests comportementaux.
-req('selectplan(43);' in t,'Plan pgTAP Junior inattendu.')
+req('selectplan(48);' in t,'Plan pgTAP Junior inattendu.')
+req('leparentpeutrévoquerimmédiatementlacommunautéjunior' in t,'La preuve de révocation parentale immédiate est absente.')
+req('junior_guardian_consent_required' in t and 'aprèsrévocationlefiljuniorestimmédiatementrefusécôtéserveur' in t,'Le fil Junior n est pas prouvé fermé après révocation.')
+req('leparentpeutréactiverlacommunautéjunior' in t,'La réactivation parentale n est pas couverte.')
 for marker,msg in (
     ('aucunselectdirectsurpublicationsjunior','Le test ne prouve pas l absence de SELECT direct.'),
     ('leparentactiveexplicitementlacommunautéjunior','Le test ne prouve pas l opt-in parent.'),

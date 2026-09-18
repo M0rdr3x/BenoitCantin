@@ -58,7 +58,7 @@ export function createClient(){
     rpc:async(name,args={})=>{
       if(name==='is_sinjira_admin')return {data:false,error:null};
       if(name==='sinjira_my_age_band')return {data:'child',error:null};
-      if(name==='sinjira_my_account_capabilities')return {data:{account_mode:'child',age_band:'child',child_11_12:true,native_general_hubs:false,general_community:false,private_messages:false,dating:false,library_mode:'reviewed_11_12'},error:null};
+      if(name==='sinjira_my_account_capabilities')return {data:{account_mode:'child',age_band:'child',child_11_12:true,native_general_hubs:false,general_community:false,private_messages:false,dating:false,library_mode:'reviewed_11_12',junior_community_eligible:true,junior_community_enabled:true,junior_rules_accepted:true},error:null};
       if(name==='sinjira_junior_community_enabled')return {data:true,error:null};
       if(name==='has_accepted_junior_community_rules')return {data:true,error:null};
       if(name==='junior_community_feed')return {data:posts,error:null};
