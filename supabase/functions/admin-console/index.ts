@@ -110,6 +110,29 @@ Deno.serve(async(req)=>{
       if(error)throw error;return privateJson({ok:true,documents:data||[]});
     }
 
+    if(action==='set_child_access_review'){
+      const targetType=String(body.target_type||'');
+      const targetId=String(body.target_id||'').trim();
+      const childStatus=String(body.child_access_status||'');
+      const table=targetType==='project'?'projects':targetType==='document'?'documents':'';
+      if(!table||!targetId||!['unreviewed','approved_11_12','blocked_11_12'].includes(childStatus)){
+        return privateJson({ok:false,error:'Décision 11–12 invalide.'},400);
+      }
+      const update:any={child_access_status:childStatus};
+      if(childStatus==='unreviewed'){
+        update.child_access_reviewed_at=null;
+        update.child_access_reviewed_by=null;
+        update.child_access_review_note=null;
+      }else{
+        update.child_access_reviewed_at=new Date().toISOString();
+        update.child_access_reviewed_by=user.id;
+        update.child_access_review_note=String(body.review_note||'').trim().slice(0,1200)||null;
+      }
+      const {data,error}=await service.from(table).update(update).eq('id',targetId).select('*').single();
+      if(error)throw error;
+      return privateJson({ok:true,target_type:targetType,item:data});
+    }
+
     if(action==='prepare_document_upload'){
       const x=body.document||{},original=safeName(x.filename||'document.pdf');
       const ext=original.includes('.')?original.split('.').pop():'bin';
