@@ -133,11 +133,16 @@ req('data-junior-community-children' in rh,'Relations ne contient pas le panneau
 req("s.rpc('guardian_set_junior_community'" in r,'Relations ne peut pas activer/révoquer la Communauté Junior.')
 req("s.rpc('junior_guardian_summary'" in r,'Relations ne peut pas lire le résumé de sécurité sans contenu.')
 
-# Navigation fail-closed minimale pour 11–12.
-req("ageband!=='child'" in a and "link.href='communaute-junior.html'" in a,'La navigation du compte ne route pas child vers Junior.')
-for route in ('messages.html','rencontres.html','reseau-personnage.html','marche.html','jetons.html','mes-achats.html','contributions.html'):
-    req(f"'{route}'" in a,f'Route sensible non masquée pour child: {route}')
-req("hiddenroutes.has(currentleaf)" in a and "communaute-junior.html?from=restricted" in a,'Un compte child peut encore ouvrir directement une route sensible masquée.')
+# Navigation fail-closed pour 11–12 : liste blanche explicite, redirections Junior et refus par défaut.
+req("ageband!=='child'" in a and "constchild_11_12_allowed_routes=newset([" in a,'La navigation du compte ne borne pas explicitement les routes child.')
+req("['communaute.html','/compte/communaute-junior.html']" in a,'La communauté générale n est pas redirigée vers Junior.')
+req("['regles-communaute.html','/compte/regles-communaute-junior.html']" in a,'Les règles générales ne sont pas redirigées vers les règles Junior.')
+allowed_section=a[a.find('constchild_11_12_allowed_routes=newset(['):a.find('constchild_11_12_route_redirects=newmap([')]
+for route in ('messages.html','rencontres.html','reseau-personnage.html','marche.html','jetons.html','mes-achats.html','contributions.html','bibliotheque.html','documents.html','playtests.html','emploi.html','mon-ia.html','monde-parallele.html'):
+    req(f"'{route}'" not in allowed_section,f'Route sensible autorisée par erreur pour child: {route}')
+req("location.pathname.startswith('/compte/')&&!child_11_12_allowed_routes.has(currentleaf)" in a,'Un compte child peut encore ouvrir directement une route compte non autorisée.')
+req("next.searchparams.set('from','restricted')" in a and "next.searchparams.set('module',currentleaf)" in a,'Le repli Junior des routes restreintes n est pas traçable dans l URL locale.')
+req("if(!child_11_12_allowed_routes.has(leaf))link.hidden=true" in a,'La navigation ne masque pas par défaut les routes non autorisées aux comptes child.')
 req("ageband==='child'" in co and "communaute-junior.html" in co,'La Communauté générale ne redirige pas un compte child.')
 
 # Tests comportementaux.
