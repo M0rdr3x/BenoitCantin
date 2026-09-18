@@ -115,12 +115,23 @@ function accountRouteLeaf(pathname=location.pathname){
   return pathname.split('/').filter(Boolean).pop()||'index.html';
 }
 
+function postNativeChildAccess(state){
+  try{
+    const bridge=window.ReactNativeWebView;
+    if(!bridge||typeof bridge.postMessage!=='function')return;
+    const normalized=state==='child'?'child':state==='nonchild'?'nonchild':'unknown';
+    bridge.postMessage(JSON.stringify({type:'sinjira:child-access',state:normalized}));
+  }catch{}
+}
+
 async function initAgeAccessNavigation(){
   if(!isSinjiraBackendConfigured()) return;
   const {data:{user},error:userError}=await getSupabase().auth.getUser();
   if(userError||!user) return;
   const {data:ageBand,error}=await getSupabase().rpc('sinjira_my_age_band');
-  if(error||ageBand!=='child') return;
+  if(error){postNativeChildAccess('unknown');return}
+  postNativeChildAccess(ageBand==='child'?'child':'nonchild');
+  if(ageBand!=='child') return;
 
   const currentLeaf=accountRouteLeaf();
   const directRedirect=CHILD_11_12_ROUTE_REDIRECTS.get(currentLeaf);
@@ -336,10 +347,10 @@ async function settings(){
     if(prompt('Pour supprimer définitivement votre compte, écrivez SUPPRIMER.')!=='SUPPRIMER')return;
     const {error}=await s.functions.invoke('delete-player-account',{body:{confirm:'SUPPRIMER'}});
     if(error){setStatus(status,'Suppression impossible.','error');return}
-    await s.auth.signOut();location.href='/compte/connexion.html?deleted=1';
+    postNativeChildAccess('unknown');await s.auth.signOut();location.href='/compte/connexion.html?deleted=1';
   });
 }
-document.querySelectorAll('[data-logout]').forEach(b=>b.addEventListener('click',signOut));
+document.querySelectorAll('[data-logout]').forEach(b=>b.addEventListener('click',async()=>{postNativeChildAccess('unknown');await signOut()}));
 backendNotice();
 initAdminNavigation().catch(()=>{});
 initAgeAccessNavigation().catch(()=>{});
