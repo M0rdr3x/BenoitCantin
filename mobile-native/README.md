@@ -143,6 +143,7 @@ La racine `/app/` est maintenant représentée par un accueil React Native de na
 - tant que cet état est `unknown`, l’accueil est fail-closed : aucun hub natif sensible n’est proposé et la première ouverture passe par la surface Web du compte;
 - pour `child`, l’accueil natif n’affiche que Communauté Junior, Bibliothèque Junior, Profil, Relations/famille et Ma sécurité; Messages, Rencontres, Emploi, Monde parallèle, Mon IA, commerce et playtests restent absents;
 - seuls les comptes vérifiés `nonchild` retrouvent les hubs natifs généraux existants;
+- lorsqu’un compte est déjà identifié `child`, les deep links et liens internes vers Messages, Rencontres, Emploi, playtests, Mon IA, Monde parallèle, commerce et autres routes restreintes sont réécrits vers l’espace Junior **avant** que la surface interdite ne soit chargée;
 - l’accueil n’appelle ni Supabase, ni Edge Function, ni RPC et n’utilise aucun stockage sécurisé;
 - **Ma sécurité** ouvre le hub natif déjà borné, qui renvoie lui-même vers la source de vérité serveur pour les opérations réelles;
 - **Mode Voyage** reste une fonction de sécurité et ouvre uniquement son ancre dans le Centre de sécurité existant;
