@@ -34,6 +34,9 @@ for table in ('access_requests','playtest_participants','parallel_responses','pa
 req('createorreplacefunctionprivate.sinjira_child_research_consent_guard()' in m,'Garde contribution child absente.')
 req('new.participate:=false' in m and 'new.share_free_text:=false' in m,'Contribution child non forcée à OFF.')
 req('public.sinjira_age_band((selectauth.uid()))<>\'child\'' in m,'Politiques projet/document/playtest sans garde child.')
+req('droppolicyifexistsplaytests_read_authorizedonpublic.playtests' in m and 'createpolicyplaytests_read_authorizedonpublic.playtestsforselecttoauthenticated' in m,'L ancienne politique SELECT Playtests n est pas remplacée canoniquement.')
+req('droppolicyifexistsplaytest_participants_read_authorizedonpublic.playtest_participants' in m and 'createpolicyplaytest_participants_read_authorizedonpublic.playtest_participantsforselecttoauthenticated' in m,'La lecture des participations Playtests ne remplace pas la politique héritée.')
+req("public.sinjira_age_band((selectauth.uid()))<>'child'and(public.is_sinjira_admin" in m,'La politique Playtests canonique ne ferme pas child avant les exceptions admin/historique.')
 req("access_level='public'" in m and "p.visibility='public'" in m,'Documents child ne sont pas limités aux documents publics de projets publics.')
 
 req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in d,'get-document-url ne vérifie pas l âge serveur.')
@@ -45,8 +48,8 @@ for edge_name,edge_text in (('téléchargement Livre I',bd),('lecture Livre I',b
     req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in edge_text,f'{edge_name}: vérification d âge serveur absente.')
     req("ageband==='child'" in edge_text and 'book_not_available_11_12' in edge_text,f'{edge_name}: contenu privé non classé encore ouvert aux 11–12 ans.')
 
-req('selectplan(8);' in t,'Plan pgTAP frontière child inattendu.')
-for marker in ('emploiportelagardechild','marchéportelagardechild','demandestesteurportentlagardechild','précommandesportentlagardechild','documentsprivéstiennentcomptedelabandeâge','playtestsrefusentchildcôtérls'):
+req('selectplan(12);' in t,'Plan pgTAP frontière child inattendu.')
+for marker in ('emploiportelagardechild','marchéportelagardechild','demandestesteurportentlagardechild','précommandesportentlagardechild','documentsprivéstiennentcomptedelabandeâge','playtestsrefusentchildcôtérls','uneseulepolitiqueselectplaytestsresteactive','lapolitiqueselectplaytestscanoniqueexclutexplicitementchild','uneseulepolitiqueselectparticipationsplaytestsresteactive','lalecturedesparticipationsplaytestsexclutexplicitementchild'):
     req(marker in t,f'Preuve pgTAP absente: {marker}')
 
 if errors:

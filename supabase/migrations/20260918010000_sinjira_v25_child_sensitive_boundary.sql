@@ -96,12 +96,48 @@ using(
   )
 );
 
+-- Une seule politique SELECT Playtests doit rester active. Les anciennes politiques
+-- permissives seraient combinées par OR et pourraient sinon contourner la fermeture child.
 drop policy if exists "playtests readable" on public.playtests;
-create policy "playtests readable" on public.playtests for select to authenticated
+drop policy if exists playtests_read on public.playtests;
+drop policy if exists admin_read_all_playtests on public.playtests;
+drop policy if exists playtests_read_authorized on public.playtests;
+create policy playtests_read_authorized on public.playtests for select to authenticated
 using(
-  status in ('open','active')
+  (select auth.uid()) is not null
   and public.sinjira_age_band((select auth.uid()))<>'child'
-  and public.project_access_rank(project_id,(select auth.uid()))>=10
+  and (
+    public.is_sinjira_admin((select auth.uid()))
+    or exists(
+      select 1
+      from public.playtest_participants pp
+      where pp.playtest_id=playtests.id
+        and pp.user_id=(select auth.uid())
+    )
+    or (
+      status in ('open','active')
+      and public.project_access_rank(project_id,(select auth.uid()))>=case required_access
+        when 'tester' then 30
+        when 'player' then 20
+        else 10
+      end
+    )
+  )
+);
+
+-- Même règle pour l'historique des participations : un ancien compte 12 ans
+-- devenu child ne doit pas pouvoir relire ses anciennes participations.
+drop policy if exists playtest_participants_select_own on public.playtest_participants;
+drop policy if exists admin_read_all_playtest_participants on public.playtest_participants;
+drop policy if exists playtest_participants_read_authorized on public.playtest_participants;
+create policy playtest_participants_read_authorized on public.playtest_participants for select to authenticated
+using(
+  (select auth.uid()) is not null
+  and public.sinjira_age_band((select auth.uid()))<>'child'
+  and (
+    (select auth.uid())=user_id
+    or public.is_sinjira_admin((select auth.uid()))
+  )
 );
 
 drop policy if exists "requests own insert" on public.access_requests;
