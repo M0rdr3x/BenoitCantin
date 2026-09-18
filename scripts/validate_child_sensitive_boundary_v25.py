@@ -29,10 +29,10 @@ for table in ('access_requests','playtest_participants','parallel_responses','pa
 req('createorreplacefunctionprivate.sinjira_child_research_consent_guard()' in m,'Garde contribution child absente.')
 req('new.participate:=false' in m and 'new.share_free_text:=false' in m,'Contribution child non forcée à OFF.')
 req('public.sinjira_age_band((selectauth.uid()))<>\'child\'' in m,'Politiques projet/document/playtest sans garde child.')
-req('access_level=\'public\'' in m,'Documents child ne sont pas limités au niveau public.')
+req("access_level='public'" in m and "p.visibility='public'" in m,'Documents child ne sont pas limités aux documents publics de projets publics.')
 
 req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in d,'get-document-url ne vérifie pas l âge serveur.')
-req("ageband==='child'&&doc.access_level!=='public'" in d,'get-document-url ne bloque pas les documents privés pour child.')
+req("ageband==='child'&&(doc.access_level!=='public'||doc.projects?.visibility!=='public')" in d,'get-document-url ne bloque pas les documents/projets privés pour child.')
 req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in a,'Mon IA ne vérifie pas l âge serveur.')
 req("ageband==='child'" in a and 'personal_ai_not_available_11_12' in a,'Mon IA n est pas bloqué pour child.')
 
