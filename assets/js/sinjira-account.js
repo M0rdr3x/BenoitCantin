@@ -128,10 +128,11 @@ async function initAgeAccessNavigation(){
   if(!isSinjiraBackendConfigured()) return;
   const {data:{user},error:userError}=await getSupabase().auth.getUser();
   if(userError||!user) return;
-  const {data:ageBand,error}=await getSupabase().rpc('sinjira_my_age_band');
-  if(error){postNativeChildAccess('unknown');return}
-  postNativeChildAccess(ageBand==='child'?'child':'nonchild');
-  if(ageBand!=='child') return;
+  const {data:capabilities,error}=await getSupabase().rpc('sinjira_my_account_capabilities');
+  if(error||!capabilities){postNativeChildAccess('unknown');return}
+  const childAccount=capabilities.child_11_12===true;
+  postNativeChildAccess(childAccount?'child':'nonchild');
+  if(!childAccount) return;
 
   const currentLeaf=accountRouteLeaf();
   const directRedirect=CHILD_11_12_ROUTE_REDIRECTS.get(currentLeaf);
