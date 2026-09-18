@@ -97,7 +97,7 @@ function errorCode(error: unknown) {
   const code = error instanceof Error ? error.message : '';
   return new Set(['AUTH_REQUIRED','MFA_SETUP_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE','JSON_REQUIRED',
     'REQUEST_TOO_LARGE','INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','SECURITY_DECISION_INVALID',
-    'PERSONAL_AI_SOURCE_FORBIDDEN','PERSONAL_AI_LANGUAGE_INVALID']).has(code)
+    'PERSONAL_AI_SOURCE_FORBIDDEN','PERSONAL_AI_LANGUAGE_INVALID','PERSONAL_AI_NOT_AVAILABLE_11_12','PERSONAL_AI_AGE_STATE_UNAVAILABLE']).has(code)
     ? code : 'PERSONAL_AI_OPERATION_REFUSED';
 }
 
@@ -106,6 +106,10 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return privateJson({ ok:false, code:'METHOD_NOT_ALLOWED', error:'Méthode non autorisée.' }, 405);
   try {
     const { user, service } = await requiredPersonalAiUser(req);
+    const { data:ageBand, error:ageBandError } = await service.rpc('sinjira_age_band',{p_user_id:user.id});
+    if (ageBandError) throw new Error('PERSONAL_AI_AGE_STATE_UNAVAILABLE');
+    if (ageBand === 'child') throw new Error('PERSONAL_AI_NOT_AVAILABLE_11_12');
+
     const body = await readBoundedJson(req);
     rejectClientIdentity(body);
     const deviceKey = safeText(body.device_key, 128);
@@ -165,7 +169,8 @@ Deno.serve(async (req) => {
     if (code==='AUTH_REQUIRED') return privateJson({ok:false,code,error:'Connexion requise.'},401);
     if (code==='MFA_SETUP_REQUIRED') return privateJson({ok:false,code,error:'Configurez une authentification renforcée avant d’utiliser Mon IA.'},403);
     if (code==='MFA_REQUIRED') return privateJson({ok:false,code,error:'Une vérification MFA récente est requise.'},403);
-    if (code==='MFA_STATE_UNAVAILABLE'||code==='SECURITY_DECISION_INVALID') return privateJson({ok:false,code,error:'La protection de Mon IA est temporairement indisponible.'},503);
+    if (code==='MFA_STATE_UNAVAILABLE'||code==='SECURITY_DECISION_INVALID'||code==='PERSONAL_AI_AGE_STATE_UNAVAILABLE') return privateJson({ok:false,code,error:'La protection de Mon IA est temporairement indisponible.'},503);
+    if (code==='PERSONAL_AI_NOT_AVAILABLE_11_12') return privateJson({ok:false,code,error:'Mon IA n’est pas disponible pour les comptes de 11–12 ans.'},403);
     if (code==='JSON_REQUIRED') return privateJson({ok:false,code,error:'Corps JSON requis.'},415);
     if (code==='REQUEST_TOO_LARGE') return privateJson({ok:false,code,error:'Requête trop volumineuse.'},413);
     if (['INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','PERSONAL_AI_SOURCE_FORBIDDEN','PERSONAL_AI_LANGUAGE_INVALID'].includes(code)) return privateJson({ok:false,code,error:'Requête Mon IA invalide.'},400);
