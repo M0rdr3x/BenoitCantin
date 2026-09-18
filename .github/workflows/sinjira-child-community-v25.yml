@@ -7,16 +7,22 @@ on:
     paths:
       - 'supabase/migrations/20260917223000_sinjira_v25_junior_community.sql'
       - 'supabase/migrations/20260918010000_sinjira_v25_child_sensitive_boundary.sql'
+      - 'supabase/migrations/20260918013000_sinjira_v25_child_content_rating.sql'
       - 'supabase/tests/child_community_v25.test.sql'
       - 'supabase/tests/child_sensitive_boundary_v25.test.sql'
+      - 'supabase/tests/child_content_rating_v25.test.sql'
       - 'compte/*.html'
       - 'assets/js/sinjira-community-junior-v25.js'
       - 'assets/js/sinjira-community-junior-rules-v25.js'
       - 'assets/js/sinjira-community-real.js'
       - 'assets/js/sinjira-account.js'
+      - 'assets/js/sinjira-library.js'
+      - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/sinjira-admin-console-core.js'
       - 'assets/js/v24-relations.js'
       - 'assets/js/sinjira-admin-social-v20.js'
       - 'supabase/functions/admin-social-v20/index.ts'
+      - 'supabase/functions/admin-console/index.ts'
       - 'supabase/functions/get-document-url/index.ts'
       - 'supabase/functions/personal-ai/index.ts'
       - 'supabase/functions/redeem-license-code/index.ts'
@@ -25,6 +31,7 @@ on:
       - 'scripts/validate_child_community_v25.py'
       - 'scripts/validate_child_access_matrix_v25.py'
       - 'scripts/validate_child_sensitive_boundary_v25.py'
+      - 'scripts/validate_child_content_rating_v25.py'
       - 'docs/SINJIRA_CHILD_ACCESS_MATRIX_V25.md'
       - 'tests/e2e/test_child_community.py'
       - '.github/workflows/sinjira-child-community-v25.yml'
@@ -56,14 +63,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m py_compile scripts/validate_child_community_v25.py scripts/validate_child_access_matrix_v25.py scripts/validate_child_sensitive_boundary_v25.py
+          python -m py_compile scripts/validate_child_community_v25.py scripts/validate_child_access_matrix_v25.py scripts/validate_child_sensitive_boundary_v25.py scripts/validate_child_content_rating_v25.py
           python scripts/validate_child_community_v25.py
           python scripts/validate_child_access_matrix_v25.py
           python scripts/validate_child_sensitive_boundary_v25.py
+          python scripts/validate_child_content_rating_v25.py
           node --check assets/js/sinjira-community-junior-v25.js
           node --check assets/js/sinjira-community-junior-rules-v25.js
           node --check assets/js/sinjira-community-real.js
           node --check assets/js/sinjira-account.js
+          node --check assets/js/sinjira-library.js
+          node --check assets/js/sinjira-library-v24-4-61.js
+          node --check assets/js/sinjira-admin-console-core.js
           node --check assets/js/v24-relations.js
           node --check assets/js/sinjira-admin-social-v20.js
 
@@ -83,6 +94,9 @@ jobs:
 
       - name: Exécuter le test pgTAP frontière serveur 11–12 ans
         run: supabase test db supabase/tests/child_sensitive_boundary_v25.test.sql
+
+      - name: Exécuter le test pgTAP classement contenu 11–12 ans
+        run: supabase test db supabase/tests/child_content_rating_v25.test.sql
 
       - name: Arrêter et supprimer la pile locale
         if: always()
