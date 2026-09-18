@@ -18,7 +18,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
+import { WebView } from 'react-native-webview';
+import type { WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
 import { NativeHomeHub } from './NativeHomeHub';
 import { NativeModuleRouter, isNativeModulePath } from './NativeModuleRouter';
 import type { NativeModulePath } from './NativeModuleRouter';
