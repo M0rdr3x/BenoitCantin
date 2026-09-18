@@ -79,9 +79,9 @@ async function downloadPrivateBook(button){
 async function init(){
   if(document.body.dataset.libraryPage!=='library-v24-4-61')return;
   const user=await requireUser('/compte/connexion.html');const s=getSupabase();
-  const {data:ageBand,error:ageError}=await s.rpc('sinjira_my_age_band');
-  if(ageError){setStatus(status,'Impossible de vérifier la tranche d’âge du compte.','error');return}
-  const childMode=ageBand==='child';
+  const {data:capabilities,error:capabilityError}=await s.rpc('sinjira_my_account_capabilities');
+  if(capabilityError||!capabilities){setStatus(status,'Impossible de vérifier les capacités du compte.','error');return}
+  const childMode=capabilities.library_mode==='reviewed_11_12';
 
   if(childMode){
     const [projectsResult,documentsResult]=await Promise.all([
