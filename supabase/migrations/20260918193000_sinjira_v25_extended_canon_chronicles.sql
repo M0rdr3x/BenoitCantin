@@ -60,6 +60,7 @@ create table if not exists public.sinjira_story_character_presence(
   certainty text not null default 'confirmed' check(certainty in ('confirmed','approximate','unknown')),
   source_note text,
   created_at timestamptz not null default now(),
+  unique(story_id,character_id),
   check(ends_at is null or starts_at is null or ends_at >= starts_at)
 );
 
