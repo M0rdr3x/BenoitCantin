@@ -28,7 +28,7 @@ select is(public.sinjira_my_account_capabilities()->>'library_mode','full','adul
 select ok((public.sinjira_my_account_capabilities()->>'dating')::boolean,'Rencontres reste disponible à adulte');
 
 insert into public.guardian_signup_invites(guardian_user_id,invite_code,expires_at)
-values('a1000000-0000-4000-8000-000000000001','YOUTH-CAPABILITY01',now()+interval '1 day');
+values('a1000000-0000-4000-8000-000000000001','YOUTH-CAPABI0001',now()+interval '1 day');
 
 insert into auth.users(id,email,raw_user_meta_data)
 values(
@@ -38,7 +38,7 @@ values(
     'birth_date',(current_date-interval '11 years')::date::text,
     'date_of_birth',(current_date-interval '11 years')::date::text,
     'gender','Femme','sex','female','pseudo','Enfant capacités','display_name','Enfant capacités','residence_country','Canada',
-    'guardian_code','YOUTH-CAPABILITY01'
+    'guardian_code','YOUTH-CAPABI0001'
   )
 );
 select is(public.sinjira_age_band('a2000000-0000-4000-8000-000000000011'),'child','compte enfant de test');
