@@ -31,9 +31,9 @@ req('new.participate:=false' in m and 'new.share_free_text:=false' in m,'Contrib
 req('public.sinjira_age_band((selectauth.uid()))<>\'child\'' in m,'Politiques projet/document/playtest sans garde child.')
 req('access_level=\'public\'' in m,'Documents child ne sont pas limités au niveau public.')
 
-req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in doc,'get-document-url ne vérifie pas l âge serveur.')
+req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in d,'get-document-url ne vérifie pas l âge serveur.')
 req("ageband==='child'&&doc.access_level!=='public'" in d,'get-document-url ne bloque pas les documents privés pour child.')
-req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in ai,'Mon IA ne vérifie pas l âge serveur.')
+req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in a,'Mon IA ne vérifie pas l âge serveur.')
 req("ageband==='child'" in a and 'personal_ai_not_available_11_12' in a,'Mon IA n est pas bloqué pour child.')
 
 req('selectplan(8);' in t,'Plan pgTAP frontière child inattendu.')
