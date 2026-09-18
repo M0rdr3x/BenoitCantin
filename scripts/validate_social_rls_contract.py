@@ -79,8 +79,11 @@ for marker in (
     "then'adult'",
     'account_safety_profiles',
     "g.status='verified'",
+    'g.revoked_at is null',
+    "'under11'",
+    "'child'",
+    "'child_pending'",
     "'youth_pending'",
-    "'under12'",
     "'unverified'",
 ):
     require(compact(marker) in age_compact, f'sinjira_age_band() incomplet: {marker}')

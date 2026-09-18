@@ -98,7 +98,16 @@ for phrase in ('confidentialité élevée','efvp','legal holds','21 jours','fonc
 req('paid_sexual_content' in v82.lower() and 'human_trafficking' in v82.lower() and 'dating_profiles_adult_only' in v82.lower(),'Le contrat V24.4.82 de sécurité n’est plus présent.')
 req('select plan(31);' in test,'Plan pgTAP V83 inattendu.')
 req('YOUTH_JURISDICTION_NOT_ENABLED' in test and "'sinjira_content_policy_guard'" in test and "'dating_profiles_adult_only'" in test,'Les tests V83 ne protègent pas les gates jeunesse/V82.')
-req('select plan(20);' in child_test_lower and 'sinjira_minimum_age_11' in child_test_lower and "'child','la veille des 13 ans" in child_test_lower and "'youth','le jour des 13 ans" in child_test_lower and 'guardian_authorization_required_under_14' in child_test_lower,'Le pgTAP V25 enfant supervisé est incomplet.')
+req(
+    'select plan(26);' in child_test_lower
+    and 'sinjira_minimum_age_11' in child_test_lower
+    and "'child','la veille des 13 ans" in child_test_lower
+    and "'youth','le jour des 13 ans" in child_test_lower
+    and 'guardian_authorization_required_under_14' in child_test_lower
+    and 'revoked_at seul suffit à retirer la bande supervisée' in child_test_lower
+    and 'revoked_at seul suffit à retirer la supervision parentale' in child_test_lower,
+    'Le pgTAP V25 enfant supervisé est incomplet.'
+)
 for paid in ('stripe','paypal','openai_api_key','paymentintent','google places api','mapbox token'):
     req(paid not in alltext,f'V83/V25 introduit une intégration payante/interdite: {paid}')
 if errors:
