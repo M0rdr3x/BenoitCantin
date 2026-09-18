@@ -188,7 +188,7 @@ for marker, message in (
     ("anonpeutévalueruniquementsaproprebandeself-onlypourlesrlspubliques", "Le test ne prouve pas l'accès anon borné au wrapper self-only requis par les RLS publiques."),
     ("authenticatednepeutpassonderunerelationparent/enfantarbitraire", "Le test ne prouve pas la confidentialité du helper de supervision."),
     ("revoked_atseulsuffitàretirerlabandesuperviséemêmesistatusestencoreverified", "Le test ne prouve pas le fail-closed sur revoked_at pour la bande âge."),
-    ("revoked_atseulsuffitàretirerl supervisionparentale".replace(" ",""), "Le test ne prouve pas le fail-closed sur revoked_at pour la supervision."),
+    ("revoked_atseulsuffitàretirerlasupervisionparentale", "Le test ne prouve pas le fail-closed sur revoked_at pour la supervision."),
 ):
     req(marker in t, message)
 
