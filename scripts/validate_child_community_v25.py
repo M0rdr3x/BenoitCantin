@@ -186,6 +186,7 @@ req("isjunior=x.snapshot?.source==='junior_community'" in ac and "communautéjun
 req(('page.route(' in browser_test or 'context.route(' in browser_test) and '@supabase/supabase-js@2/+esm' in browser_test,'La preuve navigateur Junior n intercepte pas le client Supabase.')
 req('private-child@example.test' in browser_test and 'child-test-11' in browser_test,'La preuve navigateur ne contient pas les sentinelles de données privées.')
 req('private-child@example.test" not in text' in browser_test and 'child-test-11" not in text' in browser_test,'La preuve navigateur ne vérifie pas l absence de données privées dans le DOM.')
+req('getauthenticatorassurancelevel' in bt,'La preuve navigateur Junior ne simule pas le niveau MFA attendu par requireUser().')
 req('not production_requests' in bt,'La preuve navigateur ne bloque pas les appels vers Supabase production.')
 req('junior_community_create_post' in browser_test and 'junior_community_create_comment' in browser_test,'La preuve navigateur ne couvre pas publication + commentaire.')
 req('sinjira_junior_external_contact_forbidden' in bt,'La preuve navigateur ne couvre pas le blocage des liens externes.')
@@ -205,6 +206,7 @@ if workflow:
     req('supabase db reset' in w and 'supabase test db supabase/tests/child_community_v25.test.sql' in w,'Le workflow Junior ne rejoue pas la base et le pgTAP local.')
     req('python tests/e2e/test_child_community.py' in w,'Le workflow Junior ne lance pas la preuve navigateur isolée.')
     req('mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:' in w,'L image Playwright Junior n est pas épinglée par digest.')
+    req("      - name: Démarrer le site statique local\n        shell: bash\n        run: |\n          set -euo pipefail" in workflow,'Le serveur navigateur Junior doit utiliser bash lorsque pipefail est activé.')
 
 if errors:
     print(f'ECHEC Communauté Junior V25: {len(errors)} problème(s).')

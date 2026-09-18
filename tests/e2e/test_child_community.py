@@ -53,6 +53,7 @@ export function createClient(){
   return {
     auth:{
       getUser:async()=>({data:{user},error:null}),
+      mfa:{getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:'aal1',nextLevel:'aal1'},error:null})},
       signOut:async()=>({error:null})
     },
     rpc:async(name,args={})=>{
