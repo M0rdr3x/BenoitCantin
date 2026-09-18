@@ -112,8 +112,8 @@ def main() -> int:
     require("function postNativeChildAccess(state)" in account, "pont compte→mobile absent")
     require("type:'sinjira:child-access'" in account and "state:normalized" in account,
             "message coarse compte→mobile absent")
-    require("postNativeChildAccess(ageBand==='child'?'child':'nonchild')" in account,
-            "le résultat self-only d'âge n'alimente pas le shell")
+    require("const childAccount=capabilities.child_11_12===true;" in account and "postNativeChildAccess(childAccount?'child':'nonchild')" in account,
+            "les capacités self-only n'alimentent pas le shell natif")
     bridge = account.split("function postNativeChildAccess(state)", 1)[1].split("async function initAgeAccessNavigation", 1)[0].lower()
     for marker in ("birth_date", "date_of_birth", "email", "user.id", "uuid"):
         forbid(bridge, marker, f"donnée personnelle transmise dans le pont natif: {marker}")
