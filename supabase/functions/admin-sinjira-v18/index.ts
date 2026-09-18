@@ -15,7 +15,7 @@ const SAFE_LOG_CODES=new Set([
   'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE',
   'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON','SOURCE_PURGED',
   'SOURCE_PURGE_CONFIRMATION_REQUIRED','SOURCE_PURGE_STORAGE_FAILED',
-  'CANON_CONFIRMATION_REQUIRED','NOTIFICATION_ID_REQUIRED','CENTRAL_CANON_LOCKED'
+  'CANON_CONFIRMATION_REQUIRED','EXTENDED_CANON_CONFIRMATION_REQUIRED','NOTIFICATION_ID_REQUIRED','CENTRAL_CANON_LOCKED'
 ]);
 
 function privateJson(data:unknown,status=200){
@@ -166,6 +166,75 @@ Deno.serve(async(req)=>{
       return privateJson({ok:true,contexts});
     }
 
+    if(a==='list_extended_stories'){
+      const {data,error}=await s.from('sinjira_extended_stories')
+        .select('*,characters(public_name)')
+        .order('updated_at',{ascending:false});
+      if(error)throw error;
+      return privateJson({ok:true,stories:(data||[]).map((x:any)=>({...x,character_name:x.characters?.public_name||''}))});
+    }
+
+    if(a==='save_extended_story'){
+      const story=b.story||{};
+      const storyTypes=['character_chronicle','world_chronicle','quebec_chronicle','archive','fragment','novella'];
+      const anchorScopes=['LIVRES_1_12','ORIGINES_13_14','MULTI_PERIODE','UNASSIGNED'];
+      const canonStatuses=['PROVISOIRE','CANON_ETENDU','A_ARBITRER','NON_CANON'];
+      const workflowStatuses=['draft','author_review','validated','published','archived'];
+      const audiences=['private','members','public'];
+      const storyType=storyTypes.includes(story.story_type)?story.story_type:'character_chronicle';
+      const anchorScope=anchorScopes.includes(story.anchor_scope)?story.anchor_scope:'UNASSIGNED';
+      const canonStatus=canonStatuses.includes(story.canon_status)?story.canon_status:'PROVISOIRE';
+      const status=workflowStatuses.includes(story.status)?story.status:'draft';
+      const audience=audiences.includes(story.audience)?story.audience:'private';
+      if(canonStatus==='CANON_ETENDU'&&story.author_confirmed_extended_canon!==true)throw new Error('EXTENDED_CANON_CONFIRMATION_REQUIRED');
+      const characterId=story.character_id||null;
+      if(storyType==='character_chronicle'&&!characterId)return privateJson({ok:false,error:'Une Chronique de personnage doit être liée à une Conscience.',code:'CHARACTER_REQUIRED'},400);
+      const title=String(story.title||'').trim().slice(0,220);
+      if(!title)return privateJson({ok:false,error:'Titre de Chronique requis.',code:'TITLE_REQUIRED'},400);
+      const startsAt=story.starts_at||null,endsAt=story.ends_at||null;
+      if(startsAt&&endsAt&&new Date(endsAt).getTime()<new Date(startsAt).getTime())return privateJson({ok:false,error:'La fin de la Chronique ne peut pas précéder son début.',code:'INVALID_STORY_RANGE'},400);
+      const payload={
+        story_type:storyType,
+        character_id:characterId,
+        title,
+        slug:String(story.slug||'').trim().slice(0,180)||null,
+        summary:String(story.summary||'').slice(0,12000)||null,
+        content:String(story.content||'').slice(0,1000000)||null,
+        region_name:String(story.region_name||'').trim().slice(0,220)||null,
+        anchor_scope:anchorScope,
+        canon_status:canonStatus,
+        status,
+        starts_at:startsAt,
+        ends_at:endsAt,
+        continuity_data:story.continuity_data&&typeof story.continuity_data==='object'?story.continuity_data:{},
+        audience,
+        visible_to_character_owner:story.visible_to_character_owner!==false,
+        published_at:status==='published'?(story.published_at||new Date().toISOString()):null
+      };
+      let saved:any=null;
+      if(story.id){
+        const {data,error}=await s.from('sinjira_extended_stories').update(payload).eq('id',story.id).select('*').single();
+        if(error)throw error;saved=data;
+      }else{
+        const {data,error}=await s.from('sinjira_extended_stories').insert(payload).select('*').single();
+        if(error)throw error;saved=data;
+      }
+      if(characterId){
+        const {error:presenceError}=await s.from('sinjira_story_character_presence').upsert({
+          story_id:saved.id,
+          character_id:characterId,
+          starts_at:startsAt,
+          ends_at:endsAt,
+          location_name:payload.region_name,
+          certainty:'confirmed',
+          source_note:`Présence dérivée de la Chronique : ${title}`
+        },{onConflict:'story_id,character_id'});
+        if(presenceError)throw presenceError;
+      }
+      await audit(s,user.id,story.id?'update_extended_story':'create_extended_story','sinjira_extended_story',saved.id,title,{story_type:storyType,canon_status:canonStatus,anchor_scope:anchorScope});
+      return privateJson({ok:true,story:saved});
+    }
+
     if(a==='save_character'){
       const c=b.character||{};
       const canonStatus=['PROVISOIRE','CANON','SECRET_AUTEUR','A_ARBITRER'].includes(c.canon_status)?c.canon_status:'PROVISOIRE';
@@ -192,6 +261,7 @@ Deno.serve(async(req)=>{
     if(e?.message==='SOURCE_PURGED')return privateJson({ok:false,error:'Les données sources ont déjà été supprimées.',code:'SOURCE_PURGED'},409);
     if(e?.message==='SOURCE_PURGE_STORAGE_FAILED')return privateJson({ok:false,error:'La suppression du fichier source a échoué; les références ont été conservées.',code:'SOURCE_PURGE_STORAGE_FAILED'},503);
     if(e?.message==='CANON_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmez explicitement que ce personnage est établi par un manuscrit officiel finalisé avant de le passer CANON.'},409);
+    if(e?.message==='EXTENDED_CANON_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmez explicitement la validation auteur avant de passer cette histoire en CANON ÉTENDU.',code:'EXTENDED_CANON_CONFIRMATION_REQUIRED'},409);
     if(e?.message==='NOTIFICATION_ID_REQUIRED')return privateJson({ok:false,error:'Identifiant de notification requis.'},400);
     if(e?.message==='CENTRAL_CANON_LOCKED')return privateJson({ok:false,error:'Les 14 romans principaux constituent le Canon central verrouillé. Une attribution directe à un roman central exige une confirmation auteur explicite; utilisez normalement une Chronique du Canon étendu pour les personnages du Registre.',code:'CENTRAL_CANON_LOCKED'},409);
     return privateJson({ok:false,error:'Erreur administration V18.',code:'ADMIN_V18_FAILED'},500);
