@@ -92,15 +92,19 @@ Deno.serve(async(req)=>{
     }
     const {data:doc,error}=await service
       .from('documents')
-      .select('project_id,status,access_level,external_url,storage_bucket,storage_path,projects(id,visibility,status)')
+      .select('project_id,status,access_level,child_access_status,external_url,storage_bucket,storage_path,projects(id,visibility,status,child_access_status)')
       .eq('id',document_id)
       .maybeSingle();
     if(error||!doc||doc.status!=='approved'||doc.projects?.status!=='active'){
       return privateJson({ok:false,error:'Document introuvable ou non approuvé.'},404);
     }
 
-    if(ageBand==='child'&&(doc.access_level!=='public'||doc.projects?.visibility!=='public')){
-      return privateJson({ok:false,error:'Ce document n’est pas encore disponible pour les comptes de 11–12 ans.'},403);
+    if(ageBand==='child'&&(
+      doc.child_access_status!=='approved_11_12'
+      || doc.projects?.child_access_status!=='approved_11_12'
+      || !['public','account'].includes(String(doc.projects?.visibility||''))
+    )){
+      return privateJson({ok:false,error:'Ce document n’est pas encore approuvé pour les comptes de 11–12 ans.'},403);
     }
 
     let userRank=0;
