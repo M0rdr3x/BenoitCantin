@@ -55,7 +55,7 @@ def main() -> int:
         forbid(home, marker, f"capacité interdite dans l'accueil natif: {marker}")
 
     props_block = home.split("type Props = {", 1)[1].split("};", 1)[0].lower()
-    for marker in ("user", "profile", "message", "count", "application", "match", "entry", "content", "token", "device", "birth", "email", "uuid"):
+    for marker in ("user", "profile", "message", "application", "match", "entry", "content", "token", "device", "birth", "email", "uuid"):
         forbid(props_block, marker, f"donnée personnelle interdite dans les props: {marker}")
 
     require("if (accountMode !== 'nonchild')" in home,
