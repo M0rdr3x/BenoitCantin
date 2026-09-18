@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(16);
+select plan(17);
 
 select ok(to_regprocedure('public.sinjira_my_account_capabilities()') is not null,'RPC self-only des capacités existe');
 select ok(to_regprocedure('public.sinjira_my_account_capabilities(uuid)') is null,'aucun RPC capacités avec UUID arbitraire');
