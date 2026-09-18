@@ -8,7 +8,7 @@ ACCOUNT=ROOT/'assets/js/sinjira-account.js'
 DOC=ROOT/'docs/SINJIRA_CHILD_ACCESS_MATRIX_V25.md'
 
 ALLOWED={
-    'index.html','blocages.html','communaute-junior.html','confidentialite-joueur.html',
+    'index.html','bibliotheque.html','documents.html','projet.html','blocages.html','communaute-junior.html','confidentialite-joueur.html',
     'histoire-de-vie.html','moderation.html','mon-personnage.html','mes-personnages.html',
     'notifications.html','parametres.html','profil.html','registre-personnel.html',
     'regles-communaute-junior.html','relations.html','securite.html','vie-privee.html',
@@ -22,10 +22,10 @@ REDIRECTS={
     'regles-communaute.html':'regles-communaute-junior.html',
 }
 RESTRICTED={
-    'bibliotheque.html','contributions.html','documents.html','emploi.html','jetons.html',
+    'contributions.html','emploi.html','jetons.html',
     'licences.html','marche.html','mes-achats.html','mes-commentaires.html','mes-lectures.html',
     'mes-parties.html','messages-personnage.html','messages-reels.html','messages.html',
-    'mon-ia.html','monde-parallele.html','playtests.html','projet.html','rencontres.html',
+    'mon-ia.html','monde-parallele.html','playtests.html','rencontres.html',
     'reseau-personnage.html','signaler-deces.html',
 }
 
