@@ -139,7 +139,7 @@ Cette frontière évite de créer deux implémentations de sécurité qui pourra
 La racine `/app/` est maintenant représentée par un accueil React Native de navigation uniquement. Il devient l’écran initial du conteneur mobile sans créer une seconde copie du compte.
 
 - aucune donnée personnelle n’est passée au composant : aucun message, profil, compteur, candidature, rencontre, confidence, date de naissance, courriel, UUID ou contenu privé;
-- le shell reçoit seulement un état d’accès grossier et éphémère — `unknown`, `child` ou `nonchild` — envoyé par une page `/compte/` authentifiée; cet état n’est pas persisté comme profil local;
+- le shell reçoit seulement un état d’accès grossier et éphémère — `unknown`, `child` ou `nonchild` — dérivé de `sinjira_my_account_capabilities()` par une page `/compte/` authentifiée; cet état n’est pas persisté comme profil local;
 - tant que cet état est `unknown`, l’accueil est fail-closed : aucun hub natif sensible n’est proposé et la première ouverture passe par la surface Web du compte;
 - pour `child`, l’accueil natif n’affiche que Communauté Junior, Bibliothèque Junior, Profil, Relations/famille et Ma sécurité; Messages, Rencontres, Emploi, Monde parallèle, Mon IA, commerce et playtests restent absents;
 - seuls les comptes vérifiés `nonchild` retrouvent les hubs natifs généraux existants;
