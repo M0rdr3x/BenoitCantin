@@ -78,6 +78,40 @@ async function initAdminNavigation(){
   document.querySelectorAll('[data-admin-nav],[data-admin-entry]').forEach(node=>{node.hidden=false});
 }
 
+const CHILD_11_12_ALLOWED_ROUTES=new Set([
+  'index.html',
+  'blocages.html',
+  'communaute-junior.html',
+  'confidentialite-joueur.html',
+  'histoire-de-vie.html',
+  'moderation.html',
+  'mon-personnage.html',
+  'mes-personnages.html',
+  'notifications.html',
+  'parametres.html',
+  'profil.html',
+  'registre-personnel.html',
+  'regles-communaute-junior.html',
+  'relations.html',
+  'securite.html',
+  'vie-privee.html',
+  'connexion.html',
+  'inscription.html',
+  'mot-de-passe-oublie.html',
+  'reinitialiser-mot-de-passe.html',
+  'mfa.html'
+]);
+
+const CHILD_11_12_ROUTE_REDIRECTS=new Map([
+  ['communaute.html','/compte/communaute-junior.html'],
+  ['regles-communaute.html','/compte/regles-communaute-junior.html']
+]);
+
+function accountRouteLeaf(pathname=location.pathname){
+  if(/\/compte\/?$/.test(pathname))return 'index.html';
+  return pathname.split('/').filter(Boolean).pop()||'index.html';
+}
+
 async function initAgeAccessNavigation(){
   if(!isSinjiraBackendConfigured()) return;
   const {data:{user},error:userError}=await getSupabase().auth.getUser();
@@ -85,29 +119,30 @@ async function initAgeAccessNavigation(){
   const {data:ageBand,error}=await getSupabase().rpc('sinjira_my_age_band');
   if(error||ageBand!=='child') return;
 
-  document.querySelectorAll('a[href$="communaute.html"]').forEach(link=>{
-    link.href='communaute-junior.html';
-    link.textContent='Communauté Junior';
-  });
-
-  const hiddenRoutes=new Set([
-    'messages.html',
-    'rencontres.html',
-    'reseau-personnage.html',
-    'marche.html',
-    'jetons.html',
-    'mes-achats.html',
-    'contributions.html'
-  ]);
-  const currentLeaf=location.pathname.split('/').filter(Boolean).pop()||'index.html';
-  if(hiddenRoutes.has(currentLeaf)){
-    location.replace('/compte/communaute-junior.html?from=restricted');
+  const currentLeaf=accountRouteLeaf();
+  const directRedirect=CHILD_11_12_ROUTE_REDIRECTS.get(currentLeaf);
+  if(directRedirect){
+    location.replace(directRedirect);
     return;
   }
+  if(location.pathname.startsWith('/compte/')&&!CHILD_11_12_ALLOWED_ROUTES.has(currentLeaf)){
+    const next=new URL('/compte/communaute-junior.html',location.origin);
+    next.searchParams.set('from','restricted');
+    next.searchParams.set('module',currentLeaf);
+    location.replace(next.pathname+next.search);
+    return;
+  }
+
   document.querySelectorAll('.account-nav a').forEach(link=>{
     const href=(link.getAttribute('href')||'').split('?')[0].split('#')[0];
-    const leaf=href.split('/').filter(Boolean).pop()||href;
-    if(hiddenRoutes.has(leaf))link.hidden=true;
+    const leaf=accountRouteLeaf(href);
+    const redirect=CHILD_11_12_ROUTE_REDIRECTS.get(leaf);
+    if(redirect){
+      link.href=redirect;
+      link.textContent=leaf==='regles-communaute.html'?'Règles Junior':'Communauté Junior';
+      return;
+    }
+    if(!CHILD_11_12_ALLOWED_ROUTES.has(leaf))link.hidden=true;
   });
 
   document.querySelectorAll('[data-contribution-status]').forEach(node=>{
