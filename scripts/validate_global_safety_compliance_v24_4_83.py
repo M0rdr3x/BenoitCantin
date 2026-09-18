@@ -97,7 +97,7 @@ for phrase in ('confidentialité élevée','efvp','legal holds','21 jours','fonc
     req(phrase in docs.lower(),f'Gouvernance V83 marqueur absent: {phrase}')
 req('paid_sexual_content' in v82.lower() and 'human_trafficking' in v82.lower() and 'dating_profiles_adult_only' in v82.lower(),'Le contrat V24.4.82 de sécurité n’est plus présent.')
 req('select plan(31);' in test,'Plan pgTAP V83 inattendu.')
-req('YOUTH_JURISDICTION_NOT_ENABLED' in test and "'sinjira_content_policy_guard'" in test and "'dating_profiles_adult_only'" in test,'Les tests V83 ne protègent pas les gates jeunesse/V82.')
+req('SINJIRA_MINIMUM_AGE_11' in test and 'YOUTH_JURISDICTION_NOT_ENABLED' in test and "'sinjira_content_policy_guard'" in test and "'dating_profiles_adult_only'" in test,'Les tests V83/V25 ne protègent pas le minimum 11 ans, les gates jeunesse ou V82.')
 req(
     'select plan(26);' in child_test_lower
     and 'sinjira_minimum_age_11' in child_test_lower
