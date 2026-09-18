@@ -86,7 +86,13 @@ using(
   and (
     (select auth.uid()) is null
     or public.sinjira_age_band((select auth.uid()))<>'child'
-    or access_level='public'
+    or (
+      access_level='public'
+      and exists(
+        select 1 from public.projects p
+        where p.id=project_id and p.visibility='public' and p.status<>'draft'
+      )
+    )
   )
 );
 
