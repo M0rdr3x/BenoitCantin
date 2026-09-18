@@ -130,8 +130,9 @@ async function initAgeAccessNavigation(){
   if(userError||!user) return;
   const {data:capabilities,error}=await getSupabase().rpc('sinjira_my_account_capabilities');
   if(error||!capabilities){postNativeChildAccess('unknown');return}
-  const childAccount=capabilities.child_11_12===true;
-  postNativeChildAccess(childAccount?'child':'nonchild');
+  const accountMode=String(capabilities.account_mode||'restricted');
+  const childAccount=accountMode==='child'&&capabilities.child_11_12===true;
+  postNativeChildAccess(childAccount?'child':accountMode==='standard'?'nonchild':'unknown');
   if(!childAccount) return;
 
   const currentLeaf=accountRouteLeaf();

@@ -2,12 +2,18 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(17);
+select plan(21);
 
 select ok(to_regprocedure('public.sinjira_my_account_capabilities()') is not null,'RPC self-only des capacités existe');
 select ok(to_regprocedure('public.sinjira_my_account_capabilities(uuid)') is null,'aucun RPC capacités avec UUID arbitraire');
 select ok(not has_function_privilege('anon','public.sinjira_my_account_capabilities()','EXECUTE'),'anon ne peut pas sonder les capacités');
 select ok(has_function_privilege('authenticated','public.sinjira_my_account_capabilities()','EXECUTE'),'authenticated peut lire ses propres capacités');
+
+select set_config('request.jwt.claim.sub','a9000000-0000-4000-8000-000000000099',true);
+select is(public.sinjira_my_account_capabilities()->>'account_mode','restricted','un compte sans profil de sécurité vérifié reste restricted');
+select ok(not (public.sinjira_my_account_capabilities()->>'native_general_hubs')::boolean,'restricted ne peut pas ouvrir les hubs natifs généraux');
+select is(public.sinjira_my_account_capabilities()->>'library_mode','none','restricted ne reçoit aucune bibliothèque');
+select ok(not (public.sinjira_my_account_capabilities()->>'general_community')::boolean,'restricted ne peut pas ouvrir la communauté générale');
 
 insert into auth.users(id,email,raw_user_meta_data)
 values(

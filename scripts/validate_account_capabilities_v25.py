@@ -37,14 +37,19 @@ for forbidden in ('date_of_birth','birth_date','email','display_name','pseudo','
     req(forbidden not in m,f'Donnée personnelle interdite renvoyée/consultée dans le contrat capacités: {forbidden}')
 
 req("rpc('sinjira_my_account_capabilities')" in a,'Navigation compte n utilise pas le RPC capacités.')
+req("constaccountmode=string(capabilities.account_mode||'restricted')" in a and "accountmode==='standard'?'nonchild':'unknown'" in a,'Le pont natif ne traite pas restricted comme fail-closed.')
 req("capabilities.child_11_12===true" in a,'Navigation compte ne lit pas child_11_12.')
 req("rpc('sinjira_my_account_capabilities')" in l and "capabilities.library_mode==='reviewed_11_12'" in l,'Bibliothèque V24.4.61 non pilotée par library_mode.')
 req("rpc('sinjira_my_account_capabilities')" in lc and "capabilities.library_mode==='reviewed_11_12'" in lc,'Bibliothèque cœur non pilotée par library_mode.')
 req("rpc('sinjira_my_account_capabilities')" in co and 'capabilities.general_community!==true' in co,'Communauté générale non pilotée par les capacités.')
 
-req('selectplan(17);' in t,'Plan pgTAP capacités inattendu.')
+req('selectplan(21);' in t,'Plan pgTAP capacités inattendu.')
 for marker in (
     'aucunrpccapacitésavecuuidarbitraire',
+    'uncomptesansprofildesécuritévérifiéresterestricted',
+    'restrictednepeutpasouvrirleshubsnatifsgénéraux',
+    'restrictednereçoitaucunebibliothèque',
+    'restrictednepeutpasouvrirlacommunautégénérale',
     'hubsnatifs générauxfermésà11–12'.replace(' ',''),
     'bibliothèquebornéeaucontenurevu',
     'communautégénéraleferméeà11–12',
