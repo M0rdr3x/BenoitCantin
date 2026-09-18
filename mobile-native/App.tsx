@@ -584,8 +584,8 @@ export default function App() {
       internalIntent.searchParams.get('surface') !== 'web' &&
       isNativeModulePath(internalIntent.pathname)
     ) {
-      openNativeModule(internalIntent.pathname, tab);
-      return;
+      const openedNative = openNativeModule(internalIntent.pathname, tab);
+      if (openedNative) return;
     }
 
     if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
