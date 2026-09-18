@@ -9,7 +9,7 @@ select ok(exists(select 1 from pg_trigger where tgname='sinjira_child_sensitive_
 select ok(exists(select 1 from pg_trigger where tgname='sinjira_child_sensitive_write_guard' and tgrelid='public.market_listings'::regclass and not tgisinternal),'Marché porte la garde child');
 select ok(exists(select 1 from pg_trigger where tgname='sinjira_child_sensitive_write_guard' and tgrelid='public.access_requests'::regclass and not tgisinternal),'demandes testeur portent la garde child');
 select ok(exists(select 1 from pg_trigger where tgname='sinjira_child_sensitive_write_guard' and tgrelid='public.product_preorders'::regclass and not tgisinternal),'précommandes portent la garde child');
-select ok((select qual ilike '%sinjira_age_band%' from pg_policies where schemaname='public' and tablename='documents' and policyname='approved documents visible by access'),'documents privés tiennent compte de la bande âge');
+select ok((select qual ilike '%sinjira_my_age_band%' from pg_policies where schemaname='public' and tablename='documents' and policyname='approved documents visible by access'),'documents privés tiennent compte de la bande âge');
 select ok((select with_check ilike '%sinjira_age_band%' from pg_policies where schemaname='public' and tablename='playtest_participants' and policyname='participants own apply'),'playtests refusent child côté RLS');
 select is(
   (select count(*) from pg_policies where schemaname='public' and tablename='playtests' and cmd='SELECT'),
@@ -17,7 +17,7 @@ select is(
   'une seule politique SELECT Playtests reste active pour éviter un OR permissif'
 );
 select ok(
-  (select qual ilike '%sinjira_age_band%' from pg_policies where schemaname='public' and tablename='playtests' and policyname='playtests_read_authorized'),
+  (select qual ilike '%sinjira_my_age_band%' from pg_policies where schemaname='public' and tablename='playtests' and policyname='playtests_read_authorized'),
   'la politique SELECT Playtests canonique exclut explicitement child'
 );
 select is(
@@ -26,7 +26,7 @@ select is(
   'une seule politique SELECT participations Playtests reste active'
 );
 select ok(
-  (select qual ilike '%sinjira_age_band%' from pg_policies where schemaname='public' and tablename='playtest_participants' and policyname='playtest_participants_read_authorized'),
+  (select qual ilike '%sinjira_my_age_band%' from pg_policies where schemaname='public' and tablename='playtest_participants' and policyname='playtest_participants_read_authorized'),
   'la lecture des participations Playtests exclut explicitement child'
 );
 select * from finish();

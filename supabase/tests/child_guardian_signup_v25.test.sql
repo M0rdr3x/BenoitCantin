@@ -2,12 +2,16 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(20);
+select plan(24);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
 select ok(to_regprocedure('public.sinjira_age_band(uuid)') is not null,'classification d âge existe');
 select ok(to_regprocedure('public.sinjira_parent_can_supervise(uuid,uuid)') is not null,'contrôle de supervision existe');
+select ok(not has_function_privilege('authenticated','public.sinjira_age_band(uuid)','EXECUTE'),'authenticated ne peut pas sonder la bande âge d un UUID arbitraire');
+select ok(has_function_privilege('authenticated','public.sinjira_my_age_band()','EXECUTE'),'authenticated peut lire uniquement sa propre bande âge');
+select ok(not has_function_privilege('anon','public.sinjira_my_age_band()','EXECUTE'),'anon ne peut pas sonder la bande âge self-only');
+select ok(not has_function_privilege('authenticated','public.sinjira_parent_can_supervise(uuid,uuid)','EXECUTE'),'authenticated ne peut pas sonder une relation parent/enfant arbitraire');
 
 insert into auth.users(id,email,raw_user_meta_data)
 values(
