@@ -33,11 +33,11 @@ for table in ('access_requests','playtest_participants','parallel_responses','pa
     req(f"'{table}'" in m,f'Table sensible non couverte: {table}')
 req('createorreplacefunctionprivate.sinjira_child_research_consent_guard()' in m,'Garde contribution child absente.')
 req('new.participate:=false' in m and 'new.share_free_text:=false' in m,'Contribution child non forcée à OFF.')
-req('public.sinjira_age_band((selectauth.uid()))<>\'child\'' in m,'Politiques projet/document/playtest sans garde child.')
+req("public.sinjira_my_age_band()<>'child'" in m,'Politiques projet/document/playtest sans garde child self-only.')
 req('droppolicyifexistsplaytests_read_authorizedonpublic.playtests' in m and 'createpolicyplaytests_read_authorizedonpublic.playtestsforselecttoauthenticated' in m,'L ancienne politique SELECT Playtests n est pas remplacée canoniquement.')
 req('droppolicyifexistsplaytest_participants_read_authorizedonpublic.playtest_participants' in m and 'createpolicyplaytest_participants_read_authorizedonpublic.playtest_participantsforselecttoauthenticated' in m,'La lecture des participations Playtests ne remplace pas la politique héritée.')
 req('droppolicyifexists"participantsownselect"onpublic.playtest_participants' in m,'La politique historique "participants own select" n est pas retirée.')
-req("public.sinjira_age_band((selectauth.uid()))<>'child'and(public.is_sinjira_admin" in m,'La politique Playtests canonique ne ferme pas child avant les exceptions admin/historique.')
+req("public.sinjira_my_age_band()<>'child'and(public.is_sinjira_admin" in m,'La politique Playtests canonique ne ferme pas child avant les exceptions admin/historique.')
 req("access_level='public'" in m and "p.visibility='public'" in m,'Documents child ne sont pas limités aux documents publics de projets publics.')
 
 req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in d,'get-document-url ne vérifie pas l âge serveur.')
