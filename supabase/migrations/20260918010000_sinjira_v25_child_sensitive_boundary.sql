@@ -13,6 +13,15 @@ begin
   if uid is not null and public.sinjira_age_band(uid)='child' then
     raise exception 'CHILD_ACTION_NOT_AVAILABLE_11_12' using errcode='42501';
   end if;
+
+  -- Un adulte/admin ne peut pas créer ou maintenir une participation Playtest
+  -- ciblant un compte 11–12. DELETE reste permis pour nettoyer l historique.
+  if tg_table_name='playtest_participants' and tg_op<>'DELETE' then
+    if public.sinjira_age_band(new.user_id)='child' then
+      raise exception 'CHILD_TARGET_NOT_AVAILABLE_11_12' using errcode='42501';
+    end if;
+  end if;
+
   if tg_op='DELETE' then return old; end if;
   return new;
 end;

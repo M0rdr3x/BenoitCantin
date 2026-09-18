@@ -2,9 +2,14 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(12);
+select plan(13);
 select ok(to_regprocedure('private.sinjira_child_sensitive_write_guard()') is not null,'garde serveur child des mutations sensibles existe');
 select ok(to_regprocedure('private.sinjira_child_research_consent_guard()') is not null,'garde consentement recherche child existe');
+select ok(
+  pg_get_functiondef('private.sinjira_child_sensitive_write_guard()'::regprocedure) ilike '%CHILD_TARGET_NOT_AVAILABLE_11_12%'
+  and pg_get_functiondef('private.sinjira_child_sensitive_write_guard()'::regprocedure) ilike '%playtest_participants%',
+  'un adulte/admin ne peut pas cibler un compte child dans une participation Playtest'
+);
 select ok(exists(select 1 from pg_trigger where tgname='sinjira_child_sensitive_write_guard' and tgrelid='public.employment_profiles'::regclass and not tgisinternal),'Emploi porte la garde child');
 select ok(exists(select 1 from pg_trigger where tgname='sinjira_child_sensitive_write_guard' and tgrelid='public.market_listings'::regclass and not tgisinternal),'Marché porte la garde child');
 select ok(exists(select 1 from pg_trigger where tgname='sinjira_child_sensitive_write_guard' and tgrelid='public.access_requests'::regclass and not tgisinternal),'demandes testeur portent la garde child');
