@@ -47,6 +47,40 @@ const PERSONAL_AI_PATH = '/compte/mon-ia.html';
 const ACCOUNT_HOME_PATH = '/compte/index.html';
 const VAULT_LOCAL_GATE_MS = 90_000;
 
+const CHILD_ACCOUNT_REDIRECTS = new Map<string, string>([
+  ['/compte/communaute.html', '/compte/communaute-junior.html'],
+  ['/compte/regles-communaute.html', '/compte/regles-communaute-junior.html'],
+]);
+
+const CHILD_RESTRICTED_ACCOUNT_PATHS = new Set([
+  '/compte/messages.html',
+  '/compte/messages-reels.html',
+  '/compte/messages-personnage.html',
+  '/compte/rencontres.html',
+  '/compte/reseau-personnage.html',
+  '/compte/mes-commentaires.html',
+  '/compte/marche.html',
+  '/compte/jetons.html',
+  '/compte/licences.html',
+  '/compte/mes-achats.html',
+  '/compte/contributions.html',
+  '/compte/emploi.html',
+  '/compte/playtests.html',
+  '/compte/mes-lectures.html',
+  '/compte/mes-parties.html',
+  '/compte/mon-ia.html',
+  '/compte/monde-parallele.html',
+  '/compte/signaler-deces.html',
+]);
+
+function childAccountRedirect(pathname: string) {
+  const mapped = CHILD_ACCOUNT_REDIRECTS.get(pathname);
+  if (mapped) return mapped;
+  if (!CHILD_RESTRICTED_ACCOUNT_PATHS.has(pathname)) return null;
+  const leaf = pathname.split('/').filter(Boolean).pop() || 'module';
+  return `/compte/communaute-junior.html?from=restricted&module=${encodeURIComponent(leaf)}`;
+}
+
 function configuredWebOrigin() {
   const raw = String(Constants.expoConfig?.extra?.webOrigin || DEFAULT_ORIGIN).replace(/\/+$/, '');
   try {
@@ -527,6 +561,14 @@ export default function App() {
       if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)) internalIntent = parsed;
     } catch {}
 
+    if (internalIntent && childAccess === 'child') {
+      const safeRedirect = childAccountRedirect(internalIntent.pathname);
+      if (safeRedirect) {
+        await navigateToUrl(`${ORIGIN}${safeRedirect}`, 'junior');
+        return;
+      }
+    }
+
     if (internalIntent && !internalIntent.search && !internalIntent.hash && internalIntent.pathname === '/compte/securite.html') {
       setNativeModulePath(null);
       setNativeHomeOpen(false);
@@ -725,6 +767,13 @@ export default function App() {
     }
 
     if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)) {
+      if (childAccess === 'child') {
+        const safeRedirect = childAccountRedirect(parsed.pathname);
+        if (safeRedirect) {
+          void navigateToUrl(`${ORIGIN}${safeRedirect}`, 'junior');
+          return false;
+        }
+      }
       if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
         void navigate(VAULT_PATH);
         return false;
