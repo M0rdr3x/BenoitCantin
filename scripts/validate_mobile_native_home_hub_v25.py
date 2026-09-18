@@ -94,6 +94,20 @@ def main() -> int:
     require("!source.pathname.startsWith('/compte/')" in app, "message accepté hors /compte/")
     require("parsed.pathname === '/compte/connexion.html' || parsed.pathname === '/compte/inscription.html'" in app,
             "connexion/inscription ne réinitialisent pas l'état en inconnu")
+    require("const CHILD_ACCOUNT_REDIRECTS = new Map<string, string>([" in app,
+            "redirections Junior natives absentes")
+    require("const CHILD_RESTRICTED_ACCOUNT_PATHS = new Set([" in app,
+            "liste native des routes child restreintes absente")
+    for path in (
+        "/compte/messages.html", "/compte/rencontres.html", "/compte/emploi.html",
+        "/compte/playtests.html", "/compte/mon-ia.html", "/compte/monde-parallele.html",
+        "/compte/mes-achats.html", "/compte/licences.html",
+    ):
+        require(path in app, f"route restreinte child absente du shell natif: {path}")
+    require("safeRedirect" in app and "'junior'" in app and "await navigateToUrl" in app,
+            "les deep links child connus ne sont pas redirigés avant chargement")
+    require("const safeRedirect = childAccountRedirect(parsed.pathname);" in app,
+            "les liens Web child ne sont pas filtrés par shouldStart")
 
     require("function postNativeChildAccess(state)" in account, "pont compte→mobile absent")
     require("type:'sinjira:child-access'" in account and "state:normalized" in account,
