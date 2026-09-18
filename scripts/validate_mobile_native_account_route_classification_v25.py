@@ -150,7 +150,7 @@ def main() -> int:
     for route in sorted(classified):
         require(route in doc, f"route absente de la documentation de classification: {route}")
     for marker in (
-        "42 pages html",
+        "44 pages html",
         "31 routes de sas",
         "accueil web de repli",
         "sécurité dédiée hors routeur",
