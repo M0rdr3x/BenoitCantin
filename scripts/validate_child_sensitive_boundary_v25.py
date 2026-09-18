@@ -37,7 +37,7 @@ req('public.sinjira_age_band((selectauth.uid()))<>\'child\'' in m,'Politiques pr
 req("access_level='public'" in m and "p.visibility='public'" in m,'Documents child ne sont pas limités aux documents publics de projets publics.')
 
 req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in d,'get-document-url ne vérifie pas l âge serveur.')
-req("ageband==='child'&&(doc.access_level!=='public'||doc.projects?.visibility!=='public')" in d,'get-document-url ne bloque pas les documents/projets privés pour child.')
+req("ageband==='child'" in d and "doc.child_access_status!=='approved_11_12'" in d and "doc.projects?.child_access_status!=='approved_11_12'" in d,'get-document-url ne revérifie pas le classement 11–12 document + projet.')
 req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in a,'Mon IA ne vérifie pas l âge serveur.')
 req("ageband==='child'" in a and 'personal_ai_not_available_11_12' in a,'Mon IA n est pas bloqué pour child.')
 req("ageband==='child'" in l and 'child_action_not_available_11_12' in l,'L activation de licence Edge n est pas refusée à 11–12 ans.')
