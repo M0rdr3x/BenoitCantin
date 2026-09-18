@@ -43,7 +43,7 @@ req("rpc('sinjira_my_account_capabilities')" in l and "capabilities.library_mode
 req("rpc('sinjira_my_account_capabilities')" in lc and "capabilities.library_mode==='reviewed_11_12'" in lc,'Bibliothèque cœur non pilotée par library_mode.')
 req("rpc('sinjira_my_account_capabilities')" in co and 'capabilities.general_community!==true' in co,'Communauté générale non pilotée par les capacités.')
 
-req('selectplan(21);' in t,'Plan pgTAP capacités inattendu.')
+req('selectplan(25);' in t,'Plan pgTAP capacités inattendu.')
 for marker in (
     'aucunrpccapacitésavecuuidarbitraire',
     'uncomptesansprofildesécuritévérifiéresterestricted',
@@ -55,6 +55,10 @@ for marker in (
     'communautégénéraleferméeà11–12',
     'rencontresferméeà11–12',
     'communautéjunioréligibleà11–12',
+    'aprèsrévocationparentaleun11–12devientchild_pending',
+    'child_pendingdevientimmédiatementrestricted',
+    'child_pendingperdimmédiatementlabibliothèquejunior',
+    'child_pendingperdimmédiatementléligibilitécommunautéjunior',
 ):
     req(marker in t,f'Preuve pgTAP capacités absente: {marker}')
 

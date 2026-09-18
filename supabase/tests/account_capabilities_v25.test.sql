@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(21);
+select plan(25);
 
 select ok(to_regprocedure('public.sinjira_my_account_capabilities()') is not null,'RPC self-only des capacités existe');
 select ok(to_regprocedure('public.sinjira_my_account_capabilities(uuid)') is null,'aucun RPC capacités avec UUID arbitraire');
@@ -57,6 +57,16 @@ select is(public.sinjira_my_account_capabilities()->>'library_mode','reviewed_11
 select ok(not (public.sinjira_my_account_capabilities()->>'general_community')::boolean,'communauté générale fermée à 11–12');
 select ok(not (public.sinjira_my_account_capabilities()->>'dating')::boolean,'Rencontres fermée à 11–12');
 select ok((public.sinjira_my_account_capabilities()->>'junior_community_eligible')::boolean,'Communauté Junior éligible à 11–12');
+
+update public.guardian_links
+set status='revoked',revoked_at=now()
+where minor_user_id='a2000000-0000-4000-8000-000000000011'
+  and guardian_user_id='a1000000-0000-4000-8000-000000000001';
+
+select is(public.sinjira_age_band('a2000000-0000-4000-8000-000000000011'),'child_pending','après révocation parentale un 11–12 devient child_pending');
+select is(public.sinjira_my_account_capabilities()->>'account_mode','restricted','child_pending devient immédiatement restricted');
+select is(public.sinjira_my_account_capabilities()->>'library_mode','none','child_pending perd immédiatement la Bibliothèque Junior');
+select ok(not (public.sinjira_my_account_capabilities()->>'junior_community_eligible')::boolean,'child_pending perd immédiatement l éligibilité Communauté Junior');
 
 select * from finish();
 rollback;
