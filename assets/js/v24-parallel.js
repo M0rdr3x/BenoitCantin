@@ -1,6 +1,6 @@
 import {getSupabase,requireUser,setStatus,escapeHtml,formatDate} from './sinjira-supabase.js';
 
-const UI_VERSION='24.4.88';
+const UI_VERSION='25.1.0';
 const missionBox=document.querySelector('[data-parallel-mission]');
 const stateBox=document.querySelector('[data-parallel-state]');
 const historyBox=document.querySelector('[data-parallel-history]');
