@@ -1,10 +1,10 @@
 import {getSupabase,requireUser,escapeHtml,formatDate,isSinjiraOwner} from './sinjira-supabase.js';
 
-const UI_VERSION='24.4.85';
+const UI_VERSION='25.1.0';
 const OWNER_REPAIR_CONTRACT='24.4.20';
 const box=document.querySelector('[data-my-character]');
 const status=document.querySelector('[data-character-status]');
-const labels={submitted:'Questionnaire reçu',ai_draft:'Brouillon IA',author_review:'En préparation',approved:'Approuvé',assigned:'Roman attribué',future:'Futur roman',published:'Publié',refused:'Refusé',archived:'Archivé'};
+const labels={submitted:'Questionnaire reçu',ai_draft:'Brouillon IA',author_review:'En préparation',approved:'Approuvé',assigned:'Ancrage attribué',future:'Histoire planifiée',published:'Publié',refused:'Refusé',archived:'Archivé'};
 const canonLabels={PROVISOIRE:'Provisoire',CANON:'Canon',SECRET_AUTEUR:'Secret auteur',A_ARBITRER:'À arbitrer'};
 const list=v=>Array.isArray(v)?v:[];
 const clean=v=>String(v??'').trim();
@@ -82,7 +82,35 @@ function renderPsychology(bible){
   return `<section class="character-psychology" data-character-psychology><h2>Portrait du personnage</h2><p class="v24-field-help">Cette synthèse vient uniquement de la bible narrative validée du personnage. La fiche humaine source du Registre reste privée.</p><div class="character-bible">${cards.join('')}</div></section>`;
 }
 
-function renderCharacter(ch,submission=null){
+function renderChronicles(chronicles){
+  const rows=list(chronicles);
+  if(!rows.length)return `<section class="character-psychology"><h2>Ma Chronique officielle</h2><p class="v24-field-help">Aucune Chronique du Canon étendu n’est encore visible pour ce personnage. Lorsqu’une histoire sera préparée et rendue visible par Benoit Cantin, elle apparaîtra ici séparément du Monde parallèle.</p></section>`;
+  const typeLabels={character_chronicle:'Chronique de personnage',world_chronicle:'Chronique du Monde',quebec_chronicle:'Chronique de Québec',archive:'Archive SINJIRA™',fragment:'Fragment',novella:'Novella'};
+  const canonLabelsExtended={PROVISOIRE:'Provisoire',CANON_ETENDU:'Canon étendu',A_ARBITRER:'À arbitrer',NON_CANON:'Non canon'};
+  return `<section class="character-psychology"><h2>Ma Chronique officielle</h2><p class="v24-field-help">Ces récits sont ancrés dans les 14 romans principaux et restent distincts du rôle-play du Monde parallèle.</p><div class="character-bible">${rows.map(st=>`<div><strong>${escapeHtml(st.title||'Chronique')}</strong><br><small>${escapeHtml(typeLabels[st.story_type]||st.story_type||'Récit')} · ${escapeHtml(canonLabelsExtended[st.canon_status]||st.canon_status||'Provisoire')}${st.region_name?` · ${escapeHtml(st.region_name)}`:''}</small>${st.summary?`<p>${escapeHtml(st.summary)}</p>`:''}<small>Ancrage : ${escapeHtml(st.anchor_scope||'À définir')}</small></div>`).join('')}</div></section>`;
+}
+
+async function loadChronicles(characterId){
+  if(!characterId)return [];
+  try{
+    const {data,error}=await getSupabase().from('sinjira_extended_stories')
+      .select('id,story_type,title,summary,region_name,anchor_scope,canon_status,status,published_at,updated_at')
+      .eq('character_id',characterId)
+      .eq('visible_to_character_owner',true)
+      .neq('status','archived')
+      .order('updated_at',{ascending:false});
+    if(error){
+      if(error.code==='42P01')return [];
+      throw error;
+    }
+    return list(data);
+  }catch(error){
+    console.info('[SINJIRA Chroniques] indisponible',error?.message||error);
+    return [];
+  }
+}
+
+function renderCharacter(ch,submission=null,chronicles=[]){
   const ready=['approved','assigned','future','published'].includes(ch.status)&&ch.visible_to_user!==false;
   const name=ch.public_name||'Personnage SINJIRA™';
   const steps=timeline(submission,ch);
@@ -94,10 +122,11 @@ function renderCharacter(ch,submission=null){
       <h1>${escapeHtml(name)}</h1>
       ${ch.public_description?`<p>${escapeHtml(ch.public_description)}</p>`:'<p>Le dossier public du personnage sera complété uniquement avec les informations validées par Benoit Cantin.</p>'}
       <div class="character-bible">
-        <div><strong>Roman</strong><br>${escapeHtml(ch.novels?.title||ch.novel_note||'À attribuer / futur roman')}</div>
+        <div><strong>Ancrage central</strong><br>${escapeHtml(ch.novels?.title||ch.novel_note||'Aucune liaison directe — Canon étendu')}</div>
         <div><strong>Statut de continuité</strong><br>${escapeHtml(canon)}</div>
       </div>
       ${renderPsychology(ch.bible)}
+      ${renderChronicles(chronicles)}
       ${steps.length?`<div class="v19-timeline">${steps.map(step=>`<div class="v19-timeline-item"><strong>${escapeHtml(step.label)}</strong><span>${escapeHtml(formatDate(step.date))}</span></div>`).join('')}</div>`:''}
       ${ready?'<div class="hero-actions"><a class="btn btn-primary" href="reseau-personnage.html">Entrer dans le Réseau personnage</a><a class="btn btn-secondary" href="messages-personnage.html">Messages personnage</a></div>':'<div class="v20-character-lock"><p>Le Réseau personnage sera disponible lorsque votre personnage sera approuvé et prêt à être utilisé.</p></div>'}
     </div>
@@ -161,7 +190,8 @@ async function loadCharacter(user){
 
     const {submission,character}=await loadCharacter(user);
     if(character){
-      renderCharacter(character,submission);
+      const chronicles=await loadChronicles(character.id);
+      renderCharacter(character,submission,chronicles);
       setStatus(owner
         ?`AbyssTime est synchronisé avec sa fiche persistante, son profil social et le Monde parallèle (interface ${UI_VERSION} · contrat ${OWNER_REPAIR_CONTRACT}${repair?.repair_version?` · serveur ${repair.repair_version}`:''}).`
         :'Votre personnage est synchronisé avec votre Compte SINJIRA™.','success');
