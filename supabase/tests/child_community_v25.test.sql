@@ -4,7 +4,7 @@ set local search_path=public,private,extensions;
 
 select plan(43);
 
-select ok(to_regprocedure('public.sinjira_junior_community_enabled(uuid)') is not null,'garde d activation Junior existe');
+select ok(to_regprocedure('private.sinjira_junior_community_enabled(uuid)') is not null,'garde privée d activation Junior existe');
 select ok(to_regprocedure('public.junior_community_feed(integer)') is not null,'RPC fil Junior existe');
 select ok(to_regprocedure('public.guardian_set_junior_community(uuid,boolean)') is not null,'RPC parent activation Junior existe');
 select ok(to_regprocedure('public.sinjira_junior_community_enabled()') is not null,'RPC état Junior self-only existe');
@@ -34,9 +34,7 @@ values(
 select is(public.sinjira_age_band('71000000-0000-4000-8000-000000000001'),'adult','le parent Junior est adulte');
 
 insert into public.guardian_signup_invites(guardian_user_id,invite_code,expires_at)
-values
-('71000000-0000-4000-8000-000000000001','YOUTH-JUNIOR0001',now()+interval '1 day'),
-('71000000-0000-4000-8000-000000000001','YOUTH-JUNIOR0002',now()+interval '1 day');
+values('71000000-0000-4000-8000-000000000001','YOUTH-JUNIOR0001',now()+interval '1 day');
 
 insert into auth.users(id,email,raw_user_meta_data)
 values(
@@ -49,6 +47,11 @@ values(
     'guardian_code','YOUTH-JUNIOR0001'
   )
 );
+
+-- Le contrat n'autorise qu'un seul code parental ouvert par tuteur.
+-- Le premier code est consommé à la création du premier enfant avant d'en créer un second.
+insert into public.guardian_signup_invites(guardian_user_id,invite_code,expires_at)
+values('71000000-0000-4000-8000-000000000001','YOUTH-JUNIOR0002',now()+interval '1 day');
 
 insert into auth.users(id,email,raw_user_meta_data)
 values(
