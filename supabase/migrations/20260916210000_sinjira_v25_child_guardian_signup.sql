@@ -65,8 +65,11 @@ as $$
   from (select p_user_id user_id) x
   left join public.account_safety_profiles s on s.user_id=x.user_id;
 $$;
-revoke all on function public.sinjira_age_band(uuid) from public,anon;
-grant execute on function public.sinjira_age_band(uuid) to authenticated,service_role;
+revoke all on function public.sinjira_age_band(uuid) from public,anon,authenticated;
+grant execute on function public.sinjira_age_band(uuid) to service_role;
+
+revoke all on function public.sinjira_my_age_band() from public,anon;
+grant execute on function public.sinjira_my_age_band() to authenticated,service_role;
 
 -- Un parent peut superviser un compte enfant ou jeunesse lié et vérifié.
 create or replace function public.sinjira_parent_can_supervise(p_parent uuid,p_child uuid)
@@ -85,8 +88,8 @@ as $$
         and g.status='verified'
     );
 $$;
-revoke all on function public.sinjira_parent_can_supervise(uuid,uuid) from public,anon;
-grant execute on function public.sinjira_parent_can_supervise(uuid,uuid) to authenticated,service_role;
+revoke all on function public.sinjira_parent_can_supervise(uuid,uuid) from public,anon,authenticated;
+grant execute on function public.sinjira_parent_can_supervise(uuid,uuid) to service_role;
 
 create or replace function public.handle_new_sinjira_user()
 returns trigger

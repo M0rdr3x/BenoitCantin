@@ -65,18 +65,18 @@ using(
       visibility='public'
       and (
         (select auth.uid()) is null
-        or public.sinjira_age_band((select auth.uid()))<>'child'
+        or public.sinjira_my_age_band()<>'child'
         or child_access_status='approved_11_12'
       )
     )
     or (
       (select auth.uid()) is not null
-      and public.sinjira_age_band((select auth.uid()))<>'child'
+      and public.sinjira_my_age_band()<>'child'
       and (visibility='account' or public.project_access_rank(id,(select auth.uid()))>=20)
     )
     or (
       (select auth.uid()) is not null
-      and public.sinjira_age_band((select auth.uid()))='child'
+      and public.sinjira_my_age_band()='child'
       and visibility='account'
       and child_access_status='approved_11_12'
     )
@@ -95,7 +95,7 @@ using(
   and public.project_access_rank(project_id,(select auth.uid()))>=public.document_access_rank(access_level)
   and (
     (select auth.uid()) is null
-    or public.sinjira_age_band((select auth.uid()))<>'child'
+    or public.sinjira_my_age_band()<>'child'
     or public.sinjira_child_document_available(id)
   )
 );

@@ -72,7 +72,7 @@ using(
     visibility='public'
     or (
       (select auth.uid()) is not null
-      and public.sinjira_age_band((select auth.uid()))<>'child'
+      and public.sinjira_my_age_band()<>'child'
       and (visibility='account' or public.project_access_rank(id,(select auth.uid()))>=20)
     )
   )
@@ -85,7 +85,7 @@ using(
   and public.project_access_rank(project_id,(select auth.uid()))>=public.document_access_rank(access_level)
   and (
     (select auth.uid()) is null
-    or public.sinjira_age_band((select auth.uid()))<>'child'
+    or public.sinjira_my_age_band()<>'child'
     or (
       access_level='public'
       and exists(
@@ -105,7 +105,7 @@ drop policy if exists playtests_read_authorized on public.playtests;
 create policy playtests_read_authorized on public.playtests for select to authenticated
 using(
   (select auth.uid()) is not null
-  and public.sinjira_age_band((select auth.uid()))<>'child'
+  and public.sinjira_my_age_band()<>'child'
   and (
     public.is_sinjira_admin((select auth.uid()))
     or exists(
@@ -134,7 +134,7 @@ drop policy if exists playtest_participants_read_authorized on public.playtest_p
 create policy playtest_participants_read_authorized on public.playtest_participants for select to authenticated
 using(
   (select auth.uid()) is not null
-  and public.sinjira_age_band((select auth.uid()))<>'child'
+  and public.sinjira_my_age_band()<>'child'
   and (
     (select auth.uid())=user_id
     or public.is_sinjira_admin((select auth.uid()))
@@ -145,7 +145,7 @@ drop policy if exists "requests own insert" on public.access_requests;
 create policy "requests own insert" on public.access_requests for insert to authenticated
 with check(
   (select auth.uid())=user_id
-  and public.sinjira_age_band((select auth.uid()))<>'child'
+  and public.sinjira_my_age_band()<>'child'
   and status='pending'
 );
 
@@ -153,7 +153,7 @@ drop policy if exists "participants own apply" on public.playtest_participants;
 create policy "participants own apply" on public.playtest_participants for insert to authenticated
 with check(
   (select auth.uid())=user_id
-  and public.sinjira_age_band((select auth.uid()))<>'child'
+  and public.sinjira_my_age_band()<>'child'
   and status='applied'
 );
 
