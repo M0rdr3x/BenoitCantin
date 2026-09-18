@@ -151,9 +151,14 @@ function bind(posts,comments){
 (async()=>{
   try{
     const gateUser=await requireUser('/compte/connexion.html');
-    const {data:ageBand,error:ageError}=await getSupabase().rpc('sinjira_my_age_band');
-    if(!ageError&&ageBand==='child'){
+    const {data:capabilities,error:capabilityError}=await getSupabase().rpc('sinjira_my_account_capabilities');
+    if(capabilityError||!capabilities)throw new Error('ACCOUNT_CAPABILITIES_UNAVAILABLE');
+    if(capabilities.child_11_12===true){
       location.replace('/compte/communaute-junior.html');
+      return;
+    }
+    if(capabilities.general_community!==true){
+      location.replace('/compte/index.html?from=community-restricted');
       return;
     }
     user=await requireCommunityUser();
