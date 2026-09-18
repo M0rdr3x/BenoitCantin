@@ -38,6 +38,8 @@ req("p.child_access_status='approved_11_12'" in m,'Projet non borné à approved
 req("d.child_access_status='approved_11_12'" in m,'Document non borné à approved_11_12.')
 req('public.sinjira_child_project_available(d.project_id)' in m,'Le document ne dépend pas aussi du classement du projet.')
 req("visibilityin('public','account')" in m,'Un projet restricted pourrait devenir Junior par simple classement.')
+for legacy_policy in ('projects_public_read','projects_authenticated_read','documents_anon_read','documents_authenticated_read'):
+    req(f'droppolicyifexists{legacy_policy}' in m,f'Politique SELECT héritée non retirée: {legacy_policy}.')
 
 for route in ('bibliotheque.html','documents.html','projet.html'):
     req(f"'{route}'" in a,f'Route classée non ouverte au compte child: {route}.')
@@ -61,8 +63,8 @@ req('data-child-review-status="blocked_11_12"' in admin,'Bouton admin Bloquer 11
 req("doc.child_access_status!=='approved_11_12'" in de,'get-document-url ne revérifie pas le classement document.')
 req("doc.projects?.child_access_status!=='approved_11_12'" in de,'get-document-url ne revérifie pas le classement projet.')
 
-req('selectplan(17);' in t,'Plan pgTAP classement 11–12 inattendu.')
-for marker in ('unprojetnonréviséestindisponible11–12','unprojetaccountactifexplicitementapprouvédevientdisponible','unprojetrestrictednedevientpasjuniorparsimpleclassement','undocumentnonréviséestindisponible11–12','document+projetdoublementapprouvésdeviennentdisponibles','bloquerensuiteleprojetrefermeimmédiatementledocument'):
+req('selectplan(21);' in t,'Plan pgTAP classement 11–12 inattendu.')
+for marker in ('unprojetnonréviséestindisponible11–12','unprojetaccountactifexplicitementapprouvédevientdisponible','unprojetrestrictednedevientpasjuniorparsimpleclassement','undocumentnonréviséestindisponible11–12','document+projetdoublementapprouvésdeviennentdisponibles','bloquerensuiteleprojetrefermeimmédiatementledocument','uneseulepolitiqueselectprojetsresteactive','uneseulepolitiqueselectdocumentsresteactive','rlsprojetsborneexplicitementlabandechild','rlsdocumentsborneexplicitementlabandechild'):
     req(marker in t,f'Preuve pgTAP classement enfant absente: {marker}')
 
 req('défaut `unreviewed` reste fermé' in d,'Documentation: défaut unreviewed non expliqué.')

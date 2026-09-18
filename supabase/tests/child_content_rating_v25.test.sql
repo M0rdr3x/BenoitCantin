@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(17);
+select plan(21);
 
 select has_column('public','projects','child_access_status','projects possède le classement 11–12');
 select has_column('public','projects','child_access_reviewed_by','projects conserve le réviseur humain');
@@ -40,6 +40,18 @@ select ok(public.sinjira_child_document_available('92000000-0000-4000-8000-00000
 update public.projects set child_access_status='blocked_11_12' where id='91000000-0000-4000-8000-000000000002';
 select ok(not public.sinjira_child_document_available('92000000-0000-4000-8000-000000000002'),'bloquer ensuite le projet referme immédiatement le document');
 
+select is(
+  (select count(*) from pg_policies where schemaname='public' and tablename='projects' and cmd='SELECT'),
+  1::bigint,
+  'une seule politique SELECT projets reste active pour éviter un OR permissif'
+);
+select is(
+  (select count(*) from pg_policies where schemaname='public' and tablename='documents' and cmd='SELECT'),
+  1::bigint,
+  'une seule politique SELECT documents reste active pour éviter un OR permissif'
+);
+select ok((select qual ilike '%sinjira_age_band%' from pg_policies where schemaname='public' and tablename='projects' and policyname='projects readable when accessible'),'RLS projets borne explicitement la bande child');
+select ok((select qual ilike '%sinjira_age_band%' from pg_policies where schemaname='public' and tablename='documents' and policyname='approved documents visible by access'),'RLS documents borne explicitement la bande child');
 select ok((select qual ilike '%child_access_status%' from pg_policies where schemaname='public' and tablename='projects' and policyname='projects readable when accessible'),'RLS projets contient le classement 11–12');
 select ok((select qual ilike '%sinjira_child_document_available%' from pg_policies where schemaname='public' and tablename='documents' and policyname='approved documents visible by access'),'RLS documents impose la double approbation');
 

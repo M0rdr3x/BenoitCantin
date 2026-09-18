@@ -54,6 +54,10 @@ grant execute on function public.sinjira_child_document_available(uuid) to anon,
 -- Projets : un child ne voit dans sa bibliothèque que les projets explicitement approuvés 11–12.
 -- Les visiteurs anonymes et les autres bandes conservent le comportement historique.
 drop policy if exists "projects readable when accessible" on public.projects;
+drop policy if exists admin_read_all_projects on public.projects;
+drop policy if exists projects_read on public.projects;
+drop policy if exists projects_public_read on public.projects;
+drop policy if exists projects_authenticated_read on public.projects;
 create policy "projects readable when accessible" on public.projects for select to anon,authenticated
 using(
   status<>'draft' and (
@@ -81,6 +85,10 @@ using(
 
 -- Documents : un child exige une double approbation explicite document + projet.
 drop policy if exists "approved documents visible by access" on public.documents;
+drop policy if exists documents_read_by_access on public.documents;
+drop policy if exists admin_read_all_documents on public.documents;
+drop policy if exists documents_anon_read on public.documents;
+drop policy if exists documents_authenticated_read on public.documents;
 create policy "approved documents visible by access" on public.documents for select to anon,authenticated
 using(
   status='approved'
