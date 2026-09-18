@@ -134,7 +134,7 @@ req("s.rpc('guardian_set_junior_community'" in r,'Relations ne peut pas activer/
 req("s.rpc('junior_guardian_summary'" in r,'Relations ne peut pas lire le résumé de sécurité sans contenu.')
 
 # Navigation fail-closed pour 11–12 : liste blanche explicite, redirections Junior et refus par défaut.
-req("ageband!=='child'" in a and "constchild_11_12_allowed_routes=newset([" in a,'La navigation du compte ne borne pas explicitement les routes child.')
+req("capabilities.child_11_12===true" in a and "if(!childaccount)return" in a and "constchild_11_12_allowed_routes=newset([" in a,'La navigation du compte ne borne pas explicitement les routes child via les capacités serveur.')
 req("['communaute.html','/compte/communaute-junior.html']" in a,'La communauté générale n est pas redirigée vers Junior.')
 req("['regles-communaute.html','/compte/regles-communaute-junior.html']" in a,'Les règles générales ne sont pas redirigées vers les règles Junior.')
 allowed_section=a[a.find('constchild_11_12_allowed_routes=newset(['):a.find('constchild_11_12_route_redirects=newmap([')]
@@ -145,7 +145,7 @@ for route in ('bibliotheque.html','documents.html','projet.html'):
 req("location.pathname.startswith('/compte/')&&!child_11_12_allowed_routes.has(currentleaf)" in a,'Un compte child peut encore ouvrir directement une route compte non autorisée.')
 req("next.searchparams.set('from','restricted')" in a and "next.searchparams.set('module',currentleaf)" in a,'Le repli Junior des routes restreintes n est pas traçable dans l URL locale.')
 req("if(!child_11_12_allowed_routes.has(leaf))link.hidden=true" in a,'La navigation ne masque pas par défaut les routes non autorisées aux comptes child.')
-req("ageband==='child'" in co and "communaute-junior.html" in co,'La Communauté générale ne redirige pas un compte child.')
+req("capabilities.child_11_12===true" in co and "communaute-junior.html" in co and "capabilities.general_community!==true" in co,'La Communauté générale n est pas bornée par les capacités serveur.')
 
 # Tests comportementaux.
 req('selectplan(43);' in t,'Plan pgTAP Junior inattendu.')
