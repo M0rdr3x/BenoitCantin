@@ -138,8 +138,10 @@ req("ageband!=='child'" in a and "constchild_11_12_allowed_routes=newset([" in a
 req("['communaute.html','/compte/communaute-junior.html']" in a,'La communauté générale n est pas redirigée vers Junior.')
 req("['regles-communaute.html','/compte/regles-communaute-junior.html']" in a,'Les règles générales ne sont pas redirigées vers les règles Junior.')
 allowed_section=a[a.find('constchild_11_12_allowed_routes=newset(['):a.find('constchild_11_12_route_redirects=newmap([')]
-for route in ('messages.html','rencontres.html','reseau-personnage.html','marche.html','jetons.html','mes-achats.html','contributions.html','bibliotheque.html','documents.html','playtests.html','emploi.html','mon-ia.html','monde-parallele.html'):
+for route in ('messages.html','rencontres.html','reseau-personnage.html','marche.html','jetons.html','mes-achats.html','contributions.html','playtests.html','emploi.html','mon-ia.html','monde-parallele.html','mes-lectures.html','mes-parties.html'):
     req(f"'{route}'" not in allowed_section,f'Route sensible autorisée par erreur pour child: {route}')
+for route in ('bibliotheque.html','documents.html','projet.html'):
+    req(f"'{route}'" in allowed_section,f'Route de contenu classé absente de la liste blanche child: {route}')
 req("location.pathname.startswith('/compte/')&&!child_11_12_allowed_routes.has(currentleaf)" in a,'Un compte child peut encore ouvrir directement une route compte non autorisée.')
 req("next.searchparams.set('from','restricted')" in a and "next.searchparams.set('module',currentleaf)" in a,'Le repli Junior des routes restreintes n est pas traçable dans l URL locale.')
 req("if(!child_11_12_allowed_routes.has(leaf))link.hidden=true" in a,'La navigation ne masque pas par défaut les routes non autorisées aux comptes child.')
@@ -181,7 +183,9 @@ req('private-child@example.test" not in text' in browser_test and 'child-test-11
 req('not production_requests' in bt,'La preuve navigateur ne bloque pas les appels vers Supabase production.')
 req('junior_community_create_post' in browser_test and 'junior_community_create_comment' in browser_test,'La preuve navigateur ne couvre pas publication + commentaire.')
 req('sinjira_junior_external_contact_forbidden' in bt,'La preuve navigateur ne couvre pas le blocage des liens externes.')
-req('compte/bibliotheque.html' in browser_test and 'from=restricted&module=bibliotheque.html' in browser_test,'La preuve navigateur ne couvre pas une URL directe vers un module enfant non certifié.')
+req('compte/bibliotheque.html' in browser_test and 'aucun contenu n’a encore été approuvé pour les comptes de 11–12 ans' in bt,'La preuve navigateur ne couvre pas la Bibliothèque Junior filtrée.')
+req('sinjira_reader_library' in browser_test and 'user_entitlements' in browser_test and 'forbidden' in bt,'La preuve navigateur ne vérifie pas l absence de requêtes vers lectures/licences non certifiées.')
+req('compte/playtests.html' in browser_test and 'from=restricted&module=playtests.html' in browser_test,'La preuve navigateur ne couvre pas une URL directe vers un module enfant non certifié.')
 req('data-junior-access-note' in browser_test,'La preuve navigateur ne vérifie pas le message de repli Junior.')
 
 # CI locale uniquement, lecture seule et sans capacité de production.
