@@ -15,3 +15,9 @@ Le portail Benoit Cantin reste la porte commune vers ces environnements. Sa page
 Les cinq environnements conservent leur identité propre, mais partagent une direction de conception publique : humain d’abord, autonomie, capacité d’agir, conséquences à long terme, liberté de choix, transparence et préférence pour les décisions corrigeables lorsqu’un irréversible n’est pas nécessaire.
 
 Le contrat détaillé et les limites de confidentialité sont définis dans `docs/SITE_PERSONALITY_V25.md`. La présentation commune est fournie par `assets/js/site-personality-v25.js` et `assets/css/site-personality-v25.css`.
+
+## Continuité SINJIRA™
+
+Les règles détaillées de l’univers étendu sont définies dans `projets/sinjira/codex/ARCHITECTURE_UNIVERS_ETENDU_V25.md`.
+
+Les **14 romans principaux** forment le Canon central verrouillé. Le Registre des Consciences permet à chaque personnage approuvé d’être admissible à une histoire distincte du Canon étendu, construite à partir de ces romans. Le **Monde parallèle** demeure un espace de cycles et de rôle-play distinct : ses interactions ne deviennent pas canoniques automatiquement. Les numéros pionniers 1 à 40 sont une distinction historique et non une limite narrative.
