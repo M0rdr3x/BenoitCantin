@@ -70,7 +70,9 @@ language sql
 stable
 security definer
 set search_path=public,auth
-as $ select public.sinjira_age_band(auth.uid()); $;
+as $self_age$
+  select public.sinjira_age_band(auth.uid());
+$self_age$;
 revoke all on function public.sinjira_my_age_band() from public,anon,authenticated;
 grant execute on function public.sinjira_my_age_band() to anon,authenticated,service_role;
 
