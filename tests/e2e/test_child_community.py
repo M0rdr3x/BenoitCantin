@@ -49,6 +49,7 @@ function query(data=[]){
   return api;
 }
 export function createClient(){
+  globalThis.__sinjiraTables=globalThis.__sinjiraTables||[];
   return {
     auth:{
       getUser:async()=>({data:{user},error:null}),
@@ -76,7 +77,7 @@ export function createClient(){
       if(name==='junior_community_report_content')return {data:{ok:true,blocked:true},error:null};
       return {data:null,error:null};
     },
-    from:()=>query([])
+    from:(name)=>{globalThis.__sinjiraTables.push(String(name));return query([])}
   };
 }
 """
@@ -109,12 +110,23 @@ export function createClient(){
         page.locator("[data-junior-post-form] button[type='submit']").click()
         page.wait_for_function("document.querySelector('[data-junior-status]')?.innerText.includes('liens, coordonnées')",timeout=10000)
 
+        library=context.new_page()
+        library.on("pageerror",lambda error: errors.append("library:"+str(error)))
+        library.on("request",lambda request: production_requests.append(request.url) if "supabase.co" in request.url else None)
+        response=library.goto(urljoin(BASE_URL,"compte/bibliotheque.html"),wait_until="domcontentloaded",timeout=30000)
+        assert_true(response is not None and response.status<400,"Route Bibliothèque Junior inaccessible")
+        library.wait_for_function("document.body.innerText.includes('Aucun contenu n’a encore été approuvé pour les comptes de 11–12 ans')",timeout=10000)
+        assert_true("/compte/bibliotheque.html" in library.url,"La Bibliothèque approuvée 11–12 a été redirigée à tort")
+        tables=library.evaluate("globalThis.__sinjiraTables||[]")
+        forbidden={"access_requests","sinjira_reader_library","user_entitlements","playtests","playtest_participants"}
+        assert_true(not (forbidden & set(tables)),"La Bibliothèque Junior a interrogé des modules non certifiés: "+", ".join(sorted(forbidden & set(tables))))
+
         restricted=context.new_page()
         restricted.on("pageerror",lambda error: errors.append("route:"+str(error)))
         restricted.on("request",lambda request: production_requests.append(request.url) if "supabase.co" in request.url else None)
-        response=restricted.goto(urljoin(BASE_URL,"compte/bibliotheque.html"),wait_until="domcontentloaded",timeout=30000)
-        assert_true(response is not None and response.status<400,"Route Bibliothèque inaccessible pendant le test")
-        restricted.wait_for_url("**/compte/communaute-junior.html?from=restricted&module=bibliotheque.html",timeout=10000)
+        response=restricted.goto(urljoin(BASE_URL,"compte/playtests.html"),wait_until="domcontentloaded",timeout=30000)
+        assert_true(response is not None and response.status<400,"Route Playtests inaccessible pendant le test")
+        restricted.wait_for_url("**/compte/communaute-junior.html?from=restricted&module=playtests.html",timeout=10000)
         restricted.wait_for_function("document.querySelector('[data-junior-access-note]')?.hidden === false",timeout=10000)
         assert_true("pas encore certifiée" in restricted.locator("[data-junior-access-note]").inner_text(),"Le repli Junior n explique pas la restriction")
 
@@ -123,7 +135,7 @@ export function createClient(){
 
         context.close()
         browser.close()
-        print("OK navigateur Junior: identité protégée, publication/commentaire via RPC, liens externes bloqués et routes non certifiées redirigées fail-closed.")
+        print("OK navigateur Junior: identité protégée, bibliothèque limitée aux contenus approuvés, aucun module sensible interrogé et routes non certifiées redirigées fail-closed.")
 
 
 if __name__=="__main__":
