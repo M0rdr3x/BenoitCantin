@@ -41,8 +41,8 @@ req("visibilityin('public','account')" in m,'Un projet restricted pourrait deven
 
 for route in ('bibliotheque.html','documents.html','projet.html'):
     req(f"'{route}'" in a,f'Route classée non ouverte au compte child: {route}.')
-req("s.rpc('sinjira_my_age_band')" in l,'Bibliothèque moderne sans vérification d âge.')
-req("constchildmode=ageband==='child'" in l,'Bibliothèque moderne sans mode child.')
+req("s.rpc('sinjira_my_account_capabilities')" in l,'Bibliothèque moderne sans capacités serveur.')
+req("constchildmode=capabilities.library_mode==='reviewed_11_12'" in l,'Bibliothèque moderne sans mode child centralisé.')
 for forbidden in ('access_requests','sinjira_reader_library','user_entitlements'):
     child_block=l[l.find("if(childmode){"):l.find("const[adminresult",l.find("if(childmode){"))]
     req(forbidden not in child_block,f'Bibliothèque Junior interroge encore {forbidden}.')
