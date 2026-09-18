@@ -117,25 +117,21 @@ function bindFeed(posts){
 (async()=>{
   try{
     user=await requireUser('/compte/connexion.html');
-    const {data:band,error:bandError}=await s.rpc('sinjira_my_age_band');
-    if(bandError)throw bandError;
-    if(band!=='child'){
+    const {data:capabilities,error:capabilityError}=await s.rpc('sinjira_my_account_capabilities');
+    if(capabilityError||!capabilities)throw capabilityError||new Error('ACCOUNT_CAPABILITIES_UNAVAILABLE');
+    if(capabilities.child_11_12!==true){
       location.replace('/compte/communaute.html');
       return;
     }
 
-    const {data:enabled,error:enabledError}=await s.rpc('sinjira_junior_community_enabled');
-    if(enabledError)throw enabledError;
-    if(enabled!==true){
+    if(capabilities.junior_community_enabled!==true){
       const message='Ton parent ou tuteur doit activer la Communauté Junior dans Relations avant que tu puisses entrer ici.';
       disableComposer(message);
       setStatus(status,message,'info');
       return;
     }
 
-    const {data:accepted,error:rulesError}=await s.rpc('has_accepted_junior_community_rules');
-    if(rulesError)throw rulesError;
-    if(accepted!==true){
+    if(capabilities.junior_rules_accepted!==true){
       location.replace('/compte/regles-communaute-junior.html?next=%2Fcompte%2Fcommunaute-junior.html');
       return;
     }

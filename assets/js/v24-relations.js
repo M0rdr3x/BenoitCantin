@@ -27,8 +27,8 @@ function configureGuardianTools(){
   if(guardianNeutralTools)guardianNeutralTools.hidden=ageBand==='adult'||pending;
 }
 async function refreshAgeBand(){
-  const {data,error}=await s.rpc('sinjira_my_age_band');
-  if(!error&&typeof data==='string')ageBand=data;
+  const {data:capabilities,error}=await s.rpc('sinjira_my_account_capabilities');
+  if(!error&&capabilities&&typeof capabilities.age_band==='string')ageBand=capabilities.age_band;
   configureGuardianTools();
 }
 

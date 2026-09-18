@@ -7,24 +7,20 @@ const button=document.querySelector('[data-junior-rules-accept]');
 (async()=>{
   try{
     const user=await requireUser('/compte/connexion.html');
-    const {data:band,error:bandError}=await s.rpc('sinjira_my_age_band');
-    if(bandError)throw bandError;
-    if(band!=='child'){
+    const {data:capabilities,error:capabilityError}=await s.rpc('sinjira_my_account_capabilities');
+    if(capabilityError||!capabilities)throw capabilityError||new Error('ACCOUNT_CAPABILITIES_UNAVAILABLE');
+    if(capabilities.child_11_12!==true){
       location.replace('/compte/communaute.html');
       return;
     }
 
-    const {data:enabled,error:enabledError}=await s.rpc('sinjira_junior_community_enabled');
-    if(enabledError)throw enabledError;
-    if(enabled!==true){
+    if(capabilities.junior_community_enabled!==true){
       if(button)button.disabled=true;
       setStatus(status,'Ton parent ou tuteur doit d’abord activer la Communauté Junior dans Relations.','info');
       return;
     }
 
-    const {data:accepted,error:acceptedError}=await s.rpc('has_accepted_junior_community_rules');
-    if(acceptedError)throw acceptedError;
-    if(accepted===true){
+    if(capabilities.junior_rules_accepted===true){
       if(button){button.disabled=true;button.textContent='Règles Junior déjà acceptées';}
       setStatus(status,'Tu as déjà accepté la version actuelle des règles Junior.','success');
     }

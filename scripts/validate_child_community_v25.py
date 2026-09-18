@@ -119,22 +119,25 @@ for marker,msg in (
 req("s.rpc('junior_community_feed'" in c,'Le client Junior n utilise pas le RPC de fil.')
 req("s.rpc('junior_community_create_post'" in c,'Le client Junior ne publie pas via RPC.')
 req("s.rpc('junior_community_report_content'" in c,'Le client Junior ne signale pas via RPC.')
-req("s.rpc('sinjira_junior_community_enabled')" in c,'Le client Junior n utilise pas le RPC self-only d activation.')
-req("s.rpc('has_accepted_junior_community_rules')" in c,'Le client Junior n utilise pas le RPC self-only des règles.')
+req("s.rpc('sinjira_my_account_capabilities')" in c,'Le client Junior n utilise pas les capacités self-only centralisées.')
+req("capabilities.junior_community_enabled!==true" in c and "capabilities.junior_rules_accepted!==true" in c,'Le client Junior ne borne pas activation/règles via les capacités serveur.')
+req("s.rpc('sinjira_my_account_capabilities')" in rc,'Le client des règles Junior n utilise pas les capacités self-only centralisées.')
+req("capabilities.junior_community_enabled!==true" in rc and "capabilities.junior_rules_accepted===true" in rc,'Le client des règles ne borne pas activation/acceptation via les capacités serveur.')
 req("p_user_id:user.id" not in c and "p_user_id:user.id" not in rc,'Les clients Junior transmettent encore leur UUID aux RPC d état self-only.')
 req(".from('junior_community_" not in client.lower(),'Le client Junior contourne les RPC avec un accès table direct.')
-req("if(band!=='child')" in c,'Le client Junior ne vérifie pas la bande child.')
+req("capabilities.child_11_12!==true" in c,'Le client Junior ne vérifie pas la capacité child_11_12.')
 req("location.replace('/compte/communaute.html')" in c,'Le client Junior ne renvoie pas les autres âges vers leur communauté.')
 
 # Règles Junior et activation parent.
 req('pas de messages privés' in rp and 'pas de rencontre privée' in rp and 'pas d’argent ni de commerce' in rp,'Les règles Junior sont incomplètes.')
 req("s.rpc('junior_community_accept_rules')" in rc,'L acceptation des règles Junior ne passe pas par RPC.')
 req('data-junior-community-children' in rh,'Relations ne contient pas le panneau d activation Junior.')
+req("s.rpc('sinjira_my_account_capabilities')" in r,'Relations ne lit pas la bande via les capacités self-only.')
 req("s.rpc('guardian_set_junior_community'" in r,'Relations ne peut pas activer/révoquer la Communauté Junior.')
 req("s.rpc('junior_guardian_summary'" in r,'Relations ne peut pas lire le résumé de sécurité sans contenu.')
 
 # Navigation fail-closed pour 11–12 : liste blanche explicite, redirections Junior et refus par défaut.
-req("capabilities.child_11_12===true" in a and "if(!childaccount)return" in a and "constchild_11_12_allowed_routes=newset([" in a,'La navigation du compte ne borne pas explicitement les routes child via les capacités serveur.')
+req("constaccountmode=string(capabilities.account_mode||'restricted')" in a and "capabilities.child_11_12===true" in a and "if(!childaccount)return" in a and "constchild_11_12_allowed_routes=newset([" in a,'La navigation du compte ne borne pas explicitement les routes child via les capacités serveur.')
 req("['communaute.html','/compte/communaute-junior.html']" in a,'La communauté générale n est pas redirigée vers Junior.')
 req("['regles-communaute.html','/compte/regles-communaute-junior.html']" in a,'Les règles générales ne sont pas redirigées vers les règles Junior.')
 allowed_section=a[a.find('constchild_11_12_allowed_routes=newset(['):a.find('constchild_11_12_route_redirects=newmap([')]
