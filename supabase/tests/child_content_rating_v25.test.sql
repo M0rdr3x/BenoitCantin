@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(16);
+select plan(17);
 
 select has_column('public','projects','child_access_status','projects possède le classement 11–12');
 select has_column('public','projects','child_access_reviewed_by','projects conserve le réviseur humain');
