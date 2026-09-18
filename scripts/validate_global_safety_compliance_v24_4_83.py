@@ -31,6 +31,7 @@ def req(ok,msg):
 mig=read(MIG); gate=read(GATE); hold=read(HOLD); child=read(CHILD); ledger=read(LEDGER); v82=read(V82); test=read(TEST); hold_test=read(HOLD_TEST); child_test=read(CHILD_TEST); delete_fn=read(DELETE_FN); signup_js=read(SIGNUP_JS); signup_html=read(SIGNUP_HTML)
 privacy=read(PRIVACY); governance=read(GOVERNANCE); account_privacy=read(ACCOUNT_PRIVACY); privacy_center=read(PRIVACY_CENTER); privacy_js=read(PRIVACY_JS); legal=read(LEGAL); contact=read(CONTACT); docs='\n'.join(read(p) for p in DOCS)
 compact=''.join(mig.lower().split()); gatecompact=''.join(gate.lower().split()); childcompact=''.join(child.lower().split()); signupcompact=''.join(signup_js.lower().split())
+child_test_lower=child_test.lower()
 alltext='\n'.join((mig,gate,hold,child,test,hold_test,child_test,delete_fn,signup_js,signup_html,privacy,governance,account_privacy,privacy_center,privacy_js,legal,contact,docs)).lower()
 
 for old in OLD: req(not old.exists(),f'Ancien timestamp V83 encore présent: {old.name}')
@@ -73,7 +74,7 @@ req("getsupabase().auth.getsession()" in signupcompact and "getsupabase().auth.s
 req("if(boundary==='active')" in signupcompact and "if(boundary==='error')" in signupcompact,'La création de compte n’est pas bloquée fail-closed lorsque la session navigateur n’est pas libre.')
 req("submit.disabled=busystate||sessionboundarystate!=='clear';" in signupcompact,'Le bouton de création n’est pas verrouillé pendant la vérification de session.')
 req('compte disponible à partir de 11 ans' in signup_html.lower() and 'moins de 11 ans' in signup_html.lower(),'Interface inscription pas alignée sur le minimum courant de 11 ans.')
-req('11–12 ans' in signup_html.lower() and 'fonctions sociales sont désactivées' in signup_html.lower(),'Interface enfant supervisé incomplète.')
+req('11–12 ans' in signup_html.lower() and 'fonctions sociales générales' in signup_html.lower() and 'messages privés restent désactivés' in signup_html.lower() and 'communauté junior séparée' in signup_html.lower(),'Interface enfant supervisé incomplète.')
 req('comptes de 11 à 17 ans' in signup_html.lower() and 'canada' in signup_html.lower(),'Gate jeunesse Canada non expliqué à l’inscription.')
 req('data-signup-session-warning' in signup_html.lower() and 'data-signup-session-signout' in signup_html.lower(),'Interface de séparation de session parent/enfant absente.')
 req('v24-signup.js?v=25.0.1&amp;rev=child-11-flow-session' in signup_html,'Version du client inscription enfant non invalidée.')
@@ -97,7 +98,7 @@ for phrase in ('confidentialité élevée','efvp','legal holds','21 jours','fonc
 req('paid_sexual_content' in v82.lower() and 'human_trafficking' in v82.lower() and 'dating_profiles_adult_only' in v82.lower(),'Le contrat V24.4.82 de sécurité n’est plus présent.')
 req('select plan(31);' in test,'Plan pgTAP V83 inattendu.')
 req('YOUTH_JURISDICTION_NOT_ENABLED' in test and "'sinjira_content_policy_guard'" in test and "'dating_profiles_adult_only'" in test,'Les tests V83 ne protègent pas les gates jeunesse/V82.')
-req('select plan(20);' in child_test and 'SINJIRA_MINIMUM_AGE_11' in child_test and "'child','la veille des 13 ans" in child_test and "'youth','le jour des 13 ans" in child_test and 'guardian_authorization_required_under_14' in child_test,'Le pgTAP V25 enfant supervisé est incomplet.')
+req('select plan(20);' in child_test_lower and 'sinjira_minimum_age_11' in child_test_lower and "'child','la veille des 13 ans" in child_test_lower and "'youth','le jour des 13 ans" in child_test_lower and 'guardian_authorization_required_under_14' in child_test_lower,'Le pgTAP V25 enfant supervisé est incomplet.')
 for paid in ('stripe','paypal','openai_api_key','paymentintent','google places api','mapbox token'):
     req(paid not in alltext,f'V83/V25 introduit une intégration payante/interdite: {paid}')
 if errors:
