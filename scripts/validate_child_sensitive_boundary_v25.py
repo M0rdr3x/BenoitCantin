@@ -36,6 +36,7 @@ req('new.participate:=false' in m and 'new.share_free_text:=false' in m,'Contrib
 req('public.sinjira_age_band((selectauth.uid()))<>\'child\'' in m,'Politiques projet/document/playtest sans garde child.')
 req('droppolicyifexistsplaytests_read_authorizedonpublic.playtests' in m and 'createpolicyplaytests_read_authorizedonpublic.playtestsforselecttoauthenticated' in m,'L ancienne politique SELECT Playtests n est pas remplacée canoniquement.')
 req('droppolicyifexistsplaytest_participants_read_authorizedonpublic.playtest_participants' in m and 'createpolicyplaytest_participants_read_authorizedonpublic.playtest_participantsforselecttoauthenticated' in m,'La lecture des participations Playtests ne remplace pas la politique héritée.')
+req('droppolicyifexists"participantsownselect"onpublic.playtest_participants' in m,'La politique historique "participants own select" n est pas retirée.')
 req("public.sinjira_age_band((selectauth.uid()))<>'child'and(public.is_sinjira_admin" in m,'La politique Playtests canonique ne ferme pas child avant les exceptions admin/historique.')
 req("access_level='public'" in m and "p.visibility='public'" in m,'Documents child ne sont pas limités aux documents publics de projets publics.')
 

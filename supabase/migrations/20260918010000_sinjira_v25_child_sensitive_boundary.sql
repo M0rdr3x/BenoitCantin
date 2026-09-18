@@ -127,6 +127,7 @@ using(
 
 -- Même règle pour l'historique des participations : un ancien compte 12 ans
 -- devenu child ne doit pas pouvoir relire ses anciennes participations.
+drop policy if exists "participants own select" on public.playtest_participants;
 drop policy if exists playtest_participants_select_own on public.playtest_participants;
 drop policy if exists admin_read_all_playtest_participants on public.playtest_participants;
 drop policy if exists playtest_participants_read_authorized on public.playtest_participants;
