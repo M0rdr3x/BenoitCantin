@@ -81,9 +81,9 @@ language sql
 stable
 security definer
 set search_path=public
-as $
+as $junior$
   select p_user_id is not null and public.sinjira_age_band(p_user_id)='child';
-$;
+$junior$;
 revoke all on function private.sinjira_is_junior(uuid) from public,anon,authenticated;
 grant execute on function private.sinjira_is_junior(uuid) to service_role;
 
@@ -93,7 +93,7 @@ language sql
 stable
 security definer
 set search_path=public,private
-as $
+as $junior$
   select private.sinjira_is_junior(p_user_id)
     and exists(
       select 1
@@ -106,7 +106,7 @@ as $
         and g.status='verified'
         and public.sinjira_age_band(g.guardian_user_id)='adult'
     );
-$;
+$junior$;
 revoke all on function private.sinjira_junior_community_enabled(uuid) from public,anon,authenticated;
 grant execute on function private.sinjira_junior_community_enabled(uuid) to service_role;
 
@@ -116,14 +116,14 @@ language sql
 stable
 security definer
 set search_path=public
-as $
+as $junior$
   select exists(
     select 1
     from public.community_rule_acceptances a
     where a.user_id=p_user_id
       and a.rules_version='sinjira-junior-rules-v1-2026-09-17'
   );
-$;
+$junior$;
 revoke all on function private.has_accepted_junior_community_rules(uuid) from public,anon,authenticated;
 grant execute on function private.has_accepted_junior_community_rules(uuid) to service_role;
 
@@ -134,7 +134,7 @@ language sql
 stable
 security definer
 set search_path=pg_catalog,public,private
-as $ select private.sinjira_junior_community_enabled(auth.uid()); $;
+as $junior$ select private.sinjira_junior_community_enabled(auth.uid()); $junior$;
 revoke all on function public.sinjira_junior_community_enabled() from public,anon;
 grant execute on function public.sinjira_junior_community_enabled() to authenticated,service_role;
 
@@ -144,7 +144,7 @@ language sql
 stable
 security definer
 set search_path=pg_catalog,public,private
-as $ select private.has_accepted_junior_community_rules(auth.uid()); $;
+as $junior$ select private.has_accepted_junior_community_rules(auth.uid()); $junior$;
 revoke all on function public.has_accepted_junior_community_rules() from public,anon;
 grant execute on function public.has_accepted_junior_community_rules() to authenticated,service_role;
 
