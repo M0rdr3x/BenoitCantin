@@ -43,12 +43,16 @@ req("public.sinjira_my_age_band()='child'" in m and "access_level='public'" in m
 
 req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in d,'get-document-url ne vérifie pas l âge serveur.')
 req("ageband==='child'" in d and "doc.child_access_status!=='approved_11_12'" in d and "doc.projects?.child_access_status!=='approved_11_12'" in d,'get-document-url ne revérifie pas le classement 11–12 document + projet.')
+req("!['adult','youth','child'].includes(ageband)" in d and 'account_access_restricted' in d,'get-document-url ne ferme pas les bandes authentifiées restreintes.')
 req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in a,'Mon IA ne vérifie pas l âge serveur.')
-req("ageband==='child'" in a and 'personal_ai_not_available_11_12' in a,'Mon IA n est pas bloqué pour child.')
-req("ageband==='child'" in l and 'child_action_not_available_11_12' in l,'L activation de licence Edge n est pas refusée à 11–12 ans.')
+req("normalizedageband==='child'" in a and 'personal_ai_not_available_11_12' in a,'Mon IA n est pas bloqué pour child.')
+req("!['adult','youth'].includes(normalizedageband)" in a and 'personal_ai_account_restricted' in a,'Mon IA ne ferme pas les bandes non standard.')
+req("normalizedageband==='child'" in l and 'child_action_not_available_11_12' in l,'L activation de licence Edge n est pas refusée à 11–12 ans.')
+req("!['adult','youth'].includes(normalizedageband)" in l and 'account_action_not_available_restricted' in l,'L activation de licence Edge ne ferme pas les bandes non standard.')
 for edge_name,edge_text in (('téléchargement Livre I',bd),('lecture Livre I',br)):
     req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in edge_text,f'{edge_name}: vérification d âge serveur absente.')
-    req("ageband==='child'" in edge_text and 'book_not_available_11_12' in edge_text,f'{edge_name}: contenu privé non classé encore ouvert aux 11–12 ans.')
+    req("normalizedageband==='child'" in edge_text and 'book_not_available_11_12' in edge_text,f'{edge_name}: contenu privé non classé encore ouvert aux 11–12 ans.')
+    req("!['adult','youth'].includes(normalizedageband)" in edge_text and 'book_account_restricted' in edge_text,f'{edge_name}: bande non standard encore ouverte au contenu privé.')
 
 req('selectplan(13);' in t,'Plan pgTAP frontière child inattendu.')
 req("with_checkilike'%sinjira_my_age_band%'" in t,'Le pgTAP Playtests ne vérifie pas la cohorte self-only.')

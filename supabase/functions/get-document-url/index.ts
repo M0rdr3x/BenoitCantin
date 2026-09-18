@@ -89,6 +89,9 @@ Deno.serve(async(req)=>{
         return privateJson({ok:false,error:'La vérification de sécurité du compte est temporairement indisponible.'},503);
       }
       ageBand=String(band||'unverified');
+      if(!['adult','youth','child'].includes(ageBand)){
+        return privateJson({ok:false,error:'Ce compte n’a pas accès à la bibliothèque privée.',code:'ACCOUNT_ACCESS_RESTRICTED'},403);
+      }
     }
     const {data:doc,error}=await service
       .from('documents')

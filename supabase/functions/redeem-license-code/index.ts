@@ -86,7 +86,9 @@ Deno.serve(async req=>{
     const ageService=serviceClient();
     const {data:ageBand,error:ageError}=await ageService.rpc('sinjira_age_band',{p_user_id:user.id});
     if(ageError)return privateJson({ok:false,error:'La vérification de sécurité du compte est temporairement indisponible.',code:'AGE_STATE_UNAVAILABLE'},503);
-    if(ageBand==='child')return privateJson({ok:false,error:'L’activation de licences n’est pas disponible pour les comptes de 11–12 ans.',code:'CHILD_ACTION_NOT_AVAILABLE_11_12'},403);
+    const normalizedAgeBand=String(ageBand||'unverified');
+    if(normalizedAgeBand==='child')return privateJson({ok:false,error:'L’activation de licences n’est pas disponible pour les comptes de 11–12 ans.',code:'CHILD_ACTION_NOT_AVAILABLE_11_12'},403);
+    if(!['adult','youth'].includes(normalizedAgeBand))return privateJson({ok:false,error:'L’activation de licences n’est pas disponible pour ce compte tant que son état de sécurité n’est pas standard.',code:'ACCOUNT_ACTION_NOT_AVAILABLE_RESTRICTED'},403);
     const parsed=await readLimitedJson(req);
     if(parsed.response)return parsed.response;
     const body=parsed.body||{};
