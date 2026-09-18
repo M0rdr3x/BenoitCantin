@@ -10,7 +10,7 @@ select ok(to_regprocedure('public.sinjira_age_band(uuid)') is not null,'classifi
 select ok(to_regprocedure('public.sinjira_parent_can_supervise(uuid,uuid)') is not null,'contrôle de supervision existe');
 select ok(not has_function_privilege('authenticated','public.sinjira_age_band(uuid)','EXECUTE'),'authenticated ne peut pas sonder la bande âge d un UUID arbitraire');
 select ok(has_function_privilege('authenticated','public.sinjira_my_age_band()','EXECUTE'),'authenticated peut lire uniquement sa propre bande âge');
-select ok(not has_function_privilege('anon','public.sinjira_my_age_band()','EXECUTE'),'anon ne peut pas sonder la bande âge self-only');
+select ok(has_function_privilege('anon','public.sinjira_my_age_band()','EXECUTE'),'anon peut évaluer uniquement sa propre bande self-only pour les RLS publiques');
 select ok(not has_function_privilege('authenticated','public.sinjira_parent_can_supervise(uuid,uuid)','EXECUTE'),'authenticated ne peut pas sonder une relation parent/enfant arbitraire');
 
 insert into auth.users(id,email,raw_user_meta_data)

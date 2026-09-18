@@ -68,8 +68,8 @@ $$;
 revoke all on function public.sinjira_age_band(uuid) from public,anon,authenticated;
 grant execute on function public.sinjira_age_band(uuid) to service_role;
 
-revoke all on function public.sinjira_my_age_band() from public,anon;
-grant execute on function public.sinjira_my_age_band() to authenticated,service_role;
+revoke all on function public.sinjira_my_age_band() from public,anon,authenticated;
+grant execute on function public.sinjira_my_age_band() to anon,authenticated,service_role;
 
 -- Un parent peut superviser un compte enfant ou jeunesse lié et vérifié.
 create or replace function public.sinjira_parent_can_supervise(p_parent uuid,p_child uuid)

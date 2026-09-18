@@ -66,8 +66,8 @@ req("public.sinjira_age_band(p_child)in('child','youth')" in m,
     "La supervision parentale ne couvre pas enfant + jeunesse.")
 req('revokeallonfunctionpublic.sinjira_age_band(uuid)frompublic,anon,authenticated' in m and 'grantexecuteonfunctionpublic.sinjira_age_band(uuid)toservice_role' in m,
     "La cohorte UUID arbitraire est réexposée aux comptes authentifiés.")
-req('revokeallonfunctionpublic.sinjira_my_age_band()frompublic,anon' in m and 'grantexecuteonfunctionpublic.sinjira_my_age_band()toauthenticated,service_role' in m,
-    "Le wrapper de cohorte self-only n est pas borné à authenticated/service_role.")
+req('revokeallonfunctionpublic.sinjira_my_age_band()frompublic,anon,authenticated' in m and 'grantexecuteonfunctionpublic.sinjira_my_age_band()toanon,authenticated,service_role' in m,
+    "Le wrapper de cohorte self-only n est pas borné aux rôles API sans UUID arbitraire.")
 req('revokeallonfunctionpublic.sinjira_parent_can_supervise(uuid,uuid)frompublic,anon,authenticated' in m,
     "La relation parent/enfant arbitraire reste sondable par authenticated.")
 req('createorreplacefunctionpublic.sinjira_can_social_interact' not in m,
@@ -183,7 +183,7 @@ for marker, message in (
     ("youth_jurisdiction_not_enabled", "Le test ne prouve pas la porte Canada jeunesse."),
     ("authenticatednepeutpassonderlabandeâgedunuuidarbitraire", "Le test ne prouve pas la fermeture de sinjira_age_band(uuid)."),
     ("authenticatedpeutlireuniquementsaproprebandeâge", "Le test ne prouve pas le wrapper self-only de cohorte."),
-    ("anonnepeutpassonderlabandeâgeself-only", "Le test ne prouve pas la fermeture anon du wrapper de cohorte."),
+    ("anonpeutévalueruniquementsaproprebandeself-onlypourlesrlspubliques", "Le test ne prouve pas l'accès anon borné au wrapper self-only requis par les RLS publiques."),
     ("authenticatednepeutpassonderunerelationparent/enfantarbitraire", "Le test ne prouve pas la confidentialité du helper de supervision."),
 ):
     req(marker in t, message)
