@@ -103,6 +103,14 @@ Pour un compte `child` :
 4. une nouvelle page `compte/*.html` non présente dans cette matrice est **restreinte par défaut**;
 5. la communauté générale et ses règles sont remplacées par leurs versions Junior.
 
+## Décision de capacités self-only
+
+`sinjira_my_account_capabilities()` centralise maintenant les décisions de surface du compte courant. Le RPC n’accepte **aucun UUID** et ne renvoie ni date de naissance, courriel, pseudo ni identité. Il expose uniquement des capacités fonctionnelles comme `child_11_12`, `native_general_hubs`, `general_community`, `dating` et `library_mode`.
+
+Les bandes `child_pending`, `youth_pending`, `under11`, `unverified` ou autres états non vérifiés reçoivent un `account_mode` **restricted** par défaut. Seuls `adult` et `youth` vérifiés reçoivent le mode `standard`; `child` reçoit le mode Junior 11–12.
+
+Le Web, la Bibliothèque, la Communauté générale et le pont mobile utilisent ce même contrat afin d’éviter des décisions d’âge divergentes entre interfaces.
+
 ## Invariants serveur
 
 La navigation n'est jamais considérée comme une barrière de sécurité suffisante. Les invariants suivants restent obligatoires :
