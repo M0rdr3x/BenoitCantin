@@ -54,7 +54,7 @@ req("!childmode&&p.play_path" in lc,'La fiche projet Junior expose encore le bou
 req("action==='set_child_access_review'" in ae,'Action admin explicite de révision 11–12 absente.')
 req("targettype==='project'?'projects':targettype==='document'?'documents':''" in ae,'Action admin de révision cible des tables arbitraires.')
 req("['unreviewed','approved_11_12','blocked_11_12'].includes(childstatus)" in ae,'Action admin accepte un état de classement non borné.')
-req('child_access_reviewed_by:user.id' in ae,'La décision admin n enregistre pas le réviseur humain.')
+req('update.child_access_reviewed_by=user.id' in ae,'La décision admin n enregistre pas le réviseur humain.')
 req('data-child-review-status="approved_11_12"' in admin,'Bouton admin Approuver 11–12 absent.')
 req('data-child-review-status="blocked_11_12"' in admin,'Bouton admin Bloquer 11–12 absent.')
 
