@@ -78,6 +78,8 @@ req('createorreplacefunctionpublic.has_accepted_junior_community_rules()' in m,'
 req('createorreplacefunctionpublic.sinjira_junior_community_enabled(p_user_iduuid' not in m,'Un RPC public permet encore de sonder l activation Junior par UUID.')
 req('createorreplacefunctionpublic.has_accepted_junior_community_rules(p_user_iduuid' not in m,'Un RPC public permet encore de sonder les règles Junior par UUID.')
 req('createorreplacefunctionpublic.sinjira_is_junior(p_user_iduuid' not in m,'Un RPC public permet encore de sonder la bande Junior par UUID.')
+req('createorreplacefunctionpublic.sinjira_my_age_band()' in m and 'securitydefiner' in m[m.find('createorreplacefunctionpublic.sinjira_my_age_band()'):m.find('--helpersarbitraires')],'Le wrapper sinjira_my_age_band n est pas SECURITY DEFINER dans la dernière migration Junior.')
+req('revokeallonfunctionpublic.sinjira_my_age_band()frompublic,anon,authenticated' in m and 'grantexecuteonfunctionpublic.sinjira_my_age_band()toanon,authenticated,service_role' in m,'ACL finale du wrapper self-only incompatible avec les RLS publiques.')
 
 # Minimisation identité et séparation sociale.
 req("'explorateur-'||upper(substr(md5(" in m,'Le pseudonyme Junior généré côté serveur est absent.')
@@ -151,8 +153,11 @@ req("if(!child_11_12_allowed_routes.has(leaf))link.hidden=true" in a,'La navigat
 req("capabilities.child_11_12===true" in co and "communaute-junior.html" in co and "capabilities.general_community!==true" in co,'La Communauté générale n est pas bornée par les capacités serveur.')
 
 # Tests comportementaux.
-req('selectplan(48);' in t,'Plan pgTAP Junior inattendu.')
+req('selectplan(51);' in t,'Plan pgTAP Junior inattendu.')
 req('leparentpeutrévoquerimmédiatementlacommunautéjunior' in t,'La preuve de révocation parentale immédiate est absente.')
+req('wrapperdebandeself-onlyrestesecuritydefineraprèsmigrationjunior' in t,'Le pgTAP ne prouve pas SECURITY DEFINER sur le wrapper self-only final.')
+req('authenticatedconservelewrapperdebandeself-only' in t,'Le pgTAP ne prouve pas l accès authenticated au wrapper self-only final.')
+req('anonconservelewrapperself-onlyrequisparlesrlspubliques' in t,'Le pgTAP ne prouve pas l accès anon self-only requis par les RLS publiques.')
 req('junior_guardian_consent_required' in t and 'aprèsrévocationlefiljuniorestimmédiatementrefusécôtéserveur' in t,'Le fil Junior n est pas prouvé fermé après révocation.')
 req('leparentpeutréactiverlacommunautéjunior' in t,'La réactivation parentale n est pas couverte.')
 for marker,msg in (

@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(48);
+select plan(51);
 
 select ok(to_regprocedure('private.sinjira_junior_community_enabled(uuid)') is not null,'garde privée d activation Junior existe');
 select ok(to_regprocedure('public.junior_community_feed(integer)') is not null,'RPC fil Junior existe');
@@ -12,6 +12,9 @@ select ok(to_regprocedure('public.sinjira_junior_community_enabled(uuid)') is nu
 select ok(to_regprocedure('public.has_accepted_junior_community_rules()') is not null,'RPC règles Junior self-only existe');
 select ok(to_regprocedure('public.has_accepted_junior_community_rules(uuid)') is null,'aucun RPC public ne permet de sonder les règles Junior par UUID');
 select ok(to_regprocedure('public.sinjira_is_junior(uuid)') is null,'aucun RPC public ne permet de sonder la bande Junior par UUID');
+select ok((select prosecdef from pg_proc where oid='public.sinjira_my_age_band()'::regprocedure),'wrapper de bande self-only reste SECURITY DEFINER après migration Junior');
+select ok(has_function_privilege('authenticated','public.sinjira_my_age_band()','EXECUTE'),'authenticated conserve le wrapper de bande self-only');
+select ok(has_function_privilege('anon','public.sinjira_my_age_band()','EXECUTE'),'anon conserve le wrapper self-only requis par les RLS publiques');
 select ok(not has_function_privilege('authenticated','private.sinjira_is_junior(uuid)','EXECUTE'),'auth: aucun EXECUTE sur le helper privé de bande Junior');
 select ok(not has_function_privilege('authenticated','private.sinjira_junior_community_enabled(uuid)','EXECUTE'),'auth: aucun EXECUTE sur le helper privé d activation Junior');
 select ok(not has_function_privilege('authenticated','private.has_accepted_junior_community_rules(uuid)','EXECUTE'),'auth: aucun EXECUTE sur le helper privé de règles Junior');

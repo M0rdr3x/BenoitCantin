@@ -68,10 +68,11 @@ create or replace function public.sinjira_my_age_band()
 returns text
 language sql
 stable
-set search_path=public
-as $$ select public.sinjira_age_band(auth.uid()); $$;
-revoke all on function public.sinjira_my_age_band() from public,anon;
-grant execute on function public.sinjira_my_age_band() to authenticated,service_role;
+security definer
+set search_path=public,auth
+as $ select public.sinjira_age_band(auth.uid()); $;
+revoke all on function public.sinjira_my_age_band() from public,anon,authenticated;
+grant execute on function public.sinjira_my_age_band() to anon,authenticated,service_role;
 
 -- Helpers arbitraires strictement privés. Un enfant authentifié ne peut jamais
 -- sonder l'âge, l'activation Junior ou l'acceptation des règles d'un autre compte par UUID.
