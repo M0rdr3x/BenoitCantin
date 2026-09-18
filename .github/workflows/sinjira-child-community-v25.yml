@@ -19,6 +19,9 @@ on:
       - 'assets/js/sinjira-library.js'
       - 'assets/js/sinjira-library-v24-4-61.js'
       - 'assets/js/sinjira-admin-console-core.js'
+      - 'mobile-native/App.tsx'
+      - 'mobile-native/NativeHomeHub.tsx'
+      - 'mobile-native/README.md'
       - 'assets/js/v24-relations.js'
       - 'assets/js/sinjira-admin-social-v20.js'
       - 'supabase/functions/admin-social-v20/index.ts'
@@ -32,6 +35,7 @@ on:
       - 'scripts/validate_child_access_matrix_v25.py'
       - 'scripts/validate_child_sensitive_boundary_v25.py'
       - 'scripts/validate_child_content_rating_v25.py'
+      - 'scripts/validate_mobile_native_home_hub_v25.py'
       - 'docs/SINJIRA_CHILD_ACCESS_MATRIX_V25.md'
       - 'tests/e2e/test_child_community.py'
       - '.github/workflows/sinjira-child-community-v25.yml'
@@ -63,11 +67,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m py_compile scripts/validate_child_community_v25.py scripts/validate_child_access_matrix_v25.py scripts/validate_child_sensitive_boundary_v25.py scripts/validate_child_content_rating_v25.py
+          python -m py_compile scripts/validate_child_community_v25.py scripts/validate_child_access_matrix_v25.py scripts/validate_child_sensitive_boundary_v25.py scripts/validate_child_content_rating_v25.py scripts/validate_mobile_native_home_hub_v25.py
           python scripts/validate_child_community_v25.py
           python scripts/validate_child_access_matrix_v25.py
           python scripts/validate_child_sensitive_boundary_v25.py
           python scripts/validate_child_content_rating_v25.py
+          python scripts/validate_mobile_native_home_hub_v25.py
           node --check assets/js/sinjira-community-junior-v25.js
           node --check assets/js/sinjira-community-junior-rules-v25.js
           node --check assets/js/sinjira-community-real.js
