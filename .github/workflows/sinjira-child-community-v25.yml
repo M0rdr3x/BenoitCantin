@@ -7,9 +7,7 @@ on:
     paths:
       - 'supabase/migrations/20260917223000_sinjira_v25_junior_community.sql'
       - 'supabase/tests/child_community_v25.test.sql'
-      - 'compte/communaute-junior.html'
-      - 'compte/regles-communaute-junior.html'
-      - 'compte/relations.html'
+      - 'compte/*.html'
       - 'assets/js/sinjira-community-junior-v25.js'
       - 'assets/js/sinjira-community-junior-rules-v25.js'
       - 'assets/js/sinjira-community-real.js'
@@ -18,6 +16,8 @@ on:
       - 'assets/js/sinjira-admin-social-v20.js'
       - 'supabase/functions/admin-social-v20/index.ts'
       - 'scripts/validate_child_community_v25.py'
+      - 'scripts/validate_child_access_matrix_v25.py'
+      - 'docs/SINJIRA_CHILD_ACCESS_MATRIX_V25.md'
       - 'tests/e2e/test_child_community.py'
       - '.github/workflows/sinjira-child-community-v25.yml'
   workflow_dispatch:
@@ -48,8 +48,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m py_compile scripts/validate_child_community_v25.py
+          python -m py_compile scripts/validate_child_community_v25.py scripts/validate_child_access_matrix_v25.py
           python scripts/validate_child_community_v25.py
+          python scripts/validate_child_access_matrix_v25.py
           node --check assets/js/sinjira-community-junior-v25.js
           node --check assets/js/sinjira-community-junior-rules-v25.js
           node --check assets/js/sinjira-community-real.js
