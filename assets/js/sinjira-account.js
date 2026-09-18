@@ -80,6 +80,9 @@ async function initAdminNavigation(){
 
 const CHILD_11_12_ALLOWED_ROUTES=new Set([
   'index.html',
+  'bibliotheque.html',
+  'documents.html',
+  'projet.html',
   'blocages.html',
   'communaute-junior.html',
   'confidentialite-joueur.html',
