@@ -60,8 +60,88 @@ async function submissions(){const d=await call('list_submissions'),box=document
 }
 
 let charactersCache=[];
-async function characters(){const d=await call('list_characters');charactersCache=d.characters||[];const box=document.querySelector('[data-admin-character-list]'),nov=document.querySelector('[data-admin-novel-select]');if(nov)nov.innerHTML='<option value="">À attribuer</option>'+(d.novels||[]).map(n=>`<option value="${n.id}">${escapeHtml(n.title)}</option>`).join('');if(!box)return;box.innerHTML=charactersCache.map(c=>`<article class="admin-v18-row"><strong>${escapeHtml(c.public_name||'Personnage sans nom')}</strong><p>${escapeHtml(c.status)} · ${escapeHtml(c.novel_title||c.novel_note||'Aucun roman attribué')}</p><button class="btn btn-secondary btn-small" data-edit-character="${c.id}">Modifier</button></article>`).join('')||'<p>Aucun personnage.</p>';box.querySelectorAll('[data-edit-character]').forEach(b=>b.addEventListener('click',()=>fillEditor(charactersCache.find(c=>c.id===b.dataset.editCharacter))))}
+async function characters(){const d=await call('list_characters');charactersCache=d.characters||[];const box=document.querySelector('[data-admin-character-list]'),nov=document.querySelector('[data-admin-novel-select]');if(nov)nov.innerHTML='<option value="">Aucune liaison directe</option>'+(d.novels||[]).map(n=>`<option value="${n.id}">${escapeHtml(n.title)}</option>`).join('');if(!box)return;box.innerHTML=charactersCache.map(c=>`<article class="admin-v18-row"><strong>${escapeHtml(c.public_name||'Personnage sans nom')}</strong><p>${escapeHtml(c.status)} · ${escapeHtml(c.novel_title||c.novel_note||'Aucun roman attribué')}</p><button class="btn btn-secondary btn-small" data-edit-character="${c.id}">Modifier</button></article>`).join('')||'<p>Aucun personnage.</p>';box.querySelectorAll('[data-edit-character]').forEach(b=>b.addEventListener('click',()=>fillEditor(charactersCache.find(c=>c.id===b.dataset.editCharacter))))}
 function fillEditor(c){const f=document.querySelector('[data-character-editor]');if(!c||!f)return;f.elements.id.value=c.id;f.elements.public_name.value=c.public_name||'';f.elements.status.value=c.status||'author_review';f.elements.canon_status.value=c.canon_status||'PROVISOIRE';f.elements.canon_version.value=c.canon_version||'v1.0';f.elements.public_description.value=c.public_description||'';f.elements.novel_id.value=c.novel_id||'';f.elements.novel_note.value=c.novel_note||'';f.elements.visible_to_user.checked=c.visible_to_user!==false;f.elements.bible_json.value=JSON.stringify(c.bible||{},null,2);if(f.elements.author_confirmed_canon)f.elements.author_confirmed_canon.checked=false;if(f.elements.author_confirmed_retcon)f.elements.author_confirmed_retcon.checked=false;f.scrollIntoView({behavior:'smooth'})}
 function editor(){const f=document.querySelector('[data-character-editor]');if(!f)return;f.addEventListener('submit',async e=>{e.preventDefault();let bible={};try{bible=JSON.parse(f.elements.bible_json.value||'{}')}catch{return alert('Le JSON de la Bible est invalide.')};await call('save_character',{character:{id:f.elements.id.value,public_name:f.elements.public_name.value,status:f.elements.status.value,public_description:f.elements.public_description.value,novel_id:f.elements.novel_id.value||null,novel_note:f.elements.novel_note.value,visible_to_user:f.elements.visible_to_user.checked,canon_status:f.elements.canon_status.value,canon_version:f.elements.canon_version.value,author_confirmed_canon:Boolean(f.elements.author_confirmed_canon?.checked),author_confirmed_retcon:Boolean(f.elements.author_confirmed_retcon?.checked),bible}});alert('Personnage enregistré.');await characters()})}
 
-(async()=>{try{editor();ensureNotificationsUi();await Promise.all([dashboard(),comments(),submissions(),characters(),canonOverview(),auditLog(),notifications()])}catch(e){console.error('[SINJIRA admin V18]',e)}})();
+function toLocalInput(value){
+ if(!value)return '';
+ const d=new Date(value);if(Number.isNaN(d.getTime()))return '';
+ const pad=n=>String(n).padStart(2,'0');
+ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function toIso(value){if(!value)return null;const d=new Date(value);return Number.isNaN(d.getTime())?null:d.toISOString()}
+function resetExtendedStoryEditor(){
+ const f=document.querySelector('[data-extended-story-editor]');if(!f)return;
+ f.reset();f.elements.id.value='';f.elements.published_at.value='';f.elements.story_type.value='character_chronicle';f.elements.anchor_scope.value='UNASSIGNED';f.elements.canon_status.value='PROVISOIRE';f.elements.status.value='draft';f.elements.audience.value='private';f.elements.continuity_json.value='{}';f.elements.visible_to_character_owner.checked=true;f.elements.author_confirmed_extended_canon.checked=false;
+}
+let extendedStoriesCache=[];
+async function extendedStories(){
+ const d=await call('list_extended_stories');
+ extendedStoriesCache=d.stories||[];
+ const box=document.querySelector('[data-admin-extended-story-list]');
+ const charSelect=document.querySelector('[data-admin-story-character-select]');
+ if(charSelect)charSelect.innerHTML='<option value="">Aucune</option>'+charactersCache.map(c=>`<option value="${c.id}">${escapeHtml(c.public_name||'Personnage sans nom')}</option>`).join('');
+ if(!box)return;
+ const labels={character_chronicle:'Chronique de personnage',world_chronicle:'Chronique du Monde',quebec_chronicle:'Chronique de Québec',archive:'Archive',fragment:'Fragment',novella:'Novella'};
+ box.innerHTML=extendedStoriesCache.map(st=>`<article class="admin-v18-row"><strong>${escapeHtml(st.title||'Chronique sans titre')}</strong><p>${escapeHtml(labels[st.story_type]||st.story_type)} · ${escapeHtml(st.canon_status||'PROVISOIRE')} · ${escapeHtml(st.status||'draft')}</p><p>${st.character_name?`Conscience : ${escapeHtml(st.character_name)} · `:''}${st.region_name?`Région : ${escapeHtml(st.region_name)} · `:''}Ancrage : ${escapeHtml(st.anchor_scope||'UNASSIGNED')}</p><button class="btn btn-secondary btn-small" data-edit-extended-story="${st.id}">Modifier</button></article>`).join('')||'<p>Aucune Chronique du Canon étendu.</p>';
+ box.querySelectorAll('[data-edit-extended-story]').forEach(b=>b.addEventListener('click',()=>fillExtendedStoryEditor(extendedStoriesCache.find(x=>x.id===b.dataset.editExtendedStory))));
+}
+function fillExtendedStoryEditor(st){
+ const f=document.querySelector('[data-extended-story-editor]');if(!st||!f)return;
+ f.elements.id.value=st.id||'';
+ f.elements.published_at.value=st.published_at||'';
+ f.elements.story_type.value=st.story_type||'character_chronicle';
+ f.elements.character_id.value=st.character_id||'';
+ f.elements.title.value=st.title||'';
+ f.elements.region_name.value=st.region_name||'';
+ f.elements.anchor_scope.value=st.anchor_scope||'UNASSIGNED';
+ f.elements.canon_status.value=st.canon_status||'PROVISOIRE';
+ f.elements.status.value=st.status||'draft';
+ f.elements.audience.value=st.audience||'private';
+ f.elements.starts_at.value=toLocalInput(st.starts_at);
+ f.elements.ends_at.value=toLocalInput(st.ends_at);
+ f.elements.summary.value=st.summary||'';
+ f.elements.content.value=st.content||'';
+ f.elements.continuity_json.value=JSON.stringify(st.continuity_data||{},null,2);
+ f.elements.visible_to_character_owner.checked=st.visible_to_character_owner!==false;
+ f.elements.author_confirmed_extended_canon.checked=false;
+ f.scrollIntoView({behavior:'smooth'});
+}
+function extendedStoryEditor(){
+ const f=document.querySelector('[data-extended-story-editor]');if(!f)return;
+ f.querySelector('[data-story-reset]')?.addEventListener('click',resetExtendedStoryEditor);
+ f.addEventListener('submit',async e=>{
+   e.preventDefault();
+   let continuity={};try{continuity=JSON.parse(f.elements.continuity_json.value||'{}')}catch{return alert('Le JSON de continuité est invalide.')};
+   const story={
+     id:f.elements.id.value||null,
+     published_at:f.elements.published_at.value||null,
+     story_type:f.elements.story_type.value,
+     character_id:f.elements.character_id.value||null,
+     title:f.elements.title.value,
+     region_name:f.elements.region_name.value,
+     anchor_scope:f.elements.anchor_scope.value,
+     canon_status:f.elements.canon_status.value,
+     status:f.elements.status.value,
+     audience:f.elements.audience.value,
+     starts_at:toIso(f.elements.starts_at.value),
+     ends_at:toIso(f.elements.ends_at.value),
+     summary:f.elements.summary.value,
+     content:f.elements.content.value,
+     continuity_data:continuity,
+     visible_to_character_owner:f.elements.visible_to_character_owner.checked,
+     author_confirmed_extended_canon:Boolean(f.elements.author_confirmed_extended_canon.checked)
+   };
+   try{
+     const saved=await call('save_extended_story',{story});
+     alert('Chronique enregistrée dans le Canon étendu.');
+     f.elements.id.value=saved.story?.id||story.id||'';
+     f.elements.published_at.value=saved.story?.published_at||story.published_at||'';
+     f.elements.author_confirmed_extended_canon.checked=false;
+     await extendedStories();
+   }catch(err){alert(err.message)}
+ });
+}
+
+(async()=>{try{editor();extendedStoryEditor();ensureNotificationsUi();await Promise.all([dashboard(),comments(),submissions(),canonOverview(),auditLog(),notifications()]);await characters();await extendedStories()}catch(e){console.error('[SINJIRA admin V18]',e)}})();
