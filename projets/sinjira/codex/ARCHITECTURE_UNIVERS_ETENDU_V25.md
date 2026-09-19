@@ -208,6 +208,34 @@ Avant une expansion massive, SINJIRA™ doit disposer de :
 9. vérification des collisions chronologiques;
 10. parcours de lecture par saga, personnage, région et période.
 
+### Fondation V25 déjà préparée dans GitHub
+
+La fondation technique prévoit maintenant :
+
+- une table distincte pour les récits du **Canon étendu**;
+- une table de présence des personnages par récit;
+- un **Atlas hiérarchique** de lieux;
+- un **Calendrier-Monde** dont chaque événement exige une référence de source;
+- des présences canoniques reliant personnages, dates et lieux;
+- des règles de temps minimal de déplacement entre lieux;
+- une détection des chevauchements géographiques incompatibles;
+- une détection des déplacements matériellement impossibles;
+- un blocage de canonisation lorsque la date, le lieu ou une règle de trajet nécessaire est manquante;
+- l’utilisation des faits SECRET_AUTEUR comme garde-fous de continuité sans les divulguer;
+- une confirmation humaine explicite avant toute promotion vers CANON_ETENDU.
+
+### Procédure de canonisation d’une Chronique
+
+1. La Chronique est créée en **PROVISOIRE**.
+2. Son personnage, sa période et son lieu sont reliés aux référentiels canoniques.
+3. Le système compare sa présence avec le Canon central et les Chroniques déjà canonisées.
+4. Le système vérifie les temps de déplacement documentés lorsque deux scènes se déroulent dans des lieux incompatibles.
+5. Une information manquante produit un blocage de validation plutôt qu’une supposition automatique.
+6. Une collision produit un blocage de canonisation.
+7. Lorsque les contrôles sont satisfaits, **Benoit Cantin confirme explicitement** la promotion vers CANON_ETENDU.
+
+Le moteur de continuité ne doit jamais inventer une heure, un lieu, une durée de trajet ou un fait absent des sources pour faire « passer » une histoire.
+
 ---
 
 **Règle de synthèse :** les 14 romans donnent les faits fondamentaux. L’univers étendu montre tout ce que ces romans n’avaient pas besoin de montrer, sans jamais leur retirer leur autorité canonique.
