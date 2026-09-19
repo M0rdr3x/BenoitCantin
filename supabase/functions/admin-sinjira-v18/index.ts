@@ -16,7 +16,7 @@ const SAFE_LOG_CODES=new Set([
   'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON','SOURCE_PURGED',
   'SOURCE_PURGE_CONFIRMATION_REQUIRED','SOURCE_PURGE_STORAGE_FAILED',
   'CANON_CONFIRMATION_REQUIRED','EXTENDED_CANON_CONFIRMATION_REQUIRED','STORY_CONTINUITY_CONFLICT','STORY_CONTINUITY_INCOMPLETE','NOTIFICATION_ID_REQUIRED','CENTRAL_CANON_LOCKED',
-  'CANON_SOURCE_REQUIRED','CANON_SOURCE_NOT_VERIFIED','CANON_SOURCE_SCOPE_MISMATCH','CANON_PRESENCE_SOURCE_SCOPE_MISMATCH','CANON_SOURCE_LOCATOR_REQUIRED','CANON_SOURCE_CHAPTER_REQUIRED','CANON_SOURCE_IN_USE','CANON_SOURCE_KEY_IMMUTABLE','CANON_SOURCE_SUPERSEDES_SELF','CANON_SOURCE_SUPERSEDES_CYCLE','CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED','CLAIM_SOURCE_REQUIRED','CLAIM_SOURCE_NOT_VERIFIED','CLAIM_SOURCE_SCOPE_MISMATCH','STORY_PROVENANCE_REQUIRED','STORY_PROVENANCE_INCOMPLETE','STORY_PROVENANCE_SCOPE_MISMATCH','STORY_CANON_INSERT_FORBIDDEN','STORY_SAVE_BEFORE_CANON_TRANSITION','STORY_PROMOTION_REQUIRED','STORY_CANON_STATUS_INVALID','STORY_PUBLICATION_TIMESTAMP_REQUIRED'
+  'CANON_SOURCE_REQUIRED','CANON_SOURCE_NOT_VERIFIED','CANON_SOURCE_SCOPE_MISMATCH','CANON_PRESENCE_SOURCE_SCOPE_MISMATCH','CANON_SOURCE_LOCATOR_REQUIRED','CANON_SOURCE_CHAPTER_REQUIRED','CANON_SOURCE_IN_USE','CANON_SOURCE_KEY_IMMUTABLE','CANON_SOURCE_SUPERSEDES_SELF','CANON_SOURCE_SUPERSEDES_CYCLE','CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED','CANON_SOURCE_RETIRE_REFERENCES_REMAIN','CLAIM_SOURCE_REQUIRED','CLAIM_SOURCE_NOT_VERIFIED','CLAIM_SOURCE_SCOPE_MISMATCH','STORY_PROVENANCE_REQUIRED','STORY_PROVENANCE_INCOMPLETE','STORY_PROVENANCE_SCOPE_MISMATCH','STORY_CANON_INSERT_FORBIDDEN','STORY_SAVE_BEFORE_CANON_TRANSITION','STORY_PROMOTION_REQUIRED','STORY_CANON_STATUS_INVALID','STORY_PUBLICATION_TIMESTAMP_REQUIRED'
 ]);
 
 function privateJson(data:unknown,status=200){
@@ -231,12 +231,12 @@ Deno.serve(async(req)=>{
       const usageBySource=new Map<string,any>();
       const usageFor=(id:any)=>{
         const key=String(id||'');if(!key)return null;
-        if(!usageBySource.has(key))usageBySource.set(key,{total:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,retirement_allowed:false,references:[]});
+        if(!usageBySource.has(key))usageBySource.set(key,{total:0,direct_references:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,retirement_allowed:false,retirement_blocked_references:false,references:[]});
         return usageBySource.get(key);
       };
       const add=(sourceId:any,kind:string,label:string,canonical=false)=>{
         const u=usageFor(sourceId);if(!u)return;
-        u.total+=1;u[kind]=(u[kind]||0)+1;u.key_locked=true;if(canonical){u.canonical+=1;u.authority_locked=true}
+        u.total+=1;u.direct_references+=1;u[kind]=(u[kind]||0)+1;u.key_locked=true;if(canonical){u.canonical+=1;u.authority_locked=true}
         if(u.references.length<20)u.references.push(label);
       };
 
@@ -256,11 +256,14 @@ Deno.serve(async(req)=>{
           && ['roman','bible','author_decision','archive'].includes(newer.source_kind)
           && oldSource?.scope===newer.scope;
         u.total+=1;u.superseded_by+=1;u.key_locked=true;u.authority_locked=true;
-        if(replacementVerified)u.retirement_allowed=true;
-        if(u.references.length<20)u.references.push(`Remplacée par : ${newer.title||newer.source_key}${replacementVerified?' · retrait RETIRED autorisé':''}`);
+        if(replacementVerified){
+          u.retirement_allowed=(u.direct_references||0)===0;
+          u.retirement_blocked_references=(u.direct_references||0)>0;
+        }
+        if(u.references.length<20)u.references.push(`Remplacée par : ${newer.title||newer.source_key}${replacementVerified?(u.retirement_allowed?' · RETIRED autorisé':' · références à migrer avant RETIRED'):''}`);
       }
 
-      const enrichedSources=sourceRows.map((src:any)=>({...src,usage:usageBySource.get(String(src.id))||{total:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,retirement_allowed:false,references:[]}}));
+      const enrichedSources=sourceRows.map((src:any)=>({...src,usage:usageBySource.get(String(src.id))||{total:0,direct_references:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,retirement_allowed:false,retirement_blocked_references:false,references:[]}}));
       return privateJson({ok:true,sources:enrichedSources,claims:claimRows});
     }
 
@@ -618,6 +621,7 @@ Deno.serve(async(req)=>{
     if(e?.message==='CANON_SOURCE_CHAPTER_REQUIRED')return privateJson({ok:false,error:'Une source Roman vérifiée doit indiquer le chapitre ou la section.',code:'CANON_SOURCE_CHAPTER_REQUIRED'},409);
     if(e?.message==='CANON_SOURCE_IN_USE')return privateJson({ok:false,error:'Cette source est déjà utilisée par le canon. Créez une nouvelle source de remplacement au lieu de modifier son autorité ou ses repères.',code:'CANON_SOURCE_IN_USE'},409);
     if(e?.message==='CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED')return privateJson({ok:false,error:'Pour passer une source engagée à RETIRED, créez d’abord une source de remplacement VERIFIED ou SECRET AUTEUR dans la même période et reliez-la avec « Remplace la source ».',code:'CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED'},409);
+    if(e?.message==='CANON_SOURCE_RETIRE_REFERENCES_REMAIN')return privateJson({ok:false,error:'Le remplacement existe, mais l’ancienne source est encore utilisée. Migrez d’abord tous les faits, lieux, trajets, événements et présences vers la nouvelle source avant de choisir RETIRED.',code:'CANON_SOURCE_RETIRE_REFERENCES_REMAIN'},409);
     if(e?.message==='CANON_SOURCE_KEY_IMMUTABLE')return privateJson({ok:false,error:'La clé stable d’une source déjà utilisée ne peut plus être modifiée.',code:'CANON_SOURCE_KEY_IMMUTABLE'},409);
     if(e?.message==='CANON_SOURCE_SUPERSEDES_SELF')return privateJson({ok:false,error:'Une source ne peut pas se remplacer elle-même.',code:'CANON_SOURCE_SUPERSEDES_SELF'},409);
     if(e?.message==='CANON_SOURCE_SUPERSEDES_CYCLE')return privateJson({ok:false,error:'Chaîne de remplacement refusée : elle créerait un cycle entre sources.',code:'CANON_SOURCE_SUPERSEDES_CYCLE'},409);
