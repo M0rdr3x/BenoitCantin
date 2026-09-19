@@ -58,6 +58,7 @@ select throws_ok(
   'tuteur AAL1 ne peut pas activer la Communauté Junior'
 );
 
+select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','75000000-0000-4000-8000-000000000001','aal','aal2')::text,
@@ -234,6 +235,7 @@ select ok(
   'Junior ne redevient actif qu après la nouvelle activation explicite de A'
 );
 
+select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','75000000-0000-4000-8000-000000000001','aal','aal1')::text,

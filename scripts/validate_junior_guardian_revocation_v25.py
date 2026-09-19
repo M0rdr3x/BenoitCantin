@@ -137,6 +137,15 @@ def validate(migration: str, cascade: str, enable_aal2: str, summary_aal2: str, 
         if marker not in test:
             fail(f"preuve pgTAP multi-tuteur manquante: {marker}")
 
+    test_compact = "".join(test.lower().split())
+    guardian_sub = "selectset_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000001',true);"
+    if test_compact.count(guardian_sub) < 3:
+        fail("preuve pgTAP Junior: le contexte auth.uid() du tuteur A n est pas rétabli explicitement")
+    if guardian_sub + "selectset_config('request.jwt.claims',jsonb_build_object('sub','75000000-0000-4000-8000-000000000001','aal','aal2')::text,true);" not in test_compact:
+        fail("preuve pgTAP Junior: contexte tuteur AAL2 incohérent avant réactivation")
+    if guardian_sub + "selectset_config('request.jwt.claims',jsonb_build_object('sub','75000000-0000-4000-8000-000000000001','aal','aal1')::text,true);" not in test_compact:
+        fail("preuve pgTAP Junior: contexte tuteur AAL1 incohérent avant désactivation fail-safe")
+
     forbidden_workflow = (
         "pull_request_target",
         "secrets.",
@@ -172,6 +181,7 @@ def self_test(migration: str, cascade: str, enable_aal2: str, summary_aal2: str,
         "cascade consentement retirée": (migration, cascade.replace("  update public.junior_community_guardian_consents\n", "  -- update retiré\n", 1), enable_aal2, summary_aal2, alias_privacy, relations_js, test, workflow),
         "AAL2 activation retiré": (migration, cascade, enable_aal2.replace("if v_enabled and coalesce(auth.jwt()->>'aal','aal1')<>'aal2' then", "if false then", 1), summary_aal2, alias_privacy, relations_js, test, workflow),
         "preuve second tuteur retirée": (migration, cascade, enable_aal2, summary_aal2, alias_privacy, relations_js, test.replace("junior-revocation-guardian-b@example.test", "guardian-b-missing"), workflow),
+        "contexte auth.uid tuteur retiré": (migration, cascade, enable_aal2, summary_aal2, alias_privacy, relations_js, test.replace("select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000001',true);", "-- contexte tuteur retiré", 1), workflow),
         "résumé AAL2 retiré": (migration, cascade, enable_aal2, summary_aal2.replace("coalesce(auth.jwt()->>'aal','aal1')<>'aal2'", "false", 1), alias_privacy, relations_js, test, workflow),
         "alias Junior réexposé": (migration, cascade, enable_aal2, summary_aal2, alias_privacy.replace("'enabled',c.revoked_at is null and c.minor_user_id is not null", "'enabled',c.revoked_at is null and c.minor_user_id is not null,'junior_alias','probe'", 1), relations_js, test, workflow),
         "secret ajouté au workflow": (migration, cascade, enable_aal2, summary_aal2, alias_privacy, relations_js, test, workflow + "\n# secrets.TEST\n"),
