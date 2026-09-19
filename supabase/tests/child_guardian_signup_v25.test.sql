@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(41);
+select plan(45);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -285,6 +285,73 @@ select is(
   public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),
   'child_pending',
   'quitter son lien remet immédiatement le compte 11 ans en child_pending'
+);
+
+-- Majorité : la supervision cesse aussi comme visibilité pour l'ancien tuteur.
+update public.account_safety_profiles
+set date_of_birth=(current_date-interval '18 years')::date
+where user_id='20000000-0000-4000-8000-000000000011';
+
+select is(
+  public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),
+  'adult',
+  'le jour des 18 ans le compte devient adult'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal2')::text,
+  true
+);
+set local role authenticated;
+select is(
+  (select count(*)::integer
+   from public.guardian_links
+   where minor_user_id='20000000-0000-4000-8000-000000000011'),
+  0,
+  'à 18 ans l ancien tuteur ne peut plus lire le lien de supervision'
+);
+reset role;
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','20000000-0000-4000-8000-000000000011','aal','aal1')::text,
+  true
+);
+set local role authenticated;
+select is(
+  (select count(*)::integer
+   from public.guardian_links
+   where minor_user_id='20000000-0000-4000-8000-000000000011'),
+  1,
+  'la personne devenue adulte conserve l accès à son propre historique de supervision'
+);
+reset role;
+
+insert into auth.users(id,email,raw_user_meta_data)
+values(
+  '60000000-0000-4000-8000-000000000099',
+  'guardian-link-outsider@example.test',
+  jsonb_build_object(
+    'birth_date',(current_date-interval '30 years')::date::text,
+    'date_of_birth',(current_date-interval '30 years')::date::text,
+    'gender','Femme','sex','female','pseudo','Tiers test','display_name','Tiers test','residence_country','Canada'
+  )
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','60000000-0000-4000-8000-000000000099','aal','aal2')::text,
+  true
+);
+select ok(
+  not public.sinjira_can_read_guardian_link((
+    select id
+    from public.guardian_links
+    where minor_user_id='20000000-0000-4000-8000-000000000011'
+    limit 1
+  )),
+  'un tiers ne peut pas utiliser le helper pour sonder un lien qui ne le concerne pas'
 );
 
 select * from finish();

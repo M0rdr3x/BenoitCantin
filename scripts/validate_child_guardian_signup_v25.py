@@ -9,6 +9,7 @@ GUARDIAN_AAL2_MIG = ROOT / 'supabase/migrations/20260919023000_sinjira_v25_guard
 GUARDIAN_SECRET_MIN_MIG = ROOT / 'supabase/migrations/20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql'
 GUARDIAN_READ_AAL2_MIG = ROOT / 'supabase/migrations/20260919033000_sinjira_v25_guardian_invite_read_aal2.sql'
 GUARDIAN_REVOKE_AAL2_MIG = ROOT / 'supabase/migrations/20260919043000_sinjira_v25_guardian_revoke_aal2.sql'
+GUARDIAN_ADULT_VIS_MIG = ROOT / 'supabase/migrations/20260919050000_sinjira_v25_guardian_majority_visibility.sql'
 YOUTH_BASE = ROOT / 'supabase/migrations/20260816140000_sinjira_v24_4_12_youth_safety.sql'
 SIGNUP_JS = ROOT / 'assets/js/v24-signup.js'
 BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
@@ -40,6 +41,7 @@ guardian_aal2_mig = read(GUARDIAN_AAL2_MIG)
 guardian_secret_min_mig = read(GUARDIAN_SECRET_MIN_MIG)
 guardian_read_aal2_mig = read(GUARDIAN_READ_AAL2_MIG)
 guardian_revoke_aal2_mig = read(GUARDIAN_REVOKE_AAL2_MIG)
+guardian_adult_vis_mig = read(GUARDIAN_ADULT_VIS_MIG)
 youth_base = read(YOUTH_BASE)
 signup_js = read(SIGNUP_JS)
 backend_js = read(BACKEND_JS)
@@ -56,6 +58,7 @@ gm = compact(guardian_aal2_mig)
 gsm = compact(guardian_secret_min_mig)
 grm = compact(guardian_read_aal2_mig)
 grv = compact(guardian_revoke_aal2_mig)
+gav = compact(guardian_adult_vis_mig)
 y = compact(youth_base)
 j = compact(signup_js)
 b = compact(backend_js)
@@ -117,6 +120,17 @@ req("ifuid=r.guardian_user_id" in grv and "uid=r.minor_user_id" not in grv,
     "Le contrat ne préserve pas clairement la sortie immédiate du mineur.")
 req("r.status='revoked'orr.revoked_atisnotnull" in grv,
     "La révocation n'est pas idempotente sur status/revoked_at.")
+req("createorreplacefunctionpublic.sinjira_can_read_guardian_link(p_link_iduuid)" in gav,
+    "Le helper de visibilité de majorité guardian_links est absent.")
+req("whenauth.uid()=g.minor_user_idthentrue" in gav,
+    "La personne concernée ne conserve pas l'accès à son propre historique de supervision.")
+req("whenauth.uid()=g.guardian_user_idthenpublic.sinjira_age_band(g.minor_user_id)in('child','child_pending','youth','youth_pending')" in gav,
+    "La visibilité de l'ancien tuteur n'est pas bornée aux comptes sous 18 ans.")
+req("createpolicyguardian_read_parties_age_bounded" in gav
+    and "using(public.sinjira_can_read_guardian_link(id))" in gav,
+    "La RLS guardian_links n'utilise pas le garde de majorité self-only.")
+req("droppolicyifexistsguardian_read_partiesonpublic.guardian_links" in gav,
+    "L'ancienne policy guardian_links sans borne d'âge n'est pas supprimée.")
 
 # Bande enfant distincte : elle ne doit pas hériter automatiquement des droits sociaux jeunesse.
 req("interval'11years'then'under11'" in m,
@@ -266,7 +280,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(41);' in t,
+req('selectplan(45);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
@@ -305,6 +319,10 @@ for marker, message in (
     ("untuteuraal2peutrévoquerleliendesupervision", "Le pgTAP ne prouve pas la révocation tuteur en AAL2."),
     ("lenfantaal1peutquitterimmédiatementsonpropreliendesupervision", "Le pgTAP ne préserve pas la sortie fail-safe de l enfant."),
     ("quittersonlienremetimmédiatementlecompte11ansenchild_pending", "Le pgTAP ne prouve pas l'effet fail-closed de la sortie enfant."),
+    ("lejourdes18anslecomptedevientadult", "Le pgTAP ne prouve pas la transition automatique vers adult à 18 ans."),
+    ("à18anslancientuteurnepeutpluslireleliendesupervision", "Le pgTAP ne prouve pas la fin de visibilité tuteur à la majorité."),
+    ("lapersonnedevenueadulteconservelaccèsàsonproprehistoriquedesupervision", "Le pgTAP ne préserve pas l'accès self-only de l'adulte à son historique."),
+    ("untiersnepeutpasutiliserlehelperpoursonderunlienquineleconcernepas", "Le pgTAP ne prouve pas la fermeture du helper à un tiers."),
     ("$$,'p0001','youth_jurisdiction_not_enabled'", "Le délimiteur pgTAP du refus hors Canada est cassé."),
     ("$$selectpublic.redeem_guardian_signup_invite('youth-redeem1101')$$", "Le délimiteur pgTAP du rétablissement child_pending est cassé."),
 ):

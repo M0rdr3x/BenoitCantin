@@ -52,7 +52,7 @@ La migration forward-only suivante aligne le serveur avec la bande V25 :
 
 Elle autorise un compte `child_pending` à consommer un **nouveau code parental adulte valide et à usage unique**. Le trigger canonique `sync_guardian_signup_invite_link` réactive/crée alors le lien `guardian_links` en `verified`, remet `revoked_at` à `null` et la classification repasse immédiatement à `child`. Un compte déjà supervisé ne reçoit pas un nouveau droit implicite.
 
-Le pgTAP d'inscription enfant couvre explicitement `child_pending → child`, la réactivation du lien, la consommation unique du code et la révocation asymétrique; il compte désormais **41 assertions**.
+Le pgTAP d'inscription enfant couvre explicitement `child_pending → child`, la réactivation du lien, la consommation unique du code, la révocation asymétrique et la transition de majorité; il compte désormais **45 assertions**.
 
 Cette onzième migration reste **non revue production**.
 
@@ -82,7 +82,7 @@ Elle refuse explicitement AAL1 avec `MFA_AAL2_REQUIRED`, conserve les gardes MFA
 
 L’interface Relations vérifie le niveau d’assurance avant l’appel RPC. Si un facteur existe mais que la session est AAL1, elle utilise le parcours `/compte/mfa.html` puis revient vers Relations. Si aucun second facteur n’est configuré, elle renvoie vers le Centre de sécurité.
 
-Le pgTAP enfant contient maintenant **37 assertions** et prouve le refus AAL1 à l’émission, la réussite AAL2, le format du code, la minimisation du secret et la fermeture de la relecture sous AAL1. Deux délimiteurs SQL `$$` endommagés dans la preuve précédente ont également été réparés et sont désormais verrouillés par le validateur statique.
+Le pgTAP enfant contient maintenant **45 assertions** au total; il prouve notamment le refus AAL1 à l’émission, la réussite AAL2, le format du code, la minimisation du secret et la fermeture de la relecture sous AAL1. Deux délimiteurs SQL `$$` endommagés dans la preuve précédente ont également été réparés et sont désormais verrouillés par le validateur statique.
 
 Cette treizième migration reste **non revue production**.
 
@@ -141,13 +141,27 @@ La migration forward-only suivante applique donc une règle asymétrique :
 - un lien déjà révoqué reste idempotent;
 - l'interface distingue les deux parcours et ne présente plus un lien avec `revoked_at` comme actif.
 
-Le pgTAP enfant compte maintenant **41 assertions** et prouve : tuteur AAL1 refusé, tuteur AAL2 accepté, puis enfant AAL1 capable de quitter immédiatement son propre lien avec retour fail-closed vers `child_pending`.
+Le pgTAP enfant compte maintenant **45 assertions** et prouve notamment : tuteur AAL1 refusé, tuteur AAL2 accepté, puis enfant AAL1 capable de quitter immédiatement son propre lien avec retour fail-closed vers `child_pending`.
 
 Cette dix-septième migration reste **non revue production**.
 
+### Fin de visibilité de supervision à 18 ans
+
+Le calcul des capacités cessait déjà la supervision à 18 ans, mais la policy historique `guardian_links` permettait encore à l'ancien tuteur de lire le lien après la majorité. Le pouvoir était donc coupé, mais la visibilité relationnelle persistait.
+
+La migration forward-only suivante ferme cette rétention de visibilité :
+
+`20260919050000_sinjira_v25_guardian_majority_visibility.sql`
+
+La nouvelle policy utilise un helper self-only par ID de lien. La personne concernée conserve l'accès à son propre historique, tandis que l'ancien tuteur ne peut lire le lien que tant que le compte est dans une bande sous 18 ans (`child`, `child_pending`, `youth`, `youth_pending`). Un tiers obtient toujours `false` et ne peut pas sonder un lien arbitraire.
+
+Le pgTAP enfant compte désormais **45 assertions** et prouve la transition exacte vers `adult` à 18 ans, **0 lien visible pour l'ancien tuteur**, conservation de l'historique pour la personne devenue adulte et fermeture du helper aux tiers.
+
+Cette dix-huitième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **17 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **18 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -175,6 +189,7 @@ Le snapshot de revue attend exactement **17 migrations locales futures non revue
 | `20260919033000_sinjira_v25_guardian_invite_read_aal2.sql` | `9b56b0e422f91fbb93939e03709d9afbcce0c7cf` |
 | `20260919040000_sinjira_v25_junior_enable_aal2.sql` | `df5475777abd5bb8fff26510a727d3d04cffce53` |
 | `20260919043000_sinjira_v25_guardian_revoke_aal2.sql` | `7dada317202bdd1add1d4dc5113e3aca682459e4` |
+| `20260919050000_sinjira_v25_guardian_majority_visibility.sql` | `d7a65f65e1a870620809f1a2e669ef031d6f6d8a` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -219,7 +234,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **17 migrations** dans l’ordre.
+2. Relire les **18 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.
