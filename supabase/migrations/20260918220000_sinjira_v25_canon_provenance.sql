@@ -276,7 +276,7 @@ $$;
 
 drop trigger if exists sinjira_canon_sources_prevent_supersedes_cycle on public.sinjira_canon_sources;
 create trigger sinjira_canon_sources_prevent_supersedes_cycle
-before insert or update of supersedes_source_id,scope on public.sinjira_canon_sources
+before insert or update of supersedes_source_id,scope,source_kind,book_number on public.sinjira_canon_sources
 for each row execute function private.sinjira_prevent_source_supersedes_cycle();
 
 drop trigger if exists sinjira_canon_sources_guard_authority on public.sinjira_canon_sources;
