@@ -29,6 +29,7 @@ create table if not exists public.sinjira_world_travel_rules(
   to_location_id uuid not null references public.sinjira_world_locations(id) on delete cascade,
   minimum_minutes integer not null check(minimum_minutes >= 0),
   travel_mode text not null default 'unspecified',
+  bidirectional boolean not null default true,
   valid_from timestamptz,
   valid_until timestamptz,
   canon_status text not null default 'PROVISOIRE' check(canon_status in ('PROVISOIRE','CANON','A_ARBITRER')),
@@ -392,7 +393,7 @@ begin
           select min(r.minimum_minutes)
           from public.sinjira_world_travel_rules r
           where ((r.from_location_id=t.prev_location_id and r.to_location_id=t.location_id)
-              or (r.from_location_id=t.location_id and r.to_location_id=t.prev_location_id))
+              or (r.bidirectional and r.from_location_id=t.location_id and r.to_location_id=t.prev_location_id))
             and r.canon_status='CANON'
             and (r.valid_from is null or r.valid_from<=t.prev_end)
             and (r.valid_until is null or r.valid_until>=t.starts_at)
@@ -403,7 +404,7 @@ begin
           select min(r.minimum_minutes)
           from public.sinjira_world_travel_rules r
           where ((r.from_location_id=t.location_id and r.to_location_id=t.next_location_id)
-              or (r.from_location_id=t.next_location_id and r.to_location_id=t.location_id))
+              or (r.bidirectional and r.from_location_id=t.next_location_id and r.to_location_id=t.location_id))
             and r.canon_status='CANON'
             and (r.valid_from is null or r.valid_from<=t.ends_at)
             and (r.valid_until is null or r.valid_until>=t.next_start)
@@ -501,7 +502,7 @@ begin
       and not exists(
         select 1 from public.sinjira_world_travel_rules r
         where ((r.from_location_id=t.prev_location_id and r.to_location_id=t.location_id)
-            or (r.from_location_id=t.location_id and r.to_location_id=t.prev_location_id))
+            or (r.bidirectional and r.from_location_id=t.location_id and r.to_location_id=t.prev_location_id))
           and r.canon_status='CANON'
           and (r.valid_from is null or r.valid_from<=t.prev_end)
           and (r.valid_until is null or r.valid_until>=t.starts_at)
@@ -519,7 +520,7 @@ begin
       and not exists(
         select 1 from public.sinjira_world_travel_rules r
         where ((r.from_location_id=t.location_id and r.to_location_id=t.next_location_id)
-            or (r.from_location_id=t.next_location_id and r.to_location_id=t.location_id))
+            or (r.bidirectional and r.from_location_id=t.next_location_id and r.to_location_id=t.location_id))
           and r.canon_status='CANON'
           and (r.valid_from is null or r.valid_from<=t.ends_at)
           and (r.valid_until is null or r.valid_until>=t.next_start)
