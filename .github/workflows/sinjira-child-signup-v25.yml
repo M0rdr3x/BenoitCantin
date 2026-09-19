@@ -17,6 +17,7 @@ on:
       - 'supabase/migrations/20260919043000_sinjira_v25_guardian_revoke_aal2.sql'
       - 'supabase/migrations/20260919050000_sinjira_v25_guardian_majority_visibility.sql'
       - 'supabase/migrations/20260919053000_sinjira_v25_guardian_invite_majority_visibility.sql'
+      - 'supabase/migrations/20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql'
       - 'supabase/tests/child_guardian_signup_v25.test.sql'
       - 'scripts/validate_child_guardian_signup_v25.py'
       - 'tests/e2e/test_public_site.py'

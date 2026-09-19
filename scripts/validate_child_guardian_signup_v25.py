@@ -11,6 +11,7 @@ GUARDIAN_READ_AAL2_MIG = ROOT / 'supabase/migrations/20260919033000_sinjira_v25_
 GUARDIAN_REVOKE_AAL2_MIG = ROOT / 'supabase/migrations/20260919043000_sinjira_v25_guardian_revoke_aal2.sql'
 GUARDIAN_ADULT_VIS_MIG = ROOT / 'supabase/migrations/20260919050000_sinjira_v25_guardian_majority_visibility.sql'
 GUARDIAN_INVITE_ADULT_VIS_MIG = ROOT / 'supabase/migrations/20260919053000_sinjira_v25_guardian_invite_majority_visibility.sql'
+GUARDIAN_CONTACTS_AAL2_MIG = ROOT / 'supabase/migrations/20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql'
 YOUTH_BASE = ROOT / 'supabase/migrations/20260816140000_sinjira_v24_4_12_youth_safety.sql'
 SIGNUP_JS = ROOT / 'assets/js/v24-signup.js'
 BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
@@ -44,6 +45,7 @@ guardian_read_aal2_mig = read(GUARDIAN_READ_AAL2_MIG)
 guardian_revoke_aal2_mig = read(GUARDIAN_REVOKE_AAL2_MIG)
 guardian_adult_vis_mig = read(GUARDIAN_ADULT_VIS_MIG)
 guardian_invite_adult_vis_mig = read(GUARDIAN_INVITE_ADULT_VIS_MIG)
+guardian_contacts_aal2_mig = read(GUARDIAN_CONTACTS_AAL2_MIG)
 youth_base = read(YOUTH_BASE)
 signup_js = read(SIGNUP_JS)
 backend_js = read(BACKEND_JS)
@@ -62,6 +64,7 @@ grm = compact(guardian_read_aal2_mig)
 grv = compact(guardian_revoke_aal2_mig)
 gav = compact(guardian_adult_vis_mig)
 giav = compact(guardian_invite_adult_vis_mig)
+gca = compact(guardian_contacts_aal2_mig)
 y = compact(youth_base)
 j = compact(signup_js)
 b = compact(backend_js)
@@ -141,6 +144,21 @@ req("minor_user_idisnullorexists(select1frompublic.guardian_linksg" in giav
     and "g.guardian_user_id=(selectauth.uid())" in giav
     and "g.minor_user_id=guardian_signup_invites.minor_user_id" in giav,
     "Les invitations consommées ne sont pas bornées par la visibilité du guardian_link.")
+req("createorreplacefunctionpublic.get_guardian_youth_contacts(p_child_user_iduuid)" in gca,
+    "Le RPC de métadonnées de contacts jeunesse V25 est absent.")
+req("notpublic.sinjira_parent_can_supervise(uid,p_child_user_id)" in gca,
+    "Le RPC contacts jeunesse ne vérifie plus la supervision active.")
+req("g.can_view_contact_metadataistrue" in gca
+    and "guardian_contact_metadata_not_allowed" in gca,
+    "Le RPC contacts jeunesse n'exige pas le consentement can_view_contact_metadata=true.")
+req("coalesce(auth.jwt()->>'aal','aal1')<>'aal2'" in gca
+    and "mfa_aal2_required" in gca,
+    "Le RPC contacts jeunesse n'exige pas AAL2.")
+req("setsearch_path=pg_catalog,public,auth" in gca,
+    "Le RPC contacts jeunesse n'a pas un search_path borné.")
+req("revokeallonfunctionpublic.get_guardian_youth_contacts(uuid)frompublic,anon" in gca
+    and "grantexecuteonfunctionpublic.get_guardian_youth_contacts(uuid)toauthenticated" in gca,
+    "Les ACL du RPC contacts jeunesse ne sont pas bornées.")
 
 # Bande enfant distincte : elle ne doit pas hériter automatiquement des droits sociaux jeunesse.
 req("interval'11years'then'under11'" in m,
@@ -290,7 +308,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(46);' in t,
+req('selectplan(49);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
@@ -332,6 +350,9 @@ for marker, message in (
     ("lejourdes18anslecomptedevientadult", "Le pgTAP ne prouve pas la transition automatique vers adult à 18 ans."),
     ("à18anslancientuteurnepeutpluslireleliendesupervision", "Le pgTAP ne prouve pas la fin de visibilité tuteur à la majorité."),
     ("à18anslancientuteurnepeutplusrelirelesinvitationsparentalesconsommées", "Le pgTAP ne prouve pas la fin de visibilité des invitations consommées à la majorité."),
+    ("letuteurnepeutpaslirelesmétadonnéesdecontactssansconsentementexplicite", "Le pgTAP ne prouve pas le refus sans consentement contacts."),
+    ("letuteuraal1nepeutpaslirelesmétadonnéesdecontactsjeunesse", "Le pgTAP ne prouve pas le step-up AAL2 pour les contacts jeunesse."),
+    ("letuteuravecconsentementexpliciteetaal2peutlireuniquementlesmétadonnéesdecontactsjeunesse", "Le pgTAP ne prouve pas le parcours contacts autorisé sous consentement + AAL2."),
     ("lapersonnedevenueadulteconservelaccèsàsonproprehistoriquedesupervision", "Le pgTAP ne préserve pas l'accès self-only de l'adulte à son historique."),
     ("untiersnepeutpasutiliserlehelperpoursonderunlienquineleconcernepas", "Le pgTAP ne prouve pas la fermeture du helper à un tiers."),
     ("$$,'p0001','youth_jurisdiction_not_enabled'", "Le délimiteur pgTAP du refus hors Canada est cassé."),

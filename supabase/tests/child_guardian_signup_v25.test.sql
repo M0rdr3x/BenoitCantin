@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(46);
+select plan(49);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -154,6 +154,50 @@ where user_id='20000000-0000-4000-8000-000000000011';
 select is(public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),'youth','le jour des 13 ans la classification devient youth automatiquement');
 select ok(public.sinjira_parent_can_supervise('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011'),'le lien parental vérifié continue de permettre la supervision à 13 ans');
 select ok(public.sinjira_can_social_interact('20000000-0000-4000-8000-000000000011','20000000-0000-4000-8000-000000000011'),'le contrat social jeunesse peut s appliquer automatiquement à partir de 13 ans');
+
+update public.guardian_links
+set can_view_contact_metadata=false
+where minor_user_id='20000000-0000-4000-8000-000000000011'
+  and guardian_user_id='10000000-0000-4000-8000-000000000001';
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal2')::text,
+  true
+);
+select throws_ok(
+  $$ select public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011') $$,
+  'P0001',
+  'GUARDIAN_CONTACT_METADATA_NOT_ALLOWED',
+  'le tuteur ne peut pas lire les métadonnées de contacts sans consentement explicite'
+);
+
+update public.guardian_links
+set can_view_contact_metadata=true
+where minor_user_id='20000000-0000-4000-8000-000000000011'
+  and guardian_user_id='10000000-0000-4000-8000-000000000001';
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal1')::text,
+  true
+);
+select throws_ok(
+  $$ select public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011') $$,
+  'P0001',
+  'MFA_AAL2_REQUIRED',
+  'le tuteur AAL1 ne peut pas lire les métadonnées de contacts jeunesse'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal2')::text,
+  true
+);
+select lives_ok(
+  $$ select public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011') $$,
+  'le tuteur avec consentement explicite et AAL2 peut lire uniquement les métadonnées de contacts jeunesse'
+);
 
 select set_config(
   'request.jwt.claims',
