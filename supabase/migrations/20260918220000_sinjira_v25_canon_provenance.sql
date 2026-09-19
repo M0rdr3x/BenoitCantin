@@ -205,7 +205,7 @@ for each row execute function private.sinjira_prevent_source_supersedes_cycle();
 
 drop trigger if exists sinjira_canon_sources_guard_authority on public.sinjira_canon_sources;
 create trigger sinjira_canon_sources_guard_authority
-before update of source_key,source_kind,scope,book_number,chapter_reference,passage_reference,source_version,verification_status on public.sinjira_canon_sources
+before update of source_key,source_kind,scope,book_number,chapter_reference,passage_reference,source_version,verification_status,supersedes_source_id on public.sinjira_canon_sources
 for each row execute function private.sinjira_guard_canon_source_in_use();
 
 revoke all on function private.sinjira_prevent_source_supersedes_cycle() from public,anon,authenticated,service_role;
