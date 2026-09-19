@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(124);
+select plan(126);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -816,6 +816,23 @@ select ok(
      and tr.tgname='sinjira_canon_sources_prevent_supersedes_cycle'
      and not tr.tgisinternal limit 1),
   'toutes les colonnes qui déterminent la compatibilité du remplacement relancent le garde'
+);
+
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_MIGRATION_BOOK_MISMATCH%'
+          and pg_get_functiondef(p.oid) ilike '%v_new.book_number is distinct from v_old.book_number%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
+  'la migration atomique revérifie aussi le numéro du livre'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%v_old.source_kind=''roman''%'
+          and pg_get_functiondef(p.oid) ilike '%v_new.source_kind=''roman''%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
+  'le contrôle de livre pendant migration ne s applique que lorsque les deux sources sont des romans'
 );
 
 select * from finish();
