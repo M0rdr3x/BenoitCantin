@@ -24,7 +24,7 @@ Le périmètre enfant/Junior couvre notamment :
 
 La vague CI associée au dossier précédent a confirmé que les parcours Communauté Junior et inscription enfant 11 ans passent. Les validations sécurité/conformité restantes atteignent la frontière ledger/lot production avant d’échouer, ce qui est attendu tant que la revue humaine de production n’a pas eu lieu.
 
-## 2. Correctif forward-only issu de la revue technique
+## 2. Correctifs forward-only issus de la revue technique
 
 La revue a identifié un cas multi-tuteur : un lien `guardian_links` ayant `status='verified'` mais un `revoked_at` non nul pouvait encore contribuer à l’activation Junior ou rester visible dans la liste du tuteur si un autre tuteur valide maintenait la bande `child`.
 
@@ -41,9 +41,23 @@ Une preuve pgTAP dédiée reproduit le scénario avec deux tuteurs : le second t
 
 Cette dixième migration reste **non revue production**.
 
+### Rétablissement de supervision 11–12 après révocation
+
+La revue du parcours Relations a identifié une incohérence serveur/client : l'interface reconnaissait `child_pending` et proposait un nouveau code parental, alors que `public.redeem_guardian_signup_invite(text)` refusait cette bande et n'acceptait que le contrat jeunesse historique.
+
+La migration forward-only suivante aligne le serveur avec la bande V25 :
+
+`20260919013000_sinjira_v25_child_pending_guardian_redeem.sql`
+
+Elle autorise un compte `child_pending` à consommer un **nouveau code parental adulte valide et à usage unique**. Le trigger canonique `sync_guardian_signup_invite_link` réactive/crée alors le lien `guardian_links` en `verified`, remet `revoked_at` à `null` et la classification repasse immédiatement à `child`. Un compte déjà supervisé ne reçoit pas un nouveau droit implicite.
+
+Le pgTAP d'inscription enfant passe de **26 à 31 assertions** et couvre explicitement `child_pending → child`, la réactivation du lien et la consommation unique du nouveau code.
+
+Cette onzième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **10 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **11 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -64,6 +78,7 @@ Le snapshot de revue attend exactement **10 migrations locales futures non revue
 | `20260918020000_sinjira_v25_account_capabilities.sql` | `0a16bfcc49e51ee2b96cb98742442ae3d00e5c76` |
 | `20260918023000_sinjira_v25_minor_content_policy_compat.sql` | `c0556e3baa218f9529f185010455984a0bc1cd03` |
 | `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` | `f60c6e7a6717f7b5818ff0b9a1ba7b055aa418ff` |
+| `20260919013000_sinjira_v25_child_pending_guardian_redeem.sql` | `983ac4b48f25f29c0c62becb692b9203cdec80a1` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -108,7 +123,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **10 migrations** dans l’ordre.
+2. Relire les **11 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.

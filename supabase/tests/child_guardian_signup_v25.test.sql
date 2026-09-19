@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(26);
+select plan(31);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -88,14 +88,68 @@ select throws_ok($$
   )
 $$,'P0001','GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14','un compte de 11 ans sans code parental est refusé');
 
-select throws_ok($$
+select throws_ok($
   insert into auth.users(id,email,raw_user_meta_data)
   values(
     '50000000-0000-4000-8000-000000000011',
     'child11-outside-canada@example.test',
     jsonb_build_object('birth_date',(current_date-interval '11 years')::date::text,'gender','Homme','pseudo','Hors Canada','residence_country','France','guardian_code','YOUTH-ABCD123456')
   )
-$$,'P0001','YOUTH_JURISDICTION_NOT_ENABLED','un compte jeunesse hors Canada reste refusé');
+$,'P0001','YOUTH_JURISDICTION_NOT_ENABLED','un compte jeunesse hors Canada reste refusé');
+
+-- Régression V25 : après révocation, un 11–12 ans devient child_pending.
+-- L'écran Relations lui propose un nouveau code; le RPC doit réellement permettre
+-- de rétablir la supervision et le trigger canonique réactive le lien.
+update public.account_safety_profiles
+set date_of_birth=(current_date-interval '11 years')::date
+where user_id='20000000-0000-4000-8000-000000000011';
+
+select is(
+  public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),
+  'child_pending',
+  'un enfant de 11 ans sans lien tuteur actif devient child_pending'
+);
+
+insert into public.guardian_signup_invites(guardian_user_id,invite_code,expires_at)
+values(
+  '10000000-0000-4000-8000-000000000001',
+  'YOUTH-REDEEM1101',
+  now()+interval '1 day'
+);
+
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000011',true);
+
+select lives_ok(
+  $ select public.redeem_guardian_signup_invite('YOUTH-REDEEM1101') $,
+  'child_pending peut consommer un nouveau code parental valide'
+);
+
+select is(
+  public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),
+  'child',
+  'la consommation du nouveau code rétablit immédiatement la bande child'
+);
+
+select ok(
+  exists(
+    select 1 from public.guardian_links
+    where minor_user_id='20000000-0000-4000-8000-000000000011'
+      and guardian_user_id='10000000-0000-4000-8000-000000000001'
+      and status='verified'
+      and revoked_at is null
+  ),
+  'le lien tuteur révoqué est réactivé proprement en verified non révoqué'
+);
+
+select ok(
+  exists(
+    select 1 from public.guardian_signup_invites
+    where invite_code='YOUTH-REDEEM1101'
+      and used_at is not null
+      and minor_user_id='20000000-0000-4000-8000-000000000011'
+  ),
+  'le nouveau code est consommé une seule fois par le compte child_pending'
+);
 
 select * from finish();
 rollback;

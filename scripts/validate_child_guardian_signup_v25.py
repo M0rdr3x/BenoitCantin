@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MIG = ROOT / 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
 TEST = ROOT / 'supabase/tests/child_guardian_signup_v25.test.sql'
+REDEEM_MIG = ROOT / 'supabase/migrations/20260919013000_sinjira_v25_child_pending_guardian_redeem.sql'
 YOUTH_BASE = ROOT / 'supabase/migrations/20260816140000_sinjira_v24_4_12_youth_safety.sql'
 SIGNUP_JS = ROOT / 'assets/js/v24-signup.js'
 BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
@@ -29,6 +30,7 @@ def compact(text):
 
 mig = read(MIG)
 test = read(TEST)
+redeem_mig = read(REDEEM_MIG)
 youth_base = read(YOUTH_BASE)
 signup_js = read(SIGNUP_JS)
 backend_js = read(BACKEND_JS)
@@ -39,6 +41,7 @@ browser_test = read(BROWSER_TEST)
 
 m = compact(mig)
 t = compact(test)
+rm = compact(redeem_mig)
 y = compact(youth_base)
 j = compact(signup_js)
 b = compact(backend_js)
@@ -56,6 +59,15 @@ req("years<18andresidence_countrynotin('canada','ca','can')" in m and 'youth_jur
     "La porte de juridiction jeunesse Canada n'est pas conservée côté serveur.")
 req("ifinv.idisnotnullandyears<18then" in m and "'verified','parent'" in m,
     "Le lien parent/enfant vérifié n'est pas créé après validation du code.")
+req("bandnotin('child_pending','youth_pending','youth')" in rm,
+    "Le RPC de rétablissement ne reconnaît pas child_pending.")
+req("g.status='verified'andg.revoked_atisnull" in rm,
+    "Le RPC de rétablissement ne distingue pas un lien réellement actif d'un lien révoqué.")
+req("updatepublic.guardian_signup_invitessetused_at=now(),minor_user_id=uid" in rm,
+    "Le RPC de rétablissement ne consomme pas atomiquement le code parental.")
+req("revokeallonfunctionpublic.redeem_guardian_signup_invite(text)frompublic,anon" in rm
+    and "grantexecuteonfunctionpublic.redeem_guardian_signup_invite(text)toauthenticated" in rm,
+    "Les ACL du RPC de rétablissement parental ne sont pas bornées.")
 
 # Bande enfant distincte : elle ne doit pas hériter automatiquement des droits sociaux jeunesse.
 req("interval'11years'then'under11'" in m,
@@ -167,7 +179,7 @@ req("[data-signup-session-warning]" in bt and "[data-signup-session-signout]" in
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(26);' in t,
+req('selectplan(31);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
@@ -189,6 +201,11 @@ for marker, message in (
     ("authenticatednepeutpassonderunerelationparent/enfantarbitraire", "Le test ne prouve pas la confidentialité du helper de supervision."),
     ("revoked_atseulsuffitàretirerlabandesuperviséemêmesistatusestencoreverified", "Le test ne prouve pas le fail-closed sur revoked_at pour la bande âge."),
     ("revoked_atseulsuffitàretirerlasupervisionparentale", "Le test ne prouve pas le fail-closed sur revoked_at pour la supervision."),
+    ("unenfantde11anssanslientuteuractifdevientchild_pending", "Le test ne prouve pas le passage 11–12 vers child_pending après révocation."),
+    ("child_pendingpeutconsommerunnouveaucodeparentalvalide", "Le test ne prouve pas le rétablissement de supervision depuis child_pending."),
+    ("laconsommationdunouveaucoderétablitimmédiatementlabandechild", "Le test ne prouve pas le retour immédiat à child."),
+    ("lelientuteurrévoquéestréactivéproprementenverifiednonrévoqué", "Le test ne prouve pas la réactivation propre du lien tuteur."),
+    ("lenouveaucodeestconsomméuneseulefoisparlecomptechild_pending", "Le test ne prouve pas la consommation unique du code de rétablissement."),
 ):
     req(marker in t, message)
 
