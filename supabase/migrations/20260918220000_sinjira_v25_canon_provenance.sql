@@ -164,6 +164,10 @@ begin
   if v_in_use and (
     new.source_kind is distinct from old.source_kind
     or new.scope is distinct from old.scope
+    or new.book_number is distinct from old.book_number
+    or new.chapter_reference is distinct from old.chapter_reference
+    or new.passage_reference is distinct from old.passage_reference
+    or new.source_version is distinct from old.source_version
     or not v_new_qualifies
   ) then
     raise exception 'CANON_SOURCE_IN_USE';
@@ -180,7 +184,7 @@ for each row execute function private.sinjira_prevent_source_supersedes_cycle();
 
 drop trigger if exists sinjira_canon_sources_guard_authority on public.sinjira_canon_sources;
 create trigger sinjira_canon_sources_guard_authority
-before update of source_key,source_kind,scope,verification_status on public.sinjira_canon_sources
+before update of source_key,source_kind,scope,book_number,chapter_reference,passage_reference,source_version,verification_status on public.sinjira_canon_sources
 for each row execute function private.sinjira_guard_canon_source_in_use();
 
 revoke all on function private.sinjira_prevent_source_supersedes_cycle() from public,anon,authenticated,service_role;
