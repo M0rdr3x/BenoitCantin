@@ -105,7 +105,7 @@ function syncCanonSourceScope(){
 }
 function setCanonSourceAuthorityLock(src){
  const f=document.querySelector('[data-canon-source-form]');if(!f)return;
- const usage=src?.usage||{},authorityLocked=usage.authority_locked===true,keyLocked=usage.key_locked===true,retirementAllowed=usage.retirement_allowed===true;
+ const usage=src?.usage||{},authorityLocked=usage.authority_locked===true,keyLocked=usage.key_locked===true,retirementAllowed=usage.retirement_allowed===true,retirementBlocked=usage.retirement_blocked_references===true;
  if(f.elements.source_key)f.elements.source_key.disabled=keyLocked;
  for(const name of ['source_kind','book_number','chapter_reference','passage_reference','source_version','supersedes_source_id']){
    if(f.elements[name])f.elements[name].disabled=authorityLocked;
@@ -132,8 +132,13 @@ function setCanonSourceAuthorityLock(src){
  if(box){
    if(!src){box.innerHTML='<div class="account-status" data-status-type="info">Nouvelle source : aucune utilisation canonique.</div>';return}
    const refs=Array.isArray(usage.references)?usage.references:[];
-   const state=authorityLocked?(retirementAllowed?'Autorité verrouillée · RETIRED disponible':'Autorité verrouillée'):keyLocked?'Clé stable verrouillée':'Source encore modifiable';
-   box.innerHTML=`<div class="account-status" data-status-type="${authorityLocked?'info':'success'}"><strong>${escapeHtml(state)}</strong><p>${escapeHtml(String(usage.total||0))} utilisation(s), dont ${escapeHtml(String(usage.canonical||0))} canonique(s).</p>${retirementAllowed?'<p>Une source de remplacement vérifiée de même période existe : le retrait logique RETIRED est maintenant autorisé.</p>':''}${refs.length?'<p>'+refs.map(escapeHtml).join(' · ')+'</p>':''}</div>`;
+   const state=authorityLocked?(retirementAllowed?'Autorité verrouillée · RETIRED disponible':retirementBlocked?'Autorité verrouillée · références à migrer':'Autorité verrouillée'):keyLocked?'Clé stable verrouillée':'Source encore modifiable';
+   const retireMessage=retirementAllowed
+     ?'<p>Le remplacement vérifié existe et aucune référence directe ne subsiste : RETIRED est maintenant autorisé.</p>'
+     :retirementBlocked
+       ?'<p>Le remplacement vérifié existe, mais '+escapeHtml(String(usage.direct_references||0))+' référence(s) directe(s) doivent encore être migrées avant RETIRED.</p>'
+       :'';
+   box.innerHTML=`<div class="account-status" data-status-type="${authorityLocked?'info':'success'}"><strong>${escapeHtml(state)}</strong><p>${escapeHtml(String(usage.total||0))} utilisation(s), dont ${escapeHtml(String(usage.direct_references||0))} référence(s) directe(s) et ${escapeHtml(String(usage.canonical||0))} canonique(s).</p>${retireMessage}${refs.length?'<p>'+refs.map(escapeHtml).join(' · ')+'</p>':''}</div>`;
  }
 }
 function fillCanonSource(src){
