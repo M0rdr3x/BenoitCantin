@@ -92,12 +92,41 @@ function toIso(value,zone=''){
 }
 let canonSourcesCache=[],storyClaimsCache=[];
 function canonSourceLabel(src){if(!src)return '';const bits=[src.book_number?'Livre '+src.book_number:'',src.chapter_reference||'',src.passage_reference||''].filter(Boolean);return (src.title||src.source_key||'Source')+(bits.length?' — '+bits.join(' · '):'')+' · '+(src.source_kind||'source')+' · '+(src.verification_status||'PROVISOIRE')}
-function canonSourceOptions(placeholder='À relier'){return `<option value="">${escapeHtml(placeholder)}</option>`+canonSourcesCache.map(src=>`<option value="${src.id}">${escapeHtml(canonSourceLabel(src))}</option>`).join('')}
-function refreshCanonSourceSelects(){
+function canonSourceOptions(placeholder='À relier',excludeId=''){return `<option value="">${escapeHtml(placeholder)}</option>`+canonSourcesCache.filter(src=>src.id!==excludeId).map(src=>`<option value="${src.id}">${escapeHtml(canonSourceLabel(src))}</option>`).join('')}
+function refreshCanonSourceSelects(excludeSupersedesId=''){
  for(const sel of document.querySelectorAll('[data-canon-source-select],[data-story-claim-source]')){const old=sel.value;sel.innerHTML=canonSourceOptions(sel.hasAttribute('data-story-claim-source')?'Choisir une source':'À relier au Registre');if(old)sel.value=old}
- const sup=document.querySelector('[data-canon-source-supersedes]');if(sup){const old=sup.value;sup.innerHTML=canonSourceOptions('Aucune');if(old)sup.value=old}
+ const sup=document.querySelector('[data-canon-source-supersedes]');if(sup){const old=sup.value;sup.innerHTML=canonSourceOptions('Aucune',excludeSupersedesId);if(old&&old!==excludeSupersedesId)sup.value=old}
 }
-function fillCanonSource(src){const f=document.querySelector('[data-canon-source-form]');if(!src||!f)return;for(const [k,v] of Object.entries(src)){if(f.elements[k]&&k!=='public_safe')f.elements[k].value=v??''}f.elements.public_safe.checked=src.public_safe===true;f.scrollIntoView({behavior:'smooth'})}
+function syncCanonSourceScope(){
+ const f=document.querySelector('[data-canon-source-form]');if(!f)return;
+ const isRoman=f.elements.source_kind.value==='roman',book=Number(f.elements.book_number.value||0);
+ if(isRoman&&book>=1&&book<=14)f.elements.scope.value=book<=12?'LIVRES_1_12':'ORIGINES_13_14';
+ if(!f.elements.scope.dataset.authorityLocked)f.elements.scope.disabled=isRoman;
+}
+function setCanonSourceAuthorityLock(src){
+ const f=document.querySelector('[data-canon-source-form]');if(!f)return;
+ const usage=src?.usage||{},authorityLocked=usage.authority_locked===true,keyLocked=usage.key_locked===true;
+ if(f.elements.source_key)f.elements.source_key.disabled=keyLocked;
+ for(const name of ['source_kind','book_number','chapter_reference','passage_reference','source_version','verification_status','supersedes_source_id']){
+   if(f.elements[name])f.elements[name].disabled=authorityLocked;
+ }
+ if(f.elements.scope){f.elements.scope.dataset.authorityLocked=authorityLocked?'1':'';f.elements.scope.disabled=authorityLocked||f.elements.source_kind.value==='roman'}
+ const box=document.querySelector('[data-canon-source-usage]');
+ if(box){
+   if(!src){box.innerHTML='<div class="account-status" data-status-type="info">Nouvelle source : aucune utilisation canonique.</div>';return}
+   const refs=Array.isArray(usage.references)?usage.references:[];
+   const state=authorityLocked?'Autorité verrouillée':keyLocked?'Clé stable verrouillée':'Source encore modifiable';
+   box.innerHTML=`<div class="account-status" data-status-type="${authorityLocked?'info':'success'}"><strong>${escapeHtml(state)}</strong><p>${escapeHtml(String(usage.total||0))} utilisation(s), dont ${escapeHtml(String(usage.canonical||0))} canonique(s).</p>${refs.length?'<p>'+refs.map(escapeHtml).join(' · ')+'</p>':''}</div>`;
+ }
+}
+function fillCanonSource(src){
+ const f=document.querySelector('[data-canon-source-form]');if(!src||!f)return;
+ refreshCanonSourceSelects(src.id);
+ for(const [k,v] of Object.entries(src)){if(f.elements[k]&&k!=='public_safe')f.elements[k].value=v??''}
+ f.elements.public_safe.checked=src.public_safe===true;
+ setCanonSourceAuthorityLock(src);syncCanonSourceScope();
+ f.scrollIntoView({behavior:'smooth'});
+}
 function fillStoryClaim(claim){const f=document.querySelector('[data-story-claim-form]');if(!claim||!f)return;f.elements.id.value=claim.id||'';f.elements.story_id.value=claim.story_id||'';f.elements.claim_key.value=claim.claim_key||'';f.elements.claim_type.value=claim.claim_type||'other';f.elements.source_id.value=claim.source_id||'';f.elements.verification_status.value=claim.verification_status||'PROVISOIRE';f.elements.statement.value=claim.statement||'';f.elements.author_note.value=claim.author_note||'';f.scrollIntoView({behavior:'smooth'})}
 function renderStoryClaims(storyId){
  const box=document.querySelector('[data-story-claim-list]'),f=document.querySelector('[data-story-claim-form]');if(f)f.elements.story_id.value=storyId||'';if(!box)return;
@@ -109,7 +138,7 @@ function renderStoryClaims(storyId){
 }
 async function canonProvenance(){
  const d=await call('list_canon_provenance');canonSourcesCache=d.sources||[];storyClaimsCache=d.claims||[];refreshCanonSourceSelects();
- const box=document.querySelector('[data-canon-source-list]');if(box){box.innerHTML=canonSourcesCache.map(src=>`<article class="admin-v18-row"><strong>${escapeHtml(src.title||src.source_key)}</strong><p>${escapeHtml(src.source_kind)} · ${escapeHtml(src.scope)} · ${escapeHtml(src.verification_status)}</p><small>${escapeHtml(canonSourceLabel(src))}</small><button class="btn btn-secondary btn-small" data-edit-canon-source="${src.id}">Modifier</button></article>`).join('')||'<p>Aucune source canonique enregistrée.</p>';box.querySelectorAll('[data-edit-canon-source]').forEach(b=>b.addEventListener('click',()=>fillCanonSource(canonSourcesCache.find(x=>x.id===b.dataset.editCanonSource))))}
+ const box=document.querySelector('[data-canon-source-list]');if(box){box.innerHTML=canonSourcesCache.map(src=>{const u=src.usage||{};const lock=u.authority_locked?' · autorité verrouillée':u.key_locked?' · clé verrouillée':'';return `<article class="admin-v18-row"><strong>${escapeHtml(src.title||src.source_key)}</strong><p>${escapeHtml(src.source_kind)} · ${escapeHtml(src.scope)} · ${escapeHtml(src.verification_status)}${escapeHtml(lock)}</p><small>${escapeHtml(canonSourceLabel(src))}</small><p>Utilisations : ${escapeHtml(String(u.total||0))} · canoniques : ${escapeHtml(String(u.canonical||0))}</p><button class="btn btn-secondary btn-small" data-edit-canon-source="${src.id}">Modifier</button></article>`}).join('')||'<p>Aucune source canonique enregistrée.</p>';box.querySelectorAll('[data-edit-canon-source]').forEach(b=>b.addEventListener('click',()=>fillCanonSource(canonSourcesCache.find(x=>x.id===b.dataset.editCanonSource))))}
  const storyId=document.querySelector('[data-extended-story-editor]')?.elements?.id?.value||'';if(storyId)renderStoryClaims(storyId);
 }
 function renderContinuityResult(result){
@@ -317,7 +346,9 @@ function bindStorySegments(){
 }
 function bindCanonProvenance(){
  const sf=document.querySelector('[data-canon-source-form]');
- sf?.querySelector('[data-canon-source-reset]')?.addEventListener('click',()=>{sf.reset();sf.elements.id.value='';refreshCanonSourceSelects()});
+ sf?.elements.source_kind?.addEventListener('change',syncCanonSourceScope);
+ sf?.elements.book_number?.addEventListener('input',syncCanonSourceScope);
+ sf?.querySelector('[data-canon-source-reset]')?.addEventListener('click',()=>{sf.reset();sf.elements.id.value='';for(const el of sf.querySelectorAll('input,textarea,select,button'))el.disabled=false;sf.elements.scope.dataset.authorityLocked='';refreshCanonSourceSelects();setCanonSourceAuthorityLock(null);syncCanonSourceScope()});
  sf?.addEventListener('submit',async e=>{e.preventDefault();const source={id:sf.elements.id.value||null,source_key:sf.elements.source_key.value,source_kind:sf.elements.source_kind.value,scope:sf.elements.scope.value,verification_status:sf.elements.verification_status.value,title:sf.elements.title.value,book_number:sf.elements.book_number.value,chapter_reference:sf.elements.chapter_reference.value,passage_reference:sf.elements.passage_reference.value,source_version:sf.elements.source_version.value,supersedes_source_id:sf.elements.supersedes_source_id.value||null,public_safe:sf.elements.public_safe.checked,notes:sf.elements.notes.value};try{await call('save_canon_source',{source});sf.reset();sf.elements.id.value='';await canonProvenance();await worldContinuity()}catch(err){alert(err.message)}});
  const cf=document.querySelector('[data-story-claim-form]');
  cf?.querySelector('[data-story-claim-reset]')?.addEventListener('click',()=>{const storyId=cf.elements.story_id.value;cf.reset();cf.elements.id.value='';cf.elements.story_id.value=storyId;refreshCanonSourceSelects()});
