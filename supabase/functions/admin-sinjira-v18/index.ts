@@ -381,10 +381,10 @@ Deno.serve(async(req)=>{
       return privateJson({ok:true});
     }
 
-    if(a==='check_extended_story_continuity'){
+    if(a==='check_extended_story_continuity'||a==='check_extended_story_validation'){
       if(!b.story_id)return privateJson({ok:false,error:'Chronique requise.',code:'STORY_REQUIRED'},400);
-      const {data,error}=await s.rpc('admin_sinjira_story_continuity_check',{p_story_id:b.story_id});if(error)throw error;
-      return privateJson({ok:true,continuity:data});
+      const {data,error}=await s.rpc('admin_sinjira_story_validation_check',{p_story_id:b.story_id});if(error)throw error;
+      return privateJson({ok:true,validation:data,provenance:data?.provenance||null,continuity:data?.continuity||null});
     }
 
     if(a==='publish_extended_story'){
