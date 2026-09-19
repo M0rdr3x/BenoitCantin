@@ -449,7 +449,7 @@ Deno.serve(async(req)=>{
         location_id:story.location_id||null,
         anchor_scope:anchorScope,
         canon_status:requestedCanon==='CANON_ETENDU'?'PROVISOIRE':requestedCanon,
-        status,
+        status:requestedCanon==='CANON_ETENDU'?'author_review':status,
         starts_at:startsAt,
         ends_at:endsAt,
         continuity_data:story.continuity_data&&typeof story.continuity_data==='object'?story.continuity_data:{},
@@ -485,22 +485,38 @@ Deno.serve(async(req)=>{
         const {error:stalePrimaryError}=await s.from('sinjira_story_character_presence').delete().eq('story_id',saved.id).eq('segment_key','primary');
         if(stalePrimaryError)throw stalePrimaryError;
       }
-      let continuity:any=null;
+      let continuity:any=null,provenance:any=null,validation:any=null;
       if(requestedCanon==='CANON_ETENDU'){
-        const check=await s.rpc('admin_sinjira_story_continuity_check',{p_story_id:saved.id});
+        const check=await s.rpc('admin_sinjira_story_validation_check',{p_story_id:saved.id});
         if(check.error)throw check.error;
-        continuity=check.data;
-        if(Number(continuity?.blocking_conflicts||0)>0){
-          await audit(s,user.id,'extended_story_continuity_blocked','sinjira_extended_story',saved.id,title,{blocking_conflicts:continuity.blocking_conflicts});
-          return privateJson({ok:false,persisted:true,story:saved,continuity,error:'Canonisation bloquée : une collision de continuité doit être corrigée.',code:'STORY_CONTINUITY_CONFLICT'},409);
+        validation=check.data||{};
+        continuity=validation?.continuity||null;
+        provenance=validation?.provenance||null;
+
+        if(validation?.ready!==true){
+          const metadataReady=validation?.metadata?.ready===true;
+          const blocking=Number(continuity?.blocking_conflicts||0);
+          const warnings=Number(continuity?.warnings||0);
+          const anchors=Number(provenance?.verified_anchor_claims||0);
+          const matchingAnchors=Number(provenance?.matching_anchor_claims||0);
+          const unresolved=Number(provenance?.unresolved_claims||0);
+
+          let code='STORY_VALIDATION_INCOMPLETE';
+          let error='Canonisation bloquée : la prévalidation doit être complétée.';
+          if(!metadataReady){code='STORY_METADATA_INCOMPLETE';error='Canonisation bloquée : ancrage, période, lieu CANON ou contenu incomplet.'}
+          else if(anchors===0){code='STORY_PROVENANCE_REQUIRED';error='Canonisation bloquée : ajoutez un fait d’ancrage vérifié.'}
+          else if(matchingAnchors===0){code='STORY_PROVENANCE_SCOPE_MISMATCH';error='Canonisation bloquée : la source d’ancrage ne correspond pas à la période du récit.'}
+          else if(unresolved>0){code='STORY_PROVENANCE_INCOMPLETE';error='Canonisation bloquée : des faits de provenance restent non résolus.'}
+          else if(blocking>0){code='STORY_CONTINUITY_CONFLICT';error='Canonisation bloquée : une collision de continuité doit être corrigée.'}
+          else if(warnings>0){code='STORY_CONTINUITY_INCOMPLETE';error='Canonisation bloquée : la continuité contient encore des informations à compléter.'}
+
+          await audit(s,user.id,'extended_story_validation_blocked','sinjira_extended_story',saved.id,title,{code,blocking_conflicts:blocking,warnings,unresolved_claims:unresolved,matching_anchor_claims:matchingAnchors});
+          return privateJson({ok:false,persisted:true,story:saved,validation,provenance,continuity,error,code},409);
         }
-        if(Number(continuity?.warnings||0)>0){
-          await audit(s,user.id,'extended_story_continuity_incomplete','sinjira_extended_story',saved.id,title,{warnings:continuity.warnings});
-          return privateJson({ok:false,persisted:true,story:saved,continuity,error:'Canonisation bloquée : la date ou le lieu d’une présence doit être complété dans le Calendrier-Monde / Atlas.',code:'STORY_CONTINUITY_INCOMPLETE'},409);
-        }
+
         const promotion=await s.rpc('admin_sinjira_promote_extended_story',{p_story_id:saved.id});
         if(promotion.error)throw promotion.error;
-        saved={...saved,canon_status:promotion.data?.canon_status||'CANON_ETENDU',status:promotion.data?.status||saved.status};
+        saved={...saved,canon_status:promotion.data?.canon_status||'CANON_ETENDU',status:promotion.data?.status||'validated',published_at:null};
       }
       await audit(s,user.id,story.id?'update_extended_story':'create_extended_story','sinjira_extended_story',saved.id,title,{story_type:storyType,canon_status:saved.canon_status,anchor_scope:anchorScope});
       return privateJson({ok:true,story:saved,continuity});
@@ -551,6 +567,7 @@ Deno.serve(async(req)=>{
     if(e?.message==='CANON_PRESENCE_SOURCE_SCOPE_MISMATCH')return privateJson({ok:false,error:'La source de cette présence ne correspond pas à la période de son événement.',code:'CANON_PRESENCE_SOURCE_SCOPE_MISMATCH'},409);
     if(e?.message==='CLAIM_SOURCE_SCOPE_MISMATCH')return privateJson({ok:false,error:'La source d’ancrage ne correspond pas à la période de la Chronique.',code:'CLAIM_SOURCE_SCOPE_MISMATCH'},409);
     if(e?.message==='STORY_PROVENANCE_SCOPE_MISMATCH')return privateJson({ok:false,error:'Publication refusée : aucun fait d’ancrage vérifié ne correspond à la période de la Chronique.',code:'STORY_PROVENANCE_SCOPE_MISMATCH'},409);
+    if(e?.message==='STORY_VALIDATION_INCOMPLETE')return privateJson({ok:false,error:'La prévalidation de la Chronique est incomplète.',code:'STORY_VALIDATION_INCOMPLETE'},409);
     if(e?.message==='CANON_SOURCE_LOCATOR_REQUIRED')return privateJson({ok:false,error:'Une source vérifiée doit contenir un chapitre, un passage ou une version précise.',code:'CANON_SOURCE_LOCATOR_REQUIRED'},409);
     if(e?.message==='CANON_SOURCE_CHAPTER_REQUIRED')return privateJson({ok:false,error:'Une source Roman vérifiée doit indiquer le chapitre ou la section.',code:'CANON_SOURCE_CHAPTER_REQUIRED'},409);
     if(e?.message==='CANON_SOURCE_IN_USE')return privateJson({ok:false,error:'Cette source est déjà utilisée par le canon. Créez une nouvelle source de remplacement au lieu de modifier son autorité ou ses repères.',code:'CANON_SOURCE_IN_USE'},409);
