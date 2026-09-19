@@ -129,17 +129,25 @@ as $$
 declare
   v_cycle boolean:=false;
   v_previous_scope text;
+  v_previous_kind text;
+  v_previous_book smallint;
 begin
   if new.supersedes_source_id is null then return new; end if;
   if new.supersedes_source_id=new.id then raise exception 'CANON_SOURCE_SUPERSEDES_SELF'; end if;
 
-  select s.scope into v_previous_scope
+  select s.scope,s.source_kind,s.book_number
+  into v_previous_scope,v_previous_kind,v_previous_book
   from public.sinjira_canon_sources s
   where s.id=new.supersedes_source_id;
 
   if v_previous_scope is null then raise exception 'CANON_SOURCE_SUPERSEDES_NOT_FOUND'; end if;
   if new.scope is distinct from v_previous_scope then
     raise exception 'CANON_SOURCE_SUPERSEDES_SCOPE_MISMATCH';
+  end if;
+  if new.source_kind='roman'
+     and v_previous_kind='roman'
+     and new.book_number is distinct from v_previous_book then
+    raise exception 'CANON_SOURCE_SUPERSEDES_BOOK_MISMATCH';
   end if;
   if exists(
     select 1
@@ -1205,7 +1213,7 @@ comment on function private.sinjira_source_is_verified(uuid) is
 comment on function private.sinjira_guard_canon_source_lifecycle() is
   'Interdit la création directe en RETIRED et empêche une source research de devenir un maillon de remplacement canonique.';
 comment on function private.sinjira_prevent_source_supersedes_cycle() is
-  'Empêche auto-remplacement, cycles, références absentes, fourches de succession et remplacements entre périmètres canoniques différents.';
+  'Empêche auto-remplacement, cycles, références absentes, fourches de succession, croisements de périmètre et remplacement direct entre deux romans de numéros différents.';
 comment on function public.admin_sinjira_migrate_canon_source_references(uuid,uuid) is
   'Migration atomique auteur : déplace toutes les références directes vers l’unique remplacement vérifié de même période puis passe immédiatement l’ancienne source à RETIRED dans la même transaction.';
 comment on function private.sinjira_guard_canon_source_in_use() is
