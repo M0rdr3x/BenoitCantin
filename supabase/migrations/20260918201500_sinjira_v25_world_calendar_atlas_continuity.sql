@@ -119,7 +119,7 @@ create or replace function private.sinjira_prevent_location_cycle()
 returns trigger
 language plpgsql
 set search_path=pg_catalog,public,private
-as $
+as $$
 declare
   v_cycle boolean:=false;
 begin
@@ -141,7 +141,7 @@ begin
   if v_cycle then raise exception 'LOCATION_HIERARCHY_CYCLE'; end if;
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists sinjira_world_locations_prevent_cycle on public.sinjira_world_locations;
 create trigger sinjira_world_locations_prevent_cycle
