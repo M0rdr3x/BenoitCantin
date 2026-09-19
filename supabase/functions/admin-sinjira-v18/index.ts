@@ -217,7 +217,7 @@ Deno.serve(async(req)=>{
     if(a==='list_canon_provenance'){
       const [sources,claims,locations,travel,events,presences]=await Promise.all([
         s.from('sinjira_canon_sources').select('*').order('scope').order('book_number',{ascending:true,nullsFirst:false}).order('title'),
-        s.from('sinjira_story_claims').select('*,sinjira_canon_sources(source_key,title,book_number,chapter_reference,passage_reference,verification_status,public_safe),sinjira_extended_stories(title,status,canon_status)').order('story_id').order('claim_key'),
+        s.from('sinjira_story_claims').select('*,sinjira_canon_sources(source_key,title,source_kind,scope,book_number,chapter_reference,passage_reference,verification_status,public_safe),sinjira_extended_stories(title,status,canon_status)').order('story_id').order('claim_key'),
         s.from('sinjira_world_locations').select('id,name,canon_status,source_id'),
         s.from('sinjira_world_travel_rules').select('id,canon_status,source_id'),
         s.from('sinjira_canon_events').select('id,title,classification,source_id'),
