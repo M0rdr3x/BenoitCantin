@@ -165,7 +165,7 @@ create or replace function private.sinjira_require_verified_story_claim()
 returns trigger
 language plpgsql
 set search_path=pg_catalog,public,private
-as $
+as $$
 declare
   v_story_scope text;
   v_source_scope text;
@@ -188,7 +188,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 create or replace function private.sinjira_guard_published_story_claim()
 returns trigger
@@ -226,7 +226,7 @@ create or replace function private.sinjira_guard_event_source_scope()
 returns trigger
 language plpgsql
 set search_path=pg_catalog,public,private
-as $
+as $$
 begin
   if tg_op='UPDATE' and new.source_scope is distinct from old.source_scope and exists(
     select 1
@@ -240,7 +240,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 revoke all on function private.sinjira_guard_event_source_scope() from public,anon,authenticated,service_role;
 
