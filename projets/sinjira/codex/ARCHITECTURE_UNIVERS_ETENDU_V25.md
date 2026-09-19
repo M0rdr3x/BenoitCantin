@@ -256,6 +256,7 @@ Règles :
 12. cette migration atomique retire de publication et rétrograde les Chroniques dépendantes avant de déplacer leurs faits, puis migre aussi les lieux, trajets, événements et présences; si une seule référence subsiste, toute la transaction échoue; si tout réussit, l’ancienne source passe à `RETIRED` **dans la même transaction**, supprimant toute fenêtre où une nouvelle référence pourrait encore pointer vers elle;
 13. une source ne peut pas être créée directement en `RETIRED`; cet état représente uniquement un retrait d’une source déjà existante;
 14. une source `research` ne peut jamais devenir un maillon « remplace » de la chaîne canonique; elle sert à documenter le travail sans acquérir l’autorité d’une source canonique;
+15. deux sources de type `roman` ne peuvent se remplacer directement que si elles appartiennent au **même numéro de livre**; l’interface filtre ces candidats avant l’enregistrement et PostgreSQL constitue le garde final;
 11. les sources `SECRET_AUTEUR` peuvent protéger la continuité sans être exposées aux membres ou au public.
 
 Le champ texte de référence reste un **instantané lisible**. L’autorité réelle est l’identifiant structuré de la source.
