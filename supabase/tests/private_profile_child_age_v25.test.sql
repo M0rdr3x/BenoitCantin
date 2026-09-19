@@ -46,6 +46,7 @@ values
   jsonb_build_object(
     'birth_date',(current_date-interval '40 years')::date::text,
     'date_of_birth',(current_date-interval '40 years')::date::text,
+    'gender','Homme','sex','male',
     'pseudo','Tuteur Profil',
     'display_name','Tuteur Profil',
     'residence_country','Canada'
@@ -57,6 +58,7 @@ values
   jsonb_build_object(
     'birth_date',(current_date-interval '20 years')::date::text,
     'date_of_birth',(current_date-interval '20 years')::date::text,
+    'gender','Femme','sex','female',
     'pseudo','Enfant Profil Actif',
     'display_name','Enfant Profil Actif',
     'residence_country','Canada'
@@ -68,6 +70,7 @@ values
   jsonb_build_object(
     'birth_date',(current_date-interval '20 years')::date::text,
     'date_of_birth',(current_date-interval '20 years')::date::text,
+    'gender','Homme','sex','male',
     'pseudo','Enfant Profil Sans Tuteur',
     'display_name','Enfant Profil Sans Tuteur',
     'residence_country','Canada'

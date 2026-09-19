@@ -314,9 +314,21 @@ Deux preuves SQL sont exécutées par le workflow Profil privé après reconstru
 
 Cette vingt-huitième migration reste **non revue production**.
 
+### Catalogue canonique du Livre I
+
+La reconstruction locale a montré que le schéma `public.sinjira_novels` pouvait exister sans contenir encore la ligne canonique du Livre I. Dans ce cas, la migration du registre privé exécutait un `INSERT ... SELECT` sans résultat et l'actif intégral n'était pas enregistré.
+
+La migration forward-only :
+
+`20260919103000_sinjira_v25_livre_i_catalog_seed.sql`
+
+garantit que **La Cendre du Jugement** existe dans `public.sinjira_novels`, puis rattache son actif intégral au registre privé. Cet actif reste `enabled=false`, en mode `legacy_env`, sans chemin de stockage privé livré au navigateur et sans autorisation implicite de publication ou de déploiement.
+
+Cette vingt-neuvième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **28 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **29 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -355,6 +367,7 @@ Le snapshot de revue attend exactement **28 migrations locales futures non revue
 | `20260919090000_sinjira_v25_account_content_hub.sql` | `29358d27f8f505897b924062e208b8d5c740f8c5` |
 | `20260919093000_sinjira_v25_private_novel_catalog.sql` | `be721fa72387de258fb488293f973febd9f9c8e7` |
 | `20260919100000_sinjira_v25_private_profile_age_11.sql` | `40c29de09331b187ddc00432054abcf500711ded` |
+| `20260919103000_sinjira_v25_livre_i_catalog_seed.sql` | `04929202946a0cda629c1f8005dbf51e4bfb2d68` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -399,7 +412,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **28 migrations** dans l’ordre.
+2. Relire les **29 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.

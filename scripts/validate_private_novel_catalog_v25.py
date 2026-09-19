@@ -8,6 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 FILES={
     "migration":ROOT/"supabase/migrations/20260919093000_sinjira_v25_private_novel_catalog.sql",
+    "catalog_seed":ROOT/"supabase/migrations/20260919103000_sinjira_v25_livre_i_catalog_seed.sql",
     "shared":ROOT/"supabase/functions/_shared/privateNovel.ts",
     "edge":ROOT/"supabase/functions/get-private-novel-url/index.ts",
     "reader_js":ROOT/"assets/js/sinjira-private-book-reader.js",
@@ -27,6 +28,7 @@ def compact(value:str)->str:
 
 def validate(contents:dict[str,str])->None:
     m=compact(contents["migration"])
+    seed=compact(contents["catalog_seed"])
     shared=compact(contents["shared"])
     edge=compact(contents["edge"])
     reader=compact(contents["reader_js"])
@@ -49,6 +51,20 @@ def validate(contents:dict[str,str])->None:
     ):
         if marker not in m:
             fail(f"catalogue privé: garde SQL absente: {marker}")
+
+    for marker in (
+        "insertintopublic.sinjira_novels",
+        "'la-cendre-du-jugement'",
+        "'published'",
+        "onconflict(slug)doupdate",
+        "insertintoprivate.sinjira_private_novel_assets",
+        "'legacy_env'",
+        "1066",
+        "enabled=false",
+        "onconflict(novel_id)doupdate",
+    ):
+        if marker not in seed:
+            fail(f"seed Livre I: garde absente: {marker}")
 
     self_section=m[m.find("createorreplacefunctionpublic.sinjira_my_novel_catalog()"):m.find("createorreplacefunctionpublic.sinjira_private_novel_asset_for_delivery")]
     if "'storage_bucket'" in self_section or "'storage_path'" in self_section:

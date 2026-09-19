@@ -46,6 +46,7 @@ EXPECTED_NON_REVIEWED = {
     "20260919090000_sinjira_v25_account_content_hub.sql": "29358d27f8f505897b924062e208b8d5c740f8c5",
     "20260919093000_sinjira_v25_private_novel_catalog.sql": "be721fa72387de258fb488293f973febd9f9c8e7",
     "20260919100000_sinjira_v25_private_profile_age_11.sql": "40c29de09331b187ddc00432054abcf500711ded",
+    "20260919103000_sinjira_v25_livre_i_catalog_seed.sql": "04929202946a0cda629c1f8005dbf51e4bfb2d68",
 }
 
 
@@ -219,7 +220,7 @@ def main() -> None:
 
     validate_snapshot(*values)
     print(
-        "OK snapshot release V25: 28 migrations futures non revues correspondent au dossier, "
+        "OK snapshot release V25: 29 migrations futures non revues correspondent au dossier, "
         "empreintes intactes, reviewed/ledger inchangés et garde humaine conservée."
     )
 

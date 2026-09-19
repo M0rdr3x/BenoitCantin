@@ -365,14 +365,13 @@ select ok(
   ),
   'chaque entrée ne conserve que label public, réseau et date de dernier contact'
 );
-select like(
-  (
+select ok(
+  coalesce((
     select item->>'last_contact_date'
     from jsonb_array_elements(public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')) item
     where item->>'network'='Personnage'
     limit 1
-  ),
-  '____-__-__',
+  ),'') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$',
   'la dernière interaction personnage reste réduite à une date sans heure précise'
 );
 

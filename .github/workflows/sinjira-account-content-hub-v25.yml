@@ -6,6 +6,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'supabase/migrations/20260919090000_sinjira_v25_account_content_hub.sql'
+      - 'supabase/migrations/20260919103000_sinjira_v25_livre_i_catalog_seed.sql'
       - 'supabase/tests/account_content_hub_v25.test.sql'
       - 'scripts/validate_account_site_refresh_v25.py'
       - 'scripts/validate_site.py'

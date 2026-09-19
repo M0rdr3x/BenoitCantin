@@ -72,6 +72,11 @@ select is(public.sinjira_age_band('72000000-0000-4000-8000-000000000011'),'child
 select is(public.sinjira_age_band('73000000-0000-4000-8000-000000000012'),'child','12 ans est dans la bande child');
 
 select set_config('request.jwt.claim.sub','71000000-0000-4000-8000-000000000001',true);
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','71000000-0000-4000-8000-000000000001','aal','aal2')::text,
+  true
+);
 select is(
   (public.guardian_set_junior_community('72000000-0000-4000-8000-000000000011',true)->>'enabled')::boolean,
   true,

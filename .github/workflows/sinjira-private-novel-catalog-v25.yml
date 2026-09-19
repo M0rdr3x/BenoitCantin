@@ -6,6 +6,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'supabase/migrations/20260919093000_sinjira_v25_private_novel_catalog.sql'
+      - 'supabase/migrations/20260919103000_sinjira_v25_livre_i_catalog_seed.sql'
       - 'supabase/tests/private_novel_catalog_v25.test.sql'
       - 'supabase/functions/_shared/privateNovel.ts'
       - 'supabase/functions/get-private-novel-url/**'
