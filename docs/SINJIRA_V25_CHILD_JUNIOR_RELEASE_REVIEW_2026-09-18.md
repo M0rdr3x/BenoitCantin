@@ -298,9 +298,25 @@ Le pgTAP `private_novel_catalog_v25.test.sql` contient **12 assertions** sur les
 
 Cette vingt-septième migration reste **non revue production**.
 
+### Profil privé compatible avec les comptes 11 ans
+
+La revue de la base active a révélé une incompatibilité restante : l'inscription V25 accepte les comptes à partir de 11 ans sous supervision, mais l'implémentation interne `private_profile_save` conservait encore l'ancienne erreur `SINJIRA_MINIMUM_AGE_13`. Un compte de 11 ou 12 ans pouvait donc être correctement créé puis être refusé au moment de modifier son coffre privé.
+
+La migration forward-only :
+
+`20260919100000_sinjira_v25_private_profile_age_11.sql`
+
+conserve les barrières MFA, juridiction jeunesse et confidentialité du coffre, remplace la limite effective par **11 ans**, exige toujours un tuteur vérifié avant 14 ans et refuse explicitement un lien dont `revoked_at` n'est pas nul.
+
+Le navigateur affiche désormais un message cohérent avec la règle 11+, tout en reconnaissant une éventuelle erreur historique `SINJIRA_MINIMUM_AGE_13` comme un serveur non encore synchronisé.
+
+Deux preuves SQL sont exécutées par le workflow Profil privé après reconstruction locale : le test historique de **22 assertions** et un nouveau pgTAP de **8 assertions** couvrant 11 ans avec tuteur actif, 11 ans sans tuteur, moins de 11 ans et lien tuteur révoqué.
+
+Cette vingt-huitième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **27 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **28 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -338,6 +354,7 @@ Le snapshot de revue attend exactement **27 migrations locales futures non revue
 | `20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql` | `8e0fd367bd0c30ed77f947ae0583408b370121a1` |
 | `20260919090000_sinjira_v25_account_content_hub.sql` | `29358d27f8f505897b924062e208b8d5c740f8c5` |
 | `20260919093000_sinjira_v25_private_novel_catalog.sql` | `be721fa72387de258fb488293f973febd9f9c8e7` |
+| `20260919100000_sinjira_v25_private_profile_age_11.sql` | `40c29de09331b187ddc00432054abcf500711ded` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -382,7 +399,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **27 migrations** dans l’ordre.
+2. Relire les **28 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.

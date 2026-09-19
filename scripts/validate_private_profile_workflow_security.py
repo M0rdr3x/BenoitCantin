@@ -10,7 +10,9 @@ from pathlib import Path
 WORKFLOW = Path('.github/workflows/sinjira-private-profile-v24-5-23.yml')
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
 SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
+SETUP_SUPABASE_SHA = '3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf'
 PYTHON_VERSION = '3.12.14'
+SUPABASE_VERSION = '2.111.0'
 CONTRACT_TRIGGER = "      - 'scripts/validate_private_profile_workflow_security.py'"
 CHECKS = (
     'python scripts/validate_private_profile_editing_v24_5_23.py',
@@ -19,6 +21,10 @@ CHECKS = (
     'python scripts/validate_rls_helper_rpc_v24_5_22.py',
     'python scripts/validate_security_contract.py',
     'python scripts/validate_free_only_mode.py',
+    'supabase start',
+    'supabase db reset',
+    'supabase test db supabase/tests/private_profile_editing_v24_5_23.test.sql',
+    'supabase test db supabase/tests/private_profile_child_age_v25.test.sql',
 )
 
 
@@ -31,11 +37,14 @@ def validate_text(text: str) -> None:
         'permissions:\n  contents: read',
         'push:\n    branches: [main]',
         'runs-on: ubuntu-24.04',
-        'timeout-minutes: 10',
+        'timeout-minutes: 25',
         f'uses: actions/checkout@{CHECKOUT_SHA}',
         'persist-credentials: false',
         f'uses: actions/setup-python@{SETUP_PYTHON_SHA}',
         f"python-version: '{PYTHON_VERSION}'",
+        f'uses: supabase/setup-cli@{SETUP_SUPABASE_SHA}',
+        f"version: {SUPABASE_VERSION}",
+        'supabase stop --no-backup',
         'python scripts/validate_private_profile_workflow_security.py --self-test',
         'python scripts/validate_private_profile_workflow_security.py',
         *CHECKS,
@@ -63,7 +72,7 @@ def validate_text(text: str) -> None:
         fail('permission GitHub en écriture détectée')
 
     uses_targets = re.findall(r'^\s*-?\s*uses:\s+(\S+)\s*$', text, flags=re.MULTILINE)
-    if len(uses_targets) != 2:
+    if len(uses_targets) != 3:
         fail(f'nombre inattendu d’actions réutilisables: {len(uses_targets)}')
     for target in uses_targets:
         if '@' not in target or not re.fullmatch(r'[0-9a-f]{40}', target.rsplit('@', 1)[1]):
@@ -74,8 +83,11 @@ def self_test(text: str) -> None:
     mutations = {
         'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
         'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
+        'setup-supabase mobile': text.replace(f'supabase/setup-cli@{SETUP_SUPABASE_SHA}', 'supabase/setup-cli@v1', 1),
+        'version Supabase mobile': text.replace(f'version: {SUPABASE_VERSION}', 'version: latest', 1),
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
         'runner mobile': text.replace('ubuntu-24.04', 'ubuntu-latest', 1),
+        'timeout réduit': text.replace('timeout-minutes: 25', 'timeout-minutes: 10', 1),
         'Python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
         'secret GitHub': text.replace('permissions:\n  contents: read', 'permissions:\n  contents: read\nenv:\n  BAD: ${{ secrets.BAD }}', 1),
         'permission écriture': text.replace('contents: read', 'contents: write', 1),

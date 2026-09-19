@@ -61,7 +61,8 @@ function userMessage(error){
   const rules=[
     [/MFA_REQUIRED/i,'Une authentification renforcée est requise avant de modifier votre coffre privé. Ouvrez Sécurité, complétez la vérification demandée, puis revenez ici.'],
     [/AUTH_REQUIRED/i,'Votre session n’est plus valide. Reconnectez-vous puis réessayez.'],
-    [/SINJIRA_MINIMUM_AGE_13/i,'La date de naissance indiquée ne respecte pas l’âge minimum actuellement permis pour un Compte SINJIRA™.'],
+    [/SINJIRA_MINIMUM_AGE_11/i,'Un Compte SINJIRA™ supervisé est disponible à partir de 11 ans.'],
+    [/SINJIRA_MINIMUM_AGE_13/i,'Le serveur utilise encore une ancienne règle d’âge. La synchronisation du module enfant 11 ans est requise avant cette modification.'],
     [/INVALID_BIRTH_DATE/i,'La date de naissance indiquée n’est pas valide.'],
     [/INVALID_GENDER/i,'La valeur de genre choisie n’est pas valide.'],
     [/INVALID_RELATIONSHIP_STATUS/i,'Le statut relationnel choisi n’est pas valide.'],

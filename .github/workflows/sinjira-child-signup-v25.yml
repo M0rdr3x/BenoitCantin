@@ -21,7 +21,9 @@ on:
       - 'supabase/migrations/20260919063000_sinjira_v25_guardian_contact_metadata_opt_in.sql'
       - 'supabase/migrations/20260919070000_sinjira_v25_guardian_contacts_minimization.sql'
       - 'supabase/migrations/20260919080000_sinjira_v25_guardian_character_identity_isolation.sql'
+      - 'supabase/migrations/20260919100000_sinjira_v25_private_profile_age_11.sql'
       - 'supabase/tests/child_guardian_signup_v25.test.sql'
+      - 'supabase/tests/private_profile_child_age_v25.test.sql'
       - 'scripts/validate_child_guardian_signup_v25.py'
       - 'tests/e2e/test_public_site.py'
       - '.github/workflows/sinjira-child-signup-v25.yml'
@@ -72,6 +74,9 @@ jobs:
 
       - name: Exécuter le test pgTAP comportemental 11 ans
         run: supabase test db supabase/tests/child_guardian_signup_v25.test.sql
+
+      - name: Vérifier le coffre privé du compte enfant 11 ans
+        run: supabase test db supabase/tests/private_profile_child_age_v25.test.sql
 
       - name: Vérifier une inscription Auth HTTP ayant exactement 11 ans
         shell: bash
