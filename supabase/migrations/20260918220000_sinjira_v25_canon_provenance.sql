@@ -104,6 +104,12 @@ begin
     raise exception 'CANON_SOURCE_CREATE_RETIRED_FORBIDDEN';
   end if;
 
+  if tg_op='UPDATE'
+     and old.verification_status='RETIRED'
+     and new.verification_status is distinct from 'RETIRED' then
+    raise exception 'CANON_SOURCE_RETIRED_FINAL';
+  end if;
+
   if new.supersedes_source_id is not null
      and new.source_kind not in ('roman','bible','author_decision','archive') then
     raise exception 'CANON_SOURCE_SUPERSEDES_KIND_INVALID';
@@ -1211,7 +1217,7 @@ comment on table public.sinjira_story_claims is
 comment on function private.sinjira_source_is_verified(uuid) is
   'Retourne vrai uniquement pour une source VERIFIED ou SECRET_AUTEUR.';
 comment on function private.sinjira_guard_canon_source_lifecycle() is
-  'Interdit la création directe en RETIRED et empêche une source research de devenir un maillon de remplacement canonique.';
+  'Interdit la création directe en RETIRED, rend RETIRED irréversible et empêche une source research de devenir un maillon de remplacement canonique.';
 comment on function private.sinjira_prevent_source_supersedes_cycle() is
   'Empêche auto-remplacement, cycles, références absentes, fourches de succession, croisements de périmètre et remplacement direct entre deux romans de numéros différents.';
 comment on function public.admin_sinjira_migrate_canon_source_references(uuid,uuid) is
