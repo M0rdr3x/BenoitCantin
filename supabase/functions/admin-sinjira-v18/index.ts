@@ -225,7 +225,7 @@ Deno.serve(async(req)=>{
 
     if(a==='save_canon_source'){
       const x=b.source||{};
-      const kinds=['roman','bible','author_decision','canon_event','extended_story','archive','research'];
+      const kinds=['roman','bible','author_decision','archive','research'];
       const scopes=['LIVRES_1_12','ORIGINES_13_14','CANON_ETENDU','META'];
       const statuses=['PROVISOIRE','VERIFIED','SECRET_AUTEUR','A_ARBITRER','RETIRED'];
       const sourceKey=String(x.source_key||'').trim().toLowerCase().replace(/[^a-z0-9:_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,160);
