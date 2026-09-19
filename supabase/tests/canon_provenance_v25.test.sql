@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(101);
+select plan(104);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -628,6 +628,34 @@ select ok(
    where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
   'la transaction échoue si une référence directe subsiste après migration'
 );
+
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_SUPERSEDES_SCOPE_MISMATCH%'
+          and pg_get_functiondef(p.oid) ilike '%v_previous_scope%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_prevent_source_supersedes_cycle' limit 1),
+  'une relation de remplacement est refusée si les périodes canoniques diffèrent'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_SUPERSEDES_NOT_FOUND%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_prevent_source_supersedes_cycle' limit 1),
+  'une relation de remplacement ne peut pas viser une source inexistante'
+);
+
+select ok(exists(
+  select 1 from pg_trigger tr
+  join pg_class t on t.oid=tr.tgrelid
+  join pg_namespace n on n.oid=t.relnamespace
+  where n.nspname='public'
+    and t.relname='sinjira_canon_sources'
+    and tr.tgname='sinjira_canon_sources_prevent_supersedes_cycle'
+    and not tr.tgisinternal
+    and pg_get_triggerdef(tr.oid) ilike '%supersedes_source_id%'
+    and pg_get_triggerdef(tr.oid) ilike '%scope%'
+),'le garde de remplacement se relance aussi lors d un changement de période');
 
 select * from finish();
 rollback;
