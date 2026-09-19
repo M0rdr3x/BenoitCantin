@@ -289,6 +289,30 @@ Deno.serve(async(req)=>{
       return privateJson({ok:true,continuity:data});
     }
 
+    if(a==='publish_extended_story'){
+      if(!b.story_id)return privateJson({ok:false,error:'Chronique requise.',code:'STORY_REQUIRED'},400);
+      if(b.author_confirmed_publication!==true)throw new Error('STORY_PUBLICATION_CONFIRMATION_REQUIRED');
+      const audience=['members','public'].includes(b.audience)?b.audience:null;
+      if(!audience)return privateJson({ok:false,error:'La publication exige une audience Membres ou Public.',code:'STORY_PUBLIC_AUDIENCE_REQUIRED'},400);
+      const {data,error}=await s.rpc('admin_sinjira_publish_extended_story',{p_story_id:b.story_id,p_audience:audience});
+      if(error)throw error;
+      const {data:story,error:storyError}=await s.from('sinjira_extended_stories').select('*').eq('id',b.story_id).single();
+      if(storyError)throw storyError;
+      await audit(s,user.id,'publish_extended_story','sinjira_extended_story',b.story_id,story?.title||'Chronique publiée',{audience});
+      return privateJson({ok:true,story,publication:data});
+    }
+
+    if(a==='unpublish_extended_story'){
+      if(!b.story_id)return privateJson({ok:false,error:'Chronique requise.',code:'STORY_REQUIRED'},400);
+      if(b.author_confirmed_unpublish!==true)throw new Error('STORY_UNPUBLISH_CONFIRMATION_REQUIRED');
+      const {data,error}=await s.rpc('admin_sinjira_unpublish_extended_story',{p_story_id:b.story_id});
+      if(error)throw error;
+      const {data:story,error:storyError}=await s.from('sinjira_extended_stories').select('*').eq('id',b.story_id).single();
+      if(storyError)throw storyError;
+      await audit(s,user.id,'unpublish_extended_story','sinjira_extended_story',b.story_id,story?.title||'Chronique retirée de publication',{});
+      return privateJson({ok:true,story,publication:data});
+    }
+
     if(a==='save_extended_story'){
       const story=b.story||{};
       const storyTypes=['character_chronicle','world_chronicle','quebec_chronicle','archive','fragment','novella'];
@@ -301,6 +325,14 @@ Deno.serve(async(req)=>{
       const requestedCanon=canonStatuses.includes(story.canon_status)?story.canon_status:'PROVISOIRE';
       const status=workflowStatuses.includes(story.status)?story.status:'draft';
       const audience=audiences.includes(story.audience)?story.audience:'private';
+      if(status==='published')throw new Error('STORY_PUBLISH_SEPARATELY');
+      let currentStory:any=null;
+      if(story.id){
+        const current=await s.from('sinjira_extended_stories').select('id,status,canon_status,published_at,audience').eq('id',story.id).maybeSingle();
+        if(current.error)throw current.error;
+        currentStory=current.data;
+        if(currentStory?.status==='published')throw new Error('STORY_UNPUBLISH_FIRST');
+      }
       if(requestedCanon==='CANON_ETENDU'&&story.author_confirmed_extended_canon!==true)throw new Error('EXTENDED_CANON_CONFIRMATION_REQUIRED');
       const characterId=story.character_id||null;
       if(storyType==='character_chronicle'&&!characterId)return privateJson({ok:false,error:'Une Chronique de personnage doit être liée à une Conscience.',code:'CHARACTER_REQUIRED'},400);
@@ -325,7 +357,7 @@ Deno.serve(async(req)=>{
         continuity_data:story.continuity_data&&typeof story.continuity_data==='object'?story.continuity_data:{},
         audience,
         visible_to_character_owner:story.visible_to_character_owner!==false,
-        published_at:status==='published'?(story.published_at||new Date().toISOString()):null
+        published_at:null
       };
       let saved:any=null;
       if(story.id){
@@ -403,6 +435,16 @@ Deno.serve(async(req)=>{
     if(e?.message==='SOURCE_PURGE_STORAGE_FAILED')return privateJson({ok:false,error:'La suppression du fichier source a échoué; les références ont été conservées.',code:'SOURCE_PURGE_STORAGE_FAILED'},503);
     if(e?.message==='CANON_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmez explicitement que ce personnage est établi par un manuscrit officiel finalisé avant de le passer CANON.'},409);
     if(e?.message==='EXTENDED_CANON_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmez explicitement la validation auteur avant de passer cette histoire en CANON ÉTENDU.',code:'EXTENDED_CANON_CONFIRMATION_REQUIRED'},409);
+    if(e?.message==='STORY_PUBLICATION_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmez explicitement la publication de cette Chronique.',code:'STORY_PUBLICATION_CONFIRMATION_REQUIRED'},409);
+    if(e?.message==='STORY_UNPUBLISH_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmez explicitement le retrait de publication avant modification.',code:'STORY_UNPUBLISH_CONFIRMATION_REQUIRED'},409);
+    if(e?.message==='STORY_PUBLISH_SEPARATELY')return privateJson({ok:false,error:'Enregistrez et canonisez d’abord la Chronique, puis utilisez le bouton Publier.',code:'STORY_PUBLISH_SEPARATELY'},409);
+    if(e?.message==='STORY_UNPUBLISH_FIRST')return privateJson({ok:false,error:'Cette Chronique est publiée. Retirez-la de publication avant de modifier son contenu ou sa continuité.',code:'STORY_UNPUBLISH_FIRST'},409);
+    if(e?.message==='STORY_PUBLIC_AUDIENCE_REQUIRED')return privateJson({ok:false,error:'La publication exige une audience Membres ou Public.',code:'STORY_PUBLIC_AUDIENCE_REQUIRED'},409);
+    if(e?.message==='STORY_NOT_CANON_EXTENDED')return privateJson({ok:false,error:'La Chronique doit être CANON ÉTENDU avant publication.',code:'STORY_NOT_CANON_EXTENDED'},409);
+    if(e?.message==='STORY_ARCHIVED')return privateJson({ok:false,error:'Une Chronique archivée ne peut pas être publiée.',code:'STORY_ARCHIVED'},409);
+    if(e?.message==='STORY_ANCHOR_REQUIRED')return privateJson({ok:false,error:'Définissez l’ancrage canonique avant publication.',code:'STORY_ANCHOR_REQUIRED'},409);
+    if(e?.message==='STORY_METADATA_INCOMPLETE')return privateJson({ok:false,error:'La publication exige une période complète et un lieu Atlas.',code:'STORY_METADATA_INCOMPLETE'},409);
+    if(e?.message==='STORY_CONTENT_REQUIRED')return privateJson({ok:false,error:'Le contenu de la Chronique doit être rédigé avant publication.',code:'STORY_CONTENT_REQUIRED'},409);
     if(e?.message==='STORY_CONTINUITY_CONFLICT')return privateJson({ok:false,error:'Canonisation refusée : collision de continuité détectée.',code:'STORY_CONTINUITY_CONFLICT'},409);
     if(e?.message==='STORY_CONTINUITY_INCOMPLETE')return privateJson({ok:false,error:'Canonisation refusée : date ou lieu de continuité incomplet.',code:'STORY_CONTINUITY_INCOMPLETE'},409);
     if(e?.message==='NOTIFICATION_ID_REQUIRED')return privateJson({ok:false,error:'Identifiant de notification requis.'},400);
