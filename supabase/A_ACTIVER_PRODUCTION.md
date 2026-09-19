@@ -85,8 +85,9 @@ La branche de travail `sinjira-univers-etendu-registre-v25` ajoute deux migratio
 
 1. `20260918193000_sinjira_v25_extended_canon_chronicles.sql`
 2. `20260918201500_sinjira_v25_world_calendar_atlas_continuity.sql`
+3. `20260918220000_sinjira_v25_canon_provenance.sql`
 
-Elles introduisent les Chroniques officielles du Canon étendu, les segments de présence, l’Atlas canonique, le Calendrier-Monde, les présences canoniques, les règles de déplacement et les contrôles de collision.
+Elles introduisent les Chroniques officielles du Canon étendu, les segments de présence, l’Atlas canonique, le Calendrier-Monde, les présences canoniques, les règles de déplacement, les contrôles de collision ainsi que le Registre des sources et les faits de provenance vérifiables.
 
 **Procédure obligatoire avant application :**
 
