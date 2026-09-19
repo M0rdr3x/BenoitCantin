@@ -141,4 +141,5 @@ jobs:
 
       - name: Arrêter et supprimer la pile locale
         if: always()
-        run: supabase stop --no-backup
+        run: |
+          if command -v supabase >/dev/null 2>&1; then supabase stop --no-backup || true; fi

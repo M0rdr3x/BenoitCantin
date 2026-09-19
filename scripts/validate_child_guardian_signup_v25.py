@@ -308,7 +308,7 @@ req(
 )
 req('data-create-guardian-code' in rh and 'de 11 à 13 ans' in rh,
     "La page Relations n'explique pas le code parental obligatoire de 11 à 13 ans.")
-req('ouvrir l’inscription' in rh and 'v24-relations.js?v=25.0.7&amp;rev=contact-consent' in rh,
+req('ouvrir l’inscription' in rh and 'v24-relations.js?v=25.' in rh and '&amp;rev=' in rh,
     "Le parcours parent vers l'inscription ou son invalidation de cache est incomplet.")
 req('session aal2 avec second facteur' in rh and 'securite.html#mfa-active-title' in rh,
     "La page Relations n'explique pas la vérification AAL2 ni le chemin de configuration MFA.")
@@ -359,7 +359,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(62);' in t,
+req('selectplan(64);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),

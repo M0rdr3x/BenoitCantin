@@ -80,7 +80,7 @@ def validate(contents:dict[str,str])->None:
         fail("lecteur intégral: fonction générique absente")
     if "params.get('novel')" not in reader:
         fail("lecteur intégral: slug dynamique absent")
-    if "novel_slug:novelslug" not in reader or "mode:'download'" not in reader:
+    if "novel_slug:novelslug" not in reader or "invokedelivery('download')" not in reader:
         fail("lecteur intégral: contrat de livraison générique absent")
     if "data-private-reader-title" not in reader_html or "data-private-reader-meta" not in reader_html:
         fail("lecteur intégral: métadonnées dynamiques absentes")

@@ -84,7 +84,7 @@ def validate(contents: dict[str, str]) -> None:
     if "rendercreatorportfolio" not in pj:
         fail("achats: séparation portefeuille créateur absente")
 
-    if "name="pseudo"required" not in prof or "name="email"requiredtype="email"" not in prof:
+    if 'name="pseudo"required' not in prof or 'name="email"requiredtype="email"' not in prof:
         fail("profil: pseudo/courriel ne sont pas éditables")
     if "auth.updateuser({email}" not in acc:
         fail("profil: mise à jour sécurisée du courriel absente")
@@ -116,7 +116,7 @@ def validate(contents: dict[str, str]) -> None:
     if "sinjira-account-v18.js?v=25.0.1" not in contents["comments_html"]:
         fail("commentaires: cache client V25 non forcé")
 
-    if "data-literature-catalog" not in lith or "sinjira-literature-catalog-v25.js?v=25.0.1" not in lith:
+    if "data-literature-catalog" not in lith or "sinjira-literature-catalog-v25.js?v=25.1.0" not in lith:
         fail("littérature: catalogue dynamique V25 absent")
     if "sinjira_my_novel_catalog" not in contents["literature_js"] or "is_sinjira_owner" not in contents["literature_js"]:
         fail("littérature: catalogue self-only/créateur absent")
