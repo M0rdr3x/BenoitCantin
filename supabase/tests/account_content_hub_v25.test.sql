@@ -9,12 +9,12 @@ values
 (
   'b1000000-0000-4000-8000-000000000001',
   'content-hub-owner@example.test',
-  jsonb_build_object('birth_date',(current_date-interval '40 years')::date::text,'date_of_birth',(current_date-interval '40 years')::date::text,'pseudo','Créateur test','display_name','Créateur test','residence_country','Canada')
+  jsonb_build_object('birth_date',(current_date-interval '40 years')::date::text,'date_of_birth',(current_date-interval '40 years')::date::text,'gender','Homme','sex','male','pseudo','Créateur test','display_name','Créateur test','residence_country','Canada')
 ),
 (
   'b2000000-0000-4000-8000-000000000002',
   'content-hub-member@example.test',
-  jsonb_build_object('birth_date',(current_date-interval '30 years')::date::text,'date_of_birth',(current_date-interval '30 years')::date::text,'pseudo','Membre test','display_name','Membre test','residence_country','Canada')
+  jsonb_build_object('birth_date',(current_date-interval '30 years')::date::text,'date_of_birth',(current_date-interval '30 years')::date::text,'gender','Femme','sex','female','pseudo','Membre test','display_name','Membre test','residence_country','Canada')
 );
 
 insert into public.internal_admin_users(user_id,role)

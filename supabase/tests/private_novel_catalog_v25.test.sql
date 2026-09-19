@@ -33,6 +33,7 @@ values
   jsonb_build_object(
     'birth_date',(current_date-interval '42 years')::date::text,
     'date_of_birth',(current_date-interval '42 years')::date::text,
+    'gender','Homme','sex','male',
     'pseudo','Créateur Roman',
     'display_name','Créateur Roman',
     'residence_country','Canada'
@@ -44,6 +45,7 @@ values
   jsonb_build_object(
     'birth_date',(current_date-interval '30 years')::date::text,
     'date_of_birth',(current_date-interval '30 years')::date::text,
+    'gender','Femme','sex','female',
     'pseudo','Membre Roman',
     'display_name','Membre Roman',
     'residence_country','Canada'
@@ -52,8 +54,18 @@ values
 (
   'c3000000-0000-4000-8000-000000000003',
   'private-novel-restricted@example.test',
-  '{}'::jsonb
+  jsonb_build_object(
+    'birth_date',(current_date-interval '30 years')::date::text,
+    'date_of_birth',(current_date-interval '30 years')::date::text,
+    'gender','Homme','sex','male',
+    'pseudo','Compte non vérifié',
+    'display_name','Compte non vérifié',
+    'residence_country','Canada'
+  )
 );
+
+delete from public.account_safety_profiles
+where user_id='c3000000-0000-4000-8000-000000000003';
 
 insert into public.internal_admin_users(user_id,role)
 values('c1000000-0000-4000-8000-000000000001','owner')

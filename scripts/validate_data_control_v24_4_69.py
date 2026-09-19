@@ -47,10 +47,12 @@ def main():
     if 'data-account-page="settings-v69"' not in page and 'data-account-page="settings-v70"' not in page:
         raise AssertionError('page paramètres: version settings V69+ absente')
     require(page,[
-        'sinjira-account.js?v=24.4.69','Les comptes propriétaire et administrateur sont protégés',
+        'Les comptes propriétaire et administrateur sont protégés',
         'L’export indique explicitement s’il est complet','v24-data-control.js?v=24.4.83',
         'Points SINJIRA™','Rencontres/Safe Meet','Centre Vie privée'
     ],'page paramètres V24.4.83')
+    if 'sinjira-account.js?v=25.' not in page:
+        raise AssertionError('page paramètres V24.4.83: cache navigation Compte V25 absent')
 
     require(delete_fn,[
         "CONFIRM_PHRASE='SUPPRIMER MON COMPTE'","service.rpc('is_sinjira_admin'","code:'OWNER_OR_ADMIN_DELETE_BLOCKED'",

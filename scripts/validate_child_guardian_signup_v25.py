@@ -361,6 +361,12 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
 req('selectplan(64);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
+req(
+    t.find("request.jwt.claim.sub','20000000-0000-4000-8000-000000000011'") >= 0
+    and t.find("request.jwt.claim.sub','20000000-0000-4000-8000-000000000011'")
+        < t.find("lecontratsocialjeunessepeutsappliquerautomatiquementàpartirde13ans"),
+    "Le pgTAP ne fixe pas l identité JWT enfant avant les helpers sociaux self-only."
+)
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
     ("youth-abcd123456", "Le test ne crée pas de code parental déterministe."),

@@ -49,6 +49,7 @@ select throws_ok(
   'une session adulte AAL1 ne peut pas créer de code parental'
 );
 
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object(
@@ -81,6 +82,7 @@ where guardian_user_id='10000000-0000-4000-8000-000000000001'
 insert into public.guardian_signup_invites(guardian_user_id,invite_code,expires_at)
 values('10000000-0000-4000-8000-000000000001','YOUTH-ABCD123456',now()+interval '1 day');
 
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object(
@@ -97,6 +99,7 @@ select is(
 );
 reset role;
 
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object(
@@ -123,6 +126,13 @@ values(
     'gender','Homme','sex','male','pseudo','Enfant 11','display_name','Enfant 11','residence_country','Canada',
     'guardian_code','YOUTH-ABCD123456','initial_contributor_opt_in',true,'initial_share_free_text',true
   )
+);
+
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000011',true);
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','20000000-0000-4000-8000-000000000011','aal','aal1')::text,
+  true
 );
 
 select ok(exists(select 1 from public.profiles where user_id='20000000-0000-4000-8000-000000000011'),'le compte enfant crée son profil');
@@ -188,6 +198,7 @@ where minor_user_id='20000000-0000-4000-8000-000000000011'
   and guardian_user_id='10000000-0000-4000-8000-000000000001'
   and status='verified';
 
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal2')::text,
@@ -200,6 +211,7 @@ select throws_ok(
   'le tuteur ne peut pas lire les métadonnées de contacts sans consentement explicite'
 );
 
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000011',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','20000000-0000-4000-8000-000000000011','aal','aal1')::text,
@@ -228,7 +240,7 @@ values(
   jsonb_build_object(
     'birth_date',(current_date-interval '15 years')::date::text,
     'date_of_birth',(current_date-interval '15 years')::date::text,
-    'gender','Autre','sex','other','pseudo','Contact Jeunesse','display_name','Nom Affiché Privé','residence_country','Canada'
+    'gender','Femme','sex','female','pseudo','Contact Jeunesse','display_name','Nom Affiché Privé','residence_country','Canada'
   )
 );
 
@@ -277,6 +289,7 @@ values(
   now()-interval '2 hours'
 );
 
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal1')::text,
@@ -289,6 +302,7 @@ select throws_ok(
   'le tuteur AAL1 ne peut pas lire les métadonnées de contacts jeunesse'
 );
 
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal2')::text,
@@ -362,6 +376,7 @@ select like(
   'la dernière interaction personnage reste réduite à une date sans heure précise'
 );
 
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000011',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','20000000-0000-4000-8000-000000000011','aal','aal1')::text,
@@ -383,6 +398,7 @@ select is(
   'le retrait de permission est enregistré immédiatement'
 );
 
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal2')::text,
@@ -395,6 +411,7 @@ select throws_ok(
   'après retrait le tuteur AAL2 perd immédiatement l accès aux métadonnées de contacts'
 );
 
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal1')::text,
@@ -411,6 +428,7 @@ select throws_ok(
   'un tuteur AAL1 ne peut pas révoquer le lien de supervision'
 );
 
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal2')::text,
@@ -508,6 +526,7 @@ select ok(
   'le nouveau code est consommé une seule fois par le compte child_pending'
 );
 
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000011',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','20000000-0000-4000-8000-000000000011','aal','aal1')::text,
@@ -538,6 +557,7 @@ select is(
   'le jour des 18 ans le compte devient adult'
 );
 
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal2')::text,
@@ -560,6 +580,7 @@ select is(
 );
 reset role;
 
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000011',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','20000000-0000-4000-8000-000000000011','aal','aal1')::text,
@@ -586,6 +607,7 @@ values(
   )
 );
 
+select set_config('request.jwt.claim.sub','60000000-0000-4000-8000-000000000099',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','60000000-0000-4000-8000-000000000099','aal','aal2')::text,

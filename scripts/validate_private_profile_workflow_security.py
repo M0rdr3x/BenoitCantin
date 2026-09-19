@@ -52,6 +52,14 @@ def validate_text(text: str) -> None:
         if needle not in text:
             fail(f'élément obligatoire absent: {needle}')
 
+    profile_test = 'supabase test db supabase/tests/private_profile_editing_v24_5_23.test.sql'
+    child_test = 'supabase test db supabase/tests/private_profile_child_age_v25.test.sql'
+    ledger = 'python scripts/validate_production_migration_ledger.py'
+    if not (text.find(profile_test) < text.find(child_test) < text.find(ledger)):
+        fail('le ledger production doit rester après les preuves pgTAP locales')
+    if '      - name: Ledger production\n        if: always()\n        run: python scripts/validate_production_migration_ledger.py' not in text:
+        fail('le ledger production doit toujours être exécuté après les preuves locales')
+
     if text.count(CONTRACT_TRIGGER) != 2:
         fail('le contrat CI doit déclencher le workflow sur PR et push')
     for path in ('scripts/validate_security_contract.py', 'scripts/validate_free_only_mode.py'):
@@ -95,6 +103,15 @@ def self_test(text: str) -> None:
         'push main retiré': text.replace('  push:\n    branches: [main]\n', '', 1),
         'déclencheur contrat retiré': text.replace(CONTRACT_TRIGGER + '\n', '', 1),
         'auto-test retiré': text.replace('      - name: Auto-tester le contrat CI profil privé\n        run: python scripts/validate_private_profile_workflow_security.py --self-test\n\n', '', 1),
+        'ledger replacé avant les tests': text.replace(
+            '      - name: Ledger production\n        if: always()\n        run: python scripts/validate_production_migration_ledger.py\n\n',
+            '      - name: Ledger production\n        if: always()\n        run: python scripts/validate_production_migration_ledger.py\n\n      - name: Marqueur ordre invalide\n        run: true\n\n',
+            1
+        ).replace(
+            '      - name: Prouver le coffre privé historique\n',
+            '      - name: Ledger production déplacé\n        if: always()\n        run: python scripts/validate_production_migration_ledger.py\n\n      - name: Prouver le coffre privé historique\n',
+            1
+        ),
     }
     for index, check in enumerate(CHECKS, start=1):
         mutations[f'contrôle {index} retiré'] = text.replace(f'        run: {check}\n', '', 1)

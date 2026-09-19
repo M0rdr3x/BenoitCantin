@@ -71,8 +71,6 @@ jobs:
         run: python scripts/validate_private_profile_editing_v24_5_23.py
       - name: Manifeste schéma production
         run: python scripts/validate_production_schema_manifest.py
-      - name: Ledger production
-        run: python scripts/validate_production_migration_ledger.py
       - name: Contrat RLS historique V24.5.22
         run: python scripts/validate_rls_helper_rpc_v24_5_22.py
       - name: Sécurité générale
@@ -96,6 +94,10 @@ jobs:
 
       - name: Prouver la compatibilité Profil enfant 11 ans
         run: supabase test db supabase/tests/private_profile_child_age_v25.test.sql
+
+      - name: Ledger production
+        if: always()
+        run: python scripts/validate_production_migration_ledger.py
 
       - name: Arrêter et supprimer la pile locale
         if: always()
