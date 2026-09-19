@@ -400,6 +400,143 @@ revoke all on function private.sinjira_guard_published_story_claim() from public
 
 -- Renforce la publication : au moins un fait d'ancrage vérifié, aucun fait
 -- non résolu, et toutes les sources utilisées doivent toujours être vérifiées.
+create or replace function private.sinjira_story_provenance_report(p_story_id uuid)
+returns jsonb
+language plpgsql
+stable
+set search_path=pg_catalog,public,private
+as $$
+declare
+  v_scope text;
+  v_total integer:=0;
+  v_verified integer:=0;
+  v_unresolved integer:=0;
+  v_anchor_verified integer:=0;
+  v_anchor_matching integer:=0;
+begin
+  select anchor_scope into v_scope
+  from public.sinjira_extended_stories
+  where id=p_story_id;
+
+  if v_scope is null then
+    return jsonb_build_object(
+      'ok',false,
+      'story_id',p_story_id,
+      'code','STORY_NOT_FOUND'
+    );
+  end if;
+
+  select
+    count(*)::integer,
+    count(*) filter(
+      where c.verification_status='VERIFIED'
+        and c.source_id is not null
+        and private.sinjira_source_is_verified(c.source_id)
+    )::integer,
+    count(*) filter(
+      where c.verification_status<>'VERIFIED'
+         or c.source_id is null
+         or not private.sinjira_source_is_verified(c.source_id)
+    )::integer,
+    count(*) filter(
+      where c.claim_type='anchor'
+        and c.verification_status='VERIFIED'
+        and c.source_id is not null
+        and private.sinjira_source_is_verified(c.source_id)
+    )::integer,
+    count(*) filter(
+      where c.claim_type='anchor'
+        and c.verification_status='VERIFIED'
+        and c.source_id is not null
+        and private.sinjira_source_is_verified(c.source_id)
+        and (
+          v_scope='MULTI_PERIODE'
+          or src.scope='META'
+          or src.scope=v_scope
+        )
+    )::integer
+  into v_total,v_verified,v_unresolved,v_anchor_verified,v_anchor_matching
+  from public.sinjira_story_claims c
+  left join public.sinjira_canon_sources src on src.id=c.source_id
+  where c.story_id=p_story_id;
+
+  return jsonb_build_object(
+    'ok',true,
+    'story_id',p_story_id,
+    'anchor_scope',v_scope,
+    'total_claims',v_total,
+    'verified_claims',v_verified,
+    'unresolved_claims',v_unresolved,
+    'verified_anchor_claims',v_anchor_verified,
+    'matching_anchor_claims',v_anchor_matching,
+    'ready',v_anchor_verified>0 and v_anchor_matching>0 and v_unresolved=0
+  );
+end;
+$$;
+
+revoke all on function private.sinjira_story_provenance_report(uuid) from public,anon,authenticated;
+
+create or replace function public.admin_sinjira_promote_extended_story(
+  p_story_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path=pg_catalog,public,private,auth
+as $$
+declare
+  v_admin uuid;
+  v_report jsonb;
+  v_provenance jsonb;
+  v_story public.sinjira_extended_stories%rowtype;
+begin
+  v_admin:=private.require_sinjira_admin_aal2();
+
+  select * into v_story
+  from public.sinjira_extended_stories
+  where id=p_story_id
+  for update;
+
+  if v_story.id is null then raise exception 'STORY_NOT_FOUND'; end if;
+  if v_story.anchor_scope='UNASSIGNED' then raise exception 'STORY_ANCHOR_REQUIRED'; end if;
+
+  v_provenance:=private.sinjira_story_provenance_report(p_story_id);
+
+  if coalesce((v_provenance->>'verified_anchor_claims')::integer,0)=0 then
+    raise exception 'STORY_PROVENANCE_REQUIRED';
+  end if;
+  if coalesce((v_provenance->>'matching_anchor_claims')::integer,0)=0 then
+    raise exception 'STORY_PROVENANCE_SCOPE_MISMATCH';
+  end if;
+  if coalesce((v_provenance->>'unresolved_claims')::integer,0)>0 then
+    raise exception 'STORY_PROVENANCE_INCOMPLETE';
+  end if;
+
+  v_report:=private.sinjira_story_continuity_report(p_story_id);
+  if coalesce((v_report->>'blocking_conflicts')::integer,0)>0 then
+    raise exception 'STORY_CONTINUITY_CONFLICT';
+  end if;
+  if coalesce((v_report->>'warnings')::integer,0)>0 then
+    raise exception 'STORY_CONTINUITY_INCOMPLETE';
+  end if;
+
+  update public.sinjira_extended_stories
+  set canon_status='CANON_ETENDU',
+      status=case when status in ('draft','author_review') then 'validated' else status end
+  where id=p_story_id
+  returning * into v_story;
+
+  return jsonb_build_object(
+    'ok',true,
+    'story_id',v_story.id,
+    'canon_status',v_story.canon_status,
+    'status',v_story.status,
+    'provenance',v_provenance,
+    'continuity',v_report
+  );
+end;
+$$;
+
 create or replace function public.admin_sinjira_publish_extended_story(
   p_story_id uuid,
   p_audience text
@@ -412,6 +549,7 @@ as $$
 declare
   v_admin uuid;
   v_report jsonb;
+  v_provenance jsonb;
   v_story public.sinjira_extended_stories%rowtype;
 begin
   v_admin:=private.require_sinjira_admin_aal2();
@@ -438,44 +576,19 @@ begin
   ) then
     raise exception 'STORY_LOCATION_NOT_CANON';
   end if;
-  if btrim(coalesce(v_story.content,''))='' then raise exception 'STORY_CONTENT_REQUIRED'; end if;
+  if btrim(coalesce(v_story.content,''))='' then
+    raise exception 'STORY_CONTENT_REQUIRED';
+  end if;
 
-  if not exists(
-    select 1 from public.sinjira_story_claims c
-    where c.story_id=p_story_id
-      and c.claim_type='anchor'
-      and c.verification_status='VERIFIED'
-      and private.sinjira_source_is_verified(c.source_id)
-  ) then
+  v_provenance:=private.sinjira_story_provenance_report(p_story_id);
+
+  if coalesce((v_provenance->>'verified_anchor_claims')::integer,0)=0 then
     raise exception 'STORY_PROVENANCE_REQUIRED';
   end if;
-
-  if not exists(
-    select 1
-    from public.sinjira_story_claims c
-    join public.sinjira_canon_sources src on src.id=c.source_id
-    where c.story_id=p_story_id
-      and c.claim_type='anchor'
-      and c.verification_status='VERIFIED'
-      and private.sinjira_source_is_verified(c.source_id)
-      and (
-        v_story.anchor_scope='MULTI_PERIODE'
-        or src.scope='META'
-        or src.scope=v_story.anchor_scope
-      )
-  ) then
+  if coalesce((v_provenance->>'matching_anchor_claims')::integer,0)=0 then
     raise exception 'STORY_PROVENANCE_SCOPE_MISMATCH';
   end if;
-
-  if exists(
-    select 1 from public.sinjira_story_claims c
-    where c.story_id=p_story_id
-      and (
-        c.verification_status<>'VERIFIED'
-        or c.source_id is null
-        or not private.sinjira_source_is_verified(c.source_id)
-      )
-  ) then
+  if coalesce((v_provenance->>'unresolved_claims')::integer,0)>0 then
     raise exception 'STORY_PROVENANCE_INCOMPLETE';
   end if;
 
@@ -501,6 +614,7 @@ begin
     'status',v_story.status,
     'audience',v_story.audience,
     'published_at',v_story.published_at,
+    'provenance',v_provenance,
     'continuity',v_report
   );
 end;
@@ -512,3 +626,5 @@ comment on table public.sinjira_story_claims is
   'Faits de continuité d’une Chronique. Chaque fait vérifié pointe vers une source canonique vérifiée.';
 comment on function private.sinjira_source_is_verified(uuid) is
   'Retourne vrai uniquement pour une source VERIFIED ou SECRET_AUTEUR.';
+comment on function private.sinjira_story_provenance_report(uuid) is
+  'Rapport unique de provenance d’une Chronique : ancrages vérifiés, période correspondante et faits non résolus.';
