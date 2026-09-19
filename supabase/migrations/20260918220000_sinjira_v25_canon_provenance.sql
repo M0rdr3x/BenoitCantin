@@ -24,7 +24,18 @@ create table if not exists public.sinjira_canon_sources(
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   check(supersedes_source_id is null or supersedes_source_id<>id),
-  check(source_kind<>'roman' or book_number is not null)
+  check(source_kind<>'roman' or book_number is not null),
+  check(
+    verification_status not in ('VERIFIED','SECRET_AUTEUR')
+    or chapter_reference is not null
+    or passage_reference is not null
+    or source_version is not null
+  ),
+  check(
+    verification_status not in ('VERIFIED','SECRET_AUTEUR')
+    or source_kind<>'roman'
+    or chapter_reference is not null
+  )
 );
 
 create table if not exists public.sinjira_story_claims(
