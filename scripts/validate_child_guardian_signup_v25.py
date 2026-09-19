@@ -7,6 +7,7 @@ TEST = ROOT / 'supabase/tests/child_guardian_signup_v25.test.sql'
 REDEEM_MIG = ROOT / 'supabase/migrations/20260919013000_sinjira_v25_child_pending_guardian_redeem.sql'
 GUARDIAN_AAL2_MIG = ROOT / 'supabase/migrations/20260919023000_sinjira_v25_guardian_invite_aal2.sql'
 GUARDIAN_SECRET_MIN_MIG = ROOT / 'supabase/migrations/20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql'
+GUARDIAN_READ_AAL2_MIG = ROOT / 'supabase/migrations/20260919033000_sinjira_v25_guardian_invite_read_aal2.sql'
 YOUTH_BASE = ROOT / 'supabase/migrations/20260816140000_sinjira_v24_4_12_youth_safety.sql'
 SIGNUP_JS = ROOT / 'assets/js/v24-signup.js'
 BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
@@ -36,6 +37,7 @@ test = read(TEST)
 redeem_mig = read(REDEEM_MIG)
 guardian_aal2_mig = read(GUARDIAN_AAL2_MIG)
 guardian_secret_min_mig = read(GUARDIAN_SECRET_MIN_MIG)
+guardian_read_aal2_mig = read(GUARDIAN_READ_AAL2_MIG)
 youth_base = read(YOUTH_BASE)
 signup_js = read(SIGNUP_JS)
 backend_js = read(BACKEND_JS)
@@ -50,6 +52,7 @@ t = compact(test)
 rm = compact(redeem_mig)
 gm = compact(guardian_aal2_mig)
 gsm = compact(guardian_secret_min_mig)
+grm = compact(guardian_read_aal2_mig)
 y = compact(youth_base)
 j = compact(signup_js)
 b = compact(backend_js)
@@ -94,6 +97,12 @@ req("raw_user_meta_data=coalesce(raw_user_meta_data,'{}'::jsonb)-'guardian_code'
     "La migration de minimisation ne retire pas réellement guardian_code des métadonnées Auth.")
 req("revokeallonfunctionprivate.sinjira_strip_guardian_signup_secret()frompublic,anon,authenticated" in gsm,
     "La fonction privée de minimisation du secret parental est exposée aux rôles API.")
+req("createpolicyguardian_signup_invites_own_aal2" in grm
+    and "coalesce(auth.jwt()->>'aal','aal1')='aal2'" in grm
+    and "(selectauth.uid())=guardian_user_id" in grm,
+    "La lecture des codes parentaux n'est pas bornée self-only + AAL2 par RLS.")
+req("droppolicyifexistsguardian_signup_invites_ownonpublic.guardian_signup_invites" in grm,
+    "L'ancienne policy AAL1 de lecture des codes parentaux n'est pas retirée.")
 
 # Bande enfant distincte : elle ne doit pas hériter automatiquement des droits sociaux jeunesse.
 req("interval'11years'then'under11'" in m,
@@ -175,9 +184,16 @@ req("/compte/mfa.html?next=" in r and "encodeuricomponent('/compte/relations.htm
     "Le parcours parent ne redirige plus vers la vérification MFA avec retour à Relations.")
 req("mfa_aal2_required|mfa_required" in r,
     "L'interface parent ne traite plus explicitement un refus MFA serveur.")
+req("codesparentauxmasqués" in r and "unesessionaal2estrequisepourrelireuncodeparental" in r,
+    "L'interface n'explique plus que la relecture d'un code exige AAL2.")
+req(
+    r.find("s.auth.mfa.getauthenticatorassurancelevel()") >= 0
+    and r.find("s.from('guardian_signup_invites')") > r.find("s.auth.mfa.getauthenticatorassurancelevel()"),
+    "Le navigateur pourrait lire guardian_signup_invites avant de vérifier AAL2."
+)
 req('data-create-guardian-code' in rh and 'de 11 à 13 ans' in rh,
     "La page Relations n'explique pas le code parental obligatoire de 11 à 13 ans.")
-req('ouvrir l’inscription' in rh and 'v24-relations.js?v=25.0.3&amp;rev=guardian-aal2' in rh,
+req('ouvrir l’inscription' in rh and 'v24-relations.js?v=25.0.4&amp;rev=guardian-read-aal2' in rh,
     "Le parcours parent vers l'inscription ou son invalidation de cache est incomplet.")
 req('session aal2 avec second facteur' in rh and 'securite.html#mfa-active-title' in rh,
     "La page Relations n'explique pas la vérification AAL2 ni le chemin de configuration MFA.")
@@ -228,7 +244,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(35);' in t,
+req('selectplan(37);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
@@ -260,6 +276,9 @@ for marker, message in (
     ("request.jwt.claims", "Le pgTAP ne simule pas explicitement les niveaux AAL du JWT."),
     ("invite_code~'^youth-[a-z0-9]{10}$'", "Le pgTAP ne vérifie pas le format du code généré sous AAL2."),
     ("lecodeparentalconsomméestsupprimédesmétadonnéesauthdelenfant", "Le pgTAP ne prouve pas la suppression de guardian_code après consommation."),
+    ("unesessiontuteuraal1nepeutpasrelireuncodeparental", "Le pgTAP ne prouve pas le masquage RLS des codes sous AAL1."),
+    ("unesessiontuteuraal2peutreliresonproprecodeparental", "Le pgTAP ne prouve pas la relecture self-only sous AAL2."),
+    ("setlocalroleauthenticated", "Le pgTAP ne teste pas la policy avec le rôle API authenticated."),
     ("$$,'p0001','youth_jurisdiction_not_enabled'", "Le délimiteur pgTAP du refus hors Canada est cassé."),
     ("$$selectpublic.redeem_guardian_signup_invite('youth-redeem1101')$$", "Le délimiteur pgTAP du rétablissement child_pending est cassé."),
 ):

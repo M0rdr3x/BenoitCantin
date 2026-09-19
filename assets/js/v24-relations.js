@@ -83,11 +83,21 @@ async function renderGuardian(){
   if(!guardianLinks)return;
   let codesResult={data:[],error:null};
   if(ageBand==='adult'&&guardianCodes){
-    codesResult=await s.from('guardian_signup_invites').select('id,invite_code,consented_at,expires_at,used_at,minor_user_id,created_at').eq('guardian_user_id',user.id).order('created_at',{ascending:false}).limit(10);
-    if(codesResult.error){guardianCodes.innerHTML=serverMissing(codesResult.error)?'<div class="v2433-server-note">Le module d’autorisation parentale doit être synchronisé côté serveur.</div>':'<div class="v24-empty">Impossible de charger les codes parentaux.</div>'}
-    else{
-      const rows=codesResult.data||[];
-      guardianCodes.innerHTML=rows.length?rows.map(x=>{const used=Boolean(x.used_at),expired=!used&&new Date(x.expires_at).getTime()<Date.now();const state=used?'Utilisé':expired?'Expiré':'Valide';return `<article class="v24-panel"><strong>${escapeHtml(x.invite_code)}</strong><p>${state} · expire ${escapeHtml(formatDate(x.expires_at))}</p>${used?`<small>Utilisé ${escapeHtml(formatDate(x.used_at))}</small>`:''}</article>`}).join(''):'<div class="v24-empty">Aucun code parental créé.</div>';
+    const {data:aal,error:aalError}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
+    if(aalError){
+      guardianCodes.innerHTML='<div class="v24-empty">Impossible de vérifier le niveau de sécurité. Les codes parentaux restent masqués.</div>';
+    }else if(aal?.currentLevel!=='aal2'){
+      const action=aal?.nextLevel==='aal2'
+        ? `<a class="btn btn-secondary btn-small" href="/compte/mfa.html?next=${encodeURIComponent('/compte/relations.html')}">Vérifier avec mon second facteur</a>`
+        : '<a class="btn btn-secondary btn-small" href="securite.html#mfa-active-title">Configurer le second facteur</a>';
+      guardianCodes.innerHTML=`<div class="v24-empty"><strong>Codes parentaux masqués.</strong><br>Une session AAL2 est requise pour relire un code parental.<div class="hero-actions">${action}</div></div>`;
+    }else{
+      codesResult=await s.from('guardian_signup_invites').select('id,invite_code,consented_at,expires_at,used_at,minor_user_id,created_at').eq('guardian_user_id',user.id).order('created_at',{ascending:false}).limit(10);
+      if(codesResult.error){guardianCodes.innerHTML=serverMissing(codesResult.error)?'<div class="v2433-server-note">Le module d’autorisation parentale doit être synchronisé côté serveur.</div>':'<div class="v24-empty">Impossible de charger les codes parentaux.</div>'}
+      else{
+        const rows=codesResult.data||[];
+        guardianCodes.innerHTML=rows.length?rows.map(x=>{const used=Boolean(x.used_at),expired=!used&&new Date(x.expires_at).getTime()<Date.now();const state=used?'Utilisé':expired?'Expiré':'Valide';return `<article class="v24-panel"><strong>${escapeHtml(x.invite_code)}</strong><p>${state} · expire ${escapeHtml(formatDate(x.expires_at))}</p>${used?`<small>Utilisé ${escapeHtml(formatDate(x.used_at))}</small>`:''}</article>`}).join(''):'<div class="v24-empty">Aucun code parental créé.</div>';
+      }
     }
   }
 

@@ -52,7 +52,7 @@ La migration forward-only suivante aligne le serveur avec la bande V25 :
 
 Elle autorise un compte `child_pending` à consommer un **nouveau code parental adulte valide et à usage unique**. Le trigger canonique `sync_guardian_signup_invite_link` réactive/crée alors le lien `guardian_links` en `verified`, remet `revoked_at` à `null` et la classification repasse immédiatement à `child`. Un compte déjà supervisé ne reçoit pas un nouveau droit implicite.
 
-Le pgTAP d'inscription enfant couvre explicitement `child_pending → child`, la réactivation du lien et la consommation unique du nouveau code; il compte désormais **35 assertions** après les durcissements AAL2 et minimisation.
+Le pgTAP d'inscription enfant couvre explicitement `child_pending → child`, la réactivation du lien et la consommation unique du nouveau code; il compte désormais **37 assertions** après les durcissements AAL2, minimisation et lecture protégée.
 
 Cette onzième migration reste **non revue production**.
 
@@ -82,7 +82,7 @@ Elle refuse explicitement AAL1 avec `MFA_AAL2_REQUIRED`, conserve les gardes MFA
 
 L’interface Relations vérifie le niveau d’assurance avant l’appel RPC. Si un facteur existe mais que la session est AAL1, elle utilise le parcours `/compte/mfa.html` puis revient vers Relations. Si aucun second facteur n’est configuré, elle renvoie vers le Centre de sécurité.
 
-Le pgTAP enfant contient maintenant **35 assertions** et prouve le refus AAL1, la réussite AAL2, le format du code généré et la minimisation du secret après consommation. Deux délimiteurs SQL `$$` endommagés dans la preuve précédente ont également été réparés et sont désormais verrouillés par le validateur statique.
+Le pgTAP enfant contient maintenant **37 assertions** et prouve le refus AAL1 à l’émission, la réussite AAL2, le format du code, la minimisation du secret et la fermeture de la relecture sous AAL1. Deux délimiteurs SQL `$$` endommagés dans la preuve précédente ont également été réparés et sont désormais verrouillés par le validateur statique.
 
 Cette treizième migration reste **non revue production**.
 
@@ -100,9 +100,23 @@ Le pgTAP vérifie maintenant que le lien tuteur et la consommation du code exist
 
 Cette quatorzième migration reste **non revue production**.
 
+### Relecture des codes parentaux également protégée par AAL2
+
+La revue du parcours a identifié qu'après avoir imposé AAL2 à l'émission, la table `guardian_signup_invites` restait lisible par le tuteur avec une simple session authentifiée grâce à l'ancienne policy RLS. Une session AAL1 pouvait donc relire un code déjà émis.
+
+La migration forward-only suivante ferme cette asymétrie :
+
+`20260919033000_sinjira_v25_guardian_invite_read_aal2.sql`
+
+La policy historique de lecture est retirée et remplacée par une policy **self-only + AAL2**. Le navigateur vérifie aussi le niveau d'assurance avant toute requête vers `guardian_signup_invites`; sous AAL1, les codes sont explicitement masqués et l'interface propose la vérification MFA ou la configuration du second facteur.
+
+Le pgTAP ajoute deux preuves exécutées avec le rôle API `authenticated` : **0 ligne visible en AAL1**, puis **le propre code visible en AAL2**.
+
+Cette quinzième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **14 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **15 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -127,6 +141,7 @@ Le snapshot de revue attend exactement **14 migrations locales futures non revue
 | `20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql` | `e14c41364246929054282bccb0e4abc5641b8643` |
 | `20260919023000_sinjira_v25_guardian_invite_aal2.sql` | `5700bfaa2b5a95d84d37ad475524960bdb78fc9b` |
 | `20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql` | `f08102d4bc2485bc229e21076f361bf31552c928` |
+| `20260919033000_sinjira_v25_guardian_invite_read_aal2.sql` | `9b56b0e422f91fbb93939e03709d9afbcce0c7cf` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -171,7 +186,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **14 migrations** dans l’ordre.
+2. Relire les **15 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.

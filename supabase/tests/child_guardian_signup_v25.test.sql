@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(35);
+select plan(37);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -80,6 +80,38 @@ where guardian_user_id='10000000-0000-4000-8000-000000000001'
 
 insert into public.guardian_signup_invites(guardian_user_id,invite_code,expires_at)
 values('10000000-0000-4000-8000-000000000001','YOUTH-ABCD123456',now()+interval '1 day');
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object(
+    'sub','10000000-0000-4000-8000-000000000001',
+    'aal','aal1'
+  )::text,
+  true
+);
+set local role authenticated;
+select is(
+  (select count(*)::integer from public.guardian_signup_invites where invite_code='YOUTH-ABCD123456'),
+  0,
+  'une session tuteur AAL1 ne peut pas relire un code parental'
+);
+reset role;
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object(
+    'sub','10000000-0000-4000-8000-000000000001',
+    'aal','aal2'
+  )::text,
+  true
+);
+set local role authenticated;
+select is(
+  (select count(*)::integer from public.guardian_signup_invites where invite_code='YOUTH-ABCD123456'),
+  1,
+  'une session tuteur AAL2 peut relire son propre code parental'
+);
+reset role;
 
 insert into auth.users(id,email,raw_user_meta_data)
 values(
