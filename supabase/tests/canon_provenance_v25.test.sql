@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(111);
+select plan(116);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -711,6 +711,38 @@ select ok(
    where n.nspname='private' and p.proname='sinjira_prevent_source_supersedes_cycle' limit 1),
   'l édition de la relation existante reste possible sans autoriser un second successeur'
 );
+
+
+select has_function('private','sinjira_guard_canon_source_lifecycle',array[]::text[],
+  'le garde de cycle de vie des sources existe');
+
+select ok(exists(
+  select 1 from pg_trigger tr
+  join pg_class t on t.oid=tr.tgrelid
+  join pg_namespace n on n.oid=t.relnamespace
+  where n.nspname='public'
+    and t.relname='sinjira_canon_sources'
+    and tr.tgname='sinjira_canon_sources_guard_lifecycle'
+    and not tr.tgisinternal
+),'toute création ou modification pertinente passe par le garde de cycle de vie');
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_CREATE_RETIRED_FORBIDDEN%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_lifecycle' limit 1),
+  'une source ne peut pas être créée directement en RETIRED'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_SUPERSEDES_KIND_INVALID%'
+          and pg_get_functiondef(p.oid) ilike '%source_kind not in (''roman'',''bible'',''author_decision'',''archive'')%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_lifecycle' limit 1),
+  'une source research ne peut pas devenir un maillon de remplacement canonique'
+);
+
+select ok(not has_function_privilege('authenticated','private.sinjira_guard_canon_source_lifecycle()','EXECUTE'),
+  'le navigateur ne peut pas invoquer directement le garde de cycle de vie');
 
 select * from finish();
 rollback;
