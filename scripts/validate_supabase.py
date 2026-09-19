@@ -9,6 +9,8 @@ FUN=ROOT/'supabase'/'functions'
 CONFIG=ROOT/'supabase'/'config.toml'
 FRONTEND=ROOT/'assets'/'js'/'sinjira-supabase-config.js'
 WORKFLOW=ROOT/'.github'/'workflows'/'supabase-production-preflight.yml'
+ADMIN_HTML=ROOT/'admin'/'sinjira'/'index.html'
+ADMIN_JS=ROOT/'assets'/'js'/'sinjira-admin-v18.js'
 EXPECTED='24.4.13'
 REGISTRY_EXPECTED='25.1.0'
 PROJECT='gpvivleexywljowcqkru'
@@ -114,6 +116,7 @@ def main()->int:
       'CANON_SOURCE_SUPERSEDES_CYCLE',
       'CANON_SOURCE_SUPERSEDES_NOT_FOUND',
       'CANON_SOURCE_SUPERSEDES_SCOPE_MISMATCH',
+      'CANON_SOURCE_SUPERSEDES_BOOK_MISMATCH',
       'CANON_SOURCE_SUPERSEDES_ALREADY_EXISTS',
       'CANON_SOURCE_CREATE_RETIRED_FORBIDDEN',
       'CANON_SOURCE_SUPERSEDES_KIND_INVALID',
@@ -170,6 +173,17 @@ def main()->int:
         admin_text=read(admin_edge)
         for needle in ("admin_sinjira_story_validation_check","status:requestedCanon==='CANON_ETENDU'?'author_review':status","STORY_VALIDATION_INCOMPLETE"):
             if needle not in admin_text:fail(errors,f'Contrat administration Canon étendu incomplet: {needle}')
+
+    admin_html=read(ADMIN_HTML) if ADMIN_HTML.exists() else ''
+    admin_js=read(ADMIN_JS) if ADMIN_JS.exists() else ''
+    if not admin_html:fail(errors,'Page administration SINJIRA absente.')
+    else:
+        m=re.search(r'data-canon-source-form.*?</form>',admin_html,re.I|re.S)
+        if not m:fail(errors,'Formulaire source canonique introuvable dans l administration.')
+        elif 'value="RETIRED"' in m.group(0):
+            fail(errors,'Formulaire source admin: RETIRED ne doit pas être proposé à la création.')
+    for needle in ("setCanonSourceAuthorityLock(null);syncCanonSourceScope()","src.scope===scope","replacementKind==='roman'","src.source_kind==='roman'"):
+        if needle not in admin_js:fail(errors,f'Contrat UI sources canoniques incomplet: {needle}')
 
     registry=FUN/'submit-character-questionnaire'/'index.ts'
     if not registry.exists():fail(errors,'Edge Function du Registre absente.')
