@@ -476,6 +476,50 @@ $$;
 
 revoke all on function private.sinjira_story_provenance_report(uuid) from public,anon,authenticated;
 
+create or replace function public.admin_sinjira_story_validation_check(
+  p_story_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path=pg_catalog,public,private,auth
+as $$
+declare
+  v_admin uuid;
+  v_exists boolean:=false;
+  v_provenance jsonb;
+  v_continuity jsonb;
+  v_ready boolean:=false;
+begin
+  v_admin:=private.require_sinjira_admin_aal2();
+
+  select exists(
+    select 1 from public.sinjira_extended_stories where id=p_story_id
+  ) into v_exists;
+
+  if not v_exists then raise exception 'STORY_NOT_FOUND'; end if;
+
+  v_provenance:=private.sinjira_story_provenance_report(p_story_id);
+  v_continuity:=private.sinjira_story_continuity_report(p_story_id);
+
+  v_ready:=
+    coalesce((v_provenance->>'ready')::boolean,false)
+    and coalesce((v_continuity->>'blocking_conflicts')::integer,0)=0
+    and coalesce((v_continuity->>'warnings')::integer,0)=0;
+
+  return jsonb_build_object(
+    'ok',true,
+    'story_id',p_story_id,
+    'ready',v_ready,
+    'provenance',v_provenance,
+    'continuity',v_continuity
+  );
+end;
+$$;
+
+revoke all on function public.admin_sinjira_story_validation_check(uuid) from public,anon;
+grant execute on function public.admin_sinjira_story_validation_check(uuid) to authenticated,service_role;
+
 create or replace function public.admin_sinjira_promote_extended_story(
   p_story_id uuid
 )
@@ -628,3 +672,5 @@ comment on function private.sinjira_source_is_verified(uuid) is
   'Retourne vrai uniquement pour une source VERIFIED ou SECRET_AUTEUR.';
 comment on function private.sinjira_story_provenance_report(uuid) is
   'Rapport unique de provenance d’une Chronique : ancrages vérifiés, période correspondante et faits non résolus.';
+comment on function public.admin_sinjira_story_validation_check(uuid) is
+  'Prévalidation auteur combinée : provenance structurée et continuité doivent être prêtes avant CANON_ETENDU.';
