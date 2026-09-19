@@ -112,6 +112,21 @@ async function canonProvenance(){
  const box=document.querySelector('[data-canon-source-list]');if(box){box.innerHTML=canonSourcesCache.map(src=>`<article class="admin-v18-row"><strong>${escapeHtml(src.title||src.source_key)}</strong><p>${escapeHtml(src.source_kind)} · ${escapeHtml(src.scope)} · ${escapeHtml(src.verification_status)}</p><small>${escapeHtml(canonSourceLabel(src))}</small><button class="btn btn-secondary btn-small" data-edit-canon-source="${src.id}">Modifier</button></article>`).join('')||'<p>Aucune source canonique enregistrée.</p>';box.querySelectorAll('[data-edit-canon-source]').forEach(b=>b.addEventListener('click',()=>fillCanonSource(canonSourcesCache.find(x=>x.id===b.dataset.editCanonSource))))}
  const storyId=document.querySelector('[data-extended-story-editor]')?.elements?.id?.value||'';if(storyId)renderStoryClaims(storyId);
 }
+function renderContinuityResult(result){
+ const box=document.querySelector('[data-story-continuity-result]');if(!box)return;
+ if(!result){box.innerHTML='';return}
+ const validation=result.validation||result;
+ const provenance=validation.provenance||null;
+ const continuity=validation.continuity||(validation.blocking_conflicts!==undefined||validation.warnings!==undefined?validation:null);
+ const conflicts=Number(continuity?.blocking_conflicts||0),warnings=Number(continuity?.warnings||0);
+ const unresolved=Number(provenance?.unresolved_claims||0),anchors=Number(provenance?.matching_anchor_claims||0),verified=Number(provenance?.verified_claims||0);
+ const ready=validation.ready===true||(!provenance&&conflicts===0&&warnings===0);
+ const type=ready?'success':(conflicts>0?'error':'info');
+ const title=ready?'Prêt pour la canonisation':'Validation à compléter';
+ const provenanceText=provenance?`Provenance : ${verified} fait(s) vérifié(s), ${anchors} ancrage(s) compatible(s), ${unresolved} non résolu(s).`:'Provenance : non incluse dans cet ancien rapport.';
+ const continuityText=`Continuité : ${conflicts} conflit(s) bloquant(s), ${warnings} avertissement(s).`;
+ box.innerHTML=`<div class="account-status" data-status-type="${type}"><strong>${title}</strong><p>${escapeHtml(provenanceText)}</p><p>${escapeHtml(continuityText)}</p>${ready?'<p>La provenance et la continuité satisfont la prévalidation actuelle.</p>':'<p>Corrigez les éléments signalés avant de demander CANON ÉTENDU.</p>'}</div>`;
+}
 function resetExtendedStoryEditor(){
  const f=document.querySelector('[data-extended-story-editor]');if(!f)return;
  f.reset();f.elements.id.value='';f.elements.published_at.value='';f.elements.story_type.value='character_chronicle';f.elements.anchor_scope.value='UNASSIGNED';f.elements.canon_status.value='PROVISOIRE';f.elements.status.value='draft';f.elements.audience.value='private';f.elements.location_id.value='';f.elements.continuity_json.value='{}';f.elements.visible_to_character_owner.checked=true;f.elements.author_confirmed_extended_canon.checked=false;f.elements.author_confirmed_publication.checked=false;renderContinuityResult(null);renderStoryPublicationState(null);setStoryPublishedLock(null);const sf=document.querySelector('[data-story-segment-form]');if(sf){sf.reset();sf.elements.id.value='';sf.elements.story_id.value=''}const sb=document.querySelector('[data-story-segment-list]');if(sb)sb.innerHTML='<p>Sélectionnez d’abord une Chronique.</p>';const cf=document.querySelector('[data-story-claim-form]');if(cf){cf.reset();cf.elements.id.value='';cf.elements.story_id.value=''}const cb=document.querySelector('[data-story-claim-list]');if(cb)cb.innerHTML='<p>Sélectionnez d’abord une Chronique.</p>';
@@ -120,7 +135,7 @@ function renderStoryPublicationState(st){
  const box=document.querySelector('[data-story-publication-state]');if(!box)return;
  if(!st){box.innerHTML='<div class="account-status" data-status-type="info">La publication est une étape distincte de la canonisation.</div>';return}
  if(st.status==='published'){const when=st.published_at?new Date(st.published_at).toLocaleString('fr-CA'):'date inconnue';box.innerHTML='<div class="account-status" data-status-type="success"><strong>Chronique publiée</strong><p>'+escapeHtml(st.audience||'public')+' · '+escapeHtml(when)+'. Retirez-la de publication avant toute modification.</p></div>';return}
- if(st.canon_status==='CANON_ETENDU'){box.innerHTML='<div class="account-status" data-status-type="info"><strong>Canon étendu validé</strong><p>La Chronique peut être publiée après confirmation et nouvelle vérification de continuité.</p></div>';return}
+ if(st.canon_status==='CANON_ETENDU'){box.innerHTML='<div class="account-status" data-status-type="info"><strong>Canon étendu validé</strong><p>La Chronique peut être publiée après confirmation et nouvelle vérification de provenance + continuité.</p></div>';return}
  box.innerHTML='<div class="account-status" data-status-type="info">La Chronique doit être CANON ÉTENDU avant publication.</div>';
 }
 function setStoryPublishedLock(st){
@@ -188,6 +203,10 @@ function fillExtendedStoryEditor(st){
 function extendedStoryEditor(){
  const f=document.querySelector('[data-extended-story-editor]');if(!f)return;
  f.querySelector('[data-story-reset]')?.addEventListener('click',resetExtendedStoryEditor);
+ f.querySelector('[data-story-check]')?.addEventListener('click',async()=>{
+   const storyId=f.elements.id.value;if(!storyId)return alert('Enregistrez d’abord la Chronique.');
+   try{const d=await call('check_extended_story_validation',{story_id:storyId});renderContinuityResult(d.validation||d)}catch(err){alert(err.message)}
+ });
  f.querySelector('[data-story-publish]')?.addEventListener('click',async()=>{
    const storyId=f.elements.id.value;if(!storyId)return alert('Enregistrez d’abord la Chronique.');
    if(!f.elements.author_confirmed_publication.checked)return alert('Confirmez personnellement la publication avant de continuer.');
@@ -195,7 +214,7 @@ function extendedStoryEditor(){
    try{
      const d=await call('publish_extended_story',{story_id:storyId,audience:f.elements.audience.value,author_confirmed_publication:true});
      await extendedStories();const current=extendedStoriesCache.find(x=>x.id===storyId)||d.story;if(current)fillExtendedStoryEditor(current);
-     alert('Chronique publiée après nouvelle vérification de continuité.');
+     alert('Chronique publiée après nouvelle vérification de provenance et de continuité.');
    }catch(err){if(err.data?.continuity)renderContinuityResult(err.data.continuity);alert(err.message)}
  });
  f.querySelector('[data-story-unpublish]')?.addEventListener('click',async()=>{
