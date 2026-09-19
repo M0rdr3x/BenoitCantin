@@ -248,8 +248,10 @@ Règles :
 4. la période de la source d’ancrage doit correspondre à l’ancrage de la Chronique, sauf source `META` ou récit `MULTI_PERIODE`;
 5. un événement du Calendrier-Monde ne peut utiliser une source d’une autre période;
 6. une présence canonique ne peut remplacer la source de son événement par une source d’une autre période;
-7. modifier l’autorité, la période ou le repère d’une source invalide automatiquement les Chroniques publiées afin qu’elles soient contrôlées de nouveau;
-8. les sources `SECRET_AUTEUR` peuvent protéger la continuité sans être exposées aux membres ou au public.
+7. modifier une source non encore engagée peut invalider automatiquement les Chroniques publiées afin qu’elles soient contrôlées de nouveau;
+8. dès qu’une source soutient un fait canonique ou un fait `VERIFIED`, sa clé stable, son type, sa période et ses repères essentiels ne peuvent plus être réécrits silencieusement;
+9. une correction substantielle doit créer une **nouvelle source** reliée par « remplace », et la chaîne de remplacement ne peut jamais former de cycle;
+10. les sources `SECRET_AUTEUR` peuvent protéger la continuité sans être exposées aux membres ou au public.
 
 Le champ texte de référence reste un **instantané lisible**. L’autorité réelle est l’identifiant structuré de la source.
 
