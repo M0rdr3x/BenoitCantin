@@ -122,6 +122,7 @@ La navigation n'est jamais considérée comme une barrière de sécurité suffis
 - Communauté Junior via RPC bornées uniquement, sans accès table direct;
 - aucun UUID auteur, nom réel, avatar ou courriel dans le fil Junior;
 - activation Communauté Junior révocable par un parent/tuteur vérifié;
+- un lien `guardian_links` révoqué (`revoked_at` non nul) ne peut ni maintenir l’activation Junior ni conserver l’enfant dans la liste Junior de ce tuteur, même si un autre tuteur valide maintient la bande `child`;
 - sortie automatique de la bande Junior à 13 ans;
 - les nouvelles surfaces restreintes doivent recevoir leur propre garde serveur avant d'être déplacées en catégorie A;
 - pour Bibliothèque/Documents/Projet, `unreviewed` et `blocked_11_12` restent fermés; seul `approved_11_12` ouvre le contenu;

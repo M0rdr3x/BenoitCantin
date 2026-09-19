@@ -73,6 +73,8 @@ for name in sorted(actual):
 req('**44**' in doc,'Le document ne fixe pas la couverture à 44 routes.')
 req('fail-closed' in doc.lower(),'Le principe fail-closed n est pas documenté.')
 req('ne remplace pas les contrôles serveur' in doc.lower(),'La matrice doit rappeler que la navigation ne remplace pas la sécurité serveur.')
+req('guardian_links' in doc and 'revoked_at' in doc,'La matrice doit documenter le fail-closed de révocation multi-tuteur Junior.')
+req('ne peut ni maintenir l’activation Junior ni conserver l’enfant dans la liste Junior' in doc,'La matrice doit expliciter les deux effets de la révocation tuteur Junior.')
 
 junior=(COMPTE/'communaute-junior.html').read_text('utf-8')
 junior_js=(ROOT/'assets/js/sinjira-community-junior-v25.js').read_text('utf-8')
