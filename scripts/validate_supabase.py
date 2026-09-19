@@ -57,7 +57,8 @@ def main()->int:
 
     for table in ('admin_notifications','guardian_signup_invites','products','user_entitlements','character_submissions','characters',
                   'sinjira_extended_stories','sinjira_story_character_presence','sinjira_world_locations',
-                  'sinjira_world_travel_rules','sinjira_canon_events','sinjira_canon_event_characters'):
+                  'sinjira_world_travel_rules','sinjira_canon_events','sinjira_canon_event_characters',
+                  'sinjira_canon_sources','sinjira_story_claims'):
         if table not in tables:fail(errors,f'Table contractuelle absente des migrations: {table}')
     for table in tables:
         if not re.search(rf'alter\s+table\s+(?:if\s+exists\s+)?(?:(?:public|private)\.)?{re.escape(table)}\s+enable\s+row\s+level\s+security',sql,re.I):
@@ -89,6 +90,15 @@ def main()->int:
       'location_not_canon',
       'central_presence_uncertain',
       "cp.certainty='confirmed'",
+      'sinjira_canon_sources',
+      'sinjira_story_claims',
+      'sinjira_source_is_verified',
+      'sinjira_require_verified_provenance',
+      'sinjira_require_verified_story_claim',
+      'sinjira_guard_published_story_claim',
+      'STORY_PROVENANCE_REQUIRED',
+      'STORY_PROVENANCE_INCOMPLETE',
+      "source_kind in ('roman','bible','author_decision','archive')",
     }
     for needle in sorted(extended_contract):
         if needle.lower() not in sql.lower():
