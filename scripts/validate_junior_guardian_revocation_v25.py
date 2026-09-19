@@ -9,6 +9,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MIGRATION = ROOT / "supabase/migrations/20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql"
 CASCADE_MIG = ROOT / "supabase/migrations/20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql"
+ENABLE_AAL2_MIG = ROOT / "supabase/migrations/20260919040000_sinjira_v25_junior_enable_aal2.sql"
+RELATIONS_JS = ROOT / "assets/js/v24-relations.js"
 TEST = ROOT / "supabase/tests/junior_guardian_revocation_v25.test.sql"
 WORKFLOW = ROOT / ".github/workflows/sinjira-junior-guardian-revocation-v25.yml"
 
@@ -28,7 +30,7 @@ def segment(text: str, start: str, end: str | None = None) -> str:
     return part
 
 
-def validate(migration: str, cascade: str, test: str, workflow: str) -> None:
+def validate(migration: str, cascade: str, enable_aal2: str, relations_js: str, test: str, workflow: str) -> None:
     enabled = segment(
         migration,
         "create or replace function private.sinjira_junior_community_enabled(p_user_id uuid)",
@@ -57,8 +59,24 @@ def validate(migration: str, cascade: str, test: str, workflow: str) -> None:
     if "tg_op='delete'" not in cascade_compact:
         fail("cascade Junior: suppression d'un lien tuteur non couverte")
 
+    enable_compact = "".join(enable_aal2.lower().split())
+    if "ifv_enabledandcoalesce(auth.jwt()->>'aal','aal1')<>'aal2'" not in enable_compact:
+        fail("activation Junior: AAL2 serveur obligatoire absent")
+    if "mfa_aal2_required" not in enable_compact:
+        fail("activation Junior: erreur MFA_AAL2_REQUIRED absente")
+    if "ifv_enabled" not in enable_compact or "revoked_at=casewhenv_enabledthennullelsenow()end" not in enable_compact:
+        fail("activation Junior: activation/désactivation fail-safe non conservée")
+
+    relations_compact = "".join(relations_js.lower().split())
+    if "if(next)" not in relations_compact or "s.auth.mfa.getauthenticatorassurancelevel()" not in relations_compact:
+        fail("interface Junior: vérification AAL2 avant activation absente")
+    if "mfa_aal2_required" not in relations_compact:
+        fail("interface Junior: refus serveur AAL2 non traité")
+    if "activerlacommunautéjuniorexigeunsecondfacteur" not in relations_compact:
+        fail("interface Junior: guidage vers second facteur absent")
+
     required_test = (
-        "select plan(17);",
+        "select plan(20);",
         "junior-revocation-guardian-a@example.test",
         "junior-revocation-guardian-b@example.test",
         "set revoked_at=now()",
@@ -71,6 +89,12 @@ def validate(migration: str, cascade: str, test: str, workflow: str) -> None:
         "redeem_guardian_signup_invite('YOUTH-RECONSENT1')",
         "l ancien consentement Junior de A reste révoqué",
         "une nouvelle activation Junior explicite est nécessaire",
+        "MFA_AAL2_REQUIRED",
+        "tuteur AAL1 ne peut pas activer la Communauté Junior",
+        "tuteur A active Junior sous AAL2 avant révocation",
+        "tuteur AAL1 peut toujours désactiver Junior en voie fail-safe",
+        "la désactivation AAL1 coupe immédiatement Junior pour l enfant",
+        "$ select public.redeem_guardian_signup_invite('YOUTH-RECONSENT1') $",
     )
     for marker in required_test:
         if marker not in test:
@@ -103,14 +127,15 @@ def validate(migration: str, cascade: str, test: str, workflow: str) -> None:
             fail(f"workflow révocation Junior: garde manquante: {marker}")
 
 
-def self_test(migration: str, cascade: str, test: str, workflow: str) -> None:
-    validate(migration, cascade, test, workflow)
+def self_test(migration: str, cascade: str, enable_aal2: str, relations_js: str, test: str, workflow: str) -> None:
+    validate(migration, cascade, enable_aal2, relations_js, test, workflow)
     mutations = {
-        "revoked_at activation retiré": (migration.replace("        and g.revoked_at is null\n", "", 1), cascade, test, workflow),
-        "revoked_at liste parent retiré": (migration.rsplit("    and g.revoked_at is null\n", 1)[0] + migration.rsplit("    and g.revoked_at is null\n", 1)[1], cascade, test, workflow),
-        "cascade consentement retirée": (migration, cascade.replace("  update public.junior_community_guardian_consents\n", "  -- update retiré\n", 1), test, workflow),
-        "preuve second tuteur retirée": (migration, cascade, test.replace("junior-revocation-guardian-b@example.test", "guardian-b-missing"), workflow),
-        "secret ajouté au workflow": (migration, cascade, test, workflow + "\n# secrets.TEST\n"),
+        "revoked_at activation retiré": (migration.replace("        and g.revoked_at is null\n", "", 1), cascade, enable_aal2, relations_js, test, workflow),
+        "revoked_at liste parent retiré": (migration.rsplit("    and g.revoked_at is null\n", 1)[0] + migration.rsplit("    and g.revoked_at is null\n", 1)[1], cascade, enable_aal2, relations_js, test, workflow),
+        "cascade consentement retirée": (migration, cascade.replace("  update public.junior_community_guardian_consents\n", "  -- update retiré\n", 1), enable_aal2, relations_js, test, workflow),
+        "AAL2 activation retiré": (migration, cascade, enable_aal2.replace("if v_enabled and coalesce(auth.jwt()->>'aal','aal1')<>'aal2' then", "if false then", 1), relations_js, test, workflow),
+        "preuve second tuteur retirée": (migration, cascade, enable_aal2, relations_js, test.replace("junior-revocation-guardian-b@example.test", "guardian-b-missing"), workflow),
+        "secret ajouté au workflow": (migration, cascade, enable_aal2, relations_js, test, workflow + "\n# secrets.TEST\n"),
     }
     for label, values in mutations.items():
         try:
@@ -128,13 +153,15 @@ def main() -> None:
 
     migration = MIGRATION.read_text(encoding="utf-8")
     cascade = CASCADE_MIG.read_text(encoding="utf-8")
+    enable_aal2 = ENABLE_AAL2_MIG.read_text(encoding="utf-8")
+    relations_js = RELATIONS_JS.read_text(encoding="utf-8")
     test = TEST.read_text(encoding="utf-8")
     workflow = WORKFLOW.read_text(encoding="utf-8")
     if args.self_test:
-        self_test(migration, cascade, test, workflow)
+        self_test(migration, cascade, enable_aal2, relations_js, test, workflow)
         return
-    validate(migration, cascade, test, workflow)
-    print("OK révocation Junior V25: lien tuteur, consentement Junior et réactivation de supervision restent fail-closed; nouvelle activation explicite prouvée.")
+    validate(migration, cascade, enable_aal2, relations_js, test, workflow)
+    print("OK Junior V25: révocation durable, réactivation explicite AAL2 et désactivation fail-safe AAL1 sont prouvées.")
 
 
 if __name__ == "__main__":

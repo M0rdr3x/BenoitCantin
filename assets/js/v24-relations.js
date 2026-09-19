@@ -48,13 +48,37 @@ async function renderJuniorCommunityChildren(){
   juniorCommunityChildren.querySelectorAll('[data-junior-community-toggle]').forEach(button=>button.addEventListener('click',async()=>{
     const childId=button.dataset.juniorCommunityToggle;
     const next=button.dataset.juniorEnabled!=='true';
-    if(next&&!confirm('Activer la Communauté Junior pour ce compte enfant? L’enfant devra aussi accepter les règles Junior.'))return;
-    if(!next&&!confirm('Désactiver la Communauté Junior? Le compte enfant perdra immédiatement l’accès au fil Junior.'))return;
-    button.disabled=true;
+    if(next){
+      button.disabled=true;
+      const {data:aal,error:aalError}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
+      if(aalError){
+        button.disabled=false;
+        setStatus(guardianStatus,'Impossible de vérifier le niveau de sécurité. La Communauté Junior reste désactivée.','error');
+        return;
+      }
+      if(aal?.currentLevel!=='aal2'){
+        button.disabled=false;
+        if(aal?.nextLevel==='aal2'){
+          location.assign(`/compte/mfa.html?next=${encodeURIComponent('/compte/relations.html')}`);
+          return;
+        }
+        setStatus(guardianStatus,'Activer la Communauté Junior exige un second facteur. Configurez-le dans Sécurité puis revenez ici.','error');
+        return;
+      }
+      if(!confirm('Activer la Communauté Junior pour ce compte enfant? L’enfant devra aussi accepter les règles Junior.')){button.disabled=false;return}
+    }else{
+      if(!confirm('Désactiver la Communauté Junior? Le compte enfant perdra immédiatement l’accès au fil Junior.'))return;
+      button.disabled=true;
+    }
     const {data:result,error:toggleError}=await s.rpc('guardian_set_junior_community',{p_child_user_id:childId,p_enabled:next});
     if(toggleError||!result?.ok){
       button.disabled=false;
-      setStatus(guardianStatus,'Impossible de modifier l’accès à la Communauté Junior pour le moment.','error');
+      const raw=String(toggleError?.message||'');
+      if(next&&/MFA_AAL2_REQUIRED/i.test(raw)){
+        setStatus(guardianStatus,'La session doit être vérifiée au niveau AAL2 avant d’activer la Communauté Junior.','error');
+      }else{
+        setStatus(guardianStatus,'Impossible de modifier l’accès à la Communauté Junior pour le moment.','error');
+      }
       return;
     }
     setStatus(guardianStatus,next?'Communauté Junior activée. L’enfant doit maintenant accepter les règles Junior.':'Communauté Junior désactivée.','success');

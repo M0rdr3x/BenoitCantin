@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(17);
+select plan(20);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values(
@@ -46,11 +46,27 @@ values(
 
 select is(public.sinjira_age_band('75000000-0000-4000-8000-000000000011'),'child','enfant initialement child via tuteur A');
 
-select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000001',true);
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','75000000-0000-4000-8000-000000000001','aal','aal1')::text,
+  true
+);
+select throws_ok(
+  $$ select public.guardian_set_junior_community('75000000-0000-4000-8000-000000000011',true) $$,
+  'P0001',
+  'MFA_AAL2_REQUIRED',
+  'tuteur AAL1 ne peut pas activer la Communauté Junior'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','75000000-0000-4000-8000-000000000001','aal','aal2')::text,
+  true
+);
 select is(
   (public.guardian_set_junior_community('75000000-0000-4000-8000-000000000011',true)->>'enabled')::boolean,
   true,
-  'tuteur A active Junior avant révocation'
+  'tuteur A active Junior sous AAL2 avant révocation'
 );
 
 select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000011',true);
@@ -135,7 +151,7 @@ values('75000000-0000-4000-8000-000000000001','YOUTH-RECONSENT1',now()+interval 
 
 select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000011',true);
 select lives_ok(
-  $ select public.redeem_guardian_signup_invite('YOUTH-RECONSENT1') $,
+  $$ select public.redeem_guardian_signup_invite('YOUTH-RECONSENT1') $$,
   'child_pending peut rétablir la supervision avec un nouveau code de A'
 );
 
@@ -150,7 +166,11 @@ select ok(
   'l ancien consentement Junior de A reste révoqué après rétablissement de supervision'
 );
 
-select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000001',true);
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','75000000-0000-4000-8000-000000000001','aal','aal2')::text,
+  true
+);
 select is(
   (public.guardian_set_junior_community('75000000-0000-4000-8000-000000000011',true)->>'enabled')::boolean,
   true,
@@ -161,6 +181,27 @@ select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000011'
 select ok(
   public.sinjira_junior_community_enabled(),
   'Junior ne redevient actif qu après la nouvelle activation explicite de A'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','75000000-0000-4000-8000-000000000001','aal','aal1')::text,
+  true
+);
+select is(
+  (public.guardian_set_junior_community('75000000-0000-4000-8000-000000000011',false)->>'enabled')::boolean,
+  false,
+  'tuteur AAL1 peut toujours désactiver Junior en voie fail-safe'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','75000000-0000-4000-8000-000000000011','aal','aal1')::text,
+  true
+);
+select ok(
+  not public.sinjira_junior_community_enabled(),
+  'la désactivation AAL1 coupe immédiatement Junior pour l enfant'
 );
 
 select * from finish();
