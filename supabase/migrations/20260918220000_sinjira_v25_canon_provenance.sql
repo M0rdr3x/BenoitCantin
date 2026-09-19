@@ -101,9 +101,19 @@ set search_path=pg_catalog,public,private
 as $$
 declare
   v_cycle boolean:=false;
+  v_previous_scope text;
 begin
   if new.supersedes_source_id is null then return new; end if;
   if new.supersedes_source_id=new.id then raise exception 'CANON_SOURCE_SUPERSEDES_SELF'; end if;
+
+  select s.scope into v_previous_scope
+  from public.sinjira_canon_sources s
+  where s.id=new.supersedes_source_id;
+
+  if v_previous_scope is null then raise exception 'CANON_SOURCE_SUPERSEDES_NOT_FOUND'; end if;
+  if new.scope is distinct from v_previous_scope then
+    raise exception 'CANON_SOURCE_SUPERSEDES_SCOPE_MISMATCH';
+  end if;
 
   with recursive chain(id,supersedes_source_id,path) as (
     select s.id,s.supersedes_source_id,array[s.id]
@@ -217,7 +227,7 @@ $$;
 
 drop trigger if exists sinjira_canon_sources_prevent_supersedes_cycle on public.sinjira_canon_sources;
 create trigger sinjira_canon_sources_prevent_supersedes_cycle
-before insert or update of supersedes_source_id on public.sinjira_canon_sources
+before insert or update of supersedes_source_id,scope on public.sinjira_canon_sources
 for each row execute function private.sinjira_prevent_source_supersedes_cycle();
 
 drop trigger if exists sinjira_canon_sources_guard_authority on public.sinjira_canon_sources;
@@ -1151,6 +1161,8 @@ comment on table public.sinjira_story_claims is
   'Faits de continuité d’une Chronique. Chaque fait vérifié pointe vers une source canonique vérifiée.';
 comment on function private.sinjira_source_is_verified(uuid) is
   'Retourne vrai uniquement pour une source VERIFIED ou SECRET_AUTEUR.';
+comment on function private.sinjira_prevent_source_supersedes_cycle() is
+  'Empêche auto-remplacement, cycles, références absentes et remplacements entre périmètres canoniques différents.';
 comment on function public.admin_sinjira_migrate_canon_source_references(uuid,uuid) is
   'Migration atomique auteur : déplace toutes les références directes d’une source vers son unique remplacement vérifié de même période, puis permet le retrait logique RETIRED.';
 comment on function private.sinjira_guard_canon_source_in_use() is
