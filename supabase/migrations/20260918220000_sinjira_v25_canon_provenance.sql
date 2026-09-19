@@ -138,6 +138,7 @@ begin
     or exists(select 1 from public.sinjira_canon_events e where e.source_id=old.id)
     or exists(select 1 from public.sinjira_canon_event_characters p where p.source_id=old.id)
     or exists(select 1 from public.sinjira_story_claims c where c.source_id=old.id)
+    or exists(select 1 from public.sinjira_canon_sources newer where newer.supersedes_source_id=old.id)
   into v_any_use;
 
   select
@@ -151,6 +152,7 @@ begin
       where p.source_id=old.id and e.classification in ('CANON','SECRET_AUTEUR')
     )
     or exists(select 1 from public.sinjira_story_claims c where c.source_id=old.id and c.verification_status='VERIFIED')
+    or exists(select 1 from public.sinjira_canon_sources newer where newer.supersedes_source_id=old.id)
   into v_in_use;
 
   v_new_qualifies:=
