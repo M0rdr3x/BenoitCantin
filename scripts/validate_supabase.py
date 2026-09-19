@@ -129,6 +129,13 @@ def main()->int:
     function_dirs={p.name for p in FUN.iterdir() if p.is_dir() and not p.name.startswith('_')} if FUN.exists() else set()
     invoked=set(re.findall(r"\.functions\.invoke\(\s*['\"]([a-zA-Z0-9_-]+)['\"]",source_text))
     for name in sorted(invoked-function_dirs):fail(errors,f'Edge Function invoquée mais absente du dépôt: {name}')
+    admin_edge=FUN/'admin-sinjira-v18'/'index.ts'
+    if not admin_edge.exists():fail(errors,'Edge Function administration SINJIRA V18 absente.')
+    else:
+        admin_text=read(admin_edge)
+        for needle in ("admin_sinjira_story_validation_check","status:requestedCanon==='CANON_ETENDU'?'author_review':status","STORY_VALIDATION_INCOMPLETE"):
+            if needle not in admin_text:fail(errors,f'Contrat administration Canon étendu incomplet: {needle}')
+
     registry=FUN/'submit-character-questionnaire'/'index.ts'
     if not registry.exists():fail(errors,'Edge Function du Registre absente.')
     else:
