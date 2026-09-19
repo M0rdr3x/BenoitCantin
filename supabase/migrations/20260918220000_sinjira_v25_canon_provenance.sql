@@ -114,6 +114,14 @@ begin
   if new.scope is distinct from v_previous_scope then
     raise exception 'CANON_SOURCE_SUPERSEDES_SCOPE_MISMATCH';
   end if;
+  if exists(
+    select 1
+    from public.sinjira_canon_sources other
+    where other.supersedes_source_id=new.supersedes_source_id
+      and other.id<>new.id
+  ) then
+    raise exception 'CANON_SOURCE_SUPERSEDES_ALREADY_EXISTS';
+  end if;
 
   with recursive chain(id,supersedes_source_id,path) as (
     select s.id,s.supersedes_source_id,array[s.id]
@@ -381,11 +389,10 @@ as $$
   );
 $$;
 
-create unique index if not exists sinjira_canon_sources_one_verified_successor_idx
+drop index if exists public.sinjira_canon_sources_one_verified_successor_idx;
+create unique index if not exists sinjira_canon_sources_one_successor_idx
   on public.sinjira_canon_sources(supersedes_source_id)
-  where supersedes_source_id is not null
-    and verification_status in ('VERIFIED','SECRET_AUTEUR')
-    and source_kind in ('roman','bible','author_decision','archive');
+  where supersedes_source_id is not null;
 
 create or replace function public.admin_sinjira_migrate_canon_source_references(
   p_source_id uuid,
@@ -1169,7 +1176,7 @@ comment on table public.sinjira_story_claims is
 comment on function private.sinjira_source_is_verified(uuid) is
   'Retourne vrai uniquement pour une source VERIFIED ou SECRET_AUTEUR.';
 comment on function private.sinjira_prevent_source_supersedes_cycle() is
-  'Empêche auto-remplacement, cycles, références absentes et remplacements entre périmètres canoniques différents.';
+  'Empêche auto-remplacement, cycles, références absentes, fourches de succession et remplacements entre périmètres canoniques différents.';
 comment on function public.admin_sinjira_migrate_canon_source_references(uuid,uuid) is
   'Migration atomique auteur : déplace toutes les références directes vers l’unique remplacement vérifié de même période puis passe immédiatement l’ancienne source à RETIRED dans la même transaction.';
 comment on function private.sinjira_guard_canon_source_in_use() is
