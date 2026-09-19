@@ -182,7 +182,7 @@ def main()->int:
         if not m:fail(errors,'Formulaire source canonique introuvable dans l administration.')
         elif 'value="RETIRED"' in m.group(0):
             fail(errors,'Formulaire source admin: RETIRED ne doit pas être proposé à la création.')
-    for needle in ("setCanonSourceAuthorityLock(null);syncCanonSourceScope()","src.scope===scope","replacementKind==='roman'","src.source_kind==='roman'","isAuthoritativeCanonSource","authoritativeOnly","verification_status?.value==='VERIFIED'","classification?.value","canon_status?.value==='CANON'"):
+    for needle in ("setCanonSourceAuthorityLock(null);syncCanonSourceScope()","src.scope===scope","replacementKind==='roman'","src.source_kind==='roman'","isAuthoritativeCanonSource","authoritativeOnly","verification_status?.value==='VERIFIED'","classification?.value","canon_status?.value==='CANON'","allowMetaScope","sourceScope=story.anchor_scope","sourceScope=form.elements.source_scope","sourceScope=event?.source_scope"):
         if needle not in admin_js:fail(errors,f'Contrat UI sources canoniques incomplet: {needle}')
 
     registry=FUN/'submit-character-questionnaire'/'index.ts'
