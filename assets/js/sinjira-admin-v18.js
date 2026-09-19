@@ -119,7 +119,7 @@ async function extendedStories(){
  const charSelect=document.querySelector('[data-admin-story-character-select]');
  if(charSelect)charSelect.innerHTML='<option value="">Aucune</option>'+charactersCache.map(c=>`<option value="${c.id}">${escapeHtml(c.public_name||'Personnage sans nom')}</option>`).join('');
  const locSelect=document.querySelector('[data-admin-story-location-select]');
- if(locSelect){const old=locSelect.value;locSelect.innerHTML='<option value="">À relier à l’Atlas</option>'+worldLocationsCache.map(l=>`<option value="${l.id}">${escapeHtml(l.name)} · ${escapeHtml(l.location_type)}</option>`).join('');if(old)locSelect.value=old}
+ if(locSelect){const old=locSelect.value;locSelect.innerHTML='<option value="">À relier à l’Atlas</option>'+worldLocationsCache.map(l=>`<option value="${l.id}">${escapeHtml(l.name)} · ${escapeHtml(l.location_type)} · ${escapeHtml(l.canon_status||'PROVISOIRE')}</option>`).join('');if(old)locSelect.value=old}
  if(!box)return;
  const labels={character_chronicle:'Chronique de personnage',world_chronicle:'Chronique du Monde',quebec_chronicle:'Chronique de Québec',archive:'Archive',fragment:'Fragment',novella:'Novella'};
  box.innerHTML=extendedStoriesCache.map(st=>`<article class="admin-v18-row"><strong>${escapeHtml(st.title||'Chronique sans titre')}</strong><p>${escapeHtml(labels[st.story_type]||st.story_type)} · ${escapeHtml(st.canon_status||'PROVISOIRE')} · ${escapeHtml(st.status||'draft')}</p><p>${st.character_name?`Conscience : ${escapeHtml(st.character_name)} · `:''}${st.region_name?`Région : ${escapeHtml(st.region_name)} · `:''}Ancrage : ${escapeHtml(st.anchor_scope||'UNASSIGNED')}</p><button class="btn btn-secondary btn-small" data-edit-extended-story="${st.id}">Modifier</button></article>`).join('')||'<p>Aucune Chronique du Canon étendu.</p>';
@@ -228,7 +228,7 @@ function extendedStoryEditor(){
 }
 
 let worldLocationsCache=[],canonEventsCache=[],travelRulesCache=[];
-function locationOptions(placeholder='Aucun'){return `<option value="">${escapeHtml(placeholder)}</option>`+worldLocationsCache.map(l=>`<option value="${l.id}">${escapeHtml(l.name)} · ${escapeHtml(l.location_type)}</option>`).join('')}
+function locationOptions(placeholder='Aucun'){return `<option value="">${escapeHtml(placeholder)}</option>`+worldLocationsCache.map(l=>`<option value="${l.id}">${escapeHtml(l.name)} · ${escapeHtml(l.location_type)} · ${escapeHtml(l.canon_status||'PROVISOIRE')}</option>`).join('')}
 function refreshWorldSelects(){
  const parent=document.querySelector('[data-world-parent-select]');if(parent){const old=parent.value;parent.innerHTML=locationOptions('Aucun parent');if(old)parent.value=old}
  for(const sel of document.querySelectorAll('[data-event-location-select],[data-event-presence-location]')){const old=sel.value;sel.innerHTML=locationOptions(sel.hasAttribute('data-event-presence-location')?'Lieu de l’événement':'Non normalisé');if(old)sel.value=old}
