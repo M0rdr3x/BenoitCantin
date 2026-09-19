@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(104);
+select plan(107);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -656,6 +656,28 @@ select ok(exists(
     and pg_get_triggerdef(tr.oid) ilike '%supersedes_source_id%'
     and pg_get_triggerdef(tr.oid) ilike '%scope%'
 ),'le garde de remplacement se relance aussi lors d un changement de période');
+
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%set verification_status=''RETIRED''%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
+  'la migration atomique passe l ancienne source à RETIRED dans la même transaction'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%''source_status'',''RETIRED''%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
+  'le résultat de migration confirme explicitement le retrait de l ancienne source'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%aucune nouvelle référence%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
+  'le contrat SQL documente la fermeture de la fenêtre entre migration et retrait'
+);
 
 select * from finish();
 rollback;
