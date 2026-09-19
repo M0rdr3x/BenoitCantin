@@ -85,6 +85,8 @@ def main()->int:
       'sinjira_canon_events_invalidate_extended_update',
       'sinjira_canon_event_characters_invalidate_extended',
       'sinjira_canon_context_invalidate_extended',
+      'STORY_LOCATION_NOT_CANON',
+      'location_not_canon',
     }
     for needle in sorted(extended_contract):
         if needle.lower() not in sql.lower():
