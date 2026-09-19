@@ -133,11 +133,36 @@ async function renderGuardian(){
   const rows=linksResult.data||[];
   guardianLinks.innerHTML=rows.length?rows.map(x=>{
     const asGuardian=x.guardian_user_id===user.id;
+    const asMinor=x.minor_user_id===user.id;
     const mine=asGuardian?'Tuteur / parent':'Compte enfant / jeunesse';
     const active=x.status==='verified'&&!x.revoked_at;
-    return `<article class="v24-panel"><strong>${escapeHtml(mine)} · ${escapeHtml(active?'verified':x.status||'—')}</strong><p>Rôle : ${escapeHtml(x.guardian_role||'parent/tuteur')}</p><small>${x.can_view_contact_metadata?'Métadonnées de contact autorisées':'Métadonnées de contact non autorisées'} · aucun contenu privé de message</small>${active?`<div class="hero-actions"><button class="btn btn-secondary btn-small" type="button" data-revoke-guardian-link="${escapeHtml(x.id)}" data-revoke-as-guardian="${asGuardian?'true':'false'}">Révoquer ce lien</button></div>`:''}</article>`;
+    const contactControl=active&&asMinor
+      ? `<button class="btn btn-secondary btn-small" type="button" data-contact-metadata-toggle="${escapeHtml(x.id)}" data-contact-metadata-allowed="${x.can_view_contact_metadata?'true':'false'}">${x.can_view_contact_metadata?'Retirer':'Autoriser'} les métadonnées de contacts</button>`
+      : '';
+    const revokeControl=active
+      ? `<button class="btn btn-secondary btn-small" type="button" data-revoke-guardian-link="${escapeHtml(x.id)}" data-revoke-as-guardian="${asGuardian?'true':'false'}">Révoquer ce lien</button>`
+      : '';
+    const actions=contactControl||revokeControl?`<div class="hero-actions">${contactControl}${revokeControl}</div>`:'';
+    return `<article class="v24-panel"><strong>${escapeHtml(mine)} · ${escapeHtml(active?'verified':x.status||'—')}</strong><p>Rôle : ${escapeHtml(x.guardian_role||'parent/tuteur')}</p><small>${x.can_view_contact_metadata?'Métadonnées de contact autorisées par le compte jeunesse':'Métadonnées de contact non autorisées'} · aucun contenu privé de message</small>${actions}</article>`;
   }).join(''):'<div class="v24-empty">Aucun lien de supervision.</div>';
   await renderJuniorCommunityChildren();
+  guardianLinks.querySelectorAll('[data-contact-metadata-toggle]').forEach(button=>button.addEventListener('click',async()=>{
+    const allowed=button.dataset.contactMetadataAllowed==='true';
+    const next=!allowed;
+    const prompt=next
+      ? 'Autoriser ce tuteur à voir uniquement les métadonnées de vos contacts jeunesse (pseudo, réseau et dernière date de contact)? Le contenu des messages reste privé.'
+      : 'Retirer immédiatement au tuteur l’accès aux métadonnées de vos contacts jeunesse?';
+    if(!confirm(prompt))return;
+    button.disabled=true;
+    const {data,error}=await s.rpc('set_my_guardian_contact_metadata',{p_link_id:button.dataset.contactMetadataToggle,p_allowed:next});
+    button.disabled=false;
+    if(error||!data?.ok){
+      setStatus(guardianStatus,'Impossible de modifier cette permission pour le moment.','error');
+      return;
+    }
+    setStatus(guardianStatus,next?'Métadonnées de contacts autorisées. Le contenu de vos messages reste privé.':'Permission retirée. Le tuteur ne peut plus consulter vos métadonnées de contacts.','success');
+    await renderGuardian();
+  }));
   guardianLinks.querySelectorAll('[data-revoke-guardian-link]').forEach(button=>button.addEventListener('click',async()=>{
     const asGuardian=button.dataset.revokeAsGuardian==='true';
     if(asGuardian){

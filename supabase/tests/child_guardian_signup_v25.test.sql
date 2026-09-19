@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(49);
+select plan(55);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -128,6 +128,13 @@ values(
 select ok(exists(select 1 from public.profiles where user_id='20000000-0000-4000-8000-000000000011'),'le compte enfant crée son profil');
 select is((select date_of_birth from public.account_safety_profiles where user_id='20000000-0000-4000-8000-000000000011'),(current_date-interval '11 years')::date,'la date de naissance exacte de 11 ans est conservée');
 select ok(exists(select 1 from public.guardian_links where minor_user_id='20000000-0000-4000-8000-000000000011' and guardian_user_id='10000000-0000-4000-8000-000000000001' and status='verified'),'le lien parent enfant est créé et vérifié');
+select is(
+  (select can_view_contact_metadata from public.guardian_links
+   where minor_user_id='20000000-0000-4000-8000-000000000011'
+     and guardian_user_id='10000000-0000-4000-8000-000000000001'),
+  false,
+  'un nouveau lien de supervision désactive les métadonnées de contacts par défaut'
+);
 select ok(exists(select 1 from public.guardian_signup_invites where invite_code='YOUTH-ABCD123456' and used_at is not null and minor_user_id='20000000-0000-4000-8000-000000000011'),'le code parental est consommé une seule fois par le compte enfant');
 select ok(
   not coalesce(
@@ -155,11 +162,6 @@ select is(public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),'youth
 select ok(public.sinjira_parent_can_supervise('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011'),'le lien parental vérifié continue de permettre la supervision à 13 ans');
 select ok(public.sinjira_can_social_interact('20000000-0000-4000-8000-000000000011','20000000-0000-4000-8000-000000000011'),'le contrat social jeunesse peut s appliquer automatiquement à partir de 13 ans');
 
-update public.guardian_links
-set can_view_contact_metadata=false
-where minor_user_id='20000000-0000-4000-8000-000000000011'
-  and guardian_user_id='10000000-0000-4000-8000-000000000001';
-
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal2')::text,
@@ -172,10 +174,26 @@ select throws_ok(
   'le tuteur ne peut pas lire les métadonnées de contacts sans consentement explicite'
 );
 
-update public.guardian_links
-set can_view_contact_metadata=true
-where minor_user_id='20000000-0000-4000-8000-000000000011'
-  and guardian_user_id='10000000-0000-4000-8000-000000000001';
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','20000000-0000-4000-8000-000000000011','aal','aal1')::text,
+  true
+);
+select lives_ok(
+  $$ select public.set_my_guardian_contact_metadata((
+    select id from public.guardian_links
+    where minor_user_id='20000000-0000-4000-8000-000000000011'
+      and guardian_user_id='10000000-0000-4000-8000-000000000001'
+  ),true) $$,
+  'le compte jeunesse peut autoriser explicitement ses métadonnées de contacts'
+);
+select is(
+  (select can_view_contact_metadata from public.guardian_links
+   where minor_user_id='20000000-0000-4000-8000-000000000011'
+     and guardian_user_id='10000000-0000-4000-8000-000000000001'),
+  true,
+  'l autorisation explicite du compte jeunesse est enregistrée'
+);
 
 select set_config(
   'request.jwt.claims',
@@ -197,6 +215,39 @@ select set_config(
 select lives_ok(
   $$ select public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011') $$,
   'le tuteur avec consentement explicite et AAL2 peut lire uniquement les métadonnées de contacts jeunesse'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','20000000-0000-4000-8000-000000000011','aal','aal1')::text,
+  true
+);
+select lives_ok(
+  $$ select public.set_my_guardian_contact_metadata((
+    select id from public.guardian_links
+    where minor_user_id='20000000-0000-4000-8000-000000000011'
+      and guardian_user_id='10000000-0000-4000-8000-000000000001'
+  ),false) $$,
+  'le compte jeunesse peut retirer immédiatement la permission de métadonnées'
+);
+select is(
+  (select can_view_contact_metadata from public.guardian_links
+   where minor_user_id='20000000-0000-4000-8000-000000000011'
+     and guardian_user_id='10000000-0000-4000-8000-000000000001'),
+  false,
+  'le retrait de permission est enregistré immédiatement'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal2')::text,
+  true
+);
+select throws_ok(
+  $$ select public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011') $$,
+  'P0001',
+  'GUARDIAN_CONTACT_METADATA_NOT_ALLOWED',
+  'après retrait le tuteur AAL2 perd immédiatement l accès aux métadonnées de contacts'
 );
 
 select set_config(
