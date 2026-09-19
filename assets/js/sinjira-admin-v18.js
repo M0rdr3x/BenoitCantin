@@ -116,16 +116,18 @@ function renderContinuityResult(result){
  const box=document.querySelector('[data-story-continuity-result]');if(!box)return;
  if(!result){box.innerHTML='';return}
  const validation=result.validation||result;
+ const metadata=validation.metadata||null;
  const provenance=validation.provenance||null;
  const continuity=validation.continuity||(validation.blocking_conflicts!==undefined||validation.warnings!==undefined?validation:null);
  const conflicts=Number(continuity?.blocking_conflicts||0),warnings=Number(continuity?.warnings||0);
  const unresolved=Number(provenance?.unresolved_claims||0),anchors=Number(provenance?.matching_anchor_claims||0),verified=Number(provenance?.verified_claims||0);
- const ready=validation.ready===true||(!provenance&&conflicts===0&&warnings===0);
+ const ready=validation.ready===true||(!metadata&&!provenance&&conflicts===0&&warnings===0);
  const type=ready?'success':(conflicts>0?'error':'info');
  const title=ready?'Prêt pour la canonisation':'Validation à compléter';
+ const metadataText=metadata?`Métadonnées : ancrage ${metadata.anchor_assigned?'OK':'MANQUANT'}, période ${metadata.time_complete?'OK':'INCOMPLÈTE'}, lieu ${metadata.location_assigned?(metadata.location_canon?'CANON':'NON CANON'):'MANQUANT'}, contenu ${metadata.content_present?'OK':'MANQUANT'}.`:'Métadonnées : non incluses dans cet ancien rapport.';
  const provenanceText=provenance?`Provenance : ${verified} fait(s) vérifié(s), ${anchors} ancrage(s) compatible(s), ${unresolved} non résolu(s).`:'Provenance : non incluse dans cet ancien rapport.';
  const continuityText=`Continuité : ${conflicts} conflit(s) bloquant(s), ${warnings} avertissement(s).`;
- box.innerHTML=`<div class="account-status" data-status-type="${type}"><strong>${title}</strong><p>${escapeHtml(provenanceText)}</p><p>${escapeHtml(continuityText)}</p>${ready?'<p>La provenance et la continuité satisfont la prévalidation actuelle.</p>':'<p>Corrigez les éléments signalés avant de demander CANON ÉTENDU.</p>'}</div>`;
+ box.innerHTML=`<div class="account-status" data-status-type="${type}"><strong>${title}</strong><p>${escapeHtml(metadataText)}</p><p>${escapeHtml(provenanceText)}</p><p>${escapeHtml(continuityText)}</p>${ready?'<p>Métadonnées, provenance et continuité satisfont la prévalidation actuelle.</p>':'<p>Corrigez les éléments signalés avant de demander CANON ÉTENDU.</p>'}</div>`;
 }
 function resetExtendedStoryEditor(){
  const f=document.querySelector('[data-extended-story-editor]');if(!f)return;
@@ -262,7 +264,7 @@ function extendedStoryEditor(){
      alert('Chronique enregistrée. La publication reste une étape distincte.');
    }catch(err){
      if(err.data?.story?.id){f.elements.id.value=err.data.story.id;f.elements.published_at.value=err.data.story.published_at||'';await extendedStories();const current=extendedStoriesCache.find(x=>x.id===f.elements.id.value);if(current)fillExtendedStoryEditor(current)}
-     if(err.data?.continuity)renderContinuityResult(err.data.continuity);
+     if(err.data?.validation)renderContinuityResult(err.data.validation);else if(err.data?.continuity)renderContinuityResult(err.data.continuity);
      alert(err.message);
    }
  });
