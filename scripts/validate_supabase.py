@@ -122,6 +122,14 @@ def main()->int:
       'sinjira_story_presence_demote_canon',
       'sinjira_story_claims_demote_canon',
       "canon_status='PROVISOIRE'",
+      'sinjira_story_readiness_report',
+      'sinjira_require_story_canon_transition',
+      'sinjira_extended_stories_canon_transition_guard',
+      'sinjira_extended_stories_canon_workflow_check',
+      'STORY_CANON_INSERT_FORBIDDEN',
+      'STORY_SAVE_BEFORE_CANON_TRANSITION',
+      'STORY_PROMOTION_REQUIRED',
+      'STORY_PUBLICATION_TIMESTAMP_REQUIRED',
     }
     for needle in sorted(extended_contract):
         if needle.lower() not in sql.lower():
