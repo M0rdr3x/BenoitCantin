@@ -132,6 +132,12 @@ def main()->int:
       'STORY_CANON_INSERT_FORBIDDEN',
       'STORY_SAVE_BEFORE_CANON_TRANSITION',
       'STORY_PROMOTION_REQUIRED',
+      'admin_sinjira_migrate_canon_source_references',
+      'sinjira_canon_sources_one_verified_successor_idx',
+      'CANON_SOURCE_MIGRATION_REPLACEMENT_INVALID',
+      'CANON_SOURCE_MIGRATION_SCOPE_MISMATCH',
+      'CANON_SOURCE_MIGRATION_REPLACEMENT_NOT_VERIFIED',
+      'CANON_SOURCE_MIGRATION_INCOMPLETE',
       'STORY_PUBLICATION_TIMESTAMP_REQUIRED',
     }
     for needle in sorted(extended_contract):
