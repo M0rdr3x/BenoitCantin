@@ -170,7 +170,7 @@ async function renderGuardian(){
     const allowed=button.dataset.contactMetadataAllowed==='true';
     const next=!allowed;
     const prompt=next
-      ? 'Autoriser ce tuteur à voir uniquement les métadonnées de vos contacts jeunesse (pseudo, réseau et dernière date de contact)? Le contenu des messages reste privé.'
+      ? 'Autoriser ce tuteur à voir uniquement les métadonnées de vos contacts jeunesse (pseudo du compte ou nom public du personnage, réseau et dernière date de contact)? Le contenu des messages reste privé.'
       : 'Retirer immédiatement au tuteur l’accès aux métadonnées de vos contacts jeunesse?';
     if(!confirm(prompt))return;
     button.disabled=true;

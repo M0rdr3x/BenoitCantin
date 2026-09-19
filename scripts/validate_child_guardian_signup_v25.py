@@ -14,6 +14,7 @@ GUARDIAN_INVITE_ADULT_VIS_MIG = ROOT / 'supabase/migrations/20260919053000_sinji
 GUARDIAN_CONTACTS_AAL2_MIG = ROOT / 'supabase/migrations/20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql'
 GUARDIAN_CONTACT_CONSENT_MIG = ROOT / 'supabase/migrations/20260919063000_sinjira_v25_guardian_contact_metadata_opt_in.sql'
 GUARDIAN_CONTACT_MIN_MIG = ROOT / 'supabase/migrations/20260919070000_sinjira_v25_guardian_contacts_minimization.sql'
+GUARDIAN_CHARACTER_ISOLATION_MIG = ROOT / 'supabase/migrations/20260919080000_sinjira_v25_guardian_character_identity_isolation.sql'
 YOUTH_BASE = ROOT / 'supabase/migrations/20260816140000_sinjira_v24_4_12_youth_safety.sql'
 SIGNUP_JS = ROOT / 'assets/js/v24-signup.js'
 BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
@@ -50,6 +51,7 @@ guardian_invite_adult_vis_mig = read(GUARDIAN_INVITE_ADULT_VIS_MIG)
 guardian_contacts_aal2_mig = read(GUARDIAN_CONTACTS_AAL2_MIG)
 guardian_contact_consent_mig = read(GUARDIAN_CONTACT_CONSENT_MIG)
 guardian_contact_min_mig = read(GUARDIAN_CONTACT_MIN_MIG)
+guardian_character_isolation_mig = read(GUARDIAN_CHARACTER_ISOLATION_MIG)
 youth_base = read(YOUTH_BASE)
 signup_js = read(SIGNUP_JS)
 backend_js = read(BACKEND_JS)
@@ -71,6 +73,7 @@ giav = compact(guardian_invite_adult_vis_mig)
 gca = compact(guardian_contacts_aal2_mig)
 gcc = compact(guardian_contact_consent_mig)
 gcm = compact(guardian_contact_min_mig)
+gci = compact(guardian_character_isolation_mig)
 y = compact(youth_base)
 j = compact(signup_js)
 b = compact(backend_js)
@@ -190,6 +193,19 @@ req("'user_id',g.other_user_id" not in gcm
     and "'display_name',sp.display_name" not in gcm
     and "'last_contact_at',g.last_contact_at" not in gcm,
     "Le résumé parental minimisé expose encore UUID, display_name ou timestamp précis.")
+req("leftjoinpublic.character_social_profilescsp" in gci
+    and "recipient_character_id" in gci
+    and "sender_character_id" in gci,
+    "Le résumé parental ne résout pas l'identité Personnage par character_id.")
+req("'contact_label',g.contact_label" in gci
+    and "'network',g.network" in gci
+    and "'last_contact_date',(timezone('utc',g.last_contact_at))::date" in gci,
+    "Le résumé cloisonné ne conserve pas exactement label/réseau/date.")
+req("'pseudo',coalesce(sp.pseudo" not in gci
+    and "'networks',g.networks" not in gci
+    and "'user_id'" not in gci
+    and "'display_name'" not in gci,
+    "Le résumé cloisonné réexpose une ancienne forme corrélable.")
 req("data-contact-metadata-toggle" in r
     and "set_my_guardian_contact_metadata" in r
     and "lecontenudevosmessagesresteprivé" in r,
@@ -343,7 +359,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(60);' in t,
+req('selectplan(62);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
@@ -392,9 +408,11 @@ for marker, message in (
     ("lecomptejeunessepeutautoriserexplicitementsesmétadonnéesdecontacts", "Le pgTAP ne prouve pas l'opt-in self-only du compte jeunesse."),
     ("lecomptejeunessepeutretirerimmédiatementlapermissiondemétadonnées", "Le pgTAP ne prouve pas le retrait self-only de permission."),
     ("aprèsretraitletuteuraal2perdimmédiatementlaccèsauxmétadonnéesdecontacts", "Le pgTAP ne prouve pas l'effet immédiat du retrait."),
-    ("lerésuméparentalnerévèleniuuidinternenidisplay_namenheureprécise", "Le pgTAP ne prouve pas la minimisation UUID/display_name/timestamp."),
-    ("lerésuméconserveuniquementlepseudoutileducontact", "Le pgTAP ne prouve pas la conservation du pseudo minimal."),
-    ("ladernièreinteractionestréduiteàunedatesansheureprécise", "Le pgTAP ne prouve pas la réduction temporelle à la journée."),
+    ("lerésuméparentalnerévèleniuuid,display_name,ancienpseudobrutnitimestampprécis", "Le pgTAP ne prouve pas la minimisation finale UUID/display_name/timestamp."),
+    ("leréseaucompteconserveuniquementlepseudopublicducontact", "Le pgTAP ne prouve pas le label public minimal du réseau Compte."),
+    ("ladernièreinteractionpersonnageresteréduiteàunedatesansheureprécise", "Le pgTAP ne prouve pas la réduction temporelle Personnage à la journée."),
+    ("leréseaupersonnageexposeuniquementlenompublicdupersonnage", "Le pgTAP ne prouve pas l'identité publique Personnage."),
+    ("lerésuménerecollepaslepersonnageaupseudodesoncompteréel", "Le pgTAP ne prouve pas l'absence de recoupement Compte/Personnage."),
     ("lapersonnedevenueadulteconservelaccèsàsonproprehistoriquedesupervision", "Le pgTAP ne préserve pas l'accès self-only de l'adulte à son historique."),
     ("untiersnepeutpasutiliserlehelperpoursonderunlienquineleconcernepas", "Le pgTAP ne prouve pas la fermeture du helper à un tiers."),
     ("$$,'p0001','youth_jurisdiction_not_enabled'", "Le délimiteur pgTAP du refus hors Canada est cassé."),

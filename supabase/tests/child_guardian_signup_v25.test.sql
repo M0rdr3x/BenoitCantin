@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(60);
+select plan(62);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -216,6 +216,41 @@ values(
   now()-interval '3 hours'
 );
 
+insert into public.characters(
+  id,user_id,public_name,public_description,status,visible_to_user
+)
+values
+(
+  '81000000-0000-4000-8000-000000000011',
+  '20000000-0000-4000-8000-000000000011',
+  'Personnage Enfant',
+  'identité personnage enfant de preuve',
+  'approved',
+  true
+),
+(
+  '81000000-0000-4000-8000-000000000015',
+  '70000000-0000-4000-8000-000000000015',
+  'Avatar Secret',
+  'identité personnage contact de preuve',
+  'approved',
+  true
+);
+
+insert into public.social_character_messages(
+  sender_user_id,recipient_user_id,
+  sender_character_id,recipient_character_id,
+  body,created_at
+)
+values(
+  '20000000-0000-4000-8000-000000000011',
+  '70000000-0000-4000-8000-000000000015',
+  '81000000-0000-4000-8000-000000000011',
+  '81000000-0000-4000-8000-000000000015',
+  'message personnage de preuve non exposé au tuteur',
+  now()-interval '2 hours'
+);
+
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal1')::text,
@@ -240,29 +275,65 @@ select lives_ok(
 
 select is(
   jsonb_array_length(public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')),
-  1,
-  'le résumé parental contient le contact jeunesse de preuve'
+  2,
+  'le résumé parental sépare le contact Compte et le contact Personnage'
 );
 select ok(
-  not (public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0 ? 'user_id')
-  and not (public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0 ? 'display_name')
-  and not (public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0 ? 'last_contact_at'),
-  'le résumé parental ne révèle ni UUID interne ni display_name ni heure précise'
-);
-select is(
-  public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0->>'pseudo',
-  'Contact Jeunesse',
-  'le résumé conserve uniquement le pseudo utile du contact'
+  not exists(
+    select 1
+    from jsonb_array_elements(public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')) item
+    where item ? 'user_id'
+       or item ? 'display_name'
+       or item ? 'last_contact_at'
+       or item ? 'pseudo'
+       or item ? 'networks'
+  ),
+  'le résumé parental ne révèle ni UUID, display_name, ancien pseudo brut ni timestamp précis'
 );
 select ok(
-  public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0 ? 'networks'
-  and public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0 ? 'last_contact_date',
-  'le résumé conserve les réseaux et la date de dernier contact à la journée'
+  exists(
+    select 1
+    from jsonb_array_elements(public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')) item
+    where item->>'network'='Compte'
+      and item->>'contact_label'='Contact Jeunesse'
+  ),
+  'le réseau Compte conserve uniquement le pseudo public du contact'
+);
+select ok(
+  exists(
+    select 1
+    from jsonb_array_elements(public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')) item
+    where item->>'network'='Personnage'
+      and item->>'contact_label'='Avatar Secret'
+  ),
+  'le réseau Personnage expose uniquement le nom public du personnage'
+);
+select ok(
+  not exists(
+    select 1
+    from jsonb_array_elements(public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')) item
+    where item->>'network'='Personnage'
+      and item->>'contact_label'='Contact Jeunesse'
+  ),
+  'le résumé ne recolle pas le personnage au pseudo de son compte réel'
+);
+select ok(
+  not exists(
+    select 1
+    from jsonb_array_elements(public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')) item
+    where not (item ? 'network' and item ? 'contact_label' and item ? 'last_contact_date')
+  ),
+  'chaque entrée ne conserve que label public, réseau et date de dernier contact'
 );
 select like(
-  public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0->>'last_contact_date',
+  (
+    select item->>'last_contact_date'
+    from jsonb_array_elements(public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')) item
+    where item->>'network'='Personnage'
+    limit 1
+  ),
   '____-__-__',
-  'la dernière interaction est réduite à une date sans heure précise'
+  'la dernière interaction personnage reste réduite à une date sans heure précise'
 );
 
 select set_config(
