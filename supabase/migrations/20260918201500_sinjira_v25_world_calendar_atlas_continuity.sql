@@ -495,7 +495,7 @@ begin
         or sp.location_id is null
       )
   )
-  select coalesce(jsonb_agg(item),'[]'::jsonb) into v_warnings from warn;
+  select v_warnings || coalesce(jsonb_agg(item),'[]'::jsonb) into v_warnings from warn;
 
   return jsonb_build_object(
     'ok',true,
