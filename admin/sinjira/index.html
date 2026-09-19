@@ -76,7 +76,7 @@
 <div class="field"><label>Lieu Atlas</label><select data-admin-story-location-select="" name="location_id"><option value="">À relier à l’Atlas</option></select></div><div class="field"><label>Région / libellé</label><input name="region_name" maxlength="220" placeholder="Libellé narratif — ex. Beauport, Québec"/></div>
 <div class="field"><label>Ancrage</label><select name="anchor_scope"><option value="UNASSIGNED">À définir</option><option value="LIVRES_1_12">Livres 1 à 12</option><option value="ORIGINES_13_14">Origines — Livres 13 et 14</option><option value="MULTI_PERIODE">Plusieurs périodes</option></select></div>
 <div class="field"><label>Statut canonique</label><select name="canon_status"><option value="PROVISOIRE">PROVISOIRE</option><option value="A_ARBITRER">À ARBITRER</option><option value="CANON_ETENDU">CANON ÉTENDU</option><option value="NON_CANON">NON CANON</option></select></div>
-<div class="field"><label>Production</label><select name="status"><option value="draft">Brouillon</option><option value="author_review">Révision auteur</option><option value="validated">Validé</option><option value="published">Publié</option><option value="archived">Archivé</option></select></div>
+<div class="field"><label>Production</label><select name="status"><option value="draft">Brouillon</option><option value="author_review">Révision auteur</option><option value="validated">Validé</option><option value="published" disabled>Publié — via action Publier</option><option value="archived">Archivé</option></select></div>
 <div class="field"><label>Audience</label><select name="audience"><option value="private">Privé</option><option value="members">Membres</option><option value="public">Public</option></select></div>
 <div class="field"><label>Début canonique</label><input name="starts_at" type="datetime-local"/></div>
 <div class="field"><label>Fin canonique</label><input name="ends_at" type="datetime-local"/></div>
@@ -84,8 +84,10 @@
 <div class="field wide"><label>Contenu / brouillon</label><textarea name="content" rows="16"></textarea></div>
 <div class="field wide"><label>Données de continuité JSON</label><textarea name="continuity_json" rows="10">{}</textarea></div>
 <label class="account-check wide"><input checked name="visible_to_character_owner" type="checkbox"/><span>Rendre cette Chronique visible au propriétaire de la Conscience lorsqu’elle est liée à un personnage.</span></label>
-<label class="account-check wide"><input name="author_confirmed_extended_canon" type="checkbox"/><span>Je confirme personnellement la validation avant de passer ce récit en CANON ÉTENDU. Le système refusera la canonisation si la date, le lieu ou une présence entre en conflit avec le Calendrier-Monde.</span></label><div class="wide" data-story-continuity-result></div>
-<div class="wide"><button class="btn btn-primary" type="submit">Enregistrer la Chronique</button> <button class="btn btn-secondary" data-story-check type="button">Vérifier la continuité</button> <button class="btn btn-secondary" data-story-reset type="button">Nouveau récit</button></div>
+<label class="account-check wide"><input name="author_confirmed_extended_canon" type="checkbox"/><span>Je confirme personnellement la validation avant de passer ce récit en CANON ÉTENDU. Le système refusera la canonisation si la date, le lieu ou une présence entre en conflit avec le Calendrier-Monde.</span></label>
+<label class="account-check wide"><input name="author_confirmed_publication" type="checkbox"/><span>Je confirme personnellement la publication. La Chronique doit déjà être CANON ÉTENDU; sa continuité sera vérifiée de nouveau juste avant publication.</span></label>
+<div class="wide" data-story-publication-state></div><div class="wide" data-story-continuity-result></div>
+<div class="wide"><button class="btn btn-primary" type="submit">Enregistrer la Chronique</button> <button class="btn btn-secondary" data-story-check type="button">Vérifier la continuité</button> <button class="btn btn-secondary" data-story-publish type="button">Publier</button> <button class="btn btn-secondary" data-story-unpublish type="button">Retirer de publication</button> <button class="btn btn-secondary" data-story-reset type="button">Nouveau récit</button></div>
 </form>
 </article>
 </div>
