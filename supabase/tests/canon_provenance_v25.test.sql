@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(59);
+select plan(60);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -344,6 +344,14 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
   'la lignée de remplacement d une source canonique utilisée est immuable'
+);
+
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%newer.supersedes_source_id=old.id%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
+  'une source déjà remplacée devient elle aussi un historique immuable'
 );
 
 select * from finish();
