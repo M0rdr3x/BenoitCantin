@@ -392,7 +392,7 @@ begin
     )),'[]'::jsonb),count(*)
   into v_conflicts,v_blocking
   from private.sinjira_effective_story_presence sp
-  join public.sinjira_canon_event_characters cp on cp.character_id=sp.character_id
+  join public.sinjira_canon_event_characters cp on cp.character_id=sp.character_id and cp.certainty='confirmed'
   join public.sinjira_canon_events ce on ce.id=cp.event_id and ce.classification in ('CANON','SECRET_AUTEUR')
   where sp.story_id=p_story_id
     and sp.starts_at is not null
@@ -403,6 +403,49 @@ begin
     and sp.location_id is not null
     and coalesce(cp.location_id,ce.location_id) is not null
     and not private.sinjira_locations_compatible(sp.location_id,coalesce(cp.location_id,ce.location_id));
+
+  -- Présence centrale incertaine ou incomplète : ne jamais l’ignorer silencieusement.
+  with central_unresolved as (
+    select jsonb_build_object(
+      'type',case
+        when cp.certainty<>'confirmed' then 'central_presence_uncertain'
+        when coalesce(cp.starts_at,ce.starts_at) is null or coalesce(cp.ends_at,ce.ends_at) is null then 'central_time_incomplete'
+        when coalesce(cp.location_id,ce.location_id) is null then 'central_location_incomplete'
+        else 'central_presence_incomplete'
+      end,
+      'character_id',sp.character_id,
+      'story_presence_id',sp.id,
+      'event_id',ce.id,
+      'event_title',ce.title,
+      'event_source',ce.source_reference,
+      'message',case
+        when cp.certainty<>'confirmed' then 'Une présence du Canon central est encore approximative ou inconnue pour ce personnage.'
+        when coalesce(cp.starts_at,ce.starts_at) is null or coalesce(cp.ends_at,ce.ends_at) is null then 'Une présence du Canon central n’a pas encore une période complète.'
+        when coalesce(cp.location_id,ce.location_id) is null then 'Une présence du Canon central chevauchante n’a pas encore un lieu canonique.'
+        else 'Une présence du Canon central doit être clarifiée avant canonisation.'
+      end
+    ) as item
+    from private.sinjira_effective_story_presence sp
+    join public.sinjira_canon_event_characters cp on cp.character_id=sp.character_id
+    join public.sinjira_canon_events ce on ce.id=cp.event_id and ce.classification in ('CANON','SECRET_AUTEUR')
+    where sp.story_id=p_story_id
+      and (
+        cp.certainty<>'confirmed'
+        or coalesce(cp.starts_at,ce.starts_at) is null
+        or coalesce(cp.ends_at,ce.ends_at) is null
+        or coalesce(cp.location_id,ce.location_id) is null
+      )
+      and (
+        coalesce(cp.starts_at,ce.starts_at) is null
+        or coalesce(cp.ends_at,ce.ends_at) is null
+        or sp.starts_at is null
+        or sp.ends_at is null
+        or tstzrange(sp.starts_at,sp.ends_at,'[]') && tstzrange(coalesce(cp.starts_at,ce.starts_at),coalesce(cp.ends_at,ce.ends_at),'[]')
+      )
+  )
+  select v_warnings || coalesce(jsonb_agg(item),'[]'::jsonb)
+  into v_warnings
+  from central_unresolved;
 
   -- Collision interne : deux segments détaillés du même personnage ne peuvent pas
   -- se chevaucher dans deux lieux incompatibles au sein de la même Chronique.
