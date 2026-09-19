@@ -168,10 +168,35 @@ Deno.serve(async(req)=>{
 
     if(a==='list_extended_stories'){
       const {data,error}=await s.from('sinjira_extended_stories')
-        .select('*,characters(public_name),sinjira_world_locations(name,slug)')
+        .select('*,characters(public_name),sinjira_world_locations(name,slug),sinjira_story_character_presence(*,characters(public_name),sinjira_world_locations(name,slug))')
         .order('updated_at',{ascending:false});
       if(error)throw error;
       return privateJson({ok:true,stories:(data||[]).map((x:any)=>({...x,character_name:x.characters?.public_name||'',location_name_canon:x.sinjira_world_locations?.name||''}))});
+    }
+
+    if(a==='save_extended_story_segment'){
+      const x=b.segment||{};
+      if(!x.story_id||!x.character_id)return privateJson({ok:false,error:'Chronique et personnage requis pour un segment.',code:'SEGMENT_REQUIRED'},400);
+      const {data:story,error:storyError}=await s.from('sinjira_extended_stories').select('id').eq('id',x.story_id).maybeSingle();if(storyError)throw storyError;if(!story)return privateJson({ok:false,error:'Chronique introuvable.',code:'STORY_NOT_FOUND'},404);
+      const kinds=['story_span','scene','travel','reference'],certainties=['confirmed','approximate','unknown'];
+      const segmentKey=String(x.segment_key||'').trim().slice(0,120)||`segment-${crypto.randomUUID().slice(0,8)}`;
+      const startsAt=x.starts_at||null,endsAt=x.ends_at||null;
+      if(startsAt&&endsAt&&new Date(endsAt).getTime()<new Date(startsAt).getTime())return privateJson({ok:false,error:'La fin du segment ne peut pas précéder son début.',code:'INVALID_SEGMENT_RANGE'},400);
+      const payload={story_id:x.story_id,character_id:x.character_id,starts_at:startsAt,ends_at:endsAt,location_id:x.location_id||null,location_name:String(x.location_name||'').trim().slice(0,220)||null,certainty:certainties.includes(x.certainty)?x.certainty:'confirmed',presence_kind:kinds.includes(x.presence_kind)?x.presence_kind:'scene',segment_key:segmentKey,source_note:String(x.source_note||'').slice(0,2000)||null};
+      let saved;
+      if(x.id){const {data,error}=await s.from('sinjira_story_character_presence').update(payload).eq('id',x.id).select('*').single();if(error)throw error;saved=data}
+      else{const {data,error}=await s.from('sinjira_story_character_presence').insert(payload).select('*').single();if(error)throw error;saved=data}
+      await audit(s,user.id,x.id?'update_extended_story_segment':'create_extended_story_segment','sinjira_story_character_presence',saved.id,'Segment de continuité',{story_id:x.story_id,character_id:x.character_id,segment_key:segmentKey});
+      return privateJson({ok:true,segment:saved});
+    }
+
+    if(a==='remove_extended_story_segment'){
+      if(!b.segment_id)return privateJson({ok:false,error:'Segment requis.',code:'SEGMENT_REQUIRED'},400);
+      const {data:segment,error:lookupError}=await s.from('sinjira_story_character_presence').select('id,story_id,segment_key').eq('id',b.segment_id).maybeSingle();if(lookupError)throw lookupError;if(!segment)return privateJson({ok:true});
+      if(segment.segment_key==='primary')return privateJson({ok:false,error:'Le segment principal est géré par la fiche de Chronique et ne peut pas être supprimé ici.',code:'PRIMARY_SEGMENT_LOCKED'},409);
+      const {error}=await s.from('sinjira_story_character_presence').delete().eq('id',segment.id);if(error)throw error;
+      await audit(s,user.id,'remove_extended_story_segment','sinjira_story_character_presence',segment.id,'Segment de continuité retiré',{story_id:segment.story_id});
+      return privateJson({ok:true});
     }
 
     if(a==='list_world_continuity'){
