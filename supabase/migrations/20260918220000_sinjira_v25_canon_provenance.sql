@@ -131,6 +131,7 @@ declare
   v_in_use boolean:=false;
   v_any_use boolean:=false;
   v_new_qualifies boolean:=false;
+  v_has_verified_replacement boolean:=false;
 begin
   select
     exists(select 1 from public.sinjira_world_locations l where l.source_id=old.id)
@@ -159,6 +160,14 @@ begin
     new.verification_status in ('VERIFIED','SECRET_AUTEUR')
     and new.source_kind in ('roman','bible','author_decision','archive');
 
+  select exists(
+    select 1
+    from public.sinjira_canon_sources newer
+    where newer.supersedes_source_id=old.id
+      and newer.scope=old.scope
+      and private.sinjira_source_is_verified(newer.id)
+  ) into v_has_verified_replacement;
+
   if v_any_use and new.source_key is distinct from old.source_key then
     raise exception 'CANON_SOURCE_KEY_IMMUTABLE';
   end if;
@@ -171,8 +180,17 @@ begin
     or new.passage_reference is distinct from old.passage_reference
     or new.source_version is distinct from old.source_version
     or new.supersedes_source_id is distinct from old.supersedes_source_id
-    or not v_new_qualifies
+    or (
+      not v_new_qualifies
+      and not (
+        new.verification_status='RETIRED'
+        and v_has_verified_replacement
+      )
+    )
   ) then
+    if new.verification_status='RETIRED' and not v_has_verified_replacement then
+      raise exception 'CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED';
+    end if;
     raise exception 'CANON_SOURCE_IN_USE';
   end if;
 
@@ -979,6 +997,8 @@ comment on table public.sinjira_story_claims is
   'Faits de continuité d’une Chronique. Chaque fait vérifié pointe vers une source canonique vérifiée.';
 comment on function private.sinjira_source_is_verified(uuid) is
   'Retourne vrai uniquement pour une source VERIFIED ou SECRET_AUTEUR.';
+comment on function private.sinjira_guard_canon_source_in_use() is
+  'Protège les sources engagées; RETIRED est permis seulement après création d’une source de remplacement vérifiée de même période.';
 comment on function private.sinjira_demote_extended_story_on_edit() is
   'Une modification structurelle retire automatiquement CANON_ETENDU et exige une nouvelle prévalidation.';
 comment on function private.sinjira_demote_story_from_child_change() is
