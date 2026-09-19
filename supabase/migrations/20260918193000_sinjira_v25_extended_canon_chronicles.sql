@@ -47,7 +47,16 @@ create table if not exists public.sinjira_extended_stories(
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   check(ends_at is null or starts_at is null or ends_at >= starts_at),
-  check(story_type <> 'character_chronicle' or character_id is not null)
+  check(story_type <> 'character_chronicle' or character_id is not null),
+  check(published_at is null or status='published'),
+  check(
+    status <> 'published'
+    or (
+      canon_status='CANON_ETENDU'
+      and audience in ('members','public')
+      and published_at is not null
+    )
+  )
 );
 
 create table if not exists public.sinjira_story_character_presence(
