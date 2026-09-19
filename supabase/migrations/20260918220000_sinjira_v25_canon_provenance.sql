@@ -5,7 +5,7 @@ create table if not exists public.sinjira_canon_sources(
   id uuid primary key default gen_random_uuid(),
   source_key text not null unique check(char_length(source_key) between 3 and 160),
   source_kind text not null check(source_kind in (
-    'roman','bible','author_decision','canon_event','extended_story','archive','research'
+    'roman','bible','author_decision','archive','research'
   )),
   scope text not null check(scope in (
     'LIVRES_1_12','ORIGINES_13_14','CANON_ETENDU','META'
@@ -89,6 +89,7 @@ as $$
     from public.sinjira_canon_sources s
     where s.id=p_source_id
       and s.verification_status in ('VERIFIED','SECRET_AUTEUR')
+      and s.source_kind in ('roman','bible','author_decision','archive')
   );
 $$;
 
