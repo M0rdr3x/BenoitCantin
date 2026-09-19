@@ -94,6 +94,33 @@ alter table public.sinjira_story_claims enable row level security;
 revoke all on public.sinjira_canon_sources from anon,authenticated;
 revoke all on public.sinjira_story_claims from anon,authenticated;
 
+create or replace function private.sinjira_guard_canon_source_lifecycle()
+returns trigger
+language plpgsql
+set search_path=pg_catalog,public,private
+as $$
+begin
+  if tg_op='INSERT' and new.verification_status='RETIRED' then
+    raise exception 'CANON_SOURCE_CREATE_RETIRED_FORBIDDEN';
+  end if;
+
+  if new.supersedes_source_id is not null
+     and new.source_kind not in ('roman','bible','author_decision','archive') then
+    raise exception 'CANON_SOURCE_SUPERSEDES_KIND_INVALID';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists sinjira_canon_sources_guard_lifecycle on public.sinjira_canon_sources;
+create trigger sinjira_canon_sources_guard_lifecycle
+before insert or update of source_kind,verification_status,supersedes_source_id
+on public.sinjira_canon_sources
+for each row execute function private.sinjira_guard_canon_source_lifecycle();
+
+revoke all on function private.sinjira_guard_canon_source_lifecycle() from public,anon,authenticated,service_role;
+
 create or replace function private.sinjira_prevent_source_supersedes_cycle()
 returns trigger
 language plpgsql
@@ -1175,6 +1202,8 @@ comment on table public.sinjira_story_claims is
   'Faits de continuité d’une Chronique. Chaque fait vérifié pointe vers une source canonique vérifiée.';
 comment on function private.sinjira_source_is_verified(uuid) is
   'Retourne vrai uniquement pour une source VERIFIED ou SECRET_AUTEUR.';
+comment on function private.sinjira_guard_canon_source_lifecycle() is
+  'Interdit la création directe en RETIRED et empêche une source research de devenir un maillon de remplacement canonique.';
 comment on function private.sinjira_prevent_source_supersedes_cycle() is
   'Empêche auto-remplacement, cycles, références absentes, fourches de succession et remplacements entre périmètres canoniques différents.';
 comment on function public.admin_sinjira_migrate_canon_source_references(uuid,uuid) is
