@@ -35,6 +35,11 @@ create table if not exists public.sinjira_canon_sources(
     verification_status not in ('VERIFIED','SECRET_AUTEUR')
     or source_kind<>'roman'
     or chapter_reference is not null
+  ),
+  check(
+    source_kind<>'roman'
+    or (book_number between 1 and 12 and scope='LIVRES_1_12')
+    or (book_number between 13 and 14 and scope='ORIGINES_13_14')
   )
 );
 
