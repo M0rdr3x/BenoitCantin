@@ -52,6 +52,18 @@ Deno.serve(async(req)=>{
   try{
     const {user,service:s}=await requiredAdmin(req);
     const b=await readBoundedJson(req),a=String(b.action||'');
+    const canonSource=async(id:any)=>{
+      const sourceId=String(id||'').trim();
+      if(!sourceId)return null;
+      const {data,error}=await s.from('sinjira_canon_sources').select('id,source_key,source_kind,scope,title,book_number,chapter_reference,passage_reference,source_version,verification_status,public_safe').eq('id',sourceId).maybeSingle();
+      if(error)throw error;
+      return data||null;
+    };
+    const sourceLabel=(source:any)=>{
+      if(!source)return '';
+      const bits=[source.book_number?'Livre '+source.book_number:'',source.chapter_reference||'',source.passage_reference||''].filter(Boolean);
+      return bits.length?source.title+' — '+bits.join(' · '):source.title;
+    };
 
     if(a==='dashboard'){
       const [c,sub,rev]=await Promise.all([
