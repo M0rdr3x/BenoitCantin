@@ -1,17 +1,19 @@
 import {getSupabase,requireUser} from './sinjira-supabase.js';
 
-const READER_FUNCTION='get-private-book-reading-url';
-const DOWNLOAD_FUNCTION='get-private-book-url';
-const STORAGE_KEY='sinjira-reader-full-la-cendre-du-jugement-v1';
-const body=document.body;
-const totalPages=Math.max(1,Number(body.dataset.readerTotalPages)||1);
+const DELIVERY_FUNCTION='get-private-novel-url';
+const params=new URLSearchParams(location.search);
+const novelSlug=String(params.get('novel')||document.body.dataset.novelSlug||'la-cendre-du-jugement').trim();
+const storageKey=`sinjira-reader-full-${novelSlug}-v1`;
 const frame=document.querySelector('[data-private-pdf-reader]');
 const status=document.querySelector('[data-private-reader-status]');
 const input=document.querySelector('[data-private-reader-page]');
 const progress=document.querySelector('[data-private-reader-progress]');
 const bar=document.querySelector('[data-private-reader-progress-bar]');
 const resume=document.querySelector('[data-private-reader-resume]');
-let current=Math.min(totalPages,Math.max(1,Number(localStorage.getItem(STORAGE_KEY))||1));
+const titleNode=document.querySelector('[data-private-reader-title]');
+const metaNode=document.querySelector('[data-private-reader-meta]');
+let totalPages=Math.max(1,Number(document.body.dataset.readerTotalPages)||1);
+let current=Math.min(totalPages,Math.max(1,Number(localStorage.getItem(storageKey))||1));
 let signedUrl='';
 let refreshAt=0;
 let accessPromise=null;
@@ -24,30 +26,46 @@ function setStatus(message,type='info'){
 }
 
 function updateProgress(){
+  current=Math.min(totalPages,Math.max(1,current));
   const percent=Math.round((current/totalPages)*100);
-  if(input)input.value=String(current);
+  if(input){input.max=String(totalPages);input.value=String(current);}
   if(progress){progress.value=current;progress.max=totalPages;progress.textContent=`${current} sur ${totalPages}`;}
   if(bar)bar.style.width=`${percent}%`;
   if(resume)resume.textContent=`Page ${current} · ${percent} %`;
 }
 
+function applyMetadata(data){
+  if(data?.title&&titleNode)titleNode.textContent=String(data.title);
+  const pages=Number(data?.total_pages);
+  if(Number.isFinite(pages)&&pages>0)totalPages=Math.floor(pages);
+  if(metaNode)metaNode.textContent=`Édition intégrale · accès privé du compte · ${totalPages} page${totalPages===1?'':'s'}`;
+  document.title=`Lecture intégrale privée | ${String(data?.title||'SINJIRA™')}`;
+  updateProgress();
+}
+
 function savePage(){
-  localStorage.setItem(STORAGE_KEY,String(current));
+  localStorage.setItem(storageKey,String(current));
   updateProgress();
   if(resume)resume.textContent=`Page ${current} sauvegardée sur cet appareil.`;
 }
 
 async function requireReaderUser(){
-  return requireUser('/compte/connexion.html');
+  return requireUser(`/compte/connexion.html?next=${encodeURIComponent(location.pathname+location.search)}`);
+}
+
+async function invokeDelivery(mode){
+  await requireReaderUser();
+  const {data,error}=await getSupabase().functions.invoke(DELIVERY_FUNCTION,{body:{novel_slug:novelSlug,mode}});
+  if(error||!data?.ok||!data?.url)throw new Error(data?.error||'Impossible de préparer l’accès privé.');
+  applyMetadata(data);
+  return data;
 }
 
 async function requestReadingUrl(force=false){
   if(!force&&signedUrl&&Date.now()<refreshAt)return signedUrl;
   if(accessPromise)return accessPromise;
   accessPromise=(async()=>{
-    await requireReaderUser();
-    const {data,error}=await getSupabase().functions.invoke(READER_FUNCTION);
-    if(error||!data?.ok||!data?.url)throw new Error(data?.error||'Impossible de préparer la lecture privée.');
+    const data=await invokeDelivery('read');
     const ttl=Math.max(60,Math.min(300,Number(data.expires_in)||300));
     signedUrl=String(data.url);
     refreshAt=Date.now()+Math.max(30000,(ttl-45)*1000);
@@ -81,9 +99,7 @@ async function downloadBook(button){
   const previous=button.textContent;
   button.textContent='Préparation…';
   try{
-    await requireReaderUser();
-    const {data,error}=await getSupabase().functions.invoke(DOWNLOAD_FUNCTION);
-    if(error||!data?.ok||!data?.url)throw new Error(data?.error||'Téléchargement indisponible.');
+    const data=await invokeDelivery('download');
     location.assign(String(data.url));
   }catch(error){
     setStatus(error?.message||'Téléchargement indisponible.','error');

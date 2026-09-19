@@ -3,8 +3,9 @@ import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel} from '.
 const status=document.querySelector('[data-library-status]');
 const rows=value=>Array.isArray(value)?value:[];
 const BOOK_ONE_SLUG='sinjira-livre-01-la-cendre-du-jugement';
+const BOOK_ONE_NOVEL_SLUG='la-cendre-du-jugement';
 const PRIVATE_READER_PATH='/projets/sinjira/romans/lire-integral.html';
-const PRIVATE_DOWNLOAD_FUNCTION='get-private-book-url';
+const PRIVATE_NOVEL_FUNCTION='get-private-novel-url';
 
 function cover(project){
   if(project.cover_url)return project.cover_url;
@@ -40,26 +41,28 @@ function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmi
   }).join('')||(childMode?'<div class="notice"><strong>Aucun contenu n’a encore été approuvé pour les comptes de 11–12 ans.</strong><p>Les projets apparaîtront ici seulement après une révision humaine explicite.</p></div>':'<div class="notice"><strong>Aucun espace disponible pour ce compte.</strong></div>');
 }
 
-function renderNovels(novels,libraryRows,entitlements,isOwner,childMode=false){
+function renderNovels(novels,libraryRows,isOwner,childMode=false){
   const box=document.querySelector('[data-library-novels]');if(!box)return;
   if(childMode){
     box.innerHTML='<div class="notice"><strong>Romans fermés par défaut pour les comptes 11–12 ans.</strong><p>Un roman apparaît ici seulement après une classification et une autorisation adaptées.</p></div>';
     return;
   }
   const progressByNovel=new Map(libraryRows.map(row=>[row.novel_id,row]));
-  const hasBookOne=entitlements.some(row=>row.products?.slug===BOOK_ONE_SLUG);
   box.innerHTML=novels.map(novel=>{
     const progress=progressByNovel.get(novel.id);
-    const bookOne=novel.slug==='la-cendre-du-jugement';
-    const fullAccess=bookOne&&(isOwner||hasBookOne);
-    const access=isOwner?'Créateur · accès complet':fullAccess?'Acheté / droit numérique':novel.status==='published'?'Disponible':'Annoncé';
+    const fullAccess=Boolean(novel.full_access);
+    const source=String(novel.access_source||'catalogue');
+    const access=isOwner
+      ?(fullAccess?'Créateur · intégrale privée':'Créateur · catalogue complet')
+      :fullAccess&&source==='entitlement'?'Acheté / droit numérique':novel.status==='published'?'Disponible':'Annoncé';
     const statusLabel=novel.status==='draft'?'Brouillon créateur':novel.status==='published'?'Publié':novel.status==='announced'?'Annoncé':novel.status||'—';
     const actions=[
       novel.demo_path?`<a class="btn btn-secondary" href="${escapeHtml(novel.demo_path)}">Lire la démo</a>`:'',
-      fullAccess?`<a class="btn btn-primary" href="${PRIVATE_READER_PATH}">Lire l’intégrale</a>`:'',
+      fullAccess?`<a class="btn btn-primary" href="${PRIVATE_READER_PATH}?novel=${encodeURIComponent(novel.slug)}">Lire l’intégrale</a>`:'',
       novel.public_path?`<a class="btn btn-secondary" href="${escapeHtml(novel.public_path)}">Voir le roman</a>`:''
     ].join('');
-    return `<article class="reader-book-card"><div class="library-project-meta"><span class="status-badge">${escapeHtml(statusLabel)}</span><span class="role-chip">${escapeHtml(access)}</span></div><h2>${escapeHtml(novel.title||'Roman SINJIRA™')}</h2><p>${escapeHtml(novel.description||'')}</p>${progress?`<p>Progression privée : ${Math.max(0,Math.min(100,Number(progress.progress_percent||0)))} %${progress.last_page?` · page ${Number(progress.last_page)}`:''}</p>`:''}<div class="hero-actions">${actions}</div></article>`;
+    const privateState=isOwner&&!fullAccess?'<p><small>Manuscrit intégral privé non chargé dans le coffre SINJIRA™.</small></p>':'';
+    return `<article class="reader-book-card"><div class="library-project-meta"><span class="status-badge">${escapeHtml(statusLabel)}</span><span class="role-chip">${escapeHtml(access)}</span></div><h2>${escapeHtml(novel.title||'Roman SINJIRA™')}</h2><p>${escapeHtml(novel.description||'')}</p>${privateState}${progress?`<p>Progression privée : ${Math.max(0,Math.min(100,Number(progress.progress_percent||0)))} %${progress.last_page?` · page ${Number(progress.last_page)}`:''}</p>`:''}<div class="hero-actions">${actions}</div></article>`;
   }).join('')||'<div class="notice"><strong>Aucun roman disponible pour ce compte.</strong></div>';
 }
 function renderReads(libraryRows){
@@ -68,7 +71,7 @@ function renderReads(libraryRows){
 }
 
 function bookActions(){
-  return `<div class="hero-actions"><a class="btn btn-primary" href="${PRIVATE_READER_PATH}">Lire le livre intégral</a><button class="btn btn-secondary" type="button" data-private-book-download>Télécharger mon PDF</button><a class="btn btn-secondary" href="/projets/sinjira/romans/lire-demo.html">Lire la démo</a></div>`;
+  return `<div class="hero-actions"><a class="btn btn-primary" href="${PRIVATE_READER_PATH}?novel=${encodeURIComponent(BOOK_ONE_NOVEL_SLUG)}">Lire le livre intégral</a><button class="btn btn-secondary" type="button" data-private-book-download>Télécharger mon PDF</button><a class="btn btn-secondary" href="/projets/sinjira/romans/lire-demo.html">Lire la démo</a></div>`;
 }
 
 function entitlementCard(row){
@@ -91,7 +94,7 @@ function renderEntitlements(entitlements,isOwner){
 async function downloadPrivateBook(button){
   button.disabled=true;const label=button.textContent;button.textContent='Préparation…';
   try{
-    const {data,error}=await getSupabase().functions.invoke(PRIVATE_DOWNLOAD_FUNCTION);
+    const {data,error}=await getSupabase().functions.invoke(PRIVATE_NOVEL_FUNCTION,{body:{novel_slug:BOOK_ONE_NOVEL_SLUG,mode:'download'}});
     if(error||!data?.ok||!data?.url)throw new Error(data?.error||'Téléchargement indisponible.');
     location.assign(String(data.url));
   }catch(error){setStatus(status,error?.message||'Téléchargement indisponible.','error')}
@@ -115,7 +118,7 @@ async function init(){
     const role=document.querySelector('[data-library-role]');if(role)role.textContent='Compte Junior 11–12 ans';
     renderProjects(projects.filter(project=>project.type==='game'),documents,[],[],false,false,true,'[data-library-games]');
     renderProjects(projects.filter(project=>project.type!=='game'),documents,[],[],false,false,true,'[data-library-other]');
-    renderNovels([],[],[],false,true);
+    renderNovels([],[],false,true);
     const reads=document.querySelector('[data-library-reads]');if(reads)reads.innerHTML='<div class="notice"><strong>Lectures privées non classées.</strong><p>Elles resteront fermées jusqu’à une révision adaptée aux 11–12 ans.</p></div>';
     const entitlements=document.querySelector('[data-library-entitlements]');if(entitlements)entitlements.innerHTML='<div class="notice"><strong>Licences et achats indisponibles à 11–12 ans.</strong><p>Cette section ne s’active pas automatiquement avec un compte supervisé.</p></div>';
     if(projectsResult.error||documentsResult.error)setStatus(status,'La bibliothèque Junior n’a pas pu terminer sa vérification.','error');
@@ -124,13 +127,13 @@ async function init(){
   }
 
   const [adminResult,ownerResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult]=await Promise.all([
-    s.rpc('is_sinjira_admin',{p_user_id:user.id}),s.rpc('is_sinjira_owner',{p_user_id:user.id}),s.from('projects').select('id,slug,name,type,status,visibility,description,cover_url,public_path,play_path,allow_tester_requests,sort_order').order('sort_order'),s.from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id),s.from('documents').select('id,project_id').eq('status','approved'),s.from('access_requests').select('project_id,requested_level,status').eq('user_id',user.id).eq('status','pending'),s.from('sinjira_reader_library').select('novel_id,last_opened_at,last_page,progress_percent,sinjira_novels(id,title,description,status,cover_url,public_path,demo_path)').eq('user_id',user.id).order('updated_at',{ascending:false}),s.from('user_entitlements').select('product_id,source,granted_at,products(id,slug,name,product_type,active)').eq('user_id',user.id).order('granted_at',{ascending:false}),s.from('sinjira_novels').select('id,slug,title,description,status,cover_url,public_path,demo_path,sort_order').order('sort_order')
+    s.rpc('is_sinjira_admin',{p_user_id:user.id}),s.rpc('is_sinjira_owner',{p_user_id:user.id}),s.from('projects').select('id,slug,name,type,status,visibility,description,cover_url,public_path,play_path,allow_tester_requests,sort_order').order('sort_order'),s.from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id),s.from('documents').select('id,project_id').eq('status','approved'),s.from('access_requests').select('project_id,requested_level,status').eq('user_id',user.id).eq('status','pending'),s.from('sinjira_reader_library').select('novel_id,last_opened_at,last_page,progress_percent,sinjira_novels(id,title,description,status,cover_url,public_path,demo_path)').eq('user_id',user.id).order('updated_at',{ascending:false}),s.from('user_entitlements').select('product_id,source,granted_at,products(id,slug,name,product_type,active)').eq('user_id',user.id).order('granted_at',{ascending:false}),s.rpc('sinjira_my_novel_catalog')
   ]);
   const isAdmin=!adminResult.error&&adminResult.data===true,isOwner=!ownerResult.error&&ownerResult.data===true;
   const projects=rows(projectsResult.data),accessRows=rows(accessResult.data),documents=rows(documentsResult.data),pendingRows=rows(pendingResult.data),libraryRows=rows(readsResult.data),entitlements=rows(entitlementsResult.data),novels=rows(novelsResult.data);
   setCount('[data-library-project-count]',projects.length);setCount('[data-library-novel-count]',novels.length);setCount('[data-library-entitlement-count]',entitlements.length);setCount('[data-library-request-count]',pendingRows.length);
   const role=document.querySelector('[data-library-role]');if(role)role.textContent=isOwner?'Propriétaire SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Compte SINJIRA™';
-  renderProjects(projects.filter(project=>project.type==='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-games]');renderProjects(projects.filter(project=>project.type!=='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-other]');renderNovels(novels,libraryRows,entitlements,isOwner,false);renderReads(libraryRows);renderEntitlements(entitlements,isOwner);
+  renderProjects(projects.filter(project=>project.type==='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-games]');renderProjects(projects.filter(project=>project.type!=='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-other]');renderNovels(novels,libraryRows,isOwner,false);renderReads(libraryRows);renderEntitlements(entitlements,isOwner);
   document.querySelectorAll('[data-private-book-download]').forEach(button=>button.addEventListener('click',()=>downloadPrivateBook(button)));
   const errors=[projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult].filter(result=>result.error);if(errors.length)setStatus(status,'Certaines sections privées n’ont pas pu être chargées. Les données disponibles restent protégées par les règles du compte.','error');
   document.querySelectorAll('[data-v2461-request-tester]').forEach(button=>button.addEventListener('click',async()=>{const message=prompt('Court message pour votre demande (facultatif).')||'';const {error}=await s.from('access_requests').insert({user_id:user.id,project_id:button.dataset.v2461RequestTester,requested_level:'tester',message:message.slice(0,1500)});if(error){setStatus(status,'La demande n’a pas pu être transmise.','error');return}button.disabled=true;button.textContent='Demande testeur en attente';setStatus(status,'Demande testeur transmise.','success')}));

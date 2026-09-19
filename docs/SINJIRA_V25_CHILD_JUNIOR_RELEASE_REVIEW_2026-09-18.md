@@ -275,9 +275,32 @@ Le pgTAP `account_content_hub_v25.test.sql` contient **9 assertions** dédiées 
 
 Cette vingt-sixième migration reste **non revue production**.
 
+### Catalogue générique des romans privés
+
+La première refonte révélait encore une limitation historique : la lecture intégrale privée était codée spécifiquement pour le Livre I. Cela ne pouvait pas supporter proprement les futurs romans ni distinguer un catalogue créateur complet d'un manuscrit réellement chargé dans le coffre privé.
+
+La migration forward-only :
+
+`20260919093000_sinjira_v25_private_novel_catalog.sql`
+
+introduit un registre privé `private.sinjira_private_novel_assets` inaccessible au navigateur, un RPC self-only `sinjira_my_novel_catalog()` et un RPC de livraison strictement `service_role`. Le catalogue navigateur ne reçoit jamais le bucket ni le chemin de stockage.
+
+Le nouveau service `get-private-novel-url` utilise un `novel_slug`, vérifie l'état d'âge du compte, puis le rôle créateur ou un entitlement réel avant de signer temporairement un actif privé. Le Livre I est enregistré dans ce registre mais reste **désactivé par défaut** tant qu'un véritable actif privé n'a pas été configuré et revu. Le lecteur intégral devient générique via `?novel=<slug>`.
+
+Pour le compte créateur, la distinction est maintenant explicite :
+- **catalogue complet** : l'œuvre et son état sont visibles;
+- **intégrale privée** : le bouton de lecture apparaît seulement lorsqu'un actif privé est configuré;
+- un manuscrit non chargé n'est jamais présenté comme disponible.
+
+À l'état constaté lors de cette revue, aucun actif privé identifiable du Livre II n'est présent dans le stockage actif. La refonte ne fabrique donc aucun fichier ni accès fictif pour `Le Sang du Sauveur`.
+
+Le pgTAP `private_novel_catalog_v25.test.sql` contient **12 assertions** sur les frontières membre/créateur, la non-divulgation des chemins de stockage et le fail-closed des comptes non vérifiés.
+
+Cette vingt-septième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **26 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **27 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -314,6 +337,7 @@ Le snapshot de revue attend exactement **26 migrations locales futures non revue
 | `20260919080000_sinjira_v25_guardian_character_identity_isolation.sql` | `7c169564095bb440bde8a2a106c4e00aa2f307e4` |
 | `20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql` | `8e0fd367bd0c30ed77f947ae0583408b370121a1` |
 | `20260919090000_sinjira_v25_account_content_hub.sql` | `29358d27f8f505897b924062e208b8d5c740f8c5` |
+| `20260919093000_sinjira_v25_private_novel_catalog.sql` | `be721fa72387de258fb488293f973febd9f9c8e7` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -358,7 +382,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **26 migrations** dans l’ordre.
+2. Relire les **27 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.

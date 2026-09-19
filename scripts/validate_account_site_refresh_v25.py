@@ -69,8 +69,8 @@ def validate(contents: dict[str, str]) -> None:
     for marker in ("data-library-games", "data-library-novels", "data-library-other"):
         if marker not in libh:
             fail(f"bibliothèque: séparation manquante: {marker}")
-    if "from('sinjira_novels')" not in contents["library_js"]:
-        fail("bibliothèque: catalogue roman canonique absent")
+    if "sinjira_my_novel_catalog" not in contents["library_js"]:
+        fail("bibliothèque: catalogue roman self-only canonique absent")
     if "functionrendernovels" not in libj:
         fail("bibliothèque: rendu romans absent")
 
@@ -110,8 +110,10 @@ def validate(contents: dict[str, str]) -> None:
 
     if "data-literature-catalog" not in lith or "sinjira-literature-catalog-v25.js?v=25.0.1" not in lith:
         fail("littérature: catalogue dynamique V25 absent")
-    if "from('sinjira_novels')" not in contents["literature_js"] or "is_sinjira_owner" not in contents["literature_js"]:
-        fail("littérature: catalogue canonique/créateur absent")
+    if "sinjira_my_novel_catalog" not in contents["literature_js"] or "is_sinjira_owner" not in contents["literature_js"]:
+        fail("littérature: catalogue self-only/créateur absent")
+    if "from('sinjira_novels')" not in contents["literature_js"]:
+        fail("littérature: fallback public anonyme canonique absent")
 
     if "selectplan(9);" not in test:
         fail("pgTAP contenu: plan(9) absent")
