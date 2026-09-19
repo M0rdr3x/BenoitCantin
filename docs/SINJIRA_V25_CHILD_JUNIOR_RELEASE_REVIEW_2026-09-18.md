@@ -18,6 +18,7 @@ Le périmètre enfant/Junior couvre notamment :
 - aucune messagerie privée générale pour 11–12 ans;
 - filtrage serveur des liens, coordonnées, rencontres, secrets, sexualité et commerce;
 - classement de contenu 11–12 fail-closed;
+- décisions de classement 11–12 réservées à l’admin avec second facteur configuré et session `aal2` active;
 - capacités de compte self-only;
 - cohérence web, mobile et Edge Functions avec les bandes V25.
 
