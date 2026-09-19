@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(82);
+select plan(85);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -484,6 +484,30 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='private' and p.proname='sinjira_require_story_canon_transition' limit 1),
   'le garde SQL réapplique provenance et continuité même hors interface'
+);
+
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
+  'une source engagée ne peut passer RETIRED sans remplacement vérifié'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%newer.scope=old.scope%'
+          and pg_get_functiondef(p.oid) ilike '%sinjira_source_is_verified(newer.id)%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
+  'le remplacement autorisant RETIRED doit être vérifié et de même période'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%new.verification_status=''RETIRED''%'
+          and pg_get_functiondef(p.oid) ilike '%v_has_verified_replacement%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
+  'RETIRED devient une transition contrôlée plutôt qu une suppression de l historique'
 );
 
 select * from finish();
