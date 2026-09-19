@@ -259,11 +259,13 @@ Le champ texte de référence reste un **instantané lisible**. L’autorité r�
 
 1. La Chronique est créée en **PROVISOIRE**.
 2. Son personnage, sa période et son lieu sont reliés aux référentiels canoniques.
-3. Le système compare sa présence avec le Canon central et les Chroniques déjà canonisées.
-4. Le système vérifie les temps de déplacement documentés lorsque deux scènes se déroulent dans des lieux incompatibles.
-5. Une information manquante produit un blocage de validation plutôt qu’une supposition automatique.
-6. Une collision produit un blocage de canonisation.
-7. Lorsque les contrôles sont satisfaits, **Benoit Cantin confirme explicitement** la promotion vers CANON_ETENDU.
+3. Ses faits de provenance sont reliés à des sources vérifiées, avec au moins un fait `anchor` compatible avec sa période.
+4. La prévalidation combine **provenance + continuité** dans un seul verdict.
+5. Le système compare sa présence avec le Canon central et les Chroniques déjà canonisées.
+6. Le système vérifie les temps de déplacement documentés lorsque deux scènes se déroulent dans des lieux incompatibles.
+7. Une source, une date, un lieu, un fait ou une règle de trajet manquante produit un blocage plutôt qu’une supposition automatique.
+8. Une collision ou un fait de provenance non résolu produit un blocage de canonisation.
+9. Lorsque les contrôles sont satisfaits, **Benoit Cantin confirme explicitement** la promotion vers CANON_ETENDU.
 8. La Chronique canonisée reste en état **validated** tant qu’elle n’est pas publiée.
 9. La publication est une action séparée : elle exige une audience Membres ou Public, un contenu rédigé, un ancrage défini, une période complète, un lieu Atlas et une nouvelle vérification de continuité.
 10. Une Chronique publiée doit être retirée de publication avant toute modification de son contenu, de sa période, de son lieu ou de ses segments.
