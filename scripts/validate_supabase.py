@@ -119,6 +119,7 @@ def main()->int:
       'CANON_SOURCE_SUPERSEDES_BOOK_MISMATCH',
       'CANON_SOURCE_SUPERSEDES_ALREADY_EXISTS',
       'CANON_SOURCE_CREATE_RETIRED_FORBIDDEN',
+      'CANON_SOURCE_RETIRED_FINAL',
       'CANON_SOURCE_SUPERSEDES_KIND_INVALID',
       'sinjira_guard_canon_source_lifecycle',
       'sinjira_canon_sources_guard_lifecycle',
