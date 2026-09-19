@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(47);
+select plan(51);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -265,6 +265,24 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='public' and p.proname='admin_sinjira_publish_extended_story' limit 1),
   'la publication réutilise le même rapport de provenance que la canonisation'
+);
+
+
+select has_function('public','admin_sinjira_story_validation_check',array['uuid'],
+  'la prévalidation combinée provenance et continuité existe');
+
+select ok(not has_function_privilege('anon','public.admin_sinjira_story_validation_check(uuid)','EXECUTE'),
+  'anon ne peut pas lancer la prévalidation auteur');
+
+select ok(has_function_privilege('authenticated','public.admin_sinjira_story_validation_check(uuid)','EXECUTE'),
+  'authenticated atteint le wrapper qui impose ensuite admin AAL2');
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%sinjira_story_provenance_report%'
+          and pg_get_functiondef(p.oid) ilike '%sinjira_story_continuity_report%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_story_validation_check' limit 1),
+  'la prévalidation combine le rapport de provenance et le rapport de continuité'
 );
 
 select * from finish();
