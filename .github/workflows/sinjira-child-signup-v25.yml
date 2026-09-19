@@ -21,6 +21,7 @@ on:
       - 'supabase/migrations/20260919063000_sinjira_v25_guardian_contact_metadata_opt_in.sql'
       - 'supabase/migrations/20260919070000_sinjira_v25_guardian_contacts_minimization.sql'
       - 'supabase/migrations/20260919080000_sinjira_v25_guardian_character_identity_isolation.sql'
+      - 'supabase/migrations/20260919110000_sinjira_v25_social_public_pseudo_privacy.sql'
       - 'supabase/migrations/20260919100000_sinjira_v25_private_profile_age_11.sql'
       - 'supabase/tests/child_guardian_signup_v25.test.sql'
       - 'supabase/tests/private_profile_child_age_v25.test.sql'

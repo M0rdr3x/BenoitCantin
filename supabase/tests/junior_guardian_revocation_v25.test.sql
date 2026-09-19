@@ -98,9 +98,11 @@ select ok(
   and public.junior_guardian_summary('75000000-0000-4000-8000-000000000011') ? 'last_activity_date',
   'le résumé Junior ne révèle plus l heure précise de dernière activité'
 );
-select like(
-  public.junior_guardian_summary('75000000-0000-4000-8000-000000000011')->>'last_activity_date',
-  '____-__-__',
+select ok(
+  coalesce(
+    public.junior_guardian_summary('75000000-0000-4000-8000-000000000011')->>'last_activity_date',
+    ''
+  ) ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$',
   'le résumé Junior réduit la dernière activité à une date'
 );
 select is(

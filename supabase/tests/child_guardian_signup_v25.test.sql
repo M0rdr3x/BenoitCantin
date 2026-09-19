@@ -336,6 +336,18 @@ select ok(
     from jsonb_array_elements(public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')) item
     where item->>'network'='Compte'
       and item->>'contact_label'='Contact Jeunesse'
+  )
+  and exists(
+    select 1
+    from public.social_profiles sp
+    where sp.user_id='70000000-0000-4000-8000-000000000015'
+      and sp.pseudo='Contact Jeunesse'
+      and sp.display_name='Contact Jeunesse'
+  )
+  and not exists(
+    select 1
+    from jsonb_array_elements(public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')) item
+    where item->>'contact_label'='Nom Affiché Privé'
   ),
   'le réseau Compte conserve uniquement le pseudo public du contact'
 );

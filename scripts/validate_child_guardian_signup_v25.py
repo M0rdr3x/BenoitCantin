@@ -15,6 +15,7 @@ GUARDIAN_CONTACTS_AAL2_MIG = ROOT / 'supabase/migrations/20260919060000_sinjira_
 GUARDIAN_CONTACT_CONSENT_MIG = ROOT / 'supabase/migrations/20260919063000_sinjira_v25_guardian_contact_metadata_opt_in.sql'
 GUARDIAN_CONTACT_MIN_MIG = ROOT / 'supabase/migrations/20260919070000_sinjira_v25_guardian_contacts_minimization.sql'
 GUARDIAN_CHARACTER_ISOLATION_MIG = ROOT / 'supabase/migrations/20260919080000_sinjira_v25_guardian_character_identity_isolation.sql'
+SOCIAL_PSEUDO_PRIVACY_MIG = ROOT / 'supabase/migrations/20260919110000_sinjira_v25_social_public_pseudo_privacy.sql'
 YOUTH_BASE = ROOT / 'supabase/migrations/20260816140000_sinjira_v24_4_12_youth_safety.sql'
 SIGNUP_JS = ROOT / 'assets/js/v24-signup.js'
 BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
@@ -52,6 +53,7 @@ guardian_contacts_aal2_mig = read(GUARDIAN_CONTACTS_AAL2_MIG)
 guardian_contact_consent_mig = read(GUARDIAN_CONTACT_CONSENT_MIG)
 guardian_contact_min_mig = read(GUARDIAN_CONTACT_MIN_MIG)
 guardian_character_isolation_mig = read(GUARDIAN_CHARACTER_ISOLATION_MIG)
+social_pseudo_privacy_mig = read(SOCIAL_PSEUDO_PRIVACY_MIG)
 youth_base = read(YOUTH_BASE)
 signup_js = read(SIGNUP_JS)
 backend_js = read(BACKEND_JS)
@@ -74,6 +76,7 @@ gca = compact(guardian_contacts_aal2_mig)
 gcc = compact(guardian_contact_consent_mig)
 gcm = compact(guardian_contact_min_mig)
 gci = compact(guardian_character_isolation_mig)
+spp = compact(social_pseudo_privacy_mig)
 y = compact(youth_base)
 j = compact(signup_js)
 b = compact(backend_js)
@@ -201,6 +204,18 @@ req("'contact_label',g.contact_label" in gci
     and "'network',g.network" in gci
     and "'last_contact_date',(timezone('utc',g.last_contact_at))::date" in gci,
     "Le résumé cloisonné ne conserve pas exactement label/réseau/date.")
+req("createorreplacefunctionpublic.sync_social_profile_from_profile()" in spp
+    and "v_public_pseudo" in spp
+    and "coalesce(nullif(btrim(new.pseudo),''),'membresinjira')" in spp,
+    "La synchronisation sociale V25 ne dérive pas du pseudonyme public.")
+req("updatepublic.social_profilessp" in spp
+    and "display_name=l.public_pseudo" in spp
+    and "values(new.user_id,v_public_pseudo,v_public_pseudo,new.avatar_path,now())" in spp,
+    "La synchronisation sociale V25 ne neutralise pas le nom affiché privé.")
+req("nomaffichéprivé" in t
+    and "sp.pseudo='contactjeunesse'" in t
+    and "sp.display_name='contactjeunesse'" in t,
+    "Le pgTAP enfant ne prouve pas le nettoyage du nom affiché privé.")
 req("'pseudo',coalesce(sp.pseudo" not in gci
     and "'networks',g.networks" not in gci
     and "'user_id'" not in gci
