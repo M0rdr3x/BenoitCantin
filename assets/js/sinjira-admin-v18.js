@@ -92,11 +92,11 @@ function toIso(value,zone=''){
 }
 let canonSourcesCache=[],storyClaimsCache=[];
 function canonSourceLabel(src){if(!src)return '';const bits=[src.book_number?'Livre '+src.book_number:'',src.chapter_reference||'',src.passage_reference||''].filter(Boolean);return (src.title||src.source_key||'Source')+(bits.length?' — '+bits.join(' · '):'')+' · '+(src.source_kind||'source')+' · '+(src.verification_status||'PROVISOIRE')}
-function canonSourceOptions(placeholder='À relier',excludeId='',scope=''){return `<option value="">${escapeHtml(placeholder)}</option>`+canonSourcesCache.filter(src=>src.id!==excludeId&&(!scope||src.scope===scope)).map(src=>`<option value="${src.id}">${escapeHtml(canonSourceLabel(src))}</option>`).join('')}
+function canonSourceOptions(placeholder='À relier',excludeId='',scope='',includeRetired=false){return `<option value="">${escapeHtml(placeholder)}</option>`+canonSourcesCache.filter(src=>src.id!==excludeId&&(!scope||src.scope===scope)&&(includeRetired||src.verification_status!=='RETIRED')).map(src=>`<option value="${src.id}">${escapeHtml(canonSourceLabel(src))}</option>`).join('')}
 function refreshCanonSourceSelects(excludeSupersedesId=''){
  for(const sel of document.querySelectorAll('[data-canon-source-select],[data-story-claim-source]')){const old=sel.value;sel.innerHTML=canonSourceOptions(sel.hasAttribute('data-story-claim-source')?'Choisir une source':'À relier au Registre');if(old)sel.value=old}
  const form=document.querySelector('[data-canon-source-form]'),sup=document.querySelector('[data-canon-source-supersedes]');
- if(sup){const old=sup.value,scope=form?.elements?.scope?.value||'';sup.innerHTML=canonSourceOptions('Aucune',excludeSupersedesId,scope);if(old&&old!==excludeSupersedesId&&Array.from(sup.options).some(o=>o.value===old))sup.value=old}
+ if(sup){const old=sup.value,scope=form?.elements?.scope?.value||'';sup.innerHTML=canonSourceOptions('Aucune',excludeSupersedesId,scope,true);if(old&&old!==excludeSupersedesId&&Array.from(sup.options).some(o=>o.value===old))sup.value=old}
 }
 function syncCanonSourceScope(){
  const f=document.querySelector('[data-canon-source-form]');if(!f)return;
@@ -106,7 +106,7 @@ function syncCanonSourceScope(){
  const sup=f.elements.supersedes_source_id;
  if(sup){
    const old=sup.value,excludeId=f.elements.id.value||'',scope=f.elements.scope.value||'';
-   sup.innerHTML=canonSourceOptions('Aucune',excludeId,scope);
+   sup.innerHTML=canonSourceOptions('Aucune',excludeId,scope,true);
    if(old&&old!==excludeId&&Array.from(sup.options).some(o=>o.value===old))sup.value=old;
  }
 }
@@ -161,7 +161,7 @@ function setCanonSourceAuthorityLock(src){
        const updated=canonSourcesCache.find(x=>x.id===src.id);
        if(updated)fillCanonSource(updated);
        const m=result?.migrated||{};
-       alert(`Migration terminée : ${Number(m.world_locations||0)} lieu(x), ${Number(m.travel_rules||0)} trajet(s), ${Number(m.events||0)} événement(s), ${Number(m.presences||0)} présence(s) et ${Number(m.claims||0)} fait(s) déplacés. RETIRED peut maintenant être choisi si aucune référence ne subsiste.`);
+       alert(`Migration terminée : ${Number(m.world_locations||0)} lieu(x), ${Number(m.travel_rules||0)} trajet(s), ${Number(m.events||0)} événement(s), ${Number(m.presences||0)} présence(s) et ${Number(m.claims||0)} fait(s) déplacés. L’ancienne source est maintenant RETIRED automatiquement.`);
      }catch(err){alert(err.message)}finally{migrate.disabled=false}
    });
  }
