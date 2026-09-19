@@ -257,6 +257,7 @@ Règles :
 13. une source ne peut pas être créée directement en `RETIRED`; cet état représente uniquement un retrait d’une source déjà existante;
 14. une source `research` ne peut jamais devenir un maillon « remplace » de la chaîne canonique; elle sert à documenter le travail sans acquérir l’autorité d’une source canonique;
 15. deux sources de type `roman` ne peuvent se remplacer directement que si elles appartiennent au **même numéro de livre**; l’interface filtre ces candidats avant l’enregistrement et PostgreSQL constitue le garde final;
+16. les menus de provenance utilisent un **filtrage contextuel** : en préparation `PROVISOIRE`, les sources de travail non retirées restent visibles; dès qu’un élément devient `CANON`, `SECRET_AUTEUR` ou qu’un fait devient `VERIFIED`, l’interface ne propose plus que des sources autoritatives `VERIFIED/SECRET_AUTEUR` de type `roman`, `bible`, `author_decision` ou `archive`;
 11. les sources `SECRET_AUTEUR` peuvent protéger la continuité sans être exposées aux membres ou au public.
 
 Le champ texte de référence reste un **instantané lisible**. L’autorité réelle est l’identifiant structuré de la source.
