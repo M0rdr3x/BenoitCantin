@@ -210,6 +210,117 @@ for each row execute function private.sinjira_prevent_canon_source_delete();
 
 revoke all on function private.sinjira_prevent_canon_source_delete() from public,anon,authenticated,service_role;
 
+-- CANON_ETENDU signifie toujours « actuellement validé ».
+-- Toute modification du récit, de ses faits, de ses segments ou d'une dépendance
+-- canonique force une nouvelle prévalidation avant de retrouver ce statut.
+create or replace function private.sinjira_demote_extended_story_on_edit()
+returns trigger
+language plpgsql
+set search_path=pg_catalog,public,private
+as $$
+begin
+  if old.canon_status='CANON_ETENDU'
+     and (
+       new.story_type is distinct from old.story_type
+       or new.character_id is distinct from old.character_id
+       or new.title is distinct from old.title
+       or new.slug is distinct from old.slug
+       or new.summary is distinct from old.summary
+       or new.content is distinct from old.content
+       or new.region_name is distinct from old.region_name
+       or new.location_id is distinct from old.location_id
+       or new.anchor_scope is distinct from old.anchor_scope
+       or new.starts_at is distinct from old.starts_at
+       or new.ends_at is distinct from old.ends_at
+       or new.continuity_data is distinct from old.continuity_data
+     ) then
+    -- Une Chronique publiée reste bloquée par le garde existant :
+    -- elle doit d'abord être retirée de publication explicitement.
+    if old.status<>'published' then
+      new.canon_status:='PROVISOIRE';
+      new.status:='author_review';
+      new.audience:='private';
+      new.published_at:=null;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists sinjira_extended_stories_demote_on_edit on public.sinjira_extended_stories;
+create trigger sinjira_extended_stories_demote_on_edit
+before update on public.sinjira_extended_stories
+for each row execute function private.sinjira_demote_extended_story_on_edit();
+
+create or replace function private.sinjira_demote_story_from_child_change()
+returns trigger
+language plpgsql
+security definer
+set search_path=pg_catalog,public,private
+as $$
+declare
+  v_old_story uuid;
+  v_new_story uuid;
+begin
+  if tg_op<>'INSERT' then v_old_story:=old.story_id; end if;
+  if tg_op<>'DELETE' then v_new_story:=new.story_id; end if;
+
+  update public.sinjira_extended_stories
+  set canon_status='PROVISOIRE',
+      status='author_review',
+      audience='private',
+      published_at=null
+  where canon_status='CANON_ETENDU'
+    and status<>'published'
+    and (id=v_old_story or id=v_new_story);
+
+  if tg_op='DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists sinjira_story_presence_demote_canon on public.sinjira_story_character_presence;
+create trigger sinjira_story_presence_demote_canon
+after insert or update or delete on public.sinjira_story_character_presence
+for each row execute function private.sinjira_demote_story_from_child_change();
+
+drop trigger if exists sinjira_story_claims_demote_canon on public.sinjira_story_claims;
+create trigger sinjira_story_claims_demote_canon
+after insert or update or delete on public.sinjira_story_claims
+for each row execute function private.sinjira_demote_story_from_child_change();
+
+-- Les dépendances globales du Calendrier-Monde, de l'Atlas, des sources et du
+-- Canon central utilisent déjà cette fonction via les triggers V25. On la
+-- renforce ici pour retirer aussi le statut CANON_ETENDU, pas seulement publier.
+create or replace function private.sinjira_invalidate_published_extended_stories()
+returns trigger
+language plpgsql
+security definer
+set search_path=pg_catalog,public,private
+as $$
+begin
+  -- Première passe autorisée par le verrou des récits publiés.
+  update public.sinjira_extended_stories
+  set status='validated',
+      published_at=null
+  where status='published';
+
+  -- Deuxième passe : tout Canon étendu doit être prévalidé de nouveau.
+  update public.sinjira_extended_stories
+  set canon_status='PROVISOIRE',
+      status='author_review',
+      audience='private',
+      published_at=null
+  where canon_status='CANON_ETENDU';
+
+  return null;
+end;
+$$;
+
+revoke all on function private.sinjira_demote_extended_story_on_edit() from public,anon,authenticated,service_role;
+revoke all on function private.sinjira_demote_story_from_child_change() from public,anon,authenticated,service_role;
+revoke all on function private.sinjira_invalidate_published_extended_stories() from public,anon,authenticated,service_role;
+
 create or replace function private.sinjira_source_is_verified(p_source_id uuid)
 returns boolean
 language sql
@@ -736,6 +847,12 @@ comment on table public.sinjira_story_claims is
   'Faits de continuité d’une Chronique. Chaque fait vérifié pointe vers une source canonique vérifiée.';
 comment on function private.sinjira_source_is_verified(uuid) is
   'Retourne vrai uniquement pour une source VERIFIED ou SECRET_AUTEUR.';
+comment on function private.sinjira_demote_extended_story_on_edit() is
+  'Une modification structurelle retire automatiquement CANON_ETENDU et exige une nouvelle prévalidation.';
+comment on function private.sinjira_demote_story_from_child_change() is
+  'Toute modification d’un fait de provenance ou d’un segment retire CANON_ETENDU du récit concerné.';
+comment on function private.sinjira_invalidate_published_extended_stories() is
+  'Toute modification d’une dépendance canonique dépublie et repasse les Chroniques CANON_ETENDU en PROVISOIRE / author_review.';
 comment on function private.sinjira_story_provenance_report(uuid) is
   'Rapport unique de provenance d’une Chronique : ancrages vérifiés, période correspondante et faits non résolus.';
 comment on function public.admin_sinjira_story_validation_check(uuid) is
