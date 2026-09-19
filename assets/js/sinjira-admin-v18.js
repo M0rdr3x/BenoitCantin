@@ -92,7 +92,24 @@ function toIso(value,zone=''){
 }
 function resetExtendedStoryEditor(){
  const f=document.querySelector('[data-extended-story-editor]');if(!f)return;
- f.reset();f.elements.id.value='';f.elements.published_at.value='';f.elements.story_type.value='character_chronicle';f.elements.anchor_scope.value='UNASSIGNED';f.elements.canon_status.value='PROVISOIRE';f.elements.status.value='draft';f.elements.audience.value='private';f.elements.location_id.value='';f.elements.continuity_json.value='{}';f.elements.visible_to_character_owner.checked=true;f.elements.author_confirmed_extended_canon.checked=false;renderContinuityResult(null);const sf=document.querySelector('[data-story-segment-form]');if(sf){sf.reset();sf.elements.id.value='';sf.elements.story_id.value=''}const sb=document.querySelector('[data-story-segment-list]');if(sb)sb.innerHTML='<p>Sélectionnez d’abord une Chronique.</p>';
+ f.reset();f.elements.id.value='';f.elements.published_at.value='';f.elements.story_type.value='character_chronicle';f.elements.anchor_scope.value='UNASSIGNED';f.elements.canon_status.value='PROVISOIRE';f.elements.status.value='draft';f.elements.audience.value='private';f.elements.location_id.value='';f.elements.continuity_json.value='{}';f.elements.visible_to_character_owner.checked=true;f.elements.author_confirmed_extended_canon.checked=false;f.elements.author_confirmed_publication.checked=false;renderContinuityResult(null);renderStoryPublicationState(null);setStoryPublishedLock(null);const sf=document.querySelector('[data-story-segment-form]');if(sf){sf.reset();sf.elements.id.value='';sf.elements.story_id.value=''}const sb=document.querySelector('[data-story-segment-list]');if(sb)sb.innerHTML='<p>Sélectionnez d’abord une Chronique.</p>';
+}
+function renderStoryPublicationState(st){
+ const box=document.querySelector('[data-story-publication-state]');if(!box)return;
+ if(!st){box.innerHTML='<div class="account-status" data-status-type="info">La publication est une étape distincte de la canonisation.</div>';return}
+ if(st.status==='published'){const when=st.published_at?new Date(st.published_at).toLocaleString('fr-CA'):'date inconnue';box.innerHTML='<div class="account-status" data-status-type="success"><strong>Chronique publiée</strong><p>'+escapeHtml(st.audience||'public')+' · '+escapeHtml(when)+'. Retirez-la de publication avant toute modification.</p></div>';return}
+ if(st.canon_status==='CANON_ETENDU'){box.innerHTML='<div class="account-status" data-status-type="info"><strong>Canon étendu validé</strong><p>La Chronique peut être publiée après confirmation et nouvelle vérification de continuité.</p></div>';return}
+ box.innerHTML='<div class="account-status" data-status-type="info">La Chronique doit être CANON ÉTENDU avant publication.</div>';
+}
+function setStoryPublishedLock(st){
+ const f=document.querySelector('[data-extended-story-editor]');if(!f)return;
+ const locked=st?.status==='published';
+ for(const el of f.querySelectorAll('input[name],textarea[name],select[name]')){if(['id','published_at'].includes(el.name))continue;el.disabled=locked}
+ const submit=f.querySelector('button[type="submit"]');if(submit)submit.disabled=locked;
+ const publish=f.querySelector('[data-story-publish]');if(publish)publish.disabled=locked||!st?.id||st?.canon_status!=='CANON_ETENDU';
+ const unpublish=f.querySelector('[data-story-unpublish]');if(unpublish)unpublish.disabled=!locked;
+ const check=f.querySelector('[data-story-check]');if(check)check.disabled=!st?.id;
+ const sf=document.querySelector('[data-story-segment-form]');if(sf)sf.querySelectorAll('input,textarea,select,button').forEach(el=>el.disabled=locked);
 }
 let extendedStoriesCache=[];
 async function extendedStories(){
