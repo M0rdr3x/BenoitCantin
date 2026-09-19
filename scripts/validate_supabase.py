@@ -141,6 +141,8 @@ def main()->int:
       'CANON_SOURCE_MIGRATION_SCOPE_MISMATCH',
       'CANON_SOURCE_MIGRATION_REPLACEMENT_NOT_VERIFIED',
       'CANON_SOURCE_MIGRATION_INCOMPLETE',
+      "set verification_status='RETIRED'",
+      "'source_status','RETIRED'",
       'STORY_PUBLICATION_TIMESTAMP_REQUIRED',
     }
     for needle in sorted(extended_contract):
