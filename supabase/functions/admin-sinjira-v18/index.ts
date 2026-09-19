@@ -15,7 +15,8 @@ const SAFE_LOG_CODES=new Set([
   'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE',
   'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON','SOURCE_PURGED',
   'SOURCE_PURGE_CONFIRMATION_REQUIRED','SOURCE_PURGE_STORAGE_FAILED',
-  'CANON_CONFIRMATION_REQUIRED','EXTENDED_CANON_CONFIRMATION_REQUIRED','STORY_CONTINUITY_CONFLICT','STORY_CONTINUITY_INCOMPLETE','NOTIFICATION_ID_REQUIRED','CENTRAL_CANON_LOCKED'
+  'CANON_CONFIRMATION_REQUIRED','EXTENDED_CANON_CONFIRMATION_REQUIRED','STORY_CONTINUITY_CONFLICT','STORY_CONTINUITY_INCOMPLETE','NOTIFICATION_ID_REQUIRED','CENTRAL_CANON_LOCKED',
+  'CANON_SOURCE_REQUIRED','CANON_SOURCE_NOT_VERIFIED','CLAIM_SOURCE_REQUIRED','CLAIM_SOURCE_NOT_VERIFIED','STORY_PROVENANCE_REQUIRED','STORY_PROVENANCE_INCOMPLETE'
 ]);
 
 function privateJson(data:unknown,status=200){
@@ -119,7 +120,7 @@ Deno.serve(async(req)=>{
 
     if(a==='system_health'){
       const checks:any={};
-      for(const table of ['profiles','game_sessions','novel_comments','character_submissions','characters','sinjira_extended_stories','sinjira_world_locations','sinjira_canon_events']){
+      for(const table of ['profiles','game_sessions','novel_comments','character_submissions','characters','sinjira_extended_stories','sinjira_world_locations','sinjira_canon_events','sinjira_canon_sources','sinjira_story_claims']){
         const {count,error}=await s.from(table).select('*',{count:'exact',head:true});
         checks[table]={ok:!error,count:count||0,code:error?'CHECK_FAILED':null};
       }
@@ -539,6 +540,12 @@ Deno.serve(async(req)=>{
     if(e?.message==='STORY_CONTENT_REQUIRED')return privateJson({ok:false,error:'Le contenu de la Chronique doit être rédigé avant publication.',code:'STORY_CONTENT_REQUIRED'},409);
     if(e?.message==='STORY_LOCATION_NOT_CANON')return privateJson({ok:false,error:'Le lieu principal de la Chronique doit être CANON dans l’Atlas avant publication.',code:'STORY_LOCATION_NOT_CANON'},409);
     if(e?.message==='CANON_LOCATION_REQUIRED')return privateJson({ok:false,error:'Un événement ou une présence CANON/SECRET AUTEUR doit utiliser un lieu CANON dans l’Atlas.',code:'CANON_LOCATION_REQUIRED'},409);
+    if(e?.message==='CANON_SOURCE_REQUIRED')return privateJson({ok:false,error:'Cet élément canonique doit être relié à une source du Registre.',code:'CANON_SOURCE_REQUIRED'},409);
+    if(e?.message==='CANON_SOURCE_NOT_VERIFIED')return privateJson({ok:false,error:'La source choisie doit être VERIFIED ou SECRET_AUTEUR avant cette validation canonique.',code:'CANON_SOURCE_NOT_VERIFIED'},409);
+    if(e?.message==='CLAIM_SOURCE_REQUIRED')return privateJson({ok:false,error:'Un fait vérifié doit citer une source du Registre.',code:'CLAIM_SOURCE_REQUIRED'},409);
+    if(e?.message==='CLAIM_SOURCE_NOT_VERIFIED')return privateJson({ok:false,error:'La source du fait doit être vérifiée avant de valider ce fait.',code:'CLAIM_SOURCE_NOT_VERIFIED'},409);
+    if(e?.message==='STORY_PROVENANCE_REQUIRED')return privateJson({ok:false,error:'Publication refusée : ajoutez au moins un fait d’ancrage vérifié avec une source canonique.',code:'STORY_PROVENANCE_REQUIRED'},409);
+    if(e?.message==='STORY_PROVENANCE_INCOMPLETE')return privateJson({ok:false,error:'Publication refusée : tous les faits de provenance doivent être vérifiés et reliés à une source encore valide.',code:'STORY_PROVENANCE_INCOMPLETE'},409);
     if(e?.message==='STORY_CONTINUITY_CONFLICT')return privateJson({ok:false,error:'Canonisation refusée : collision de continuité détectée.',code:'STORY_CONTINUITY_CONFLICT'},409);
     if(e?.message==='STORY_CONTINUITY_INCOMPLETE')return privateJson({ok:false,error:'Canonisation refusée : date ou lieu de continuité incomplet.',code:'STORY_CONTINUITY_INCOMPLETE'},409);
     if(e?.message==='NOTIFICATION_ID_REQUIRED')return privateJson({ok:false,error:'Identifiant de notification requis.'},400);
