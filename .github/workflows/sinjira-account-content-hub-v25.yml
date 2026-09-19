@@ -8,6 +8,7 @@ on:
       - 'supabase/migrations/20260919090000_sinjira_v25_account_content_hub.sql'
       - 'supabase/tests/account_content_hub_v25.test.sql'
       - 'scripts/validate_account_site_refresh_v25.py'
+      - 'scripts/validate_site.py'
       - 'assets/js/sinjira-account.js'
       - 'assets/js/sinjira-library-v24-4-61.js'
       - 'assets/js/sinjira-purchases-v25.js'
@@ -43,11 +44,23 @@ jobs:
         with:
           python-version: '3.12.14'
 
+      - name: Configurer Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+
       - name: Valider la refonte compte et catalogue
         run: |
           python3 -m py_compile scripts/validate_account_site_refresh_v25.py
           python3 scripts/validate_account_site_refresh_v25.py --self-test
           python3 scripts/validate_account_site_refresh_v25.py
+
+      - name: Vérifier routes, références et syntaxe du site en mode draft
+        run: |
+          python3 scripts/validate_site.py
+          python3 scripts/validate_browser_compat.py
+          python3 scripts/validate_accessibility.py
 
       - name: Installer Supabase CLI
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
