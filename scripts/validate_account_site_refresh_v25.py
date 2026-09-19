@@ -20,6 +20,16 @@ FILES = {
     "literature_html": ROOT / "projets/sinjira/romans/index.html",
     "literature_js": ROOT / "assets/js/sinjira-literature-catalog-v25.js",
     "test": ROOT / "supabase/tests/account_content_hub_v25.test.sql",
+    "secondary_mes_lectures": ROOT / "compte/mes-lectures.html",
+    "secondary_documents": ROOT / "compte/documents.html",
+    "secondary_playtests": ROOT / "compte/playtests.html",
+    "secondary_contributions": ROOT / "compte/contributions.html",
+    "secondary_messages_reels": ROOT / "compte/messages-reels.html",
+    "secondary_messages_personnage": ROOT / "compte/messages-personnage.html",
+    "secondary_privacy": ROOT / "compte/vie-privee.html",
+    "secondary_blocks": ROOT / "compte/blocages.html",
+    "secondary_junior": ROOT / "compte/communaute-junior.html",
+    "secondary_project": ROOT / "compte/projet.html",
 }
 
 def fail(message: str) -> None:
@@ -80,6 +90,14 @@ def validate(contents: dict[str, str]) -> None:
     for marker in ("appendgroup('bibliothèque'", "appendgroup('univers'", "appendgroup('communauté'", "appendgroup('compte'"):
         if marker not in acc:
             fail(f"navigation groupée absente: {marker}")
+
+    for name, content in contents.items():
+        if not name.startswith("secondary_"):
+            continue
+        if "sinjira-account.js?v=25.0.1" not in content:
+            fail(f"navigation secondaire: cache JS V25 absent dans {name}")
+        if "sinjira-player-account.css?v=25.0.1" not in content:
+            fail(f"navigation secondaire: cache CSS V25 absent dans {name}")
 
     if "from('novel_comments')" in reader or "from('novel_comments')" in comments:
         fail("commentaires: ancien modèle novel_comments encore utilisé")
