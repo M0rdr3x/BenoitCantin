@@ -52,10 +52,13 @@ jobs:
       - name: Reconstruire la base locale depuis zéro
         run: supabase db reset
 
+      - name: Rejouer la suite historique Communauté Junior
+        run: supabase test db supabase/tests/child_community_v25.test.sql
+
       - name: Prouver la révocation multi-tuteur Junior
         run: supabase test db supabase/tests/junior_guardian_revocation_v25.test.sql
 
       - name: Arrêter et supprimer la pile locale
         if: always()
         run: |
-          if command -v supabase >/dev/null 2>&1; then supabase stop --no-backup || true; fi
+          if comand -v supabase >/dev/null 2>&1; then supabase stop --no-backup || true; fi

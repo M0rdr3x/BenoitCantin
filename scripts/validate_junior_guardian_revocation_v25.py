@@ -79,6 +79,7 @@ def validate(migration: str, test: str, workflow: str) -> None:
         "python-version: '3.12.14'",
         "version: 2.111.0",
         "supabase db reset",
+        "supabase test db supabase/tests/child_community_v25.test.sql",
         "supabase test db supabase/tests/junior_guardian_revocation_v25.test.sql",
     )
     for marker in required_workflow:
