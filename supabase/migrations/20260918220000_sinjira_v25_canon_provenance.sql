@@ -94,6 +94,98 @@ alter table public.sinjira_story_claims enable row level security;
 revoke all on public.sinjira_canon_sources from anon,authenticated;
 revoke all on public.sinjira_story_claims from anon,authenticated;
 
+create or replace function private.sinjira_prevent_source_supersedes_cycle()
+returns trigger
+language plpgsql
+set search_path=pg_catalog,public,private
+as $$
+declare
+  v_cycle boolean:=false;
+begin
+  if new.supersedes_source_id is null then return new; end if;
+  if new.supersedes_source_id=new.id then raise exception 'CANON_SOURCE_SUPERSEDES_SELF'; end if;
+
+  with recursive chain(id,supersedes_source_id,path) as (
+    select s.id,s.supersedes_source_id,array[s.id]
+    from public.sinjira_canon_sources s
+    where s.id=new.supersedes_source_id
+    union all
+    select p.id,p.supersedes_source_id,c.path||p.id
+    from public.sinjira_canon_sources p
+    join chain c on p.id=c.supersedes_source_id
+    where not p.id=any(c.path)
+  )
+  select exists(select 1 from chain where id=new.id) into v_cycle;
+
+  if v_cycle then raise exception 'CANON_SOURCE_SUPERSEDES_CYCLE'; end if;
+  return new;
+end;
+$$;
+
+create or replace function private.sinjira_guard_canon_source_in_use()
+returns trigger
+language plpgsql
+set search_path=pg_catalog,public,private
+as $$
+declare
+  v_in_use boolean:=false;
+  v_any_use boolean:=false;
+  v_new_qualifies boolean:=false;
+begin
+  select
+    exists(select 1 from public.sinjira_world_locations l where l.source_id=old.id)
+    or exists(select 1 from public.sinjira_world_travel_rules r where r.source_id=old.id)
+    or exists(select 1 from public.sinjira_canon_events e where e.source_id=old.id)
+    or exists(select 1 from public.sinjira_canon_event_characters p where p.source_id=old.id)
+    or exists(select 1 from public.sinjira_story_claims c where c.source_id=old.id)
+  into v_any_use;
+
+  select
+    exists(select 1 from public.sinjira_world_locations l where l.source_id=old.id and l.canon_status='CANON')
+    or exists(select 1 from public.sinjira_world_travel_rules r where r.source_id=old.id and r.canon_status='CANON')
+    or exists(select 1 from public.sinjira_canon_events e where e.source_id=old.id and e.classification in ('CANON','SECRET_AUTEUR'))
+    or exists(
+      select 1
+      from public.sinjira_canon_event_characters p
+      join public.sinjira_canon_events e on e.id=p.event_id
+      where p.source_id=old.id and e.classification in ('CANON','SECRET_AUTEUR')
+    )
+    or exists(select 1 from public.sinjira_story_claims c where c.source_id=old.id and c.verification_status='VERIFIED')
+  into v_in_use;
+
+  v_new_qualifies:=
+    new.verification_status in ('VERIFIED','SECRET_AUTEUR')
+    and new.source_kind in ('roman','bible','author_decision','archive');
+
+  if v_any_use and new.source_key is distinct from old.source_key then
+    raise exception 'CANON_SOURCE_KEY_IMMUTABLE';
+  end if;
+
+  if v_in_use and (
+    new.source_kind is distinct from old.source_kind
+    or new.scope is distinct from old.scope
+    or not v_new_qualifies
+  ) then
+    raise exception 'CANON_SOURCE_IN_USE';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists sinjira_canon_sources_prevent_supersedes_cycle on public.sinjira_canon_sources;
+create trigger sinjira_canon_sources_prevent_supersedes_cycle
+before insert or update of supersedes_source_id on public.sinjira_canon_sources
+for each row execute function private.sinjira_prevent_source_supersedes_cycle();
+
+drop trigger if exists sinjira_canon_sources_guard_authority on public.sinjira_canon_sources;
+create trigger sinjira_canon_sources_guard_authority
+before update of source_key,source_kind,scope,verification_status on public.sinjira_canon_sources
+for each row execute function private.sinjira_guard_canon_source_in_use();
+
+revoke all on function private.sinjira_prevent_source_supersedes_cycle() from public,anon,authenticated,service_role;
+revoke all on function private.sinjira_guard_canon_source_in_use() from public,anon,authenticated,service_role;
+
 create or replace function private.sinjira_source_is_verified(p_source_id uuid)
 returns boolean
 language sql
