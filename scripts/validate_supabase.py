@@ -77,6 +77,14 @@ def main()->int:
       'sinjira_extended_stories_published_metadata_check',
       'sinjira_guard_published_story_update',
       'sinjira_guard_published_story_presence',
+      'sinjira_invalidate_published_extended_stories',
+      'sinjira_world_locations_invalidate_extended_update',
+      'sinjira_world_locations_invalidate_extended_delete',
+      'sinjira_world_travel_invalidate_extended',
+      'sinjira_canon_events_invalidate_extended_insert_delete',
+      'sinjira_canon_events_invalidate_extended_update',
+      'sinjira_canon_event_characters_invalidate_extended',
+      'sinjira_canon_context_invalidate_extended',
     }
     for needle in sorted(extended_contract):
         if needle.lower() not in sql.lower():
