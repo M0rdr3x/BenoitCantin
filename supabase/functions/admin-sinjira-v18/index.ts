@@ -215,12 +215,47 @@ Deno.serve(async(req)=>{
     }
 
     if(a==='list_canon_provenance'){
-      const [sources,claims]=await Promise.all([
+      const [sources,claims,locations,travel,events,presences]=await Promise.all([
         s.from('sinjira_canon_sources').select('*').order('scope').order('book_number',{ascending:true,nullsFirst:false}).order('title'),
-        s.from('sinjira_story_claims').select('*,sinjira_canon_sources(source_key,title,book_number,chapter_reference,passage_reference,verification_status,public_safe),sinjira_extended_stories(title,status,canon_status)').order('story_id').order('claim_key')
+        s.from('sinjira_story_claims').select('*,sinjira_canon_sources(source_key,title,book_number,chapter_reference,passage_reference,verification_status,public_safe),sinjira_extended_stories(title,status,canon_status)').order('story_id').order('claim_key'),
+        s.from('sinjira_world_locations').select('id,name,canon_status,source_id'),
+        s.from('sinjira_world_travel_rules').select('id,canon_status,source_id'),
+        s.from('sinjira_canon_events').select('id,title,classification,source_id'),
+        s.from('sinjira_canon_event_characters').select('event_id,character_id,source_id')
       ]);
-      if(sources.error)throw sources.error;if(claims.error)throw claims.error;
-      return privateJson({ok:true,sources:sources.data||[],claims:claims.data||[]});
+      for(const q of [sources,claims,locations,travel,events,presences])if(q.error)throw q.error;
+
+      const sourceRows=sources.data||[],claimRows=claims.data||[],locationRows=locations.data||[],travelRows=travel.data||[],eventRows=events.data||[],presenceRows=presences.data||[];
+      const eventById=new Map(eventRows.map((e:any)=>[e.id,e]));
+      const usageBySource=new Map<string,any>();
+      const usageFor=(id:any)=>{
+        const key=String(id||'');if(!key)return null;
+        if(!usageBySource.has(key))usageBySource.set(key,{total:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,references:[]});
+        return usageBySource.get(key);
+      };
+      const add=(sourceId:any,kind:string,label:string,canonical=false)=>{
+        const u=usageFor(sourceId);if(!u)return;
+        u.total+=1;u[kind]=(u[kind]||0)+1;u.key_locked=true;if(canonical){u.canonical+=1;u.authority_locked=true}
+        if(u.references.length<20)u.references.push(label);
+      };
+
+      for(const x of locationRows)add(x.source_id,'world_locations',`Lieu : ${x.name||x.id}`,x.canon_status==='CANON');
+      for(const x of travelRows)add(x.source_id,'travel_rules',`Règle de déplacement : ${x.id}`,x.canon_status==='CANON');
+      for(const x of eventRows)add(x.source_id,'events',`Événement : ${x.title||x.id}`,['CANON','SECRET_AUTEUR'].includes(x.classification));
+      for(const x of presenceRows){
+        const ev=eventById.get(x.event_id);
+        add(x.source_id,'presences',`Présence : ${ev?.title||x.event_id}`,['CANON','SECRET_AUTEUR'].includes(ev?.classification||''));
+      }
+      for(const x of claimRows)add(x.source_id,'claims',`Fait : ${x.claim_key}`,x.verification_status==='VERIFIED');
+      for(const newer of sourceRows){
+        if(!newer.supersedes_source_id)continue;
+        const u=usageFor(newer.supersedes_source_id);if(!u)continue;
+        u.total+=1;u.superseded_by+=1;u.key_locked=true;u.authority_locked=true;
+        if(u.references.length<20)u.references.push(`Remplacée par : ${newer.title||newer.source_key}`);
+      }
+
+      const enrichedSources=sourceRows.map((src:any)=>({...src,usage:usageBySource.get(String(src.id))||{total:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,references:[]}}));
+      return privateJson({ok:true,sources:enrichedSources,claims:claimRows});
     }
 
     if(a==='save_canon_source'){
