@@ -55,9 +55,23 @@ Le pgTAP d'inscription enfant passe de **26 à 31 assertions** et couvre explici
 
 Cette onzième migration reste **non revue production**.
 
+### Révocation durable du consentement Junior
+
+Une seconde revue de la chaîne de révocation a identifié qu'un ancien consentement `junior_community_guardian_consents` pouvait rester avec `revoked_at=null` lorsque le lien `guardian_links` était révoqué. Le garde d'accès empêchait bien Junior pendant la révocation, mais une réactivation ultérieure du lien pouvait alors ressusciter silencieusement cet ancien consentement.
+
+La migration forward-only suivante ferme ce scénario :
+
+`20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql`
+
+Un trigger sur `guardian_links` révoque désormais durablement le consentement Junior associé lors d'une révocation **ou suppression** du lien. Après rétablissement de la supervision, Junior reste fermé jusqu'à une **nouvelle activation explicite** du parent/tuteur.
+
+Le pgTAP de révocation Junior passe de **9 à 17 assertions** et prouve la chaîne complète : révocation du lien, révocation du consentement, passage `child_pending`, nouveau code, retour à `child`, Junior toujours fermé, puis réactivation explicite seulement.
+
+Cette douzième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **11 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **12 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -79,6 +93,7 @@ Le snapshot de revue attend exactement **11 migrations locales futures non revue
 | `20260918023000_sinjira_v25_minor_content_policy_compat.sql` | `c0556e3baa218f9529f185010455984a0bc1cd03` |
 | `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` | `f60c6e7a6717f7b5818ff0b9a1ba7b055aa418ff` |
 | `20260919013000_sinjira_v25_child_pending_guardian_redeem.sql` | `983ac4b48f25f29c0c62becb692b9203cdec80a1` |
+| `20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql` | `e14c41364246929054282bccb0e4abc5641b8643` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -123,7 +138,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **11 migrations** dans l’ordre.
+2. Relire les **12 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.

@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(9);
+select plan(17);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values(
@@ -70,6 +70,17 @@ set revoked_at=now()
 where minor_user_id='75000000-0000-4000-8000-000000000011'
   and guardian_user_id='75000000-0000-4000-8000-000000000001';
 
+select ok(
+  exists(
+    select 1
+    from public.junior_community_guardian_consents
+    where minor_user_id='75000000-0000-4000-8000-000000000011'
+      and guardian_user_id='75000000-0000-4000-8000-000000000001'
+      and revoked_at is not null
+  ),
+  'révoquer le lien A révoque durablement son consentement Junior'
+);
+
 select is(
   public.sinjira_age_band('75000000-0000-4000-8000-000000000011'),
   'child',
@@ -104,6 +115,52 @@ select ok(
       and (item->>'enabled')::boolean=false
   ),
   'le tuteur B valide voit l enfant sans hériter du consentement Junior de A'
+);
+
+-- Révoquer aussi B fait passer l'enfant en child_pending.
+update public.guardian_links
+set revoked_at=now()
+where minor_user_id='75000000-0000-4000-8000-000000000011'
+  and guardian_user_id='75000000-0000-4000-8000-000000000002';
+
+select is(
+  public.sinjira_age_band('75000000-0000-4000-8000-000000000011'),
+  'child_pending',
+  'sans lien tuteur actif le compte 11 ans devient child_pending'
+);
+
+-- Un nouveau code de A rétablit la supervision, mais ne doit pas réactiver l'ancien consentement Junior.
+insert into public.guardian_signup_invites(guardian_user_id,invite_code,expires_at)
+values('75000000-0000-4000-8000-000000000001','YOUTH-RECONSENT1',now()+interval '1 day');
+
+select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000011',true);
+select lives_ok(
+  $ select public.redeem_guardian_signup_invite('YOUTH-RECONSENT1') $,
+  'child_pending peut rétablir la supervision avec un nouveau code de A'
+);
+
+select is(
+  public.sinjira_age_band('75000000-0000-4000-8000-000000000011'),
+  'child',
+  'le nouveau code rétablit la bande child'
+);
+
+select ok(
+  not public.sinjira_junior_community_enabled(),
+  'l ancien consentement Junior de A reste révoqué après rétablissement de supervision'
+);
+
+select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000001',true);
+select is(
+  (public.guardian_set_junior_community('75000000-0000-4000-8000-000000000011',true)->>'enabled')::boolean,
+  true,
+  'une nouvelle activation Junior explicite est nécessaire après rétablissement de supervision'
+);
+
+select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000011',true);
+select ok(
+  public.sinjira_junior_community_enabled(),
+  'Junior ne redevient actif qu après la nouvelle activation explicite de A'
 );
 
 select * from finish();
