@@ -117,6 +117,8 @@ def main()->int:
       'sinjira_prevent_canon_source_delete',
       'CANON_SOURCE_DELETE_FORBIDDEN',
       'CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED',
+      'CANON_SOURCE_RETIRE_REFERENCES_REMAIN',
+      'verification_status,supersedes_source_id on public.sinjira_canon_sources',
       'sinjira_demote_extended_story_on_edit',
       'sinjira_demote_story_from_child_change',
       'sinjira_extended_stories_demote_on_edit',
