@@ -179,6 +179,60 @@ for each row execute function private.sinjira_guard_published_story_presence();
 revoke all on function private.sinjira_guard_published_story_update() from public,anon,authenticated,service_role;
 revoke all on function private.sinjira_guard_published_story_presence() from public,anon,authenticated,service_role;
 
+create or replace function private.sinjira_invalidate_published_extended_stories()
+returns trigger
+language plpgsql
+security definer
+set search_path=pg_catalog,public,private
+as $$
+begin
+  update public.sinjira_extended_stories
+  set status='validated',
+      published_at=null
+  where status='published';
+
+  if tg_op='DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
+revoke all on function private.sinjira_invalidate_published_extended_stories() from public,anon,authenticated,service_role;
+
+drop trigger if exists sinjira_world_locations_invalidate_extended_update on public.sinjira_world_locations;
+create trigger sinjira_world_locations_invalidate_extended_update
+after update of parent_id,canon_status on public.sinjira_world_locations
+for each statement execute function private.sinjira_invalidate_published_extended_stories();
+
+drop trigger if exists sinjira_world_locations_invalidate_extended_delete on public.sinjira_world_locations;
+create trigger sinjira_world_locations_invalidate_extended_delete
+after delete on public.sinjira_world_locations
+for each statement execute function private.sinjira_invalidate_published_extended_stories();
+
+drop trigger if exists sinjira_world_travel_invalidate_extended on public.sinjira_world_travel_rules;
+create trigger sinjira_world_travel_invalidate_extended
+after insert or update or delete on public.sinjira_world_travel_rules
+for each statement execute function private.sinjira_invalidate_published_extended_stories();
+
+drop trigger if exists sinjira_canon_events_invalidate_extended_insert_delete on public.sinjira_canon_events;
+create trigger sinjira_canon_events_invalidate_extended_insert_delete
+after insert or delete on public.sinjira_canon_events
+for each statement execute function private.sinjira_invalidate_published_extended_stories();
+
+drop trigger if exists sinjira_canon_events_invalidate_extended_update on public.sinjira_canon_events;
+create trigger sinjira_canon_events_invalidate_extended_update
+after update of starts_at,ends_at,location_id,classification on public.sinjira_canon_events
+for each statement execute function private.sinjira_invalidate_published_extended_stories();
+
+drop trigger if exists sinjira_canon_event_characters_invalidate_extended on public.sinjira_canon_event_characters;
+create trigger sinjira_canon_event_characters_invalidate_extended
+after insert or update or delete on public.sinjira_canon_event_characters
+for each statement execute function private.sinjira_invalidate_published_extended_stories();
+
+drop trigger if exists sinjira_canon_context_invalidate_extended on public.sinjira_canon_context;
+create trigger sinjira_canon_context_invalidate_extended
+after insert or update or delete on public.sinjira_canon_context
+for each statement execute function private.sinjira_invalidate_published_extended_stories();
+
 create or replace view private.sinjira_effective_story_presence as
 select sp.*
 from public.sinjira_story_character_presence sp
