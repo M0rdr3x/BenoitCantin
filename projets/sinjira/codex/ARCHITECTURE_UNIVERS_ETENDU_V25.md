@@ -224,6 +224,35 @@ La fondation technique prévoit maintenant :
 - l’utilisation des faits SECRET_AUTEUR comme garde-fous de continuité sans les divulguer;
 - une confirmation humaine explicite avant toute promotion vers CANON_ETENDU.
 
+### Provenance canonique V25
+
+La mémoire de l’auteur, une note libre ou une réponse générée par une IA ne constitue pas à elle seule une source canonique.
+
+Le **Registre des sources** distingue :
+
+- `roman` — passage des 14 romans;
+- `bible` — entrée structurée de la Bible canonique;
+- `author_decision` — décision éditoriale explicite de Benoit Cantin;
+- `archive` — archive officielle vérifiée;
+- `research` — documentation de travail qui peut aider la conception mais **ne peut pas établir le canon**.
+
+Une source utilisable comme preuve canonique doit être `VERIFIED` ou `SECRET_AUTEUR`, appartenir à un type canonique autorisé et comporter un repère précis : chapitre, passage ou version. Une source de roman vérifiée doit obligatoirement indiquer son chapitre ou sa section.
+
+Chaque Chronique possède ensuite des **faits de provenance**. Un fait peut décrire un ancrage, un personnage, une date, un lieu, un événement, une technologie, une organisation, une relation, un décès ou un déplacement.
+
+Règles :
+
+1. un fait `VERIFIED` doit pointer vers une source canonique vérifiée;
+2. au moins un fait de type `anchor` vérifié est obligatoire avant publication;
+3. aucun fait `PROVISOIRE`, `A_ARBITRER` ou `REJECTED` ne peut rester dans une Chronique publiée;
+4. la période de la source d’ancrage doit correspondre à l’ancrage de la Chronique, sauf source `META` ou récit `MULTI_PERIODE`;
+5. un événement du Calendrier-Monde ne peut utiliser une source d’une autre période;
+6. une présence canonique ne peut remplacer la source de son événement par une source d’une autre période;
+7. modifier l’autorité, la période ou le repère d’une source invalide automatiquement les Chroniques publiées afin qu’elles soient contrôlées de nouveau;
+8. les sources `SECRET_AUTEUR` peuvent protéger la continuité sans être exposées aux membres ou au public.
+
+Le champ texte de référence reste un **instantané lisible**. L’autorité réelle est l’identifiant structuré de la source.
+
 ### Procédure de canonisation d’une Chronique
 
 1. La Chronique est créée en **PROVISOIRE**.
