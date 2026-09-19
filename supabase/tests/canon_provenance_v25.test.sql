@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(28);
+select plan(34);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -109,6 +109,67 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='private' and p.proname='sinjira_source_is_verified' limit 1),
   'les sources research ne peuvent pas prouver le canon'
+);
+
+
+select ok(
+  exists(
+    select 1
+    from pg_constraint c
+    join pg_class t on t.oid=c.conrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_canon_sources'
+      and c.contype='c'
+      and pg_get_constraintdef(c.oid) ilike '%chapter_reference%'
+      and pg_get_constraintdef(c.oid) ilike '%passage_reference%'
+      and pg_get_constraintdef(c.oid) ilike '%source_version%'
+  ),
+  'une source vérifiée doit conserver un repère précis'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CLAIM_SOURCE_SCOPE_MISMATCH%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_require_verified_story_claim' limit 1),
+  'un fait d ancrage bloque une source provenant de la mauvaise période'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_SCOPE_MISMATCH%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_require_verified_provenance' limit 1),
+  'un événement bloque une source provenant de la mauvaise période'
+);
+
+select ok(
+  exists(
+    select 1 from pg_trigger tr
+    join pg_class t on t.oid=tr.tgrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_canon_events'
+      and tr.tgname='sinjira_canon_events_guard_source_scope'
+      and not tr.tgisinternal
+  ),
+  'un changement de période d événement protège les sources des présences existantes'
+);
+
+select ok(
+  exists(
+    select 1 from pg_trigger tr
+    join pg_class t on t.oid=tr.tgrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_canon_events'
+      and tr.tgname='sinjira_canon_events_scope_invalidate_extended'
+      and not tr.tgisinternal
+  ),
+  'un changement de période d événement invalide les publications'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%STORY_PROVENANCE_SCOPE_MISMATCH%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_publish_extended_story' limit 1),
+  'la publication exige un fait d ancrage de la bonne période'
 );
 
 select * from finish();
