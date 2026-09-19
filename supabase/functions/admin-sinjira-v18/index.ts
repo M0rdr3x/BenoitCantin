@@ -107,7 +107,7 @@ Deno.serve(async(req)=>{
 
     if(a==='system_health'){
       const checks:any={};
-      for(const table of ['profiles','game_sessions','novel_comments','character_submissions','characters']){
+      for(const table of ['profiles','game_sessions','novel_comments','character_submissions','characters','sinjira_extended_stories','sinjira_world_locations','sinjira_canon_events']){
         const {count,error}=await s.from(table).select('*',{count:'exact',head:true});
         checks[table]={ok:!error,count:count||0,code:error?'CHECK_FAILED':null};
       }
@@ -198,6 +198,23 @@ Deno.serve(async(req)=>{
       else{const {data,error}=await s.from('sinjira_world_locations').insert(payload).select('*').single();if(error)throw error;saved=data}
       await audit(s,user.id,id?'update_world_location':'create_world_location','sinjira_world_location',saved.id,name,{canon_status:payload.canon_status});
       return privateJson({ok:true,location:saved});
+    }
+
+    if(a==='save_world_travel_rule'){
+      const x=b.rule||{};
+      const id=x.id||null;
+      if(!x.from_location_id||!x.to_location_id||x.from_location_id===x.to_location_id)return privateJson({ok:false,error:'Deux lieux différents sont requis pour une règle de déplacement.',code:'TRAVEL_LOCATIONS_REQUIRED'},400);
+      const minutes=Number(x.minimum_minutes);
+      if(!Number.isFinite(minutes)||minutes<0||minutes>525600)return privateJson({ok:false,error:'Durée minimale de déplacement invalide.',code:'TRAVEL_MINUTES_INVALID'},400);
+      const canon=['PROVISOIRE','CANON','A_ARBITRER'];
+      const payload={from_location_id:x.from_location_id,to_location_id:x.to_location_id,minimum_minutes:Math.round(minutes),travel_mode:String(x.travel_mode||'unspecified').trim().slice(0,120)||'unspecified',valid_from:x.valid_from||null,valid_until:x.valid_until||null,canon_status:canon.includes(x.canon_status)?x.canon_status:'PROVISOIRE',source_reference:String(x.source_reference||'').trim().slice(0,700)||null,notes:String(x.notes||'').slice(0,4000)||null};
+      if(payload.canon_status==='CANON'&&!payload.source_reference)return privateJson({ok:false,error:'Une règle de déplacement CANON doit avoir une source.',code:'TRAVEL_SOURCE_REQUIRED'},400);
+      if(payload.valid_from&&payload.valid_until&&new Date(payload.valid_until).getTime()<new Date(payload.valid_from).getTime())return privateJson({ok:false,error:'La fin de validité ne peut pas précéder le début.',code:'TRAVEL_WINDOW_INVALID'},400);
+      let saved;
+      if(id){const {data,error}=await s.from('sinjira_world_travel_rules').update(payload).eq('id',id).select('*').single();if(error)throw error;saved=data}
+      else{const {data,error}=await s.from('sinjira_world_travel_rules').insert(payload).select('*').single();if(error)throw error;saved=data}
+      await audit(s,user.id,id?'update_world_travel_rule':'create_world_travel_rule','sinjira_world_travel_rule',saved.id,'Règle de déplacement',{minimum_minutes:payload.minimum_minutes,canon_status:payload.canon_status});
+      return privateJson({ok:true,rule:saved});
     }
 
     if(a==='save_canon_event'){
