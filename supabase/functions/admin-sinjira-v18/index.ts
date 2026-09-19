@@ -213,6 +213,66 @@ Deno.serve(async(req)=>{
       return privateJson({ok:true});
     }
 
+    if(a==='list_canon_provenance'){
+      const [sources,claims]=await Promise.all([
+        s.from('sinjira_canon_sources').select('*').order('scope').order('book_number',{ascending:true,nullsFirst:false}).order('title'),
+        s.from('sinjira_story_claims').select('*,sinjira_canon_sources(source_key,title,book_number,chapter_reference,passage_reference,verification_status,public_safe),sinjira_extended_stories(title,status,canon_status)').order('story_id').order('claim_key')
+      ]);
+      if(sources.error)throw sources.error;if(claims.error)throw claims.error;
+      return privateJson({ok:true,sources:sources.data||[],claims:claims.data||[]});
+    }
+
+    if(a==='save_canon_source'){
+      const x=b.source||{};
+      const kinds=['roman','bible','author_decision','canon_event','extended_story','archive','research'];
+      const scopes=['LIVRES_1_12','ORIGINES_13_14','CANON_ETENDU','META'];
+      const statuses=['PROVISOIRE','VERIFIED','SECRET_AUTEUR','A_ARBITRER','RETIRED'];
+      const sourceKey=String(x.source_key||'').trim().toLowerCase().replace(/[^a-z0-9:_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,160);
+      const title=String(x.title||'').trim().slice(0,300);
+      const kind=kinds.includes(x.source_kind)?x.source_kind:'bible';
+      const scope=scopes.includes(x.scope)?x.scope:'META';
+      const status=statuses.includes(x.verification_status)?x.verification_status:'PROVISOIRE';
+      const bookNumber=x.book_number===''||x.book_number==null?null:Number(x.book_number);
+      if(!sourceKey||!title)return privateJson({ok:false,error:'Clé et titre de source requis.',code:'CANON_SOURCE_REQUIRED_FIELDS'},400);
+      if(kind==='roman'&&(!Number.isInteger(bookNumber)||bookNumber<1||bookNumber>14))return privateJson({ok:false,error:'Une source Roman doit indiquer un livre de 1 à 14.',code:'CANON_SOURCE_BOOK_REQUIRED'},400);
+      const payload={source_key:sourceKey,source_kind:kind,scope,title,book_number:kind==='roman'?bookNumber:null,chapter_reference:String(x.chapter_reference||'').trim().slice(0,240)||null,passage_reference:String(x.passage_reference||'').trim().slice(0,500)||null,source_version:String(x.source_version||'').trim().slice(0,120)||null,verification_status:status,public_safe:x.public_safe===true,supersedes_source_id:x.supersedes_source_id||null,notes:String(x.notes||'').slice(0,6000)||null};
+      if(['VERIFIED','SECRET_AUTEUR'].includes(status)&&kind==='roman'&&!payload.chapter_reference)return privateJson({ok:false,error:'Une source de roman vérifiée doit indiquer un chapitre ou une section précise.',code:'CANON_SOURCE_CHAPTER_REQUIRED'},400);
+      let saved;
+      if(x.id){const {data,error}=await s.from('sinjira_canon_sources').update(payload).eq('id',x.id).select('*').single();if(error)throw error;saved=data}
+      else{const {data,error}=await s.from('sinjira_canon_sources').insert(payload).select('*').single();if(error)throw error;saved=data}
+      await audit(s,user.id,x.id?'update_canon_source':'create_canon_source','sinjira_canon_source',saved.id,title,{source_kind:kind,scope,verification_status:status});
+      return privateJson({ok:true,source:saved});
+    }
+
+    if(a==='save_story_claim'){
+      const x=b.claim||{};
+      if(!x.story_id)return privateJson({ok:false,error:'Chronique requise pour ce fait.',code:'STORY_REQUIRED'},400);
+      const {data:story,error:storyError}=await s.from('sinjira_extended_stories').select('id,status').eq('id',x.story_id).maybeSingle();if(storyError)throw storyError;if(!story)return privateJson({ok:false,error:'Chronique introuvable.',code:'STORY_NOT_FOUND'},404);if(story.status==='published')throw new Error('STORY_UNPUBLISH_FIRST');
+      const types=['anchor','character','time','location','event','technology','organization','relationship','death','travel','other'];
+      const statuses=['PROVISOIRE','VERIFIED','A_ARBITRER','REJECTED'];
+      const claimKey=String(x.claim_key||'').trim().toLowerCase().replace(/[^a-z0-9:_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,160);
+      const statement=String(x.statement||'').trim().slice(0,12000);
+      const verificationStatus=statuses.includes(x.verification_status)?x.verification_status:'PROVISOIRE';
+      const source=await canonSource(x.source_id);
+      if(!claimKey||!statement)return privateJson({ok:false,error:'Clé et formulation du fait requises.',code:'CLAIM_REQUIRED_FIELDS'},400);
+      if(verificationStatus==='VERIFIED'&&!source)return privateJson({ok:false,error:'Un fait vérifié doit citer une source du Registre.',code:'CLAIM_SOURCE_REQUIRED'},400);
+      if(verificationStatus==='VERIFIED'&&!['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||''))return privateJson({ok:false,error:'La source doit être vérifiée avant le fait.',code:'CLAIM_SOURCE_NOT_VERIFIED'},409);
+      const payload={story_id:x.story_id,claim_key:claimKey,claim_type:types.includes(x.claim_type)?x.claim_type:'other',statement,source_id:source?.id||null,verification_status:verificationStatus,author_note:String(x.author_note||'').slice(0,4000)||null};
+      let saved;
+      if(x.id){const {data,error}=await s.from('sinjira_story_claims').update(payload).eq('id',x.id).select('*').single();if(error)throw error;saved=data}
+      else{const {data,error}=await s.from('sinjira_story_claims').insert(payload).select('*').single();if(error)throw error;saved=data}
+      await audit(s,user.id,x.id?'update_story_claim':'create_story_claim','sinjira_story_claim',saved.id,statement.slice(0,180),{story_id:x.story_id,claim_key:claimKey,verification_status:verificationStatus,source_id:source?.id||null});
+      return privateJson({ok:true,claim:saved});
+    }
+
+    if(a==='remove_story_claim'){
+      if(!b.claim_id)return privateJson({ok:false,error:'Fait de provenance requis.',code:'CLAIM_REQUIRED'},400);
+      const {data:claim,error:lookupError}=await s.from('sinjira_story_claims').select('id,story_id,claim_key').eq('id',b.claim_id).maybeSingle();if(lookupError)throw lookupError;if(!claim)return privateJson({ok:true});
+      const {data:story,error:storyError}=await s.from('sinjira_extended_stories').select('status').eq('id',claim.story_id).maybeSingle();if(storyError)throw storyError;if(story?.status==='published')throw new Error('STORY_UNPUBLISH_FIRST');
+      const {error}=await s.from('sinjira_story_claims').delete().eq('id',claim.id);if(error)throw error;
+      await audit(s,user.id,'remove_story_claim','sinjira_story_claim',claim.id,'Fait de provenance retiré',{story_id:claim.story_id,claim_key:claim.claim_key});
+      return privateJson({ok:true});
+    }
     if(a==='list_world_continuity'){
       const [locations,events,travel]=await Promise.all([
         s.from('sinjira_world_locations').select('*').order('name'),
