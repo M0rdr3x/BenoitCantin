@@ -168,6 +168,7 @@ begin
     or new.chapter_reference is distinct from old.chapter_reference
     or new.passage_reference is distinct from old.passage_reference
     or new.source_version is distinct from old.source_version
+    or new.supersedes_source_id is distinct from old.supersedes_source_id
     or not v_new_qualifies
   ) then
     raise exception 'CANON_SOURCE_IN_USE';
