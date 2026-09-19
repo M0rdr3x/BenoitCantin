@@ -227,10 +227,11 @@ Deno.serve(async(req)=>{
 
       const sourceRows=sources.data||[],claimRows=claims.data||[],locationRows=locations.data||[],travelRows=travel.data||[],eventRows=events.data||[],presenceRows=presences.data||[];
       const eventById=new Map(eventRows.map((e:any)=>[e.id,e]));
+      const sourceById=new Map(sourceRows.map((src:any)=>[src.id,src]));
       const usageBySource=new Map<string,any>();
       const usageFor=(id:any)=>{
         const key=String(id||'');if(!key)return null;
-        if(!usageBySource.has(key))usageBySource.set(key,{total:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,references:[]});
+        if(!usageBySource.has(key))usageBySource.set(key,{total:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,retirement_allowed:false,references:[]});
         return usageBySource.get(key);
       };
       const add=(sourceId:any,kind:string,label:string,canonical=false)=>{
@@ -249,12 +250,17 @@ Deno.serve(async(req)=>{
       for(const x of claimRows)add(x.source_id,'claims',`Fait : ${x.claim_key}`,x.verification_status==='VERIFIED');
       for(const newer of sourceRows){
         if(!newer.supersedes_source_id)continue;
+        const oldSource=sourceById.get(newer.supersedes_source_id);
         const u=usageFor(newer.supersedes_source_id);if(!u)continue;
+        const replacementVerified=['VERIFIED','SECRET_AUTEUR'].includes(newer.verification_status)
+          && ['roman','bible','author_decision','archive'].includes(newer.source_kind)
+          && oldSource?.scope===newer.scope;
         u.total+=1;u.superseded_by+=1;u.key_locked=true;u.authority_locked=true;
-        if(u.references.length<20)u.references.push(`Remplacée par : ${newer.title||newer.source_key}`);
+        if(replacementVerified)u.retirement_allowed=true;
+        if(u.references.length<20)u.references.push(`Remplacée par : ${newer.title||newer.source_key}${replacementVerified?' · retrait RETIRED autorisé':''}`);
       }
 
-      const enrichedSources=sourceRows.map((src:any)=>({...src,usage:usageBySource.get(String(src.id))||{total:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,references:[]}}));
+      const enrichedSources=sourceRows.map((src:any)=>({...src,usage:usageBySource.get(String(src.id))||{total:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,retirement_allowed:false,references:[]}}));
       return privateJson({ok:true,sources:enrichedSources,claims:claimRows});
     }
 
