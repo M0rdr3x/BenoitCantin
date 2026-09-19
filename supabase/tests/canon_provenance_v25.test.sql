@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(41);
+select plan(47);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -230,6 +230,41 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
   'le repère exact d une source canonique utilisée est immuable'
+);
+
+
+select has_function('private','sinjira_story_provenance_report',array['uuid'],
+  'le rapport privé de provenance d une Chronique existe');
+
+select ok(not has_function_privilege('authenticated','private.sinjira_story_provenance_report(uuid)','EXECUTE'),
+  'le rapport privé de provenance n est pas directement invocable par le navigateur');
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%STORY_PROVENANCE_REQUIRED%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_promote_extended_story' limit 1),
+  'la promotion CANON_ETENDU exige un fait d ancrage vérifié'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%STORY_PROVENANCE_INCOMPLETE%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_promote_extended_story' limit 1),
+  'la promotion CANON_ETENDU bloque tout fait de provenance non résolu'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%STORY_PROVENANCE_SCOPE_MISMATCH%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_promote_extended_story' limit 1),
+  'la promotion CANON_ETENDU exige un ancrage de la bonne période'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%sinjira_story_provenance_report%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_publish_extended_story' limit 1),
+  'la publication réutilise le même rapport de provenance que la canonisation'
 );
 
 select * from finish();
