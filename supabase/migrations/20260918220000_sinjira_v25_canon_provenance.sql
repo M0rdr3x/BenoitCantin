@@ -113,6 +113,7 @@ declare
   v_source_id uuid;
   v_required boolean:=false;
   v_event_classification text;
+  v_source_scope text;
 begin
   if tg_table_name='sinjira_world_locations' then
     v_source_id:=new.source_id;
@@ -141,6 +142,15 @@ begin
     raise exception 'CANON_SOURCE_NOT_VERIFIED';
   end if;
 
+  if v_source_id is not null then
+    select s.scope into v_source_scope from public.sinjira_canon_sources s where s.id=v_source_id;
+    if tg_table_name='sinjira_canon_events'
+       and v_source_scope is distinct from 'META'
+       and v_source_scope is distinct from new.source_scope then
+      raise exception 'CANON_SOURCE_SCOPE_MISMATCH';
+    end if;
+  end if;
+
   return new;
 end;
 $$;
@@ -149,8 +159,21 @@ create or replace function private.sinjira_require_verified_story_claim()
 returns trigger
 language plpgsql
 set search_path=pg_catalog,public,private
-as $$
+as $
+declare
+  v_story_scope text;
+  v_source_scope text;
 begin
+  if new.source_id is not null and new.claim_type='anchor' then
+    select s.anchor_scope into v_story_scope from public.sinjira_extended_stories s where s.id=new.story_id;
+    select s.scope into v_source_scope from public.sinjira_canon_sources s where s.id=new.source_id;
+    if v_story_scope<>'MULTI_PERIODE'
+       and v_source_scope<>'META'
+       and v_story_scope is distinct from v_source_scope then
+      raise exception 'CLAIM_SOURCE_SCOPE_MISMATCH';
+    end if;
+  end if;
+
   if new.verification_status='VERIFIED' then
     if new.source_id is null then raise exception 'CLAIM_SOURCE_REQUIRED'; end if;
     if not private.sinjira_source_is_verified(new.source_id) then
@@ -159,7 +182,7 @@ begin
   end if;
   return new;
 end;
-$$;
+$;
 
 create or replace function private.sinjira_guard_published_story_claim()
 returns trigger
@@ -286,6 +309,23 @@ begin
       and private.sinjira_source_is_verified(c.source_id)
   ) then
     raise exception 'STORY_PROVENANCE_REQUIRED';
+  end if;
+
+  if not exists(
+    select 1
+    from public.sinjira_story_claims c
+    join public.sinjira_canon_sources src on src.id=c.source_id
+    where c.story_id=p_story_id
+      and c.claim_type='anchor'
+      and c.verification_status='VERIFIED'
+      and private.sinjira_source_is_verified(c.source_id)
+      and (
+        v_story.anchor_scope='MULTI_PERIODE'
+        or src.scope='META'
+        or src.scope=v_story.anchor_scope
+      )
+  ) then
+    raise exception 'STORY_PROVENANCE_SCOPE_MISMATCH';
   end if;
 
   if exists(
