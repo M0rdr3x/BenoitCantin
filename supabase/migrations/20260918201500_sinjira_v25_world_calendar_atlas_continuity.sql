@@ -246,20 +246,30 @@ begin
   into v_conflicts,v_blocking
   from ext;
 
-  -- Avertissements : une période est définie mais le lieu canonique n'est pas encore normalisé.
+  -- Avertissements bloquants pour la promotion : la continuité ne peut pas être garantie.
   with warn as (
     select jsonb_build_object(
-      'type','location_unresolved',
+      'type',case
+        when sp.starts_at is null or sp.ends_at is null then 'time_unresolved'
+        when sp.location_id is null then 'location_unresolved'
+        else 'continuity_unresolved'
+      end,
       'character_id',sp.character_id,
       'story_presence_id',sp.id,
       'location_name',sp.location_name,
-      'message','La présence est datée mais sans location_id Atlas; les collisions géographiques ne peuvent pas être garanties.'
+      'message',case
+        when sp.starts_at is null or sp.ends_at is null then 'La présence doit avoir un début et une fin avant canonisation.'
+        when sp.location_id is null then 'Le lieu doit être relié à l’Atlas canonique avant canonisation.'
+        else 'La continuité de cette présence reste incomplète.'
+      end
     ) as item
     from public.sinjira_story_character_presence sp
     where sp.story_id=p_story_id
-      and sp.starts_at is not null
-      and sp.ends_at is not null
-      and sp.location_id is null
+      and (
+        sp.starts_at is null
+        or sp.ends_at is null
+        or sp.location_id is null
+      )
   )
   select coalesce(jsonb_agg(item),'[]'::jsonb) into v_warnings from warn;
 
@@ -311,6 +321,9 @@ begin
   v_report:=private.sinjira_story_continuity_report(p_story_id);
   if coalesce((v_report->>'blocking_conflicts')::integer,0)>0 then
     raise exception 'STORY_CONTINUITY_CONFLICT';
+  end if;
+  if coalesce((v_report->>'warnings')::integer,0)>0 then
+    raise exception 'STORY_CONTINUITY_INCOMPLETE';
   end if;
 
   update public.sinjira_extended_stories
