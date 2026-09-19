@@ -91,7 +91,7 @@ function toIso(value,zone=''){
  const roundTrip=toLocalInput(result.toISOString(),zone);return roundTrip===String(value)?result.toISOString():null;
 }
 let canonSourcesCache=[],storyClaimsCache=[];
-function canonSourceLabel(src){if(!src)return '';const bits=[src.book_number?'Livre '+src.book_number:'',src.chapter_reference||'',src.passage_reference||''].filter(Boolean);return (src.title||src.source_key||'Source')+(bits.length?' — '+bits.join(' · '):'')+' · '+(src.verification_status||'PROVISOIRE')}
+function canonSourceLabel(src){if(!src)return '';const bits=[src.book_number?'Livre '+src.book_number:'',src.chapter_reference||'',src.passage_reference||''].filter(Boolean);return (src.title||src.source_key||'Source')+(bits.length?' — '+bits.join(' · '):'')+' · '+(src.source_kind||'source')+' · '+(src.verification_status||'PROVISOIRE')}
 function canonSourceOptions(placeholder='À relier'){return `<option value="">${escapeHtml(placeholder)}</option>`+canonSourcesCache.map(src=>`<option value="${src.id}">${escapeHtml(canonSourceLabel(src))}</option>`).join('')}
 function refreshCanonSourceSelects(){
  for(const sel of document.querySelectorAll('[data-canon-source-select],[data-story-claim-source]')){const old=sel.value;sel.innerHTML=canonSourceOptions(sel.hasAttribute('data-story-claim-source')?'Choisir une source':'À relier au Registre');if(old)sel.value=old}
