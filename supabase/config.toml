@@ -26,9 +26,13 @@ verify_jwt = false
 [functions.get-document-url]
 verify_jwt = false
 
-# Livre I : fonction strictement privée, réservée aux comptes authentifiés.
-# L'Edge Function applique en plus un entitlement produit et un drapeau serveur explicite.
+# Livre I : fonctions strictement privées, réservées aux comptes authentifiés.
+# L'Edge Function applique en plus un entitlement produit OU le rôle propriétaire
+# vérifié côté serveur, ainsi qu'un drapeau serveur explicite d'activation.
 [functions.get-private-book-url]
+verify_jwt = true
+
+[functions.get-private-book-reading-url]
 verify_jwt = true
 
 [functions.submit-game-contribution]

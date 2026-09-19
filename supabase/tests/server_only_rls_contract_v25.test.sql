@@ -82,6 +82,12 @@ insert into expected_server_only_rls(schema_name,table_name,presence_scope,acces
   -- même pour service_role.
   ('private','social_live_room_invites','reconstruction_only','strict_no_direct'),
   ('private','social_live_room_share_codes','reconstruction_only','strict_no_direct'),
+  -- Communauté Junior : tables RLS sans policy et sans accès navigateur.
+  -- Les RPC SECURITY DEFINER bornées sont l'unique frontière client; service_role
+  -- conserve le CRUD interne nécessaire aux opérations serveur.
+  ('public','junior_community_comments','reconstruction_only','service_role_allowed'),
+  ('public','junior_community_guardian_consents','reconstruction_only','service_role_allowed'),
+  ('public','junior_community_posts','reconstruction_only','service_role_allowed'),
   ('public','content_versions','reconstruction_only','service_role_allowed'),
   ('public','security_push_receipt_queue','reconstruction_only','service_role_allowed');
 
@@ -89,8 +95,8 @@ select plan(12);
 
 select is(
   (select count(*)::int from expected_server_only_rls),
-  53,
-  'le contrat classifie les 49 tables production et quatre tables RLS reconstruction-only'
+  56,
+  'le contrat classifie les 49 tables production et sept tables RLS reconstruction-only'
 );
 
 select is(
@@ -101,8 +107,8 @@ select is(
 
 select is(
   (select count(*)::int from expected_server_only_rls where presence_scope='reconstruction_only'),
-  4,
-  'quatre tables RLS sans policy sont explicitement propres à la reconstruction locale'
+  7,
+  'sept tables RLS sans policy sont explicitement propres à la reconstruction locale'
 );
 
 select is(
@@ -111,7 +117,7 @@ select is(
     from expected_server_only_rls
     where presence_scope='reconstruction_only'
   ),
-  'private.social_live_room_invites, private.social_live_room_share_codes, public.content_versions, public.security_push_receipt_queue'::text,
+  'private.social_live_room_invites, private.social_live_room_share_codes, public.content_versions, public.junior_community_comments, public.junior_community_guardian_consents, public.junior_community_posts, public.security_push_receipt_queue'::text,
   'les exceptions RLS reconstruction-only sont explicitement nommées'
 );
 
@@ -123,8 +129,8 @@ select is(
 
 select is(
   (select count(*)::int from expected_server_only_rls where access_class='service_role_allowed'),
-  37,
-  '35 tables production et deux tables reconstruction-only peuvent conserver un CRUD direct service_role explicitement autorisé'
+  40,
+  '35 tables production et cinq tables reconstruction-only peuvent conserver un CRUD direct service_role explicitement autorisé'
 );
 
 select is(

@@ -67,6 +67,7 @@ def run() -> None:
         )
         page = context.new_page()
         page_errors = []
+        child_errors = []
         register_error_capture(page, page_errors)
 
         for route in PUBLIC_ROUTES:
@@ -130,6 +131,71 @@ def run() -> None:
 
             page.goto(urljoin(BASE_URL, "compte/inscription.html"), wait_until="domcontentloaded", timeout=30_000)
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à l'inscription")
+
+            # Cette preuve fonctionnelle du formulaire enfant s'exécute dans un contexte isolé.
+            # L'import Supabase distant est remplacé par un client inerte : aucun réseau de
+            # production, aucune session réelle et aucune création de compte ne sont utilisés.
+            child_context = browser.new_context(
+                locale="fr-CA",
+                viewport={"width": 1280, "height": 900},
+                reduced_motion="reduce",
+            )
+            child_page = child_context.new_page()
+            register_error_capture(child_page, child_errors)
+            child_page.route(
+                "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/javascript",
+                    headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"},
+                    body="""
+export function createClient(){
+  return {
+    auth: {
+      getSession: async () => ({data:{session:null},error:null}),
+      signOut: async () => ({error:null}),
+      signUp: async () => ({data:{session:null},error:new Error('TEST_SIGNUP_DISABLED')})
+    }
+  };
+}
+""",
+                ),
+            )
+            response = child_page.goto(urljoin(BASE_URL, "compte/inscription.html"), wait_until="domcontentloaded", timeout=30_000)
+            assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: inscription enfant locale inaccessible")
+            assert_true(child_page.locator('[data-signup-session-warning]').count() == 1, f"{BROWSER_NAME}: garde de session inscription absente")
+            assert_true(child_page.locator('[data-signup-session-signout]').count() == 1, f"{BROWSER_NAME}: action de séparation de session absente")
+
+            # Régression réelle du parcours signalé par un parent : une date donnant exactement
+            # 11 ans doit ouvrir le parcours enfant supervisé, exiger le code adulte et masquer
+            # le Programme Contributeur. Le calcul se fait dans le même fuseau que le navigateur.
+            child_birth = child_page.evaluate(
+                """() => {
+                    const d = new Date();
+                    d.setFullYear(d.getFullYear() - 11);
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${day}`;
+                }"""
+            )
+            child_page.locator('#signup-birth-date').fill(child_birth)
+            child_page.wait_for_function(
+                """() => {
+                    const guide = document.querySelector('[data-child-guardian-guide]');
+                    const wrap = document.querySelector('[data-guardian-code-wrap]');
+                    const code = document.querySelector('[data-guardian-code]');
+                    const contributor = document.querySelector('[data-contributor-panel]');
+                    return guide && !guide.hidden && wrap && !wrap.hidden && code && code.required === true && contributor && contributor.hidden;
+                }""",
+                timeout=10_000,
+            )
+            assert_true(child_page.locator('[data-child-guardian-guide]').is_visible(), f"{BROWSER_NAME}: guide parental 11 ans absent")
+            assert_true(child_page.locator('[data-guardian-code-wrap]').is_visible(), f"{BROWSER_NAME}: champ code parental 11 ans absent")
+            assert_true(child_page.locator('[data-guardian-code]').get_attribute('required') is not None, f"{BROWSER_NAME}: code parental 11 ans non obligatoire")
+            assert_true(child_page.locator('[data-contributor-panel]').is_hidden(), f"{BROWSER_NAME}: Programme Contributeur exposé à 11 ans")
+            child_context.close()
+
             page.goto(urljoin(BASE_URL, "compte/reinitialiser-mot-de-passe.html"), wait_until="domcontentloaded", timeout=30_000)
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à la réinitialisation")
 
@@ -240,7 +306,7 @@ def run() -> None:
         has_robots = 'name="robots"' in account_html or "name='robots'" in account_html
         assert_true(has_robots and "noindex" in account_html, "Page compte non protégée contre l’indexation")
 
-        all_errors = page_errors + mobile_errors
+        all_errors = page_errors + child_errors + mobile_errors
         assert_true(not all_errors, f"{BROWSER_NAME}: erreurs JavaScript navigateur: " + " | ".join(all_errors[:5]))
         context.close()
         browser.close()

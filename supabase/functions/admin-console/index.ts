@@ -33,8 +33,26 @@ async function readBoundedJson(req:Request){
     const declared=Number(declaredRaw);
     if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   }
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+  const reader=req.body?.getReader();
+  if(!reader)throw new Error('INVALID_JSON');
+  const chunks:Uint8Array[]=[];
+  let total=0;
+  while(true){
+    const {done,value}=await reader.read();
+    if(done)break;
+    if(!value)continue;
+    total+=value.byteLength;
+    if(total>MAX_REQUEST_BYTES){
+      try{await reader.cancel()}catch{/* Le rejet de taille reste prioritaire. */}
+      throw new Error('REQUEST_TOO_LARGE');
+    }
+    chunks.push(value);
+  }
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
+  let raw:string;
+  try{raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes)}catch{throw new Error('INVALID_JSON')}
   let body:unknown;
   try{body=JSON.parse(raw)}catch{throw new Error('INVALID_JSON')}
   if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('INVALID_JSON');
@@ -50,7 +68,7 @@ Deno.serve(async(req)=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:corsHeaders});
   if(req.method!=='POST')return privateJson({ok:false,error:'Méthode non autorisée.',code:'METHOD_NOT_ALLOWED'},405);
   try{
-    const {user,service}=await requiredAdmin(req);
+    const {user,service,aal}=await requiredAdmin(req);
     const body=await readBoundedJson(req),action=String(body?.action||'');
 
     if(action==='dashboard'){
@@ -90,6 +108,31 @@ Deno.serve(async(req)=>{
     if(action==='list_documents'){
       const {data,error}=await service.from('documents').select('*,projects(name,slug)').order('created_at',{ascending:false});
       if(error)throw error;return privateJson({ok:true,documents:data||[]});
+    }
+
+    if(action==='set_child_access_review'){
+      if(aal.nextLevel!=='aal2')return privateJson({ok:false,error:'Un second facteur est requis avant une décision de contenu 11–12.',code:'MFA_SETUP_REQUIRED'},403);
+      if(aal.currentLevel!=='aal2')return privateJson({ok:false,error:'Une vérification MFA est requise avant une décision de contenu 11–12.',code:'MFA_REQUIRED'},403);
+      const targetType=String(body.target_type||'');
+      const targetId=String(body.target_id||'').trim();
+      const childStatus=String(body.child_access_status||'');
+      const table=targetType==='project'?'projects':targetType==='document'?'documents':'';
+      if(!table||!targetId||!['unreviewed','approved_11_12','blocked_11_12'].includes(childStatus)){
+        return privateJson({ok:false,error:'Décision 11–12 invalide.'},400);
+      }
+      const update:any={child_access_status:childStatus};
+      if(childStatus==='unreviewed'){
+        update.child_access_reviewed_at=null;
+        update.child_access_reviewed_by=null;
+        update.child_access_review_note=null;
+      }else{
+        update.child_access_reviewed_at=new Date().toISOString();
+        update.child_access_reviewed_by=user.id;
+        update.child_access_review_note=String(body.review_note||'').trim().slice(0,1200)||null;
+      }
+      const {data,error}=await service.from(table).update(update).eq('id',targetId).select('*').single();
+      if(error)throw error;
+      return privateJson({ok:true,target_type:targetType,item:data});
     }
 
     if(action==='prepare_document_upload'){

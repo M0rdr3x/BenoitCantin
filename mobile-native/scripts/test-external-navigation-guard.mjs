@@ -28,6 +28,11 @@ const vaultPathLine = requireSlice(
   '\n',
   'chemin Registre personnel',
 );
+const childBoundary = requireSlice(
+  'const CHILD_ACCOUNT_REDIRECTS = new Map<string, string>([',
+  '\nfunction configuredWebOrigin',
+  'frontière routes Junior',
+);
 const guardFunctions = requireSlice(
   'function containsSensitiveExternalAssignment(value: string)',
   '\nfunction isVaultUrl',
@@ -39,9 +44,9 @@ const shouldStartFunction = requireSlice(
   'décision shouldStart',
 );
 
-const runtimeSource = `${protocolLine}\n${sensitiveParams}\n${vaultPathLine}\n${guardFunctions}\n` +
+const runtimeSource = `${protocolLine}\n${sensitiveParams}\n${vaultPathLine}\n${childBoundary}\n${guardFunctions}\n` +
   `function buildShouldStartHarness(deps: any) {\n` +
-  `  const { allowedHosts, isVaultUrl, vaultLocalGateUntilRef, navigate, setNativeMessage, Linking } = deps;\n` +
+  `  const { allowedHosts, isVaultUrl, vaultLocalGateUntilRef, navigate, navigateToUrl, childAccess, ORIGIN, setNativeMessage, Linking } = deps;\n` +
   `${shouldStartFunction}\n` +
   `  return shouldStart;\n` +
   `}\n` +
@@ -93,10 +98,12 @@ function externalPolicyAllows(rawUrl) {
     && !hasSensitiveExternalMaterial(parsed);
 }
 
-function createShouldStartHarness({ vaultGateOpen = true, linkingRejects = false } = {}) {
+function createShouldStartHarness({ vaultGateOpen = true, linkingRejects = false, childAccess = 'nonchild' } = {}) {
   const messages = [];
   const openedUrls = [];
   const navigatedPaths = [];
+  const redirectedUrls = [];
+  const ORIGIN = 'https://www.benoitcantin.com';
   const allowedHosts = new Set([
     'www.benoitcantin.com',
     'benoitcantin.com',
@@ -116,6 +123,9 @@ function createShouldStartHarness({ vaultGateOpen = true, linkingRejects = false
   const navigate = async (path) => {
     navigatedPaths.push(path);
   };
+  const navigateToUrl = async (url, tab) => {
+    redirectedUrls.push({ url, tab });
+  };
   const setNativeMessage = (message) => {
     messages.push(message);
   };
@@ -130,10 +140,13 @@ function createShouldStartHarness({ vaultGateOpen = true, linkingRejects = false
     isVaultUrl,
     vaultLocalGateUntilRef,
     navigate,
+    navigateToUrl,
+    childAccess,
+    ORIGIN,
     setNativeMessage,
     Linking,
   });
-  return { shouldStart, messages, openedUrls, navigatedPaths };
+  return { shouldStart, messages, openedUrls, navigatedPaths, redirectedUrls };
 }
 
 for (const protocol of ['https:', 'mailto:', 'tel:']) {
@@ -301,6 +314,44 @@ for (const rawUrl of allowedUrls) {
 }
 
 {
+  const harness = createShouldStartHarness({ childAccess: 'child' });
+  assert.equal(
+    harness.shouldStart({ url: 'https://www.sinjira.com/compte/messages.html' }),
+    false,
+    'un compte Junior connu ne doit pas charger Messages avant la redirection',
+  );
+  assert.equal(harness.redirectedUrls.length, 1);
+  assert.equal(
+    harness.redirectedUrls[0].url,
+    'https://www.benoitcantin.com/compte/communaute-junior.html?from=restricted&module=messages.html',
+  );
+  assert.equal(harness.redirectedUrls[0].tab, 'junior');
+}
+
+{
+  const harness = createShouldStartHarness({ childAccess: 'child' });
+  assert.equal(
+    harness.shouldStart({ url: 'https://www.sinjira.com/compte/communaute.html' }),
+    false,
+    'la communauté générale doit être réécrite avant chargement pour un compte Junior connu',
+  );
+  assert.equal(
+    harness.redirectedUrls[0].url,
+    'https://www.benoitcantin.com/compte/communaute-junior.html',
+  );
+}
+
+{
+  const harness = createShouldStartHarness({ childAccess: 'child' });
+  assert.equal(
+    harness.shouldStart({ url: 'https://www.sinjira.com/compte/profil.html' }),
+    true,
+    'une route explicitement autorisée au compte Junior doit rester dans la WebView',
+  );
+  assert.deepEqual(harness.redirectedUrls, []);
+}
+
+{
   const harness = createShouldStartHarness();
   assert.equal(
     harness.shouldStart({ url: 'https://user:password@sinjira.com/compte/profil.html' }),
@@ -408,5 +459,5 @@ console.log(
   `OK frontière navigation V25: ${blockedUrls.length} cas dangereux refusés, ` +
   `${allowedUrls.length} cas légitimes permis, ${blockedMailtoUrls.length} formes mailto dangereuses bloquées, ` +
   `${blockedTelephoneUrls.length} formes tel dangereuses bloquées, ` +
-  `et shouldStart exécuté avec ses effets de bord critiques sur le code réel de App.tsx.`,
+  `avec redirections Junior préchargement et shouldStart exécuté avec ses effets de bord critiques sur le code réel de App.tsx.`,
 );

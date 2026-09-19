@@ -21,8 +21,13 @@ function privateJson(data: unknown, status = 200) {
 async function readBoundedJson(req: Request) {
   const type = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
   if (type !== 'application/json') throw new Error('JSON_REQUIRED');
-  const declared = Number(req.headers.get('content-length') || 0);
-  if (Number.isFinite(declared) && declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
+  const rawLength = req.headers.get('content-length');
+  if (rawLength !== null) {
+    const normalizedLength = rawLength.trim();
+    if (!/^\d+$/.test(normalizedLength)) throw new Error('REQUEST_TOO_LARGE');
+    const declared = Number(normalizedLength);
+    if (!Number.isSafeInteger(declared) || declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
+  }
   if (!req.body) throw new Error('INVALID_JSON');
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -43,8 +48,11 @@ async function readBoundedJson(req: Request) {
   const bytes = new Uint8Array(total);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  let raw: string;
+  try { raw = new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+  catch { throw new Error('INVALID_JSON'); }
   try {
-    const parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error();
     return parsed as Record<string, unknown>;
   } catch { throw new Error('INVALID_JSON'); }
@@ -89,7 +97,7 @@ function errorCode(error: unknown) {
   const code = error instanceof Error ? error.message : '';
   return new Set(['AUTH_REQUIRED','MFA_SETUP_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE','JSON_REQUIRED',
     'REQUEST_TOO_LARGE','INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','SECURITY_DECISION_INVALID',
-    'PERSONAL_AI_SOURCE_FORBIDDEN','PERSONAL_AI_LANGUAGE_INVALID']).has(code)
+    'PERSONAL_AI_SOURCE_FORBIDDEN','PERSONAL_AI_LANGUAGE_INVALID','PERSONAL_AI_NOT_AVAILABLE_11_12','PERSONAL_AI_ACCOUNT_RESTRICTED','PERSONAL_AI_AGE_STATE_UNAVAILABLE']).has(code)
     ? code : 'PERSONAL_AI_OPERATION_REFUSED';
 }
 
@@ -98,6 +106,12 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return privateJson({ ok:false, code:'METHOD_NOT_ALLOWED', error:'Méthode non autorisée.' }, 405);
   try {
     const { user, service } = await requiredPersonalAiUser(req);
+    const { data:ageBand, error:ageBandError } = await service.rpc('sinjira_age_band',{p_user_id:user.id});
+    if (ageBandError) throw new Error('PERSONAL_AI_AGE_STATE_UNAVAILABLE');
+    const normalizedAgeBand=String(ageBand||'unverified');
+    if (normalizedAgeBand === 'child') throw new Error('PERSONAL_AI_NOT_AVAILABLE_11_12');
+    if (!['adult','youth'].includes(normalizedAgeBand)) throw new Error('PERSONAL_AI_ACCOUNT_RESTRICTED');
+
     const body = await readBoundedJson(req);
     rejectClientIdentity(body);
     const deviceKey = safeText(body.device_key, 128);
@@ -157,7 +171,9 @@ Deno.serve(async (req) => {
     if (code==='AUTH_REQUIRED') return privateJson({ok:false,code,error:'Connexion requise.'},401);
     if (code==='MFA_SETUP_REQUIRED') return privateJson({ok:false,code,error:'Configurez une authentification renforcée avant d’utiliser Mon IA.'},403);
     if (code==='MFA_REQUIRED') return privateJson({ok:false,code,error:'Une vérification MFA récente est requise.'},403);
-    if (code==='MFA_STATE_UNAVAILABLE'||code==='SECURITY_DECISION_INVALID') return privateJson({ok:false,code,error:'La protection de Mon IA est temporairement indisponible.'},503);
+    if (code==='MFA_STATE_UNAVAILABLE'||code==='SECURITY_DECISION_INVALID'||code==='PERSONAL_AI_AGE_STATE_UNAVAILABLE') return privateJson({ok:false,code,error:'La protection de Mon IA est temporairement indisponible.'},503);
+    if (code==='PERSONAL_AI_NOT_AVAILABLE_11_12') return privateJson({ok:false,code,error:'Mon IA n’est pas disponible pour les comptes de 11–12 ans.'},403);
+    if (code==='PERSONAL_AI_ACCOUNT_RESTRICTED') return privateJson({ok:false,code,error:'Mon IA n’est pas disponible pour ce compte tant que son état de sécurité n’est pas standard.'},403);
     if (code==='JSON_REQUIRED') return privateJson({ok:false,code,error:'Corps JSON requis.'},415);
     if (code==='REQUEST_TOO_LARGE') return privateJson({ok:false,code,error:'Requête trop volumineuse.'},413);
     if (['INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','PERSONAL_AI_SOURCE_FORBIDDEN','PERSONAL_AI_LANGUAGE_INVALID'].includes(code)) return privateJson({ok:false,code,error:'Requête Mon IA invalide.'},400);

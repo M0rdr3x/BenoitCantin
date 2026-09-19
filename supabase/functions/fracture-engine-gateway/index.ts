@@ -92,22 +92,53 @@ function publicError(message:string){
 }
 
 async function readLimitedJson(req:Request):Promise<{body?:JsonRecord;response?:Response}>{
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json'){
     return {response:privateJson({ok:false,error:'Content-Type application/json requis.',gateway_version:GATEWAY_VERSION},415)};
   }
 
   const rawLength=req.headers.get('content-length');
   if(rawLength!==null){
-    const declaredLength=Number(rawLength);
-    if(Number.isFinite(declaredLength)&&declaredLength>MAX_BODY_BYTES){
+    const normalizedLength=rawLength.trim();
+    if(!/^\d+$/.test(normalizedLength)){
+      return {response:privateJson({ok:false,error:'Requête invalide.',gateway_version:GATEWAY_VERSION},400)};
+    }
+    const declaredLength=Number(normalizedLength);
+    if(!Number.isSafeInteger(declaredLength)){
+      return {response:privateJson({ok:false,error:'Requête invalide.',gateway_version:GATEWAY_VERSION},400)};
+    }
+    if(declaredLength>MAX_BODY_BYTES){
       return {response:privateJson({ok:false,error:'Requête trop volumineuse.',gateway_version:GATEWAY_VERSION},413)};
     }
   }
 
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).byteLength>MAX_BODY_BYTES){
-    return {response:privateJson({ok:false,error:'Requête trop volumineuse.',gateway_version:GATEWAY_VERSION},413)};
+  const reader=req.body?.getReader();
+  if(!reader) return {body:{}};
+  const chunks:Uint8Array[]=[];
+  let total=0;
+  while(true){
+    const {done,value}=await reader.read();
+    if(done) break;
+    if(!value) continue;
+    total+=value.byteLength;
+    if(total>MAX_BODY_BYTES){
+      try{await reader.cancel()}catch{/* Le rejet 413 reste prioritaire. */}
+      return {response:privateJson({ok:false,error:'Requête trop volumineuse.',gateway_version:GATEWAY_VERSION},413)};
+    }
+    chunks.push(value);
+  }
+
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){
+    bytes.set(chunk,offset);
+    offset+=chunk.byteLength;
+  }
+  let raw:string;
+  try{
+    raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
+  }catch{
+    return {response:privateJson({ok:false,error:'JSON invalide.',gateway_version:GATEWAY_VERSION},400)};
   }
 
   let parsed:unknown;

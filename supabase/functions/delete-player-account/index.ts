@@ -3,6 +3,17 @@ import { bearerToken, requiredUser, serviceClient } from '../_shared/auth.ts';
 
 const CONFIRM_PHRASE='SUPPRIMER MON COMPTE';
 const MAX_REQUEST_BYTES=1024;
+const SAFE_FAILURE_CODES=new Set([
+  'AUTH_REQUIRED',
+  'JSON_REQUIRED',
+  'REQUEST_TOO_LARGE',
+  'INVALID_JSON',
+  'ADMIN_CHECK_FAILED',
+  'LEGAL_HOLD_CHECK_FAILED',
+  'STORAGE_DELETE_FAILED',
+  'STORAGE_PATH_LOOKUP_FAILED',
+  'CONTRIBUTION_REVOKE_FAILED'
+]);
 const PRIVATE_HEADERS={
   ...corsHeaders,
   'Content-Type':'application/json; charset=utf-8',
@@ -16,22 +27,57 @@ function privateJson(data:unknown,status=200){
   return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS});
 }
 
+function failureCode(error:unknown){
+  if(!(error instanceof Error))return 'DELETE_FAILED';
+  return SAFE_FAILURE_CODES.has(error.message)?error.message:'DELETE_FAILED';
+}
+
 async function readBoundedJson(req:Request){
   const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
   if(contentType!=='application/json')throw new Error('JSON_REQUIRED');
 
   const declaredRaw=req.headers.get('content-length');
-  if(declaredRaw){
-    const declared=Number(declaredRaw);
-    if(Number.isFinite(declared)&&declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+  if(declaredRaw!==null){
+    const normalizedLength=declaredRaw.trim();
+    if(!/^\d+$/.test(normalizedLength))throw new Error('REQUEST_TOO_LARGE');
+    const declared=Number(normalizedLength);
+    if(!Number.isSafeInteger(declared)||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   }
 
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+  if(!req.body)throw new Error('INVALID_JSON');
+  const reader=req.body.getReader();
+  const chunks:Uint8Array[]=[];
+  let total=0;
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(!value)continue;
+      total+=value.byteLength;
+      if(total>MAX_REQUEST_BYTES){
+        await reader.cancel('REQUEST_TOO_LARGE').catch(()=>undefined);
+        throw new Error('REQUEST_TOO_LARGE');
+      }
+      chunks.push(value);
+    }
+  }finally{
+    reader.releaseLock();
+  }
+
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){
+    bytes.set(chunk,offset);
+    offset+=chunk.byteLength;
+  }
+
+  let raw:string;
+  try{raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}
+  catch{throw new Error('INVALID_JSON');}
 
   let body:unknown;
-  try{ body=JSON.parse(raw); }
-  catch{ throw new Error('INVALID_JSON'); }
+  try{body=JSON.parse(raw);}
+  catch{throw new Error('INVALID_JSON');}
   if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('INVALID_JSON');
   return body as Record<string,unknown>;
 }
@@ -40,10 +86,7 @@ async function removeStoragePaths(service:any,bucket:string,paths:(string|null|u
   const unique=[...new Set(paths.map(x=>String(x||'').trim()).filter(Boolean))];
   for(let i=0;i<unique.length;i+=100){
     const {error}=await service.storage.from(bucket).remove(unique.slice(i,i+100));
-    if(error){
-      console.error(`[SINJIRA delete] storage ${bucket}`,error);
-      throw new Error('STORAGE_DELETE_FAILED');
-    }
+    if(error)throw new Error('STORAGE_DELETE_FAILED');
   }
 }
 
@@ -97,12 +140,12 @@ Deno.serve(async (req) => {
 
     const { error } = await service.auth.admin.deleteUser(user.id);
     if (error){
-      console.error('[SINJIRA delete] auth delete',error);
+      console.error('[delete-player-account]',{code:'AUTH_DELETE_FAILED'});
       return privateJson({ok:false,error:'Suppression du compte impossible après la préparation des données.',code:'AUTH_DELETE_FAILED'},500);
     }
     return privateJson({ok:true,deleted:true,storage_cleaned:true,contributions_revoked:true});
   } catch (error) {
-    console.error('[delete-player-account]',error);
+    console.error('[delete-player-account]',{code:failureCode(error)});
     if(error?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
     if(error?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED'},415);
     if(error?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);

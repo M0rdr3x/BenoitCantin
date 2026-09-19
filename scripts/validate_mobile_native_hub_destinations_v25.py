@@ -24,6 +24,11 @@ SENSITIVE_WEB_ONLY = {
     "/compte/mfa.html",
     "/compte/signaler-deces.html",
 }
+JUNIOR_WEB_ONLY = {
+    "/compte/communaute-junior.html",
+    "/compte/regles-communaute-junior.html",
+}
+ACCOUNT_HOME_WEB_ONLY = "/compte/index.html"
 
 SECURITY_PATH = "/compte/securite.html"
 APPROVED_SECURITY_FRAGMENTS = {
@@ -72,6 +77,20 @@ def validate_account_destination(source: str, literal: str, account_pages: set[s
     require(route not in SENSITIVE_WEB_ONLY,
             f"{source}: surface sensible interdite dans un tableau de destinations natif: {literal}")
 
+    if route in JUNIOR_WEB_ONLY:
+        require(source == "NativeHomeHub.tsx",
+                f"{source}: une surface Junior Web dédiée ne peut être déclarée que depuis l'accueil natif: {literal}")
+        require(not pairs and not parsed.fragment,
+                f"{source}: une surface Junior Web dédiée doit rester exacte, sans paramètre ni fragment: {literal}")
+        return "junior-web"
+
+    if route == ACCOUNT_HOME_WEB_ONLY:
+        require(source == "NativeHomeHub.tsx",
+                f"{source}: l'accueil compte Web fail-closed ne peut être déclaré que depuis l'accueil natif: {literal}")
+        require(not pairs and not parsed.fragment and literal == ACCOUNT_HOME_WEB_ONLY,
+                f"{source}: l'accueil compte Web doit rester exact, sans paramètre ni fragment: {literal}")
+        return "account-home-web"
+
     if route in natives:
         require(not parsed.fragment,
                 f"{source}: une route de sas natif ne doit pas porter de fragment: {literal}")
@@ -98,8 +117,8 @@ def main() -> int:
         require(path.exists(), f"élément manquant: {path.relative_to(ROOT)}")
 
     account_pages = {f"/compte/{path.name}" for path in ACCOUNT_DIR.glob("*.html") if path.is_file()}
-    require(len(account_pages) == 42,
-            f"inventaire compte attendu à 42 pages, trouvé {len(account_pages)}")
+    require(len(account_pages) == 44,
+            f"inventaire compte attendu à 44 pages, trouvé {len(account_pages)}")
     natives = native_routes()
     require(len(natives) == 31, f"31 routes natives attendues, trouvé {len(natives)}")
 
@@ -120,6 +139,8 @@ def main() -> int:
         "security-native": 0,
         "security-web-fragment": 0,
         "vault-guarded-home": 0,
+        "junior-web": 0,
+        "account-home-web": 0,
         "public-internal": 0,
     }
     unique_literals: set[tuple[str, str]] = set()
@@ -156,6 +177,10 @@ def main() -> int:
             "les cinq ancres Web Sécurité doivent rester visibles dans le graphe")
     require(counts["vault-guarded-home"] == 1,
             f"un seul lien Registre gardé est attendu depuis l'accueil, trouvé {counts['vault-guarded-home']}")
+    require(counts["junior-web"] >= 1,
+            "la Communauté Junior Web dédiée doit rester visible depuis l'accueil natif enfant")
+    require(counts["account-home-web"] == 1,
+            f"un seul accueil compte Web fail-closed est attendu depuis NativeHomeHub, trouvé {counts['account-home-web']}")
 
     docs = DOC.read_text(encoding="utf-8").casefold()
     for marker in (
@@ -168,7 +193,9 @@ def main() -> int:
         "signalement de décès",
         "cinq ancres sécurité",
         "aucune destination externe",
-        "42 pages",
+        "44 pages",
+        "communauté junior",
+        "accueil compte web",
         "31 routes natives",
     ):
         require(marker in docs, f"preuve documentaire manquante: {marker}")
@@ -207,6 +234,8 @@ def main() -> int:
         f"{counts['native']} transitions natives; "
         f"{counts['web-explicit']} sorties Web explicites; "
         f"{counts['security-web-fragment']} ancres Sécurité; "
+        f"{counts['junior-web']} destination(s) Junior Web dédiée(s); "
+        "1 accueil compte Web fail-closed; "
         "1 accès Registre limité à l'accueil gardé; auth/MFA/décès exclus."
     )
     return 0

@@ -54,6 +54,10 @@ PGTAP_CHECKS = (
     'supabase test db supabase/tests/security_advisor_contract_v24_5_24.test.sql --local',
 )
 
+PRODUCTION_LEDGER_LINE = '        run: python scripts/validate_production_migration_ledger.py\n'
+PRODUCTION_SCHEMA_LINE = '        run: python scripts/validate_production_schema_manifest.py\n'
+STOP_LINE = '        run: supabase stop --no-backup || true\n'
+
 
 def fail(message: str) -> None:
     raise ValueError(message)
@@ -73,15 +77,25 @@ def validate_text(text: str) -> None:
         require_once(text, marker, f'validateur statique {marker}')
     for marker in PGTAP_CHECKS:
         require_once(text, marker, f'preuve pgTAP {marker}')
+    require_once(text, PRODUCTION_LEDGER_LINE, 'étape ledger production séparée')
+    require_once(text, PRODUCTION_SCHEMA_LINE, 'étape manifeste production séparée')
+    require_once(text, STOP_LINE, 'arrêt Supabase local explicite')
+
+    if 'continue-on-error: true' in text:
+        fail('les contrôles En direct/production doivent rester bloquants')
 
     static_index = text.index(STATIC_CHECKS[0])
     start_index = text.index('run: supabase start')
     test_indexes = [text.index(marker) for marker in PGTAP_CHECKS]
-    stop_index = text.index('run: supabase stop --no-backup || true')
+    stop_index = text.index(STOP_LINE)
+    ledger_index = text.index(PRODUCTION_LEDGER_LINE)
+    schema_index = text.index(PRODUCTION_SCHEMA_LINE)
     if not static_index < start_index < test_indexes[0]:
-        fail('contrats statiques ou démarrage Supabase mal ordonnés')
-    if test_indexes != sorted(test_indexes) or not test_indexes[-1] < stop_index:
-        fail('ordre modération -> invitations -> codes -> mineurs -> conformité -> RLS -> advisor -> stop non respecté')
+        fail('contrats fonctionnels ou démarrage Supabase mal ordonnés')
+    if test_indexes != sorted(test_indexes):
+        fail('ordre modération -> invitations -> codes -> mineurs -> conformité -> RLS -> advisor non respecté')
+    if not test_indexes[-1] < stop_index < ledger_index < schema_index:
+        fail('ordre preuves locales -> stop -> ledger -> manifeste non respecté')
 
 
 def extra_mutations(text: str):
@@ -101,6 +115,16 @@ def extra_mutations(text: str):
         yield f'validateur statique {index + 1} retiré', text.replace(marker, f'echo static-{index + 1}-retire', 1)
     for index, marker in enumerate(PGTAP_CHECKS):
         yield f'preuve pgTAP {index + 1} retirée', text.replace(marker, f'echo pgtap-{index + 1}-retire', 1)
+    yield 'ledger regroupé avec le fonctionnel', text.replace(
+        PRODUCTION_LEDGER_LINE,
+        '        run: |\n          python scripts/validate_production_migration_ledger.py\n',
+        1,
+    )
+    yield 'contrôle rendu tolérant', text.replace(
+        '    timeout-minutes: 20\n',
+        '    timeout-minutes: 20\n    continue-on-error: true\n',
+        1,
+    )
 
 
 def self_test(text: str) -> None:
@@ -117,7 +141,7 @@ def main() -> int:
             self_test(text)
         else:
             validate_text(text)
-            print('OK: contrat CI sécurité En direct V25 respecté')
+            print('OK: contrat CI sécurité En direct V25 respecté, preuves locales séparées de la gouvernance production')
     except ValueError as exc:
         print(f'ECHEC CI sécurité En direct V25: {exc}', file=sys.stderr)
         return 1

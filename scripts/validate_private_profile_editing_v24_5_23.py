@@ -7,9 +7,11 @@ PAGE=ROOT/'compte/profil.html'
 JS=ROOT/'assets/js/sinjira-private-profile-v24-5-23.js'
 MIG1=ROOT/'supabase/migrations/20260823035659_sinjira_v24_5_14_private_profile_editing.sql'
 MIG2=ROOT/'supabase/migrations/20260823040936_sinjira_v24_5_23_private_profile_schema_convergence.sql'
+MIG3=ROOT/'supabase/migrations/20260919100000_sinjira_v25_private_profile_age_11.sql'
 LEDGER=ROOT/'supabase/production-migration-ledger.txt'
 DOC=ROOT/'PRIVATE_PROFILE_EDITING_V24_5_23.md'
 TEST=ROOT/'supabase/tests/private_profile_editing_v24_5_23.test.sql'
+TEST_CHILD=ROOT/'supabase/tests/private_profile_child_age_v25.test.sql'
 
 
 def read(p): return p.read_text('utf-8',errors='ignore') if p.exists() else ''
@@ -18,20 +20,20 @@ def compact(s): return re.sub(r'\s+',' ',s.lower()).strip()
 
 def main():
     errors=[]
-    for p in [PAGE,JS,MIG1,MIG2,LEDGER,DOC,TEST]:
+    for p in [PAGE,JS,MIG1,MIG2,MIG3,LEDGER,DOC,TEST,TEST_CHILD]:
         if not p.exists(): errors.append(f'Fichier absent: {p.relative_to(ROOT)}')
     if errors:
         for e in errors: print('- '+e)
         return 1
 
-    page=read(PAGE); js=read(JS); sql1=read(MIG1); sql2=read(MIG2); sql=sql1+'\n'+sql2; ledger=read(LEDGER); doc=read(DOC).lower(); test=read(TEST)
-    pl=page.lower(); jl=js.lower(); sl=compact(sql)
+    page=read(PAGE); js=read(JS); sql1=read(MIG1); sql2=read(MIG2); sql3=read(MIG3); sql=sql1+'\n'+sql2; ledger=read(LEDGER); doc=read(DOC).lower(); test=read(TEST); test_child=read(TEST_CHILD)
+    pl=page.lower(); jl=js.lower(); sl=compact(sql); sl3=compact(sql3)
 
     for marker in [
         'enregistrer mes informations personnelles','annuler les modifications',
         'value="woman"','value="man"','value="non_binary"','value="other"','value="prefer_not_to_say"',
         'value="single"','value="partnered"','value="engaged"','value="married"','value="separated"','value="divorced"','value="widowed"',
-        'sinjira-private-profile-v24-5-23.js?v=24.5.23'
+        'sinjira-private-profile-v24-5-23.js?v=25.1.0'
     ]:
         if marker not in pl: errors.append(f'Page Profil incomplète: {marker}')
     if re.search(r'<fieldset[^>]*\bdisabled\b',pl): errors.append('Le coffre privé ne doit plus être enfermé dans un fieldset disabled.')
@@ -58,6 +60,17 @@ def main():
         'b_photo_consent=false'
     ]:
         if marker not in sl: errors.append(f'Migrations Profil privées incomplètes: {marker}')
+
+    for marker in [
+        'sinjira_minimum_age_11',
+        'guardian_authorization_required_under_14',
+        'g.revoked_at is null',
+        'sinjira_mfa_access_allowed',
+        'security definer'
+    ]:
+        if marker not in sl3: errors.append(f'Migration V25 Profil enfant incomplète: {marker}')
+    if 'sinjira_minimum_age_13' in sl3:
+        errors.append('La migration effective V25 ne doit pas réintroduire la limite 13 ans.')
     if re.search(r'grant\s+.*on\s+table\s+public\.private_profiles\s+to\s+(?:anon|authenticated)',sl): errors.append('private_profiles ne doit recevoir aucun accès table direct client.')
 
     rows=[x for x in ledger.splitlines() if x.strip() and not x.startswith('#')]
@@ -77,6 +90,9 @@ def main():
     for marker in ['private_profiles','security invoker','sinjira_mfa_access_allowed','youth_jurisdiction_not_enabled','sinjira_birth_date_change_guard']:
         if marker not in test.lower(): errors.append(f'pgTAP V24.5.23 incomplet: {marker}')
 
+    for marker in ['select plan(8);','sinjira_minimum_age_11','guardian_authorization_required_under_14','revoked_at is null','un enfant de 11 ans avec tuteur actif']:
+        if marker not in test_child.lower(): errors.append(f'pgTAP V25 Profil enfant incomplet: {marker}')
+
     forbidden=['stripe','paypal','twilio','api.resend.com','openai.com','shippo','easypost','fedex','purolator']
     for token in forbidden:
         if token in jl or token in sl: errors.append(f'Intégration externe interdite dans V24.5.23: {token}')
@@ -85,7 +101,7 @@ def main():
         print(f'ECHEC V24.5.23 profil privé modifiable: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK V24.5.23 historique: coffre privé modifiable via RPC, accès table direct fermé, MFA/âge/juridiction/tuteur protégés et migrations Profil présentes dans le ledger.')
+    print('OK Profil privé: historique immuable, coffre self-only, MFA conservé et compatibilité enfant 11+ forward-only validée.')
     return 0
 
 if __name__=='__main__': raise SystemExit(main())

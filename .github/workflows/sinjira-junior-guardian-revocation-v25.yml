@@ -1,0 +1,72 @@
+name: SINJIRA V25 — Révocation tuteur Junior multi-tuteur
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
+      - 'supabase/migrations/20260917223000_sinjira_v25_junior_community.sql'
+      - 'supabase/migrations/20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql'
+      - 'supabase/migrations/20260919013000_sinjira_v25_child_pending_guardian_redeem.sql'
+      - 'supabase/migrations/20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql'
+      - 'supabase/migrations/20260919040000_sinjira_v25_junior_enable_aal2.sql'
+      - 'supabase/migrations/20260919073000_sinjira_v25_junior_guardian_summary_aal2.sql'
+      - 'supabase/migrations/20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql'
+      - 'supabase/migrations/20260919043000_sinjira_v25_guardian_revoke_aal2.sql'
+      - 'assets/js/v24-relations.js'
+      - 'compte/relations.html'
+      - 'supabase/tests/junior_guardian_revocation_v25.test.sql'
+      - 'scripts/validate_junior_guardian_revocation_v25.py'
+      - '.github/workflows/sinjira-junior-guardian-revocation-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-junior-guardian-revocation-v25-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  junior-guardian-revocation-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Compiler et auto-tester le garde révocation Junior
+        run: |
+          python3 -m py_compile scripts/validate_junior_guardian_revocation_v25.py
+          python3 scripts/validate_junior_guardian_revocation_v25.py --self-test
+          python3 scripts/validate_junior_guardian_revocation_v25.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+
+      - name: Démarrer une pile Supabase locale propre
+        run: supabase start
+
+      - name: Reconstruire la base locale depuis zéro
+        run: supabase db reset
+
+      - name: Rejouer la suite historique Communauté Junior
+        run: supabase test db supabase/tests/child_community_v25.test.sql
+
+      - name: Prouver la révocation multi-tuteur Junior
+        run: supabase test db supabase/tests/junior_guardian_revocation_v25.test.sql
+
+      - name: Arrêter et supprimer la pile locale
+        if: always()
+        run: |
+          if command -v supabase >/dev/null 2>&1; then supabase stop --no-backup || true; fi

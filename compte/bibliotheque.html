@@ -7,7 +7,7 @@
 <title>Bibliothèque | Compte SINJIRA™</title>
 <link href="../assets/icons/sinjira-favicon.png" rel="icon" type="image/png"/>
 <link href="../assets/css/site.css?v=7.6-sinjira-account" rel="stylesheet"/>
-<link href="../assets/css/sinjira-player-account.css?v=24.1" rel="stylesheet"/>
+<link href="../assets/css/sinjira-player-account.css?v=25.0.1" rel="stylesheet"/>
 <link href="../assets/css/sinjira-reader-character.css?v=24.1" rel="stylesheet"/>
 <link href="../assets/css/v19-pro.css?v=24.1" rel="stylesheet"/>
 <link href="../assets/css/v20-social.css?v=24.1" rel="stylesheet"/>
@@ -20,11 +20,11 @@
 <section class="account-hero"><div class="account-shell">
 <span class="eyebrow">Bibliothèque du compte</span>
 <h1>Ma bibliothèque SINJIRA™</h1>
-<p>Vos espaces accessibles, romans suivis et droits numériques sont réunis ici à partir des autorisations réelles de votre compte.</p>
+<p>Votre bibliothèque réunit vos achats, vos droits numériques et les créations SINJIRA™ réellement accessibles à votre compte. Le compte créateur voit aussi ses œuvres en développement, clairement séparées des achats.</p>
 <div class="account-welcome-strip"><strong data-library-role>Compte SINJIRA™</strong><span>Aucun achat ou service payant n’est activé actuellement.</span></div>
 <div class="account-stats">
 <div class="account-stat"><span>Espaces disponibles</span><strong data-library-project-count>0</strong></div>
-<div class="account-stat"><span>Romans suivis</span><strong data-library-read-count>0</strong></div>
+<div class="account-stat"><span>Romans disponibles</span><strong data-library-novel-count>0</strong></div>
 <div class="account-stat"><span>Droits numériques</span><strong data-library-entitlement-count>0</strong></div>
 <div class="account-stat"><span>Demandes en attente</span><strong data-library-request-count>0</strong></div>
 </div>
@@ -39,13 +39,23 @@
 </div></section>
 
 <section class="section section-tight"><div class="account-shell">
-<div class="section-heading"><span class="eyebrow">Jeux &amp; projets</span><h2>Espaces disponibles avec ce compte</h2><p>Chaque carte indique si l’accès est public, inclus avec le compte, privé, administrateur ou propriétaire.</p></div>
-<div class="library-grid" data-project-library></div>
+<div class="section-heading"><span class="eyebrow">Jeux</span><h2>Mes jeux et espaces jouables</h2><p>Les jeux sont séparés des romans et des autres créations. Les accès proviennent de votre compte, de vos droits ou du rôle créateur.</p></div>
+<div class="library-grid" data-library-games></div>
 </div></section>
 
 <section class="section section-tight"><div class="account-shell">
-<div class="section-heading"><span class="eyebrow">Romans</span><h2>Lectures réellement suivies</h2><p>Cette section utilise la bibliothèque lecteur SINJIRA™ canonique et sa progression enregistrée.</p></div>
+<div class="section-heading"><span class="eyebrow">Romans</span><h2>Romans disponibles pour ce compte</h2><p>Un membre voit les romans réellement disponibles pour lui. Le compte créateur voit aussi les romans en développement sans les faire passer pour des achats.</p></div>
+<div class="account-reader-grid" data-library-novels></div>
+</div></section>
+
+<section class="section section-tight"><div class="account-shell">
+<div class="section-heading"><span class="eyebrow">Progression</span><h2>Mes lectures en cours</h2><p>Votre progression privée reste associée uniquement à votre compte.</p></div>
 <div class="account-reader-grid" data-library-reads></div>
+</div></section>
+
+<section class="section section-tight"><div class="account-shell">
+<div class="section-heading"><span class="eyebrow">Autres créations</span><h2>Projets SINJIRA™</h2><p>Cette zone accueillera les futures catégories de l’univers sans mélanger jeux, romans et autres développements.</p></div>
+<div class="library-grid" data-library-other></div>
 </div></section>
 
 <section class="section section-tight"><div class="account-shell">
@@ -55,8 +65,8 @@
 </main>
 <footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Compte SINJIRA™ — ressources gratuites activées seulement.</span></div></div></footer>
 <script defer src="../assets/js/site.js?v=7.6-sinjira-account"></script>
-<script src="../assets/js/sinjira-account.js?v=19.0" type="module"></script>
+<script src="../assets/js/sinjira-account.js?v=25.0.1" type="module"></script>
 <script src="../assets/js/sinjira-library.js?v=24.1" type="module"></script>
-<script src="../assets/js/sinjira-library-v24-4-61.js?v=24.4.61" type="module"></script>
+<script src="../assets/js/sinjira-library-v24-4-61.js?v=25.1.0" type="module"></script>
 </body>
 </html>

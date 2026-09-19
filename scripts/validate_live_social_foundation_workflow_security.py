@@ -43,6 +43,10 @@ PGTAP_CHECKS = (
     'supabase test db supabase/tests/live_social_realtime_eligibility_v25.test.sql --local',
 )
 
+PRODUCTION_LEDGER_LINE = '        run: python scripts/validate_production_migration_ledger.py\n'
+PRODUCTION_SCHEMA_LINE = '        run: python scripts/validate_production_schema_manifest.py\n'
+STOP_LINE = '        run: supabase stop --no-backup || true\n'
+
 
 def fail(message: str) -> None:
     raise ValueError(message)
@@ -62,14 +66,22 @@ def validate_text(text: str) -> None:
         require_once(text, marker, f'validateur statique {marker}')
     for marker in PGTAP_CHECKS:
         require_once(text, marker, f'preuve pgTAP {marker}')
+    require_once(text, PRODUCTION_LEDGER_LINE, 'étape ledger production séparée')
+    require_once(text, PRODUCTION_SCHEMA_LINE, 'étape manifeste production séparée')
+    require_once(text, STOP_LINE, 'arrêt Supabase local explicite')
+
+    if 'continue-on-error: true' in text:
+        fail('les contrôles En direct/production doivent rester bloquants')
 
     static_index = text.index(STATIC_CHECKS[0])
     start_index = text.index('run: supabase start')
     foundation_index = text.index(PGTAP_CHECKS[0])
     realtime_index = text.index(PGTAP_CHECKS[1])
-    stop_index = text.index('run: supabase stop --no-backup || true')
-    if not static_index < start_index < foundation_index < realtime_index < stop_index:
-        fail('ordre statique -> start -> fondation -> Realtime -> stop non respecté')
+    stop_index = text.index(STOP_LINE)
+    ledger_index = text.index(PRODUCTION_LEDGER_LINE)
+    schema_index = text.index(PRODUCTION_SCHEMA_LINE)
+    if not static_index < start_index < foundation_index < realtime_index < stop_index < ledger_index < schema_index:
+        fail('ordre fonctionnel -> Supabase local -> pgTAP -> stop -> ledger -> manifeste non respecté')
 
 
 def extra_mutations(text: str):
@@ -86,6 +98,16 @@ def extra_mutations(text: str):
         yield f'validateur statique {index + 1} retiré', text.replace(marker, f'echo static-{index + 1}-retire', 1)
     yield 'pgTAP fondation retiré', text.replace(PGTAP_CHECKS[0], 'echo fondation-pgtap-retire', 1)
     yield 'pgTAP Realtime retiré', text.replace(PGTAP_CHECKS[1], 'echo realtime-pgtap-retire', 1)
+    yield 'ledger regroupé avec le fonctionnel', text.replace(
+        PRODUCTION_LEDGER_LINE,
+        '        run: |\n          python scripts/validate_production_migration_ledger.py\n',
+        1,
+    )
+    yield 'contrôle rendu tolérant', text.replace(
+        '    timeout-minutes: 20\n',
+        '    timeout-minutes: 20\n    continue-on-error: true\n',
+        1,
+    )
     yield 'ordre pgTAP inversé', text.replace(
         PGTAP_CHECKS[0] + "\n\n      - name: Tester l'éligibilité Realtime avec pgTAP\n        run: " + PGTAP_CHECKS[1],
         PGTAP_CHECKS[1] + "\n\n      - name: Tester l'éligibilité Realtime avec pgTAP\n        run: " + PGTAP_CHECKS[0],
@@ -107,7 +129,7 @@ def main() -> int:
             self_test(text)
         else:
             validate_text(text)
-            print('OK: contrat CI fondation En direct V25 respecté')
+            print('OK: contrat CI fondation En direct V25 respecté, preuves locales séparées de la gouvernance production')
     except ValueError as exc:
         print(f'ECHEC CI fondation En direct V25: {exc}', file=sys.stderr)
         return 1

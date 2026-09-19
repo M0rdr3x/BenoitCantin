@@ -18,7 +18,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { WebView, WebViewNavigation } from 'react-native-webview';
+import { WebView } from 'react-native-webview';
+import type { WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
 import { NativeHomeHub } from './NativeHomeHub';
 import { NativeModuleRouter, isNativeModulePath } from './NativeModuleRouter';
 import type { NativeModulePath } from './NativeModuleRouter';
@@ -45,6 +46,40 @@ const VAULT_PATH = '/compte/registre-personnel.html';
 const PERSONAL_AI_PATH = '/compte/mon-ia.html';
 const ACCOUNT_HOME_PATH = '/compte/index.html';
 const VAULT_LOCAL_GATE_MS = 90_000;
+
+const CHILD_ACCOUNT_REDIRECTS = new Map<string, string>([
+  ['/compte/communaute.html', '/compte/communaute-junior.html'],
+  ['/compte/regles-communaute.html', '/compte/regles-communaute-junior.html'],
+]);
+
+const CHILD_RESTRICTED_ACCOUNT_PATHS = new Set([
+  '/compte/messages.html',
+  '/compte/messages-reels.html',
+  '/compte/messages-personnage.html',
+  '/compte/rencontres.html',
+  '/compte/reseau-personnage.html',
+  '/compte/mes-commentaires.html',
+  '/compte/marche.html',
+  '/compte/jetons.html',
+  '/compte/licences.html',
+  '/compte/mes-achats.html',
+  '/compte/contributions.html',
+  '/compte/emploi.html',
+  '/compte/playtests.html',
+  '/compte/mes-lectures.html',
+  '/compte/mes-parties.html',
+  '/compte/mon-ia.html',
+  '/compte/monde-parallele.html',
+  '/compte/signaler-deces.html',
+]);
+
+function childAccountRedirect(pathname: string) {
+  const mapped = CHILD_ACCOUNT_REDIRECTS.get(pathname);
+  if (mapped) return mapped;
+  if (!CHILD_RESTRICTED_ACCOUNT_PATHS.has(pathname)) return null;
+  const leaf = pathname.split('/').filter(Boolean).pop() || 'module';
+  return `/compte/communaute-junior.html?from=restricted&module=${encodeURIComponent(leaf)}`;
+}
 
 function configuredWebOrigin() {
   const raw = String(Constants.expoConfig?.extra?.webOrigin || DEFAULT_ORIGIN).replace(/\/+$/, '');
@@ -76,7 +111,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const tabs = [
+const adultTabs = [
   { key: 'home', label: 'Accueil', path: '/app/' },
   { key: 'messages', label: 'Messages', path: '/compte/messages.html' },
   { key: 'dating', label: 'Rencontres', path: '/compte/rencontres.html' },
@@ -84,6 +119,22 @@ const tabs = [
   { key: 'world', label: 'Monde', path: '/compte/monde-parallele.html' },
   { key: 'ai', label: 'Mon IA', path: PERSONAL_AI_PATH },
 ] as const;
+
+const childTabs = [
+  { key: 'home', label: 'Accueil', path: '/app/' },
+  { key: 'junior', label: 'Junior', path: '/compte/communaute-junior.html' },
+  { key: 'library', label: 'Bibliothèque', path: '/compte/bibliotheque.html' },
+  { key: 'junior-profile', label: 'Profil', path: '/compte/profil.html' },
+  { key: 'security', label: 'Sécurité', path: '/compte/securite.html' },
+] as const;
+
+const unverifiedTabs = [
+  { key: 'home', label: 'Accueil', path: '/app/' },
+  { key: 'account', label: 'Compte', path: '/compte/index.html' },
+  { key: 'security', label: 'Sécurité', path: '/compte/securite.html' },
+] as const;
+
+const allTabs = [...adultTabs, ...childTabs, ...unverifiedTabs] as const;
 
 const quickLinks = [
   { label: 'Alertes', path: '/compte/notifications.html' },
@@ -93,7 +144,8 @@ const quickLinks = [
   { label: 'Registre perso', path: VAULT_PATH },
 ] as const;
 
-type TabKey = (typeof tabs)[number]['key'];
+type TabKey = (typeof allTabs)[number]['key'];
+type ChildAccessState = 'unknown' | 'child' | 'nonchild';
 
 function normalizeSinjiraUrl(url: string | null): string | null {
   if (!url) return null;
@@ -235,7 +287,7 @@ function isNativeHomeUrl(url: string) {
 }
 
 function tabForUrl(url: string): TabKey | null {
-  const match = tabs.find((tab) => url.includes(tab.path));
+  const match = allTabs.find((tab) => url.includes(tab.path));
   return match?.key ?? null;
 }
 
@@ -267,8 +319,10 @@ export default function App() {
   const [nativeHomeOpen, setNativeHomeOpen] = useState(true);
   const [nativeModulePath, setNativeModulePath] = useState<NativeModulePath | null>(null);
   const [nativeSecurityOpen, setNativeSecurityOpen] = useState(false);
+  const [childAccess, setChildAccess] = useState<ChildAccessState>('unknown');
 
   const allowedHosts = useMemo(() => new Set(ALLOWED_WEB_HOSTS), []);
+  const visibleTabs = childAccess === 'child' ? childTabs : childAccess === 'nonchild' ? adultTabs : unverifiedTabs;
 
   const injectedSecurityScript = useMemo(() => {
     if (!nativeDeviceKey) return 'true;';
@@ -473,6 +527,7 @@ export default function App() {
   }, [biometricEnabled, currentUrl]);
 
   const openNativeModule = (path: string, tab?: TabKey) => {
+    if (childAccess !== 'nonchild') return false;
     if (!isNativeModulePath(path)) return false;
     setNativeSecurityOpen(false);
     setNativeHomeOpen(false);
@@ -506,6 +561,14 @@ export default function App() {
       if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)) internalIntent = parsed;
     } catch {}
 
+    if (internalIntent && childAccess === 'child') {
+      const safeRedirect = childAccountRedirect(internalIntent.pathname);
+      if (safeRedirect) {
+        await navigateToUrl(`${ORIGIN}${safeRedirect}`, 'junior');
+        return;
+      }
+    }
+
     if (internalIntent && !internalIntent.search && !internalIntent.hash && internalIntent.pathname === '/compte/securite.html') {
       setNativeModulePath(null);
       setNativeHomeOpen(false);
@@ -521,8 +584,8 @@ export default function App() {
       internalIntent.searchParams.get('surface') !== 'web' &&
       isNativeModulePath(internalIntent.pathname)
     ) {
-      openNativeModule(internalIntent.pathname, tab);
-      return;
+      const openedNative = openNativeModule(internalIntent.pathname, tab);
+      if (openedNative) return;
     }
 
     if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
@@ -635,6 +698,17 @@ export default function App() {
   };
 
   const onNavigationStateChange = (state: WebViewNavigation) => {
+    try {
+      const parsed = new URL(state.url);
+      if (
+        parsed.protocol === 'https:' &&
+        allowedHosts.has(parsed.hostname) &&
+        (parsed.pathname === '/compte/connexion.html' || parsed.pathname === '/compte/inscription.html')
+      ) {
+        setChildAccess('unknown');
+        setNativeModulePath(null);
+      }
+    } catch {}
     if (isNativeHomeUrl(state.url)) {
       setNativeModulePath(null);
       setNativeHomeOpen(true);
@@ -647,6 +721,32 @@ export default function App() {
     setCurrentUrl(state.url);
     const nextTab = tabForUrl(state.url);
     if (nextTab) setActiveTab(nextTab);
+  };
+
+  const onWebMessage = (event: WebViewMessageEvent) => {
+    let source: URL;
+    try {
+      source = new URL(event.nativeEvent.url);
+    } catch {
+      return;
+    }
+    if (
+      source.protocol !== 'https:' ||
+      !allowedHosts.has(source.hostname) ||
+      !source.pathname.startsWith('/compte/')
+    ) return;
+
+    try {
+      const message = JSON.parse(String(event.nativeEvent.data || ''));
+      if (message?.type !== 'sinjira:child-access') return;
+      if (!['unknown', 'child', 'nonchild'].includes(message.state)) return;
+      const next = message.state as ChildAccessState;
+      setChildAccess(next);
+      if (next !== 'nonchild') {
+        setNativeModulePath(null);
+        setActiveTab('home');
+      }
+    } catch {}
   };
 
   const shouldStart = (request: { url: string }) => {
@@ -667,6 +767,13 @@ export default function App() {
     }
 
     if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)) {
+      if (childAccess === 'child') {
+        const safeRedirect = childAccountRedirect(parsed.pathname);
+        if (safeRedirect) {
+          void navigateToUrl(`${ORIGIN}${safeRedirect}`, 'junior');
+          return false;
+        }
+      }
       if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
         void navigate(VAULT_PATH);
         return false;
@@ -824,6 +931,7 @@ export default function App() {
         />
       ) : nativeHomeOpen ? (
         <NativeHomeHub
+          accountMode={childAccess}
           onOpenPath={(path) => void navigate(path)}
           onOpenSecurity={() => setNativeSecurityOpen(true)}
         />
@@ -844,6 +952,7 @@ export default function App() {
           pullToRefreshEnabled={Platform.OS === 'ios'}
           allowsBackForwardNavigationGestures={Platform.OS === 'ios'}
           onNavigationStateChange={onNavigationStateChange}
+          onMessage={onWebMessage}
           onShouldStartLoadWithRequest={shouldStart}
           renderLoading={() => (
             <View style={styles.loading}>
@@ -864,7 +973,7 @@ export default function App() {
       )}
 
       <View style={styles.bottomNav}>
-        {tabs.map((tab) => {
+        {visibleTabs.map((tab) => {
           const selected = tab.key === activeTab;
           return (
             <Pressable

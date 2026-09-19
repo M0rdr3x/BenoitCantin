@@ -14,11 +14,11 @@ SETUP_PYTHON = 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1'
 SETUP_NODE = 'actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38'
 SELF_TEST = 'python3 scripts/validate_mobile_life_story_hub_workflow_security.py --self-test'
 SELF_CHECK = 'python3 scripts/validate_mobile_life_story_hub_workflow_security.py'
-HISTORICAL = (
+LEDGER = 'python3 scripts/validate_production_migration_ledger.py'
+LOCAL_PROOFS = (
     'python3 scripts/validate_mobile_native_life_story_hub_v25.py',
     'python3 scripts/validate_life_story_legacy_v24_5_2.py',
     'python3 scripts/validate_life_story_fk_indexes_v24_5_2.py',
-    'python3 scripts/validate_production_migration_ledger.py',
     'python3 scripts/validate_mobile_native_route_dispatch_v25.py',
     'python3 scripts/validate_mobile_native_personal_ai_hub_v25.py',
     'python3 scripts/validate_mobile_native_home_hub_v25.py',
@@ -31,6 +31,7 @@ HISTORICAL = (
     'npm run validate:vault',
     'npm run typecheck',
 )
+HISTORICAL = (*LOCAL_PROOFS, LEDGER)
 TRIGGER_PATHS = (
     "      - 'mobile-native/NativeHomeHub.tsx'",
     "      - 'mobile-native/NativeModuleRouter.tsx'",
@@ -110,8 +111,11 @@ def validate_text(text: str) -> None:
     require('cache:' not in active, 'Aucun cache package-manager ne doit être activé sans lockfile revu.')
     require('cache-dependency-path:' not in active, 'Aucun faux chemin de cache ne doit être configuré.')
 
+    runs = exact_run_commands(text)
     expected_runs = [SELF_TEST, SELF_CHECK, *HISTORICAL]
-    require(exact_run_commands(text) == expected_runs, 'Les commandes exécutables ou leur ordre ont changé hors contrat.')
+    require(runs == expected_runs, 'Les commandes exécutables ou leur ordre ont changé hors contrat.')
+    require(runs[-1] == LEDGER, 'Le ledger production doit rester le dernier contrôle, après toutes les preuves locales.')
+    require(text.count(f'        run: {LEDGER}\n') == 1, 'Le ledger production doit rester une étape directe, unique et bloquante.')
     require(text.count('working-directory: mobile-native') == 3, 'Seules installation, validation vault et typecheck doivent utiliser mobile-native.')
 
     forbidden = (
@@ -149,6 +153,9 @@ def validate_repo_state() -> None:
 
 def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
     node_line = "          node-version: '22.23.2'\n"
+    ledger_step = f"\n      - name: Revalider le ledger de production sans écriture\n        run: {LEDGER}\n"
+    route_step = "\n      - name: Revalider le routeur natif central\n"
+    ledger_too_early = text.replace(ledger_step, '', 1).replace(route_step, ledger_step + route_step, 1)
     return (
         ('runner mobile', text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1)),
         ('checkout mutable', text.replace(CHECKOUT, 'actions/checkout@v4', 1)),
@@ -174,6 +181,7 @@ def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
             (f'preuve retirée {index + 1}', text.replace(f'        run: {command}\n', '', 1))
             for index, command in enumerate(HISTORICAL)
         ),
+        ('ledger remonté avant preuves locales', ledger_too_early),
         ('continue-on-error', text.replace('    timeout-minutes: 10\n', '    timeout-minutes: 10\n    continue-on-error: true\n', 1)),
         ('push Git ajouté', text.replace('      - name: Vérifier TypeScript\n', '      - run: git push origin HEAD:main\n\n      - name: Vérifier TypeScript\n', 1)),
         ('Supabase distant ajouté', text.replace('      - name: Vérifier TypeScript\n', '      - run: supabase db push --linked\n\n      - name: Vérifier TypeScript\n', 1)),
@@ -203,7 +211,8 @@ def main() -> int:
     validate_repo_state()
     print(
         'OK CI Histoire de vie native: runner/Python/Node/actions immuables, Git read-only, '
-        'scripts npm désactivés, aucun faux cache et aucune opération Supabase distante.'
+        'preuves locales/mobile/TypeScript avant ledger production bloquant, scripts npm désactivés, '
+        'aucun faux cache et aucune opération Supabase distante.'
     )
     return 0
 
