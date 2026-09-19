@@ -99,6 +99,13 @@ def main()->int:
       'STORY_PROVENANCE_REQUIRED',
       'STORY_PROVENANCE_INCOMPLETE',
       "source_kind in ('roman','bible','author_decision','archive')",
+      'CANON_SOURCE_SCOPE_MISMATCH',
+      'CANON_PRESENCE_SOURCE_SCOPE_MISMATCH',
+      'CLAIM_SOURCE_SCOPE_MISMATCH',
+      'STORY_PROVENANCE_SCOPE_MISMATCH',
+      'CANON_SOURCE_LOCATOR_REQUIRED',
+      'sinjira_canon_events_guard_source_scope',
+      'sinjira_canon_events_scope_invalidate_extended',
     }
     for needle in sorted(extended_contract):
         if needle.lower() not in sql.lower():
