@@ -371,6 +371,143 @@ as $$
   );
 $$;
 
+create unique index if not exists sinjira_canon_sources_one_verified_successor_idx
+  on public.sinjira_canon_sources(supersedes_source_id)
+  where supersedes_source_id is not null
+    and verification_status in ('VERIFIED','SECRET_AUTEUR')
+    and source_kind in ('roman','bible','author_decision','archive');
+
+create or replace function public.admin_sinjira_migrate_canon_source_references(
+  p_source_id uuid,
+  p_replacement_source_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path=pg_catalog,public,private,auth
+as $$
+declare
+  v_admin uuid;
+  v_old public.sinjira_canon_sources%rowtype;
+  v_new public.sinjira_canon_sources%rowtype;
+  v_story_count integer:=0;
+  v_location_count integer:=0;
+  v_travel_count integer:=0;
+  v_event_count integer:=0;
+  v_presence_count integer:=0;
+  v_claim_count integer:=0;
+  v_remaining integer:=0;
+begin
+  v_admin:=private.require_sinjira_admin_aal2();
+
+  if p_source_id is null or p_replacement_source_id is null or p_source_id=p_replacement_source_id then
+    raise exception 'CANON_SOURCE_MIGRATION_REQUIRED_FIELDS';
+  end if;
+
+  select * into v_old
+  from public.sinjira_canon_sources
+  where id=p_source_id
+  for update;
+  if v_old.id is null then raise exception 'CANON_SOURCE_MIGRATION_SOURCE_NOT_FOUND'; end if;
+
+  select * into v_new
+  from public.sinjira_canon_sources
+  where id=p_replacement_source_id
+  for update;
+  if v_new.id is null then raise exception 'CANON_SOURCE_MIGRATION_REPLACEMENT_NOT_FOUND'; end if;
+
+  if v_old.verification_status='RETIRED' then
+    raise exception 'CANON_SOURCE_ALREADY_RETIRED';
+  end if;
+  if v_new.supersedes_source_id is distinct from v_old.id then
+    raise exception 'CANON_SOURCE_MIGRATION_REPLACEMENT_INVALID';
+  end if;
+  if v_new.scope is distinct from v_old.scope then
+    raise exception 'CANON_SOURCE_MIGRATION_SCOPE_MISMATCH';
+  end if;
+  if not private.sinjira_source_is_verified(v_new.id) then
+    raise exception 'CANON_SOURCE_MIGRATION_REPLACEMENT_NOT_VERIFIED';
+  end if;
+
+  -- Les faits d'une Chronique publiée doivent d'abord sortir de l'état publié.
+  update public.sinjira_extended_stories st
+  set status='validated',
+      published_at=null
+  where st.status='published'
+    and exists(
+      select 1 from public.sinjira_story_claims c
+      where c.story_id=st.id and c.source_id=v_old.id
+    );
+  get diagnostics v_story_count = row_count;
+
+  update public.sinjira_extended_stories st
+  set canon_status='PROVISOIRE',
+      status='author_review',
+      audience='private',
+      published_at=null
+  where st.canon_status='CANON_ETENDU'
+    and exists(
+      select 1 from public.sinjira_story_claims c
+      where c.story_id=st.id and c.source_id=v_old.id
+    );
+
+  if exists(select 1 from public.sinjira_world_locations where source_id=v_old.id) then
+    update public.sinjira_world_locations set source_id=v_new.id where source_id=v_old.id;
+    get diagnostics v_location_count = row_count;
+  end if;
+
+  if exists(select 1 from public.sinjira_world_travel_rules where source_id=v_old.id) then
+    update public.sinjira_world_travel_rules set source_id=v_new.id where source_id=v_old.id;
+    get diagnostics v_travel_count = row_count;
+  end if;
+
+  if exists(select 1 from public.sinjira_canon_events where source_id=v_old.id) then
+    update public.sinjira_canon_events set source_id=v_new.id where source_id=v_old.id;
+    get diagnostics v_event_count = row_count;
+  end if;
+
+  if exists(select 1 from public.sinjira_canon_event_characters where source_id=v_old.id) then
+    update public.sinjira_canon_event_characters set source_id=v_new.id where source_id=v_old.id;
+    get diagnostics v_presence_count = row_count;
+  end if;
+
+  if exists(select 1 from public.sinjira_story_claims where source_id=v_old.id) then
+    update public.sinjira_story_claims set source_id=v_new.id where source_id=v_old.id;
+    get diagnostics v_claim_count = row_count;
+  end if;
+
+  select
+      (select count(*) from public.sinjira_world_locations where source_id=v_old.id)
+    + (select count(*) from public.sinjira_world_travel_rules where source_id=v_old.id)
+    + (select count(*) from public.sinjira_canon_events where source_id=v_old.id)
+    + (select count(*) from public.sinjira_canon_event_characters where source_id=v_old.id)
+    + (select count(*) from public.sinjira_story_claims where source_id=v_old.id)
+  into v_remaining;
+
+  if v_remaining<>0 then
+    raise exception 'CANON_SOURCE_MIGRATION_INCOMPLETE';
+  end if;
+
+  return jsonb_build_object(
+    'ok',true,
+    'source_id',v_old.id,
+    'replacement_source_id',v_new.id,
+    'published_stories_unpublished',v_story_count,
+    'migrated',jsonb_build_object(
+      'world_locations',v_location_count,
+      'travel_rules',v_travel_count,
+      'events',v_event_count,
+      'presences',v_presence_count,
+      'claims',v_claim_count
+    ),
+    'remaining_references',v_remaining
+  );
+end;
+$$;
+
+revoke all on function public.admin_sinjira_migrate_canon_source_references(uuid,uuid) from public,anon;
+grant execute on function public.admin_sinjira_migrate_canon_source_references(uuid,uuid) to authenticated,service_role;
+
 create or replace function private.sinjira_require_verified_provenance()
 returns trigger
 language plpgsql
@@ -1014,6 +1151,8 @@ comment on table public.sinjira_story_claims is
   'Faits de continuité d’une Chronique. Chaque fait vérifié pointe vers une source canonique vérifiée.';
 comment on function private.sinjira_source_is_verified(uuid) is
   'Retourne vrai uniquement pour une source VERIFIED ou SECRET_AUTEUR.';
+comment on function public.admin_sinjira_migrate_canon_source_references(uuid,uuid) is
+  'Migration atomique auteur : déplace toutes les références directes d’une source vers son unique remplacement vérifié de même période, puis permet le retrait logique RETIRED.';
 comment on function private.sinjira_guard_canon_source_in_use() is
   'Protège les sources engagées; RETIRED exige un remplacement vérifié de même période et aucune référence directe restante vers l’ancienne source.';
 comment on function private.sinjira_demote_extended_story_on_edit() is
