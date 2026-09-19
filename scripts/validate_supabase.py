@@ -123,7 +123,7 @@ def main()->int:
       'sinjira_guard_canon_source_lifecycle',
       'sinjira_canon_sources_guard_lifecycle',
       'sinjira_canon_sources_one_successor_idx',
-      'before insert or update of supersedes_source_id,scope on public.sinjira_canon_sources',
+      'before insert or update of supersedes_source_id,scope,source_kind,book_number on public.sinjira_canon_sources',
       'sinjira_story_provenance_report',
       'admin_sinjira_story_validation_check',
       'sinjira_prevent_canon_source_delete',
