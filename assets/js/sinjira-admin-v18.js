@@ -411,6 +411,7 @@ function bindStorySegments(){
 }
 function bindCanonProvenance(){
  const sf=document.querySelector('[data-canon-source-form]');
+ if(sf){setCanonSourceAuthorityLock(null);syncCanonSourceScope()}
  sf?.elements.source_kind?.addEventListener('change',syncCanonSourceScope);
  sf?.elements.book_number?.addEventListener('input',syncCanonSourceScope);
  sf?.querySelector('[data-canon-source-reset]')?.addEventListener('click',()=>{sf.reset();sf.elements.id.value='';for(const el of sf.querySelectorAll('input,textarea,select,button'))el.disabled=false;sf.elements.scope.dataset.authorityLocked='';refreshCanonSourceSelects();setCanonSourceAuthorityLock(null);syncCanonSourceScope()});
