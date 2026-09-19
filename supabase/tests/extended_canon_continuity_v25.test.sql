@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(56);
+select plan(58);
 
 select has_table('public','sinjira_extended_stories','les récits du Canon étendu existent');
 select has_table('public','sinjira_story_character_presence','les présences de Chroniques existent');
@@ -289,6 +289,21 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='private' and p.proname='sinjira_story_continuity_report' limit 1),
   'le rapport de continuité bloque les segments dans un lieu non CANON'
+);
+
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%central_presence_uncertain%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_story_continuity_report' limit 1),
+  'les présences centrales incertaines deviennent des avertissements bloquants'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%cp.certainty=''confirmed''%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_story_continuity_report' limit 1),
+  'seules les présences centrales confirmées produisent une collision ferme'
 );
 
 select * from finish();
