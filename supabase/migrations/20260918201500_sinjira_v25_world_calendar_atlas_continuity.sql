@@ -193,7 +193,7 @@ begin
 
   return null;
 end;
-$;
+$$;
 
 revoke all on function private.sinjira_invalidate_published_extended_stories() from public,anon,authenticated,service_role;
 
