@@ -54,7 +54,11 @@ req("childmode?'approuvé11–12ans'" in lc,'Fiche projet/document n indique pas
 req('if(childmode)' in lc and 'lesplaytestsnesontpasdisponibles' in lc,'La fiche projet Junior expose encore les playtests.')
 req("!childmode&&p.play_path" in lc,'La fiche projet Junior expose encore le bouton Jouer.')
 
+req("const{user,service,aal}=awaitrequiredadmin(req)" in ae,'La console admin ne conserve pas le niveau AAL pour la révision 11–12.')
 req("action==='set_child_access_review'" in ae,'Action admin explicite de révision 11–12 absente.')
+req("aal.nextlevel!=='aal2'" in ae and "mfa_setup_required" in ae,'La révision 11–12 ne force pas la configuration MFA.')
+req("aal.currentlevel!=='aal2'" in ae and "mfa_required" in ae,'La révision 11–12 ne force pas une session AAL2 active.')
+req(ae.find("aal.currentlevel!=='aal2'") < ae.find("service.from(table).update(update)"),'Le contrôle AAL2 doit précéder toute écriture de classement 11–12.')
 req("targettype==='project'?'projects':targettype==='document'?'documents':''" in ae,'Action admin de révision cible des tables arbitraires.')
 req("['unreviewed','approved_11_12','blocked_11_12'].includes(childstatus)" in ae,'Action admin accepte un état de classement non borné.')
 req('update.child_access_reviewed_by=user.id' in ae,'La décision admin n enregistre pas le réviseur humain.')

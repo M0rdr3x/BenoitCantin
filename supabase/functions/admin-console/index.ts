@@ -68,7 +68,7 @@ Deno.serve(async(req)=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:corsHeaders});
   if(req.method!=='POST')return privateJson({ok:false,error:'Méthode non autorisée.',code:'METHOD_NOT_ALLOWED'},405);
   try{
-    const {user,service}=await requiredAdmin(req);
+    const {user,service,aal}=await requiredAdmin(req);
     const body=await readBoundedJson(req),action=String(body?.action||'');
 
     if(action==='dashboard'){
@@ -111,6 +111,8 @@ Deno.serve(async(req)=>{
     }
 
     if(action==='set_child_access_review'){
+      if(aal.nextLevel!=='aal2')return privateJson({ok:false,error:'Un second facteur est requis avant une décision de contenu 11–12.',code:'MFA_SETUP_REQUIRED'},403);
+      if(aal.currentLevel!=='aal2')return privateJson({ok:false,error:'Une vérification MFA est requise avant une décision de contenu 11–12.',code:'MFA_REQUIRED'},403);
       const targetType=String(body.target_type||'');
       const targetId=String(body.target_id||'').trim();
       const childStatus=String(body.child_access_status||'');

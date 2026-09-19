@@ -126,7 +126,8 @@ La navigation n'est jamais considérée comme une barrière de sécurité suffis
 - sortie automatique de la bande Junior à 13 ans;
 - les nouvelles surfaces restreintes doivent recevoir leur propre garde serveur avant d'être déplacées en catégorie A;
 - pour Bibliothèque/Documents/Projet, `unreviewed` et `blocked_11_12` restent fermés; seul `approved_11_12` ouvre le contenu;
-- l'approbation 11–12 est une décision humaine distincte pour le projet et pour chaque document; elle enregistre le réviseur et l'heure de décision.
+- l'approbation 11–12 est une décision humaine distincte pour le projet et pour chaque document; elle enregistre le réviseur et l'heure de décision;
+- toute décision admin `approved_11_12`, `blocked_11_12` ou retour à `unreviewed` exige un second facteur configuré et une session `aal2` active avant l'écriture.
 
 ## Couverture
 
