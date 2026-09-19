@@ -187,6 +187,22 @@ function refreshWorldSelects(){
  const eventSel=document.querySelector('[data-event-presence-event]');if(eventSel){const old=eventSel.value;eventSel.innerHTML=canonEventsCache.map(e=>`<option value="${e.id}">${escapeHtml(e.title)}</option>`).join('');if(old)eventSel.value=old}
  const charSel=document.querySelector('[data-event-presence-character]');if(charSel){const old=charSel.value;charSel.innerHTML=charactersCache.map(c=>`<option value="${c.id}">${escapeHtml(c.public_name||'Personnage sans nom')}</option>`).join('');if(old)charSel.value=old}
 }
+function setExtendedV25Unavailable(message='Le backend V25 du Canon étendu n’est pas encore déployé. Les fonctions existantes de l’administration restent disponibles.'){
+ for(const panel of document.querySelectorAll('[data-admin-panel="extended-stories"],[data-admin-panel="world-continuity"]')){
+   panel.querySelectorAll('input,textarea,select,button').forEach(el=>el.disabled=true);
+ }
+ for(const sel of ['[data-admin-extended-story-list]','[data-world-location-list]','[data-canon-event-list]','[data-event-presence-list]','[data-travel-rule-list]','[data-story-segment-list]']){
+   const box=document.querySelector(sel);if(box)box.innerHTML=`<div class="account-status" data-status-type="info">${escapeHtml(message)}</div>`;
+ }
+}
+async function loadExtendedV25Safely(){
+ try{await worldContinuity();return true}
+ catch(error){
+   console.info('[SINJIRA admin V25]',error?.message||error);
+   setExtendedV25Unavailable();
+   return false;
+ }
+}
 async function worldContinuity(){
  const d=await call('list_world_continuity');worldLocationsCache=d.locations||[];canonEventsCache=d.events||[];travelRulesCache=d.travel_rules||[];refreshWorldSelects();
  const lbox=document.querySelector('[data-world-location-list]');if(lbox){lbox.innerHTML=worldLocationsCache.map(l=>`<article class="admin-v18-row"><strong>${escapeHtml(l.name)}</strong><p>${escapeHtml(l.location_type)} · ${escapeHtml(l.canon_status)}${l.timezone_name?` · ${escapeHtml(l.timezone_name)}`:''}</p><button class="btn btn-secondary btn-small" data-edit-world-location="${l.id}">Modifier</button></article>`).join('')||'<p>Aucun lieu dans l’Atlas.</p>';lbox.querySelectorAll('[data-edit-world-location]').forEach(b=>b.addEventListener('click',()=>fillWorldLocation(worldLocationsCache.find(x=>x.id===b.dataset.editWorldLocation))))}
@@ -210,4 +226,4 @@ function bindWorldContinuity(){
  const tf=document.querySelector('[data-travel-rule-form]');tf?.querySelector('[data-travel-rule-reset]')?.addEventListener('click',()=>{tf.reset();tf.elements.id.value='';tf.elements.bidirectional.checked=true});tf?.addEventListener('submit',async e=>{e.preventDefault();const zone=zoneForLocation(tf.elements.from_location_id.value);const validFrom=toIso(tf.elements.valid_from.value,zone),validUntil=toIso(tf.elements.valid_until.value,zone);if(tf.elements.valid_from.value&&!validFrom)return alert('Début de validité invalide pour le fuseau du lieu de départ.');if(tf.elements.valid_until.value&&!validUntil)return alert('Fin de validité invalide pour le fuseau du lieu de départ.');const rule={id:tf.elements.id.value||null,from_location_id:tf.elements.from_location_id.value,to_location_id:tf.elements.to_location_id.value,minimum_minutes:tf.elements.minimum_minutes.value,travel_mode:tf.elements.travel_mode.value,bidirectional:tf.elements.bidirectional.checked,canon_status:tf.elements.canon_status.value,valid_from:validFrom,valid_until:validUntil,source_reference:tf.elements.source_reference.value,notes:tf.elements.notes.value};try{await call('save_world_travel_rule',{rule});tf.reset();tf.elements.id.value='';await worldContinuity()}catch(err){alert(err.message)}});
 }
 
-(async()=>{try{editor();extendedStoryEditor();bindStorySegments();bindWorldContinuity();ensureNotificationsUi();await Promise.all([dashboard(),comments(),submissions(),canonOverview(),auditLog(),notifications()]);await characters();await worldContinuity()}catch(e){console.error('[SINJIRA admin V18]',e)}})();
+(async()=>{try{editor();extendedStoryEditor();bindStorySegments();bindWorldContinuity();ensureNotificationsUi();await Promise.all([dashboard(),comments(),submissions(),canonOverview(),auditLog(),notifications()]);await characters();await loadExtendedV25Safely()}catch(e){console.error('[SINJIRA admin V18]',e)}})();
