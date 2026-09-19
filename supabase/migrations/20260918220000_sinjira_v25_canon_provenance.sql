@@ -130,6 +130,7 @@ as $$
 declare
   v_in_use boolean:=false;
   v_any_use boolean:=false;
+  v_direct_use boolean:=false;
   v_new_qualifies boolean:=false;
   v_has_verified_replacement boolean:=false;
 begin
@@ -139,8 +140,11 @@ begin
     or exists(select 1 from public.sinjira_canon_events e where e.source_id=old.id)
     or exists(select 1 from public.sinjira_canon_event_characters p where p.source_id=old.id)
     or exists(select 1 from public.sinjira_story_claims c where c.source_id=old.id)
-    or exists(select 1 from public.sinjira_canon_sources newer where newer.supersedes_source_id=old.id)
-  into v_any_use;
+  into v_direct_use;
+
+  v_any_use:=
+    v_direct_use
+    or exists(select 1 from public.sinjira_canon_sources newer where newer.supersedes_source_id=old.id);
 
   select
     exists(select 1 from public.sinjira_world_locations l where l.source_id=old.id and l.canon_status='CANON')
@@ -172,6 +176,15 @@ begin
     raise exception 'CANON_SOURCE_KEY_IMMUTABLE';
   end if;
 
+  if new.verification_status='RETIRED' and old.verification_status<>'RETIRED' then
+    if not v_has_verified_replacement then
+      raise exception 'CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED';
+    end if;
+    if v_direct_use then
+      raise exception 'CANON_SOURCE_RETIRE_REFERENCES_REMAIN';
+    end if;
+  end if;
+
   if v_in_use and (
     new.source_kind is distinct from old.source_kind
     or new.scope is distinct from old.scope
@@ -185,11 +198,15 @@ begin
       and not (
         new.verification_status='RETIRED'
         and v_has_verified_replacement
+        and not v_direct_use
       )
     )
   ) then
     if new.verification_status='RETIRED' and not v_has_verified_replacement then
       raise exception 'CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED';
+    end if;
+    if new.verification_status='RETIRED' and v_direct_use then
+      raise exception 'CANON_SOURCE_RETIRE_REFERENCES_REMAIN';
     end if;
     raise exception 'CANON_SOURCE_IN_USE';
   end if;
@@ -998,7 +1015,7 @@ comment on table public.sinjira_story_claims is
 comment on function private.sinjira_source_is_verified(uuid) is
   'Retourne vrai uniquement pour une source VERIFIED ou SECRET_AUTEUR.';
 comment on function private.sinjira_guard_canon_source_in_use() is
-  'Protège les sources engagées; RETIRED est permis seulement après création d’une source de remplacement vérifiée de même période.';
+  'Protège les sources engagées; RETIRED exige un remplacement vérifié de même période et aucune référence directe restante vers l’ancienne source.';
 comment on function private.sinjira_demote_extended_story_on_edit() is
   'Une modification structurelle retire automatiquement CANON_ETENDU et exige une nouvelle prévalidation.';
 comment on function private.sinjira_demote_story_from_child_change() is
