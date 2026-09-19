@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(45);
+select plan(54);
 
 select has_table('public','sinjira_extended_stories','les récits du Canon étendu existent');
 select has_table('public','sinjira_story_character_presence','les présences de Chroniques existent');
@@ -28,6 +28,7 @@ select has_function('private','sinjira_story_continuity_report',array['uuid'],'l
 select has_function('private','sinjira_locations_compatible',array['uuid','uuid'],'le moteur compare les lieux hiérarchiques');
 select has_function('private','sinjira_guard_published_story_update',array[]::text[],'le verrou SQL des Chroniques publiées existe');
 select has_function('private','sinjira_guard_published_story_presence',array[]::text[],'le verrou SQL des segments publiés existe');
+select has_function('private','sinjira_invalidate_published_extended_stories',array[]::text[],'l invalidation automatique des publications existe');
 
 select ok(not has_function_privilege('anon','public.admin_sinjira_story_continuity_check(uuid)','EXECUTE'),
   'anon ne peut pas lancer le contrôle auteur');
@@ -54,6 +55,8 @@ select ok(not has_function_privilege('authenticated','private.sinjira_guard_publ
   'le verrou de Chronique publiée n est pas invocable directement');
 select ok(not has_function_privilege('authenticated','private.sinjira_guard_published_story_presence()','EXECUTE'),
   'le verrou de segments publiés n est pas invocable directement');
+select ok(not has_function_privilege('authenticated','private.sinjira_invalidate_published_extended_stories()','EXECUTE'),
+  'l invalidation automatique n est pas invocable directement');
 
 select ok(
   (select relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace
@@ -186,6 +189,91 @@ select ok(
       and not tr.tgisinternal
   ),
   'un trigger verrouille les segments des Chroniques publiées'
+);
+
+
+select ok(
+  exists(
+    select 1 from pg_trigger tr
+    join pg_class t on t.oid=tr.tgrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_world_locations'
+      and tr.tgname='sinjira_world_locations_invalidate_extended_update'
+      and not tr.tgisinternal
+  ),
+  'l Atlas invalide les publications après changement de hiérarchie ou statut'
+);
+
+select ok(
+  exists(
+    select 1 from pg_trigger tr
+    join pg_class t on t.oid=tr.tgrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_world_locations'
+      and tr.tgname='sinjira_world_locations_invalidate_extended_delete'
+      and not tr.tgisinternal
+  ),
+  'la suppression d un lieu invalide les publications'
+);
+
+select ok(
+  exists(
+    select 1 from pg_trigger tr
+    join pg_class t on t.oid=tr.tgrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_world_travel_rules'
+      and tr.tgname='sinjira_world_travel_invalidate_extended'
+      and not tr.tgisinternal
+  ),
+  'les règles de trajet invalident les publications'
+);
+
+select ok(
+  exists(
+    select 1 from pg_trigger tr
+    join pg_class t on t.oid=tr.tgrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_canon_events'
+      and tr.tgname='sinjira_canon_events_invalidate_extended_insert_delete'
+      and not tr.tgisinternal
+  ),
+  'les événements canoniques ajoutés ou retirés invalident les publications'
+);
+
+select ok(
+  exists(
+    select 1 from pg_trigger tr
+    join pg_class t on t.oid=tr.tgrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_canon_events'
+      and tr.tgname='sinjira_canon_events_invalidate_extended_update'
+      and not tr.tgisinternal
+  ),
+  'les changements temporels ou géographiques d événements invalident les publications'
+);
+
+select ok(
+  exists(
+    select 1 from pg_trigger tr
+    join pg_class t on t.oid=tr.tgrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_canon_event_characters'
+      and tr.tgname='sinjira_canon_event_characters_invalidate_extended'
+      and not tr.tgisinternal
+  ),
+  'les présences canoniques invalident les publications'
+);
+
+select ok(
+  exists(
+    select 1 from pg_trigger tr
+    join pg_class t on t.oid=tr.tgrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_canon_context'
+      and tr.tgname='sinjira_canon_context_invalidate_extended'
+      and not tr.tgisinternal
+  ),
+  'le contexte du Canon central invalide les publications'
 );
 
 select * from finish();
