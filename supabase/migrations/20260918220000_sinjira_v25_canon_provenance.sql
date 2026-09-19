@@ -483,6 +483,11 @@ begin
   if v_new.scope is distinct from v_old.scope then
     raise exception 'CANON_SOURCE_MIGRATION_SCOPE_MISMATCH';
   end if;
+  if v_old.source_kind='roman'
+     and v_new.source_kind='roman'
+     and v_new.book_number is distinct from v_old.book_number then
+    raise exception 'CANON_SOURCE_MIGRATION_BOOK_MISMATCH';
+  end if;
   if not private.sinjira_source_is_verified(v_new.id) then
     raise exception 'CANON_SOURCE_MIGRATION_REPLACEMENT_NOT_VERIFIED';
   end if;
