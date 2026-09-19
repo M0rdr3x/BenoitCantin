@@ -236,6 +236,7 @@ La fondation technique prévoit maintenant :
 8. La Chronique canonisée reste en état **validated** tant qu’elle n’est pas publiée.
 9. La publication est une action séparée : elle exige une audience Membres ou Public, un contenu rédigé, un ancrage défini, une période complète, un lieu Atlas et une nouvelle vérification de continuité.
 10. Une Chronique publiée doit être retirée de publication avant toute modification de son contenu, de sa période, de son lieu ou de ses segments.
+11. Si le Canon central, le Calendrier-Monde, une présence canonique, une règle de déplacement ou la hiérarchie de l’Atlas change, les Chroniques publiées repassent automatiquement à **validated** et doivent être recontrôlées avant republication.
 
 Le moteur de continuité ne doit jamais inventer une heure, un lieu, une durée de trajet ou un fait absent des sources pour faire « passer » une histoire.
 
