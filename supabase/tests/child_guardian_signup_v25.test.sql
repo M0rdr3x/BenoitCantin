@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(45);
+select plan(46);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -310,6 +310,13 @@ select is(
    where minor_user_id='20000000-0000-4000-8000-000000000011'),
   0,
   'à 18 ans l ancien tuteur ne peut plus lire le lien de supervision'
+);
+select is(
+  (select count(*)::integer
+   from public.guardian_signup_invites
+   where minor_user_id='20000000-0000-4000-8000-000000000011'),
+  0,
+  'à 18 ans l ancien tuteur ne peut plus relire les invitations parentales consommées'
 );
 reset role;
 

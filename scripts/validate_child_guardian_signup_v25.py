@@ -10,6 +10,7 @@ GUARDIAN_SECRET_MIN_MIG = ROOT / 'supabase/migrations/20260919030000_sinjira_v25
 GUARDIAN_READ_AAL2_MIG = ROOT / 'supabase/migrations/20260919033000_sinjira_v25_guardian_invite_read_aal2.sql'
 GUARDIAN_REVOKE_AAL2_MIG = ROOT / 'supabase/migrations/20260919043000_sinjira_v25_guardian_revoke_aal2.sql'
 GUARDIAN_ADULT_VIS_MIG = ROOT / 'supabase/migrations/20260919050000_sinjira_v25_guardian_majority_visibility.sql'
+GUARDIAN_INVITE_ADULT_VIS_MIG = ROOT / 'supabase/migrations/20260919053000_sinjira_v25_guardian_invite_majority_visibility.sql'
 YOUTH_BASE = ROOT / 'supabase/migrations/20260816140000_sinjira_v24_4_12_youth_safety.sql'
 SIGNUP_JS = ROOT / 'assets/js/v24-signup.js'
 BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
@@ -42,6 +43,7 @@ guardian_secret_min_mig = read(GUARDIAN_SECRET_MIN_MIG)
 guardian_read_aal2_mig = read(GUARDIAN_READ_AAL2_MIG)
 guardian_revoke_aal2_mig = read(GUARDIAN_REVOKE_AAL2_MIG)
 guardian_adult_vis_mig = read(GUARDIAN_ADULT_VIS_MIG)
+guardian_invite_adult_vis_mig = read(GUARDIAN_INVITE_ADULT_VIS_MIG)
 youth_base = read(YOUTH_BASE)
 signup_js = read(SIGNUP_JS)
 backend_js = read(BACKEND_JS)
@@ -59,6 +61,7 @@ gsm = compact(guardian_secret_min_mig)
 grm = compact(guardian_read_aal2_mig)
 grv = compact(guardian_revoke_aal2_mig)
 gav = compact(guardian_adult_vis_mig)
+giav = compact(guardian_invite_adult_vis_mig)
 y = compact(youth_base)
 j = compact(signup_js)
 b = compact(backend_js)
@@ -131,6 +134,13 @@ req("createpolicyguardian_read_parties_age_bounded" in gav
     "La RLS guardian_links n'utilise pas le garde de majorité self-only.")
 req("droppolicyifexistsguardian_read_partiesonpublic.guardian_links" in gav,
     "L'ancienne policy guardian_links sans borne d'âge n'est pas supprimée.")
+req("createpolicyguardian_signup_invites_own_aal2" in giav
+    and "coalesce(auth.jwt()->>'aal','aal1')='aal2'" in giav,
+    "La policy des invitations parentales ne conserve pas la borne AAL2.")
+req("minor_user_idisnullorexists(select1frompublic.guardian_linksg" in giav
+    and "g.guardian_user_id=(selectauth.uid())" in giav
+    and "g.minor_user_id=guardian_signup_invites.minor_user_id" in giav,
+    "Les invitations consommées ne sont pas bornées par la visibilité du guardian_link.")
 
 # Bande enfant distincte : elle ne doit pas hériter automatiquement des droits sociaux jeunesse.
 req("interval'11years'then'under11'" in m,
@@ -280,7 +290,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(45);' in t,
+req('selectplan(46);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
@@ -321,6 +331,7 @@ for marker, message in (
     ("quittersonlienremetimmédiatementlecompte11ansenchild_pending", "Le pgTAP ne prouve pas l'effet fail-closed de la sortie enfant."),
     ("lejourdes18anslecomptedevientadult", "Le pgTAP ne prouve pas la transition automatique vers adult à 18 ans."),
     ("à18anslancientuteurnepeutpluslireleliendesupervision", "Le pgTAP ne prouve pas la fin de visibilité tuteur à la majorité."),
+    ("à18anslancientuteurnepeutplusrelirelesinvitationsparentalesconsommées", "Le pgTAP ne prouve pas la fin de visibilité des invitations consommées à la majorité."),
     ("lapersonnedevenueadulteconservelaccèsàsonproprehistoriquedesupervision", "Le pgTAP ne préserve pas l'accès self-only de l'adulte à son historique."),
     ("untiersnepeutpasutiliserlehelperpoursonderunlienquineleconcernepas", "Le pgTAP ne prouve pas la fermeture du helper à un tiers."),
     ("$$,'p0001','youth_jurisdiction_not_enabled'", "Le délimiteur pgTAP du refus hors Canada est cassé."),
