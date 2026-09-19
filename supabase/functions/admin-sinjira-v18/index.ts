@@ -16,7 +16,7 @@ const SAFE_LOG_CODES=new Set([
   'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON','SOURCE_PURGED',
   'SOURCE_PURGE_CONFIRMATION_REQUIRED','SOURCE_PURGE_STORAGE_FAILED',
   'CANON_CONFIRMATION_REQUIRED','EXTENDED_CANON_CONFIRMATION_REQUIRED','STORY_CONTINUITY_CONFLICT','STORY_CONTINUITY_INCOMPLETE','NOTIFICATION_ID_REQUIRED','CENTRAL_CANON_LOCKED',
-  'CANON_SOURCE_REQUIRED','CANON_SOURCE_NOT_VERIFIED','CANON_SOURCE_SCOPE_MISMATCH','CANON_PRESENCE_SOURCE_SCOPE_MISMATCH','CANON_SOURCE_LOCATOR_REQUIRED','CANON_SOURCE_CHAPTER_REQUIRED','CANON_SOURCE_IN_USE','CANON_SOURCE_KEY_IMMUTABLE','CANON_SOURCE_SUPERSEDES_SELF','CANON_SOURCE_SUPERSEDES_CYCLE','CLAIM_SOURCE_REQUIRED','CLAIM_SOURCE_NOT_VERIFIED','CLAIM_SOURCE_SCOPE_MISMATCH','STORY_PROVENANCE_REQUIRED','STORY_PROVENANCE_INCOMPLETE','STORY_PROVENANCE_SCOPE_MISMATCH'
+  'CANON_SOURCE_REQUIRED','CANON_SOURCE_NOT_VERIFIED','CANON_SOURCE_SCOPE_MISMATCH','CANON_PRESENCE_SOURCE_SCOPE_MISMATCH','CANON_SOURCE_LOCATOR_REQUIRED','CANON_SOURCE_CHAPTER_REQUIRED','CANON_SOURCE_IN_USE','CANON_SOURCE_KEY_IMMUTABLE','CANON_SOURCE_SUPERSEDES_SELF','CANON_SOURCE_SUPERSEDES_CYCLE','CLAIM_SOURCE_REQUIRED','CLAIM_SOURCE_NOT_VERIFIED','CLAIM_SOURCE_SCOPE_MISMATCH','STORY_PROVENANCE_REQUIRED','STORY_PROVENANCE_INCOMPLETE','STORY_PROVENANCE_SCOPE_MISMATCH','STORY_CANON_INSERT_FORBIDDEN','STORY_SAVE_BEFORE_CANON_TRANSITION','STORY_PROMOTION_REQUIRED','STORY_CANON_STATUS_INVALID','STORY_PUBLICATION_TIMESTAMP_REQUIRED'
 ]);
 
 function privateJson(data:unknown,status=200){
@@ -591,18 +591,23 @@ Deno.serve(async(req)=>{
     if(e?.message==='STORY_PUBLIC_AUDIENCE_REQUIRED')return privateJson({ok:false,error:'La publication exige une audience Membres ou Public.',code:'STORY_PUBLIC_AUDIENCE_REQUIRED'},409);
     if(e?.message==='STORY_NOT_CANON_EXTENDED')return privateJson({ok:false,error:'La Chronique doit être CANON ÉTENDU avant publication.',code:'STORY_NOT_CANON_EXTENDED'},409);
     if(e?.message==='STORY_ARCHIVED')return privateJson({ok:false,error:'Une Chronique archivée ne peut pas être publiée.',code:'STORY_ARCHIVED'},409);
-    if(e?.message==='STORY_ANCHOR_REQUIRED')return privateJson({ok:false,error:'Définissez l’ancrage canonique avant publication.',code:'STORY_ANCHOR_REQUIRED'},409);
-    if(e?.message==='STORY_METADATA_INCOMPLETE')return privateJson({ok:false,error:'La publication exige une période complète et un lieu Atlas.',code:'STORY_METADATA_INCOMPLETE'},409);
-    if(e?.message==='STORY_CONTENT_REQUIRED')return privateJson({ok:false,error:'Le contenu de la Chronique doit être rédigé avant publication.',code:'STORY_CONTENT_REQUIRED'},409);
-    if(e?.message==='STORY_LOCATION_NOT_CANON')return privateJson({ok:false,error:'Le lieu principal de la Chronique doit être CANON dans l’Atlas avant publication.',code:'STORY_LOCATION_NOT_CANON'},409);
+    if(e?.message==='STORY_ANCHOR_REQUIRED')return privateJson({ok:false,error:'Définissez l’ancrage canonique avant canonisation ou publication.',code:'STORY_ANCHOR_REQUIRED'},409);
+    if(e?.message==='STORY_METADATA_INCOMPLETE')return privateJson({ok:false,error:'La canonisation/publication exige une période complète, un lieu Atlas CANON et un contenu prêt.',code:'STORY_METADATA_INCOMPLETE'},409);
+    if(e?.message==='STORY_CONTENT_REQUIRED')return privateJson({ok:false,error:'Le contenu de la Chronique doit être rédigé avant canonisation ou publication.',code:'STORY_CONTENT_REQUIRED'},409);
+    if(e?.message==='STORY_LOCATION_NOT_CANON')return privateJson({ok:false,error:'Le lieu principal de la Chronique doit être CANON dans l’Atlas avant canonisation ou publication.',code:'STORY_LOCATION_NOT_CANON'},409);
     if(e?.message==='CANON_LOCATION_REQUIRED')return privateJson({ok:false,error:'Un événement ou une présence CANON/SECRET AUTEUR doit utiliser un lieu CANON dans l’Atlas.',code:'CANON_LOCATION_REQUIRED'},409);
     if(e?.message==='CANON_SOURCE_REQUIRED')return privateJson({ok:false,error:'Cet élément canonique doit être relié à une source du Registre.',code:'CANON_SOURCE_REQUIRED'},409);
     if(e?.message==='CANON_SOURCE_NOT_VERIFIED')return privateJson({ok:false,error:'La source choisie doit être VERIFIED ou SECRET_AUTEUR avant cette validation canonique.',code:'CANON_SOURCE_NOT_VERIFIED'},409);
     if(e?.message==='CANON_SOURCE_SCOPE_MISMATCH')return privateJson({ok:false,error:'La période de cette source ne correspond pas au périmètre canonique de l’élément.',code:'CANON_SOURCE_SCOPE_MISMATCH'},409);
     if(e?.message==='CANON_PRESENCE_SOURCE_SCOPE_MISMATCH')return privateJson({ok:false,error:'La source de cette présence ne correspond pas à la période de son événement.',code:'CANON_PRESENCE_SOURCE_SCOPE_MISMATCH'},409);
     if(e?.message==='CLAIM_SOURCE_SCOPE_MISMATCH')return privateJson({ok:false,error:'La source d’ancrage ne correspond pas à la période de la Chronique.',code:'CLAIM_SOURCE_SCOPE_MISMATCH'},409);
-    if(e?.message==='STORY_PROVENANCE_SCOPE_MISMATCH')return privateJson({ok:false,error:'Publication refusée : aucun fait d’ancrage vérifié ne correspond à la période de la Chronique.',code:'STORY_PROVENANCE_SCOPE_MISMATCH'},409);
+    if(e?.message==='STORY_PROVENANCE_SCOPE_MISMATCH')return privateJson({ok:false,error:'Canonisation/publication refusée : aucun fait d’ancrage vérifié ne correspond à la période de la Chronique.',code:'STORY_PROVENANCE_SCOPE_MISMATCH'},409);
     if(e?.message==='STORY_VALIDATION_INCOMPLETE')return privateJson({ok:false,error:'La prévalidation de la Chronique est incomplète.',code:'STORY_VALIDATION_INCOMPLETE'},409);
+    if(e?.message==='STORY_CANON_INSERT_FORBIDDEN')return privateJson({ok:false,error:'Une Chronique doit d’abord être enregistrée en brouillon/révision avant toute canonisation ou publication.',code:'STORY_CANON_INSERT_FORBIDDEN'},409);
+    if(e?.message==='STORY_SAVE_BEFORE_CANON_TRANSITION')return privateJson({ok:false,error:'Enregistrez d’abord les modifications de la Chronique, puis relancez la prévalidation avant canonisation/publication.',code:'STORY_SAVE_BEFORE_CANON_TRANSITION'},409);
+    if(e?.message==='STORY_PROMOTION_REQUIRED')return privateJson({ok:false,error:'La Chronique doit être promue en CANON ÉTENDU et validée avant de pouvoir être publiée.',code:'STORY_PROMOTION_REQUIRED'},409);
+    if(e?.message==='STORY_CANON_STATUS_INVALID')return privateJson({ok:false,error:'Une Chronique entrant dans CANON ÉTENDU doit terminer la transition avec le statut validated.',code:'STORY_CANON_STATUS_INVALID'},409);
+    if(e?.message==='STORY_PUBLICATION_TIMESTAMP_REQUIRED')return privateJson({ok:false,error:'Une publication doit recevoir son horodatage par l’action Publier.',code:'STORY_PUBLICATION_TIMESTAMP_REQUIRED'},409);
     if(e?.message==='CANON_SOURCE_LOCATOR_REQUIRED')return privateJson({ok:false,error:'Une source vérifiée doit contenir un chapitre, un passage ou une version précise.',code:'CANON_SOURCE_LOCATOR_REQUIRED'},409);
     if(e?.message==='CANON_SOURCE_CHAPTER_REQUIRED')return privateJson({ok:false,error:'Une source Roman vérifiée doit indiquer le chapitre ou la section.',code:'CANON_SOURCE_CHAPTER_REQUIRED'},409);
     if(e?.message==='CANON_SOURCE_IN_USE')return privateJson({ok:false,error:'Cette source est déjà utilisée par le canon. Créez une nouvelle source de remplacement au lieu de modifier son autorité ou ses repères.',code:'CANON_SOURCE_IN_USE'},409);
@@ -611,8 +616,8 @@ Deno.serve(async(req)=>{
     if(e?.message==='CANON_SOURCE_SUPERSEDES_CYCLE')return privateJson({ok:false,error:'Chaîne de remplacement refusée : elle créerait un cycle entre sources.',code:'CANON_SOURCE_SUPERSEDES_CYCLE'},409);
     if(e?.message==='CLAIM_SOURCE_REQUIRED')return privateJson({ok:false,error:'Un fait vérifié doit citer une source du Registre.',code:'CLAIM_SOURCE_REQUIRED'},409);
     if(e?.message==='CLAIM_SOURCE_NOT_VERIFIED')return privateJson({ok:false,error:'La source du fait doit être vérifiée avant de valider ce fait.',code:'CLAIM_SOURCE_NOT_VERIFIED'},409);
-    if(e?.message==='STORY_PROVENANCE_REQUIRED')return privateJson({ok:false,error:'Publication refusée : ajoutez au moins un fait d’ancrage vérifié avec une source canonique.',code:'STORY_PROVENANCE_REQUIRED'},409);
-    if(e?.message==='STORY_PROVENANCE_INCOMPLETE')return privateJson({ok:false,error:'Publication refusée : tous les faits de provenance doivent être vérifiés et reliés à une source encore valide.',code:'STORY_PROVENANCE_INCOMPLETE'},409);
+    if(e?.message==='STORY_PROVENANCE_REQUIRED')return privateJson({ok:false,error:'Canonisation/publication refusée : ajoutez au moins un fait d’ancrage vérifié avec une source canonique.',code:'STORY_PROVENANCE_REQUIRED'},409);
+    if(e?.message==='STORY_PROVENANCE_INCOMPLETE')return privateJson({ok:false,error:'Canonisation/publication refusée : tous les faits de provenance doivent être vérifiés et reliés à une source encore valide.',code:'STORY_PROVENANCE_INCOMPLETE'},409);
     if(e?.message==='STORY_CONTINUITY_CONFLICT')return privateJson({ok:false,error:'Canonisation refusée : collision de continuité détectée.',code:'STORY_CONTINUITY_CONFLICT'},409);
     if(e?.message==='STORY_CONTINUITY_INCOMPLETE')return privateJson({ok:false,error:'Canonisation refusée : date ou lieu de continuité incomplet.',code:'STORY_CONTINUITY_INCOMPLETE'},409);
     if(e?.message==='NOTIFICATION_ID_REQUIRED')return privateJson({ok:false,error:'Identifiant de notification requis.'},400);
