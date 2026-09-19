@@ -680,6 +680,8 @@ begin
       'type',case
         when sp.starts_at is null or sp.ends_at is null then 'time_unresolved'
         when sp.location_id is null then 'location_unresolved'
+        when sp.certainty<>'confirmed' then 'presence_uncertain'
+        when wl.canon_status is distinct from 'CANON' then 'location_not_canon'
         else 'continuity_unresolved'
       end,
       'character_id',sp.character_id,
@@ -688,15 +690,20 @@ begin
       'message',case
         when sp.starts_at is null or sp.ends_at is null then 'La présence doit avoir un début et une fin avant canonisation.'
         when sp.location_id is null then 'Le lieu doit être relié à l’Atlas canonique avant canonisation.'
+        when sp.certainty<>'confirmed' then 'La présence doit être confirmée avant canonisation.'
+        when wl.canon_status is distinct from 'CANON' then 'Le lieu du segment doit être CANON dans l’Atlas avant canonisation.'
         else 'La continuité de cette présence reste incomplète.'
       end
     ) as item
     from private.sinjira_effective_story_presence sp
+    left join public.sinjira_world_locations wl on wl.id=sp.location_id
     where sp.story_id=p_story_id
       and (
         sp.starts_at is null
         or sp.ends_at is null
         or sp.location_id is null
+        or sp.certainty<>'confirmed'
+        or wl.canon_status is distinct from 'CANON'
       )
   )
   select v_warnings || coalesce(jsonb_agg(item),'[]'::jsonb) into v_warnings from warn;
@@ -801,6 +808,12 @@ begin
   if v_story.anchor_scope='UNASSIGNED' then raise exception 'STORY_ANCHOR_REQUIRED'; end if;
   if v_story.starts_at is null or v_story.ends_at is null or v_story.location_id is null then
     raise exception 'STORY_METADATA_INCOMPLETE';
+  end if;
+  if not exists(
+    select 1 from public.sinjira_world_locations l
+    where l.id=v_story.location_id and l.canon_status='CANON'
+  ) then
+    raise exception 'STORY_LOCATION_NOT_CANON';
   end if;
   if btrim(coalesce(v_story.content,''))='' then raise exception 'STORY_CONTENT_REQUIRED'; end if;
 
