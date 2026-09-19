@@ -607,16 +607,13 @@ $$;
 
 revoke all on function private.sinjira_story_provenance_report(uuid) from public,anon,authenticated;
 
-create or replace function public.admin_sinjira_story_validation_check(
-  p_story_id uuid
-)
+create or replace function private.sinjira_story_readiness_report(p_story_id uuid)
 returns jsonb
 language plpgsql
-security definer
-set search_path=pg_catalog,public,private,auth
+stable
+set search_path=pg_catalog,public,private
 as $$
 declare
-  v_admin uuid;
   v_story public.sinjira_extended_stories%rowtype;
   v_location_canon boolean:=false;
   v_metadata_ready boolean:=false;
@@ -624,13 +621,13 @@ declare
   v_continuity jsonb;
   v_ready boolean:=false;
 begin
-  v_admin:=private.require_sinjira_admin_aal2();
-
   select * into v_story
   from public.sinjira_extended_stories
   where id=p_story_id;
 
-  if v_story.id is null then raise exception 'STORY_NOT_FOUND'; end if;
+  if v_story.id is null then
+    return jsonb_build_object('ok',false,'story_id',p_story_id,'code','STORY_NOT_FOUND');
+  end if;
 
   if v_story.location_id is not null then
     select exists(
@@ -671,6 +668,141 @@ begin
     'provenance',v_provenance,
     'continuity',v_continuity
   );
+end;
+$$;
+
+revoke all on function private.sinjira_story_readiness_report(uuid) from public,anon,authenticated;
+
+alter table public.sinjira_extended_stories
+  drop constraint if exists sinjira_extended_stories_canon_workflow_check;
+alter table public.sinjira_extended_stories
+  add constraint sinjira_extended_stories_canon_workflow_check
+  check(
+    (canon_status='CANON_ETENDU' and status in ('validated','published'))
+    or
+    (canon_status<>'CANON_ETENDU' and status<>'published')
+  );
+
+create or replace function private.sinjira_require_story_canon_transition()
+returns trigger
+language plpgsql
+security definer
+set search_path=pg_catalog,public,private
+as $$
+declare
+  v_structural_changed boolean:=false;
+  v_entering_canon boolean:=false;
+  v_entering_publish boolean:=false;
+  v_readiness jsonb;
+  v_metadata jsonb;
+  v_provenance jsonb;
+  v_continuity jsonb;
+begin
+  if tg_op='INSERT' then
+    if new.canon_status='CANON_ETENDU' or new.status='published' then
+      raise exception 'STORY_CANON_INSERT_FORBIDDEN';
+    end if;
+    return new;
+  end if;
+
+  v_structural_changed:=
+    new.story_type is distinct from old.story_type
+    or new.character_id is distinct from old.character_id
+    or new.title is distinct from old.title
+    or new.slug is distinct from old.slug
+    or new.summary is distinct from old.summary
+    or new.content is distinct from old.content
+    or new.region_name is distinct from old.region_name
+    or new.location_id is distinct from old.location_id
+    or new.anchor_scope is distinct from old.anchor_scope
+    or new.starts_at is distinct from old.starts_at
+    or new.ends_at is distinct from old.ends_at
+    or new.continuity_data is distinct from old.continuity_data;
+
+  v_entering_canon:=new.canon_status='CANON_ETENDU' and old.canon_status<>'CANON_ETENDU';
+  v_entering_publish:=new.status='published' and old.status<>'published';
+
+  if not v_entering_canon and not v_entering_publish then
+    return new;
+  end if;
+
+  if v_structural_changed then
+    raise exception 'STORY_SAVE_BEFORE_CANON_TRANSITION';
+  end if;
+
+  if v_entering_publish and old.canon_status<>'CANON_ETENDU' then
+    raise exception 'STORY_PROMOTION_REQUIRED';
+  end if;
+
+  if v_entering_canon and new.status<>'validated' then
+    raise exception 'STORY_CANON_STATUS_INVALID';
+  end if;
+
+  if v_entering_publish then
+    if new.canon_status<>'CANON_ETENDU' then raise exception 'STORY_NOT_CANON_EXTENDED'; end if;
+    if new.audience not in ('members','public') then raise exception 'STORY_PUBLIC_AUDIENCE_REQUIRED'; end if;
+    if new.published_at is null then raise exception 'STORY_PUBLICATION_TIMESTAMP_REQUIRED'; end if;
+  end if;
+
+  v_readiness:=private.sinjira_story_readiness_report(old.id);
+  if coalesce((v_readiness->>'ok')::boolean,false) is not true then
+    raise exception 'STORY_NOT_FOUND';
+  end if;
+
+  v_metadata:=v_readiness->'metadata';
+  v_provenance:=v_readiness->'provenance';
+  v_continuity:=v_readiness->'continuity';
+
+  if coalesce((v_metadata->>'ready')::boolean,false) is not true then
+    raise exception 'STORY_METADATA_INCOMPLETE';
+  end if;
+  if coalesce((v_provenance->>'verified_anchor_claims')::integer,0)=0 then
+    raise exception 'STORY_PROVENANCE_REQUIRED';
+  end if;
+  if coalesce((v_provenance->>'matching_anchor_claims')::integer,0)=0 then
+    raise exception 'STORY_PROVENANCE_SCOPE_MISMATCH';
+  end if;
+  if coalesce((v_provenance->>'unresolved_claims')::integer,0)>0 then
+    raise exception 'STORY_PROVENANCE_INCOMPLETE';
+  end if;
+  if coalesce((v_continuity->>'blocking_conflicts')::integer,0)>0 then
+    raise exception 'STORY_CONTINUITY_CONFLICT';
+  end if;
+  if coalesce((v_continuity->>'warnings')::integer,0)>0 then
+    raise exception 'STORY_CONTINUITY_INCOMPLETE';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists sinjira_extended_stories_canon_transition_guard on public.sinjira_extended_stories;
+create trigger sinjira_extended_stories_canon_transition_guard
+before insert or update on public.sinjira_extended_stories
+for each row execute function private.sinjira_require_story_canon_transition();
+
+revoke all on function private.sinjira_require_story_canon_transition() from public,anon,authenticated,service_role;
+
+create or replace function public.admin_sinjira_story_validation_check(
+  p_story_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path=pg_catalog,public,private,auth
+as $$
+declare
+  v_admin uuid;
+  v_readiness jsonb;
+begin
+  v_admin:=private.require_sinjira_admin_aal2();
+  v_readiness:=private.sinjira_story_readiness_report(p_story_id);
+
+  if coalesce((v_readiness->>'ok')::boolean,false) is not true then
+    raise exception 'STORY_NOT_FOUND';
+  end if;
+
+  return v_readiness;
 end;
 $$;
 
@@ -855,6 +987,10 @@ comment on function private.sinjira_invalidate_published_extended_stories() is
   'Toute modification d’une dépendance canonique dépublie et repasse les Chroniques CANON_ETENDU en PROVISOIRE / author_review.';
 comment on function private.sinjira_story_provenance_report(uuid) is
   'Rapport unique de provenance d’une Chronique : ancrages vérifiés, période correspondante et faits non résolus.';
+comment on function private.sinjira_story_readiness_report(uuid) is
+  'Source unique de vérité avant canonisation/publication : métadonnées, provenance et continuité.';
+comment on function private.sinjira_require_story_canon_transition() is
+  'Garde SQL : toute entrée dans CANON_ETENDU ou published exige une version déjà enregistrée et entièrement prête.';
 comment on function public.admin_sinjira_story_validation_check(uuid) is
   'Prévalidation auteur combinée : provenance structurée et continuité doivent être prêtes avant CANON_ETENDU.';
 comment on function public.admin_sinjira_promote_extended_story(uuid) is
