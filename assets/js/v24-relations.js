@@ -113,10 +113,33 @@ async function renderGuardian(){
 }
 
 guardianButton?.addEventListener('click',async()=>{
-  guardianButton.disabled=true;setStatus(guardianStatus,'Création sécurisée du code parental…','info');
+  guardianButton.disabled=true;setStatus(guardianStatus,'Vérification renforcée avant création du code parental…','info');
+  const {data:aal,error:aalError}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
+  if(aalError){
+    guardianButton.disabled=false;
+    setStatus(guardianStatus,'Impossible de vérifier le niveau de sécurité de votre session. Aucun code parental n’a été créé.','error');
+    return;
+  }
+  if(aal?.currentLevel!=='aal2'){
+    guardianButton.disabled=false;
+    if(aal?.nextLevel==='aal2'){
+      location.assign(`/compte/mfa.html?next=${encodeURIComponent('/compte/relations.html')}`);
+      return;
+    }
+    setStatus(guardianStatus,'La création d’un code parental exige un second facteur. Activez d’abord une application d’authentification dans Sécurité, puis revenez ici.','error');
+    return;
+  }
   const {data,error}=await s.rpc('create_guardian_signup_invite');
   guardianButton.disabled=false;
-  if(error){setStatus(guardianStatus,'Impossible de générer le code parental. Vérifiez que votre compte est adulte et que les exigences de sécurité sont satisfaites.','error');return}
+  if(error){
+    const raw=String(error.message||'');
+    if(/MFA_AAL2_REQUIRED|MFA_REQUIRED/i.test(raw)){
+      setStatus(guardianStatus,'Votre session doit être vérifiée au niveau AAL2 avant de créer un code parental. Utilisez la vérification renforcée puis réessayez.','error');
+    }else{
+      setStatus(guardianStatus,'Impossible de générer le code parental. Vérifiez que votre compte est adulte et que les exigences de sécurité sont satisfaites.','error');
+    }
+    return;
+  }
   setStatus(guardianStatus,`Code créé : ${String(data||'')}. Copiez-le dans l’inscription de l’enfant. Il est à usage unique et expire automatiquement.`,'success');
   await renderGuardian();
 });

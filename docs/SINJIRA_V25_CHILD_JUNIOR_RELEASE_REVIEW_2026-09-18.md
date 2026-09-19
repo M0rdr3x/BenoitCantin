@@ -12,6 +12,7 @@ Le périmètre enfant/Junior couvre notamment :
 
 - création de compte dès 11 ans;
 - parent/tuteur adulte vérifié obligatoire pour 11–13 ans;
+- génération d’un code parental réservée à une session adulte AAL2;
 - bande `child` à 11–12 ans, puis transition automatique vers `youth` à 13 ans;
 - révocation du tuteur fail-closed;
 - Communauté Junior séparée et pseudonymisée;
@@ -51,7 +52,7 @@ La migration forward-only suivante aligne le serveur avec la bande V25 :
 
 Elle autorise un compte `child_pending` à consommer un **nouveau code parental adulte valide et à usage unique**. Le trigger canonique `sync_guardian_signup_invite_link` réactive/crée alors le lien `guardian_links` en `verified`, remet `revoked_at` à `null` et la classification repasse immédiatement à `child`. Un compte déjà supervisé ne reçoit pas un nouveau droit implicite.
 
-Le pgTAP d'inscription enfant passe de **26 à 31 assertions** et couvre explicitement `child_pending → child`, la réactivation du lien et la consommation unique du nouveau code.
+Le pgTAP d'inscription enfant passe de **26 à 34 assertions** et couvre explicitement `child_pending → child`, la réactivation du lien et la consommation unique du nouveau code.
 
 Cette onzième migration reste **non revue production**.
 
@@ -69,9 +70,25 @@ Le pgTAP de révocation Junior passe de **9 à 17 assertions** et prouve la cha�
 
 Cette douzième migration reste **non revue production**.
 
+### AAL2 obligatoire pour émettre un code parental
+
+La génération d’un code parental peut créer ou rétablir un lien de supervision d’un mineur. La revue a donc durci ce geste sensible indépendamment du réglage MFA global.
+
+La migration forward-only suivante impose une session adulte **AAL2** :
+
+`20260919023000_sinjira_v25_guardian_invite_aal2.sql`
+
+Elle refuse explicitement AAL1 avec `MFA_AAL2_REQUIRED`, conserve les gardes MFA historiques additionnelles lorsqu’elles sont activées, invalide les anciens codes non consommés du même tuteur et maintient les ACL bornées à `authenticated`.
+
+L’interface Relations vérifie le niveau d’assurance avant l’appel RPC. Si un facteur existe mais que la session est AAL1, elle utilise le parcours `/compte/mfa.html` puis revient vers Relations. Si aucun second facteur n’est configuré, elle renvoie vers le Centre de sécurité.
+
+Le pgTAP enfant contient maintenant **34 assertions** et prouve le refus AAL1, la réussite AAL2 et le format du code généré. Deux délimiteurs SQL `$$` endommagés dans la preuve précédente ont également été réparés et sont désormais verrouillés par le validateur statique.
+
+Cette treizième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **12 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **13 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -94,6 +111,7 @@ Le snapshot de revue attend exactement **12 migrations locales futures non revue
 | `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` | `f60c6e7a6717f7b5818ff0b9a1ba7b055aa418ff` |
 | `20260919013000_sinjira_v25_child_pending_guardian_redeem.sql` | `983ac4b48f25f29c0c62becb692b9203cdec80a1` |
 | `20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql` | `e14c41364246929054282bccb0e4abc5641b8643` |
+| `20260919023000_sinjira_v25_guardian_invite_aal2.sql` | `5700bfaa2b5a95d84d37ad475524960bdb78fc9b` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -138,7 +156,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **12 migrations** dans l’ordre.
+2. Relire les **13 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.

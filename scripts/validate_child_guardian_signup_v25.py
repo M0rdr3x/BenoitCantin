@@ -5,6 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MIG = ROOT / 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
 TEST = ROOT / 'supabase/tests/child_guardian_signup_v25.test.sql'
 REDEEM_MIG = ROOT / 'supabase/migrations/20260919013000_sinjira_v25_child_pending_guardian_redeem.sql'
+GUARDIAN_AAL2_MIG = ROOT / 'supabase/migrations/20260919023000_sinjira_v25_guardian_invite_aal2.sql'
 YOUTH_BASE = ROOT / 'supabase/migrations/20260816140000_sinjira_v24_4_12_youth_safety.sql'
 SIGNUP_JS = ROOT / 'assets/js/v24-signup.js'
 BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
@@ -32,6 +33,7 @@ def compact(text):
 mig = read(MIG)
 test = read(TEST)
 redeem_mig = read(REDEEM_MIG)
+guardian_aal2_mig = read(GUARDIAN_AAL2_MIG)
 youth_base = read(YOUTH_BASE)
 signup_js = read(SIGNUP_JS)
 backend_js = read(BACKEND_JS)
@@ -44,6 +46,7 @@ child_browser_test = read(CHILD_BROWSER_TEST)
 m = compact(mig)
 t = compact(test)
 rm = compact(redeem_mig)
+gm = compact(guardian_aal2_mig)
 y = compact(youth_base)
 j = compact(signup_js)
 b = compact(backend_js)
@@ -71,6 +74,15 @@ req("updatepublic.guardian_signup_invitessetused_at=now(),minor_user_id=uid" in 
 req("revokeallonfunctionpublic.redeem_guardian_signup_invite(text)frompublic,anon" in rm
     and "grantexecuteonfunctionpublic.redeem_guardian_signup_invite(text)toauthenticated" in rm,
     "Les ACL du RPC de rétablissement parental ne sont pas bornées.")
+req("coalesce(auth.jwt()->>'aal','aal1')<>'aal2'" in gm and "mfa_aal2_required" in gm,
+    "La création d'un code parental n'exige pas explicitement AAL2 côté serveur.")
+req("notpublic.sinjira_mfa_access_allowed(uid)" in gm and "mfa_required" in gm,
+    "Le durcissement AAL2 a supprimé les gardes MFA historiques additionnelles.")
+req("deletefrompublic.guardian_signup_inviteswhereguardian_user_id=uidandused_atisnull" in gm,
+    "Un nouveau code AAL2 n'invalide plus les anciens codes ouverts.")
+req("revokeallonfunctionpublic.create_guardian_signup_invite()frompublic,anon" in gm
+    and "grantexecuteonfunctionpublic.create_guardian_signup_invite()toauthenticated" in gm,
+    "Les ACL de création du code parental AAL2 ne sont pas bornées.")
 
 # Bande enfant distincte : elle ne doit pas hériter automatiquement des droits sociaux jeunesse.
 req("interval'11years'then'under11'" in m,
@@ -144,10 +156,20 @@ req("s.rpc('create_guardian_signup_invite')" in r,
     "L'interface parent ne génère plus le code d'inscription.")
 req("['child_pending','youth_pending'].includes(ageband)" in r,
     "L'interface de supervision ne reconnaît pas child_pending.")
+req("s.auth.mfa.getauthenticatorassurancelevel()" in r
+    and "aal?.currentlevel!=='aal2'" in r
+    and "aal?.nextlevel==='aal2'" in r,
+    "Le parcours parent ne vérifie pas le niveau AAL avant d'émettre un code.")
+req("/compte/mfa.html?next=" in r and "encodeuricomponent('/compte/relations.html')" in r,
+    "Le parcours parent ne redirige plus vers la vérification MFA avec retour à Relations.")
+req("mfa_aal2_required|mfa_required" in r,
+    "L'interface parent ne traite plus explicitement un refus MFA serveur.")
 req('data-create-guardian-code' in rh and 'de 11 à 13 ans' in rh,
     "La page Relations n'explique pas le code parental obligatoire de 11 à 13 ans.")
-req('ouvrir l’inscription' in rh and 'v24-relations.js?v=25.0.2&amp;rev=junior-community' in rh,
+req('ouvrir l’inscription' in rh and 'v24-relations.js?v=25.0.3&amp;rev=guardian-aal2' in rh,
     "Le parcours parent vers l'inscription ou son invalidation de cache est incomplet.")
+req('session aal2 avec second facteur' in rh and 'securite.html#mfa-active-title' in rh,
+    "La page Relations n'explique pas la vérification AAL2 ni le chemin de configuration MFA.")
 
 # Interface et invalidation de cache.
 req('compte disponible à partir de 11 ans' in h,
@@ -195,7 +217,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(31);' in t,
+req('selectplan(34);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
@@ -222,6 +244,12 @@ for marker, message in (
     ("laconsommationdunouveaucoderétablitimmédiatementlabandechild", "Le test ne prouve pas le retour immédiat à child."),
     ("lelientuteurrévoquéestréactivéproprementenverifiednonrévoqué", "Le test ne prouve pas la réactivation propre du lien tuteur."),
     ("lenouveaucodeestconsomméuneseulefoisparlecomptechild_pending", "Le test ne prouve pas la consommation unique du code de rétablissement."),
+    ("mfa_aal2_required", "Le pgTAP ne prouve pas le refus AAL1 de création du code parental."),
+    ("unesessionadulteaal2peutcréeruncodeparental", "Le pgTAP ne prouve pas la réussite de création sous AAL2."),
+    ("request.jwt.claims", "Le pgTAP ne simule pas explicitement les niveaux AAL du JWT."),
+    ("invite_code~'^youth-[a-z0-9]{10}$'", "Le pgTAP ne vérifie pas le format du code généré sous AAL2."),
+    ("$$,'p0001','youth_jurisdiction_not_enabled'", "Le délimiteur pgTAP du refus hors Canada est cassé."),
+    ("$$selectpublic.redeem_guardian_signup_invite('youth-redeem1101')$$", "Le délimiteur pgTAP du rétablissement child_pending est cassé."),
 ):
     req(marker in t, message)
 

@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(31);
+select plan(34);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -25,6 +25,58 @@ values(
 );
 
 select is(public.sinjira_age_band('10000000-0000-4000-8000-000000000001'),'adult','le parent de test est classé adulte');
+
+-- Émettre un code parental est un geste sensible : AAL1 doit échouer même lorsque
+-- la politique MFA globale est permissive; AAL2 doit réussir.
+update public.sinjira_security_settings
+set require_phone_mfa=false
+where singleton_id=1;
+
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object(
+    'sub','10000000-0000-4000-8000-000000000001',
+    'aal','aal1'
+  )::text,
+  true
+);
+
+select throws_ok(
+  $$ select public.create_guardian_signup_invite() $$,
+  'P0001',
+  'MFA_AAL2_REQUIRED',
+  'une session adulte AAL1 ne peut pas créer de code parental'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object(
+    'sub','10000000-0000-4000-8000-000000000001',
+    'aal','aal2'
+  )::text,
+  true
+);
+
+select lives_ok(
+  $$ select public.create_guardian_signup_invite() $$,
+  'une session adulte AAL2 peut créer un code parental'
+);
+
+select ok(
+  exists(
+    select 1
+    from public.guardian_signup_invites
+    where guardian_user_id='10000000-0000-4000-8000-000000000001'
+      and used_at is null
+      and invite_code ~ '^YOUTH-[A-Z0-9]{10}$'
+  ),
+  'le code créé sous AAL2 respecte le format et reste à usage unique'
+);
+
+delete from public.guardian_signup_invites
+where guardian_user_id='10000000-0000-4000-8000-000000000001'
+  and used_at is null;
 
 insert into public.guardian_signup_invites(guardian_user_id,invite_code,expires_at)
 values('10000000-0000-4000-8000-000000000001','YOUTH-ABCD123456',now()+interval '1 day');
@@ -88,14 +140,14 @@ select throws_ok($$
   )
 $$,'P0001','GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14','un compte de 11 ans sans code parental est refusé');
 
-select throws_ok($
+select throws_ok($$
   insert into auth.users(id,email,raw_user_meta_data)
   values(
     '50000000-0000-4000-8000-000000000011',
     'child11-outside-canada@example.test',
     jsonb_build_object('birth_date',(current_date-interval '11 years')::date::text,'gender','Homme','pseudo','Hors Canada','residence_country','France','guardian_code','YOUTH-ABCD123456')
   )
-$,'P0001','YOUTH_JURISDICTION_NOT_ENABLED','un compte jeunesse hors Canada reste refusé');
+$$,'P0001','YOUTH_JURISDICTION_NOT_ENABLED','un compte jeunesse hors Canada reste refusé');
 
 -- Régression V25 : après révocation, un 11–12 ans devient child_pending.
 -- L'écran Relations lui propose un nouveau code; le RPC doit réellement permettre
@@ -120,7 +172,7 @@ values(
 select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000011',true);
 
 select lives_ok(
-  $ select public.redeem_guardian_signup_invite('YOUTH-REDEEM1101') $,
+  $$ select public.redeem_guardian_signup_invite('YOUTH-REDEEM1101') $$,
   'child_pending peut consommer un nouveau code parental valide'
 );
 

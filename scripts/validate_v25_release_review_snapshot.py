@@ -30,6 +30,7 @@ EXPECTED_NON_REVIEWED = {
     "20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql": "f60c6e7a6717f7b5818ff0b9a1ba7b055aa418ff",
     "20260919013000_sinjira_v25_child_pending_guardian_redeem.sql": "983ac4b48f25f29c0c62becb692b9203cdec80a1",
     "20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql": "e14c41364246929054282bccb0e4abc5641b8643",
+    "20260919023000_sinjira_v25_guardian_invite_aal2.sql": "5700bfaa2b5a95d84d37ad475524960bdb78fc9b",
 }
 
 
@@ -203,7 +204,7 @@ def main() -> None:
 
     validate_snapshot(*values)
     print(
-        "OK snapshot release V25: 12 migrations futures non revues correspondent au dossier, "
+        "OK snapshot release V25: 13 migrations futures non revues correspondent au dossier, "
         "empreintes intactes, reviewed/ledger inchangés et garde humaine conservée."
     )
 
