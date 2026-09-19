@@ -725,6 +725,11 @@ begin
 end;
 $$;
 
+revoke all on function public.admin_sinjira_promote_extended_story(uuid) from public,anon;
+revoke all on function public.admin_sinjira_publish_extended_story(uuid,text) from public,anon;
+grant execute on function public.admin_sinjira_promote_extended_story(uuid) to authenticated,service_role;
+grant execute on function public.admin_sinjira_publish_extended_story(uuid,text) to authenticated,service_role;
+
 comment on table public.sinjira_canon_sources is
   'Registre privé des sources canoniques SINJIRA. Les SECRET_AUTEUR peuvent servir de garde-fous sans être divulgués.';
 comment on table public.sinjira_story_claims is
@@ -735,3 +740,7 @@ comment on function private.sinjira_story_provenance_report(uuid) is
   'Rapport unique de provenance d’une Chronique : ancrages vérifiés, période correspondante et faits non résolus.';
 comment on function public.admin_sinjira_story_validation_check(uuid) is
   'Prévalidation auteur combinée : provenance structurée et continuité doivent être prêtes avant CANON_ETENDU.';
+comment on function public.admin_sinjira_promote_extended_story(uuid) is
+  'Promotion auteur vers CANON_ETENDU : exige métadonnées complètes, provenance vérifiée et continuité sans conflit ni avertissement.';
+comment on function public.admin_sinjira_publish_extended_story(uuid,text) is
+  'Publication atomique d’une Chronique CANON_ETENDU; revalide métadonnées, provenance et continuité avant exposition membres/public.';
