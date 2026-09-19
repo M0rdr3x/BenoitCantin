@@ -46,7 +46,10 @@ PLANNED_LOCAL_TABLES={
 'market_listings','market_favorites','token_ledger',
 'codex_entities','codex_relationships','content_versions',
 'security_push_receipt_queue',
-'social_live_rooms','social_live_room_members','social_live_messages','social_live_room_invites','social_live_room_share_codes'
+'social_live_rooms','social_live_room_members','social_live_messages','social_live_room_invites','social_live_room_share_codes',
+'sinjira_extended_stories','sinjira_story_character_presence',
+'sinjira_world_locations','sinjira_world_travel_rules',
+'sinjira_canon_events','sinjira_canon_event_characters','sinjira_canon_sources','sinjira_story_claims'
 }
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|private)\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
