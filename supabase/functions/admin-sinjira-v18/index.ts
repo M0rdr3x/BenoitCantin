@@ -231,9 +231,10 @@ Deno.serve(async(req)=>{
       const sourceKey=String(x.source_key||'').trim().toLowerCase().replace(/[^a-z0-9:_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,160);
       const title=String(x.title||'').trim().slice(0,300);
       const kind=kinds.includes(x.source_kind)?x.source_kind:'bible';
-      const scope=scopes.includes(x.scope)?x.scope:'META';
+      const requestedScope=scopes.includes(x.scope)?x.scope:'META';
       const status=statuses.includes(x.verification_status)?x.verification_status:'PROVISOIRE';
       const bookNumber=x.book_number===''||x.book_number==null?null:Number(x.book_number);
+      const scope=kind==='roman'&&Number.isInteger(bookNumber)?(bookNumber<=12?'LIVRES_1_12':'ORIGINES_13_14'):requestedScope;
       if(!sourceKey||!title)return privateJson({ok:false,error:'Clé et titre de source requis.',code:'CANON_SOURCE_REQUIRED_FIELDS'},400);
       if(kind==='roman'&&(!Number.isInteger(bookNumber)||bookNumber<1||bookNumber>14))return privateJson({ok:false,error:'Une source Roman doit indiquer un livre de 1 à 14.',code:'CANON_SOURCE_BOOK_REQUIRED'},400);
       const payload={source_key:sourceKey,source_kind:kind,scope,title,book_number:kind==='roman'?bookNumber:null,chapter_reference:String(x.chapter_reference||'').trim().slice(0,240)||null,passage_reference:String(x.passage_reference||'').trim().slice(0,500)||null,source_version:String(x.source_version||'').trim().slice(0,120)||null,verification_status:status,public_safe:x.public_safe===true,supersedes_source_id:x.supersedes_source_id||null,notes:String(x.notes||'').slice(0,6000)||null};
