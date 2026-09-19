@@ -87,6 +87,8 @@ def main()->int:
       'sinjira_canon_context_invalidate_extended',
       'STORY_LOCATION_NOT_CANON',
       'location_not_canon',
+      'central_presence_uncertain',
+      "cp.certainty='confirmed'",
     }
     for needle in sorted(extended_contract):
         if needle.lower() not in sql.lower():
