@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(72);
+select plan(82);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -420,6 +420,70 @@ select ok(
 select ok(
   not has_function_privilege('authenticated','private.sinjira_demote_story_from_child_change()','EXECUTE'),
   'le navigateur ne peut pas invoquer directement le garde de rétrogradation'
+);
+
+
+select has_function('private','sinjira_story_readiness_report',array['uuid'],
+  'le rapport privé unique de readiness existe');
+
+select ok(not has_function_privilege('authenticated','private.sinjira_story_readiness_report(uuid)','EXECUTE'),
+  'le navigateur ne peut pas invoquer directement le rapport privé de readiness');
+
+select has_function('private','sinjira_require_story_canon_transition',array[]::text[],
+  'le garde SQL de transition vers Canon/publication existe');
+
+select ok(not has_function_privilege('authenticated','private.sinjira_require_story_canon_transition()','EXECUTE'),
+  'le navigateur ne peut pas invoquer directement le garde de transition');
+
+select ok(exists(
+  select 1 from pg_trigger tr
+  join pg_class t on t.oid=tr.tgrelid
+  join pg_namespace n on n.oid=t.relnamespace
+  where n.nspname='public' and t.relname='sinjira_extended_stories'
+    and tr.tgname='sinjira_extended_stories_canon_transition_guard'
+    and not tr.tgisinternal
+),'toute transition de récit passe par le garde SQL de readiness');
+
+select ok(exists(
+  select 1 from pg_constraint c
+  join pg_class t on t.oid=c.conrelid
+  join pg_namespace n on n.oid=t.relnamespace
+  where n.nspname='public' and t.relname='sinjira_extended_stories'
+    and c.conname='sinjira_extended_stories_canon_workflow_check'
+    and pg_get_constraintdef(c.oid) ilike '%CANON_ETENDU%'
+    and pg_get_constraintdef(c.oid) ilike '%validated%'
+    and pg_get_constraintdef(c.oid) ilike '%published%'
+),'CANON_ETENDU ne peut exister qu avec un état validated ou published');
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%sinjira_story_readiness_report%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_story_validation_check' limit 1),
+  'la prévalidation admin utilise la source unique de readiness'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%STORY_CANON_INSERT_FORBIDDEN%'
+          and pg_get_functiondef(p.oid) ilike '%STORY_SAVE_BEFORE_CANON_TRANSITION%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_require_story_canon_transition' limit 1),
+  'une insertion canonique directe et une canonisation avec édition simultanée sont interdites'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%STORY_PROMOTION_REQUIRED%'
+          and pg_get_functiondef(p.oid) ilike '%STORY_PUBLICATION_TIMESTAMP_REQUIRED%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_require_story_canon_transition' limit 1),
+  'la publication exige une promotion préalable et un horodatage'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%STORY_PROVENANCE_REQUIRED%'
+          and pg_get_functiondef(p.oid) ilike '%STORY_CONTINUITY_CONFLICT%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_require_story_canon_transition' limit 1),
+  'le garde SQL réapplique provenance et continuité même hors interface'
 );
 
 select * from finish();
