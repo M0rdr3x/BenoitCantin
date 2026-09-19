@@ -1,7 +1,7 @@
 import {getSupabase,escapeHtml} from './sinjira-supabase.js';
 import './v24-admin-health.js';
 
-async function call(action,extra={}){const {data,error}=await getSupabase().functions.invoke('admin-sinjira-v18',{body:{action,...extra}});if(error||!data?.ok)throw new Error(data?.error||error?.message||'Erreur administration V18');return data}
+async function call(action,extra={}){const {data,error}=await getSupabase().functions.invoke('admin-sinjira-v18',{body:{action,...extra}});if(error||!data?.ok){const err=new Error(data?.error||error?.message||'Erreur administration V18');err.data=data||null;throw err}return data}
 function setText(sel,v){const n=document.querySelector(sel);if(n)n.textContent=String(v??0)}
 async function dashboard(){const d=(await call('dashboard')).dashboard||{};setText('[data-admin-reader-comments]',d.pending_comments);setText('[data-admin-character-submissions]',d.character_submissions);setText('[data-admin-character-review]',d.characters_in_review)}
 
@@ -73,7 +73,7 @@ function toLocalInput(value){
 function toIso(value){if(!value)return null;const d=new Date(value);return Number.isNaN(d.getTime())?null:d.toISOString()}
 function resetExtendedStoryEditor(){
  const f=document.querySelector('[data-extended-story-editor]');if(!f)return;
- f.reset();f.elements.id.value='';f.elements.published_at.value='';f.elements.story_type.value='character_chronicle';f.elements.anchor_scope.value='UNASSIGNED';f.elements.canon_status.value='PROVISOIRE';f.elements.status.value='draft';f.elements.audience.value='private';f.elements.continuity_json.value='{}';f.elements.visible_to_character_owner.checked=true;f.elements.author_confirmed_extended_canon.checked=false;
+ f.reset();f.elements.id.value='';f.elements.published_at.value='';f.elements.story_type.value='character_chronicle';f.elements.anchor_scope.value='UNASSIGNED';f.elements.canon_status.value='PROVISOIRE';f.elements.status.value='draft';f.elements.audience.value='private';f.elements.location_id.value='';f.elements.continuity_json.value='{}';f.elements.visible_to_character_owner.checked=true;f.elements.author_confirmed_extended_canon.checked=false;renderContinuityResult(null);
 }
 let extendedStoriesCache=[];
 async function extendedStories(){
@@ -82,6 +82,8 @@ async function extendedStories(){
  const box=document.querySelector('[data-admin-extended-story-list]');
  const charSelect=document.querySelector('[data-admin-story-character-select]');
  if(charSelect)charSelect.innerHTML='<option value="">Aucune</option>'+charactersCache.map(c=>`<option value="${c.id}">${escapeHtml(c.public_name||'Personnage sans nom')}</option>`).join('');
+ const locSelect=document.querySelector('[data-admin-story-location-select]');
+ if(locSelect){const old=locSelect.value;locSelect.innerHTML='<option value="">À relier à l’Atlas</option>'+worldLocationsCache.map(l=>`<option value="${l.id}">${escapeHtml(l.name)} · ${escapeHtml(l.location_type)}</option>`).join('');if(old)locSelect.value=old}
  if(!box)return;
  const labels={character_chronicle:'Chronique de personnage',world_chronicle:'Chronique du Monde',quebec_chronicle:'Chronique de Québec',archive:'Archive',fragment:'Fragment',novella:'Novella'};
  box.innerHTML=extendedStoriesCache.map(st=>`<article class="admin-v18-row"><strong>${escapeHtml(st.title||'Chronique sans titre')}</strong><p>${escapeHtml(labels[st.story_type]||st.story_type)} · ${escapeHtml(st.canon_status||'PROVISOIRE')} · ${escapeHtml(st.status||'draft')}</p><p>${st.character_name?`Conscience : ${escapeHtml(st.character_name)} · `:''}${st.region_name?`Région : ${escapeHtml(st.region_name)} · `:''}Ancrage : ${escapeHtml(st.anchor_scope||'UNASSIGNED')}</p><button class="btn btn-secondary btn-small" data-edit-extended-story="${st.id}">Modifier</button></article>`).join('')||'<p>Aucune Chronique du Canon étendu.</p>';
@@ -95,6 +97,7 @@ function fillExtendedStoryEditor(st){
  f.elements.character_id.value=st.character_id||'';
  f.elements.title.value=st.title||'';
  f.elements.region_name.value=st.region_name||'';
+ f.elements.location_id.value=st.location_id||'';
  f.elements.anchor_scope.value=st.anchor_scope||'UNASSIGNED';
  f.elements.canon_status.value=st.canon_status||'PROVISOIRE';
  f.elements.status.value=st.status||'draft';
@@ -121,6 +124,7 @@ function extendedStoryEditor(){
      character_id:f.elements.character_id.value||null,
      title:f.elements.title.value,
      region_name:f.elements.region_name.value,
+     location_id:f.elements.location_id.value||null,
      anchor_scope:f.elements.anchor_scope.value,
      canon_status:f.elements.canon_status.value,
      status:f.elements.status.value,
@@ -140,8 +144,32 @@ function extendedStoryEditor(){
      f.elements.published_at.value=saved.story?.published_at||story.published_at||'';
      f.elements.author_confirmed_extended_canon.checked=false;
      await extendedStories();
-   }catch(err){alert(err.message)}
+   }catch(err){if(err.data?.story?.id){f.elements.id.value=err.data.story.id;f.elements.published_at.value=err.data.story.published_at||''}if(err.data?.continuity)renderContinuityResult(err.data.continuity);alert(err.message)}
  });
 }
 
-(async()=>{try{editor();extendedStoryEditor();ensureNotificationsUi();await Promise.all([dashboard(),comments(),submissions(),canonOverview(),auditLog(),notifications()]);await characters();await extendedStories()}catch(e){console.error('[SINJIRA admin V18]',e)}})();
+let worldLocationsCache=[],canonEventsCache=[];
+function locationOptions(placeholder='Aucun'){return `<option value="">${escapeHtml(placeholder)}</option>`+worldLocationsCache.map(l=>`<option value="${l.id}">${escapeHtml(l.name)} · ${escapeHtml(l.location_type)}</option>`).join('')}
+function refreshWorldSelects(){
+ const parent=document.querySelector('[data-world-parent-select]');if(parent){const old=parent.value;parent.innerHTML=locationOptions('Aucun parent');if(old)parent.value=old}
+ for(const sel of document.querySelectorAll('[data-event-location-select],[data-event-presence-location]')){const old=sel.value;sel.innerHTML=locationOptions(sel.hasAttribute('data-event-presence-location')?'Lieu de l’événement':'Non normalisé');if(old)sel.value=old}
+ const story=document.querySelector('[data-admin-story-location-select]');if(story){const old=story.value;story.innerHTML=locationOptions('À relier à l’Atlas');if(old)story.value=old}
+ const eventSel=document.querySelector('[data-event-presence-event]');if(eventSel){const old=eventSel.value;eventSel.innerHTML=canonEventsCache.map(e=>`<option value="${e.id}">${escapeHtml(e.title)}</option>`).join('');if(old)eventSel.value=old}
+ const charSel=document.querySelector('[data-event-presence-character]');if(charSel){const old=charSel.value;charSel.innerHTML=charactersCache.map(c=>`<option value="${c.id}">${escapeHtml(c.public_name||'Personnage sans nom')}</option>`).join('');if(old)charSel.value=old}
+}
+async function worldContinuity(){
+ const d=await call('list_world_continuity');worldLocationsCache=d.locations||[];canonEventsCache=d.events||[];refreshWorldSelects();
+ const lbox=document.querySelector('[data-world-location-list]');if(lbox){lbox.innerHTML=worldLocationsCache.map(l=>`<article class="admin-v18-row"><strong>${escapeHtml(l.name)}</strong><p>${escapeHtml(l.location_type)} · ${escapeHtml(l.canon_status)}${l.timezone_name?` · ${escapeHtml(l.timezone_name)}`:''}</p><button class="btn btn-secondary btn-small" data-edit-world-location="${l.id}">Modifier</button></article>`).join('')||'<p>Aucun lieu dans l’Atlas.</p>';lbox.querySelectorAll('[data-edit-world-location]').forEach(b=>b.addEventListener('click',()=>fillWorldLocation(worldLocationsCache.find(x=>x.id===b.dataset.editWorldLocation))))}
+ const ebox=document.querySelector('[data-canon-event-list]');if(ebox){ebox.innerHTML=canonEventsCache.map(e=>`<article class="admin-v18-row"><strong>${escapeHtml(e.title)}</strong><p>${escapeHtml(e.classification)} · ${escapeHtml(e.source_scope)} · ${escapeHtml(e.sinjira_world_locations?.name||e.location_name_snapshot||'Lieu non normalisé')}</p><small>${escapeHtml(e.source_reference||'')}</small><button class="btn btn-secondary btn-small" data-edit-canon-event="${e.id}">Modifier</button></article>`).join('')||'<p>Aucun événement canonique.</p>';ebox.querySelectorAll('[data-edit-canon-event]').forEach(b=>b.addEventListener('click',()=>fillCanonEvent(canonEventsCache.find(x=>x.id===b.dataset.editCanonEvent))))}
+ const pbox=document.querySelector('[data-event-presence-list]');if(pbox){const rows=canonEventsCache.flatMap(e=>(e.sinjira_canon_event_characters||[]).map(p=>({...p,event_title:e.title})));pbox.innerHTML=rows.map(p=>`<article class="admin-v18-row"><strong>${escapeHtml(p.characters?.public_name||'Personnage')} · ${escapeHtml(p.event_title)}</strong><p>${escapeHtml(p.certainty||'confirmed')} · ${escapeHtml(p.location_name_snapshot||'Lieu hérité / Atlas')}</p><button class="btn btn-secondary btn-small" data-remove-event-presence="${p.event_id}" data-character="${p.character_id}">Retirer</button></article>`).join('')||'<p>Aucune présence canonique enregistrée.</p>';pbox.querySelectorAll('[data-remove-event-presence]').forEach(b=>b.addEventListener('click',async()=>{if(!confirm('Retirer cette présence du Calendrier-Monde?'))return;try{await call('remove_canon_event_character',{event_id:b.dataset.removeEventPresence,character_id:b.dataset.character});await worldContinuity()}catch(e){alert(e.message)}}))}
+ await extendedStories();
+}
+function fillWorldLocation(l){const f=document.querySelector('[data-world-location-form]');if(!l||!f)return;for(const [k,v] of Object.entries(l)){if(f.elements[k])f.elements[k].value=v??''}f.scrollIntoView({behavior:'smooth'})}
+function fillCanonEvent(e){const f=document.querySelector('[data-canon-event-form]');if(!e||!f)return;f.elements.id.value=e.id||'';f.elements.title.value=e.title||'';f.elements.event_key.value=e.event_key||'';f.elements.source_scope.value=e.source_scope||'LIVRES_1_12';f.elements.classification.value=e.classification||'PROVISOIRE';f.elements.location_id.value=e.location_id||'';f.elements.timezone_name.value=e.timezone_name||'';f.elements.starts_at.value=toLocalInput(e.starts_at);f.elements.ends_at.value=toLocalInput(e.ends_at);f.elements.source_reference.value=e.source_reference||'';f.elements.summary.value=e.summary||'';f.elements.public_safe.checked=e.public_safe===true;f.scrollIntoView({behavior:'smooth'})}
+function bindWorldContinuity(){
+ const lf=document.querySelector('[data-world-location-form]');lf?.querySelector('[data-world-location-reset]')?.addEventListener('click',()=>{lf.reset();lf.elements.id.value=''});lf?.addEventListener('submit',async e=>{e.preventDefault();const location={id:lf.elements.id.value||null,name:lf.elements.name.value,slug:lf.elements.slug.value,location_type:lf.elements.location_type.value,parent_id:lf.elements.parent_id.value||null,timezone_name:lf.elements.timezone_name.value,canon_status:lf.elements.canon_status.value,latitude:lf.elements.latitude.value,longitude:lf.elements.longitude.value,source_reference:lf.elements.source_reference.value,notes:lf.elements.notes.value};try{await call('save_world_location',{location});lf.reset();lf.elements.id.value='';await worldContinuity()}catch(err){alert(err.message)}});
+ const ef=document.querySelector('[data-canon-event-form]');ef?.querySelector('[data-canon-event-reset]')?.addEventListener('click',()=>{ef.reset();ef.elements.id.value=''});ef?.addEventListener('submit',async e=>{e.preventDefault();const event={id:ef.elements.id.value||null,title:ef.elements.title.value,event_key:ef.elements.event_key.value,source_scope:ef.elements.source_scope.value,classification:ef.elements.classification.value,location_id:ef.elements.location_id.value||null,timezone_name:ef.elements.timezone_name.value,starts_at:toIso(ef.elements.starts_at.value),ends_at:toIso(ef.elements.ends_at.value),source_reference:ef.elements.source_reference.value,summary:ef.elements.summary.value,public_safe:ef.elements.public_safe.checked};try{await call('save_canon_event',{event});ef.reset();ef.elements.id.value='';await worldContinuity()}catch(err){alert(err.message)}});
+ const pf=document.querySelector('[data-event-presence-form]');pf?.addEventListener('submit',async e=>{e.preventDefault();const event=canonEventsCache.find(x=>x.id===pf.elements.event_id.value);const presence={event_id:pf.elements.event_id.value,character_id:pf.elements.character_id.value,location_id:pf.elements.location_id.value||event?.location_id||null,location_name_snapshot:worldLocationsCache.find(x=>x.id===(pf.elements.location_id.value||event?.location_id))?.name||event?.location_name_snapshot||'',certainty:pf.elements.certainty.value,starts_at:toIso(pf.elements.starts_at.value)||event?.starts_at||null,ends_at:toIso(pf.elements.ends_at.value)||event?.ends_at||null,role:pf.elements.role.value,source_reference:pf.elements.source_reference.value||event?.source_reference||''};try{await call('save_canon_event_character',{presence});pf.reset();await worldContinuity()}catch(err){alert(err.message)}});
+}
+
+(async()=>{try{editor();extendedStoryEditor();bindWorldContinuity();ensureNotificationsUi();await Promise.all([dashboard(),comments(),submissions(),canonOverview(),auditLog(),notifications()]);await characters();await worldContinuity()}catch(e){console.error('[SINJIRA admin V18]',e)}})();
