@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(34);
+select plan(35);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -170,6 +170,21 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='public' and p.proname='admin_sinjira_publish_extended_story' limit 1),
   'la publication exige un fait d ancrage de la bonne période'
+);
+
+
+select ok(
+  exists(
+    select 1
+    from pg_constraint c
+    join pg_class t on t.oid=c.conrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_canon_sources'
+      and c.contype='c'
+      and pg_get_constraintdef(c.oid) ilike '%book_number between 1 and 12%'
+      and pg_get_constraintdef(c.oid) ilike '%ORIGINES_13_14%'
+  ),
+  'le numéro du roman détermine automatiquement sa période canonique'
 );
 
 select * from finish();
