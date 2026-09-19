@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(28);
+select plan(38);
 
 select has_table('public','sinjira_extended_stories','les récits du Canon étendu existent');
 select has_table('public','sinjira_story_character_presence','les présences de Chroniques existent');
@@ -22,6 +22,8 @@ select has_column('public','sinjira_world_travel_rules','bidirectional','le sens
 
 select has_function('public','admin_sinjira_story_continuity_check',array['uuid'],'la vérification de continuité auteur existe');
 select has_function('public','admin_sinjira_promote_extended_story',array['uuid'],'la promotion vers CANON_ETENDU existe');
+select has_function('public','admin_sinjira_publish_extended_story',array['uuid','text'],'la publication atomique existe');
+select has_function('public','admin_sinjira_unpublish_extended_story',array['uuid'],'le retrait de publication existe');
 select has_function('private','sinjira_story_continuity_report',array['uuid'],'le moteur privé de continuité existe');
 select has_function('private','sinjira_locations_compatible',array['uuid','uuid'],'le moteur compare les lieux hiérarchiques');
 
@@ -33,6 +35,14 @@ select ok(not has_function_privilege('anon','public.admin_sinjira_promote_extend
   'anon ne peut pas promouvoir une Chronique');
 select ok(has_function_privilege('authenticated','public.admin_sinjira_promote_extended_story(uuid)','EXECUTE'),
   'authenticated peut atteindre le wrapper de promotion protégé par admin AAL2');
+select ok(not has_function_privilege('anon','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE'),
+  'anon ne peut pas publier une Chronique');
+select ok(has_function_privilege('authenticated','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE'),
+  'authenticated peut atteindre le wrapper de publication protégé par admin AAL2');
+select ok(not has_function_privilege('anon','public.admin_sinjira_unpublish_extended_story(uuid)','EXECUTE'),
+  'anon ne peut pas retirer une Chronique de publication');
+select ok(has_function_privilege('authenticated','public.admin_sinjira_unpublish_extended_story(uuid)','EXECUTE'),
+  'authenticated peut atteindre le wrapper de retrait protégé par admin AAL2');
 
 select ok(not has_function_privilege('authenticated','private.sinjira_story_continuity_report(uuid)','EXECUTE'),
   'le moteur privé de continuité n est pas directement invocable par le navigateur');
@@ -83,6 +93,56 @@ select ok(
       and array_to_string(p.proconfig,',') like '%search_path=%'
   ),
   'la promotion est SECURITY DEFINER avec search_path figé'
+);
+
+select ok(
+  exists(
+    select 1 from pg_constraint c
+    join pg_class t on t.oid=c.conrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_extended_stories'
+      and c.contype='c'
+      and pg_get_constraintdef(c.oid) ilike '%status <> ''published''%'
+      and pg_get_constraintdef(c.oid) ilike '%CANON_ETENDU%'
+  ),
+  'une Chronique publiée doit être CANON_ETENDU'
+);
+
+select ok(
+  exists(
+    select 1 from pg_constraint c
+    join pg_class t on t.oid=c.conrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_extended_stories'
+      and c.contype='c'
+      and pg_get_constraintdef(c.oid) ilike '%published_at%'
+      and pg_get_constraintdef(c.oid) ilike '%status%'
+  ),
+  'published_at est lié à l état published par contrainte SQL'
+);
+
+select ok(
+  exists(
+    select 1 from pg_proc p
+    join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public'
+      and p.proname='admin_sinjira_publish_extended_story'
+      and p.prosecdef
+      and array_to_string(p.proconfig,',') like '%search_path=%'
+  ),
+  'la publication est SECURITY DEFINER avec search_path figé'
+);
+
+select ok(
+  exists(
+    select 1 from pg_proc p
+    join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public'
+      and p.proname='admin_sinjira_unpublish_extended_story'
+      and p.prosecdef
+      and array_to_string(p.proconfig,',') like '%search_path=%'
+  ),
+  'le retrait de publication est SECURITY DEFINER avec search_path figé'
 );
 
 select * from finish();
