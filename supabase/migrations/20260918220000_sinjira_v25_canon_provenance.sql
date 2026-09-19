@@ -190,6 +190,23 @@ for each row execute function private.sinjira_guard_canon_source_in_use();
 revoke all on function private.sinjira_prevent_source_supersedes_cycle() from public,anon,authenticated,service_role;
 revoke all on function private.sinjira_guard_canon_source_in_use() from public,anon,authenticated,service_role;
 
+create or replace function private.sinjira_prevent_canon_source_delete()
+returns trigger
+language plpgsql
+set search_path=pg_catalog,public,private
+as $$
+begin
+  raise exception 'CANON_SOURCE_DELETE_FORBIDDEN';
+end;
+$$;
+
+drop trigger if exists sinjira_canon_sources_prevent_delete on public.sinjira_canon_sources;
+create trigger sinjira_canon_sources_prevent_delete
+before delete on public.sinjira_canon_sources
+for each row execute function private.sinjira_prevent_canon_source_delete();
+
+revoke all on function private.sinjira_prevent_canon_source_delete() from public,anon,authenticated,service_role;
+
 create or replace function private.sinjira_source_is_verified(p_source_id uuid)
 returns boolean
 language sql
