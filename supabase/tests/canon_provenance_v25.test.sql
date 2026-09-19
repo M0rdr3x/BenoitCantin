@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(85);
+select plan(87);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -508,6 +508,26 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
   'RETIRED devient une transition contrôlée plutôt qu une suppression de l historique'
+);
+
+
+select ok(exists(
+  select 1
+  from pg_trigger tr
+  join pg_class t on t.oid=tr.tgrelid
+  join pg_namespace n on n.oid=t.relnamespace
+  where n.nspname='public'
+    and t.relname='sinjira_canon_sources'
+    and tr.tgname='sinjira_canon_sources_guard_authority'
+    and not tr.tgisinternal
+    and pg_get_triggerdef(tr.oid) ilike '%supersedes_source_id%'
+),'le garde d autorité se déclenche aussi lors d un changement de source remplacée');
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%new.supersedes_source_id is distinct from old.supersedes_source_id%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
+  'une source engagée ne peut pas faire réécrire sa chaîne de remplacement'
 );
 
 select * from finish();
