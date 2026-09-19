@@ -74,6 +74,9 @@ def main()->int:
       "published_at is null or status='published'",
       'STORY_PUBLIC_AUDIENCE_REQUIRED',
       'STORY_NOT_CANON_EXTENDED',
+      'sinjira_extended_stories_published_metadata_check',
+      'sinjira_guard_published_story_update',
+      'sinjira_guard_published_story_presence',
     }
     for needle in sorted(extended_contract):
         if needle.lower() not in sql.lower():
