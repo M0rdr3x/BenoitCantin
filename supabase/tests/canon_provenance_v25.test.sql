@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(35);
+select plan(41);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -185,6 +185,51 @@ select ok(
       and pg_get_constraintdef(c.oid) ilike '%ORIGINES_13_14%'
   ),
   'le numéro du roman détermine automatiquement sa période canonique'
+);
+
+
+select has_function('private','sinjira_prevent_source_supersedes_cycle',array[]::text[],
+  'le garde anti-cycle de remplacement des sources existe');
+
+select has_function('private','sinjira_guard_canon_source_in_use',array[]::text[],
+  'le garde d autorité des sources utilisées existe');
+
+select ok(
+  exists(
+    select 1 from pg_trigger tr
+    join pg_class t on t.oid=tr.tgrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_canon_sources'
+      and tr.tgname='sinjira_canon_sources_prevent_supersedes_cycle'
+      and not tr.tgisinternal
+  ),
+  'la chaîne de remplacement des sources ne peut pas former de cycle'
+);
+
+select ok(
+  exists(
+    select 1 from pg_trigger tr
+    join pg_class t on t.oid=tr.tgrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_canon_sources'
+      and tr.tgname='sinjira_canon_sources_guard_authority'
+      and not tr.tgisinternal
+  ),
+  'les sources utilisées protègent leur autorité et leurs repères'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_KEY_IMMUTABLE%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
+  'la clé stable d une source utilisée est immuable'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%chapter_reference is distinct from old.chapter_reference%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
+  'le repère exact d une source canonique utilisée est immuable'
 );
 
 select * from finish();
