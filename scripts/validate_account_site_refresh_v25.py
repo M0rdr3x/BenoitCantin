@@ -30,6 +30,8 @@ FILES = {
     "secondary_blocks": ROOT / "compte/blocages.html",
     "secondary_junior": ROOT / "compte/communaute-junior.html",
     "secondary_project": ROOT / "compte/projet.html",
+    "secondary_death_report": ROOT / "compte/signaler-deces.html",
+    "privacy_information": ROOT / "compte/confidentialite-joueur.html",
 }
 
 def fail(message: str) -> None:
@@ -98,6 +100,12 @@ def validate(contents: dict[str, str]) -> None:
             fail(f"navigation secondaire: cache JS V25 absent dans {name}")
         if "sinjira-player-account.css?v=25.0.1" not in content:
             fail(f"navigation secondaire: cache CSS V25 absent dans {name}")
+
+    privacy_info = compact(contents["privacy_information"])
+    if "àpartirde11ans" not in privacy_info or "11–13ans" not in privacy_info:
+        fail("confidentialité: seuil jeunesse actuel 11–13 absent")
+    if "l’inscriptionlibre-serviceest13+" in privacy_info:
+        fail("confidentialité: ancien seuil 13+ encore publié")
 
     if "from('novel_comments')" in reader or "from('novel_comments')" in comments:
         fail("commentaires: ancien modèle novel_comments encore utilisé")

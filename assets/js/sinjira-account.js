@@ -384,7 +384,7 @@ function enhanceAccountNavigation(){
     nav.replaceChildren();
     if(home){used.add(home);home.textContent='Mon espace';home.classList.add('account-nav-home');nav.append(home);}
     appendGroup('Bibliothèque',['bibliotheque.html','mes-lectures.html','licences.html','mes-achats.html','marche.html','jetons.html','documents.html','playtests.html','contributions.html']);
-    appendGroup('Univers',['mon-personnage.html','mes-personnages.html','monde-parallele.html','mes-parties.html','registre-personnel.html','histoire-de-vie.html']);
+    appendGroup('Univers',['mon-personnage.html','mes-personnages.html','monde-parallele.html','mes-parties.html','registre-personnel.html','histoire-de-vie.html','signaler-deces.html']);
     appendGroup('Communauté',['communaute.html','communaute-junior.html','relations.html','rencontres.html','reseau-personnage.html','messages.html','messages-reels.html','messages-personnage.html','notifications.html']);
     appendGroup('Compte',['profil.html','securite.html','parametres.html','confidentialite-joueur.html','vie-privee.html','blocages.html','emploi.html','mon-ia.html']);
     const leftovers=nodes.filter(node=>node.tagName==='A'&&!used.has(node)&&node!==admin);
