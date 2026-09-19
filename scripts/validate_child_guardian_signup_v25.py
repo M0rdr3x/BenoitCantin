@@ -6,6 +6,7 @@ MIG = ROOT / 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_sign
 TEST = ROOT / 'supabase/tests/child_guardian_signup_v25.test.sql'
 REDEEM_MIG = ROOT / 'supabase/migrations/20260919013000_sinjira_v25_child_pending_guardian_redeem.sql'
 GUARDIAN_AAL2_MIG = ROOT / 'supabase/migrations/20260919023000_sinjira_v25_guardian_invite_aal2.sql'
+GUARDIAN_SECRET_MIN_MIG = ROOT / 'supabase/migrations/20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql'
 YOUTH_BASE = ROOT / 'supabase/migrations/20260816140000_sinjira_v24_4_12_youth_safety.sql'
 SIGNUP_JS = ROOT / 'assets/js/v24-signup.js'
 BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
@@ -34,6 +35,7 @@ mig = read(MIG)
 test = read(TEST)
 redeem_mig = read(REDEEM_MIG)
 guardian_aal2_mig = read(GUARDIAN_AAL2_MIG)
+guardian_secret_min_mig = read(GUARDIAN_SECRET_MIN_MIG)
 youth_base = read(YOUTH_BASE)
 signup_js = read(SIGNUP_JS)
 backend_js = read(BACKEND_JS)
@@ -47,6 +49,7 @@ m = compact(mig)
 t = compact(test)
 rm = compact(redeem_mig)
 gm = compact(guardian_aal2_mig)
+gsm = compact(guardian_secret_min_mig)
 y = compact(youth_base)
 j = compact(signup_js)
 b = compact(backend_js)
@@ -83,6 +86,14 @@ req("deletefrompublic.guardian_signup_inviteswhereguardian_user_id=uidandused_at
 req("revokeallonfunctionpublic.create_guardian_signup_invite()frompublic,anon" in gm
     and "grantexecuteonfunctionpublic.create_guardian_signup_invite()toauthenticated" in gm,
     "Les ACL de création du code parental AAL2 ne sont pas bornées.")
+req("createorreplacefunctionprivate.sinjira_strip_guardian_signup_secret()" in gsm,
+    "La fonction de minimisation du secret parental est absente.")
+req("createtriggerzz_sinjira_strip_guardian_signup_secretafterinsertonauth.users" in gsm,
+    "Le nettoyage du guardian_code n'est pas garanti après le trigger de création utilisateur.")
+req("raw_user_meta_data=coalesce(raw_user_meta_data,'{}'::jsonb)-'guardian_code'" in gsm,
+    "La migration de minimisation ne retire pas réellement guardian_code des métadonnées Auth.")
+req("revokeallonfunctionprivate.sinjira_strip_guardian_signup_secret()frompublic,anon,authenticated" in gsm,
+    "La fonction privée de minimisation du secret parental est exposée aux rôles API.")
 
 # Bande enfant distincte : elle ne doit pas hériter automatiquement des droits sociaux jeunesse.
 req("interval'11years'then'under11'" in m,
@@ -217,7 +228,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(34);' in t,
+req('selectplan(35);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
@@ -248,6 +259,7 @@ for marker, message in (
     ("unesessionadulteaal2peutcréeruncodeparental", "Le pgTAP ne prouve pas la réussite de création sous AAL2."),
     ("request.jwt.claims", "Le pgTAP ne simule pas explicitement les niveaux AAL du JWT."),
     ("invite_code~'^youth-[a-z0-9]{10}$'", "Le pgTAP ne vérifie pas le format du code généré sous AAL2."),
+    ("lecodeparentalconsomméestsupprimédesmétadonnéesauthdelenfant", "Le pgTAP ne prouve pas la suppression de guardian_code après consommation."),
     ("$$,'p0001','youth_jurisdiction_not_enabled'", "Le délimiteur pgTAP du refus hors Canada est cassé."),
     ("$$selectpublic.redeem_guardian_signup_invite('youth-redeem1101')$$", "Le délimiteur pgTAP du rétablissement child_pending est cassé."),
 ):

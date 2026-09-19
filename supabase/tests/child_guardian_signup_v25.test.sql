@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(34);
+select plan(35);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -97,6 +97,15 @@ select ok(exists(select 1 from public.profiles where user_id='20000000-0000-4000
 select is((select date_of_birth from public.account_safety_profiles where user_id='20000000-0000-4000-8000-000000000011'),(current_date-interval '11 years')::date,'la date de naissance exacte de 11 ans est conservée');
 select ok(exists(select 1 from public.guardian_links where minor_user_id='20000000-0000-4000-8000-000000000011' and guardian_user_id='10000000-0000-4000-8000-000000000001' and status='verified'),'le lien parent enfant est créé et vérifié');
 select ok(exists(select 1 from public.guardian_signup_invites where invite_code='YOUTH-ABCD123456' and used_at is not null and minor_user_id='20000000-0000-4000-8000-000000000011'),'le code parental est consommé une seule fois par le compte enfant');
+select ok(
+  not coalesce(
+    (select raw_user_meta_data ? 'guardian_code'
+     from auth.users
+     where id='20000000-0000-4000-8000-000000000011'),
+    false
+  ),
+  'le code parental consommé est supprimé des métadonnées Auth de l enfant'
+);
 select is(public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),'child','un compte ayant exactement 11 ans devient child');
 select ok(public.sinjira_parent_can_supervise('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011'),'le parent peut superviser le compte enfant');
 select ok(not public.sinjira_can_social_interact('20000000-0000-4000-8000-000000000011','20000000-0000-4000-8000-000000000011'),'les fonctions sociales restent coupées pour la bande child');

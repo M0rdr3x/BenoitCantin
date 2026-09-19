@@ -12,6 +12,7 @@ on:
       - 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
       - 'supabase/migrations/20260919013000_sinjira_v25_child_pending_guardian_redeem.sql'
       - 'supabase/migrations/20260919023000_sinjira_v25_guardian_invite_aal2.sql'
+      - 'supabase/migrations/20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql'
       - 'supabase/tests/child_guardian_signup_v25.test.sql'
       - 'scripts/validate_child_guardian_signup_v25.py'
       - 'tests/e2e/test_public_site.py'
