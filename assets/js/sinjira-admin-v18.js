@@ -148,12 +148,34 @@ function fillExtendedStoryEditor(st){
  f.elements.continuity_json.value=JSON.stringify(st.continuity_data||{},null,2);
  f.elements.visible_to_character_owner.checked=st.visible_to_character_owner!==false;
  f.elements.author_confirmed_extended_canon.checked=false;
+ f.elements.author_confirmed_publication.checked=false;
+ renderStoryPublicationState(st);
+ setStoryPublishedLock(st);
  renderStorySegments(st.id);
  f.scrollIntoView({behavior:'smooth'});
 }
 function extendedStoryEditor(){
  const f=document.querySelector('[data-extended-story-editor]');if(!f)return;
  f.querySelector('[data-story-reset]')?.addEventListener('click',resetExtendedStoryEditor);
+ f.querySelector('[data-story-publish]')?.addEventListener('click',async()=>{
+   const storyId=f.elements.id.value;if(!storyId)return alert('Enregistrez d’abord la Chronique.');
+   if(!f.elements.author_confirmed_publication.checked)return alert('Confirmez personnellement la publication avant de continuer.');
+   if(!['members','public'].includes(f.elements.audience.value))return alert('Choisissez une audience Membres ou Public avant publication.');
+   try{
+     const d=await call('publish_extended_story',{story_id:storyId,audience:f.elements.audience.value,author_confirmed_publication:true});
+     await extendedStories();const current=extendedStoriesCache.find(x=>x.id===storyId)||d.story;if(current)fillExtendedStoryEditor(current);
+     alert('Chronique publiée après nouvelle vérification de continuité.');
+   }catch(err){if(err.data?.continuity)renderContinuityResult(err.data.continuity);alert(err.message)}
+ });
+ f.querySelector('[data-story-unpublish]')?.addEventListener('click',async()=>{
+   const storyId=f.elements.id.value;if(!storyId)return;
+   if(!confirm('Retirer cette Chronique de publication afin de pouvoir la modifier?'))return;
+   try{
+     const d=await call('unpublish_extended_story',{story_id:storyId,author_confirmed_unpublish:true});
+     await extendedStories();const current=extendedStoriesCache.find(x=>x.id===storyId)||d.story;if(current)fillExtendedStoryEditor(current);
+     alert('Chronique retirée de publication. Vous pouvez maintenant la modifier.');
+   }catch(err){alert(err.message)}
+ });
  f.addEventListener('submit',async e=>{
    e.preventDefault();
    let continuity={};try{continuity=JSON.parse(f.elements.continuity_json.value||'{}')}catch{return alert('Le JSON de continuité est invalide.')};
@@ -183,12 +205,16 @@ function extendedStoryEditor(){
    };
    try{
      const saved=await call('save_extended_story',{story});
-     alert('Chronique enregistrée dans le Canon étendu.');
      f.elements.id.value=saved.story?.id||story.id||'';
-     f.elements.published_at.value=saved.story?.published_at||story.published_at||'';
-     f.elements.author_confirmed_extended_canon.checked=false;
-     await extendedStories();renderStorySegments(f.elements.id.value);
-   }catch(err){if(err.data?.story?.id){f.elements.id.value=err.data.story.id;f.elements.published_at.value=err.data.story.published_at||'';await extendedStories();renderStorySegments(f.elements.id.value)}if(err.data?.continuity)renderContinuityResult(err.data.continuity);alert(err.message)}
+     f.elements.published_at.value=saved.story?.published_at||'';
+     f.elements.author_confirmed_extended_canon.checked=false;f.elements.author_confirmed_publication.checked=false;
+     await extendedStories();const current=extendedStoriesCache.find(x=>x.id===f.elements.id.value);if(current)fillExtendedStoryEditor(current);
+     alert('Chronique enregistrée. La publication reste une étape distincte.');
+   }catch(err){
+     if(err.data?.story?.id){f.elements.id.value=err.data.story.id;f.elements.published_at.value=err.data.story.published_at||'';await extendedStories();const current=extendedStoriesCache.find(x=>x.id===f.elements.id.value);if(current)fillExtendedStoryEditor(current)}
+     if(err.data?.continuity)renderContinuityResult(err.data.continuity);
+     alert(err.message);
+   }
  });
 }
 
