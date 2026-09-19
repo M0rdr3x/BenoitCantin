@@ -259,9 +259,25 @@ Le pgTAP Junior compte désormais **25 assertions** et prouve qu'aucun objet de 
 
 Cette vingt-cinquième migration reste **non revue production**.
 
+### Refonte compte, acquisitions et catalogue créateur
+
+La revue visuelle du compte a identifié plusieurs incohérences : navigation trop chargée, page Achats sans historique réel, bibliothèque mélangeant jeux et projets, page Littérature centrée sur un seul roman, et ancien client commentaires encore branché sur `novel_comments.contains_spoilers` alors que le modèle canonique utilise `sinjira_novel_comments.spoiler`.
+
+La migration forward-only :
+
+`20260919090000_sinjira_v25_account_content_hub.sql`
+
+ajoute trois garanties de lecture sans créer de faux achats : un membre peut relire un produit inactif s'il est lié à son propre entitlement ou à sa propre commande; le compte créateur peut lire les romans brouillons et produits internes; les autres membres ne voient pas ces éléments privés. Le Livre II `Le Sang du Sauveur` est aussi convergé vers `sinjira_novels` afin que le catalogue canonique reflète les romans déjà annoncés sur le site.
+
+La refonte front-end regroupe la navigation du compte en familles, sépare Bibliothèque en **Jeux / Romans / Autres créations**, ajoute un historique réel **Achats / Droits / Créations**, rend pseudo et courriel modifiables par le propriétaire du compte, convertit les commentaires vers les tables/RPC `sinjira_*`, et transforme Littérature en catalogue multi-romans piloté par les droits du compte.
+
+Le pgTAP `account_content_hub_v25.test.sql` contient **9 assertions** dédiées aux frontières membre/créateur.
+
+Cette vingt-sixième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **25 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **26 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -297,6 +313,7 @@ Le snapshot de revue attend exactement **25 migrations locales futures non revue
 | `20260919073000_sinjira_v25_junior_guardian_summary_aal2.sql` | `07b1ea063e57d3dd4a31e689fac6f44fd1ca6d18` |
 | `20260919080000_sinjira_v25_guardian_character_identity_isolation.sql` | `7c169564095bb440bde8a2a106c4e00aa2f307e4` |
 | `20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql` | `8e0fd367bd0c30ed77f947ae0583408b370121a1` |
+| `20260919090000_sinjira_v25_account_content_hub.sql` | `29358d27f8f505897b924062e208b8d5c740f8c5` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -341,7 +358,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **25 migrations** dans l’ordre.
+2. Relire les **26 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.

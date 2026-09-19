@@ -1,0 +1,72 @@
+name: SINJIRA V25 — Refonte compte et catalogue
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'supabase/migrations/20260919090000_sinjira_v25_account_content_hub.sql'
+      - 'supabase/tests/account_content_hub_v25.test.sql'
+      - 'scripts/validate_account_site_refresh_v25.py'
+      - 'assets/js/sinjira-account.js'
+      - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/sinjira-purchases-v25.js'
+      - 'assets/js/sinjira-reader.js'
+      - 'assets/js/sinjira-account-v18.js'
+      - 'assets/js/sinjira-literature-catalog-v25.js'
+      - 'assets/css/sinjira-player-account.css'
+      - 'compte/bibliotheque.html'
+      - 'compte/mes-achats.html'
+      - 'compte/profil.html'
+      - 'compte/mes-commentaires.html'
+      - 'projets/sinjira/romans/index.html'
+      - 'projets/sinjira/sinjira.css'
+      - '.github/workflows/sinjira-account-content-hub-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-account-content-hub-v25-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  account-content-hub-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Valider la refonte compte et catalogue
+        run: |
+          python3 -m py_compile scripts/validate_account_site_refresh_v25.py
+          python3 scripts/validate_account_site_refresh_v25.py --self-test
+          python3 scripts/validate_account_site_refresh_v25.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+
+      - name: Démarrer une pile Supabase locale propre
+        run: supabase start
+
+      - name: Reconstruire la base locale depuis zéro
+        run: supabase db reset
+
+      - name: Prouver les accès membre et créateur
+        run: supabase test db supabase/tests/account_content_hub_v25.test.sql
+
+      - name: Arrêter et supprimer la pile locale
+        if: always()
+        run: |
+          if command -v supabase >/dev/null 2>&1; then supabase stop --no-backup || true; fi

@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+FILES = {
+    "migration": ROOT / "supabase/migrations/20260919090000_sinjira_v25_account_content_hub.sql",
+    "library_html": ROOT / "compte/bibliotheque.html",
+    "library_js": ROOT / "assets/js/sinjira-library-v24-4-61.js",
+    "purchases_html": ROOT / "compte/mes-achats.html",
+    "purchases_js": ROOT / "assets/js/sinjira-purchases-v25.js",
+    "profile_html": ROOT / "compte/profil.html",
+    "account_js": ROOT / "assets/js/sinjira-account.js",
+    "reader_js": ROOT / "assets/js/sinjira-reader.js",
+    "comments_js": ROOT / "assets/js/sinjira-account-v18.js",
+    "comments_html": ROOT / "compte/mes-commentaires.html",
+    "literature_html": ROOT / "projets/sinjira/romans/index.html",
+    "literature_js": ROOT / "assets/js/sinjira-literature-catalog-v25.js",
+    "test": ROOT / "supabase/tests/account_content_hub_v25.test.sql",
+}
+
+def fail(message: str) -> None:
+    raise ValueError(message)
+
+def compact(value: str) -> str:
+    return "".join(value.lower().split())
+
+def validate(contents: dict[str, str]) -> None:
+    m = compact(contents["migration"])
+    libh = compact(contents["library_html"])
+    libj = compact(contents["library_js"])
+    ph = compact(contents["purchases_html"])
+    pj = compact(contents["purchases_js"])
+    prof = compact(contents["profile_html"])
+    acc = compact(contents["account_js"])
+    reader = compact(contents["reader_js"])
+    comments = compact(contents["comments_js"])
+    comment_html = compact(contents["comments_html"])
+    lith = compact(contents["literature_html"])
+    litj = compact(contents["literature_js"])
+    test = compact(contents["test"])
+
+    required_migration = (
+        "createpolicysinjira_novels_owner_read",
+        "createpolicyproducts_entitled_read",
+        "createpolicyproducts_ordered_read",
+        "createpolicyproducts_owner_read",
+        "public.is_sinjira_owner((selectauth.uid()))",
+        "insertintopublic.sinjira_novels",
+        "'le-sang-du-sauveur'",
+    )
+    for marker in required_migration:
+        if marker not in m:
+            fail(f"migration contenu: garde absente: {marker}")
+
+    for marker in ("data-library-games", "data-library-novels", "data-library-other"):
+        if marker not in libh:
+            fail(f"bibliothèque: séparation manquante: {marker}")
+    if "from('sinjira_novels')" not in contents["library_js"]:
+        fail("bibliothèque: catalogue roman canonique absent")
+    if "functionrendernovels" not in libj:
+        fail("bibliothèque: rendu romans absent")
+
+    for marker in ("data-purchase-history", "data-purchase-entitlements", "data-creator-portfolio"):
+        if marker not in ph:
+            fail(f"achats: section manquante: {marker}")
+    if ".eq('user_id',user.id)" not in contents["purchases_js"]:
+        fail("achats: lectures propres au compte non bornées")
+    if "rendercreatorportfolio" not in pj:
+        fail("achats: séparation portefeuille créateur absente")
+
+    if "name="pseudo"required" not in prof or "name="email"requiredtype="email"" not in prof:
+        fail("profil: pseudo/courriel ne sont pas éditables")
+    if "auth.updateuser({email}" not in acc:
+        fail("profil: mise à jour sécurisée du courriel absente")
+
+    for marker in ("appendgroup('bibliothèque'", "appendgroup('univers'", "appendgroup('communauté'", "appendgroup('compte'"):
+        if marker not in acc:
+            fail(f"navigation groupée absente: {marker}")
+
+    if "from('novel_comments')" in reader or "from('novel_comments')" in comments:
+        fail("commentaires: ancien modèle novel_comments encore utilisé")
+    if "list_sinjira_novel_comments" not in contents["reader_js"]:
+        fail("commentaires publics: RPC canonique absent")
+    if "from('sinjira_novel_comments')" not in contents["reader_js"] or "from('sinjira_novel_comments')" not in contents["comments_js"]:
+        fail("commentaires: table canonique sinjira_novel_comments absente")
+    if "sinjira-account-v18.js?v=25.0.1" not in contents["comments_html"]:
+        fail("commentaires: cache client V25 non forcé")
+
+    if "data-literature-catalog" not in lith or "sinjira-literature-catalog-v25.js?v=25.0.1" not in lith:
+        fail("littérature: catalogue dynamique V25 absent")
+    if "from('sinjira_novels')" not in contents["literature_js"] or "is_sinjira_owner" not in contents["literature_js"]:
+        fail("littérature: catalogue canonique/créateur absent")
+
+    if "selectplan(9);" not in test:
+        fail("pgTAP contenu: plan(9) absent")
+    for marker in (
+        "unmembrenevoitpasunromanbrouilloncréateur",
+        "unmembrevoitencoreunproduitinactifliéàsonentitlement",
+        "unmembrevoitencoreunproduitinactifprésentdanssapropcommande".replace("propcommande", "proprecommande"),
+        "lecréateurvoitsonromanbrouillon",
+        "lesangdusauveurestprésentdanslecatalogueromancanonique",
+    ):
+        if marker not in test:
+            fail(f"pgTAP contenu: preuve absente: {marker}")
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--self-test", action="store_true")
+    args = parser.parse_args()
+    contents = {name: path.read_text(encoding="utf-8") for name, path in FILES.items()}
+    validate(contents)
+    if args.self_test:
+        broken = dict(contents)
+        broken["reader_js"] = broken["reader_js"].replace("sinjira_novel_comments", "novel_comments", 1)
+        try:
+            validate(broken)
+        except ValueError:
+            print("OK auto-test: retour à novel_comments détecté")
+            return
+        fail("auto-test: dérive novel_comments non détectée")
+    print("OK V25 compte: navigation regroupée, achats propres, catalogue créateur et commentaires canoniques validés.")
+
+if __name__ == "__main__":
+    main()

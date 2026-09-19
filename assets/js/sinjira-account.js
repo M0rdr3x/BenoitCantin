@@ -305,7 +305,7 @@ async function profilePage(){
     if(updateError){setStatus(status,updateError.message,'error');remove.disabled=false;return}
     p.avatar_path=null;remove.disabled=false;showStored();avatarState.textContent='Photo retirée. Vous pouvez en ajouter une nouvelle.';setStatus(status,'Photo de profil retirée.','success');
   });
-  form.addEventListener('submit',async e=>{e.preventDefault();const d=new FormData(form);const {error}=await getSupabase().from('profiles').update({pseudo:String(d.get('pseudo')||'').trim(),display_name:String(d.get('display_name')||'').trim()}).eq('user_id',user.id);setStatus(status,error?error.message:'Profil mis à jour.',error?'error':'success')});
+  form.addEventListener('submit',async e=>{e.preventDefault();const d=new FormData(form),s=getSupabase(),pseudo=String(d.get('pseudo')||'').trim(),displayName=String(d.get('display_name')||'').trim(),email=String(d.get('email')||'').trim().toLowerCase();if(!pseudo||!displayName||!email){setStatus(status,'Complétez le pseudonyme, le nom affiché et le courriel.','error');return}const {error:profileError}=await s.from('profiles').update({pseudo,display_name:displayName}).eq('user_id',user.id);if(profileError){setStatus(status,profileError.message||'Impossible de mettre le profil à jour.','error');return}if(email!==String(user.email||'').toLowerCase()){const {error:emailError}=await s.auth.updateUser({email},{emailRedirectTo:`${location.origin}/compte/profil.html`});if(emailError){setStatus(status,emailError.message||'Le profil a été enregistré, mais le changement de courriel n’a pas pu être lancé.','error');return}setStatus(status,'Profil enregistré. Confirmez le changement de courriel avec les messages de sécurité envoyés par SINJIRA™.','success');return}setStatus(status,'Profil mis à jour.','success')});
 }
 async function contributions(){
   const user=await requireUser(),c=await consent(user),form=document.querySelector('[data-contribution-form]');if(!form)return;
@@ -352,10 +352,58 @@ async function settings(){
     postNativeChildAccess('unknown');await s.auth.signOut();location.href='/compte/connexion.html?deleted=1';
   });
 }
+function refreshAccountNavGroups(){
+  document.querySelectorAll('.account-nav-group').forEach(group=>{
+    const visible=[...group.querySelectorAll('a')].some(link=>!link.hidden);
+    group.hidden=!visible;
+  });
+}
+
+function enhanceAccountNavigation(){
+  document.querySelectorAll('.account-nav').forEach(nav=>{
+    if(nav.dataset.grouped==='true')return;
+    nav.dataset.grouped='true';
+    nav.classList.add('account-nav--grouped');
+    const nodes=[...nav.children];
+    const leaf=node=>String(node?.getAttribute?.('href')||'').split('?')[0].split('#')[0].split('/').pop();
+    const take=leaves=>nodes.filter(node=>node.tagName==='A'&&leaves.includes(leaf(node)));
+    const used=new Set();
+    const appendGroup=(label,leaves)=>{
+      const links=take(leaves);
+      if(!links.length)return;
+      links.forEach(link=>used.add(link));
+      const details=document.createElement('details');details.className='account-nav-group';
+      const summary=document.createElement('summary');summary.textContent=label;
+      if(links.some(link=>link.getAttribute('aria-current')==='page'))details.classList.add('is-current');
+      const panel=document.createElement('div');panel.className='account-nav-panel';
+      links.forEach(link=>panel.append(link));details.append(summary,panel);nav.append(details);
+    };
+    const home=nodes.find(node=>node.tagName==='A'&&leaf(node)==='index.html');
+    const logout=nodes.find(node=>node.matches?.('[data-logout]'));
+    const admin=nodes.find(node=>node.matches?.('[data-admin-nav]'));
+    nav.replaceChildren();
+    if(home){used.add(home);home.textContent='Mon espace';home.classList.add('account-nav-home');nav.append(home);}
+    appendGroup('Bibliothèque',['bibliotheque.html','mes-lectures.html','licences.html','mes-achats.html','marche.html','jetons.html','documents.html','playtests.html','contributions.html']);
+    appendGroup('Univers',['mon-personnage.html','mes-personnages.html','monde-parallele.html','mes-parties.html','registre-personnel.html','histoire-de-vie.html']);
+    appendGroup('Communauté',['communaute.html','communaute-junior.html','relations.html','rencontres.html','reseau-personnage.html','messages.html','messages-reels.html','messages-personnage.html','notifications.html']);
+    appendGroup('Compte',['profil.html','securite.html','parametres.html','confidentialite-joueur.html','vie-privee.html','blocages.html','emploi.html','mon-ia.html']);
+    const leftovers=nodes.filter(node=>node.tagName==='A'&&!used.has(node)&&node!==admin);
+    if(leftovers.length){
+      const details=document.createElement('details');details.className='account-nav-group';
+      const summary=document.createElement('summary');summary.textContent='Plus';
+      const panel=document.createElement('div');panel.className='account-nav-panel';leftovers.forEach(link=>panel.append(link));details.append(summary,panel);nav.append(details);
+    }
+    if(admin)nav.append(admin);
+    if(logout)nav.append(logout);
+    nav.addEventListener('toggle',event=>{if(event.target.open)nav.querySelectorAll('details[open]').forEach(other=>{if(other!==event.target)other.removeAttribute('open')})},true);
+  });
+  refreshAccountNavGroups();
+}
 document.querySelectorAll('[data-logout]').forEach(b=>b.addEventListener('click',async()=>{postNativeChildAccess('unknown');await signOut()}));
 backendNotice();
+enhanceAccountNavigation();
 initAdminNavigation().catch(()=>{});
-initAgeAccessNavigation().catch(()=>{});
+initAgeAccessNavigation().then(refreshAccountNavGroups).catch(()=>{});
 (async()=>{try{
   if(page==='signup')await signup();else if(page==='login')await login();else if(page==='forgot')await forgot();else if(page==='reset')await reset();
   else if(page==='dashboard')await dashboard();else if(page==='games')await games();else if(page==='profile')await profilePage();else if(page==='contributions')await contributions();else if(page==='settings')await settings();
