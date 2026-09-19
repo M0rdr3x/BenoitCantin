@@ -257,6 +257,11 @@ Deno.serve(async(req)=>{
       const startsAt=x.starts_at||null,endsAt=x.ends_at||null;
       if(startsAt&&endsAt&&new Date(endsAt).getTime()<new Date(startsAt).getTime())return privateJson({ok:false,error:'La fin de l’événement ne peut pas précéder son début.',code:'INVALID_EVENT_RANGE'},400);
       const payload={event_key:String(x.event_key||'').trim().slice(0,160)||null,title,summary:String(x.summary||'').slice(0,12000)||null,starts_at:startsAt,ends_at:endsAt,timezone_name:String(x.timezone_name||'').trim().slice(0,80)||null,location_id:x.location_id||null,location_name_snapshot:String(x.location_name_snapshot||'').trim().slice(0,220)||null,source_scope:scopes.includes(x.source_scope)?x.source_scope:'LIVRES_1_12',source_reference:sourceReference,classification:classifications.includes(x.classification)?x.classification:'PROVISOIRE',public_safe:x.public_safe===true,consequences:x.consequences&&typeof x.consequences==='object'?x.consequences:{}};
+      if(['CANON','SECRET_AUTEUR'].includes(payload.classification)&&payload.location_id){
+        const {data:canonLocation,error:canonLocationError}=await s.from('sinjira_world_locations').select('canon_status').eq('id',payload.location_id).maybeSingle();
+        if(canonLocationError)throw canonLocationError;
+        if(canonLocation?.canon_status!=='CANON')throw new Error('CANON_LOCATION_REQUIRED');
+      }
       let saved;
       if(id){const {data,error}=await s.from('sinjira_canon_events').update(payload).eq('id',id).select('*').single();if(error)throw error;saved=data}
       else{const {data,error}=await s.from('sinjira_canon_events').insert(payload).select('*').single();if(error)throw error;saved=data}
@@ -267,10 +272,15 @@ Deno.serve(async(req)=>{
     if(a==='save_canon_event_character'){
       const x=b.presence||{};
       if(!x.event_id||!x.character_id)return privateJson({ok:false,error:'Événement et personnage requis.',code:'EVENT_CHARACTER_REQUIRED'},400);
-      const {data:event,error:eventError}=await s.from('sinjira_canon_events').select('id,starts_at,ends_at,location_id,location_name_snapshot,source_reference').eq('id',x.event_id).maybeSingle();
+      const {data:event,error:eventError}=await s.from('sinjira_canon_events').select('id,starts_at,ends_at,location_id,location_name_snapshot,source_reference,classification').eq('id',x.event_id).maybeSingle();
       if(eventError)throw eventError;if(!event)return privateJson({ok:false,error:'Événement canonique introuvable.',code:'EVENT_NOT_FOUND'},404);
       const certainties=['confirmed','approximate','unknown'];
       const payload={event_id:x.event_id,character_id:x.character_id,role:String(x.role||'').trim().slice(0,160)||null,starts_at:x.starts_at||event.starts_at||null,ends_at:x.ends_at||event.ends_at||null,location_id:x.location_id||event.location_id||null,location_name_snapshot:String(x.location_name_snapshot||event.location_name_snapshot||'').trim().slice(0,220)||null,certainty:certainties.includes(x.certainty)?x.certainty:'confirmed',source_reference:String(x.source_reference||event.source_reference||'').trim().slice(0,700)||null};
+      if(['CANON','SECRET_AUTEUR'].includes(event.classification)&&payload.location_id){
+        const {data:canonLocation,error:canonLocationError}=await s.from('sinjira_world_locations').select('canon_status').eq('id',payload.location_id).maybeSingle();
+        if(canonLocationError)throw canonLocationError;
+        if(canonLocation?.canon_status!=='CANON')throw new Error('CANON_LOCATION_REQUIRED');
+      }
       if(payload.starts_at&&payload.ends_at&&new Date(payload.ends_at).getTime()<new Date(payload.starts_at).getTime())return privateJson({ok:false,error:'La fin de présence ne peut pas précéder son début.',code:'INVALID_PRESENCE_RANGE'},400);
       const {data,error}=await s.from('sinjira_canon_event_characters').upsert(payload,{onConflict:'event_id,character_id'}).select('*').single();if(error)throw error;
       await audit(s,user.id,'save_canon_event_character','sinjira_canon_event_character',x.event_id,'Présence canonique mise à jour',{character_id:x.character_id});
@@ -446,6 +456,8 @@ Deno.serve(async(req)=>{
     if(e?.message==='STORY_ANCHOR_REQUIRED')return privateJson({ok:false,error:'Définissez l’ancrage canonique avant publication.',code:'STORY_ANCHOR_REQUIRED'},409);
     if(e?.message==='STORY_METADATA_INCOMPLETE')return privateJson({ok:false,error:'La publication exige une période complète et un lieu Atlas.',code:'STORY_METADATA_INCOMPLETE'},409);
     if(e?.message==='STORY_CONTENT_REQUIRED')return privateJson({ok:false,error:'Le contenu de la Chronique doit être rédigé avant publication.',code:'STORY_CONTENT_REQUIRED'},409);
+    if(e?.message==='STORY_LOCATION_NOT_CANON')return privateJson({ok:false,error:'Le lieu principal de la Chronique doit être CANON dans l’Atlas avant publication.',code:'STORY_LOCATION_NOT_CANON'},409);
+    if(e?.message==='CANON_LOCATION_REQUIRED')return privateJson({ok:false,error:'Un événement ou une présence CANON/SECRET AUTEUR doit utiliser un lieu CANON dans l’Atlas.',code:'CANON_LOCATION_REQUIRED'},409);
     if(e?.message==='STORY_CONTINUITY_CONFLICT')return privateJson({ok:false,error:'Canonisation refusée : collision de continuité détectée.',code:'STORY_CONTINUITY_CONFLICT'},409);
     if(e?.message==='STORY_CONTINUITY_INCOMPLETE')return privateJson({ok:false,error:'Canonisation refusée : date ou lieu de continuité incomplet.',code:'STORY_CONTINUITY_INCOMPLETE'},409);
     if(e?.message==='NOTIFICATION_ID_REQUIRED')return privateJson({ok:false,error:'Identifiant de notification requis.'},400);
