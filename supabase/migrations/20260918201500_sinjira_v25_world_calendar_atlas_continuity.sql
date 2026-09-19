@@ -634,7 +634,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path=pg_catalog,public,private,auth
-as $
+as $$
 declare
   v_admin uuid;
   v_report jsonb;
@@ -685,7 +685,7 @@ begin
     'continuity',v_report
   );
 end;
-$;
+$$;
 
 create or replace function public.admin_sinjira_unpublish_extended_story(
   p_story_id uuid
@@ -694,7 +694,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path=pg_catalog,public,private,auth
-as $
+as $$
 declare
   v_admin uuid;
   v_story public.sinjira_extended_stories%rowtype;
@@ -725,7 +725,7 @@ begin
     'published_at',v_story.published_at
   );
 end;
-$;
+$$;
 
 revoke all on function private.sinjira_prevent_location_cycle() from public,anon,authenticated;
 revoke all on function private.sinjira_location_is_ancestor(uuid,uuid) from public,anon,authenticated;
