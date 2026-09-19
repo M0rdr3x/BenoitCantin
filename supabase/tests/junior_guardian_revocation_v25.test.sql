@@ -218,6 +218,7 @@ select ok(
   'l ancien consentement Junior de A reste révoqué après rétablissement de supervision'
 );
 
+select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','75000000-0000-4000-8000-000000000001','aal','aal2')::text,
