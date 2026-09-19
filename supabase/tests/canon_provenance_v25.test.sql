@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(60);
+select plan(64);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -353,6 +353,19 @@ select ok(
    where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
   'une source déjà remplacée devient elle aussi un historique immuable'
 );
+
+
+select ok(not has_function_privilege('anon','public.admin_sinjira_promote_extended_story(uuid)','EXECUTE'),
+  'anon ne peut pas promouvoir une Chronique vers CANON_ETENDU');
+
+select ok(has_function_privilege('authenticated','public.admin_sinjira_promote_extended_story(uuid)','EXECUTE'),
+  'authenticated atteint le RPC de promotion qui exige ensuite admin AAL2');
+
+select ok(not has_function_privilege('anon','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE'),
+  'anon ne peut pas publier une Chronique');
+
+select ok(has_function_privilege('authenticated','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE'),
+  'authenticated atteint le RPC de publication qui exige ensuite admin AAL2');
 
 select * from finish();
 rollback;
