@@ -149,7 +149,7 @@ using(
   exists(
     select 1
     from public.sinjira_extended_stories s
-    join public.characters c on c.id=sinjira_story_character_presence.character_id
+    join public.characters c on c.id=s.character_id
     where s.id=sinjira_story_character_presence.story_id
       and s.visible_to_character_owner
       and c.user_id=(select auth.uid())
