@@ -314,8 +314,10 @@ Deno.serve(async(req)=>{
           location_id:payload.location_id,
           location_name:payload.region_name,
           certainty:'confirmed',
+          presence_kind:'story_span',
+          segment_key:'primary',
           source_note:`Présence dérivée de la Chronique : ${title}`
-        },{onConflict:'story_id,character_id'});
+        },{onConflict:'story_id,character_id,segment_key'});
         if(presenceError)throw presenceError;
       }
       let continuity:any=null;
