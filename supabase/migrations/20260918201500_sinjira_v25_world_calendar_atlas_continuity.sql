@@ -89,7 +89,7 @@ alter table public.sinjira_story_character_presence
 
 create or replace view private.sinjira_effective_story_presence as
 select sp.*
-from private.sinjira_effective_story_presence sp
+from public.sinjira_story_character_presence sp
 where sp.segment_key<>'primary'
    or not exists(
      select 1
