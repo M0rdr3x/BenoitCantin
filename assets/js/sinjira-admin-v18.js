@@ -114,7 +114,7 @@ async function canonProvenance(){
 }
 function resetExtendedStoryEditor(){
  const f=document.querySelector('[data-extended-story-editor]');if(!f)return;
- f.reset();f.elements.id.value='';f.elements.published_at.value='';f.elements.story_type.value='character_chronicle';f.elements.anchor_scope.value='UNASSIGNED';f.elements.canon_status.value='PROVISOIRE';f.elements.status.value='draft';f.elements.audience.value='private';f.elements.location_id.value='';f.elements.continuity_json.value='{}';f.elements.visible_to_character_owner.checked=true;f.elements.author_confirmed_extended_canon.checked=false;f.elements.author_confirmed_publication.checked=false;renderContinuityResult(null);renderStoryPublicationState(null);setStoryPublishedLock(null);const sf=document.querySelector('[data-story-segment-form]');if(sf){sf.reset();sf.elements.id.value='';sf.elements.story_id.value=''}const sb=document.querySelector('[data-story-segment-list]');if(sb)sb.innerHTML='<p>Sélectionnez d’abord une Chronique.</p>';
+ f.reset();f.elements.id.value='';f.elements.published_at.value='';f.elements.story_type.value='character_chronicle';f.elements.anchor_scope.value='UNASSIGNED';f.elements.canon_status.value='PROVISOIRE';f.elements.status.value='draft';f.elements.audience.value='private';f.elements.location_id.value='';f.elements.continuity_json.value='{}';f.elements.visible_to_character_owner.checked=true;f.elements.author_confirmed_extended_canon.checked=false;f.elements.author_confirmed_publication.checked=false;renderContinuityResult(null);renderStoryPublicationState(null);setStoryPublishedLock(null);const sf=document.querySelector('[data-story-segment-form]');if(sf){sf.reset();sf.elements.id.value='';sf.elements.story_id.value=''}const sb=document.querySelector('[data-story-segment-list]');if(sb)sb.innerHTML='<p>Sélectionnez d’abord une Chronique.</p>';const cf=document.querySelector('[data-story-claim-form]');if(cf){cf.reset();cf.elements.id.value='';cf.elements.story_id.value=''}const cb=document.querySelector('[data-story-claim-list]');if(cb)cb.innerHTML='<p>Sélectionnez d’abord une Chronique.</p>';
 }
 function renderStoryPublicationState(st){
  const box=document.querySelector('[data-story-publication-state]');if(!box)return;
@@ -131,7 +131,7 @@ function setStoryPublishedLock(st){
  const publish=f.querySelector('[data-story-publish]');if(publish)publish.disabled=locked||!st?.id||st?.canon_status!=='CANON_ETENDU';
  const unpublish=f.querySelector('[data-story-unpublish]');if(unpublish)unpublish.disabled=!locked;
  const check=f.querySelector('[data-story-check]');if(check)check.disabled=!st?.id;
- const sf=document.querySelector('[data-story-segment-form]');if(sf)sf.querySelectorAll('input,textarea,select,button').forEach(el=>el.disabled=locked);
+ const sf=document.querySelector('[data-story-segment-form]');if(sf)sf.querySelectorAll('input,textarea,select,button').forEach(el=>el.disabled=locked);const cf=document.querySelector('[data-story-claim-form]');if(cf)cf.querySelectorAll('input,textarea,select,button').forEach(el=>el.disabled=locked);
 }
 let extendedStoriesCache=[];
 async function extendedStories(){
@@ -182,7 +182,7 @@ function fillExtendedStoryEditor(st){
  f.elements.author_confirmed_publication.checked=false;
  renderStoryPublicationState(st);
  setStoryPublishedLock(st);
- renderStorySegments(st.id);
+ renderStorySegments(st.id);renderStoryClaims(st.id);
  f.scrollIntoView({behavior:'smooth'});
 }
 function extendedStoryEditor(){
