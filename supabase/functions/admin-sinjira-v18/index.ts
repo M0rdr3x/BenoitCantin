@@ -16,7 +16,7 @@ const SAFE_LOG_CODES=new Set([
   'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON','SOURCE_PURGED',
   'SOURCE_PURGE_CONFIRMATION_REQUIRED','SOURCE_PURGE_STORAGE_FAILED',
   'CANON_CONFIRMATION_REQUIRED','EXTENDED_CANON_CONFIRMATION_REQUIRED','STORY_CONTINUITY_CONFLICT','STORY_CONTINUITY_INCOMPLETE','NOTIFICATION_ID_REQUIRED','CENTRAL_CANON_LOCKED',
-  'CANON_SOURCE_REQUIRED','CANON_SOURCE_NOT_VERIFIED','CANON_SOURCE_SCOPE_MISMATCH','CANON_PRESENCE_SOURCE_SCOPE_MISMATCH','CANON_SOURCE_LOCATOR_REQUIRED','CANON_SOURCE_CHAPTER_REQUIRED','CANON_SOURCE_IN_USE','CANON_SOURCE_KEY_IMMUTABLE','CANON_SOURCE_SUPERSEDES_SELF','CANON_SOURCE_SUPERSEDES_CYCLE','CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED','CANON_SOURCE_RETIRE_REFERENCES_REMAIN','CLAIM_SOURCE_REQUIRED','CLAIM_SOURCE_NOT_VERIFIED','CLAIM_SOURCE_SCOPE_MISMATCH','STORY_PROVENANCE_REQUIRED','STORY_PROVENANCE_INCOMPLETE','STORY_PROVENANCE_SCOPE_MISMATCH','STORY_CANON_INSERT_FORBIDDEN','STORY_SAVE_BEFORE_CANON_TRANSITION','STORY_PROMOTION_REQUIRED','STORY_CANON_STATUS_INVALID','STORY_PUBLICATION_TIMESTAMP_REQUIRED'
+  'CANON_SOURCE_REQUIRED','CANON_SOURCE_NOT_VERIFIED','CANON_SOURCE_SCOPE_MISMATCH','CANON_PRESENCE_SOURCE_SCOPE_MISMATCH','CANON_SOURCE_LOCATOR_REQUIRED','CANON_SOURCE_CHAPTER_REQUIRED','CANON_SOURCE_IN_USE','CANON_SOURCE_KEY_IMMUTABLE','CANON_SOURCE_SUPERSEDES_SELF','CANON_SOURCE_SUPERSEDES_CYCLE','CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED','CANON_SOURCE_RETIRE_REFERENCES_REMAIN','CANON_SOURCE_MIGRATION_REQUIRED_FIELDS','CANON_SOURCE_MIGRATION_SOURCE_NOT_FOUND','CANON_SOURCE_MIGRATION_REPLACEMENT_NOT_FOUND','CANON_SOURCE_MIGRATION_REPLACEMENT_INVALID','CANON_SOURCE_MIGRATION_SCOPE_MISMATCH','CANON_SOURCE_MIGRATION_REPLACEMENT_NOT_VERIFIED','CANON_SOURCE_MIGRATION_INCOMPLETE','CANON_SOURCE_ALREADY_RETIRED','CLAIM_SOURCE_REQUIRED','CLAIM_SOURCE_NOT_VERIFIED','CLAIM_SOURCE_SCOPE_MISMATCH','STORY_PROVENANCE_REQUIRED','STORY_PROVENANCE_INCOMPLETE','STORY_PROVENANCE_SCOPE_MISMATCH','STORY_CANON_INSERT_FORBIDDEN','STORY_SAVE_BEFORE_CANON_TRANSITION','STORY_PROMOTION_REQUIRED','STORY_CANON_STATUS_INVALID','STORY_PUBLICATION_TIMESTAMP_REQUIRED'
 ]);
 
 function privateJson(data:unknown,status=200){
@@ -231,7 +231,7 @@ Deno.serve(async(req)=>{
       const usageBySource=new Map<string,any>();
       const usageFor=(id:any)=>{
         const key=String(id||'');if(!key)return null;
-        if(!usageBySource.has(key))usageBySource.set(key,{total:0,direct_references:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,retirement_allowed:false,retirement_blocked_references:false,references:[]});
+        if(!usageBySource.has(key))usageBySource.set(key,{total:0,direct_references:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,retirement_allowed:false,retirement_blocked_references:false,retirement_replacement_id:null,retirement_replacement_title:null,references:[]});
         return usageBySource.get(key);
       };
       const add=(sourceId:any,kind:string,label:string,canonical=false)=>{
@@ -259,11 +259,13 @@ Deno.serve(async(req)=>{
         if(replacementVerified){
           u.retirement_allowed=(u.direct_references||0)===0;
           u.retirement_blocked_references=(u.direct_references||0)>0;
+          u.retirement_replacement_id=newer.id;
+          u.retirement_replacement_title=newer.title||newer.source_key;
         }
         if(u.references.length<20)u.references.push(`Remplacée par : ${newer.title||newer.source_key}${replacementVerified?(u.retirement_allowed?' · RETIRED autorisé':' · références à migrer avant RETIRED'):''}`);
       }
 
-      const enrichedSources=sourceRows.map((src:any)=>({...src,usage:usageBySource.get(String(src.id))||{total:0,direct_references:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,retirement_allowed:false,retirement_blocked_references:false,references:[]}}));
+      const enrichedSources=sourceRows.map((src:any)=>({...src,usage:usageBySource.get(String(src.id))||{total:0,direct_references:0,canonical:0,claims:0,world_locations:0,travel_rules:0,events:0,presences:0,superseded_by:0,key_locked:false,authority_locked:false,retirement_allowed:false,retirement_blocked_references:false,retirement_replacement_id:null,retirement_replacement_title:null,references:[]}}));
       return privateJson({ok:true,sources:enrichedSources,claims:claimRows});
     }
 
@@ -289,6 +291,16 @@ Deno.serve(async(req)=>{
       else{const {data,error}=await s.from('sinjira_canon_sources').insert(payload).select('*').single();if(error)throw error;saved=data}
       await audit(s,user.id,x.id?'update_canon_source':'create_canon_source','sinjira_canon_source',saved.id,title,{source_kind:kind,scope,verification_status:status});
       return privateJson({ok:true,source:saved});
+    }
+
+    if(a==='migrate_canon_source_references'){
+      const sourceId=String(b.source_id||'').trim();
+      const replacementId=String(b.replacement_source_id||'').trim();
+      if(!sourceId||!replacementId)return privateJson({ok:false,error:'Source et remplacement requis.',code:'CANON_SOURCE_MIGRATION_REQUIRED_FIELDS'},400);
+      const {data,error}=await s.rpc('admin_sinjira_migrate_canon_source_references',{p_source_id:sourceId,p_replacement_source_id:replacementId});
+      if(error)throw error;
+      await audit(s,user.id,'migrate_canon_source_references','sinjira_canon_source',sourceId,'Migration atomique des références canoniques',{replacement_source_id:replacementId,result:data});
+      return privateJson(data||{ok:true,source_id:sourceId,replacement_source_id:replacementId});
     }
 
     if(a==='save_story_claim'){
@@ -622,6 +634,14 @@ Deno.serve(async(req)=>{
     if(e?.message==='CANON_SOURCE_IN_USE')return privateJson({ok:false,error:'Cette source est déjà utilisée par le canon. Créez une nouvelle source de remplacement au lieu de modifier son autorité ou ses repères.',code:'CANON_SOURCE_IN_USE'},409);
     if(e?.message==='CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED')return privateJson({ok:false,error:'Pour passer une source engagée à RETIRED, créez d’abord une source de remplacement VERIFIED ou SECRET AUTEUR dans la même période et reliez-la avec « Remplace la source ».',code:'CANON_SOURCE_RETIRE_REPLACEMENT_REQUIRED'},409);
     if(e?.message==='CANON_SOURCE_RETIRE_REFERENCES_REMAIN')return privateJson({ok:false,error:'Le remplacement existe, mais l’ancienne source est encore utilisée. Migrez d’abord tous les faits, lieux, trajets, événements et présences vers la nouvelle source avant de choisir RETIRED.',code:'CANON_SOURCE_RETIRE_REFERENCES_REMAIN'},409);
+    if(e?.message==='CANON_SOURCE_MIGRATION_REQUIRED_FIELDS')return privateJson({ok:false,error:'La source d’origine et sa source de remplacement sont requises.',code:'CANON_SOURCE_MIGRATION_REQUIRED_FIELDS'},400);
+    if(e?.message==='CANON_SOURCE_MIGRATION_SOURCE_NOT_FOUND')return privateJson({ok:false,error:'La source d’origine est introuvable.',code:'CANON_SOURCE_MIGRATION_SOURCE_NOT_FOUND'},404);
+    if(e?.message==='CANON_SOURCE_MIGRATION_REPLACEMENT_NOT_FOUND')return privateJson({ok:false,error:'La source de remplacement est introuvable.',code:'CANON_SOURCE_MIGRATION_REPLACEMENT_NOT_FOUND'},404);
+    if(e?.message==='CANON_SOURCE_MIGRATION_REPLACEMENT_INVALID')return privateJson({ok:false,error:'La source choisie n’est pas déclarée comme remplacement direct de cette source.',code:'CANON_SOURCE_MIGRATION_REPLACEMENT_INVALID'},409);
+    if(e?.message==='CANON_SOURCE_MIGRATION_SCOPE_MISMATCH')return privateJson({ok:false,error:'Le remplacement doit appartenir à la même période canonique que la source d’origine.',code:'CANON_SOURCE_MIGRATION_SCOPE_MISMATCH'},409);
+    if(e?.message==='CANON_SOURCE_MIGRATION_REPLACEMENT_NOT_VERIFIED')return privateJson({ok:false,error:'Le remplacement doit être VERIFIED ou SECRET AUTEUR avant migration.',code:'CANON_SOURCE_MIGRATION_REPLACEMENT_NOT_VERIFIED'},409);
+    if(e?.message==='CANON_SOURCE_MIGRATION_INCOMPLETE')return privateJson({ok:false,error:'Migration annulée : au moins une référence n’a pas pu être déplacée. Aucune migration partielle ne doit être conservée.',code:'CANON_SOURCE_MIGRATION_INCOMPLETE'},409);
+    if(e?.message==='CANON_SOURCE_ALREADY_RETIRED')return privateJson({ok:false,error:'Cette source est déjà RETIRED.',code:'CANON_SOURCE_ALREADY_RETIRED'},409);
     if(e?.message==='CANON_SOURCE_KEY_IMMUTABLE')return privateJson({ok:false,error:'La clé stable d’une source déjà utilisée ne peut plus être modifiée.',code:'CANON_SOURCE_KEY_IMMUTABLE'},409);
     if(e?.message==='CANON_SOURCE_SUPERSEDES_SELF')return privateJson({ok:false,error:'Une source ne peut pas se remplacer elle-même.',code:'CANON_SOURCE_SUPERSEDES_SELF'},409);
     if(e?.message==='CANON_SOURCE_SUPERSEDES_CYCLE')return privateJson({ok:false,error:'Chaîne de remplacement refusée : elle créerait un cycle entre sources.',code:'CANON_SOURCE_SUPERSEDES_CYCLE'},409);
