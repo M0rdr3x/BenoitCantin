@@ -87,6 +87,20 @@ alter table public.sinjira_extended_stories
 alter table public.sinjira_story_character_presence
   add column if not exists location_id uuid references public.sinjira_world_locations(id) on delete set null;
 
+create or replace view private.sinjira_effective_story_presence as
+select sp.*
+from private.sinjira_effective_story_presence sp
+where sp.segment_key<>'primary'
+   or not exists(
+     select 1
+     from public.sinjira_story_character_presence detailed
+     where detailed.story_id=sp.story_id
+       and detailed.character_id=sp.character_id
+       and detailed.segment_key<>'primary'
+   );
+
+revoke all on private.sinjira_effective_story_presence from public,anon,authenticated;
+
 create index if not exists sinjira_world_locations_parent_idx
   on public.sinjira_world_locations(parent_id);
 create index if not exists sinjira_world_travel_route_idx
@@ -232,7 +246,7 @@ begin
       'event_source',ce.source_reference
     )),'[]'::jsonb),count(*)
   into v_conflicts,v_blocking
-  from public.sinjira_story_character_presence sp
+  from private.sinjira_effective_story_presence sp
   join public.sinjira_canon_event_characters cp on cp.character_id=sp.character_id
   join public.sinjira_canon_events ce on ce.id=cp.event_id and ce.classification in ('CANON','SECRET_AUTEUR')
   where sp.story_id=p_story_id
@@ -244,6 +258,38 @@ begin
     and sp.location_id is not null
     and coalesce(cp.location_id,ce.location_id) is not null
     and not private.sinjira_locations_compatible(sp.location_id,coalesce(cp.location_id,ce.location_id));
+
+  -- Collision interne : deux segments détaillés du même personnage ne peuvent pas
+  -- se chevaucher dans deux lieux incompatibles au sein de la même Chronique.
+  with internal_conflict as (
+    select jsonb_build_object(
+      'type','internal_overlap',
+      'character_id',a.character_id,
+      'story_presence_id',a.id,
+      'other_story_presence_id',b.id,
+      'story_start',a.starts_at,
+      'story_end',a.ends_at,
+      'other_start',b.starts_at,
+      'other_end',b.ends_at,
+      'story_location_id',a.location_id,
+      'other_location_id',b.location_id
+    ) as item
+    from private.sinjira_effective_story_presence a
+    join private.sinjira_effective_story_presence b
+      on b.story_id=a.story_id
+      and b.character_id=a.character_id
+      and b.id>a.id
+    where a.story_id=p_story_id
+      and a.starts_at is not null and a.ends_at is not null
+      and b.starts_at is not null and b.ends_at is not null
+      and tstzrange(a.starts_at,a.ends_at,'[]') && tstzrange(b.starts_at,b.ends_at,'[]')
+      and a.location_id is not null and b.location_id is not null
+      and not private.sinjira_locations_compatible(a.location_id,b.location_id)
+  )
+  select v_conflicts || coalesce(jsonb_agg(item),'[]'::jsonb),
+         v_blocking + count(*)
+  into v_conflicts,v_blocking
+  from internal_conflict;
 
   -- Collision avec une autre Chronique déjà canonisée.
   with ext as (
@@ -260,8 +306,8 @@ begin
       'story_location_id',sp.location_id,
       'other_location_id',op.location_id
     ) as item
-    from public.sinjira_story_character_presence sp
-    join public.sinjira_story_character_presence op
+    from private.sinjira_effective_story_presence sp
+    join private.sinjira_effective_story_presence op
       on op.character_id=sp.character_id and op.story_id<>sp.story_id
     join public.sinjira_extended_stories os
       on os.id=op.story_id
@@ -289,7 +335,8 @@ begin
            coalesce(cp.location_id,ce.location_id) as location_id,
            'central'::text as source_kind,
            ce.id as source_id,
-           ce.title as source_title
+           ce.title as source_title,
+           null::uuid as source_presence_id
     from public.sinjira_canon_event_characters cp
     join public.sinjira_canon_events ce on ce.id=cp.event_id
     where ce.classification in ('CANON','SECRET_AUTEUR')
@@ -297,12 +344,17 @@ begin
       and coalesce(cp.ends_at,ce.ends_at) is not null
     union all
     select op.character_id,op.starts_at,op.ends_at,op.location_id,
-           'extended'::text,os.id,os.title
-    from public.sinjira_story_character_presence op
+           case when op.story_id=p_story_id then 'same_story' else 'extended' end::text,
+           os.id,os.title,op.id
+    from private.sinjira_effective_story_presence op
     join public.sinjira_extended_stories os on os.id=op.story_id
-    where op.story_id<>p_story_id
-      and os.canon_status='CANON_ETENDU'
-      and os.status in ('validated','published')
+    where (
+        op.story_id=p_story_id
+        or (
+          os.canon_status='CANON_ETENDU'
+          and os.status in ('validated','published')
+        )
+      )
       and op.starts_at is not null and op.ends_at is not null
   ),
   transitions as (
@@ -311,10 +363,11 @@ begin
            prev.ends_at as prev_end,prev.location_id as prev_location_id,
            nxt.source_kind as next_kind,nxt.source_id as next_id,nxt.source_title as next_title,
            nxt.starts_at as next_start,nxt.location_id as next_location_id
-    from public.sinjira_story_character_presence sp
+    from private.sinjira_effective_story_presence sp
     left join lateral (
       select k.* from known k
       where k.character_id=sp.character_id
+        and (k.source_presence_id is null or k.source_presence_id<>sp.id)
         and sp.starts_at is not null
         and k.ends_at<=sp.starts_at
       order by k.ends_at desc
@@ -323,6 +376,7 @@ begin
     left join lateral (
       select k.* from known k
       where k.character_id=sp.character_id
+        and (k.source_presence_id is null or k.source_presence_id<>sp.id)
         and sp.ends_at is not null
         and k.starts_at>=sp.ends_at
       order by k.starts_at asc
@@ -401,31 +455,36 @@ begin
            coalesce(cp.starts_at,ce.starts_at) as starts_at,
            coalesce(cp.ends_at,ce.ends_at) as ends_at,
            coalesce(cp.location_id,ce.location_id) as location_id,
-           ce.id as source_id,ce.title as source_title
+           ce.id as source_id,ce.title as source_title,
+           null::uuid as source_presence_id
     from public.sinjira_canon_event_characters cp
     join public.sinjira_canon_events ce on ce.id=cp.event_id
     where ce.classification in ('CANON','SECRET_AUTEUR')
       and coalesce(cp.starts_at,ce.starts_at) is not null
       and coalesce(cp.ends_at,ce.ends_at) is not null
     union all
-    select op.character_id,op.starts_at,op.ends_at,op.location_id,os.id,os.title
-    from public.sinjira_story_character_presence op
+    select op.character_id,op.starts_at,op.ends_at,op.location_id,os.id,os.title,op.id
+    from private.sinjira_effective_story_presence op
     join public.sinjira_extended_stories os on os.id=op.story_id
-    where op.story_id<>p_story_id
-      and os.canon_status='CANON_ETENDU'
-      and os.status in ('validated','published')
+    where (
+        op.story_id=p_story_id
+        or (
+          os.canon_status='CANON_ETENDU'
+          and os.status in ('validated','published')
+        )
+      )
       and op.starts_at is not null and op.ends_at is not null
   ),
   transitions as (
     select sp.id as story_presence_id,sp.character_id,sp.starts_at,sp.ends_at,sp.location_id,
            prev.source_id as prev_id,prev.source_title as prev_title,prev.ends_at as prev_end,prev.location_id as prev_location_id,
            nxt.source_id as next_id,nxt.source_title as next_title,nxt.starts_at as next_start,nxt.location_id as next_location_id
-    from public.sinjira_story_character_presence sp
+    from private.sinjira_effective_story_presence sp
     left join lateral (
-      select k.* from known k where k.character_id=sp.character_id and sp.starts_at is not null and k.ends_at<=sp.starts_at order by k.ends_at desc limit 1
+      select k.* from known k where k.character_id=sp.character_id and (k.source_presence_id is null or k.source_presence_id<>sp.id) and sp.starts_at is not null and k.ends_at<=sp.starts_at order by k.ends_at desc limit 1
     ) prev on true
     left join lateral (
-      select k.* from known k where k.character_id=sp.character_id and sp.ends_at is not null and k.starts_at>=sp.ends_at order by k.starts_at asc limit 1
+      select k.* from known k where k.character_id=sp.character_id and (k.source_presence_id is null or k.source_presence_id<>sp.id) and sp.ends_at is not null and k.starts_at>=sp.ends_at order by k.starts_at asc limit 1
     ) nxt on true
     where sp.story_id=p_story_id
   ),
@@ -487,7 +546,7 @@ begin
         else 'La continuité de cette présence reste incomplète.'
       end
     ) as item
-    from public.sinjira_story_character_presence sp
+    from private.sinjira_effective_story_presence sp
     where sp.story_id=p_story_id
       and (
         sp.starts_at is null
