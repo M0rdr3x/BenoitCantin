@@ -498,10 +498,17 @@ begin
     raise exception 'CANON_SOURCE_MIGRATION_INCOMPLETE';
   end if;
 
+  -- Ferme immédiatement l'ancienne source dans la même transaction afin
+  -- qu'aucune nouvelle référence ne puisse être créée entre migration et retrait.
+  update public.sinjira_canon_sources
+  set verification_status='RETIRED'
+  where id=v_old.id;
+
   return jsonb_build_object(
     'ok',true,
     'source_id',v_old.id,
     'replacement_source_id',v_new.id,
+    'source_status','RETIRED',
     'published_stories_unpublished',v_story_count,
     'migrated',jsonb_build_object(
       'world_locations',v_location_count,
@@ -1164,7 +1171,7 @@ comment on function private.sinjira_source_is_verified(uuid) is
 comment on function private.sinjira_prevent_source_supersedes_cycle() is
   'Empêche auto-remplacement, cycles, références absentes et remplacements entre périmètres canoniques différents.';
 comment on function public.admin_sinjira_migrate_canon_source_references(uuid,uuid) is
-  'Migration atomique auteur : déplace toutes les références directes d’une source vers son unique remplacement vérifié de même période, puis permet le retrait logique RETIRED.';
+  'Migration atomique auteur : déplace toutes les références directes vers l’unique remplacement vérifié de même période puis passe immédiatement l’ancienne source à RETIRED dans la même transaction.';
 comment on function private.sinjira_guard_canon_source_in_use() is
   'Protège les sources engagées; RETIRED exige un remplacement vérifié de même période et aucune référence directe restante vers l’ancienne source.';
 comment on function private.sinjira_demote_extended_story_on_edit() is
