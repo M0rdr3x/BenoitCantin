@@ -92,16 +92,23 @@ function toIso(value,zone=''){
 }
 let canonSourcesCache=[],storyClaimsCache=[];
 function canonSourceLabel(src){if(!src)return '';const bits=[src.book_number?'Livre '+src.book_number:'',src.chapter_reference||'',src.passage_reference||''].filter(Boolean);return (src.title||src.source_key||'Source')+(bits.length?' — '+bits.join(' · '):'')+' · '+(src.source_kind||'source')+' · '+(src.verification_status||'PROVISOIRE')}
-function canonSourceOptions(placeholder='À relier',excludeId=''){return `<option value="">${escapeHtml(placeholder)}</option>`+canonSourcesCache.filter(src=>src.id!==excludeId).map(src=>`<option value="${src.id}">${escapeHtml(canonSourceLabel(src))}</option>`).join('')}
+function canonSourceOptions(placeholder='À relier',excludeId='',scope=''){return `<option value="">${escapeHtml(placeholder)}</option>`+canonSourcesCache.filter(src=>src.id!==excludeId&&(!scope||src.scope===scope)).map(src=>`<option value="${src.id}">${escapeHtml(canonSourceLabel(src))}</option>`).join('')}
 function refreshCanonSourceSelects(excludeSupersedesId=''){
  for(const sel of document.querySelectorAll('[data-canon-source-select],[data-story-claim-source]')){const old=sel.value;sel.innerHTML=canonSourceOptions(sel.hasAttribute('data-story-claim-source')?'Choisir une source':'À relier au Registre');if(old)sel.value=old}
- const sup=document.querySelector('[data-canon-source-supersedes]');if(sup){const old=sup.value;sup.innerHTML=canonSourceOptions('Aucune',excludeSupersedesId);if(old&&old!==excludeSupersedesId)sup.value=old}
+ const form=document.querySelector('[data-canon-source-form]'),sup=document.querySelector('[data-canon-source-supersedes]');
+ if(sup){const old=sup.value,scope=form?.elements?.scope?.value||'';sup.innerHTML=canonSourceOptions('Aucune',excludeSupersedesId,scope);if(old&&old!==excludeSupersedesId&&Array.from(sup.options).some(o=>o.value===old))sup.value=old}
 }
 function syncCanonSourceScope(){
  const f=document.querySelector('[data-canon-source-form]');if(!f)return;
  const isRoman=f.elements.source_kind.value==='roman',book=Number(f.elements.book_number.value||0);
  if(isRoman&&book>=1&&book<=14)f.elements.scope.value=book<=12?'LIVRES_1_12':'ORIGINES_13_14';
  if(!f.elements.scope.dataset.authorityLocked)f.elements.scope.disabled=isRoman;
+ const sup=f.elements.supersedes_source_id;
+ if(sup){
+   const old=sup.value,excludeId=f.elements.id.value||'',scope=f.elements.scope.value||'';
+   sup.innerHTML=canonSourceOptions('Aucune',excludeId,scope);
+   if(old&&old!==excludeId&&Array.from(sup.options).some(o=>o.value===old))sup.value=old;
+ }
 }
 function setCanonSourceAuthorityLock(src){
  const f=document.querySelector('[data-canon-source-form]');if(!f)return;
