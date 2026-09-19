@@ -233,7 +233,7 @@ Deno.serve(async(req)=>{
       const minutes=Number(x.minimum_minutes);
       if(!Number.isFinite(minutes)||minutes<0||minutes>525600)return privateJson({ok:false,error:'Durée minimale de déplacement invalide.',code:'TRAVEL_MINUTES_INVALID'},400);
       const canon=['PROVISOIRE','CANON','A_ARBITRER'];
-      const payload={from_location_id:x.from_location_id,to_location_id:x.to_location_id,minimum_minutes:Math.round(minutes),travel_mode:String(x.travel_mode||'unspecified').trim().slice(0,120)||'unspecified',valid_from:x.valid_from||null,valid_until:x.valid_until||null,canon_status:canon.includes(x.canon_status)?x.canon_status:'PROVISOIRE',source_reference:String(x.source_reference||'').trim().slice(0,700)||null,notes:String(x.notes||'').slice(0,4000)||null};
+      const payload={from_location_id:x.from_location_id,to_location_id:x.to_location_id,minimum_minutes:Math.round(minutes),travel_mode:String(x.travel_mode||'unspecified').trim().slice(0,120)||'unspecified',bidirectional:x.bidirectional!==false,valid_from:x.valid_from||null,valid_until:x.valid_until||null,canon_status:canon.includes(x.canon_status)?x.canon_status:'PROVISOIRE',source_reference:String(x.source_reference||'').trim().slice(0,700)||null,notes:String(x.notes||'').slice(0,4000)||null};
       if(payload.canon_status==='CANON'&&!payload.source_reference)return privateJson({ok:false,error:'Une règle de déplacement CANON doit avoir une source.',code:'TRAVEL_SOURCE_REQUIRED'},400);
       if(payload.valid_from&&payload.valid_until&&new Date(payload.valid_until).getTime()<new Date(payload.valid_from).getTime())return privateJson({ok:false,error:'La fin de validité ne peut pas précéder le début.',code:'TRAVEL_WINDOW_INVALID'},400);
       let saved;
