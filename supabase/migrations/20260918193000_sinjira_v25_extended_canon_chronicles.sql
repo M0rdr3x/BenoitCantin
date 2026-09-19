@@ -58,9 +58,11 @@ create table if not exists public.sinjira_story_character_presence(
   ends_at timestamptz,
   location_name text,
   certainty text not null default 'confirmed' check(certainty in ('confirmed','approximate','unknown')),
+  presence_kind text not null default 'story_span' check(presence_kind in ('story_span','scene','travel','reference')),
+  segment_key text not null default 'primary' check(char_length(segment_key) between 1 and 120),
   source_note text,
   created_at timestamptz not null default now(),
-  unique(story_id,character_id),
+  unique(story_id,character_id,segment_key),
   check(ends_at is null or starts_at is null or ends_at >= starts_at)
 );
 
@@ -158,7 +160,7 @@ comment on table public.sinjira_extended_stories is
   'Canon étendu SINJIRA : Chroniques des personnages, Chroniques du Monde, Chroniques de Québec, archives et formats courts. Ne remplace jamais les 14 romans du Canon central.';
 
 comment on table public.sinjira_story_character_presence is
-  'Présences temporelles et géographiques des personnages dans le Canon étendu. Sert à détecter les collisions de continuité avant validation.';
+  'Présences temporelles et géographiques des personnages dans le Canon étendu. Un même personnage peut avoir plusieurs segments dans une Chronique; segment_key=primary représente la présence générale de l’éditeur.';
 
 comment on column public.parallel_world_memberships.main_canon_eligible is
   'LEGACY V22 : ne doit plus servir à déterminer l’admissibilité d’une Conscience au Canon étendu. Les 14 romans centraux sont verrouillés; les Chroniques officielles utilisent sinjira_extended_stories.';
