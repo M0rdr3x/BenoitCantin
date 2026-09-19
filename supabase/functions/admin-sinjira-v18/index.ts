@@ -344,6 +344,11 @@ Deno.serve(async(req)=>{
           source_note:`Présence dérivée de la Chronique : ${title}`
         },{onConflict:'story_id,character_id,segment_key'});
         if(presenceError)throw presenceError;
+        const {error:stalePrimaryError}=await s.from('sinjira_story_character_presence').delete().eq('story_id',saved.id).eq('segment_key','primary').neq('character_id',characterId);
+        if(stalePrimaryError)throw stalePrimaryError;
+      }else{
+        const {error:stalePrimaryError}=await s.from('sinjira_story_character_presence').delete().eq('story_id',saved.id).eq('segment_key','primary');
+        if(stalePrimaryError)throw stalePrimaryError;
       }
       let continuity:any=null;
       if(requestedCanon==='CANON_ETENDU'){
