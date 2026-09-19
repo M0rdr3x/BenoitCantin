@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(87);
+select plan(91);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -528,6 +528,38 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
   'une source engagée ne peut pas faire réécrire sa chaîne de remplacement'
+);
+
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_RETIRE_REFERENCES_REMAIN%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
+  'une source ne peut pas passer RETIRED tant que des références directes subsistent'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%v_direct_use%'
+          and pg_get_functiondef(p.oid) ilike '%sinjira_story_claims%'
+          and pg_get_functiondef(p.oid) ilike '%sinjira_canon_event_characters%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
+  'les références directes couvrent faits, lieux, trajets, événements et présences'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%v_has_verified_replacement%'
+          and pg_get_functiondef(p.oid) ilike '%not v_direct_use%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
+  'RETIRED exige à la fois un remplacement vérifié et zéro référence directe'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%supersedes_source_id%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
+  'la relation de remplacement reste conservée dans l historique après migration des références'
 );
 
 select * from finish();
