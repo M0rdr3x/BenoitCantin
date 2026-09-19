@@ -106,6 +106,11 @@ def main()->int:
       'CANON_SOURCE_LOCATOR_REQUIRED',
       'sinjira_canon_events_guard_source_scope',
       'sinjira_canon_events_scope_invalidate_extended',
+      'sinjira_prevent_source_supersedes_cycle',
+      'sinjira_guard_canon_source_in_use',
+      'CANON_SOURCE_KEY_IMMUTABLE',
+      'CANON_SOURCE_IN_USE',
+      'CANON_SOURCE_SUPERSEDES_CYCLE',
     }
     for needle in sorted(extended_contract):
         if needle.lower() not in sql.lower():
