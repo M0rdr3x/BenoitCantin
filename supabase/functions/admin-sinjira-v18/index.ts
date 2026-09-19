@@ -220,6 +220,7 @@ Deno.serve(async(req)=>{
       const canon=['PROVISOIRE','CANON','A_ARBITRER'];
       if(!slug||!name)return privateJson({ok:false,error:'Nom et slug du lieu requis.',code:'LOCATION_REQUIRED'},400);
       const payload={slug,name,location_type:types.includes(x.location_type)?x.location_type:'place',parent_id:x.parent_id||null,country_code:String(x.country_code||'').trim().slice(0,8)||null,timezone_name:String(x.timezone_name||'').trim().slice(0,80)||null,latitude:x.latitude===''||x.latitude==null?null:Number(x.latitude),longitude:x.longitude===''||x.longitude==null?null:Number(x.longitude),canon_status:canon.includes(x.canon_status)?x.canon_status:'PROVISOIRE',source_reference:String(x.source_reference||'').trim().slice(0,500)||null,notes:String(x.notes||'').slice(0,4000)||null};
+      if(payload.canon_status==='CANON'&&!payload.source_reference)return privateJson({ok:false,error:'Un lieu CANON doit citer sa source dans les romans ou la Bible canonique.',code:'LOCATION_SOURCE_REQUIRED'},400);
       let saved;
       if(id){const {data,error}=await s.from('sinjira_world_locations').update(payload).eq('id',id).select('*').single();if(error)throw error;saved=data}
       else{const {data,error}=await s.from('sinjira_world_locations').insert(payload).select('*').single();if(error)throw error;saved=data}
@@ -265,8 +266,10 @@ Deno.serve(async(req)=>{
     if(a==='save_canon_event_character'){
       const x=b.presence||{};
       if(!x.event_id||!x.character_id)return privateJson({ok:false,error:'Événement et personnage requis.',code:'EVENT_CHARACTER_REQUIRED'},400);
+      const {data:event,error:eventError}=await s.from('sinjira_canon_events').select('id,starts_at,ends_at,location_id,location_name_snapshot,source_reference').eq('id',x.event_id).maybeSingle();
+      if(eventError)throw eventError;if(!event)return privateJson({ok:false,error:'Événement canonique introuvable.',code:'EVENT_NOT_FOUND'},404);
       const certainties=['confirmed','approximate','unknown'];
-      const payload={event_id:x.event_id,character_id:x.character_id,role:String(x.role||'').trim().slice(0,160)||null,starts_at:x.starts_at||null,ends_at:x.ends_at||null,location_id:x.location_id||null,location_name_snapshot:String(x.location_name_snapshot||'').trim().slice(0,220)||null,certainty:certainties.includes(x.certainty)?x.certainty:'confirmed',source_reference:String(x.source_reference||'').trim().slice(0,700)||null};
+      const payload={event_id:x.event_id,character_id:x.character_id,role:String(x.role||'').trim().slice(0,160)||null,starts_at:x.starts_at||event.starts_at||null,ends_at:x.ends_at||event.ends_at||null,location_id:x.location_id||event.location_id||null,location_name_snapshot:String(x.location_name_snapshot||event.location_name_snapshot||'').trim().slice(0,220)||null,certainty:certainties.includes(x.certainty)?x.certainty:'confirmed',source_reference:String(x.source_reference||event.source_reference||'').trim().slice(0,700)||null};
       if(payload.starts_at&&payload.ends_at&&new Date(payload.ends_at).getTime()<new Date(payload.starts_at).getTime())return privateJson({ok:false,error:'La fin de présence ne peut pas précéder son début.',code:'INVALID_PRESENCE_RANGE'},400);
       const {data,error}=await s.from('sinjira_canon_event_characters').upsert(payload,{onConflict:'event_id,character_id'}).select('*').single();if(error)throw error;
       await audit(s,user.id,'save_canon_event_character','sinjira_canon_event_character',x.event_id,'Présence canonique mise à jour',{character_id:x.character_id});
