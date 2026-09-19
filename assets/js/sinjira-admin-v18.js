@@ -105,9 +105,11 @@ function syncCanonSourceScope(){
  if(!f.elements.scope.dataset.authorityLocked)f.elements.scope.disabled=isRoman;
  const sup=f.elements.supersedes_source_id;
  if(sup){
-   const old=sup.value,excludeId=f.elements.id.value||'',scope=f.elements.scope.value||'';
-   sup.innerHTML=canonSourceOptions('Aucune',excludeId,scope,true,old);
-   if(old&&old!==excludeId&&Array.from(sup.options).some(o=>o.value===old))sup.value=old;
+   const research=f.elements.source_kind.value==='research';
+   const old=research?'':sup.value,excludeId=f.elements.id.value||'',scope=f.elements.scope.value||'';
+   sup.innerHTML=research?'<option value="">Non disponible pour research</option>':canonSourceOptions('Aucune',excludeId,scope,true,old);
+   if(!research&&old&&old!==excludeId&&Array.from(sup.options).some(o=>o.value===old))sup.value=old;
+   sup.disabled=research||sup.dataset.authorityLocked==='1';
  }
 }
 function setCanonSourceAuthorityLock(src){
@@ -115,13 +117,16 @@ function setCanonSourceAuthorityLock(src){
  const usage=src?.usage||{},authorityLocked=usage.authority_locked===true,keyLocked=usage.key_locked===true,retirementAllowed=usage.retirement_allowed===true,retirementBlocked=usage.retirement_blocked_references===true;
  if(f.elements.source_key)f.elements.source_key.disabled=keyLocked;
  for(const name of ['source_kind','book_number','chapter_reference','passage_reference','source_version','supersedes_source_id']){
-   if(f.elements[name])f.elements[name].disabled=authorityLocked;
+   if(f.elements[name]){
+     f.elements[name].disabled=authorityLocked;
+     if(name==='supersedes_source_id')f.elements[name].dataset.authorityLocked=authorityLocked?'1':'';
+   }
  }
  const verification=f.elements.verification_status;
  if(verification){
    const allStatuses=[['PROVISOIRE','PROVISOIRE'],['VERIFIED','VERIFIED'],['SECRET_AUTEUR','SECRET AUTEUR'],['A_ARBITRER','À ARBITRER'],['RETIRED','RETIRÉE']];
    if(!src){
-     verification.innerHTML=allStatuses.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+     verification.innerHTML=allStatuses.filter(([v])=>v!=='RETIRED').map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
      verification.value='PROVISOIRE';verification.disabled=false;
    }else if(authorityLocked){
      const current=src.verification_status||'PROVISOIRE';
