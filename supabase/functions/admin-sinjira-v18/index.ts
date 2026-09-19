@@ -213,8 +213,9 @@ Deno.serve(async(req)=>{
     if(a==='save_world_location'){
       const x=b.location||{};
       const id=x.id||null;
-      const slug=String(x.slug||'').trim().toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,120);
       const name=String(x.name||'').trim().slice(0,180);
+      const slugSource=String(x.slug||name).normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      const slug=slugSource.trim().toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,120);
       const types=['world','continent','country','province_state','region','city','district','site','place'];
       const canon=['PROVISOIRE','CANON','A_ARBITRER'];
       if(!slug||!name)return privateJson({ok:false,error:'Nom et slug du lieu requis.',code:'LOCATION_REQUIRED'},400);
