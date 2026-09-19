@@ -44,7 +44,8 @@ def main()->int:
       'is_sinjira_owner','ensure_sinjira_owner_character','has_sinjira_product',
       'create_guardian_signup_invite','sinjira_age_band','sinjira_can_social_interact',
       'fracture_engine_health','fracture_engine_get_state','fracture_engine_start','fracture_engine_submit_accusation',
-      'create_fracture_party','join_fracture_party','is_fracture_party_member','sinjira_content_allowed','sinjira_cycle_allowed'
+      'create_fracture_party','join_fracture_party','is_fracture_party_member','sinjira_content_allowed','sinjira_cycle_allowed',
+      'admin_sinjira_story_continuity_check','admin_sinjira_promote_extended_story'
     }
     for name in sorted(required_funcs-funcs):fail(errors,f'RPC critique absente: {name}')
 
@@ -53,11 +54,25 @@ def main()->int:
     hp,hb=latest_function(files,'get_sinjira_runtime_health')
     if not hp or f"'platform_version','{EXPECTED}'" not in re.sub(r'\s+','',hb.lower()):fail(errors,f'Runtime health ne déclare pas {EXPECTED}.')
 
-    for table in ('admin_notifications','guardian_signup_invites','products','user_entitlements','character_submissions','characters'):
+    for table in ('admin_notifications','guardian_signup_invites','products','user_entitlements','character_submissions','characters',
+                  'sinjira_extended_stories','sinjira_story_character_presence','sinjira_world_locations',
+                  'sinjira_world_travel_rules','sinjira_canon_events','sinjira_canon_event_characters'):
         if table not in tables:fail(errors,f'Table contractuelle absente des migrations: {table}')
     for table in tables:
         if not re.search(rf'alter\s+table\s+(?:if\s+exists\s+)?(?:(?:public|private)\.)?{re.escape(table)}\s+enable\s+row\s+level\s+security',sql,re.I):
             fail(errors,f'RLS non activée sur {table}')
+
+    extended_contract = {
+      'sinjira_effective_story_presence',
+      'STORY_CONTINUITY_CONFLICT',
+      'STORY_CONTINUITY_INCOMPLETE',
+      'SECRET_AUTEUR',
+      'bidirectional boolean not null default true',
+      "segment_key text not null default 'primary'",
+    }
+    for needle in sorted(extended_contract):
+        if needle.lower() not in sql.lower():
+            fail(errors,f'Contrat Canon étendu V25 incomplet: {needle}')
 
     source=[]
     for root in (ROOT/'assets'/'js',FUN):
