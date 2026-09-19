@@ -27,6 +27,7 @@ EXPECTED_NON_REVIEWED = {
     "20260918013000_sinjira_v25_child_content_rating.sql": "5cc1d572f97f080bcc43ae3d20e85b441e62b9e0",
     "20260918020000_sinjira_v25_account_capabilities.sql": "0a16bfcc49e51ee2b96cb98742442ae3d00e5c76",
     "20260918023000_sinjira_v25_minor_content_policy_compat.sql": "c0556e3baa218f9529f185010455984a0bc1cd03",
+    "20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql": "f60c6e7a6717f7b5818ff0b9a1ba7b055aa418ff",
 }
 
 
@@ -113,7 +114,7 @@ def validate_snapshot(
         fail("snapshot release: ensemble des migrations non revues différent; " + "; ".join(details))
 
     if set(snapshot_contents) != expected_names:
-        fail("snapshot release: contenus chargés incomplets pour les 9 migrations attendues")
+        fail("snapshot release: contenus chargés incomplets pour les migrations attendues")
 
     for filename, expected_blob in EXPECTED_NON_REVIEWED.items():
         actual_blob = git_blob_sha1(snapshot_contents[filename])
@@ -200,7 +201,7 @@ def main() -> None:
 
     validate_snapshot(*values)
     print(
-        "OK snapshot release V25: 9 migrations futures non revues correspondent au dossier, "
+        "OK snapshot release V25: 10 migrations futures non revues correspondent au dossier, "
         "empreintes intactes, reviewed/ledger inchangés et garde humaine conservée."
     )
 
