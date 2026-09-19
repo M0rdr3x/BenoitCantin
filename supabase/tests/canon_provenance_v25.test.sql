@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(119);
+select plan(122);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -766,6 +766,29 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='private' and p.proname='sinjira_prevent_source_supersedes_cycle' limit 1),
   'le garde de remplacement lit périmètre, type et numéro de livre de la source précédente'
+);
+
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_RETIRED_FINAL%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_lifecycle' limit 1),
+  'RETIRED est un état terminal irréversible'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%old.verification_status=''RETIRED''%'
+          and pg_get_functiondef(p.oid) ilike '%new.verification_status is distinct from ''RETIRED''%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_lifecycle' limit 1),
+  'une source RETIRED ne peut pas redevenir active'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%tg_op=''UPDATE''%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_lifecycle' limit 1),
+  'le verrou terminal RETIRED s applique explicitement aux mises à jour'
 );
 
 select * from finish();
