@@ -251,7 +251,7 @@ Règles :
 7. modifier une source non encore engagée peut invalider automatiquement les Chroniques publiées afin qu’elles soient contrôlées de nouveau;
 8. dès qu’une source soutient un fait canonique ou un fait `VERIFIED`, sa clé stable, son type, sa période et ses repères essentiels ne peuvent plus être réécrits silencieusement;
 9. une correction substantielle doit créer une **nouvelle source** reliée par « remplace », et la chaîne de remplacement ne peut jamais former de cycle;
-10. une source créée n’est jamais supprimée physiquement : lorsqu’elle ne doit plus être utilisée, elle passe à `RETIRED`; si elle est déjà engagée, ce retrait n’est autorisé qu’après création d’une source de remplacement `VERIFIED` ou `SECRET_AUTEUR` de même période, afin que les dépendances soient rétrogradées puis migrées sans trou de provenance;
+10. une source créée n’est jamais supprimée physiquement : lorsqu’elle ne doit plus être utilisée, elle passe à `RETIRED`; si elle est déjà engagée, ce retrait n’est autorisé qu’après création d’une source de remplacement `VERIFIED` ou `SECRET_AUTEUR` de même période **et après migration de toutes les références directes** (faits, lieux, trajets, événements et présences) vers la nouvelle source; la relation de remplacement reste conservée pour l’historique;
 11. les sources `SECRET_AUTEUR` peuvent protéger la continuité sans être exposées aux membres ou au public.
 
 Le champ texte de référence reste un **instantané lisible**. L’autorité réelle est l’identifiant structuré de la source.
