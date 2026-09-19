@@ -233,6 +233,9 @@ La fondation technique prévoit maintenant :
 5. Une information manquante produit un blocage de validation plutôt qu’une supposition automatique.
 6. Une collision produit un blocage de canonisation.
 7. Lorsque les contrôles sont satisfaits, **Benoit Cantin confirme explicitement** la promotion vers CANON_ETENDU.
+8. La Chronique canonisée reste en état **validated** tant qu’elle n’est pas publiée.
+9. La publication est une action séparée : elle exige une audience Membres ou Public, un contenu rédigé, un ancrage défini, une période complète, un lieu Atlas et une nouvelle vérification de continuité.
+10. Une Chronique publiée doit être retirée de publication avant toute modification de son contenu, de sa période, de son lieu ou de ses segments.
 
 Le moteur de continuité ne doit jamais inventer une heure, un lieu, une durée de trajet ou un fait absent des sources pour faire « passer » une histoire.
 
