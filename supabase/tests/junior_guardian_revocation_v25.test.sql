@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(20);
+select plan(24);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values(
@@ -67,6 +67,46 @@ select is(
   (public.guardian_set_junior_community('75000000-0000-4000-8000-000000000011',true)->>'enabled')::boolean,
   true,
   'tuteur A active Junior sous AAL2 avant révocation'
+);
+
+insert into public.junior_community_posts(author_user_id,body,created_at)
+values(
+  '75000000-0000-4000-8000-000000000011',
+  'activité Junior de preuve non visible au tuteur',
+  now()-interval '2 hours'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','75000000-0000-4000-8000-000000000001','aal','aal1')::text,
+  true
+);
+select throws_ok(
+  $$ select public.junior_guardian_summary('75000000-0000-4000-8000-000000000011') $$,
+  'P0001',
+  'MFA_AAL2_REQUIRED',
+  'tuteur AAL1 ne peut pas lire le résumé d activité Junior'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','75000000-0000-4000-8000-000000000001','aal','aal2')::text,
+  true
+);
+select ok(
+  not (public.junior_guardian_summary('75000000-0000-4000-8000-000000000011') ? 'last_activity_at')
+  and public.junior_guardian_summary('75000000-0000-4000-8000-000000000011') ? 'last_activity_date',
+  'le résumé Junior ne révèle plus l heure précise de dernière activité'
+);
+select like(
+  public.junior_guardian_summary('75000000-0000-4000-8000-000000000011')->>'last_activity_date',
+  '____-__-__',
+  'le résumé Junior réduit la dernière activité à une date'
+);
+select is(
+  (public.junior_guardian_summary('75000000-0000-4000-8000-000000000011')->>'posts')::integer,
+  1,
+  'le résumé AAL2 conserve seulement le compte utile des publications'
 );
 
 select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000011',true);

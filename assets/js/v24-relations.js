@@ -89,16 +89,36 @@ async function renderJuniorCommunityChildren(){
     const childId=button.dataset.juniorCommunitySummary;
     const target=juniorCommunityChildren.querySelector(`[data-junior-summary-for="${CSS.escape(childId)}"]`);
     button.disabled=true;
+    const {data:aal,error:aalError}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
+    if(aalError){
+      button.disabled=false;
+      if(target){target.hidden=false;target.textContent='Impossible de vérifier le niveau de sécurité. Le résumé reste masqué.';}
+      return;
+    }
+    if(aal?.currentLevel!=='aal2'){
+      button.disabled=false;
+      if(aal?.nextLevel==='aal2'){
+        location.assign(`/compte/mfa.html?next=${encodeURIComponent('/compte/relations.html')}`);
+        return;
+      }
+      if(target){target.hidden=false;target.textContent='Le résumé de sécurité exige un second facteur configuré dans Sécurité.';}
+      return;
+    }
     const {data:summary,error:summaryError}=await s.rpc('junior_guardian_summary',{p_child_user_id:childId});
     button.disabled=false;
     if(summaryError||!summary){
-      if(target){target.hidden=false;target.textContent='Résumé temporairement indisponible.';}
+      if(target){
+        target.hidden=false;
+        target.textContent=/MFA_AAL2_REQUIRED/i.test(String(summaryError?.message||''))
+          ? 'La session doit être vérifiée au niveau AAL2 pour afficher ce résumé.'
+          : 'Résumé temporairement indisponible.';
+      }
       return;
     }
     if(target){
-      const last=summary.last_activity_at?formatDate(summary.last_activity_at):'aucune activité';
+      const last=summary.last_activity_date||'aucune activité';
       target.hidden=false;
-      target.textContent=`Résumé seulement : ${Number(summary.posts||0)} publication(s), ${Number(summary.comments||0)} commentaire(s), dernière activité : ${last}. Le contenu reste privé à l’enfant et à la Communauté Junior.`;
+      target.textContent=`Résumé seulement : ${Number(summary.posts||0)} publication(s), ${Number(summary.comments||0)} commentaire(s), dernière activité (date seulement) : ${last}. Le contenu reste privé à l’enfant et à la Communauté Junior.`;
     }
   }));
 }
