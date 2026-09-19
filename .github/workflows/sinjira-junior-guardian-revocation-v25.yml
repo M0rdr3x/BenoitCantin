@@ -12,6 +12,7 @@ on:
       - 'supabase/migrations/20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql'
       - 'supabase/migrations/20260919040000_sinjira_v25_junior_enable_aal2.sql'
       - 'supabase/migrations/20260919073000_sinjira_v25_junior_guardian_summary_aal2.sql'
+      - 'supabase/migrations/20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql'
       - 'supabase/migrations/20260919043000_sinjira_v25_guardian_revoke_aal2.sql'
       - 'assets/js/v24-relations.js'
       - 'compte/relations.html'

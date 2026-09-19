@@ -66,7 +66,7 @@ La migration forward-only suivante ferme ce scénario :
 
 Un trigger sur `guardian_links` révoque désormais durablement le consentement Junior associé lors d'une révocation **ou suppression** du lien. Après rétablissement de la supervision, Junior reste fermé jusqu'à une **nouvelle activation explicite** du parent/tuteur.
 
-Le pgTAP de révocation Junior passe désormais à **24 assertions** et prouve la chaîne complète : révocation du lien, révocation du consentement, passage `child_pending`, nouveau code, retour à `child`, Junior toujours fermé, puis réactivation explicite seulement.
+Le pgTAP de révocation Junior passe désormais à **25 assertions** et prouve la chaîne complète : révocation du lien, révocation du consentement, passage `child_pending`, nouveau code, retour à `child`, Junior toujours fermé, puis réactivation explicite seulement.
 
 Cette douzième migration reste **non revue production**.
 
@@ -124,7 +124,7 @@ La migration forward-only suivante impose AAL2 uniquement à l'activation :
 
 Le serveur exige désormais une session parent/tuteur **AAL2** lorsque `p_enabled=true`. La désactivation reste volontairement disponible en AAL1 afin de conserver une voie fail-safe immédiate de retrait d'accès.
 
-L'interface Relations applique la même règle et réutilise le parcours MFA existant. Le pgTAP Junior compte maintenant **24 assertions** : activation refusée en AAL1, activation permise en AAL2, révocation durable, réactivation explicite et désactivation fail-safe en AAL1. La preuve a aussi réparé un délimiteur SQL `$$` cassé et le workflow corrige son nettoyage local `command -v supabase`.
+L'interface Relations applique la même règle et réutilise le parcours MFA existant. Le pgTAP Junior compte maintenant **25 assertions** : activation refusée en AAL1, activation permise en AAL2, révocation durable, réactivation explicite et désactivation fail-safe en AAL1. La preuve a aussi réparé un délimiteur SQL `$$` cassé et le workflow corrige son nettoyage local `command -v supabase`.
 
 Cette seizième migration reste **non revue production**.
 
@@ -227,7 +227,7 @@ La migration forward-only :
 
 exige désormais AAL2 pour lire le résumé et remplace `last_activity_at` par `last_activity_date` en UTC. Les comptes de publications/commentaires restent disponibles, tandis que le contenu et les messages privés restent explicitement invisibles au tuteur. La désactivation de Junior demeure disponible en AAL1 comme voie fail-safe.
 
-Le pgTAP Junior compte désormais **24 assertions** et prouve le refus AAL1, la lecture AAL2, l'absence du timestamp précis et la conservation du seul compte d'activité utile.
+Le pgTAP Junior compte désormais **25 assertions** et prouve le refus AAL1, la lecture AAL2, l'absence du timestamp précis et la conservation du seul compte d'activité utile.
 
 Cette vingt-troisième migration reste **non revue production**.
 
@@ -245,9 +245,23 @@ Le pgTAP enfant compte désormais **62 assertions** et prouve explicitement qu'u
 
 Cette vingt-quatrième migration reste **non revue production**.
 
+### Alias Junior privé vis-à-vis du tuteur
+
+La liste parentale `guardian_junior_community_children()` renvoyait encore `junior_alias`, alors que cet alias sert précisément à pseudonymiser l'enfant dans la Communauté Junior. Le tuteur n'en a pas besoin pour activer/désactiver Junior ni pour consulter le résumé de sécurité.
+
+La migration forward-only :
+
+`20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql`
+
+retire donc l'alias Junior de la réponse parentale. L'interface Relations affiche seulement le libellé du compte enfant et précise que l'alias Junior n'est pas montré au tuteur.
+
+Le pgTAP Junior compte désormais **25 assertions** et prouve qu'aucun objet de la liste tuteur ne contient `junior_alias`.
+
+Cette vingt-cinquième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **24 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **25 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -282,6 +296,7 @@ Le snapshot de revue attend exactement **24 migrations locales futures non revue
 | `20260919070000_sinjira_v25_guardian_contacts_minimization.sql` | `300b934766f3f1e8298f459ab3e8897df63b4959` |
 | `20260919073000_sinjira_v25_junior_guardian_summary_aal2.sql` | `07b1ea063e57d3dd4a31e689fac6f44fd1ca6d18` |
 | `20260919080000_sinjira_v25_guardian_character_identity_isolation.sql` | `7c169564095bb440bde8a2a106c4e00aa2f307e4` |
+| `20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql` | `8e0fd367bd0c30ed77f947ae0583408b370121a1` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -326,7 +341,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **24 migrations** dans l’ordre.
+2. Relire les **25 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.

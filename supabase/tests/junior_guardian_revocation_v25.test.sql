@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(24);
+select plan(25);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values(
@@ -171,6 +171,15 @@ select ok(
       and (item->>'enabled')::boolean=false
   ),
   'le tuteur B valide voit l enfant sans hériter du consentement Junior de A'
+);
+
+select ok(
+  not exists(
+    select 1
+    from jsonb_array_elements(public.guardian_junior_community_children()) item
+    where item ? 'junior_alias'
+  ),
+  'la liste tuteur ne révèle jamais le pseudonyme Junior de l enfant'
 );
 
 -- Révoquer aussi B fait passer l'enfant en child_pending.
