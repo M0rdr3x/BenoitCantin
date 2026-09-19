@@ -626,15 +626,120 @@ begin
 end;
 $$;
 
+create or replace function public.admin_sinjira_publish_extended_story(
+  p_story_id uuid,
+  p_audience text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path=pg_catalog,public,private,auth
+as $
+declare
+  v_admin uuid;
+  v_report jsonb;
+  v_story public.sinjira_extended_stories%rowtype;
+begin
+  v_admin:=private.require_sinjira_admin_aal2();
+
+  if p_audience not in ('members','public') then
+    raise exception 'STORY_PUBLIC_AUDIENCE_REQUIRED';
+  end if;
+
+  select * into v_story
+  from public.sinjira_extended_stories
+  where id=p_story_id
+  for update;
+
+  if v_story.id is null then raise exception 'STORY_NOT_FOUND'; end if;
+  if v_story.canon_status<>'CANON_ETENDU' then raise exception 'STORY_NOT_CANON_EXTENDED'; end if;
+  if v_story.status='archived' then raise exception 'STORY_ARCHIVED'; end if;
+  if v_story.anchor_scope='UNASSIGNED' then raise exception 'STORY_ANCHOR_REQUIRED'; end if;
+  if v_story.starts_at is null or v_story.ends_at is null or v_story.location_id is null then
+    raise exception 'STORY_METADATA_INCOMPLETE';
+  end if;
+  if btrim(coalesce(v_story.content,''))='' then raise exception 'STORY_CONTENT_REQUIRED'; end if;
+
+  v_report:=private.sinjira_story_continuity_report(p_story_id);
+  if coalesce((v_report->>'blocking_conflicts')::integer,0)>0 then
+    raise exception 'STORY_CONTINUITY_CONFLICT';
+  end if;
+  if coalesce((v_report->>'warnings')::integer,0)>0 then
+    raise exception 'STORY_CONTINUITY_INCOMPLETE';
+  end if;
+
+  update public.sinjira_extended_stories
+  set status='published',
+      audience=p_audience,
+      published_at=now()
+  where id=p_story_id
+  returning * into v_story;
+
+  return jsonb_build_object(
+    'ok',true,
+    'story_id',v_story.id,
+    'canon_status',v_story.canon_status,
+    'status',v_story.status,
+    'audience',v_story.audience,
+    'published_at',v_story.published_at,
+    'continuity',v_report
+  );
+end;
+$;
+
+create or replace function public.admin_sinjira_unpublish_extended_story(
+  p_story_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path=pg_catalog,public,private,auth
+as $
+declare
+  v_admin uuid;
+  v_story public.sinjira_extended_stories%rowtype;
+begin
+  v_admin:=private.require_sinjira_admin_aal2();
+
+  select * into v_story
+  from public.sinjira_extended_stories
+  where id=p_story_id
+  for update;
+
+  if v_story.id is null then raise exception 'STORY_NOT_FOUND'; end if;
+
+  if v_story.status='published' then
+    update public.sinjira_extended_stories
+    set status='validated',
+        published_at=null
+    where id=p_story_id
+    returning * into v_story;
+  end if;
+
+  return jsonb_build_object(
+    'ok',true,
+    'story_id',v_story.id,
+    'canon_status',v_story.canon_status,
+    'status',v_story.status,
+    'audience',v_story.audience,
+    'published_at',v_story.published_at
+  );
+end;
+$;
+
 revoke all on function private.sinjira_prevent_location_cycle() from public,anon,authenticated;
 revoke all on function private.sinjira_location_is_ancestor(uuid,uuid) from public,anon,authenticated;
 revoke all on function private.sinjira_locations_compatible(uuid,uuid) from public,anon,authenticated;
 revoke all on function private.sinjira_story_continuity_report(uuid) from public,anon,authenticated;
 revoke all on function public.admin_sinjira_story_continuity_check(uuid) from public,anon;
 revoke all on function public.admin_sinjira_promote_extended_story(uuid) from public,anon;
+revoke all on function public.admin_sinjira_publish_extended_story(uuid,text) from public,anon;
+revoke all on function public.admin_sinjira_unpublish_extended_story(uuid) from public,anon;
 
 grant execute on function public.admin_sinjira_story_continuity_check(uuid) to authenticated,service_role;
 grant execute on function public.admin_sinjira_promote_extended_story(uuid) to authenticated,service_role;
+grant execute on function public.admin_sinjira_publish_extended_story(uuid,text) to authenticated,service_role;
+grant execute on function public.admin_sinjira_unpublish_extended_story(uuid) to authenticated,service_role;
 
 comment on table public.sinjira_world_locations is
   'Atlas canonique SINJIRA. Les lieux sont hiérarchiques afin de distinguer une vraie collision de la présence dans une sous-zone compatible.';
@@ -648,3 +753,7 @@ comment on function public.admin_sinjira_story_continuity_check(uuid) is
   'Contrôle auteur : détecte les chevauchements géographiques incompatibles entre une Chronique, le Canon central et les Chroniques déjà canonisées.';
 comment on function public.admin_sinjira_promote_extended_story(uuid) is
   'Promotion humaine vers CANON_ETENDU refusée si une collision de continuité bloquante est détectée.';
+comment on function public.admin_sinjira_publish_extended_story(uuid,text) is
+  'Publication atomique d’une Chronique déjà CANON_ETENDU; revalide continuité, ancrage, période, lieu et contenu.';
+comment on function public.admin_sinjira_unpublish_extended_story(uuid) is
+  'Retire une Chronique de publication avant toute nouvelle modification éditoriale.';
