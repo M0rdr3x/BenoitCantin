@@ -15,7 +15,7 @@ const SAFE_LOG_CODES=new Set([
   'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE',
   'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON','SOURCE_PURGED',
   'SOURCE_PURGE_CONFIRMATION_REQUIRED','SOURCE_PURGE_STORAGE_FAILED',
-  'CANON_CONFIRMATION_REQUIRED','EXTENDED_CANON_CONFIRMATION_REQUIRED','NOTIFICATION_ID_REQUIRED','CENTRAL_CANON_LOCKED'
+  'CANON_CONFIRMATION_REQUIRED','EXTENDED_CANON_CONFIRMATION_REQUIRED','STORY_CONTINUITY_CONFLICT','STORY_CONTINUITY_INCOMPLETE','NOTIFICATION_ID_REQUIRED','CENTRAL_CANON_LOCKED'
 ]);
 
 function privateJson(data:unknown,status=200){
@@ -168,10 +168,78 @@ Deno.serve(async(req)=>{
 
     if(a==='list_extended_stories'){
       const {data,error}=await s.from('sinjira_extended_stories')
-        .select('*,characters(public_name)')
+        .select('*,characters(public_name),sinjira_world_locations(name,slug)')
         .order('updated_at',{ascending:false});
       if(error)throw error;
-      return privateJson({ok:true,stories:(data||[]).map((x:any)=>({...x,character_name:x.characters?.public_name||''}))});
+      return privateJson({ok:true,stories:(data||[]).map((x:any)=>({...x,character_name:x.characters?.public_name||'',location_name_canon:x.sinjira_world_locations?.name||''}))});
+    }
+
+    if(a==='list_world_continuity'){
+      const [locations,events,travel]=await Promise.all([
+        s.from('sinjira_world_locations').select('*').order('name'),
+        s.from('sinjira_canon_events').select('*,sinjira_world_locations(name,slug),sinjira_canon_event_characters(*,characters(public_name))').order('starts_at',{ascending:true,nullsFirst:false}),
+        s.from('sinjira_world_travel_rules').select('*,from:sinjira_world_locations!sinjira_world_travel_rules_from_location_id_fkey(name),to:sinjira_world_locations!sinjira_world_travel_rules_to_location_id_fkey(name)').order('minimum_minutes')
+      ]);
+      if(locations.error)throw locations.error;if(events.error)throw events.error;if(travel.error)throw travel.error;
+      return privateJson({ok:true,locations:locations.data||[],events:events.data||[],travel_rules:travel.data||[]});
+    }
+
+    if(a==='save_world_location'){
+      const x=b.location||{};
+      const id=x.id||null;
+      const slug=String(x.slug||'').trim().toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,120);
+      const name=String(x.name||'').trim().slice(0,180);
+      const types=['world','continent','country','province_state','region','city','district','site','place'];
+      const canon=['PROVISOIRE','CANON','A_ARBITRER'];
+      if(!slug||!name)return privateJson({ok:false,error:'Nom et slug du lieu requis.',code:'LOCATION_REQUIRED'},400);
+      const payload={slug,name,location_type:types.includes(x.location_type)?x.location_type:'place',parent_id:x.parent_id||null,country_code:String(x.country_code||'').trim().slice(0,8)||null,timezone_name:String(x.timezone_name||'').trim().slice(0,80)||null,latitude:x.latitude===''||x.latitude==null?null:Number(x.latitude),longitude:x.longitude===''||x.longitude==null?null:Number(x.longitude),canon_status:canon.includes(x.canon_status)?x.canon_status:'PROVISOIRE',source_reference:String(x.source_reference||'').trim().slice(0,500)||null,notes:String(x.notes||'').slice(0,4000)||null};
+      let saved;
+      if(id){const {data,error}=await s.from('sinjira_world_locations').update(payload).eq('id',id).select('*').single();if(error)throw error;saved=data}
+      else{const {data,error}=await s.from('sinjira_world_locations').insert(payload).select('*').single();if(error)throw error;saved=data}
+      await audit(s,user.id,id?'update_world_location':'create_world_location','sinjira_world_location',saved.id,name,{canon_status:payload.canon_status});
+      return privateJson({ok:true,location:saved});
+    }
+
+    if(a==='save_canon_event'){
+      const x=b.event||{};
+      const id=x.id||null;
+      const scopes=['LIVRES_1_12','ORIGINES_13_14','CANON_ETENDU'];
+      const classifications=['CANON','SECRET_AUTEUR','A_ARBITRER','PROVISOIRE'];
+      const title=String(x.title||'').trim().slice(0,240);
+      const sourceReference=String(x.source_reference||'').trim().slice(0,700);
+      if(!title||!sourceReference)return privateJson({ok:false,error:'Titre et source canonique requis.',code:'EVENT_SOURCE_REQUIRED'},400);
+      const startsAt=x.starts_at||null,endsAt=x.ends_at||null;
+      if(startsAt&&endsAt&&new Date(endsAt).getTime()<new Date(startsAt).getTime())return privateJson({ok:false,error:'La fin de l’événement ne peut pas précéder son début.',code:'INVALID_EVENT_RANGE'},400);
+      const payload={event_key:String(x.event_key||'').trim().slice(0,160)||null,title,summary:String(x.summary||'').slice(0,12000)||null,starts_at:startsAt,ends_at:endsAt,timezone_name:String(x.timezone_name||'').trim().slice(0,80)||null,location_id:x.location_id||null,location_name_snapshot:String(x.location_name_snapshot||'').trim().slice(0,220)||null,source_scope:scopes.includes(x.source_scope)?x.source_scope:'LIVRES_1_12',source_reference:sourceReference,classification:classifications.includes(x.classification)?x.classification:'PROVISOIRE',public_safe:x.public_safe===true,consequences:x.consequences&&typeof x.consequences==='object'?x.consequences:{}};
+      let saved;
+      if(id){const {data,error}=await s.from('sinjira_canon_events').update(payload).eq('id',id).select('*').single();if(error)throw error;saved=data}
+      else{const {data,error}=await s.from('sinjira_canon_events').insert(payload).select('*').single();if(error)throw error;saved=data}
+      await audit(s,user.id,id?'update_canon_event':'create_canon_event','sinjira_canon_event',saved.id,title,{classification:payload.classification,source_scope:payload.source_scope});
+      return privateJson({ok:true,event:saved});
+    }
+
+    if(a==='save_canon_event_character'){
+      const x=b.presence||{};
+      if(!x.event_id||!x.character_id)return privateJson({ok:false,error:'Événement et personnage requis.',code:'EVENT_CHARACTER_REQUIRED'},400);
+      const certainties=['confirmed','approximate','unknown'];
+      const payload={event_id:x.event_id,character_id:x.character_id,role:String(x.role||'').trim().slice(0,160)||null,starts_at:x.starts_at||null,ends_at:x.ends_at||null,location_id:x.location_id||null,location_name_snapshot:String(x.location_name_snapshot||'').trim().slice(0,220)||null,certainty:certainties.includes(x.certainty)?x.certainty:'confirmed',source_reference:String(x.source_reference||'').trim().slice(0,700)||null};
+      if(payload.starts_at&&payload.ends_at&&new Date(payload.ends_at).getTime()<new Date(payload.starts_at).getTime())return privateJson({ok:false,error:'La fin de présence ne peut pas précéder son début.',code:'INVALID_PRESENCE_RANGE'},400);
+      const {data,error}=await s.from('sinjira_canon_event_characters').upsert(payload,{onConflict:'event_id,character_id'}).select('*').single();if(error)throw error;
+      await audit(s,user.id,'save_canon_event_character','sinjira_canon_event_character',x.event_id,'Présence canonique mise à jour',{character_id:x.character_id});
+      return privateJson({ok:true,presence:data});
+    }
+
+    if(a==='remove_canon_event_character'){
+      if(!b.event_id||!b.character_id)return privateJson({ok:false,error:'Événement et personnage requis.',code:'EVENT_CHARACTER_REQUIRED'},400);
+      const {error}=await s.from('sinjira_canon_event_characters').delete().eq('event_id',b.event_id).eq('character_id',b.character_id);if(error)throw error;
+      await audit(s,user.id,'remove_canon_event_character','sinjira_canon_event_character',b.event_id,'Présence canonique retirée',{character_id:b.character_id});
+      return privateJson({ok:true});
+    }
+
+    if(a==='check_extended_story_continuity'){
+      if(!b.story_id)return privateJson({ok:false,error:'Chronique requise.',code:'STORY_REQUIRED'},400);
+      const {data,error}=await s.rpc('admin_sinjira_story_continuity_check',{p_story_id:b.story_id});if(error)throw error;
+      return privateJson({ok:true,continuity:data});
     }
 
     if(a==='save_extended_story'){
@@ -183,10 +251,10 @@ Deno.serve(async(req)=>{
       const audiences=['private','members','public'];
       const storyType=storyTypes.includes(story.story_type)?story.story_type:'character_chronicle';
       const anchorScope=anchorScopes.includes(story.anchor_scope)?story.anchor_scope:'UNASSIGNED';
-      const canonStatus=canonStatuses.includes(story.canon_status)?story.canon_status:'PROVISOIRE';
+      const requestedCanon=canonStatuses.includes(story.canon_status)?story.canon_status:'PROVISOIRE';
       const status=workflowStatuses.includes(story.status)?story.status:'draft';
       const audience=audiences.includes(story.audience)?story.audience:'private';
-      if(canonStatus==='CANON_ETENDU'&&story.author_confirmed_extended_canon!==true)throw new Error('EXTENDED_CANON_CONFIRMATION_REQUIRED');
+      if(requestedCanon==='CANON_ETENDU'&&story.author_confirmed_extended_canon!==true)throw new Error('EXTENDED_CANON_CONFIRMATION_REQUIRED');
       const characterId=story.character_id||null;
       if(storyType==='character_chronicle'&&!characterId)return privateJson({ok:false,error:'Une Chronique de personnage doit être liée à une Conscience.',code:'CHARACTER_REQUIRED'},400);
       const title=String(story.title||'').trim().slice(0,220);
@@ -201,8 +269,9 @@ Deno.serve(async(req)=>{
         summary:String(story.summary||'').slice(0,12000)||null,
         content:String(story.content||'').slice(0,1000000)||null,
         region_name:String(story.region_name||'').trim().slice(0,220)||null,
+        location_id:story.location_id||null,
         anchor_scope:anchorScope,
-        canon_status:canonStatus,
+        canon_status:requestedCanon==='CANON_ETENDU'?'PROVISOIRE':requestedCanon,
         status,
         starts_at:startsAt,
         ends_at:endsAt,
@@ -225,14 +294,32 @@ Deno.serve(async(req)=>{
           character_id:characterId,
           starts_at:startsAt,
           ends_at:endsAt,
+          location_id:payload.location_id,
           location_name:payload.region_name,
           certainty:'confirmed',
           source_note:`Présence dérivée de la Chronique : ${title}`
         },{onConflict:'story_id,character_id'});
         if(presenceError)throw presenceError;
       }
-      await audit(s,user.id,story.id?'update_extended_story':'create_extended_story','sinjira_extended_story',saved.id,title,{story_type:storyType,canon_status:canonStatus,anchor_scope:anchorScope});
-      return privateJson({ok:true,story:saved});
+      let continuity:any=null;
+      if(requestedCanon==='CANON_ETENDU'){
+        const check=await s.rpc('admin_sinjira_story_continuity_check',{p_story_id:saved.id});
+        if(check.error)throw check.error;
+        continuity=check.data;
+        if(Number(continuity?.blocking_conflicts||0)>0){
+          await audit(s,user.id,'extended_story_continuity_blocked','sinjira_extended_story',saved.id,title,{blocking_conflicts:continuity.blocking_conflicts});
+          return privateJson({ok:false,persisted:true,story:saved,continuity,error:'Canonisation bloquée : une collision de continuité doit être corrigée.',code:'STORY_CONTINUITY_CONFLICT'},409);
+        }
+        if(Number(continuity?.warnings||0)>0){
+          await audit(s,user.id,'extended_story_continuity_incomplete','sinjira_extended_story',saved.id,title,{warnings:continuity.warnings});
+          return privateJson({ok:false,persisted:true,story:saved,continuity,error:'Canonisation bloquée : la date ou le lieu d’une présence doit être complété dans le Calendrier-Monde / Atlas.',code:'STORY_CONTINUITY_INCOMPLETE'},409);
+        }
+        const promotion=await s.rpc('admin_sinjira_promote_extended_story',{p_story_id:saved.id});
+        if(promotion.error)throw promotion.error;
+        saved={...saved,canon_status:promotion.data?.canon_status||'CANON_ETENDU',status:promotion.data?.status||saved.status};
+      }
+      await audit(s,user.id,story.id?'update_extended_story':'create_extended_story','sinjira_extended_story',saved.id,title,{story_type:storyType,canon_status:saved.canon_status,anchor_scope:anchorScope});
+      return privateJson({ok:true,story:saved,continuity});
     }
 
     if(a==='save_character'){
@@ -262,6 +349,8 @@ Deno.serve(async(req)=>{
     if(e?.message==='SOURCE_PURGE_STORAGE_FAILED')return privateJson({ok:false,error:'La suppression du fichier source a échoué; les références ont été conservées.',code:'SOURCE_PURGE_STORAGE_FAILED'},503);
     if(e?.message==='CANON_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmez explicitement que ce personnage est établi par un manuscrit officiel finalisé avant de le passer CANON.'},409);
     if(e?.message==='EXTENDED_CANON_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmez explicitement la validation auteur avant de passer cette histoire en CANON ÉTENDU.',code:'EXTENDED_CANON_CONFIRMATION_REQUIRED'},409);
+    if(e?.message==='STORY_CONTINUITY_CONFLICT')return privateJson({ok:false,error:'Canonisation refusée : collision de continuité détectée.',code:'STORY_CONTINUITY_CONFLICT'},409);
+    if(e?.message==='STORY_CONTINUITY_INCOMPLETE')return privateJson({ok:false,error:'Canonisation refusée : date ou lieu de continuité incomplet.',code:'STORY_CONTINUITY_INCOMPLETE'},409);
     if(e?.message==='NOTIFICATION_ID_REQUIRED')return privateJson({ok:false,error:'Identifiant de notification requis.'},400);
     if(e?.message==='CENTRAL_CANON_LOCKED')return privateJson({ok:false,error:'Les 14 romans principaux constituent le Canon central verrouillé. Une attribution directe à un roman central exige une confirmation auteur explicite; utilisez normalement une Chronique du Canon étendu pour les personnages du Registre.',code:'CENTRAL_CANON_LOCKED'},409);
     return privateJson({ok:false,error:'Erreur administration V18.',code:'ADMIN_V18_FAILED'},500);
