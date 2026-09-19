@@ -86,16 +86,20 @@ def validate(
             'Le rôle propriétaire reste distinct des droits numériques attribués aux produits.',
         ),
         'Bibliothèque: chemin lecteur privé': (library, READER_PATH),
-        'Bibliothèque: téléchargement via fonction privée': (library, "functions.invoke(PRIVATE_DOWNLOAD_FUNCTION)"),
+        'Bibliothèque: fonction privée générique': (library, "const PRIVATE_NOVEL_FUNCTION='get-private-novel-url'"),
+        'Bibliothèque: téléchargement via fonction privée': (library, "functions.invoke(PRIVATE_NOVEL_FUNCTION"),
+        'Bibliothèque: slug Livre I transmis au serveur': (library, "body:{novel_slug:BOOK_ONE_NOVEL_SLUG,mode:'download'}"),
         'Bibliothèque: carte auteur explicite': (library, 'Accès auteur'),
-        'Lecteur: session obligatoire': (reader_js, "requireUser('/compte/connexion.html')"),
-        'Lecteur: fonction URL lecture privée': (reader_js, "functions.invoke(READER_FUNCTION)"),
-        'Lecteur: fonction téléchargement privée': (reader_js, "functions.invoke(DOWNLOAD_FUNCTION)"),
-        'Lecteur: progression locale': (reader_js, 'localStorage.setItem(STORAGE_KEY'),
+        'Lecteur: session obligatoire avec retour': (reader_js, "requireUser(`/compte/connexion.html?next="),
+        'Lecteur: fonction privée générique': (reader_js, "const DELIVERY_FUNCTION='get-private-novel-url'"),
+        'Lecteur: slug roman transmis au serveur': (reader_js, 'body:{novel_slug:novelSlug,mode}'),
+        'Lecteur: fonction URL lecture privée': (reader_js, "invokeDelivery('read')"),
+        'Lecteur: fonction téléchargement privée': (reader_js, "invokeDelivery('download')"),
+        'Lecteur: progression locale': (reader_js, 'localStorage.setItem(storageKey'),
         'Lecteur HTML: non indexable': (reader_html, 'content="noindex,nofollow,noarchive"'),
         'Lecteur HTML: politique no-referrer': (reader_html, 'content="no-referrer" name="referrer"'),
         'Lecteur HTML: total de pages contrôlé': (reader_html, 'data-reader-total-pages="1066"'),
-        'Roman: lien lecteur intégral': (roman_html, 'href="lire-integral.html"'),
+        'Roman: lien lecteur intégral générique': (roman_html, 'href="lire-integral.html?novel='),
         'Démo: lien lecteur intégral': (demo_html, 'href="lire-integral.html"'),
     }
     for label, (text, marker) in required.items():
@@ -185,9 +189,11 @@ def self_test() -> None:
             encoding='utf-8',
         )
         paths['library'].write_text(
-            f"const BOOK='{BOOK_SLUG}'; const PRIVATE_READER_PATH='{READER_PATH}'; const PRIVATE_DOWNLOAD_FUNCTION='get-private-book-url'; "
-            "s.from('user_entitlements'); 'Droit numérique reconnu'; 'diffusion privée'; 'Accès auteur'; "
-            "s.functions.invoke(PRIVATE_DOWNLOAD_FUNCTION); location.assign(String(data.url));",
+            f"const BOOK='{BOOK_SLUG}'; const BOOK_ONE_NOVEL_SLUG='la-cendre-du-jugement'; const PRIVATE_READER_PATH='{READER_PATH}'; "
+            "const PRIVATE_NOVEL_FUNCTION='get-private-novel-url'; s.from('user_entitlements'); "
+            "'Droit numérique reconnu'; 'diffusion privée'; 'Accès auteur'; "
+            "s.functions.invoke(PRIVATE_NOVEL_FUNCTION,{body:{novel_slug:BOOK_ONE_NOVEL_SLUG,mode:'download'}}); "
+            "location.assign(String(data.url));",
             encoding='utf-8',
         )
         paths['library_html'].write_text(
@@ -195,8 +201,11 @@ def self_test() -> None:
             encoding='utf-8',
         )
         paths['reader_js'].write_text(
-            "requireUser('/compte/connexion.html'); functions.invoke(READER_FUNCTION); functions.invoke(DOWNLOAD_FUNCTION); "
-            "localStorage.setItem(STORAGE_KEY,String(current)); location.assign(String(data.url));",
+            "const DELIVERY_FUNCTION='get-private-novel-url'; const novelSlug='la-cendre-du-jugement'; "
+            "requireUser(`/compte/connexion.html?next=${encodeURIComponent(location.pathname+location.search)}`); "
+            "functions.invoke(DELIVERY_FUNCTION,{body:{novel_slug:novelSlug,mode}}); "
+            "invokeDelivery('read'); invokeDelivery('download'); "
+            "localStorage.setItem(storageKey,String(current)); location.assign(String(data.url));",
             encoding='utf-8',
         )
         paths['reader_html'].write_text(
@@ -204,7 +213,7 @@ def self_test() -> None:
             '<body data-reader-total-pages="1066"></body>',
             encoding='utf-8',
         )
-        paths['roman'].write_text('<a href="lire-integral.html">Lire</a>', encoding='utf-8')
+        paths['roman'].write_text('<a href="lire-integral.html?novel=la-cendre-du-jugement">Lire</a>', encoding='utf-8')
         paths['demo'].write_text('<a href="lire-integral.html">Lire</a>', encoding='utf-8')
 
         args = tuple(paths[key] for key in ('contract', 'licenses', 'library', 'library_html', 'reader_js', 'reader_html', 'roman', 'demo'))
@@ -218,8 +227,11 @@ def self_test() -> None:
             raise AssertionError('Une autorisation auteur côté client doit être bloquée.')
 
         paths['reader_js'].write_text(
-            "requireUser('/compte/connexion.html'); functions.invoke(READER_FUNCTION); functions.invoke(DOWNLOAD_FUNCTION); "
-            "localStorage.setItem(STORAGE_KEY,String(current)); location.assign(String(data.url)); "
+            "const DELIVERY_FUNCTION='get-private-novel-url'; const novelSlug='la-cendre-du-jugement'; "
+            "requireUser(`/compte/connexion.html?next=${encodeURIComponent(location.pathname+location.search)}`); "
+            "functions.invoke(DELIVERY_FUNCTION,{body:{novel_slug:novelSlug,mode}}); "
+            "invokeDelivery('read'); invokeDelivery('download'); "
+            "localStorage.setItem(storageKey,String(current)); location.assign(String(data.url)); "
             "s.from('sinjira_reader_library').upsert({last_page:1});",
             encoding='utf-8',
         )
@@ -228,22 +240,25 @@ def self_test() -> None:
             raise AssertionError('Une synchronisation silencieuse de progression doit être bloquée.')
 
         paths['reader_js'].write_text(
-            "requireUser('/compte/connexion.html'); functions.invoke(READER_FUNCTION); functions.invoke(DOWNLOAD_FUNCTION); "
-            "localStorage.setItem(STORAGE_KEY,String(current)); location.assign(String(data.url));",
+            "const DELIVERY_FUNCTION='get-private-novel-url'; const novelSlug='la-cendre-du-jugement'; "
+            "requireUser(`/compte/connexion.html?next=${encodeURIComponent(location.pathname+location.search)}`); "
+            "functions.invoke(DELIVERY_FUNCTION,{body:{novel_slug:novelSlug,mode}}); "
+            "invokeDelivery('read'); invokeDelivery('download'); "
+            "localStorage.setItem(storageKey,String(current)); location.assign(String(data.url));",
             encoding='utf-8',
         )
-        paths['roman'].write_text('<a href="lire-integral.html">Lire</a> sinjira-livre01-couverture-avant.png', encoding='utf-8')
+        paths['roman'].write_text('<a href="lire-integral.html?novel=la-cendre-du-jugement">Lire</a> sinjira-livre01-couverture-avant.png', encoding='utf-8')
         broken = validate(*args)
         if not any('référence de couverture inexistante' in item for item in broken):
             raise AssertionError('Une couverture cassée doit être bloquée.')
 
-        paths['roman'].write_text('<a href="lire-integral.html">Lire</a>', encoding='utf-8')
+        paths['roman'].write_text('<a href="lire-integral.html?novel=la-cendre-du-jugement">Lire</a>', encoding='utf-8')
         paths['licenses'].write_text(read(paths['licenses']) + " 'Accès permanent à tous les romans';", encoding='utf-8')
         promise = validate(*args)
         if not any('Promesse propriétaire' in item for item in promise):
             raise AssertionError('Une promesse propriétaire universelle doit être bloquée.')
 
-    print('OK auto-test UI Livre I V2: rôle serveur, progression locale et actifs publics protégés.')
+    print('OK auto-test UI Livre I V3: catalogue privé multi-romans, rôle serveur, progression locale et actifs publics protégés.')
 
 
 def main() -> int:
@@ -261,7 +276,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK UI Livre I V2: rôle auteur non auto-déclaré, progression locale, pages publiques sans intégrale et actions privées temporaires.')
+    print('OK UI Livre I V3: lecteur privé multi-romans, rôle auteur non auto-déclaré, progression locale, pages publiques sans intégrale et actions privées temporaires.')
     return 0
 
 
