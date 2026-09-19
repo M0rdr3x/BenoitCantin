@@ -190,7 +190,7 @@ Deno.serve(async(req)=>{
     if(a==='save_extended_story_segment'){
       const x=b.segment||{};
       if(!x.story_id||!x.character_id)return privateJson({ok:false,error:'Chronique et personnage requis pour un segment.',code:'SEGMENT_REQUIRED'},400);
-      const {data:story,error:storyError}=await s.from('sinjira_extended_stories').select('id,status').eq('id',x.story_id).maybeSingle();if(storyError)throw storyError;if(!story)return privateJson({ok:false,error:'Chronique introuvable.',code:'STORY_NOT_FOUND'},404);if(story.status==='published')throw new Error('STORY_UNPUBLISH_FIRST');
+      const {data:story,error:storyError}=await s.from('sinjira_extended_stories').select('id,status,anchor_scope').eq('id',x.story_id).maybeSingle();if(storyError)throw storyError;if(!story)return privateJson({ok:false,error:'Chronique introuvable.',code:'STORY_NOT_FOUND'},404);if(story.status==='published')throw new Error('STORY_UNPUBLISH_FIRST');
       const kinds=['scene','travel','reference'],certainties=['confirmed','approximate','unknown'];
       const segmentKey=String(x.segment_key||'').trim().slice(0,120)||`segment-${crypto.randomUUID().slice(0,8)}`;
       if(segmentKey==='primary'||x.presence_kind==='story_span')return privateJson({ok:false,error:'Le segment primary/story_span est réservé à la fiche principale de la Chronique.',code:'PRIMARY_SEGMENT_LOCKED'},409);
@@ -259,6 +259,7 @@ Deno.serve(async(req)=>{
       if(!claimKey||!statement)return privateJson({ok:false,error:'Clé et formulation du fait requises.',code:'CLAIM_REQUIRED_FIELDS'},400);
       if(verificationStatus==='VERIFIED'&&!source)return privateJson({ok:false,error:'Un fait vérifié doit citer une source du Registre.',code:'CLAIM_SOURCE_REQUIRED'},400);
       if(verificationStatus==='VERIFIED'&&!(['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||'')&&['roman','bible','author_decision','archive'].includes(source?.source_kind||'')))return privateJson({ok:false,error:'La source doit être vérifiée avant le fait.',code:'CLAIM_SOURCE_NOT_VERIFIED'},409);
+      if((types.includes(x.claim_type)?x.claim_type:'other')==='anchor'&&source&&story.anchor_scope!=='MULTI_PERIODE'&&source.scope!=='META'&&source.scope!==story.anchor_scope)return privateJson({ok:false,error:'La période de la source ne correspond pas à l’ancrage de la Chronique.',code:'CLAIM_SOURCE_SCOPE_MISMATCH'},409);
       const payload={story_id:x.story_id,claim_key:claimKey,claim_type:types.includes(x.claim_type)?x.claim_type:'other',statement,source_id:source?.id||null,verification_status:verificationStatus,author_note:String(x.author_note||'').slice(0,4000)||null};
       let saved;
       if(x.id){const {data,error}=await s.from('sinjira_story_claims').update(payload).eq('id',x.id).select('*').single();if(error)throw error;saved=data}
@@ -336,6 +337,7 @@ Deno.serve(async(req)=>{
       const startsAt=x.starts_at||null,endsAt=x.ends_at||null;
       if(startsAt&&endsAt&&new Date(endsAt).getTime()<new Date(startsAt).getTime())return privateJson({ok:false,error:'La fin de l’événement ne peut pas précéder son début.',code:'INVALID_EVENT_RANGE'},400);
       const payload={event_key:String(x.event_key||'').trim().slice(0,160)||null,title,summary:String(x.summary||'').slice(0,12000)||null,starts_at:startsAt,ends_at:endsAt,timezone_name:String(x.timezone_name||'').trim().slice(0,80)||null,location_id:x.location_id||null,location_name_snapshot:String(x.location_name_snapshot||'').trim().slice(0,220)||null,source_scope:scopes.includes(x.source_scope)?x.source_scope:'LIVRES_1_12',source_id:source.id,source_reference:sourceReference,classification:classifications.includes(x.classification)?x.classification:'PROVISOIRE',public_safe:x.public_safe===true,consequences:x.consequences&&typeof x.consequences==='object'?x.consequences:{}};
+      if(source.scope!=='META'&&source.scope!==payload.source_scope)throw new Error('CANON_SOURCE_SCOPE_MISMATCH');
       if(['CANON','SECRET_AUTEUR'].includes(payload.classification)&&!(['VERIFIED','SECRET_AUTEUR'].includes(source.verification_status)&&['roman','bible','author_decision','archive'].includes(source.source_kind)))throw new Error('CANON_SOURCE_NOT_VERIFIED');
       if(['CANON','SECRET_AUTEUR'].includes(payload.classification)&&payload.location_id){
         const {data:canonLocation,error:canonLocationError}=await s.from('sinjira_world_locations').select('canon_status').eq('id',payload.location_id).maybeSingle();
@@ -543,6 +545,11 @@ Deno.serve(async(req)=>{
     if(e?.message==='CANON_LOCATION_REQUIRED')return privateJson({ok:false,error:'Un événement ou une présence CANON/SECRET AUTEUR doit utiliser un lieu CANON dans l’Atlas.',code:'CANON_LOCATION_REQUIRED'},409);
     if(e?.message==='CANON_SOURCE_REQUIRED')return privateJson({ok:false,error:'Cet élément canonique doit être relié à une source du Registre.',code:'CANON_SOURCE_REQUIRED'},409);
     if(e?.message==='CANON_SOURCE_NOT_VERIFIED')return privateJson({ok:false,error:'La source choisie doit être VERIFIED ou SECRET_AUTEUR avant cette validation canonique.',code:'CANON_SOURCE_NOT_VERIFIED'},409);
+    if(e?.message==='CANON_SOURCE_SCOPE_MISMATCH')return privateJson({ok:false,error:'La période de cette source ne correspond pas au périmètre canonique de l’élément.',code:'CANON_SOURCE_SCOPE_MISMATCH'},409);
+    if(e?.message==='CLAIM_SOURCE_SCOPE_MISMATCH')return privateJson({ok:false,error:'La source d’ancrage ne correspond pas à la période de la Chronique.',code:'CLAIM_SOURCE_SCOPE_MISMATCH'},409);
+    if(e?.message==='STORY_PROVENANCE_SCOPE_MISMATCH')return privateJson({ok:false,error:'Publication refusée : aucun fait d’ancrage vérifié ne correspond à la période de la Chronique.',code:'STORY_PROVENANCE_SCOPE_MISMATCH'},409);
+    if(e?.message==='CANON_SOURCE_LOCATOR_REQUIRED')return privateJson({ok:false,error:'Une source vérifiée doit contenir un chapitre, un passage ou une version précise.',code:'CANON_SOURCE_LOCATOR_REQUIRED'},409);
+    if(e?.message==='CANON_SOURCE_CHAPTER_REQUIRED')return privateJson({ok:false,error:'Une source Roman vérifiée doit indiquer le chapitre ou la section.',code:'CANON_SOURCE_CHAPTER_REQUIRED'},409);
     if(e?.message==='CLAIM_SOURCE_REQUIRED')return privateJson({ok:false,error:'Un fait vérifié doit citer une source du Registre.',code:'CLAIM_SOURCE_REQUIRED'},409);
     if(e?.message==='CLAIM_SOURCE_NOT_VERIFIED')return privateJson({ok:false,error:'La source du fait doit être vérifiée avant de valider ce fait.',code:'CLAIM_SOURCE_NOT_VERIFIED'},409);
     if(e?.message==='STORY_PROVENANCE_REQUIRED')return privateJson({ok:false,error:'Publication refusée : ajoutez au moins un fait d’ancrage vérifié avec une source canonique.',code:'STORY_PROVENANCE_REQUIRED'},409);
