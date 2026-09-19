@@ -178,8 +178,9 @@ Deno.serve(async(req)=>{
       const x=b.segment||{};
       if(!x.story_id||!x.character_id)return privateJson({ok:false,error:'Chronique et personnage requis pour un segment.',code:'SEGMENT_REQUIRED'},400);
       const {data:story,error:storyError}=await s.from('sinjira_extended_stories').select('id').eq('id',x.story_id).maybeSingle();if(storyError)throw storyError;if(!story)return privateJson({ok:false,error:'Chronique introuvable.',code:'STORY_NOT_FOUND'},404);
-      const kinds=['story_span','scene','travel','reference'],certainties=['confirmed','approximate','unknown'];
+      const kinds=['scene','travel','reference'],certainties=['confirmed','approximate','unknown'];
       const segmentKey=String(x.segment_key||'').trim().slice(0,120)||`segment-${crypto.randomUUID().slice(0,8)}`;
+      if(segmentKey==='primary'||x.presence_kind==='story_span')return privateJson({ok:false,error:'Le segment primary/story_span est réservé à la fiche principale de la Chronique.',code:'PRIMARY_SEGMENT_LOCKED'},409);
       const startsAt=x.starts_at||null,endsAt=x.ends_at||null;
       if(startsAt&&endsAt&&new Date(endsAt).getTime()<new Date(startsAt).getTime())return privateJson({ok:false,error:'La fin du segment ne peut pas précéder son début.',code:'INVALID_SEGMENT_RANGE'},400);
       const payload={story_id:x.story_id,character_id:x.character_id,starts_at:startsAt,ends_at:endsAt,location_id:x.location_id||null,location_name:String(x.location_name||'').trim().slice(0,220)||null,certainty:certainties.includes(x.certainty)?x.certainty:'confirmed',presence_kind:kinds.includes(x.presence_kind)?x.presence_kind:'scene',segment_key:segmentKey,source_note:String(x.source_note||'').slice(0,2000)||null};
