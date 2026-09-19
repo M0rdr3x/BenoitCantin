@@ -90,6 +90,28 @@ function toIso(value,zone=''){
  const result=new Date(guess);if(Number.isNaN(result.getTime()))return null;
  const roundTrip=toLocalInput(result.toISOString(),zone);return roundTrip===String(value)?result.toISOString():null;
 }
+let canonSourcesCache=[],storyClaimsCache=[];
+function canonSourceLabel(src){if(!src)return '';const bits=[src.book_number?'Livre '+src.book_number:'',src.chapter_reference||'',src.passage_reference||''].filter(Boolean);return (src.title||src.source_key||'Source')+(bits.length?' — '+bits.join(' · '):'')+' · '+(src.verification_status||'PROVISOIRE')}
+function canonSourceOptions(placeholder='À relier'){return `<option value="">${escapeHtml(placeholder)}</option>`+canonSourcesCache.map(src=>`<option value="${src.id}">${escapeHtml(canonSourceLabel(src))}</option>`).join('')}
+function refreshCanonSourceSelects(){
+ for(const sel of document.querySelectorAll('[data-canon-source-select],[data-story-claim-source]')){const old=sel.value;sel.innerHTML=canonSourceOptions(sel.hasAttribute('data-story-claim-source')?'Choisir une source':'À relier au Registre');if(old)sel.value=old}
+ const sup=document.querySelector('[data-canon-source-supersedes]');if(sup){const old=sup.value;sup.innerHTML=canonSourceOptions('Aucune');if(old)sup.value=old}
+}
+function fillCanonSource(src){const f=document.querySelector('[data-canon-source-form]');if(!src||!f)return;for(const [k,v] of Object.entries(src)){if(f.elements[k]&&k!=='public_safe')f.elements[k].value=v??''}f.elements.public_safe.checked=src.public_safe===true;f.scrollIntoView({behavior:'smooth'})}
+function fillStoryClaim(claim){const f=document.querySelector('[data-story-claim-form]');if(!claim||!f)return;f.elements.id.value=claim.id||'';f.elements.story_id.value=claim.story_id||'';f.elements.claim_key.value=claim.claim_key||'';f.elements.claim_type.value=claim.claim_type||'other';f.elements.source_id.value=claim.source_id||'';f.elements.verification_status.value=claim.verification_status||'PROVISOIRE';f.elements.statement.value=claim.statement||'';f.elements.author_note.value=claim.author_note||'';f.scrollIntoView({behavior:'smooth'})}
+function renderStoryClaims(storyId){
+ const box=document.querySelector('[data-story-claim-list]'),f=document.querySelector('[data-story-claim-form]');if(f)f.elements.story_id.value=storyId||'';if(!box)return;
+ const st=extendedStoriesCache.find(x=>x.id===storyId),locked=st?.status==='published',rows=storyClaimsCache.filter(x=>x.story_id===storyId);
+ box.innerHTML=rows.map(cl=>{const src=cl.sinjira_canon_sources||canonSourcesCache.find(x=>x.id===cl.source_id);return `<article class="admin-v18-row"><strong>${escapeHtml(cl.claim_key)} · ${escapeHtml(cl.claim_type)}</strong><p>${escapeHtml(cl.statement)}</p><small>${escapeHtml(cl.verification_status)} · ${escapeHtml(src?canonSourceLabel(src):'Source non reliée')}</small>${locked?'<p><em>Chronique publiée — provenance verrouillée.</em></p>':`<div class="admin-v18-actions"><button class="btn btn-secondary btn-small" data-edit-story-claim="${cl.id}">Modifier</button><button class="btn btn-secondary btn-small" data-remove-story-claim="${cl.id}">Retirer</button></div>`}</article>`}).join('')||'<p>Aucun fait de provenance pour cette Chronique.</p>';
+ if(locked)return;
+ box.querySelectorAll('[data-edit-story-claim]').forEach(b=>b.addEventListener('click',()=>fillStoryClaim(rows.find(x=>x.id===b.dataset.editStoryClaim))));
+ box.querySelectorAll('[data-remove-story-claim]').forEach(b=>b.addEventListener('click',async()=>{if(!confirm('Retirer ce fait de provenance?'))return;try{await call('remove_story_claim',{claim_id:b.dataset.removeStoryClaim});await canonProvenance();renderStoryClaims(storyId)}catch(e){alert(e.message)}}));
+}
+async function canonProvenance(){
+ const d=await call('list_canon_provenance');canonSourcesCache=d.sources||[];storyClaimsCache=d.claims||[];refreshCanonSourceSelects();
+ const box=document.querySelector('[data-canon-source-list]');if(box){box.innerHTML=canonSourcesCache.map(src=>`<article class="admin-v18-row"><strong>${escapeHtml(src.title||src.source_key)}</strong><p>${escapeHtml(src.source_kind)} · ${escapeHtml(src.scope)} · ${escapeHtml(src.verification_status)}</p><small>${escapeHtml(canonSourceLabel(src))}</small><button class="btn btn-secondary btn-small" data-edit-canon-source="${src.id}">Modifier</button></article>`).join('')||'<p>Aucune source canonique enregistrée.</p>';box.querySelectorAll('[data-edit-canon-source]').forEach(b=>b.addEventListener('click',()=>fillCanonSource(canonSourcesCache.find(x=>x.id===b.dataset.editCanonSource))))}
+ const storyId=document.querySelector('[data-extended-story-editor]')?.elements?.id?.value||'';if(storyId)renderStoryClaims(storyId);
+}
 function resetExtendedStoryEditor(){
  const f=document.querySelector('[data-extended-story-editor]');if(!f)return;
  f.reset();f.elements.id.value='';f.elements.published_at.value='';f.elements.story_type.value='character_chronicle';f.elements.anchor_scope.value='UNASSIGNED';f.elements.canon_status.value='PROVISOIRE';f.elements.status.value='draft';f.elements.audience.value='private';f.elements.location_id.value='';f.elements.continuity_json.value='{}';f.elements.visible_to_character_owner.checked=true;f.elements.author_confirmed_extended_canon.checked=false;f.elements.author_confirmed_publication.checked=false;renderContinuityResult(null);renderStoryPublicationState(null);setStoryPublishedLock(null);const sf=document.querySelector('[data-story-segment-form]');if(sf){sf.reset();sf.elements.id.value='';sf.elements.story_id.value=''}const sb=document.querySelector('[data-story-segment-list]');if(sb)sb.innerHTML='<p>Sélectionnez d’abord une Chronique.</p>';
