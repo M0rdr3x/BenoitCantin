@@ -88,6 +88,97 @@ alter table public.sinjira_extended_stories
 alter table public.sinjira_story_character_presence
   add column if not exists location_id uuid references public.sinjira_world_locations(id) on delete set null;
 
+alter table public.sinjira_extended_stories
+  drop constraint if exists sinjira_extended_stories_published_metadata_check;
+alter table public.sinjira_extended_stories
+  add constraint sinjira_extended_stories_published_metadata_check
+  check(
+    status <> 'published'
+    or (
+      canon_status='CANON_ETENDU'
+      and anchor_scope<>'UNASSIGNED'
+      and starts_at is not null
+      and ends_at is not null
+      and location_id is not null
+      and btrim(coalesce(content,''))<>''
+    )
+  );
+
+create or replace function private.sinjira_guard_published_story_update()
+returns trigger
+language plpgsql
+set search_path=pg_catalog,public,private
+as $$
+begin
+  if old.status='published' then
+    if new.story_type is distinct from old.story_type
+       or new.character_id is distinct from old.character_id
+       or new.title is distinct from old.title
+       or new.slug is distinct from old.slug
+       or new.summary is distinct from old.summary
+       or new.content is distinct from old.content
+       or new.region_name is distinct from old.region_name
+       or new.location_id is distinct from old.location_id
+       or new.anchor_scope is distinct from old.anchor_scope
+       or new.canon_status is distinct from old.canon_status
+       or new.starts_at is distinct from old.starts_at
+       or new.ends_at is distinct from old.ends_at
+       or new.continuity_data is distinct from old.continuity_data
+       or new.audience is distinct from old.audience
+       or new.visible_to_character_owner is distinct from old.visible_to_character_owner then
+      raise exception 'STORY_UNPUBLISH_FIRST';
+    end if;
+
+    if new.status='published' then
+      if new.published_at is distinct from old.published_at then
+        raise exception 'STORY_UNPUBLISH_FIRST';
+      end if;
+    elsif not (new.status='validated' and new.published_at is null) then
+      raise exception 'STORY_UNPUBLISH_FIRST';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists sinjira_extended_stories_guard_published on public.sinjira_extended_stories;
+create trigger sinjira_extended_stories_guard_published
+before update on public.sinjira_extended_stories
+for each row execute function private.sinjira_guard_published_story_update();
+
+create or replace function private.sinjira_guard_published_story_presence()
+returns trigger
+language plpgsql
+set search_path=pg_catalog,public,private
+as $$
+begin
+  if tg_op in ('UPDATE','DELETE') and exists(
+    select 1 from public.sinjira_extended_stories s
+    where s.id=old.story_id and s.status='published'
+  ) then
+    raise exception 'STORY_UNPUBLISH_FIRST';
+  end if;
+
+  if tg_op in ('INSERT','UPDATE') and exists(
+    select 1 from public.sinjira_extended_stories s
+    where s.id=new.story_id and s.status='published'
+  ) then
+    raise exception 'STORY_UNPUBLISH_FIRST';
+  end if;
+
+  if tg_op='DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists sinjira_story_presence_guard_published on public.sinjira_story_character_presence;
+create trigger sinjira_story_presence_guard_published
+before insert or update or delete on public.sinjira_story_character_presence
+for each row execute function private.sinjira_guard_published_story_presence();
+
+revoke all on function private.sinjira_guard_published_story_update() from public,anon,authenticated,service_role;
+revoke all on function private.sinjira_guard_published_story_presence() from public,anon,authenticated,service_role;
+
 create or replace view private.sinjira_effective_story_presence as
 select sp.*
 from public.sinjira_story_character_presence sp
