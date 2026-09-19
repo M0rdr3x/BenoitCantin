@@ -279,6 +279,197 @@ begin
   into v_conflicts,v_blocking
   from ext;
 
+  -- Vérification du temps de déplacement avec les présences canoniques immédiatement
+  -- précédentes et suivantes. Une absence de règle de trajet produit un avertissement
+  -- bloquant pour la canonisation, afin de ne jamais inventer une durée.
+  with known as (
+    select cp.character_id,
+           coalesce(cp.starts_at,ce.starts_at) as starts_at,
+           coalesce(cp.ends_at,ce.ends_at) as ends_at,
+           coalesce(cp.location_id,ce.location_id) as location_id,
+           'central'::text as source_kind,
+           ce.id as source_id,
+           ce.title as source_title
+    from public.sinjira_canon_event_characters cp
+    join public.sinjira_canon_events ce on ce.id=cp.event_id
+    where ce.classification in ('CANON','SECRET_AUTEUR')
+      and coalesce(cp.starts_at,ce.starts_at) is not null
+      and coalesce(cp.ends_at,ce.ends_at) is not null
+    union all
+    select op.character_id,op.starts_at,op.ends_at,op.location_id,
+           'extended'::text,os.id,os.title
+    from public.sinjira_story_character_presence op
+    join public.sinjira_extended_stories os on os.id=op.story_id
+    where op.story_id<>p_story_id
+      and os.canon_status='CANON_ETENDU'
+      and os.status in ('validated','published')
+      and op.starts_at is not null and op.ends_at is not null
+  ),
+  transitions as (
+    select sp.id as story_presence_id,sp.character_id,sp.starts_at,sp.ends_at,sp.location_id,
+           prev.source_kind as prev_kind,prev.source_id as prev_id,prev.source_title as prev_title,
+           prev.ends_at as prev_end,prev.location_id as prev_location_id,
+           nxt.source_kind as next_kind,nxt.source_id as next_id,nxt.source_title as next_title,
+           nxt.starts_at as next_start,nxt.location_id as next_location_id
+    from public.sinjira_story_character_presence sp
+    left join lateral (
+      select k.* from known k
+      where k.character_id=sp.character_id
+        and sp.starts_at is not null
+        and k.ends_at<=sp.starts_at
+      order by k.ends_at desc
+      limit 1
+    ) prev on true
+    left join lateral (
+      select k.* from known k
+      where k.character_id=sp.character_id
+        and sp.ends_at is not null
+        and k.starts_at>=sp.ends_at
+      order by k.starts_at asc
+      limit 1
+    ) nxt on true
+    where sp.story_id=p_story_id
+  ),
+  travel_eval as (
+    select t.*,
+      case when t.prev_location_id is not null and t.location_id is not null
+                 and not private.sinjira_locations_compatible(t.prev_location_id,t.location_id)
+        then (
+          select min(r.minimum_minutes)
+          from public.sinjira_world_travel_rules r
+          where ((r.from_location_id=t.prev_location_id and r.to_location_id=t.location_id)
+              or (r.from_location_id=t.location_id and r.to_location_id=t.prev_location_id))
+            and r.canon_status='CANON'
+            and (r.valid_from is null or r.valid_from<=t.prev_end)
+            and (r.valid_until is null or r.valid_until>=t.starts_at)
+        ) else 0 end as prev_required_minutes,
+      case when t.next_location_id is not null and t.location_id is not null
+                 and not private.sinjira_locations_compatible(t.location_id,t.next_location_id)
+        then (
+          select min(r.minimum_minutes)
+          from public.sinjira_world_travel_rules r
+          where ((r.from_location_id=t.location_id and r.to_location_id=t.next_location_id)
+              or (r.from_location_id=t.next_location_id and r.to_location_id=t.location_id))
+            and r.canon_status='CANON'
+            and (r.valid_from is null or r.valid_from<=t.ends_at)
+            and (r.valid_until is null or r.valid_until>=t.next_start)
+        ) else 0 end as next_required_minutes
+    from transitions t
+  ),
+  travel_conflicts as (
+    select jsonb_build_object(
+      'type','travel_time',
+      'direction','before',
+      'character_id',character_id,
+      'story_presence_id',story_presence_id,
+      'other_source_kind',prev_kind,
+      'other_source_id',prev_id,
+      'other_title',prev_title,
+      'available_minutes',floor(extract(epoch from (starts_at-prev_end))/60),
+      'required_minutes',prev_required_minutes,
+      'from_location_id',prev_location_id,
+      'to_location_id',location_id
+    ) as item
+    from travel_eval
+    where prev_required_minutes is not null and prev_required_minutes>0
+      and extract(epoch from (starts_at-prev_end))/60 < prev_required_minutes
+    union all
+    select jsonb_build_object(
+      'type','travel_time',
+      'direction','after',
+      'character_id',character_id,
+      'story_presence_id',story_presence_id,
+      'other_source_kind',next_kind,
+      'other_source_id',next_id,
+      'other_title',next_title,
+      'available_minutes',floor(extract(epoch from (next_start-ends_at))/60),
+      'required_minutes',next_required_minutes,
+      'from_location_id',location_id,
+      'to_location_id',next_location_id
+    )
+    from travel_eval
+    where next_required_minutes is not null and next_required_minutes>0
+      and extract(epoch from (next_start-ends_at))/60 < next_required_minutes
+  )
+  select v_conflicts || coalesce(jsonb_agg(item),'[]'::jsonb),
+         v_blocking + count(*)
+  into v_conflicts,v_blocking
+  from travel_conflicts;
+
+  with known as (
+    select cp.character_id,
+           coalesce(cp.starts_at,ce.starts_at) as starts_at,
+           coalesce(cp.ends_at,ce.ends_at) as ends_at,
+           coalesce(cp.location_id,ce.location_id) as location_id,
+           ce.id as source_id,ce.title as source_title
+    from public.sinjira_canon_event_characters cp
+    join public.sinjira_canon_events ce on ce.id=cp.event_id
+    where ce.classification in ('CANON','SECRET_AUTEUR')
+      and coalesce(cp.starts_at,ce.starts_at) is not null
+      and coalesce(cp.ends_at,ce.ends_at) is not null
+    union all
+    select op.character_id,op.starts_at,op.ends_at,op.location_id,os.id,os.title
+    from public.sinjira_story_character_presence op
+    join public.sinjira_extended_stories os on os.id=op.story_id
+    where op.story_id<>p_story_id
+      and os.canon_status='CANON_ETENDU'
+      and os.status in ('validated','published')
+      and op.starts_at is not null and op.ends_at is not null
+  ),
+  transitions as (
+    select sp.id as story_presence_id,sp.character_id,sp.starts_at,sp.ends_at,sp.location_id,
+           prev.source_id as prev_id,prev.source_title as prev_title,prev.ends_at as prev_end,prev.location_id as prev_location_id,
+           nxt.source_id as next_id,nxt.source_title as next_title,nxt.starts_at as next_start,nxt.location_id as next_location_id
+    from public.sinjira_story_character_presence sp
+    left join lateral (
+      select k.* from known k where k.character_id=sp.character_id and sp.starts_at is not null and k.ends_at<=sp.starts_at order by k.ends_at desc limit 1
+    ) prev on true
+    left join lateral (
+      select k.* from known k where k.character_id=sp.character_id and sp.ends_at is not null and k.starts_at>=sp.ends_at order by k.starts_at asc limit 1
+    ) nxt on true
+    where sp.story_id=p_story_id
+  ),
+  missing as (
+    select jsonb_build_object(
+      'type','travel_rule_missing','direction','before','character_id',character_id,
+      'story_presence_id',story_presence_id,'other_source_id',prev_id,'other_title',prev_title,
+      'from_location_id',prev_location_id,'to_location_id',location_id,
+      'message','Aucune durée minimale CANON n’est définie dans l’Atlas pour vérifier le déplacement précédent.'
+    ) as item
+    from transitions t
+    where t.prev_location_id is not null and t.location_id is not null
+      and not private.sinjira_locations_compatible(t.prev_location_id,t.location_id)
+      and not exists(
+        select 1 from public.sinjira_world_travel_rules r
+        where ((r.from_location_id=t.prev_location_id and r.to_location_id=t.location_id)
+            or (r.from_location_id=t.location_id and r.to_location_id=t.prev_location_id))
+          and r.canon_status='CANON'
+          and (r.valid_from is null or r.valid_from<=t.prev_end)
+          and (r.valid_until is null or r.valid_until>=t.starts_at)
+      )
+    union all
+    select jsonb_build_object(
+      'type','travel_rule_missing','direction','after','character_id',character_id,
+      'story_presence_id',story_presence_id,'other_source_id',next_id,'other_title',next_title,
+      'from_location_id',location_id,'to_location_id',next_location_id,
+      'message','Aucune durée minimale CANON n’est définie dans l’Atlas pour vérifier le déplacement suivant.'
+    )
+    from transitions t
+    where t.next_location_id is not null and t.location_id is not null
+      and not private.sinjira_locations_compatible(t.location_id,t.next_location_id)
+      and not exists(
+        select 1 from public.sinjira_world_travel_rules r
+        where ((r.from_location_id=t.location_id and r.to_location_id=t.next_location_id)
+            or (r.from_location_id=t.next_location_id and r.to_location_id=t.location_id))
+          and r.canon_status='CANON'
+          and (r.valid_from is null or r.valid_from<=t.ends_at)
+          and (r.valid_until is null or r.valid_until>=t.next_start)
+      )
+  )
+  select v_warnings || coalesce(jsonb_agg(item),'[]'::jsonb)
+  into v_warnings
+  from missing;
+
   -- Avertissements bloquants pour la promotion : la continuité ne peut pas être garantie.
   with warn as (
     select jsonb_build_object(
