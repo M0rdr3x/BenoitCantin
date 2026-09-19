@@ -82,6 +82,12 @@ insert into expected_server_only_rls(schema_name,table_name,presence_scope,acces
   -- même pour service_role.
   ('private','social_live_room_invites','reconstruction_only','strict_no_direct'),
   ('private','social_live_room_share_codes','reconstruction_only','strict_no_direct'),
+  -- Communauté Junior : tables RLS sans policy et sans accès navigateur.
+  -- Les RPC SECURITY DEFINER bornées sont l'unique frontière client; service_role
+  -- conserve le CRUD interne nécessaire aux opérations serveur.
+  ('public','junior_community_comments','reconstruction_only','service_role_allowed'),
+  ('public','junior_community_guardian_consents','reconstruction_only','service_role_allowed'),
+  ('public','junior_community_posts','reconstruction_only','service_role_allowed'),
   ('public','content_versions','reconstruction_only','service_role_allowed'),
   ('public','security_push_receipt_queue','reconstruction_only','service_role_allowed');
 
