@@ -147,6 +147,7 @@ def main()->int:
       'admin_sinjira_migrate_canon_source_references',
             'CANON_SOURCE_MIGRATION_REPLACEMENT_INVALID',
       'CANON_SOURCE_MIGRATION_SCOPE_MISMATCH',
+      'CANON_SOURCE_MIGRATION_BOOK_MISMATCH',
       'CANON_SOURCE_MIGRATION_REPLACEMENT_NOT_VERIFIED',
       'CANON_SOURCE_MIGRATION_INCOMPLETE',
       "set verification_status='RETIRED'",
