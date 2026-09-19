@@ -89,6 +89,24 @@
 </form>
 </article>
 </div>
+<article class="account-card" style="margin-top:20px">
+<span class="eyebrow">Segments de continuité</span>
+<h2>Présences détaillées dans une Chronique</h2>
+<p>Utilisez ces segments lorsqu’un personnage change de lieu ou lorsqu’un autre personnage intervient pendant une période précise. Le segment principal reste géré par la fiche de Chronique.</p>
+<form class="account-form admin-form-grid" data-story-segment-form>
+<input name="id" type="hidden"/><input name="story_id" type="hidden"/>
+<div class="field"><label>Personnage</label><select data-story-segment-character name="character_id" required></select></div>
+<div class="field"><label>Clé du segment</label><input name="segment_key" maxlength="120" placeholder="Ex. scene-001"/></div>
+<div class="field"><label>Type</label><select name="presence_kind"><option value="scene">Scène</option><option value="travel">Déplacement</option><option value="reference">Référence</option></select></div>
+<div class="field"><label>Lieu</label><select data-story-segment-location name="location_id"><option value="">À relier à l’Atlas</option></select></div>
+<div class="field"><label>Début</label><input name="starts_at" type="datetime-local"/></div>
+<div class="field"><label>Fin</label><input name="ends_at" type="datetime-local"/></div>
+<div class="field"><label>Certitude</label><select name="certainty"><option value="confirmed">Confirmé</option><option value="approximate">Approximatif</option><option value="unknown">Inconnu</option></select></div>
+<div class="field wide"><label>Note / source du segment</label><textarea name="source_note" rows="3"></textarea></div>
+<div class="wide"><button class="btn btn-primary" type="submit">Enregistrer le segment</button> <button class="btn btn-secondary" data-story-segment-reset type="button">Nouveau segment</button></div>
+</form>
+<div class="admin-management-list" data-story-segment-list><p>Sélectionnez d’abord une Chronique.</p></div>
+</article>
 </section>
 <section class="admin-panel" data-admin-panel="world-continuity" hidden="">
 <div class="admin-v18-grid">
