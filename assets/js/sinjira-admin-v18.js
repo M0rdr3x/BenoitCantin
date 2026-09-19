@@ -138,7 +138,25 @@ function setCanonSourceAuthorityLock(src){
      :retirementBlocked
        ?'<p>Le remplacement vérifié existe, mais '+escapeHtml(String(usage.direct_references||0))+' référence(s) directe(s) doivent encore être migrées avant RETIRED.</p>'
        :'';
-   box.innerHTML=`<div class="account-status" data-status-type="${authorityLocked?'info':'success'}"><strong>${escapeHtml(state)}</strong><p>${escapeHtml(String(usage.total||0))} utilisation(s), dont ${escapeHtml(String(usage.direct_references||0))} référence(s) directe(s) et ${escapeHtml(String(usage.canonical||0))} canonique(s).</p>${retireMessage}${refs.length?'<p>'+refs.map(escapeHtml).join(' · ')+'</p>':''}</div>`;
+   const migrateButton=retirementBlocked&&usage.retirement_replacement_id
+     ?`<p><button type="button" class="btn btn-secondary btn-small" data-migrate-canon-source data-source-id="${escapeHtml(src.id)}" data-replacement-id="${escapeHtml(usage.retirement_replacement_id)}">Migrer toutes les références vers ${escapeHtml(usage.retirement_replacement_title||'le remplacement')}</button></p>`
+     :'';
+   box.innerHTML=`<div class="account-status" data-status-type="${authorityLocked?'info':'success'}"><strong>${escapeHtml(state)}</strong><p>${escapeHtml(String(usage.total||0))} utilisation(s), dont ${escapeHtml(String(usage.direct_references||0))} référence(s) directe(s) et ${escapeHtml(String(usage.canonical||0))} canonique(s).</p>${retireMessage}${migrateButton}${refs.length?'<p>'+refs.map(escapeHtml).join(' · ')+'</p>':''}</div>`;
+   const migrate=box.querySelector('[data-migrate-canon-source]');
+   migrate?.addEventListener('click',async()=>{
+     const replacementTitle=usage.retirement_replacement_title||'la source de remplacement';
+     if(!confirm(`Migrer atomiquement toutes les références de « ${src.title||src.source_key} » vers « ${replacementTitle} » ? Les Chroniques dépendantes seront retirées de publication et repasseront en PROVISOIRE pour être revalidées.`))return;
+     migrate.disabled=true;
+     try{
+       const result=await call('migrate_canon_source_references',{source_id:src.id,replacement_source_id:usage.retirement_replacement_id});
+       await canonProvenance();
+       await worldContinuity();
+       const updated=canonSourcesCache.find(x=>x.id===src.id);
+       if(updated)fillCanonSource(updated);
+       const m=result?.migrated||{};
+       alert(`Migration terminée : ${Number(m.world_locations||0)} lieu(x), ${Number(m.travel_rules||0)} trajet(s), ${Number(m.events||0)} événement(s), ${Number(m.presences||0)} présence(s) et ${Number(m.claims||0)} fait(s) déplacés. RETIRED peut maintenant être choisi si aucune référence ne subsiste.`);
+     }catch(err){alert(err.message)}finally{migrate.disabled=false}
+   });
  }
 }
 function fillCanonSource(src){
