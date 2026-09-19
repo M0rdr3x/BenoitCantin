@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(116);
+select plan(119);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -743,6 +743,30 @@ select ok(
 
 select ok(not has_function_privilege('authenticated','private.sinjira_guard_canon_source_lifecycle()','EXECUTE'),
   'le navigateur ne peut pas invoquer directement le garde de cycle de vie');
+
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_SUPERSEDES_BOOK_MISMATCH%'
+          and pg_get_functiondef(p.oid) ilike '%new.book_number is distinct from v_previous_book%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_prevent_source_supersedes_cycle' limit 1),
+  'deux sources roman ne peuvent se remplacer que dans le même numéro de livre'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%v_previous_kind=''roman''%'
+          and pg_get_functiondef(p.oid) ilike '%new.source_kind=''roman''%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_prevent_source_supersedes_cycle' limit 1),
+  'le verrou de numéro de livre ne s applique que lorsque les deux sources sont des romans'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%select s.scope,s.source_kind,s.book_number%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_prevent_source_supersedes_cycle' limit 1),
+  'le garde de remplacement lit périmètre, type et numéro de livre de la source précédente'
+);
 
 select * from finish();
 rollback;
