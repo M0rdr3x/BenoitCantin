@@ -100,6 +100,39 @@ create index if not exists sinjira_canon_event_characters_character_time_idx
 create index if not exists sinjira_story_presence_location_time_idx
   on public.sinjira_story_character_presence(location_id,starts_at,ends_at);
 
+create or replace function private.sinjira_prevent_location_cycle()
+returns trigger
+language plpgsql
+set search_path=pg_catalog,public,private
+as $
+declare
+  v_cycle boolean:=false;
+begin
+  if new.parent_id is null then return new; end if;
+  if new.parent_id=new.id then raise exception 'LOCATION_PARENT_SELF'; end if;
+
+  with recursive ancestors(id,parent_id,path) as (
+    select l.id,l.parent_id,array[l.id]
+    from public.sinjira_world_locations l
+    where l.id=new.parent_id
+    union all
+    select p.id,p.parent_id,a.path||p.id
+    from public.sinjira_world_locations p
+    join ancestors a on p.id=a.parent_id
+    where not p.id=any(a.path)
+  )
+  select exists(select 1 from ancestors where id=new.id) into v_cycle;
+
+  if v_cycle then raise exception 'LOCATION_HIERARCHY_CYCLE'; end if;
+  return new;
+end;
+$;
+
+drop trigger if exists sinjira_world_locations_prevent_cycle on public.sinjira_world_locations;
+create trigger sinjira_world_locations_prevent_cycle
+before insert or update of parent_id on public.sinjira_world_locations
+for each row execute function private.sinjira_prevent_location_cycle();
+
 drop trigger if exists sinjira_world_locations_updated_at on public.sinjira_world_locations;
 create trigger sinjira_world_locations_updated_at before update on public.sinjira_world_locations
 for each row execute function public.set_updated_at();
@@ -201,7 +234,7 @@ begin
   into v_conflicts,v_blocking
   from public.sinjira_story_character_presence sp
   join public.sinjira_canon_event_characters cp on cp.character_id=sp.character_id
-  join public.sinjira_canon_events ce on ce.id=cp.event_id and ce.classification='CANON'
+  join public.sinjira_canon_events ce on ce.id=cp.event_id and ce.classification in ('CANON','SECRET_AUTEUR')
   where sp.story_id=p_story_id
     and sp.starts_at is not null
     and sp.ends_at is not null
@@ -342,6 +375,7 @@ begin
 end;
 $$;
 
+revoke all on function private.sinjira_prevent_location_cycle() from public,anon,authenticated;
 revoke all on function private.sinjira_location_is_ancestor(uuid,uuid) from public,anon,authenticated;
 revoke all on function private.sinjira_locations_compatible(uuid,uuid) from public,anon,authenticated;
 revoke all on function private.sinjira_story_continuity_report(uuid) from public,anon,authenticated;
