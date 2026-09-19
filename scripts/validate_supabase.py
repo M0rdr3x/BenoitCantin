@@ -45,7 +45,8 @@ def main()->int:
       'create_guardian_signup_invite','sinjira_age_band','sinjira_can_social_interact',
       'fracture_engine_health','fracture_engine_get_state','fracture_engine_start','fracture_engine_submit_accusation',
       'create_fracture_party','join_fracture_party','is_fracture_party_member','sinjira_content_allowed','sinjira_cycle_allowed',
-      'admin_sinjira_story_continuity_check','admin_sinjira_promote_extended_story'
+      'admin_sinjira_story_continuity_check','admin_sinjira_promote_extended_story',
+      'admin_sinjira_publish_extended_story','admin_sinjira_unpublish_extended_story'
     }
     for name in sorted(required_funcs-funcs):fail(errors,f'RPC critique absente: {name}')
 
@@ -69,6 +70,10 @@ def main()->int:
       'SECRET_AUTEUR',
       'bidirectional boolean not null default true',
       "segment_key text not null default 'primary'",
+      "status <> 'published'",
+      "published_at is null or status='published'",
+      'STORY_PUBLIC_AUDIENCE_REQUIRED',
+      'STORY_NOT_CANON_EXTENDED',
     }
     for needle in sorted(extended_contract):
         if needle.lower() not in sql.lower():
