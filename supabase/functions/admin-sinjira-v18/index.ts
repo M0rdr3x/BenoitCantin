@@ -177,7 +177,7 @@ Deno.serve(async(req)=>{
     if(a==='save_extended_story_segment'){
       const x=b.segment||{};
       if(!x.story_id||!x.character_id)return privateJson({ok:false,error:'Chronique et personnage requis pour un segment.',code:'SEGMENT_REQUIRED'},400);
-      const {data:story,error:storyError}=await s.from('sinjira_extended_stories').select('id').eq('id',x.story_id).maybeSingle();if(storyError)throw storyError;if(!story)return privateJson({ok:false,error:'Chronique introuvable.',code:'STORY_NOT_FOUND'},404);
+      const {data:story,error:storyError}=await s.from('sinjira_extended_stories').select('id,status').eq('id',x.story_id).maybeSingle();if(storyError)throw storyError;if(!story)return privateJson({ok:false,error:'Chronique introuvable.',code:'STORY_NOT_FOUND'},404);if(story.status==='published')throw new Error('STORY_UNPUBLISH_FIRST');
       const kinds=['scene','travel','reference'],certainties=['confirmed','approximate','unknown'];
       const segmentKey=String(x.segment_key||'').trim().slice(0,120)||`segment-${crypto.randomUUID().slice(0,8)}`;
       if(segmentKey==='primary'||x.presence_kind==='story_span')return privateJson({ok:false,error:'Le segment primary/story_span est réservé à la fiche principale de la Chronique.',code:'PRIMARY_SEGMENT_LOCKED'},409);
@@ -195,6 +195,7 @@ Deno.serve(async(req)=>{
       if(!b.segment_id)return privateJson({ok:false,error:'Segment requis.',code:'SEGMENT_REQUIRED'},400);
       const {data:segment,error:lookupError}=await s.from('sinjira_story_character_presence').select('id,story_id,segment_key').eq('id',b.segment_id).maybeSingle();if(lookupError)throw lookupError;if(!segment)return privateJson({ok:true});
       if(segment.segment_key==='primary')return privateJson({ok:false,error:'Le segment principal est géré par la fiche de Chronique et ne peut pas être supprimé ici.',code:'PRIMARY_SEGMENT_LOCKED'},409);
+      const {data:story,error:storyError}=await s.from('sinjira_extended_stories').select('status').eq('id',segment.story_id).maybeSingle();if(storyError)throw storyError;if(story?.status==='published')throw new Error('STORY_UNPUBLISH_FIRST');
       const {error}=await s.from('sinjira_story_character_presence').delete().eq('id',segment.id);if(error)throw error;
       await audit(s,user.id,'remove_extended_story_segment','sinjira_story_character_presence',segment.id,'Segment de continuité retiré',{story_id:segment.story_id});
       return privateJson({ok:true});
