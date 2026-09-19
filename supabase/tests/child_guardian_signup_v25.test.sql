@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(37);
+select plan(41);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -155,13 +155,37 @@ select is(public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),'youth
 select ok(public.sinjira_parent_can_supervise('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011'),'le lien parental vérifié continue de permettre la supervision à 13 ans');
 select ok(public.sinjira_can_social_interact('20000000-0000-4000-8000-000000000011','20000000-0000-4000-8000-000000000011'),'le contrat social jeunesse peut s appliquer automatiquement à partir de 13 ans');
 
-update public.guardian_links
-set revoked_at=now()
-where minor_user_id='20000000-0000-4000-8000-000000000011'
-  and guardian_user_id='10000000-0000-4000-8000-000000000001'
-  and status='verified';
-select is(public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),'youth_pending','revoked_at seul suffit à retirer la bande supervisée même si status est encore verified');
-select ok(not public.sinjira_parent_can_supervise('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011'),'revoked_at seul suffit à retirer la supervision parentale');
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal1')::text,
+  true
+);
+select throws_ok(
+  $$ select public.revoke_guardian_link((
+    select id from public.guardian_links
+    where minor_user_id='20000000-0000-4000-8000-000000000011'
+      and guardian_user_id='10000000-0000-4000-8000-000000000001'
+  )) $$,
+  'P0001',
+  'MFA_AAL2_REQUIRED',
+  'un tuteur AAL1 ne peut pas révoquer le lien de supervision'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal2')::text,
+  true
+);
+select lives_ok(
+  $$ select public.revoke_guardian_link((
+    select id from public.guardian_links
+    where minor_user_id='20000000-0000-4000-8000-000000000011'
+      and guardian_user_id='10000000-0000-4000-8000-000000000001'
+  )) $$,
+  'un tuteur AAL2 peut révoquer le lien de supervision'
+);
+select is(public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),'youth_pending','la révocation tuteur AAL2 retire la bande supervisée');
+select ok(not public.sinjira_parent_can_supervise('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011'),'la révocation tuteur AAL2 retire la supervision parentale');
 
 select throws_ok($$
   insert into auth.users(id,email,raw_user_meta_data)
@@ -242,6 +266,25 @@ select ok(
       and minor_user_id='20000000-0000-4000-8000-000000000011'
   ),
   'le nouveau code est consommé une seule fois par le compte child_pending'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','20000000-0000-4000-8000-000000000011','aal','aal1')::text,
+  true
+);
+select lives_ok(
+  $$ select public.revoke_guardian_link((
+    select id from public.guardian_links
+    where minor_user_id='20000000-0000-4000-8000-000000000011'
+      and guardian_user_id='10000000-0000-4000-8000-000000000001'
+  )) $$,
+  'l enfant AAL1 peut quitter immédiatement son propre lien de supervision'
+);
+select is(
+  public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),
+  'child_pending',
+  'quitter son lien remet immédiatement le compte 11 ans en child_pending'
 );
 
 select * from finish();

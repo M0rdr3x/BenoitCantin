@@ -8,6 +8,7 @@ REDEEM_MIG = ROOT / 'supabase/migrations/20260919013000_sinjira_v25_child_pendin
 GUARDIAN_AAL2_MIG = ROOT / 'supabase/migrations/20260919023000_sinjira_v25_guardian_invite_aal2.sql'
 GUARDIAN_SECRET_MIN_MIG = ROOT / 'supabase/migrations/20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql'
 GUARDIAN_READ_AAL2_MIG = ROOT / 'supabase/migrations/20260919033000_sinjira_v25_guardian_invite_read_aal2.sql'
+GUARDIAN_REVOKE_AAL2_MIG = ROOT / 'supabase/migrations/20260919043000_sinjira_v25_guardian_revoke_aal2.sql'
 YOUTH_BASE = ROOT / 'supabase/migrations/20260816140000_sinjira_v24_4_12_youth_safety.sql'
 SIGNUP_JS = ROOT / 'assets/js/v24-signup.js'
 BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
@@ -38,6 +39,7 @@ redeem_mig = read(REDEEM_MIG)
 guardian_aal2_mig = read(GUARDIAN_AAL2_MIG)
 guardian_secret_min_mig = read(GUARDIAN_SECRET_MIN_MIG)
 guardian_read_aal2_mig = read(GUARDIAN_READ_AAL2_MIG)
+guardian_revoke_aal2_mig = read(GUARDIAN_REVOKE_AAL2_MIG)
 youth_base = read(YOUTH_BASE)
 signup_js = read(SIGNUP_JS)
 backend_js = read(BACKEND_JS)
@@ -53,6 +55,7 @@ rm = compact(redeem_mig)
 gm = compact(guardian_aal2_mig)
 gsm = compact(guardian_secret_min_mig)
 grm = compact(guardian_read_aal2_mig)
+grv = compact(guardian_revoke_aal2_mig)
 y = compact(youth_base)
 j = compact(signup_js)
 b = compact(backend_js)
@@ -103,6 +106,17 @@ req("createpolicyguardian_signup_invites_own_aal2" in grm
     "La lecture des codes parentaux n'est pas bornée self-only + AAL2 par RLS.")
 req("droppolicyifexistsguardian_signup_invites_ownonpublic.guardian_signup_invites" in grm,
     "L'ancienne policy AAL1 de lecture des codes parentaux n'est pas retirée.")
+req("createorreplacefunctionpublic.revoke_guardian_link(p_link_iduuid)" in grv,
+    "Le RPC de révocation tuteur V25 est absent.")
+req("ifuid=r.guardian_user_idandcoalesce(auth.jwt()->>'aal','aal1')<>'aal2'" in grv
+    and "mfa_aal2_required" in grv,
+    "La révocation initiée par le tuteur n'exige pas AAL2.")
+req("uidnotin(r.guardian_user_id,r.minor_user_id)" in grv,
+    "Le RPC de révocation ne borne plus l'action aux deux parties du lien.")
+req("ifuid=r.guardian_user_id" in grv and "uid=r.minor_user_id" not in grv,
+    "Le contrat ne préserve pas clairement la sortie immédiate du mineur.")
+req("r.status='revoked'orr.revoked_atisnotnull" in grv,
+    "La révocation n'est pas idempotente sur status/revoked_at.")
 
 # Bande enfant distincte : elle ne doit pas hériter automatiquement des droits sociaux jeunesse.
 req("interval'11years'then'under11'" in m,
@@ -186,6 +200,14 @@ req("mfa_aal2_required|mfa_required" in r,
     "L'interface parent ne traite plus explicitement un refus MFA serveur.")
 req("codesparentauxmasqués" in r and "unesessionaal2estrequisepourrelireuncodeparental" in r,
     "L'interface n'explique plus que la relecture d'un code exige AAL2.")
+req("data-revoke-as-guardian" in r and "constasguardian=button.dataset.revokeasguardian==='true'" in r,
+    "L'interface ne distingue plus révocation tuteur et sortie du mineur.")
+req("révoquerunliencommetuteurexigeunsecondfacteur" in r and "mfa_aal2_required" in r,
+    "L'interface ne protège plus la révocation initiée par le tuteur.")
+req("vousavezquittécelien" in r,
+    "L'interface ne préserve plus le parcours de sortie immédiate du mineur.")
+req("constactive=x.status==='verified'&&!x.revoked_at" in r,
+    "L'interface pourrait encore afficher un lien revoked_at comme actif.")
 req(
     r.find("s.auth.mfa.getauthenticatorassurancelevel()") >= 0
     and r.find("s.from('guardian_signup_invites')") > r.find("s.auth.mfa.getauthenticatorassurancelevel()"),
@@ -193,7 +215,7 @@ req(
 )
 req('data-create-guardian-code' in rh and 'de 11 à 13 ans' in rh,
     "La page Relations n'explique pas le code parental obligatoire de 11 à 13 ans.")
-req('ouvrir l’inscription' in rh and 'v24-relations.js?v=25.0.4&amp;rev=guardian-read-aal2' in rh,
+req('ouvrir l’inscription' in rh and 'v24-relations.js?v=25.0.6&amp;rev=guardian-revoke-aal2' in rh,
     "Le parcours parent vers l'inscription ou son invalidation de cache est incomplet.")
 req('session aal2 avec second facteur' in rh and 'securite.html#mfa-active-title' in rh,
     "La page Relations n'explique pas la vérification AAL2 ni le chemin de configuration MFA.")
@@ -244,7 +266,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(37);' in t,
+req('selectplan(41);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 for marker, message in (
     ("insertintoauth.users", "Le test ne crée pas de comptes Auth réels dans la transaction."),
@@ -279,6 +301,10 @@ for marker, message in (
     ("unesessiontuteuraal1nepeutpasrelireuncodeparental", "Le pgTAP ne prouve pas le masquage RLS des codes sous AAL1."),
     ("unesessiontuteuraal2peutreliresonproprecodeparental", "Le pgTAP ne prouve pas la relecture self-only sous AAL2."),
     ("setlocalroleauthenticated", "Le pgTAP ne teste pas la policy avec le rôle API authenticated."),
+    ("untuteuraal1nepeutpasrévoquerleliendesupervision", "Le pgTAP ne prouve pas le refus de révocation tuteur en AAL1."),
+    ("untuteuraal2peutrévoquerleliendesupervision", "Le pgTAP ne prouve pas la révocation tuteur en AAL2."),
+    ("lenfantaal1peutquitterimmédiatementsonpropreliendesupervision", "Le pgTAP ne préserve pas la sortie fail-safe de l enfant."),
+    ("quittersonlienremetimmédiatementlecompte11ansenchild_pending", "Le pgTAP ne prouve pas l'effet fail-closed de la sortie enfant."),
     ("$$,'p0001','youth_jurisdiction_not_enabled'", "Le délimiteur pgTAP du refus hors Canada est cassé."),
     ("$$selectpublic.redeem_guardian_signup_invite('youth-redeem1101')$$", "Le délimiteur pgTAP du rétablissement child_pending est cassé."),
 ):

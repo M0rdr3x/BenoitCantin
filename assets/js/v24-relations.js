@@ -132,17 +132,45 @@ async function renderGuardian(){
   if(linksResult.error){guardianLinks.innerHTML='<div class="v24-empty">Impossible de charger les liens de supervision.</div>';return}
   const rows=linksResult.data||[];
   guardianLinks.innerHTML=rows.length?rows.map(x=>{
-    const mine=x.guardian_user_id===user.id?'Tuteur / parent':'Compte enfant / jeunesse';
-    const active=x.status==='verified';
-    return `<article class="v24-panel"><strong>${escapeHtml(mine)} · ${escapeHtml(x.status||'—')}</strong><p>Rôle : ${escapeHtml(x.guardian_role||'parent/tuteur')}</p><small>${x.can_view_contact_metadata?'Métadonnées de contact autorisées':'Métadonnées de contact non autorisées'} · aucun contenu privé de message</small>${active?`<div class="hero-actions"><button class="btn btn-secondary btn-small" type="button" data-revoke-guardian-link="${escapeHtml(x.id)}">Révoquer ce lien</button></div>`:''}</article>`;
+    const asGuardian=x.guardian_user_id===user.id;
+    const mine=asGuardian?'Tuteur / parent':'Compte enfant / jeunesse';
+    const active=x.status==='verified'&&!x.revoked_at;
+    return `<article class="v24-panel"><strong>${escapeHtml(mine)} · ${escapeHtml(active?'verified':x.status||'—')}</strong><p>Rôle : ${escapeHtml(x.guardian_role||'parent/tuteur')}</p><small>${x.can_view_contact_metadata?'Métadonnées de contact autorisées':'Métadonnées de contact non autorisées'} · aucun contenu privé de message</small>${active?`<div class="hero-actions"><button class="btn btn-secondary btn-small" type="button" data-revoke-guardian-link="${escapeHtml(x.id)}" data-revoke-as-guardian="${asGuardian?'true':'false'}">Révoquer ce lien</button></div>`:''}</article>`;
   }).join(''):'<div class="v24-empty">Aucun lien de supervision.</div>';
   await renderJuniorCommunityChildren();
   guardianLinks.querySelectorAll('[data-revoke-guardian-link]').forEach(button=>button.addEventListener('click',async()=>{
-    if(!confirm('Révoquer ce lien de supervision? Les fonctions jeunesse qui exigent un tuteur vérifié pourront être limitées.'))return;
+    const asGuardian=button.dataset.revokeAsGuardian==='true';
+    if(asGuardian){
+      button.disabled=true;
+      const {data:aal,error:aalError}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
+      if(aalError){
+        button.disabled=false;
+        setStatus(guardianStatus,'Impossible de vérifier le niveau de sécurité. Le lien reste actif.','error');
+        return;
+      }
+      if(aal?.currentLevel!=='aal2'){
+        button.disabled=false;
+        if(aal?.nextLevel==='aal2'){
+          location.assign(`/compte/mfa.html?next=${encodeURIComponent('/compte/relations.html')}`);
+          return;
+        }
+        setStatus(guardianStatus,'Révoquer un lien comme tuteur exige un second facteur. Configurez-le dans Sécurité puis revenez ici.','error');
+        return;
+      }
+    }
+    if(!confirm(asGuardian?'Révoquer ce lien de supervision? Une vérification AAL2 protège cette décision.':'Quitter ce lien de supervision? Vous pouvez retirer immédiatement cette supervision de votre compte.')){button.disabled=false;return}
     button.disabled=true;
     const {data,error}=await s.rpc('revoke_guardian_link',{p_link_id:button.dataset.revokeGuardianLink});
-    if(error||!data?.ok){button.disabled=false;setStatus(guardianStatus,'Impossible de révoquer ce lien pour le moment.','error');return}
-    await refreshAgeBand();setStatus(guardianStatus,'Lien de supervision révoqué.','success');await renderGuardian();
+    if(error||!data?.ok){
+      button.disabled=false;
+      if(asGuardian&&/MFA_AAL2_REQUIRED/i.test(String(error?.message||''))){
+        setStatus(guardianStatus,'La session tuteur doit être vérifiée au niveau AAL2 avant de révoquer ce lien.','error');
+      }else{
+        setStatus(guardianStatus,'Impossible de révoquer ce lien pour le moment.','error');
+      }
+      return;
+    }
+    await refreshAgeBand();setStatus(guardianStatus,asGuardian?'Lien de supervision révoqué par le tuteur.':'Vous avez quitté ce lien de supervision.','success');await renderGuardian();
   }));
 }
 
