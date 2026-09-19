@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(122);
+select plan(124);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -789,6 +789,33 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='private' and p.proname='sinjira_guard_canon_source_lifecycle' limit 1),
   'le verrou terminal RETIRED s applique explicitement aux mises à jour'
+);
+
+
+select ok(exists(
+  select 1 from pg_trigger tr
+  join pg_class t on t.oid=tr.tgrelid
+  join pg_namespace n on n.oid=t.relnamespace
+  where n.nspname='public'
+    and t.relname='sinjira_canon_sources'
+    and tr.tgname='sinjira_canon_sources_prevent_supersedes_cycle'
+    and not tr.tgisinternal
+    and pg_get_triggerdef(tr.oid) ilike '%source_kind%'
+    and pg_get_triggerdef(tr.oid) ilike '%book_number%'
+),'la relation remplace est revalidée après changement de type ou numéro de livre');
+
+select ok(
+  (select pg_get_triggerdef(tr.oid) ilike '%supersedes_source_id%'
+          and pg_get_triggerdef(tr.oid) ilike '%scope%'
+          and pg_get_triggerdef(tr.oid) ilike '%source_kind%'
+          and pg_get_triggerdef(tr.oid) ilike '%book_number%'
+   from pg_trigger tr
+   join pg_class t on t.oid=tr.tgrelid
+   join pg_namespace n on n.oid=t.relnamespace
+   where n.nspname='public' and t.relname='sinjira_canon_sources'
+     and tr.tgname='sinjira_canon_sources_prevent_supersedes_cycle'
+     and not tr.tgisinternal limit 1),
+  'toutes les colonnes qui déterminent la compatibilité du remplacement relancent le garde'
 );
 
 select * from finish();
