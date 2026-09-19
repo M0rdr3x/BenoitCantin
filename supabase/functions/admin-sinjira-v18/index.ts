@@ -257,7 +257,7 @@ Deno.serve(async(req)=>{
       const source=await canonSource(x.source_id);
       if(!claimKey||!statement)return privateJson({ok:false,error:'Clé et formulation du fait requises.',code:'CLAIM_REQUIRED_FIELDS'},400);
       if(verificationStatus==='VERIFIED'&&!source)return privateJson({ok:false,error:'Un fait vérifié doit citer une source du Registre.',code:'CLAIM_SOURCE_REQUIRED'},400);
-      if(verificationStatus==='VERIFIED'&&!['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||''))return privateJson({ok:false,error:'La source doit être vérifiée avant le fait.',code:'CLAIM_SOURCE_NOT_VERIFIED'},409);
+      if(verificationStatus==='VERIFIED'&&!(['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||'')&&['roman','bible','author_decision','archive'].includes(source?.source_kind||'')))return privateJson({ok:false,error:'La source doit être vérifiée avant le fait.',code:'CLAIM_SOURCE_NOT_VERIFIED'},409);
       const payload={story_id:x.story_id,claim_key:claimKey,claim_type:types.includes(x.claim_type)?x.claim_type:'other',statement,source_id:source?.id||null,verification_status:verificationStatus,author_note:String(x.author_note||'').slice(0,4000)||null};
       let saved;
       if(x.id){const {data,error}=await s.from('sinjira_story_claims').update(payload).eq('id',x.id).select('*').single();if(error)throw error;saved=data}
@@ -296,7 +296,7 @@ Deno.serve(async(req)=>{
       const source=await canonSource(x.source_id);
       const payload={slug,name,location_type:types.includes(x.location_type)?x.location_type:'place',parent_id:x.parent_id||null,country_code:String(x.country_code||'').trim().slice(0,8)||null,timezone_name:String(x.timezone_name||'').trim().slice(0,80)||null,latitude:x.latitude===''||x.latitude==null?null:Number(x.latitude),longitude:x.longitude===''||x.longitude==null?null:Number(x.longitude),canon_status:canon.includes(x.canon_status)?x.canon_status:'PROVISOIRE',source_id:source?.id||null,source_reference:(sourceLabel(source)||String(x.source_reference||'').trim()).slice(0,500)||null,notes:String(x.notes||'').slice(0,4000)||null};
       if(payload.canon_status==='CANON'&&!source)return privateJson({ok:false,error:'Un lieu CANON doit être relié à une source du Registre.',code:'CANON_SOURCE_REQUIRED'},400);
-      if(payload.canon_status==='CANON'&&!['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||''))return privateJson({ok:false,error:'La source du lieu doit être vérifiée avant de le passer CANON.',code:'CANON_SOURCE_NOT_VERIFIED'},409);
+      if(payload.canon_status==='CANON'&&!(['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||'')&&['roman','bible','author_decision','archive'].includes(source?.source_kind||'')))return privateJson({ok:false,error:'La source du lieu doit être vérifiée avant de le passer CANON.',code:'CANON_SOURCE_NOT_VERIFIED'},409);
       let saved;
       if(id){const {data,error}=await s.from('sinjira_world_locations').update(payload).eq('id',id).select('*').single();if(error)throw error;saved=data}
       else{const {data,error}=await s.from('sinjira_world_locations').insert(payload).select('*').single();if(error)throw error;saved=data}
@@ -314,7 +314,7 @@ Deno.serve(async(req)=>{
       const source=await canonSource(x.source_id);
       const payload={from_location_id:x.from_location_id,to_location_id:x.to_location_id,minimum_minutes:Math.round(minutes),travel_mode:String(x.travel_mode||'unspecified').trim().slice(0,120)||'unspecified',bidirectional:x.bidirectional!==false,valid_from:x.valid_from||null,valid_until:x.valid_until||null,canon_status:canon.includes(x.canon_status)?x.canon_status:'PROVISOIRE',source_id:source?.id||null,source_reference:(sourceLabel(source)||String(x.source_reference||'').trim()).slice(0,700)||null,notes:String(x.notes||'').slice(0,4000)||null};
       if(payload.canon_status==='CANON'&&!source)return privateJson({ok:false,error:'Une règle de déplacement CANON doit être reliée à une source du Registre.',code:'CANON_SOURCE_REQUIRED'},400);
-      if(payload.canon_status==='CANON'&&!['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||''))return privateJson({ok:false,error:'La source du trajet doit être vérifiée avant de le passer CANON.',code:'CANON_SOURCE_NOT_VERIFIED'},409);
+      if(payload.canon_status==='CANON'&&!(['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||'')&&['roman','bible','author_decision','archive'].includes(source?.source_kind||'')))return privateJson({ok:false,error:'La source du trajet doit être vérifiée avant de le passer CANON.',code:'CANON_SOURCE_NOT_VERIFIED'},409);
       if(payload.valid_from&&payload.valid_until&&new Date(payload.valid_until).getTime()<new Date(payload.valid_from).getTime())return privateJson({ok:false,error:'La fin de validité ne peut pas précéder le début.',code:'TRAVEL_WINDOW_INVALID'},400);
       let saved;
       if(id){const {data,error}=await s.from('sinjira_world_travel_rules').update(payload).eq('id',id).select('*').single();if(error)throw error;saved=data}
@@ -335,7 +335,7 @@ Deno.serve(async(req)=>{
       const startsAt=x.starts_at||null,endsAt=x.ends_at||null;
       if(startsAt&&endsAt&&new Date(endsAt).getTime()<new Date(startsAt).getTime())return privateJson({ok:false,error:'La fin de l’événement ne peut pas précéder son début.',code:'INVALID_EVENT_RANGE'},400);
       const payload={event_key:String(x.event_key||'').trim().slice(0,160)||null,title,summary:String(x.summary||'').slice(0,12000)||null,starts_at:startsAt,ends_at:endsAt,timezone_name:String(x.timezone_name||'').trim().slice(0,80)||null,location_id:x.location_id||null,location_name_snapshot:String(x.location_name_snapshot||'').trim().slice(0,220)||null,source_scope:scopes.includes(x.source_scope)?x.source_scope:'LIVRES_1_12',source_id:source.id,source_reference:sourceReference,classification:classifications.includes(x.classification)?x.classification:'PROVISOIRE',public_safe:x.public_safe===true,consequences:x.consequences&&typeof x.consequences==='object'?x.consequences:{}};
-      if(['CANON','SECRET_AUTEUR'].includes(payload.classification)&&!['VERIFIED','SECRET_AUTEUR'].includes(source.verification_status))throw new Error('CANON_SOURCE_NOT_VERIFIED');
+      if(['CANON','SECRET_AUTEUR'].includes(payload.classification)&&!(['VERIFIED','SECRET_AUTEUR'].includes(source.verification_status)&&['roman','bible','author_decision','archive'].includes(source.source_kind)))throw new Error('CANON_SOURCE_NOT_VERIFIED');
       if(['CANON','SECRET_AUTEUR'].includes(payload.classification)&&payload.location_id){
         const {data:canonLocation,error:canonLocationError}=await s.from('sinjira_world_locations').select('canon_status').eq('id',payload.location_id).maybeSingle();
         if(canonLocationError)throw canonLocationError;
@@ -357,7 +357,7 @@ Deno.serve(async(req)=>{
       const source=await canonSource(x.source_id||event.source_id);
       const payload={event_id:x.event_id,character_id:x.character_id,role:String(x.role||'').trim().slice(0,160)||null,starts_at:x.starts_at||event.starts_at||null,ends_at:x.ends_at||event.ends_at||null,location_id:x.location_id||event.location_id||null,location_name_snapshot:String(x.location_name_snapshot||event.location_name_snapshot||'').trim().slice(0,220)||null,certainty:certainties.includes(x.certainty)?x.certainty:'confirmed',source_id:source?.id||null,source_reference:(sourceLabel(source)||String(x.source_reference||event.source_reference||'').trim()).slice(0,700)||null};
       if(['CANON','SECRET_AUTEUR'].includes(event.classification)&&!source)throw new Error('CANON_SOURCE_REQUIRED');
-      if(['CANON','SECRET_AUTEUR'].includes(event.classification)&&!['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||''))throw new Error('CANON_SOURCE_NOT_VERIFIED');
+      if(['CANON','SECRET_AUTEUR'].includes(event.classification)&&!(['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||'')&&['roman','bible','author_decision','archive'].includes(source?.source_kind||'')))throw new Error('CANON_SOURCE_NOT_VERIFIED');
       if(['CANON','SECRET_AUTEUR'].includes(event.classification)&&payload.location_id){
         const {data:canonLocation,error:canonLocationError}=await s.from('sinjira_world_locations').select('canon_status').eq('id',payload.location_id).maybeSingle();
         if(canonLocationError)throw canonLocationError;
