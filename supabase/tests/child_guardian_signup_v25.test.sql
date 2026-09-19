@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(55);
+select plan(60);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -195,6 +195,27 @@ select is(
   'l autorisation explicite du compte jeunesse est enregistrée'
 );
 
+insert into auth.users(id,email,raw_user_meta_data)
+values(
+  '70000000-0000-4000-8000-000000000015',
+  'youth-contact@example.test',
+  jsonb_build_object(
+    'birth_date',(current_date-interval '15 years')::date::text,
+    'date_of_birth',(current_date-interval '15 years')::date::text,
+    'gender','Autre','sex','other','pseudo','Contact Jeunesse','display_name','Nom Affiché Privé','residence_country','Canada'
+  )
+);
+
+insert into public.social_real_messages(
+  sender_user_id,recipient_user_id,body,created_at
+)
+values(
+  '20000000-0000-4000-8000-000000000011',
+  '70000000-0000-4000-8000-000000000015',
+  'message de preuve non exposé au tuteur',
+  now()-interval '3 hours'
+);
+
 select set_config(
   'request.jwt.claims',
   jsonb_build_object('sub','10000000-0000-4000-8000-000000000001','aal','aal1')::text,
@@ -215,6 +236,33 @@ select set_config(
 select lives_ok(
   $$ select public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011') $$,
   'le tuteur avec consentement explicite et AAL2 peut lire uniquement les métadonnées de contacts jeunesse'
+);
+
+select is(
+  jsonb_array_length(public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')),
+  1,
+  'le résumé parental contient le contact jeunesse de preuve'
+);
+select ok(
+  not (public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0 ? 'user_id')
+  and not (public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0 ? 'display_name')
+  and not (public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0 ? 'last_contact_at'),
+  'le résumé parental ne révèle ni UUID interne ni display_name ni heure précise'
+);
+select is(
+  public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0->>'pseudo',
+  'Contact Jeunesse',
+  'le résumé conserve uniquement le pseudo utile du contact'
+);
+select ok(
+  public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0 ? 'networks'
+  and public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0 ? 'last_contact_date',
+  'le résumé conserve les réseaux et la date de dernier contact à la journée'
+);
+select like(
+  public.get_guardian_youth_contacts('20000000-0000-4000-8000-000000000011')->0->>'last_contact_date',
+  '____-__-__',
+  'la dernière interaction est réduite à une date sans heure précise'
 );
 
 select set_config(
