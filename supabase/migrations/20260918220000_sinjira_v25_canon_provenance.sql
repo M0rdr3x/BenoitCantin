@@ -486,24 +486,42 @@ set search_path=pg_catalog,public,private,auth
 as $$
 declare
   v_admin uuid;
-  v_exists boolean:=false;
+  v_story public.sinjira_extended_stories%rowtype;
+  v_location_canon boolean:=false;
+  v_metadata_ready boolean:=false;
   v_provenance jsonb;
   v_continuity jsonb;
   v_ready boolean:=false;
 begin
   v_admin:=private.require_sinjira_admin_aal2();
 
-  select exists(
-    select 1 from public.sinjira_extended_stories where id=p_story_id
-  ) into v_exists;
+  select * into v_story
+  from public.sinjira_extended_stories
+  where id=p_story_id;
 
-  if not v_exists then raise exception 'STORY_NOT_FOUND'; end if;
+  if v_story.id is null then raise exception 'STORY_NOT_FOUND'; end if;
+
+  if v_story.location_id is not null then
+    select exists(
+      select 1 from public.sinjira_world_locations l
+      where l.id=v_story.location_id and l.canon_status='CANON'
+    ) into v_location_canon;
+  end if;
+
+  v_metadata_ready:=
+    v_story.anchor_scope<>'UNASSIGNED'
+    and v_story.starts_at is not null
+    and v_story.ends_at is not null
+    and v_story.location_id is not null
+    and v_location_canon
+    and btrim(coalesce(v_story.content,''))<>'';
 
   v_provenance:=private.sinjira_story_provenance_report(p_story_id);
   v_continuity:=private.sinjira_story_continuity_report(p_story_id);
 
   v_ready:=
-    coalesce((v_provenance->>'ready')::boolean,false)
+    v_metadata_ready
+    and coalesce((v_provenance->>'ready')::boolean,false)
     and coalesce((v_continuity->>'blocking_conflicts')::integer,0)=0
     and coalesce((v_continuity->>'warnings')::integer,0)=0;
 
@@ -511,6 +529,14 @@ begin
     'ok',true,
     'story_id',p_story_id,
     'ready',v_ready,
+    'metadata',jsonb_build_object(
+      'ready',v_metadata_ready,
+      'anchor_assigned',v_story.anchor_scope<>'UNASSIGNED',
+      'time_complete',v_story.starts_at is not null and v_story.ends_at is not null,
+      'location_assigned',v_story.location_id is not null,
+      'location_canon',v_location_canon,
+      'content_present',btrim(coalesce(v_story.content,''))<>''
+    ),
     'provenance',v_provenance,
     'continuity',v_continuity
   );
@@ -542,7 +568,21 @@ begin
   for update;
 
   if v_story.id is null then raise exception 'STORY_NOT_FOUND'; end if;
+  if v_story.status='published' then raise exception 'STORY_UNPUBLISH_FIRST'; end if;
+  if v_story.status='archived' then raise exception 'STORY_ARCHIVED'; end if;
   if v_story.anchor_scope='UNASSIGNED' then raise exception 'STORY_ANCHOR_REQUIRED'; end if;
+  if v_story.starts_at is null or v_story.ends_at is null or v_story.location_id is null then
+    raise exception 'STORY_METADATA_INCOMPLETE';
+  end if;
+  if not exists(
+    select 1 from public.sinjira_world_locations l
+    where l.id=v_story.location_id and l.canon_status='CANON'
+  ) then
+    raise exception 'STORY_LOCATION_NOT_CANON';
+  end if;
+  if btrim(coalesce(v_story.content,''))='' then
+    raise exception 'STORY_CONTENT_REQUIRED';
+  end if;
 
   v_provenance:=private.sinjira_story_provenance_report(p_story_id);
 
@@ -566,7 +606,8 @@ begin
 
   update public.sinjira_extended_stories
   set canon_status='CANON_ETENDU',
-      status=case when status in ('draft','author_review') then 'validated' else status end
+      status='validated',
+      published_at=null
   where id=p_story_id
   returning * into v_story;
 
