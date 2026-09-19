@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(55);
+select plan(58);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -313,6 +313,29 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='public' and p.proname='admin_sinjira_promote_extended_story' limit 1),
   'CANON_ETENDU exige un contenu et produit toujours le statut validated'
+);
+
+
+select has_function('private','sinjira_prevent_canon_source_delete',array[]::text[],
+  'le garde contre la suppression physique des sources existe');
+
+select ok(
+  exists(
+    select 1 from pg_trigger tr
+    join pg_class t on t.oid=tr.tgrelid
+    join pg_namespace n on n.oid=t.relnamespace
+    where n.nspname='public' and t.relname='sinjira_canon_sources'
+      and tr.tgname='sinjira_canon_sources_prevent_delete'
+      and not tr.tgisinternal
+  ),
+  'la suppression physique des sources canoniques est bloquée'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_DELETE_FORBIDDEN%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_prevent_canon_source_delete' limit 1),
+  'une source doit être retirée logiquement au lieu d être supprimée'
 );
 
 select * from finish();
