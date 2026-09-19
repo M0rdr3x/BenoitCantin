@@ -105,18 +105,35 @@ function syncCanonSourceScope(){
 }
 function setCanonSourceAuthorityLock(src){
  const f=document.querySelector('[data-canon-source-form]');if(!f)return;
- const usage=src?.usage||{},authorityLocked=usage.authority_locked===true,keyLocked=usage.key_locked===true;
+ const usage=src?.usage||{},authorityLocked=usage.authority_locked===true,keyLocked=usage.key_locked===true,retirementAllowed=usage.retirement_allowed===true;
  if(f.elements.source_key)f.elements.source_key.disabled=keyLocked;
- for(const name of ['source_kind','book_number','chapter_reference','passage_reference','source_version','verification_status','supersedes_source_id']){
+ for(const name of ['source_kind','book_number','chapter_reference','passage_reference','source_version','supersedes_source_id']){
    if(f.elements[name])f.elements[name].disabled=authorityLocked;
+ }
+ const verification=f.elements.verification_status;
+ if(verification){
+   const allStatuses=[['PROVISOIRE','PROVISOIRE'],['VERIFIED','VERIFIED'],['SECRET_AUTEUR','SECRET AUTEUR'],['A_ARBITRER','À ARBITRER'],['RETIRED','RETIRÉE']];
+   if(!src){
+     verification.innerHTML=allStatuses.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+     verification.value='PROVISOIRE';verification.disabled=false;
+   }else if(authorityLocked){
+     const current=src.verification_status||'PROVISOIRE';
+     const currentLabel=allStatuses.find(x=>x[0]===current)?.[1]||current;
+     verification.innerHTML=`<option value="${escapeHtml(current)}">${escapeHtml(currentLabel)}</option>`+(retirementAllowed&&current!=='RETIRED'?'<option value="RETIRED">RETIRÉE</option>':'');
+     verification.value=current;verification.disabled=!retirementAllowed||current==='RETIRED';
+   }else{
+     const current=src.verification_status||'PROVISOIRE';
+     verification.innerHTML=allStatuses.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+     verification.value=current;verification.disabled=false;
+   }
  }
  if(f.elements.scope){f.elements.scope.dataset.authorityLocked=authorityLocked?'1':'';f.elements.scope.disabled=authorityLocked||f.elements.source_kind.value==='roman'}
  const box=document.querySelector('[data-canon-source-usage]');
  if(box){
    if(!src){box.innerHTML='<div class="account-status" data-status-type="info">Nouvelle source : aucune utilisation canonique.</div>';return}
    const refs=Array.isArray(usage.references)?usage.references:[];
-   const state=authorityLocked?'Autorité verrouillée':keyLocked?'Clé stable verrouillée':'Source encore modifiable';
-   box.innerHTML=`<div class="account-status" data-status-type="${authorityLocked?'info':'success'}"><strong>${escapeHtml(state)}</strong><p>${escapeHtml(String(usage.total||0))} utilisation(s), dont ${escapeHtml(String(usage.canonical||0))} canonique(s).</p>${refs.length?'<p>'+refs.map(escapeHtml).join(' · ')+'</p>':''}</div>`;
+   const state=authorityLocked?(retirementAllowed?'Autorité verrouillée · RETIRED disponible':'Autorité verrouillée'):keyLocked?'Clé stable verrouillée':'Source encore modifiable';
+   box.innerHTML=`<div class="account-status" data-status-type="${authorityLocked?'info':'success'}"><strong>${escapeHtml(state)}</strong><p>${escapeHtml(String(usage.total||0))} utilisation(s), dont ${escapeHtml(String(usage.canonical||0))} canonique(s).</p>${retirementAllowed?'<p>Une source de remplacement vérifiée de même période existe : le retrait logique RETIRED est maintenant autorisé.</p>':''}${refs.length?'<p>'+refs.map(escapeHtml).join(' · ')+'</p>':''}</div>`;
  }
 }
 function fillCanonSource(src){
@@ -131,7 +148,7 @@ function fillStoryClaim(claim){const f=document.querySelector('[data-story-claim
 function renderStoryClaims(storyId){
  const box=document.querySelector('[data-story-claim-list]'),f=document.querySelector('[data-story-claim-form]');if(f)f.elements.story_id.value=storyId||'';if(!box)return;
  const st=extendedStoriesCache.find(x=>x.id===storyId),locked=st?.status==='published',rows=storyClaimsCache.filter(x=>x.story_id===storyId);
- box.innerHTML=rows.map(cl=>{const src=cl.sinjira_canon_sources||canonSourcesCache.find(x=>x.id===cl.source_id);return `<article class="admin-v18-row"><strong>${escapeHtml(cl.claim_key)} · ${escapeHtml(cl.claim_type)}</strong><p>${escapeHtml(cl.statement)}</p><small>${escapeHtml(cl.verification_status)} · ${escapeHtml(src?canonSourceLabel(src):'Source non reliée')}</small>${locked?'<p><em>Chronique publiée — provenance verrouillée.</em></p>':`<div class="admin-v18-actions"><button class="btn btn-secondary btn-small" data-edit-story-claim="${cl.id}">Modifier</button><button class="btn btn-secondary btn-small" data-remove-story-claim="${cl.id}">Retirer</button></div>`}</article>`}).join('')||'<p>Aucun fait de provenance pour cette Chronique.</p>';
+ box.innerHTML=rows.map(cl=>{const src=cl.sinjira_canon_sources||canonSourcesCache.find(x=>x.id===cl.source_id);const sourceValid=src&&['VERIFIED','SECRET_AUTEUR'].includes(src.verification_status)&&['roman','bible','author_decision','archive'].includes(src.source_kind);const claimState=cl.verification_status==='VERIFIED'&&!sourceValid?'VERIFIED · SOURCE À REVALIDER':cl.verification_status;return `<article class="admin-v18-row"><strong>${escapeHtml(cl.claim_key)} · ${escapeHtml(cl.claim_type)}</strong><p>${escapeHtml(cl.statement)}</p><small>${escapeHtml(claimState)} · ${escapeHtml(src?canonSourceLabel(src):'Source non reliée')}</small>${locked?'<p><em>Chronique publiée — provenance verrouillée.</em></p>':`<div class="admin-v18-actions"><button class="btn btn-secondary btn-small" data-edit-story-claim="${cl.id}">Modifier</button><button class="btn btn-secondary btn-small" data-remove-story-claim="${cl.id}">Retirer</button></div>`}</article>`}).join('')||'<p>Aucun fait de provenance pour cette Chronique.</p>';
  if(locked)return;
  box.querySelectorAll('[data-edit-story-claim]').forEach(b=>b.addEventListener('click',()=>fillStoryClaim(rows.find(x=>x.id===b.dataset.editStoryClaim))));
  box.querySelectorAll('[data-remove-story-claim]').forEach(b=>b.addEventListener('click',async()=>{if(!confirm('Retirer ce fait de provenance?'))return;const wasCanon=extendedStoriesCache.find(x=>x.id===storyId)?.canon_status==='CANON_ETENDU';try{await call('remove_story_claim',{claim_id:b.dataset.removeStoryClaim});await canonProvenance();await extendedStories();syncStoryStateAfterChildEdit(storyId,wasCanon);renderStoryClaims(storyId)}catch(e){alert(e.message)}}));
