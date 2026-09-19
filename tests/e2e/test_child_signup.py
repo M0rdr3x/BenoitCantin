@@ -40,7 +40,10 @@ export function createClient(){
     auth: {
       getSession: async () => ({data:{session:active ? {user:{id:'parent-test'}} : null},error:null}),
       signOut: async () => { active = false; return {error:null}; },
-      signUp: async () => ({data:{session:null},error:new Error('TEST_SIGNUP_DISABLED')})
+      signUp: async (payload) => {
+        globalThis.__SINJIRA_TEST_SIGNUP_PAYLOAD = payload;
+        return {data:{session:null},error:null};
+      }
     }
   };
 }
@@ -107,11 +110,37 @@ export function createClient(){
         assert_true(page.locator("[data-guardian-code-wrap]").is_visible(), "Champ code parental absent à exactement 11 ans")
         assert_true(page.locator("[data-guardian-code]").get_attribute("required") is not None, "Code parental non obligatoire à exactement 11 ans")
         assert_true(page.locator("[data-contributor-panel]").is_hidden(), "Programme Contributeur visible pour un enfant de 11 ans")
+
+        # Le parcours visible doit réellement transmettre le code au hook Auth.
+        # Cette preuve ferme l'écart entre « champ présent » et « donnée envoyée au serveur ».
+        page.locator("#signup-name").fill("Enfant navigateur 11")
+        page.locator("#signup-email").fill("child-browser-11@example.test")
+        page.locator("#signup-password").fill("Child-Browser-11-2026!")
+        page.locator("#signup-confirm").fill("Child-Browser-11-2026!")
+        page.locator("#signup-gender").select_option(label="Homme")
+        page.locator("[data-guardian-code]").fill("youth-abcd123456")
+        page.locator('[data-signup-form] input[type="checkbox"][required]').check()
+        submit.click()
+
+        page.wait_for_function(
+            "() => Boolean(window.__SINJIRA_TEST_SIGNUP_PAYLOAD)",
+            timeout=10_000,
+        )
+        signup_payload = page.evaluate("() => window.__SINJIRA_TEST_SIGNUP_PAYLOAD")
+        metadata = signup_payload.get("options", {}).get("data", {})
+
+        assert_true(metadata.get("guardian_code") == "YOUTH-ABCD123456", "Le code parental saisi n'est pas transmis ou normalisé dans signUp")
+        assert_true(metadata.get("birth_date") == child_birth, "La date de naissance 11 ans n'est pas transmise au serveur")
+        assert_true(metadata.get("date_of_birth") == child_birth, "Le champ de compatibilité date_of_birth diverge")
+        assert_true(metadata.get("account_age_band") == "child_11_12", "Le payload navigateur ne marque pas la bande enfant 11–12")
+        assert_true(metadata.get("guardian_controls_required") is True, "Le payload ne marque pas la supervision comme obligatoire")
+        assert_true(metadata.get("initial_contributor_opt_in") is False, "Le navigateur tente d'activer la contribution pour un enfant")
+        assert_true(metadata.get("initial_share_free_text") is False, "Le navigateur tente d'activer le texte libre pour un enfant")
         assert_true(not page_errors, "Erreur JavaScript dans le parcours enfant: " + " | ".join(page_errors[:5]))
 
         context.close()
         browser.close()
-        print("OK navigateur enfant 11 ans: session parent bloquée, séparation locale confirmée, code parental requis et contribution masquée.")
+        print("OK navigateur enfant 11 ans: session séparée, code requis et réellement transmis à signUp, bande child_11_12 et contribution neutralisée.")
 
 
 if __name__ == "__main__":

@@ -12,6 +12,7 @@ RELATIONS_JS = ROOT / 'assets/js/v24-relations.js'
 SIGNUP_HTML = ROOT / 'compte/inscription.html'
 RELATIONS_HTML = ROOT / 'compte/relations.html'
 BROWSER_TEST = ROOT / 'tests/e2e/test_public_site.py'
+CHILD_BROWSER_TEST = ROOT / 'tests/e2e/test_child_signup.py'
 
 errors = []
 
@@ -38,6 +39,7 @@ relations_js = read(RELATIONS_JS)
 signup_html = read(SIGNUP_HTML)
 relations_html = read(RELATIONS_HTML)
 browser_test = read(BROWSER_TEST)
+child_browser_test = read(CHILD_BROWSER_TEST)
 
 m = compact(mig)
 t = compact(test)
@@ -49,6 +51,7 @@ r = compact(relations_js)
 h = signup_html.lower()
 rh = relations_html.lower()
 bt = compact(browser_test)
+cbt = compact(child_browser_test)
 
 # Autorité serveur et seuil minimal.
 req("ifyears<11thenraiseexception'sinjira_minimum_age_11'" in m,
@@ -108,6 +111,10 @@ req('contributorpanel.hidden=child;' in j,
     "Le formulaire continue d'exposer le Programme Contributeur à un compte enfant 11–12.")
 req('age<18&&!iscanada(residencecountry)' in j,
     "La porte Canada jeunesse n'est plus appliquée côté client.")
+req('guardian_code:guardiancode' in j,
+    "Le contrôleur actif ne transmet pas le code parental dans les métadonnées Auth.")
+req('date_of_birth:birthdate' in j and "account_age_band:child?'child_11_12'" in j,
+    "Le payload Auth enfant n'est pas aligné sur la date et la bande V25.")
 
 # Frontière de session : aucune création de compte enfant ne doit réutiliser implicitement
 # la session du parent ou d'un autre compte déjà connecté dans le navigateur.
@@ -176,6 +183,15 @@ req("contributor&&contributor.hidden" in bt and "[data-contributor-panel]" in bt
     "Le test navigateur ne prouve plus que le Programme Contributeur disparaît à 11 ans.")
 req("[data-signup-session-warning]" in bt and "[data-signup-session-signout]" in bt,
     "Le test navigateur ne protège plus la séparation de session parent/enfant.")
+req('__sinjira_test_signup_payload' in cbt and 'signup_payload=page.evaluate' in cbt,
+    "La preuve navigateur dédiée n'intercepte plus le payload Auth réel.")
+req('metadata.get("guardian_code")=="youth-abcd123456"' in cbt,
+    "La preuve navigateur ne vérifie plus la transmission normalisée du code parental.")
+req('metadata.get("account_age_band")=="child_11_12"' in cbt,
+    "La preuve navigateur ne vérifie plus la bande child_11_12 envoyée à Auth.")
+req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
+    and 'metadata.get("initial_share_free_text")isfalse' in cbt,
+    "La preuve navigateur ne vérifie plus la neutralisation des contributions dans le payload.")
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
