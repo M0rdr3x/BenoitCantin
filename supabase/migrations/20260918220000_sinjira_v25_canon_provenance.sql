@@ -113,6 +113,7 @@ declare
   v_source_id uuid;
   v_required boolean:=false;
   v_event_classification text;
+  v_event_scope text;
   v_source_scope text;
 begin
   if tg_table_name='sinjira_world_locations' then
@@ -126,7 +127,7 @@ begin
     v_required:=new.classification in ('CANON','SECRET_AUTEUR');
   elsif tg_table_name='sinjira_canon_event_characters' then
     v_source_id:=new.source_id;
-    select e.classification into v_event_classification
+    select e.classification,e.source_scope into v_event_classification,v_event_scope
     from public.sinjira_canon_events e
     where e.id=new.event_id;
     v_required:=v_event_classification in ('CANON','SECRET_AUTEUR');
@@ -148,6 +149,11 @@ begin
        and v_source_scope is distinct from 'META'
        and v_source_scope is distinct from new.source_scope then
       raise exception 'CANON_SOURCE_SCOPE_MISMATCH';
+    end if;
+    if tg_table_name='sinjira_canon_event_characters'
+       and v_source_scope is distinct from 'META'
+       and v_source_scope is distinct from v_event_scope then
+      raise exception 'CANON_PRESENCE_SOURCE_SCOPE_MISMATCH';
     end if;
   end if;
 
@@ -216,9 +222,36 @@ create trigger sinjira_world_travel_require_provenance
 before insert or update of canon_status,source_id on public.sinjira_world_travel_rules
 for each row execute function private.sinjira_require_verified_provenance();
 
+create or replace function private.sinjira_guard_event_source_scope()
+returns trigger
+language plpgsql
+set search_path=pg_catalog,public,private
+as $
+begin
+  if tg_op='UPDATE' and new.source_scope is distinct from old.source_scope and exists(
+    select 1
+    from public.sinjira_canon_event_characters p
+    join public.sinjira_canon_sources src on src.id=p.source_id
+    where p.event_id=old.id
+      and src.scope<>'META'
+      and src.scope<>new.source_scope
+  ) then
+    raise exception 'CANON_PRESENCE_SOURCE_SCOPE_MISMATCH';
+  end if;
+  return new;
+end;
+$;
+
+revoke all on function private.sinjira_guard_event_source_scope() from public,anon,authenticated,service_role;
+
+drop trigger if exists sinjira_canon_events_guard_source_scope on public.sinjira_canon_events;
+create trigger sinjira_canon_events_guard_source_scope
+before update of source_scope on public.sinjira_canon_events
+for each row execute function private.sinjira_guard_event_source_scope();
+
 drop trigger if exists sinjira_canon_events_require_provenance on public.sinjira_canon_events;
 create trigger sinjira_canon_events_require_provenance
-before insert or update of classification,source_id on public.sinjira_canon_events
+before insert or update of classification,source_id,source_scope on public.sinjira_canon_events
 for each row execute function private.sinjira_require_verified_provenance();
 
 drop trigger if exists sinjira_canon_event_characters_require_provenance on public.sinjira_canon_event_characters;
@@ -247,6 +280,11 @@ for each statement execute function private.sinjira_invalidate_published_extende
 drop trigger if exists sinjira_world_locations_source_invalidate_extended on public.sinjira_world_locations;
 create trigger sinjira_world_locations_source_invalidate_extended
 after update of source_id on public.sinjira_world_locations
+for each statement execute function private.sinjira_invalidate_published_extended_stories();
+
+drop trigger if exists sinjira_canon_events_scope_invalidate_extended on public.sinjira_canon_events;
+create trigger sinjira_canon_events_scope_invalidate_extended
+after update of source_scope on public.sinjira_canon_events
 for each statement execute function private.sinjira_invalidate_published_extended_stories();
 
 drop trigger if exists sinjira_canon_events_source_invalidate_extended on public.sinjira_canon_events;
