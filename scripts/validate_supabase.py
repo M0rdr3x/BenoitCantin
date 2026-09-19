@@ -114,6 +114,8 @@ def main()->int:
       'CANON_SOURCE_SUPERSEDES_CYCLE',
       'sinjira_story_provenance_report',
       'admin_sinjira_story_validation_check',
+      'sinjira_prevent_canon_source_delete',
+      'CANON_SOURCE_DELETE_FORBIDDEN',
     }
     for needle in sorted(extended_contract):
         if needle.lower() not in sql.lower():
