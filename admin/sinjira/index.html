@@ -151,6 +151,25 @@
 </form>
 <div class="admin-management-list" data-event-presence-list></div>
 </article>
+<article class="account-card" style="margin-top:20px">
+<span class="eyebrow">Déplacements</span>
+<h2>Temps minimal entre lieux</h2>
+<p>Ces règles servent à détecter un voyage impossible entre deux scènes. Une règle marquée CANON doit toujours citer sa source; aucune durée n’est inventée automatiquement.</p>
+<form class="account-form admin-form-grid" data-travel-rule-form>
+<input name="id" type="hidden"/>
+<div class="field"><label>De</label><select data-travel-from name="from_location_id" required></select></div>
+<div class="field"><label>Vers</label><select data-travel-to name="to_location_id" required></select></div>
+<div class="field"><label>Durée minimale (minutes)</label><input name="minimum_minutes" type="number" min="0" max="525600" required/></div>
+<div class="field"><label>Mode</label><input name="travel_mode" maxlength="120" placeholder="Ex. voiture, marche, aérien, variable"/></div>
+<div class="field"><label>Statut</label><select name="canon_status"><option value="PROVISOIRE">PROVISOIRE</option><option value="CANON">CANON</option><option value="A_ARBITRER">À ARBITRER</option></select></div>
+<div class="field"><label>Valide à partir de</label><input name="valid_from" type="datetime-local"/></div>
+<div class="field"><label>Valide jusqu’à</label><input name="valid_until" type="datetime-local"/></div>
+<div class="field wide"><label>Source</label><input name="source_reference" maxlength="700" placeholder="Obligatoire si CANON"/></div>
+<div class="field wide"><label>Notes</label><textarea name="notes" rows="3"></textarea></div>
+<div class="wide"><button class="btn btn-primary" type="submit">Enregistrer la règle</button> <button class="btn btn-secondary" data-travel-rule-reset type="button">Nouvelle règle</button></div>
+</form>
+<div class="admin-management-list" data-travel-rule-list></div>
+</article>
 </section>
 <section class="admin-panel" data-admin-panel="canon-sinjira" hidden="">
 <article class="account-card">
