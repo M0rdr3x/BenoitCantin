@@ -292,8 +292,10 @@ Deno.serve(async(req)=>{
       const types=['world','continent','country','province_state','region','city','district','site','place'];
       const canon=['PROVISOIRE','CANON','A_ARBITRER'];
       if(!slug||!name)return privateJson({ok:false,error:'Nom et slug du lieu requis.',code:'LOCATION_REQUIRED'},400);
-      const payload={slug,name,location_type:types.includes(x.location_type)?x.location_type:'place',parent_id:x.parent_id||null,country_code:String(x.country_code||'').trim().slice(0,8)||null,timezone_name:String(x.timezone_name||'').trim().slice(0,80)||null,latitude:x.latitude===''||x.latitude==null?null:Number(x.latitude),longitude:x.longitude===''||x.longitude==null?null:Number(x.longitude),canon_status:canon.includes(x.canon_status)?x.canon_status:'PROVISOIRE',source_reference:String(x.source_reference||'').trim().slice(0,500)||null,notes:String(x.notes||'').slice(0,4000)||null};
-      if(payload.canon_status==='CANON'&&!payload.source_reference)return privateJson({ok:false,error:'Un lieu CANON doit citer sa source dans les romans ou la Bible canonique.',code:'LOCATION_SOURCE_REQUIRED'},400);
+      const source=await canonSource(x.source_id);
+      const payload={slug,name,location_type:types.includes(x.location_type)?x.location_type:'place',parent_id:x.parent_id||null,country_code:String(x.country_code||'').trim().slice(0,8)||null,timezone_name:String(x.timezone_name||'').trim().slice(0,80)||null,latitude:x.latitude===''||x.latitude==null?null:Number(x.latitude),longitude:x.longitude===''||x.longitude==null?null:Number(x.longitude),canon_status:canon.includes(x.canon_status)?x.canon_status:'PROVISOIRE',source_id:source?.id||null,source_reference:(sourceLabel(source)||String(x.source_reference||'').trim()).slice(0,500)||null,notes:String(x.notes||'').slice(0,4000)||null};
+      if(payload.canon_status==='CANON'&&!source)return privateJson({ok:false,error:'Un lieu CANON doit être relié à une source du Registre.',code:'CANON_SOURCE_REQUIRED'},400);
+      if(payload.canon_status==='CANON'&&!['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||''))return privateJson({ok:false,error:'La source du lieu doit être vérifiée avant de le passer CANON.',code:'CANON_SOURCE_NOT_VERIFIED'},409);
       let saved;
       if(id){const {data,error}=await s.from('sinjira_world_locations').update(payload).eq('id',id).select('*').single();if(error)throw error;saved=data}
       else{const {data,error}=await s.from('sinjira_world_locations').insert(payload).select('*').single();if(error)throw error;saved=data}
@@ -308,8 +310,10 @@ Deno.serve(async(req)=>{
       const minutes=Number(x.minimum_minutes);
       if(!Number.isFinite(minutes)||minutes<0||minutes>525600)return privateJson({ok:false,error:'Durée minimale de déplacement invalide.',code:'TRAVEL_MINUTES_INVALID'},400);
       const canon=['PROVISOIRE','CANON','A_ARBITRER'];
-      const payload={from_location_id:x.from_location_id,to_location_id:x.to_location_id,minimum_minutes:Math.round(minutes),travel_mode:String(x.travel_mode||'unspecified').trim().slice(0,120)||'unspecified',bidirectional:x.bidirectional!==false,valid_from:x.valid_from||null,valid_until:x.valid_until||null,canon_status:canon.includes(x.canon_status)?x.canon_status:'PROVISOIRE',source_reference:String(x.source_reference||'').trim().slice(0,700)||null,notes:String(x.notes||'').slice(0,4000)||null};
-      if(payload.canon_status==='CANON'&&!payload.source_reference)return privateJson({ok:false,error:'Une règle de déplacement CANON doit avoir une source.',code:'TRAVEL_SOURCE_REQUIRED'},400);
+      const source=await canonSource(x.source_id);
+      const payload={from_location_id:x.from_location_id,to_location_id:x.to_location_id,minimum_minutes:Math.round(minutes),travel_mode:String(x.travel_mode||'unspecified').trim().slice(0,120)||'unspecified',bidirectional:x.bidirectional!==false,valid_from:x.valid_from||null,valid_until:x.valid_until||null,canon_status:canon.includes(x.canon_status)?x.canon_status:'PROVISOIRE',source_id:source?.id||null,source_reference:(sourceLabel(source)||String(x.source_reference||'').trim()).slice(0,700)||null,notes:String(x.notes||'').slice(0,4000)||null};
+      if(payload.canon_status==='CANON'&&!source)return privateJson({ok:false,error:'Une règle de déplacement CANON doit être reliée à une source du Registre.',code:'CANON_SOURCE_REQUIRED'},400);
+      if(payload.canon_status==='CANON'&&!['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||''))return privateJson({ok:false,error:'La source du trajet doit être vérifiée avant de le passer CANON.',code:'CANON_SOURCE_NOT_VERIFIED'},409);
       if(payload.valid_from&&payload.valid_until&&new Date(payload.valid_until).getTime()<new Date(payload.valid_from).getTime())return privateJson({ok:false,error:'La fin de validité ne peut pas précéder le début.',code:'TRAVEL_WINDOW_INVALID'},400);
       let saved;
       if(id){const {data,error}=await s.from('sinjira_world_travel_rules').update(payload).eq('id',id).select('*').single();if(error)throw error;saved=data}
@@ -324,11 +328,13 @@ Deno.serve(async(req)=>{
       const scopes=['LIVRES_1_12','ORIGINES_13_14','CANON_ETENDU'];
       const classifications=['CANON','SECRET_AUTEUR','A_ARBITRER','PROVISOIRE'];
       const title=String(x.title||'').trim().slice(0,240);
-      const sourceReference=String(x.source_reference||'').trim().slice(0,700);
-      if(!title||!sourceReference)return privateJson({ok:false,error:'Titre et source canonique requis.',code:'EVENT_SOURCE_REQUIRED'},400);
+      const source=await canonSource(x.source_id);
+      const sourceReference=(sourceLabel(source)||String(x.source_reference||'').trim()).slice(0,700);
+      if(!title||!source)return privateJson({ok:false,error:'Titre et source du Registre requis pour un événement.',code:'EVENT_SOURCE_REQUIRED'},400);
       const startsAt=x.starts_at||null,endsAt=x.ends_at||null;
       if(startsAt&&endsAt&&new Date(endsAt).getTime()<new Date(startsAt).getTime())return privateJson({ok:false,error:'La fin de l’événement ne peut pas précéder son début.',code:'INVALID_EVENT_RANGE'},400);
-      const payload={event_key:String(x.event_key||'').trim().slice(0,160)||null,title,summary:String(x.summary||'').slice(0,12000)||null,starts_at:startsAt,ends_at:endsAt,timezone_name:String(x.timezone_name||'').trim().slice(0,80)||null,location_id:x.location_id||null,location_name_snapshot:String(x.location_name_snapshot||'').trim().slice(0,220)||null,source_scope:scopes.includes(x.source_scope)?x.source_scope:'LIVRES_1_12',source_reference:sourceReference,classification:classifications.includes(x.classification)?x.classification:'PROVISOIRE',public_safe:x.public_safe===true,consequences:x.consequences&&typeof x.consequences==='object'?x.consequences:{}};
+      const payload={event_key:String(x.event_key||'').trim().slice(0,160)||null,title,summary:String(x.summary||'').slice(0,12000)||null,starts_at:startsAt,ends_at:endsAt,timezone_name:String(x.timezone_name||'').trim().slice(0,80)||null,location_id:x.location_id||null,location_name_snapshot:String(x.location_name_snapshot||'').trim().slice(0,220)||null,source_scope:scopes.includes(x.source_scope)?x.source_scope:'LIVRES_1_12',source_id:source.id,source_reference:sourceReference,classification:classifications.includes(x.classification)?x.classification:'PROVISOIRE',public_safe:x.public_safe===true,consequences:x.consequences&&typeof x.consequences==='object'?x.consequences:{}};
+      if(['CANON','SECRET_AUTEUR'].includes(payload.classification)&&!['VERIFIED','SECRET_AUTEUR'].includes(source.verification_status))throw new Error('CANON_SOURCE_NOT_VERIFIED');
       if(['CANON','SECRET_AUTEUR'].includes(payload.classification)&&payload.location_id){
         const {data:canonLocation,error:canonLocationError}=await s.from('sinjira_world_locations').select('canon_status').eq('id',payload.location_id).maybeSingle();
         if(canonLocationError)throw canonLocationError;
@@ -344,10 +350,13 @@ Deno.serve(async(req)=>{
     if(a==='save_canon_event_character'){
       const x=b.presence||{};
       if(!x.event_id||!x.character_id)return privateJson({ok:false,error:'Événement et personnage requis.',code:'EVENT_CHARACTER_REQUIRED'},400);
-      const {data:event,error:eventError}=await s.from('sinjira_canon_events').select('id,starts_at,ends_at,location_id,location_name_snapshot,source_reference,classification').eq('id',x.event_id).maybeSingle();
+      const {data:event,error:eventError}=await s.from('sinjira_canon_events').select('id,starts_at,ends_at,location_id,location_name_snapshot,source_id,source_reference,classification').eq('id',x.event_id).maybeSingle();
       if(eventError)throw eventError;if(!event)return privateJson({ok:false,error:'Événement canonique introuvable.',code:'EVENT_NOT_FOUND'},404);
       const certainties=['confirmed','approximate','unknown'];
-      const payload={event_id:x.event_id,character_id:x.character_id,role:String(x.role||'').trim().slice(0,160)||null,starts_at:x.starts_at||event.starts_at||null,ends_at:x.ends_at||event.ends_at||null,location_id:x.location_id||event.location_id||null,location_name_snapshot:String(x.location_name_snapshot||event.location_name_snapshot||'').trim().slice(0,220)||null,certainty:certainties.includes(x.certainty)?x.certainty:'confirmed',source_reference:String(x.source_reference||event.source_reference||'').trim().slice(0,700)||null};
+      const source=await canonSource(x.source_id||event.source_id);
+      const payload={event_id:x.event_id,character_id:x.character_id,role:String(x.role||'').trim().slice(0,160)||null,starts_at:x.starts_at||event.starts_at||null,ends_at:x.ends_at||event.ends_at||null,location_id:x.location_id||event.location_id||null,location_name_snapshot:String(x.location_name_snapshot||event.location_name_snapshot||'').trim().slice(0,220)||null,certainty:certainties.includes(x.certainty)?x.certainty:'confirmed',source_id:source?.id||null,source_reference:(sourceLabel(source)||String(x.source_reference||event.source_reference||'').trim()).slice(0,700)||null};
+      if(['CANON','SECRET_AUTEUR'].includes(event.classification)&&!source)throw new Error('CANON_SOURCE_REQUIRED');
+      if(['CANON','SECRET_AUTEUR'].includes(event.classification)&&!['VERIFIED','SECRET_AUTEUR'].includes(source?.verification_status||''))throw new Error('CANON_SOURCE_NOT_VERIFIED');
       if(['CANON','SECRET_AUTEUR'].includes(event.classification)&&payload.location_id){
         const {data:canonLocation,error:canonLocationError}=await s.from('sinjira_world_locations').select('canon_status').eq('id',payload.location_id).maybeSingle();
         if(canonLocationError)throw canonLocationError;
