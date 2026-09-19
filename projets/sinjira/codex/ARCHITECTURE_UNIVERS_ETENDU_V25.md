@@ -270,6 +270,7 @@ Le champ texte de référence reste un **instantané lisible**. L’autorité r�
 
 10. Le statut `CANON_ETENDU` signifie que la version actuelle du récit est validée. Toute modification structurelle du récit, d’un fait de provenance ou d’un segment de présence le repasse automatiquement en `PROVISOIRE / author_review`.
 11. Toute modification d’une dépendance globale du canon (Atlas, Calendrier-Monde, présence canonique, règle de déplacement, source canonique ou contexte central) dépublie puis rétrograde les Chroniques `CANON_ETENDU` afin d’imposer une nouvelle prévalidation.
+12. PostgreSQL bloque aussi les transitions directes incohérentes : une Chronique ne peut pas être insérée déjà `CANON_ETENDU`/`published`, une édition structurelle doit être enregistrée avant promotion, et `published` exige une Chronique déjà `CANON_ETENDU`, une audience autorisée, un horodatage et un rapport de readiness entièrement vert.
 8. La Chronique canonisée reste en état **validated** tant qu’elle n’est pas publiée.
 9. La publication est une action séparée : elle exige une audience Membres ou Public, un contenu rédigé, un ancrage défini, une période complète, un lieu Atlas et une nouvelle vérification de continuité.
 10. Une Chronique publiée doit être retirée de publication avant toute modification de son contenu, de sa période, de son lieu ou de ses segments.
