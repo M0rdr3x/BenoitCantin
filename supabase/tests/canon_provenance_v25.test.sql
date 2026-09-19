@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(91);
+select plan(101);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -560,6 +560,73 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='private' and p.proname='sinjira_guard_canon_source_in_use' limit 1),
   'la relation de remplacement reste conservée dans l historique après migration des références'
+);
+
+
+select has_function('public','admin_sinjira_migrate_canon_source_references',array['uuid','uuid'],
+  'le RPC atomique de migration des références de source existe');
+
+select ok(not has_function_privilege('anon','public.admin_sinjira_migrate_canon_source_references(uuid,uuid)','EXECUTE'),
+  'anon ne peut pas migrer les références de source');
+
+select ok(has_function_privilege('authenticated','public.admin_sinjira_migrate_canon_source_references(uuid,uuid)','EXECUTE'),
+  'authenticated atteint le RPC qui impose ensuite admin AAL2');
+
+select ok(exists(
+  select 1
+  from pg_indexes
+  where schemaname='public'
+    and tablename='sinjira_canon_sources'
+    and indexname='sinjira_canon_sources_one_verified_successor_idx'
+    and indexdef ilike '%unique%'
+),'une source ne peut avoir qu un seul successeur canonique vérifié actif');
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%supersedes_source_id is distinct from v_old.id%'
+          and pg_get_functiondef(p.oid) ilike '%v_new.scope is distinct from v_old.scope%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
+  'la migration exige un remplacement explicitement relié et de même période'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%sinjira_source_is_verified(v_new.id)%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
+  'la migration exige un remplacement encore vérifié'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%update public.sinjira_world_locations set source_id=v_new.id%'
+          and pg_get_functiondef(p.oid) ilike '%update public.sinjira_world_travel_rules set source_id=v_new.id%'
+          and pg_get_functiondef(p.oid) ilike '%update public.sinjira_canon_events set source_id=v_new.id%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
+  'la migration couvre lieux, trajets et événements'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%update public.sinjira_canon_event_characters set source_id=v_new.id%'
+          and pg_get_functiondef(p.oid) ilike '%update public.sinjira_story_claims set source_id=v_new.id%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
+  'la migration couvre présences et faits de provenance'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%status=''validated''%'
+          and pg_get_functiondef(p.oid) ilike '%canon_status=''PROVISOIRE''%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
+  'les Chroniques dépendantes sont sorties de publication et rétrogradées avant migration'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_MIGRATION_INCOMPLETE%'
+          and pg_get_functiondef(p.oid) ilike '%remaining_references%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
+  'la transaction échoue si une référence directe subsiste après migration'
 );
 
 select * from finish();
