@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(107);
+select plan(111);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -677,6 +677,39 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='public' and p.proname='admin_sinjira_migrate_canon_source_references' limit 1),
   'le contrat SQL documente la fermeture de la fenêtre entre migration et retrait'
+);
+
+
+select ok(exists(
+  select 1
+  from pg_indexes
+  where schemaname='public'
+    and tablename='sinjira_canon_sources'
+    and indexname='sinjira_canon_sources_one_successor_idx'
+    and indexdef ilike '%unique%'
+),'la chaîne de remplacement interdit toute fourche, même provisoire');
+
+select ok(not exists(
+  select 1
+  from pg_indexes
+  where schemaname='public'
+    and tablename='sinjira_canon_sources'
+    and indexname='sinjira_canon_sources_one_verified_successor_idx'
+),'l ancien index limité aux successeurs vérifiés est remplacé par la contrainte de chaîne stricte');
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_SUPERSEDES_ALREADY_EXISTS%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_prevent_source_supersedes_cycle' limit 1),
+  'le garde SQL renvoie une erreur explicite lorsqu une source possède déjà un successeur'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%other.supersedes_source_id=new.supersedes_source_id%'
+          and pg_get_functiondef(p.oid) ilike '%other.id<>new.id%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_prevent_source_supersedes_cycle' limit 1),
+  'l édition de la relation existante reste possible sans autoriser un second successeur'
 );
 
 select * from finish();
