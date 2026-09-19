@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(64);
+select plan(72);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -366,6 +366,61 @@ select ok(not has_function_privilege('anon','public.admin_sinjira_publish_extend
 
 select ok(has_function_privilege('authenticated','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE'),
   'authenticated atteint le RPC de publication qui exige ensuite admin AAL2');
+
+
+select has_function('private','sinjira_demote_extended_story_on_edit',array[]::text[],
+  'le garde de rétrogradation des Chroniques modifiées existe');
+
+select has_function('private','sinjira_demote_story_from_child_change',array[]::text[],
+  'le garde de rétrogradation après modification des faits ou segments existe');
+
+select ok(exists(
+  select 1 from pg_trigger tr
+  join pg_class t on t.oid=tr.tgrelid
+  join pg_namespace n on n.oid=t.relnamespace
+  where n.nspname='public' and t.relname='sinjira_extended_stories'
+    and tr.tgname='sinjira_extended_stories_demote_on_edit'
+    and not tr.tgisinternal
+),'une modification structurelle du récit force une nouvelle canonisation');
+
+select ok(exists(
+  select 1 from pg_trigger tr
+  join pg_class t on t.oid=tr.tgrelid
+  join pg_namespace n on n.oid=t.relnamespace
+  where n.nspname='public' and t.relname='sinjira_story_character_presence'
+    and tr.tgname='sinjira_story_presence_demote_canon'
+    and not tr.tgisinternal
+),'une modification de segment retire CANON_ETENDU');
+
+select ok(exists(
+  select 1 from pg_trigger tr
+  join pg_class t on t.oid=tr.tgrelid
+  join pg_namespace n on n.oid=t.relnamespace
+  where n.nspname='public' and t.relname='sinjira_story_claims'
+    and tr.tgname='sinjira_story_claims_demote_canon'
+    and not tr.tgisinternal
+),'une modification de provenance retire CANON_ETENDU');
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%new.canon_status:=''PROVISOIRE''%'
+          and pg_get_functiondef(p.oid) ilike '%new.status:=''author_review''%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_demote_extended_story_on_edit' limit 1),
+  'une édition structurelle rétrograde le récit en PROVISOIRE / author_review'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%where canon_status=''CANON_ETENDU''%'
+          and pg_get_functiondef(p.oid) ilike '%audience=''private''%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_invalidate_published_extended_stories' limit 1),
+  'un changement global du canon rétrograde aussi les Chroniques validées'
+);
+
+select ok(
+  not has_function_privilege('authenticated','private.sinjira_demote_story_from_child_change()','EXECUTE'),
+  'le navigateur ne peut pas invoquer directement le garde de rétrogradation'
+);
 
 select * from finish();
 rollback;
