@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(51);
+select plan(55);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -283,6 +283,36 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='public' and p.proname='admin_sinjira_story_validation_check' limit 1),
   'la prévalidation combine le rapport de provenance et le rapport de continuité'
+);
+
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%''metadata'',jsonb_build_object%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_story_validation_check' limit 1),
+  'la prévalidation inclut l état détaillé des métadonnées'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%STORY_METADATA_INCOMPLETE%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_promote_extended_story' limit 1),
+  'CANON_ETENDU exige une période et un lieu renseignés'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%STORY_LOCATION_NOT_CANON%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_promote_extended_story' limit 1),
+  'CANON_ETENDU exige un lieu CANON dans l Atlas'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%STORY_CONTENT_REQUIRED%'
+          and pg_get_functiondef(p.oid) ilike '%status=''validated''%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='public' and p.proname='admin_sinjira_promote_extended_story' limit 1),
+  'CANON_ETENDU exige un contenu et produit toujours le statut validated'
 );
 
 select * from finish();
