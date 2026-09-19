@@ -16,7 +16,7 @@ const SAFE_LOG_CODES=new Set([
   'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON','SOURCE_PURGED',
   'SOURCE_PURGE_CONFIRMATION_REQUIRED','SOURCE_PURGE_STORAGE_FAILED',
   'CANON_CONFIRMATION_REQUIRED','EXTENDED_CANON_CONFIRMATION_REQUIRED','STORY_CONTINUITY_CONFLICT','STORY_CONTINUITY_INCOMPLETE','NOTIFICATION_ID_REQUIRED','CENTRAL_CANON_LOCKED',
-  'CANON_SOURCE_REQUIRED','CANON_SOURCE_NOT_VERIFIED','CANON_SOURCE_SCOPE_MISMATCH','CANON_PRESENCE_SOURCE_SCOPE_MISMATCH','CANON_SOURCE_LOCATOR_REQUIRED','CANON_SOURCE_CHAPTER_REQUIRED','CLAIM_SOURCE_REQUIRED','CLAIM_SOURCE_NOT_VERIFIED','CLAIM_SOURCE_SCOPE_MISMATCH','STORY_PROVENANCE_REQUIRED','STORY_PROVENANCE_INCOMPLETE','STORY_PROVENANCE_SCOPE_MISMATCH'
+  'CANON_SOURCE_REQUIRED','CANON_SOURCE_NOT_VERIFIED','CANON_SOURCE_SCOPE_MISMATCH','CANON_PRESENCE_SOURCE_SCOPE_MISMATCH','CANON_SOURCE_LOCATOR_REQUIRED','CANON_SOURCE_CHAPTER_REQUIRED','CANON_SOURCE_IN_USE','CANON_SOURCE_KEY_IMMUTABLE','CANON_SOURCE_SUPERSEDES_SELF','CANON_SOURCE_SUPERSEDES_CYCLE','CLAIM_SOURCE_REQUIRED','CLAIM_SOURCE_NOT_VERIFIED','CLAIM_SOURCE_SCOPE_MISMATCH','STORY_PROVENANCE_REQUIRED','STORY_PROVENANCE_INCOMPLETE','STORY_PROVENANCE_SCOPE_MISMATCH'
 ]);
 
 function privateJson(data:unknown,status=200){
@@ -553,6 +553,10 @@ Deno.serve(async(req)=>{
     if(e?.message==='STORY_PROVENANCE_SCOPE_MISMATCH')return privateJson({ok:false,error:'Publication refusée : aucun fait d’ancrage vérifié ne correspond à la période de la Chronique.',code:'STORY_PROVENANCE_SCOPE_MISMATCH'},409);
     if(e?.message==='CANON_SOURCE_LOCATOR_REQUIRED')return privateJson({ok:false,error:'Une source vérifiée doit contenir un chapitre, un passage ou une version précise.',code:'CANON_SOURCE_LOCATOR_REQUIRED'},409);
     if(e?.message==='CANON_SOURCE_CHAPTER_REQUIRED')return privateJson({ok:false,error:'Une source Roman vérifiée doit indiquer le chapitre ou la section.',code:'CANON_SOURCE_CHAPTER_REQUIRED'},409);
+    if(e?.message==='CANON_SOURCE_IN_USE')return privateJson({ok:false,error:'Cette source est déjà utilisée par le canon. Créez une nouvelle source de remplacement au lieu de modifier son autorité ou ses repères.',code:'CANON_SOURCE_IN_USE'},409);
+    if(e?.message==='CANON_SOURCE_KEY_IMMUTABLE')return privateJson({ok:false,error:'La clé stable d’une source déjà utilisée ne peut plus être modifiée.',code:'CANON_SOURCE_KEY_IMMUTABLE'},409);
+    if(e?.message==='CANON_SOURCE_SUPERSEDES_SELF')return privateJson({ok:false,error:'Une source ne peut pas se remplacer elle-même.',code:'CANON_SOURCE_SUPERSEDES_SELF'},409);
+    if(e?.message==='CANON_SOURCE_SUPERSEDES_CYCLE')return privateJson({ok:false,error:'Chaîne de remplacement refusée : elle créerait un cycle entre sources.',code:'CANON_SOURCE_SUPERSEDES_CYCLE'},409);
     if(e?.message==='CLAIM_SOURCE_REQUIRED')return privateJson({ok:false,error:'Un fait vérifié doit citer une source du Registre.',code:'CLAIM_SOURCE_REQUIRED'},409);
     if(e?.message==='CLAIM_SOURCE_NOT_VERIFIED')return privateJson({ok:false,error:'La source du fait doit être vérifiée avant de valider ce fait.',code:'CLAIM_SOURCE_NOT_VERIFIED'},409);
     if(e?.message==='STORY_PROVENANCE_REQUIRED')return privateJson({ok:false,error:'Publication refusée : ajoutez au moins un fait d’ancrage vérifié avec une source canonique.',code:'STORY_PROVENANCE_REQUIRED'},409);
