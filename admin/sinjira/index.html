@@ -109,6 +109,22 @@
 </form>
 <div class="admin-management-list" data-story-segment-list><p>Sélectionnez d’abord une Chronique.</p></div>
 </article>
+<article class="account-card" style="margin-top:20px">
+<span class="eyebrow">Provenance canonique</span>
+<h2>Faits vérifiables de la Chronique</h2>
+<p>Enregistrez ici les faits de continuité qui doivent être prouvés : ancrage, date, lieu, personnage, événement, technologie, relation, décès ou déplacement. Une publication exige au moins un fait d’ancrage vérifié et aucun fait en attente.</p>
+<form class="account-form admin-form-grid" data-story-claim-form>
+<input name="id" type="hidden"/><input name="story_id" type="hidden"/>
+<div class="field"><label>Clé du fait</label><input name="claim_key" maxlength="160" placeholder="Ex. anchor-book-02-ch-14" required/></div>
+<div class="field"><label>Type</label><select name="claim_type"><option value="anchor">Ancrage</option><option value="character">Personnage</option><option value="time">Date / période</option><option value="location">Lieu</option><option value="event">Événement</option><option value="technology">Technologie</option><option value="organization">Organisation</option><option value="relationship">Relation</option><option value="death">Décès</option><option value="travel">Déplacement</option><option value="other">Autre</option></select></div>
+<div class="field"><label>Source canonique</label><select data-story-claim-source name="source_id"><option value="">À relier</option></select></div>
+<div class="field"><label>Vérification</label><select name="verification_status"><option value="PROVISOIRE">PROVISOIRE</option><option value="VERIFIED">VERIFIED</option><option value="A_ARBITRER">À ARBITRER</option><option value="REJECTED">REJETÉ</option></select></div>
+<div class="field wide"><label>Fait / affirmation</label><textarea name="statement" rows="4" required></textarea></div>
+<div class="field wide"><label>Note auteur</label><textarea name="author_note" rows="3"></textarea></div>
+<div class="wide"><button class="btn btn-primary" type="submit">Enregistrer le fait</button> <button class="btn btn-secondary" data-story-claim-reset type="button">Nouveau fait</button></div>
+</form>
+<div class="admin-management-list" data-story-claim-list><p>Sélectionnez d’abord une Chronique.</p></div>
+</article>
 </section>
 <section class="admin-panel" data-admin-panel="world-continuity" hidden="">
 <div class="admin-v18-grid">
@@ -126,7 +142,7 @@
 <div class="field"><label>Statut</label><select name="canon_status"><option value="PROVISOIRE">PROVISOIRE</option><option value="CANON">CANON</option><option value="A_ARBITRER">À ARBITRER</option></select></div>
 <div class="field"><label>Latitude</label><input name="latitude" type="number" step="0.000001" min="-90" max="90"/></div>
 <div class="field"><label>Longitude</label><input name="longitude" type="number" step="0.000001" min="-180" max="180"/></div>
-<div class="field wide"><label>Source</label><input name="source_reference" maxlength="500" placeholder="Roman / chapitre / Bible canonique"/></div>
+<div class="field wide"><label>Source canonique</label><select data-canon-source-select name="source_id"><option value="">À relier au Registre des sources</option></select></div><div class="field wide"><label>Référence lisible</label><input name="source_reference" maxlength="500" placeholder="Générée depuis la source; conservée comme instantané"/></div>
 <div class="field wide"><label>Notes</label><textarea name="notes" rows="4"></textarea></div>
 <div class="wide"><button class="btn btn-primary" type="submit">Enregistrer le lieu</button> <button class="btn btn-secondary" data-world-location-reset type="button">Nouveau lieu</button></div>
 </form>
@@ -146,7 +162,7 @@
 <div class="field"><label>Fuseau</label><input name="timezone_name" maxlength="80"/></div>
 <div class="field"><label>Début</label><input name="starts_at" type="datetime-local"/></div>
 <div class="field"><label>Fin</label><input name="ends_at" type="datetime-local"/></div>
-<div class="field wide"><label>Référence exacte *</label><input name="source_reference" required maxlength="700" placeholder="Ex. Livre II, chapitre X — à saisir depuis la source"/></div>
+<div class="field wide"><label>Source canonique *</label><select data-canon-source-select name="source_id" required><option value="">Choisir une source du Registre</option></select></div><div class="field wide"><label>Référence lisible</label><input name="source_reference" maxlength="700" placeholder="Générée depuis la source sélectionnée"/></div>
 <div class="field wide"><label>Résumé</label><textarea name="summary" rows="5"></textarea></div>
 <label class="account-check wide"><input name="public_safe" type="checkbox"/><span>Ce fait peut être divulgué publiquement sans révéler de SECRET AUTEUR.</span></label>
 <div class="wide"><button class="btn btn-primary" type="submit">Enregistrer l’événement</button> <button class="btn btn-secondary" data-canon-event-reset type="button">Nouvel événement</button></div>
@@ -166,7 +182,7 @@
 <div class="field"><label>Début de présence</label><input name="starts_at" type="datetime-local"/></div>
 <div class="field"><label>Fin de présence</label><input name="ends_at" type="datetime-local"/></div>
 <div class="field"><label>Rôle dans l’événement</label><input name="role" maxlength="160"/></div>
-<div class="field"><label>Source spécifique</label><input name="source_reference" maxlength="700"/></div>
+<div class="field"><label>Source spécifique</label><select data-canon-source-select name="source_id"><option value="">Hériter de la source de l’événement</option></select></div><div class="field"><label>Référence lisible</label><input name="source_reference" maxlength="700"/></div>
 <div class="wide"><button class="btn btn-primary" type="submit">Enregistrer la présence</button></div>
 </form>
 <div class="admin-management-list" data-event-presence-list></div>
@@ -185,7 +201,7 @@
 <div class="field"><label>Statut</label><select name="canon_status"><option value="PROVISOIRE">PROVISOIRE</option><option value="CANON">CANON</option><option value="A_ARBITRER">À ARBITRER</option></select></div>
 <div class="field"><label>Valide à partir de</label><input name="valid_from" type="datetime-local"/></div>
 <div class="field"><label>Valide jusqu’à</label><input name="valid_until" type="datetime-local"/></div>
-<div class="field wide"><label>Source</label><input name="source_reference" maxlength="700" placeholder="Obligatoire si CANON"/></div>
+<div class="field wide"><label>Source canonique</label><select data-canon-source-select name="source_id"><option value="">À relier au Registre des sources</option></select></div><div class="field wide"><label>Référence lisible</label><input name="source_reference" maxlength="700" placeholder="Générée depuis la source sélectionnée"/></div>
 <div class="field wide"><label>Notes</label><textarea name="notes" rows="3"></textarea></div>
 <div class="wide"><button class="btn btn-primary" type="submit">Enregistrer la règle</button> <button class="btn btn-secondary" data-travel-rule-reset type="button">Nouvelle règle</button></div>
 </form>
@@ -193,15 +209,39 @@
 </article>
 </section>
 <section class="admin-panel" data-admin-panel="canon-sinjira" hidden="">
+<div class="admin-v18-grid">
 <article class="account-card">
 <span class="eyebrow">Continuité privée · auteur uniquement</span>
 <h2>Canon SINJIRA™ — sources et garde-fous</h2>
 <p>Cette section utilise le contexte privé enregistré dans Supabase. Les documents maîtres complets et les éléments SECRET AUTEUR ne sont jamais placés dans le dépôt GitHub public.</p>
 <div class="admin-management-list" data-admin-canon-list=""></div>
 </article>
+<article class="account-card">
+<span class="eyebrow">Registre des sources</span>
+<h2>Provenance canonique</h2>
+<p>Une source vérifiée devient une référence utilisable par l’Atlas, le Calendrier-Monde et les faits des Chroniques. Les sources SECRET_AUTEUR restent privées même lorsqu’elles servent de garde-fous.</p>
+<form class="account-form admin-form-grid" data-canon-source-form>
+<input name="id" type="hidden"/>
+<div class="field"><label>Clé stable</label><input name="source_key" maxlength="160" placeholder="Ex. livre-02-ch-14" required/></div>
+<div class="field"><label>Type</label><select name="source_kind"><option value="roman">Roman</option><option value="bible">Bible canonique</option><option value="author_decision">Décision auteur</option><option value="canon_event">Événement canonique</option><option value="extended_story">Chronique canonisée</option><option value="archive">Archive</option><option value="research">Recherche / référence</option></select></div>
+<div class="field"><label>Périmètre</label><select name="scope"><option value="LIVRES_1_12">Livres 1 à 12</option><option value="ORIGINES_13_14">Origines 13–14</option><option value="CANON_ETENDU">Canon étendu</option><option value="META">Métadonnée / décision</option></select></div>
+<div class="field"><label>Statut</label><select name="verification_status"><option value="PROVISOIRE">PROVISOIRE</option><option value="VERIFIED">VERIFIED</option><option value="SECRET_AUTEUR">SECRET AUTEUR</option><option value="A_ARBITRER">À ARBITRER</option><option value="RETIRED">RETIRÉE</option></select></div>
+<div class="field wide"><label>Titre de la source</label><input name="title" maxlength="300" required/></div>
+<div class="field"><label>Numéro de livre</label><input name="book_number" type="number" min="1" max="14"/></div>
+<div class="field"><label>Chapitre / section</label><input name="chapter_reference" maxlength="240"/></div>
+<div class="field wide"><label>Passage / repère exact</label><input name="passage_reference" maxlength="500"/></div>
+<div class="field"><label>Version</label><input name="source_version" maxlength="120" placeholder="Ex. manuscrit v3"/></div>
+<div class="field"><label>Remplace la source</label><select data-canon-source-supersedes name="supersedes_source_id"><option value="">Aucune</option></select></div>
+<label class="account-check wide"><input name="public_safe" type="checkbox"/><span>La référence peut être montrée sans révéler d’information auteur secrète.</span></label>
+<div class="field wide"><label>Notes privées</label><textarea name="notes" rows="4"></textarea></div>
+<div class="wide"><button class="btn btn-primary" type="submit">Enregistrer la source</button> <button class="btn btn-secondary" data-canon-source-reset type="button">Nouvelle source</button></div>
+</form>
+<div class="admin-management-list" data-canon-source-list></div>
+</article>
+</div>
 </section>
 <section class="admin-panel" data-admin-panel="social-moderation" hidden=""><article class="account-card"><span class="eyebrow">Communauté + Réseau personnage</span><h2>Modération sociale</h2><p>L’administration voit les contenus publics et les éléments explicitement signalés. Les messages privés ne sont pas parcourus librement : seul le contenu signalé est joint au dossier de modération.</p><div class="admin-stat-grid"><div class="account-stat"><span>Signalements ouverts</span><strong data-social-report-count="">0</strong></div><div class="account-stat"><span>Suspensions actives</span><strong data-social-suspension-count="">0</strong></div></div><div data-social-report-list=""></div></article></section><section class="admin-panel" data-admin-panel="analytics" hidden=""><article class="account-card"><span class="eyebrow">Contributions volontaires</span><h2>Statistiques d’amélioration</h2><p>Ces données proviennent uniquement des parties volontairement partagées avec SINJIRA™.</p><div class="admin-analytics-grid" data-admin-analytics=""></div></article></section>
 <section class="admin-panel" data-admin-panel="extensions" hidden=""><div class="account-layout">
 <article class="account-card"><h2>Planifier une extension</h2><form class="account-form" data-extension-form=""><div class="field"><label>Projet</label><select data-project-select="" name="project_id" required=""></select></div><div class="field"><label>Titre</label><input name="title" required=""/></div><div class="field"><label>Description / hypothèse</label><textarea name="description"></textarea></div><div class="field"><label>Statut</label><select name="status"><option value="idea">Idée</option><option value="research">Recherche</option><option value="design">Conception</option><option value="testing">Test</option><option value="approved">Approuvée</option><option value="released">Publiée</option><option value="archived">Archivée</option></select></div><label class="account-check"><input name="is_public" type="checkbox"/><span>Rendre cette extension publique lorsqu’elle est approuvée/publiée.</span></label><button class="btn btn-primary" type="submit">Enregistrer</button></form><h2 style="margin-top:30px">Extensions suivies</h2><div class="admin-management-list" data-admin-extension-list=""></div></article>
 <aside class="account-card"><h2>Signaux des joueurs</h2><p>Idées d’extensions, mécaniques préférées et points à clarifier, seulement lorsque ces commentaires ont été partagés volontairement.</p><div class="admin-management-list" data-extension-signals=""></div></aside></div></section>
-<section class="admin-panel" data-admin-panel="system-health" hidden=""><article class="account-card"><span class="eyebrow">Diagnostic</span><h2>État du système SINJIRA™</h2><p>Contrôle rapide des tables essentielles. Cette page ne remplace pas les journaux Supabase, mais permet de repérer immédiatement une panne de données.</p><div class="v19-admin-health" data-admin-health=""></div></article></section><section class="admin-panel" data-admin-panel="audit-log" hidden=""><article class="account-card"><span class="eyebrow">Traçabilité</span><h2>Journal des actions administratives</h2><p>Les actions sensibles V19 sont consignées avec leur date, leur type et l’élément concerné.</p><div class="v19-audit-list" data-admin-audit-list=""></div></article></section></main><script src="/assets/js/sinjira-admin-console.js?v=4.0" type="module"></script><script src="/assets/js/sinjira-admin-v18.js?v=25.3.0" type="module"></script><script src="/assets/js/sinjira-admin-social-v20.js?v=20.0" type="module"></script></body></html>
+<section class="admin-panel" data-admin-panel="system-health" hidden=""><article class="account-card"><span class="eyebrow">Diagnostic</span><h2>État du système SINJIRA™</h2><p>Contrôle rapide des tables essentielles. Cette page ne remplace pas les journaux Supabase, mais permet de repérer immédiatement une panne de données.</p><div class="v19-admin-health" data-admin-health=""></div></article></section><section class="admin-panel" data-admin-panel="audit-log" hidden=""><article class="account-card"><span class="eyebrow">Traçabilité</span><h2>Journal des actions administratives</h2><p>Les actions sensibles V19 sont consignées avec leur date, leur type et l’élément concerné.</p><div class="v19-audit-list" data-admin-audit-list=""></div></article></section></main><script src="/assets/js/sinjira-admin-console.js?v=4.0" type="module"></script><script src="/assets/js/sinjira-admin-v18.js?v=25.4.0" type="module"></script><script src="/assets/js/sinjira-admin-social-v20.js?v=20.0" type="module"></script></body></html>
