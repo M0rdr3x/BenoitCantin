@@ -222,6 +222,20 @@ async function createTravel(form){
 
 function confirmAction(message){return globalThis.confirm(message)}
 
+function setCoreActionsEnabled(enabled){
+  for(const selector of ('[data-security-settings-save],[data-security-compromised]').split(',')){
+    const button=qs(selector);
+    if(button)button.disabled=!enabled;
+  }
+}
+
+function bindReloadFallback(){
+  const button=qs('[data-security-refresh]');
+  if(!button||button.dataset.securityReloadBound==='true')return;
+  button.dataset.securityReloadBound='true';
+  button.addEventListener('click',()=>location.reload(),{once:true});
+}
+
 function friendlySecurityError(error,context='security'){
   const message=error?.message||String(error||'Erreur de sécurité.');
   if(message.includes('TRUST_CONFIRMATION_REQUIRED'))return 'Cet appareil doit d’abord être autorisé depuis un autre appareil déjà fiable.';
@@ -237,6 +251,7 @@ function friendlySecurityError(error,context='security'){
 
 async function boot(){
   const meta=deviceMetadata();
+  setCoreActionsEnabled(false);
   try{
     await requireUser();
     status('Initialisation du Centre de sécurité…');
@@ -290,12 +305,15 @@ async function boot(){
       }catch(err){status(friendlySecurityError(err,errorContext),'error')}
     });
 
+    setCoreActionsEnabled(true);
     document.documentElement.dataset.securityCenterReady='true';
     window.dispatchEvent(new Event('sinjira:security-center-ready'));
     status('Centre de sécurité prêt.','success');
   }catch(error){
     delete document.documentElement.dataset.securityCenterReady;
-    status(friendlySecurityError(error),'error');
+    setCoreActionsEnabled(false);
+    bindReloadFallback();
+    status(`${friendlySecurityError(error)} Utilisez « Actualiser » pour réessayer.`,'error');
   }
 }
 
