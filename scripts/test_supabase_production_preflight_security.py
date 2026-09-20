@@ -99,6 +99,16 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = self.valid.replace(marker, "", 1)
         self.assertRejected(bad, "Chemin critique absent")
 
+    def test_migration_review_plan_changes_must_trigger_preflight(self):
+        marker = "      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'\n"
+        bad = self.valid.replace(marker, "", 1)
+        self.assertRejected(bad, "Chemin critique absent")
+
+    def test_migration_review_plan_validator_must_run_locally(self):
+        marker = "          python scripts/validate_future_migration_review_plan_v25.py\n"
+        bad = self.valid.replace(marker, "          echo plan-retire\n", 1)
+        self.assertRejected(bad, "Prévol local incomplet")
+
     def test_local_preflight_cannot_receive_secret(self):
         bad = self.valid.replace(
             "    timeout-minutes: 10\n    steps:",
