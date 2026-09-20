@@ -140,7 +140,7 @@ async function loadPrivateDashboard(){
 
   const accessResolved=!accessResult.error;
   let projects=(accessResult.data||[]).filter(row=>!row.expires_at||new Date(row.expires_at)>new Date());
-  let catalogResolved=!(roleResolved&&(isAdmin||isOwner));
+  let catalogResolved=false;
   if(roleResolved&&(isAdmin||isOwner)){
     const all=await s.from('projects').select('id,slug,name,status').order('sort_order');
     catalogResolved=!all.error;
