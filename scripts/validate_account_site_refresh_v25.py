@@ -17,6 +17,7 @@ FILES = {
     "purchases_js": ROOT / "assets/js/sinjira-purchases-v25.js",
     "profile_html": ROOT / "compte/profil.html",
     "account_js": ROOT / "assets/js/sinjira-account.js",
+    "account_css": ROOT / "assets/css/sinjira-player-account.css",
     "recovery_js": ROOT / "assets/js/sinjira-recovery-v24-4-99.js",
     "signup_html": ROOT / "compte/inscription.html",
     "login_html": ROOT / "compte/connexion.html",
@@ -60,6 +61,7 @@ def validate(contents: dict[str, str]) -> None:
     pj = compact(contents["purchases_js"])
     prof = compact(contents["profile_html"])
     acc = compact(contents["account_js"])
+    account_css = compact(contents["account_css"])
     recovery = compact(contents["recovery_js"])
     signup_html = compact(contents["signup_html"])
     login_html = compact(contents["login_html"])
@@ -165,6 +167,10 @@ def validate(contents: dict[str, str]) -> None:
         fail("navigation Bibliothèque: routes projet/commentaires non classées")
     if "'regles-communaute.html','regles-communaute-junior.html','moderation.html'" not in acc:
         fail("navigation Communauté: règles/modération non classées")
+    if ".account-nav-group[open]{grid-column:1/-1}" not in account_css:
+        fail("navigation mobile: groupe ouvert ne prend pas toute la largeur")
+    if ".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}" not in account_css:
+        fail("navigation mobile: panneau regroupé risque encore de déborder")
 
     for name, content in contents.items():
         if not name.startswith("secondary_"):
@@ -247,6 +253,7 @@ def main() -> None:
             "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.0\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
             "rôle créateur secondaire revenu côté client":("secondary_library_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "module bibliothèque secondaire hors paths CI":("workflow","assets/js/sinjira-library.js","assets/js/sinjira-library-missing.js"),
+            "navigation mobile redevenue absolue":("account_css",".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}",".account-nav-panel{position:absolute;width:min(88vw,320px)}"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
