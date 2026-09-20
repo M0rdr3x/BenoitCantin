@@ -298,6 +298,10 @@ req("s.rpc('create_guardian_signup_invite')" in r,
     "L'interface parent ne génère plus le code d'inscription.")
 req("['child_pending','youth_pending'].includes(ageband)" in r,
     "L'interface de supervision ne reconnaît pas child_pending.")
+req("constneutral=['child','youth'].includes(ageband)" in r and "guardianneutraltools.hidden=!neutral" in r,
+    "L'interface Relations affiche encore un état neutre lorsque la bande du compte n'est pas confirmée.")
+req("constinitialageready=awaitrefreshageband()" in r and "lesoutilsparentauxrestentmasquésparsécurité" in r,
+    "Le chargement initial Relations ne reste pas fail-closed si les capacités sont indisponibles.")
 req("s.auth.mfa.getauthenticatorassurancelevel()" in r
     and "aal?.currentlevel!=='aal2'" in r
     and "aal?.nextlevel==='aal2'" in r,
@@ -325,6 +329,8 @@ req('data-create-guardian-code' in rh and 'de 11 à 13 ans' in rh,
     "La page Relations n'explique pas le code parental obligatoire de 11 à 13 ans.")
 req('ouvrir l’inscription' in rh and 'v24-relations.js?v=25.' in rh and '&amp;rev=' in rh,
     "Le parcours parent vers l'inscription ou son invalidation de cache est incomplet.")
+req('v24-relations.js?v=25.0.14&amp;rev=junior-alias-private' in rh,
+    "La version Relations V25.0.14 n'est pas forcée après le durcissement fail-closed.")
 req('session aal2 avec second facteur' in rh and 'securite.html#mfa-active-title' in rh,
     "La page Relations n'explique pas la vérification AAL2 ni le chemin de configuration MFA.")
 
