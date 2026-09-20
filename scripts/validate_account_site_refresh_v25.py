@@ -129,6 +129,14 @@ def validate(contents: dict[str, str]) -> None:
         fail("bibliothèque secondaire: rôle créateur encore déduit côté navigateur")
     if "s.rpc('is_sinjira_owner',{p_user_id:user.id})" not in contents["secondary_library_js"]:
         fail("bibliothèque secondaire: RPC serveur is_sinjira_owner absent")
+    for marker in (
+        "p.visibility==='restricted'?'accèsrestreint':p.visibility==='account'?'inclusaveclecompte':'pagepublique'",
+        "rolechip=owner?'propriétaire':a?.access_level==='tester'?'testeur':''",
+        "propriétaire·cataloguecomplet",
+        "lerôlepropriétairen’apaspuêtreconfirmé.aucunaccèspropriétairesupplémentairen’estsupposé.",
+    ):
+        if marker not in secondary_library:
+            fail(f"bibliothèque secondaire: sémantique projet incohérente: {marker}")
     if "assets/js/sinjira-library.js" not in workflow:
         fail("CI compte: module bibliothèque secondaire non surveillé")
 
@@ -318,6 +326,7 @@ def main() -> None:
             "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.0\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
             "raccourci Mes achats retiré":("library_html",'<a href="mes-achats.html"><strong>Mes achats</strong>','<a href="licences.html"><strong>Mes achats</strong>'),
             "rôle créateur secondaire revenu côté client":("secondary_library_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
+            "projet public secondaire présenté comme compte":("secondary_library_js","p.visibility==='restricted'?'Accès restreint':p.visibility==='account'?'Inclus avec le compte':'Page publique'","p.visibility==='restricted'?'Accès restreint':'Inclus avec le compte'"),
             "module bibliothèque secondaire hors paths CI":("workflow","assets/js/sinjira-library.js","assets/js/sinjira-library-missing.js"),
             "navigation mobile redevenue absolue":("account_css",".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}",".account-nav-panel{position:absolute;width:min(88vw,320px)}"),
             "barre supérieure Compte redevenue multiple":("account_js","nav.replaceChildren(universe);","nav.append(universe);"),
