@@ -103,6 +103,12 @@ def validate(contents: dict[str, str]) -> None:
         fail("bibliothèque: catalogue roman self-only canonique absent")
     if "functionrendernovels" not in libj:
         fail("bibliothèque: rendu romans absent")
+    if "constfullaccess=boolean(novel.full_access);" not in libj or "fullaccess?" not in libj:
+        fail("bibliothèque: intégrale privée non liée au full_access canonique")
+    if "data-private-book-download" in libj or "functionbookactions" in libj or "functiondownloadprivatebook" in libj:
+        fail("bibliothèque: action privée dupliquée hors catalogue roman")
+    if "accèsauteur" in libj:
+        fail("bibliothèque: rôle créateur encore présenté comme droit numérique privé")
 
     for marker in ("data-purchase-history", "data-purchase-entitlements", "data-creator-portfolio"):
         if marker not in ph:
@@ -223,6 +229,7 @@ def main() -> None:
             "MFA avec ancien cache CSS":("mfa_html","sinjira-player-account.css?v=25.0.1","sinjira-player-account.css?v=24.4.66"),
             "policy projets créateur retirée":("project_owner_migration","projects_owner_catalog_read_v25","projects_owner_catalog_missing"),
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
+            "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
