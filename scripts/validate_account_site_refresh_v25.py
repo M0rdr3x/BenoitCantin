@@ -267,11 +267,19 @@ def validate(contents: dict[str, str]) -> None:
         fail("tableau de bord: état fail-closed du rôle non confirmé absent")
     if "catalogresolved=!all.error" not in dashboard or "cataloguecomplettemporairementindisponible" not in dashboard:
         fail("tableau de bord: échec du catalogue complet owner/admin non signalé")
-    if "renderaccess(projects,isowner,isadmin,roleresolved,catalogresolved)" not in dashboard:
-        fail("tableau de bord: résumé des accès projets non lié au rôle/catalogue résolus")
+    for marker in (
+        "constaccessresolved=!accessresult.error",
+        "letcatalogresolved=false",
+        "renderaccess(projects,isowner,isadmin,roleresolved,catalogresolved,accessresolved)",
+        "renderlibrary(libraryresult.data||[],!libraryresult.error)",
+        "accèsprojetstemporairementindisponibles",
+        "bibliothèquedelecturetemporairementindisponible",
+    ):
+        if marker not in dashboard:
+            fail(f"tableau de bord: dégradation fail-closed absente: {marker}")
     if "assets/js/sinjira-account-dashboard-v24-4-60.js" not in workflow:
         fail("CI compte: module Dashboard dédié non surveillé")
-    if "sinjira-account-dashboard-v24-4-60.js?v=25.0.1" not in contents["account_page:index.html"]:
+    if "sinjira-account-dashboard-v24-4-60.js?v=25.0.2" not in contents["account_page:index.html"]:
         fail("tableau de bord: cache V25 du module dédié absent")
     if "pw.length<12" not in acc or "a.length<12" not in acc:
         fail("authentification: helpers Compte doivent conserver le minimum de 12 caractères")
@@ -467,9 +475,11 @@ def main() -> None:
             "owner retiré du catalogue dashboard":("dashboard_js","if(roleResolved&&(isAdmin||isOwner)){","if(roleResolved&&isAdmin){"),
             "owner rendu dépendant du RPC admin":("dashboard_js","const roleResolved=ownerResolved&&(isOwner||adminResolved);","const roleResolved=ownerResolved&&adminResolved;"),
             "catalogue dashboard déclaré sain à tort":("dashboard_js","catalogResolved=!all.error;","catalogResolved=true;"),
-            "résumé accès dashboard retiré":("dashboard_js","renderAccess(projects,isOwner,isAdmin,roleResolved,catalogResolved);","renderAccess(projects,false,false,true,true);"),
+            "erreur accès dashboard masquée":("dashboard_js","const accessResolved=!accessResult.error;","const accessResolved=true;"),
+            "bibliothèque dashboard erreur masquée":("dashboard_js","renderLibrary(libraryResult.data||[],!libraryResult.error);","renderLibrary(libraryResult.data||[],true);"),
+            "résumé accès dashboard retiré":("dashboard_js","renderAccess(projects,isOwner,isAdmin,roleResolved,catalogResolved,accessResolved);","renderAccess(projects,false,false,true,true,true);"),
             "module Dashboard hors paths CI":("workflow","assets/js/sinjira-account-dashboard-v24-4-60.js","assets/js/sinjira-account-dashboard-missing.js"),
-            "cache Dashboard revenu V24":("account_page:index.html","sinjira-account-dashboard-v24-4-60.js?v=25.0.1","sinjira-account-dashboard-v24-4-60.js?v=24.4.60"),
+            "cache Dashboard revenu V24":("account_page:index.html","sinjira-account-dashboard-v24-4-60.js?v=25.0.2","sinjira-account-dashboard-v24-4-60.js?v=24.4.60"),
             "catalogue littérature masque rôle non résolu":("literature_js","ownerResolved=!ownerResult.error","ownerResolved=true"),
             "lecteur démo revenu à reader_library":("reader_js","from('sinjira_reader_library').select('last_page')","from('reader_library').select('last_page')"),
             "cache catalogue littérature revenu V25.1.0":("literature_html","sinjira-literature-catalog-v25.js?v=25.1.1","sinjira-literature-catalog-v25.js?v=25.1.0"),
