@@ -15,6 +15,12 @@ SELF_TEST_RUN = "        run: python3 scripts/validate_production_migration_hist
 SELF_CHECK_RUN = "        run: python3 scripts/validate_production_migration_history_workflow_security.py"
 LEDGER_CHECK = "python scripts/validate_production_migration_ledger.py"
 TRIGGER_PATH = "      - 'scripts/validate_production_migration_history_workflow_security.py'"
+PLAN_VALIDATOR_TRIGGER = "      - 'scripts/validate_future_migration_review_plan_v25.py'"
+PLAN_DOC_TRIGGER = "      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'"
+REVIEWED_BATCH_TRIGGER = "      - 'supabase/production-reviewed-migration-batch.txt'"
+PLAN_SELF_TEST = "python3 scripts/validate_future_migration_review_plan_v25.py --self-test"
+PLAN_CHECK = "python3 scripts/validate_future_migration_review_plan_v25.py"
+PLAN_COMPILE = "python3 -m py_compile scripts/validate_future_migration_review_plan_v25.py"
 
 
 def validate_text(text: str) -> list[str]:
@@ -47,18 +53,36 @@ def validate_text(text: str) -> list[str]:
 
     if text.count(TRIGGER_PATH) < 2:
         errors.append("Le validateur sécurité doit déclencher les contrôles sur push et pull_request.")
+    for marker, label in (
+        (PLAN_VALIDATOR_TRIGGER, "validateur du plan"),
+        (PLAN_DOC_TRIGGER, "document du plan"),
+        (REVIEWED_BATCH_TRIGGER, "lot reviewed"),
+    ):
+        if text.count(marker) < 2:
+            errors.append(f"{label} doit déclencher le garde sur push et pull_request.")
 
     self_test_at = text.find(SELF_TEST_RUN)
     self_check_at = text.find(SELF_CHECK_RUN + "\n")
+    plan_step_at = text.find("      - name: Vérifier le plan des migrations futures non revues")
     ledger_step_at = text.find("      - name: Verrouiller les migrations historiques")
     if self_test_at < 0:
         errors.append("L'auto-test mutationnel du garde sécurité est absent.")
     if self_check_at < 0:
         errors.append("La validation du workflow est absente.")
+    if plan_step_at < 0:
+        errors.append("L'étape de synchronisation du plan des migrations futures est absente.")
     if ledger_step_at < 0:
         errors.append("L'étape historique de verrouillage des migrations est absente.")
-    if min(self_test_at, self_check_at, ledger_step_at) >= 0 and not self_test_at < self_check_at < ledger_step_at:
-        errors.append("L'ordre doit rester auto-test sécurité → validation sécurité → verrouillage historique.")
+    if min(self_test_at, self_check_at, plan_step_at, ledger_step_at) >= 0 and not self_test_at < self_check_at < plan_step_at < ledger_step_at:
+        errors.append("L'ordre doit rester auto-test sécurité → validation sécurité → plan non revu → verrouillage historique.")
+
+    for fragment, label in (
+        (PLAN_COMPILE, "compilation du validateur du plan"),
+        (PLAN_SELF_TEST, "auto-test du plan"),
+        (PLAN_CHECK + "\n", "validation du plan"),
+    ):
+        if fragment not in text:
+            errors.append(f"Étape plan migrations incomplète: {label}.")
 
     required_fragments = (
         'if [ "${{ github.event_name }}" = "pull_request" ]; then',
@@ -94,6 +118,11 @@ def self_test(valid: str) -> int:
         ("base push retirée", valid.replace('before="${{ github.event.before }}"', 'before=""', 1)),
         ("base-ref ledger retiré", valid.replace('python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF"', LEDGER_CHECK, 1)),
         ("continue-on-error", valid.replace("    timeout-minutes: 5", "    timeout-minutes: 5\n    continue-on-error: true", 1)),
+        ("plan retiré", valid.replace(PLAN_CHECK + "\n", "echo plan-retire\n", 1)),
+        ("auto-test plan retiré", valid.replace(PLAN_SELF_TEST, "echo plan-self-test-retire", 1)),
+        ("trigger plan retiré", valid.replace(PLAN_VALIDATOR_TRIGGER, "      - 'scripts/plan-disabled.py'", 1)),
+        ("trigger document retiré", valid.replace(PLAN_DOC_TRIGGER, "      - 'docs/plan-disabled.md'", 1)),
+        ("trigger reviewed retiré", valid.replace(REVIEWED_BATCH_TRIGGER, "      - 'supabase/reviewed-disabled.txt'", 1)),
     ]
 
     failures: list[str] = []
