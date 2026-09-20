@@ -140,7 +140,7 @@ req("s.rpc('sinjira_my_account_capabilities')" in rc,'Le client des règles Juni
 req("capabilities.junior_community_enabled!==true" in rc and "capabilities.junior_rules_accepted===true" in rc,'Le client des règles ne borne pas activation/acceptation via les capacités serveur.')
 req("if(button)button.disabled=true;" in rules_client,'Le bouton des règles Junior n est pas verrouillé avant validation.')
 req("if(button)button.disabled=false;" in rules_client,'Le bouton des règles Junior n est pas réactivé après validation.')
-req("règles junior déjà acceptées" in rc and "return;" in rules_client,'Le bouton des règles déjà acceptées ne reste pas borné.')
+req("règlesjuniordéjàacceptées" in rc and "return;" in rules_client,'Le bouton des règles déjà acceptées ne reste pas borné.')
 req('sinjira-community-junior-rules-v25.js?v=25.0.3' in rules_page,'Le cache des règles Junior V25.0.3 n est pas forcé.')
 req("p_user_id:user.id" not in c and "p_user_id:user.id" not in rc,'Les clients Junior transmettent encore leur UUID aux RPC d état self-only.')
 req(".from('junior_community_" not in client.lower(),'Le client Junior contourne les RPC avec un accès table direct.')
@@ -186,7 +186,7 @@ for marker,msg in (
     ('<button class="btn btn-primary" disabled type="submit">Ajouter la relation</button>','Le submit Relations HTML n est pas désactivé par défaut.'),
 ):
     req(marker in relations_html,msg)
-req('v24-relations.js?v=25.0.13&amp;rev=junior-alias-private' in relations_html,'Le cache Relations Junior V25.0.13 n est pas forcé.')
+req('v24-relations.js?v=25.0.14&amp;rev=junior-alias-private' in relations_html,'Le cache Relations Junior V25.0.14 n est pas forcé.')
 
 # Navigation fail-closed pour 11–12 : liste blanche explicite, redirections Junior et refus par défaut.
 req("constaccountmode=string(capabilities.account_mode||'restricted')" in a and "capabilities.child_11_12===true" in a and "if(!childaccount)return" in a and "constchild_11_12_allowed_routes=newset([" in a,'La navigation du compte ne borne pas explicitement les routes child via les capacités serveur.')
