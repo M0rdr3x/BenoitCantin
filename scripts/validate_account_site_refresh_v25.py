@@ -137,6 +137,12 @@ def validate(contents: dict[str, str]) -> None:
         fail("achats: lectures propres au compte non bornées")
     if "rendercreatorportfolio" not in pj:
         fail("achats: séparation portefeuille créateur absente")
+    if "rôleducomptenonconfirmé" not in libj or "rôleducomptenonconfirmé" not in pj:
+        fail("rôle créateur: échec de résolution encore masqué comme compte membre")
+    if "consterrors=[ownerresult,adminresult,projectsresult" not in libj:
+        fail("bibliothèque: erreurs de rôle owner/admin non remontées")
+    if "consterrors=[ownerresult,ordersresult,entitlementsresult]" not in pj:
+        fail("achats: erreur de rôle owner non remontée")
 
     if 'name="pseudo"required' not in prof or 'name="email"requiredtype="email"' not in prof:
         fail("profil: pseudo/courriel ne sont pas éditables")
@@ -259,6 +265,8 @@ def main() -> None:
             "module bibliothèque secondaire hors paths CI":("workflow","assets/js/sinjira-library.js","assets/js/sinjira-library-missing.js"),
             "navigation mobile redevenue absolue":("account_css",".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}",".account-nav-panel{position:absolute;width:min(88vw,320px)}"),
             "compteur commandes redevenu ambigu":("purchases_html","Commandes enregistrées","Commandes payées / enregistrées"),
+            "échec rôle créateur masqué en bibliothèque":("library_js","Rôle du compte non confirmé","Compte SINJIRA™"),
+            "échec rôle créateur masqué dans achats":("purchases_js","Rôle du compte non confirmé","Compte membre SINJIRA™"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
