@@ -12,7 +12,8 @@ async function openDoc(id){
 }
 function bindDocs(root=document){root.querySelectorAll('[data-open-document]').forEach(b=>b.addEventListener('click',()=>openDoc(b.dataset.openDocument)))}
 async function accessMap(){
-  const {data}=await getSupabase().from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id);
+  const {data,error}=await getSupabase().from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id);
+  if(error)throw error;
   return new Map(rows(data).map(x=>[x.project_id,x]));
 }
 async function resolveFractureRight(projects,s){
@@ -28,7 +29,13 @@ async function library(){
     s.from('access_requests').select('project_id,requested_level,status').eq('user_id',user.id).eq('status','pending'),
     accessMap()
   ]);
-  const projects=rows(pr.data),docs=rows(dr.data),pending=new Map(rows(rr.data).map(x=>[x.project_id,x])),box=document.querySelector('[data-project-library]');
+  const box=document.querySelector('[data-project-library]');
+  if(pr.error||dr.error||rr.error){
+    if(box)box.innerHTML='<div class="notice"><strong>Bibliothèque temporairement indisponible.</strong><p>Les accès n’ont pas pu être vérifiés; aucun contenu supplémentaire n’est supposé.</p></div>';
+    setStatus(status,'Impossible de vérifier complètement les projets, documents ou demandes. Aucun accès supplémentaire n’a été accordé.','error');
+    return;
+  }
+  const projects=rows(pr.data),docs=rows(dr.data),pending=new Map(rows(rr.data).map(x=>[x.project_id,x]));
   const fractureRight=await resolveFractureRight(projects,s);
   box.innerHTML=projects.map(p=>{
     const a=access.get(p.id),tester=owner||a?.access_level==='tester',pd=docs.filter(d=>d.project_id===p.id).length,waiting=pending.has(p.id);
@@ -63,8 +70,9 @@ async function project(){
   const slug=new URLSearchParams(location.search).get('slug');if(!slug){location.href='/compte/bibliotheque.html';return}
   const s=getSupabase(),projectRequest=s.from('projects').select('*').eq('slug',slug).maybeSingle();
   const accessRequest=childMode?Promise.resolve({data:[],error:null}):s.from('project_access').select('*').eq('user_id',user.id);
-  const [{data:p,error},{data:access}]=await Promise.all([projectRequest,accessRequest]);
+  const [{data:p,error},{data:access,error:accessError}]=await Promise.all([projectRequest,accessRequest]);
   if(error||!p){setStatus(status,childMode?'Ce projet n’est pas approuvé pour les comptes de 11–12 ans.':'Projet introuvable ou non accessible.','error');return}
+  if(accessError&&!childMode)setStatus(status,'Le niveau d’accès au projet n’a pas pu être vérifié. Aucun rôle supplémentaire n’est supposé.','error');
   document.querySelector('[data-project-name]').textContent=p.name;document.querySelector('[data-project-description]').textContent=p.description||'';document.querySelector('[data-project-status]').textContent=projectStatusLabel(p.status);
   const img=document.querySelector('[data-project-cover]');img.src=cover(p);img.alt=`Visuel de ${p.name}`;
   const licensedGame=p.slug==='fracture-du-reseau-mere';
@@ -85,21 +93,34 @@ async function project(){
     ?`<a class="btn btn-secondary" href="licences.html">${productRightVerified?'Activer une licence':'Vérifier mes licences'}</a>`
     :'';
   document.querySelector('[data-project-actions]').innerHTML=`${p.public_path?`<a class="btn btn-secondary" href="${escapeHtml(p.public_path)}">Page publique</a>`:''}${!childMode&&p.play_path&&canPlay?`<a class="btn btn-primary" href="${escapeHtml(p.play_path)}">Jouer</a>`:''}${licenseAction}`;
-  const {data:docs}=await s.from('documents').select('id,title,description,version,document_type,access_level').eq('project_id',p.id).eq('status','approved').order('sort_order');
-  const dl=document.querySelector('[data-project-documents]');dl.innerHTML=rows(docs).map(d=>`<article class="document-row"><div><strong>${escapeHtml(d.title)}</strong><span>${escapeHtml(d.description||'')}</span></div><div class="document-row-meta"><small>v${escapeHtml(d.version||'—')}</small><small>${childMode?'Approuvé 11–12 ans':escapeHtml(roleLabel(d.access_level))}</small><button class="btn btn-secondary btn-small" type="button" data-open-document="${d.id}">Ouvrir</button></div></article>`).join('')||'<p>Aucun document approuvé accessible.</p>';bindDocs(dl);
+  const {data:docs,error:docsError}=await s.from('documents').select('id,title,description,version,document_type,access_level').eq('project_id',p.id).eq('status','approved').order('sort_order');
+  const dl=document.querySelector('[data-project-documents]');
+  if(docsError){
+    if(dl)dl.innerHTML='<p>Documents temporairement indisponibles : les droits n’ont pas pu être vérifiés.</p>';
+    setStatus(status,'Impossible de vérifier les documents du projet.','error');
+  }else if(dl)dl.innerHTML=rows(docs).map(d=>`<article class="document-row"><div><strong>${escapeHtml(d.title)}</strong><span>${escapeHtml(d.description||'')}</span></div><div class="document-row-meta"><small>v${escapeHtml(d.version||'—')}</small><small>${childMode?'Approuvé 11–12 ans':escapeHtml(roleLabel(d.access_level))}</small><button class="btn btn-secondary btn-small" type="button" data-open-document="${d.id}">Ouvrir</button></div></article>`).join('')||'<p>Aucun document approuvé accessible.</p>';bindDocs(dl);
   const playtests=document.querySelector('[data-project-playtests]');
   if(childMode){
     if(playtests)playtests.innerHTML='<p>Les playtests ne sont pas disponibles pour les comptes de 11–12 ans.</p>';
     return;
   }
-  const {data:pts}=await s.from('playtests').select('id,title,description,status,starts_at,ends_at,max_participants').eq('project_id',p.id).in('status',['open','active']).order('starts_at');
-  if(playtests)playtests.innerHTML=rows(pts).map(x=>`<article class="playtest-card"><span class="status-badge">${x.status==='active'?'En cours':'Ouvert'}</span><h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.description||'')}</p><a class="btn btn-secondary" href="/compte/playtests.html#${encodeURIComponent(x.id)}">Voir le playtest</a></article>`).join('')||'<p>Aucun playtest ouvert.</p>';
+  const {data:pts,error:playtestError}=await s.from('playtests').select('id,title,description,status,starts_at,ends_at,max_participants').eq('project_id',p.id).in('status',['open','active']).order('starts_at');
+  if(playtestError){
+    if(playtests)playtests.innerHTML='<p>Playtests temporairement indisponibles : leur visibilité n’a pas pu être vérifiée.</p>';
+    setStatus(status,'Impossible de vérifier les playtests du projet.','error');
+  }else if(playtests)playtests.innerHTML=rows(pts).map(x=>`<article class="playtest-card"><span class="status-badge">${x.status==='active'?'En cours':'Ouvert'}</span><h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.description||'')}</p><a class="btn btn-secondary" href="/compte/playtests.html#${encodeURIComponent(x.id)}">Voir le playtest</a></article>`).join('')||'<p>Aucun playtest ouvert.</p>';
 }
 async function playtests(){
   const s=getSupabase(),[pr,mr]=await Promise.all([
     s.from('playtests').select('id,title,description,status,starts_at,ends_at,max_participants,required_access,projects(name,slug)').in('status',['open','active']).order('starts_at'),
     s.from('playtest_participants').select('playtest_id,status').eq('user_id',user.id)
-  ]),pts=rows(pr.data),mine=rows(mr.data),map=new Map(mine.map(x=>[x.playtest_id,x.status])),list=document.querySelector('[data-playtests-list]');
+  ]),list=document.querySelector('[data-playtests-list]');
+  if(pr.error||mr.error){
+    if(list)list.innerHTML='<div class="notice"><strong>Playtests temporairement indisponibles.</strong><p>Les candidatures et tests ouverts n’ont pas pu être vérifiés; aucune nouvelle action n’est proposée.</p></div>';
+    setStatus(status,'Impossible de vérifier les playtests ou vos candidatures.','error');
+    return;
+  }
+  const pts=rows(pr.data),mine=rows(mr.data),map=new Map(mine.map(x=>[x.playtest_id,x.status]));
   list.innerHTML=pts.map(x=>{const m=map.get(x.id);return `<article class="account-game-card" id="${x.id}"><div class="account-game-card-top"><span class="status-badge">${x.status==='active'?'En cours':'Candidatures ouvertes'}</span><span>${escapeHtml(x.projects?.name||'')}</span></div><h2>${escapeHtml(x.title)}</h2><p>${escapeHtml(x.description||'')}</p><p><strong>Accès requis :</strong> ${escapeHtml(roleLabel(x.required_access||'tester'))}</p><div class="hero-actions">${m?`<span class="role-chip">${escapeHtml({applied:'Candidature envoyée',approved:'Approuvé',refused:'Refusé',completed:'Complété'}[m]||m)}</span>`:`<button class="btn btn-primary" type="button" data-apply-playtest="${x.id}">Poser ma candidature</button>`}</div></article>`}).join('')||'<div class="notice"><strong>Aucun playtest ouvert.</strong></div>';
   list.querySelectorAll('[data-apply-playtest]').forEach(b=>b.addEventListener('click',async()=>{const msg=prompt('Message de candidature (facultatif).')||'';const {error}=await s.from('playtest_participants').insert({playtest_id:b.dataset.applyPlaytest,user_id:user.id,status:'applied',application_message:msg.slice(0,1500)});if(error){setStatus(status,error.message,'error');return}b.outerHTML='<span class="role-chip">Candidature envoyée</span>';setStatus(status,'Candidature transmise.','success')}));
 }
