@@ -41,9 +41,15 @@ update public.projects set child_access_status='blocked_11_12' where id='9100000
 select ok(not public.sinjira_child_document_available('92000000-0000-4000-8000-000000000002'),'bloquer ensuite le projet referme immédiatement le document');
 
 select is(
-  (select count(*) from pg_policies where schemaname='public' and tablename='projects' and cmd='SELECT'),
-  1::bigint,
-  'une seule politique SELECT projets reste active pour éviter un OR permissif'
+  (
+    select string_agg(policyname, ', ' order by policyname)
+    from pg_policies
+    where schemaname='public'
+      and tablename='projects'
+      and cmd='SELECT'
+  ),
+  'projects readable when accessible, projects_owner_catalog_read_v25'::text,
+  'une seule politique générale projets reste active; seule l exception owner V25 explicitement bornée s ajoute'
 );
 select is(
   (select count(*) from pg_policies where schemaname='public' and tablename='documents' and cmd='SELECT'),
