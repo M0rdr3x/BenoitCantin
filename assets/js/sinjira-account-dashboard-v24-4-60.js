@@ -122,9 +122,9 @@ async function loadPrivateDashboard(){
   ]);
 
   const ownerResolved=!ownerResult.error,adminResolved=!adminResult.error;
-  const roleResolved=ownerResolved&&adminResolved;
-  const isAdmin=adminResolved&&adminResult.data===true;
   const isOwner=ownerResolved&&ownerResult.data===true;
+  const isAdmin=adminResolved&&adminResult.data===true;
+  const roleResolved=ownerResolved&&(isOwner||adminResolved);
   setText('[data-account-role]',!roleResolved?'Rôle du compte non confirmé':isOwner?'Propriétaire SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Membre SINJIRA™');
 
   let projects=(accessResult.data||[]).filter(row=>!row.expires_at||new Date(row.expires_at)>new Date());
