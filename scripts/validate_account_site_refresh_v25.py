@@ -101,6 +101,8 @@ def validate(contents: dict[str, str]) -> None:
 
     if "supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql" not in contents["workflow"]:
         fail("CI compte: migration visibilité projets créateur non surveillée")
+    if "supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql" not in contents["workflow"]:
+        fail("CI compte: frontière RPC V25 finale non surveillée")
 
     for marker in ("data-library-games", "data-library-novels", "data-library-other"):
         if marker not in libh:

@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260917223000_sinjira_v25_junior_community.sql'
+BOUNDARY=ROOT/'supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql'
 TEST=ROOT/'supabase/tests/child_community_v25.test.sql'
 PAGE=ROOT/'compte/communaute-junior.html'
 RULES_PAGE=ROOT/'compte/regles-communaute-junior.html'
@@ -33,6 +34,7 @@ def req(condition,message):
         errors.append(message)
 
 mig=read(MIG)
+boundary=read(BOUNDARY)
 test=read(TEST)
 page=read(PAGE)
 rules_page=read(RULES_PAGE)
@@ -48,6 +50,7 @@ admin_edge=read(ADMIN_EDGE)
 admin_client=read(ADMIN_CLIENT)
 
 m=compact(mig)
+b=compact(boundary)
 t=compact(test)
 p=page.lower()
 rp=rules_page.lower()
@@ -80,7 +83,16 @@ req('createorreplacefunctionpublic.has_accepted_junior_community_rules(p_user_id
 req('createorreplacefunctionpublic.sinjira_is_junior(p_user_iduuid' not in m,'Un RPC public permet encore de sonder la bande Junior par UUID.')
 req('createorreplacefunctionpublic.sinjira_my_age_band()' in m and 'securitydefiner' in m[m.find('createorreplacefunctionpublic.sinjira_my_age_band()'):m.find('--helpersarbitraires')],'Le wrapper sinjira_my_age_band n est pas SECURITY DEFINER dans la dernière migration Junior.')
 req('revokeallonfunctionpublic.sinjira_my_age_band()frompublic,anon,authenticated' in m and 'grantexecuteonfunctionpublic.sinjira_my_age_band()toanon,authenticated,service_role' in m,'ACL finale du wrapper self-only incompatible avec les RLS publiques.')
-req('as$self_age$selectpublic.sinjira_age_band(auth.uid());$self_age$;' in m,'Le wrapper sinjira_my_age_band final doit utiliser un délimiteur SQL nommé valide.')
+req('as$self_age$selectpublic.sinjira_age_band(auth.uid());$self_age$;' in m,'Le wrapper sinjira_my_age_band historique doit utiliser un délimiteur SQL nommé valide.')
+for marker in (
+    'createschemaifnotexistssinjira_v25_internal',
+    "'sinjira_my_age_band'",
+    'securityinvoker',
+    'v_count<>23',
+    'v_anon_count<>3',
+):
+    req(marker in b,f'Frontière RPC V25 finale incomplète: {marker}')
+req('20260919123000_sinjira_v25_public_rpc_boundary.sql' in w,'La CI Junior ne surveille pas la frontière RPC V25 finale.')
 
 # Minimisation identité et séparation sociale.
 req("'explorateur-'||upper(substr(md5(" in m,'Le pseudonyme Junior généré côté serveur est absent.')
@@ -156,7 +168,7 @@ req("capabilities.child_11_12===true" in co and "communaute-junior.html" in co a
 # Tests comportementaux.
 req('selectplan(51);' in t,'Plan pgTAP Junior inattendu.')
 req('leparentpeutrévoquerimmédiatementlacommunautéjunior' in t,'La preuve de révocation parentale immédiate est absente.')
-req('wrapperdebandeself-onlyrestesecuritydefineraprèsmigrationjunior' in t,'Le pgTAP ne prouve pas SECURITY DEFINER sur le wrapper self-only final.')
+req('wrapperpublicdebandeself-onlyrestesecurityinvokeretsonimplémentationinternesecuritydefiner' in t,'Le pgTAP ne prouve pas la séparation INVOKER public / DEFINER interne du wrapper self-only final.')
 req('authenticatedconservelewrapperdebandeself-only' in t,'Le pgTAP ne prouve pas l accès authenticated au wrapper self-only final.')
 req('anonconservelewrapperself-onlyrequisparlesrlspubliques' in t,'Le pgTAP ne prouve pas l accès anon self-only requis par les RLS publiques.')
 req('junior_guardian_consent_required' in t and 'aprèsrévocationlefiljuniorestimmédiatementrefusécôtéserveur' in t,'Le fil Junior n est pas prouvé fermé après révocation.')
