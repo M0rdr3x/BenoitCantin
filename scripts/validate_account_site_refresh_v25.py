@@ -310,9 +310,11 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in acc:
             fail(f"compte générique: dégradation fail-closed absente: {marker}")
-    for key in ("account_page:index.html","profile_html","secondary_contributions","account_page:parametres.html","account_page:mes-parties.html"):
+    for key in ("account_page:index.html","profile_html","secondary_contributions","account_page:mes-parties.html"):
         if "sinjira-account.js?v=25.0.2" not in contents[key]:
             fail(f"compte générique: cache V25.0.2 absent dans {key}")
+    if "sinjira-account.js?v=25.0.3" not in contents["account_page:parametres.html"]:
+        fail("paramètres: cache Compte V25.0.3 absent après suppression des handlers dupliqués")
     if "data-export-data" in acc or "data-delete-account" in acc or "delete-player-account" in acc:
         fail("paramètres: export/suppression encore dupliqués dans le module Compte générique")
     for marker in (
@@ -462,7 +464,7 @@ def validate(contents: dict[str, str]) -> None:
     for name, content in contents.items():
         if not name.startswith("secondary_") or not name.endswith(("_lectures","_documents","_playtests","_contributions","_reels","_personnage","_privacy","_blocks","_junior","_project","_report")):
             continue
-        if not any(v in content for v in ("sinjira-account.js?v=25.0.1","sinjira-account.js?v=25.0.2")):
+        if not any(v in content for v in ("sinjira-account.js?v=25.0.1","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.3")):
             fail(f"navigation secondaire: cache JS V25 absent dans {name}")
         if "sinjira-player-account.css?v=25.0.1" not in content:
             fail(f"navigation secondaire: cache CSS V25 absent dans {name}")
@@ -473,7 +475,7 @@ def validate(contents: dict[str, str]) -> None:
         page_compact=compact(content)
         if 'class="account-nav"' not in page_compact:
             continue
-        if not any(v in content for v in ("sinjira-account.js?v=25.0.1","sinjira-account.js?v=25.0.2")):
+        if not any(v in content for v in ("sinjira-account.js?v=25.0.1","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.3")):
             fail(f"navigation compte globale: JS V25 absent dans {name}")
         if "sinjira-player-account.css?v=25.0.1" not in content:
             fail(f"navigation compte globale: CSS V25 absent dans {name}")
@@ -604,7 +606,7 @@ def main() -> None:
             "centre vie privée actif avant auth":("privacy_center_js","setFormLocked(true);","setFormLocked(false);"),
             "centre vie privée confond création et refresh":("privacy_center_js","showStatus('Votre demande a bien été enregistrée, mais le suivi ne peut pas être rafraîchi pour le moment.','info');","showStatus('Impossible d’enregistrer la demande pour le moment.','error');"),
             "cache centre vie privée revenu V24":("secondary_privacy","sinjira-privacy-center-v24-4-83.js?v=25.0.1","sinjira-privacy-center-v24-4-83.js?v=24.4.83"),
-            "cache paramètres revenu V25.0.1":("account_page:parametres.html","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
+            "cache paramètres revenu V25.0.2":("account_page:parametres.html","sinjira-account.js?v=25.0.3","sinjira-account.js?v=25.0.2"),
             "suppression compte revenue à ancienne phrase":("data_control_js","phrase!=='SUPPRIMER MON COMPTE'","phrase!=='SUPPRIMER'"),
             "suppression compte envoie ancienne phrase":("data_control_js","body:{confirm:'SUPPRIMER MON COMPTE'}","body:{confirm:'SUPPRIMER'}"),
             "suppression compte ignore corps d'erreur HTTP":("data_control_js","const responseData=error?(await edgeErrorData(error)):(data||null);","const responseData=data||null;"),
