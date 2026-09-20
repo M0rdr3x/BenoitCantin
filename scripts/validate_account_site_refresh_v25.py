@@ -19,6 +19,7 @@ FILES = {
     "profile_html": ROOT / "compte/profil.html",
     "private_profile_js": ROOT / "assets/js/sinjira-private-profile-v24-5-23.js",
     "account_js": ROOT / "assets/js/sinjira-account.js",
+    "data_control_js": ROOT / "assets/js/v24-data-control.js",
     "dashboard_js": ROOT / "assets/js/sinjira-account-dashboard-v24-4-60.js",
     "account_css": ROOT / "assets/css/sinjira-player-account.css",
     "recovery_js": ROOT / "assets/js/sinjira-recovery-v24-4-99.js",
@@ -67,6 +68,7 @@ def validate(contents: dict[str, str]) -> None:
     prof = compact(contents["profile_html"])
     private_profile = compact(contents["private_profile_js"])
     acc = compact(contents["account_js"])
+    data_control = compact(contents["data_control_js"])
     dashboard = compact(contents["dashboard_js"])
     account_css = compact(contents["account_css"])
     recovery = compact(contents["recovery_js"])
@@ -296,16 +298,6 @@ def validate(contents: dict[str, str]) -> None:
         "impossibledechargerleprofil.leformulaireresteverrouillé",
         "constform=document.queryselector('[data-contribution-form]');if(!form)return;setformenabled(form,false);constuser=awaitrequireuser();",
         "impossibledevérifiervoschoixdecontribution.leformulaireresteverrouillé",
-        "private_profile:s.rpc('private_profile_get')",
-        "if(results.some(result=>result.error))",
-        "aucunearchiveincomplèten’aétégénérée",
-        "result.key==='private_profile'?(result.data?[result.data]:[])",
-        "payload.format='sinjira_user_export_v24'",
-        "écrivezsupprimermoncompte",
-        "confirmation!=='supprimermoncompte'",
-        "functions.invoke('delete-player-account',{body:{confirm:confirmation}})",
-        "if(error||!data?.ok)",
-        "aucuneconfirmationdesuppressionn’aétéreçue",
         "if(sheets.error||endgame.error)",
         "aucunfichierincompletn’aétégénéré",
         "constimportedsheets=(payload.player_sheets||[]).map(",
@@ -317,8 +309,27 @@ def validate(contents: dict[str, str]) -> None:
     for key in ("account_page:index.html","profile_html","secondary_contributions","account_page:parametres.html","account_page:mes-parties.html"):
         if "sinjira-account.js?v=25.0.2" not in contents[key]:
             fail(f"compte générique: cache V25.0.2 absent dans {key}")
-    if "from('private_profiles')" in acc:
+    if "data-export-data" in acc or "data-delete-account" in acc or "delete-player-account" in acc:
+        fail("paramètres: export/suppression encore dupliqués dans le module Compte générique")
+    for marker in (
+        "constexportbutton=document.queryselector('[data-export-data]')",
+        "constdeletebutton=document.queryselector('[data-delete-account]')",
+        "['extended_private','privacy_export_my_extended_data']",
+        "['private_profile','private_profile_get']",
+        "consttotalsteps=entries.length+rpcexports.length",
+        "label.endswith('_legacy')",
+        "complete:errors.length===0",
+        "exportpartieltéléchargé",
+        "supprimermoncompte",
+        "functions.invoke('delete-player-account',{body:{confirm:'supprimermoncompte'}})",
+        "if(!data?.ok)",
+    ):
+        if marker not in data_control:
+            fail(f"paramètres: contrôleur canonique export/suppression incomplet: {marker}")
+    if "from('private_profiles')" in data_control:
         fail("export compte: accès direct au coffre private_profiles interdit")
+    if "v24-data-control.js?v=25.0.1" not in contents["account_page:parametres.html"]:
+        fail("paramètres: cache contrôleur données V25.0.1 absent")
     for marker in (
         "if(form){setbusy(true);awaitrequireuser();try{awaitloadprofile();setbusy(false);",
         "leformulaireresteverrouillétantquevosdonnéesn’ontpasétéchargées",
