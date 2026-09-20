@@ -17,6 +17,7 @@ FILES = {
     "account_js": ROOT / "assets/js/sinjira-account.js",
     "recovery_js": ROOT / "assets/js/sinjira-recovery-v24-4-99.js",
     "reset_html": ROOT / "compte/reinitialiser-mot-de-passe.html",
+    "workflow": ROOT / ".github/workflows/sinjira-account-content-hub-v25.yml",
     "reader_js": ROOT / "assets/js/sinjira-reader.js",
     "comments_js": ROOT / "assets/js/sinjira-account-v18.js",
     "comments_html": ROOT / "compte/mes-commentaires.html",
@@ -53,6 +54,7 @@ def validate(contents: dict[str, str]) -> None:
     acc = compact(contents["account_js"])
     recovery = compact(contents["recovery_js"])
     reset_html = compact(contents["reset_html"])
+    workflow = contents["workflow"]
     reader = compact(contents["reader_js"])
     comments = compact(contents["comments_js"])
     comment_html = compact(contents["comments_html"])
@@ -103,6 +105,8 @@ def validate(contents: dict[str, str]) -> None:
         fail("récupération active: HTML non aligné sur le minimum 12 caractères")
     if "security_after_password_recovery" not in recovery or "signout({scope:'global'})" not in recovery:
         fail("récupération active: nettoyage sécurité ou fermeture globale des sessions absent")
+    if "assets/js/sinjira-recovery-v24-4-99.js" not in workflow:
+        fail("CI compte: le script de récupération sécurisé n'est pas surveillé par le workflow")
 
     for marker in ("appendgroup('bibliothèque'", "appendgroup('univers'", "appendgroup('communauté'", "appendgroup('compte'"):
         if marker not in acc:
@@ -181,6 +185,7 @@ def main() -> None:
             "reset mot de passe revenu à 10":("account_js","a.length<12","a.length<10"),
             "récupération active revenue à 10":("recovery_js","password.length<12","password.length<10"),
             "HTML reset revenu à 10":("reset_html",'minlength="12"','minlength="10"'),
+            "script récupération hors paths CI":("workflow","assets/js/sinjira-recovery-v24-4-99.js","assets/js/sinjira-recovery-missing.js"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
