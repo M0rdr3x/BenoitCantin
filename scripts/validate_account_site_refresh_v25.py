@@ -16,7 +16,11 @@ FILES = {
     "profile_html": ROOT / "compte/profil.html",
     "account_js": ROOT / "assets/js/sinjira-account.js",
     "recovery_js": ROOT / "assets/js/sinjira-recovery-v24-4-99.js",
+    "signup_html": ROOT / "compte/inscription.html",
+    "login_html": ROOT / "compte/connexion.html",
+    "forgot_html": ROOT / "compte/mot-de-passe-oublie.html",
     "reset_html": ROOT / "compte/reinitialiser-mot-de-passe.html",
+    "mfa_html": ROOT / "compte/mfa.html",
     "workflow": ROOT / ".github/workflows/sinjira-account-content-hub-v25.yml",
     "reader_js": ROOT / "assets/js/sinjira-reader.js",
     "comments_js": ROOT / "assets/js/sinjira-account-v18.js",
@@ -53,7 +57,11 @@ def validate(contents: dict[str, str]) -> None:
     prof = compact(contents["profile_html"])
     acc = compact(contents["account_js"])
     recovery = compact(contents["recovery_js"])
+    signup_html = compact(contents["signup_html"])
+    login_html = compact(contents["login_html"])
+    forgot_html = compact(contents["forgot_html"])
     reset_html = compact(contents["reset_html"])
+    mfa_html = compact(contents["mfa_html"])
     workflow = contents["workflow"]
     reader = compact(contents["reader_js"])
     comments = compact(contents["comments_js"])
@@ -103,6 +111,15 @@ def validate(contents: dict[str, str]) -> None:
         fail("récupération active: minimum 12 caractères absent du script sécurisé")
     if 'minlength="12"' not in contents["reset_html"] or "aumoins12caractères" not in reset_html:
         fail("récupération active: HTML non aligné sur le minimum 12 caractères")
+    for auth_name,auth_page in (
+        ("inscription",signup_html),
+        ("connexion",login_html),
+        ("mot de passe oublié",forgot_html),
+        ("réinitialisation",reset_html),
+        ("MFA",mfa_html),
+    ):
+        if "sinjira-player-account.css?v=25.0.1" not in auth_page:
+            fail(f"authentification: cache CSS Compte V25 absent sur {auth_name}")
     if "security_after_password_recovery" not in recovery or "signout({scope:'global'})" not in recovery:
         fail("récupération active: nettoyage sécurité ou fermeture globale des sessions absent")
     if "assets/js/sinjira-recovery-v24-4-99.js" not in workflow:
@@ -186,6 +203,8 @@ def main() -> None:
             "récupération active revenue à 10":("recovery_js","password.length<12","password.length<10"),
             "HTML reset revenu à 10":("reset_html",'minlength="12"','minlength="10"'),
             "script récupération hors paths CI":("workflow","assets/js/sinjira-recovery-v24-4-99.js","assets/js/sinjira-recovery-missing.js"),
+            "inscription avec ancien cache CSS":("signup_html","sinjira-player-account.css?v=25.0.1","sinjira-player-account.css?v=24.4.12"),
+            "MFA avec ancien cache CSS":("mfa_html","sinjira-player-account.css?v=25.0.1","sinjira-player-account.css?v=24.4.66"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
