@@ -17,6 +17,7 @@ FILES = {
     "purchases_html": ROOT / "compte/mes-achats.html",
     "purchases_js": ROOT / "assets/js/sinjira-purchases-v25.js",
     "profile_html": ROOT / "compte/profil.html",
+    "private_profile_js": ROOT / "assets/js/sinjira-private-profile-v24-5-23.js",
     "account_js": ROOT / "assets/js/sinjira-account.js",
     "dashboard_js": ROOT / "assets/js/sinjira-account-dashboard-v24-4-60.js",
     "account_css": ROOT / "assets/css/sinjira-player-account.css",
@@ -64,6 +65,7 @@ def validate(contents: dict[str, str]) -> None:
     ph = compact(contents["purchases_html"])
     pj = compact(contents["purchases_js"])
     prof = compact(contents["profile_html"])
+    private_profile = compact(contents["private_profile_js"])
     acc = compact(contents["account_js"])
     dashboard = compact(contents["dashboard_js"])
     account_css = compact(contents["account_css"])
@@ -264,6 +266,16 @@ def validate(contents: dict[str, str]) -> None:
             fail(f"profil: séparation identité publique/privée non expliquée: {marker}")
     if "auth.updateuser({email}" not in acc:
         fail("profil: mise à jour sécurisée du courriel absente")
+    for marker in (
+        "setbusy(true);try{awaitloadprofile();setbusy(false);",
+        "leformulaireresteverrouillétantquevosdonnéesn’ontpasétéchargées",
+        "if(!loadedsnapshot)",
+        "aucunemodificationn’estenvoyée",
+    ):
+        if marker not in private_profile:
+            fail(f"profil privé: verrou de chargement absent: {marker}")
+    if "sinjira-private-profile-v24-5-23.js?v=25.1.1" not in contents["profile_html"]:
+        fail("profil privé: cache module V25.1.1 absent")
     if "data-stat-reader" in contents["account_js"] or "data-account-role" in contents["account_js"] or "data-project-access-summary" in contents["account_js"]:
         fail("tableau de bord: données privées dupliquées dans le module Compte générique")
     if "from('sinjira_reader_library').select('novel_id,last_opened_at,progress_percent').eq('user_id',user.id)" not in contents["dashboard_js"]:
@@ -501,6 +513,9 @@ def main() -> None:
             "échec droits masqué en zéro":("purchases_js","renderEntitlements(entitlements,entitlementsResolved);","renderEntitlements(entitlements,true);"),
             "cache achats revenu V25.0.1":("purchases_html","sinjira-purchases-v25.js?v=25.0.2","sinjira-purchases-v25.js?v=25.0.1"),
             "nom affiché redevenu ambigu":("profile_html","Nom affiché privé","Nom affiché"),
+            "profil privé sauvegarde sans chargement":("private_profile_js","if(!loadedSnapshot){","if(false){"),
+            "profil privé réactivé après échec de chargement":("private_profile_js","setStatus(status,userMessage(error)+' Le formulaire reste verrouillé tant que vos données n’ont pas été chargées. Rechargez la page pour réessayer.','error');","setBusy(false); setStatus(status,userMessage(error),'error');"),
+            "cache profil privé revenu V25.1.0":("profile_html","sinjira-private-profile-v24-5-23.js?v=25.1.1","sinjira-private-profile-v24-5-23.js?v=25.1.0"),
             "compteur romans suivis retiré":("dashboard_js","setText('[data-stat-reader]',count)","setText('[data-stat-reader]',0)"),
             "rôle dashboard supposé côté client":("dashboard_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "owner retiré du catalogue dashboard":("dashboard_js","if(roleResolved&&(isAdmin||isOwner)){","if(roleResolved&&isAdmin){"),
