@@ -192,6 +192,8 @@ def validate(contents: dict[str, str]) -> None:
         fail("navigation Bibliothèque: routes projet/commentaires non classées")
     if "'regles-communaute.html','regles-communaute-junior.html','moderation.html'" not in acc:
         fail("navigation Communauté: règles/modération non classées")
+    if "details.open=true" not in acc:
+        fail("navigation Compte: la famille de la page courante ne s'ouvre pas automatiquement")
     if ".account-nav-group[open]{grid-column:1/-1}" not in account_css:
         fail("navigation mobile: groupe ouvert ne prend pas toute la largeur")
     if ".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}" not in account_css:
@@ -282,6 +284,7 @@ def main() -> None:
             "module bibliothèque secondaire hors paths CI":("workflow","assets/js/sinjira-library.js","assets/js/sinjira-library-missing.js"),
             "navigation mobile redevenue absolue":("account_css",".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}",".account-nav-panel{position:absolute;width:min(88vw,320px)}"),
             "barre supérieure Compte redevenue multiple":("account_js","nav.replaceChildren(universe);","nav.append(universe);"),
+            "famille courante refermée":("account_js","details.open=true;","details.open=false;"),
             "barre confidentialité redevenue multiple":("privacy_information",'<nav class="main-nav" aria-label="Navigation principale"><a href="/compte/vie-privee.html">Centre Vie privée</a><a href="/compte/inscription.html">Créer un compte</a></nav>','<nav class="main-nav" aria-label="Navigation principale"><a href="/confidentialite.html">Politique générale</a><a href="/compte/vie-privee.html">Centre Vie privée</a><a href="/compte/inscription.html">Créer un compte</a></nav>'),
             "compteur commandes redevenu ambigu":("purchases_html","Commandes enregistrées","Commandes payées / enregistrées"),
             "échec rôle créateur masqué en bibliothèque":("library_js","Rôle du compte non confirmé","Compte SINJIRA™"),
