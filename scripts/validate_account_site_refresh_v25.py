@@ -338,7 +338,7 @@ def validate(contents: dict[str, str]) -> None:
     if "from('private_profiles')" in data_control:
         fail("export compte: accès direct au coffre private_profiles interdit")
     if "v24-data-control.js?v=25.0.2" not in contents["account_page:parametres.html"]:
-        fail("paramètres: cache contrôleur données V25.0.1 absent")
+        fail("paramètres: cache contrôleur données V25.0.2 absent")
     for marker in (
         "functioncreateformlock(form)",
         "constpermanentlydisabled=newset([...form.elements].filter(el=>el.disabled))",
@@ -352,7 +352,7 @@ def validate(contents: dict[str, str]) -> None:
         if marker not in preferences:
             fail(f"paramètres: verrou de chargement préférences absent: {marker}")
     if "v24-preferences.js?v=25.0.2" not in contents["account_page:parametres.html"]:
-        fail("paramètres: cache préférences V25.0.1 absent")
+        fail("paramètres: cache préférences V25.0.2 absent")
     for marker in (
         "setformlocked(true)",
         "authenticated=true",
