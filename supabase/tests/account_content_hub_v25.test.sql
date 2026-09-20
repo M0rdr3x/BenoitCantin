@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(39);
+select plan(41);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -64,6 +64,40 @@ select ok(has_table_privilege('authenticated','public.playtest_participants','SE
 select ok(has_table_privilege('authenticated','public.playtest_participants','INSERT'),'authenticated peut candidater à un playtest');
 select ok(not has_table_privilege('authenticated','public.playtest_participants','UPDATE'),'authenticated ne peut pas approuver une candidature directement');
 select ok(not has_table_privilege('authenticated','public.playtest_participants','DELETE'),'authenticated ne peut pas supprimer arbitrairement une candidature');
+
+select ok(
+  exists(
+    select 1
+    from pg_policies
+    where schemaname='public'
+      and tablename='access_requests'
+      and policyname='requests own insert'
+      and lower(coalesce(with_check,'')) like '%auth.uid%'
+      and lower(coalesce(with_check,'')) like '%user_id%'
+      and lower(coalesce(with_check,'')) like '%sinjira_my_age_band%'
+      and lower(coalesce(with_check,'')) like '%adult%'
+      and lower(coalesce(with_check,'')) like '%youth%'
+      and lower(coalesce(with_check,'')) like '%pending%'
+  ),
+  'INSERT access_requests reste self-only, adulte/youth et pending'
+);
+select ok(
+  exists(
+    select 1
+    from pg_policies
+    where schemaname='public'
+      and tablename='playtest_participants'
+      and policyname='participants own apply'
+      and lower(coalesce(with_check,'')) like '%auth.uid%'
+      and lower(coalesce(with_check,'')) like '%user_id%'
+      and lower(coalesce(with_check,'')) like '%sinjira_my_age_band%'
+      and lower(coalesce(with_check,'')) like '%adult%'
+      and lower(coalesce(with_check,'')) like '%youth%'
+      and lower(coalesce(with_check,'')) like '%applied%'
+  ),
+  'INSERT playtest_participants reste self-only, adulte/youth et applied'
+);
+
 select ok(has_table_privilege('authenticated','public.extensions','SELECT'),'authenticated peut lire les extensions publiées sous RLS');
 select ok(has_table_privilege('anon','public.extensions','SELECT'),'anon peut lire les extensions publiques sous RLS');
 
