@@ -386,7 +386,10 @@ function enhanceAccountNavigation(){
       links.forEach(link=>used.add(link));
       const details=document.createElement('details');details.className='account-nav-group';
       const summary=document.createElement('summary');summary.textContent=label;
-      if(links.some(link=>link.getAttribute('aria-current')==='page'))details.classList.add('is-current');
+      if(links.some(link=>link.getAttribute('aria-current')==='page')){
+        details.classList.add('is-current');
+        details.open=true;
+      }
       const panel=document.createElement('div');panel.className='account-nav-panel';
       links.forEach(link=>panel.append(link));details.append(summary,panel);nav.append(details);
     };
