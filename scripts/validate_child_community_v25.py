@@ -152,12 +152,13 @@ req('asyncfunctionrefreshfeedafteraction(successmessage,stalemessage)' in c,'Les
 for marker,msg in (
     ('publicationajoutée,maislefilnepeutpasêtrerafraîchi','La création de publication peut encore devenir un faux échec après rafraîchissement.'),
     ('commentaireajouté,maislefilnepeutpasêtrerafraîchi','La création de commentaire peut encore devenir un faux échec après rafraîchissement.'),
-    ('signalementenregistréetpersonnemasquée,maislefilnepeutpasêtrerafraîchi','Le signalement Junior peut encore être présenté comme échoué après succès.'),
+    ('signalementenregistréetpersonnemasquée.lefilesttemporairementferméjusqu’àsonprochainrafraîchissement','Le signalement Junior ne ferme pas le fil stale après succès sans rafraîchissement.'),
+    ('filtemporairementmasqué','Le fil Junior ne masque pas le contenu stale après signalement confirmé.'),
     ('publicationsupprimée,maislefilnepeutpasêtrerafraîchi','La suppression de publication peut encore devenir un faux échec.'),
     ('commentairesupprimé,maislefilnepeutpasêtrerafraîchi','La suppression de commentaire peut encore devenir un faux échec.'),
 ):
     req(marker in c,msg)
-req('sinjira-community-junior-v25.js?v=25.0.4&rev=child-access-matrix' in page,'Le cache Communauté Junior V25.0.4 n est pas forcé.')
+req('sinjira-community-junior-v25.js?v=25.0.5&rev=child-access-matrix' in page,'Le cache Communauté Junior V25.0.5 n est pas forcé.')
 req('<textarea disabled maxlength="500" name="body"' in page,'Le compositeur Junior HTML n est pas fail-closed sans JavaScript.')
 req('<button class="btn btn-primary" disabled type="submit">Publier</button>' in page,'Le bouton Publier Junior HTML n est pas désactivé par défaut.')
 req('data-junior-rules-accept disabled' in rules_page,'Le bouton des règles Junior HTML n est pas désactivé par défaut.')
