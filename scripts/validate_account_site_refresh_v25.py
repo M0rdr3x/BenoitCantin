@@ -340,6 +340,9 @@ def validate(contents: dict[str, str]) -> None:
         "setlocked(true)",
         "setlocked(false)",
         "if(save&&tablemissing(save)){ready=false;setlocked(true)}",
+        "if(table==='privacy_settings'&&form.elements.allow_ai_personal_data)",
+        "form.elements.allow_ai_personal_data.checked=false",
+        "if(table==='privacy_settings')payload.allow_ai_personal_data=false",
     ):
         if marker not in preferences:
             fail(f"paramètres: verrou de chargement préférences absent: {marker}")
@@ -593,6 +596,7 @@ def main() -> None:
             "cache contrôleur données revenu V24":("account_page:parametres.html","v24-data-control.js?v=25.0.1","v24-data-control.js?v=24.4.83"),
             "préférences réactivées avant chargement":("preferences_js","setLocked(true);","setLocked(false);"),
             "préférences réactivent les champs permanents":("preferences_js","if(permanentlyDisabled.has(el)){el.disabled=true;continue}","if(permanentlyDisabled.has(el)){el.disabled=false;continue}"),
+            "préférence IA personnelle réactivée":("preferences_js","if(table==='privacy_settings')payload.allow_ai_personal_data=false;","if(table==='privacy_settings')payload.allow_ai_personal_data=true;"),
             "cache préférences revenu V24":("account_page:parametres.html","v24-preferences.js?v=25.0.1","v24-preferences.js?v=24.4.70"),
             "centre vie privée actif avant auth":("privacy_center_js","setFormLocked(true);","setFormLocked(false);"),
             "centre vie privée confond création et refresh":("privacy_center_js","showStatus('Votre demande a bien été enregistrée, mais le suivi ne peut pas être rafraîchi pour le moment.','info');","showStatus('Impossible d’enregistrer la demande pour le moment.','error');"),
