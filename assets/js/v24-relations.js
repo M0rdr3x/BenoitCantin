@@ -13,6 +13,7 @@ const guardianNeutralTools=document.querySelector('[data-guardian-neutral-tools]
 const juniorCommunityChildren=document.querySelector('[data-junior-community-children]');
 const redeemInput=document.querySelector('[data-redeem-guardian-code]');
 const redeemButton=document.querySelector('[data-redeem-guardian-code-button]');
+for(const el of form?.elements||[])el.disabled=true;
 const user=await requireUser();
 const s=getSupabase();
 const CODE_RE=/^YOUTH-[A-Z0-9]{10}$/;
@@ -266,16 +267,38 @@ redeemButton?.addEventListener('click',async()=>{
 });
 
 if(form&&list){
-  let ready=true;
-  function setFormReady(value){ready=value;for(const el of form.elements){if(el.type==='submit'||el.tagName==='BUTTON')el.disabled=!value}}
+  let ready=false;
+  function setFormReady(value){ready=value;for(const el of form.elements)el.disabled=!value}
   async function render(){
+    setFormReady(false);
     const {data,error}=await s.from('family_relationships').select('*').eq('owner_user_id',user.id).order('created_at',{ascending:true});
-    if(error){ready=!serverMissing(error);setFormReady(ready);list.innerHTML=serverMissing(error)?'<div class="v2433-server-note"><strong>Relations privées en préparation</strong><br>Le serveur doit encore être synchronisé pour cette section.</div>':'<div class="v24-empty">Impossible de charger vos relations privées.</div>';return}
+    if(error){
+      list.innerHTML=serverMissing(error)?'<div class="v2433-server-note"><strong>Relations privées en préparation</strong><br>Le serveur doit encore être synchronisé pour cette section.</div>':'<div class="v24-empty">Impossible de charger vos relations privées.</div>';
+      return false;
+    }
     setFormReady(true);const rows=Array.isArray(data)?data:[];
     list.innerHTML=rows.length?rows.map(x=>`<article class="v24-panel"><strong>${escapeHtml(x.relationship_type)}</strong><p>${escapeHtml(x.relative_name)}</p>${x.since_date?`<small>Depuis ${escapeHtml(x.since_date)}</small>`:''}<div class="hero-actions"><button class="btn btn-secondary btn-small" type="button" data-delete-relation="${x.id}">Retirer</button></div></article>`).join(''):'<div class="v24-empty">Aucune relation enregistrée.</div>';
-    list.querySelectorAll('[data-delete-relation]').forEach(b=>b.addEventListener('click',async()=>{if(!confirm('Retirer cette relation de votre profil privé?'))return;const {error}=await s.from('family_relationships').delete().eq('id',b.dataset.deleteRelation).eq('owner_user_id',user.id);if(error){setStatus(status,'Impossible de retirer cette relation.','error');return}await render()}));
+    list.querySelectorAll('[data-delete-relation]').forEach(b=>b.addEventListener('click',async()=>{
+      if(!confirm('Retirer cette relation de votre profil privé?'))return;
+      const {error}=await s.from('family_relationships').delete().eq('id',b.dataset.deleteRelation).eq('owner_user_id',user.id);
+      if(error){setStatus(status,'Impossible de retirer cette relation.','error');return}
+      const refreshed=await render();
+      setStatus(status,refreshed?'Relation retirée de votre espace privé.':'Relation retirée, mais la liste ne peut pas être rafraîchie pour le moment.',refreshed?'success':'info');
+    }));
+    return true;
   }
-  form.addEventListener('submit',async e=>{e.preventDefault();if(!ready){setStatus(status,'Enregistrement temporairement indisponible.','info');return}const d=new FormData(form),relativeName=String(d.get('relative_name')||'').trim(),relationshipType=String(d.get('relationship_type')||'').trim();if(!relationshipType||!relativeName){setStatus(status,'Choisissez le type de relation et indiquez un nom ou un pseudo.','error');return}const payload={owner_user_id:user.id,relationship_type:relationshipType,relative_name:relativeName,since_date:d.get('since_date')||null,until_date:d.get('until_date')||null,private_note:String(d.get('private_note')||'').trim()||null,status:'private_record'};const {error}=await s.from('family_relationships').insert(payload);if(error){setStatus(status,error.message||'Impossible d’ajouter cette relation.','error');return}form.reset();setStatus(status,'Relation ajoutée dans votre espace privé.','success');await render()});
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(!ready){setStatus(status,'Enregistrement temporairement indisponible.','info');return}
+    const d=new FormData(form),relativeName=String(d.get('relative_name')||'').trim(),relationshipType=String(d.get('relationship_type')||'').trim();
+    if(!relationshipType||!relativeName){setStatus(status,'Choisissez le type de relation et indiquez un nom ou un pseudo.','error');return}
+    const payload={owner_user_id:user.id,relationship_type:relationshipType,relative_name:relativeName,since_date:d.get('since_date')||null,until_date:d.get('until_date')||null,private_note:String(d.get('private_note')||'').trim()||null,status:'private_record'};
+    const {error}=await s.from('family_relationships').insert(payload);
+    if(error){setStatus(status,error.message||'Impossible d’ajouter cette relation.','error');return}
+    form.reset();
+    const refreshed=await render();
+    setStatus(status,refreshed?'Relation ajoutée dans votre espace privé.':'Relation ajoutée, mais la liste ne peut pas être rafraîchie pour le moment.',refreshed?'success':'info');
+  });
   await render();
 }
 await refreshAgeBand();
