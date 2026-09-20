@@ -109,6 +109,18 @@ def validate(contents: dict[str, str]) -> None:
         fail("CI compte: convergence des privilèges catalogue navigateur non surveillée")
 
     for marker in (
+        "createschemaifnotexistssinjira_catalog_internal",
+        "alterfunctionpublic.project_access_rank(uuid,uuid)setschemasinjira_catalog_internal",
+        "grantexecuteonfunctionsinjira_catalog_internal.project_access_rank(uuid,uuid)toanon,authenticated,service_role",
+        "createfunctionpublic.project_access_rank(",
+        "securityinvoker",
+        "revokeallonfunctionpublic.project_access_rank(uuid,uuid)frompublic,anon,authenticated",
+        "grantexecuteonfunctionpublic.project_access_rank(uuid,uuid)toservice_role",
+    ):
+        if marker not in browser_privileges:
+            fail(f"migration privilèges catalogue: frontière project_access_rank absente: {marker}")
+
+    for marker in (
         "revokeallontablepublic.projectsfromanon,authenticated",
         "grantselectontablepublic.projectstoanon,authenticated",
         "revokeallontablepublic.project_accessfromanon,authenticated",
@@ -338,8 +350,8 @@ def validate(contents: dict[str, str]) -> None:
     if "from('sinjira_novels')" not in contents["literature_js"]:
         fail("littérature: fallback public anonyme canonique absent")
 
-    if "selectplan(30);" not in test:
-        fail("pgTAP contenu: plan(30) absent")
+    if "selectplan(39);" not in test:
+        fail("pgTAP contenu: plan(39) absent")
     for marker in (
         "lapolicyprojetsowner-onlyv25existe",
         "authenticatedpeutlireprojectssousrls",
@@ -354,6 +366,10 @@ def validate(contents: dict[str, str]) -> None:
         "lecréateurvoit sonprojetinternesansfauxachat".replace(" ", ""),
         "unmembrevoitencoreunproduitinactifliéàsonentitlement",
         "unmembrevoitencoreunproduitinactifprésentdanssapropcommande".replace("propcommande", "proprecommande"),
+        "schémainternecatalogueexiste",
+        "project_access_rankpublicestunwrappersecurityinvoker",
+        "authenticatednepeutpassonderdirectementlerangprojet",
+        "lespoliciesprojects/documentsconserventloiddhelperdéplacé".replace("dhelper","duhelper"),
         "lecréateurvoitsonromanbrouillon",
         "lesangdusauveurestprésentdanslecatalogueromancanonique",
     ):
