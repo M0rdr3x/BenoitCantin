@@ -296,12 +296,19 @@ def validate(contents: dict[str, str]) -> None:
         "impossibledechargerleprofil.leformulaireresteverrouillé",
         "constuser=awaitrequireuser(),form=document.queryselector('[data-contribution-form]');if(!form)return;setformenabled(form,false);",
         "impossibledevérifiervoschoixdecontribution.leformulaireresteverrouillé",
+        "private_profile:s.rpc('private_profile_get')",
+        "if(results.some(result=>result.error))",
+        "aucunearchiveincomplèten’aétégénérée",
+        "result.key==='private_profile'?(result.data?[result.data]:[])",
+        "payload.format='sinjira_user_export_v24'",
     ):
         if marker not in acc:
             fail(f"compte générique: dégradation fail-closed absente: {marker}")
-    for key in ("account_page:index.html","profile_html","secondary_contributions"):
+    for key in ("account_page:index.html","profile_html","secondary_contributions","account_page:parametres.html"):
         if "sinjira-account.js?v=25.0.2" not in contents[key]:
             fail(f"compte générique: cache V25.0.2 absent dans {key}")
+    if "from('private_profiles')" in acc:
+        fail("export compte: accès direct au coffre private_profiles interdit")
     for marker in (
         "setbusy(true);try{awaitloadprofile();setbusy(false);",
         "leformulaireresteverrouillétantquevosdonnéesn’ontpasétéchargées",
@@ -524,6 +531,10 @@ def main() -> None:
             "contributions non verrouillées au chargement":("account_js","const user=await requireUser(),form=document.querySelector('[data-contribution-form]');if(!form)return;\n  setFormEnabled(form,false);","const user=await requireUser(),form=document.querySelector('[data-contribution-form]');if(!form)return;"),
             "cache compte profil revenu V25.0.1":("profile_html","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
             "cache compte contributions revenu V25.0.1":("secondary_contributions","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
+            "export coffre revenu en accès table direct":("account_js","private_profile:s.rpc('private_profile_get')","private_profile:s.from('private_profiles').select('*').eq('user_id',user.id)"),
+            "export données masque une erreur":("account_js","if(results.some(result=>result.error)){","if(false){"),
+            "export coffre change la forme V24":("account_js","result.key==='private_profile'?(result.data?[result.data]:[])","result.key==='private_profile'?(result.data||{}):(result.data??[])"),
+            "cache paramètres revenu V25.0.1":("account_page:parametres.html","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
             "modération renvoyée vers Plus":("account_js","'regles-communaute.html','regles-communaute-junior.html','moderation.html'","'regles-communaute.html','regles-communaute-junior.html'"),
             "reset mot de passe revenu à 10":("account_js","a.length<12","a.length<10"),
             "récupération active revenue à 10":("recovery_js","password.length<12","password.length<10"),
