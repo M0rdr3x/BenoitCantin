@@ -200,6 +200,8 @@ def run() -> None:
         assert_true("from('novel_comments')" not in reader_js, f"{BROWSER_NAME}: ancien novel_comments encore utilisé dans Littérature")
         assert_true("from('sinjira_reader_library').select('last_page')" in reader_js, f"{BROWSER_NAME}: reprise de lecture n’utilise pas sinjira_reader_library")
         assert_true("from('reader_library')" not in reader_js, f"{BROWSER_NAME}: ancienne table reader_library encore utilisée pour la reprise")
+        assert_true("return {synced:!error,error:error||null}" in reader_js, f"{BROWSER_NAME}: l’échec de synchronisation progression est encore ignoré")
+        assert_true("synchronisation du compte indisponible" in reader_js, f"{BROWSER_NAME}: état de progression non synchronisée absent")
 
         account_comments_response = context.request.get(urljoin(BASE_URL, ACCOUNT_COMMENTS_JS_ROUTE), timeout=30_000)
         assert_true(account_comments_response.status < 400, f"{BROWSER_NAME}: client Mes commentaires inaccessible")
