@@ -174,12 +174,20 @@ try{
     cancelButton.disabled=true;
     if(factorId){
       const {error}=await s.auth.mfa.unenroll({factorId});
-      if(error)console.warn('[SINJIRA MFA cancel]',error);
+      if(error){
+        cancelButton.disabled=false;
+        setStatus(status,'Impossible d’annuler cet enrôlement TOTP pour le moment. Le facteur temporaire n’est pas considéré comme supprimé.','error');
+        return;
+      }
     }
     hideSetup();
     cancelButton.disabled=false;
-    await loadFactors(s).catch(()=>{});
-    setStatus(status,'Activation TOTP annulée.','info');
+    try{
+      await loadFactors(s);
+      setStatus(status,'Activation TOTP annulée.','info');
+    }catch(error){
+      setStatus(status,'Activation TOTP annulée, mais l’état des facteurs ne peut pas être rafraîchi pour le moment.','info');
+    }
   });
 }catch(error){
   console.warn('[SINJIRA security]',error);
