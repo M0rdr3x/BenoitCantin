@@ -142,6 +142,18 @@ req("p_user_id:user.id" not in c and "p_user_id:user.id" not in rc,'Les clients 
 req(".from('junior_community_" not in client.lower(),'Le client Junior contourne les RPC avec un accès table direct.')
 req("capabilities.child_11_12!==true" in c,'Le client Junior ne vérifie pas la capacité child_11_12.')
 req("location.replace('/compte/communaute.html')" in c,'Le client Junior ne renvoie pas les autres âges vers leur communauté.')
+req('setcomposerenabled(false)' in c,'Le formulaire Junior n est pas verrouillé avant validation des capacités.')
+req('setcomposerenabled(true)' in c,'Le formulaire Junior n est pas réactivé après validation.')
+req('asyncfunctionrefreshfeedafteraction(successmessage,stalemessage)' in c,'Les mutations Junior ne séparent pas succès serveur et rafraîchissement du fil.')
+for marker,msg in (
+    ('publicationajoutée,maislefilnepeutpasêtrerafraîchi','La création de publication peut encore devenir un faux échec après rafraîchissement.'),
+    ('commentaireajouté,maislefilnepeutpasêtrerafraîchi','La création de commentaire peut encore devenir un faux échec après rafraîchissement.'),
+    ('signalementenregistréetpersonnemasquée,maislefilnepeutpasêtrerafraîchi','Le signalement Junior peut encore être présenté comme échoué après succès.'),
+    ('publicationsupprimée,maislefilnepeutpasêtrerafraîchi','La suppression de publication peut encore devenir un faux échec.'),
+    ('commentairesupprimé,maislefilnepeutpasêtrerafraîchi','La suppression de commentaire peut encore devenir un faux échec.'),
+):
+    req(marker in c,msg)
+req('sinjira-community-junior-v25.js?v=25.0.4&rev=child-access-matrix' in page,'Le cache Communauté Junior V25.0.4 n est pas forcé.')
 
 # Règles Junior et activation parent.
 req('pas de messages privés' in rp and 'pas de rencontre privée' in rp and 'pas d’argent ni de commerce' in rp,'Les règles Junior sont incomplètes.')
