@@ -17,6 +17,7 @@ FILES = {
     "purchases_js": ROOT / "assets/js/sinjira-purchases-v25.js",
     "profile_html": ROOT / "compte/profil.html",
     "account_js": ROOT / "assets/js/sinjira-account.js",
+    "dashboard_js": ROOT / "assets/js/sinjira-account-dashboard-v24-4-60.js",
     "account_css": ROOT / "assets/css/sinjira-player-account.css",
     "recovery_js": ROOT / "assets/js/sinjira-recovery-v24-4-99.js",
     "signup_html": ROOT / "compte/inscription.html",
@@ -61,6 +62,7 @@ def validate(contents: dict[str, str]) -> None:
     pj = compact(contents["purchases_js"])
     prof = compact(contents["profile_html"])
     acc = compact(contents["account_js"])
+    dashboard = compact(contents["dashboard_js"])
     account_css = compact(contents["account_css"])
     recovery = compact(contents["recovery_js"])
     signup_html = compact(contents["signup_html"])
@@ -159,16 +161,22 @@ def validate(contents: dict[str, str]) -> None:
             fail(f"profil: séparation identité publique/privée non expliquée: {marker}")
     if "auth.updateuser({email}" not in acc:
         fail("profil: mise à jour sécurisée du courriel absente")
-    if "from('sinjira_reader_library').select('novel_id').eq('user_id',user.id)" not in contents["account_js"]:
+    if "data-stat-reader" in contents["account_js"] or "data-account-role" in contents["account_js"] or "data-project-access-summary" in contents["account_js"]:
+        fail("tableau de bord: données privées dupliquées dans le module Compte générique")
+    if "from('sinjira_reader_library').select('novel_id,last_opened_at,progress_percent').eq('user_id',user.id)" not in contents["dashboard_js"]:
         fail("tableau de bord: source self-only des romans suivis absente")
-    if "set('[data-stat-reader]',reads.length)" not in contents["account_js"]:
+    if "settext('[data-stat-reader]',count)" not in dashboard:
         fail("tableau de bord: compteur Romans suivis non alimenté")
-    if "set('[data-account-role]'" not in contents["account_js"] or "s.rpc('is_sinjira_owner',{p_user_id:user.id})" not in contents["account_js"] or "s.rpc('is_sinjira_admin',{p_user_id:user.id})" not in contents["account_js"]:
+    if "s.rpc('is_sinjira_owner',{p_user_id:user.id})" not in contents["dashboard_js"] or "s.rpc('is_sinjira_admin',{p_user_id:user.id})" not in contents["dashboard_js"]:
         fail("tableau de bord: rôle du compte non résolu côté serveur")
-    if "set('[data-project-access-summary]'" not in contents["account_js"]:
-        fail("tableau de bord: résumé des accès projets non alimenté")
-    if "rôleducomptenonconfirmé" not in acc:
+    if "roleresolved&&(isadmin||isowner)" not in dashboard:
+        fail("tableau de bord: catalogue complet owner/admin non chargé")
+    if "rôleducomptenonconfirmé" not in dashboard:
         fail("tableau de bord: état fail-closed du rôle non confirmé absent")
+    if "renderaccess(projects,isowner,isadmin,roleresolved)" not in dashboard:
+        fail("tableau de bord: résumé des accès projets non lié au rôle résolu")
+    if "assets/js/sinjira-account-dashboard-v24-4-60.js" not in workflow:
+        fail("CI compte: module Dashboard dédié non surveillé")
     if "pw.length<12" not in acc or "a.length<12" not in acc:
         fail("authentification: helpers Compte doivent conserver le minimum de 12 caractères")
     if "a.length<10" in acc or "au moins 10 caractères" in acc:
@@ -305,9 +313,11 @@ def main() -> None:
             "échec rôle créateur masqué en bibliothèque":("library_js","Rôle du compte non confirmé","Compte SINJIRA™"),
             "échec rôle créateur masqué dans achats":("purchases_js","Rôle du compte non confirmé","Compte membre SINJIRA™"),
             "nom affiché redevenu ambigu":("profile_html","Nom affiché privé","Nom affiché"),
-            "compteur romans suivis retiré":("account_js","set('[data-stat-reader]',reads.length)","set('[data-stat-reader]',0)"),
-            "rôle dashboard supposé côté client":("account_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
-            "résumé accès dashboard retiré":("account_js","set('[data-project-access-summary]'","set('[data-project-access-summary-missing]'"),
+            "compteur romans suivis retiré":("dashboard_js","setText('[data-stat-reader]',count)","setText('[data-stat-reader]',0)"),
+            "rôle dashboard supposé côté client":("dashboard_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
+            "owner retiré du catalogue dashboard":("dashboard_js","if(roleResolved&&(isAdmin||isOwner)){","if(roleResolved&&isAdmin){"),
+            "résumé accès dashboard retiré":("dashboard_js","renderAccess(projects,isOwner,isAdmin,roleResolved);","renderAccess(projects,false,false,true);"),
+            "module Dashboard hors paths CI":("workflow","assets/js/sinjira-account-dashboard-v24-4-60.js","assets/js/sinjira-account-dashboard-missing.js"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
