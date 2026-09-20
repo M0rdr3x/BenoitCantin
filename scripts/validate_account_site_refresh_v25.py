@@ -177,6 +177,8 @@ def validate(contents: dict[str, str]) -> None:
         fail("tableau de bord: compteur Romans suivis non alimenté")
     if "s.rpc('is_sinjira_owner',{p_user_id:user.id})" not in contents["dashboard_js"] or "s.rpc('is_sinjira_admin',{p_user_id:user.id})" not in contents["dashboard_js"]:
         fail("tableau de bord: rôle du compte non résolu côté serveur")
+    if "roleresolved=ownerresolved&&(isowner||adminresolved)" not in dashboard:
+        fail("tableau de bord: owner confirmé dépend encore inutilement du RPC admin")
     if "roleresolved&&(isadmin||isowner)" not in dashboard:
         fail("tableau de bord: catalogue complet owner/admin non chargé")
     if "rôleducomptenonconfirmé" not in dashboard:
@@ -329,6 +331,7 @@ def main() -> None:
             "compteur romans suivis retiré":("dashboard_js","setText('[data-stat-reader]',count)","setText('[data-stat-reader]',0)"),
             "rôle dashboard supposé côté client":("dashboard_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "owner retiré du catalogue dashboard":("dashboard_js","if(roleResolved&&(isAdmin||isOwner)){","if(roleResolved&&isAdmin){"),
+            "owner rendu dépendant du RPC admin":("dashboard_js","const roleResolved=ownerResolved&&(isOwner||adminResolved);","const roleResolved=ownerResolved&&adminResolved;"),
             "catalogue dashboard déclaré sain à tort":("dashboard_js","catalogResolved=!all.error;","catalogResolved=true;"),
             "résumé accès dashboard retiré":("dashboard_js","renderAccess(projects,isOwner,isAdmin,roleResolved,catalogResolved);","renderAccess(projects,false,false,true,true);"),
             "module Dashboard hors paths CI":("workflow","assets/js/sinjira-account-dashboard-v24-4-60.js","assets/js/sinjira-account-dashboard-missing.js"),
