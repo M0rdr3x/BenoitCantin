@@ -8,9 +8,13 @@ function setHtml(selector,html){
   if(node)node.innerHTML=html;
 }
 
-function renderOrders(orders){
+function renderOrders(orders,resolved=true){
   const box=document.querySelector('[data-purchase-history]');
   if(!box)return;
+  if(!resolved){
+    box.innerHTML='<div class="notice"><strong>Historique temporairement indisponible.</strong><p>Les commandes n’ont pas pu être vérifiées; aucune absence d’achat n’est déduite.</p></div>';
+    return;
+  }
   box.innerHTML=orders.length?orders.map(order=>{
     const items=rows(order.order_items);
     const itemHtml=items.length?items.map(item=>{
@@ -22,9 +26,13 @@ function renderOrders(orders){
   }).join(''):'<div class="notice"><strong>Aucune commande enregistrée.</strong><p>Les commandes associées à votre compte apparaîtront ici avec leur statut. Une précommande sans paiement reste séparée.</p></div>';
 }
 
-function renderEntitlements(entitlements){
+function renderEntitlements(entitlements,resolved=true){
   const box=document.querySelector('[data-purchase-entitlements]');
   if(!box)return;
+  if(!resolved){
+    box.innerHTML='<div class="notice"><strong>Droits numériques temporairement indisponibles.</strong><p>Les droits du compte n’ont pas pu être vérifiés; aucun accès supplémentaire n’est accordé ou retiré.</p></div>';
+    return;
+  }
   box.innerHTML=entitlements.length?entitlements.map(row=>{
     const product=row.products;
     return `<article class="account-content-row"><div><strong>${escapeHtml(product?.name||'Droit numérique SINJIRA™')}</strong><small>${escapeHtml(product?.product_type||'accès')} · source : ${escapeHtml(row.source||'compte')} · attribué ${escapeHtml(formatDate(row.granted_at))}</small></div><span class="role-chip">Accès actif</span></article>`;
@@ -64,13 +72,14 @@ async function init(){
 
   const orders=rows(ordersResult.data);
   const entitlements=rows(entitlementsResult.data);
-  renderOrders(orders);
-  renderEntitlements(entitlements);
+  const ordersResolved=!ordersResult.error,entitlementsResolved=!entitlementsResult.error;
+  renderOrders(orders,ordersResolved);
+  renderEntitlements(entitlements,entitlementsResolved);
 
   const orderCount=document.querySelector('[data-paid-order-count]');
   const rightsCount=document.querySelector('[data-purchase-right-count]');
-  if(orderCount)orderCount.textContent=String(orders.length);
-  if(rightsCount)rightsCount.textContent=String(entitlements.length);
+  if(orderCount)orderCount.textContent=ordersResolved?String(orders.length):'—';
+  if(rightsCount)rightsCount.textContent=entitlementsResolved?String(entitlements.length):'—';
 
   const ownerResolved=!ownerResult.error;
   const isOwner=ownerResolved&&ownerResult.data===true;
