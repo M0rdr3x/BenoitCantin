@@ -15,6 +15,7 @@ on:
       - 'scripts/validate_site.py'
       - 'assets/js/sinjira-account.js'
       - 'assets/js/v24-data-control.js'
+      - 'assets/js/v24-preferences.js'
       - 'assets/js/sinjira-account-dashboard-v24-4-60.js'
       - 'assets/js/sinjira-recovery-v24-4-99.js'
       - 'assets/js/sinjira-library-v24-4-61.js'
