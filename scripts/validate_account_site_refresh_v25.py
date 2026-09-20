@@ -125,6 +125,19 @@ def validate(contents: dict[str, str]) -> None:
         fail("bibliothèque: action privée dupliquée hors catalogue roman")
     if "accèsauteur" in libj:
         fail("bibliothèque: rôle créateur encore présenté comme droit numérique privé")
+    for marker in (
+        "constrequiresproductright=project.slug==='fracture-du-reseau-mere';",
+        "constproductright=isowner||entitledproductslugs.has(project.slug);",
+        "droitnumériqueactif",
+        "droitdejeurequis",
+        "droitdejeunonvérifié",
+        "project.play_path&&canplay",
+        "entitlements,!entitlementsresult.error",
+        "activerunelicence",
+        "vérifiermeslicences",
+    ):
+        if marker not in libj:
+            fail(f"bibliothèque: droit de jeu Fracture mal distingué de la visibilité projet: {marker}")
     if "issinjiraowner" in secondary_library:
         fail("bibliothèque secondaire: rôle créateur encore déduit côté navigateur")
     if "s.rpc('is_sinjira_owner',{p_user_id:user.id})" not in contents["secondary_library_js"]:
@@ -323,6 +336,8 @@ def main() -> None:
             "policy projets créateur retirée":("project_owner_migration","projects_owner_catalog_read_v25","projects_owner_catalog_missing"),
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
             "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
+            "Fracture jouable sans droit produit":("library_js","project.play_path&&canPlay","project.play_path"),
+            "Fracture droit produit forcé":("library_js","const productRight=isOwner||entitledProductSlugs.has(project.slug);","const productRight=true;"),
             "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.0\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
             "raccourci Mes achats retiré":("library_html",'<a href="mes-achats.html"><strong>Mes achats</strong>','<a href="licences.html"><strong>Mes achats</strong>'),
             "rôle créateur secondaire revenu côté client":("secondary_library_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
