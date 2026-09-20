@@ -301,6 +301,11 @@ def validate(contents: dict[str, str]) -> None:
         "aucunearchiveincomplèten’aétégénérée",
         "result.key==='private_profile'?(result.data?[result.data]:[])",
         "payload.format='sinjira_user_export_v24'",
+        "écrivezsupprimermoncompte",
+        "confirmation!=='supprimermoncompte'",
+        "functions.invoke('delete-player-account',{body:{confirm:confirmation}})",
+        "if(error||!data?.ok)",
+        "aucuneconfirmationdesuppressionn’aétéreçue",
     ):
         if marker not in acc:
             fail(f"compte générique: dégradation fail-closed absente: {marker}")
@@ -535,6 +540,9 @@ def main() -> None:
             "export données masque une erreur":("account_js","if(results.some(result=>result.error)){","if(false){"),
             "export coffre change la forme V24":("account_js","result.key==='private_profile'?(result.data?[result.data]:[])","result.key==='private_profile'?(result.data||{}):(result.data??[])"),
             "cache paramètres revenu V25.0.1":("account_page:parametres.html","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
+            "suppression compte revenue à ancienne phrase":("account_js","confirmation!=='SUPPRIMER MON COMPTE'","confirmation!=='SUPPRIMER'"),
+            "suppression compte envoie ancienne phrase":("account_js","body:{confirm:confirmation}","body:{confirm:'SUPPRIMER'}"),
+            "suppression compte ignore ok serveur":("account_js","if(error||!data?.ok)","if(error)"),
             "modération renvoyée vers Plus":("account_js","'regles-communaute.html','regles-communaute-junior.html','moderation.html'","'regles-communaute.html','regles-communaute-junior.html'"),
             "reset mot de passe revenu à 10":("account_js","a.length<12","a.length<10"),
             "récupération active revenue à 10":("recovery_js","password.length<12","password.length<10"),
