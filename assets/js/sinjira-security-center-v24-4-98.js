@@ -254,8 +254,13 @@ async function boot(){
       }catch(err){status(friendlySecurityError(err,errorContext),'error')}
     });
 
+    document.documentElement.dataset.securityCenterReady='true';
+    window.dispatchEvent(new Event('sinjira:security-center-ready'));
     status('Centre de sécurité prêt.','success');
-  }catch(error){console.error('[SINJIRA security center]',error);status(friendlySecurityError(error),'error')}
+  }catch(error){
+    delete document.documentElement.dataset.securityCenterReady;
+    status(friendlySecurityError(error),'error');
+  }
 }
 
 boot();
