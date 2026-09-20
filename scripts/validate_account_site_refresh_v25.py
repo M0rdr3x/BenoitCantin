@@ -326,13 +326,16 @@ def validate(contents: dict[str, str]) -> None:
         "exportpartieltéléchargé",
         "supprimermoncompte",
         "functions.invoke('delete-player-account',{body:{confirm:'supprimermoncompte'}})",
-        "if(!data?.ok)",
+        "asyncfunctionedgeerrordata(error)",
+        "constresponsedata=error?(awaitedgeerrordata(error)):(data||null)",
+        "if(error&&!responsedata)throwerror",
+        "if(!responsedata?.ok)",
     ):
         if marker not in data_control:
             fail(f"paramètres: contrôleur canonique export/suppression incomplet: {marker}")
     if "from('private_profiles')" in data_control:
         fail("export compte: accès direct au coffre private_profiles interdit")
-    if "v24-data-control.js?v=25.0.1" not in contents["account_page:parametres.html"]:
+    if "v24-data-control.js?v=25.0.2" not in contents["account_page:parametres.html"]:
         fail("paramètres: cache contrôleur données V25.0.1 absent")
     for marker in (
         "functioncreateformlock(form)",
@@ -346,7 +349,7 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in preferences:
             fail(f"paramètres: verrou de chargement préférences absent: {marker}")
-    if "v24-preferences.js?v=25.0.1" not in contents["account_page:parametres.html"]:
+    if "v24-preferences.js?v=25.0.2" not in contents["account_page:parametres.html"]:
         fail("paramètres: cache préférences V25.0.1 absent")
     for marker in (
         "setformlocked(true)",
@@ -593,18 +596,19 @@ def main() -> None:
             "export coffre revenu en accès table direct":("data_control_js","['private_profile','private_profile_get']","['private_profile','private_profiles']"),
             "export privé étendu retiré":("data_control_js","['extended_private','privacy_export_my_extended_data']","['extended_private','missing_export_rpc']"),
             "export ancien schéma absent devient erreur":("data_control_js","const legacyMissing=label.endsWith('_legacy')&&/relation .* does not exist|schema cache|could not find/i.test(message);","const legacyMissing=false;"),
-            "cache contrôleur données revenu V24":("account_page:parametres.html","v24-data-control.js?v=25.0.1","v24-data-control.js?v=24.4.83"),
+            "cache contrôleur données revenu V24":("account_page:parametres.html","v24-data-control.js?v=25.0.2","v24-data-control.js?v=24.4.83"),
             "préférences réactivées avant chargement":("preferences_js","setLocked(true);","setLocked(false);"),
             "préférences réactivent les champs permanents":("preferences_js","if(permanentlyDisabled.has(el)){el.disabled=true;continue}","if(permanentlyDisabled.has(el)){el.disabled=false;continue}"),
             "préférence IA personnelle réactivée":("preferences_js","if(table==='privacy_settings')payload.allow_ai_personal_data=false;","if(table==='privacy_settings')payload.allow_ai_personal_data=true;"),
-            "cache préférences revenu V24":("account_page:parametres.html","v24-preferences.js?v=25.0.1","v24-preferences.js?v=24.4.70"),
+            "cache préférences revenu V24":("account_page:parametres.html","v24-preferences.js?v=25.0.2","v24-preferences.js?v=24.4.70"),
             "centre vie privée actif avant auth":("privacy_center_js","setFormLocked(true);","setFormLocked(false);"),
             "centre vie privée confond création et refresh":("privacy_center_js","showStatus('Votre demande a bien été enregistrée, mais le suivi ne peut pas être rafraîchi pour le moment.','info');","showStatus('Impossible d’enregistrer la demande pour le moment.','error');"),
             "cache centre vie privée revenu V24":("secondary_privacy","sinjira-privacy-center-v24-4-83.js?v=25.0.1","sinjira-privacy-center-v24-4-83.js?v=24.4.83"),
             "cache paramètres revenu V25.0.1":("account_page:parametres.html","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
             "suppression compte revenue à ancienne phrase":("data_control_js","phrase!=='SUPPRIMER MON COMPTE'","phrase!=='SUPPRIMER'"),
             "suppression compte envoie ancienne phrase":("data_control_js","body:{confirm:'SUPPRIMER MON COMPTE'}","body:{confirm:'SUPPRIMER'}"),
-            "suppression compte ignore ok serveur":("data_control_js","if(!data?.ok)","if(false)"),
+            "suppression compte ignore corps d'erreur HTTP":("data_control_js","const responseData=error?(await edgeErrorData(error)):(data||null);","const responseData=data||null;"),
+            "suppression compte ignore ok serveur":("data_control_js","if(!responseData?.ok)","if(false)"),
             "export partie masque erreur de fiches":("account_js","if(sheets.error||endgame.error)","if(false)"),
             "import partie ignore erreur de fiches":("account_js","if(sheetError){setStatus(status,'La partie a été créée, mais ses fiches n’ont pas pu être importées. Aucun succès complet n’est annoncé.','error');return}","if(sheetError)console.warn(sheetError)"),
             "cache mes parties revenu V25.0.1":("account_page:mes-parties.html","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
