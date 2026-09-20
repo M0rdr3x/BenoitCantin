@@ -14,6 +14,7 @@ on:
       - 'assets/js/sinjira-account.js'
       - 'assets/js/sinjira-recovery-v24-4-99.js'
       - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/sinjira-library.js'
       - 'assets/js/sinjira-purchases-v25.js'
       - 'assets/js/sinjira-reader.js'
       - 'assets/js/sinjira-account-v18.js'
