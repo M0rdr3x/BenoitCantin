@@ -286,6 +286,23 @@ def validate(contents: dict[str, str]) -> None:
     if "auth.updateuser({email}" not in acc:
         fail("profil: mise à jour sécurisée du courriel absente")
     for marker in (
+        "from('profiles').select('*').eq('user_id',user.id).maybesingle();if(error)throwerror;",
+        "from('research_consents').select('*').eq('user_id',user.id).maybesingle();if(error)throwerror;",
+        "functionsetformenabled(form,enabled)",
+        "sessionsresolved=!rs.error,requestsresolved=!rr.error",
+        "requestsresolved?reqs.length:'—'",
+        "partiesrécentestemporairementindisponibles",
+        "constuser=awaitrequireuser(),form=document.queryselector('[data-profile-form]');if(!form)return;setformenabled(form,false);",
+        "impossibledechargerleprofil.leformulaireresteverrouillé",
+        "constuser=awaitrequireuser(),form=document.queryselector('[data-contribution-form]');if(!form)return;setformenabled(form,false);",
+        "impossibledevérifiervoschoixdecontribution.leformulaireresteverrouillé",
+    ):
+        if marker not in acc:
+            fail(f"compte générique: dégradation fail-closed absente: {marker}")
+    for key in ("account_page:index.html","profile_html","secondary_contributions"):
+        if "sinjira-account.js?v=25.0.2" not in contents[key]:
+            fail(f"compte générique: cache V25.0.2 absent dans {key}")
+    for marker in (
         "setbusy(true);try{awaitloadprofile();setbusy(false);",
         "leformulaireresteverrouillétantquevosdonnéesn’ontpasétéchargées",
         "if(!loadedsnapshot)",
@@ -377,7 +394,7 @@ def validate(contents: dict[str, str]) -> None:
     for name, content in contents.items():
         if not name.startswith("secondary_") or not name.endswith(("_lectures","_documents","_playtests","_contributions","_reels","_personnage","_privacy","_blocks","_junior","_project","_report")):
             continue
-        if "sinjira-account.js?v=25.0.1" not in content:
+        if not any(v in content for v in ("sinjira-account.js?v=25.0.1","sinjira-account.js?v=25.0.2")):
             fail(f"navigation secondaire: cache JS V25 absent dans {name}")
         if "sinjira-player-account.css?v=25.0.1" not in content:
             fail(f"navigation secondaire: cache CSS V25 absent dans {name}")
@@ -388,7 +405,7 @@ def validate(contents: dict[str, str]) -> None:
         page_compact=compact(content)
         if 'class="account-nav"' not in page_compact:
             continue
-        if "sinjira-account.js?v=25.0.1" not in content:
+        if not any(v in content for v in ("sinjira-account.js?v=25.0.1","sinjira-account.js?v=25.0.2")):
             fail(f"navigation compte globale: JS V25 absent dans {name}")
         if "sinjira-player-account.css?v=25.0.1" not in content:
             fail(f"navigation compte globale: CSS V25 absent dans {name}")
@@ -499,7 +516,14 @@ def main() -> None:
             "mes lectures revenue à novels":("comments_js","from('sinjira_novels').select('id,title,subtitle,description,status,public_path,demo_path,sort_order')","from('novels').select('*')"),
             "cache mes lectures revenu V24":("secondary_mes_lectures","sinjira-account-v18.js?v=25.0.2","sinjira-account-v18.js?v=24.4.61"),
             "cache mes commentaires revenu V25.0.1":("comments_html","sinjira-account-v18.js?v=25.0.2","sinjira-account-v18.js?v=25.0.1"),
-            "page compte sans JS V25":("account_page:index.html","sinjira-account.js?v=25.0.1","sinjira-account.js?v=24.1"),
+            "page compte sans JS V25":("account_page:index.html","sinjira-account.js?v=25.0.2","sinjira-account.js?v=24.1"),
+            "profil générique masque erreur lecture":("account_js","const {data,error}=await getSupabase().from('profiles').select('*').eq('user_id',user.id).maybeSingle();","const {data}=await getSupabase().from('profiles').select('*').eq('user_id',user.id).maybeSingle();"),
+            "consentement générique masque erreur lecture":("account_js","const {data,error}=await getSupabase().from('research_consents').select('*').eq('user_id',user.id).maybeSingle();","const {data}=await getSupabase().from('research_consents').select('*').eq('user_id',user.id).maybeSingle();"),
+            "dashboard historique masque erreurs en zéro":("account_js","const sessionsResolved=!rs.error,requestsResolved=!rr.error","const sessionsResolved=true,requestsResolved=true"),
+            "profil générique non verrouillé au chargement":("account_js","const user=await requireUser(),form=document.querySelector('[data-profile-form]');if(!form)return;\n  setFormEnabled(form,false);","const user=await requireUser(),form=document.querySelector('[data-profile-form]');if(!form)return;"),
+            "contributions non verrouillées au chargement":("account_js","const user=await requireUser(),form=document.querySelector('[data-contribution-form]');if(!form)return;\n  setFormEnabled(form,false);","const user=await requireUser(),form=document.querySelector('[data-contribution-form]');if(!form)return;"),
+            "cache compte profil revenu V25.0.1":("profile_html","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
+            "cache compte contributions revenu V25.0.1":("secondary_contributions","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
             "modération renvoyée vers Plus":("account_js","'regles-communaute.html','regles-communaute-junior.html','moderation.html'","'regles-communaute.html','regles-communaute-junior.html'"),
             "reset mot de passe revenu à 10":("account_js","a.length<12","a.length<10"),
             "récupération active revenue à 10":("recovery_js","password.length<12","password.length<10"),
