@@ -179,6 +179,8 @@ def validate(contents: dict[str, str]) -> None:
         fail("tableau de bord: résumé des accès projets non lié au rôle/catalogue résolus")
     if "assets/js/sinjira-account-dashboard-v24-4-60.js" not in workflow:
         fail("CI compte: module Dashboard dédié non surveillé")
+    if "sinjira-account-dashboard-v24-4-60.js?v=25.0.1" not in contents["account_page:index.html"]:
+        fail("tableau de bord: cache V25 du module dédié absent")
     if "pw.length<12" not in acc or "a.length<12" not in acc:
         fail("authentification: helpers Compte doivent conserver le minimum de 12 caractères")
     if "a.length<10" in acc or "au moins 10 caractères" in acc:
@@ -321,6 +323,7 @@ def main() -> None:
             "catalogue dashboard déclaré sain à tort":("dashboard_js","catalogResolved=!all.error;","catalogResolved=true;"),
             "résumé accès dashboard retiré":("dashboard_js","renderAccess(projects,isOwner,isAdmin,roleResolved,catalogResolved);","renderAccess(projects,false,false,true,true);"),
             "module Dashboard hors paths CI":("workflow","assets/js/sinjira-account-dashboard-v24-4-60.js","assets/js/sinjira-account-dashboard-missing.js"),
+            "cache Dashboard revenu V24":("account_page:index.html","sinjira-account-dashboard-v24-4-60.js?v=25.0.1","sinjira-account-dashboard-v24-4-60.js?v=24.4.60"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
