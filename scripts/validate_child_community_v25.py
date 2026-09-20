@@ -158,6 +158,9 @@ for marker,msg in (
 ):
     req(marker in c,msg)
 req('sinjira-community-junior-v25.js?v=25.0.4&rev=child-access-matrix' in page,'Le cache Communauté Junior V25.0.4 n est pas forcé.')
+req('<textarea disabled maxlength="500" name="body"' in page,'Le compositeur Junior HTML n est pas fail-closed sans JavaScript.')
+req('<button class="btn btn-primary" disabled type="submit">Publier</button>' in page,'Le bouton Publier Junior HTML n est pas désactivé par défaut.')
+req('data-junior-rules-accept disabled' in rules_page,'Le bouton des règles Junior HTML n est pas désactivé par défaut.')
 
 # Règles Junior et activation parent.
 req('pas de messages privés' in rp and 'pas de rencontre privée' in rp and 'pas d’argent ni de commerce' in rp,'Les règles Junior sont incomplètes.')
