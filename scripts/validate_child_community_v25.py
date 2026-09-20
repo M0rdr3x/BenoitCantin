@@ -169,6 +169,9 @@ req('data-junior-community-children' in rh,'Relations ne contient pas le panneau
 req("s.rpc('sinjira_my_account_capabilities')" in r,'Relations ne lit pas la bande via les capacités self-only.')
 req("s.rpc('guardian_set_junior_community'" in r,'Relations ne peut pas activer/révoquer la Communauté Junior.')
 req("s.rpc('junior_guardian_summary'" in r,'Relations ne peut pas lire le résumé de sécurité sans contenu.')
+req("return false;" in relations and "const refreshed=await renderJuniorCommunityChildren();" in relations,'Le panneau tuteur ne distingue pas un échec de rafraîchissement après décision Junior.')
+req("Le panneau de contrôle ne peut pas être rafraîchi pour le moment." in relations,'Le parent ne reçoit pas un état explicite après décision Junior réussie mais rafraîchissement impossible.')
+req('v24-relations.js?v=25.0.11&amp;rev=junior-alias-private' in relations_html,'Le cache Relations Junior V25.0.11 n est pas forcé.')
 
 # Navigation fail-closed pour 11–12 : liste blanche explicite, redirections Junior et refus par défaut.
 req("constaccountmode=string(capabilities.account_mode||'restricted')" in a and "capabilities.child_11_12===true" in a and "if(!childaccount)return" in a and "constchild_11_12_allowed_routes=newset([" in a,'La navigation du compte ne borne pas explicitement les routes child via les capacités serveur.')
