@@ -19,7 +19,7 @@ function renderOrders(orders){
       return `<div class="account-content-row"><div><strong>${escapeHtml(label)}</strong><small>${escapeHtml(product?.product_type||'produit')} · quantité ${Number(item.quantity||1)}</small></div><span>${escapeHtml(money(Number(item.unit_price_cents||0)*Number(item.quantity||1),order.currency))}</span></div>`;
     }).join(''):'<div class="account-content-row"><div><strong>Commande enregistrée</strong><small>Détail produit temporairement indisponible.</small></div></div>';
     return `<article class="account-content-category"><h3>Commande ${escapeHtml(order.order_number||'SINJIRA')}</h3><p><span class="status-badge">${escapeHtml(order.status||'—')}</span> · ${escapeHtml(formatDate(order.created_at))}</p><div class="account-content-list">${itemHtml}</div><p><strong>Total enregistré : ${escapeHtml(money(order.total_cents,order.currency))}</strong></p></article>`;
-  }).join(''):'<div class="notice"><strong>Aucun achat payé enregistré.</strong><p>Vos futures commandes réellement payées apparaîtront ici. Une précommande sans paiement reste séparée.</p></div>';
+  }).join(''):'<div class="notice"><strong>Aucune commande enregistrée.</strong><p>Les commandes associées à votre compte apparaîtront ici avec leur statut. Une précommande sans paiement reste séparée.</p></div>';
 }
 
 function renderEntitlements(entitlements){
@@ -60,9 +60,9 @@ async function init(){
   renderOrders(orders);
   renderEntitlements(entitlements);
 
-  const paidCount=document.querySelector('[data-paid-order-count]');
+  const orderCount=document.querySelector('[data-paid-order-count]');
   const rightsCount=document.querySelector('[data-purchase-right-count]');
-  if(paidCount)paidCount.textContent=String(orders.length);
+  if(orderCount)orderCount.textContent=String(orders.length);
   if(rightsCount)rightsCount.textContent=String(entitlements.length);
 
   const isOwner=!ownerResult.error&&ownerResult.data===true;
