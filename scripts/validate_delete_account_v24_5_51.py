@@ -8,6 +8,7 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 FN = ROOT / 'supabase/functions/delete-player-account/index.ts'
+CLIENT = ROOT / 'assets/js/sinjira-account.js'
 DOC = ROOT / 'DELETE_ACCOUNT_HTTP_HARDENING_V24_5_51.md'
 CONFIG = ROOT / 'supabase/config.toml'
 MIGRATIONS = ROOT / 'supabase/migrations'
@@ -140,7 +141,7 @@ def main() -> int:
     args = parser.parse_args()
 
     errors: list[str] = []
-    for path in (FN, DOC, CONFIG):
+    for path in (FN, CLIENT, DOC, CONFIG):
         if not path.exists():
             errors.append(f'Fichier absent: {path.relative_to(ROOT)}')
     if errors:
@@ -154,9 +155,22 @@ def main() -> int:
         return 0
 
     source = FN.read_text('utf-8', errors='ignore')
+    client = CLIENT.read_text('utf-8', errors='ignore')
     doc = DOC.read_text('utf-8', errors='ignore').lower()
     config = tomllib.loads(CONFIG.read_text('utf-8'))
     errors.extend(edge_errors(source))
+
+    for marker in (
+        "prompt('Pour supprimer définitivement votre compte, écrivez SUPPRIMER MON COMPTE.')",
+        "confirmation!=='SUPPRIMER MON COMPTE'",
+        "functions.invoke('delete-player-account',{body:{confirm:confirmation}})",
+        "if(error||!data?.ok)",
+        "Aucune confirmation de suppression n’a été reçue.",
+    ):
+        if marker not in client:
+            errors.append(f'Contrat client suppression absent: {marker}')
+    if "body:{confirm:'SUPPRIMER'}" in client:
+        errors.append('Le client ne doit plus envoyer l’ancienne confirmation SUPPRIMER.')
 
     function_cfg = config.get('functions', {}).get('delete-player-account', {})
     if function_cfg.get('verify_jwt') is not True:
