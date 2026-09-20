@@ -89,6 +89,10 @@ def validate(contents: dict[str, str]) -> None:
         fail("profil: pseudo/courriel ne sont pas éditables")
     if "auth.updateuser({email}" not in acc:
         fail("profil: mise à jour sécurisée du courriel absente")
+    if "pw.length<12" not in acc or "a.length<12" not in acc:
+        fail("authentification: inscription et réinitialisation doivent imposer le même minimum de 12 caractères")
+    if "a.length<10" in acc or "au moins 10 caractères" in acc:
+        fail("authentification: ancien minimum 10 caractères encore présent dans la réinitialisation")
 
     for marker in ("appendgroup('bibliothèque'", "appendgroup('univers'", "appendgroup('communauté'", "appendgroup('compte'"):
         if marker not in acc:
@@ -164,6 +168,7 @@ def main() -> None:
             "retour à novel_comments":("reader_js","sinjira_novel_comments","novel_comments"),
             "page compte sans JS V25":("account_page:index.html","sinjira-account.js?v=25.0.1","sinjira-account.js?v=24.1"),
             "modération renvoyée vers Plus":("account_js","'regles-communaute.html','regles-communaute-junior.html','moderation.html'","'regles-communaute.html','regles-communaute-junior.html'"),
+            "reset mot de passe revenu à 10":("account_js","a.length<12","a.length<10"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
