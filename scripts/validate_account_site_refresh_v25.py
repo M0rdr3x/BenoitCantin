@@ -239,6 +239,19 @@ def validate(contents: dict[str, str]) -> None:
         fail("bibliothèque: erreurs de rôle owner/admin non remontées")
     if "consterrors=[ownerresult,ordersresult,entitlementsresult,...creatorresults]" not in pj:
         fail("achats: erreur de rôle owner ou portefeuille créateur non remontée")
+    for marker in (
+        "constordersresolved=!ordersresult.error,entitlementsresolved=!entitlementsresult.error",
+        "renderorders(orders,ordersresolved)",
+        "renderentitlements(entitlements,entitlementsresolved)",
+        "historiquetemporairementindisponible",
+        "droitsnumériquestemporairementindisponibles",
+        "ordercount.textcontent=ordersresolved?string(orders.length):'—'",
+        "rightscount.textcontent=entitlementsresolved?string(entitlements.length):'—'",
+    ):
+        if marker not in pj:
+            fail(f"achats: faux état vide encore possible: {marker}")
+    if "sinjira-purchases-v25.js?v=25.0.2" not in contents["purchases_html"]:
+        fail("achats: cache module V25.0.2 absent")
 
     if 'name="pseudo"required' not in prof or 'name="email"requiredtype="email"' not in prof:
         fail("profil: pseudo/courriel ne sont pas éditables")
@@ -469,6 +482,9 @@ def main() -> None:
             "échec rôle créateur masqué en bibliothèque":("library_js","Rôle du compte non confirmé","Compte SINJIRA™"),
             "échec rôle créateur masqué dans achats":("purchases_js","Rôle du compte non confirmé","Compte membre SINJIRA™"),
             "échec portefeuille créateur masqué":("purchases_js","Catalogue des projets temporairement indisponible.","Aucun projet enregistré."),
+            "échec commandes masqué en zéro":("purchases_js","const ordersResolved=!ordersResult.error,entitlementsResolved=!entitlementsResult.error;","const ordersResolved=true,entitlementsResolved=!entitlementsResult.error;"),
+            "échec droits masqué en zéro":("purchases_js","renderEntitlements(entitlements,entitlementsResolved);","renderEntitlements(entitlements,true);"),
+            "cache achats revenu V25.0.1":("purchases_html","sinjira-purchases-v25.js?v=25.0.2","sinjira-purchases-v25.js?v=25.0.1"),
             "nom affiché redevenu ambigu":("profile_html","Nom affiché privé","Nom affiché"),
             "compteur romans suivis retiré":("dashboard_js","setText('[data-stat-reader]',count)","setText('[data-stat-reader]',0)"),
             "rôle dashboard supposé côté client":("dashboard_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
