@@ -397,7 +397,7 @@ révoque d’abord les privilèges navigateur implicites puis réaccorde uniquem
 - `playtest_participants` : `SELECT` + `INSERT` authentifié, sans décision client;
 - `extensions` : `SELECT` uniquement pour les lignes rendues publiques par RLS.
 
-Aucune création/modification de projet, décision de demande, approbation de candidature ou administration directe n’est ouverte au navigateur. Le pgTAP `account_content_hub_v25.test.sql` passe à **39 assertions** et prouve les privilèges positifs, les refus d’écriture sensibles et la frontière de `project_access_rank` : implémentation `SECURITY DEFINER` déplacée vers `sinjira_catalog_internal`, policies RLS conservées par OID, wrapper public `SECURITY INVOKER` réservé au `service_role`. Le workflow Compte surveille explicitement cette migration, tandis que le workflow Sécurité En direct surveille déjà `supabase/migrations/**`.
+Aucune création/modification de projet, décision de demande, approbation de candidature ou administration directe n’est ouverte au navigateur. Le pgTAP `account_content_hub_v25.test.sql` passe à **41 assertions** et prouve les privilèges positifs, les refus d’écriture sensibles, les `WITH CHECK` self-only des INSERT `access_requests` / `playtest_participants` (bande adulte/youth + statuts `pending` / `applied`) et la frontière de `project_access_rank` : implémentation `SECURITY DEFINER` déplacée vers `sinjira_catalog_internal`, policies RLS conservées par OID, wrapper public `SECURITY INVOKER` réservé au `service_role`. Le workflow Compte surveille explicitement cette migration, tandis que le workflow Sécurité En direct surveille déjà `supabase/migrations/**`.
 
 Cette trente-quatrième migration reste **non revue production**.
 
