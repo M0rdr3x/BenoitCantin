@@ -158,6 +158,9 @@ def validate(contents: dict[str, str]) -> None:
             fail(f"bibliothèque secondaire: sémantique projet incohérente: {marker}")
     if "assets/js/sinjira-library.js" not in workflow:
         fail("CI compte: module bibliothèque secondaire non surveillé")
+    for name in ("secondary_project","secondary_documents"):
+        if "sinjira-library.js?v=25.1.0" not in contents[name]:
+            fail(f"bibliothèque secondaire: cache V25 absent dans {name}")
 
     for marker in ("data-purchase-history", "data-purchase-entitlements", "data-creator-portfolio"):
         if marker not in ph:
@@ -351,6 +354,7 @@ def main() -> None:
             "Fracture secondaire jouable sans droit":("secondary_library_js","p.play_path&&canPlay","p.play_path"),
             "contrôle Fracture secondaire retiré":("secondary_library_js","s.rpc('has_sinjira_product',{p_product_slug:p.slug})","Promise.resolve({data:true,error:null})"),
             "module bibliothèque secondaire hors paths CI":("workflow","assets/js/sinjira-library.js","assets/js/sinjira-library-missing.js"),
+            "cache Projet bibliothèque revenu V24":("secondary_project","sinjira-library.js?v=25.1.0","sinjira-library.js?v=24.1"),
             "navigation mobile redevenue absolue":("account_css",".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}",".account-nav-panel{position:absolute;width:min(88vw,320px)}"),
             "barre supérieure Compte redevenue multiple":("account_js","nav.replaceChildren(universe);","nav.append(universe);"),
             "famille courante refermée":("account_js","details.open=true;","details.open=false;"),
