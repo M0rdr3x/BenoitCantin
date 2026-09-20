@@ -147,6 +147,12 @@ def validate(contents: dict[str, str]) -> None:
         "rolechip=owner?'propriétaire':a?.access_level==='tester'?'testeur':''",
         "propriétaire·cataloguecomplet",
         "lerôlepropriétairen’apaspuêtreconfirmé.aucunaccèspropriétairesupplémentairen’estsupposé.",
+        "licensedgame=p.slug==='fracture-du-reseau-mere'",
+        "s.rpc('has_sinjira_product',{p_product_slug:p.slug})",
+        "droitdejeunonvérifié",
+        "droitnumériqueactif",
+        "droitdejeurequis",
+        "p.play_path&&canplay",
     ):
         if marker not in secondary_library:
             fail(f"bibliothèque secondaire: sémantique projet incohérente: {marker}")
@@ -342,6 +348,8 @@ def main() -> None:
             "raccourci Mes achats retiré":("library_html",'<a href="mes-achats.html"><strong>Mes achats</strong>','<a href="licences.html"><strong>Mes achats</strong>'),
             "rôle créateur secondaire revenu côté client":("secondary_library_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "projet public secondaire présenté comme compte":("secondary_library_js","p.visibility==='restricted'?'Accès restreint':p.visibility==='account'?'Inclus avec le compte':'Page publique'","p.visibility==='restricted'?'Accès restreint':'Inclus avec le compte'"),
+            "Fracture secondaire jouable sans droit":("secondary_library_js","p.play_path&&canPlay","p.play_path"),
+            "contrôle Fracture secondaire retiré":("secondary_library_js","s.rpc('has_sinjira_product',{p_product_slug:p.slug})","Promise.resolve({data:true,error:null})"),
             "module bibliothèque secondaire hors paths CI":("workflow","assets/js/sinjira-library.js","assets/js/sinjira-library-missing.js"),
             "navigation mobile redevenue absolue":("account_css",".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}",".account-nav-panel{position:absolute;width:min(88vw,320px)}"),
             "barre supérieure Compte redevenue multiple":("account_js","nav.replaceChildren(universe);","nav.append(universe);"),
