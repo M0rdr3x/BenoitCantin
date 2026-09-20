@@ -159,6 +159,10 @@ def validate(contents: dict[str, str]) -> None:
             fail(f"profil: séparation identité publique/privée non expliquée: {marker}")
     if "auth.updateuser({email}" not in acc:
         fail("profil: mise à jour sécurisée du courriel absente")
+    if "from('sinjira_reader_library').select('novel_id').eq('user_id',user.id)" not in contents["account_js"]:
+        fail("tableau de bord: source self-only des romans suivis absente")
+    if "set('[data-stat-reader]',reads.length)" not in contents["account_js"]:
+        fail("tableau de bord: compteur Romans suivis non alimenté")
     if "pw.length<12" not in acc or "a.length<12" not in acc:
         fail("authentification: helpers Compte doivent conserver le minimum de 12 caractères")
     if "a.length<10" in acc or "au moins 10 caractères" in acc:
@@ -295,6 +299,7 @@ def main() -> None:
             "échec rôle créateur masqué en bibliothèque":("library_js","Rôle du compte non confirmé","Compte SINJIRA™"),
             "échec rôle créateur masqué dans achats":("purchases_js","Rôle du compte non confirmé","Compte membre SINJIRA™"),
             "nom affiché redevenu ambigu":("profile_html","Nom affiché privé","Nom affiché"),
+            "compteur romans suivis retiré":("account_js","set('[data-stat-reader]',reads.length)","set('[data-stat-reader]',0)"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
