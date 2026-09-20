@@ -1,4 +1,4 @@
-import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabel,isSinjiraOwner} from './sinjira-supabase.js';
+import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabel} from './sinjira-supabase.js';
 
 const page=document.body.dataset.libraryPage||'',status=document.querySelector('[data-library-status]');
 let user=null,owner=false,childMode=false;
@@ -72,9 +72,15 @@ async function playtests(){
   list.querySelectorAll('[data-apply-playtest]').forEach(b=>b.addEventListener('click',async()=>{const msg=prompt('Message de candidature (facultatif).')||'';const {error}=await s.from('playtest_participants').insert({playtest_id:b.dataset.applyPlaytest,user_id:user.id,status:'applied',application_message:msg.slice(0,1500)});if(error){setStatus(status,error.message,'error');return}b.outerHTML='<span class="role-chip">Candidature envoyée</span>';setStatus(status,'Candidature transmise.','success')}));
 }
 (async()=>{
-  user=await requireUser();owner=isSinjiraOwner(user);
-  const {data:capabilities,error:capabilityError}=await getSupabase().rpc('sinjira_my_account_capabilities');
+  user=await requireUser();
+  const s=getSupabase();
+  const [capabilityResult,ownerResult]=await Promise.all([
+    s.rpc('sinjira_my_account_capabilities'),
+    s.rpc('is_sinjira_owner',{p_user_id:user.id})
+  ]);
+  const {data:capabilities,error:capabilityError}=capabilityResult;
   if(capabilityError||!capabilities){setStatus(status,'Impossible de vérifier les capacités du compte.','error');return}
+  owner=!ownerResult.error&&ownerResult.data===true;
   childMode=capabilities.library_mode==='reviewed_11_12';
   try{
     if(page==='library')await library();
