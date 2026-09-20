@@ -114,7 +114,6 @@ def validate(plan_text: str | None = None) -> list[str]:
     for marker in (
         "Statut : préparation de revue uniquement.",
         "Ce document ne constitue **aucune approbation**",
-        "34 / 34 migrations : **NON REVUES**",
         "0 changement du ledger production",
         "0 déploiement production",
     ):
@@ -126,6 +125,16 @@ def validate(plan_text: str | None = None) -> list[str]:
     except ValueError as exc:
         errors.append(str(exc))
         planned = []
+
+    status_match = re.search(r"(\d+)\s*/\s*(\d+)\s+migrations\s*:\s*\*\*NON REVUES\*\*", plan_text)
+    if not status_match:
+        errors.append("Le plan n'indique pas explicitement le nombre de migrations NON REVUES.")
+    else:
+        left, right = map(int, status_match.groups())
+        if left != right or left != len(non_reviewed):
+            errors.append(
+                f"Le compteur NON REVUES du plan ({left}/{right}) ne correspond pas au delta courant ({len(non_reviewed)})."
+            )
 
     if len(planned) != len(set(planned)):
         errors.append("Le plan contient une migration en double.")
@@ -139,12 +148,6 @@ def validate(plan_text: str | None = None) -> list[str]:
             errors.append("Le plan omet des migrations futures non revues: " + ", ".join(missing))
         if not unexpected and not missing:
             errors.append("Le plan contient le bon ensemble mais pas dans l'ordre chronologique canonique.")
-
-    if len(non_reviewed) != 34:
-        errors.append(
-            f"Le delta non revu courant contient {len(non_reviewed)} migration(s), pas 34; "
-            "mettre à jour explicitement le plan avant toute interprétation."
-        )
 
     return errors
 
