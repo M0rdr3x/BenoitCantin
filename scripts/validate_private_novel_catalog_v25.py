@@ -82,6 +82,14 @@ def validate(contents:dict[str,str])->None:
 
     for marker in (
         "requireduser(req)",
+        "max_request_bytes=2048",
+        "constbody=awaitreadboundedjson(req)",
+        "req.body.getreader()",
+        "reader.cancel",
+        "newtextdecoder('utf-8',{fatal:true})",
+        "json_required",
+        "request_too_large",
+        "invalid_json",
         "sinjira_age_band",
         "requireprivatenovelaccess",
         "resolveprivatenovelstorage",
@@ -91,6 +99,8 @@ def validate(contents:dict[str,str])->None:
     ):
         if marker not in edge:
             fail(f"Edge roman privé: garde absente: {marker}")
+    if "awaitreq.json()" in edge:
+        fail("Edge roman privé: lecture JSON directe non bornée interdite")
 
     if "get-private-novel-url" not in reader:
         fail("lecteur intégral: fonction générique absente")
@@ -139,15 +149,23 @@ def main()->None:
     contents={name:path.read_text(encoding="utf-8") for name,path in FILES.items()}
     validate(contents)
     if args.self_test:
-        broken=dict(contents)
-        broken["library_js"]=broken["library_js"].replace("sinjira_my_novel_catalog","sinjira_novels",1)
-        try:
-            validate(broken)
-        except ValueError:
-            print("OK auto-test: retour à un catalogue non self-only détecté")
-            return
-        fail("auto-test: dérive catalogue non détectée")
-    print("OK V25 romans privés: catalogue self-only, créateur générique et livraison signée validés.")
+        mutations={
+            "catalogue non self-only":("library_js","sinjira_my_novel_catalog","sinjira_novels"),
+            "JSON Edge non borné":("edge","const body=await readBoundedJson(req);","const body=await req.json();"),
+        }
+        for label,(key,old,new) in mutations.items():
+            broken=dict(contents)
+            if old not in broken[key]:
+                fail(f"auto-test: marqueur source absent pour {label}")
+            broken[key]=broken[key].replace(old,new,1)
+            try:
+                validate(broken)
+            except ValueError:
+                continue
+            fail(f"auto-test: dérive non détectée: {label}")
+        print(f"OK auto-test romans privés: {len(mutations)}/{len(mutations)} dérives critiques détectées")
+        return
+    print("OK V25 romans privés: catalogue self-only, créateur générique, corps Edge borné et livraison signée validés.")
 
 if __name__=="__main__":
     main()
