@@ -23,19 +23,30 @@ function accessLabel(project,access,isOwner,isAdmin){
   return 'Accès autorisé';
 }
 
-function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmin,childMode=false,selector='[data-library-games]'){
+function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmin,childMode=false,selector='[data-library-games]',entitlements=[],entitlementsVerified=true){
   const box=document.querySelector(selector);if(!box)return;
   const access=new Map(accessRows.map(row=>[row.project_id,row]));
   const pending=new Map(pendingRows.map(row=>[row.project_id,row]));
+  const entitledProductSlugs=new Set(entitlements.map(row=>row.products?.slug).filter(Boolean));
   const now=Date.now();
   const activeAccess=new Map([...access.entries()].filter(([,row])=>!row.expires_at||new Date(row.expires_at).getTime()>now));
   box.innerHTML=projects.map(project=>{
     const right=activeAccess.get(project.id),docCount=documents.filter(document=>document.project_id===project.id).length,waiting=pending.has(project.id);
     const tester=!childMode&&(isOwner||isAdmin||right?.access_level==='tester');
     const canRequest=!childMode&&!isOwner&&!isAdmin&&!tester&&project.allow_tester_requests;
-    const role=childMode?'Approuvé 11–12 ans':accessLabel(project,right,isOwner,isAdmin);
+    const requiresProductRight=project.slug==='fracture-du-reseau-mere';
+    const productRight=isOwner||entitledProductSlugs.has(project.slug);
+    const canPlay=!requiresProductRight||productRight;
+    const role=childMode
+      ?'Approuvé 11–12 ans'
+      :requiresProductRight&&!isOwner
+        ?(!entitlementsVerified?'Droit de jeu non vérifié':productRight?'Droit numérique actif':'Droit de jeu requis')
+        :accessLabel(project,right,isOwner,isAdmin);
     const visibility=childMode?'Contenu vérifié pour cette tranche d’âge':project.visibility==='restricted'?'Accès restreint':project.visibility==='account'?'Compte requis':'Page publique';
-    return `<article class="library-project-card"><div class="library-project-art"><img src="${escapeHtml(cover(project))}" alt=""></div><div class="library-project-body"><div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(project.status))}</span><span class="role-chip">${escapeHtml(role)}</span></div><h2>${escapeHtml(project.name)}</h2><p>${escapeHtml(project.description||'')}</p><div class="library-project-stats"><span>${docCount} document${docCount===1?'':'s'} accessible${docCount===1?'':'s'}</span><span>${escapeHtml(visibility)}</span></div><div class="hero-actions"><a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(project.slug)}">Ouvrir l’espace</a>${!childMode&&project.play_path?`<a class="btn btn-secondary" href="${escapeHtml(project.play_path)}">Jouer</a>`:''}${canRequest?`<button class="btn btn-secondary" type="button" data-v2461-request-tester="${project.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div></div></article>`;
+    const licenseAction=!childMode&&requiresProductRight&&!isOwner&&!productRight
+      ?`<a class="btn btn-secondary" href="licences.html">${entitlementsVerified?'Activer une licence':'Vérifier mes licences'}</a>`
+      :'';
+    return `<article class="library-project-card"><div class="library-project-art"><img src="${escapeHtml(cover(project))}" alt=""></div><div class="library-project-body"><div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(project.status))}</span><span class="role-chip">${escapeHtml(role)}</span></div><h2>${escapeHtml(project.name)}</h2><p>${escapeHtml(project.description||'')}</p><div class="library-project-stats"><span>${docCount} document${docCount===1?'':'s'} accessible${docCount===1?'':'s'}</span><span>${escapeHtml(visibility)}</span></div><div class="hero-actions"><a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(project.slug)}">Ouvrir l’espace</a>${!childMode&&project.play_path&&canPlay?`<a class="btn btn-secondary" href="${escapeHtml(project.play_path)}">Jouer</a>`:''}${licenseAction}${canRequest?`<button class="btn btn-secondary" type="button" data-v2461-request-tester="${project.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div></div></article>`;
   }).join('')||(childMode?'<div class="notice"><strong>Aucun contenu n’a encore été approuvé pour les comptes de 11–12 ans.</strong><p>Les projets apparaîtront ici seulement après une révision humaine explicite.</p></div>':'<div class="notice"><strong>Aucun espace disponible pour ce compte.</strong></div>');
 }
 
@@ -116,7 +127,7 @@ async function init(){
   const projects=rows(projectsResult.data),accessRows=rows(accessResult.data),documents=rows(documentsResult.data),pendingRows=rows(pendingResult.data),libraryRows=rows(readsResult.data),entitlements=rows(entitlementsResult.data),novels=rows(novelsResult.data);
   setCount('[data-library-project-count]',projects.length);setCount('[data-library-novel-count]',novels.length);setCount('[data-library-entitlement-count]',entitlements.length);setCount('[data-library-request-count]',pendingRows.length);
   const role=document.querySelector('[data-library-role]');if(role)role.textContent=!ownerResolved?'Rôle du compte non confirmé':isOwner?'Propriétaire SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Compte SINJIRA™';
-  renderProjects(projects.filter(project=>project.type==='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-games]');renderProjects(projects.filter(project=>project.type!=='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-other]');renderNovels(novels,libraryRows,isOwner,false);renderReads(libraryRows);renderEntitlements(entitlements,isOwner);
+  renderProjects(projects.filter(project=>project.type==='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-games]',entitlements,!entitlementsResult.error);renderProjects(projects.filter(project=>project.type!=='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-other]',entitlements,!entitlementsResult.error);renderNovels(novels,libraryRows,isOwner,false);renderReads(libraryRows);renderEntitlements(entitlements,isOwner);
   const errors=[ownerResult,adminResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult].filter(result=>result.error);if(errors.length)setStatus(status,'Certaines sections privées ou le rôle du compte n’ont pas pu être vérifiés. Aucun accès supplémentaire n’a été accordé.','error');
   document.querySelectorAll('[data-v2461-request-tester]').forEach(button=>button.addEventListener('click',async()=>{const message=prompt('Court message pour votre demande (facultatif).')||'';const {error}=await s.from('access_requests').insert({user_id:user.id,project_id:button.dataset.v2461RequestTester,requested_level:'tester',message:message.slice(0,1500)});if(error){setStatus(status,'La demande n’a pas pu être transmise.','error');return}button.disabled=true;button.textContent='Demande testeur en attente';setStatus(status,'Demande testeur transmise.','success')}));
 }
