@@ -292,9 +292,9 @@ def validate(contents: dict[str, str]) -> None:
         "sessionsresolved=!rs.error,requestsresolved=!rr.error",
         "requestsresolved?reqs.length:'—'",
         "partiesrécentestemporairementindisponibles",
-        "constuser=awaitrequireuser(),form=document.queryselector('[data-profile-form]');if(!form)return;setformenabled(form,false);",
+        "constform=document.queryselector('[data-profile-form]');if(!form)return;setformenabled(form,false);constuser=awaitrequireuser();",
         "impossibledechargerleprofil.leformulaireresteverrouillé",
-        "constuser=awaitrequireuser(),form=document.queryselector('[data-contribution-form]');if(!form)return;setformenabled(form,false);",
+        "constform=document.queryselector('[data-contribution-form]');if(!form)return;setformenabled(form,false);constuser=awaitrequireuser();",
         "impossibledevérifiervoschoixdecontribution.leformulaireresteverrouillé",
         "private_profile:s.rpc('private_profile_get')",
         "if(results.some(result=>result.error))",
@@ -315,7 +315,7 @@ def validate(contents: dict[str, str]) -> None:
     if "from('private_profiles')" in acc:
         fail("export compte: accès direct au coffre private_profiles interdit")
     for marker in (
-        "setbusy(true);try{awaitloadprofile();setbusy(false);",
+        "if(form){setbusy(true);awaitrequireuser();try{awaitloadprofile();setbusy(false);",
         "leformulaireresteverrouillétantquevosdonnéesn’ontpasétéchargées",
         "if(!loadedsnapshot)",
         "aucunemodificationn’estenvoyée",
@@ -532,8 +532,8 @@ def main() -> None:
             "profil générique masque erreur lecture":("account_js","const {data,error}=await getSupabase().from('profiles').select('*').eq('user_id',user.id).maybeSingle();","const {data}=await getSupabase().from('profiles').select('*').eq('user_id',user.id).maybeSingle();"),
             "consentement générique masque erreur lecture":("account_js","const {data,error}=await getSupabase().from('research_consents').select('*').eq('user_id',user.id).maybeSingle();","const {data}=await getSupabase().from('research_consents').select('*').eq('user_id',user.id).maybeSingle();"),
             "dashboard historique masque erreurs en zéro":("account_js","const sessionsResolved=!rs.error,requestsResolved=!rr.error","const sessionsResolved=true,requestsResolved=true"),
-            "profil générique non verrouillé au chargement":("account_js","const user=await requireUser(),form=document.querySelector('[data-profile-form]');if(!form)return;\n  setFormEnabled(form,false);","const user=await requireUser(),form=document.querySelector('[data-profile-form]');if(!form)return;"),
-            "contributions non verrouillées au chargement":("account_js","const user=await requireUser(),form=document.querySelector('[data-contribution-form]');if(!form)return;\n  setFormEnabled(form,false);","const user=await requireUser(),form=document.querySelector('[data-contribution-form]');if(!form)return;"),
+            "profil générique non verrouillé avant auth":("account_js","const form=document.querySelector('[data-profile-form]');if(!form)return;\n  setFormEnabled(form,false);\n  const user=await requireUser();","const form=document.querySelector('[data-profile-form]');if(!form)return;\n  const user=await requireUser();"),
+            "contributions non verrouillées avant auth":("account_js","const form=document.querySelector('[data-contribution-form]');if(!form)return;\n  setFormEnabled(form,false);\n  const user=await requireUser();","const form=document.querySelector('[data-contribution-form]');if(!form)return;\n  const user=await requireUser();"),
             "cache compte profil revenu V25.0.1":("profile_html","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
             "cache compte contributions revenu V25.0.1":("secondary_contributions","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
             "export coffre revenu en accès table direct":("account_js","private_profile:s.rpc('private_profile_get')","private_profile:s.from('private_profiles').select('*').eq('user_id',user.id)"),
