@@ -65,9 +65,10 @@ async function init(){
   if(orderCount)orderCount.textContent=String(orders.length);
   if(rightsCount)rightsCount.textContent=String(entitlements.length);
 
-  const isOwner=!ownerResult.error&&ownerResult.data===true;
+  const ownerResolved=!ownerResult.error;
+  const isOwner=ownerResolved&&ownerResult.data===true;
   const role=document.querySelector('[data-purchase-account-role]');
-  if(role)role.textContent=isOwner?'Compte créateur SINJIRA™':'Compte membre SINJIRA™';
+  if(role)role.textContent=!ownerResolved?'Rôle du compte non confirmé':isOwner?'Compte créateur SINJIRA™':'Compte membre SINJIRA™';
 
   if(isOwner){
     const [projectsResult,novelsResult,productsResult]=await Promise.all([
@@ -78,12 +79,12 @@ async function init(){
     renderCreatorPortfolio(rows(projectsResult.data),rows(novelsResult.data),rows(productsResult.data));
   }
 
-  const errors=[ordersResult,entitlementsResult].filter(result=>result.error);
+  const errors=[ownerResult,ordersResult,entitlementsResult].filter(result=>result.error);
   const status=document.querySelector('[data-purchases-v25-status]');
   if(errors.length&&status){
     status.hidden=false;
     status.dataset.statusType='error';
-    status.textContent='Certaines informations d’achat n’ont pas pu être chargées. Aucun accès supplémentaire n’a été accordé automatiquement.';
+    status.textContent='Certaines informations d’achat ou le rôle du compte n’ont pas pu être vérifiés. Aucun accès supplémentaire n’a été accordé automatiquement.';
   }
 }
 
