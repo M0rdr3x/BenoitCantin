@@ -31,7 +31,7 @@ Sept implémentations conservent leur vérification directe `auth.uid()`. `fract
 
 ### Droit produit Fracture conservé côté serveur
 
-`create_fracture_party` et `join_fracture_party` conservent avant leur déplacement interne la vérification serveur `has_sinjira_product('fracture-du-reseau-mere', auth.uid())`. Sans droit produit Fracture, elles refusent avec `FRACTURE_ENTITLEMENT_REQUIRED` **avant toute écriture de partie ou de membre**.
+`create_fracture_party` et `join_fracture_party` conservent avant leur déplacement interne la vérification serveur `has_sinjira_product('fracture-du-reseau-mere', auth.uid())`. Sans droit produit Fracture, elles refusent avec `FRACTURE_ACCESS_REQUIRED` **avant toute écriture de partie ou de membre**.
 
 Ce droit produit provient de `user_entitlements` (par exemple après activation d’un code physique). Il reste distinct de `project_access`, qui sert aux niveaux d’accès projet/testeur/documents. Une acquisition Fracture n’a donc pas besoin de fabriquer un faux `project_access` pour rendre le jeu jouable, et le rôle propriétaire ne doit pas être représenté comme un achat.
 
