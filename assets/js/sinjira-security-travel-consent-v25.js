@@ -108,6 +108,7 @@ function ensurePreview(form){
 
 function resetPreview(form){
   approvedSignature = null;
+  delete form.dataset.travelConsentApproved;
   const preview = qs(PREVIEW_SELECTOR, form);
   if(preview)preview.hidden = true;
   const submit = qs(SUBMIT_SELECTOR, form);
@@ -148,11 +149,15 @@ function interceptTravelSubmit(event){
   try{
     const draft = readTravelDraft(form);
     const signature = travelSignature(draft);
-    if(approvedSignature === signature)return;
+    if(approvedSignature === signature){
+      form.dataset.travelConsentApproved='true';
+      return;
+    }
 
     event.preventDefault();
     event.stopImmediatePropagation();
     approvedSignature = signature;
+    delete form.dataset.travelConsentApproved;
     showPreview(form, draft);
     status('Vérifiez les données affichées, puis confirmez vous-même l’activation du Mode Voyage.', 'info');
   }catch(error){
