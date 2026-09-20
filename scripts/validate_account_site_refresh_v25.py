@@ -143,6 +143,14 @@ def validate(contents: dict[str, str]) -> None:
         fail("achats: lectures propres au compte non bornées")
     if "rendercreatorportfolio" not in pj:
         fail("achats: séparation portefeuille créateur absente")
+    for marker in (
+        "cataloguedesprojetstemporairementindisponible",
+        "cataloguedesromanstemporairementindisponible",
+        "cataloguedesproduitstemporairementindisponible",
+        "consterrors=[ownerresult,ordersresult,entitlementsresult,...creatorresults]",
+    ):
+        if marker not in pj:
+            fail(f"achats: échec partiel du portefeuille créateur non signalé: {marker}")
     if "rôleducomptenonconfirmé" not in libj or "rôleducomptenonconfirmé" not in pj:
         fail("rôle créateur: échec de résolution encore masqué comme compte membre")
     if "consterrors=[ownerresult,adminresult,projectsresult" not in libj:
@@ -316,6 +324,7 @@ def main() -> None:
             "compteur commandes redevenu ambigu":("purchases_html","Commandes enregistrées","Commandes payées / enregistrées"),
             "échec rôle créateur masqué en bibliothèque":("library_js","Rôle du compte non confirmé","Compte SINJIRA™"),
             "échec rôle créateur masqué dans achats":("purchases_js","Rôle du compte non confirmé","Compte membre SINJIRA™"),
+            "échec portefeuille créateur masqué":("purchases_js","Catalogue des projets temporairement indisponible.","Aucun projet enregistré."),
             "nom affiché redevenu ambigu":("profile_html","Nom affiché privé","Nom affiché"),
             "compteur romans suivis retiré":("dashboard_js","setText('[data-stat-reader]',count)","setText('[data-stat-reader]',0)"),
             "rôle dashboard supposé côté client":("dashboard_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
