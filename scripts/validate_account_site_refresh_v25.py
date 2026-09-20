@@ -450,9 +450,9 @@ def validate(contents: dict[str, str]) -> None:
         if marker not in reader:
             fail(f"lecteur démo: état de synchronisation non vérifié: {marker}")
     if "sinjira-reader.js?v=25.0.3" not in contents["literature_html"]:
-        fail("littérature: cache lecteur V25.0.2 absent")
+        fail("littérature: cache lecteur V25.0.3 absent")
     if "sinjira-reader.js?v=25.0.3" not in contents["demo_html"]:
-        fail("lecteur démo: cache lecteur V25.0.2 absent")
+        fail("lecteur démo: cache lecteur V25.0.3 absent")
 
     if "selectplan(41);" not in test:
         fail("pgTAP contenu: plan(41) absent")
@@ -562,7 +562,7 @@ def main() -> None:
             "catalogue littérature masque rôle non résolu":("literature_js","ownerResolved=!ownerResult.error","ownerResolved=true"),
             "lecteur démo revenu à reader_library":("reader_js","from('sinjira_reader_library').select('last_page')","from('reader_library').select('last_page')"),
             "lecteur démo ignore erreur upsert":("reader_js","return {synced:!error,error:error||null}","return {synced:true,error:null}"),
-            "lecteur démo annonce toujours synchronisé":("reader_js","sync.synced?\`Page \${current} sauvegardée sur cet appareil et synchronisée avec votre compte.\`:\`Page \${current} sauvegardée sur cet appareil · synchronisation du compte indisponible.\`","\`Page \${current} sauvegardée sur cet appareil et synchronisée avec votre compte.\`"),
+            "lecteur démo annonce toujours synchronisé":("reader_js","sync.synced?`Page ${current} sauvegardée sur cet appareil et synchronisée avec votre compte.`:`Page ${current} sauvegardée sur cet appareil · synchronisation du compte indisponible.`","`Page ${current} sauvegardée sur cet appareil et synchronisée avec votre compte.`"),
             "cache catalogue littérature revenu V25.1.0":("literature_html","sinjira-literature-catalog-v25.js?v=25.1.1","sinjira-literature-catalog-v25.js?v=25.1.0"),
             "cache lecteur démo revenu V19":("demo_html","sinjira-reader.js?v=25.0.3","sinjira-reader.js?v=19.0"),
         }
