@@ -233,6 +233,28 @@ def self_test() -> None:
         if clean:
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
 
+        healthy_library = read(paths['library'])
+        paths['library'].write_text(
+            healthy_library + "\nfunctions.invoke(PRIVATE_NOVEL_FUNCTION);",
+            encoding='utf-8',
+        )
+        direct_library_delivery = validate(*args)
+        if not any('action privée ou rôle propriétaire dupliqué interdit' in item for item in direct_library_delivery):
+            raise AssertionError('Un appel de livraison privée direct depuis la Bibliothèque doit être bloqué.')
+
+        paths['library'].write_text(
+            healthy_library.replace(
+                'const fullAccess=Boolean(novel.full_access);',
+                'const fullAccess=true;',
+                1,
+            ),
+            encoding='utf-8',
+        )
+        bypass = validate(*args)
+        if not any('full_access serveur' in item for item in bypass):
+            raise AssertionError('Un contournement du full_access canonique doit être bloqué.')
+
+        paths['library'].write_text(healthy_library, encoding='utf-8')
         paths['reader_js'].write_text(read(paths['reader_js']) + '\nisSinjiraOwner(user);', encoding='utf-8')
         client_owner = validate(*args)
         if not any('autorisation client interdite' in item for item in client_owner):
