@@ -163,6 +163,12 @@ def validate(contents: dict[str, str]) -> None:
         fail("tableau de bord: source self-only des romans suivis absente")
     if "set('[data-stat-reader]',reads.length)" not in contents["account_js"]:
         fail("tableau de bord: compteur Romans suivis non alimenté")
+    if "set('[data-account-role]'" not in contents["account_js"] or "s.rpc('is_sinjira_owner',{p_user_id:user.id})" not in contents["account_js"] or "s.rpc('is_sinjira_admin',{p_user_id:user.id})" not in contents["account_js"]:
+        fail("tableau de bord: rôle du compte non résolu côté serveur")
+    if "set('[data-project-access-summary]'" not in contents["account_js"]:
+        fail("tableau de bord: résumé des accès projets non alimenté")
+    if "rôleducomptenonconfirmé" not in acc:
+        fail("tableau de bord: état fail-closed du rôle non confirmé absent")
     if "pw.length<12" not in acc or "a.length<12" not in acc:
         fail("authentification: helpers Compte doivent conserver le minimum de 12 caractères")
     if "a.length<10" in acc or "au moins 10 caractères" in acc:
@@ -300,6 +306,8 @@ def main() -> None:
             "échec rôle créateur masqué dans achats":("purchases_js","Rôle du compte non confirmé","Compte membre SINJIRA™"),
             "nom affiché redevenu ambigu":("profile_html","Nom affiché privé","Nom affiché"),
             "compteur romans suivis retiré":("account_js","set('[data-stat-reader]',reads.length)","set('[data-stat-reader]',0)"),
+            "rôle dashboard supposé côté client":("account_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
+            "résumé accès dashboard retiré":("account_js","set('[data-project-access-summary]'","set('[data-project-access-summary-missing]'"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
