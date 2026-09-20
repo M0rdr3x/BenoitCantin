@@ -369,9 +369,10 @@ async function settings(){
     const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`sinjira-mes-donnees-${new Date().toISOString().slice(0,10)}.json`;link.click();URL.revokeObjectURL(url);
   });
   document.querySelector('[data-delete-account]')?.addEventListener('click',async()=>{
-    if(prompt('Pour supprimer définitivement votre compte, écrivez SUPPRIMER.')!=='SUPPRIMER')return;
-    const {error}=await s.functions.invoke('delete-player-account',{body:{confirm:'SUPPRIMER'}});
-    if(error){setStatus(status,'Suppression impossible.','error');return}
+    const confirmation=prompt('Pour supprimer définitivement votre compte, écrivez SUPPRIMER MON COMPTE.');
+    if(confirmation!=='SUPPRIMER MON COMPTE')return;
+    const {data,error}=await s.functions.invoke('delete-player-account',{body:{confirm:confirmation}});
+    if(error||!data?.ok){setStatus(status,data?.error||'Suppression impossible. Aucune confirmation de suppression n’a été reçue.','error');return}
     postNativeChildAccess('unknown');await s.auth.signOut();location.href='/compte/connexion.html?deleted=1';
   });
 }
