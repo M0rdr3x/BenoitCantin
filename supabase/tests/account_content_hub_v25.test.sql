@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(9);
+select plan(12);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -20,6 +20,32 @@ values
 insert into public.internal_admin_users(user_id,role)
 values('b1000000-0000-4000-8000-000000000001','owner')
 on conflict(user_id) do update set role='owner';
+
+insert into public.projects(
+  id,slug,name,type,status,visibility,sort_order,allow_tester_requests
+)
+values(
+  'b8000000-0000-4000-8000-000000000008',
+  'content-hub-owner-private-project',
+  'Projet interne créateur',
+  'game',
+  'draft',
+  'restricted',
+  998,
+  false
+);
+
+select ok(
+  exists(
+    select 1
+    from pg_policies
+    where schemaname='public'
+      and tablename='projects'
+      and policyname='projects_owner_catalog_read_v25'
+      and qual ilike '%is_sinjira_owner%'
+  ),
+  'la policy projets owner-only V25 existe'
+);
 
 insert into public.sinjira_novels(id,slug,title,status,sort_order)
 values('b3000000-0000-4000-8000-000000000003','content-hub-draft','Roman privé créateur','draft',999);
@@ -56,6 +82,11 @@ select is(
   'un membre ne voit pas un roman brouillon créateur'
 );
 select is(
+  (select count(*)::integer from public.projects where slug='content-hub-owner-private-project'),
+  0,
+  'un membre ne voit pas un projet interne créateur'
+);
+select is(
   (select count(*)::integer from public.products where slug='content-entitled'),
   1,
   'un membre voit encore un produit inactif lié à son entitlement'
@@ -88,6 +119,11 @@ select is(
   (select count(*)::integer from public.sinjira_novels where slug='content-hub-draft'),
   1,
   'le créateur voit son roman brouillon'
+);
+select is(
+  (select count(*)::integer from public.projects where slug='content-hub-owner-private-project'),
+  1,
+  'le créateur voit son projet interne sans faux achat'
 );
 select is(
   (select count(*)::integer from public.products where slug='content-private'),
