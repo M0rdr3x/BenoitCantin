@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(12);
+select plan(30);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -47,6 +47,25 @@ select ok(
   ),
   'la policy projets owner-only V25 existe'
 );
+
+select ok(has_table_privilege('authenticated','public.projects','SELECT'),'authenticated peut lire projects sous RLS');
+select ok(has_table_privilege('anon','public.projects','SELECT'),'anon peut lire les projets publics sous RLS');
+select ok(not has_table_privilege('authenticated','public.projects','INSERT'),'authenticated ne peut pas créer un projet directement');
+select ok(has_table_privilege('authenticated','public.project_access','SELECT'),'authenticated peut relire son project_access sous RLS');
+select ok(not has_table_privilege('anon','public.project_access','SELECT'),'anon ne peut pas lire project_access');
+select ok(has_table_privilege('authenticated','public.access_requests','SELECT'),'authenticated peut relire ses demandes sous RLS');
+select ok(has_table_privilege('authenticated','public.access_requests','INSERT'),'authenticated peut créer une demande sous RLS');
+select ok(not has_table_privilege('authenticated','public.access_requests','UPDATE'),'authenticated ne peut pas décider une demande directement');
+select ok(not has_table_privilege('authenticated','public.access_requests','DELETE'),'authenticated ne peut pas supprimer arbitrairement une demande');
+select ok(has_table_privilege('authenticated','public.documents','SELECT'),'authenticated peut lire les documents autorisés sous RLS');
+select ok(has_table_privilege('anon','public.documents','SELECT'),'anon peut lire uniquement les documents publics autorisés par RLS');
+select ok(has_table_privilege('authenticated','public.playtests','SELECT'),'authenticated peut lire les playtests autorisés sous RLS');
+select ok(has_table_privilege('authenticated','public.playtest_participants','SELECT'),'authenticated peut relire ses candidatures playtest');
+select ok(has_table_privilege('authenticated','public.playtest_participants','INSERT'),'authenticated peut candidater à un playtest');
+select ok(not has_table_privilege('authenticated','public.playtest_participants','UPDATE'),'authenticated ne peut pas approuver une candidature directement');
+select ok(not has_table_privilege('authenticated','public.playtest_participants','DELETE'),'authenticated ne peut pas supprimer arbitrairement une candidature');
+select ok(has_table_privilege('authenticated','public.extensions','SELECT'),'authenticated peut lire les extensions publiées sous RLS');
+select ok(has_table_privilege('anon','public.extensions','SELECT'),'anon peut lire les extensions publiques sous RLS');
 
 insert into public.sinjira_novels(id,slug,title,status,sort_order)
 values('b3000000-0000-4000-8000-000000000003','content-hub-draft','Roman privé créateur','draft',999);
