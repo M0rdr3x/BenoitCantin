@@ -20,6 +20,7 @@ FILES={
     "literature_html":ROOT/"projets/sinjira/romans/index.html",
     "test":ROOT/"supabase/tests/private_novel_catalog_v25.test.sql",
     "workflow":ROOT/".github/workflows/sinjira-private-novel-catalog-v25.yml",
+    "config":ROOT/"supabase/config.toml",
 }
 
 def fail(message:str)->None:
@@ -42,6 +43,7 @@ def validate(contents:dict[str,str])->None:
     literature_html=compact(contents["literature_html"])
     test=compact(contents["test"])
     workflow=compact(contents["workflow"])
+    config=contents["config"]
 
     for marker in (
         "createtableifnotexistsprivate.sinjira_private_novel_assets",
@@ -144,6 +146,11 @@ def validate(contents:dict[str,str])->None:
     if "supabase/migrations/20260919113000_sinjira_v25_private_novel_asset_rls.sql" not in contents["workflow"]:
         fail("workflow romans privés: migration RLS 20260919113000 non surveillée")
 
+    if "supabase/config.toml" not in contents["workflow"]:
+        fail("workflow romans privés: config.toml non surveillé")
+    if "[functions.get-private-novel-url]\nverify_jwt = true" not in config:
+        fail("config romans privés: get-private-novel-url doit garder verify_jwt=true")
+
     if "selectplan(13);" not in test:
         fail("pgTAP roman privé: plan(13) absent")
     for marker in (
@@ -169,6 +176,8 @@ def main()->None:
             "catalogue non self-only":("library_js","sinjira_my_novel_catalog","sinjira_novels"),
             "JSON Edge non borné":("edge","const body=await readBoundedJson(req);","const body=await req.json();"),
             "migration RLS hors paths CI":("workflow","supabase/migrations/20260919113000_sinjira_v25_private_novel_asset_rls.sql","supabase/migrations/rls-missing.sql"),
+            "config JWT hors paths CI":("workflow","supabase/config.toml","supabase/config-missing.toml"),
+            "JWT Edge désactivé":("config","[functions.get-private-novel-url]\nverify_jwt = true","[functions.get-private-novel-url]\nverify_jwt = false"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
