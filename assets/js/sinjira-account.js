@@ -235,17 +235,17 @@ async function dashboard(){
   document.querySelectorAll('[data-player-name]').forEach(n=>n.textContent=p.pseudo||p.display_name||user.email||'Joueur SINJIRA');
   document.querySelectorAll('[data-player-email]').forEach(n=>n.textContent=user.email||'—');
   document.querySelectorAll('[data-dashboard-avatar]').forEach(n=>{n.src=avatarPublicUrl(p.avatar_path);n.alt=`Photo de profil de ${p.pseudo||p.display_name||'joueur'}`});
-  const [rs,rp,rd,rr]=await Promise.all([
+  const [rs,rp,rl,rr]=await Promise.all([
     s.from('game_sessions').select('id,title,status,updated_at,game_slug,party_code,projects(name,public_path)').eq('user_id',user.id).order('updated_at',{ascending:false}).limit(6),
     s.from('projects').select('id,slug,name,status').order('sort_order'),
-    s.from('documents').select('id').eq('status','approved'),
+    s.from('sinjira_reader_library').select('novel_id').eq('user_id',user.id),
     s.from('access_requests').select('id').eq('user_id',user.id).eq('status','pending')
   ]);
-  const sessions=rs.data||[],projects=rp.data||[],docs=rd.data||[],reqs=rr.data||[];
+  const sessions=rs.data||[],projects=rp.data||[],reads=rl.data||[],reqs=rr.data||[];
   const set=(sel,v)=>document.querySelector(sel)?.replaceChildren(document.createTextNode(String(v)));
   set('[data-stat-active]',sessions.filter(x=>x.status==='in_progress').length);
   set('[data-stat-finished]',sessions.filter(x=>x.status==='finished').length);
-  set('[data-stat-projects]',projects.length);set('[data-stat-documents]',docs.length);set('[data-stat-requests]',reqs.length);
+  set('[data-stat-projects]',projects.length);set('[data-stat-reader]',reads.length);set('[data-stat-requests]',reqs.length);
   const cs=document.querySelector('[data-contribution-status]');if(cs)cs.textContent=c.participate?'Programme Contributeur activé':'Programme Contributeur désactivé';
   const recent=document.querySelector('[data-recent-sessions]');
   if(recent)recent.innerHTML=sessions.length?sessions.map(x=>`<article class="account-session-row"><div><strong>${escapeHtml(x.title||x.projects?.name||'Partie SINJIRA')}</strong><span>${x.status==='finished'?'Terminée':'En cours'} · ${formatDate(x.updated_at)}</span></div><a class="btn btn-secondary btn-small" href="${sessionUrl(x)}">${x.status==='finished'?'Consulter':'Continuer'}</a></article>`).join(''):'<p>Aucune partie sauvegardée.</p>';
