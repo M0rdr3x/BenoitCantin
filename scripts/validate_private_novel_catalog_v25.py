@@ -129,8 +129,18 @@ def validate(contents:dict[str,str])->None:
         fail("bibliothèque: RPC roman self-only absent")
     if "cataloguecomplet" not in library or "manuscritintégralprivénonchargé" not in library:
         fail("bibliothèque: état créateur honnête absent")
-    if "get-private-novel-url" not in library:
-        fail("bibliothèque: livraison générique absente")
+    if "constfullaccess=boolean(novel.full_access);" not in library or "fullaccess?" not in library:
+        fail("bibliothèque: accès intégral non lié au full_access canonique")
+    for forbidden in (
+        "get-private-novel-url",
+        "functions.invoke(",
+        "data-private-book-download",
+        "functiondownloadprivatebook",
+        "functionbookactions",
+        "accèsauteur",
+    ):
+        if forbidden in library:
+            fail(f"bibliothèque: livraison privée directe ou rôle dupliqué interdit: {forbidden}")
     if "sinjira-library-v24-4-61.js?v=25.1.0" not in library_html:
         fail("bibliothèque: cache générique roman non forcé")
 
@@ -174,6 +184,8 @@ def main()->None:
     if args.self_test:
         mutations={
             "catalogue non self-only":("library_js","sinjira_my_novel_catalog","sinjira_novels"),
+            "full_access bibliothèque contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
+            "livraison privée réintroduite dans bibliothèque":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=Boolean(novel.full_access); functions.invoke('get-private-novel-url');"),
             "JSON Edge non borné":("edge","const body=await readBoundedJson(req);","const body=await req.json();"),
             "migration RLS hors paths CI":("workflow","supabase/migrations/20260919113000_sinjira_v25_private_novel_asset_rls.sql","supabase/migrations/rls-missing.sql"),
             "config JWT hors paths CI":("workflow","supabase/config.toml","supabase/config-missing.toml"),
