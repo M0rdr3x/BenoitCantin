@@ -10,6 +10,8 @@ on:
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_social_rls_contract.py'
       - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_future_migration_review_plan_v25.py'
+      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
@@ -23,6 +25,8 @@ on:
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_social_rls_contract.py'
       - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_future_migration_review_plan_v25.py'
+      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
@@ -83,6 +87,9 @@ jobs:
           python scripts/validate_supabase.py
           python scripts/validate_edge_function_inventory.py
           python scripts/validate_social_rls_contract.py
+          python -m py_compile scripts/validate_future_migration_review_plan_v25.py
+          python scripts/validate_future_migration_review_plan_v25.py --self-test
+          python scripts/validate_future_migration_review_plan_v25.py
           python scripts/validate_production_migration_ledger.py
 
       - name: Construire le workspace production protégé
