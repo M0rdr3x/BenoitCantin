@@ -72,8 +72,8 @@ def main():
         entitlement="public.has_sinjira_product('fracture-du-reseau-mere',uid)"
         if entitlement not in b:
             errors.append(f'{name}: droit produit Fracture absent avant déplacement interne ({path.name}).')
-        if "raise exception 'fracture_entitlement_required'" not in b:
-            errors.append(f'{name}: erreur FRACTURE_ENTITLEMENT_REQUIRED absente ({path.name}).')
+        if "raise exception 'fracture_access_required'" not in b:
+            errors.append(f'{name}: erreur FRACTURE_ACCESS_REQUIRED absente ({path.name}).')
         entitlement_pos=b.find(entitlement)
         write_pos=b.find(write_marker)
         if entitlement_pos<0 or write_pos<0 or entitlement_pos>write_pos:
@@ -87,7 +87,7 @@ def main():
 
     if '8 rpc' not in doc and 'huit rpc' not in doc:
         errors.append('Document V24.5.21 incomplet: huit RPC')
-    for marker in ['security invoker','sinjira_fracture_internal','152 migrations','auth.uid()','_fracture_engine_get_state_raw','is_fracture_party_member','quatre politiques rls','droit produit fracture','fracture_entitlement_required','état brut','aucun paiement','l’humain avant tout']:
+    for marker in ['security invoker','sinjira_fracture_internal','152 migrations','auth.uid()','_fracture_engine_get_state_raw','is_fracture_party_member','quatre politiques rls','droit produit fracture','fracture_access_required','état brut','aucun paiement','l’humain avant tout']:
         if marker not in doc: errors.append(f'Document V24.5.21 incomplet: {marker}')
     for token in ['stripe','paypal','twilio','api.resend.com','openai.com','shippo','easypost']:
         if token in low: errors.append(f'Intégration externe interdite dans V24.5.21: {token}')
