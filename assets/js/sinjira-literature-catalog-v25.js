@@ -11,10 +11,11 @@ async function init(){
   if(!box)return;
   const s=getSupabase();
   const user=await getCurrentUser();
-  let isOwner=false;
+  let isOwner=false,ownerResolved=true;
   if(user){
     const ownerResult=await s.rpc('is_sinjira_owner',{p_user_id:user.id});
-    isOwner=!ownerResult.error&&ownerResult.data===true;
+    ownerResolved=!ownerResult.error;
+    isOwner=ownerResolved&&ownerResult.data===true;
   }
   const result=user?await s.rpc('sinjira_my_novel_catalog'):await s.from('sinjira_novels').select('id,slug,title,subtitle,description,status,cover_url,public_path,demo_path,sort_order').order('sort_order');
   const {data,error}=result;
@@ -25,7 +26,11 @@ async function init(){
   const novels=Array.isArray(data)?data:[];
   box.innerHTML=novels.map(novel=>{
     const integral=Boolean(novel.full_access);
-    const access=isOwner?(integral?'Créateur · intégrale privée':'Créateur · catalogue complet'):integral?'Acheté / droit numérique':novel.status==='published'?'Public':'Annoncé';
+    const access=!ownerResolved&&user
+      ?(integral?'Accès intégral confirmé':'Rôle du compte non confirmé')
+      :isOwner
+        ?(integral?'Créateur · intégrale privée':'Créateur · catalogue complet')
+        :integral?'Acheté / droit numérique':novel.status==='published'?'Public':'Annoncé';
     const cover=novel.cover_url||'/assets/media/sinjira-litterature.webp';
     const actions=[
       novel.public_path?`<a class="btn btn-secondary" href="${escapeHtml(novel.public_path)}">Voir la fiche</a>`:'',
@@ -38,12 +43,19 @@ async function init(){
 
   const note=document.querySelector('[data-literature-account-note]');
   if(note){
-    note.textContent=isOwner
-      ?'Mode créateur : les romans en préparation sont visibles ici, sans être rendus publics aux autres comptes.'
-      :user
-        ?'Catalogue adapté à votre compte : les accès intégraux apparaissent seulement lorsqu’un droit numérique existe.'
-        :'Les romans annoncés ou publiés sont visibles ici. Connectez-vous pour voir vos droits de lecture.';
+    note.textContent=user&&!ownerResolved
+      ?'Rôle du compte non confirmé. Le catalogue affiché vient du serveur et aucun accès supplémentaire n’est supposé.'
+      :isOwner
+        ?'Mode créateur : les romans en préparation sont visibles ici, sans être rendus publics aux autres comptes.'
+        :user
+          ?'Catalogue adapté à votre compte : les accès intégraux apparaissent seulement lorsqu’un droit numérique existe.'
+          :'Les romans annoncés ou publiés sont visibles ici. Connectez-vous pour voir vos droits de lecture.';
   }
 }
 
-init().catch(()=>{});
+init().catch(()=>{
+  const box=document.querySelector('[data-literature-catalog]');
+  if(box)box.innerHTML='<div class="notice"><strong>Catalogue temporairement indisponible.</strong><p>Les accès n’ont pas pu être vérifiés; aucun droit supplémentaire n’est supposé.</p></div>';
+  const note=document.querySelector('[data-literature-account-note]');
+  if(note)note.textContent='Impossible de vérifier le catalogue pour le moment.';
+});
