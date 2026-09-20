@@ -393,8 +393,15 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in dashboard:
             fail(f"tableau de bord: dégradation fail-closed absente: {marker}")
-    if "assets/js/sinjira-account-dashboard-v24-4-60.js" not in workflow:
-        fail("CI compte: module Dashboard dédié non surveillé")
+    for watched in (
+        "assets/js/sinjira-account-dashboard-v24-4-60.js",
+        "assets/js/v24-data-control.js",
+        "assets/js/v24-preferences.js",
+        "assets/js/sinjira-privacy-center-v24-4-83.js",
+        "projets/sinjira/romans/lire-demo.html",
+    ):
+        if watched not in workflow:
+            fail(f"CI compte: fichier critique non surveillé: {watched}")
     if "sinjira-account-dashboard-v24-4-60.js?v=25.0.2" not in contents["account_page:index.html"]:
         fail("tableau de bord: cache V25 du module dédié absent")
     if "pw.length<12" not in acc or "a.length<12" not in acc:
@@ -655,6 +662,10 @@ def main() -> None:
             "bibliothèque dashboard erreur masquée":("dashboard_js","renderLibrary(libraryResult.data||[],!libraryResult.error);","renderLibrary(libraryResult.data||[],true);"),
             "résumé accès dashboard retiré":("dashboard_js","renderAccess(projects,isOwner,isAdmin,roleResolved,catalogResolved,accessResolved);","renderAccess(projects,false,false,true,true,true);"),
             "module Dashboard hors paths CI":("workflow","assets/js/sinjira-account-dashboard-v24-4-60.js","assets/js/sinjira-account-dashboard-missing.js"),
+            "contrôleur données hors paths CI":("workflow","assets/js/v24-data-control.js","assets/js/v24-data-control-missing.js"),
+            "préférences hors paths CI":("workflow","assets/js/v24-preferences.js","assets/js/v24-preferences-missing.js"),
+            "centre vie privée hors paths CI":("workflow","assets/js/sinjira-privacy-center-v24-4-83.js","assets/js/privacy-center-missing.js"),
+            "lecteur démo HTML hors paths CI":("workflow","projets/sinjira/romans/lire-demo.html","projets/sinjira/romans/lire-demo-missing.html"),
             "cache Dashboard revenu V24":("account_page:index.html","sinjira-account-dashboard-v24-4-60.js?v=25.0.2","sinjira-account-dashboard-v24-4-60.js?v=24.4.60"),
             "catalogue littérature masque rôle non résolu":("literature_js","ownerResolved=!ownerResult.error","ownerResolved=true"),
             "lecteur démo revenu à reader_library":("reader_js","from('sinjira_reader_library').select('last_page')","from('reader_library').select('last_page')"),
