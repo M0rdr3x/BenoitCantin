@@ -28,6 +28,7 @@ on:
       - 'assets/css/sinjira-player-account.css'
       - 'compte/**'
       - 'projets/sinjira/romans/index.html'
+      - 'projets/sinjira/romans/lire-demo.html'
       - 'projets/sinjira/sinjira.css'
       - '.github/workflows/sinjira-account-content-hub-v25.yml'
   workflow_dispatch:
