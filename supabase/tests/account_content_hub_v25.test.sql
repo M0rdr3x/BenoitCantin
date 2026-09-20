@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(30);
+select plan(39);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -66,6 +66,38 @@ select ok(not has_table_privilege('authenticated','public.playtest_participants'
 select ok(not has_table_privilege('authenticated','public.playtest_participants','DELETE'),'authenticated ne peut pas supprimer arbitrairement une candidature');
 select ok(has_table_privilege('authenticated','public.extensions','SELECT'),'authenticated peut lire les extensions publiées sous RLS');
 select ok(has_table_privilege('anon','public.extensions','SELECT'),'anon peut lire les extensions publiques sous RLS');
+
+select ok(to_regnamespace('sinjira_catalog_internal') is not null,'schéma interne catalogue existe');
+select ok(
+  exists(
+    select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public' and p.proname='project_access_rank' and not p.prosecdef
+  ),
+  'project_access_rank public est un wrapper SECURITY INVOKER'
+);
+select ok(not has_function_privilege('authenticated','public.project_access_rank(uuid,uuid)','EXECUTE'),'authenticated ne peut pas sonder directement le rang projet');
+select ok(not has_function_privilege('anon','public.project_access_rank(uuid,uuid)','EXECUTE'),'anon ne peut pas sonder directement le rang projet');
+select ok(has_function_privilege('service_role','public.project_access_rank(uuid,uuid)','EXECUTE'),'service_role conserve le wrapper public du rang projet');
+select ok(
+  exists(
+    select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='sinjira_catalog_internal' and p.proname='project_access_rank' and p.prosecdef
+  ),
+  'implémentation project_access_rank privilégiée déplacée hors public'
+);
+select ok(has_function_privilege('authenticated','sinjira_catalog_internal.project_access_rank(uuid,uuid)','EXECUTE'),'authenticated peut évaluer le helper interne via RLS');
+select ok(has_function_privilege('anon','sinjira_catalog_internal.project_access_rank(uuid,uuid)','EXECUTE'),'anon peut évaluer le helper interne via RLS public');
+select is(
+  (
+    select count(*)::integer
+    from pg_policies
+    where schemaname='public'
+      and tablename in ('projects','documents')
+      and lower(coalesce(qual,'')) like '%sinjira_catalog_internal.project_access_rank%'
+  ),
+  2,
+  'les policies projects/documents conservent l OID du helper déplacé'
+);
 
 insert into public.sinjira_novels(id,slug,title,status,sort_order)
 values('b3000000-0000-4000-8000-000000000003','content-hub-draft','Roman privé créateur','draft',999);
