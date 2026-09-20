@@ -13,6 +13,16 @@ function safeError(error){
   return text.length>180?`${text.slice(0,177)}…`:text;
 }
 
+async function edgeErrorData(error){
+  const response=error?.context;
+  if(!response||typeof response.json!=='function')return null;
+  try{
+    const readable=typeof response.clone==='function'?response.clone():response;
+    const payload=await readable.json();
+    return payload&&typeof payload==='object'?payload:null;
+  }catch{return null}
+}
+
 async function fetchAll(label,build){
   const rows=[];
   let from=0;
@@ -148,17 +158,18 @@ async function deleteAccount(){
   setStatus(status,'Vérification de sécurité et suppression en cours…','info');
   try{
     const {data,error}=await s.functions.invoke('delete-player-account',{body:{confirm:'SUPPRIMER MON COMPTE'}});
-    if(error)throw error;
-    if(!data?.ok){
-      if(data?.code==='OWNER_OR_ADMIN_DELETE_BLOCKED'){
+    const responseData=error?(await edgeErrorData(error)):(data||null);
+    if(error&&!responseData)throw error;
+    if(!responseData?.ok){
+      if(responseData?.code==='OWNER_OR_ADMIN_DELETE_BLOCKED'){
         setStatus(status,'Un compte propriétaire ou administrateur ne peut pas être supprimé depuis cette page.','error');
-      }else if(data?.code==='MFA_REQUIRED'){
+      }else if(responseData?.code==='MFA_REQUIRED'){
         location.href=`/compte/mfa.html?next=${encodeURIComponent('/compte/parametres.html')}`;
         return;
-      }else if(data?.code==='LEGAL_HOLD_ACTIVE'){
+      }else if(responseData?.code==='LEGAL_HOLD_ACTIVE'){
         setStatus(status,'La suppression automatique est temporairement bloquée par une obligation de conservation documentée. Ouvrez le Centre Vie privée pour suivre la demande.','error');
       }else{
-        setStatus(status,data?.error||'Suppression impossible.','error');
+        setStatus(status,responseData?.error||'Suppression impossible.','error');
       }
       deleteButton.disabled=false;
       return;
@@ -166,7 +177,6 @@ async function deleteAccount(){
     await s.auth.signOut({scope:'local'}).catch(()=>{});
     location.replace('/compte/connexion.html?deleted=1');
   }catch(error){
-    console.warn('[SINJIRA delete account]',error);
     setStatus(status,'Suppression impossible pour le moment. Aucune suppression supplémentaire n’a été demandée depuis cette page.','error');
     deleteButton.disabled=false;
   }
