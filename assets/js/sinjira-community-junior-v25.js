@@ -9,6 +9,11 @@ const accessNote=document.querySelector('[data-junior-access-note]');
 const accessParams=new URLSearchParams(location.search);
 if(accessNote&&accessParams.get('from')==='restricted')accessNote.hidden=false;
 
+function setComposerEnabled(enabled){
+  form?.querySelectorAll('textarea,button').forEach(node=>{node.disabled=!enabled;});
+}
+setComposerEnabled(false);
+
 function juniorMessage(error,fallback='Action impossible pour le moment.'){
   const message=String(error?.message||error||'').toUpperCase();
   if(message.includes('JUNIOR_GUARDIAN_CONSENT_REQUIRED'))return 'Ton parent ou tuteur doit d’abord activer la Communauté Junior dans Relations.';
@@ -24,10 +29,19 @@ function juniorMessage(error,fallback='Action impossible pour le moment.'){
 }
 
 function disableComposer(message){
-  if(form){
-    form.querySelectorAll('textarea,button').forEach(node=>{node.disabled=true;});
-  }
+  setComposerEnabled(false);
   if(feed)feed.innerHTML='<article class="v20-social-card"><h2>Communauté Junior indisponible</h2><p>'+escapeHtml(message)+'</p></article>';
+}
+
+async function refreshFeedAfterAction(successMessage,staleMessage){
+  setStatus(status,successMessage,'success');
+  try{
+    await loadFeed();
+    return true;
+  }catch{
+    setStatus(status,staleMessage,'info');
+    return false;
+  }
 }
 
 async function loadFeed(){
@@ -62,8 +76,10 @@ async function reportAndBlock(type,id){
     p_block:true
   });
   if(error)throw error;
-  setStatus(status,'Signalement enregistré. Cette personne est maintenant masquée de ton fil.','success');
-  await loadFeed();
+  await refreshFeedAfterAction(
+    'Signalement enregistré. Cette personne est maintenant masquée de ton fil.',
+    'Signalement enregistré et personne masquée, mais le fil ne peut pas être rafraîchi pour le moment.'
+  );
 }
 
 function bindFeed(posts){
@@ -75,7 +91,10 @@ function bindFeed(posts){
       if(!confirm('Supprimer cette publication?'))return;
       const {error}=await s.rpc('junior_community_delete_post',{p_post_id:postId});
       if(error){setStatus(status,juniorMessage(error,'Suppression impossible.'),'error');return;}
-      await loadFeed();
+      await refreshFeedAfterAction(
+        'Publication supprimée.',
+        'Publication supprimée, mais le fil ne peut pas être rafraîchi pour le moment.'
+      );
     });
 
     card.querySelector('[data-junior-report-post]')?.addEventListener('click',async()=>{
@@ -93,7 +112,10 @@ function bindFeed(posts){
         const {error}=await s.rpc('junior_community_create_comment',{p_post_id:postId,p_body:body});
         if(error){setStatus(status,juniorMessage(error,'Commentaire impossible.'),'error');return;}
         commentForm.reset();
-        await loadFeed();
+        await refreshFeedAfterAction(
+          'Commentaire ajouté au fil Junior.',
+          'Commentaire ajouté, mais le fil ne peut pas être rafraîchi pour le moment.'
+        );
       }finally{if(button)button.disabled=false;}
     });
 
@@ -104,7 +126,10 @@ function bindFeed(posts){
         if(!confirm('Supprimer ce commentaire?'))return;
         const {error}=await s.rpc('junior_community_delete_comment',{p_comment_id:commentId});
         if(error){setStatus(status,juniorMessage(error,'Suppression impossible.'),'error');return;}
-        await loadFeed();
+        await refreshFeedAfterAction(
+          'Commentaire supprimé.',
+          'Commentaire supprimé, mais le fil ne peut pas être rafraîchi pour le moment.'
+        );
       });
       commentCard.querySelector('[data-junior-report-comment]')?.addEventListener('click',async()=>{
         if(!comment)return;
@@ -136,6 +161,8 @@ function bindFeed(posts){
       return;
     }
 
+    setComposerEnabled(true);
+
     form?.addEventListener('submit',async event=>{
       event.preventDefault();
       const body=String(new FormData(form).get('body')||'').trim();
@@ -146,8 +173,10 @@ function bindFeed(posts){
         const {error}=await s.rpc('junior_community_create_post',{p_body:body});
         if(error){setStatus(status,juniorMessage(error,'Publication impossible.'),'error');return;}
         form.reset();
-        await loadFeed();
-        setStatus(status,'Publication ajoutée au fil Junior.','success');
+        await refreshFeedAfterAction(
+          'Publication ajoutée au fil Junior.',
+          'Publication ajoutée, mais le fil ne peut pas être rafraîchi pour le moment.'
+        );
       }finally{if(button)button.disabled=false;}
     });
 
