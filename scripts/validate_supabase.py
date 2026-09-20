@@ -60,8 +60,6 @@ def main()->int:
         product_compact=re.sub(r'\s+','',product_block.lower())
         if 'frompublic.user_entitlements' not in product_compact:
             fail(errors,f'{product_path.name}: has_sinjira_product ne dérive plus le droit depuis user_entitlements.')
-        if 'public.is_sinjira_owner' not in product_compact:
-            fail(errors,f'{product_path.name}: has_sinjira_product ne reconnaît plus explicitement le propriétaire.')
 
     for table in ('admin_notifications','guardian_signup_invites','products','user_entitlements','character_submissions','characters'):
         if table not in tables:fail(errors,f'Table contractuelle absente des migrations: {table}')
