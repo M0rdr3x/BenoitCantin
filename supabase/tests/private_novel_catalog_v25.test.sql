@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(12);
+select plan(13);
 
 select ok(
   to_regprocedure('public.sinjira_my_novel_catalog()') is not null,
@@ -20,6 +20,18 @@ select ok(
   not has_function_privilege('authenticated','public.sinjira_private_novel_asset_for_delivery(text)','EXECUTE'),
   'le navigateur membre ne peut pas lire les métadonnées de livraison privée'
 );
+select ok(
+  exists(
+    select 1
+    from pg_class c
+    join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='private'
+      and c.relname='sinjira_private_novel_assets'
+      and c.relrowsecurity=true
+  ),
+  'RLS est activée sur le registre privé des actifs romans'
+);
+
 select ok(
   not has_table_privilege('authenticated','private.sinjira_private_novel_assets','SELECT'),
   'la table des actifs privés reste invisible au navigateur'
