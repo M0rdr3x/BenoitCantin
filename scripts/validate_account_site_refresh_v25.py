@@ -10,6 +10,7 @@ ACCOUNT_DIR = ROOT / "compte"
 FILES = {
     "migration": ROOT / "supabase/migrations/20260919090000_sinjira_v25_account_content_hub.sql",
     "project_owner_migration": ROOT / "supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql",
+    "browser_privileges_migration": ROOT / "supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql",
     "library_html": ROOT / "compte/bibliotheque.html",
     "library_js": ROOT / "assets/js/sinjira-library-v24-4-61.js",
     "secondary_library_js": ROOT / "assets/js/sinjira-library.js",
@@ -55,6 +56,7 @@ def compact(value: str) -> str:
 def validate(contents: dict[str, str]) -> None:
     m = compact(contents["migration"])
     project_owner_migration = compact(contents["project_owner_migration"])
+    browser_privileges = compact(contents["browser_privileges_migration"])
     libh = compact(contents["library_html"])
     libj = compact(contents["library_js"])
     secondary_library = compact(contents["secondary_library_js"])
@@ -103,6 +105,27 @@ def validate(contents: dict[str, str]) -> None:
         fail("CI compte: migration visibilité projets créateur non surveillée")
     if "supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql" not in contents["workflow"]:
         fail("CI compte: frontière RPC V25 finale non surveillée")
+    if "supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql" not in contents["workflow"]:
+        fail("CI compte: convergence des privilèges catalogue navigateur non surveillée")
+
+    for marker in (
+        "revokeallontablepublic.projectsfromanon,authenticated",
+        "grantselectontablepublic.projectstoanon,authenticated",
+        "revokeallontablepublic.project_accessfromanon,authenticated",
+        "grantselectontablepublic.project_accesstoauthenticated",
+        "revokeallontablepublic.access_requestsfromanon,authenticated",
+        "grantselect,insertontablepublic.access_requeststoauthenticated",
+        "revokeallontablepublic.documentsfromanon,authenticated",
+        "grantselectontablepublic.documentstoanon,authenticated",
+        "revokeallontablepublic.playtestsfromanon,authenticated",
+        "grantselectontablepublic.playteststoauthenticated",
+        "revokeallontablepublic.playtest_participantsfromanon,authenticated",
+        "grantselect,insertontablepublic.playtest_participantstoauthenticated",
+        "revokeallontablepublic.extensionsfromanon,authenticated",
+        "grantselectontablepublic.extensionstoanon,authenticated",
+    ):
+        if marker not in browser_privileges:
+            fail(f"migration privilèges catalogue: garde absente: {marker}")
 
     for marker in ("data-library-games", "data-library-novels", "data-library-other"):
         if marker not in libh:
@@ -315,10 +338,17 @@ def validate(contents: dict[str, str]) -> None:
     if "from('sinjira_novels')" not in contents["literature_js"]:
         fail("littérature: fallback public anonyme canonique absent")
 
-    if "selectplan(12);" not in test:
-        fail("pgTAP contenu: plan(12) absent")
+    if "selectplan(30);" not in test:
+        fail("pgTAP contenu: plan(30) absent")
     for marker in (
         "lapolicyprojetsowner-onlyv25existe",
+        "authenticatedpeutlireprojectssousrls",
+        "anonnepeutpaslireproject_access",
+        "authenticatedpeutcréerunedemandesousrls",
+        "authenticatednepeutpasdéciderunedemandedirectement",
+        "authenticatedpeutcandidateràunplaytest",
+        "authenticatednepeutpasapprouverunecandidaturedirectement",
+        "anonpeutlirelesextensionspubliquessousrls",
         "unmembrenevoitpasunromanbrouilloncréateur",
         "unmembrenevoitpasunprojetinternecréateur",
         "lecréateurvoit sonprojetinternesansfauxachat".replace(" ", ""),
@@ -351,6 +381,8 @@ def main() -> None:
             "MFA avec ancien cache CSS":("mfa_html","sinjira-player-account.css?v=25.0.1","sinjira-player-account.css?v=24.4.66"),
             "policy projets créateur retirée":("project_owner_migration","create policy projects_owner_catalog_read_v25","create policy projects_owner_catalog_missing"),
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
+            "migration privilèges catalogue hors paths CI":("workflow","supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql","supabase/migrations/catalog-browser-privileges-missing.sql"),
+            "écriture projet navigateur réouverte":("browser_privileges_migration","grant select on table public.projects to anon, authenticated;","grant select, insert on table public.projects to anon, authenticated;"),
             "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
             "Fracture jouable sans droit produit":("library_js","project.play_path&&canPlay","project.play_path"),
             "Fracture droit produit forcé":("library_js","const productRight=isOwner||entitledProductSlugs.has(project.slug);","const productRight=true;"),
