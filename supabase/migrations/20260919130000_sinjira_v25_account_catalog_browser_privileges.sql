@@ -11,6 +11,62 @@
 
 begin;
 
+-- project_access_rank() était volontairement service_role-only en public depuis
+-- V24.5.24 afin d'éviter l'exposition directe d'un SECURITY DEFINER acceptant
+-- un p_user_id arbitraire. Les policies RLS projects/documents dépendent toutefois
+-- de son OID. On déplace donc l'implémentation privilégiée hors du schéma API
+-- public sans la recréer : les policies existantes conservent cet OID.
+create schema if not exists sinjira_catalog_internal;
+revoke all on schema sinjira_catalog_internal from public, anon, authenticated;
+grant usage on schema sinjira_catalog_internal to anon, authenticated, service_role;
+
+do $catalog_boundary$
+declare
+  v_oid oid;
+begin
+  select p.oid
+    into v_oid
+  from pg_proc p
+  join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='public'
+    and p.proname='project_access_rank'
+    and pg_get_function_identity_arguments(p.oid)='p_project_id uuid, p_user_id uuid'
+    and p.prosecdef;
+
+  if v_oid is null then
+    raise exception 'V25 catalogue: project_access_rank public SECURITY DEFINER attendu avant déplacement';
+  end if;
+
+  execute 'alter function public.project_access_rank(uuid,uuid) set schema sinjira_catalog_internal';
+end
+$catalog_boundary$;
+
+revoke all on function sinjira_catalog_internal.project_access_rank(uuid,uuid)
+from public, anon, authenticated;
+grant execute on function sinjira_catalog_internal.project_access_rank(uuid,uuid)
+to anon, authenticated, service_role;
+
+create function public.project_access_rank(
+  p_project_id uuid,
+  p_user_id uuid default auth.uid()
+)
+returns integer
+language sql
+stable
+security invoker
+set search_path=''
+as $catalog_wrapper$
+  select sinjira_catalog_internal.project_access_rank(p_project_id,p_user_id);
+$catalog_wrapper$;
+
+revoke all on function public.project_access_rank(uuid,uuid)
+from public, anon, authenticated;
+grant execute on function public.project_access_rank(uuid,uuid)
+to service_role;
+
+comment on schema sinjira_catalog_internal is
+  'Implémentation privilégiée du rang projet utilisée par RLS. Hors schéma API public; wrapper public réservé au service_role.';
+
 -- Catalogue projets : public/account filtré par RLS; aucune écriture navigateur.
 revoke all on table public.projects from anon, authenticated;
 grant select on table public.projects to anon, authenticated;
