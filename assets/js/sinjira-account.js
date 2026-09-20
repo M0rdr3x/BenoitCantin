@@ -336,7 +336,7 @@ async function settings(){
   document.querySelector('[data-export-data]')?.addEventListener('click',async()=>{
     const queries={
       profile:s.from('profiles').select('*').eq('user_id',user.id),
-      private_profile:s.from('private_profiles').select('*').eq('user_id',user.id),
+      private_profile:s.rpc('private_profile_get'),
       relationships:s.from('family_relationships').select('*').eq('owner_user_id',user.id),
       privacy:s.from('privacy_settings').select('*').eq('user_id',user.id),
       notifications:s.from('notification_preferences').select('*').eq('user_id',user.id),
@@ -353,8 +353,15 @@ async function settings(){
       parallel_state:s.from('parallel_character_state').select('*').eq('user_id',user.id),
       entitlements:s.from('user_entitlements').select('*,products(slug,name)').eq('user_id',user.id)
     };
-    const entries=await Promise.all(Object.entries(queries).map(async([k,q])=>{try{const r=await q;return [k,r.data||[]]}catch{return [k,[]]}}));
-    const payload=Object.fromEntries(entries);payload.exported_at=new Date().toISOString();payload.format='SINJIRA_USER_EXPORT_V24';
+    const results=await Promise.all(Object.entries(queries).map(async([key,query])=>{
+      try{const response=await query;return {key,data:response.data,error:response.error||null}}
+      catch(error){return {key,data:null,error}}
+    }));
+    if(results.some(result=>result.error)){
+      setStatus(status,'Export interrompu : certaines catégories n’ont pas pu être vérifiées. Aucune archive incomplète n’a été générée.','error');
+      return;
+    }
+    const payload=Object.fromEntries(results.map(result=>[result.key,result.data??(result.key==='private_profile'?{}:[])]));payload.exported_at=new Date().toISOString();payload.format='SINJIRA_USER_EXPORT_V25';
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`sinjira-mes-donnees-${new Date().toISOString().slice(0,10)}.json`;link.click();URL.revokeObjectURL(url);
   });
