@@ -195,6 +195,16 @@ async function loadState(meta,context=null){
   return {settings,devices,sessions,travel,connections,events,challenges};
 }
 
+async function refreshAfterMutation(meta,context,message){
+  try{
+    await loadState(meta,context);
+    return true;
+  }catch{
+    status(message,'info');
+    return false;
+  }
+}
+
 async function saveSettings(){
   const values={};qsa('[data-security-setting]').forEach(input=>values[`p_${input.name}`]=Boolean(input.checked));
   await rpc('security_update_settings',values);status('Préférences de sécurité enregistrées.','success');
@@ -231,14 +241,37 @@ async function boot(){
     await requireUser();
     status('Initialisation du Centre de sécurité…');
     const contextResult=await registerContext(meta);
-    let state=await loadState(meta,contextResult.context);
+    await loadState(meta,contextResult.context);
 
-    qs('[data-security-settings-save]')?.addEventListener('click',async()=>{try{await saveSettings();state=await loadState(meta,contextResult.context)}catch(e){status(friendlySecurityError(e),'error')}});
-    qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{e.preventDefault();try{await createTravel(e.currentTarget);state=await loadState(meta,contextResult.context)}catch(err){status(friendlySecurityError(err,'travel-create'),'error')}});
-    qs('[data-security-refresh]')?.addEventListener('click',async()=>{try{state=await loadState(meta,contextResult.context);status('État de sécurité actualisé.','success')}catch(e){status(friendlySecurityError(e),'error')}});
+    qs('[data-security-settings-save]')?.addEventListener('click',async()=>{
+      try{
+        await saveSettings();
+        await refreshAfterMutation(meta,contextResult.context,'Préférences enregistrées, mais l’état de sécurité ne peut pas être rafraîchi pour le moment.');
+      }catch(e){status(friendlySecurityError(e),'error')}
+    });
+    qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{
+      e.preventDefault();
+      try{
+        await createTravel(e.currentTarget);
+        await refreshAfterMutation(meta,contextResult.context,'Mode Voyage enregistré, mais la liste des voyages ne peut pas être rafraîchie pour le moment.');
+      }catch(err){status(friendlySecurityError(err,'travel-create'),'error')}
+    });
+    qs('[data-security-refresh]')?.addEventListener('click',async()=>{
+      try{await loadState(meta,contextResult.context);status('État de sécurité actualisé.','success')}
+      catch(e){status(friendlySecurityError(e),'error')}
+    });
     qs('[data-security-compromised]')?.addEventListener('click',async()=>{
       if(!confirmAction('Révoquer les autres appareils SINJIRA et fermer leurs sessions ?'))return;
-      try{await rpc('security_compromise_account',{p_current_device_key:meta.device_key});await getSupabase().auth.signOut({scope:'others'});state=await loadState(meta,contextResult.context);status('Mesures d’urgence appliquées : autres appareils révoqués et autres sessions fermées.','success')}catch(e){status(friendlySecurityError(e),'error')}
+      try{
+        await rpc('security_compromise_account',{p_current_device_key:meta.device_key});
+        const {error:sessionError}=await getSupabase().auth.signOut({scope:'others'});
+        if(sessionError){
+          status('Mesures d’urgence appliquées aux appareils, mais la fermeture des autres sessions n’a pas pu être confirmée. Utilisez aussi « Déconnecter tous les appareils ».','error');
+          return;
+        }
+        status('Mesures d’urgence appliquées : autres appareils révoqués et autres sessions fermées.','success');
+        await refreshAfterMutation(meta,contextResult.context,'Mesures d’urgence appliquées, mais l’état de sécurité ne peut pas être rafraîchi pour le moment.');
+      }catch(e){status(friendlySecurityError(e),'error')}
     });
 
     document.addEventListener('click',async e=>{
@@ -253,7 +286,7 @@ async function boot(){
         else if(target.dataset.challengeApprove){await rpc('security_resolve_connection_challenge',{p_challenge_id:target.dataset.challengeApprove,p_device_key:meta.device_key,p_decision:'approved'});status('Connexion autorisée.','success')}
         else if(target.dataset.challengeDeny){await rpc('security_resolve_connection_challenge',{p_challenge_id:target.dataset.challengeDeny,p_device_key:meta.device_key,p_decision:'denied'});status('Connexion refusée. Vérifiez vos appareils si vous ne reconnaissez pas cette tentative.','success')}
         else return;
-        state=await loadState(meta,contextResult.context);
+        await refreshAfterMutation(meta,contextResult.context,'Action de sécurité appliquée, mais l’état affiché ne peut pas être rafraîchi pour le moment.');
       }catch(err){status(friendlySecurityError(err,errorContext),'error')}
     });
 
