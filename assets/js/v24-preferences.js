@@ -45,12 +45,16 @@ async function bind(table,formSel,statusSel){
       if(el.type==='checkbox')el.checked=!!row[el.name];
       else if(row[el.name]!=null)el.value=row[el.name];
     }
+    if(table==='privacy_settings'&&form.elements.allow_ai_personal_data){
+      form.elements.allow_ai_personal_data.checked=false;
+    }
     setLocked(false);
   }
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(!ready){setStatus(status,'Enregistrement temporairement indisponible tant que le serveur n’est pas synchronisé.','info');return}
     const payload=formPayload(form);
+    if(table==='privacy_settings')payload.allow_ai_personal_data=false;
     let result;
     if(exists){
       result=await s.from(table).update({...payload,updated_at:new Date().toISOString()}).eq('user_id',user.id);
