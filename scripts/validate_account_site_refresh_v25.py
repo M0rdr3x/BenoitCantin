@@ -20,6 +20,7 @@ FILES = {
     "private_profile_js": ROOT / "assets/js/sinjira-private-profile-v24-5-23.js",
     "account_js": ROOT / "assets/js/sinjira-account.js",
     "data_control_js": ROOT / "assets/js/v24-data-control.js",
+    "preferences_js": ROOT / "assets/js/v24-preferences.js",
     "dashboard_js": ROOT / "assets/js/sinjira-account-dashboard-v24-4-60.js",
     "account_css": ROOT / "assets/css/sinjira-player-account.css",
     "recovery_js": ROOT / "assets/js/sinjira-recovery-v24-4-99.js",
@@ -69,6 +70,7 @@ def validate(contents: dict[str, str]) -> None:
     private_profile = compact(contents["private_profile_js"])
     acc = compact(contents["account_js"])
     data_control = compact(contents["data_control_js"])
+    preferences = compact(contents["preferences_js"])
     dashboard = compact(contents["dashboard_js"])
     account_css = compact(contents["account_css"])
     recovery = compact(contents["recovery_js"])
@@ -331,6 +333,17 @@ def validate(contents: dict[str, str]) -> None:
     if "v24-data-control.js?v=25.0.1" not in contents["account_page:parametres.html"]:
         fail("paramètres: cache contrôleur données V25.0.1 absent")
     for marker in (
+        "functioncreateformlock(form)",
+        "constpermanentlydisabled=newset([...form.elements].filter(el=>el.disabled))",
+        "setlocked(true)",
+        "setlocked(false)",
+        "if(save&&tablemissing(save)){ready=false;setlocked(true)}",
+    ):
+        if marker not in preferences:
+            fail(f"paramètres: verrou de chargement préférences absent: {marker}")
+    if "v24-preferences.js?v=25.0.1" not in contents["account_page:parametres.html"]:
+        fail("paramètres: cache préférences V25.0.1 absent")
+    for marker in (
         "if(form){setbusy(true);awaitrequireuser();try{awaitloadprofile();setbusy(false);",
         "leformulaireresteverrouillétantquevosdonnéesn’ontpasétéchargées",
         "if(!loadedsnapshot)",
@@ -557,6 +570,9 @@ def main() -> None:
             "export privé étendu retiré":("data_control_js","['extended_private','privacy_export_my_extended_data']","['extended_private','missing_export_rpc']"),
             "export ancien schéma absent devient erreur":("data_control_js","const legacyMissing=label.endsWith('_legacy')&&/relation .* does not exist|schema cache|could not find/i.test(message);","const legacyMissing=false;"),
             "cache contrôleur données revenu V24":("account_page:parametres.html","v24-data-control.js?v=25.0.1","v24-data-control.js?v=24.4.83"),
+            "préférences réactivées avant chargement":("preferences_js","setLocked(true);","setLocked(false);"),
+            "préférences réactivent les champs permanents":("preferences_js","if(permanentlyDisabled.has(el)){el.disabled=true;continue}","if(permanentlyDisabled.has(el)){el.disabled=false;continue}"),
+            "cache préférences revenu V24":("account_page:parametres.html","v24-preferences.js?v=25.0.1","v24-preferences.js?v=24.4.70"),
             "cache paramètres revenu V25.0.1":("account_page:parametres.html","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
             "suppression compte revenue à ancienne phrase":("data_control_js","phrase!=='SUPPRIMER MON COMPTE'","phrase!=='SUPPRIMER'"),
             "suppression compte envoie ancienne phrase":("data_control_js","body:{confirm:'SUPPRIMER MON COMPTE'}","body:{confirm:'SUPPRIMER'}"),
