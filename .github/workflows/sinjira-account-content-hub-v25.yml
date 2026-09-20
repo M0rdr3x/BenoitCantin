@@ -11,6 +11,7 @@ on:
       - 'scripts/validate_account_site_refresh_v25.py'
       - 'scripts/validate_site.py'
       - 'assets/js/sinjira-account.js'
+      - 'assets/js/sinjira-recovery-v24-4-99.js'
       - 'assets/js/sinjira-library-v24-4-61.js'
       - 'assets/js/sinjira-purchases-v25.js'
       - 'assets/js/sinjira-reader.js'
