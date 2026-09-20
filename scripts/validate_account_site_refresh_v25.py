@@ -306,10 +306,15 @@ def validate(contents: dict[str, str]) -> None:
         "functions.invoke('delete-player-account',{body:{confirm:confirmation}})",
         "if(error||!data?.ok)",
         "aucuneconfirmationdesuppressionn’aétéreçue",
+        "if(sheets.error||endgame.error)",
+        "aucunfichierincompletn’aétégénéré",
+        "constimportedsheets=(payload.player_sheets||[]).map(",
+        "from('player_sheets').insert(importedsheets)",
+        "aucunsuccèscompletn’estannoncé",
     ):
         if marker not in acc:
             fail(f"compte générique: dégradation fail-closed absente: {marker}")
-    for key in ("account_page:index.html","profile_html","secondary_contributions","account_page:parametres.html"):
+    for key in ("account_page:index.html","profile_html","secondary_contributions","account_page:parametres.html","account_page:mes-parties.html"):
         if "sinjira-account.js?v=25.0.2" not in contents[key]:
             fail(f"compte générique: cache V25.0.2 absent dans {key}")
     if "from('private_profiles')" in acc:
@@ -543,6 +548,9 @@ def main() -> None:
             "suppression compte revenue à ancienne phrase":("account_js","confirmation!=='SUPPRIMER MON COMPTE'","confirmation!=='SUPPRIMER'"),
             "suppression compte envoie ancienne phrase":("account_js","body:{confirm:confirmation}","body:{confirm:'SUPPRIMER'}"),
             "suppression compte ignore ok serveur":("account_js","if(error||!data?.ok)","if(error)"),
+            "export partie masque erreur de fiches":("account_js","if(sheets.error||endgame.error)","if(false)"),
+            "import partie ignore erreur de fiches":("account_js","if(sheetError){setStatus(status,'La partie a été créée, mais ses fiches n’ont pas pu être importées. Aucun succès complet n’est annoncé.','error');return}","if(sheetError)console.warn(sheetError)"),
+            "cache mes parties revenu V25.0.1":("account_page:mes-parties.html","sinjira-account.js?v=25.0.2","sinjira-account.js?v=25.0.1"),
             "modération renvoyée vers Plus":("account_js","'regles-communaute.html','regles-communaute-junior.html','moderation.html'","'regles-communaute.html','regles-communaute-junior.html'"),
             "reset mot de passe revenu à 10":("account_js","a.length<12","a.length<10"),
             "récupération active revenue à 10":("recovery_js","password.length<12","password.length<10"),
