@@ -397,7 +397,7 @@ révoque d’abord les privilèges navigateur implicites puis réaccorde uniquem
 - `playtest_participants` : `SELECT` + `INSERT` authentifié, sans décision client;
 - `extensions` : `SELECT` uniquement pour les lignes rendues publiques par RLS.
 
-Aucune création/modification de projet, décision de demande, approbation de candidature ou administration directe n’est ouverte au navigateur. Le pgTAP `account_content_hub_v25.test.sql` passe à **30 assertions** et prouve les privilèges positifs comme les refus d’écriture sensibles. Le workflow Compte surveille explicitement cette migration, tandis que le workflow Sécurité En direct surveille déjà `supabase/migrations/**`.
+Aucune création/modification de projet, décision de demande, approbation de candidature ou administration directe n’est ouverte au navigateur. Le pgTAP `account_content_hub_v25.test.sql` passe à **39 assertions** et prouve les privilèges positifs, les refus d’écriture sensibles et la frontière de `project_access_rank` : implémentation `SECURITY DEFINER` déplacée vers `sinjira_catalog_internal`, policies RLS conservées par OID, wrapper public `SECURITY INVOKER` réservé au `service_role`. Le workflow Compte surveille explicitement cette migration, tandis que le workflow Sécurité En direct surveille déjà `supabase/migrations/**`.
 
 Cette trente-quatrième migration reste **non revue production**.
 
@@ -447,7 +447,7 @@ Le snapshot de revue attend exactement **34 migrations locales futures non revue
 | `20260919113000_sinjira_v25_private_novel_asset_rls.sql` | `745ae12098e538415dde16bac198d05610b99954` |
 | `20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql` | `5ed558a9426173fdb714479d28f170ada542803b` |
 | `20260919123000_sinjira_v25_public_rpc_boundary.sql` | `da1d5de6d9330421cd6a7ef5a62fa4c1ebf51a60` |
-| `20260919130000_sinjira_v25_account_catalog_browser_privileges.sql` | `2c7d668f6dd543a747b8337057dfa8406ac549c2` |
+| `20260919130000_sinjira_v25_account_catalog_browser_privileges.sql` | `c6d94e7e38513660c2b1288ac8a78ae51a8225f7` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
