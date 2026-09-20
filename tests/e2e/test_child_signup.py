@@ -38,7 +38,10 @@ let active = true;
 export function createClient(){
   return {
     auth: {
-      getSession: async () => ({data:{session:active ? {user:{id:'parent-test'}} : null},error:null}),
+      getSession: async () => {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return {data:{session:active ? {user:{id:'parent-test'}} : null},error:null};
+      },
       signOut: async () => { active = false; return {error:null}; },
       signUp: async (payload) => {
         globalThis.__SINJIRA_TEST_SIGNUP_PAYLOAD = payload;
@@ -61,6 +64,7 @@ export function createClient(){
         warning = page.locator("[data-signup-session-warning]")
         signout = page.locator("[data-signup-session-signout]")
         submit = page.locator('[data-signup-form] [type="submit"]')
+        assert_true(submit.is_disabled(), "Le bouton de création est actif avant la vérification de la frontière de session")
         page.wait_for_function(
             """() => {
                 const warning = document.querySelector('[data-signup-session-warning]');
