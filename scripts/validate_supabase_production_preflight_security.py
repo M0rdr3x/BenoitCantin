@@ -153,6 +153,8 @@ def validate_text(text: str) -> list[str]:
         "      - 'scripts/test_supabase_production_preflight_security.py'",
         "      - '.github/workflows/supabase-production-preflight.yml'",
         "      - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'",
+        "      - 'scripts/validate_future_migration_review_plan_v25.py'",
+        "      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'",
     ):
         if text.count(trigger_path) < 2:
             errors.append(f"Chemin critique absent des déclencheurs PR/push: {trigger_path.strip()}")
@@ -182,6 +184,9 @@ def validate_text(text: str) -> list[str]:
             "python scripts/validate_supabase.py",
             "python scripts/validate_edge_function_inventory.py",
             "python scripts/validate_social_rls_contract.py",
+            "python -m py_compile scripts/validate_future_migration_review_plan_v25.py",
+            "python scripts/validate_future_migration_review_plan_v25.py --self-test",
+            "python scripts/validate_future_migration_review_plan_v25.py",
             "python scripts/validate_production_migration_ledger.py",
             "python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase",
         ):
