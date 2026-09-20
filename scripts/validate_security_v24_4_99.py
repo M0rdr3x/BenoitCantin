@@ -56,6 +56,7 @@ def main():
 
     security=read('assets/js/sinjira-security-v24-4-99.js')
     security_mfa=read('assets/js/v24-security.js')
+    security_center=read('assets/js/sinjira-security-center-v24-4-98.js')
     require(security,[
         "security_report_lost_device",
         "signOut({scope:'others'})",
@@ -68,6 +69,13 @@ def main():
         "non activé",
     ],'Centre sécurité V24.4.99')
     forbid(security,['navigator.credentials.create','navigator.credentials.get'],'passkeys avant domaine final')
+    require(security_center,[
+        "async function refreshAfterMutation(meta,context,message)",
+        "const {error:sessionError}=await getSupabase().auth.signOut({scope:'others'});",
+        "la fermeture des autres sessions n’a pas pu être confirmée",
+        "Action de sécurité appliquée, mais l’état affiché ne peut pas être rafraîchi pour le moment.",
+        "Mode Voyage enregistré, mais la liste des voyages ne peut pas être rafraîchie pour le moment.",
+    ],'Centre sécurité mutations/rafraîchissement')
     require(security_mfa,[
         "const {error}=await s.auth.mfa.unenroll({factorId});",
         "Impossible d’annuler cet enrôlement TOTP pour le moment.",
@@ -81,6 +89,7 @@ def main():
     require(center,[
         'sinjira-security-v24-4-99.js?v=25.0.1',
         'v24-security.js?v=25.0.1',
+        'sinjira-security-center-v24-4-98.js?v=25.0.3',
         'Déclarer perdu',
         'aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'
     ],'page Ma sécurité')
