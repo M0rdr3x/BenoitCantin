@@ -53,8 +53,24 @@ async function project(){
   if(error||!p){setStatus(status,childMode?'Ce projet n’est pas approuvé pour les comptes de 11–12 ans.':'Projet introuvable ou non accessible.','error');return}
   document.querySelector('[data-project-name]').textContent=p.name;document.querySelector('[data-project-description]').textContent=p.description||'';document.querySelector('[data-project-status]').textContent=projectStatusLabel(p.status);
   const img=document.querySelector('[data-project-cover]');img.src=cover(p);img.alt=`Visuel de ${p.name}`;
-  const a=rows(access).find(x=>x.project_id===p.id);document.querySelector('[data-project-role]').textContent=childMode?'Approuvé 11–12 ans':owner?'Propriétaire · catalogue complet':a?.access_level==='tester'?'Testeur approuvé':p.visibility==='restricted'?'Accès privé autorisé':p.visibility==='account'?'Inclus avec le compte':'Page publique';
-  document.querySelector('[data-project-actions]').innerHTML=`${p.public_path?`<a class="btn btn-secondary" href="${escapeHtml(p.public_path)}">Page publique</a>`:''}${!childMode&&p.play_path?`<a class="btn btn-primary" href="${escapeHtml(p.play_path)}">Jouer</a>`:''}`;
+  const licensedGame=p.slug==='fracture-du-reseau-mere';
+  let productRight=owner,productRightVerified=owner;
+  if(licensedGame&&!owner&&!childMode){
+    const productResult=await s.rpc('has_sinjira_product',{p_product_slug:p.slug});
+    productRightVerified=!productResult.error;
+    productRight=productRightVerified&&productResult.data===true;
+  }
+  const a=rows(access).find(x=>x.project_id===p.id);
+  document.querySelector('[data-project-role]').textContent=childMode
+    ?'Approuvé 11–12 ans'
+    :licensedGame&&!owner
+      ?(!productRightVerified?'Droit de jeu non vérifié':productRight?'Droit numérique actif':'Droit de jeu requis')
+      :owner?'Propriétaire · catalogue complet':a?.access_level==='tester'?'Testeur approuvé':p.visibility==='restricted'?'Accès privé autorisé':p.visibility==='account'?'Inclus avec le compte':'Page publique';
+  const canPlay=!licensedGame||owner||productRight;
+  const licenseAction=!childMode&&licensedGame&&!owner&&!productRight
+    ?`<a class="btn btn-secondary" href="licences.html">${productRightVerified?'Activer une licence':'Vérifier mes licences'}</a>`
+    :'';
+  document.querySelector('[data-project-actions]').innerHTML=`${p.public_path?`<a class="btn btn-secondary" href="${escapeHtml(p.public_path)}">Page publique</a>`:''}${!childMode&&p.play_path&&canPlay?`<a class="btn btn-primary" href="${escapeHtml(p.play_path)}">Jouer</a>`:''}${licenseAction}`;
   const {data:docs}=await s.from('documents').select('id,title,description,version,document_type,access_level').eq('project_id',p.id).eq('status','approved').order('sort_order');
   const dl=document.querySelector('[data-project-documents]');dl.innerHTML=rows(docs).map(d=>`<article class="document-row"><div><strong>${escapeHtml(d.title)}</strong><span>${escapeHtml(d.description||'')}</span></div><div class="document-row-meta"><small>v${escapeHtml(d.version||'—')}</small><small>${childMode?'Approuvé 11–12 ans':escapeHtml(roleLabel(d.access_level))}</small><button class="btn btn-secondary btn-small" type="button" data-open-document="${d.id}">Ouvrir</button></div></article>`).join('')||'<p>Aucun document approuvé accessible.</p>';bindDocs(dl);
   const playtests=document.querySelector('[data-project-playtests]');
