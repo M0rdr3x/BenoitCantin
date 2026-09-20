@@ -63,7 +63,7 @@ def validate(path: Path) -> list[str]:
         if marker.lower() in lowered:
             errors.append(f'Garde admin-console violé: {label}.')
 
-    auth_pos = source.find('const {user,service}=await requiredAdmin(req)')
+    auth_pos = source.find('const {user,service,aal}=await requiredAdmin(req)')
     body_pos = source.find('const body=await readBoundedJson(req)')
     if auth_pos < 0 or body_pos < 0:
         errors.append('Ordre admin/corps impossible à vérifier.')
@@ -107,8 +107,8 @@ def self_test() -> None:
         'annulation retirée': real.replace('try{await reader.cancel()}catch{/* Le rejet de taille reste prioritaire. */}', '', 1),
         'décodage non strict': real.replace("new TextDecoder('utf-8',{fatal:true})", "new TextDecoder('utf-8')", 1),
         'admin après corps': real.replace(
-            'const {user,service}=await requiredAdmin(req);\n    const body=await readBoundedJson(req)',
-            'const body=await readBoundedJson(req)\n    const {user,service}=await requiredAdmin(req);',
+            'const {user,service,aal}=await requiredAdmin(req);\n    const body=await readBoundedJson(req)',
+            'const body=await readBoundedJson(req)\n    const {user,service,aal}=await requiredAdmin(req);',
             1,
         ),
         'no-store retiré': real.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),
