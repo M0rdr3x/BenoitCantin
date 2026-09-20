@@ -376,8 +376,19 @@ def validate(contents: dict[str, str]) -> None:
         fail("commentaires publics: RPC canonique absent")
     if "from('sinjira_novel_comments')" not in contents["reader_js"] or "from('sinjira_novel_comments')" not in contents["comments_js"]:
         fail("commentaires: table canonique sinjira_novel_comments absente")
-    if "sinjira-account-v18.js?v=25.0.1" not in contents["comments_html"]:
+    if "sinjira-account-v18.js?v=25.0.2" not in contents["comments_html"]:
         fail("commentaires: cache client V25 non forcé")
+    for marker in (
+        "from('sinjira_novels').select('id,title,subtitle,description,status,public_path,demo_path,sort_order')",
+        "from('sinjira_reader_library').select('novel_id,last_opened_at,last_page,progress_percent').eq('user_id',user.id)",
+        "n.subtitle||'sinjira'",
+    ):
+        if marker not in comments:
+            fail(f"mes lectures: source canonique absente: {marker}")
+    if "from('novels')" in comments or "from('reader_library')" in comments:
+        fail("mes lectures: ancienne table novels/reader_library encore utilisée")
+    if "sinjira-account-v18.js?v=25.0.2" not in contents["secondary_mes_lectures"]:
+        fail("mes lectures: cache module V25.0.2 absent")
 
     if "data-literature-catalog" not in lith or "sinjira-literature-catalog-v25.js?v=25.1.1" not in lith:
         fail("littérature: catalogue dynamique V25 absent")
@@ -444,6 +455,10 @@ def main() -> None:
     if args.self_test:
         mutations={
             "retour à novel_comments":("reader_js","sinjira_novel_comments","novel_comments"),
+            "mes lectures revenue à reader_library":("comments_js","from('sinjira_reader_library').select('novel_id,last_opened_at,last_page,progress_percent')","from('reader_library').select('novel_id,last_opened_at,last_page,progress_percent')"),
+            "mes lectures revenue à novels":("comments_js","from('sinjira_novels').select('id,title,subtitle,description,status,public_path,demo_path,sort_order')","from('novels').select('*')"),
+            "cache mes lectures revenu V24":("secondary_mes_lectures","sinjira-account-v18.js?v=25.0.2","sinjira-account-v18.js?v=24.4.61"),
+            "cache mes commentaires revenu V25.0.1":("comments_html","sinjira-account-v18.js?v=25.0.2","sinjira-account-v18.js?v=25.0.1"),
             "page compte sans JS V25":("account_page:index.html","sinjira-account.js?v=25.0.1","sinjira-account.js?v=24.1"),
             "modération renvoyée vers Plus":("account_js","'regles-communaute.html','regles-communaute-junior.html','moderation.html'","'regles-communaute.html','regles-communaute-junior.html'"),
             "reset mot de passe revenu à 10":("account_js","a.length<12","a.length<10"),
