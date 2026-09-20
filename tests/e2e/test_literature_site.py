@@ -198,6 +198,8 @@ def run() -> None:
         assert_true("list_sinjira_novel_comments" in reader_js, f"{BROWSER_NAME}: RPC canonique commentaires absent")
         assert_true("from('sinjira_novel_comments')" in reader_js, f"{BROWSER_NAME}: insertion commentaire canonique absente")
         assert_true("from('novel_comments')" not in reader_js, f"{BROWSER_NAME}: ancien novel_comments encore utilisé dans Littérature")
+        assert_true("from('sinjira_reader_library').select('last_page')" in reader_js, f"{BROWSER_NAME}: reprise de lecture n’utilise pas sinjira_reader_library")
+        assert_true("from('reader_library')" not in reader_js, f"{BROWSER_NAME}: ancienne table reader_library encore utilisée pour la reprise")
 
         account_comments_response = context.request.get(urljoin(BASE_URL, ACCOUNT_COMMENTS_JS_ROUTE), timeout=30_000)
         assert_true(account_comments_response.status < 400, f"{BROWSER_NAME}: client Mes commentaires inaccessible")
