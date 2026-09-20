@@ -345,8 +345,10 @@ req('data-signup-session-warning' in h and 'data-signup-session-signout' in h an
     "L'interface n'affiche plus la frontière de session lorsqu'un compte est déjà connecté.")
 req('data-contributor-panel' in h,
     "Le panneau Contributeur ne peut pas être masqué pour un compte enfant.")
-req('v24-signup.js?v=25.0.1&amp;rev=child-11-flow-session' in h,
+req('v24-signup.js?v=25.0.2&amp;rev=child-11-flow-session' in h,
     "La version du client d'inscription enfant n'est pas invalidée après le durcissement de session.")
+req('<button class="btn btn-primary" disabled type="submit">créer mon compte</button>' in h,
+    "Le bouton Créer mon compte n'est pas fail-closed dans le HTML avant la vérification de session.")
 req('réservés aux personnes de 13 ans et plus' not in h,
     "Un ancien message 13+ global subsiste dans l'interface.")
 
@@ -362,6 +364,10 @@ req("contributor&&contributor.hidden" in bt and "[data-contributor-panel]" in bt
     "Le test navigateur ne prouve plus que le Programme Contributeur disparaît à 11 ans.")
 req("[data-signup-session-warning]" in bt and "[data-signup-session-signout]" in bt,
     "Le test navigateur ne protège plus la séparation de session parent/enfant.")
+req('awaitnewpromise(resolve=>settimeout(resolve,500))' in cbt,
+    "Le test navigateur ne ralentit pas getSession pour prouver le verrou initial.")
+req('submit.is_disabled()' in cbt and 'avantlavérificationdelafrontièredesession' in cbt,
+    "Le test navigateur ne vérifie pas le bouton désactivé avant la réponse de session.")
 req('__sinjira_test_signup_payload' in cbt and 'signup_payload=page.evaluate' in cbt,
     "La preuve navigateur dédiée n'intercepte plus le payload Auth réel.")
 req('metadata.get("guardian_code")=="youth-abcd123456"' in cbt,
