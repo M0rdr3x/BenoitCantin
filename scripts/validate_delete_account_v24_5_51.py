@@ -8,7 +8,7 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 FN = ROOT / 'supabase/functions/delete-player-account/index.ts'
-CLIENT = ROOT / 'assets/js/sinjira-account.js'
+CLIENT = ROOT / 'assets/js/v24-data-control.js'
 DOC = ROOT / 'DELETE_ACCOUNT_HTTP_HARDENING_V24_5_51.md'
 CONFIG = ROOT / 'supabase/config.toml'
 MIGRATIONS = ROOT / 'supabase/migrations'
@@ -161,11 +161,14 @@ def main() -> int:
     errors.extend(edge_errors(source))
 
     for marker in (
-        "prompt('Pour supprimer définitivement votre compte, écrivez SUPPRIMER MON COMPTE.')",
-        "confirmation!=='SUPPRIMER MON COMPTE'",
-        "functions.invoke('delete-player-account',{body:{confirm:confirmation}})",
-        "if(error||!data?.ok)",
-        "Aucune confirmation de suppression n’a été reçue.",
+        "prompt('Cette action est irréversible. Pour continuer, écrivez exactement : SUPPRIMER MON COMPTE')",
+        "phrase!=='SUPPRIMER MON COMPTE'",
+        "confirm('Dernière confirmation : supprimer définitivement ce compte SINJIRA™ et ses données personnelles associées?')",
+        "functions.invoke('delete-player-account',{body:{confirm:'SUPPRIMER MON COMPTE'}})",
+        "if(!data?.ok)",
+        "OWNER_OR_ADMIN_DELETE_BLOCKED",
+        "MFA_REQUIRED",
+        "LEGAL_HOLD_ACTIVE",
     ):
         if marker not in client:
             errors.append(f'Contrat client suppression absent: {marker}')
