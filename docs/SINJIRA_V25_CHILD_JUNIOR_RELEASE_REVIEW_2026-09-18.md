@@ -294,7 +294,7 @@ Pour le compte créateur, la distinction est maintenant explicite :
 
 À l'état constaté lors de cette revue, aucun actif privé identifiable du Livre II n'est présent dans le stockage actif. La refonte ne fabrique donc aucun fichier ni accès fictif pour `Le Sang du Sauveur`.
 
-Le pgTAP `private_novel_catalog_v25.test.sql` contient **12 assertions** sur les frontières membre/créateur, la non-divulgation des chemins de stockage et le fail-closed des comptes non vérifiés.
+Le pgTAP `private_novel_catalog_v25.test.sql` contient désormais **13 assertions** sur les frontières membre/créateur, la non-divulgation des chemins de stockage, le fail-closed des comptes non vérifiés et l’activation RLS du registre privé.
 
 Cette vingt-septième migration reste **non revue production**.
 
