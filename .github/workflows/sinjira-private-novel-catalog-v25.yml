@@ -11,6 +11,7 @@ on:
       - 'supabase/tests/private_novel_catalog_v25.test.sql'
       - 'supabase/functions/_shared/privateNovel.ts'
       - 'supabase/functions/get-private-novel-url/**'
+      - 'supabase/config.toml'
       - 'assets/js/sinjira-private-book-reader.js'
       - 'assets/js/sinjira-library-v24-4-61.js'
       - 'assets/js/sinjira-literature-catalog-v25.js'
