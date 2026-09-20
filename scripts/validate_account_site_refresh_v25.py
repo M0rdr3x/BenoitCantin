@@ -229,8 +229,13 @@ def validate(contents: dict[str, str]) -> None:
         fail("authentification: ancien minimum 10 caractères encore présent dans le helper Compte")
     if "password.length<12" not in recovery or "aumoins12caractères" not in recovery:
         fail("récupération active: minimum 12 caractères absent du script sécurisé")
-    if 'minlength="12"' not in contents["reset_html"] or "aumoins12caractères" not in reset_html:
-        fail("récupération active: HTML non aligné sur le minimum 12 caractères")
+    for marker in (
+        'id="reset-password"autocomplete="new-password"minlength="12"name="password"',
+        'id="reset-password-confirm"autocomplete="new-password"minlength="12"name="password_confirm"',
+        "aumoins12caractères",
+    ):
+        if marker not in reset_html:
+            fail(f"récupération active: HTML non aligné sur le minimum 12 caractères: {marker}")
     for auth_name,auth_page in (
         ("inscription",signup_html),
         ("connexion",login_html),
