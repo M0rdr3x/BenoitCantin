@@ -224,6 +224,9 @@ req('compte/bibliotheque.html' in browser_test and 'aucun contenu n’a encore �
 req('sinjira_reader_library' in browser_test and 'user_entitlements' in browser_test and 'forbidden' in bt,'La preuve navigateur ne vérifie pas l absence de requêtes vers lectures/licences non certifiées.')
 req('compte/playtests.html' in browser_test and 'from=restricted&module=playtests.html' in browser_test,'La preuve navigateur ne couvre pas une URL directe vers un module enfant non certifié.')
 req('data-junior-access-note' in browser_test,'La preuve navigateur ne vérifie pas le message de repli Junior.')
+req('await new promise(resolve=>settimeout(resolve,500))' in bt,'La preuve navigateur ne ralentit pas les capacités pour tester la course de chargement.')
+req('composer.is_disabled()' in bt,'La preuve navigateur ne vérifie pas le verrou avant capacités.')
+req('composer.is_enabled()' in bt,'La preuve navigateur ne vérifie pas la réactivation après capacités.')
 
 # CI locale uniquement, lecture seule et sans capacité de production.
 if workflow:
