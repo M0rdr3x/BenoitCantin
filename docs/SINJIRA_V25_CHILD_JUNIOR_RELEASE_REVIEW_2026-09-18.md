@@ -352,9 +352,21 @@ active RLS sur cette table sans créer de policy membre. Les rôles `public`, `a
 
 Cette trente-et-unième migration reste **non revue production**.
 
+### Visibilité catalogue projets du créateur
+
+La revue du portefeuille et de la bibliothèque a confirmé que les preuves V25 couvraient les romans et les produits, mais pas explicitement les lignes `public.projects` internes (jeux et autres créations). La migration forward-only :
+
+`20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql`
+
+ajoute une policy de lecture `authenticated` limitée à `is_sinjira_owner(auth.uid())`. Elle permet au créateur de voir les projets brouillons ou restreints dans son catalogue de gestion sans créer de faux achat, entitlement ou `project_access`. Aucun droit membre supplémentaire n'est accordé.
+
+Le pgTAP `account_content_hub_v25.test.sql` prouve désormais que le membre standard ne voit pas le projet interne de test et que le créateur le voit.
+
+Cette trente-deuxième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **31 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **32 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -396,6 +408,7 @@ Le snapshot de revue attend exactement **31 migrations locales futures non revue
 | `20260919103000_sinjira_v25_livre_i_catalog_seed.sql` | `04929202946a0cda629c1f8005dbf51e4bfb2d68` |
 | `20260919110000_sinjira_v25_social_public_pseudo_privacy.sql` | `ac4f11e8e1591c35f0be91f541a21763fdb3ec8d` |
 | `20260919113000_sinjira_v25_private_novel_asset_rls.sql` | `745ae12098e538415dde16bac198d05610b99954` |
+| `20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql` | `5ed558a9426173fdb714479d28f170ada542803b` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -440,7 +453,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **31 migrations** dans l’ordre.
+2. Relire les **32 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.
