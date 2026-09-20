@@ -201,6 +201,8 @@ async function saveSettings(){
 }
 
 async function createTravel(form){
+  if(form.dataset.travelConsentApproved!=='true')throw new Error('TRAVEL_CONFIRMATION_REQUIRED');
+  delete form.dataset.travelConsentApproved;
   const data=new FormData(form);const start=String(data.get('starts_at')||'');const end=String(data.get('ends_at')||'');
   const destinations=String(data.get('destinations')||'').split(',').map(x=>x.trim()).filter(Boolean);
   if(!start||!end||!destinations.length)throw new Error('Indiquez une période et au moins un code pays.');
@@ -214,6 +216,7 @@ function friendlySecurityError(error,context='security'){
   const message=error?.message||String(error||'Erreur de sécurité.');
   if(message.includes('TRUST_CONFIRMATION_REQUIRED'))return 'Cet appareil doit d’abord être autorisé depuis un autre appareil déjà fiable.';
   if(message.includes('CURRENT_DEVICE_REQUIRED'))return 'Seul l’appareil que vous utilisez actuellement peut être marqué comme fiable.';
+  if(message.includes('TRAVEL_CONFIRMATION_REQUIRED'))return 'Vérifiez d’abord les données du voyage, puis confirmez explicitement son activation.';
   if(message.includes('AAL2_REQUIRED')){
     if(context==='travel-create')return 'Une vérification MFA récente est requise pour activer le Mode Voyage. Aucune activation n’a été effectuée.';
     if(context==='travel-cancel')return 'Une vérification MFA récente est requise pour annuler ce Mode Voyage. Aucune annulation n’a été effectuée.';
