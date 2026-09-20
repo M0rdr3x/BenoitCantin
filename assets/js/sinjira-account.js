@@ -225,7 +225,7 @@ async function reset(){
   const form=document.querySelector('[data-reset-form]');if(!form)return;
   form.addEventListener('submit',async e=>{
     e.preventDefault();const d=new FormData(form),a=String(d.get('password')||''),b=String(d.get('password_confirm')||'');
-    if(a.length<10||a!==b){setStatus(status,'Les mots de passe doivent correspondre et contenir au moins 10 caractères.','error');return}
+    if(a.length<12||a!==b){setStatus(status,'Les mots de passe doivent correspondre et contenir au moins 12 caractères.','error');return}
     const {error}=await getSupabase().auth.updateUser({password:a});
     setStatus(status,error?error.message:'Mot de passe mis à jour.',error?'error':'success');
   });
