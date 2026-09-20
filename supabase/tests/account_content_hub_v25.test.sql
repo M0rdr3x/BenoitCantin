@@ -22,7 +22,7 @@ values('b1000000-0000-4000-8000-000000000001','owner')
 on conflict(user_id) do update set role='owner';
 
 insert into public.projects(
-  id,slug,name,type,status,visibility,sort_order,allow_tester_requests
+  id,slug,name,type,status,visibility,description,allow_tester_requests,sort_order
 )
 values(
   'b8000000-0000-4000-8000-000000000008',
@@ -31,8 +31,9 @@ values(
   'game',
   'draft',
   'restricted',
-  998,
-  false
+  'Projet interne de preuve owner-only',
+  false,
+  998
 );
 
 select ok(
