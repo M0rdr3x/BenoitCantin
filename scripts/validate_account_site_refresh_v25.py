@@ -210,6 +210,8 @@ def validate(contents: dict[str, str]) -> None:
             fail(f"navigation compte globale: CSS V25 absent dans {name}")
 
     privacy_info = compact(contents["privacy_information"])
+    if '<navclass="main-nav"aria-label="navigationprincipale"><ahref="/compte/vie-privee.html">centrevieprivée</a><ahref="/compte/inscription.html">créeruncompte</a></nav>' not in privacy_info:
+        fail("confidentialité: barre supérieure publique non simplifiée")
     if "àpartirde11ans" not in privacy_info or "11–13ans" not in privacy_info:
         fail("confidentialité: seuil jeunesse actuel 11–13 absent")
     if "l’inscriptionlibre-serviceest13+" in privacy_info:
@@ -273,6 +275,7 @@ def main() -> None:
             "module bibliothèque secondaire hors paths CI":("workflow","assets/js/sinjira-library.js","assets/js/sinjira-library-missing.js"),
             "navigation mobile redevenue absolue":("account_css",".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}",".account-nav-panel{position:absolute;width:min(88vw,320px)}"),
             "barre supérieure Compte redevenue multiple":("account_js","nav.replaceChildren(universe);","nav.append(universe);"),
+            "barre confidentialité redevenue multiple":("privacy_information",'<nav class="main-nav" aria-label="Navigation principale"><a href="/compte/vie-privee.html">Centre Vie privée</a><a href="/compte/inscription.html">Créer un compte</a></nav>','<nav class="main-nav" aria-label="Navigation principale"><a href="/confidentialite.html">Politique générale</a><a href="/compte/vie-privee.html">Centre Vie privée</a><a href="/compte/inscription.html">Créer un compte</a></nav>'),
             "compteur commandes redevenu ambigu":("purchases_html","Commandes enregistrées","Commandes payées / enregistrées"),
             "échec rôle créateur masqué en bibliothèque":("library_js","Rôle du compte non confirmé","Compte SINJIRA™"),
             "échec rôle créateur masqué dans achats":("purchases_js","Rôle du compte non confirmé","Compte membre SINJIRA™"),
