@@ -173,8 +173,10 @@ def validate(contents: dict[str, str]) -> None:
         fail("tableau de bord: catalogue complet owner/admin non chargé")
     if "rôleducomptenonconfirmé" not in dashboard:
         fail("tableau de bord: état fail-closed du rôle non confirmé absent")
-    if "renderaccess(projects,isowner,isadmin,roleresolved)" not in dashboard:
-        fail("tableau de bord: résumé des accès projets non lié au rôle résolu")
+    if "catalogueresolved=!all.error" not in dashboard or "cataloguecomplettemporairementindisponible" not in dashboard:
+        fail("tableau de bord: échec du catalogue complet owner/admin non signalé")
+    if "renderaccess(projects,isowner,isadmin,roleresolved,catalogueresolved)" not in dashboard:
+        fail("tableau de bord: résumé des accès projets non lié au rôle/catalogue résolus")
     if "assets/js/sinjira-account-dashboard-v24-4-60.js" not in workflow:
         fail("CI compte: module Dashboard dédié non surveillé")
     if "pw.length<12" not in acc or "a.length<12" not in acc:
@@ -316,7 +318,8 @@ def main() -> None:
             "compteur romans suivis retiré":("dashboard_js","setText('[data-stat-reader]',count)","setText('[data-stat-reader]',0)"),
             "rôle dashboard supposé côté client":("dashboard_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "owner retiré du catalogue dashboard":("dashboard_js","if(roleResolved&&(isAdmin||isOwner)){","if(roleResolved&&isAdmin){"),
-            "résumé accès dashboard retiré":("dashboard_js","renderAccess(projects,isOwner,isAdmin,roleResolved);","renderAccess(projects,false,false,true);"),
+            "catalogue dashboard déclaré sain à tort":("dashboard_js","catalogResolved=!all.error;","catalogResolved=true;"),
+            "résumé accès dashboard retiré":("dashboard_js","renderAccess(projects,isOwner,isAdmin,roleResolved,catalogResolved);","renderAccess(projects,false,false,true,true);"),
             "module Dashboard hors paths CI":("workflow","assets/js/sinjira-account-dashboard-v24-4-60.js","assets/js/sinjira-account-dashboard-missing.js"),
         }
         for label,(key,old,new) in mutations.items():
