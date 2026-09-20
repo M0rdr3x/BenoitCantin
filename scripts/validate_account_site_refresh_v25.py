@@ -15,6 +15,8 @@ FILES = {
     "purchases_js": ROOT / "assets/js/sinjira-purchases-v25.js",
     "profile_html": ROOT / "compte/profil.html",
     "account_js": ROOT / "assets/js/sinjira-account.js",
+    "recovery_js": ROOT / "assets/js/sinjira-recovery-v24-4-99.js",
+    "reset_html": ROOT / "compte/reinitialiser-mot-de-passe.html",
     "reader_js": ROOT / "assets/js/sinjira-reader.js",
     "comments_js": ROOT / "assets/js/sinjira-account-v18.js",
     "comments_html": ROOT / "compte/mes-commentaires.html",
@@ -49,6 +51,8 @@ def validate(contents: dict[str, str]) -> None:
     pj = compact(contents["purchases_js"])
     prof = compact(contents["profile_html"])
     acc = compact(contents["account_js"])
+    recovery = compact(contents["recovery_js"])
+    reset_html = compact(contents["reset_html"])
     reader = compact(contents["reader_js"])
     comments = compact(contents["comments_js"])
     comment_html = compact(contents["comments_html"])
@@ -90,9 +94,15 @@ def validate(contents: dict[str, str]) -> None:
     if "auth.updateuser({email}" not in acc:
         fail("profil: mise à jour sécurisée du courriel absente")
     if "pw.length<12" not in acc or "a.length<12" not in acc:
-        fail("authentification: inscription et réinitialisation doivent imposer le même minimum de 12 caractères")
+        fail("authentification: helpers Compte doivent conserver le minimum de 12 caractères")
     if "a.length<10" in acc or "au moins 10 caractères" in acc:
-        fail("authentification: ancien minimum 10 caractères encore présent dans la réinitialisation")
+        fail("authentification: ancien minimum 10 caractères encore présent dans le helper Compte")
+    if "password.length<12" not in recovery or "au moins12caractères" not in recovery:
+        fail("récupération active: minimum 12 caractères absent du script sécurisé")
+    if 'minlength="12"' not in contents["reset_html"] or "aumoins12caractères" not in reset_html:
+        fail("récupération active: HTML non aligné sur le minimum 12 caractères")
+    if "security_after_password_recovery" not in recovery or "signout({scope:'global'})" not in recovery:
+        fail("récupération active: nettoyage sécurité ou fermeture globale des sessions absent")
 
     for marker in ("appendgroup('bibliothèque'", "appendgroup('univers'", "appendgroup('communauté'", "appendgroup('compte'"):
         if marker not in acc:
@@ -169,6 +179,8 @@ def main() -> None:
             "page compte sans JS V25":("account_page:index.html","sinjira-account.js?v=25.0.1","sinjira-account.js?v=24.1"),
             "modération renvoyée vers Plus":("account_js","'regles-communaute.html','regles-communaute-junior.html','moderation.html'","'regles-communaute.html','regles-communaute-junior.html'"),
             "reset mot de passe revenu à 10":("account_js","a.length<12","a.length<10"),
+            "récupération active revenue à 10":("recovery_js","password.length<12","password.length<10"),
+            "HTML reset revenu à 10":("reset_html",'minlength="12"','minlength="10"'),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
