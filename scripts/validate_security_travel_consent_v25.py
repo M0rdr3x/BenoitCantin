@@ -7,6 +7,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 HTML = ROOT / "compte" / "securite.html"
 JS = ROOT / "assets" / "js" / "sinjira-security-travel-consent-v25.js"
+CENTER_JS = ROOT / "assets" / "js" / "sinjira-security-center-v24-4-98.js"
 
 errors: list[str] = []
 
@@ -23,8 +24,10 @@ def forbid(text: str, needle: str, label: str) -> None:
 
 html = HTML.read_text(encoding="utf-8")
 js = JS.read_text(encoding="utf-8")
+center_js = CENTER_JS.read_text(encoding="utf-8")
 
-require(html, "sinjira-security-travel-consent-v25.js?v=25.0.0", "travel consent module on security page")
+require(html, "sinjira-security-travel-consent-v25.js?v=25.0.1", "travel consent module on security page")
+require(html, "sinjira-security-center-v24-4-98.js?v=25.0.1", "security center readiness module on security page")
 require(html, ">Vérifier avant d’activer</button>", "explicit verification-first button label")
 require(js, "document.addEventListener('submit', interceptTravelSubmit, true)", "capture-phase submit gate")
 require(js, "event.preventDefault()", "first-step submission prevention")
@@ -40,6 +43,13 @@ require(js, "textContent = formatMoment(draft.startsAt)", "safe start preview re
 require(js, "textContent = formatMoment(draft.endsAt)", "safe end preview rendering")
 require(js, "Aucune donnée de ce voyage n’est envoyée au serveur avant votre confirmation", "explicit pre-confirmation travel-data disclosure")
 require(js, "jamais de GPS, d’adresse, d’hôtel, de vol ou de trajet quotidien", "minimal-travel-data disclosure")
+require(js, "let securityReady", "security-center readiness state")
+require(js, "setTravelLocked(form, !securityReady)", "travel form locked before security center ready")
+require(js, "if(!securityReady)", "submit blocked before security center ready")
+require(js, "sinjira:security-center-ready", "security-center ready event listener")
+require(center_js, "document.documentElement.dataset.securityCenterReady='true'", "security center ready state")
+require(center_js, "window.dispatchEvent(new Event('sinjira:security-center-ready'))", "security center ready event")
+require(center_js, "delete document.documentElement.dataset.securityCenterReady", "failed boot clears readiness")
 
 forbidden_storage = ("localStorage", "sessionStorage", "indexedDB")
 for name in forbidden_storage:
