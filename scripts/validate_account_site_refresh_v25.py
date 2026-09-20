@@ -146,6 +146,13 @@ def validate(contents: dict[str, str]) -> None:
 
     if 'name="pseudo"required' not in prof or 'name="email"requiredtype="email"' not in prof:
         fail("profil: pseudo/courriel ne sont pas éditables")
+    for marker in (
+        "pseudonymepublic",
+        "nomaffichéprivé",
+        "n’estjamaiscopiédansleprofilsocialpublic",
+    ):
+        if marker not in prof:
+            fail(f"profil: séparation identité publique/privée non expliquée: {marker}")
     if "auth.updateuser({email}" not in acc:
         fail("profil: mise à jour sécurisée du courriel absente")
     if "pw.length<12" not in acc or "a.length<12" not in acc:
@@ -279,6 +286,7 @@ def main() -> None:
             "compteur commandes redevenu ambigu":("purchases_html","Commandes enregistrées","Commandes payées / enregistrées"),
             "échec rôle créateur masqué en bibliothèque":("library_js","Rôle du compte non confirmé","Compte SINJIRA™"),
             "échec rôle créateur masqué dans achats":("purchases_js","Rôle du compte non confirmé","Compte membre SINJIRA™"),
+            "nom affiché redevenu ambigu":("profile_html","Nom affiché privé","Nom affiché"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
