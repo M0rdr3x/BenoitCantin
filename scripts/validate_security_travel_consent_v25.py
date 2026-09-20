@@ -27,7 +27,7 @@ js = JS.read_text(encoding="utf-8")
 center_js = CENTER_JS.read_text(encoding="utf-8")
 
 require(html, "sinjira-security-travel-consent-v25.js?v=25.0.2", "travel consent module on security page")
-require(html, "sinjira-security-center-v24-4-98.js?v=25.0.2", "security center readiness module on security page")
+require(html, "sinjira-security-center-v24-4-98.js?v=25.0.3", "security center readiness module on security page")
 require(html, ">Vérifier avant d’activer</button>", "explicit verification-first button label")
 require(js, "document.addEventListener('submit', interceptTravelSubmit, true)", "capture-phase submit gate")
 require(js, "event.preventDefault()", "first-step submission prevention")
@@ -55,6 +55,9 @@ require(center_js, "delete form.dataset.travelConsentApproved", "one-shot consen
 require(center_js, "document.documentElement.dataset.securityCenterReady='true'", "security center ready state")
 require(center_js, "window.dispatchEvent(new Event('sinjira:security-center-ready'))", "security center ready event")
 require(center_js, "delete document.documentElement.dataset.securityCenterReady", "failed boot clears readiness")
+require(center_js, "async function refreshAfterMutation(meta,context,message)", "post-mutation refresh separation")
+require(center_js, "const {error:sessionError}=await getSupabase().auth.signOut({scope:'others'});", "compromised-session signout result")
+require(center_js, "la fermeture des autres sessions n’a pas pu être confirmée", "partial compromised-account outcome")
 
 forbidden_storage = ("localStorage", "sessionStorage", "indexedDB")
 for name in forbidden_storage:
