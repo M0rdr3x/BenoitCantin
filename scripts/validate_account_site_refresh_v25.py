@@ -196,7 +196,7 @@ def validate(contents: dict[str, str]) -> None:
         "if(playtesterror)",
         "if(pr.error||mr.error)",
         "aucunenouvelleactionn’estproposée",
-        "constcanplay=!licensedgame||owner||(fractureright.verified&&fractureright.active);
+        "constcanplay=!licensedgame||owner||(fractureright.verified&&fractureright.active);",
         "licenseaction=licensedgame&&!owner&&!fractureright.active",
         "licensedgame=p.slug==='fracture-du-reseau-mere'",
         "s.rpc('has_sinjira_product',{p_product_slug:p.slug})",
