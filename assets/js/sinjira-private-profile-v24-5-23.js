@@ -97,10 +97,12 @@ async function loadProfile(){
 
 if(form){
   await requireUser();
+  setBusy(true);
   try{
     await loadProfile();
+    setBusy(false);
   }catch(error){
-    setStatus(status,userMessage(error),'error');
+    setStatus(status,userMessage(error)+' Le formulaire reste verrouillé tant que vos données n’ont pas été chargées. Rechargez la page pour réessayer.','error');
   }
 
   resetButton?.addEventListener('click',()=>{
@@ -111,6 +113,10 @@ if(form){
 
   form.addEventListener('submit',async event=>{
     event.preventDefault();
+    if(!loadedSnapshot){
+      setStatus(status,'Vos informations privées n’ont pas été chargées. Aucune modification n’est envoyée. Rechargez la page puis réessayez.','error');
+      return;
+    }
     setBusy(true);
     try{
       const s=getSupabase();
