@@ -58,6 +58,9 @@ def main():
     require(security,[
         "security_report_lost_device",
         "signOut({scope:'others'})",
+        "const {error:sessionError}=await s.auth.signOut({scope:'others'});",
+        "if(sessionError)",
+        "la fermeture des autres sessions n’a pas pu être confirmée",
         "data-device-lost",
         "PublicKeyCredential",
         "RP ID définitif",
@@ -68,7 +71,7 @@ def main():
     reset=read('compte/reinitialiser-mot-de-passe.html')
     require(reset,['sinjira-recovery-v24-4-99.js?v=24.4.99','second facteur'],'page récupération')
     center=read('compte/securite.html')
-    require(center,['sinjira-security-v24-4-99.js?v=24.4.99','Déclarer perdu','aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'],'page Ma sécurité')
+    require(center,['sinjira-security-v24-4-99.js?v=25.0.1','Déclarer perdu','aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'],'page Ma sécurité')
 
     app=json.loads(read('mobile-native/app.json'))['expo']
     version=numeric_version(app.get('version'))
