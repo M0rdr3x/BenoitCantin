@@ -173,6 +173,14 @@ def validate(contents: dict[str, str]) -> None:
     for marker in ("appendgroup('bibliothèque'", "appendgroup('univers'", "appendgroup('communauté'", "appendgroup('compte'"):
         if marker not in acc:
             fail(f"navigation groupée absente: {marker}")
+    for marker in (
+        "functionnormalizeaccountheadernavigation()",
+        "universe.href='/projets/sinjira/'",
+        "universe.textcontent='universsinjira™'",
+        "nav.replacechildren(universe)",
+    ):
+        if marker not in acc:
+            fail(f"navigation supérieure Compte non normalisée: {marker}")
     if "appendgroup('bibliothèque',['bibliotheque.html','projet.html','mes-lectures.html','mes-commentaires.html'" not in acc:
         fail("navigation Bibliothèque: routes projet/commentaires non classées")
     if "'regles-communaute.html','regles-communaute-junior.html','moderation.html'" not in acc:
@@ -264,6 +272,7 @@ def main() -> None:
             "rôle créateur secondaire revenu côté client":("secondary_library_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "module bibliothèque secondaire hors paths CI":("workflow","assets/js/sinjira-library.js","assets/js/sinjira-library-missing.js"),
             "navigation mobile redevenue absolue":("account_css",".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}",".account-nav-panel{position:absolute;width:min(88vw,320px)}"),
+            "barre supérieure Compte redevenue multiple":("account_js","nav.replaceChildren(universe);","nav.append(universe);"),
             "compteur commandes redevenu ambigu":("purchases_html","Commandes enregistrées","Commandes payées / enregistrées"),
             "échec rôle créateur masqué en bibliothèque":("library_js","Rôle du compte non confirmé","Compte SINJIRA™"),
             "échec rôle créateur masqué dans achats":("purchases_js","Rôle du compte non confirmé","Compte membre SINJIRA™"),
