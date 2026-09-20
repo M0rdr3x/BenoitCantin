@@ -364,9 +364,25 @@ Le pgTAP `account_content_hub_v25.test.sql` prouve désormais que le membre stan
 
 Cette trente-deuxième migration reste **non revue production**.
 
+### Reconvergence de la frontière RPC V25
+
+Le contrat advisor V24.5.24 a révélé que plusieurs RPC Compte/Enfant/Junior redéfinies par V25 étaient redevenues des fonctions `SECURITY DEFINER` directement exposées dans le schéma API `public`. Les anciennes frontières V24.5.x avaient précisément supprimé cette exposition directe.
+
+La migration forward-only :
+
+`20260919123000_sinjira_v25_public_rpc_boundary.sql`
+
+replace **23 implémentations privilégiées** dans le schéma interne `sinjira_v25_internal` et recrée leurs signatures publiques sous forme de wrappers `SECURITY INVOKER`. Elle conserve l'exécution `authenticated` des 23 RPC et l'accès `anon` uniquement aux trois helpers qui étaient déjà anonymes : `sinjira_my_age_band()`, `sinjira_child_project_available(uuid)` et `sinjira_child_document_available(uuid)`.
+
+La migration échoue si le nombre de RPC, les privilèges anonymes ou les privilèges authentifiés ne correspondent pas exactement à l'état attendu. Elle n'élargit aucun droit métier, ne modifie aucune donnée utilisateur et ne change ni le reviewed batch ni le ledger production.
+
+Le contrat pgTAP historique `security_advisor_contract_v24_5_24.test.sql` redevient ainsi applicable sans liste blanche : aucune fonction `SECURITY DEFINER` du schéma `public` ne doit être directement exécutable par `anon` ou `authenticated`.
+
+Cette trente-troisième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **32 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **33 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -409,6 +425,7 @@ Le snapshot de revue attend exactement **32 migrations locales futures non revue
 | `20260919110000_sinjira_v25_social_public_pseudo_privacy.sql` | `ac4f11e8e1591c35f0be91f541a21763fdb3ec8d` |
 | `20260919113000_sinjira_v25_private_novel_asset_rls.sql` | `745ae12098e538415dde16bac198d05610b99954` |
 | `20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql` | `5ed558a9426173fdb714479d28f170ada542803b` |
+| `20260919123000_sinjira_v25_public_rpc_boundary.sql` | `da1d5de6d9330421cd6a7ef5a62fa4c1ebf51a60` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -453,7 +470,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **32 migrations** dans l’ordre.
+2. Relire les **33 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.
