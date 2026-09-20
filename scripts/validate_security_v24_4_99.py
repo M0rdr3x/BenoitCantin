@@ -84,14 +84,18 @@ def main():
         "Impossible d’annuler cet enrôlement TOTP pour le moment.",
         "Le facteur temporaire n’est pas considéré comme supprimé.",
         "Activation TOTP annulée, mais l’état des facteurs ne peut pas être rafraîchi pour le moment.",
-    ],'annulation enrôlement TOTP')
+        "const {data:{session},error:sessionError}=await s.auth.getSession();",
+        "if(sessionError)throw sessionError;",
+        "Facteur TOTP retiré, mais la liste des facteurs ne peut pas être rafraîchie pour le moment.",
+        "Authentification TOTP activée, mais la liste des facteurs ne peut pas être rafraîchie pour le moment.",
+    ],'MFA et sessions sans faux état')
 
     reset=read('compte/reinitialiser-mot-de-passe.html')
     require(reset,['sinjira-recovery-v24-4-99.js?v=24.4.99','second facteur'],'page récupération')
     center=read('compte/securite.html')
     require(center,[
         'sinjira-security-v24-4-99.js?v=25.0.1',
-        'v24-security.js?v=25.0.1',
+        'v24-security.js?v=25.0.2',
         'sinjira-security-center-v24-4-98.js?v=25.0.4',
         'Déclarer perdu',
         'aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'
