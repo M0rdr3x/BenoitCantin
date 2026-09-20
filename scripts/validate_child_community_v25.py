@@ -171,7 +171,17 @@ req("s.rpc('guardian_set_junior_community'" in r,'Relations ne peut pas activer/
 req("s.rpc('junior_guardian_summary'" in r,'Relations ne peut pas lire le résumé de sécurité sans contenu.')
 req("return false;" in relations and "const refreshed=await renderJuniorCommunityChildren();" in relations,'Le panneau tuteur ne distingue pas un échec de rafraîchissement après décision Junior.')
 req("Le panneau de contrôle ne peut pas être rafraîchi pour le moment." in relations,'Le parent ne reçoit pas un état explicite après décision Junior réussie mais rafraîchissement impossible.')
-req('v24-relations.js?v=25.0.11&amp;rev=junior-alias-private' in relations_html,'Le cache Relations Junior V25.0.11 n est pas forcé.')
+req("let ready=false;" in relations and "function setFormReady(value){ready=value;for(const el of form.elements)el.disabled=!value}" in relations,'Le formulaire Relations privées n est pas fail-closed pendant le chargement.')
+req("setFormReady(false);" in relations,'Chaque relecture Relations privées ne reverrouille pas le formulaire.')
+req("return false;" in relations and "Relation ajoutée, mais la liste ne peut pas être rafraîchie" in relations and "Relation retirée, mais la liste ne peut pas être rafraîchie" in relations,'Les mutations Relations privées ne distinguent pas succès et rafraîchissement.')
+for marker,msg in (
+    ('<select disabled name="relationship_type" required>','Le type de relation HTML n est pas désactivé par défaut.'),
+    ('<input disabled maxlength="120" name="relative_name" required>','Le nom/pseudo de relation HTML n est pas désactivé par défaut.'),
+    ('<textarea disabled maxlength="1000" name="private_note"></textarea>','La note privée HTML n est pas désactivée par défaut.'),
+    ('<button class="btn btn-primary" disabled type="submit">Ajouter la relation</button>','Le submit Relations HTML n est pas désactivé par défaut.'),
+):
+    req(marker in relations_html,msg)
+req('v24-relations.js?v=25.0.12&amp;rev=junior-alias-private' in relations_html,'Le cache Relations Junior V25.0.12 n est pas forcé.')
 
 # Navigation fail-closed pour 11–12 : liste blanche explicite, redirections Junior et refus par défaut.
 req("constaccountmode=string(capabilities.account_mode||'restricted')" in a and "capabilities.child_11_12===true" in a and "if(!childaccount)return" in a and "constchild_11_12_allowed_routes=newset([" in a,'La navigation du compte ne borne pas explicitement les routes child via les capacités serveur.')
