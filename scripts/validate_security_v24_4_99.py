@@ -55,6 +55,7 @@ def main():
     forbid(recovery,['auth.getSession()'],'récupération serveur-vérifiée')
 
     security=read('assets/js/sinjira-security-v24-4-99.js')
+    security_mfa=read('assets/js/v24-security.js')
     require(security,[
         "security_report_lost_device",
         "signOut({scope:'others'})",
@@ -67,11 +68,22 @@ def main():
         "non activé",
     ],'Centre sécurité V24.4.99')
     forbid(security,['navigator.credentials.create','navigator.credentials.get'],'passkeys avant domaine final')
+    require(security_mfa,[
+        "const {error}=await s.auth.mfa.unenroll({factorId});",
+        "Impossible d’annuler cet enrôlement TOTP pour le moment.",
+        "Le facteur temporaire n’est pas considéré comme supprimé.",
+        "Activation TOTP annulée, mais l’état des facteurs ne peut pas être rafraîchi pour le moment.",
+    ],'annulation enrôlement TOTP')
 
     reset=read('compte/reinitialiser-mot-de-passe.html')
     require(reset,['sinjira-recovery-v24-4-99.js?v=24.4.99','second facteur'],'page récupération')
     center=read('compte/securite.html')
-    require(center,['sinjira-security-v24-4-99.js?v=25.0.1','Déclarer perdu','aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'],'page Ma sécurité')
+    require(center,[
+        'sinjira-security-v24-4-99.js?v=25.0.1',
+        'v24-security.js?v=25.0.1',
+        'Déclarer perdu',
+        'aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'
+    ],'page Ma sécurité')
 
     app=json.loads(read('mobile-native/app.json'))['expo']
     version=numeric_version(app.get('version'))
