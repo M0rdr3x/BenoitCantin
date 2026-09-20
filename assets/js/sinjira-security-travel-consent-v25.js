@@ -4,6 +4,7 @@ const FORM_SELECTOR = '[data-security-travel-form]';
 const PREVIEW_SELECTOR = '[data-security-travel-preview]';
 const SUBMIT_SELECTOR = 'button[type="submit"]';
 let approvedSignature = null;
+let securityReady = document.documentElement.dataset.securityCenterReady === 'true';
 
 function qs(selector, root = document){
   return root.querySelector(selector);
@@ -11,6 +12,10 @@ function qs(selector, root = document){
 
 function status(message, type = 'info'){
   setStatus(qs('[data-security-center-status]'), message, type);
+}
+
+function setTravelLocked(form, locked){
+  for(const el of form?.elements || [])el.disabled = locked;
 }
 
 function normalizeDestinations(value){
@@ -124,6 +129,14 @@ function interceptTravelSubmit(event){
   const form = event.target?.closest?.(FORM_SELECTOR);
   if(!form)return;
 
+  if(!securityReady){
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    resetPreview(form);
+    status('Le Centre de sécurité termine son chargement. Le Mode Voyage reste verrouillé jusqu’à ce que les protections du compte soient prêtes.', 'info');
+    return;
+  }
+
   if(navigator.onLine === false){
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -155,6 +168,8 @@ function initTravelConsent(){
   if(!form)return;
   ensurePreview(form);
   resetPreview(form);
+  securityReady = document.documentElement.dataset.securityCenterReady === 'true';
+  setTravelLocked(form, !securityReady);
   form.addEventListener('input', () => resetPreview(form));
   form.addEventListener('change', () => resetPreview(form));
   form.addEventListener('reset', () => queueMicrotask(() => resetPreview(form)));
@@ -174,6 +189,15 @@ window.addEventListener('online', () => {
   if(!form)return;
   resetPreview(form);
   status('Connexion rétablie. Vérifiez à nouveau votre voyage avant de l’activer.', 'info');
+});
+
+window.addEventListener('sinjira:security-center-ready', () => {
+  const form = qs(FORM_SELECTOR);
+  securityReady = true;
+  if(!form)return;
+  setTravelLocked(form, false);
+  resetPreview(form);
+  status('Mode Voyage prêt. Vérifiez vos données avant toute activation.', 'info');
 });
 
 if(document.readyState === 'loading')document.addEventListener('DOMContentLoaded', initTravelConsent, {once:true});
