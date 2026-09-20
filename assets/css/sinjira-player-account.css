@@ -593,6 +593,8 @@
   .account-nav--grouped>[data-admin-nav],
   .account-nav--grouped>[data-logout],
   .account-nav-group>summary{width:100%;justify-content:space-between}
-  .account-nav-panel{position:absolute;left:0;right:auto;width:min(88vw,320px)}
+  .account-nav-group[open]{grid-column:1/-1}
+  .account-nav-group[open]>summary{width:100%}
+  .account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}
   .account-content-row{flex-direction:column;gap:8px}
 }
