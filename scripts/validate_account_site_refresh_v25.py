@@ -12,6 +12,7 @@ FILES = {
     "project_owner_migration": ROOT / "supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql",
     "library_html": ROOT / "compte/bibliotheque.html",
     "library_js": ROOT / "assets/js/sinjira-library-v24-4-61.js",
+    "secondary_library_js": ROOT / "assets/js/sinjira-library.js",
     "purchases_html": ROOT / "compte/mes-achats.html",
     "purchases_js": ROOT / "assets/js/sinjira-purchases-v25.js",
     "profile_html": ROOT / "compte/profil.html",
@@ -54,6 +55,7 @@ def validate(contents: dict[str, str]) -> None:
     project_owner_migration = compact(contents["project_owner_migration"])
     libh = compact(contents["library_html"])
     libj = compact(contents["library_js"])
+    secondary_library = compact(contents["secondary_library_js"])
     ph = compact(contents["purchases_html"])
     pj = compact(contents["purchases_js"])
     prof = compact(contents["profile_html"])
@@ -115,6 +117,12 @@ def validate(contents: dict[str, str]) -> None:
         fail("bibliothèque: action privée dupliquée hors catalogue roman")
     if "accèsauteur" in libj:
         fail("bibliothèque: rôle créateur encore présenté comme droit numérique privé")
+    if "issinjiraowner" in secondary_library:
+        fail("bibliothèque secondaire: rôle créateur encore déduit côté navigateur")
+    if "s.rpc('is_sinjira_owner',{p_user_id:user.id})" not in contents["secondary_library_js"]:
+        fail("bibliothèque secondaire: RPC serveur is_sinjira_owner absent")
+    if "assets/js/sinjira-library.js" not in workflow:
+        fail("CI compte: module bibliothèque secondaire non surveillé")
 
     for marker in ("data-purchase-history", "data-purchase-entitlements", "data-creator-portfolio"):
         if marker not in ph:
@@ -237,6 +245,8 @@ def main() -> None:
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
             "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
             "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.0\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
+            "rôle créateur secondaire revenu côté client":("secondary_library_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
+            "module bibliothèque secondaire hors paths CI":("workflow","assets/js/sinjira-library.js","assets/js/sinjira-library-missing.js"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
