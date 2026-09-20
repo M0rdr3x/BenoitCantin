@@ -80,16 +80,15 @@ def validate(
         'Licences: source user_entitlements': (licenses, "from('user_entitlements')"),
         'Bibliothèque: source user_entitlements': (library, "from('user_entitlements')"),
         'Licences: frontière de diffusion privée expliquée': (licenses, 'diffusion privée'),
-        'Bibliothèque: frontière de diffusion privée expliquée': (library, 'diffusion privée'),
+        'Bibliothèque: disponibilité privée expliquée': (library, 'La disponibilité de l’intégrale privée est vérifiée séparément dans la section Romans'),
         'Bibliothèque HTML: rôle propriétaire séparé des produits': (
             library_html,
             'Le rôle propriétaire reste distinct des droits numériques attribués aux produits.',
         ),
         'Bibliothèque: chemin lecteur privé': (library, READER_PATH),
-        'Bibliothèque: fonction privée générique': (library, "const PRIVATE_NOVEL_FUNCTION='get-private-novel-url'"),
-        'Bibliothèque: téléchargement via fonction privée': (library, "functions.invoke(PRIVATE_NOVEL_FUNCTION"),
-        'Bibliothèque: slug Livre I transmis au serveur': (library, "body:{novel_slug:BOOK_ONE_NOVEL_SLUG,mode:'download'}"),
-        'Bibliothèque: carte auteur explicite': (library, 'Accès auteur'),
+        'Bibliothèque: catalogue roman canonique': (library, 'sinjira_my_novel_catalog'),
+        'Bibliothèque: full_access serveur': (library, 'const fullAccess=Boolean(novel.full_access);'),
+        'Bibliothèque: action intégrale conditionnelle': (library, 'fullAccess?'),
         'Lecteur: session obligatoire avec retour': (reader_js, "requireUser(`/compte/connexion.html?next="),
         'Lecteur: fonction privée générique': (reader_js, "const DELIVERY_FUNCTION='get-private-novel-url'"),
         'Lecteur: slug roman transmis au serveur': (reader_js, 'body:{novel_slug:novelSlug,mode}'),
@@ -114,8 +113,9 @@ def validate(
     if "from('products').select('slug,name,product_type,active')" in licenses:
         errors.append('La page Licences ne doit pas fabriquer la possession propriétaire depuis tout le catalogue actif.')
 
-    # Le navigateur peut afficher une carte auteur obtenue depuis un RPC de présentation,
-    # mais la porte de lecture elle-même ne doit jamais décider avec un rôle/email client.
+    # La porte de lecture ne doit jamais décider avec un rôle/email client.
+    # La Bibliothèque reste une vue de catalogue : aucun appel direct à la
+    # livraison privée ne doit réapparaître hors du lecteur dédié.
     for forbidden in (
         'isSinjiraOwner',
         'kingtyrano@gmail.com',
@@ -125,6 +125,17 @@ def validate(
     ):
         if forbidden in reader_js:
             errors.append(f'Lecteur privé: autorisation client interdite ({forbidden}).')
+
+    for forbidden in (
+        'functions.invoke(PRIVATE_NOVEL_FUNCTION',
+        'data-private-book-download',
+        'function downloadPrivateBook',
+        'function bookActions',
+        'Accès auteur',
+        'BOOK_ONE_NOVEL_SLUG',
+    ):
+        if forbidden in library:
+            errors.append(f'Bibliothèque: action privée ou rôle propriétaire dupliqué interdit ({forbidden}).')
 
     # Protéger sans surveiller : aucune écriture serveur de progression dans le lecteur intégral.
     for forbidden in (
@@ -154,8 +165,8 @@ def validate(
         if 'getPublicUrl(' in text:
             errors.append(f'{label}: URL publique Storage interdite.')
 
-    if 'location.assign(String(data.url))' not in library:
-        errors.append('Bibliothèque: le téléchargement doit utiliser uniquement l’URL temporaire renvoyée par le serveur.')
+    if 'location.assign(String(data.url))' in library:
+        errors.append('Bibliothèque: téléchargement privé direct interdit; utiliser uniquement le lecteur dédié.')
     if 'location.assign(String(data.url))' not in reader_js:
         errors.append('Lecteur: le téléchargement doit utiliser uniquement l’URL temporaire renvoyée par le serveur.')
 
@@ -189,11 +200,12 @@ def self_test() -> None:
             encoding='utf-8',
         )
         paths['library'].write_text(
-            f"const BOOK='{BOOK_SLUG}'; const BOOK_ONE_NOVEL_SLUG='la-cendre-du-jugement'; const PRIVATE_READER_PATH='{READER_PATH}'; "
-            "const PRIVATE_NOVEL_FUNCTION='get-private-novel-url'; s.from('user_entitlements'); "
-            "'Droit numérique reconnu'; 'diffusion privée'; 'Accès auteur'; "
-            "s.functions.invoke(PRIVATE_NOVEL_FUNCTION,{body:{novel_slug:BOOK_ONE_NOVEL_SLUG,mode:'download'}}); "
-            "location.assign(String(data.url));",
+            f"const BOOK='{BOOK_SLUG}'; const PRIVATE_READER_PATH='{READER_PATH}'; "
+            "s.from('user_entitlements'); s.rpc('sinjira_my_novel_catalog'); "
+            "'Droit numérique reconnu'; "
+            "'La disponibilité de l’intégrale privée est vérifiée séparément dans la section Romans'; "
+            "const fullAccess=Boolean(novel.full_access); "
+            "const action=fullAccess?'reader':'none';",
             encoding='utf-8',
         )
         paths['library_html'].write_text(
@@ -258,7 +270,7 @@ def self_test() -> None:
         if not any('Promesse propriétaire' in item for item in promise):
             raise AssertionError('Une promesse propriétaire universelle doit être bloquée.')
 
-    print('OK auto-test UI Livre I V3: catalogue privé multi-romans, rôle serveur, progression locale et actifs publics protégés.')
+    print('OK auto-test UI Livre I V4: full_access canonique, lecteur privé dédié, progression locale et actifs publics protégés.')
 
 
 def main() -> int:
@@ -276,7 +288,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK UI Livre I V3: lecteur privé multi-romans, rôle auteur non auto-déclaré, progression locale, pages publiques sans intégrale et actions privées temporaires.')
+    print('OK UI Livre I V4: intégrale liée au full_access serveur, lecteur privé dédié, progression locale et pages publiques sans intégrale.')
     return 0
 
 
