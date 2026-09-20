@@ -15,6 +15,12 @@ async function accessMap(){
   const {data}=await getSupabase().from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id);
   return new Map(rows(data).map(x=>[x.project_id,x]));
 }
+async function resolveFractureRight(projects,s){
+  const needsCheck=!owner&&!childMode&&projects.some(p=>p.slug==='fracture-du-reseau-mere');
+  if(!needsCheck)return {active:owner,verified:true};
+  const result=await s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'});
+  return {active:!result.error&&result.data===true,verified:!result.error};
+}
 async function library(){
   const s=getSupabase(),[pr,dr,rr,access]=await Promise.all([
     s.from('projects').select('*').order('sort_order'),
@@ -23,11 +29,19 @@ async function library(){
     accessMap()
   ]);
   const projects=rows(pr.data),docs=rows(dr.data),pending=new Map(rows(rr.data).map(x=>[x.project_id,x])),box=document.querySelector('[data-project-library]');
+  const fractureRight=await resolveFractureRight(projects,s);
   box.innerHTML=projects.map(p=>{
     const a=access.get(p.id),tester=owner||a?.access_level==='tester',pd=docs.filter(d=>d.project_id===p.id).length,waiting=pending.has(p.id);
+    const licensedGame=p.slug==='fracture-du-reseau-mere';
+    const canPlay=!licensedGame||owner||(fractureRight.verified&&fractureRight.active);
+    const licenseAction=licensedGame&&!owner&&!fractureRight.active
+      ?`<a class="btn btn-secondary" href="licences.html">${fractureRight.verified?'Activer une licence':'Vérifier mes licences'}</a>`
+      :'';
     const roleChip=owner?'Propriétaire':a?.access_level==='tester'?'Testeur':'';
-    const visibility=p.visibility==='restricted'?'Accès restreint':p.visibility==='account'?'Inclus avec le compte':'Page publique';
-    return `<article class="library-project-card"><div class="library-project-art"><img src="${escapeHtml(cover(p))}" alt=""></div><div class="library-project-body"><div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(p.status))}</span>${roleChip?`<span class="role-chip">${escapeHtml(roleChip)}</span>`:''}</div><h2>${escapeHtml(p.name)}</h2><p>${escapeHtml(p.description||'')}</p><div class="library-project-stats"><span>${pd} document${pd===1?'':'s'} accessible${pd===1?'':'s'}</span><span>${escapeHtml(visibility)}</span></div><div class="hero-actions"><a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(p.slug)}">Ouvrir l’espace</a>${p.play_path?`<a class="btn btn-secondary" href="${escapeHtml(p.play_path)}">Jouer</a>`:''}${!tester&&p.allow_tester_requests?`<button class="btn btn-secondary" type="button" data-request-tester="${p.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div></div></article>`;
+    const visibility=licensedGame&&!owner
+      ?(!fractureRight.verified?'Droit de jeu non vérifié':fractureRight.active?'Droit numérique actif':'Droit de jeu requis')
+      :p.visibility==='restricted'?'Accès restreint':p.visibility==='account'?'Inclus avec le compte':'Page publique';
+    return `<article class="library-project-card"><div class="library-project-art"><img src="${escapeHtml(cover(p))}" alt=""></div><div class="library-project-body"><div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(p.status))}</span>${roleChip?`<span class="role-chip">${escapeHtml(roleChip)}</span>`:''}</div><h2>${escapeHtml(p.name)}</h2><p>${escapeHtml(p.description||'')}</p><div class="library-project-stats"><span>${pd} document${pd===1?'':'s'} accessible${pd===1?'':'s'}</span><span>${escapeHtml(visibility)}</span></div><div class="hero-actions"><a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(p.slug)}">Ouvrir l’espace</a>${p.play_path&&canPlay?`<a class="btn btn-secondary" href="${escapeHtml(p.play_path)}">Jouer</a>`:''}${licenseAction}${!tester&&p.allow_tester_requests?`<button class="btn btn-secondary" type="button" data-request-tester="${p.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div></div></article>`;
   }).join('')||'<div class="notice"><strong>Aucun projet disponible.</strong></div>';
   box.querySelectorAll('[data-request-tester]').forEach(b=>b.addEventListener('click',async()=>{
     const message=prompt('Court message pour votre demande (facultatif).')||'';
