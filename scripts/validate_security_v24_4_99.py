@@ -75,6 +75,9 @@ def main():
         "la fermeture des autres sessions n’a pas pu être confirmée",
         "Action de sécurité appliquée, mais l’état affiché ne peut pas être rafraîchi pour le moment.",
         "Mode Voyage enregistré, mais la liste des voyages ne peut pas être rafraîchie pour le moment.",
+        "function setCoreActionsEnabled(enabled)",
+        "function bindReloadFallback()",
+        "Utilisez « Actualiser » pour réessayer.",
     ],'Centre sécurité mutations/rafraîchissement')
     require(security_mfa,[
         "const {error}=await s.auth.mfa.unenroll({factorId});",
@@ -89,7 +92,7 @@ def main():
     require(center,[
         'sinjira-security-v24-4-99.js?v=25.0.1',
         'v24-security.js?v=25.0.1',
-        'sinjira-security-center-v24-4-98.js?v=25.0.3',
+        'sinjira-security-center-v24-4-98.js?v=25.0.4',
         'Déclarer perdu',
         'aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'
     ],'page Ma sécurité')
