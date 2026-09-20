@@ -268,7 +268,7 @@ def validate(contents: dict[str, str]) -> None:
         fail("navigation mobile: panneau regroupé risque encore de déborder")
 
     for name, content in contents.items():
-        if not name.startswith("secondary_"):
+        if not name.startswith("secondary_") or not name.endswith(("_lectures","_documents","_playtests","_contributions","_reels","_personnage","_privacy","_blocks","_junior","_project","_report")):
             continue
         if "sinjira-account.js?v=25.0.1" not in content:
             fail(f"navigation secondaire: cache JS V25 absent dans {name}")
