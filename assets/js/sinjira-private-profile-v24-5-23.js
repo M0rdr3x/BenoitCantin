@@ -96,8 +96,8 @@ async function loadProfile(){
 }
 
 if(form){
-  await requireUser();
   setBusy(true);
+  await requireUser();
   try{
     await loadProfile();
     setBusy(false);
