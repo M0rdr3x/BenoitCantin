@@ -35,6 +35,11 @@ verify_jwt = true
 [functions.get-private-book-reading-url]
 verify_jwt = true
 
+# Catalogue privé multi-romans : JWT obligatoire; l'Edge revalide ensuite
+# l'âge, l'entitlement ou le rôle créateur et ne renvoie qu'une URL signée courte.
+[functions.get-private-novel-url]
+verify_jwt = true
+
 [functions.submit-game-contribution]
 verify_jwt = true
 
