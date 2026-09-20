@@ -334,50 +334,9 @@ async function contributions(){
   });
 }
 async function settings(){
-  const user=await requireUser(),s=getSupabase();
-  document.querySelector('[data-export-data]')?.addEventListener('click',async()=>{
-    const queries={
-      profile:s.from('profiles').select('*').eq('user_id',user.id),
-      private_profile:s.rpc('private_profile_get'),
-      relationships:s.from('family_relationships').select('*').eq('owner_user_id',user.id),
-      privacy:s.from('privacy_settings').select('*').eq('user_id',user.id),
-      notifications:s.from('notification_preferences').select('*').eq('user_id',user.id),
-      questionnaire_draft:s.from('character_questionnaire_drafts').select('*').eq('user_id',user.id),
-      sessions:s.from('game_sessions').select('*').eq('user_id',user.id),
-      sheets:s.from('player_sheets').select('*').eq('user_id',user.id),
-      feedback:s.from('session_feedback').select('*').eq('user_id',user.id),
-      requests:s.from('access_requests').select('*').eq('user_id',user.id),
-      access:s.from('project_access').select('*').eq('user_id',user.id),
-      consent:s.from('research_consents').select('*').eq('user_id',user.id),
-      market:s.from('market_listings').select('*').eq('seller_user_id',user.id),
-      tokens:s.from('token_ledger').select('*').eq('user_id',user.id),
-      parallel_responses:s.from('parallel_responses').select('*').eq('user_id',user.id),
-      parallel_state:s.from('parallel_character_state').select('*').eq('user_id',user.id),
-      entitlements:s.from('user_entitlements').select('*,products(slug,name)').eq('user_id',user.id)
-    };
-    const results=await Promise.all(Object.entries(queries).map(async([key,query])=>{
-      try{const response=await query;return {key,data:response.data,error:response.error||null}}
-      catch(error){return {key,data:null,error}}
-    }));
-    if(results.some(result=>result.error)){
-      setStatus(status,'Export interrompu : certaines catégories n’ont pas pu être vérifiées. Aucune archive incomplète n’a été générée.','error');
-      return;
-    }
-    const payload=Object.fromEntries(results.map(result=>[
-      result.key,
-      result.key==='private_profile'?(result.data?[result.data]:[]):(result.data??[])
-    ]));payload.exported_at=new Date().toISOString();payload.format='SINJIRA_USER_EXPORT_V24';
-    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-    const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`sinjira-mes-donnees-${new Date().toISOString().slice(0,10)}.json`;link.click();URL.revokeObjectURL(url);
-  });
-  document.querySelector('[data-delete-account]')?.addEventListener('click',async()=>{
-    const confirmation=prompt('Pour supprimer définitivement votre compte, écrivez SUPPRIMER MON COMPTE.');
-    if(confirmation!=='SUPPRIMER MON COMPTE')return;
-    const {data,error}=await s.functions.invoke('delete-player-account',{body:{confirm:confirmation}});
-    if(error||!data?.ok){setStatus(status,data?.error||'Suppression impossible. Aucune confirmation de suppression n’a été reçue.','error');return}
-    postNativeChildAccess('unknown');await s.auth.signOut();location.href='/compte/connexion.html?deleted=1';
-  });
+  await requireUser();
 }
+
 function refreshAccountNavGroups(){
   document.querySelectorAll('.account-nav-group').forEach(group=>{
     const visible=[...group.querySelectorAll('a')].some(link=>!link.hidden);
