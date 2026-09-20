@@ -185,8 +185,8 @@ def validate(contents: dict[str, str]) -> None:
         fail("rôle créateur: échec de résolution encore masqué comme compte membre")
     if "consterrors=[ownerresult,adminresult,projectsresult" not in libj:
         fail("bibliothèque: erreurs de rôle owner/admin non remontées")
-    if "consterrors=[ownerresult,ordersresult,entitlementsresult]" not in pj:
-        fail("achats: erreur de rôle owner non remontée")
+    if "consterrors=[ownerresult,ordersresult,entitlementsresult,...creatorresults]" not in pj:
+        fail("achats: erreur de rôle owner ou portefeuille créateur non remontée")
 
     if 'name="pseudo"required' not in prof or 'name="email"requiredtype="email"' not in prof:
         fail("profil: pseudo/courriel ne sont pas éditables")
