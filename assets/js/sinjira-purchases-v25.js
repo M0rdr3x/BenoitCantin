@@ -31,13 +31,20 @@ function renderEntitlements(entitlements){
   }).join(''):'<div class="notice"><strong>Aucun droit numérique attribué.</strong><p>Les licences, achats numériques ou accès accordés à votre compte apparaîtront ici.</p></div>';
 }
 
-function renderCreatorPortfolio(projects,novels,products){
+function renderCreatorPortfolio(projectsResult,novelsResult,productsResult){
   const root=document.querySelector('[data-creator-portfolio]');
   if(!root)return;
   root.hidden=false;
-  const projectRows=projects.map(row=>`<div class="account-content-row"><div><strong>${escapeHtml(row.name)}</strong><small>${escapeHtml(row.type||'projet')} · ${escapeHtml(row.status||'—')} · ${escapeHtml(row.visibility||'—')}</small></div><span class="role-chip">Création</span></div>`).join('')||'<p>Aucun projet enregistré.</p>';
-  const novelRows=novels.map(row=>`<div class="account-content-row"><div><strong>${escapeHtml(row.title)}</strong><small>roman · ${escapeHtml(row.status||'—')}</small></div><span class="role-chip">Création</span></div>`).join('')||'<p>Aucun roman enregistré.</p>';
-  const productRows=products.map(row=>`<div class="account-content-row"><div><strong>${escapeHtml(row.name)}</strong><small>${escapeHtml(row.product_type||'produit')} · ${row.active?'actif':'inactif / préparation'}</small></div><span class="role-chip">Catalogue</span></div>`).join('')||'<p>Aucun produit enregistré.</p>';
+  const projects=rows(projectsResult.data),novels=rows(novelsResult.data),products=rows(productsResult.data);
+  const projectRows=projectsResult.error
+    ?'<p>Catalogue des projets temporairement indisponible.</p>'
+    :projects.map(row=>`<div class="account-content-row"><div><strong>${escapeHtml(row.name)}</strong><small>${escapeHtml(row.type||'projet')} · ${escapeHtml(row.status||'—')} · ${escapeHtml(row.visibility||'—')}</small></div><span class="role-chip">Création</span></div>`).join('')||'<p>Aucun projet enregistré.</p>';
+  const novelRows=novelsResult.error
+    ?'<p>Catalogue des romans temporairement indisponible.</p>'
+    :novels.map(row=>`<div class="account-content-row"><div><strong>${escapeHtml(row.title)}</strong><small>roman · ${escapeHtml(row.status||'—')}</small></div><span class="role-chip">Création</span></div>`).join('')||'<p>Aucun roman enregistré.</p>';
+  const productRows=productsResult.error
+    ?'<p>Catalogue des produits temporairement indisponible.</p>'
+    :products.map(row=>`<div class="account-content-row"><div><strong>${escapeHtml(row.name)}</strong><small>${escapeHtml(row.product_type||'produit')} · ${row.active?'actif':'inactif / préparation'}</small></div><span class="role-chip">Catalogue</span></div>`).join('')||'<p>Aucun produit enregistré.</p>';
   setHtml('[data-creator-projects]',projectRows);
   setHtml('[data-creator-novels]',novelRows);
   setHtml('[data-creator-products]',productRows);
@@ -70,21 +77,22 @@ async function init(){
   const role=document.querySelector('[data-purchase-account-role]');
   if(role)role.textContent=!ownerResolved?'Rôle du compte non confirmé':isOwner?'Compte créateur SINJIRA™':'Compte membre SINJIRA™';
 
+  let creatorResults=[];
   if(isOwner){
-    const [projectsResult,novelsResult,productsResult]=await Promise.all([
+    creatorResults=await Promise.all([
       s.from('projects').select('id,slug,name,type,status,visibility,sort_order').order('sort_order'),
       s.from('sinjira_novels').select('id,slug,title,status,sort_order').order('sort_order'),
       s.from('products').select('id,slug,name,product_type,active,created_at').order('created_at')
     ]);
-    renderCreatorPortfolio(rows(projectsResult.data),rows(novelsResult.data),rows(productsResult.data));
+    renderCreatorPortfolio(...creatorResults);
   }
 
-  const errors=[ownerResult,ordersResult,entitlementsResult].filter(result=>result.error);
+  const errors=[ownerResult,ordersResult,entitlementsResult,...creatorResults].filter(result=>result.error);
   const status=document.querySelector('[data-purchases-v25-status]');
   if(errors.length&&status){
     status.hidden=false;
     status.dataset.statusType='error';
-    status.textContent='Certaines informations d’achat ou le rôle du compte n’ont pas pu être vérifiés. Aucun accès supplémentaire n’a été accordé automatiquement.';
+    status.textContent='Certaines informations d’achat, de rôle ou du portefeuille créateur n’ont pas pu être vérifiées. Aucun accès supplémentaire n’a été accordé automatiquement.';
   }
 }
 
