@@ -359,6 +359,18 @@ function refreshAccountNavGroups(){
   });
 }
 
+function normalizeAccountHeaderNavigation(){
+  document.querySelectorAll('.account-page .site-header .main-nav').forEach(nav=>{
+    if(nav.dataset.accountHeaderNormalized==='true')return;
+    nav.dataset.accountHeaderNormalized='true';
+    nav.setAttribute('aria-label','Navigation principale');
+    const universe=document.createElement('a');
+    universe.href='/projets/sinjira/';
+    universe.textContent='Univers SINJIRA™';
+    nav.replaceChildren(universe);
+  });
+}
+
 function enhanceAccountNavigation(){
   document.querySelectorAll('.account-nav').forEach(nav=>{
     if(nav.dataset.grouped==='true')return;
@@ -401,6 +413,7 @@ function enhanceAccountNavigation(){
 }
 document.querySelectorAll('[data-logout]').forEach(b=>b.addEventListener('click',async()=>{postNativeChildAccess('unknown');await signOut()}));
 backendNotice();
+normalizeAccountHeaderNavigation();
 enhanceAccountNavigation();
 initAdminNavigation().catch(()=>{});
 initAgeAccessNavigation().then(refreshAccountNavGroups).catch(()=>{});
