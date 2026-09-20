@@ -31,23 +31,29 @@ async function waitForLegacyDashboard(){
   }
 }
 
-function renderAccess(projects,isOwner,isAdmin,roleResolved=true,catalogResolved=true){
+function renderAccess(projects,isOwner,isAdmin,roleResolved=true,catalogResolved=true,accessResolved=true){
   const count=projects.length;
-  setText('[data-stat-projects]',count);
-  setText('[data-project-access-summary]',!roleResolved
-    ? `${count} accès projet visible${count===1?'':'s'}; rôle du compte non confirmé.`
-    : (isOwner||isAdmin)&&!catalogResolved
-      ? `Catalogue complet temporairement indisponible · ${count} accès confirmé${count===1?'':'s'} affiché${count===1?'':'s'}.`
-      : isOwner
-        ? `Catalogue propriétaire : ${count} création${count===1?'':'s'} visible${count===1?'':'s'}.`
-        : isAdmin
-          ? `Accès administrateur : ${count} projet${count===1?'':'s'} disponible${count===1?'':'s'}.`
-          : count
-            ? `${count} accès projet actif${count===1?'':'s'} sur votre compte.`
-            : 'Aucun accès privé supplémentaire. Les contenus publics restent disponibles.');
+  setText('[data-stat-projects]',accessResolved||catalogResolved?count:'—');
+  setText('[data-project-access-summary]',!accessResolved&&!catalogResolved
+    ? 'Accès projets temporairement indisponibles; aucun accès supplémentaire n’est supposé.'
+    : !roleResolved
+      ? `${count} accès projet visible${count===1?'':'s'}; rôle du compte non confirmé.`
+      : (isOwner||isAdmin)&&!catalogResolved
+        ? `Catalogue complet temporairement indisponible · ${count} accès confirmé${count===1?'':'s'} affiché${count===1?'':'s'}.`
+        : isOwner
+          ? `Catalogue propriétaire : ${count} création${count===1?'':'s'} visible${count===1?'':'s'}.`
+          : isAdmin
+            ? `Accès administrateur : ${count} projet${count===1?'':'s'} disponible${count===1?'':'s'}.`
+            : count
+              ? `${count} accès projet actif${count===1?'':'s'} sur votre compte.`
+              : 'Aucun accès privé supplémentaire. Les contenus publics restent disponibles.');
 
   const box=document.querySelector('[data-dashboard-projects]');
   if(!box)return;
+  if(!accessResolved&&!catalogResolved){
+    box.innerHTML='<p>Les accès projets n’ont pas pu être vérifiés. Aucun accès supplémentaire n’est supposé.</p>';
+    return;
+  }
   if(!projects.length){
     box.innerHTML='<p>Aucun accès privé supplémentaire pour le moment.</p>';
     return;
@@ -59,7 +65,12 @@ function renderAccess(projects,isOwner,isAdmin,roleResolved=true,catalogResolved
   }).join('');
 }
 
-function renderLibrary(rows){
+function renderLibrary(rows,resolved=true){
+  if(!resolved){
+    setText('[data-stat-reader]','—');
+    setText('[data-reader-library-summary]','Bibliothèque de lecture temporairement indisponible; aucune progression n’est supposée.');
+    return;
+  }
   const count=rows.length;
   setText('[data-stat-reader]',count);
   const progressed=rows.filter(row=>Number(row.progress_percent||0)>0);
@@ -127,16 +138,17 @@ async function loadPrivateDashboard(){
   const roleResolved=ownerResolved&&(isOwner||adminResolved);
   setText('[data-account-role]',!roleResolved?'Rôle du compte non confirmé':isOwner?'Propriétaire SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Membre SINJIRA™');
 
+  const accessResolved=!accessResult.error;
   let projects=(accessResult.data||[]).filter(row=>!row.expires_at||new Date(row.expires_at)>new Date());
-  let catalogResolved=true;
+  let catalogResolved=!(roleResolved&&(isAdmin||isOwner));
   if(roleResolved&&(isAdmin||isOwner)){
     const all=await s.from('projects').select('id,slug,name,status').order('sort_order');
     catalogResolved=!all.error;
     if(catalogResolved)projects=all.data||[];
   }
 
-  renderAccess(projects,isOwner,isAdmin,roleResolved,catalogResolved);
-  renderLibrary(libraryResult.data||[]);
+  renderAccess(projects,isOwner,isAdmin,roleResolved,catalogResolved,accessResolved);
+  renderLibrary(libraryResult.data||[],!libraryResult.error);
   renderCharacter(
     normalizeCharacter(characterResult.data?.[0]||null,legacyCharacterResult.data?.[0]||null),
     applicationResult.data?.[0]||null
