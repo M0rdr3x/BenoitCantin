@@ -6,6 +6,7 @@ on:
     paths:
       - 'compte/securite.html'
       - 'assets/js/sinjira-security-travel-consent-v25.js'
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
       - 'scripts/validate_security_travel_consent_v25.py'
       - '.github/workflows/sinjira-security-travel-consent-v25.yml'
   push:
@@ -13,6 +14,7 @@ on:
     paths:
       - 'compte/securite.html'
       - 'assets/js/sinjira-security-travel-consent-v25.js'
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
       - 'scripts/validate_security_travel_consent_v25.py'
       - '.github/workflows/sinjira-security-travel-consent-v25.yml'
   workflow_dispatch:
