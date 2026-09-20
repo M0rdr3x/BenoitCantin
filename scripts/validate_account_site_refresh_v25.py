@@ -146,7 +146,7 @@ def validate(contents: dict[str, str]) -> None:
         fail("authentification: helpers Compte doivent conserver le minimum de 12 caractères")
     if "a.length<10" in acc or "au moins 10 caractères" in acc:
         fail("authentification: ancien minimum 10 caractères encore présent dans le helper Compte")
-    if "password.length<12" not in recovery or "au moins12caractères" not in recovery:
+    if "password.length<12" not in recovery or "aumoins12caractères" not in recovery:
         fail("récupération active: minimum 12 caractères absent du script sécurisé")
     if 'minlength="12"' not in contents["reset_html"] or "aumoins12caractères" not in reset_html:
         fail("récupération active: HTML non aligné sur le minimum 12 caractères")
