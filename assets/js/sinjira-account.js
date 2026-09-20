@@ -267,8 +267,9 @@ async function games(){
   const input=document.querySelector('[data-import-session]'),button=document.querySelector('[data-import-session-button]');button?.addEventListener('click',async()=>{const file=input?.files?.[0];if(!file)return setStatus(status,'Choisissez un fichier JSON de sauvegarde.','error');try{const payload=JSON.parse(await file.text());if(payload.format!=='SINJIRA_GAME_SAVE_V1'||!payload.session)throw new Error('Format de sauvegarde incompatible.');const src=payload.session;const clone={user_id:user.id,game_slug:src.game_slug,title:`${src.title||'Partie SINJIRA'} — importée`,status:'in_progress',player_count:src.player_count,human_player_count:src.human_player_count,effective_player_count:src.effective_player_count,play_mode:src.play_mode,duration_minutes:src.duration_minutes,party_code:`IMP-${Date.now().toString(36).toUpperCase()}`};const {data:newSession,error}=await s.from('game_sessions').insert(clone).select('id').single();if(error)throw error;for(const sh of payload.player_sheets||[]){await s.from('player_sheets').insert({session_id:newSession.id,user_id:user.id,sheet_key:sh.sheet_key,sheet_label:sh.sheet_label,fields:sh.fields||{}})}setStatus(status,'Sauvegarde importée comme nouvelle partie privée.','success');setTimeout(()=>location.reload(),800)}catch(e){setStatus(status,e.message||'Import impossible.','error')}});
 }
 async function profilePage(){
-  const user=await requireUser(),form=document.querySelector('[data-profile-form]');if(!form)return;
+  const form=document.querySelector('[data-profile-form]');if(!form)return;
   setFormEnabled(form,false);
+  const user=await requireUser();
   let p;
   try{p=await profile(user)}catch(error){setStatus(status,'Impossible de charger le profil. Le formulaire reste verrouillé pour éviter d’écraser des données non chargées.','error');return}
   form.elements.pseudo.value=p.pseudo||'';form.elements.display_name.value=p.display_name||'';form.elements.email.value=user.email||'';
@@ -317,8 +318,9 @@ async function profilePage(){
   form.addEventListener('submit',async e=>{e.preventDefault();const d=new FormData(form),s=getSupabase(),pseudo=String(d.get('pseudo')||'').trim(),displayName=String(d.get('display_name')||'').trim(),email=String(d.get('email')||'').trim().toLowerCase();if(!pseudo||!displayName||!email){setStatus(status,'Complétez le pseudonyme, le nom affiché et le courriel.','error');return}const {error:profileError}=await s.from('profiles').update({pseudo,display_name:displayName}).eq('user_id',user.id);if(profileError){setStatus(status,profileError.message||'Impossible de mettre le profil à jour.','error');return}if(email!==String(user.email||'').toLowerCase()){const {error:emailError}=await s.auth.updateUser({email},{emailRedirectTo:`${location.origin}/compte/profil.html`});if(emailError){setStatus(status,emailError.message||'Le profil a été enregistré, mais le changement de courriel n’a pas pu être lancé.','error');return}setStatus(status,'Profil enregistré. Confirmez le changement de courriel avec les messages de sécurité envoyés par SINJIRA™.','success');return}setStatus(status,'Profil mis à jour.','success')});
 }
 async function contributions(){
-  const user=await requireUser(),form=document.querySelector('[data-contribution-form]');if(!form)return;
+  const form=document.querySelector('[data-contribution-form]');if(!form)return;
   setFormEnabled(form,false);
+  const user=await requireUser();
   let c;
   try{c=await consent(user)}catch(error){setStatus(status,'Impossible de vérifier vos choix de contribution. Le formulaire reste verrouillé et aucun consentement n’est supposé.','error');return}
   form.elements.participate.checked=!!c.participate;form.elements.share_free_text.checked=!!c.share_free_text;
