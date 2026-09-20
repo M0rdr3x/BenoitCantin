@@ -213,9 +213,9 @@ def validate(contents: dict[str, str]) -> None:
         fail("tableau de bord: catalogue complet owner/admin non chargé")
     if "rôleducomptenonconfirmé" not in dashboard:
         fail("tableau de bord: état fail-closed du rôle non confirmé absent")
-    if "catalogueresolved=!all.error" not in dashboard or "cataloguecomplettemporairementindisponible" not in dashboard:
+    if "catalogresolved=!all.error" not in dashboard or "cataloguecomplettemporairementindisponible" not in dashboard:
         fail("tableau de bord: échec du catalogue complet owner/admin non signalé")
-    if "renderaccess(projects,isowner,isadmin,roleresolved,catalogueresolved)" not in dashboard:
+    if "renderaccess(projects,isowner,isadmin,roleresolved,catalogresolved)" not in dashboard:
         fail("tableau de bord: résumé des accès projets non lié au rôle/catalogue résolus")
     if "assets/js/sinjira-account-dashboard-v24-4-60.js" not in workflow:
         fail("CI compte: module Dashboard dédié non surveillé")
