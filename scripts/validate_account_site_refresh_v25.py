@@ -103,6 +103,10 @@ def validate(contents: dict[str, str]) -> None:
     for marker in ("data-library-games", "data-library-novels", "data-library-other"):
         if marker not in libh:
             fail(f"bibliothèque: séparation manquante: {marker}")
+    if 'href="mes-achats.html"><strong>mesachats</strong>' not in libh:
+        fail("bibliothèque: raccourci Mes achats absent")
+    if "commandesetachatsenregistrésrestentconsultablesséparémentdans«mesachats»" not in libh:
+        fail("bibliothèque: acquisitions encore confondues avec les accès affichés")
     if "sinjira-library.js?v=24.1" in contents["library_html"]:
         fail("bibliothèque: ancien module générique encore chargé en parallèle")
     if "lesachats,licencesetdroitsnumériquessontvérifiésseloncecompte" not in libh:
@@ -280,6 +284,7 @@ def main() -> None:
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
             "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
             "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.0\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
+            "raccourci Mes achats retiré":("library_html",'<a href="mes-achats.html"><strong>Mes achats</strong>','<a href="licences.html"><strong>Mes achats</strong>'),
             "rôle créateur secondaire revenu côté client":("secondary_library_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "module bibliothèque secondaire hors paths CI":("workflow","assets/js/sinjira-library.js","assets/js/sinjira-library-missing.js"),
             "navigation mobile redevenue absolue":("account_css",".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}",".account-nav-panel{position:absolute;width:min(88vw,320px)}"),
