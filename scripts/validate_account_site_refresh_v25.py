@@ -93,6 +93,10 @@ def validate(contents: dict[str, str]) -> None:
     for marker in ("appendgroup('bibliothèque'", "appendgroup('univers'", "appendgroup('communauté'", "appendgroup('compte'"):
         if marker not in acc:
             fail(f"navigation groupée absente: {marker}")
+    if "appendgroup('bibliothèque',['bibliotheque.html','projet.html','mes-lectures.html','mes-commentaires.html'" not in acc:
+        fail("navigation Bibliothèque: routes projet/commentaires non classées")
+    if "'regles-communaute.html','regles-communaute-junior.html','moderation.html'" not in acc:
+        fail("navigation Communauté: règles/modération non classées")
 
     for name, content in contents.items():
         if not name.startswith("secondary_"):
@@ -159,6 +163,7 @@ def main() -> None:
         mutations={
             "retour à novel_comments":("reader_js","sinjira_novel_comments","novel_comments"),
             "page compte sans JS V25":("account_page:index.html","sinjira-account.js?v=25.0.1","sinjira-account.js?v=24.1"),
+            "modération renvoyée vers Plus":("account_js","'regles-communaute.html','regles-communaute-junior.html','moderation.html'","'regles-communaute.html','regles-communaute-junior.html'"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
