@@ -31,18 +31,20 @@ async function waitForLegacyDashboard(){
   }
 }
 
-function renderAccess(projects,isOwner,isAdmin,roleResolved=true){
+function renderAccess(projects,isOwner,isAdmin,roleResolved=true,catalogResolved=true){
   const count=projects.length;
   setText('[data-stat-projects]',count);
   setText('[data-project-access-summary]',!roleResolved
     ? `${count} accès projet visible${count===1?'':'s'}; rôle du compte non confirmé.`
-    : isOwner
-      ? `Catalogue propriétaire : ${count} création${count===1?'':'s'} visible${count===1?'':'s'}.`
-      : isAdmin
-        ? `Accès administrateur : ${count} projet${count===1?'':'s'} disponible${count===1?'':'s'}.`
-        : count
-          ? `${count} accès projet actif${count===1?'':'s'} sur votre compte.`
-          : 'Aucun accès privé supplémentaire. Les contenus publics restent disponibles.');
+    : (isOwner||isAdmin)&&!catalogResolved
+      ? `Catalogue complet temporairement indisponible · ${count} accès confirmé${count===1?'':'s'} affiché${count===1?'':'s'}.`
+      : isOwner
+        ? `Catalogue propriétaire : ${count} création${count===1?'':'s'} visible${count===1?'':'s'}.`
+        : isAdmin
+          ? `Accès administrateur : ${count} projet${count===1?'':'s'} disponible${count===1?'':'s'}.`
+          : count
+            ? `${count} accès projet actif${count===1?'':'s'} sur votre compte.`
+            : 'Aucun accès privé supplémentaire. Les contenus publics restent disponibles.');
 
   const box=document.querySelector('[data-dashboard-projects]');
   if(!box)return;
@@ -126,12 +128,14 @@ async function loadPrivateDashboard(){
   setText('[data-account-role]',!roleResolved?'Rôle du compte non confirmé':isOwner?'Propriétaire SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Membre SINJIRA™');
 
   let projects=(accessResult.data||[]).filter(row=>!row.expires_at||new Date(row.expires_at)>new Date());
+  let catalogResolved=true;
   if(roleResolved&&(isAdmin||isOwner)){
     const all=await s.from('projects').select('id,slug,name,status').order('sort_order');
-    if(!all.error)projects=all.data||[];
+    catalogResolved=!all.error;
+    if(catalogResolved)projects=all.data||[];
   }
 
-  renderAccess(projects,isOwner,isAdmin,roleResolved);
+  renderAccess(projects,isOwner,isAdmin,roleResolved,catalogResolved);
   renderLibrary(libraryResult.data||[]);
   renderCharacter(
     normalizeCharacter(characterResult.data?.[0]||null,legacyCharacterResult.data?.[0]||null),
@@ -141,7 +145,7 @@ async function loadPrivateDashboard(){
   const state=document.querySelector('[data-dashboard-private-state]');
   if(state){
     const characterUnavailable=characterResult.error&&legacyCharacterResult.error;
-    const hadError=[adminResult,ownerResult,accessResult,libraryResult,applicationResult].some(result=>result.error)||characterUnavailable;
+    const hadError=!catalogResolved||[adminResult,ownerResult,accessResult,libraryResult,applicationResult].some(result=>result.error)||characterUnavailable;
     state.hidden=!hadError;
     if(hadError)state.textContent='Certaines informations privées n’ont pas pu être chargées. Vos données restent protégées; réessayez après avoir rechargé la page.';
   }
