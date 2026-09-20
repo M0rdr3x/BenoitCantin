@@ -9,6 +9,7 @@ ACCOUNT_DIR = ROOT / "compte"
 
 FILES = {
     "migration": ROOT / "supabase/migrations/20260919090000_sinjira_v25_account_content_hub.sql",
+    "project_owner_migration": ROOT / "supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql",
     "library_html": ROOT / "compte/bibliotheque.html",
     "library_js": ROOT / "assets/js/sinjira-library-v24-4-61.js",
     "purchases_html": ROOT / "compte/mes-achats.html",
@@ -50,6 +51,7 @@ def compact(value: str) -> str:
 
 def validate(contents: dict[str, str]) -> None:
     m = compact(contents["migration"])
+    project_owner_migration = compact(contents["project_owner_migration"])
     libh = compact(contents["library_html"])
     libj = compact(contents["library_js"])
     ph = compact(contents["purchases_html"])
@@ -82,6 +84,17 @@ def validate(contents: dict[str, str]) -> None:
     for marker in required_migration:
         if marker not in m:
             fail(f"migration contenu: garde absente: {marker}")
+
+    for marker in (
+        "altertablepublic.projectsenablerowlevelsecurity",
+        "createpolicyprojects_owner_catalog_read_v25",
+        "public.is_sinjira_owner((selectauth.uid()))",
+    ):
+        if marker not in project_owner_migration:
+            fail(f"migration projets créateur: garde absente: {marker}")
+
+    if "supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql" not in contents["workflow"]:
+        fail("CI compte: migration visibilité projets créateur non surveillée")
 
     for marker in ("data-library-games", "data-library-novels", "data-library-other"):
         if marker not in libh:
@@ -174,10 +187,13 @@ def validate(contents: dict[str, str]) -> None:
     if "from('sinjira_novels')" not in contents["literature_js"]:
         fail("littérature: fallback public anonyme canonique absent")
 
-    if "selectplan(9);" not in test:
-        fail("pgTAP contenu: plan(9) absent")
+    if "selectplan(12);" not in test:
+        fail("pgTAP contenu: plan(12) absent")
     for marker in (
+        "lapolicyprojetsowner-onlyv25existe",
         "unmembrenevoitpasunromanbrouilloncréateur",
+        "unmembrenevoitpasunprojetinternecréateur",
+        "lecréateurvoit sonprojetinternesansfauxachat".replace(" ", ""),
         "unmembrevoitencoreunproduitinactifliéàsonentitlement",
         "unmembrevoitencoreunproduitinactifprésentdanssapropcommande".replace("propcommande", "proprecommande"),
         "lecréateurvoitsonromanbrouillon",
@@ -205,6 +221,8 @@ def main() -> None:
             "script récupération hors paths CI":("workflow","assets/js/sinjira-recovery-v24-4-99.js","assets/js/sinjira-recovery-missing.js"),
             "inscription avec ancien cache CSS":("signup_html","sinjira-player-account.css?v=25.0.1","sinjira-player-account.css?v=24.4.12"),
             "MFA avec ancien cache CSS":("mfa_html","sinjira-player-account.css?v=25.0.1","sinjira-player-account.css?v=24.4.66"),
+            "policy projets créateur retirée":("project_owner_migration","projects_owner_catalog_read_v25","projects_owner_catalog_missing"),
+            "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
