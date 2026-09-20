@@ -33,14 +33,20 @@ def main():
         'enregistrer mes informations personnelles','annuler les modifications',
         'value="woman"','value="man"','value="non_binary"','value="other"','value="prefer_not_to_say"',
         'value="single"','value="partnered"','value="engaged"','value="married"','value="separated"','value="divorced"','value="widowed"',
-        'sinjira-private-profile-v24-5-23.js?v=25.1.0'
+        'sinjira-private-profile-v24-5-23.js?v=25.1.1'
     ]:
         if marker not in pl: errors.append(f'Page Profil incomplète: {marker}')
     if re.search(r'<fieldset[^>]*\bdisabled\b',pl): errors.append('Le coffre privé ne doit plus être enfermé dans un fieldset disabled.')
     if 'v24-private-profile.js' in pl: errors.append('L’ancien contrôleur lecture seule ne doit plus être chargé.')
     if 'ils ne peuvent pas être modifiés' in pl or 'lecture seule' in pl: errors.append('Le texte de l’ancien mode lecture seule ne doit plus être affiché.')
 
-    for marker in ["rpc('private_profile_get'","rpc('private_profile_save'",'dating_reconfirmation_required','youth_jurisdiction_not_enabled','guardian_authorization_required_under_14','mfa_required']:
+    for marker in [
+        "rpc('private_profile_get'","rpc('private_profile_save'",'dating_reconfirmation_required',
+        'youth_jurisdiction_not_enabled','guardian_authorization_required_under_14','mfa_required',
+        'setbusy(true);','await loadprofile();','setbusy(false);','if(!loadedsnapshot)',
+        'le formulaire reste verrouillé tant que vos données n’ont pas été chargées',
+        'aucune modification n’est envoyée'
+    ]:
         if marker not in jl: errors.append(f'Contrôleur V24.5.23 incomplet: {marker}')
     if re.search(r"\.from\(['\"]private_profiles['\"]\)",jl): errors.append('Le navigateur ne doit jamais accéder directement à private_profiles.')
     if re.search(r'\.\s*(?:insert|update|upsert|delete)\s*\(',jl): errors.append('Le contrôleur privé ne doit effectuer aucune écriture table directe.')
