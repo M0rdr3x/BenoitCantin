@@ -76,10 +76,13 @@ async function reportAndBlock(type,id){
     p_block:true
   });
   if(error)throw error;
-  await refreshFeedAfterAction(
+  const refreshed=await refreshFeedAfterAction(
     'Signalement enregistré. Cette personne est maintenant masquée de ton fil.',
-    'Signalement enregistré et personne masquée, mais le fil ne peut pas être rafraîchi pour le moment.'
+    'Signalement enregistré et personne masquée. Le fil est temporairement fermé jusqu’à son prochain rafraîchissement.'
   );
+  if(!refreshed&&feed){
+    feed.innerHTML='<article class="v20-social-card"><h2>Fil temporairement masqué</h2><p>Ton signalement a bien été enregistré. Le fil reste masqué ici pour ne pas réafficher un contenu ou une personne que tu viens de bloquer. Recharge la page plus tard.</p></article>';
+  }
 }
 
 function bindFeed(posts){
