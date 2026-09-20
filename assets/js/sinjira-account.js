@@ -361,7 +361,10 @@ async function settings(){
       setStatus(status,'Export interrompu : certaines catégories n’ont pas pu être vérifiées. Aucune archive incomplète n’a été générée.','error');
       return;
     }
-    const payload=Object.fromEntries(results.map(result=>[result.key,result.data??(result.key==='private_profile'?{}:[])]));payload.exported_at=new Date().toISOString();payload.format='SINJIRA_USER_EXPORT_V25';
+    const payload=Object.fromEntries(results.map(result=>[
+      result.key,
+      result.key==='private_profile'?(result.data?[result.data]:[]):(result.data??[])
+    ]));payload.exported_at=new Date().toISOString();payload.format='SINJIRA_USER_EXPORT_V24';
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`sinjira-mes-donnees-${new Date().toISOString().slice(0,10)}.json`;link.click();URL.revokeObjectURL(url);
   });
