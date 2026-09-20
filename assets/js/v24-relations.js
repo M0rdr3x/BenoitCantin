@@ -29,8 +29,14 @@ function configureGuardianTools(){
 }
 async function refreshAgeBand(){
   const {data:capabilities,error}=await s.rpc('sinjira_my_account_capabilities');
-  if(!error&&capabilities&&typeof capabilities.age_band==='string')ageBand=capabilities.age_band;
+  if(error||!capabilities||typeof capabilities.age_band!=='string'){
+    ageBand='unverified';
+    configureGuardianTools();
+    return false;
+  }
+  ageBand=capabilities.age_band;
   configureGuardianTools();
+  return true;
 }
 
 async function renderJuniorCommunityChildren(){
@@ -128,7 +134,7 @@ async function renderJuniorCommunityChildren(){
 }
 
 async function renderGuardian(){
-  if(!guardianLinks)return;
+  if(!guardianLinks)return true;
   let codesResult={data:[],error:null};
   if(ageBand==='adult'&&guardianCodes){
     const {data:aal,error:aalError}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
@@ -153,7 +159,7 @@ async function renderGuardian(){
     .select('id,minor_user_id,guardian_user_id,status,guardian_role,can_view_contact_metadata,consented_at,revoked_at,created_at')
     .or(`guardian_user_id.eq.${user.id},minor_user_id.eq.${user.id}`)
     .order('created_at',{ascending:false}).limit(20);
-  if(linksResult.error){guardianLinks.innerHTML='<div class="v24-empty">Impossible de charger les liens de supervision.</div>';return}
+  if(linksResult.error){guardianLinks.innerHTML='<div class="v24-empty">Impossible de charger les liens de supervision.</div>';return false}
   const rows=linksResult.data||[];
   guardianLinks.innerHTML=rows.length?rows.map(x=>{
     const asGuardian=x.guardian_user_id===user.id;
@@ -169,7 +175,7 @@ async function renderGuardian(){
     const actions=contactControl||revokeControl?`<div class="hero-actions">${contactControl}${revokeControl}</div>`:'';
     return `<article class="v24-panel"><strong>${escapeHtml(mine)} · ${escapeHtml(active?'verified':x.status||'—')}</strong><p>Rôle : ${escapeHtml(x.guardian_role||'parent/tuteur')}</p><small>${x.can_view_contact_metadata?'Métadonnées de contact autorisées par le compte jeunesse':'Métadonnées de contact non autorisées'} · aucun contenu privé de message</small>${actions}</article>`;
   }).join(''):'<div class="v24-empty">Aucun lien de supervision.</div>';
-  await renderJuniorCommunityChildren();
+  const juniorPanelRefreshed=await renderJuniorCommunityChildren();
   guardianLinks.querySelectorAll('[data-contact-metadata-toggle]').forEach(button=>button.addEventListener('click',async()=>{
     const allowed=button.dataset.contactMetadataAllowed==='true';
     const next=!allowed;
@@ -184,8 +190,10 @@ async function renderGuardian(){
       setStatus(guardianStatus,'Impossible de modifier cette permission pour le moment.','error');
       return;
     }
-    setStatus(guardianStatus,next?'Métadonnées de contacts autorisées. Le contenu de vos messages reste privé.':'Permission retirée. Le tuteur ne peut plus consulter vos métadonnées de contacts.','success');
-    await renderGuardian();
+    const successMessage=next?'Métadonnées de contacts autorisées. Le contenu de vos messages reste privé.':'Permission retirée. Le tuteur ne peut plus consulter vos métadonnées de contacts.';
+    setStatus(guardianStatus,successMessage,'success');
+    const refreshed=await renderGuardian();
+    if(!refreshed)setStatus(guardianStatus,`${successMessage} Le panneau de supervision ne peut pas être rafraîchi pour le moment.`,'info');
   }));
   guardianLinks.querySelectorAll('[data-revoke-guardian-link]').forEach(button=>button.addEventListener('click',async()=>{
     const asGuardian=button.dataset.revokeAsGuardian==='true';
@@ -219,8 +227,13 @@ async function renderGuardian(){
       }
       return;
     }
-    await refreshAgeBand();setStatus(guardianStatus,asGuardian?'Lien de supervision révoqué par le tuteur.':'Vous avez quitté ce lien de supervision.','success');await renderGuardian();
+    const ageRefreshed=await refreshAgeBand();
+    const successMessage=asGuardian?'Lien de supervision révoqué par le tuteur.':'Vous avez quitté ce lien de supervision.';
+    setStatus(guardianStatus,successMessage,'success');
+    const refreshed=await renderGuardian();
+    if(!ageRefreshed||!refreshed)setStatus(guardianStatus,`${successMessage} L’état du compte ne peut pas être entièrement rafraîchi pour le moment.`,'info');
   }));
+  return juniorPanelRefreshed;
 }
 
 guardianButton?.addEventListener('click',async()=>{
@@ -251,8 +264,10 @@ guardianButton?.addEventListener('click',async()=>{
     }
     return;
   }
-  setStatus(guardianStatus,`Code créé : ${String(data||'')}. Copiez-le dans l’inscription de l’enfant. Il est à usage unique et expire automatiquement.`,'success');
-  await renderGuardian();
+  const successMessage=`Code créé : ${String(data||'')}. Copiez-le dans l’inscription de l’enfant. Il est à usage unique et expire automatiquement.`;
+  setStatus(guardianStatus,successMessage,'success');
+  const refreshed=await renderGuardian();
+  if(!refreshed)setStatus(guardianStatus,`${successMessage} Le panneau de supervision ne peut pas être rafraîchi pour le moment.`,'info');
 });
 
 redeemButton?.addEventListener('click',async()=>{
@@ -263,7 +278,11 @@ redeemButton?.addEventListener('click',async()=>{
   redeemButton.disabled=false;
   if(error||!data?.ok){setStatus(guardianStatus,'Ce code est invalide, expiré, déjà utilisé ou ne peut pas être associé à ce compte.','error');return}
   if(redeemInput)redeemInput.value='';
-  await refreshAgeBand();setStatus(guardianStatus,'Lien parental vérifié. Les protections enfant/jeunesse utilisent maintenant cette supervision.','success');await renderGuardian();
+  const ageRefreshed=await refreshAgeBand();
+  const successMessage='Lien parental vérifié. Les protections enfant/jeunesse utilisent maintenant cette supervision.';
+  setStatus(guardianStatus,successMessage,'success');
+  const refreshed=await renderGuardian();
+  if(!ageRefreshed||!refreshed)setStatus(guardianStatus,`${successMessage} L’état du compte ne peut pas être entièrement rafraîchi pour le moment.`,'info');
 });
 
 if(form&&list){
