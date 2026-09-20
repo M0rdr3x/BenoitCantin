@@ -23,9 +23,10 @@ function serverMissing(error){const code=String(error?.code||''),text=String(err
 function normalizeCode(v=''){return String(v).trim().toUpperCase().replace(/\s+/g,'')}
 function configureGuardianTools(){
   const pending=['child_pending','youth_pending'].includes(ageBand);
+  const neutral=['child','youth'].includes(ageBand);
   if(guardianAdultTools)guardianAdultTools.hidden=ageBand!=='adult';
   if(guardianYouthTools)guardianYouthTools.hidden=!pending;
-  if(guardianNeutralTools)guardianNeutralTools.hidden=ageBand==='adult'||pending;
+  if(guardianNeutralTools)guardianNeutralTools.hidden=!neutral;
 }
 async function refreshAgeBand(){
   const {data:capabilities,error}=await s.rpc('sinjira_my_account_capabilities');
@@ -320,5 +321,6 @@ if(form&&list){
   });
   await render();
 }
-await refreshAgeBand();
+const initialAgeReady=await refreshAgeBand();
+if(!initialAgeReady)setStatus(guardianStatus,'Impossible de confirmer le type de compte pour le moment. Les outils parentaux restent masqués par sécurité.','error');
 await renderGuardian();
