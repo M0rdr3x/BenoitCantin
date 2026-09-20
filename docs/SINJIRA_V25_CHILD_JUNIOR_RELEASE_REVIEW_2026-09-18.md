@@ -340,9 +340,21 @@ Le pgTAP enfant reste à **64 assertions** mais son assertion réseau Compte pro
 
 Cette trentième migration reste **non revue production**.
 
+### Défense RLS du registre privé des romans
+
+La validation transversale Supabase a détecté que le registre serveur `private.sinjira_private_novel_assets` avait ses privilèges directs révoqués mais n'avait pas encore RLS activée. La défense en profondeur du projet exige les deux barrières.
+
+La migration forward-only :
+
+`20260919113000_sinjira_v25_private_novel_asset_rls.sql`
+
+active RLS sur cette table sans créer de policy membre. Les rôles `public`, `anon` et `authenticated` restent explicitement révoqués; le chemin de livraison privé continue de passer uniquement par les contrôles serveur dédiés et le rôle de service. Cette migration ne configure aucun actif privé et n'active aucune diffusion publique.
+
+Cette trente-et-unième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **30 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **31 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -383,6 +395,7 @@ Le snapshot de revue attend exactement **30 migrations locales futures non revue
 | `20260919100000_sinjira_v25_private_profile_age_11.sql` | `40c29de09331b187ddc00432054abcf500711ded` |
 | `20260919103000_sinjira_v25_livre_i_catalog_seed.sql` | `04929202946a0cda629c1f8005dbf51e4bfb2d68` |
 | `20260919110000_sinjira_v25_social_public_pseudo_privacy.sql` | `ac4f11e8e1591c35f0be91f541a21763fdb3ec8d` |
+| `20260919113000_sinjira_v25_private_novel_asset_rls.sql` | `745ae12098e538415dde16bac198d05610b99954` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -427,7 +440,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **30 migrations** dans l’ordre.
+2. Relire les **31 migrations** dans l’ordre.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.
