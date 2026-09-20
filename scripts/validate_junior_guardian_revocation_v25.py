@@ -139,8 +139,8 @@ def validate(migration: str, cascade: str, enable_aal2: str, summary_aal2: str, 
 
     test_compact = "".join(test.lower().split())
     guardian_sub = "selectset_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000001',true);"
-    if test_compact.count(guardian_sub) < 3:
-        fail("preuve pgTAP Junior: le contexte auth.uid() du tuteur A n est pas rétabli explicitement")
+    if test_compact.count(guardian_sub) < 4:
+        fail("preuve pgTAP Junior: les quatre rétablissements explicites de auth.uid() du tuteur A sont requis")
     guardian_aal2 = "selectset_config('request.jwt.claims',jsonb_build_object('sub','75000000-0000-4000-8000-000000000001','aal','aal2')::text,true);"
     if guardian_sub + guardian_aal2 not in test_compact:
         fail("preuve pgTAP Junior: contexte tuteur AAL2 incohérent avant activation")
