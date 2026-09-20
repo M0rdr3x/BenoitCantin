@@ -17,12 +17,17 @@ function backendNotice(){
   });
 }
 async function profile(user){
-  const {data}=await getSupabase().from('profiles').select('*').eq('user_id',user.id).maybeSingle();
+  const {data,error}=await getSupabase().from('profiles').select('*').eq('user_id',user.id).maybeSingle();
+  if(error)throw error;
   return data||{};
 }
 async function consent(user){
-  const {data}=await getSupabase().from('research_consents').select('*').eq('user_id',user.id).maybeSingle();
+  const {data,error}=await getSupabase().from('research_consents').select('*').eq('user_id',user.id).maybeSingle();
+  if(error)throw error;
   return data||{participate:false,share_free_text:false};
+}
+function setFormEnabled(form,enabled){
+  for(const field of form?.elements||[])field.disabled=!enabled;
 }
 function sessionUrl(s){
   if(s.game_slug==='fracture-du-reseau-mere'){
@@ -239,14 +244,17 @@ async function dashboard(){
     s.from('game_sessions').select('id,title,status,updated_at,game_slug,party_code,projects(name,public_path)').eq('user_id',user.id).order('updated_at',{ascending:false}).limit(6),
     s.from('access_requests').select('id').eq('user_id',user.id).eq('status','pending')
   ]);
-  const sessions=rs.data||[],reqs=rr.data||[];
+  const sessionsResolved=!rs.error,requestsResolved=!rr.error,sessions=rs.data||[],reqs=rr.data||[];
   const set=(sel,v)=>document.querySelector(sel)?.replaceChildren(document.createTextNode(String(v)));
-  set('[data-stat-active]',sessions.filter(x=>x.status==='in_progress').length);
-  set('[data-stat-finished]',sessions.filter(x=>x.status==='finished').length);
-  set('[data-stat-requests]',reqs.length);
+  set('[data-stat-active]',sessionsResolved?sessions.filter(x=>x.status==='in_progress').length:'—');
+  set('[data-stat-finished]',sessionsResolved?sessions.filter(x=>x.status==='finished').length:'—');
+  set('[data-stat-requests]',requestsResolved?reqs.length:'—');
   const cs=document.querySelector('[data-contribution-status]');if(cs)cs.textContent=c.participate?'Programme Contributeur activé':'Programme Contributeur désactivé';
   const recent=document.querySelector('[data-recent-sessions]');
-  if(recent)recent.innerHTML=sessions.length?sessions.map(x=>`<article class="account-session-row"><div><strong>${escapeHtml(x.title||x.projects?.name||'Partie SINJIRA')}</strong><span>${x.status==='finished'?'Terminée':'En cours'} · ${formatDate(x.updated_at)}</span></div><a class="btn btn-secondary btn-small" href="${sessionUrl(x)}">${x.status==='finished'?'Consulter':'Continuer'}</a></article>`).join(''):'<p>Aucune partie sauvegardée.</p>';
+  if(recent)recent.innerHTML=!sessionsResolved
+    ?'<p>Parties récentes temporairement indisponibles. Aucune absence de sauvegarde n’est déduite.</p>'
+    :sessions.length?sessions.map(x=>`<article class="account-session-row"><div><strong>${escapeHtml(x.title||x.projects?.name||'Partie SINJIRA')}</strong><span>${x.status==='finished'?'Terminée':'En cours'} · ${formatDate(x.updated_at)}</span></div><a class="btn btn-secondary btn-small" href="${sessionUrl(x)}">${x.status==='finished'?'Consulter':'Continuer'}</a></article>`).join(''):'<p>Aucune partie sauvegardée.</p>';
+  if(!sessionsResolved||!requestsResolved)setStatus(status,'Certaines informations du tableau de bord n’ont pas pu être vérifiées. Aucun état vide n’est supposé.','error');
 
 }
 async function games(){
@@ -259,8 +267,12 @@ async function games(){
   const input=document.querySelector('[data-import-session]'),button=document.querySelector('[data-import-session-button]');button?.addEventListener('click',async()=>{const file=input?.files?.[0];if(!file)return setStatus(status,'Choisissez un fichier JSON de sauvegarde.','error');try{const payload=JSON.parse(await file.text());if(payload.format!=='SINJIRA_GAME_SAVE_V1'||!payload.session)throw new Error('Format de sauvegarde incompatible.');const src=payload.session;const clone={user_id:user.id,game_slug:src.game_slug,title:`${src.title||'Partie SINJIRA'} — importée`,status:'in_progress',player_count:src.player_count,human_player_count:src.human_player_count,effective_player_count:src.effective_player_count,play_mode:src.play_mode,duration_minutes:src.duration_minutes,party_code:`IMP-${Date.now().toString(36).toUpperCase()}`};const {data:newSession,error}=await s.from('game_sessions').insert(clone).select('id').single();if(error)throw error;for(const sh of payload.player_sheets||[]){await s.from('player_sheets').insert({session_id:newSession.id,user_id:user.id,sheet_key:sh.sheet_key,sheet_label:sh.sheet_label,fields:sh.fields||{}})}setStatus(status,'Sauvegarde importée comme nouvelle partie privée.','success');setTimeout(()=>location.reload(),800)}catch(e){setStatus(status,e.message||'Import impossible.','error')}});
 }
 async function profilePage(){
-  const user=await requireUser(),p=await profile(user),form=document.querySelector('[data-profile-form]');if(!form)return;
+  const user=await requireUser(),form=document.querySelector('[data-profile-form]');if(!form)return;
+  setFormEnabled(form,false);
+  let p;
+  try{p=await profile(user)}catch(error){setStatus(status,'Impossible de charger le profil. Le formulaire reste verrouillé pour éviter d’écraser des données non chargées.','error');return}
   form.elements.pseudo.value=p.pseudo||'';form.elements.display_name.value=p.display_name||'';form.elements.email.value=user.email||'';
+  setFormEnabled(form,true);
   const input=document.querySelector('[data-avatar-input]'),preview=document.querySelector('[data-profile-avatar]'),choose=document.querySelector('[data-avatar-choose]'),save=document.querySelector('[data-avatar-save]'),remove=document.querySelector('[data-avatar-remove]'),avatarState=document.querySelector('[data-avatar-state]');
   let selectedFile=null;
   const currentPath=()=>preview.dataset.avatarPath||'';
@@ -305,8 +317,12 @@ async function profilePage(){
   form.addEventListener('submit',async e=>{e.preventDefault();const d=new FormData(form),s=getSupabase(),pseudo=String(d.get('pseudo')||'').trim(),displayName=String(d.get('display_name')||'').trim(),email=String(d.get('email')||'').trim().toLowerCase();if(!pseudo||!displayName||!email){setStatus(status,'Complétez le pseudonyme, le nom affiché et le courriel.','error');return}const {error:profileError}=await s.from('profiles').update({pseudo,display_name:displayName}).eq('user_id',user.id);if(profileError){setStatus(status,profileError.message||'Impossible de mettre le profil à jour.','error');return}if(email!==String(user.email||'').toLowerCase()){const {error:emailError}=await s.auth.updateUser({email},{emailRedirectTo:`${location.origin}/compte/profil.html`});if(emailError){setStatus(status,emailError.message||'Le profil a été enregistré, mais le changement de courriel n’a pas pu être lancé.','error');return}setStatus(status,'Profil enregistré. Confirmez le changement de courriel avec les messages de sécurité envoyés par SINJIRA™.','success');return}setStatus(status,'Profil mis à jour.','success')});
 }
 async function contributions(){
-  const user=await requireUser(),c=await consent(user),form=document.querySelector('[data-contribution-form]');if(!form)return;
+  const user=await requireUser(),form=document.querySelector('[data-contribution-form]');if(!form)return;
+  setFormEnabled(form,false);
+  let c;
+  try{c=await consent(user)}catch(error){setStatus(status,'Impossible de vérifier vos choix de contribution. Le formulaire reste verrouillé et aucun consentement n’est supposé.','error');return}
   form.elements.participate.checked=!!c.participate;form.elements.share_free_text.checked=!!c.share_free_text;
+  setFormEnabled(form,true);
   form.addEventListener('submit',async e=>{
     e.preventDefault();const participate=form.elements.participate.checked,free=participate&&form.elements.share_free_text.checked,s=getSupabase();
     const {error}=await s.from('research_consents').upsert({user_id:user.id,participate,share_free_text:free,consent_version:SINJIRA_CONFIG.contributionConsentVersion,consented_at:participate?new Date().toISOString():null,revoked_at:participate?null:new Date().toISOString()},{onConflict:'user_id'});
