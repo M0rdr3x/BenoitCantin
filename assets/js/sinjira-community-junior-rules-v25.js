@@ -3,6 +3,7 @@ import {getSupabase,requireUser,setStatus} from './sinjira-supabase.js';
 const s=getSupabase();
 const status=document.querySelector('[data-junior-rules-status]');
 const button=document.querySelector('[data-junior-rules-accept]');
+if(button)button.disabled=true;
 
 (async()=>{
   try{
@@ -23,8 +24,10 @@ const button=document.querySelector('[data-junior-rules-accept]');
     if(capabilities.junior_rules_accepted===true){
       if(button){button.disabled=true;button.textContent='Règles Junior déjà acceptées';}
       setStatus(status,'Tu as déjà accepté la version actuelle des règles Junior.','success');
+      return;
     }
 
+    if(button)button.disabled=false;
     button?.addEventListener('click',async()=>{
       button.disabled=true;
       const {data,error}=await s.rpc('junior_community_accept_rules');
