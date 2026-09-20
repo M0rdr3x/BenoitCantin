@@ -6,18 +6,15 @@ const statusLabel=s=>({submitted:'Questionnaire reçu',ai_draft:'Brouillon IA',a
 
 async function reads(user){
   const s=getSupabase();
-  const novelRes=await s.from('novels').select('*').in('status',['demo','announced','published']).order('sort_order');
-  if(novelRes.error)throw novelRes.error;
-  let libRes=await s.from('reader_library').select('novel_id,last_opened_at,last_page,progress_percent').eq('user_id',user.id);
-  if(libRes.error){
-    const fallback=await s.from('reader_library').select('novel_id,last_opened_at').eq('user_id',user.id);
-    if(fallback.error)throw fallback.error;
-    libRes=fallback;
-  }
+  const [novelRes,libRes]=await Promise.all([
+    s.from('sinjira_novels').select('id,title,subtitle,description,status,public_path,demo_path,sort_order').in('status',['announced','published']).order('sort_order'),
+    s.from('sinjira_reader_library').select('novel_id,last_opened_at,last_page,progress_percent').eq('user_id',user.id)
+  ]);
+  if(novelRes.error||libRes.error)throw novelRes.error||libRes.error;
   const novels=rows(novelRes.data),lib=rows(libRes.data),m=new Map(lib.map(x=>[x.novel_id,x]));
   const box=document.querySelector('[data-reader-library]');
   if(!box)return;
-  box.innerHTML=novels.map(n=>{const r=m.get(n.id),progress=Number(r?.progress_percent||0);return `<article class="reader-book-card"><span class="eyebrow">${escapeHtml(n.volume_label||'SINJIRA')}</span><h2>${escapeHtml(n.title)}</h2><p>${escapeHtml(n.description||'')}</p><div class="v19-progress-track"><span style="width:${Math.max(0,Math.min(100,progress))}%"></span></div><p>${r?`Progression mémorisée : ${progress}%${r.last_page?` · page ${r.last_page}`:''}`:'Pas encore ouvert avec ce compte.'}</p><div class="hero-actions">${n.demo_path?`<a class="btn btn-primary" href="${escapeHtml(n.demo_path)}">${r?.last_page>1?'Continuer ma lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(n.public_path||'/projets/sinjira/romans/')}">Page du roman</a></div></article>`}).join('')||'<p>Aucun roman disponible.</p>';
+  box.innerHTML=novels.map(n=>{const r=m.get(n.id),progress=Number(r?.progress_percent||0);return `<article class="reader-book-card"><span class="eyebrow">${escapeHtml(n.subtitle||'SINJIRA')}</span><h2>${escapeHtml(n.title)}</h2><p>${escapeHtml(n.description||'')}</p><div class="v19-progress-track"><span style="width:${Math.max(0,Math.min(100,progress))}%"></span></div><p>${r?`Progression mémorisée : ${progress}%${r.last_page?` · page ${r.last_page}`:''}`:'Pas encore ouvert avec ce compte.'}</p><div class="hero-actions">${n.demo_path?`<a class="btn btn-primary" href="${escapeHtml(n.demo_path)}">${r?.last_page>1?'Continuer ma lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(n.public_path||'/projets/sinjira/romans/')}">Page du roman</a></div></article>`}).join('')||'<p>Aucun roman disponible.</p>';
 }
 
 async function comments(user){
