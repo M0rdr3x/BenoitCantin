@@ -11,7 +11,7 @@ CANONICAL = {
     "admin-analytics", "admin-console", "admin-license-codes", "admin-reports",
     "admin-sinjira-v18", "admin-social-v20", "admin-users", "conscience-vault",
     "delete-player-account", "fracture-engine-gateway", "get-document-url",
-    "get-private-book-url", "get-private-book-reading-url", "life-story-delivery", "life-story-export", "personal-ai",
+    "get-private-book-url", "get-private-book-reading-url", "get-private-novel-url", "life-story-delivery", "life-story-export", "personal-ai",
     "redeem-license-code", "revoke-my-contributions", "security-context", "send-game-report",
     "send-player-sheet", "submit-character-questionnaire", "submit-fracture-endgame",
     "submit-game-contribution",
@@ -70,6 +70,14 @@ JWT_SENSITIVE_GUARDS = {
     ),
     "get-private-book-url": PRIVATE_BOOK_ENDPOINT_GUARDS,
     "get-private-book-reading-url": PRIVATE_BOOK_ENDPOINT_GUARDS,
+    "get-private-novel-url": (
+        "req.method!=='POST'", "MAX_REQUEST_BYTES = 2048", "requiredUser(req)", "readBoundedJson(req)",
+        "req.body.getReader()", "reader.cancel", "new TextDecoder('utf-8',{fatal:true})",
+        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "sinjira_age_band",
+        "requirePrivateNovelAccess", "resolvePrivateNovelStorage", "createSignedUrl", "novel_slug",
+        "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
+        "Referrer-Policy", "no-referrer",
+    ),
     "delete-player-account": (
         "req.method !== 'POST'", "readBoundedJson", "req.body.getReader()",
         "reader.cancel('REQUEST_TOO_LARGE')", "new TextDecoder('utf-8',{fatal:true})",
@@ -276,7 +284,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 24 fonctions canoniques, JWT/custom auth cohérents, frontières document/rapport/contributions bornées pendant la lecture avec MIME JSON exact ou contrat JSON dédié, suppression destructive bornée à 1 KiB en streaming avec JWT avant corps, Livre I lecture/téléchargement privés derrière entitlement ou rôle auteur vérifié serveur, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 25 fonctions canoniques, JWT/custom auth cohérents, frontières document/rapport/contributions bornées pendant la lecture avec MIME JSON exact ou contrat JSON dédié, suppression destructive bornée à 1 KiB en streaming avec JWT avant corps, Livre I lecture/téléchargement privés derrière entitlement ou rôle auteur vérifié serveur, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
