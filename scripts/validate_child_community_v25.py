@@ -173,6 +173,10 @@ req("return false;" in relations and "const refreshed=await renderJuniorCommunit
 req("Le panneau de contrôle ne peut pas être rafraîchi pour le moment." in relations,'Le parent ne reçoit pas un état explicite après décision Junior réussie mais rafraîchissement impossible.')
 req("let ready=false;" in relations and "function setFormReady(value){ready=value;for(const el of form.elements)el.disabled=!value}" in relations,'Le formulaire Relations privées n est pas fail-closed pendant le chargement.')
 req("setFormReady(false);" in relations,'Chaque relecture Relations privées ne reverrouille pas le formulaire.')
+req("ageBand='unverified';" in relations and "return false;" in relations,'La bande d âge Relations ne repasse pas fail-closed si les capacités deviennent indisponibles.')
+req("const ageRefreshed=await refreshAgeBand();" in relations,'Les mutations de supervision ne revérifient pas la bande d âge.')
+req("L’état du compte ne peut pas être entièrement rafraîchi pour le moment." in relations,'Les mutations de supervision ne signalent pas un rafraîchissement incomplet.')
+req("Le panneau de supervision ne peut pas être rafraîchi pour le moment." in relations,'Les permissions/codes parentaux ne distinguent pas mutation et rafraîchissement.')
 req("return false;" in relations and "Relation ajoutée, mais la liste ne peut pas être rafraîchie" in relations and "Relation retirée, mais la liste ne peut pas être rafraîchie" in relations,'Les mutations Relations privées ne distinguent pas succès et rafraîchissement.')
 for marker,msg in (
     ('<select disabled name="relationship_type" required>','Le type de relation HTML n est pas désactivé par défaut.'),
@@ -181,7 +185,7 @@ for marker,msg in (
     ('<button class="btn btn-primary" disabled type="submit">Ajouter la relation</button>','Le submit Relations HTML n est pas désactivé par défaut.'),
 ):
     req(marker in relations_html,msg)
-req('v24-relations.js?v=25.0.12&amp;rev=junior-alias-private' in relations_html,'Le cache Relations Junior V25.0.12 n est pas forcé.')
+req('v24-relations.js?v=25.0.13&amp;rev=junior-alias-private' in relations_html,'Le cache Relations Junior V25.0.13 n est pas forcé.')
 
 # Navigation fail-closed pour 11–12 : liste blanche explicite, redirections Junior et refus par défaut.
 req("constaccountmode=string(capabilities.account_mode||'restricted')" in a and "capabilities.child_11_12===true" in a and "if(!childaccount)return" in a and "constchild_11_12_allowed_routes=newset([" in a,'La navigation du compte ne borne pas explicitement les routes child via les capacités serveur.')
