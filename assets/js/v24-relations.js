@@ -33,11 +33,11 @@ async function refreshAgeBand(){
 }
 
 async function renderJuniorCommunityChildren(){
-  if(!juniorCommunityChildren||ageBand!=='adult')return;
+  if(!juniorCommunityChildren||ageBand!=='adult')return true;
   const {data,error}=await s.rpc('guardian_junior_community_children');
   if(error){
     juniorCommunityChildren.innerHTML='<div class="v24-empty">Le contrôle Communauté Junior sera disponible lorsque le module serveur sera synchronisé.</div>';
-    return;
+    return false;
   }
   const rows=Array.isArray(data)?data:[];
   juniorCommunityChildren.innerHTML=rows.length?rows.map(row=>{
@@ -81,8 +81,10 @@ async function renderJuniorCommunityChildren(){
       }
       return;
     }
-    setStatus(guardianStatus,next?'Communauté Junior activée. L’enfant doit maintenant accepter les règles Junior.':'Communauté Junior désactivée.','success');
-    await renderJuniorCommunityChildren();
+    const successMessage=next?'Communauté Junior activée. L’enfant doit maintenant accepter les règles Junior.':'Communauté Junior désactivée.';
+    setStatus(guardianStatus,successMessage,'success');
+    const refreshed=await renderJuniorCommunityChildren();
+    if(!refreshed)setStatus(guardianStatus,`${successMessage} Le panneau de contrôle ne peut pas être rafraîchi pour le moment.`,'info');
   }));
 
   juniorCommunityChildren.querySelectorAll('[data-junior-community-summary]').forEach(button=>button.addEventListener('click',async()=>{
@@ -121,6 +123,7 @@ async function renderJuniorCommunityChildren(){
       target.textContent=`Résumé seulement : ${Number(summary.posts||0)} publication(s), ${Number(summary.comments||0)} commentaire(s), dernière activité (date seulement) : ${last}. Le contenu reste privé à l’enfant et à la Communauté Junior.`;
     }
   }));
+  return true;
 }
 
 async function renderGuardian(){
