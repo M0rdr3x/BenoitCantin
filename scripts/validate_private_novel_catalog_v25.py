@@ -139,9 +139,10 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.0" not in literature_html:
         fail("Littérature: cache catalogue générique non forcé")
 
-    if "selectplan(12);" not in test:
-        fail("pgTAP roman privé: plan(12) absent")
+    if "selectplan(13);" not in test:
+        fail("pgTAP roman privé: plan(13) absent")
     for marker in (
+        "rlsestactivéesurleregistreprivédesactifsromans",
         "unmembrenevoitpaslebrouilloncréateur",
         "unentitlementdonneaccèsintégralauromanprivéconfiguré",
         "lecataloguenavigateurnerévèleaucunchemindestockageprivé",
