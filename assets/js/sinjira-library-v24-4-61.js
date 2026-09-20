@@ -13,6 +13,10 @@ function cover(project){
 }
 
 function setCount(selector,value){const node=document.querySelector(selector);if(node)node.textContent=String(value)}
+function renderUnavailable(selector,title,message){
+  const box=document.querySelector(selector);if(!box)return;
+  box.innerHTML=`<div class="notice"><strong>${escapeHtml(title)}</strong><p>${escapeHtml(message)}</p></div>`;
+}
 
 function accessLabel(project,access,isOwner,isAdmin){
   if(isOwner)return 'Propriétaire';
@@ -106,15 +110,20 @@ async function init(){
       s.from('projects').select('id,slug,name,type,status,visibility,description,cover_url,public_path,play_path,allow_tester_requests,sort_order,child_access_status').order('sort_order'),
       s.from('documents').select('id,project_id,child_access_status').eq('status','approved')
     ]);
-    const projects=rows(projectsResult.data),documents=rows(documentsResult.data);
-    setCount('[data-library-project-count]',projects.length);setCount('[data-library-novel-count]',0);setCount('[data-library-entitlement-count]',0);setCount('[data-library-request-count]',0);
+    const projects=rows(projectsResult.data),documents=rows(documentsResult.data),juniorResolved=!projectsResult.error&&!documentsResult.error;
+    setCount('[data-library-project-count]',juniorResolved?projects.length:'—');setCount('[data-library-novel-count]',0);setCount('[data-library-entitlement-count]',0);setCount('[data-library-request-count]',0);
     const role=document.querySelector('[data-library-role]');if(role)role.textContent='Compte Junior 11–12 ans';
-    renderProjects(projects.filter(project=>project.type==='game'),documents,[],[],false,false,true,'[data-library-games]');
-    renderProjects(projects.filter(project=>project.type!=='game'),documents,[],[],false,false,true,'[data-library-other]');
+    if(juniorResolved){
+      renderProjects(projects.filter(project=>project.type==='game'),documents,[],[],false,false,true,'[data-library-games]');
+      renderProjects(projects.filter(project=>project.type!=='game'),documents,[],[],false,false,true,'[data-library-other]');
+    }else{
+      renderUnavailable('[data-library-games]','Bibliothèque Junior temporairement indisponible','Les contenus approuvés 11–12 ans n’ont pas pu être vérifiés. Aucun contenu supplémentaire n’est affiché.');
+      renderUnavailable('[data-library-other]','Bibliothèque Junior temporairement indisponible','Les contenus approuvés 11–12 ans n’ont pas pu être vérifiés. Aucun contenu supplémentaire n’est affiché.');
+    }
     renderNovels([],[],false,true);
     const reads=document.querySelector('[data-library-reads]');if(reads)reads.innerHTML='<div class="notice"><strong>Lectures privées non classées.</strong><p>Elles resteront fermées jusqu’à une révision adaptée aux 11–12 ans.</p></div>';
     const entitlements=document.querySelector('[data-library-entitlements]');if(entitlements)entitlements.innerHTML='<div class="notice"><strong>Licences et achats indisponibles à 11–12 ans.</strong><p>Cette section ne s’active pas automatiquement avec un compte supervisé.</p></div>';
-    if(projectsResult.error||documentsResult.error)setStatus(status,'La bibliothèque Junior n’a pas pu terminer sa vérification.','error');
+    if(!juniorResolved)setStatus(status,'La bibliothèque Junior n’a pas pu terminer sa vérification. Aucun contenu supplémentaire n’est affiché.','error');
     else setStatus(status,'Bibliothèque Junior chargée · seuls les contenus approuvés 11–12 ans sont affichés.','success');
     return;
   }
@@ -124,10 +133,25 @@ async function init(){
   ]);
   const ownerResolved=!ownerResult.error,adminResolved=!adminResult.error;
   const isAdmin=adminResolved&&adminResult.data===true,isOwner=ownerResolved&&ownerResult.data===true;
+  const roleResolved=ownerResolved&&(isOwner||adminResolved);
+  const projectResolved=!projectsResult.error&&!accessResult.error&&!documentsResult.error&&!pendingResult.error;
+  const readsResolved=!readsResult.error,entitlementsResolved=!entitlementsResult.error,novelsResolved=!novelsResult.error;
   const projects=rows(projectsResult.data),accessRows=rows(accessResult.data),documents=rows(documentsResult.data),pendingRows=rows(pendingResult.data),libraryRows=rows(readsResult.data),entitlements=rows(entitlementsResult.data),novels=rows(novelsResult.data);
-  setCount('[data-library-project-count]',projects.length);setCount('[data-library-novel-count]',novels.length);setCount('[data-library-entitlement-count]',entitlements.length);setCount('[data-library-request-count]',pendingRows.length);
-  const role=document.querySelector('[data-library-role]');if(role)role.textContent=!ownerResolved?'Rôle du compte non confirmé':isOwner?'Propriétaire SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Compte SINJIRA™';
-  renderProjects(projects.filter(project=>project.type==='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-games]',entitlements,!entitlementsResult.error);renderProjects(projects.filter(project=>project.type!=='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-other]',entitlements,!entitlementsResult.error);renderNovels(novels,libraryRows,isOwner,false);renderReads(libraryRows);renderEntitlements(entitlements,isOwner);
+  setCount('[data-library-project-count]',projectResolved?projects.length:'—');setCount('[data-library-novel-count]',novelsResolved?novels.length:'—');setCount('[data-library-entitlement-count]',entitlementsResolved?entitlements.length:'—');setCount('[data-library-request-count]',!pendingResult.error?pendingRows.length:'—');
+  const role=document.querySelector('[data-library-role]');if(role)role.textContent=!roleResolved?'Rôle du compte non confirmé':isOwner?'Propriétaire SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Compte SINJIRA™';
+  if(projectResolved){
+    renderProjects(projects.filter(project=>project.type==='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-games]',entitlements,entitlementsResolved);
+    renderProjects(projects.filter(project=>project.type!=='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-other]',entitlements,entitlementsResolved);
+  }else{
+    renderUnavailable('[data-library-games]','Projets temporairement indisponibles','Les accès projets n’ont pas pu être vérifiés. Aucun accès ou bouton de jeu supplémentaire n’est supposé.');
+    renderUnavailable('[data-library-other]','Créations temporairement indisponibles','Les accès projets n’ont pas pu être vérifiés. Aucun accès supplémentaire n’est supposé.');
+  }
+  if(novelsResolved)renderNovels(novels,readsResolved?libraryRows:[],isOwner,false);
+  else renderUnavailable('[data-library-novels]','Romans temporairement indisponibles','Le catalogue de romans n’a pas pu être vérifié.');
+  if(readsResolved)renderReads(libraryRows);
+  else renderUnavailable('[data-library-reads]','Progression temporairement indisponible','Votre progression de lecture n’a pas pu être vérifiée.');
+  if(entitlementsResolved)renderEntitlements(entitlements,isOwner);
+  else renderUnavailable('[data-library-entitlements]','Droits numériques temporairement indisponibles','Les droits numériques du compte n’ont pas pu être vérifiés; aucun accès supplémentaire n’est supposé.');
   const errors=[ownerResult,adminResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult].filter(result=>result.error);if(errors.length)setStatus(status,'Certaines sections privées ou le rôle du compte n’ont pas pu être vérifiés. Aucun accès supplémentaire n’a été accordé.','error');
   document.querySelectorAll('[data-v2461-request-tester]').forEach(button=>button.addEventListener('click',async()=>{const message=prompt('Court message pour votre demande (facultatif).')||'';const {error}=await s.from('access_requests').insert({user_id:user.id,project_id:button.dataset.v2461RequestTester,requested_level:'tester',message:message.slice(0,1500)});if(error){setStatus(status,'La demande n’a pas pu être transmise.','error');return}button.disabled=true;button.textContent='Demande testeur en attente';setStatus(status,'Demande testeur transmise.','success')}));
 }
