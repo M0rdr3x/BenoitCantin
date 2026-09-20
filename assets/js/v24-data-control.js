@@ -90,15 +90,23 @@ async function exportData(){
     catch(error){errors.push({section:label,error:safeError(error)})}
   }
 
-  // Les modules ajoutés après V24.4.70 sont scellés derrière des RPC. Le complément self-only
-  // couvre Vie privée, Points SINJIRA™, Rencontres/Safe Meet et les métadonnées de signalements.
-  exportButton.textContent=`Export ${entries.length+1}/${entries.length+1}`;
-  try{
-    const {data,error}=await s.rpc('privacy_export_my_extended_data');
-    if(error)throw error;
-    sections.extended_private=data||{};
-  }catch(error){
-    errors.push({section:'extended_private',error:safeError(error)});
+  // Les modules ajoutés après V24.4.70 sont scellés derrière des RPC.
+  // Le premier complément couvre Vie privée, Points SINJIRA™, Rencontres/Safe Meet et les métadonnées de signalements.
+  // Le coffre de profil privé conserve sa frontière RPC dédiée.
+  const rpcExports=[
+    ['extended_private','privacy_export_my_extended_data'],
+    ['private_profile','private_profile_get']
+  ];
+  for(let i=0;i<rpcExports.length;i++){
+    const [section,rpc]=rpcExports[i];
+    exportButton.textContent=`Export ${entries.length+i+1}/${entries.length+rpcExports.length}`;
+    try{
+      const {data,error}=await s.rpc(rpc);
+      if(error)throw error;
+      sections[section]=data??{};
+    }catch(error){
+      errors.push({section,error:safeError(error)});
+    }
   }
 
   const payload={
@@ -121,7 +129,7 @@ async function exportData(){
   if(errors.length){
     setStatus(status,`Export partiel téléchargé : ${errors.length} section(s) n’ont pas pu être lues. Le fichier contient la liste exacte des erreurs.`,'error');
   }else{
-    setStatus(status,`Export complet téléchargé : ${entries.length+1} section(s) vérifiées.`,'success');
+    setStatus(status,`Export complet téléchargé : ${entries.length+rpcExports.length} section(s) vérifiées.`,'success');
   }
 }
 
