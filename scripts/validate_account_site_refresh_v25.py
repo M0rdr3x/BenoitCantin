@@ -99,6 +99,12 @@ def validate(contents: dict[str, str]) -> None:
     for marker in ("data-library-games", "data-library-novels", "data-library-other"):
         if marker not in libh:
             fail(f"bibliothèque: séparation manquante: {marker}")
+    if "sinjira-library.js?v=24.1" in contents["library_html"]:
+        fail("bibliothèque: ancien module générique encore chargé en parallèle")
+    if "lesachats,licencesetdroitsnumériquessontvérifiésseloncecompte" not in libh:
+        fail("bibliothèque: résumé acquisition neutre et exact absent")
+    if "aucunachatouservicepayantn’estactivéactuellement" in libh:
+        fail("bibliothèque: ancien résumé commerce absolu encore publié")
     if "sinjira_my_novel_catalog" not in contents["library_js"]:
         fail("bibliothèque: catalogue roman self-only canonique absent")
     if "functionrendernovels" not in libj:
@@ -230,6 +236,7 @@ def main() -> None:
             "policy projets créateur retirée":("project_owner_migration","projects_owner_catalog_read_v25","projects_owner_catalog_missing"),
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
             "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
+            "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.0\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
