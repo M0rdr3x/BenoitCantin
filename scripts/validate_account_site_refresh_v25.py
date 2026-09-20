@@ -31,6 +31,7 @@ FILES = {
     "comments_js": ROOT / "assets/js/sinjira-account-v18.js",
     "comments_html": ROOT / "compte/mes-commentaires.html",
     "literature_html": ROOT / "projets/sinjira/romans/index.html",
+    "demo_html": ROOT / "projets/sinjira/romans/lire-demo.html",
     "literature_js": ROOT / "assets/js/sinjira-literature-catalog-v25.js",
     "test": ROOT / "supabase/tests/account_content_hub_v25.test.sql",
     "secondary_mes_lectures": ROOT / "compte/mes-lectures.html",
@@ -357,12 +358,29 @@ def validate(contents: dict[str, str]) -> None:
     if "sinjira-account-v18.js?v=25.0.1" not in contents["comments_html"]:
         fail("commentaires: cache client V25 non forcé")
 
-    if "data-literature-catalog" not in lith or "sinjira-literature-catalog-v25.js?v=25.1.0" not in lith:
+    if "data-literature-catalog" not in lith or "sinjira-literature-catalog-v25.js?v=25.1.1" not in lith:
         fail("littérature: catalogue dynamique V25 absent")
     if "sinjira_my_novel_catalog" not in contents["literature_js"] or "is_sinjira_owner" not in contents["literature_js"]:
         fail("littérature: catalogue self-only/créateur absent")
     if "from('sinjira_novels')" not in contents["literature_js"]:
         fail("littérature: fallback public anonyme canonique absent")
+    for marker in (
+        "ownerresolved=!ownerresult.error",
+        "rôleducomptenonconfirmé",
+        "aucunaccèssupplémentairen’estsupposé",
+        "cataloguetemporairementindisponible",
+    ):
+        if marker not in litj:
+            fail(f"littérature: dégradation fail-closed absente: {marker}")
+
+    if "from('reader_library')" in reader:
+        fail("lecteur démo: ancienne table reader_library encore utilisée")
+    if "from('sinjira_reader_library').select('last_page')" not in contents["reader_js"]:
+        fail("lecteur démo: reprise canonique sinjira_reader_library absente")
+    if "sinjira-reader.js?v=25.0.2" not in contents["literature_html"]:
+        fail("littérature: cache lecteur V25.0.2 absent")
+    if "sinjira-reader.js?v=25.0.2" not in contents["demo_html"]:
+        fail("lecteur démo: cache lecteur V25.0.2 absent")
 
     if "selectplan(41);" not in test:
         fail("pgTAP contenu: plan(41) absent")
@@ -452,6 +470,10 @@ def main() -> None:
             "résumé accès dashboard retiré":("dashboard_js","renderAccess(projects,isOwner,isAdmin,roleResolved,catalogResolved);","renderAccess(projects,false,false,true,true);"),
             "module Dashboard hors paths CI":("workflow","assets/js/sinjira-account-dashboard-v24-4-60.js","assets/js/sinjira-account-dashboard-missing.js"),
             "cache Dashboard revenu V24":("account_page:index.html","sinjira-account-dashboard-v24-4-60.js?v=25.0.1","sinjira-account-dashboard-v24-4-60.js?v=24.4.60"),
+            "catalogue littérature masque rôle non résolu":("literature_js","ownerResolved=!ownerResult.error","ownerResolved=true"),
+            "lecteur démo revenu à reader_library":("reader_js","from('sinjira_reader_library').select('last_page')","from('reader_library').select('last_page')"),
+            "cache catalogue littérature revenu V25.1.0":("literature_html","sinjira-literature-catalog-v25.js?v=25.1.1","sinjira-literature-catalog-v25.js?v=25.1.0"),
+            "cache lecteur démo revenu V19":("demo_html","sinjira-reader.js?v=25.0.2","sinjira-reader.js?v=19.0"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
