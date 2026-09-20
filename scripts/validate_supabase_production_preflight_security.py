@@ -190,7 +190,7 @@ def validate_text(text: str) -> list[str]:
             "python scripts/validate_production_migration_ledger.py",
             "python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase",
         ):
-            if command not in local:
+            if not has_exact_line(local, "          " + command):
                 errors.append(f"Prévol local incomplet: {command}")
 
     remote = jobs["remote-preflight"]
