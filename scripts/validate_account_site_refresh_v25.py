@@ -129,6 +129,10 @@ def validate(contents: dict[str, str]) -> None:
     for marker in ("data-purchase-history", "data-purchase-entitlements", "data-creator-portfolio"):
         if marker not in ph:
             fail(f"achats: section manquante: {marker}")
+    if "commandesenregistrées" not in ph or "commandespayées/enregistrées" in ph:
+        fail("achats: compteur commandes encore ambigu sur le statut de paiement")
+    if "aucunecommandeenregistrée" not in pj or "aucunachatpayéenregistré" in pj:
+        fail("achats: état vide confond encore commande enregistrée et achat payé")
     if ".eq('user_id',user.id)" not in contents["purchases_js"]:
         fail("achats: lectures propres au compte non bornées")
     if "rendercreatorportfolio" not in pj:
@@ -254,6 +258,7 @@ def main() -> None:
             "rôle créateur secondaire revenu côté client":("secondary_library_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "module bibliothèque secondaire hors paths CI":("workflow","assets/js/sinjira-library.js","assets/js/sinjira-library-missing.js"),
             "navigation mobile redevenue absolue":("account_css",".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}",".account-nav-panel{position:absolute;width:min(88vw,320px)}"),
+            "compteur commandes redevenu ambigu":("purchases_html","Commandes enregistrées","Commandes payées / enregistrées"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
