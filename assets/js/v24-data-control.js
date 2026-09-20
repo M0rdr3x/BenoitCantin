@@ -83,23 +83,29 @@ async function exportData(){
   const sections={};
   const errors=[];
   const entries=Object.entries(queries(user.id));
+  const rpcExports=[
+    ['extended_private','privacy_export_my_extended_data'],
+    ['private_profile','private_profile_get']
+  ];
+  const totalSteps=entries.length+rpcExports.length;
   for(let i=0;i<entries.length;i++){
     const [label,build]=entries[i];
-    exportButton.textContent=`Export ${i+1}/${entries.length+1}`;
+    exportButton.textContent=`Export ${i+1}/${totalSteps}`;
     try{sections[label]=await fetchAll(label,build)}
-    catch(error){errors.push({section:label,error:safeError(error)})}
+    catch(error){
+      const message=safeError(error);
+      const legacyMissing=label.endsWith('_legacy')&&/relation .* does not exist|schema cache|could not find/i.test(message);
+      if(legacyMissing)sections[label]=[];
+      else errors.push({section:label,error:message});
+    }
   }
 
   // Les modules ajoutés après V24.4.70 sont scellés derrière des RPC.
   // Le premier complément couvre Vie privée, Points SINJIRA™, Rencontres/Safe Meet et les métadonnées de signalements.
   // Le coffre de profil privé conserve sa frontière RPC dédiée.
-  const rpcExports=[
-    ['extended_private','privacy_export_my_extended_data'],
-    ['private_profile','private_profile_get']
-  ];
   for(let i=0;i<rpcExports.length;i++){
     const [section,rpc]=rpcExports[i];
-    exportButton.textContent=`Export ${entries.length+i+1}/${entries.length+rpcExports.length}`;
+    exportButton.textContent=`Export ${entries.length+i+1}/${totalSteps}`;
     try{
       const {data,error}=await s.rpc(rpc);
       if(error)throw error;
@@ -129,7 +135,7 @@ async function exportData(){
   if(errors.length){
     setStatus(status,`Export partiel téléchargé : ${errors.length} section(s) n’ont pas pu être lues. Le fichier contient la liste exacte des erreurs.`,'error');
   }else{
-    setStatus(status,`Export complet téléchargé : ${entries.length+rpcExports.length} section(s) vérifiées.`,'success');
+    setStatus(status,`Export complet téléchargé : ${totalSteps} section(s) vérifiées.`,'success');
   }
 }
 
