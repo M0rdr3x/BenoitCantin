@@ -59,7 +59,10 @@ export function createClient(){
     rpc:async(name,args={})=>{
       if(name==='is_sinjira_admin')return {data:false,error:null};
       if(name==='sinjira_my_age_band')return {data:'child',error:null};
-      if(name==='sinjira_my_account_capabilities')return {data:{account_mode:'child',age_band:'child',child_11_12:true,native_general_hubs:false,general_community:false,private_messages:false,dating:false,library_mode:'reviewed_11_12',junior_community_eligible:true,junior_community_enabled:true,junior_rules_accepted:true},error:null};
+      if(name==='sinjira_my_account_capabilities'){
+        await new Promise(resolve=>setTimeout(resolve,500));
+        return {data:{account_mode:'child',age_band:'child',child_11_12:true,native_general_hubs:false,general_community:false,private_messages:false,dating:false,library_mode:'reviewed_11_12',junior_community_eligible:true,junior_community_enabled:true,junior_rules_accepted:true},error:null};
+      }
       if(name==='sinjira_junior_community_enabled')return {data:true,error:null};
       if(name==='has_accepted_junior_community_rules')return {data:true,error:null};
       if(name==='junior_community_feed')return {data:posts,error:null};
@@ -88,7 +91,10 @@ export function createClient(){
 
         response=page.goto(urljoin(BASE_URL,"compte/communaute-junior.html"),wait_until="domcontentloaded",timeout=30000)
         assert_true(response is not None and response.status<400,"Page Communauté Junior inaccessible")
+        composer=page.locator("[data-junior-post-form] textarea")
+        assert_true(composer.is_disabled(),"Le compositeur Junior est actif avant la validation des capacités serveur")
         page.wait_for_function("document.querySelector('[data-junior-feed]')?.innerText.includes('Bienvenue dans le fil Junior de test')",timeout=10000)
+        assert_true(composer.is_enabled(),"Le compositeur Junior reste verrouillé après validation des capacités")
 
         text=page.locator("main").inner_text()
         assert_true("Communauté Junior SINJIRA" in text,"Titre Junior absent")
@@ -97,7 +103,6 @@ export function createClient(){
         assert_true("child-test-11" not in text,"Identifiant technique exposé dans la page")
         assert_true("Messages privés" not in text or "Aucun message privé" in text,"La page laisse croire que les messages privés sont disponibles")
 
-        composer=page.locator("[data-junior-post-form] textarea")
         composer.fill("Ma nouvelle publication Junior")
         page.locator("[data-junior-post-form] button[type='submit']").click()
         page.wait_for_function("document.querySelector('[data-junior-feed]')?.innerText.includes('Ma nouvelle publication Junior')",timeout=10000)
