@@ -188,7 +188,7 @@ def validate(contents: dict[str, str]) -> None:
         "novelsresolved?novels.length:'—'",
         "entitlementsresolved?entitlements.length:'—'",
         "projetstemporairementindisponibles",
-        "roman Stemporairementindisponibles".replace(" ",""),
+        "romanstemporairementindisponibles",
         "progressiontemporairementindisponible",
         "droitsnumériquestemporairementindisponibles",
         "bibliothèquejuniortemporairementindisponible",
