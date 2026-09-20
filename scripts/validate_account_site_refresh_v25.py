@@ -364,8 +364,8 @@ def validate(contents: dict[str, str]) -> None:
     if "from('sinjira_novels')" not in contents["literature_js"]:
         fail("littérature: fallback public anonyme canonique absent")
 
-    if "selectplan(39);" not in test:
-        fail("pgTAP contenu: plan(39) absent")
+    if "selectplan(41);" not in test:
+        fail("pgTAP contenu: plan(41) absent")
     for marker in (
         "lapolicyprojetsowner-onlyv25existe",
         "authenticatedpeutlireprojectssousrls",
@@ -374,6 +374,10 @@ def validate(contents: dict[str, str]) -> None:
         "authenticatednepeutpasdéciderunedemandedirectement",
         "authenticatedpeutcandidateràunplaytest",
         "authenticatednepeutpasapprouverunecandidaturedirectement",
+        "policyname='requestsowninsert'",
+        "insertaccess_requestsresteself-only,adulte/youthetpending",
+        "policyname='participantsownapply'",
+        "insertplaytest_participantsresteself-only,adulte/youthetapplied",
         "anonpeutlirelesextensionspubliquessousrls",
         "unmembrenevoitpasunromanbrouilloncréateur",
         "unmembrenevoitpasunprojetinternecréateur",
@@ -413,6 +417,8 @@ def main() -> None:
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
             "migration privilèges catalogue hors paths CI":("workflow","supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql","supabase/migrations/catalog-browser-privileges-missing.sql"),
             "écriture projet navigateur réouverte":("browser_privileges_migration","grant select on table public.projects to anon, authenticated;","grant select, insert on table public.projects to anon, authenticated;"),
+            "preuve RLS access_requests self-only retirée":("test","policyname='requests own insert'","policyname='requests missing insert'"),
+            "preuve RLS playtest self-only retirée":("test","policyname='participants own apply'","policyname='participants missing apply'"),
             "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
             "Fracture jouable sans droit produit":("library_js","project.play_path&&canPlay","project.play_path"),
             "Fracture droit produit forcé":("library_js","const productRight=isOwner||entitledProductSlugs.has(project.slug);","const productRight=true;"),
