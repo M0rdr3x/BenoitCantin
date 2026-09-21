@@ -355,7 +355,7 @@ def validate(contents: dict[str, str]) -> None:
     for marker in (
         "functioncreateformlock(form)",
         "constpermanentlydisabled=newset([...form.elements].filter(el=>el.disabled))",
-        "setlocked(true)",
+        "constsetlocked=createformlock(form);setlocked(true);const{data,error}=awaits.from(table)",
         "setlocked(false)",
         "if(save&&tablemissing(save)){ready=false;setlocked(true)}",
         "if(table==='privacy_settings'&&form.elements.allow_ai_personal_data)",
@@ -614,7 +614,7 @@ def main() -> None:
             "export privé étendu retiré":("data_control_js","['extended_private','privacy_export_my_extended_data']","['extended_private','missing_export_rpc']"),
             "export ancien schéma absent devient erreur":("data_control_js","const legacyMissing=label.endsWith('_legacy')&&/relation .* does not exist|schema cache|could not find/i.test(message);","const legacyMissing=false;"),
             "cache contrôleur données revenu V24":("account_page:parametres.html","v24-data-control.js?v=25.0.2","v24-data-control.js?v=24.4.83"),
-            "préférences réactivées avant chargement":("preferences_js","setLocked(true);","setLocked(false);"),
+            "préférences réactivées avant chargement":("preferences_js","const setLocked=createFormLock(form);\n  setLocked(true);\n  const {data,error}=await s.from(table)","const setLocked=createFormLock(form);\n  setLocked(false);\n  const {data,error}=await s.from(table)"),
             "préférences réactivent les champs permanents":("preferences_js","if(permanentlyDisabled.has(el)){el.disabled=true;continue}","if(permanentlyDisabled.has(el)){el.disabled=false;continue}"),
             "préférence IA personnelle réactivée":("preferences_js","if(table==='privacy_settings')payload.allow_ai_personal_data=false;","if(table==='privacy_settings')payload.allow_ai_personal_data=true;"),
             "cache préférences revenu V24":("account_page:parametres.html","v24-preferences.js?v=25.0.2","v24-preferences.js?v=24.4.70"),
