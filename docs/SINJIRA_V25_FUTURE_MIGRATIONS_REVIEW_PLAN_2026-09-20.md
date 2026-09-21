@@ -1,4 +1,4 @@
-# SINJIRA V25 — Plan de revue des 34 migrations futures
+# SINJIRA V25 — Plan de revue des migrations futures
 
 Date de préparation : 2026-09-20  
 Branche : `a1/integration-rehearsal`  
@@ -10,12 +10,13 @@ PR : #435
 
 ## Source de vérité du périmètre
 
-Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta courant à **35 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
+Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only porte le delta courant à **36 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
 
 Répartition :
 - **Lot A — Mode Voyage : 4 migrations**
 - **Lot B — Enfant / Junior / Tuteur : 22 migrations**
 - **Lot C — Compte / Catalogue / RPC : 9 migrations**
+- **Lot D — Frontières helpers navigateur : 1 migration**
 
 L'ordre ci-dessous est un **ordre de revue**, pas un ordre d'autorisation production.
 
@@ -245,6 +246,15 @@ Cette migration appartient fonctionnellement au **Lot A — Mode Voyage**, mais 
   - Vérifier l'absence de `user_id`, `delete_after`, `cancelled_at`, timestamps techniques et `multi_country` dans les réponses.
   - Preuve associée : `security_travel_client_visibility_v25.test.sql` étendu à 28 assertions.
 
+## Lot D — Frontières helpers navigateur (1)
+
+- [ ] `20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql`
+  - Conserve l’OID de `sinjira_catalog_internal.project_access_rank(uuid,uuid)` utilisé par les policies RLS, mais retourne `0` lorsqu’un rôle navigateur fournit un `p_user_id` différent de `auth.uid()`; `service_role` conserve l’usage serveur arbitraire.
+  - Ferme l’oracle anonyme de `sinjira_child_project_available(uuid)` : un projet `visibility='account'` exige désormais une session authentifiée.
+  - Aligne `sinjira_child_document_available(uuid)` sur le rang réel du compte courant via `project_access_rank >= document_access_rank`.
+  - Preuves attendues : pgTAP Compte à 43 assertions et classement 11–12 à 23 assertions.
+  - Migration transversale B/C : revue conjointe avec la frontière RPC V25 et les policies projets/documents.
+
 ## Portes de sortie de revue
 
 Une famille ne peut être proposée comme « revue » que si :
@@ -258,7 +268,7 @@ Une famille ne peut être proposée comme « revue » que si :
 
 ## État au moment de la création de ce document
 
-- 35 / 35 migrations : **NON REVUES**
+- 36 / 36 migrations : **NON REVUES**
 - 0 migration ajoutée au lot production par ce document
 - 0 changement du ledger production
 - 0 déploiement production

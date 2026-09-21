@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(21);
+select plan(23);
 
 select has_column('public','projects','child_access_status','projects possède le classement 11–12');
 select has_column('public','projects','child_access_reviewed_by','projects conserve le réviseur humain');
@@ -24,7 +24,22 @@ select ok(not public.sinjira_child_project_available('91000000-0000-4000-8000-00
 update public.projects set child_access_status='approved_11_12' where id in (
 '91000000-0000-4000-8000-000000000002','91000000-0000-4000-8000-000000000003','91000000-0000-4000-8000-000000000004');
 
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','93000000-0000-4000-8000-000000000001','role','authenticated','aal','aal1')::text,
+  true
+);
+set local role authenticated;
 select ok(public.sinjira_child_project_available('91000000-0000-4000-8000-000000000002'),'un projet account actif explicitement approuvé devient disponible');
+reset role;
+
+select set_config('request.jwt.claims',jsonb_build_object('role','anon')::text,true);
+set local role anon;
+select ok(
+  not public.sinjira_child_project_available('91000000-0000-4000-8000-000000000002'),
+  'anon ne peut pas sonder un projet account approuvé 11–12 par UUID'
+);
+reset role;
 select ok(not public.sinjira_child_project_available('91000000-0000-4000-8000-000000000003'),'un projet restricted ne devient pas Junior par simple classement');
 select ok(not public.sinjira_child_project_available('91000000-0000-4000-8000-000000000004'),'un brouillon approuvé reste indisponible');
 
@@ -36,7 +51,22 @@ values
 select is((select child_access_status from public.documents where id='92000000-0000-4000-8000-000000000001'),'unreviewed','un document reste fermé par défaut');
 select ok(not public.sinjira_child_document_available('92000000-0000-4000-8000-000000000001'),'un document non révisé est indisponible 11–12');
 update public.documents set child_access_status='approved_11_12' where id='92000000-0000-4000-8000-000000000002';
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','93000000-0000-4000-8000-000000000001','role','authenticated','aal','aal1')::text,
+  true
+);
+set local role authenticated;
 select ok(public.sinjira_child_document_available('92000000-0000-4000-8000-000000000002'),'document + projet doublement approuvés deviennent disponibles');
+reset role;
+
+select set_config('request.jwt.claims',jsonb_build_object('role','anon')::text,true);
+set local role anon;
+select ok(
+  not public.sinjira_child_document_available('92000000-0000-4000-8000-000000000002'),
+  'anon ne peut pas sonder un document account approuvé 11–12 par UUID'
+);
+reset role;
 update public.projects set child_access_status='blocked_11_12' where id='91000000-0000-4000-8000-000000000002';
 select ok(not public.sinjira_child_document_available('92000000-0000-4000-8000-000000000002'),'bloquer ensuite le projet referme immédiatement le document');
 

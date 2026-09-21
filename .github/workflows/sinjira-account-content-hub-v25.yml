@@ -10,6 +10,7 @@ on:
       - 'supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql'
       - 'supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql'
       - 'supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql'
+      - 'supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql'
       - 'supabase/tests/account_content_hub_v25.test.sql'
       - 'scripts/validate_account_site_refresh_v25.py'
       - 'scripts/validate_site.py'

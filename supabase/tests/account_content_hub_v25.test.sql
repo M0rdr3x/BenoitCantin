@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(41);
+select plan(43);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -158,6 +158,15 @@ select set_config(
 );
 set local role authenticated;
 
+select is(
+  sinjira_catalog_internal.project_access_rank(
+    'b8000000-0000-4000-8000-000000000008',
+    'b1000000-0000-4000-8000-000000000001'
+  ),
+  0,
+  'un membre ne peut pas sonder le rang projet d’un autre compte'
+);
+
 select ok(
   not public.is_sinjira_owner('b2000000-0000-4000-8000-000000000002'),
   'un membre standard n est pas traité comme créateur'
@@ -196,6 +205,15 @@ select set_config(
   true
 );
 set local role authenticated;
+
+select is(
+  sinjira_catalog_internal.project_access_rank(
+    'b8000000-0000-4000-8000-000000000008',
+    'b1000000-0000-4000-8000-000000000001'
+  ),
+  100,
+  'le compte courant conserve son propre rang admin via le helper interne'
+);
 
 select ok(
   public.is_sinjira_owner('b1000000-0000-4000-8000-000000000001'),

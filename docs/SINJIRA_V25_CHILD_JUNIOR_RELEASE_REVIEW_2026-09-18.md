@@ -420,9 +420,30 @@ Le pgTAP `security_travel_client_visibility_v25.test.sql` passe à **28 assertio
 
 Cette trente-cinquième migration reste **non revue production**.
 
+### Helpers catalogue self-only et absence d’oracle anonyme
+
+La revue croisée du catalogue Compte et du classement 11–12 a identifié deux contournements par appels directs aux helpers internes nécessaires aux policies RLS :
+
+- `sinjira_catalog_internal.project_access_rank(uuid,uuid)` restait exécutable par `anon/authenticated` et acceptait un `p_user_id` arbitraire, malgré un wrapper public réservé au `service_role`;
+- les helpers de disponibilité 11–12 pouvaient confirmer par UUID l’existence d’un projet/document `account` à un visiteur anonyme.
+
+La migration forward-only :
+
+`20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql`
+
+conserve les OID nécessaires aux policies et les droits d’exécution requis par la RLS, mais rend les réponses fail-closed :
+- un rôle navigateur ne peut calculer `project_access_rank` que pour `auth.uid()` (ou `NULL` pour anon); toute tentative de cibler un autre UUID retourne `0`;
+- `service_role` conserve les calculs serveur avec UUID explicite;
+- un projet `account` n’est plus confirmable par anon via le helper 11–12;
+- un document 11–12 exige désormais aussi le rang d’accès réel du compte courant.
+
+Le pgTAP Compte passe à **43 assertions** et le pgTAP classement 11–12 à **23 assertions**.
+
+Cette trente-sixième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **35 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **36 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -432,6 +453,12 @@ Le snapshot de revue attend exactement **35 migrations locales futures non revue
 | `20260913230000_sinjira_v25_travel_mode_retention_purge.sql` | `41b8dc3d1b1e09c018e588755edb053e63e9904a` |
 | `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` | `b08af7275d0d89b122505da413458fa9a24d2603` |
 | `20260921005000_sinjira_v25_travel_mode_internal_response_minimization.sql` | `1653597f4c9fe053a1b691fe810a3d1b8ca60955` |
+
+### Frontières helpers navigateur
+
+| Migration | Git blob SHA-1 |
+|---|---|
+| `20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql` | `1a6f22628bf7dc944e7d3b77c2744c40e3204b03` |
 
 ### Enfant 11–12 / Junior
 
@@ -512,7 +539,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **35 migrations** dans l’ordre chronologique canonique; la migration `20260921005000` appartient fonctionnellement au lot Mode Voyage mais reste la dernière par timestamp.
+2. Relire les **36 migrations** dans l’ordre chronologique canonique; la migration `20260921005000` appartient fonctionnellement au lot Mode Voyage mais reste la dernière par timestamp.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.

@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260918013000_sinjira_v25_child_content_rating.sql'
+HARDENING=ROOT/'supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql'
 TEST=ROOT/'supabase/tests/child_content_rating_v25.test.sql'
 ACCOUNT=ROOT/'assets/js/sinjira-account.js'
 LIBRARY=ROOT/'assets/js/sinjira-library-v24-4-61.js'
@@ -23,9 +24,9 @@ def compact(text): return ''.join(text.lower().split())
 def req(cond,msg):
     if not cond: errors.append(msg)
 
-mig=read(MIG); test=read(TEST); account=read(ACCOUNT); library=read(LIBRARY)
+mig=read(MIG); hardening=read(HARDENING); test=read(TEST); account=read(ACCOUNT); library=read(LIBRARY)
 core=read(LIBRARY_CORE); admin=read(ADMIN); admin_edge=read(ADMIN_EDGE); doc_edge=read(DOC_EDGE); doc=read(DOC)
-m=compact(mig); t=compact(test); a=compact(account); l=compact(library); lc=compact(core); ad=compact(admin); ae=compact(admin_edge); de=compact(doc_edge); d=doc.lower()
+m=compact(mig); h=compact(hardening); t=compact(test); a=compact(account); l=compact(library); lc=compact(core); ad=compact(admin); ae=compact(admin_edge); de=compact(doc_edge); d=doc.lower()
 
 for table in ('projects','documents'):
     req(f'altertablepublic.{table}' in m,f'Classement 11–12 absent de {table}.')
@@ -37,6 +38,10 @@ req('createorreplacefunctionpublic.sinjira_child_document_available' in m,'Helpe
 req("p.child_access_status='approved_11_12'" in m,'Projet non borné à approved_11_12.')
 req("d.child_access_status='approved_11_12'" in m,'Document non borné à approved_11_12.')
 req('public.sinjira_child_project_available(d.project_id)' in m,'Le document ne dépend pas aussi du classement du projet.')
+req('createorreplacefunctionsinjira_v25_internal.sinjira_child_project_available' in h,'Le helper projet effectif n est pas durci après la frontière RPC.')
+req("p.visibility='public'or(p.visibility='account'andauth.uid()isnotnull)" in h,'Le helper projet expose encore visibility=account à anon.')
+req('createorreplacefunctionsinjira_v25_internal.sinjira_child_document_available' in h,'Le helper document effectif n est pas durci après la frontière RPC.')
+req('sinjira_catalog_internal.project_access_rank(d.project_id,auth.uid())>=public.document_access_rank(d.access_level)' in h,'Le helper document ne respecte pas le rang réel du compte courant.')
 req("visibilityin('public','account')" in m,'Un projet restricted pourrait devenir Junior par simple classement.')
 req("public.sinjira_my_age_band()in('adult','youth')" in m and "public.sinjira_my_age_band()='child'" in m and "public.sinjira_my_age_band()<>'child'" not in m,'Les politiques de contenu ne séparent pas explicitement standard, child et restricted.')
 for legacy_policy in ('projects_public_read','projects_authenticated_read','documents_anon_read','documents_authenticated_read'):
@@ -68,8 +73,8 @@ req('data-child-review-status="blocked_11_12"' in admin,'Bouton admin Bloquer 11
 req("doc.child_access_status!=='approved_11_12'" in de,'get-document-url ne revérifie pas le classement document.')
 req("doc.projects?.child_access_status!=='approved_11_12'" in de,'get-document-url ne revérifie pas le classement projet.')
 
-req('selectplan(21);' in t,'Plan pgTAP classement 11–12 inattendu.')
-for marker in ('unprojetnonréviséestindisponible11–12','unprojetaccountactifexplicitementapprouvédevientdisponible','unprojetrestrictednedevientpasjuniorparsimpleclassement','undocumentnonréviséestindisponible11–12','document+projetdoublementapprouvésdeviennentdisponibles','bloquerensuiteleprojetrefermeimmédiatementledocument','uneseulepolitiquegénéraleprojetsresteactive;seulelexceptionownerv25explicitementbornéesajoute','uneseulepolitiqueselectdocumentsresteactive','rlsprojetsséparestandard,childetbandesrestreintes','rlsdocumentsséparestandard,childetbandesrestreintes'):
+req('selectplan(23);' in t,'Plan pgTAP classement 11–12 inattendu.')
+for marker in ('unprojetnonréviséestindisponible11–12','unprojetaccountactifexplicitementapprouvédevientdisponible','anonnepeutpassonderunprojetaccountapprouvé11–12paruuid','unprojetrestrictednedevientpasjuniorparsimpleclassement','undocumentnonréviséestindisponible11–12','document+projetdoublementapprouvésdeviennentdisponibles','anonnepeutpassonderundocumentaccountapprouvé11–12paruuid','bloquerensuiteleprojetrefermeimmédiatementledocument','uneseulepolitiquegénéraleprojetsresteactive;seulelexceptionownerv25explicitementbornéesajoute','uneseulepolitiqueselectdocumentsresteactive','rlsprojetsséparestandard,childetbandesrestreintes','rlsdocumentsséparestandard,childetbandesrestreintes'):
     req(marker in t,f'Preuve pgTAP classement enfant absente: {marker}')
 
 req('défaut `unreviewed` reste fermé' in d,'Documentation: défaut unreviewed non expliqué.')

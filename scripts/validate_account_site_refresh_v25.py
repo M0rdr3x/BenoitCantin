@@ -11,6 +11,7 @@ FILES = {
     "migration": ROOT / "supabase/migrations/20260919090000_sinjira_v25_account_content_hub.sql",
     "project_owner_migration": ROOT / "supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql",
     "browser_privileges_migration": ROOT / "supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql",
+    "browser_helper_hardening_migration": ROOT / "supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql",
     "library_html": ROOT / "compte/bibliotheque.html",
     "library_js": ROOT / "assets/js/sinjira-library-v24-4-61.js",
     "secondary_library_js": ROOT / "assets/js/sinjira-library.js",
@@ -62,6 +63,7 @@ def validate(contents: dict[str, str]) -> None:
     m = compact(contents["migration"])
     project_owner_migration = compact(contents["project_owner_migration"])
     browser_privileges = compact(contents["browser_privileges_migration"])
+    browser_helper_hardening = compact(contents["browser_helper_hardening_migration"])
     libh = compact(contents["library_html"])
     libj = compact(contents["library_js"])
     secondary_library = compact(contents["secondary_library_js"])
@@ -116,6 +118,17 @@ def validate(contents: dict[str, str]) -> None:
         fail("CI compte: frontière RPC V25 finale non surveillée")
     if "supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql" not in contents["workflow"]:
         fail("CI compte: convergence des privilèges catalogue navigateur non surveillée")
+    if "supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql" not in contents["workflow"]:
+        fail("CI compte: durcissement self-only des helpers navigateur non surveillé")
+
+    for marker in (
+        "createorreplacefunctionsinjira_catalog_internal.project_access_rank(",
+        "coalesce(auth.jwt()->>'role','')<>'service_role'",
+        "p_user_idisdistinctfromauth.uid()then0",
+        "grantexecuteonfunctionsinjira_catalog_internal.project_access_rank(uuid,uuid)toanon,authenticated,service_role",
+    ):
+        if marker not in browser_helper_hardening:
+            fail(f"migration helpers navigateur: garde project_access_rank absente: {marker}")
 
     for marker in (
         "createschemaifnotexistssinjira_catalog_internal",
@@ -541,8 +554,8 @@ def validate(contents: dict[str, str]) -> None:
     if "sinjira-reader.js?v=25.0.3" not in contents["demo_html"]:
         fail("lecteur démo: cache lecteur V25.0.3 absent")
 
-    if "selectplan(41);" not in test:
-        fail("pgTAP contenu: plan(41) absent")
+    if "selectplan(43);" not in test:
+        fail("pgTAP contenu: plan(43) absent")
     for marker in (
         "lapolicyprojetsowner-onlyv25existe",
         "authenticatedpeutlireprojectssousrls",
@@ -564,6 +577,8 @@ def validate(contents: dict[str, str]) -> None:
         "schémainternecatalogueexiste",
         "project_access_rankpublicestunwrappersecurityinvoker",
         "authenticatednepeutpassonderdirectementlerangprojet",
+        "unmembrenepeutpassonderlerangprojetd’unautrecompte",
+        "lecomptecourantconservesonproprerangadminvialehelperinterne",
         "lespoliciesprojects/documentsconserventloiddhelperdéplacé".replace("dhelper","duhelper"),
         "lecréateurvoitsonromanbrouillon",
         "lesangdusauveurestprésentdanslecatalogueromancanonique",
@@ -624,6 +639,7 @@ def main() -> None:
             "policy projets créateur retirée":("project_owner_migration","create policy projects_owner_catalog_read_v25","create policy projects_owner_catalog_missing"),
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
             "migration privilèges catalogue hors paths CI":("workflow","supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql","supabase/migrations/catalog-browser-privileges-missing.sql"),
+            "migration helpers navigateur hors paths CI":("workflow","supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql","supabase/migrations/browser-helper-hardening-missing.sql"),
             "écriture projet navigateur réouverte":("browser_privileges_migration","grant select on table public.projects to anon, authenticated;","grant select, insert on table public.projects to anon, authenticated;"),
             "preuve RLS access_requests self-only retirée":("test","policyname='requests own insert'","policyname='requests missing insert'"),
             "preuve RLS playtest self-only retirée":("test","policyname='participants own apply'","policyname='participants missing apply'"),
