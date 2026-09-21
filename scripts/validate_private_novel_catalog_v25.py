@@ -143,7 +143,7 @@ def validate(contents:dict[str,str])->None:
     ):
         if forbidden in library:
             fail(f"bibliothèque: livraison privée directe ou rôle dupliqué interdit: {forbidden}")
-    if "sinjira-library-v24-4-61.js?v=25.1.0" not in library_html:
+    if "sinjira-library-v24-4-61.js?v=25.1.1" not in library_html:
         fail("bibliothèque: cache générique roman non forcé")
 
     if "sinjira_my_novel_catalog" not in literature:
@@ -152,7 +152,7 @@ def validate(contents:dict[str,str])->None:
         fail("Littérature: fallback public anonyme absent")
     if "?novel=" not in contents["literature_js"] or "encodeURIComponent(novel.slug)" not in contents["literature_js"]:
         fail("Littérature: lecteur intégral générique non lié")
-    if "sinjira-literature-catalog-v25.js?v=25.1.0" not in literature_html:
+    if "sinjira-literature-catalog-v25.js?v=25.1.1" not in literature_html:
         fail("Littérature: cache catalogue générique non forcé")
 
     if "supabase/migrations/20260919113000_sinjira_v25_private_novel_asset_rls.sql" not in contents["workflow"]:
