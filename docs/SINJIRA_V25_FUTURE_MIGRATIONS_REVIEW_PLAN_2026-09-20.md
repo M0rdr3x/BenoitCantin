@@ -76,6 +76,7 @@ Pour chaque migration :
   - Le trigger historique `sync_guardian_signup_invite_link_trigger` doit appeler une implémentation V25 qui ne peut jamais réactiver implicitement le partage des métadonnées.
   - `guardian_code` est une capacité à usage unique : son trigger de suppression et le nettoyage des résidus `auth.users.raw_user_meta_data` doivent exister dès cette migration, avant toute inscription 11+.
   - La visibilité du tuteur doit déjà s'arrêter au passage à `adult` pour `guardian_links` et pour les invitations consommées; le compte concerné conserve son propre historique.
+  - Avant que `handle_new_sinjira_user()` puisse créer un compte 11–12, la frontière serveur child doit déjà refuser les mutations sensibles, maintenir la recherche/contribution à OFF et fermer playtests/contenus non classés indépendamment de la navigation.
 
 - [ ] `20260917223000_sinjira_v25_junior_community.sql`
   - Crée les 3 tables Junior et les RPC de consentement, fil, publication, commentaire, signalement et résumé.
