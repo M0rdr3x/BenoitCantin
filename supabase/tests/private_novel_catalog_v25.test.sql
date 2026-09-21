@@ -79,9 +79,10 @@ values
 delete from public.account_safety_profiles
 where user_id='c3000000-0000-4000-8000-000000000003';
 
-insert into public.internal_admin_users(user_id,role)
-values('c1000000-0000-4000-8000-000000000001','owner')
-on conflict(user_id) do update set role='owner';
+-- Le catalogue créateur doit dépendre de l'autorité canonique is_sinjira_owner,
+-- pas d'une ligne auxiliaire internal_admin_users.
+delete from public.internal_admin_users
+where user_id='c1000000-0000-4000-8000-000000000001';
 
 insert into public.sinjira_novels(
   id,slug,title,status,sort_order,comments_enabled
