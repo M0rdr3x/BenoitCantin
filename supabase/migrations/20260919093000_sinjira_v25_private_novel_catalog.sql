@@ -76,11 +76,8 @@ begin
     return '[]'::jsonb;
   end if;
 
-  select exists(
-    select 1
-    from public.internal_admin_users a
-    where a.user_id=uid and a.role='owner'
-  ) into owner_mode;
+  select public.is_sinjira_owner(uid)
+  into owner_mode;
 
   with catalogue as (
     select
