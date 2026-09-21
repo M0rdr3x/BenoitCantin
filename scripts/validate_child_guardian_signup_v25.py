@@ -171,6 +171,13 @@ req("minor_off_platform_contact" in m
     and "minor_sexual_solicitation" in m
     and "minor_financial_solicitation" in m,
     "La migration d'introduction enfant ne conserve pas les refus de sollicitations mineur côté serveur.")
+req("createorreplacefunctionpublic.sync_social_profile_from_profile()" in m
+    and "v_public_pseudotext:=coalesce(nullif(btrim(new.pseudo),''),'membresinjira')" in m
+    and "values(new.user_id,v_public_pseudo,v_public_pseudo,new.avatar_path,now())" in m,
+    "La migration d'introduction enfant peut encore copier le display_name privé vers le profil social.")
+req("updatepublic.social_profilessp" in m
+    and "display_name=l.public_pseudo" in m,
+    "La migration d'introduction enfant ne neutralise pas immédiatement les profils sociaux historiques.")
 req("bandnotin('child_pending','youth_pending','youth')" in rm,
     "Le RPC de rétablissement ne reconnaît pas child_pending.")
 req("g.status='verified'andg.revoked_atisnull" in rm,
