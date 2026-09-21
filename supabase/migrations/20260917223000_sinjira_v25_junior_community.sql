@@ -275,7 +275,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path=pg_catalog,public
-as $
+as $guardian_set$
 declare
   uid uuid:=auth.uid();
   v_enabled boolean:=coalesce(p_enabled,false);
@@ -310,7 +310,7 @@ begin
 
   return jsonb_build_object('ok',true,'enabled',v_enabled);
 end;
-$;
+$guardian_set$;
 
 revoke all on function public.guardian_set_junior_community(uuid,boolean)
 from public,anon;
@@ -323,7 +323,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path=pg_catalog,public,private
-as $
+as $guardian_children$
 declare
   uid uuid:=auth.uid();
   result jsonb;
@@ -357,7 +357,7 @@ begin
 
   return result;
 end;
-$;
+$guardian_children$;
 
 revoke all on function public.guardian_junior_community_children()
 from public,anon;
@@ -601,7 +601,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path=pg_catalog,public
-as $
+as $guardian_summary$
 declare
   uid uuid:=auth.uid();
   last_activity timestamptz;
@@ -654,7 +654,7 @@ begin
     'private_messages_available',false
   );
 end;
-$;
+$guardian_summary$;
 
 revoke all on function public.junior_guardian_summary(uuid)
 from public,anon;
