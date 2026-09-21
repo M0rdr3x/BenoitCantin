@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(43);
+select plan(45);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -197,6 +197,31 @@ select is(
   'un membre ne voit pas un produit inactif sans droit ni achat'
 );
 
+reset role;
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'sinjira_catalog_internal.project_access_rank(uuid,uuid)',
+    'EXECUTE'
+  ),
+  'service_role conserve EXECUTE sur le helper interne de rang projet'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','b2000000-0000-4000-8000-000000000002','role','service_role','aal','aal2')::text,
+  true
+);
+set local role service_role;
+select is(
+  sinjira_catalog_internal.project_access_rank(
+    'b8000000-0000-4000-8000-000000000008',
+    'b1000000-0000-4000-8000-000000000001'
+  ),
+  100,
+  'service_role peut encore calculer le rang d’un UUID explicite différent du compte JWT'
+);
 reset role;
 
 select set_config(
