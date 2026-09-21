@@ -478,7 +478,7 @@ Le snapshot de revue attend exactement **36 migrations locales futures non revue
 | Migration | Git blob SHA-1 |
 |---|---|
 | `20260916210000_sinjira_v25_child_guardian_signup.sql` | `b492605be8bb1932ba78757790b9b3b0957ac203` |
-| `20260917223000_sinjira_v25_junior_community.sql` | `6fa8e12ea031bf2feabbd30047427e273fca1ee7` |
+| `20260917223000_sinjira_v25_junior_community.sql` | `64e66dc8d9c45de9ecbb1174fdb842e4444b9b6b` |
 | `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `2c8758e1ada9993645cac661f5d7676a93a31cb1` |
 | `20260918013000_sinjira_v25_child_content_rating.sql` | `5cc1d572f97f080bcc43ae3d20e85b441e62b9e0` |
 | `20260918020000_sinjira_v25_account_capabilities.sql` | `0a16bfcc49e51ee2b96cb98742442ae3d00e5c76` |
