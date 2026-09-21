@@ -61,6 +61,44 @@ from public,anon,authenticated;
 comment on function public.sync_guardian_signup_invite_link() is
   'V25 privacy-by-default: toute création ou réactivation de supervision via invitation remet can_view_contact_metadata à false.';
 
+-- guardian_code est une capacité à usage unique. Elle est retirée des métadonnées Auth
+-- dès la même migration qui ouvre l'inscription enfant, sans fenêtre de conservation.
+create or replace function private.sinjira_strip_guardian_signup_secret()
+returns trigger
+language plpgsql
+security definer
+set search_path=pg_catalog,auth
+as $guardian_secret$
+begin
+  if coalesce(new.raw_user_meta_data,'{}'::jsonb) ? 'guardian_code' then
+    update auth.users
+    set raw_user_meta_data=coalesce(raw_user_meta_data,'{}'::jsonb)-'guardian_code'
+    where id=new.id;
+  end if;
+  return new;
+end;
+$guardian_secret$;
+
+revoke all on function private.sinjira_strip_guardian_signup_secret()
+from public,anon,authenticated;
+
+drop trigger if exists zz_sinjira_strip_guardian_signup_secret
+on auth.users;
+
+create trigger zz_sinjira_strip_guardian_signup_secret
+after insert on auth.users
+for each row
+when (coalesce(new.raw_user_meta_data,'{}'::jsonb) ? 'guardian_code')
+execute function private.sinjira_strip_guardian_signup_secret();
+
+-- Nettoyage des comptes déjà créés avant cette frontière V25.
+update auth.users
+set raw_user_meta_data=coalesce(raw_user_meta_data,'{}'::jsonb)-'guardian_code'
+where coalesce(raw_user_meta_data,'{}'::jsonb) ? 'guardian_code';
+
+comment on function private.sinjira_strip_guardian_signup_secret() is
+  'V25 initial: guardian_code est retiré des métadonnées Auth après création; les secrets historiques résiduels sont aussi purgés.';
+
 -- 11–12 ans : bande `child`, volontairement exclue des autorisations sociales existantes.
 -- À 13 ans, la bande est recalculée automatiquement depuis la date de naissance et devient `youth`
 -- lorsque le lien de supervision est toujours vérifié.
