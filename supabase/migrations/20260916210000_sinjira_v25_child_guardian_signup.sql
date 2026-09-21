@@ -170,7 +170,7 @@ begin
 
   if inv.id is not null and years<18 then
     insert into public.guardian_links(minor_user_id,guardian_user_id,status,guardian_role,can_view_contact_metadata,consented_at)
-      values(new.id,inv.guardian_user_id,'verified','parent',true,inv.consented_at)
+      values(new.id,inv.guardian_user_id,'verified','parent',false,inv.consented_at)
       on conflict do nothing;
     update public.guardian_signup_invites
       set used_at=now(),minor_user_id=new.id
