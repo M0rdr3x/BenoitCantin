@@ -1,7 +1,7 @@
 -- SINJIRA™ V25 — consentement et step-up pour les métadonnées de contacts jeunesse.
--- Ce RPC ne révèle jamais le contenu des messages, mais retourne des métadonnées
--- relationnelles sensibles (identité/pseudo, réseau, dernière date de contact).
--- Il exige donc à la fois l'autorisation explicite du lien et une session AAL2.
+-- Ce RPC ne révèle jamais le contenu des messages. Dès sa première exposition il
+-- minimise les métadonnées et cloisonne l'identité Compte de l'identité Personnage.
+-- Il exige l'autorisation explicite du compte jeunesse et une session tuteur AAL2.
 
 create or replace function public.get_guardian_youth_contacts(p_child_user_id uuid)
 returns jsonb
@@ -35,55 +35,63 @@ begin
     raise exception 'MFA_AAL2_REQUIRED';
   end if;
 
-  with contacts as (
+  with contact_events as (
     select
+      'Compte'::text network,
       case
         when m.sender_user_id=p_child_user_id then m.recipient_user_id
         else m.sender_user_id
-      end other_user_id,
-      max(m.created_at) last_contact_at,
-      'Compte'::text network
+      end contact_key,
+      coalesce(sp.pseudo,'Membre SINJIRA') contact_label,
+      m.created_at
     from public.social_real_messages m
+    left join public.social_profiles sp
+      on sp.user_id=case
+        when m.sender_user_id=p_child_user_id then m.recipient_user_id
+        else m.sender_user_id
+      end
     where p_child_user_id in(m.sender_user_id,m.recipient_user_id)
-    group by 1
 
     union all
 
     select
+      'Personnage'::text network,
       case
-        when m.sender_user_id=p_child_user_id then m.recipient_user_id
-        else m.sender_user_id
-      end,
-      max(m.created_at),
-      'Personnage'::text
+        when m.sender_user_id=p_child_user_id then m.recipient_character_id
+        else m.sender_character_id
+      end contact_key,
+      coalesce(csp.public_name,'Personnage SINJIRA') contact_label,
+      m.created_at
     from public.social_character_messages m
+    left join public.character_social_profiles csp
+      on csp.character_id=case
+        when m.sender_user_id=p_child_user_id then m.recipient_character_id
+        else m.sender_character_id
+      end
     where p_child_user_id in(m.sender_user_id,m.recipient_user_id)
-    group by 1
   ),
   grouped as (
     select
-      other_user_id,
-      max(last_contact_at) last_contact_at,
-      array_agg(distinct network) networks
-    from contacts
-    group by other_user_id
+      network,
+      contact_key,
+      contact_label,
+      max(created_at) last_contact_at
+    from contact_events
+    group by network,contact_key,contact_label
   )
   select coalesce(
     jsonb_agg(
       jsonb_build_object(
-        'user_id',g.other_user_id,
-        'pseudo',coalesce(sp.pseudo,'Membre SINJIRA'),
-        'display_name',sp.display_name,
-        'networks',g.networks,
-        'last_contact_at',g.last_contact_at
+        'contact_label',g.contact_label,
+        'network',g.network,
+        'last_contact_date',(timezone('UTC',g.last_contact_at))::date
       )
-      order by g.last_contact_at desc
+      order by g.last_contact_at desc,g.network,g.contact_label
     ),
     '[]'::jsonb
   )
   into result
-  from grouped g
-  left join public.social_profiles sp on sp.user_id=g.other_user_id;
+  from grouped g;
 
   return result;
 end;
@@ -95,4 +103,4 @@ grant execute on function public.get_guardian_youth_contacts(uuid)
 to authenticated;
 
 comment on function public.get_guardian_youth_contacts(uuid) is
-  'V25: métadonnées de contacts jeunesse uniquement; exige supervision active, consentement can_view_contact_metadata=true et session tuteur AAL2; aucun contenu de message.';
+  'V25 dès première exposition: supervision active + opt-in jeunesse + AAL2; identité Compte/Personnage cloisonnée; renvoie seulement contact_label, network et last_contact_date. Aucun UUID, display_name, heure précise ou contenu.';
