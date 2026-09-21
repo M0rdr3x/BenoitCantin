@@ -89,6 +89,13 @@ cbt = compact(child_browser_test)
 # Autorité serveur et seuil minimal.
 req("ifyears<11thenraiseexception'sinjira_minimum_age_11'" in m,
     "La migration V25 n'impose pas le minimum serveur de 11 ans.")
+for marker,message in (
+    ("createorreplacefunctionpublic.enforce_sinjira_account_safety_age()returnstriggerlanguageplpgsqlsecuritydefinersetsearch_path=pg_catalog,public","search_path du garde âge"),
+    ("createorreplacefunctionpublic.sinjira_age_band(p_user_iduuiddefaultauth.uid())returnstextlanguagesqlstablesecuritydefinersetsearch_path=pg_catalog,public,auth","search_path de la classification âge"),
+    ("createorreplacefunctionpublic.sinjira_parent_can_supervise(p_parentuuid,p_childuuid)returnsbooleanlanguagesqlstablesecuritydefinersetsearch_path=pg_catalog,public","search_path supervision parentale"),
+    ("createorreplacefunctionpublic.handle_new_sinjira_user()returnstriggerlanguageplpgsqlsecuritydefinersetsearch_path=pg_catalog,public,auth","search_path du hook Auth"),
+):
+    req(marker in m,f"La migration d'introduction enfant ne borne pas {message}.")
 req("ifyears<14then" in m and 'guardian_authorization_required_under_14' in m,
     "L'autorisation parentale obligatoire de 11 à 13 ans n'est pas imposée côté serveur.")
 req("years<18andresidence_countrynotin('canada','ca','can')" in m and 'youth_jurisdiction_not_enabled' in m,
