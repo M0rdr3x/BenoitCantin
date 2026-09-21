@@ -24,6 +24,43 @@ end;
 $$;
 revoke all on function public.enforce_sinjira_account_safety_age() from public,anon,authenticated;
 
+-- Privacy-by-default dès la première consommation/réactivation d'un code parental V25.
+-- Le trigger historique sync_guardian_signup_invite_link_trigger appelle cette fonction :
+-- sa logique doit donc être sûre avant que handle_new_sinjira_user ou child_pending ne
+-- consomme une invitation, sans attendre une migration de minimisation ultérieure.
+create or replace function public.sync_guardian_signup_invite_link()
+returns trigger
+language plpgsql
+security definer
+set search_path=pg_catalog,public
+as $
+begin
+  if new.used_at is not null and new.minor_user_id is not null then
+    insert into public.guardian_links(
+      minor_user_id,guardian_user_id,status,guardian_role,
+      can_view_contact_metadata,consented_at,revoked_at
+    )
+    values(
+      new.minor_user_id,new.guardian_user_id,'verified','parent',
+      false,new.consented_at,null
+    )
+    on conflict(minor_user_id,guardian_user_id) do update
+      set status='verified',
+          guardian_role='parent',
+          can_view_contact_metadata=false,
+          consented_at=excluded.consented_at,
+          revoked_at=null,
+          updated_at=now();
+  end if;
+  return new;
+end;
+$;
+revoke all on function public.sync_guardian_signup_invite_link()
+from public,anon,authenticated;
+
+comment on function public.sync_guardian_signup_invite_link() is
+  'V25 privacy-by-default: toute création ou réactivation de supervision via invitation remet can_view_contact_metadata à false.';
+
 -- 11–12 ans : bande `child`, volontairement exclue des autorisations sociales existantes.
 -- À 13 ans, la bande est recalculée automatiquement depuis la date de naissance et devient `youth`
 -- lorsque le lien de supervision est toujours vérifié.
