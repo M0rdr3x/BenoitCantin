@@ -85,6 +85,9 @@ def validate(contents: dict[str, str]) -> None:
     reset_html = compact(contents["reset_html"])
     mfa_html = compact(contents["mfa_html"])
     workflow = contents["workflow"]
+    if "paths:" not in workflow or "workflow_dispatch:" not in workflow:
+        fail("CI compte: section pull_request.paths introuvable")
+    workflow_paths = workflow.split("paths:", 1)[1].split("workflow_dispatch:", 1)[0]
     reader = compact(contents["reader_js"])
     comments = compact(contents["comments_js"])
     comment_html = compact(contents["comments_html"])
@@ -114,17 +117,17 @@ def validate(contents: dict[str, str]) -> None:
         if marker not in project_owner_migration:
             fail(f"migration projets créateur: garde absente: {marker}")
 
-    if "supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql" not in contents["workflow"]:
+    if "supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql" not in workflow_paths:
         fail("CI compte: migration visibilité projets créateur non surveillée")
-    if "supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql" not in contents["workflow"]:
+    if "supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql" not in workflow_paths:
         fail("CI compte: frontière RPC V25 finale non surveillée")
-    if "supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql" not in contents["workflow"]:
+    if "supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql" not in workflow_paths:
         fail("CI compte: convergence des privilèges catalogue navigateur non surveillée")
-    if "supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql" not in contents["workflow"]:
+    if "supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql" not in workflow_paths:
         fail("CI compte: durcissement self-only des helpers navigateur non surveillé")
-    if "supabase/tests/child_content_rating_v25.test.sql" not in contents["workflow"]:
+    if "supabase/tests/child_content_rating_v25.test.sql" not in workflow_paths:
         fail("CI compte: pgTAP classement 11–12 non surveillé")
-    if "supabase test db supabase/tests/child_content_rating_v25.test.sql" not in contents["workflow"]:
+    if "supabase test db supabase/tests/child_content_rating_v25.test.sql" not in workflow:
         fail("CI compte: pgTAP classement 11–12 non exécuté")
 
     for marker in (
@@ -254,7 +257,7 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in secondary_library:
             fail(f"bibliothèque secondaire: sémantique projet incohérente: {marker}")
-    if "assets/js/sinjira-library.js" not in workflow:
+    if "assets/js/sinjira-library.js" not in workflow_paths:
         fail("CI compte: module bibliothèque secondaire non surveillé")
     for name in ("secondary_project","secondary_documents"):
         if "sinjira-library.js?v=25.1.1" not in contents[name]:
@@ -428,7 +431,7 @@ def validate(contents: dict[str, str]) -> None:
         "assets/js/sinjira-privacy-center-v24-4-83.js",
         "projets/sinjira/romans/lire-demo.html",
     ):
-        if watched not in workflow:
+        if watched not in workflow_paths:
             fail(f"CI compte: fichier critique non surveillé: {watched}")
     if "sinjira-account-dashboard-v24-4-60.js?v=25.0.2" not in contents["account_page:index.html"]:
         fail("tableau de bord: cache V25 du module dédié absent")
@@ -456,7 +459,7 @@ def validate(contents: dict[str, str]) -> None:
             fail(f"authentification: cache CSS Compte V25 absent sur {auth_name}")
     if "security_after_password_recovery" not in recovery or "signout({scope:'global'})" not in recovery:
         fail("récupération active: nettoyage sécurité ou fermeture globale des sessions absent")
-    if "assets/js/sinjira-recovery-v24-4-99.js" not in workflow:
+    if "assets/js/sinjira-recovery-v24-4-99.js" not in workflow_paths:
         fail("CI compte: le script de récupération sécurisé n'est pas surveillé par le workflow")
 
     for marker in ("appendgroup('bibliothèque'", "appendgroup('univers'", "appendgroup('communauté'", "appendgroup('compte'"):
