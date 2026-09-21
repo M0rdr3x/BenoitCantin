@@ -77,7 +77,7 @@ req('compte disponible à partir de 11 ans' in signup_html.lower() and 'moins de
 req('11–12 ans' in signup_html.lower() and 'fonctions sociales générales' in signup_html.lower() and 'messages privés restent désactivés' in signup_html.lower() and 'communauté junior séparée' in signup_html.lower(),'Interface enfant supervisé incomplète.')
 req('comptes de 11 à 17 ans' in signup_html.lower() and 'canada' in signup_html.lower(),'Gate jeunesse Canada non expliqué à l’inscription.')
 req('data-signup-session-warning' in signup_html.lower() and 'data-signup-session-signout' in signup_html.lower(),'Interface de séparation de session parent/enfant absente.')
-req('v24-signup.js?v=25.0.1&amp;rev=child-11-flow-session' in signup_html,'Version du client inscription enfant non invalidée.')
+req('v24-signup.js?v=25.0.2&amp;rev=child-11-flow-session' in signup_html,'Version du client inscription enfant non invalidée.')
 req('réservés aux personnes de 13 ans et plus' not in signup_html.lower(),'Ancien message global 13+ encore présent dans l’interface.')
 
 for phrase in ('registre interne','cinq ans','30 jours','13 ans','comptes jeunesse 13–17 ans','canada','rencontres sinjira™ est strictement 18+','ia distante payante est désactivée','paiements en ligne','responsable de la protection des renseignements personnels','gouvernance-vie-privee.html','formspree','états-unis','canada central'):
