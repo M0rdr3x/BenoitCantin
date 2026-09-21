@@ -37,7 +37,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path=pg_catalog,public,private
-as $
+as $guardian_children$
 declare
   uid uuid:=auth.uid();
   result jsonb;
@@ -71,7 +71,7 @@ begin
 
   return result;
 end;
-$;
+$guardian_children$;
 
 revoke all on function public.guardian_junior_community_children()
 from public,anon;
