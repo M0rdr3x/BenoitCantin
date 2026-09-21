@@ -122,6 +122,30 @@ req('insertintopublic.social_blocks' in m,'Le masquage immédiat après signalem
 req("'content_visible_to_guardian',false" in m,'Le parent pourrait recevoir le contenu Junior.')
 req("'private_messages_available',false" in m,'Le contrat ne prouve pas l absence de messages privés Junior.')
 
+# La migration d'introduction doit déjà porter les protections finales afin d'éviter
+# toute fenêtre transitoire moins sûre pendant un db push séquentiel.
+req("ifv_enabledandcoalesce(auth.jwt()->>'aal','aal1')<>'aal2'then" in m and "mfa_aal2_required" in m,
+    "La migration Junior initiale permet encore une activation AAL1 avant le durcissement ultérieur.")
+req("andg.revoked_atisnull" in m,
+    "La migration Junior initiale ne ferme pas immédiatement les liens tuteur révoqués.")
+req("createtriggersinjira_revoke_junior_consent_on_guardian_link" in m
+    and "setrevoked_at=coalesce(revoked_at,now())" in m,
+    "La migration Junior initiale ne révoque pas durablement le consentement avec le lien tuteur.")
+
+guardian_children_start=m.find("createorreplacefunctionpublic.guardian_junior_community_children()")
+guardian_children_end=m.find("createorreplacefunctionpublic.junior_community_accept_rules()",guardian_children_start)
+guardian_children_initial=m[guardian_children_start:guardian_children_end] if guardian_children_start>=0 and guardian_children_end>guardian_children_start else ""
+req(guardian_children_initial and "'junior_alias'" not in guardian_children_initial,
+    "La migration Junior initiale expose encore junior_alias au tuteur.")
+
+summary_start=m.find("createorreplacefunctionpublic.junior_guardian_summary(p_child_user_iduuid)")
+summary_end=m.find("commentonfunctionpublic.sinjira_junior_community_enabled()",summary_start)
+summary_initial=m[summary_start:summary_end] if summary_start>=0 and summary_end>summary_start else ""
+req(summary_initial and "mfa_aal2_required" in summary_initial,
+    "Le résumé parental Junior initial n'exige pas AAL2.")
+req("'last_activity_date'" in summary_initial and "'last_activity_at'" not in summary_initial,
+    "Le résumé parental Junior initial n'est pas minimisé à la date UTC.")
+
 # Interface enfant.
 for marker,msg in (
     ('communauté junior sinjira','Titre Communauté Junior absent.'),
