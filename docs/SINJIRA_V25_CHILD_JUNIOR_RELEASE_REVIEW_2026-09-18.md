@@ -441,6 +441,19 @@ Le pgTAP Compte passe à **43 assertions** et le pgTAP classement 11–12 à **2
 
 Cette trente-sixième migration reste **non revue production**.
 
+### Revue réouverte après durcissements du 21 septembre 2026
+
+Le snapshot a volontairement détecté que six migrations non revues avaient changé depuis leurs empreintes précédentes. Elles ont été relues avant mise à jour de ce dossier; les changements sont des **resserrements**, pas des élargissements de droits :
+
+- `20260916210000_sinjira_v25_child_guardian_signup.sql` : privacy-by-default dès la première supervision, purge immédiate de `guardian_code`, visibilité tuteur bornée à la minorité;
+- `20260917223000_sinjira_v25_junior_community.sql` : révocation durable du consentement Junior, AAL2 à l’activation, retrait de l’alias Junior du résumé tuteur;
+- `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` : retrait de `junior_alias` du résultat parental;
+- `20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql` : métadonnées parentales minimisées dès la première exposition et identités Compte/Personnage cloisonnées;
+- `20260919070000_sinjira_v25_guardian_contacts_minimization.sql` : maintien du cloisonnement sans UUID, `display_name` ni heure précise;
+- `20260919093000_sinjira_v25_private_novel_catalog.sql` : RLS activée dès la création du registre privé et rôle propriétaire résolu par la frontière serveur canonique.
+
+Cette réouverture de revue **ne transforme aucune migration en migration production revue**. Les 36 migrations restent non revues au sens du `production-reviewed-migration-batch.txt`.
+
 ## 3. Lot local futur actuellement non revu
 
 Le snapshot de revue attend exactement **36 migrations locales futures non revues**.
@@ -464,13 +477,13 @@ Le snapshot de revue attend exactement **36 migrations locales futures non revue
 
 | Migration | Git blob SHA-1 |
 |---|---|
-| `20260916210000_sinjira_v25_child_guardian_signup.sql` | `e4e16d20af50d9cd0c9672fda9b79cc3501aaedc` |
-| `20260917223000_sinjira_v25_junior_community.sql` | `c56785a7b9f6e3ec8933d9782af5110a2ca22f4e` |
+| `20260916210000_sinjira_v25_child_guardian_signup.sql` | `b492605be8bb1932ba78757790b9b3b0957ac203` |
+| `20260917223000_sinjira_v25_junior_community.sql` | `d74872852134f198237cb5a5f806d297b7832907` |
 | `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `2c8758e1ada9993645cac661f5d7676a93a31cb1` |
 | `20260918013000_sinjira_v25_child_content_rating.sql` | `5cc1d572f97f080bcc43ae3d20e85b441e62b9e0` |
 | `20260918020000_sinjira_v25_account_capabilities.sql` | `0a16bfcc49e51ee2b96cb98742442ae3d00e5c76` |
 | `20260918023000_sinjira_v25_minor_content_policy_compat.sql` | `c0556e3baa218f9529f185010455984a0bc1cd03` |
-| `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` | `f60c6e7a6717f7b5818ff0b9a1ba7b055aa418ff` |
+| `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` | `58c7a9c19d7d30d0497ba841043cef2b81148560` |
 | `20260919013000_sinjira_v25_child_pending_guardian_redeem.sql` | `983ac4b48f25f29c0c62becb692b9203cdec80a1` |
 | `20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql` | `e14c41364246929054282bccb0e4abc5641b8643` |
 | `20260919023000_sinjira_v25_guardian_invite_aal2.sql` | `5700bfaa2b5a95d84d37ad475524960bdb78fc9b` |
@@ -480,14 +493,14 @@ Le snapshot de revue attend exactement **36 migrations locales futures non revue
 | `20260919043000_sinjira_v25_guardian_revoke_aal2.sql` | `7dada317202bdd1add1d4dc5113e3aca682459e4` |
 | `20260919050000_sinjira_v25_guardian_majority_visibility.sql` | `d7a65f65e1a870620809f1a2e669ef031d6f6d8a` |
 | `20260919053000_sinjira_v25_guardian_invite_majority_visibility.sql` | `ac18154c958b707d94ddc557b1af6b2af01ba62f` |
-| `20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql` | `f889da5d2c78eade2da8ef5a557cc5d77ae8e1e1` |
+| `20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql` | `d2ef613bfb372efe620e413d5e059b4d1b1e6c64` |
 | `20260919063000_sinjira_v25_guardian_contact_metadata_opt_in.sql` | `2d91c64a90f5c8bca506577ef359078fdf558fad` |
-| `20260919070000_sinjira_v25_guardian_contacts_minimization.sql` | `300b934766f3f1e8298f459ab3e8897df63b4959` |
+| `20260919070000_sinjira_v25_guardian_contacts_minimization.sql` | `e684227b322aa88dbd43376d8bd9aa19a6161f6e` |
 | `20260919073000_sinjira_v25_junior_guardian_summary_aal2.sql` | `07b1ea063e57d3dd4a31e689fac6f44fd1ca6d18` |
 | `20260919080000_sinjira_v25_guardian_character_identity_isolation.sql` | `7c169564095bb440bde8a2a106c4e00aa2f307e4` |
 | `20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql` | `8e0fd367bd0c30ed77f947ae0583408b370121a1` |
 | `20260919090000_sinjira_v25_account_content_hub.sql` | `29358d27f8f505897b924062e208b8d5c740f8c5` |
-| `20260919093000_sinjira_v25_private_novel_catalog.sql` | `be721fa72387de258fb488293f973febd9f9c8e7` |
+| `20260919093000_sinjira_v25_private_novel_catalog.sql` | `7ca3cf47f5f67205cb2a36310513273faacb7dea` |
 | `20260919100000_sinjira_v25_private_profile_age_11.sql` | `40c29de09331b187ddc00432054abcf500711ded` |
 | `20260919103000_sinjira_v25_livre_i_catalog_seed.sql` | `04929202946a0cda629c1f8005dbf51e4bfb2d68` |
 | `20260919110000_sinjira_v25_social_public_pseudo_privacy.sql` | `ac4f11e8e1591c35f0be91f541a21763fdb3ec8d` |
