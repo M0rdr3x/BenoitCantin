@@ -83,8 +83,11 @@ def validate_text(text: str, browser_test: str) -> list[str]:
     test_low = browser_test.lower()
     require(errors, 'page.route(' in browser_test and '@supabase/supabase-js@2/+esm' in browser_test,
             'le test navigateur doit intercepter le client Supabase public')
-    require(errors, "getsession: async () => ({data:{session:active ?" in test_low,
-            'le test ne simule plus une session parent active')
+    require(errors,
+            "getsession: async () => {" in test_low
+            and "await new promise(resolve => settimeout(resolve, 500));" in test_low
+            and "session:active ?" in test_low,
+            'le test ne simule plus une session parent active avec frontière asynchrone')
     require(errors, 'signout: async () => { active = false;' in test_low,
             'le test ne simule plus la séparation locale de session')
     require(errors, "d.setfullyear(d.getfullyear() - 11)" in test_low,
