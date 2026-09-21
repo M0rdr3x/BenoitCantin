@@ -252,7 +252,7 @@ Cette migration appartient fonctionnellement au **Lot A — Mode Voyage**, mais 
   - Conserve l’OID de `sinjira_catalog_internal.project_access_rank(uuid,uuid)` utilisé par les policies RLS, mais retourne `0` lorsqu’un rôle navigateur fournit un `p_user_id` différent de `auth.uid()`; `service_role` conserve l’usage serveur arbitraire.
   - Ferme l’oracle anonyme de `sinjira_child_project_available(uuid)` : un projet `visibility='account'` exige désormais une session authentifiée.
   - Aligne `sinjira_child_document_available(uuid)` sur le rang réel du compte courant via `project_access_rank >= document_access_rank`.
-  - Preuves attendues : pgTAP Compte à 43 assertions et classement 11–12 à 23 assertions.
+  - Preuves attendues : pgTAP Compte à 45 assertions et classement 11–12 à 23 assertions.
   - Migration transversale B/C : revue conjointe avec la frontière RPC V25 et les policies projets/documents.
 
 ### Notes de revue statique du Lot D — non approbatives
@@ -262,6 +262,7 @@ La revue croisée des définitions et des preuves runtime confirme actuellement 
 - `sinjira_catalog_internal.project_access_rank(uuid,uuid)` conserve son OID, nécessaire aux policies RLS existantes;
 - pour `anon` / `authenticated`, un `p_user_id` différent de `auth.uid()` retourne `0` avant toute lecture de rang;
 - le pgTAP Compte exécute réellement ce cas avec un membre authentifié ciblant l'UUID d'un autre compte et attend `0`;
+- `service_role` conserve explicitement `EXECUTE` sur le helper interne et un test runtime prouve qu'il peut calculer le rang d'un UUID explicite différent du compte JWT, afin de préserver les traitements serveur légitimes;
 - `anon` ne peut plus obtenir `true` sur un projet `visibility='account'` approuvé 11–12;
 - le pgTAP classement 11–12 exécute ce cas sur projet **et** document;
 - les contenus `restricted` restent fermés sans rang d'accès réel;
