@@ -114,6 +114,15 @@ req("createpolicyguardian_signup_invites_own_aal2" in m
     and "(selectauth.uid())=guardian_user_id" in m
     and "coalesce(auth.jwt()->>'aal','aal1')='aal2'" in m,
     "La migration d'introduction enfant permet encore de relire un code parental hors AAL2.")
+req("createorreplacefunctionpublic.sinjira_can_read_guardian_link(p_link_iduuid)" in m
+    and "whenauth.uid()=g.minor_user_idthentrue" in m
+    and "whenauth.uid()=g.guardian_user_idthenpublic.sinjira_age_band(g.minor_user_id)in('child','child_pending','youth','youth_pending')" in m
+    and "createpolicyguardian_read_parties_age_bounded" in m,
+    "La migration d'introduction enfant conserve encore la visibilité tuteur après majorité.")
+req("minor_user_idisnullorexists(select1frompublic.guardian_linksg" in m
+    and "g.guardian_user_id=(selectauth.uid())" in m
+    and "g.minor_user_id=guardian_signup_invites.minor_user_id" in m,
+    "La migration d'introduction enfant conserve encore une invitation consommée visible après majorité.")
 req("createorreplacefunctionpublic.revoke_guardian_link(p_link_iduuid)" in m
     and "uidnotin(r.guardian_user_id,r.minor_user_id)" in m
     and "ifuid=r.guardian_user_idandcoalesce(auth.jwt()->>'aal','aal1')<>'aal2'" in m
