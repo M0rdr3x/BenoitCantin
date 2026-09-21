@@ -2,7 +2,7 @@
 -- Principe : L'humain avant tout. Protéger sans surveiller.
 -- La Communauté Junior est séparée des réseaux adulte/jeunesse existants :
 --   * 11–12 ans seulement (bande child);
---   * activation explicite par un parent/tuteur vérifié;
+--   * activation explicite par un parent/tuteur vérifié sous AAL2; la désactivation reste fail-safe en AAL1;
 --   * pseudonyme Junior généré, sans nom réel, avatar, courriel ni UUID exposé au client;
 --   * texte uniquement, sans liens/coordonnées, sans rencontres, sans commerce et sans messagerie privée;
 --   * signalement + blocage disponibles; les adultes et les 13–17 ans ne peuvent pas lire ce fil.
@@ -95,7 +95,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path=public,private
+set search_path=pg_catalog,public,private
 as $junior$
   select private.sinjira_is_junior(p_user_id)
     and exists(
@@ -107,11 +107,16 @@ as $junior$
        and c.revoked_at is null
       where g.minor_user_id=p_user_id
         and g.status='verified'
+        and g.revoked_at is null
         and public.sinjira_age_band(g.guardian_user_id)='adult'
     );
 $junior$;
-revoke all on function private.sinjira_junior_community_enabled(uuid) from public,anon,authenticated;
-grant execute on function private.sinjira_junior_community_enabled(uuid) to service_role;
+
+revoke all on function private.sinjira_junior_community_enabled(uuid)
+from public,anon,authenticated;
+grant execute on function private.sinjira_junior_community_enabled(uuid)
+to service_role;
+
 
 create or replace function private.has_accepted_junior_community_rules(p_user_id uuid)
 returns boolean
@@ -219,64 +224,146 @@ $$;
 revoke all on function private.sinjira_junior_require_access(boolean) from public,anon,authenticated;
 grant execute on function private.sinjira_junior_require_access(boolean) to service_role;
 
-create or replace function public.guardian_set_junior_community(p_child_user_id uuid,p_enabled boolean)
-returns jsonb
+create or replace function private.sinjira_revoke_junior_consent_on_guardian_link()
+returns trigger
 language plpgsql
 security definer
 set search_path=pg_catalog,public
 as $$
-declare uid uuid:=auth.uid();
+declare
+  v_minor uuid;
+  v_guardian uuid;
 begin
-  if uid is null then raise exception 'AUTH_REQUIRED'; end if;
-  if not public.sinjira_parent_can_supervise(uid,p_child_user_id) then raise exception 'GUARDIAN_ACCESS_REQUIRED'; end if;
-  if public.sinjira_age_band(p_child_user_id)<>'child' then raise exception 'JUNIOR_COMMUNITY_11_12_ONLY'; end if;
+  if tg_op='DELETE' then
+    v_minor:=old.minor_user_id;
+    v_guardian:=old.guardian_user_id;
+  elsif coalesce(new.status,'')<>'verified' or new.revoked_at is not null then
+    v_minor:=new.minor_user_id;
+    v_guardian:=new.guardian_user_id;
+  else
+    return new;
+  end if;
 
-  insert into public.junior_community_guardian_consents(minor_user_id,guardian_user_id,consented_at,revoked_at)
-  values(p_child_user_id,uid,now(),case when coalesce(p_enabled,false) then null else now() end)
-  on conflict(minor_user_id,guardian_user_id)
-  do update set
-    consented_at=case when coalesce(p_enabled,false) then now() else public.junior_community_guardian_consents.consented_at end,
-    revoked_at=case when coalesce(p_enabled,false) then null else now() end;
+  update public.junior_community_guardian_consents
+  set revoked_at=coalesce(revoked_at,now())
+  where minor_user_id=v_minor
+    and guardian_user_id=v_guardian
+    and revoked_at is null;
 
-  return jsonb_build_object('ok',true,'enabled',coalesce(p_enabled,false));
+  if tg_op='DELETE' then return old; end if;
+  return new;
 end;
 $$;
-revoke all on function public.guardian_set_junior_community(uuid,boolean) from public,anon;
-grant execute on function public.guardian_set_junior_community(uuid,boolean) to authenticated;
+
+revoke all on function private.sinjira_revoke_junior_consent_on_guardian_link()
+from public,anon,authenticated;
+
+drop trigger if exists sinjira_revoke_junior_consent_on_guardian_link
+on public.guardian_links;
+
+create trigger sinjira_revoke_junior_consent_on_guardian_link
+after update of status,revoked_at or delete on public.guardian_links
+for each row
+execute function private.sinjira_revoke_junior_consent_on_guardian_link();
+
+
+create or replace function public.guardian_set_junior_community(
+  p_child_user_id uuid,
+  p_enabled boolean
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path=pg_catalog,public
+as $
+declare
+  uid uuid:=auth.uid();
+  v_enabled boolean:=coalesce(p_enabled,false);
+begin
+  if uid is null then raise exception 'AUTH_REQUIRED'; end if;
+  if not public.sinjira_parent_can_supervise(uid,p_child_user_id) then
+    raise exception 'GUARDIAN_ACCESS_REQUIRED';
+  end if;
+  if public.sinjira_age_band(p_child_user_id)<>'child' then
+    raise exception 'JUNIOR_COMMUNITY_11_12_ONLY';
+  end if;
+
+  -- L'activation est un consentement parental qui augmente les capacités sociales.
+  -- Le retrait reste disponible sans step-up pour être fail-safe.
+  if v_enabled and coalesce(auth.jwt()->>'aal','aal1')<>'aal2' then
+    raise exception 'MFA_AAL2_REQUIRED';
+  end if;
+
+  insert into public.junior_community_guardian_consents(
+    minor_user_id,guardian_user_id,consented_at,revoked_at
+  )
+  values(
+    p_child_user_id,uid,now(),case when v_enabled then null else now() end
+  )
+  on conflict(minor_user_id,guardian_user_id)
+  do update set
+    consented_at=case
+      when v_enabled then now()
+      else public.junior_community_guardian_consents.consented_at
+    end,
+    revoked_at=case when v_enabled then null else now() end;
+
+  return jsonb_build_object('ok',true,'enabled',v_enabled);
+end;
+$;
+
+revoke all on function public.guardian_set_junior_community(uuid,boolean)
+from public,anon;
+grant execute on function public.guardian_set_junior_community(uuid,boolean)
+to authenticated;
+
 
 create or replace function public.guardian_junior_community_children()
 returns jsonb
 language plpgsql
 security definer
 set search_path=pg_catalog,public,private
-as $$
-declare uid uuid:=auth.uid(); result jsonb;
+as $
+declare
+  uid uuid:=auth.uid();
+  result jsonb;
 begin
   if uid is null then raise exception 'AUTH_REQUIRED'; end if;
   if public.sinjira_age_band(uid)<>'adult' then raise exception 'ADULT_GUARDIAN_REQUIRED'; end if;
 
-  select coalesce(jsonb_agg(jsonb_build_object(
-    'minor_user_id',g.minor_user_id,
-    'label',coalesce(nullif(p.pseudo,''),'Compte enfant'),
-    'age_band',public.sinjira_age_band(g.minor_user_id),
-    'enabled',c.revoked_at is null and c.minor_user_id is not null,
-    'junior_alias',private.sinjira_junior_alias(g.minor_user_id)
-  ) order by p.pseudo nulls last),'[]'::jsonb)
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'minor_user_id',g.minor_user_id,
+        'label',coalesce(nullif(p.pseudo,''),'Compte enfant'),
+        'age_band',public.sinjira_age_band(g.minor_user_id),
+        'enabled',c.revoked_at is null and c.minor_user_id is not null
+      )
+      order by p.pseudo nulls last
+    ),
+    '[]'::jsonb
+  )
   into result
   from public.guardian_links g
-  left join public.profiles p on p.user_id=g.minor_user_id
+  left join public.profiles p
+    on p.user_id=g.minor_user_id
   left join public.junior_community_guardian_consents c
     on c.minor_user_id=g.minor_user_id
    and c.guardian_user_id=g.guardian_user_id
   where g.guardian_user_id=uid
     and g.status='verified'
+    and g.revoked_at is null
     and public.sinjira_age_band(g.minor_user_id)='child';
 
   return result;
 end;
-$$;
-revoke all on function public.guardian_junior_community_children() from public,anon;
-grant execute on function public.guardian_junior_community_children() to authenticated;
+$;
+
+revoke all on function public.guardian_junior_community_children()
+from public,anon;
+grant execute on function public.guardian_junior_community_children()
+to authenticated;
+
 
 create or replace function public.junior_community_accept_rules()
 returns jsonb
@@ -514,32 +601,66 @@ returns jsonb
 language plpgsql
 security definer
 set search_path=pg_catalog,public
-as $$
-declare uid uuid:=auth.uid(); last_activity timestamptz;
+as $
+declare
+  uid uuid:=auth.uid();
+  last_activity timestamptz;
 begin
   if uid is null then raise exception 'AUTH_REQUIRED'; end if;
-  if not public.sinjira_parent_can_supervise(uid,p_child_user_id) then raise exception 'GUARDIAN_ACCESS_REQUIRED'; end if;
 
-  select max(x.at) into last_activity
+  if not public.sinjira_parent_can_supervise(uid,p_child_user_id) then
+    raise exception 'GUARDIAN_ACCESS_REQUIRED';
+  end if;
+
+  if coalesce(auth.jwt()->>'aal','aal1')<>'aal2' then
+    raise exception 'MFA_AAL2_REQUIRED';
+  end if;
+
+  select max(x.at)
+  into last_activity
   from (
-    select max(p.created_at) at from public.junior_community_posts p where p.author_user_id=p_child_user_id
+    select max(p.created_at) at
+    from public.junior_community_posts p
+    where p.author_user_id=p_child_user_id
+
     union all
-    select max(c.created_at) at from public.junior_community_comments c where c.author_user_id=p_child_user_id
+
+    select max(c.created_at) at
+    from public.junior_community_comments c
+    where c.author_user_id=p_child_user_id
   ) x;
 
   return jsonb_build_object(
     'enabled',private.sinjira_junior_community_enabled(p_child_user_id),
     'age_band',public.sinjira_age_band(p_child_user_id),
-    'posts',(select count(*) from public.junior_community_posts p where p.author_user_id=p_child_user_id and p.status='active'),
-    'comments',(select count(*) from public.junior_community_comments c where c.author_user_id=p_child_user_id and c.status='active'),
-    'last_activity_at',last_activity,
+    'posts',(
+      select count(*)
+      from public.junior_community_posts p
+      where p.author_user_id=p_child_user_id
+        and p.status='active'
+    ),
+    'comments',(
+      select count(*)
+      from public.junior_community_comments c
+      where c.author_user_id=p_child_user_id
+        and c.status='active'
+    ),
+    'last_activity_date',
+      case
+        when last_activity is null then null
+        else (timezone('UTC',last_activity))::date
+      end,
     'content_visible_to_guardian',false,
     'private_messages_available',false
   );
 end;
-$$;
-revoke all on function public.junior_guardian_summary(uuid) from public,anon;
-grant execute on function public.junior_guardian_summary(uuid) to authenticated;
+$;
+
+revoke all on function public.junior_guardian_summary(uuid)
+from public,anon;
+grant execute on function public.junior_guardian_summary(uuid)
+to authenticated;
+
 
 comment on function public.sinjira_junior_community_enabled() is
 'Communauté Junior activée uniquement pour un compte child 11–12 avec lien tuteur vérifié et consentement Junior non révoqué.';
