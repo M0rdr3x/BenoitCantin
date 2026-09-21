@@ -39,7 +39,7 @@ Pour chaque migration :
 
 ---
 
-## Lot A — Mode Voyage (3)
+## Lot A — Mode Voyage, noyau initial (3)
 
 ### A1 — Bornage du signal géographique
 
