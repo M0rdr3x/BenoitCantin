@@ -9,7 +9,7 @@ create or replace function public.enforce_sinjira_account_safety_age()
 returns trigger
 language plpgsql
 security definer
-set search_path=public
+set search_path=pg_catalog,public
 as $$
 declare years integer;
 begin
@@ -107,7 +107,7 @@ returns text
 language sql
 stable
 security definer
-set search_path=public,auth
+set search_path=pg_catalog,public,auth
 as $$
   select case
     when exists(
@@ -152,7 +152,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path=public
+set search_path=pg_catalog,public
 as $$
   select public.sinjira_age_band(p_parent)='adult'
     and public.sinjira_age_band(p_child) in ('child','youth')
@@ -661,7 +661,7 @@ create or replace function public.handle_new_sinjira_user()
 returns trigger
 language plpgsql
 security definer
-set search_path=public
+set search_path=pg_catalog,public,auth
 as $$
 declare
   c boolean:=coalesce((new.raw_user_meta_data->>'initial_contributor_opt_in')::boolean,false);
