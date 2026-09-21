@@ -97,6 +97,12 @@ req("ifinv.idisnotnullandyears<18then" in m and "'verified','parent'" in m,
     "Le lien parent/enfant vérifié n'est pas créé après validation du code.")
 req("'verified','parent',false,inv.consented_at" in m,
     "Le lien parent/enfant initial n'est pas privacy-by-default pour les métadonnées de contacts.")
+req("createorreplacefunctionpublic.sync_guardian_signup_invite_link()" in m
+    and "can_view_contact_metadata,false,new.consented_at,null" in m
+    and "can_view_contact_metadata=false" in m,
+    "Le trigger historique de synchronisation d invitation peut encore réactiver les métadonnées parentales.")
+req("setsearch_path=pg_catalog,public" in m,
+    "Le trigger SECURITY DEFINER de synchronisation parentale n'a pas un search_path borné.")
 req("bandnotin('child_pending','youth_pending','youth')" in rm,
     "Le RPC de rétablissement ne reconnaît pas child_pending.")
 req("g.status='verified'andg.revoked_atisnull" in rm,
