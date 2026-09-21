@@ -138,6 +138,24 @@ req("createorreplacefunctionprivate.sinjira_strip_guardian_signup_secret()" in m
     "La migration d'introduction enfant conserve encore guardian_code dans les métadonnées Auth.")
 req("updateauth.userssetraw_user_meta_data=coalesce(raw_user_meta_data,'{}'::jsonb)-'guardian_code'" in m,
     "La migration d'introduction enfant ne purge pas les guardian_code historiques résiduels.")
+req("createorreplacefunctionprivate.sinjira_child_sensitive_write_guard()" in m
+    and "child_action_not_available_11_12" in m
+    and "account_action_not_available_restricted" in m,
+    "La migration d'introduction enfant n'installe pas la frontière de mutations sensibles avant le premier compte 11–12.")
+req("createorreplacefunctionprivate.sinjira_child_research_consent_guard()" in m
+    and "new.participate:=false" in m
+    and "new.share_free_text:=false" in m,
+    "La migration d'introduction enfant ne force pas les consentements recherche à OFF côté base.")
+req("createpolicyplaytests_read_authorized" in m
+    and "createpolicyplaytest_participants_read_authorized" in m
+    and "public.sinjira_my_age_band()in('adult','youth')" in m,
+    "La migration d'introduction enfant n'exclut pas immédiatement child des playtests.")
+req('createpolicy"requestsowninsert"' in m
+    and "status='pending'" in m,
+    "La migration d'introduction enfant ne borne pas access_requests à self + adulte/youth + pending.")
+req('createpolicy"participantsownapply"' in m
+    and "status='applied'" in m,
+    "La migration d'introduction enfant ne borne pas playtest_participants à self + adulte/youth + applied.")
 req("bandnotin('child_pending','youth_pending','youth')" in rm,
     "Le RPC de rétablissement ne reconnaît pas child_pending.")
 req("g.status='verified'andg.revoked_atisnull" in rm,
