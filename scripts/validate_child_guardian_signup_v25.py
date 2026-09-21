@@ -156,6 +156,14 @@ req('createpolicy"requestsowninsert"' in m
 req('createpolicy"participantsownapply"' in m
     and "status='applied'" in m,
     "La migration d'introduction enfant ne borne pas playtest_participants à self + adulte/youth + applied.")
+req("createorreplacefunctionprivate.sinjira_content_policy_code(" in m
+    and "v_youthboolean:=coalesce(v_actor_bandnotin('adult','memorial'),true)" in m
+    and "coalesce(v_recipient_bandnotin('adult','memorial'),true)" in m,
+    "La migration d'introduction enfant n'active pas le classifieur de contenu fail-closed pour child/pending/inconnu.")
+req("minor_off_platform_contact" in m
+    and "minor_sexual_solicitation" in m
+    and "minor_financial_solicitation" in m,
+    "La migration d'introduction enfant ne conserve pas les refus de sollicitations mineur côté serveur.")
 req("bandnotin('child_pending','youth_pending','youth')" in rm,
     "Le RPC de rétablissement ne reconnaît pas child_pending.")
 req("g.status='verified'andg.revoked_atisnull" in rm,
