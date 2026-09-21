@@ -39,6 +39,7 @@ FILES = {
     "demo_html": ROOT / "projets/sinjira/romans/lire-demo.html",
     "literature_js": ROOT / "assets/js/sinjira-literature-catalog-v25.js",
     "test": ROOT / "supabase/tests/account_content_hub_v25.test.sql",
+    "child_content_test": ROOT / "supabase/tests/child_content_rating_v25.test.sql",
     "secondary_mes_lectures": ROOT / "compte/mes-lectures.html",
     "secondary_documents": ROOT / "compte/documents.html",
     "secondary_playtests": ROOT / "compte/playtests.html",
@@ -90,6 +91,7 @@ def validate(contents: dict[str, str]) -> None:
     lith = compact(contents["literature_html"])
     litj = compact(contents["literature_js"])
     test = compact(contents["test"])
+    child_content_test = compact(contents["child_content_test"])
 
     required_migration = (
         "createpolicysinjira_novels_owner_read",
@@ -120,6 +122,10 @@ def validate(contents: dict[str, str]) -> None:
         fail("CI compte: convergence des privilèges catalogue navigateur non surveillée")
     if "supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql" not in contents["workflow"]:
         fail("CI compte: durcissement self-only des helpers navigateur non surveillé")
+    if "supabase/tests/child_content_rating_v25.test.sql" not in contents["workflow"]:
+        fail("CI compte: pgTAP classement 11–12 non surveillé")
+    if "supabase test db supabase/tests/child_content_rating_v25.test.sql" not in contents["workflow"]:
+        fail("CI compte: pgTAP classement 11–12 non exécuté")
 
     for marker in (
         "createorreplacefunctionsinjira_catalog_internal.project_access_rank(",
@@ -556,6 +562,16 @@ def validate(contents: dict[str, str]) -> None:
 
     if "selectplan(43);" not in test:
         fail("pgTAP contenu: plan(43) absent")
+    if "selectplan(23);" not in child_content_test:
+        fail("pgTAP classement 11–12: plan(23) absent")
+    for marker in (
+        "anonnepeutpassonderunprojetaccountapprouvé11–12paruuid",
+        "anonnepeutpassonderundocumentaccountapprouvé11–12paruuid",
+        "unprojetaccountactifexplicitementapprouvédevientdisponible",
+        "document+projetdoublementapprouvésdeviennentdisponibles",
+    ):
+        if marker not in child_content_test:
+            fail(f"pgTAP classement 11–12: preuve navigateur absente: {marker}")
     for marker in (
         "lapolicyprojetsowner-onlyv25existe",
         "authenticatedpeutlireprojectssousrls",
@@ -640,6 +656,9 @@ def main() -> None:
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
             "migration privilèges catalogue hors paths CI":("workflow","supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql","supabase/migrations/catalog-browser-privileges-missing.sql"),
             "migration helpers navigateur hors paths CI":("workflow","supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql","supabase/migrations/browser-helper-hardening-missing.sql"),
+            "pgTAP 11–12 hors paths CI":("workflow","supabase/tests/child_content_rating_v25.test.sql","supabase/tests/child-content-rating-missing.sql"),
+            "pgTAP 11–12 non exécuté":("workflow","supabase test db supabase/tests/child_content_rating_v25.test.sql","echo child-content-rating-skipped"),
+            "oracle anon projet 11–12 non prouvé":("child_content_test","anon ne peut pas sonder un projet account approuvé 11–12 par UUID","anon oracle projet preuve retirée"),
             "écriture projet navigateur réouverte":("browser_privileges_migration","grant select on table public.projects to anon, authenticated;","grant select, insert on table public.projects to anon, authenticated;"),
             "preuve RLS access_requests self-only retirée":("test","policyname='requests own insert'","policyname='requests missing insert'"),
             "preuve RLS playtest self-only retirée":("test","policyname='participants own apply'","policyname='participants missing apply'"),
