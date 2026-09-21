@@ -437,7 +437,7 @@ conserve les OID nécessaires aux policies et les droits d’exécution requis p
 - un projet `account` n’est plus confirmable par anon via le helper 11–12;
 - un document 11–12 exige désormais aussi le rang d’accès réel du compte courant.
 
-Le pgTAP Compte passe à **43 assertions** et le pgTAP classement 11–12 à **23 assertions**.
+Le pgTAP Compte passe à **45 assertions** et le pgTAP classement 11–12 à **23 assertions**.
 
 Cette trente-sixième migration reste **non revue production**.
 
