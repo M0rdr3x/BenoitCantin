@@ -445,8 +445,9 @@ Cette trente-sixième migration reste **non revue production**.
 
 Le snapshot a volontairement détecté que plusieurs migrations non revues avaient changé depuis leurs empreintes précédentes. Elles ont été relues avant mise à jour de ce dossier; les changements sont des **resserrements**, pas des élargissements de droits :
 
-- `20260916210000_sinjira_v25_child_guardian_signup.sql` : privacy-by-default dès la première supervision, purge immédiate de `guardian_code`, visibilité tuteur bornée à la minorité; publication mémorielle publique et souhait d’anniversaire laissés à `false` par défaut (opt-in explicite);
+- `20260916210000_sinjira_v25_child_guardian_signup.sql` : privacy-by-default dès la première supervision, purge immédiate de `guardian_code`, visibilité tuteur bornée à la minorité; publication mémorielle publique et souhait d’anniversaire laissés à `false` par défaut; avant le classement explicite, le compte `child` authentifié reste aussi fermé aux projets/documents non classés;
 - `20260917223000_sinjira_v25_junior_community.sql` : révocation durable du consentement Junior, AAL2 à l’activation, retrait de l’alias Junior du résumé tuteur;
+- `20260918010000_sinjira_v25_child_sensitive_boundary.sql` : conserve la fermeture complète `projects/documents` pour `child` jusqu’à la migration de classement explicite `approved_11_12`, évitant une réouverture intermédiaire;
 - `20260918013000_sinjira_v25_child_content_rating.sql` : fermeture de l’oracle `anon` sur les projets `account` dès l’introduction du helper et exigence immédiate du rang d’accès réel pour les documents;
 - `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` : retrait de `junior_alias` du résultat parental;
 - `20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql` : métadonnées parentales minimisées dès la première exposition et identités Compte/Personnage cloisonnées;
@@ -478,9 +479,9 @@ Le snapshot de revue attend exactement **36 migrations locales futures non revue
 
 | Migration | Git blob SHA-1 |
 |---|---|
-| `20260916210000_sinjira_v25_child_guardian_signup.sql` | `231a991216e65b5120fc6568dccaa90cb1916069` |
+| `20260916210000_sinjira_v25_child_guardian_signup.sql` | `4305c8250aeb5e4de61cf868bd507a30d8e2a1c9` |
 | `20260917223000_sinjira_v25_junior_community.sql` | `64e66dc8d9c45de9ecbb1174fdb842e4444b9b6b` |
-| `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `2c8758e1ada9993645cac661f5d7676a93a31cb1` |
+| `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `d526702c0c32bda7628a37134b9f64e9c66d6351` |
 | `20260918013000_sinjira_v25_child_content_rating.sql` | `b0a2bfda90579830083d128035ee533d06dd2159` |
 | `20260918020000_sinjira_v25_account_capabilities.sql` | `0a16bfcc49e51ee2b96cb98742442ae3d00e5c76` |
 | `20260918023000_sinjira_v25_minor_content_policy_compat.sql` | `c0556e3baa218f9529f185010455984a0bc1cd03` |

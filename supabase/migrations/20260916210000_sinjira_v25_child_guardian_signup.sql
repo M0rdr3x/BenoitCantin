@@ -470,13 +470,19 @@ create trigger sinjira_child_research_consent_guard
 before insert or update on public.research_consents
 for each row execute function private.sinjira_child_research_consent_guard();
 
--- Les contenus de compte/projet non encore classés pour 11–12 ans ne sont pas délivrés au child.
--- Les contenus réellement publics restent visibles comme ils le seraient sans connexion.
+-- Avant le classement explicite 11–12, un compte child authentifié ne reçoit aucun projet/document via le catalogue.
+-- Les visiteurs anonymes conservent la lecture des contenus réellement publics; 20260918013000 rouvre ensuite uniquement le contenu explicitement approved_11_12.
 drop policy if exists "projects readable when accessible" on public.projects;
 create policy "projects readable when accessible" on public.projects for select to anon,authenticated
 using(
   status<>'draft' and (
-    visibility='public'
+    (
+      visibility='public'
+      and (
+        (select auth.uid()) is null
+        or public.sinjira_my_age_band() in ('adult','youth')
+      )
+    )
     or (
       (select auth.uid()) is not null
       and public.sinjira_my_age_band() in ('adult','youth')
@@ -493,14 +499,6 @@ using(
   and (
     (select auth.uid()) is null
     or public.sinjira_my_age_band() in ('adult','youth')
-    or (
-      public.sinjira_my_age_band()='child'
-      and access_level='public'
-      and exists(
-        select 1 from public.projects p
-        where p.id=project_id and p.visibility='public' and p.status<>'draft'
-      )
-    )
   )
 );
 

@@ -39,7 +39,16 @@ req('droppolicyifexistsplaytests_read_authorizedonpublic.playtests' in m and 'cr
 req('droppolicyifexistsplaytest_participants_read_authorizedonpublic.playtest_participants' in m and 'createpolicyplaytest_participants_read_authorizedonpublic.playtest_participantsforselecttoauthenticated' in m,'La lecture des participations Playtests ne remplace pas la politique héritée.')
 req('droppolicyifexists"participantsownselect"onpublic.playtest_participants' in m,'La politique historique "participants own select" n est pas retirée.')
 req("public.sinjira_my_age_band()in('adult','youth')and(public.is_sinjira_admin" in m,'La politique Playtests canonique n exige pas une bande standard avant les exceptions admin/historique.')
-req("public.sinjira_my_age_band()='child'" in m and "access_level='public'" in m and "p.visibility='public'" in m,'Documents child ne sont pas limités aux documents publics de projets publics.')
+projects_start=m.find('createpolicy"projectsreadablewhenaccessible"')
+projects_end=m.find('droppolicyifexists"approveddocumentsvisiblebyaccess"',projects_start)
+projects_policy=m[projects_start:projects_end] if projects_start>=0 and projects_end>projects_start else ''
+documents_start=m.find('createpolicy"approveddocumentsvisiblebyaccess"')
+documents_end=m.find('--uneseulepolitiqueselectplaytestsdoitresteractive',documents_start)
+documents_policy=m[documents_start:documents_end] if documents_start>=0 and documents_end>documents_start else ''
+req(projects_policy and "(selectauth.uid())isnullorpublic.sinjira_my_age_band()in('adult','youth')" in projects_policy,
+    'Avant le classement 11–12, la policy projets ne ferme pas child tout en conservant anon public.')
+req(documents_policy and "(selectauth.uid())isnullorpublic.sinjira_my_age_band()in('adult','youth')" in documents_policy and "sinjira_my_age_band()='child'" not in documents_policy,
+    'Avant le classement 11–12, la policy documents expose encore du contenu non classé à child.')
 
 req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in d,'get-document-url ne vérifie pas l âge serveur.')
 req("ageband==='child'" in d and "doc.child_access_status!=='approved_11_12'" in d and "doc.projects?.child_access_status!=='approved_11_12'" in d,'get-document-url ne revérifie pas le classement 11–12 document + projet.')

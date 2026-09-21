@@ -158,6 +158,9 @@ req("createpolicyplaytests_read_authorized" in m
     and "createpolicyplaytest_participants_read_authorized" in m
     and "public.sinjira_my_age_band()in('adult','youth')" in m,
     "La migration d'introduction enfant n'exclut pas immédiatement child des playtests.")
+pre_rating_read_gate="(selectauth.uid())isnullorpublic.sinjira_my_age_band()in('adult','youth')"
+req(m.count(pre_rating_read_gate)>=2,
+    "La migration d'introduction enfant expose encore à child du contenu projet/document non classé avant approved_11_12.")
 req('createpolicy"requestsowninsert"' in m
     and "status='pending'" in m,
     "La migration d'introduction enfant ne borne pas access_requests à self + adulte/youth + pending.")
