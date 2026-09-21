@@ -167,6 +167,43 @@ $$;
 revoke all on function public.sinjira_parent_can_supervise(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.sinjira_parent_can_supervise(uuid,uuid) to service_role;
 
+-- La supervision historique reste privée au compte concerné après sa majorité.
+-- L'ancien tuteur ne conserve aucune visibilité une fois la bande devenue adult.
+create or replace function public.sinjira_can_read_guardian_link(p_link_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path=pg_catalog,public
+as $guardian_visibility$
+  select coalesce((
+    select case
+      when auth.uid()=g.minor_user_id then true
+      when auth.uid()=g.guardian_user_id
+        then public.sinjira_age_band(g.minor_user_id) in (
+          'child','child_pending','youth','youth_pending'
+        )
+      else false
+    end
+    from public.guardian_links g
+    where g.id=p_link_id
+  ),false);
+$guardian_visibility$;
+
+revoke all on function public.sinjira_can_read_guardian_link(uuid)
+from public,anon,authenticated;
+grant execute on function public.sinjira_can_read_guardian_link(uuid)
+to authenticated;
+
+drop policy if exists guardian_read_parties on public.guardian_links;
+drop policy if exists guardian_read_parties_age_bounded on public.guardian_links;
+
+create policy guardian_read_parties_age_bounded
+on public.guardian_links
+for select
+to authenticated
+using (public.sinjira_can_read_guardian_link(id));
+
 -- Les codes parentaux deviennent une capacité d'accès dès l'ouverture du parcours 11 ans.
 -- Leur émission et leur relecture exigent donc AAL2 dès cette migration, sans fenêtre AAL1.
 create or replace function public.create_guardian_signup_invite()
@@ -225,6 +262,15 @@ to authenticated
 using (
   (select auth.uid())=guardian_user_id
   and coalesce(auth.jwt()->>'aal','aal1')='aal2'
+  and (
+    minor_user_id is null
+    or exists(
+      select 1
+      from public.guardian_links g
+      where g.guardian_user_id=(select auth.uid())
+        and g.minor_user_id=guardian_signup_invites.minor_user_id
+    )
+  )
 );
 
 revoke all on table public.guardian_signup_invites from anon;
@@ -318,9 +364,14 @@ where status='verified'
 
 comment on function public.create_guardian_signup_invite() is
   'V25 initial: code parental réservé à un adulte AAL2; anciens codes ouverts invalidés.';
+comment on function public.sinjira_can_read_guardian_link(uuid) is
+  'V25 initial: le compte concerné garde son historique; le tuteur ne voit le lien que tant que le compte est mineur.';
+comment on policy guardian_read_parties_age_bounded
+on public.guardian_links is
+  'V25 initial: visibilité tuteur automatiquement coupée au passage à adult.';
 comment on policy guardian_signup_invites_own_aal2
 on public.guardian_signup_invites is
-  'V25 initial: relecture code parental self-only + AAL2.';
+  'V25 initial: AAL2 self-only; invitation consommée lisible uniquement tant que le guardian_link reste visible.';
 comment on function public.revoke_guardian_link(uuid) is
   'V25 initial: tuteur AAL2 pour révoquer; mineur lié peut sortir immédiatement.';
 comment on function private.sinjira_guardian_contact_metadata_default_off() is
