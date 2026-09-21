@@ -123,6 +123,12 @@ req("altercolumncan_view_contact_metadatasetdefaultfalse" in m
     and "createtriggerguardian_contact_metadata_default_off" in m
     and "updatepublic.guardian_linkssetcan_view_contact_metadata=false" in m,
     "La migration d'introduction enfant n'impose pas privacy-by-default sur tous les guardian_links actifs.")
+req("createorreplacefunctionprivate.sinjira_strip_guardian_signup_secret()" in m
+    and "createtriggerzz_sinjira_strip_guardian_signup_secret" in m
+    and "raw_user_meta_data=coalesce(raw_user_meta_data,'{}'::jsonb)-'guardian_code'" in m,
+    "La migration d'introduction enfant conserve encore guardian_code dans les métadonnées Auth.")
+req("updateauth.userssetraw_user_meta_data=coalesce(raw_user_meta_data,'{}'::jsonb)-'guardian_code'" in m,
+    "La migration d'introduction enfant ne purge pas les guardian_code historiques résiduels.")
 req("bandnotin('child_pending','youth_pending','youth')" in rm,
     "Le RPC de rétablissement ne reconnaît pas child_pending.")
 req("g.status='verified'andg.revoked_atisnull" in rm,
