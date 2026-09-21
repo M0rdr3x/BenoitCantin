@@ -20,13 +20,16 @@ returns boolean
 language sql
 stable
 security definer
-set search_path=pg_catalog,public
+set search_path=pg_catalog,public,auth
 as $child_rating$
   select exists(
     select 1 from public.projects p
     where p.id=p_project_id
       and p.status<>'draft'
-      and p.visibility in ('public','account')
+      and (
+        p.visibility='public'
+        or (p.visibility='account' and auth.uid() is not null)
+      )
       and p.child_access_status='approved_11_12'
   );
 $child_rating$;
@@ -38,7 +41,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path=pg_catalog,public
+set search_path=pg_catalog,public,auth
 as $child_rating$
   select exists(
     select 1 from public.documents d
@@ -46,6 +49,8 @@ as $child_rating$
       and d.status='approved'
       and d.child_access_status='approved_11_12'
       and public.sinjira_child_project_available(d.project_id)
+      and public.project_access_rank(d.project_id,auth.uid())
+          >= public.document_access_rank(d.access_level)
   );
 $child_rating$;
 revoke all on function public.sinjira_child_document_available(uuid) from public;
@@ -111,6 +116,6 @@ comment on column public.projects.child_access_status is
 comment on column public.documents.child_access_status is
   'Décision humaine explicite document par document pour 11–12; le projet parent doit aussi être approuvé.';
 comment on function public.sinjira_child_project_available(uuid) is
-  'Disponibilité de contenu, sans donnée personnelle : vrai seulement pour un projet non brouillon explicitement approuvé 11–12.';
+  'Disponibilité 11–12 : projet non brouillon explicitement approuvé; anon seulement pour public, account exige une session authentifiée.';
 comment on function public.sinjira_child_document_available(uuid) is
-  'Disponibilité de contenu, sans donnée personnelle : vrai seulement si document et projet sont tous deux approuvés 11–12.';
+  'Disponibilité 11–12 : document + projet approuvés et rang d accès réel du compte courant suffisant; aucun oracle anon sur account/restricted.';

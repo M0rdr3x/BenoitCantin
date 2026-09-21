@@ -112,6 +112,7 @@ Aucune case n'est cochée ici : cette section documente une **préparation techn
 - [ ] `20260918013000_sinjira_v25_child_content_rating.sql`
   - Classement explicite projets/documents 11–12.
   - Revue prioritaire : défaut `unreviewed`, double approbation document + projet, absence d'élargissement implicite.
+  - Fenêtre transitoire : dès cette migration d’introduction, `anon` ne doit jamais confirmer un projet `account` par UUID et le helper document doit déjà exiger le rang d’accès réel; `20260921010000` réaffirme ces invariants après déplacement des helpers.
 
 - [ ] `20260918020000_sinjira_v25_account_capabilities.sql`
   - RPC self-only `public.sinjira_my_account_capabilities`.
@@ -263,6 +264,7 @@ La revue croisée des définitions et des preuves runtime confirme actuellement 
 - pour `anon` / `authenticated`, un `p_user_id` différent de `auth.uid()` retourne `0` avant toute lecture de rang;
 - le pgTAP Compte exécute réellement ce cas avec un membre authentifié ciblant l'UUID d'un autre compte et attend `0`;
 - `service_role` conserve explicitement `EXECUTE` sur le helper interne et un test runtime prouve qu'il peut calculer le rang d'un UUID explicite différent du compte JWT, afin de préserver les traitements serveur légitimes;
+- la migration d’introduction `20260918013000` applique désormais la même fermeture pour éviter toute fenêtre intermédiaire pendant le batch;
 - `anon` ne peut plus obtenir `true` sur un projet `visibility='account'` approuvé 11–12;
 - le pgTAP classement 11–12 exécute ce cas sur projet **et** document;
 - les contenus `restricted` restent fermés sans rang d'accès réel;

@@ -42,7 +42,9 @@ req('createorreplacefunctionsinjira_v25_internal.sinjira_child_project_available
 req("p.visibility='public'or(p.visibility='account'andauth.uid()isnotnull)" in h,'Le helper projet expose encore visibility=account à anon.')
 req('createorreplacefunctionsinjira_v25_internal.sinjira_child_document_available' in h,'Le helper document effectif n est pas durci après la frontière RPC.')
 req('sinjira_catalog_internal.project_access_rank(d.project_id,auth.uid())>=public.document_access_rank(d.access_level)' in h,'Le helper document ne respecte pas le rang réel du compte courant.')
-req("visibilityin('public','account')" in m,'Un projet restricted pourrait devenir Junior par simple classement.')
+req("p.visibility='public'or(p.visibility='account'andauth.uid()isnotnull)" in m,'La migration d introduction expose encore visibility=account à anon.')
+req('public.project_access_rank(d.project_id,auth.uid())>=public.document_access_rank(d.access_level)' in m,'La migration d introduction ne borne pas le helper document au rang réel.')
+req("p.visibility='public'" in m and "p.visibility='account'" in m,'Un projet restricted pourrait devenir Junior par simple classement.')
 req("public.sinjira_my_age_band()in('adult','youth')" in m and "public.sinjira_my_age_band()='child'" in m and "public.sinjira_my_age_band()<>'child'" not in m,'Les politiques de contenu ne séparent pas explicitement standard, child et restricted.')
 for legacy_policy in ('projects_public_read','projects_authenticated_read','documents_anon_read','documents_authenticated_read'):
     req(f'droppolicyifexists{legacy_policy}' in m,f'Politique SELECT héritée non retirée: {legacy_policy}.')

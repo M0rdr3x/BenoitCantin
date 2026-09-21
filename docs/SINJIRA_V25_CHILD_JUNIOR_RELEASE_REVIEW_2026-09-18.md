@@ -443,10 +443,11 @@ Cette trente-sixième migration reste **non revue production**.
 
 ### Revue réouverte après durcissements du 21 septembre 2026
 
-Le snapshot a volontairement détecté que sept migrations non revues avaient changé depuis leurs empreintes précédentes. Elles ont été relues avant mise à jour de ce dossier; les changements sont des **resserrements**, pas des élargissements de droits :
+Le snapshot a volontairement détecté que plusieurs migrations non revues avaient changé depuis leurs empreintes précédentes. Elles ont été relues avant mise à jour de ce dossier; les changements sont des **resserrements**, pas des élargissements de droits :
 
 - `20260916210000_sinjira_v25_child_guardian_signup.sql` : privacy-by-default dès la première supervision, purge immédiate de `guardian_code`, visibilité tuteur bornée à la minorité; publication mémorielle publique et souhait d’anniversaire laissés à `false` par défaut (opt-in explicite);
 - `20260917223000_sinjira_v25_junior_community.sql` : révocation durable du consentement Junior, AAL2 à l’activation, retrait de l’alias Junior du résumé tuteur;
+- `20260918013000_sinjira_v25_child_content_rating.sql` : fermeture de l’oracle `anon` sur les projets `account` dès l’introduction du helper et exigence immédiate du rang d’accès réel pour les documents;
 - `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` : retrait de `junior_alias` du résultat parental;
 - `20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql` : métadonnées parentales minimisées dès la première exposition et identités Compte/Personnage cloisonnées;
 - `20260919070000_sinjira_v25_guardian_contacts_minimization.sql` : maintien du cloisonnement sans UUID, `display_name` ni heure précise;
@@ -480,7 +481,7 @@ Le snapshot de revue attend exactement **36 migrations locales futures non revue
 | `20260916210000_sinjira_v25_child_guardian_signup.sql` | `231a991216e65b5120fc6568dccaa90cb1916069` |
 | `20260917223000_sinjira_v25_junior_community.sql` | `64e66dc8d9c45de9ecbb1174fdb842e4444b9b6b` |
 | `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `2c8758e1ada9993645cac661f5d7676a93a31cb1` |
-| `20260918013000_sinjira_v25_child_content_rating.sql` | `5cc1d572f97f080bcc43ae3d20e85b441e62b9e0` |
+| `20260918013000_sinjira_v25_child_content_rating.sql` | `b0a2bfda90579830083d128035ee533d06dd2159` |
 | `20260918020000_sinjira_v25_account_capabilities.sql` | `0a16bfcc49e51ee2b96cb98742442ae3d00e5c76` |
 | `20260918023000_sinjira_v25_minor_content_policy_compat.sql` | `c0556e3baa218f9529f185010455984a0bc1cd03` |
 | `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` | `efa9d6a29c4decfe0180e9262827022ff752f670` |

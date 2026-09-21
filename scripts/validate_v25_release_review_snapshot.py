@@ -24,7 +24,7 @@ EXPECTED_NON_REVIEWED = {
     "20260916210000_sinjira_v25_child_guardian_signup.sql": "231a991216e65b5120fc6568dccaa90cb1916069",
     "20260917223000_sinjira_v25_junior_community.sql": "64e66dc8d9c45de9ecbb1174fdb842e4444b9b6b",
     "20260918010000_sinjira_v25_child_sensitive_boundary.sql": "2c8758e1ada9993645cac661f5d7676a93a31cb1",
-    "20260918013000_sinjira_v25_child_content_rating.sql": "5cc1d572f97f080bcc43ae3d20e85b441e62b9e0",
+    "20260918013000_sinjira_v25_child_content_rating.sql": "b0a2bfda90579830083d128035ee533d06dd2159",
     "20260918020000_sinjira_v25_account_capabilities.sql": "0a16bfcc49e51ee2b96cb98742442ae3d00e5c76",
     "20260918023000_sinjira_v25_minor_content_policy_compat.sql": "c0556e3baa218f9529f185010455984a0bc1cd03",
     "20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql": "efa9d6a29c4decfe0180e9262827022ff752f670",
