@@ -103,6 +103,26 @@ req("createorreplacefunctionpublic.sync_guardian_signup_invite_link()" in m
     "Le trigger historique de synchronisation d invitation peut encore réactiver les métadonnées parentales.")
 req("setsearch_path=pg_catalog,public" in m,
     "Le trigger SECURITY DEFINER de synchronisation parentale n'a pas un search_path borné.")
+
+# Aucun intervalle moins sûr entre l'ouverture 11 ans et les migrations de convergence ultérieures.
+req("createorreplacefunctionpublic.create_guardian_signup_invite()" in m
+    and "coalesce(auth.jwt()->>'aal','aal1')<>'aal2'" in m
+    and "mfa_aal2_required" in m
+    and "notpublic.sinjira_mfa_access_allowed(uid)" in m,
+    "La migration d'introduction enfant n'exige pas AAL2 + garde MFA historique pour émettre un code parental.")
+req("createpolicyguardian_signup_invites_own_aal2" in m
+    and "(selectauth.uid())=guardian_user_id" in m
+    and "coalesce(auth.jwt()->>'aal','aal1')='aal2'" in m,
+    "La migration d'introduction enfant permet encore de relire un code parental hors AAL2.")
+req("createorreplacefunctionpublic.revoke_guardian_link(p_link_iduuid)" in m
+    and "uidnotin(r.guardian_user_id,r.minor_user_id)" in m
+    and "ifuid=r.guardian_user_idandcoalesce(auth.jwt()->>'aal','aal1')<>'aal2'" in m
+    and "uid=r.minor_user_id" not in m,
+    "La migration d'introduction enfant ne préserve pas révocation tuteur AAL2 + sortie mineur immédiate.")
+req("altercolumncan_view_contact_metadatasetdefaultfalse" in m
+    and "createtriggerguardian_contact_metadata_default_off" in m
+    and "updatepublic.guardian_linkssetcan_view_contact_metadata=false" in m,
+    "La migration d'introduction enfant n'impose pas privacy-by-default sur tous les guardian_links actifs.")
 req("bandnotin('child_pending','youth_pending','youth')" in rm,
     "Le RPC de rétablissement ne reconnaît pas child_pending.")
 req("g.status='verified'andg.revoked_atisnull" in rm,
