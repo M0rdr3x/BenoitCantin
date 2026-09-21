@@ -50,6 +50,7 @@ def validate(contents:dict[str,str])->None:
         "createorreplacefunctionpublic.sinjira_my_novel_catalog()",
         "createorreplacefunctionpublic.sinjira_private_novel_asset_for_delivery(p_novel_slugtext)",
         "service_role_required",
+        "altertableprivate.sinjira_private_novel_assetsenablerowlevelsecurity",
         "revokeallontableprivate.sinjira_private_novel_assetsfrompublic,anon,authenticated",
         "'full_access',private_asset_configuredand(owner_modeorentitled)",
         "'access_source',case",
