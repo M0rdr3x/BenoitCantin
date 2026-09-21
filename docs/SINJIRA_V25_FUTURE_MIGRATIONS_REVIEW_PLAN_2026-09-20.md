@@ -74,6 +74,7 @@ Pour chaque migration :
   - **Très sensible** : Auth, `SECURITY DEFINER`, création de lien tuteur, transition automatique à 13 ans.
   - Point de revue transitoire : dès l'ouverture du parcours 11+, émission **et lecture** des codes parentaux sous AAL2, révocation tuteur sous AAL2 avec sortie immédiate du mineur, et `can_view_contact_metadata=false` sur création/réactivation.
   - Le trigger historique `sync_guardian_signup_invite_link_trigger` doit appeler une implémentation V25 qui ne peut jamais réactiver implicitement le partage des métadonnées.
+  - `guardian_code` est une capacité à usage unique : son trigger de suppression et le nettoyage des résidus `auth.users.raw_user_meta_data` doivent exister dès cette migration, avant toute inscription 11+.
 
 - [ ] `20260917223000_sinjira_v25_junior_community.sql`
   - Crée les 3 tables Junior et les RPC de consentement, fil, publication, commentaire, signalement et résumé.
