@@ -336,7 +336,7 @@ La migration forward-only :
 
 redéfinit la synchronisation pour dériver **uniquement** de `profiles.pseudo`. Pour compatibilité, `social_profiles.display_name` reste présent mais devient un miroir du pseudonyme public. Un backfill nettoie aussi les lignes existantes qui auraient conservé un nom affiché privé.
 
-Le pgTAP enfant reste à **64 assertions** mais son assertion réseau Compte prouve maintenant trois choses à la fois : pseudo public correct, profil social nettoyé et absence de `Nom Affiché Privé` dans le résumé parental.
+Le pgTAP enfant est ensuite passé à **66 assertions** : l’assertion réseau Compte prouve le pseudo public correct, le profil social nettoyé et l’absence de `Nom Affiché Privé`; deux preuves supplémentaires vérifient aussi que l’inscription ne préactive ni la publication mémorielle publique ni les souhaits d’anniversaire/usages privés optionnels.
 
 Cette trentième migration reste **non revue production**.
 

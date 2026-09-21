@@ -636,7 +636,7 @@ select ok(
 
 select ok(
   position(
-    "values(new.id,'memorialize','peaceful',false,false)"
+    $needle$values(new.id,'memorialize','peaceful',false,false)$needle$
     in lower(pg_get_functiondef('public.handle_new_sinjira_user()'::regprocedure))
   ) > 0,
   'l inscription ne préactive jamais la publication mémorielle publique'
@@ -644,7 +644,7 @@ select ok(
 
 select ok(
   position(
-    "values(new.id,dob,sx,false,false,false,'not_specified','active')"
+    $needle$values(new.id,dob,sx,false,false,false,'not_specified','active')$needle$
     in lower(pg_get_functiondef('public.handle_new_sinjira_user()'::regprocedure))
   ) > 0,
   'l inscription ne préactive jamais les souhaits anniversaire ni les usages privés optionnels'
