@@ -37,22 +37,30 @@ returns jsonb
 language plpgsql
 security definer
 set search_path=pg_catalog,public,private
-as $$
-declare uid uuid:=auth.uid(); result jsonb;
+as $
+declare
+  uid uuid:=auth.uid();
+  result jsonb;
 begin
   if uid is null then raise exception 'AUTH_REQUIRED'; end if;
   if public.sinjira_age_band(uid)<>'adult' then raise exception 'ADULT_GUARDIAN_REQUIRED'; end if;
 
-  select coalesce(jsonb_agg(jsonb_build_object(
-    'minor_user_id',g.minor_user_id,
-    'label',coalesce(nullif(p.pseudo,''),'Compte enfant'),
-    'age_band',public.sinjira_age_band(g.minor_user_id),
-    'enabled',c.revoked_at is null and c.minor_user_id is not null,
-    'junior_alias',private.sinjira_junior_alias(g.minor_user_id)
-  ) order by p.pseudo nulls last),'[]'::jsonb)
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'minor_user_id',g.minor_user_id,
+        'label',coalesce(nullif(p.pseudo,''),'Compte enfant'),
+        'age_band',public.sinjira_age_band(g.minor_user_id),
+        'enabled',c.revoked_at is null and c.minor_user_id is not null
+      )
+      order by p.pseudo nulls last
+    ),
+    '[]'::jsonb
+  )
   into result
   from public.guardian_links g
-  left join public.profiles p on p.user_id=g.minor_user_id
+  left join public.profiles p
+    on p.user_id=g.minor_user_id
   left join public.junior_community_guardian_consents c
     on c.minor_user_id=g.minor_user_id
    and c.guardian_user_id=g.guardian_user_id
@@ -63,17 +71,18 @@ begin
 
   return result;
 end;
-$$;
+$;
 
 revoke all on function public.guardian_junior_community_children()
 from public,anon;
 grant execute on function public.guardian_junior_community_children()
 to authenticated;
 
+
 comment on function private.sinjira_junior_community_enabled(uuid) is
 'Communauté Junior V25: exige un lien tuteur vérifié non révoqué et un consentement Junior non révoqué; fail-closed en scénario multi-tuteur.';
 
 comment on function public.guardian_junior_community_children() is
-'Liste Junior parent V25: n expose que les enfants reliés au tuteur courant par un lien vérifié et non révoqué.';
+'Liste Junior parent V25: lien vérifié non révoqué, état minimal uniquement; junior_alias reste privé du contexte enfant.';
 
 commit;
