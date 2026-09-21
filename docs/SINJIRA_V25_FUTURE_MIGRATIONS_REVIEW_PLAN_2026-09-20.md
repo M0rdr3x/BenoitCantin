@@ -255,6 +255,28 @@ Cette migration appartient fonctionnellement au **Lot A — Mode Voyage**, mais 
   - Preuves attendues : pgTAP Compte à 43 assertions et classement 11–12 à 23 assertions.
   - Migration transversale B/C : revue conjointe avec la frontière RPC V25 et les policies projets/documents.
 
+### Notes de revue statique du Lot D — non approbatives
+
+La revue croisée des définitions et des preuves runtime confirme actuellement :
+
+- `sinjira_catalog_internal.project_access_rank(uuid,uuid)` conserve son OID, nécessaire aux policies RLS existantes;
+- pour `anon` / `authenticated`, un `p_user_id` différent de `auth.uid()` retourne `0` avant toute lecture de rang;
+- le pgTAP Compte exécute réellement ce cas avec un membre authentifié ciblant l'UUID d'un autre compte et attend `0`;
+- `anon` ne peut plus obtenir `true` sur un projet `visibility='account'` approuvé 11–12;
+- le pgTAP classement 11–12 exécute ce cas sur projet **et** document;
+- les contenus `restricted` restent fermés sans rang d'accès réel;
+- les wrappers publics V25 restent `SECURITY INVOKER` et délèguent aux implémentations internes durcies;
+- le workflow Compte et le workflow Communauté/accès enfant surveillent explicitement `20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql`.
+
+**Portes encore ouvertes avant toute approbation du Lot D :**
+- exécution verte des deux workflows sur un HEAD gelé;
+- reconstruction Supabase locale complète avec la migration `20260921010000`;
+- revue humaine de la sémantique `service_role` pour les appels serveur avec UUID explicite;
+- vérification que les policies RLS dépendantes continuent d'appeler le même OID après reconstruction;
+- aucune promotion reviewed/ledger par cette revue.
+
+Aucune case n'est cochée : cette section documente seulement la préparation technique.
+
 ## Portes de sortie de revue
 
 Une famille ne peut être proposée comme « revue » que si :
