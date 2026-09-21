@@ -5,7 +5,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(22);
+select plan(28);
 
 select ok(
   (select c.relrowsecurity
@@ -192,6 +192,48 @@ select ok(
   not has_function_privilege('anon', 'public.security_cancel_travel_plan(uuid)', 'EXECUTE')
   and has_function_privilege('authenticated', 'public.security_cancel_travel_plan(uuid)', 'EXECUTE'),
   'l’annulation reste réservée aux comptes authentifiés'
+);
+
+select ok(
+  to_regprocedure('sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)') is not null,
+  'l’implémentation interne de création existe'
+);
+
+select ok(
+  not has_function_privilege('anon', 'sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)', 'EXECUTE'),
+  'l’appel direct interne reste borné aux comptes authentifiés'
+);
+
+select ok(
+  position('jsonb_build_object' in lower(pg_catalog.pg_get_functiondef(
+    'sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure
+  ))) > 0
+  and position('return to_jsonb(v_row)' in lower(pg_catalog.pg_get_functiondef(
+    'sinjira_security_internal.security_create_travel_plan(timestamptz,timestamptz,text[],boolean)'::regprocedure
+  ))) = 0,
+  'l’implémentation interne de création ne renvoie plus la ligne complète'
+);
+
+select ok(
+  to_regprocedure('sinjira_security_internal.security_cancel_travel_plan(uuid)') is not null,
+  'l’implémentation interne d’annulation existe'
+);
+
+select ok(
+  not has_function_privilege('anon', 'sinjira_security_internal.security_cancel_travel_plan(uuid)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'sinjira_security_internal.security_cancel_travel_plan(uuid)', 'EXECUTE'),
+  'l’annulation interne directe reste bornée aux comptes authentifiés'
+);
+
+select ok(
+  position('jsonb_build_object' in lower(pg_catalog.pg_get_functiondef(
+    'sinjira_security_internal.security_cancel_travel_plan(uuid)'::regprocedure
+  ))) > 0
+  and position('return to_jsonb(v_row)' in lower(pg_catalog.pg_get_functiondef(
+    'sinjira_security_internal.security_cancel_travel_plan(uuid)'::regprocedure
+  ))) = 0,
+  'l’implémentation interne d’annulation ne renvoie plus la ligne complète'
 );
 
 select * from finish();
