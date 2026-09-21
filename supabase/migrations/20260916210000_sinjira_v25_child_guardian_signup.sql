@@ -789,7 +789,7 @@ begin
     on conflict(user_id) do update set date_of_birth=excluded.date_of_birth,sex=excluded.sex,updated_at=now();
 
   insert into public.account_legacy_preferences(user_id,account_after_death,final_story_tone,memorial_public_opt_in,transfer_private_story_to_family)
-    values(new.id,'memorialize','peaceful',true,false)
+    values(new.id,'memorialize','peaceful',false,false)
     on conflict(user_id) do nothing;
 
   if inv.id is not null and years<18 then
