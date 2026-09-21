@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(64);
+select plan(65);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -632,6 +632,14 @@ select ok(
     limit 1
   )),
   'un tiers ne peut pas utiliser le helper pour sonder un lien qui ne le concerne pas'
+);
+
+select ok(
+  position(
+    "values(new.id,'memorialize','peaceful',false,false)"
+    in lower(pg_get_functiondef('public.handle_new_sinjira_user()'::regprocedure))
+  ) > 0,
+  'l inscription ne préactive jamais la publication mémorielle publique'
 );
 
 select * from finish();
