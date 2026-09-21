@@ -33,7 +33,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path=pg_catalog,public
-as $
+as $guardian_sync$
 begin
   if new.used_at is not null and new.minor_user_id is not null then
     insert into public.guardian_links(
@@ -54,7 +54,7 @@ begin
   end if;
   return new;
 end;
-$;
+$guardian_sync$;
 revoke all on function public.sync_guardian_signup_invite_link()
 from public,anon,authenticated;
 
