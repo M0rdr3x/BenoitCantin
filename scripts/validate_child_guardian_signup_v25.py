@@ -474,7 +474,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(65);' in t,
+req('selectplan(66);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 req(
     t.find("request.jwt.claim.sub','20000000-0000-4000-8000-000000000011'") >= 0
@@ -523,6 +523,7 @@ for marker, message in (
     ("à18anslancientuteurnepeutpluslireleliendesupervision", "Le pgTAP ne prouve pas la fin de visibilité tuteur à la majorité."),
     ("à18anslancientuteurnepeutplusrelirelesinvitationsparentalesconsommées", "Le pgTAP ne prouve pas la fin de visibilité des invitations consommées à la majorité."),
     ("linscriptionnepréactivejamaislapublicationmémoriellepublique", "Le pgTAP ne prouve pas que memorial_public_opt_in reste désactivé par défaut."),
+    ("linscriptionnepréactivejamaislessouhaitsanniversairenilesusagesprivésoptionnels", "Le pgTAP ne prouve pas que birthday_greeting_opt_in et les usages privés restent désactivés par défaut."),
     ("letuteurnepeutpaslirelesmétadonnéesdecontactssansconsentementexplicite", "Le pgTAP ne prouve pas le refus sans consentement contacts."),
     ("letuteuraal1nepeutpaslirelesmétadonnéesdecontactsjeunesse", "Le pgTAP ne prouve pas le step-up AAL2 pour les contacts jeunesse."),
     ("letuteuravecconsentementexpliciteetaal2peutlireuniquementlesmétadonnéesdecontactsjeunesse", "Le pgTAP ne prouve pas le parcours contacts autorisé sous consentement + AAL2."),
