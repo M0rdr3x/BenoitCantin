@@ -785,7 +785,7 @@ begin
     on conflict(user_id) do nothing;
 
   insert into public.account_safety_profiles(user_id,date_of_birth,sex,birthday_greeting_opt_in,real_life_to_fiction_opt_in,relationship_data_opt_in,relationship_status,legacy_status)
-    values(new.id,dob,sx,true,false,false,'not_specified','active')
+    values(new.id,dob,sx,false,false,false,'not_specified','active')
     on conflict(user_id) do update set date_of_birth=excluded.date_of_birth,sex=excluded.sex,updated_at=now();
 
   insert into public.account_legacy_preferences(user_id,account_after_death,final_story_tone,memorial_public_opt_in,transfer_private_story_to_family)
