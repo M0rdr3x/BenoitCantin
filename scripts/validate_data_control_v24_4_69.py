@@ -35,10 +35,12 @@ def main():
         "s.from('playtest_participants')","s.from('sinjira_reader_library')","s.from('character_submissions')",
         "s.from('parallel_character_state')","s.from('private_family_links')","s.from('guardian_links')",
         "s.from('social_real_messages')","s.from('social_character_messages')",
-        "s.rpc('privacy_export_my_extended_data')","sections.extended_private=data||{}",
+        "['extended_private','privacy_export_my_extended_data']","['private_profile','private_profile_get']",
+        "const totalSteps=entries.length+rpcExports.length","const {data,error}=await s.rpc(rpc)","sections[section]=data??{}",
         "format:'SINJIRA_USER_EXPORT_V24_4_83'",
-        "s.functions.invoke('delete-player-account'","confirm:'SUPPRIMER MON COMPTE'",
-        "data?.code==='OWNER_OR_ADMIN_DELETE_BLOCKED'","data?.code==='MFA_REQUIRED'","data?.code==='LEGAL_HOLD_ACTIVE'",
+        "s.functions.invoke('delete-player-account'","phrase!=='SUPPRIMER MON COMPTE'","confirm:'SUPPRIMER MON COMPTE'",
+        "async function edgeErrorData(error)","const responseData=error?(await edgeErrorData(error)):(data||null)",
+        "responseData?.code==='OWNER_OR_ADMIN_DELETE_BLOCKED'","responseData?.code==='MFA_REQUIRED'","responseData?.code==='LEGAL_HOLD_ACTIVE'",
         "auth.signOut({scope:'local'})",
     ],'runtime contrôle des données V24.4.83')
 

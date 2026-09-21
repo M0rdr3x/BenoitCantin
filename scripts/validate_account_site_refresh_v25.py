@@ -345,7 +345,7 @@ def validate(contents: dict[str, str]) -> None:
         "label.endswith('_legacy')",
         "complete:errors.length===0",
         "exportpartieltéléchargé",
-        "supprimermoncompte",
+        "phrase!=='supprimermoncompte'",
         "functions.invoke('delete-player-account',{body:{confirm:'supprimermoncompte'}})",
         "asyncfunctionedgeerrordata(error)",
         "constresponsedata=error?(awaitedgeerrordata(error)):(data||null)",
