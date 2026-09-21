@@ -361,6 +361,7 @@ def validate(contents: dict[str, str]) -> None:
     for marker in (
         "functioncreateformlock(form)",
         "constpermanentlydisabled=newset([...form.elements].filter(el=>el.disabled))",
+        "if(permanentlydisabled.has(el)){el.disabled=true;continue}",
         "constsetlocked=createformlock(form);setlocked(true);const{data,error}=awaits.from(table)",
         "setlocked(false)",
         "if(save&&tablemissing(save)){ready=false;setlocked(true)}",
