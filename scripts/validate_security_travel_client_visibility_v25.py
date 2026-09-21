@@ -129,9 +129,11 @@ def validate(
         if "from public, anon" not in block or "to authenticated, service_role" not in block:
             errors.append(f"{label}: ACL directe interne inattendue")
 
-    for key in ("id", "status", "starts_at", "ends_at", "destinations"):
+    for key in ("id", "status", "starts_at", "ends_at"):
         if f"'{key}',v_row.{key}" not in internal_create:
             errors.append(f"création interne: clé minimale absente: {key}")
+    if "'destinations',to_jsonb(v_row.destinations)" not in internal_create:
+        errors.append("création interne: clé minimale absente: destinations")
     for key in ("user_id", "delete_after", "created_at", "updated_at", "cancelled_at", "multi_country"):
         if f"'{key}'," in internal_create:
             errors.append(f"création interne: clé serveur exposée: {key}")
