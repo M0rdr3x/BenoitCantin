@@ -95,6 +95,8 @@ req("years<18andresidence_countrynotin('canada','ca','can')" in m and 'youth_jur
     "La porte de juridiction jeunesse Canada n'est pas conservée côté serveur.")
 req("ifinv.idisnotnullandyears<18then" in m and "'verified','parent'" in m,
     "Le lien parent/enfant vérifié n'est pas créé après validation du code.")
+req("'verified','parent',false,inv.consented_at" in m,
+    "Le lien parent/enfant initial n'est pas privacy-by-default pour les métadonnées de contacts.")
 req("bandnotin('child_pending','youth_pending','youth')" in rm,
     "Le RPC de rétablissement ne reconnaît pas child_pending.")
 req("g.status='verified'andg.revoked_atisnull" in rm,
