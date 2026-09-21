@@ -32,7 +32,7 @@ EXPECTED_NON_REVIEWED = {
     "20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql": "e14c41364246929054282bccb0e4abc5641b8643",
     "20260919023000_sinjira_v25_guardian_invite_aal2.sql": "5700bfaa2b5a95d84d37ad475524960bdb78fc9b",
     "20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql": "f08102d4bc2485bc229e21076f361bf31552c928",
-    "20260919033000_sinjira_v25_guardian_invite_read_aal2.sql": "9b56b0e422f91fbb93939e03709d9afbcce0c7cf",
+    "20260919033000_sinjira_v25_guardian_invite_read_aal2.sql": "b2439fbad69798db42c17a04887dff50d9f184cc",
     "20260919040000_sinjira_v25_junior_enable_aal2.sql": "df5475777abd5bb8fff26510a727d3d04cffce53",
     "20260919043000_sinjira_v25_guardian_revoke_aal2.sql": "7dada317202bdd1add1d4dc5113e3aca682459e4",
     "20260919050000_sinjira_v25_guardian_majority_visibility.sql": "d7a65f65e1a870620809f1a2e669ef031d6f6d8a",

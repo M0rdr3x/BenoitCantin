@@ -148,6 +148,7 @@ Aucune case n'est cochée ici : cette section documente une **préparation techn
 
 - [ ] `20260919033000_sinjira_v25_guardian_invite_read_aal2.sql`
   - Lecture des codes parentaux bornée self-only + AAL2.
+  - Fenêtre transitoire fermée : la policy conserve aussi dès cette migration la borne de majorité des invitations consommées; `20260919053000` ne doit pas être nécessaire pour réparer une réouverture intermédiaire.
 
 - [ ] `20260919040000_sinjira_v25_junior_enable_aal2.sql`
   - Activation Junior exige AAL2; désactivation reste possible sans step-up.

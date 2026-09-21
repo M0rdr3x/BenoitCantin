@@ -12,6 +12,15 @@ to authenticated
 using (
   (select auth.uid())=guardian_user_id
   and coalesce(auth.jwt()->>'aal','aal1')='aal2'
+  and (
+    minor_user_id is null
+    or exists(
+      select 1
+      from public.guardian_links g
+      where g.guardian_user_id=(select auth.uid())
+        and g.minor_user_id=guardian_signup_invites.minor_user_id
+    )
+  )
 );
 
 revoke all on table public.guardian_signup_invites from anon;
@@ -19,4 +28,4 @@ grant select on table public.guardian_signup_invites to authenticated;
 
 comment on policy guardian_signup_invites_own_aal2
 on public.guardian_signup_invites is
-  'V25: un tuteur ne peut relire ses codes parentaux qu en session AAL2; RLS self-only + step-up.';
+  'V25: AAL2 self-only; un code non consommé reste lisible au tuteur, une invitation consommée reste lisible uniquement tant que le guardian_link associé est encore visible avant la majorité.';

@@ -214,6 +214,10 @@ req("createpolicyguardian_signup_invites_own_aal2" in grm
     and "coalesce(auth.jwt()->>'aal','aal1')='aal2'" in grm
     and "(selectauth.uid())=guardian_user_id" in grm,
     "La lecture des codes parentaux n'est pas bornée self-only + AAL2 par RLS.")
+req("minor_user_idisnullorexists(select1frompublic.guardian_linksg" in grm
+    and "g.guardian_user_id=(selectauth.uid())" in grm
+    and "g.minor_user_id=guardian_signup_invites.minor_user_id" in grm,
+    "La migration AAL2 de lecture réouvre transitoirement les invitations consommées après majorité.")
 req("droppolicyifexistsguardian_signup_invites_ownonpublic.guardian_signup_invites" in grm,
     "L'ancienne policy AAL1 de lecture des codes parentaux n'est pas retirée.")
 req("createorreplacefunctionpublic.revoke_guardian_link(p_link_iduuid)" in grv,
