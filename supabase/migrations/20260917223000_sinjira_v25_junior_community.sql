@@ -69,7 +69,7 @@ returns text
 language sql
 stable
 security definer
-set search_path=public,auth
+set search_path=pg_catalog,public,auth
 as $self_age$
   select public.sinjira_age_band(auth.uid());
 $self_age$;
@@ -83,7 +83,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path=public
+set search_path=pg_catalog,public
 as $junior$
   select p_user_id is not null and public.sinjira_age_band(p_user_id)='child';
 $junior$;
@@ -123,7 +123,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path=public
+set search_path=pg_catalog,public
 as $junior$
   select exists(
     select 1
