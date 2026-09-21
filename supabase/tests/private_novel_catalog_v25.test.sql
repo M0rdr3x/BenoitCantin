@@ -41,7 +41,7 @@ insert into auth.users(id,email,raw_user_meta_data)
 values
 (
   'c1000000-0000-4000-8000-000000000001',
-  'kingtyrano@gmail.com',
+  'private-novel-owner@example.test',
   jsonb_build_object(
     'birth_date',(current_date-interval '42 years')::date::text,
     'date_of_birth',(current_date-interval '42 years')::date::text,
@@ -79,10 +79,11 @@ values
 delete from public.account_safety_profiles
 where user_id='c3000000-0000-4000-8000-000000000003';
 
--- Le catalogue créateur doit dépendre de l'autorité canonique is_sinjira_owner,
--- pas d'une ligne auxiliaire internal_admin_users.
-delete from public.internal_admin_users
-where user_id='c1000000-0000-4000-8000-000000000001';
+-- Le catalogue créateur dépend de l'autorité canonique is_sinjira_owner :
+-- rôle explicite owner + RLS self-only, jamais d'une adresse courriel spéciale.
+insert into public.internal_admin_users(user_id,role)
+values('c1000000-0000-4000-8000-000000000001','owner')
+on conflict(user_id) do update set role=excluded.role;
 
 insert into public.sinjira_novels(
   id,slug,title,status,sort_order,comments_enabled

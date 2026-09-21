@@ -50,7 +50,7 @@ def main():
         raise AssertionError('page paramètres: version settings V69+ absente')
     require(page,[
         'Les comptes propriétaire et administrateur sont protégés',
-        'L’export indique explicitement s’il est complet','v24-data-control.js?v=24.4.83',
+        'L’export indique explicitement s’il est complet','v24-data-control.js?v=25.0.2',
         'Points SINJIRA™','Rencontres/Safe Meet','Centre Vie privée'
     ],'page paramètres V24.4.83')
     if 'sinjira-account.js?v=25.' not in page:
