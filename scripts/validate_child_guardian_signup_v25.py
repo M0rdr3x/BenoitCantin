@@ -105,7 +105,8 @@ req("ifinv.idisnotnullandyears<18then" in m and "'verified','parent'" in m,
 req("'verified','parent',false,inv.consented_at" in m,
     "Le lien parent/enfant initial n'est pas privacy-by-default pour les métadonnées de contacts.")
 req("createorreplacefunctionpublic.sync_guardian_signup_invite_link()" in m
-    and "can_view_contact_metadata,false,new.consented_at,null" in m
+    and "can_view_contact_metadata,consented_at,revoked_at" in m
+    and "false,new.consented_at,null" in m
     and "can_view_contact_metadata=false" in m,
     "Le trigger historique de synchronisation d invitation peut encore réactiver les métadonnées parentales.")
 req("setsearch_path=pg_catalog,public" in m,
