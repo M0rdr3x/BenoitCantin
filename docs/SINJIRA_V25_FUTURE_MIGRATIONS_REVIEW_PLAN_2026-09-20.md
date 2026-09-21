@@ -61,7 +61,27 @@ Pour chaque migration :
   - Revue prioritaire : vérifier que le navigateur ne voit que ses propres plans actifs/non expirés et que les détails de rétention restent serveur.
   - Point sensible : ACL, RLS, `auth.uid()`, remplacement de frontière publique.
 
-**Ordre de revue recommandé : A1 → A2 → A3.**
+**Ordre de revue recommandé : A1 → A2 → A3, puis le correctif forward-only `20260921005000`.**
+
+### Notes de revue statique du lot A — non approbatives
+
+Relecture technique effectuée sur la branche d'intégration, sans modifier le statut des cases ci-dessus :
+
+- `security_risk_score_v25` ne contient plus aucun bonus global lié à `p_travel_match`; le paramètre est conservé uniquement pour compatibilité.
+- `security_evaluate_context` neutralise `unexpected_region` uniquement lorsqu'un voyage actif correspond, tandis que `impossible_travel` reste indépendant et force un challenge.
+- Le pgTAP `security_travel_scope_v25.test.sql` prouve qu'un voyage ne réduit ni appareil inconnu, ni action sensible, ni récupération récente, ni voyage impossible.
+- La purge dédiée supprime uniquement les lignes dont `delete_after` est échu, ne reçoit aucun instant arbitraire et n'est exécutable que par `service_role`.
+- La table `security_travel_plans` reste RLS; le navigateur authentifié ne reçoit que `SELECT`, self-only, statut `active`, non expiré; aucun DML direct n'est accordé.
+- La revue a découvert que les fonctions `sinjira_security_internal` restaient directement exécutables par `authenticated` et pouvaient contourner la redaction des wrappers en renvoyant la ligne complète.
+- Le correctif forward-only `20260921005000` minimise donc également les réponses internes. Les tests de visibilité passent à 28 assertions et les gardes self-only/visibilité lisent maintenant la définition finale effective.
+
+**Portes encore ouvertes avant toute approbation du lot A :**
+- exécution verte des workflows Mode Voyage sur le HEAD gelé;
+- reconstruction Supabase locale complète avec la migration `20260921005000`;
+- revue humaine du diff SQL final et des 28 assertions pgTAP;
+- confirmation séparée qu'aucune promotion reviewed/ledger n'est effectuée par cette revue.
+
+Aucune case n'est cochée ici : cette section documente une **préparation technique de revue**, pas une approbation.
 
 ---
 
