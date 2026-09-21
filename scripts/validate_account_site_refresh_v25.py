@@ -560,8 +560,8 @@ def validate(contents: dict[str, str]) -> None:
     if "sinjira-reader.js?v=25.0.3" not in contents["demo_html"]:
         fail("lecteur démo: cache lecteur V25.0.3 absent")
 
-    if "selectplan(43);" not in test:
-        fail("pgTAP contenu: plan(43) absent")
+    if "selectplan(45);" not in test:
+        fail("pgTAP contenu: plan(45) absent")
     if "selectplan(23);" not in child_content_test:
         fail("pgTAP classement 11–12: plan(23) absent")
     for marker in (
@@ -594,6 +594,8 @@ def validate(contents: dict[str, str]) -> None:
         "project_access_rankpublicestunwrappersecurityinvoker",
         "authenticatednepeutpassonderdirectementlerangprojet",
         "unmembrenepeutpassonderlerangprojetd’unautrecompte",
+        "service_roleconserveexecutesurlehelperinternederangprojet",
+        "service_rolepeutencorecalculerlerangd’unuuidexplicitedifférentducomptejwt",
         "lecomptecourantconservesonproprerangadminvialehelperinterne",
         "lespoliciesprojects/documentsconserventloiddhelperdéplacé".replace("dhelper","duhelper"),
         "lecréateurvoitsonromanbrouillon",
