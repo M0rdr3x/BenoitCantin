@@ -99,7 +99,7 @@ req('paid_sexual_content' in v82.lower() and 'human_trafficking' in v82.lower() 
 req('select plan(31);' in test,'Plan pgTAP V83 inattendu.')
 req('SINJIRA_MINIMUM_AGE_11' in test and 'YOUTH_JURISDICTION_NOT_ENABLED' in test and "'sinjira_content_policy_guard'" in test and "'dating_profiles_adult_only'" in test,'Les tests V83/V25 ne protègent pas le minimum 11 ans, les gates jeunesse ou V82.')
 req(
-    'select plan(66);' in child_test_lower
+    'select plan(67);' in child_test_lower
     and 'sinjira_minimum_age_11' in child_test_lower
     and "'child','la veille des 13 ans" in child_test_lower
     and "'youth','le jour des 13 ans" in child_test_lower

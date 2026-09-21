@@ -184,6 +184,8 @@ req("updatepublic.social_profilessp" in m
     "La migration d'introduction enfant ne neutralise pas immédiatement les profils sociaux historiques.")
 req("bandnotin('child_pending','youth_pending','youth')" in rm,
     "Le RPC de rétablissement ne reconnaît pas child_pending.")
+req("perform1frompublic.account_safety_profilesswheres.user_id=uidforupdate" in rm,
+    "Le RPC de rétablissement ne sérialise pas les consommations concurrentes pour un même compte.")
 req("g.status='verified'andg.revoked_atisnull" in rm,
     "Le RPC de rétablissement ne distingue pas un lien réellement actif d'un lien révoqué.")
 req("updatepublic.guardian_signup_invitessetused_at=now(),minor_user_id=uid" in rm,
@@ -477,7 +479,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(66);' in t,
+req('selectplan(67);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 req(
     t.find("request.jwt.claim.sub','20000000-0000-4000-8000-000000000011'") >= 0
@@ -507,6 +509,7 @@ for marker, message in (
     ("revoked_atseulsuffitàretirerlasupervisionparentale", "Le test ne prouve pas le fail-closed sur revoked_at pour la supervision."),
     ("unenfantde11anssanslientuteuractifdevientchild_pending", "Le test ne prouve pas le passage 11–12 vers child_pending après révocation."),
     ("child_pendingpeutconsommerunnouveaucodeparentalvalide", "Le test ne prouve pas le rétablissement de supervision depuis child_pending."),
+    ("lerétablissementparentalsérialiselesconsommationsconcurrentespourunmêmecompte", "Le pgTAP ne prouve pas le verrou transactionnel du rétablissement parental."),
     ("laconsommationdunouveaucoderétablitimmédiatementlabandechild", "Le test ne prouve pas le retour immédiat à child."),
     ("lelientuteurrévoquéestréactivéproprementenverifiednonrévoqué", "Le test ne prouve pas la réactivation propre du lien tuteur."),
     ("lenouveaucodeestconsomméuneseulefoisparlecomptechild_pending", "Le test ne prouve pas la consommation unique du code de rétablissement."),

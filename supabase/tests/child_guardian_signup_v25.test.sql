@@ -2,12 +2,22 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(66);
+select plan(67);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
 select ok(to_regprocedure('public.sinjira_age_band(uuid)') is not null,'classification d âge existe');
 select ok(to_regprocedure('public.sinjira_parent_can_supervise(uuid,uuid)') is not null,'contrôle de supervision existe');
+
+select ok(
+  position('account_safety_profiles' in lower(pg_catalog.pg_get_functiondef(
+    'sinjira_v25_internal.redeem_guardian_signup_invite(text)'::regprocedure
+  ))) > 0
+  and position('for update' in lower(pg_catalog.pg_get_functiondef(
+    'sinjira_v25_internal.redeem_guardian_signup_invite(text)'::regprocedure
+  ))) > 0,
+  'le rétablissement parental sérialise les consommations concurrentes pour un même compte'
+);
 select ok(not has_function_privilege('authenticated','public.sinjira_age_band(uuid)','EXECUTE'),'authenticated ne peut pas sonder la bande âge d un UUID arbitraire');
 select ok(has_function_privilege('authenticated','public.sinjira_my_age_band()','EXECUTE'),'authenticated peut lire uniquement sa propre bande âge');
 select ok(has_function_privilege('anon','public.sinjira_my_age_band()','EXECUTE'),'anon peut évaluer uniquement sa propre bande self-only pour les RLS publiques');

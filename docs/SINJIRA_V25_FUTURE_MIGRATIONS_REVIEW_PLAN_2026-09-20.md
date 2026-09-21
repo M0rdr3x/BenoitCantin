@@ -131,6 +131,7 @@ Aucune case n'est cochée ici : cette section documente une **préparation techn
 - [ ] `20260919013000_sinjira_v25_child_pending_guardian_redeem.sql`
   - Rétablissement depuis `child_pending` via code parental.
   - Revue prioritaire : ne jamais ajouter implicitement un tuteur à un compte déjà supervisé.
+  - Concurrence : sérialiser les consommations sur la ligne `account_safety_profiles` du compte avant de recalculer sa bande; deux codes distincts ne doivent jamais pouvoir créer deux liens `verified` à partir du même état pending observé en parallèle.
 
 - [ ] `20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql`
   - Trigger de révocation durable du consentement Junior.

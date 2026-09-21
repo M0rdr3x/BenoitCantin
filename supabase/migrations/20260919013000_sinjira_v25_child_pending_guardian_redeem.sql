@@ -17,6 +17,15 @@ declare
 begin
   if uid is null then raise exception 'AUTH_REQUIRED'; end if;
 
+  -- Sérialise toutes les consommations de code pour un même compte. Sans ce verrou,
+  -- deux invitations de tuteurs différents pourraient lire child_pending en parallèle
+  -- puis créer deux liens verified avant que la bande d'âge ne soit recalculée.
+  perform 1
+  from public.account_safety_profiles s
+  where s.user_id=uid
+  for update;
+  if not found then raise exception 'YOUTH_ACCOUNT_REQUIRED'; end if;
+
   band:=public.sinjira_age_band(uid);
 
   -- V25 : child_pending est désormais une bande de premier ordre.
@@ -72,4 +81,4 @@ revoke all on function public.redeem_guardian_signup_invite(text) from public,an
 grant execute on function public.redeem_guardian_signup_invite(text) to authenticated;
 
 comment on function public.redeem_guardian_signup_invite(text) is
-  'V25: consomme un code parental à usage unique pour rétablir une supervision child_pending/youth_pending; child déjà supervisé reste fermé.';
+  'V25: rétablissement sérialisé par compte via verrou account_safety_profiles; consomme un code parental à usage unique uniquement depuis un état pending admissible, sans ajout concurrent implicite de tuteur.';
