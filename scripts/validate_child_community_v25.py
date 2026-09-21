@@ -84,7 +84,7 @@ req('createorreplacefunctionpublic.sinjira_is_junior(p_user_iduuid' not in m,'Un
 req('createorreplacefunctionpublic.sinjira_my_age_band()' in m and 'securitydefiner' in m[m.find('createorreplacefunctionpublic.sinjira_my_age_band()'):m.find('--helpersarbitraires')],'Le wrapper sinjira_my_age_band n est pas SECURITY DEFINER dans la dernière migration Junior.')
 req('revokeallonfunctionpublic.sinjira_my_age_band()frompublic,anon,authenticated' in m and 'grantexecuteonfunctionpublic.sinjira_my_age_band()toanon,authenticated,service_role' in m,'ACL finale du wrapper self-only incompatible avec les RLS publiques.')
 req('as$self_age$selectpublic.sinjira_age_band(auth.uid());$self_age$;' in m,'Le wrapper sinjira_my_age_band historique doit utiliser un délimiteur SQL nommé valide.')
-req('createorreplacefunctionpublic.sinjira_my_age_band()returnstextlanguagesqlstablesecuritydefinersetsearch_path=pg_catalog,public,authas$self_age
+req('createorreplacefunctionpublic.sinjira_my_age_band()returnstextlanguagesqlstablesecuritydefinersetsearch_path=pg_catalog,public,authas$self_age$selectpublic.sinjira_age_band(auth.uid());$self_age$;' in m,'Le wrapper sinjira_my_age_band initial doit rester self-only, SECURITY DEFINER et borné par search_path.')
 for marker in (
     'createschemaifnotexistssinjira_v25_internal',
     "'sinjira_my_age_band'",
