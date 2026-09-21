@@ -385,7 +385,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path=pg_catalog,public,auth
-as $
+as $$
 declare
   uid uuid:=auth.uid();
   result jsonb;
@@ -472,7 +472,7 @@ begin
 
   return result;
 end;
-$;
+$$;
 
 revoke all on function public.get_guardian_youth_contacts(uuid)
 from public,anon;
@@ -480,7 +480,8 @@ grant execute on function public.get_guardian_youth_contacts(uuid)
 to authenticated;
 
 comment on function public.get_guardian_youth_contacts(uuid) is
-  'V25 dès première exposition: supervision active + opt-in jeunesse + AAL2;
+  'V25 dès première exposition: supervision active + opt-in jeunesse + AAL2; identité Compte/Personnage cloisonnée; renvoie seulement contact_label, network et last_contact_date. Aucun UUID, display_name, heure précise ou contenu.';
+
 
 -- IMPORTANT : cette frontière est volontairement installée avant le hook de création
 -- de compte enfant. Une migration ultérieure la réapplique comme convergence, mais aucun
