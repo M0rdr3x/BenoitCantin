@@ -29,6 +29,11 @@ create table if not exists private.sinjira_private_novel_assets(
     )
 );
 
+-- Défense en profondeur dès la création : même si le schéma privé devenait
+-- accidentellement atteignable, aucune policy membre n'autorise la lecture.
+alter table private.sinjira_private_novel_assets
+  enable row level security;
+
 revoke all on table private.sinjira_private_novel_assets from public,anon,authenticated;
 grant select,insert,update,delete on table private.sinjira_private_novel_assets to service_role;
 
