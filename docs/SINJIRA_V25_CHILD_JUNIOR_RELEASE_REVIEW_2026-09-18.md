@@ -401,9 +401,28 @@ Aucune création/modification de projet, décision de demande, approbation de ca
 
 Cette trente-quatrième migration reste **non revue production**.
 
+### Minimisation de la réponse interne du Mode Voyage
+
+La revue statique du Mode Voyage a montré une asymétrie de confidentialité : les wrappers publics `SECURITY INVOKER` construisaient une réponse minimale, mais leurs implémentations `sinjira_security_internal` restaient directement exécutables par `authenticated` afin que les wrappers puissent fonctionner. La fonction interne de création renvoyait encore `to_jsonb(v_row)`, donc la ligne complète, incluant des métadonnées serveur comme `user_id` et `delete_after`.
+
+La migration forward-only :
+
+`20260921005000_sinjira_v25_travel_mode_internal_response_minimization.sql`
+
+ne retire aucun garde métier. Elle conserve l'identité dérivée de `auth.uid()`, AAL2 lorsque disponible, validation ISO alpha-2, déduplication, limite de 1 à 12 pays, période maximale de 180 jours, self-only à l'annulation et rétention serveur. Elle réduit uniquement les réponses directes des fonctions internes :
+
+- création : `id`, `status`, `starts_at`, `ends_at`, `destinations`;
+- annulation : `id`, `status`.
+
+Ainsi, un appel direct à l'implémentation interne ne peut plus contourner la minimisation du wrapper public pour obtenir `user_id`, `delete_after`, `cancelled_at`, timestamps techniques ou `multi_country`.
+
+Le pgTAP `security_travel_client_visibility_v25.test.sql` passe à **28 assertions** et vérifie désormais aussi l'existence, les ACL et l'absence de retour `to_jsonb(v_row)` des implémentations internes effectives. Les garde-fous `validate_security_travel_client_visibility_v25.py` et `validate_security_travel_self_only_v25.py` lisent explicitement cette migration finale.
+
+Cette trente-cinquième migration reste **non revue production**.
+
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **34 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **35 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -412,6 +431,7 @@ Le snapshot de revue attend exactement **34 migrations locales futures non revue
 | `20260913030500_sinjira_v25_travel_mode_geo_scope_hardening.sql` | `7285d1e30ea288004d17c1dbfbf9f01662b36bb7` |
 | `20260913230000_sinjira_v25_travel_mode_retention_purge.sql` | `41b8dc3d1b1e09c018e588755edb053e63e9904a` |
 | `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` | `b08af7275d0d89b122505da413458fa9a24d2603` |
+| `20260921005000_sinjira_v25_travel_mode_internal_response_minimization.sql` | `1653597f4c9fe053a1b691fe810a3d1b8ca60955` |
 
 ### Enfant 11–12 / Junior
 
@@ -492,7 +512,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **34 migrations** dans l’ordre.
+2. Relire les **35 migrations** dans l’ordre chronologique canonique; la migration `20260921005000` appartient fonctionnellement au lot Mode Voyage mais reste la dernière par timestamp.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.
