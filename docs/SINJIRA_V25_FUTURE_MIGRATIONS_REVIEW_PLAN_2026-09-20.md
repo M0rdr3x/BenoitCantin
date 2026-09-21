@@ -28,6 +28,8 @@ Pour chaque migration :
 - [ ] vérifier les policies RLS et leur comportement `anon` / `authenticated` / `service_role`;
 - [ ] vérifier les effets de `DROP POLICY`, `DROP TRIGGER`, remplacement de fonctions et changements de privilèges;
 - [ ] vérifier les chemins de révocation, désactivation et récupération fail-closed;
+- [ ] vérifier **chaque état intermédiaire du batch** : aucune fonctionnalité ne doit être exposée avec une politique plus permissive avant qu'une migration ultérieure ne la durcisse;
+- [ ] lorsqu'une migration ultérieure remplace une fonction/policy pour la rendre plus sûre, vérifier si cette protection doit être présente dès la migration d'introduction afin d'éviter une fenêtre transitoire pendant `db push`;
 - [ ] vérifier les tests pgTAP / validateurs statiques / preuves navigateur associés;
 - [ ] reconstruire une base locale propre et exécuter les tests concernés;
 - [ ] confirmer qu'aucune donnée privée supplémentaire n'est exposée au navigateur;
@@ -70,10 +72,12 @@ Pour chaque migration :
 - [ ] `20260916210000_sinjira_v25_child_guardian_signup.sql`
   - Minimum 11 ans, bandes d'âge, supervision et hook de création utilisateur.
   - **Très sensible** : Auth, `SECURITY DEFINER`, création de lien tuteur, transition automatique à 13 ans.
+  - Point de revue transitoire : le lien tuteur doit naître avec `can_view_contact_metadata=false`; aucun opt-in implicite ne doit exister même avant les migrations de minimisation ultérieures.
 
 - [ ] `20260917223000_sinjira_v25_junior_community.sql`
   - Crée les 3 tables Junior et les RPC de consentement, fil, publication, commentaire, signalement et résumé.
   - **Très sensible** : grande surface SQL, nombreux RPC privilégiés, tables isolées, pseudonymisation, signalement/blocage.
+  - Point de revue transitoire : dès cette migration, activation Junior sous AAL2, révocation durable du consentement, exclusion des liens tuteur révoqués, aucun `junior_alias` dans la vue parent et résumé parental AAL2 réduit à une date UTC.
 
 - [ ] `20260918010000_sinjira_v25_child_sensitive_boundary.sql`
   - Frontière serveur des modules non certifiés pour 11–12 ans.
