@@ -193,6 +193,17 @@ def validate_text(text: str) -> list[str]:
             if not has_exact_line(local, "          " + command):
                 errors.append(f"Prévol local incomplet: {command}")
 
+        plan_compile_at = local.find("python -m py_compile scripts/validate_future_migration_review_plan_v25.py")
+        plan_self_test_at = local.find("python scripts/validate_future_migration_review_plan_v25.py --self-test")
+        plan_check_at = local.find("python scripts/validate_future_migration_review_plan_v25.py\n")
+        ledger_at = local.find("python scripts/validate_production_migration_ledger.py")
+        builder_at = local.find("python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase")
+        if min(plan_compile_at, plan_self_test_at, plan_check_at, ledger_at, builder_at) >= 0:
+            if not plan_compile_at < plan_self_test_at < plan_check_at < ledger_at < builder_at:
+                errors.append(
+                    "L'ordre local doit rester compilation plan → auto-test plan → validation plan → ledger → workspace protégé."
+                )
+
     remote = jobs["remote-preflight"]
     if remote:
         if not has_exact_line(remote, REMOTE_JOB_GUARD):
