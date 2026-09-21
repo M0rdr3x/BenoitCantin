@@ -109,6 +109,17 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = self.valid.replace(marker, "          echo plan-retire\n", 1)
         self.assertRejected(bad, "Prévol local incomplet")
 
+    def test_migration_review_plan_must_run_before_ledger(self):
+        plan = "          python scripts/validate_future_migration_review_plan_v25.py\n"
+        ledger = "          python scripts/validate_production_migration_ledger.py\n"
+        self.assertIn(plan, self.valid)
+        self.assertIn(ledger, self.valid)
+        temporary = "          echo __ledger_temp__\n"
+        bad = self.valid.replace(ledger, temporary, 1)
+        bad = bad.replace(plan, ledger, 1)
+        bad = bad.replace(temporary, plan, 1)
+        self.assertRejected(bad, "ordre local doit rester")
+
     def test_local_preflight_cannot_receive_secret(self):
         bad = self.valid.replace(
             "    timeout-minutes: 10\n    steps:",
