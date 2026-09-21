@@ -100,6 +100,7 @@ Aucune case n'est cochée ici : cette section documente une **préparation techn
   - Avant que `handle_new_sinjira_user()` puisse créer un compte 11–12, la frontière serveur child doit déjà refuser les mutations sensibles, maintenir la recherche/contribution à OFF et fermer playtests/contenus non classés indépendamment de la navigation.
   - Convergence transitoire : `20260916210000` et `20260918010000` gardent désormais les comptes `child` authentifiés hors de `projects/documents` jusqu’à l’introduction de `child_access_status`; l’accès 11–12 n’est rouvert qu’avec `approved_11_12` dans `20260918013000`.
   - Le classifieur serveur de contenu/messagerie doit reconnaître `child`, `child_pending` et toute bande inconnue en mode fail-closed dès cette même migration; aucun intervalle ne doit précéder `20260918023000`.
+  - La même migration remplace désormais immédiatement `get_guardian_youth_contacts()` par la version consentement explicite + AAL2 + réponse minimisée (`contact_label`, réseau, date UTC seulement), afin que l’élargissement de `sinjira_parent_can_supervise()` aux 11–12 ans ne réactive jamais l’ancien RPC plus intrusif.
 
 - [ ] `20260917223000_sinjira_v25_junior_community.sql`
   - Crée les 3 tables Junior et les RPC de consentement, fil, publication, commentaire, signalement et résumé.

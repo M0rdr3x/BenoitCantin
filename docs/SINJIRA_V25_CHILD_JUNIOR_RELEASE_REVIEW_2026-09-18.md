@@ -445,7 +445,7 @@ Cette trente-sixième migration reste **non revue production**.
 
 Le snapshot a volontairement détecté que plusieurs migrations non revues avaient changé depuis leurs empreintes précédentes. Elles ont été relues avant mise à jour de ce dossier; les changements sont des **resserrements**, pas des élargissements de droits :
 
-- `20260916210000_sinjira_v25_child_guardian_signup.sql` : privacy-by-default dès la première supervision, purge immédiate de `guardian_code`, visibilité tuteur bornée à la minorité; publication mémorielle publique et souhait d’anniversaire laissés à `false` par défaut; avant le classement explicite, le compte `child` authentifié reste aussi fermé aux projets/documents non classés;
+- `20260916210000_sinjira_v25_child_guardian_signup.sql` : privacy-by-default dès la première supervision, purge immédiate de `guardian_code`, visibilité tuteur bornée à la minorité; le RPC historique de contacts est remplacé dès cette étape par la version consentement explicite + AAL2 + réponse minimisée; publication mémorielle publique et souhait d’anniversaire restent à `false` par défaut; avant le classement explicite, le compte `child` authentifié reste aussi fermé aux projets/documents non classés;
 - `20260917223000_sinjira_v25_junior_community.sql` : révocation durable du consentement Junior, AAL2 à l’activation, retrait de l’alias Junior du résumé tuteur;
 - `20260918010000_sinjira_v25_child_sensitive_boundary.sql` : conserve la fermeture complète `projects/documents` pour `child` jusqu’à la migration de classement explicite `approved_11_12`, évitant une réouverture intermédiaire;
 - `20260918013000_sinjira_v25_child_content_rating.sql` : fermeture de l’oracle `anon` sur les projets `account` dès l’introduction du helper et exigence immédiate du rang d’accès réel pour les documents;
@@ -479,7 +479,7 @@ Le snapshot de revue attend exactement **36 migrations locales futures non revue
 
 | Migration | Git blob SHA-1 |
 |---|---|
-| `20260916210000_sinjira_v25_child_guardian_signup.sql` | `4305c8250aeb5e4de61cf868bd507a30d8e2a1c9` |
+| `20260916210000_sinjira_v25_child_guardian_signup.sql` | `7028cce5efb0985f2ab7b6ff6a61c2cd5826ae10` |
 | `20260917223000_sinjira_v25_junior_community.sql` | `64e66dc8d9c45de9ecbb1174fdb842e4444b9b6b` |
 | `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `d526702c0c32bda7628a37134b9f64e9c66d6351` |
 | `20260918013000_sinjira_v25_child_content_rating.sql` | `b0a2bfda90579830083d128035ee533d06dd2159` |

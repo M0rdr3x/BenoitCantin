@@ -140,6 +140,13 @@ req("altercolumncan_view_contact_metadatasetdefaultfalse" in m
     and "createtriggerguardian_contact_metadata_default_off" in m
     and "updatepublic.guardian_linkssetcan_view_contact_metadata=false" in m,
     "La migration d'introduction enfant n'impose pas privacy-by-default sur tous les guardian_links actifs.")
+req("createorreplacefunctionpublic.get_guardian_youth_contacts(p_child_user_iduuid)" in m
+    and "guardian_contact_metadata_not_allowed" in m
+    and "mfa_aal2_required" in m
+    and "'contact_label'" in m
+    and "'last_contact_date'" in m
+    and "'display_name'" not in m[m.find("createorreplacefunctionpublic.get_guardian_youth_contacts"):m.find("commentonfunctionpublic.get_guardian_youth_contacts")],
+    "La migration d'introduction enfant laisse le RPC historique de contacts exposer trop de métadonnées avant B5.")
 req("createorreplacefunctionprivate.sinjira_strip_guardian_signup_secret()" in m
     and "createtriggerzz_sinjira_strip_guardian_signup_secret" in m
     and "raw_user_meta_data=coalesce(raw_user_meta_data,'{}'::jsonb)-'guardian_code'" in m,
