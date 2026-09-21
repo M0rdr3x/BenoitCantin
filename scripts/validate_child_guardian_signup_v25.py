@@ -264,22 +264,26 @@ req("revokeallonfunctionpublic.set_my_guardian_contact_metadata(uuid,boolean)fro
     "Les ACL du RPC de consentement contacts ne sont pas bornées.")
 req("createorreplacefunctionpublic.get_guardian_youth_contacts(p_child_user_iduuid)" in gcm,
     "La migration de minimisation des contacts jeunesse est absente.")
-req("'pseudo',coalesce(sp.pseudo,'membresinjira')" in gcm
-    and "'networks',g.networks" in gcm
-    and "'last_contact_date',(timezone('utc',g.last_contact_at))::date" in gcm,
-    "Le résumé parental minimisé ne conserve pas exactement pseudo/réseaux/date.")
-req("'user_id',g.other_user_id" not in gcm
-    and "'display_name',sp.display_name" not in gcm
-    and "'last_contact_at',g.last_contact_at" not in gcm,
-    "Le résumé parental minimisé expose encore UUID, display_name ou timestamp précis.")
-req("leftjoinpublic.character_social_profilescsp" in gci
-    and "recipient_character_id" in gci
-    and "sender_character_id" in gci,
-    "Le résumé parental ne résout pas l'identité Personnage par character_id.")
-req("'contact_label',g.contact_label" in gci
-    and "'network',g.network" in gci
-    and "'last_contact_date',(timezone('utc',g.last_contact_at))::date" in gci,
-    "Le résumé cloisonné ne conserve pas exactement label/réseau/date.")
+for stage,label in (
+    (gca,"première exposition 190600"),
+    (gcm,"convergence 190700"),
+    (gci,"isolation 190800"),
+):
+    req("leftjoinpublic.character_social_profilescsp" in stage
+        and "recipient_character_id" in stage
+        and "sender_character_id" in stage,
+        f"Le résumé parental {label} ne cloisonne pas l'identité Personnage par character_id.")
+    req("'contact_label',g.contact_label" in stage
+        and "'network',g.network" in stage
+        and "'last_contact_date',(timezone('utc',g.last_contact_at))::date" in stage,
+        f"Le résumé parental {label} ne conserve pas exactement label/réseau/date.")
+    req("'user_id'," not in stage
+        and "'display_name'," not in stage
+        and "'last_contact_at'," not in stage
+        and "'networks'," not in stage,
+        f"Le résumé parental {label} réintroduit UUID, display_name, timestamp précis ou agrégation de réseaux.")
+    req("'pseudo'," not in stage,
+        f"Le résumé parental {label} réintroduit une clé pseudo susceptible de recoller Compte et Personnage.")
 req("createorreplacefunctionpublic.sync_social_profile_from_profile()" in spp
     and "v_public_pseudo" in spp
     and "coalesce(nullif(btrim(new.pseudo),''),'membresinjira')" in spp,
