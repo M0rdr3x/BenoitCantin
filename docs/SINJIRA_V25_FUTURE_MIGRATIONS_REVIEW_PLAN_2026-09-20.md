@@ -10,10 +10,10 @@ PR : #435
 
 ## Source de vérité du périmètre
 
-Le prévol production a identifié exactement **34 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
+Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta courant à **35 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
 
 Répartition :
-- **Lot A — Mode Voyage : 3 migrations**
+- **Lot A — Mode Voyage : 4 migrations**
 - **Lot B — Enfant / Junior / Tuteur : 22 migrations**
 - **Lot C — Compte / Catalogue / RPC : 9 migrations**
 
@@ -212,6 +212,19 @@ La migration RPC `20260919123000` doit être revue avant `20260919130000`, car l
 
 ---
 
+## Lot A — correctif forward-only découvert pendant la revue
+
+Cette migration appartient fonctionnellement au **Lot A — Mode Voyage**, mais son timestamp est postérieur aux lots B/C. Elle reste donc listée ici afin que la checklist conserve l'ordre chronologique canonique exigé par le garde automatique.
+
+- [ ] `20260921005000_sinjira_v25_travel_mode_internal_response_minimization.sql`
+  - Réduit la réponse directe des implémentations `sinjira_security_internal.security_create_travel_plan` et `security_cancel_travel_plan`.
+  - Motif : les fonctions internes restent exécutables par `authenticated` pour permettre aux wrappers publics `SECURITY INVOKER` de fonctionner; elles ne doivent donc jamais retourner davantage de données que les wrappers publics.
+  - Revue prioritaire : confirmer que les gardes AAL2, validation ISO, durée <= 180 jours, self-only et rétention restent inchangées.
+  - Vérifier que création directe interne retourne uniquement `id`, `status`, `starts_at`, `ends_at`, `destinations`.
+  - Vérifier que l'annulation directe interne retourne uniquement `id` et `status`.
+  - Vérifier l'absence de `user_id`, `delete_after`, `cancelled_at`, timestamps techniques et `multi_country` dans les réponses.
+  - Preuve associée : `security_travel_client_visibility_v25.test.sql` étendu à 28 assertions.
+
 ## Portes de sortie de revue
 
 Une famille ne peut être proposée comme « revue » que si :
@@ -225,7 +238,7 @@ Une famille ne peut être proposée comme « revue » que si :
 
 ## État au moment de la création de ce document
 
-- 34 / 34 migrations : **NON REVUES**
+- 35 / 35 migrations : **NON REVUES**
 - 0 migration ajoutée au lot production par ce document
 - 0 changement du ledger production
 - 0 déploiement production
