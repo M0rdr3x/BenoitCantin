@@ -384,6 +384,8 @@ Objectif fonctionnel : le créateur et les comptes familiaux explicitement autor
 
 Points à confirmer humainement avant toute approbation :
 - le mécanisme de provisionnement production doit être exécuté séparément sous `service_role`, après déploiement de la migration, sans inscrire les adresses familiales dans Git;
+- la commande dédiée `scripts/provision_creator_family_catalog.py` lit les comptes depuis `SINJIRA_CREATOR_FAMILY_EMAILS`, utilise `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY`, appelle uniquement le RPC serveur de provisionnement et n'affiche jamais les courriels dans ses sorties;
+- la commande possède un `--self-test` exécuté par la CI; elle ne doit jamais être appelée automatiquement par un workflow PR ni avec des secrets production exposés;
 - les UUID familiaux doivent être ceux des comptes voulus et aucun autre compte;
 - la visibilité 11–12 doit rester strictement « catalogue », avec ouverture uniquement du contenu explicitement `approved_11_12`;
 - aucune ligne de commande, entitlement ou `project_access` ne doit être créée pour simuler la propriété familiale;
