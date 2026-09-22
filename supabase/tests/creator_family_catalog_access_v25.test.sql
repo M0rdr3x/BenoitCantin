@@ -71,9 +71,9 @@ values
   'family-private-game',
   'Jeu privé famille',
   'game',
-  'draft',
-  'restricted',
-  'Description interne non classée pour 11–12 ans',
+  'published',
+  'public',
+  'Description publique de catalogue, accès jouable réservé au droit produit.',
   null,
   '/famille/projet-prive',
   '/famille/jeu-prive',
@@ -328,7 +328,7 @@ select is(
 select is(
   (select count(*)::integer from public.projects where slug='family-private-game'),
   1,
-  'un compte familial youth/adult voit les projets internes'
+  'un compte familial youth/adult voit aussi les projets publics liés à un produit'
 );
 select is(
   (select count(*)::integer from public.sinjira_novels where slug='family-private-novel'),
@@ -421,7 +421,7 @@ select is(
 select is(
   (select count(*)::integer from public.projects where slug='family-private-game'),
   0,
-  'un membre standard ne voit pas le projet interne'
+  'un membre standard sans droit ne reçoit pas la ligne complète du projet public payant'
 );
 select is(
   (select count(*)::integer from public.projects where slug='family-free-account-project'),
