@@ -101,6 +101,7 @@ REQUIRED_TRIGGERS = (
     "assets/js/sinjira-live-*.js",
     "assets/css/v25-live-*.css",
     "compte/communaute.html",
+    "projets/sinjira/codex/livre-i-delivery-contract.json",
     ".github/workflows/sinjira-live-social-*.yml",
 )
 
@@ -188,6 +189,7 @@ def self_test(values: tuple[str, str, str]) -> None:
     validate_texts(*values)
     version, name = TRAVEL_MIGRATIONS[0]
     migration_trigger = f"      - 'supabase/migrations/{version}_{name}.sql'\n"
+    livre_contract_trigger = "      - 'projets/sinjira/codex/livre-i-delivery-contract.json'\n"
     mutations = {
         "promotion reviewed implicite": (
             reviewed + f"\n{version} {name} deadbeef\n",
@@ -218,6 +220,11 @@ def self_test(values: tuple[str, str, str]) -> None:
             reviewed,
             ledger,
             workflow.replace("          python3 scripts/validate_live_social_activation_gate_v25.py\n", "", 1),
+        ),
+        "contrat Livre I non surveillé": (
+            reviewed,
+            ledger,
+            workflow.replace(livre_contract_trigger, "", 1),
         ),
         "migration non surveillée": (
             reviewed,
