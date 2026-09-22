@@ -92,6 +92,7 @@ def validate(contents:dict[str,str])->None:
         "p.child_access_status='approved_11_12'",
         "'content_available',case",
         "whenband='child'thennull",
+        "elsep.cover_urlend",
         "contenuprotégéselonl’âge",
     ):
         if marker not in migration:
@@ -104,6 +105,7 @@ def validate(contents:dict[str,str])->None:
         "private_asset_configuredandbandin('adult','youth')and(full_catalog_modeorentitled)",
         "whenband='child'andfamily_modethen'family_catalog'",
         "'demo_path',casewhenband='child'thennullelsedemo_pathend",
+        "'cover_url',casewhenband='child'thennullelsecover_urlend",
     ):
         if marker not in migration:
             fail(f"catalogue roman famille: garde absente: {marker}")
@@ -185,6 +187,8 @@ def validate(contents:dict[str,str])->None:
 
     if "selectplan(38);" not in test:
         fail("pgTAP famille: plan(38) absent")
+    if test.count("anditem->>'cover_url'isnull") < 2:
+        fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
         "aucuncourrielneststockédansleregistrefamilial",
         "aucunlibellénominatifneststockédansleregistrefamilial",

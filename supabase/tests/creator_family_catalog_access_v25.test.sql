@@ -82,7 +82,7 @@ values(
 );
 
 insert into public.sinjira_novels(
-  id,slug,title,subtitle,description,status,public_path,demo_path,comments_enabled,sort_order
+  id,slug,title,subtitle,description,status,cover_url,public_path,demo_path,comments_enabled,sort_order
 )
 values(
   'f7000000-0000-4000-8000-000000000007',
@@ -91,6 +91,7 @@ values(
   'Preuve famille',
   'Description interne non classée pour 11–12 ans',
   'draft',
+  '/famille/couverture-roman-non-classee.webp',
   '/famille/roman-prive',
   '/famille/demo-prive',
   false,
@@ -374,6 +375,7 @@ select ok(
       and (item->>'content_available')::boolean=false
       and item->>'play_path' is null
       and item->>'public_path' is null
+      and item->>'cover_url' is null
       and item->>'description' like '%Contenu protégé%'
   ),
   'la fiche 11–12 non classée est minimisée et sans chemin ouvrable'
@@ -403,6 +405,7 @@ select ok(
     where item->>'slug'='family-private-novel'
       and item->>'demo_path' is null
       and item->>'public_path' is null
+      and item->>'cover_url' is null
       and item->>'total_pages' is null
   ),
   'le catalogue roman 11–12 masque les chemins de lecture et la taille de l intégrale'

@@ -246,7 +246,16 @@ begin
             then 'Création SINJIRA™ visible dans le catalogue familial. Contenu protégé selon l’âge.'
           else p.description
         end,
-        'cover_url',p.cover_url,
+        'cover_url',case
+          when band='child'
+               and not (
+                 p.status<>'draft'
+                 and p.visibility in ('public','account')
+                 and p.child_access_status='approved_11_12'
+               )
+            then null
+          else p.cover_url
+        end,
         'public_path',case
           when band='child'
                and not (
@@ -367,7 +376,7 @@ begin
           else description
         end,
         'status',status,
-        'cover_url',cover_url,
+        'cover_url',case when band='child' then null else cover_url end,
         'public_path',case when band='child' then null else public_path end,
         'demo_path',case when band='child' then null else demo_path end,
         'sort_order',sort_order,

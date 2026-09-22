@@ -477,7 +477,7 @@ La migration forward-only :
 
 ajoute un registre privé par UUID et un provisionnement réservé à `service_role`. Le courriel fourni au moment du provisionnement sert uniquement à résoudre `auth.users.id`; il n'est ni stocké dans le registre familial ni écrit dans cette migration publique.
 
-Pour 13+ (`youth` / `adult`), un compte familial peut relire les projets, romans et produits internes sans faux achat. `has_sinjira_product()` reconnaît aussi ce rôle pour lancer un jeu/licence appartenant à l'univers, tout en conservant l'anti-énumération et sans créer d'entitlement. Pour 11–12 ans, l'accès supplémentaire est limité à des RPC de catalogue minimisés : la fiche d'une création peut être visible, mais un projet non approuvé ne contient aucun chemin ouvrable, un roman privé ne reçoit jamais `full_access`, `public_path`, `demo_path` ou nombre de pages, et le droit produit reste faux. `project_access_rank` n'accorde le rang famille qu'à `youth/adult`.
+Pour 13+ (`youth` / `adult`), un compte familial peut relire les projets, romans et produits internes sans faux achat. `has_sinjira_product()` reconnaît aussi ce rôle pour lancer un jeu/licence appartenant à l'univers, tout en conservant l'anti-énumération et sans créer d'entitlement. Pour 11–12 ans, l'accès supplémentaire est limité à des RPC de catalogue minimisés : la fiche d'une création peut être visible, mais un projet non approuvé ne contient ni chemin ouvrable ni couverture non classée; un roman privé ne reçoit jamais `full_access`, `public_path`, `demo_path`, couverture privée ou nombre de pages, et le droit produit reste faux. `project_access_rank` n'accorde le rang famille qu'à `youth/adult`.
 
 Les adresses réelles des comptes familiaux ne sont volontairement pas inscrites dans Git. Leur association production devra être exécutée séparément sous `service_role`, après revue et déploiement de la migration.
 
@@ -522,7 +522,7 @@ Le snapshot de revue attend exactement **37 migrations locales futures non revue
 
 | Migration | Git blob SHA-1 |
 |---|---|
-| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `beede4aaec18b3c9a981acea814c7fbdeb97364c` |
+| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `c449428bc137c12c3fa4cd1c728f50dfc2e3e7a5` |
 
 ### Enfant 11–12 / Junior
 

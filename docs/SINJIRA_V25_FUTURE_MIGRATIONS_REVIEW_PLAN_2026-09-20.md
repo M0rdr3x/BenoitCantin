@@ -363,7 +363,7 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
   - Le provisionnement par courriel est réservé à `service_role` : le courriel est utilisé seulement pour résoudre `auth.users.id`, puis seul l'UUID est conservé.
   - Le propriétaire conserve son accès complet existant; un compte famille 13+ obtient la visibilité catalogue complète sans création de commande, entitlement ou `project_access` artificiel.
   - Les membres ordinaires restent limités aux contenus publics/gratuits et à leurs achats, entitlements ou accès explicites.
-  - Pour un compte famille 11–12, la visibilité supplémentaire passe par des RPC self-only minimisés : titres/fiches visibles, mais projets non approuvés sans chemin ouvrable et romans privés sans `full_access`, `public_path`, `demo_path` ni nombre de pages.
+  - Pour un compte famille 11–12, la visibilité supplémentaire passe par des RPC self-only minimisés : titres/fiches visibles, mais projets non approuvés sans chemin ouvrable ni couverture non classée et romans privés sans `full_access`, `public_path`, `demo_path`, couverture privée ni nombre de pages.
   - `project_access_rank` n'accorde le rang famille `90` qu'aux bandes `adult` / `youth`; un compte `child` ne contourne donc jamais `child_access_status`.
   - `has_sinjira_product(text,uuid)` reconnaît le propriétaire ou la famille `adult/youth` sans créer d'entitlement; le garde anti-énumération self-only reste actif et `child` reste refusé.
   - L'Edge de roman privé reconnaît le rôle famille uniquement après la vérification d'âge déjà existante; les 11–12 restent refusés pour une intégrale non classée.

@@ -54,7 +54,7 @@ EXPECTED_NON_REVIEWED = {
     "20260919130000_sinjira_v25_account_catalog_browser_privileges.sql": "4436b3d183fa975f5eedeb0427d66da050dfa961",
     "20260921005000_sinjira_v25_travel_mode_internal_response_minimization.sql": "1653597f4c9fe053a1b691fe810a3d1b8ca60955",
     "20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql": "1a6f22628bf7dc944e7d3b77c2744c40e3204b03",
-    "20260922014000_sinjira_v25_creator_family_catalog_access.sql": "beede4aaec18b3c9a981acea814c7fbdeb97364c",
+    "20260922014000_sinjira_v25_creator_family_catalog_access.sql": "c449428bc137c12c3fa4cd1c728f50dfc2e3e7a5",
 }
 
 
