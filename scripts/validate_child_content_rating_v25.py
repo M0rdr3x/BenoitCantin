@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260918013000_sinjira_v25_child_content_rating.sql'
 HARDENING=ROOT/'supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql'
+PRODUCT_ACCESS=ROOT/'supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql'
 TEST=ROOT/'supabase/tests/child_content_rating_v25.test.sql'
 ACCOUNT=ROOT/'assets/js/sinjira-account.js'
 LIBRARY=ROOT/'assets/js/sinjira-library-v24-4-61.js'
@@ -24,9 +25,9 @@ def compact(text): return ''.join(text.lower().split())
 def req(cond,msg):
     if not cond: errors.append(msg)
 
-mig=read(MIG); hardening=read(HARDENING); test=read(TEST); account=read(ACCOUNT); library=read(LIBRARY)
+mig=read(MIG); hardening=read(HARDENING); product_access=read(PRODUCT_ACCESS); test=read(TEST); account=read(ACCOUNT); library=read(LIBRARY)
 core=read(LIBRARY_CORE); admin=read(ADMIN); admin_edge=read(ADMIN_EDGE); doc_edge=read(DOC_EDGE); doc=read(DOC)
-m=compact(mig); h=compact(hardening); t=compact(test); a=compact(account); l=compact(library); lc=compact(core); ad=compact(admin); ae=compact(admin_edge); de=compact(doc_edge); d=doc.lower()
+m=compact(mig); h=compact(hardening); pa=compact(product_access); t=compact(test); a=compact(account); l=compact(library); lc=compact(core); ad=compact(admin); ae=compact(admin_edge); de=compact(doc_edge); d=doc.lower()
 
 for table in ('projects','documents'):
     req(f'altertablepublic.{table}' in m,f'Classement 11–12 absent de {table}.')
@@ -42,6 +43,11 @@ req('createorreplacefunctionsinjira_v25_internal.sinjira_child_project_available
 req("p.visibility='public'or(p.visibility='account'andauth.uid()isnotnull)" in h,'Le helper projet expose encore visibility=account à anon.')
 req('createorreplacefunctionsinjira_v25_internal.sinjira_child_document_available' in h,'Le helper document effectif n est pas durci après la frontière RPC.')
 req('sinjira_catalog_internal.project_access_rank(d.project_id,auth.uid())>=public.document_access_rank(d.access_level)' in h,'Le helper document ne respecte pas le rang réel du compte courant.')
+req('createorreplacefunctionsinjira_v25_internal.sinjira_child_project_available' in pa,'La frontière projet/produit ne remplace pas le helper enfant effectif.')
+req("p.child_access_status='approved_11_12'andp.product_slugisnull" in pa,'Le helper enfant effectif ne ferme pas les projets liés à un produit.')
+req("visibility='public'andproduct_slugisnull" in pa,'La RLS générale réexpose un projet public payant sans droit.')
+req("public.sinjira_my_age_band()='child'andvisibility='account'andchild_access_status='approved_11_12'andproduct_slugisnull" in pa,'La branche child account n exclut pas explicitement les projets payants.')
+req('createpolicyprojects_purchased_read_v25' in pa and "public.sinjira_my_age_band()in('adult','youth')" in pa and 'public.has_sinjira_product(product_slug,(selectauth.uid()))' in pa,'La policy projet acheté n est pas bornée adult/youth + droit produit.')
 req("p.visibility='public'or(p.visibility='account'andauth.uid()isnotnull)" in m,'La migration d introduction expose encore visibility=account à anon.')
 req('public.project_access_rank(d.project_id,auth.uid())>=public.document_access_rank(d.access_level)' in m,'La migration d introduction ne borne pas le helper document au rang réel.')
 req("p.visibility='public'" in m and "p.visibility='account'" in m,'Un projet restricted pourrait devenir Junior par simple classement.')
@@ -86,4 +92,4 @@ if errors:
     print(f'ECHEC classement contenu enfant V25: {len(errors)} problème(s).')
     for e in errors: print('- '+e)
     raise SystemExit(1)
-print('OK V25: Bibliothèque 11–12 fail-closed; projet + document doublement approuvés par décision humaine avant exposition.')
+print('OK V25: Bibliothèque 11–12 fail-closed; projets payants exclus, projet + document gratuits doublement approuvés avant exposition.')
