@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(23);
+select plan(24);
 
 select has_column('public','projects','child_access_status','projects possède le classement 11–12');
 select has_column('public','projects','child_access_reviewed_by','projects conserve le réviseur humain');
@@ -78,8 +78,8 @@ select is(
       and tablename='projects'
       and cmd='SELECT'
   ),
-  'projects readable when accessible, projects_family_catalog_read_v25, projects_owner_catalog_read_v25'::text,
-  'une seule politique générale projets reste active; les exceptions owner et famille V25 restent explicitement bornées'
+  'projects readable when accessible, projects_family_catalog_read_v25, projects_owner_catalog_read_v25, projects_purchased_read_v25'::text,
+  'une seule politique générale projets reste active; les exceptions owner, famille et achat V25 restent explicitement bornées'
 );
 select is(
   (select count(*) from pg_policies where schemaname='public' and tablename='documents' and cmd='SELECT'),
@@ -89,6 +89,17 @@ select is(
 select ok((select qual ilike '%sinjira_my_age_band%' and qual ilike '%adult%' and qual ilike '%youth%' and qual ilike '%child%' from pg_policies where schemaname='public' and tablename='projects' and policyname='projects readable when accessible'),'RLS projets sépare standard, child et bandes restreintes');
 select ok((select qual ilike '%sinjira_my_age_band%' and qual ilike '%adult%' and qual ilike '%youth%' and qual ilike '%child%' from pg_policies where schemaname='public' and tablename='documents' and policyname='approved documents visible by access'),'RLS documents sépare standard, child et bandes restreintes');
 select ok((select qual ilike '%child_access_status%' from pg_policies where schemaname='public' and tablename='projects' and policyname='projects readable when accessible'),'RLS projets contient le classement 11–12');
+select ok((
+  select qual ilike '%sinjira_my_age_band%'
+     and qual ilike '%adult%'
+     and qual ilike '%youth%'
+     and qual not ilike '%child%'
+     and qual ilike '%has_sinjira_product%'
+  from pg_policies
+  where schemaname='public'
+    and tablename='projects'
+    and policyname='projects_purchased_read_v25'
+),'la policy projet acheté reste interdite aux comptes 11–12 et exige un droit produit réel');
 select ok((select qual ilike '%sinjira_child_document_available%' from pg_policies where schemaname='public' and tablename='documents' and policyname='approved documents visible by access'),'RLS documents impose la double approbation');
 
 select * from finish();
