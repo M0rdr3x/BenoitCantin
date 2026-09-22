@@ -462,7 +462,7 @@ def main()->None:
             "catalogue famille dashboard retiré":("dashboard","s.rpc(\'sinjira_my_project_catalog\')","Promise.resolve({data:[],error:null})"),
             "droit produit famille retiré":("migration","public.is_sinjira_catalog_family_member(p_user_id)","false"),
             "jeu famille retiré bibliothèque":("library","isOwner||familyCatalog||fractureRight","isOwner||fractureRight"),
-            "extension achetée effective ouverte aux comptes child":("age_boundary_migration","product_slug is not null\n  and public.sinjira_my_age_band() in ('adult','youth')\n  and public.has_sinjira_product","product_slug is not null\n  and public.sinjira_my_age_band() in ('adult','youth','child')\n  and public.has_sinjira_product"),
+            "extension achetée effective ouverte aux comptes child":("age_boundary_migration","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band() in ('adult','youth')\n  and public.has_sinjira_product","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band() in ('adult','youth','child')\n  and public.has_sinjira_product"),
             "extension interne vendue avant approbation":("age_boundary_migration","status in ('approved','released')\n  and product_slug is not null","product_slug is not null"),
             "extension publique réexpose parent brouillon":("extension_access_migration","and parent_project.status<>'draft'\n  )\n);","\n  )\n);"),
             "extension achetée effective réexpose parent brouillon":("age_boundary_migration","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band()","\n  )\n  and public.sinjira_my_age_band()"),
