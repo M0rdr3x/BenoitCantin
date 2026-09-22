@@ -137,6 +137,8 @@ def validate(contents:dict[str,str])->None:
         "createpolicysinjira_novels_family_catalog_read_v25",
         "createpolicyproducts_family_catalog_read_v25",
         "createpolicyprojects_family_catalog_read_v25",
+        "createpolicyextensions_creator_family_catalog_read_v25",
+        "public.sinjira_has_full_catalog_access((selectauth.uid()))",
         "public.is_sinjira_catalog_family_member((selectauth.uid()))",
         "public.sinjira_age_band((selectauth.uid()))in('adult','youth')",
     ):
@@ -247,8 +249,8 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(44);" not in test:
-        fail("pgTAP famille: plan(44) absent")
+    if "selectplan(47);" not in test:
+        fail("pgTAP famille: plan(47) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
@@ -257,6 +259,9 @@ def validate(contents:dict[str,str])->None:
         "service_rolepeutassocieruncomptefamilialparcourrielsansconserverlecourriel",
         "unmembrestandardnereçoitpaslecataloguefamilial",
         "unmembrestandardvoitlecontenugratuitinclusavecsoncompte",
+        "uncomptefamilialyouth/adultvoituneextensioninterneducataloguecréateur",
+        "unmembrestandardnevoitpasuneextensioninternenonpublique",
+        "lecomptefamilial11–12nereçoitpasuneextensioninternenonclassée",
         "lerôlefamilialnecontournepaslarlschild",
         "lafiche11–12nonclasséeestminimiséeetsanscheminouvrable",
         "laficheromanfamiliale11–12nedonnejamaislintégraleprivée",
