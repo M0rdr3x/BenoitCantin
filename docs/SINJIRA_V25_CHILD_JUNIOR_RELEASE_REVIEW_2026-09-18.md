@@ -39,9 +39,9 @@ La vague CI associée au dossier précédent a confirmé que les parcours Commun
 - Profil privé : **22/22** historique et **11/11** enfant;
 - romans privés : **13/13**, avec auto-test statique courant **9/9**;
 - Mode Voyage : rétention **11/11** et visibilité client **28/28**, les workflows consentement/self-only/minimisation restant également verts;
-- snapshot release : **38 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
+- snapshot release : **39 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
 
-La classification exhaustive des workflows rouges de ce HEAD montre que leurs étapes métier/sécurité passent avant de s'arrêter sur le **ledger production volontairement bloqué** par les 38 migrations non revues. Le prévol Supabase suit la même logique : ses tests de sécurité passent, puis la vérification du dépôt s'arrête sur ce ledger.
+La classification exhaustive des workflows rouges de ce HEAD montre que leurs étapes métier/sécurité passent avant de s'arrêter sur le **ledger production volontairement bloqué** par les 39 migrations non revues. Le prévol Supabase suit la même logique : ses tests de sécurité passent, puis la vérification du dépôt s'arrête sur ce ledger.
 
 ## 2. Correctifs forward-only issus de la revue technique
 
@@ -481,7 +481,7 @@ Pour 13+ (`youth` / `adult`), un compte familial peut relire les projets, romans
 
 Les adresses réelles des comptes familiaux ne sont volontairement pas inscrites dans Git. Leur association production devra être exécutée séparément sous `service_role`, après revue et déploiement de la migration.
 
-Le pgTAP famille est maintenant porté à **50 assertions**. Il couvre notamment le gratuit visible au membre standard, le privé refusé sans droit, puis un roman privé rendu accessible par une commande `paid` sans créer d'entitlement artificiel.
+Le pgTAP famille est maintenant porté à **54 assertions**. Il couvre notamment le gratuit visible au membre standard, le privé refusé sans droit, puis un roman privé rendu accessible par une commande `paid` sans créer d'entitlement artificiel.
 
 Cette trente-septième migration reste **non revue production**.
 
@@ -504,6 +504,20 @@ Le pgTAP Compte est maintenant porté à **49 assertions** : entitlement durable
 
 Cette trente-huitième migration reste **non revue production**.
 
+### Extensions privées achetées
+
+Le schéma `extensions` ne possédait auparavant qu'un indicateur `is_public`; il n'existait aucun moyen serveur d'exprimer « extension privée achetée ».
+
+La migration forward-only :
+
+`20260922030000_sinjira_v25_extension_product_access.sql`
+
+ajoute un `product_slug` optionnel, sans convertir les extensions existantes. Une extension publique reste gratuite. Une extension privée liée à un produit devient visible au membre standard uniquement si le droit produit canonique confirme un entitlement réel ou une commande `paid`. Les commandes `pending` restent insuffisantes. Les comptes créateur/famille 13+ gardent leur catalogue complet et les 11–12 famille restent limités à une fiche protégée non ouvrable.
+
+Le pgTAP famille est porté à **54 assertions** avec quatre preuves supplémentaires : extension payante invisible avant achat en RLS + RPC, puis visible après commande `paid` en RLS + RPC, sans entitlement artificiel.
+
+Cette trente-neuvième migration reste **non revue production**.
+
 ### Revue réouverte après durcissements du 21 septembre 2026
 
 Le snapshot a volontairement détecté que plusieurs migrations non revues avaient changé depuis leurs empreintes précédentes. Elles ont été relues avant mise à jour de ce dossier; les changements sont des **resserrements**, pas des élargissements de droits :
@@ -518,11 +532,11 @@ Le snapshot a volontairement détecté que plusieurs migrations non revues avaie
 - `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` : la réponse des implémentations internes est maintenant minimisée dès A3, supprimant la fenêtre transitoire avant `20260921005000`;
 - `20260919093000_sinjira_v25_private_novel_catalog.sql` : RLS activée dès la création du registre privé et rôle propriétaire résolu par la frontière serveur canonique.
 
-Cette réouverture de revue **ne transforme aucune migration en migration production revue**. Les 38 migrations restent non revues au sens du `production-reviewed-migration-batch.txt`.
+Cette réouverture de revue **ne transforme aucune migration en migration production revue**. Les 39 migrations restent non revues au sens du `production-reviewed-migration-batch.txt`.
 
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **38 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **39 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -545,6 +559,7 @@ Le snapshot de revue attend exactement **38 migrations locales futures non revue
 |---|---|
 | `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `378b32d59781285c9781785075ba73c15b0a66e9` |
 | `20260922023000_sinjira_v25_paid_order_product_access.sql` | `edb262781911679ff740573cc3830b9dddfabf94` |
+| `20260922030000_sinjira_v25_extension_product_access.sql` | `c144d834fcf4201c79cf4f0a8407b49e3f1d29ea` |
 
 ### Enfant 11–12 / Junior
 
@@ -625,7 +640,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **38 migrations** dans l’ordre chronologique canonique; la migration `20260921005000` appartient fonctionnellement au lot Mode Voyage mais reste la dernière par timestamp.
+2. Relire les **39 migrations** dans l’ordre chronologique canonique; la migration `20260921005000` appartient fonctionnellement au lot Mode Voyage mais reste la dernière par timestamp.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.
