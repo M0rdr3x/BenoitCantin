@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(41);
+select plan(44);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -383,6 +383,55 @@ select ok(
     'f2000000-0000-4000-8000-000000000002'
   ),
   'un membre standard sans achat ni entitlement ne satisfait pas le droit produit'
+);
+
+reset role;
+
+insert into public.orders(id,user_id,order_number,status,currency,total_cents)
+values(
+  'fc000000-0000-4000-8000-00000000000c',
+  'f2000000-0000-4000-8000-000000000002',
+  'TEST-FAMILY-PAID-NOVEL-001',
+  'paid','CAD',3200
+);
+insert into public.order_items(order_id,product_id,quantity,unit_price_cents)
+values(
+  'fc000000-0000-4000-8000-00000000000c',
+  'f6000000-0000-4000-8000-000000000006',
+  1,3200
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object(
+    'sub','f2000000-0000-4000-8000-000000000002',
+    'role','authenticated','aal','aal1'
+  )::text,
+  true
+);
+set local role authenticated;
+
+select is(
+  (select count(*)::integer from public.products where slug='family-private-novel-product'),
+  1,
+  'une commande paid rend le produit acheté visible au membre standard'
+);
+select ok(
+  public.has_sinjira_product(
+    'family-private-novel-product',
+    'f2000000-0000-4000-8000-000000000002'
+  ),
+  'une commande paid satisfait le droit produit sans entitlement artificiel'
+);
+select ok(
+  exists(
+    select 1
+    from jsonb_array_elements(public.sinjira_my_novel_catalog()) item
+    where item->>'slug'='family-private-novel'
+      and (item->>'full_access')::boolean
+      and item->>'access_source'='product'
+  ),
+  'un roman privé acheté par commande paid devient disponible dans le catalogue sans entitlement'
 );
 
 reset role;
