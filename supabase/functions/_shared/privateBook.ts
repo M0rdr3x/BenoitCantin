@@ -1,7 +1,7 @@
 export const LIVRE_I_PRODUCT_SLUG='sinjira-livre-01-la-cendre-du-jugement';
 export const LIVRE_I_SIGNED_URL_SECONDS=300;
 
-export type PrivateBookAccess='entitlement'|'owner';
+export type PrivateBookAccess='product'|'owner'|'family';
 
 export function privateBookStorageConfig(){
   const enabled=Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED')==='true';
@@ -22,24 +22,23 @@ export async function requirePrivateBookAccess(service:any,userId:string):Promis
   if(ownerError)throw new Error('BOOK_ACCESS_CHECK_FAILED');
   if(isOwner===true)return 'owner';
 
-  // Pour toute autre personne, l'accès vient exclusivement d'un droit produit
-  // actif réellement attribué au compte.
-  const {data:product,error:productError}=await service
-    .from('products')
-    .select('id,slug,active')
-    .eq('slug',LIVRE_I_PRODUCT_SLUG)
-    .eq('active',true)
-    .maybeSingle();
-  if(productError||!product)throw new Error('BOOK_UNAVAILABLE');
+  // Les comptes famille adult/youth suivent le même catalogue complet V25 que
+  // les autres créations, sans fabriquer d'achat ni d'entitlement.
+  const {data:fullCatalog,error:fullCatalogError}=await service.rpc(
+    'sinjira_has_full_catalog_access',
+    {p_user_id:userId}
+  );
+  if(fullCatalogError)throw new Error('BOOK_ACCESS_CHECK_FAILED');
+  if(fullCatalog===true)return 'family';
 
-  const {data:entitlement,error:entitlementError}=await service
-    .from('user_entitlements')
-    .select('product_id')
-    .eq('user_id',userId)
-    .eq('product_id',product.id)
-    .maybeSingle();
-  if(entitlementError)throw new Error('BOOK_ACCESS_CHECK_FAILED');
-  if(entitlement)return 'entitlement';
+  // Pour les autres membres, le helper canonique couvre entitlement actif ET
+  // commande réellement payée. Une commande pending ne suffit jamais.
+  const {data:hasProduct,error:productAccessError}=await service.rpc(
+    'has_sinjira_product',
+    {p_product_slug:LIVRE_I_PRODUCT_SLUG,p_user_id:userId}
+  );
+  if(productAccessError)throw new Error('BOOK_ACCESS_CHECK_FAILED');
+  if(hasProduct===true)return 'product';
 
   throw new Error('BOOK_ACCESS_DENIED');
 }
