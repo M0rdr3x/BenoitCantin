@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(59);
+select plan(64);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -146,6 +146,54 @@ values
 update public.projects
 set product_slug='family-private-novel-product'
 where id='f8000000-0000-4000-8000-000000000008';
+
+insert into public.projects(
+  id,slug,name,type,status,visibility,description,cover_url,public_path,play_path,
+  allow_tester_requests,sort_order,child_access_status,product_slug
+)
+values(
+  'f9000000-0000-4000-8000-000000000009',
+  'family-paid-child-reviewed',
+  'Projet payant approuvé 11–12',
+  'game',
+  'published',
+  'account',
+  'Projet payant de preuve: approbation humaine et accès explicite ne suffisent pas à 11–12 ans.',
+  null,
+  '/famille/payant-enfant',
+  '/famille/payant-enfant/jouer',
+  false,
+  997,
+  'approved_11_12',
+  'family-private-novel-product'
+);
+
+insert into public.documents(
+  id,project_id,title,description,document_type,version,status,access_level,
+  external_url,sort_order,child_access_status
+)
+values(
+  'fa000000-0000-4000-8000-00000000000a',
+  'f9000000-0000-4000-8000-000000000009',
+  'Document payant approuvé 11–12',
+  'Document de preuve qui doit rester fermé.',
+  'document',
+  '1.0',
+  'approved',
+  'account',
+  '/famille/payant-enfant/document.pdf',
+  997,
+  'approved_11_12'
+);
+
+insert into public.project_access(user_id,project_id,access_level,granted_by,source)
+values(
+  'f3000000-0000-4000-8000-000000000003',
+  'f9000000-0000-4000-8000-000000000009',
+  'player',
+  'f4000000-0000-4000-8000-000000000004',
+  'migration'
+);
 
 insert into public.extensions(
   id,project_id,title,description,status,is_public,product_slug
@@ -610,6 +658,32 @@ select is(
 select ok(
   public.is_sinjira_catalog_family_member('f3000000-0000-4000-8000-000000000003'),
   'le compte familial 11–12 reste reconnu comme famille'
+);
+select is(
+  sinjira_catalog_internal.project_access_rank(
+    'f9000000-0000-4000-8000-000000000009',
+    'f3000000-0000-4000-8000-000000000003'
+  ),
+  20,
+  'un accès player explicite reste un rang technique et ne devient pas un droit produit enfant'
+);
+select is(
+  (select count(*)::integer from public.projects where slug='family-paid-child-reviewed'),
+  0,
+  'un compte 11–12 ne lit pas un projet payant même approuvé et avec project_access player'
+);
+select ok(
+  not public.sinjira_child_project_available('f9000000-0000-4000-8000-000000000009'),
+  'le helper 11–12 refuse aussi le projet payant approuvé avec accès explicite'
+);
+select is(
+  (select count(*)::integer from public.documents where id='fa000000-0000-4000-8000-00000000000a'),
+  0,
+  'un compte 11–12 ne lit pas le document d un projet payant malgré un rang player'
+);
+select ok(
+  not public.sinjira_child_document_available('fa000000-0000-4000-8000-00000000000a'),
+  'le helper document 11–12 refuse le contenu payant malgré double approbation et accès player'
 );
 select is(
   (select count(*)::integer from public.projects where slug='family-private-game'),
