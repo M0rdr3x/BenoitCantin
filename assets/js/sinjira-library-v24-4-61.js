@@ -67,13 +67,16 @@ function renderExtensions(extensions,childMode=false,familyCatalog=false){
   }
   box.innerHTML=extensions.map(extension=>{
     const available=extension.content_available!==false;
+    const source=String(extension.access_source||'catalogue');
     const role=childMode
       ?'Catalogue familial · accès protégé'
       :extension.creator_mode
         ?'Créateur · catalogue complet'
         :extension.family_mode
           ?'Famille créateur · catalogue complet'
-          :extension.is_public?'Public':'Accès autorisé';
+          :source==='product'
+            ?'Acheté / droit numérique'
+            :extension.is_public?'Public':'Accès autorisé';
     const statusLabel=childMode?'Protégé':String(extension.status||'—');
     const projectLabel=extension.project_slug?'Projet : '+escapeHtml(extension.project_slug):'Projet SINJIRA™';
     return '<article class="library-project-card"><div class="library-project-body"><div class="library-project-meta"><span class="status-badge">'+escapeHtml(statusLabel)+'</span><span class="role-chip">'+escapeHtml(role)+'</span></div><h2>'+escapeHtml(extension.title||'Extension SINJIRA™')+'</h2><p>'+escapeHtml(extension.description||'')+'</p><div class="library-project-stats"><span>'+projectLabel+'</span><span>'+(available?'Contenu disponible':'Contenu protégé selon l’âge')+'</span></div></div></article>';
