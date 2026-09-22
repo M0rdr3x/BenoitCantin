@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(87);
+select plan(90);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -966,6 +966,45 @@ select ok(
 
 reset role;
 
+insert into public.orders(id,user_id,order_number,status,currency,total_cents)
+values(
+  'fd100000-0000-4000-8000-000000000013',
+  'f3000000-0000-4000-8000-000000000003',
+  'TEST-CHILD-PAID-PRODUCT-001',
+  'paid','CAD',900
+);
+insert into public.order_items(order_id,product_id,quantity,unit_price_cents)
+values(
+  'fd100000-0000-4000-8000-000000000013',
+  'fe000000-0000-4000-8000-00000000000e',
+  1,900
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object(
+    'sub','f3000000-0000-4000-8000-000000000003',
+    'role','authenticated','aal','aal1'
+  )::text,
+  true
+);
+set local role authenticated;
+
+select ok(
+  public.has_sinjira_product(
+    'family-private-extension-product',
+    'f3000000-0000-4000-8000-000000000003'
+  ),
+  'une commande paid enfant reste un droit comptable réel'
+);
+select is(
+  (select count(*)::integer from public.products where slug='family-private-extension-product'),
+  0,
+  'une commande paid enfant ne révèle pas les métadonnées du produit à 11–12'
+);
+
+reset role;
+
 insert into public.user_entitlements(user_id,product_id,source)
 values
 (
@@ -996,6 +1035,11 @@ select ok(
     'f3000000-0000-4000-8000-000000000003'
   ),
   'un droit produit réel peut exister comptablement pour un compte 11–12'
+);
+select is(
+  (select count(*)::integer from public.products where slug='family-private-novel-product'),
+  0,
+  'un entitlement enfant ne révèle pas les métadonnées du produit à 11–12'
 );
 
 select is(
