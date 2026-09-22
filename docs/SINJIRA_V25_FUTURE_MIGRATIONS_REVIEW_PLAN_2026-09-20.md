@@ -291,7 +291,7 @@ Relecture technique effectuée sur le HEAD `1a54e110762a5249e99c70fc40e6667ce285
 
 **Preuves techniques maintenant satisfaites pour le Lot C :**
 - la dernière preuve verte antérieure du workflow Compte/catalogue reste **45/45** assertions membre/créateur + **23/23** classement 11–12; la suite courante est portée à **49 assertions** et doit être relue sur le HEAD final après les durcissements famille/commande payée;
-- le workflow Catalogue romans privés est vert avec auto-test **8/8** et pgTAP **13/13**;
+- la dernière preuve verte Catalogue romans privés reste pgTAP **13/13**; le validateur statique courant est porté à **9 dérives critiques** et doit être relu sur le HEAD final;
 - l'Edge `get-private-novel-url` réévalue côté serveur identité, âge, rôle créateur/entitlement, actif `enabled` et stockage avant URL signée 300 s; la régression `Content-Length` doublement échappée est corrigée et gardée;
 - les preuves négatives couvrent `anon/authenticated/service_role`, absence de lecture directe du registre privé, absence de chemin Storage dans le navigateur et sondage UUID self-only.
 
@@ -368,7 +368,7 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
   - `project_access_rank` n'accorde le rang famille `90` qu'aux bandes `adult` / `youth`; un compte `child` ne contourne donc jamais `child_access_status`.
   - `has_sinjira_product(text,uuid)` reconnaît le propriétaire ou la famille `adult/youth` sans créer d'entitlement; le garde anti-énumération self-only reste actif et `child` reste refusé.
   - L'Edge de roman privé reconnaît le rôle famille uniquement après la vérification d'âge déjà existante; les 11–12 restent refusés pour une intégrale non classée.
-  - Preuve dédiée : `creator_family_catalog_access_v25.test.sql` et validateur statique de confidentialité, incluant l'interdiction d'une adresse courriel littérale dans la migration.
+  - Preuve dédiée : `creator_family_catalog_access_v25.test.sql` porté à **44 assertions** et validateur statique de confidentialité, incluant l'interdiction d'une adresse courriel littérale dans la migration et le scénario roman payé sans entitlement.
 
 - [ ] `20260922023000_sinjira_v25_paid_order_product_access.sql`
   - Aligne la RLS `products_ordered_read` et `has_sinjira_product(text,uuid)` sur un achat réellement payé.
