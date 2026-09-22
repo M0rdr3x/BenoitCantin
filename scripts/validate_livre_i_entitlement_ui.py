@@ -78,6 +78,10 @@ def validate(
         'Licences: droit réellement reconnu': (licenses, 'Droit numérique reconnu'),
         'Bibliothèque: droit réellement reconnu': (library, 'Droit numérique reconnu'),
         'Licences: droits produit self-only': (licenses, "rpc('sinjira_my_product_rights')"),
+        'Licences: capacités self-only': (licenses, "rpc('sinjira_my_account_capabilities')"),
+        'Licences: mode Junior explicite': (licenses, "library_mode==='reviewed_11_12'"),
+        'Licences: formulaire masqué Junior': (licenses, 'form.hidden=true'),
+        'Licences: message Junior protégé': (licenses, 'Licences protégées pour les comptes 11–12 ans.'),
         'Bibliothèque: droits produit self-only': (library, "rpc('sinjira_my_product_rights')"),
         'Licences: frontière de diffusion privée expliquée': (licenses, 'diffusion privée'),
         'Bibliothèque: disponibilité privée expliquée': (library, 'La disponibilité de l’intégrale privée est vérifiée séparément dans la section Romans'),
@@ -117,6 +121,12 @@ def validate(
         for forbidden in ("from('orders')","from('order_items')","from('user_entitlements')"):
             if forbidden in text:
                 errors.append(f'{label}: lecture commerciale directe interdite ({forbidden}); utiliser le RPC self-only des droits produit.')
+
+    capability_pos=licenses.find("rpc('sinjira_my_account_capabilities')")
+    child_pos=licenses.find("library_mode==='reviewed_11_12'")
+    rights_pos=licenses.find("rpc('sinjira_my_product_rights')")
+    if capability_pos < 0 or child_pos < capability_pos or rights_pos < child_pos:
+        errors.append('Licences: la décision Junior doit être établie avant la lecture des droits produit.')
 
     # La porte de lecture ne doit jamais décider avec un rôle/email client.
     # La Bibliothèque reste une vue de catalogue : aucun appel direct à la
@@ -201,7 +211,9 @@ def self_test() -> None:
             },
         }), encoding='utf-8')
         paths['licenses'].write_text(
-            f"const BOOK='{BOOK_SLUG}'; s.rpc('sinjira_my_product_rights'); 'Droit numérique reconnu'; 'diffusion privée';",
+            f"const BOOK='{BOOK_SLUG}'; s.rpc('sinjira_my_account_capabilities'); "
+            "const childMode=capabilities.data.library_mode==='reviewed_11_12'; if(childMode){form.hidden=true; 'Licences protégées pour les comptes 11–12 ans.';} "
+            "s.rpc('sinjira_my_product_rights'); 'Droit numérique reconnu'; 'diffusion privée';",
             encoding='utf-8',
         )
         paths['library'].write_text(
@@ -237,6 +249,21 @@ def self_test() -> None:
         clean = validate(*args)
         if clean:
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
+
+        paths['licenses'].write_text(
+            read(paths['licenses']).replace("library_mode==='reviewed_11_12'","library_mode==='full'",1),
+            encoding='utf-8',
+        )
+        junior_bypass = validate(*args)
+        if not any('mode Junior explicite' in item or 'décision Junior' in item for item in junior_bypass):
+            raise AssertionError('La suppression du mode Junior dans Licences doit être bloquée.')
+
+        paths['licenses'].write_text(
+            f"const BOOK='{BOOK_SLUG}'; s.rpc('sinjira_my_account_capabilities'); "
+            "const childMode=capabilities.data.library_mode==='reviewed_11_12'; if(childMode){form.hidden=true; 'Licences protégées pour les comptes 11–12 ans.';} "
+            "s.rpc('sinjira_my_product_rights'); 'Droit numérique reconnu'; 'diffusion privée';",
+            encoding='utf-8',
+        )
 
         paths['licenses'].write_text(
             read(paths['licenses']).replace("s.rpc('sinjira_my_product_rights')","s.from('orders')",1),
