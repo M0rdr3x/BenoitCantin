@@ -13,6 +13,7 @@ on:
       - 'supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql'
       - 'supabase/migrations/20260922014000_sinjira_v25_creator_family_catalog_access.sql'
       - 'supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql'
+      - 'supabase/migrations/20260922030000_sinjira_v25_extension_product_access.sql'
       - 'supabase/tests/account_content_hub_v25.test.sql'
       - 'supabase/tests/child_content_rating_v25.test.sql'
       - 'supabase/tests/creator_family_catalog_access_v25.test.sql'
