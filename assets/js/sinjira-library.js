@@ -16,16 +16,9 @@ async function accessMap(){
   if(error)throw error;
   return new Map(rows(data).map(x=>[x.project_id,x]));
 }
-async function resolveFractureRight(projects,s){
-  const familyProductAccess=familyCatalog&&!childMode;
-  const needsCheck=!owner&&!familyProductAccess&&!childMode&&projects.some(p=>p.slug==='fracture-du-reseau-mere');
-  if(!needsCheck)return {active:owner||familyProductAccess,verified:true};
-  const result=await s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'});
-  return {active:!result.error&&result.data===true,verified:!result.error};
-}
 async function library(){
   const s=getSupabase(),[pr,dr,rr,access]=await Promise.all([
-    s.from('projects').select('*').order('sort_order'),
+    s.rpc('sinjira_my_project_catalog'),
     s.from('documents').select('id,project_id,title,version,document_type,access_level').eq('status','approved'),
     s.from('access_requests').select('project_id,requested_level,status').eq('user_id',user.id).eq('status','pending'),
     accessMap()
@@ -37,19 +30,13 @@ async function library(){
     return;
   }
   const projects=rows(pr.data),docs=rows(dr.data),pending=new Map(rows(rr.data).map(x=>[x.project_id,x]));
-  const fractureRight=await resolveFractureRight(projects,s);
   box.innerHTML=projects.map(p=>{
     const a=access.get(p.id),tester=owner||a?.access_level==='tester',pd=docs.filter(d=>d.project_id===p.id).length,waiting=pending.has(p.id);
-    const licensedGame=p.slug==='fracture-du-reseau-mere';
-    const canPlay=!licensedGame||owner||(fractureRight.verified&&fractureRight.active);
-    const licenseAction=licensedGame&&!owner&&!fractureRight.active
-      ?`<a class="btn btn-secondary" href="licences.html">${fractureRight.verified?'Activer une licence':'Vérifier mes licences'}</a>`
-      :'';
-    const roleChip=owner?'Propriétaire':a?.access_level==='tester'?'Testeur':'';
-    const visibility=licensedGame&&!owner
-      ?(!fractureRight.verified?'Droit de jeu non vérifié':fractureRight.active?'Droit numérique actif':'Droit de jeu requis')
-      :p.visibility==='restricted'?'Accès restreint':p.visibility==='account'?'Inclus avec le compte':'Page publique';
-    return `<article class="library-project-card"><div class="library-project-art"><img src="${escapeHtml(cover(p))}" alt=""></div><div class="library-project-body"><div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(p.status))}</span>${roleChip?`<span class="role-chip">${escapeHtml(roleChip)}</span>`:''}</div><h2>${escapeHtml(p.name)}</h2><p>${escapeHtml(p.description||'')}</p><div class="library-project-stats"><span>${pd} document${pd===1?'':'s'} accessible${pd===1?'':'s'}</span><span>${escapeHtml(visibility)}</span></div><div class="hero-actions"><a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(p.slug)}">Ouvrir l’espace</a>${p.play_path&&canPlay?`<a class="btn btn-secondary" href="${escapeHtml(p.play_path)}">Jouer</a>`:''}${licenseAction}${!tester&&p.allow_tester_requests?`<button class="btn btn-secondary" type="button" data-request-tester="${p.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div></div></article>`;
+    const source=String(p.access_source||'free'),available=p.content_available!==false;
+    const roleChip=childMode?(available?'Approuvé 11–12 ans':'Catalogue familial · accès protégé'):owner?'Propriétaire':familyCatalog||source==='family'?'Famille créateur':source==='product'?'Acheté / droit numérique':a?.access_level==='tester'?'Testeur':'';
+    const visibility=childMode?(available?'Contenu vérifié 11–12 ans':'Contenu protégé selon l’âge'):p.product_slug&&source==='product'?'Droit numérique actif':p.visibility==='restricted'?'Accès restreint':p.visibility==='account'?'Inclus avec le compte':'Page publique';
+    const openAction=available?`<a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(p.slug)}">Ouvrir l’espace</a>`:'';
+    return `<article class="library-project-card"><div class="library-project-art"><img src="${escapeHtml(cover(p))}" alt=""></div><div class="library-project-body"><div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(p.status))}</span>${roleChip?`<span class="role-chip">${escapeHtml(roleChip)}</span>`:''}</div><h2>${escapeHtml(p.name)}</h2><p>${escapeHtml(p.description||'')}</p><div class="library-project-stats"><span>${pd} document${pd===1?'':'s'} accessible${pd===1?'':'s'}</span><span>${escapeHtml(visibility)}</span></div><div class="hero-actions">${openAction}${!childMode&&p.play_path&&available?`<a class="btn btn-secondary" href="${escapeHtml(p.play_path)}">Jouer</a>`:''}${!tester&&!childMode&&p.allow_tester_requests?`<button class="btn btn-secondary" type="button" data-request-tester="${p.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div></div></article>`;
   }).join('')||'<div class="notice"><strong>Aucun projet disponible.</strong></div>';
   box.querySelectorAll('[data-request-tester]').forEach(b=>b.addEventListener('click',async()=>{
     const message=prompt('Court message pour votre demande (facultatif).')||'';
@@ -76,21 +63,22 @@ async function project(){
   if(accessError&&!childMode)setStatus(status,'Le niveau d’accès au projet n’a pas pu être vérifié. Aucun rôle supplémentaire n’est supposé.','error');
   document.querySelector('[data-project-name]').textContent=p.name;document.querySelector('[data-project-description]').textContent=p.description||'';document.querySelector('[data-project-status]').textContent=projectStatusLabel(p.status);
   const img=document.querySelector('[data-project-cover]');img.src=cover(p);img.alt=`Visuel de ${p.name}`;
-  const licensedGame=p.slug==='fracture-du-reseau-mere';
+  const licensedProject=Boolean(p.product_slug);
+  const a=rows(access).find(x=>x.project_id===p.id);
+  const explicitAccess=Boolean(a&&(!a.expires_at||new Date(a.expires_at).getTime()>Date.now())&&['player','tester'].includes(a.access_level));
   let productRight=owner,productRightVerified=owner;
-  if(licensedGame&&!owner&&!childMode){
-    const productResult=await s.rpc('has_sinjira_product',{p_product_slug:p.slug});
+  if(licensedProject&&!owner&&!childMode){
+    const productResult=await s.rpc('has_sinjira_product',{p_product_slug:p.product_slug});
     productRightVerified=!productResult.error;
     productRight=productRightVerified&&productResult.data===true;
   }
-  const a=rows(access).find(x=>x.project_id===p.id);
   document.querySelector('[data-project-role]').textContent=childMode
     ?'Approuvé 11–12 ans'
-    :licensedGame&&!owner
-      ?(!productRightVerified?'Droit de jeu non vérifié':productRight?'Droit numérique actif':'Droit de jeu requis')
-      :owner?'Propriétaire · catalogue complet':a?.access_level==='tester'?'Testeur approuvé':p.visibility==='restricted'?'Accès privé autorisé':p.visibility==='account'?'Inclus avec le compte':'Page publique';
-  const canPlay=!licensedGame||owner||productRight;
-  const licenseAction=!childMode&&licensedGame&&!owner&&!productRight
+    :licensedProject&&!owner&&!explicitAccess
+      ?(!productRightVerified?'Droit de projet non vérifié':productRight?'Droit numérique actif':'Droit produit requis')
+      :owner?'Propriétaire · catalogue complet':a?.access_level==='tester'?'Testeur approuvé':explicitAccess?'Accès privé autorisé':p.visibility==='restricted'?'Accès privé autorisé':p.visibility==='account'?'Inclus avec le compte':'Page publique';
+  const canPlay=!licensedProject||owner||productRight||explicitAccess;
+  const licenseAction=!childMode&&licensedProject&&!owner&&!productRight&&!explicitAccess
     ?`<a class="btn btn-secondary" href="licences.html">${productRightVerified?'Activer une licence':'Vérifier mes licences'}</a>`
     :'';
   document.querySelector('[data-project-actions]').innerHTML=`${p.public_path?`<a class="btn btn-secondary" href="${escapeHtml(p.public_path)}">Page publique</a>`:''}${!childMode&&p.play_path&&canPlay?`<a class="btn btn-primary" href="${escapeHtml(p.play_path)}">Jouer</a>`:''}${licenseAction}`;
