@@ -248,6 +248,8 @@ def validate(contents: dict[str, str]) -> None:
         "createpolicyorders_own_readonpublic.ordersforselecttoauthenticatedusing((selectauth.uid())=user_idandpublic.sinjira_my_age_band()in('adult','youth'))",
         "createpolicyorder_items_own_readonpublic.order_itemsforselecttoauthenticatedusing(public.sinjira_my_age_band()in('adult','youth')andexists(select1frompublic.ordersowhereo.id=order_items.order_idando.user_id=(selectauth.uid())))",
         "createpolicyentitlements_own_readonpublic.user_entitlementsforselecttoauthenticatedusing((selectauth.uid())=user_idandpublic.sinjira_my_age_band()in('adult','youth'))",
+        "whencoalesce(auth.jwt()->>'role','')='service_role'thensinjira_v25_internal.has_sinjira_product(p_product_slug,p_user_id)",
+        "orp_user_idisdistinctfromauth.uid()orpublic.sinjira_my_age_band()notin('adult','youth')thenfalse",
     ):
         if marker not in age_boundary_migration:
             fail(f"frontière commerce Junior: policy finale absente ou non bornée: {marker[:80]}")
@@ -834,6 +836,7 @@ def main() -> None:
             "policy produit paid rouverte enfant":("paid_access_migration","public.sinjira_my_age_band() in ('adult','youth')\n  and exists(","exists("),
             "catalogue commercial actif rouvert enfant":("age_boundary_migration","active=true\n  and public.sinjira_my_age_band() in ('adult','youth')","active=true"),
             "historique commandes brut rouvert enfant":("age_boundary_migration","(select auth.uid())=user_id\n  and public.sinjira_my_age_band() in ('adult','youth')","(select auth.uid())=user_id"),
+            "oracle droit produit réouvert enfant":("age_boundary_migration","or public.sinjira_my_age_band() not in ('adult','youth')\n      then false","or false\n      then false"),
             "page achats contourne garde commerce":("purchases_js","if(!commerceAllowed){","if(false){"),
             "cache licences revenu ancien":("licenses_html","v24-licenses.js?v=25.1.1","v24-licenses.js?v=24.4.62"),
             "licences enfant sans garde capacités":("licenses_js","const childMode=capabilitiesResolved&&capabilitiesResult.data.library_mode==='reviewed_11_12';","const childMode=false;"),
