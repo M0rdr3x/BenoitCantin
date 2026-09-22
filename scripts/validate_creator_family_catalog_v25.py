@@ -10,6 +10,7 @@ ROOT=Path(__file__).resolve().parents[1]
 FILES={
     "migration":ROOT/"supabase/migrations/20260922014000_sinjira_v25_creator_family_catalog_access.sql",
     "paid_access_migration":ROOT/"supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql",
+    "extension_access_migration":ROOT/"supabase/migrations/20260922030000_sinjira_v25_extension_product_access.sql",
     "shared":ROOT/"supabase/functions/_shared/privateNovel.ts",
     "library":ROOT/"assets/js/sinjira-library-v24-4-61.js",
     "secondary_library":ROOT/"assets/js/sinjira-library.js",
@@ -37,6 +38,7 @@ def compact(value:str)->str:
 def validate(contents:dict[str,str])->None:
     migration=compact(contents["migration"])
     paid_access_migration=compact(contents["paid_access_migration"])
+    extension_access_migration=compact(contents["extension_access_migration"])
     shared=compact(contents["shared"])
     library=compact(contents["library"])
     secondary_library=compact(contents["secondary_library"])
@@ -81,6 +83,20 @@ def validate(contents:dict[str,str])->None:
             fail(f"droit produit payé: invariant absent: {paid_marker}")
     if "o.status<>'cancelled'" in paid_access_migration or "o.status!='cancelled'" in paid_access_migration:
         fail("droit produit payé: une commande non annulée ne suffit pas; le statut paid doit être explicite")
+
+    for extension_marker in (
+        "altertablepublic.extensionsaddcolumnifnotexistsproduct_slugtext",
+        "extensions_product_slug_fkey",
+        "createpolicyextensions_purchased_read_v25",
+        "public.sinjira_age_band((selectauth.uid()))in('adult','youth')",
+        "public.has_sinjira_product(product_slug,(selectauth.uid()))",
+        "createorreplacefunctionsinjira_v25_internal.sinjira_my_extension_catalog()",
+        "whenband='child'thenfull_catalog",
+        "e.product_slugisnotnullandpublic.has_sinjira_product(e.product_slug,uid)",
+        "then'product'",
+    ):
+        if extension_marker not in extension_access_migration:
+            fail(f"accès extension payé: invariant absent: {extension_marker}")
 
     for marker in (
         "createtableifnotexistsprivate.sinjira_catalog_family_members(",
@@ -207,6 +223,9 @@ def validate(contents:dict[str,str])->None:
         "data-library-extensions",
         "data-library-extension-count",
         "functionrenderextensions",
+        "constsource=string(extension.access_source||'catalogue')",
+        "source==='product'",
+        "acheté/droitnumérique",
         "constproductright=isowner||familycatalog||fractureright",
         "constfracturerightverified=!fracturerightresult.error,fractureright=fracturerightverified&&fracturerightresult.data===true",
         "s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'})",
@@ -257,15 +276,15 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-account-dashboard-v24-4-60.js?v=25.0.3" not in contents["account_index"]:
         fail("cache tableau de bord famille non forcé")
 
-    if "sinjira-library-v24-4-61.js?v=25.1.5" not in contents["library_html"]:
+    if "sinjira-library-v24-4-61.js?v=25.1.6" not in contents["library_html"]:
         fail("cache bibliothèque famille non forcé")
     if "sinjira-purchases-v25.js?v=25.0.3" not in contents["purchases_html"]:
         fail("cache achats famille non forcé")
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(50);" not in test:
-        fail("pgTAP famille: plan(50) absent")
+    if "selectplan(54);" not in test:
+        fail("pgTAP famille: plan(54) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
@@ -289,6 +308,10 @@ def validate(contents:dict[str,str])->None:
         "unecommandepaidrendleproduitachetévisibleaumembrestandard",
         "unecommandepaidsatisfaitledroitproduitsansentitlementartificiel",
         "unromanprivéachetéparcommandepaiddevientdisponibledanslecataloguesansentitlement",
+        "uneextensionprivéeliéeàunproduitresteinvisibleavantachat",
+        "lerpcextensionnerévèlepasuneextensionpayanteavantachat",
+        "unecommandepaidrendlextensionprivéeachetéevisibleaumembrestandard",
+        "lecatalogueextensionreconnaîtunecommandepaidsansentitlementartificiel",
         "uncomptefamilial11–12nesatisfaitpasledroitproduitnonclassé",
         "lesrpcpublicsfamillerestentsecurityinvoker",
         "lesseptimplémentationsprivilégiéesfamillerestenthorsduschémapublic",
@@ -303,6 +326,7 @@ def validate(contents:dict[str,str])->None:
         "scripts/provision_creator_family_catalog.py",
         "supabase/functions/_shared/privateNovel.ts",
         "supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql",
+        "supabase/migrations/20260922030000_sinjira_v25_extension_product_access.sql",
     ):
         if path not in account_workflow:
             fail(f"CI compte famille: path absent: {path}")
