@@ -120,6 +120,9 @@ def validate(contents:dict[str,str])->None:
         "sinjira_my_catalog_access_mode",
         "set_sinjira_catalog_family_access_by_email",
         "sinjira_my_project_catalog",
+        "sinjira_my_extension_catalog",
+        "data-library-extensions",
+        "sinjira_my_extension_catalog",
         "sinjira_my_novel_catalog",
     )
     for name in public_family_rpcs:
@@ -157,6 +160,16 @@ def validate(contents:dict[str,str])->None:
     ):
         if marker not in migration:
             fail(f"catalogue projet famille: garde 11–12 absente: {marker}")
+
+    for marker in (
+        "createorreplacefunctionsinjira_v25_internal.sinjira_my_extension_catalog()",
+        "createorreplacefunctionpublic.sinjira_my_extension_catalog()",
+        "whenband='child'then'extensionsinjira™protégée'",
+        "whenband='child'thenfalseelsetrueend",
+        "elsee.is_public=trueande.statusin('approved','released')",
+    ):
+        if marker not in migration:
+            fail(f"catalogue extensions famille: garde absente: {marker}")
 
     for marker in (
         "createorreplacefunctionsinjira_v25_internal.sinjira_my_novel_catalog()",
@@ -249,8 +262,8 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(47);" not in test:
-        fail("pgTAP famille: plan(47) absent")
+    if "selectplan(50);" not in test:
+        fail("pgTAP famille: plan(50) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
@@ -262,6 +275,9 @@ def validate(contents:dict[str,str])->None:
         "uncomptefamilialyouth/adultvoituneextensioninterneducataloguecréateur",
         "unmembrestandardnevoitpasuneextensioninternenonpublique",
         "lecomptefamilial11–12nereçoitpasuneextensioninternenonclassée",
+        "lecatalogueextensionself-onlydonnelesmétadonnéescomplètesàlafamille13+",
+        "lecatalogueextensionself-onlynerévèlepaslextensioninterneaumembrestandard",
+        "lecomptefamilial11–12voituneficheextensionminimiséesanscontenuouvrable",
         "lerôlefamilialnecontournepaslarlschild",
         "lafiche11–12nonclasséeestminimiséeetsanscheminouvrable",
         "laficheromanfamiliale11–12nedonnejamaislintégraleprivée",
@@ -273,7 +289,7 @@ def validate(contents:dict[str,str])->None:
         "unromanprivéachetéparcommandepaiddevientdisponibledanslecataloguesansentitlement",
         "uncomptefamilial11–12nesatisfaitpasledroitproduitnonclassé",
         "lesrpcpublicsfamillerestentsecurityinvoker",
-        "lessiximplémentationsprivilégiéesfamillerestenthorsduschémapublic",
+        "lesseptimplémentationsprivilégiéesfamillerestenthorsduschémapublic",
     ):
         if marker not in test:
             fail(f"pgTAP famille: preuve absente: {marker}")
