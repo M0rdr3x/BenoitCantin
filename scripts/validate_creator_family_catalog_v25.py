@@ -140,6 +140,7 @@ def validate(contents:dict[str,str])->None:
         "altertablepublic.projectsaddcolumnifnotexistsproduct_slugtext",
         "projects_product_slug_fkey",
         "createpolicyprojects_purchased_read_v25",
+        "status<>'draft'andproduct_slugisnotnull",
         "public.sinjira_my_age_band()in('adult','youth')",
         "public.has_sinjira_product(product_slug,(selectauth.uid()))",
         "p.product_slugisnull",
@@ -343,8 +344,8 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(70);" not in test:
-        fail("pgTAP famille: plan(70) absent")
+    if "selectplan(74);" not in test:
+        fail("pgTAP famille: plan(74) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
@@ -390,6 +391,10 @@ def validate(contents:dict[str,str])->None:
         "undroitproduitréelnerouvrepaslextensionprivéeaucompte11–12",
         "lecataloguefamilialgardelextensionachetéeminimiséeà11–12",
         "ledroitproduitréelnedonnejamaislintégraleduromanaucompte11–12",
+        "unachatpaidnerévèlejamaisunprojetencoreenbrouillon",
+        "unachatpaidnerévèlepasledocumentapprouvédunprojetencoreenbrouillon",
+        "unaccèsplayerexplicitepeutouvrirleprojetbrouillonsansdépendredelachat",
+        "unaccèsplayerexpliciteconservelaccèsaudocumentdubrouillon",
         "lesrpcpublicsfamillerestentsecurityinvoker",
         "lesseptimplémentationsprivilégiéesfamillerestenthorsduschémapublic",
     ):
@@ -448,6 +453,8 @@ def main()->None:
             "projet payant rouvert aux comptes child":("project_access_migration","p.child_access_status='approved_11_12'\n      and p.product_slug is null\n      and (","p.child_access_status='approved_11_12'\n      and ("),
             "droit projet acheté retiré":("project_access_migration","public.has_sinjira_product(product_slug,(select auth.uid()))","true"),
             "projet public payant réexposé sans droit":("project_access_migration","visibility='public'\n      and product_slug is null","visibility='public'"),
+            "achat rouvre les brouillons":("project_access_migration","status<>'draft'\n  and product_slug is not null","product_slug is not null"),
+            "document acheté rouvre parent brouillon":("project_access_migration","parent_project.status<>'draft'\n          and parent_project.product_slug is not null","parent_project.product_slug is not null"),
             "catalogue projet acheté retiré":("project_access_migration","sinjira_v25_internal.has_sinjira_product(p.product_slug,uid)","false"),
             "extension produit sans droit canonique":("extension_access_migration","public.has_sinjira_product(product_slug,(select auth.uid()))","true"),
             "commande paid assouplie":("paid_access_migration","o.status='paid'","o.status<>'cancelled'"),
