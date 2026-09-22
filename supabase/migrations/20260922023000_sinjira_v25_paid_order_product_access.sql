@@ -76,7 +76,12 @@ security definer
 set search_path=pg_catalog,public,auth
 as $rights$
   with current_account as (
-    select auth.uid() as uid
+    select
+      auth.uid() as uid,
+      case
+        when auth.uid() is null then 'unverified'
+        else public.sinjira_age_band(auth.uid())
+      end as band
   ),
   rights as (
     select
@@ -90,6 +95,7 @@ as $rights$
     join public.user_entitlements ue on ue.user_id=a.uid
     join public.products p on p.id=ue.product_id
     where a.uid is not null
+      and a.band in ('adult','youth')
 
     union all
 
@@ -105,6 +111,7 @@ as $rights$
     join public.order_items oi on oi.order_id=o.id
     join public.products p on p.id=oi.product_id
     where a.uid is not null
+      and a.band in ('adult','youth')
       and o.status='paid'
   ),
   deduplicated as (
@@ -155,7 +162,7 @@ comment on policy products_ordered_read on public.products is
 comment on function public.has_sinjira_product(text,uuid) is
   'Droit produit self-only: propriétaire, famille adult/youth, entitlement durable ou commande paid. Une commande non payée ne donne aucun accès; aucun faux entitlement n est créé.';
 comment on function sinjira_v25_internal.sinjira_my_product_rights() is
-  'Implémentation privilégiée self-only et minimisée des droits produit commerciaux du compte courant.';
+  'Implémentation privilégiée self-only et minimisée des droits produit commerciaux du compte courant. Les comptes 11–12 et états non vérifiés restent masqués côté navigateur.';
 comment on function public.sinjira_my_product_rights() is
   'Wrapper SECURITY INVOKER vers la liste self-only des droits produit commerciaux: entitlement durable ou commande paid. Aucun détail de commande, aucun faux droit owner/famille.';
 
