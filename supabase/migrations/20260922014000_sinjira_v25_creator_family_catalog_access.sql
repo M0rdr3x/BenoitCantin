@@ -388,6 +388,91 @@ from public,anon;
 grant execute on function public.sinjira_my_project_catalog()
 to authenticated,service_role;
 
+create or replace function sinjira_v25_internal.sinjira_my_extension_catalog()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path=pg_catalog,public,private,auth
+as $family$
+declare
+  uid uuid:=auth.uid();
+  band text;
+  owner_mode boolean:=false;
+  family_mode boolean:=false;
+  full_catalog boolean:=false;
+  result jsonb;
+begin
+  if uid is null then
+    raise exception 'AUTH_REQUIRED' using errcode='42501';
+  end if;
+
+  band:=public.sinjira_age_band(uid);
+  owner_mode:=public.is_sinjira_owner(uid);
+  family_mode:=public.is_sinjira_catalog_family_member(uid);
+  full_catalog:=owner_mode or family_mode;
+
+  if band not in ('adult','youth','child') then
+    return '[]'::jsonb;
+  end if;
+
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'id',e.id,
+        'project_id',e.project_id,
+        'project_slug',p.slug,
+        'title',case
+          when band='child' then 'Extension SINJIRA™ protégée'
+          else e.title
+        end,
+        'description',case
+          when band='child' then 'Extension visible dans le catalogue familial. Contenu protégé jusqu’à classification adaptée.'
+          else e.description
+        end,
+        'status',case when band='child' then 'protected' else e.status end,
+        'is_public',case when band='child' then false else e.is_public end,
+        'creator_mode',owner_mode,
+        'family_mode',family_mode,
+        'content_available',case when band='child' then false else true end
+      )
+      order by p.sort_order,p.name,e.created_at,e.title
+    ),
+    '[]'::jsonb
+  ) into result
+  from public.extensions e
+  join public.projects p on p.id=e.project_id
+  where
+    case
+      when band='child' then full_catalog
+      when full_catalog then true
+      else e.is_public=true and e.status in ('approved','released')
+    end;
+
+  return result;
+end;
+$family$;
+
+revoke all on function sinjira_v25_internal.sinjira_my_extension_catalog()
+from public,anon,authenticated;
+grant execute on function sinjira_v25_internal.sinjira_my_extension_catalog()
+to authenticated,service_role;
+
+create or replace function public.sinjira_my_extension_catalog()
+returns jsonb
+language sql
+stable
+security invoker
+set search_path=''
+as $wrapper$
+  select sinjira_v25_internal.sinjira_my_extension_catalog();
+$wrapper$;
+
+revoke all on function public.sinjira_my_extension_catalog()
+from public,anon;
+grant execute on function public.sinjira_my_extension_catalog()
+to authenticated,service_role;
+
 create or replace function sinjira_v25_internal.sinjira_my_novel_catalog()
 returns jsonb
 language plpgsql
@@ -603,6 +688,8 @@ comment on function public.set_sinjira_catalog_family_access_by_email(text,boole
   'Provisionnement service_role: résout temporairement un courriel Auth vers son UUID puis ne conserve que l UUID.';
 comment on function public.sinjira_my_project_catalog() is
   'Catalogue complet owner/famille; pour 11–12 ans, expose seulement des métadonnées minimisées et ne contourne jamais child_access_status.';
+comment on function public.sinjira_my_extension_catalog() is
+  'Catalogue extensions self-only: complet pour créateur/famille adult-youth, public pour membre standard, fiches protégées minimisées pour famille 11–12.';
 comment on function public.sinjira_my_novel_catalog() is
   'Catalogue roman self-only: owner/famille voit toutes les fiches; 11–12 famille voit les fiches minimisées sans accès intégral; les autres membres restent limités au catalogue public et à leurs entitlements.';
 
