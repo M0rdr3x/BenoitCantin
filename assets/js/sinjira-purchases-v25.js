@@ -70,6 +70,8 @@ async function init(){
   const commerceAllowed=capabilitiesResolved&&capabilitiesResult.data.commerce===true;
   const orderCount=document.querySelector('[data-paid-order-count]');
   const rightsCount=document.querySelector('[data-purchase-right-count]');
+  const role=document.querySelector('[data-purchase-account-role]');
+  const status=document.querySelector('[data-purchases-v25-status]');
 
   if(!capabilitiesResolved){
     renderOrders([],false);
@@ -126,7 +128,6 @@ async function init(){
   const catalogAccessMode=catalogAccessResolved?String(catalogAccessResult.data||'member'):'member';
   const isFamily=catalogAccessMode==='family';
   const hasCreatorCatalog=isOwner||isFamily;
-  const role=document.querySelector('[data-purchase-account-role]');
   if(role)role.textContent=!ownerResolved&&!catalogAccessResolved?'Rôle du compte non confirmé':isOwner?'Compte créateur SINJIRA™':isFamily?'Compte famille créateur SINJIRA™':'Compte membre SINJIRA™';
 
   let creatorResults=[];
@@ -141,7 +142,6 @@ async function init(){
 
   const errors=[ownerResult,ordersResult,entitlementsResult,...creatorResults].filter(result=>result.error);
   if(catalogAccessResult.error)errors.push(catalogAccessResult);
-  const status=document.querySelector('[data-purchases-v25-status]');
   if(errors.length&&status){
     status.hidden=false;
     status.dataset.statusType='error';
