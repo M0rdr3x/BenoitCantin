@@ -12,6 +12,7 @@ TABLE_MIGRATION = Path("supabase/migrations/20260821222514_sinjira_v24_4_98_acco
 BASE_RPC_MIGRATION = Path("supabase/migrations/20260821222615_sinjira_v24_4_98_security_rpc.sql")
 BOUNDARY_MIGRATION = Path("supabase/migrations/20260822201257_sinjira_v24_5_10_security_rpc_boundary.sql")
 CREATE_V25_MIGRATION = Path("supabase/migrations/20260911001000_sinjira_v25_travel_mode_country_normalization.sql")
+VISIBILITY_MIGRATION = Path("supabase/migrations/20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql")
 HARDENING_MIGRATION = Path("supabase/migrations/20260921005000_sinjira_v25_travel_mode_internal_response_minimization.sql")
 SQL_TEST = Path("supabase/tests/security_travel_self_only_v25.test.sql")
 WORKFLOW = Path(".github/workflows/sinjira-security-travel-self-only-v25.yml")
@@ -129,6 +130,32 @@ def validate_text(
     require(errors, "cardinality(coalesce(v_dest,'{}'::text[])) not between 1 and 12" in normalized_create,
             "V25 travel creation must keep the 1..12 country limit")
 
+    visibility_sql = load(VISIBILITY_MIGRATION)
+    visibility_create = squash(extract_function(
+        visibility_sql, "create or replace function sinjira_security_internal.security_create_travel_plan("
+    ))
+    visibility_cancel = squash(extract_function(
+        visibility_sql, "create or replace function sinjira_security_internal.security_cancel_travel_plan("
+    ))
+    require(errors, bool(visibility_create),
+            "A3 travel creation implementation must already be redefined internally")
+    require(errors, "v_user uuid := auth.uid();" in visibility_create,
+            "A3 travel creation must still derive ownership from auth.uid()")
+    require(errors, "p_user_id" not in visibility_create,
+            "A3 travel creation must not accept a caller-supplied target user")
+    require(errors, "return pg_catalog.jsonb_build_object(" in visibility_create
+            and "return to_jsonb(v_row)" not in visibility_create,
+            "A3 travel creation must already return a minimized JSON object")
+    require(errors, bool(visibility_cancel),
+            "A3 travel cancellation implementation must already be redefined internally")
+    require(errors, "whereid=p_plan_idanduser_id=v_userandstatus='active'" in compact(visibility_cancel),
+            "A3 travel cancellation must remain self-only")
+    require(errors, "p_user_id" not in visibility_cancel,
+            "A3 travel cancellation must not accept a caller-supplied target user")
+    require(errors, "return pg_catalog.jsonb_build_object(" in visibility_cancel
+            and "return to_jsonb(v_row)" not in visibility_cancel,
+            "A3 travel cancellation must already return a minimized JSON object")
+
     effective_create = squash(extract_function(
         hardening_sql, "create or replace function sinjira_security_internal.security_create_travel_plan("
     ))
@@ -208,6 +235,7 @@ def validate_text(
         str(BASE_RPC_MIGRATION),
         str(BOUNDARY_MIGRATION),
         str(CREATE_V25_MIGRATION),
+        str(VISIBILITY_MIGRATION),
         str(HARDENING_MIGRATION),
         str(SQL_TEST),
     ):
@@ -289,6 +317,10 @@ def run_self_test(
                          r"SELF_ONLY_CREATE_RPC_MUST_DERIVE_OWNER_FROM_AUTH_UID",
                          "CREATE_OWNER_CHECK_REMOVED", "SQL create-owner assertion"),
              workflow),
+            ("visibility source unwatched", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, hardening_sql, test_sql,
+             mutate_once(workflow,
+                         re.escape(str(VISIBILITY_MIGRATION)),
+                         "supabase/migrations/UNWATCHED_travel_visibility.sql", "workflow visibility watch")),
             ("hardening source unwatched", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, hardening_sql, test_sql,
              mutate_once(workflow,
                          re.escape(str(HARDENING_MIGRATION)),
