@@ -121,8 +121,6 @@ def validate(contents:dict[str,str])->None:
         "set_sinjira_catalog_family_access_by_email",
         "sinjira_my_project_catalog",
         "sinjira_my_extension_catalog",
-        "data-library-extensions",
-        "sinjira_my_extension_catalog",
         "sinjira_my_novel_catalog",
     )
     for name in public_family_rpcs:
@@ -205,6 +203,10 @@ def validate(contents:dict[str,str])->None:
         "constfamilycatalog=catalogaccessmode==='family'",
         "source==='entitlement'||source==='product'",
         "sinjira_my_project_catalog",
+        "sinjira_my_extension_catalog",
+        "data-library-extensions",
+        "data-library-extension-count",
+        "functionrenderextensions",
         "constproductright=isowner||familycatalog||fractureright",
         "constfracturerightverified=!fracturerightresult.error,fractureright=fracturerightverified&&fracturerightresult.data===true",
         "s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'})",
@@ -255,7 +257,7 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-account-dashboard-v24-4-60.js?v=25.0.3" not in contents["account_index"]:
         fail("cache tableau de bord famille non forcé")
 
-    if "sinjira-library-v24-4-61.js?v=25.1.4" not in contents["library_html"]:
+    if "sinjira-library-v24-4-61.js?v=25.1.5" not in contents["library_html"]:
         fail("cache bibliothèque famille non forcé")
     if "sinjira-purchases-v25.js?v=25.0.3" not in contents["purchases_html"]:
         fail("cache achats famille non forcé")
