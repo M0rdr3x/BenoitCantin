@@ -117,7 +117,8 @@ on public.extensions
 for select
 to authenticated
 using (
-  product_slug is not null
+  status in ('approved','released')
+  and product_slug is not null
   and public.sinjira_my_age_band() in ('adult','youth')
   and public.has_sinjira_product(product_slug,(select auth.uid()))
 );
