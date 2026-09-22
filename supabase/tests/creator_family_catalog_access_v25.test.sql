@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(44);
+select plan(47);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -95,6 +95,18 @@ values
   false,
   998,
   'approved_11_12'
+);
+
+insert into public.extensions(
+  id,project_id,title,description,status,is_public
+)
+values(
+  'fd000000-0000-4000-8000-00000000000d',
+  'f8000000-0000-4000-8000-000000000008',
+  'Extension interne famille',
+  'Extension SINJIRA non publiée.',
+  'design',
+  false
 );
 
 insert into public.sinjira_novels(
@@ -306,6 +318,11 @@ select ok(
   ),
   'le catalogue roman familial standard donne l intégrale configurée sans entitlement'
 );
+select is(
+  (select count(*)::integer from public.extensions where id='fd000000-0000-4000-8000-00000000000d'),
+  1,
+  'un compte familial youth/adult voit une extension interne du catalogue créateur'
+);
 select ok(
   public.has_sinjira_product(
     'family-private-novel-product',
@@ -361,6 +378,11 @@ select is(
   (select count(*)::integer from public.products where slug='family-private-novel-product'),
   0,
   'un membre standard ne voit pas le produit interne sans achat ni droit'
+);
+select is(
+  (select count(*)::integer from public.extensions where id='fd000000-0000-4000-8000-00000000000d'),
+  0,
+  'un membre standard ne voit pas une extension interne non publique'
 );
 select throws_ok(
   $$ select public.sinjira_my_project_catalog() $$,
@@ -459,6 +481,11 @@ select is(
   (select count(*)::integer from public.projects where slug='family-private-game'),
   0,
   'le rôle familial ne contourne pas la RLS child pour un projet privé non classé'
+);
+select is(
+  (select count(*)::integer from public.extensions where id='fd000000-0000-4000-8000-00000000000d'),
+  0,
+  'le compte familial 11–12 ne reçoit pas une extension interne non classée'
 );
 select is(
   sinjira_catalog_internal.project_access_rank(
