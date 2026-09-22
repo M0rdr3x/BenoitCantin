@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(24);
+select plan(26);
 
 select has_column('public','projects','child_access_status','projects possède le classement 11–12');
 select has_column('public','projects','child_access_reviewed_by','projects conserve le réviseur humain');
@@ -48,6 +48,49 @@ values
 ('92000000-0000-4000-8000-000000000001','91000000-0000-4000-8000-000000000002','Document non révisé','test','document','1.0','approved','account','/test-child-unreviewed.pdf',901),
 ('92000000-0000-4000-8000-000000000002','91000000-0000-4000-8000-000000000002','Document approuvé','test','document','1.0','approved','account','/test-child-approved.pdf',902);
 
+insert into public.products(id,slug,name,product_type,active)
+values(
+  '94000000-0000-4000-8000-000000000001',
+  'child-rating-paid-product',
+  'Produit payant test 11–12',
+  'game',
+  true
+);
+insert into public.projects(
+  id,slug,name,type,status,visibility,description,allow_tester_requests,sort_order,
+  child_access_status,product_slug
+)
+values(
+  '91000000-0000-4000-8000-000000000005',
+  'child-rating-paid-approved',
+  'Payant approuvé 11–12',
+  'game',
+  'active',
+  'account',
+  'test payant',
+  false,
+  905,
+  'approved_11_12',
+  'child-rating-paid-product'
+);
+insert into public.documents(
+  id,project_id,title,description,document_type,version,status,access_level,
+  external_url,sort_order,child_access_status
+)
+values(
+  '92000000-0000-4000-8000-000000000003',
+  '91000000-0000-4000-8000-000000000005',
+  'Document payant approuvé',
+  'test',
+  'document',
+  '1.0',
+  'approved',
+  'account',
+  '/test-child-paid-approved.pdf',
+  903,
+  'approved_11_12'
+);
+
 select is((select child_access_status from public.documents where id='92000000-0000-4000-8000-000000000001'),'unreviewed','un document reste fermé par défaut');
 select ok(not public.sinjira_child_document_available('92000000-0000-4000-8000-000000000001'),'un document non révisé est indisponible 11–12');
 update public.documents set child_access_status='approved_11_12' where id='92000000-0000-4000-8000-000000000002';
@@ -58,6 +101,14 @@ select set_config(
 );
 set local role authenticated;
 select ok(public.sinjira_child_document_available('92000000-0000-4000-8000-000000000002'),'document + projet doublement approuvés deviennent disponibles');
+select ok(
+  not public.sinjira_child_project_available('91000000-0000-4000-8000-000000000005'),
+  'un projet payant reste indisponible 11–12 même avec approbation humaine'
+);
+select ok(
+  not public.sinjira_child_document_available('92000000-0000-4000-8000-000000000003'),
+  'un document d un projet payant reste indisponible 11–12 même doublement approuvé'
+);
 reset role;
 
 select set_config('request.jwt.claims',jsonb_build_object('role','anon')::text,true);
