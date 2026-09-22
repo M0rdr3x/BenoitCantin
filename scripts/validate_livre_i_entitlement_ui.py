@@ -274,7 +274,9 @@ def self_test() -> None:
             raise AssertionError('Une lecture directe des commandes depuis Licences doit être bloquée.')
 
         paths['licenses'].write_text(
-            f"const BOOK='{BOOK_SLUG}'; s.rpc('sinjira_my_product_rights'); 'Droit numérique reconnu'; 'diffusion privée';",
+            f"const BOOK='{BOOK_SLUG}'; s.rpc('sinjira_my_account_capabilities'); "
+            "const childMode=capabilities.data.library_mode==='reviewed_11_12'; if(childMode){form.hidden=true; 'Licences protégées pour les comptes 11–12 ans.';} "
+            "s.rpc('sinjira_my_product_rights'); 'Droit numérique reconnu'; 'diffusion privée';",
             encoding='utf-8',
         )
 
