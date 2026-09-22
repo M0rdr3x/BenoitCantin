@@ -26,7 +26,8 @@ function productRightCard(row){
   return `<article class="v24-panel"><span class="v24-badge live">Possédé</span><h3>${name}</h3><p>Source : ${source}</p></article>`;
 }
 
-if(form&&list){
+async function init(){
+  if(!form||!list)return;
   const user=await requireUser();
   const s=getSupabase();
   const [ownerResult,capabilitiesResult]=await Promise.all([
@@ -80,3 +81,9 @@ if(form&&list){
   });
   await render();
 }
+
+init().catch(error=>{
+  if(form)form.hidden=true;
+  if(list)list.innerHTML='<div class="v24-empty">Impossible de charger les licences pour le moment. Aucun droit commercial supplémentaire n’est affiché.</div>';
+  if(error?.message!=='Connexion requise')setStatus(status,'La vérification des licences a échoué de façon sécurisée. Réessayez plus tard.','error');
+});
