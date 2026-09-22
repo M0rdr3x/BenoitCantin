@@ -151,7 +151,7 @@ def validate(contents:dict[str,str])->None:
     ):
         if forbidden in library:
             fail(f"bibliothèque: livraison privée directe ou rôle dupliqué interdit: {forbidden}")
-    if "sinjira-library-v24-4-61.js?v=25.1.4" not in library_html:
+    if "sinjira-library-v24-4-61.js?v=25.1.5" not in library_html:
         fail("bibliothèque: cache générique roman non forcé")
 
     if "sinjira_my_novel_catalog" not in literature:
