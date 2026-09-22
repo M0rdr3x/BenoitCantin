@@ -52,6 +52,10 @@ def validate(contents:dict[str,str])->None:
         "createtableifnotexistsprivate.sinjira_catalog_family_members(",
         "user_iduuidprimarykeyreferencesauth.users(id)ondeletecascade",
         "revokeallontableprivate.sinjira_catalog_family_membersfrompublic,anon,authenticated",
+        "createorreplacefunctionsinjira_v25_internal.is_sinjira_catalog_family_member(",
+        "createorreplacefunctionsinjira_v25_internal.sinjira_has_full_catalog_access(",
+        "createorreplacefunctionsinjira_v25_internal.sinjira_my_catalog_access_mode()",
+        "createorreplacefunctionsinjira_v25_internal.set_sinjira_catalog_family_access_by_email(",
         "createorreplacefunctionpublic.is_sinjira_catalog_family_member(",
         "createorreplacefunctionpublic.sinjira_has_full_catalog_access(",
         "createorreplacefunctionpublic.sinjira_my_catalog_access_mode()",
@@ -76,6 +80,25 @@ def validate(contents:dict[str,str])->None:
     if "labeltext" in family_table:
         fail("accès famille: le registre privé ne doit pas stocker de libellé nominatif")
 
+    public_family_rpcs=(
+        "is_sinjira_catalog_family_member",
+        "sinjira_has_full_catalog_access",
+        "sinjira_my_catalog_access_mode",
+        "set_sinjira_catalog_family_access_by_email",
+        "sinjira_my_project_catalog",
+        "sinjira_my_novel_catalog",
+    )
+    for name in public_family_rpcs:
+        start=migration.find(f"createorreplacefunctionpublic.{name}(")
+        if start < 0:
+            fail(f"frontière RPC famille: wrapper public absent: {name}")
+        end=migration.find("$wrapper$;",start)
+        if end < 0:
+            fail(f"frontière RPC famille: fin wrapper absente: {name}")
+        segment=migration[start:end]
+        if "securityinvoker" not in segment or "securitydefiner" in segment:
+            fail(f"frontière RPC famille: wrapper public privilégié: {name}")
+
     for marker in (
         "createpolicysinjira_novels_family_catalog_read_v25",
         "createpolicyproducts_family_catalog_read_v25",
@@ -87,6 +110,7 @@ def validate(contents:dict[str,str])->None:
             fail(f"accès famille: policy standard manquante: {marker}")
 
     for marker in (
+        "createorreplacefunctionsinjira_v25_internal.sinjira_my_project_catalog()",
         "createorreplacefunctionpublic.sinjira_my_project_catalog()",
         "raiseexception'catalog_access_required'",
         "p.child_access_status='approved_11_12'",
@@ -99,6 +123,7 @@ def validate(contents:dict[str,str])->None:
             fail(f"catalogue projet famille: garde 11–12 absente: {marker}")
 
     for marker in (
+        "createorreplacefunctionsinjira_v25_internal.sinjira_my_novel_catalog()",
         "createorreplacefunctionpublic.sinjira_my_novel_catalog()",
         "full_catalog_mode:=owner_modeorfamily_mode",
         "ifband='child'andnotfull_catalog_modethen",
@@ -111,7 +136,7 @@ def validate(contents:dict[str,str])->None:
             fail(f"catalogue roman famille: garde absente: {marker}")
 
     for marker in (
-        "public.sinjira_has_full_catalog_access(p_user_id)",
+        "sinjira_v25_internal.sinjira_has_full_catalog_access(p_user_id)",
         "public.sinjira_age_band(p_user_id)in('adult','youth')then90",
         "p_user_idisdistinctfromauth.uid()then0",
     ):
@@ -185,8 +210,8 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(38);" not in test:
-        fail("pgTAP famille: plan(38) absent")
+    if "selectplan(40);" not in test:
+        fail("pgTAP famille: plan(40) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
@@ -201,6 +226,8 @@ def validate(contents:dict[str,str])->None:
         "uncomptefamilialnevalidejamaisunslugproduitinexistant",
         "unmembrestandardsansachatnientitlementnesatisfaitpasledroitproduit",
         "uncomptefamilial11–12nesatisfaitpasledroitproduitnonclassé",
+        "lesrpcpublicsfamillerestentsecurityinvoker",
+        "lessiximplémentationsprivilégiéesfamillerestenthorsduschémapublic",
     ):
         if marker not in test:
             fail(f"pgTAP famille: preuve absente: {marker}")
@@ -238,6 +265,7 @@ def main()->None:
             "catalogue famille dashboard retiré":("dashboard","s.rpc(\'sinjira_my_project_catalog\')","Promise.resolve({data:[],error:null})"),
             "droit produit famille retiré":("migration","public.is_sinjira_catalog_family_member(p_user_id)","false"),
             "jeu famille retiré bibliothèque":("library","isOwner||familyCatalog||entitledProductSlugs.has(project.slug)","isOwner||entitledProductSlugs.has(project.slug)"),
+            "wrapper famille redevient definer":("migration","security invoker\nset search_path=''\nas $wrapper$","security definer\nset search_path=''\nas $wrapper$"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)

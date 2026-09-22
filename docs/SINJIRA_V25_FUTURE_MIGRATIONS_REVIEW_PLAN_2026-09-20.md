@@ -361,6 +361,7 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
 - [ ] `20260922014000_sinjira_v25_creator_family_catalog_access.sql`
   - Ajoute un registre privé de comptes familiaux **par UUID uniquement**; aucun courriel n'est stocké dans la table ni inscrit en clair dans la migration publique.
   - Le provisionnement par courriel est réservé à `service_role` : le courriel est utilisé seulement pour résoudre `auth.users.id`, puis seul l'UUID est conservé.
+  - Les implémentations privilégiées famille résident dans `sinjira_v25_internal`; les RPC publics restent `SECURITY INVOKER`, afin de ne pas rouvrir la frontière C2.
   - Le propriétaire conserve son accès complet existant; un compte famille 13+ obtient la visibilité catalogue complète sans création de commande, entitlement ou `project_access` artificiel.
   - Les membres ordinaires restent limités aux contenus publics/gratuits et à leurs achats, entitlements ou accès explicites.
   - Pour un compte famille 11–12, la visibilité supplémentaire passe par des RPC self-only minimisés : titres/fiches visibles, mais projets non approuvés sans chemin ouvrable ni couverture non classée et romans privés sans `full_access`, `public_path`, `demo_path`, couverture privée ni nombre de pages.

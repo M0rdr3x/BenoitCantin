@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(38);
+select plan(40);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -162,6 +162,45 @@ select ok(
     'EXECUTE'
   ),
   'service_role peut provisionner un accès familial'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from pg_proc p
+    join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public'
+      and p.proname in (
+        'is_sinjira_catalog_family_member',
+        'sinjira_has_full_catalog_access',
+        'sinjira_my_catalog_access_mode',
+        'set_sinjira_catalog_family_access_by_email',
+        'sinjira_my_project_catalog',
+        'sinjira_my_novel_catalog'
+      )
+      and p.prosecdef
+  ),
+  0,
+  'les RPC publics famille restent SECURITY INVOKER'
+);
+select is(
+  (
+    select count(*)::integer
+    from pg_proc p
+    join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='sinjira_v25_internal'
+      and p.proname in (
+        'is_sinjira_catalog_family_member',
+        'sinjira_has_full_catalog_access',
+        'sinjira_my_catalog_access_mode',
+        'set_sinjira_catalog_family_access_by_email',
+        'sinjira_my_project_catalog',
+        'sinjira_my_novel_catalog'
+      )
+      and p.prosecdef
+  ),
+  6,
+  'les six implémentations privilégiées famille restent hors du schéma public'
 );
 
 select set_config(

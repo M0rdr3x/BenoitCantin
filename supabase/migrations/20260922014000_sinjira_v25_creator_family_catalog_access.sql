@@ -16,8 +16,8 @@ alter table private.sinjira_catalog_family_members enable row level security;
 revoke all on table private.sinjira_catalog_family_members from public,anon,authenticated;
 grant select,insert,update,delete on table private.sinjira_catalog_family_members to service_role;
 
-create or replace function public.is_sinjira_catalog_family_member(
-  p_user_id uuid default auth.uid()
+create or replace function sinjira_v25_internal.is_sinjira_catalog_family_member(
+  p_user_id uuid
 )
 returns boolean
 language sql
@@ -37,13 +37,30 @@ as $family$
     );
 $family$;
 
+revoke all on function sinjira_v25_internal.is_sinjira_catalog_family_member(uuid)
+from public,anon,authenticated;
+grant execute on function sinjira_v25_internal.is_sinjira_catalog_family_member(uuid)
+to authenticated,service_role;
+
+create or replace function public.is_sinjira_catalog_family_member(
+  p_user_id uuid default auth.uid()
+)
+returns boolean
+language sql
+stable
+security invoker
+set search_path=''
+as $wrapper$
+  select sinjira_v25_internal.is_sinjira_catalog_family_member(p_user_id);
+$wrapper$;
+
 revoke all on function public.is_sinjira_catalog_family_member(uuid)
 from public,anon;
 grant execute on function public.is_sinjira_catalog_family_member(uuid)
 to authenticated,service_role;
 
-create or replace function public.sinjira_has_full_catalog_access(
-  p_user_id uuid default auth.uid()
+create or replace function sinjira_v25_internal.sinjira_has_full_catalog_access(
+  p_user_id uuid
 )
 returns boolean
 language sql
@@ -71,12 +88,29 @@ as $family$
     );
 $family$;
 
+revoke all on function sinjira_v25_internal.sinjira_has_full_catalog_access(uuid)
+from public,anon,authenticated;
+grant execute on function sinjira_v25_internal.sinjira_has_full_catalog_access(uuid)
+to authenticated,service_role;
+
+create or replace function public.sinjira_has_full_catalog_access(
+  p_user_id uuid default auth.uid()
+)
+returns boolean
+language sql
+stable
+security invoker
+set search_path=''
+as $wrapper$
+  select sinjira_v25_internal.sinjira_has_full_catalog_access(p_user_id);
+$wrapper$;
+
 revoke all on function public.sinjira_has_full_catalog_access(uuid)
 from public,anon;
 grant execute on function public.sinjira_has_full_catalog_access(uuid)
 to authenticated,service_role;
 
-create or replace function public.sinjira_my_catalog_access_mode()
+create or replace function sinjira_v25_internal.sinjira_my_catalog_access_mode()
 returns text
 language plpgsql
 stable
@@ -108,14 +142,29 @@ begin
 end;
 $family$;
 
+revoke all on function sinjira_v25_internal.sinjira_my_catalog_access_mode()
+from public,anon,authenticated;
+grant execute on function sinjira_v25_internal.sinjira_my_catalog_access_mode()
+to authenticated,service_role;
+
+create or replace function public.sinjira_my_catalog_access_mode()
+returns text
+language sql
+stable
+security invoker
+set search_path=''
+as $wrapper$
+  select sinjira_v25_internal.sinjira_my_catalog_access_mode();
+$wrapper$;
+
 revoke all on function public.sinjira_my_catalog_access_mode()
 from public,anon;
 grant execute on function public.sinjira_my_catalog_access_mode()
 to authenticated,service_role;
 
-create or replace function public.set_sinjira_catalog_family_access_by_email(
+create or replace function sinjira_v25_internal.set_sinjira_catalog_family_access_by_email(
   p_email text,
-  p_enabled boolean default true
+  p_enabled boolean
 )
 returns jsonb
 language plpgsql
@@ -164,6 +213,23 @@ begin
 end;
 $family$;
 
+revoke all on function sinjira_v25_internal.set_sinjira_catalog_family_access_by_email(text,boolean)
+from public,anon,authenticated;
+grant execute on function sinjira_v25_internal.set_sinjira_catalog_family_access_by_email(text,boolean)
+to service_role;
+
+create or replace function public.set_sinjira_catalog_family_access_by_email(
+  p_email text,
+  p_enabled boolean default true
+)
+returns jsonb
+language sql
+security invoker
+set search_path=''
+as $wrapper$
+  select sinjira_v25_internal.set_sinjira_catalog_family_access_by_email(p_email,p_enabled);
+$wrapper$;
+
 revoke all on function public.set_sinjira_catalog_family_access_by_email(text,boolean)
 from public,anon,authenticated;
 grant execute on function public.set_sinjira_catalog_family_access_by_email(text,boolean)
@@ -199,7 +265,7 @@ using (
   and public.sinjira_age_band((select auth.uid())) in ('adult','youth')
 );
 
-create or replace function public.sinjira_my_project_catalog()
+create or replace function sinjira_v25_internal.sinjira_my_project_catalog()
 returns jsonb
 language plpgsql
 stable
@@ -217,7 +283,7 @@ begin
   end if;
 
   band:=public.sinjira_age_band(uid);
-  full_catalog:=public.sinjira_has_full_catalog_access(uid);
+  full_catalog:=sinjira_v25_internal.sinjira_has_full_catalog_access(uid);
 
   if not full_catalog then
     raise exception 'CATALOG_ACCESS_REQUIRED' using errcode='42501';
@@ -292,12 +358,27 @@ begin
 end;
 $family$;
 
+revoke all on function sinjira_v25_internal.sinjira_my_project_catalog()
+from public,anon,authenticated;
+grant execute on function sinjira_v25_internal.sinjira_my_project_catalog()
+to authenticated,service_role;
+
+create or replace function public.sinjira_my_project_catalog()
+returns jsonb
+language sql
+stable
+security invoker
+set search_path=''
+as $wrapper$
+  select sinjira_v25_internal.sinjira_my_project_catalog();
+$wrapper$;
+
 revoke all on function public.sinjira_my_project_catalog()
 from public,anon;
 grant execute on function public.sinjira_my_project_catalog()
 to authenticated,service_role;
 
-create or replace function public.sinjira_my_novel_catalog()
+create or replace function sinjira_v25_internal.sinjira_my_novel_catalog()
 returns jsonb
 language plpgsql
 stable
@@ -407,6 +488,26 @@ begin
 end;
 $family$;
 
+revoke all on function sinjira_v25_internal.sinjira_my_novel_catalog()
+from public,anon,authenticated;
+grant execute on function sinjira_v25_internal.sinjira_my_novel_catalog()
+to authenticated,service_role;
+
+create or replace function public.sinjira_my_novel_catalog()
+returns jsonb
+language sql
+stable
+security invoker
+set search_path=''
+as $wrapper$
+  select sinjira_v25_internal.sinjira_my_novel_catalog();
+$wrapper$;
+
+revoke all on function public.sinjira_my_novel_catalog()
+from public,anon;
+grant execute on function public.sinjira_my_novel_catalog()
+to authenticated,service_role;
+
 create or replace function sinjira_catalog_internal.project_access_rank(
   p_project_id uuid,
   p_user_id uuid default auth.uid()
@@ -421,7 +522,7 @@ as $family_rank$
     when coalesce(auth.jwt()->>'role','') <> 'service_role'
          and p_user_id is distinct from auth.uid() then 0
     when public.is_sinjira_admin(p_user_id) then 100
-    when public.sinjira_has_full_catalog_access(p_user_id)
+    when sinjira_v25_internal.sinjira_has_full_catalog_access(p_user_id)
          and public.sinjira_age_band(p_user_id) in ('adult','youth') then 90
     when exists(
       select 1
