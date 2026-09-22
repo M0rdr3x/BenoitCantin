@@ -1,6 +1,99 @@
 -- SINJIRA™ V25 — compatibilité Profil privé avec le minimum d'âge actuel 11+.
 -- Forward-only : ne modifie aucune migration historique déjà inscrite au ledger.
--- Les 11–13 ans restent conditionnés à un lien parent/tuteur vérifié et non révoqué.
+-- Les 11–13 ans restent conditionnés à un lien parent/tuteur vérifié et non révoqué, en lecture comme en écriture.
+
+create or replace function sinjira_profile_internal.private_profile_get()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path to 'pg_catalog','public'
+as $$
+declare
+  v_uid uuid:=auth.uid();
+  p public.private_profiles%rowtype;
+  s public.account_safety_profiles%rowtype;
+  v_birth date;
+  v_age integer;
+  v_gender text;
+  v_relationship text;
+begin
+  if v_uid is null then raise exception 'AUTH_REQUIRED'; end if;
+
+  if to_regprocedure('sinjira_rls_internal.sinjira_mfa_access_allowed(uuid)') is not null
+     and not sinjira_rls_internal.sinjira_mfa_access_allowed(v_uid) then
+    raise exception 'MFA_REQUIRED';
+  end if;
+
+  select * into p from public.private_profiles where user_id=v_uid;
+  select * into s from public.account_safety_profiles where user_id=v_uid;
+
+  v_birth:=coalesce(p.birth_date,s.date_of_birth);
+
+  if v_birth is not null then
+    if v_birth>current_date then
+      raise exception 'INVALID_BIRTH_DATE';
+    end if;
+
+    v_age:=extract(year from age(current_date,v_birth))::integer;
+
+    if v_age<11 then
+      raise exception 'SINJIRA_MINIMUM_AGE_11';
+    end if;
+
+    if v_age>120 then
+      raise exception 'INVALID_BIRTH_DATE';
+    end if;
+
+    if v_age<14
+       and not exists(
+         select 1
+         from public.guardian_links g
+         where g.minor_user_id=v_uid
+           and g.status='verified'
+           and g.revoked_at is null
+       ) then
+      raise exception 'GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14';
+    end if;
+  end if;
+
+  v_gender:=coalesce(
+    p.gender,
+    case s.sex when 'female' then 'woman' when 'male' then 'man' else null end
+  );
+  v_relationship:=coalesce(
+    nullif(p.relationship_status,'not_set'),
+    nullif(s.relationship_status,'not_set'),
+    nullif(s.relationship_status,'not_specified'),
+    'not_set'
+  );
+
+  return jsonb_build_object(
+    'birth_date',v_birth,
+    'gender',v_gender,
+    'languages',coalesce(to_jsonb(p.languages),'[]'::jsonb),
+    'residence_city',p.residence_city,
+    'residence_region',p.residence_region,
+    'residence_country',p.residence_country,
+    'origin_city',p.origin_city,
+    'origin_region',p.origin_region,
+    'origin_country',p.origin_country,
+    'relationship_status',v_relationship,
+    'relationship_since',p.relationship_since,
+    'relationship_partner_label',p.relationship_partner_label,
+    'has_safety_birth_date',(s.user_id is not null),
+    'updated_at',p.updated_at
+  );
+end;
+$$;
+
+revoke all on function sinjira_profile_internal.private_profile_get()
+from public,anon;
+grant execute on function sinjira_profile_internal.private_profile_get()
+to authenticated,service_role;
+
+comment on function sinjira_profile_internal.private_profile_get() is
+  'V25: lecture self-only du coffre privé sous MFA; minimum 11 ans et tuteur actif requis avant 14 ans.';
 
 create or replace function sinjira_profile_internal.private_profile_save(
   p_birth_date date,

@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(8);
+select plan(11);
 
 select ok(
   position(
@@ -125,6 +125,11 @@ select lives_ok(
   'un enfant de 11 ans avec tuteur actif peut enregistrer son coffre privé'
 );
 
+select lives_ok(
+  $ select public.private_profile_get() $,
+  'un enfant de 11 ans avec tuteur actif peut relire son coffre privé'
+);
+
 reset role;
 
 select is(
@@ -166,6 +171,13 @@ select throws_ok(
   'P0001',
   'GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14',
   'un enfant de 11 ans sans tuteur actif ne peut pas enregistrer son coffre'
+);
+
+select throws_ok(
+  $ select public.private_profile_get() $,
+  'P0001',
+  'GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14',
+  'un enfant de 11 ans sans tuteur actif ne peut pas relire son coffre'
 );
 
 select throws_ok(
@@ -231,6 +243,13 @@ select throws_ok(
   'P0001',
   'GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14',
   'un lien tuteur révoqué ne satisfait jamais la supervision'
+);
+
+select throws_ok(
+  $ select public.private_profile_get() $,
+  'P0001',
+  'GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14',
+  'un lien tuteur révoqué bloque aussi la lecture du coffre'
 );
 
 reset role;

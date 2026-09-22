@@ -208,6 +208,7 @@ Ne pas revoir B3/B4/B5 isolément sans avoir validé les invariants de B1/B2 qu'
 - [ ] `20260919100000_sinjira_v25_private_profile_age_11.sql`
   - Compatibilité du coffre Profil privé avec 11+.
   - Revue prioritaire : 11–13 conditionnés à une supervision valide.
+  - La garde est désormais symétrique : `private_profile_get()` et `private_profile_save(...)` refusent tous deux un compte avant 14 ans sans lien tuteur `verified` non révoqué; le MFA historique reste requis.
 
 - [ ] `20260919103000_sinjira_v25_livre_i_catalog_seed.sql`
   - Ancrage canonique du Livre I.

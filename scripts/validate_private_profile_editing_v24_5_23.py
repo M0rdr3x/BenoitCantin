@@ -68,6 +68,7 @@ def main():
         if marker not in sl: errors.append(f'Migrations Profil privées incomplètes: {marker}')
 
     for marker in [
+        'create or replace function sinjira_profile_internal.private_profile_get()',
         'sinjira_minimum_age_11',
         'guardian_authorization_required_under_14',
         'g.revoked_at is null',
@@ -96,7 +97,15 @@ def main():
     for marker in ['private_profiles','security invoker','sinjira_mfa_access_allowed','youth_jurisdiction_not_enabled','sinjira_birth_date_change_guard']:
         if marker not in test.lower(): errors.append(f'pgTAP V24.5.23 incomplet: {marker}')
 
-    for marker in ['select plan(8);','sinjira_minimum_age_11','guardian_authorization_required_under_14','revoked_at is null','un enfant de 11 ans avec tuteur actif']:
+    for marker in [
+        'select plan(11);',
+        'sinjira_minimum_age_11',
+        'guardian_authorization_required_under_14',
+        'revoked_at is null',
+        'un enfant de 11 ans avec tuteur actif peut relire son coffre privé',
+        'un enfant de 11 ans sans tuteur actif ne peut pas relire son coffre',
+        'un lien tuteur révoqué bloque aussi la lecture du coffre'
+    ]:
         if marker not in test_child.lower(): errors.append(f'pgTAP V25 Profil enfant incomplet: {marker}')
 
     forbidden=['stripe','paypal','twilio','api.resend.com','openai.com','shippo','easypost','fedex','purolator']

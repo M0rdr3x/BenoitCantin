@@ -306,11 +306,11 @@ La migration forward-only :
 
 `20260919100000_sinjira_v25_private_profile_age_11.sql`
 
-conserve les barrières MFA, juridiction jeunesse et confidentialité du coffre, remplace la limite effective par **11 ans**, exige toujours un tuteur vérifié avant 14 ans et refuse explicitement un lien dont `revoked_at` n'est pas nul.
+conserve les barrières MFA, juridiction jeunesse et confidentialité du coffre, remplace la limite effective par **11 ans**, exige toujours un tuteur vérifié avant 14 ans et refuse explicitement un lien dont `revoked_at` n'est pas nul. La même supervision est maintenant imposée à `private_profile_get()` : après révocation ou en l’absence de tuteur valide, un compte de 11–13 ans ne peut plus relire le coffre privé.
 
 Le navigateur affiche désormais un message cohérent avec la règle 11+, tout en reconnaissant une éventuelle erreur historique `SINJIRA_MINIMUM_AGE_13` comme un serveur non encore synchronisé.
 
-Deux preuves SQL sont exécutées par le workflow Profil privé après reconstruction locale : le test historique de **22 assertions** et un nouveau pgTAP de **8 assertions** couvrant 11 ans avec tuteur actif, 11 ans sans tuteur, moins de 11 ans et lien tuteur révoqué.
+Deux preuves SQL sont exécutées par le workflow Profil privé après reconstruction locale : le test historique de **22 assertions** et un nouveau pgTAP de **11 assertions** couvrant 11 ans avec tuteur actif, 11 ans sans tuteur, moins de 11 ans et lien tuteur révoqué.
 
 Cette vingt-huitième migration reste **non revue production**.
 
@@ -508,7 +508,7 @@ Le snapshot de revue attend exactement **36 migrations locales futures non revue
 | `20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql` | `8e0fd367bd0c30ed77f947ae0583408b370121a1` |
 | `20260919090000_sinjira_v25_account_content_hub.sql` | `29358d27f8f505897b924062e208b8d5c740f8c5` |
 | `20260919093000_sinjira_v25_private_novel_catalog.sql` | `7ca3cf47f5f67205cb2a36310513273faacb7dea` |
-| `20260919100000_sinjira_v25_private_profile_age_11.sql` | `40c29de09331b187ddc00432054abcf500711ded` |
+| `20260919100000_sinjira_v25_private_profile_age_11.sql` | `db4d0c04f4fba2a6044e12b28d882382ed077086` |
 | `20260919103000_sinjira_v25_livre_i_catalog_seed.sql` | `04929202946a0cda629c1f8005dbf51e4bfb2d68` |
 | `20260919110000_sinjira_v25_social_public_pseudo_privacy.sql` | `ac4f11e8e1591c35f0be91f541a21763fdb3ec8d` |
 | `20260919113000_sinjira_v25_private_novel_asset_rls.sql` | `745ae12098e538415dde16bac198d05610b99954` |
