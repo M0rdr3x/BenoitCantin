@@ -119,6 +119,12 @@ to authenticated
 using (
   status in ('approved','released')
   and product_slug is not null
+  and exists(
+    select 1
+    from public.projects parent_project
+    where parent_project.id=extensions.project_id
+      and parent_project.status<>'draft'
+  )
   and public.sinjira_my_age_band() in ('adult','youth')
   and public.has_sinjira_product(product_slug,(select auth.uid()))
 );
