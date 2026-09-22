@@ -78,8 +78,8 @@ select is(
       and tablename='projects'
       and cmd='SELECT'
   ),
-  'projects readable when accessible, projects_owner_catalog_read_v25'::text,
-  'une seule politique générale projets reste active; seule l exception owner V25 explicitement bornée s ajoute'
+  'projects readable when accessible, projects_family_catalog_read_v25, projects_owner_catalog_read_v25'::text,
+  'une seule politique générale projets reste active; les exceptions owner et famille V25 restent explicitement bornées'
 );
 select is(
   (select count(*) from pg_policies where schemaname='public' and tablename='documents' and cmd='SELECT'),
