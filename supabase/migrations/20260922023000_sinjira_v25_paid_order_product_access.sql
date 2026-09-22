@@ -10,7 +10,8 @@ on public.products
 for select
 to authenticated
 using (
-  exists(
+  public.sinjira_my_age_band() in ('adult','youth')
+  and exists(
     select 1
     from public.order_items oi
     join public.orders o on o.id=oi.order_id
@@ -157,7 +158,7 @@ grant execute on function public.sinjira_my_product_rights()
 to authenticated,service_role;
 
 comment on policy products_ordered_read on public.products is
-  'V25: un produit commandé reste lisible au compte uniquement après paiement confirmé status=paid; une commande pending ne confère aucun droit.';
+  'V25: un produit commandé reste lisible au navigateur adult/youth uniquement après paiement confirmé status=paid; une commande pending ou un compte 11–12 ne révèle pas les métadonnées produit.';
 
 comment on function public.has_sinjira_product(text,uuid) is
   'Droit produit self-only: propriétaire, famille adult/youth, entitlement durable ou commande paid. Une commande non payée ne donne aucun accès; aucun faux entitlement n est créé.';
