@@ -102,7 +102,10 @@ def main():
         'sinjira_minimum_age_11',
         'guardian_authorization_required_under_14',
         'revoked_at is null',
-        '$read$ select public.private_profile_get() $read        'un lien tuteur révoqué bloque aussi la lecture du coffre'
+        '$read$ select public.private_profile_get() $read$',
+        'un enfant de 11 ans avec tuteur actif peut relire son coffre privé',
+        'un enfant de 11 ans sans tuteur actif ne peut pas relire son coffre',
+        'un lien tuteur révoqué bloque aussi la lecture du coffre'
     ]:
         if marker not in test_child.lower(): errors.append(f'pgTAP V25 Profil enfant incomplet: {marker}')
 
