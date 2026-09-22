@@ -228,6 +228,7 @@ Ne pas revoir B3/B4/B5 isolément sans avoir validé les invariants de B1/B2 qu'
 - [ ] `20260919123000_sinjira_v25_public_rpc_boundary.sql`
   - Reconvergence des RPC privilégiés hors de `public`; wrappers publics `SECURITY INVOKER`.
   - **Très sensible** : vérifier chaque signature, ACL, résolution de fonction et absence de contournement par `search_path`.
+  - Précondition fail-closed renforcée : les 23 noms doivent chacun résoudre vers exactement une RPC `public SECURITY DEFINER`; les 3 cibles anon doivent chacune exister exactement une fois avec `EXECUTE` anon avant déplacement. Un overload inattendu ne peut plus masquer une cible absente.
 
 - [ ] `20260919130000_sinjira_v25_account_catalog_browser_privileges.sql`
   - Réaccorde uniquement les privilèges navigateur nécessaires pour rendre les RLS atteignables.

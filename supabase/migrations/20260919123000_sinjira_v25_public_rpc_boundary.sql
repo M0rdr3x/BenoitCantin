@@ -68,6 +68,26 @@ begin
     raise exception 'V25 RPC boundary attend 23 RPC public SECURITY DEFINER; trouvé %',v_count;
   end if;
 
+  -- Le total seul ne suffit pas : un overload inattendu ne doit jamais pouvoir
+  -- masquer une cible manquante. Chaque nom attendu correspond exactement à
+  -- une fonction public SECURITY DEFINER avant déplacement.
+  if exists(
+    select 1
+    from unnest(v_targets) as t(name)
+    left join (
+      select p.oid,p.proname
+      from pg_proc p
+      join pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='public'
+        and p.prokind='f'
+        and p.prosecdef
+    ) candidate on candidate.proname=t.name
+    group by t.name
+    having count(candidate.oid) <> 1
+  ) then
+    raise exception 'V25 RPC boundary: chaque cible doit correspondre à exactement une RPC public SECURITY DEFINER';
+  end if;
+
   if exists(
     select 1
     from pg_proc p
@@ -92,6 +112,26 @@ begin
 
   if v_anon_count <> 3 then
     raise exception 'V25 RPC boundary attend exactement 3 RPC anonymes; trouvé %',v_anon_count;
+  end if;
+
+  -- Même exigence par nom pour le sous-ensemble anonyme : chacune des trois
+  -- cibles doit exister une seule fois et être réellement exécutable par anon.
+  if exists(
+    select 1
+    from unnest(v_anon_targets) as t(name)
+    left join (
+      select p.oid,p.proname
+      from pg_proc p
+      join pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='public'
+        and p.prokind='f'
+        and p.prosecdef
+        and has_function_privilege('anon',p.oid,'EXECUTE')
+    ) candidate on candidate.proname=t.name
+    group by t.name
+    having count(candidate.oid) <> 1
+  ) then
+    raise exception 'V25 RPC boundary: chaque cible anon doit correspondre à exactement une RPC anonyme';
   end if;
 
   if exists(

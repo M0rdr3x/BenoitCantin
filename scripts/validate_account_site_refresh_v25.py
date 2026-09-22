@@ -10,6 +10,7 @@ ACCOUNT_DIR = ROOT / "compte"
 FILES = {
     "migration": ROOT / "supabase/migrations/20260919090000_sinjira_v25_account_content_hub.sql",
     "project_owner_migration": ROOT / "supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql",
+    "public_rpc_boundary_migration": ROOT / "supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql",
     "browser_privileges_migration": ROOT / "supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql",
     "browser_helper_hardening_migration": ROOT / "supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql",
     "library_html": ROOT / "compte/bibliotheque.html",
@@ -63,6 +64,7 @@ def compact(value: str) -> str:
 def validate(contents: dict[str, str]) -> None:
     m = compact(contents["migration"])
     project_owner_migration = compact(contents["project_owner_migration"])
+    public_rpc_boundary = compact(contents["public_rpc_boundary_migration"])
     browser_privileges = compact(contents["browser_privileges_migration"])
     browser_helper_hardening = compact(contents["browser_helper_hardening_migration"])
     libh = compact(contents["library_html"])
@@ -121,6 +123,24 @@ def validate(contents: dict[str, str]) -> None:
         fail("CI compte: migration visibilité projets créateur non surveillée")
     if "supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql" not in workflow_paths:
         fail("CI compte: frontière RPC V25 finale non surveillée")
+
+    for marker in (
+        "ifarray_length(v_targets,1)<>23then",
+        "fromunnest(v_targets)ast(name)",
+        "fromunnest(v_anon_targets)ast(name)",
+        "'alterfunctionpublic.%i(%s)setschemasinjira_v25_internal'",
+        "'revokeallonfunctionsinjira_v25_internal.%i(%s)frompublic,anon,authenticated'",
+        "'grantexecuteonfunctionsinjira_v25_internal.%i(%s)toauthenticated,service_role'",
+        "'createfunctionpublic.%i(%s)returns%slanguagesqlsecurityinvokersetsearch_path=''''as%l'",
+        "'revokeallonfunctionpublic.%i(%s)frompublic,anon,authenticated'",
+        "'grantexecuteonfunctionpublic.%i(%s)toauthenticated,service_role'",
+        "ifr.proname=any(v_anon_targets)then",
+    ):
+        if marker not in public_rpc_boundary:
+            fail(f"frontière RPC V25: invariant absent: {marker}")
+    if public_rpc_boundary.count("havingcount(candidate.oid)<>1") != 2:
+        fail("frontière RPC V25: unicité par nom absente pour les cibles générales ou anon")
+
     if "supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql" not in workflow_paths:
         fail("CI compte: convergence des privilèges catalogue navigateur non surveillée")
     if "supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql" not in workflow_paths:
@@ -665,6 +685,9 @@ def main() -> None:
             "policy projets créateur retirée":("project_owner_migration","create policy projects_owner_catalog_read_v25","create policy projects_owner_catalog_missing"),
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
             "migration privilèges catalogue hors paths CI":("workflow","supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql","supabase/migrations/catalog-browser-privileges-missing.sql"),
+            "frontière RPC masque cible manquante par overload":("public_rpc_boundary_migration","from unnest(v_targets) as t(name)","from unnest(array[]::text[]) as t(name)"),
+            "frontière RPC anon masque cible manquante":("public_rpc_boundary_migration","from unnest(v_anon_targets) as t(name)","from unnest(array[]::text[]) as t(name)"),
+            "wrapper RPC V25 redevient SECURITY DEFINER":("public_rpc_boundary_migration","language sql security invoker set search_path = '''' as %L","language sql security definer set search_path = '''' as %L"),
             "migration helpers navigateur hors paths CI":("workflow","supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql","supabase/migrations/browser-helper-hardening-missing.sql"),
             "pgTAP 11–12 hors paths CI":("workflow","supabase/tests/child_content_rating_v25.test.sql","supabase/tests/child-content-rating-missing.sql"),
             "pgTAP 11–12 non exécuté":("workflow","supabase test db supabase/tests/child_content_rating_v25.test.sql","echo child-content-rating-skipped"),

@@ -374,7 +374,7 @@ La migration forward-only :
 
 replace **23 implémentations privilégiées** dans le schéma interne `sinjira_v25_internal` et recrée leurs signatures publiques sous forme de wrappers `SECURITY INVOKER`. Elle conserve l'exécution `authenticated` des 23 RPC et l'accès `anon` uniquement aux trois helpers qui étaient déjà anonymes : `sinjira_my_age_band()`, `sinjira_child_project_available(uuid)` et `sinjira_child_document_available(uuid)`.
 
-La migration échoue si le nombre de RPC, les privilèges anonymes ou les privilèges authentifiés ne correspondent pas exactement à l'état attendu. Elle n'élargit aucun droit métier, ne modifie aucune donnée utilisateur et ne change ni le reviewed batch ni le ledger production.
+La migration échoue si le nombre de RPC, les privilèges anonymes ou les privilèges authentifiés ne correspondent pas exactement à l'état attendu. Elle vérifie désormais aussi l’unicité **par nom** : chacune des 23 cibles doit résoudre vers exactement une fonction `public SECURITY DEFINER`, et chacune des trois cibles anon vers exactement une fonction réellement exécutable par `anon`. Un overload inattendu ne peut donc pas compenser silencieusement une cible manquante. Elle n'élargit aucun droit métier, ne modifie aucune donnée utilisateur et ne change ni le reviewed batch ni le ledger production.
 
 Le contrat pgTAP historique `security_advisor_contract_v24_5_24.test.sql` redevient ainsi applicable sans liste blanche : aucune fonction `SECURITY DEFINER` du schéma `public` ne doit être directement exécutable par `anon` ou `authenticated`.
 
@@ -513,7 +513,7 @@ Le snapshot de revue attend exactement **36 migrations locales futures non revue
 | `20260919110000_sinjira_v25_social_public_pseudo_privacy.sql` | `ac4f11e8e1591c35f0be91f541a21763fdb3ec8d` |
 | `20260919113000_sinjira_v25_private_novel_asset_rls.sql` | `745ae12098e538415dde16bac198d05610b99954` |
 | `20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql` | `5ed558a9426173fdb714479d28f170ada542803b` |
-| `20260919123000_sinjira_v25_public_rpc_boundary.sql` | `da1d5de6d9330421cd6a7ef5a62fa4c1ebf51a60` |
+| `20260919123000_sinjira_v25_public_rpc_boundary.sql` | `61377e409f769ed94646791acaf8f3c1f86328d0` |
 | `20260919130000_sinjira_v25_account_catalog_browser_privileges.sql` | `4436b3d183fa975f5eedeb0427d66da050dfa961` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
