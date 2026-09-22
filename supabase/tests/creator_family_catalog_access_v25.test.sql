@@ -156,6 +156,20 @@ values(
   'family-private-extension-product'
 );
 
+insert into public.orders(id,user_id,order_number,status,currency,total_cents)
+values(
+  'fb000000-0000-4000-8000-00000000000b',
+  'f2000000-0000-4000-8000-000000000002',
+  'TEST-FAMILY-PENDING-EXT-001',
+  'pending','CAD',900
+);
+insert into public.order_items(order_id,product_id,quantity,unit_price_cents)
+values(
+  'fb000000-0000-4000-8000-00000000000b',
+  'fe000000-0000-4000-8000-00000000000e',
+  1,900
+);
+
 insert into private.sinjira_private_novel_assets(
   novel_id,product_slug,delivery_mode,storage_bucket,storage_path,download_name,total_pages,enabled
 )
@@ -429,7 +443,7 @@ select is(
 select is(
   (select count(*)::integer from public.extensions where id='ff000000-0000-4000-8000-00000000000f'),
   0,
-  'une extension privée liée à un produit reste invisible avant achat'
+  'une commande pending ne rend pas l extension privée visible au membre standard'
 );
 select is(
   (
@@ -438,7 +452,7 @@ select is(
     where item->>'id'='ff000000-0000-4000-8000-00000000000f'
   ),
   0,
-  'le RPC extension ne révèle pas une extension payante avant achat'
+  'le RPC extension refuse une extension liée seulement à une commande pending'
 );
 select throws_ok(
   $$ select public.sinjira_my_project_catalog() $$,
