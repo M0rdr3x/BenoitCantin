@@ -98,7 +98,13 @@ Deno.serve(async(req)=>{
       .select('project_id,status,access_level,child_access_status,external_url,storage_bucket,storage_path,projects(id,visibility,status,child_access_status,product_slug)')
       .eq('id',document_id)
       .maybeSingle();
-    if(error||!doc||doc.status!=='approved'||doc.projects?.status!=='active'){
+    const projectStatus=String(doc?.projects?.status||'');
+    if(
+      error
+      || !doc
+      || doc.status!=='approved'
+      || !['development','testing','active','archived'].includes(projectStatus)
+    ){
       return privateJson({ok:false,error:'Document introuvable ou non approuvé.'},404);
     }
 
