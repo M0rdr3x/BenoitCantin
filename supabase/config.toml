@@ -27,8 +27,8 @@ verify_jwt = false
 verify_jwt = false
 
 # Livre I : fonctions strictement privées, réservées aux comptes authentifiés.
-# L'Edge Function applique en plus un entitlement produit OU le rôle propriétaire
-# vérifié côté serveur, ainsi qu'un drapeau serveur explicite d'activation.
+# L'Edge Function vérifie d'abord l'âge, puis owner/famille V25 ou le droit produit
+# canonique (entitlement actif ou commande paid), sans faux droit ni accès 11–12.
 [functions.get-private-book-url]
 verify_jwt = true
 
