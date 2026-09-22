@@ -37,7 +37,7 @@ La vague CI associée au dossier précédent a confirmé que les parcours Commun
 - révocation Junior multi-tuteur : **25/25**, avec auto-test du garde **10/10**;
 - Compte/catalogue : suite actuelle **49 assertions** accès membre/créateur et **23/23** absence d'oracle/classement 11–12;
 - Profil privé : **22/22** historique et **11/11** enfant;
-- romans privés : **13/13**, avec auto-test statique **8/8**;
+- romans privés : **13/13**, avec auto-test statique courant **9/9**;
 - Mode Voyage : rétention **11/11** et visibilité client **28/28**, les workflows consentement/self-only/minimisation restant également verts;
 - snapshot release : **38 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
 
@@ -481,6 +481,8 @@ Pour 13+ (`youth` / `adult`), un compte familial peut relire les projets, romans
 
 Les adresses réelles des comptes familiaux ne sont volontairement pas inscrites dans Git. Leur association production devra être exécutée séparément sous `service_role`, après revue et déploiement de la migration.
 
+Le pgTAP famille est maintenant porté à **44 assertions**. Il couvre notamment le gratuit visible au membre standard, le privé refusé sans droit, puis un roman privé rendu accessible par une commande `paid` sans créer d'entitlement artificiel.
+
 Cette trente-septième migration reste **non revue production**.
 
 ### Accès produit après achat réellement payé
@@ -541,7 +543,7 @@ Le snapshot de revue attend exactement **38 migrations locales futures non revue
 
 | Migration | Git blob SHA-1 |
 |---|---|
-| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `b81aac5aff3531c341a4495343515fbc8d1d76eb` |
+| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `5b3ee72a1e5fab921e2aeb87782bb88ef6d61aa0` |
 | `20260922023000_sinjira_v25_paid_order_product_access.sql` | `edb262781911679ff740573cc3830b9dddfabf94` |
 
 ### Enfant 11–12 / Junior
