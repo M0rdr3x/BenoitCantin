@@ -193,7 +193,7 @@ def validate(contents: dict[str, str]) -> None:
         if marker not in browser_privileges:
             fail(f"migration privilèges catalogue: garde absente: {marker}")
 
-    for marker in ("data-library-games", "data-library-novels", "data-library-other"):
+    for marker in ("data-library-games", "data-library-novels", "data-library-other", "data-library-extensions", "data-library-extension-count"):
         if marker not in libh:
             fail(f"bibliothèque: séparation manquante: {marker}")
     if 'href="mes-achats.html"><strong>mesachats</strong>' not in libh:
@@ -208,6 +208,10 @@ def validate(contents: dict[str, str]) -> None:
         fail("bibliothèque: ancien résumé commerce absolu encore publié")
     if "sinjira_my_novel_catalog" not in contents["library_js"]:
         fail("bibliothèque: catalogue roman self-only canonique absent")
+    if "sinjira_my_extension_catalog" not in contents["library_js"]:
+        fail("bibliothèque: catalogue extensions self-only canonique absent")
+    if "functionrenderextensions" not in libj:
+        fail("bibliothèque: rendu extensions absent")
     if "functionrendernovels" not in libj:
         fail("bibliothèque: rendu romans absent")
     if "constfullaccess=boolean(novel.full_access);" not in libj or "fullaccess?" not in libj:
@@ -235,21 +239,24 @@ def validate(contents: dict[str, str]) -> None:
     for marker in (
         "functionrenderunavailable(selector,title,message)",
         "juniorresolved=!projectsresult.error&&!documentsresult.error",
+        "extensionsresult.error",
         "roleresolved=ownerresolved&&(isowner||adminresolved)",
         "projectresolved=!projectsresult.error&&!accessresult.error&&!documentsresult.error&&!pendingresult.error",
-        "readsresolved=!readsresult.error,entitlementsresolved=!entitlementsresult.error,novelsresolved=!novelsresult.error",
+        "readsresolved=!readsresult.error,entitlementsresolved=!entitlementsresult.error,novelsresolved=!novelsresult.error,extensionsresolved=!extensionsresult.error",
         "projectresolved?projects.length:'—'",
         "novelsresolved?novels.length:'—'",
+        "extensionsresolved?extensions.length:'—'",
         "entitlementsresolved?entitlements.length:'—'",
         "projetstemporairementindisponibles",
         "romanstemporairementindisponibles",
+        "extensionstemporairementindisponibles",
         "progressiontemporairementindisponible",
         "droitsnumériquestemporairementindisponibles",
         "bibliothèquejuniortemporairementindisponible",
     ):
         if marker not in libj:
             fail(f"bibliothèque: dégradation fail-closed absente: {marker}")
-    if "sinjira-library-v24-4-61.js?v=25.1.4" not in contents["library_html"]:
+    if "sinjira-library-v24-4-61.js?v=25.1.5" not in contents["library_html"]:
         fail("bibliothèque: cache module principal V25.1.1 absent")
     if "issinjiraowner" in secondary_library:
         fail("bibliothèque secondaire: rôle créateur encore déduit côté navigateur")
@@ -706,12 +713,12 @@ def main() -> None:
             "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
             "Fracture jouable sans droit produit":("library_js","project.play_path&&canPlay","project.play_path"),
             "Fracture droit produit forcé":("library_js","const productRight=isOwner||familyCatalog||fractureRight;","const productRight=true;"),
-            "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.4\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
+            "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.5\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
             "bibliothèque principale masque erreur projets":("library_js","const projectResolved=!projectsResult.error&&!accessResult.error&&!documentsResult.error&&!pendingResult.error;","const projectResolved=true;"),
             "bibliothèque principale masque erreur romans":("library_js","const readsResolved=!readsResult.error,entitlementsResolved=!entitlementsResult.error,novelsResolved=!novelsResult.error;","const readsResolved=true,entitlementsResolved=true,novelsResolved=true;"),
             "bibliothèque principale suppose rôle membre":("library_js","const roleResolved=ownerResolved&&(isOwner||adminResolved);","const roleResolved=true;"),
             "bibliothèque Junior masque erreur":("library_js","juniorResolved=!projectsResult.error&&!documentsResult.error","juniorResolved=true"),
-            "cache bibliothèque principale revenu V25.1.0":("library_html","sinjira-library-v24-4-61.js?v=25.1.4","sinjira-library-v24-4-61.js?v=25.1.0"),
+            "cache bibliothèque principale revenu V25.1.0":("library_html","sinjira-library-v24-4-61.js?v=25.1.5","sinjira-library-v24-4-61.js?v=25.1.0"),
             "raccourci Mes achats retiré":("library_html",'<a href="mes-achats.html"><strong>Mes achats</strong>','<a href="licences.html"><strong>Mes achats</strong>'),
             "rôle créateur secondaire revenu côté client":("secondary_library_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "projet public secondaire présenté comme compte":("secondary_library_js","p.visibility==='restricted'?'Accès restreint':p.visibility==='account'?'Inclus avec le compte':'Page publique'","p.visibility==='restricted'?'Accès restreint':'Inclus avec le compte'"),
