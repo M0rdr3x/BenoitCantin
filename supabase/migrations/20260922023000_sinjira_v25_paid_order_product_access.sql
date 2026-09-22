@@ -68,7 +68,7 @@ from public,anon;
 grant execute on function public.has_sinjira_product(text,uuid)
 to authenticated,service_role;
 
-create or replace function public.sinjira_my_product_rights()
+create or replace function sinjira_v25_internal.sinjira_my_product_rights()
 returns jsonb
 language sql
 stable
@@ -129,6 +129,21 @@ as $rights$
   from deduplicated;
 $rights$;
 
+revoke all on function sinjira_v25_internal.sinjira_my_product_rights()
+from public,anon,authenticated;
+grant execute on function sinjira_v25_internal.sinjira_my_product_rights()
+to authenticated,service_role;
+
+create or replace function public.sinjira_my_product_rights()
+returns jsonb
+language sql
+stable
+security invoker
+set search_path=''
+as $wrapper$
+  select sinjira_v25_internal.sinjira_my_product_rights();
+$wrapper$;
+
 revoke all on function public.sinjira_my_product_rights()
 from public,anon;
 grant execute on function public.sinjira_my_product_rights()
@@ -139,7 +154,9 @@ comment on policy products_ordered_read on public.products is
 
 comment on function public.has_sinjira_product(text,uuid) is
   'Droit produit self-only: propriétaire, famille adult/youth, entitlement durable ou commande paid. Une commande non payée ne donne aucun accès; aucun faux entitlement n est créé.';
+comment on function sinjira_v25_internal.sinjira_my_product_rights() is
+  'Implémentation privilégiée self-only et minimisée des droits produit commerciaux du compte courant.';
 comment on function public.sinjira_my_product_rights() is
-  'Liste self-only et minimisée des droits produit commerciaux réellement associés au compte courant: entitlement durable ou commande paid. Aucun détail de commande, aucun faux droit owner/famille.';
+  'Wrapper SECURITY INVOKER vers la liste self-only des droits produit commerciaux: entitlement durable ou commande paid. Aucun détail de commande, aucun faux droit owner/famille.';
 
 commit;
