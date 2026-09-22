@@ -343,6 +343,8 @@ def validate(contents:dict[str,str])->None:
         "sinjira_my_account_capabilities",
         "constchildmode=capabilitiesresolved&&capabilitiesresult.data.library_mode==='reviewed_11_12'",
         "constcommerceallowed=capabilitiesresolved&&capabilitiesresult.data.commerce===true",
+        "constrole=document.queryselector('[data-purchase-account-role]')",
+        "conststatus=document.queryselector('[data-purchases-v25-status]')",
         "if(!commerceallowed)",
         "achatsprotégéspourlescomptes11–12ans",
         "droitsnumériquesprotégéspourlescomptes11–12ans",
@@ -350,11 +352,19 @@ def validate(contents:dict[str,str])->None:
         if marker not in purchases:
             fail(f"achats Junior: garde commerce absente: {marker}")
     purchases_capability_pos=purchases.find("sinjira_my_account_capabilities")
+    purchases_role_pos=purchases.find("constrole=document.queryselector('[data-purchase-account-role]')")
+    purchases_status_pos=purchases.find("conststatus=document.queryselector('[data-purchases-v25-status]')")
+    purchases_capabilities_fail_pos=purchases.find("if(!capabilitiesresolved)")
     purchases_gate_pos=purchases.find("if(!commerceallowed)")
     purchases_orders_pos=purchases.find("s.from('orders')")
     purchases_entitlements_pos=purchases.find("s.from('user_entitlements')")
-    if not (0 <= purchases_capability_pos < purchases_gate_pos < purchases_orders_pos and purchases_gate_pos < purchases_entitlements_pos):
-        fail("achats Junior: la décision commerce doit précéder toute lecture orders/entitlements")
+    if not (
+        0 <= purchases_capability_pos < purchases_role_pos < purchases_capabilities_fail_pos
+        and purchases_capability_pos < purchases_status_pos < purchases_capabilities_fail_pos
+        and purchases_capabilities_fail_pos < purchases_gate_pos < purchases_orders_pos
+        and purchases_gate_pos < purchases_entitlements_pos
+    ):
+        fail("achats Junior: nœuds statut/rôle et gardes commerce doivent précéder toute branche fail-closed et lecture commerciale")
 
     for marker in (
         "sinjira_my_catalog_access_mode",
@@ -444,7 +454,7 @@ def validate(contents:dict[str,str])->None:
 
     if "sinjira-library-v24-4-61.js?v=25.1.8" not in contents["library_html"]:
         fail("cache bibliothèque famille non forcé")
-    if "sinjira-purchases-v25.js?v=25.0.4" not in contents["purchases_html"]:
+    if "sinjira-purchases-v25.js?v=25.0.5" not in contents["purchases_html"]:
         fail("cache achats famille non forcé")
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
