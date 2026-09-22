@@ -239,6 +239,31 @@ Ne pas revoir B3/B4/B5 isolément sans avoir validé les invariants de B1/B2 qu'
 **Ordre de revue recommandé : C1 → C2.**  
 La migration RPC `20260919123000` doit être revue avant `20260919130000`, car les privilèges navigateur ne doivent être validés qu'une fois les frontières publiques finalisées.
 
+
+### Notes de revue statique du Lot C — non approbatives
+
+Relecture technique effectuée sur le HEAD `1a54e110762a5249e99c70fc40e6667ce2858c54`, sans modifier le statut des cases C1/C2 :
+
+- les policies `products_entitled_read`, `products_ordered_read`, `products_owner_read` et `projects_owner_catalog_read_v25` accordent uniquement de la lecture; le rôle créateur reste une visibilité de gestion et ne crée ni entitlement, ni commande, ni `project_access`;
+- `private.sinjira_private_novel_assets` est sous RLS dès sa création, sans policy membre, avec privilèges navigateur révoqués; `service_role` reste le seul rôle SQL de livraison;
+- `sinjira_my_novel_catalog()` ne renvoie ni bucket ni chemin Storage; `full_access` exige un actif privé activé et soit le rôle créateur, soit un entitlement du compte courant;
+- l'Edge Function `get-private-novel-url` exige un JWT, réévalue côté serveur la bande d'âge, le rôle créateur ou l'entitlement, exige `enabled=true` et ne signe l'URL privée qu'après ces contrôles; la durée signée reste bornée à 300 secondes;
+- le seed Livre I conserve l'actif privé désactivé et ne publie aucun chemin privé;
+- `sync_social_profile_from_profile()` copie uniquement le pseudonyme public vers `social_profiles.pseudo` et `social_profiles.display_name`; le `profiles.display_name` privé n'est pas propagé;
+- le workflow Profil privé `35677574965` a reconstruit la base locale puis validé **22/22** assertions historiques et **11/11** assertions enfant; son unique rouge est le ledger attendu parce que les 36 migrations restent non revues;
+- la frontière RPC V25 exige exactement 23 cibles `public SECURITY DEFINER` et exactement 3 cibles anon avant déplacement, puis recrée uniquement des wrappers `public SECURITY INVOKER`;
+- `sinjira_catalog_internal.project_access_rank(uuid,uuid)` conserve son OID pour les policies RLS mais retourne `0` à un navigateur qui tente de cibler un UUID différent de `auth.uid()`; `service_role` conserve le ciblage serveur explicite;
+- les privilèges navigateur du catalogue restent limités à `SELECT` et aux deux insertions self-service nécessaires (`access_requests`, `playtest_participants`), toujours derrière RLS;
+- sur le run Compte/catalogue `35677574948`, la validation statique, la reconstruction locale, la preuve membre/créateur et la preuve 11–12 / absence d'oracle ont terminé en succès avant le nettoyage de la pile.
+
+**Portes encore ouvertes avant toute approbation du Lot C :**
+- terminer et relire les workflows dédiés sur un HEAD gelé, notamment le catalogue romans privés;
+- relire humainement les diffs SQL C1 puis C2 dans l'ordre et leurs interactions avec le Lot D;
+- confirmer les preuves négatives `anon/authenticated/service_role` et les ACL après reconstruction;
+- ne modifier ni `production-reviewed-migration-batch.txt` ni le ledger sans décision humaine séparée.
+
+Aucune case C1/C2 n'est cochée : cette section documente une **préparation technique de revue**, pas une approbation.
+
 ---
 
 ## Lot A — correctif forward-only découvert pendant la revue
