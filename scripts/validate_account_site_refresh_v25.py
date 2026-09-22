@@ -14,6 +14,7 @@ FILES = {
     "browser_privileges_migration": ROOT / "supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql",
     "browser_helper_hardening_migration": ROOT / "supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql",
     "paid_access_migration": ROOT / "supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql",
+    "age_boundary_migration": ROOT / "supabase/migrations/20260922031500_sinjira_v25_catalog_age_helper_boundary.sql",
     "project_product_migration": ROOT / "supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql",
     "library_html": ROOT / "compte/bibliotheque.html",
     "library_js": ROOT / "assets/js/sinjira-library-v24-4-61.js",
@@ -72,6 +73,7 @@ def validate(contents: dict[str, str]) -> None:
     browser_privileges = compact(contents["browser_privileges_migration"])
     browser_helper_hardening = compact(contents["browser_helper_hardening_migration"])
     paid_access_migration = compact(contents["paid_access_migration"])
+    age_boundary_migration = compact(contents["age_boundary_migration"])
     project_product_migration = compact(contents["project_product_migration"])
     libh = compact(contents["library_html"])
     libj = compact(contents["library_js"])
@@ -242,6 +244,15 @@ def validate(contents: dict[str, str]) -> None:
         fail("migration droits produit effectifs: wrapper public doit rester SECURITY INVOKER")
 
     for marker in (
+        "createpolicyproducts_active_readonpublic.productsforselecttoauthenticatedusing(active=trueandpublic.sinjira_my_age_band()in('adult','youth'))",
+        "createpolicyorders_own_readonpublic.ordersforselecttoauthenticatedusing((selectauth.uid())=user_idandpublic.sinjira_my_age_band()in('adult','youth'))",
+        "createpolicyorder_items_own_readonpublic.order_itemsforselecttoauthenticatedusing(public.sinjira_my_age_band()in('adult','youth')andexists(select1frompublic.ordersowhereo.id=order_items.order_idando.user_id=(selectauth.uid())))",
+        "createpolicyentitlements_own_readonpublic.user_entitlementsforselecttoauthenticatedusing((selectauth.uid())=user_idandpublic.sinjira_my_age_band()in('adult','youth'))",
+    ):
+        if marker not in age_boundary_migration:
+            fail(f"frontière commerce Junior: policy finale absente ou non bornée: {marker[:80]}")
+
+    for marker in (
         "altertablepublic.projectsaddcolumnifnotexistsproduct_slugtext",
         "projects_product_slug_fkey",
         "createpolicyprojects_purchased_read_v25",
@@ -384,6 +395,24 @@ def validate(contents: dict[str, str]) -> None:
         fail("achats: état vide confond encore commande enregistrée et achat payé")
     if ".eq('user_id',user.id)" not in contents["purchases_js"]:
         fail("achats: lectures propres au compte non bornées")
+    for marker in (
+        "sinjira_my_account_capabilities",
+        "constchildmode=capabilitiesresolved&&capabilitiesresult.data.library_mode==='reviewed_11_12'",
+        "constcommerceallowed=capabilitiesresolved&&capabilitiesresult.data.commerce===true",
+        "if(!capabilitiesresolved)",
+        "if(!commerceallowed)",
+        "achatsprotégéspourlescomptes11–12ans",
+        "droitsnumériquesprotégéspourlescomptes11–12ans",
+        "informationscommercialesrestentmasquées",
+    ):
+        if marker not in pj:
+            fail(f"achats Junior: garde fail-closed absente: {marker}")
+    purchase_capability_pos=pj.find("sinjira_my_account_capabilities")
+    purchase_gate_pos=pj.find("if(!commerceallowed)")
+    purchase_orders_pos=pj.find("s.from('orders')")
+    purchase_entitlements_pos=pj.find("s.from('user_entitlements')")
+    if not (0 <= purchase_capability_pos < purchase_gate_pos < purchase_orders_pos and purchase_gate_pos < purchase_entitlements_pos):
+        fail("achats Junior: capacités et garde commerce doivent précéder toute lecture commerciale")
     if "rendercreatorportfolio" not in pj:
         fail("achats: séparation portefeuille créateur absente")
     for marker in (
@@ -411,8 +440,8 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in pj:
             fail(f"achats: faux état vide encore possible: {marker}")
-    if "sinjira-purchases-v25.js?v=25.0.3" not in contents["purchases_html"]:
-        fail("achats: cache module V25.0.2 absent")
+    if "sinjira-purchases-v25.js?v=25.0.4" not in contents["purchases_html"]:
+        fail("achats: cache module V25.0.4 absent")
 
     if 'name="pseudo"required' not in prof or 'name="email"requiredtype="email"' not in prof:
         fail("profil: pseudo/courriel ne sont pas éditables")
@@ -802,6 +831,9 @@ def main() -> None:
             "droits produit bibliothèque relus directement":("library_js","s.rpc('sinjira_my_product_rights')","s.from('user_entitlements')"),
             "droits produit licences relus directement":("licenses_js","s.rpc('sinjira_my_product_rights')","s.from('orders')"),
             "policy produit paid rouverte enfant":("paid_access_migration","public.sinjira_my_age_band() in ('adult','youth')\n  and exists(","exists("),
+            "catalogue commercial actif rouvert enfant":("age_boundary_migration","active=true\n  and public.sinjira_my_age_band() in ('adult','youth')","active=true"),
+            "historique commandes brut rouvert enfant":("age_boundary_migration","(select auth.uid())=user_id\n  and public.sinjira_my_age_band() in ('adult','youth')","(select auth.uid())=user_id"),
+            "page achats contourne garde commerce":("purchases_js","if(!commerceAllowed){","if(false){"),
             "cache licences revenu ancien":("licenses_html","v24-licenses.js?v=25.1.1","v24-licenses.js?v=24.4.62"),
             "licences enfant sans garde capacités":("licenses_js","const childMode=capabilitiesResolved&&capabilitiesResult.data.library_mode==='reviewed_11_12';","const childMode=false;"),
             "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.8\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
@@ -832,7 +864,7 @@ def main() -> None:
             "échec portefeuille créateur masqué":("purchases_js","Catalogue des projets temporairement indisponible.","Aucun projet enregistré."),
             "échec commandes masqué en zéro":("purchases_js","const ordersResolved=!ordersResult.error,entitlementsResolved=!entitlementsResult.error;","const ordersResolved=true,entitlementsResolved=!entitlementsResult.error;"),
             "échec droits masqué en zéro":("purchases_js","renderEntitlements(entitlements,entitlementsResolved);","renderEntitlements(entitlements,true);"),
-            "cache achats revenu V25.0.1":("purchases_html","sinjira-purchases-v25.js?v=25.0.3","sinjira-purchases-v25.js?v=25.0.1"),
+            "cache achats revenu V25.0.1":("purchases_html","sinjira-purchases-v25.js?v=25.0.4","sinjira-purchases-v25.js?v=25.0.1"),
             "nom affiché redevenu ambigu":("profile_html","Nom affiché privé","Nom affiché"),
             "profil privé sauvegarde sans chargement":("private_profile_js","if(!loadedSnapshot){","if(false){"),
             "profil privé réactivé après échec de chargement":("private_profile_js","setStatus(status,userMessage(error)+' Le formulaire reste verrouillé tant que vos données n’ont pas été chargées. Rechargez la page pour réessayer.','error');","setBusy(false); setStatus(status,userMessage(error),'error');"),
