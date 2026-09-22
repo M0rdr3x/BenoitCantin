@@ -125,6 +125,17 @@ def validate(contents:dict[str,str])->None:
     if "public.sinjira_age_band((selectauth.uid()))" in age_boundary_migration:
         fail("frontière âge catalogue: une policy navigateur appelle encore sinjira_age_band(uuid)")
 
+    effective_age_policies=(
+        "createpolicysinjira_novels_family_catalog_read_v25onpublic.sinjira_novelsforselecttoauthenticatedusing(public.is_sinjira_catalog_family_member((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
+        "createpolicyproducts_family_catalog_read_v25onpublic.productsforselecttoauthenticatedusing(public.is_sinjira_catalog_family_member((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
+        "createpolicyprojects_family_catalog_read_v25onpublic.projectsforselecttoauthenticatedusing(public.is_sinjira_catalog_family_member((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
+        "createpolicyextensions_creator_family_catalog_read_v25onpublic.extensionsforselecttoauthenticatedusing(public.sinjira_has_full_catalog_access((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
+        "createpolicyextensions_purchased_read_v25onpublic.extensionsforselecttoauthenticatedusing(product_slugisnotnullandpublic.sinjira_my_age_band()in('adult','youth')andpublic.has_sinjira_product(product_slug,(selectauth.uid())))",
+    )
+    for policy_marker in effective_age_policies:
+        if policy_marker not in age_boundary_migration:
+            fail(f"frontière âge catalogue: policy effective finale non bornée: {policy_marker[:80]}")
+
     for project_marker in (
         "altertablepublic.projectsaddcolumnifnotexistsproduct_slugtext",
         "projects_product_slug_fkey",
@@ -424,7 +435,8 @@ def main()->None:
             "catalogue famille dashboard retiré":("dashboard","s.rpc(\'sinjira_my_project_catalog\')","Promise.resolve({data:[],error:null})"),
             "droit produit famille retiré":("migration","public.is_sinjira_catalog_family_member(p_user_id)","false"),
             "jeu famille retiré bibliothèque":("library","isOwner||familyCatalog||fractureRight","isOwner||fractureRight"),
-            "extension ouverte aux comptes child":("extension_access_migration","public.sinjira_age_band((select auth.uid())) in ('adult','youth')","public.sinjira_age_band((select auth.uid())) in ('adult','youth','child')"),
+            "extension achetée effective ouverte aux comptes child":("age_boundary_migration","product_slug is not null\n  and public.sinjira_my_age_band() in ('adult','youth')\n  and public.has_sinjira_product","product_slug is not null\n  and public.sinjira_my_age_band() in ('adult','youth','child')\n  and public.has_sinjira_product"),
+            "extension famille effective ouverte aux comptes child":("age_boundary_migration","public.sinjira_has_full_catalog_access((select auth.uid()))\n  and public.sinjira_my_age_band() in ('adult','youth')","public.sinjira_has_full_catalog_access((select auth.uid()))\n  and public.sinjira_my_age_band() in ('adult','youth','child')"),
             "policy catalogue réutilise oracle âge UUID":("age_boundary_migration","public.sinjira_my_age_band() in ('adult','youth')","public.sinjira_age_band((select auth.uid())) in ('adult','youth')"),
             "wrapper droit produit redevient privilégié":("age_boundary_migration","language sql\nstable\nsecurity invoker\nset search_path=''\nas $wrapper$","language sql\nstable\nsecurity definer\nset search_path=''\nas $wrapper$"),
             "projet payant rouvert aux comptes child":("project_access_migration","p.child_access_status='approved_11_12'\n      and p.product_slug is null\n      and (","p.child_access_status='approved_11_12'\n      and ("),
