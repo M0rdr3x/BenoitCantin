@@ -10,14 +10,14 @@ PR : #435
 
 ## Source de vérité du périmètre
 
-Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only a porté le delta à **36 migrations futures non revues**. La demande de catalogue complet pour le créateur et ses comptes familiaux, sans publier de courriel ni fabriquer de faux achat, ajoute maintenant une migration forward-only dédiée : le delta courant est désormais de **39 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
+Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only a porté le delta à **36 migrations futures non revues**. La demande de catalogue complet pour le créateur et ses comptes familiaux, sans publier de courriel ni fabriquer de faux achat, ajoute maintenant une migration forward-only dédiée : les frontières self-only d’âge/catalogue et l’accès produit générique projets ajoutent ensuite deux migrations forward-only supplémentaires : le delta courant est désormais de **41 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
 
 Répartition :
 - **Lot A — Mode Voyage : 4 migrations**
 - **Lot B — Enfant / Junior / Tuteur : 22 migrations**
 - **Lot C — Compte / Catalogue / RPC : 9 migrations**
 - **Lot D — Frontières helpers navigateur : 1 migration**
-- **Lot E — Catalogue famille créateur : 3 migrations**
+- **Lot E — Catalogue famille créateur : 5 migrations**
 
 L'ordre ci-dessous est un **ordre de revue**, pas un ordre d'autorisation production.
 
@@ -356,7 +356,7 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
 
 ---
 
-## Lot E — Catalogue famille créateur (3)
+## Lot E — Catalogue famille créateur (5)
 
 - [ ] `20260922014000_sinjira_v25_creator_family_catalog_access.sql`
   - Ajoute un registre privé de comptes familiaux **par UUID uniquement**; aucun courriel n'est stocké dans la table ni inscrit en clair dans la migration publique.
@@ -388,6 +388,22 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
   - Le RPC `sinjira_my_extension_catalog()` expose `access_source='product'` pour distinguer proprement un achat réel du gratuit/public.
   - Preuve dédiée dans `creator_family_catalog_access_v25.test.sql` : invisible avant achat en RLS + RPC, visible après commande `paid` en RLS + RPC, sans faux entitlement.
 
+
+- [ ] `20260922031500_sinjira_v25_catalog_age_helper_boundary.sql`
+  - Remplace les appels navigateur à `sinjira_age_band(uuid)` dans les policies catalogue par le helper self-only `sinjira_my_age_band()`.
+  - Déplace l’implémentation privilégiée de `has_sinjira_product(text,uuid)` dans `sinjira_v25_internal`, avec wrapper public `SECURITY INVOKER`.
+  - Conserve le ciblage UUID explicite uniquement pour `service_role`; un rôle navigateur reste borné à `auth.uid()`.
+  - Réaffirme que les policies famille et achats d’extensions restent limitées à `adult/youth`; aucun droit produit ne rend le contenu ouvrable à 11–12 ans.
+  - Revue prioritaire : ACL, `search_path`, ordre de remplacement des policies et absence d’oracle d’âge/droit par UUID arbitraire.
+
+- [ ] `20260922033000_sinjira_v25_project_product_access.sql`
+  - Ajoute `projects.product_slug` et généralise le droit produit aux jeux/autres projets sans créer de faux entitlement.
+  - Un projet lié à un produit n’est lisible au membre standard qu’avec droit produit réel ou accès projet explicite; un achat ne révèle jamais un projet `draft`.
+  - Les lignes complètes de projets publics payants restent fermées à `anon`; la fiche marketing publique peut rester séparée.
+  - Les documents d’un projet payant répètent la frontière produit avant livraison; le helper 11–12 exclut tout projet payant même `approved_11_12`.
+  - Le catalogue projet distingue `owner`, `family`, `product`, `access` et `free`, tout en minimisant les fiches 11–12 non ouvrables.
+  - Revue prioritaire : interactions RLS projets/documents, états non-draft autorisés, Edge `get-document-url`, et preuve qu’un `project_access` technique ne contourne jamais la barrière d’âge.
+
 ### Notes de revue préparatoire du Lot E — non approbatives
 
 Objectif fonctionnel : le créateur et les comptes familiaux explicitement autorisés voient toutes les créations SINJIRA dans leur compte, alors qu'un membre standard voit seulement le gratuit/public et ce qu'il a réellement acheté ou reçu comme droit.
@@ -417,7 +433,7 @@ Une famille ne peut être proposée comme « revue » que si :
 
 ## État au moment de la création de ce document
 
-- 39 / 39 migrations : **NON REVUES**
+- 41 / 41 migrations : **NON REVUES**
 - 0 migration ajoutée au lot production par ce document
 - 0 changement du ledger production
 - 0 déploiement production
