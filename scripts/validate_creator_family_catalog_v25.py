@@ -332,8 +332,8 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(59);" not in test:
-        fail("pgTAP famille: plan(59) absent")
+    if "selectplan(64);" not in test:
+        fail("pgTAP famille: plan(64) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
@@ -368,6 +368,11 @@ def validate(contents:dict[str,str])->None:
         "unecommandepaidrendlextensionprivéeachetéevisibleaumembrestandard",
         "lecatalogueextensionreconnaîtunecommandepaidsansentitlementartificiel",
         "uncomptefamilial11–12nesatisfaitpasledroitproduitnonclassé",
+        "unaccèsplayerexpliciteresteunrangtechniqueetnedevientpasundroitproduitenfant",
+        "uncompte11–12nelitpasunprojetpayantmêmeapprouvéetavecproject_accessplayer",
+        "lehelper11–12refuseaussileprojetpayantapprouvéavecaccèsexplicite",
+        "uncompte11–12nelitpasledocumentdunprojetpayantmalgréunrangplayer",
+        "lehelperdocument11–12refuselecontenupayantmalgrédoubleapprobationetaccèsplayer",
         "lesrpcpublicsfamillerestentsecurityinvoker",
         "lesseptimplémentationsprivilégiéesfamillerestenthorsduschémapublic",
     ):
