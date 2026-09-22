@@ -20,6 +20,7 @@ FILES={
     "purchases":ROOT/"assets/js/sinjira-purchases-v25.js",
     "literature":ROOT/"assets/js/sinjira-literature-catalog-v25.js",
     "library_html":ROOT/"compte/bibliotheque.html",
+    "licenses_html":ROOT/"compte/licences.html",
     "purchases_html":ROOT/"compte/mes-achats.html",
     "literature_html":ROOT/"projets/sinjira/romans/index.html",
     "dashboard":ROOT/"assets/js/sinjira-account-dashboard-v24-4-60.js",
@@ -87,6 +88,8 @@ def validate(contents:dict[str,str])->None:
         "createorreplacefunctionsinjira_v25_internal.sinjira_my_product_rights()",
         "selectauth.uid()asuid",
         "'paid_order'::textassource",
+        "public.sinjira_age_band(auth.uid())",
+        "a.bandin('adult','youth')",
         "distincton(product_id)",
         "revokeallonfunctionsinjira_v25_internal.sinjira_my_product_rights()frompublic,anon,authenticated",
         "createorreplacefunctionpublic.sinjira_my_product_rights()",
@@ -111,6 +114,8 @@ def validate(contents:dict[str,str])->None:
         fail("droits produit effectifs: implémentation interne doit rester SECURITY DEFINER")
     if "p_user_id" in rights_segment:
         fail("droits produit effectifs: aucun UUID arbitraire ne doit être accepté")
+    if rights_segment.count("a.bandin('adult','youth')") < 2:
+        fail("droits produit effectifs: entitlement et commande paid doivent tous deux rester masqués aux comptes 11–12")
     for forbidden in ("order_number","total_cents","currency","email"):
         if forbidden in rights_segment:
             fail(f"droits produit effectifs: détail commercial interdit dans la réponse: {forbidden}")
@@ -347,12 +352,19 @@ def validate(contents:dict[str,str])->None:
         "s.rpc('sinjira_my_product_rights')",
         "row.source==='paid_order'?'achatpayé'",
         "droitnumériquereconnu",
+        "sinjira_my_account_capabilities",
+        "constchildmode=capabilitiesresolved&&capabilitiesresult.data.library_mode==='reviewed_11_12'",
+        "form.hidden=true",
+        "licencesprotégéespourlescomptes11–12ans",
     ):
         if marker not in licenses:
             fail(f"licences: droit produit effectif absent: {marker}")
     for forbidden in ("s.from('orders')","s.from('order_items')","s.from('user_entitlements')"):
         if forbidden in licenses:
             fail(f"licences: lecture commerciale directe interdite: {forbidden}")
+
+    if "v24-licenses.js?v=25.1.1" not in contents["licenses_html"]:
+        fail("licences: cache V25.1.1 non forcé")
 
     for marker in (
         "sinjira_my_catalog_access_mode",
@@ -431,7 +443,7 @@ def validate(contents:dict[str,str])->None:
         "unecommandependingnapparaîtpasdanslesdroitsproduitducompte",
         "lesdeuxproduitsdunecommandepaidapparaissentdanslesdroitseffectifsducompte",
         "lesdroitsissusdunecommandepaidsontidentifiéssansexposerlacommande",
-        "lesentitlementsréelsrestentlistéscomptablementà11–12sansouvrirlecontenu",
+        "lesdroitscommerciauxrestentmasquéscôténavigateurà11–12malgrédesentitlementsréels",
         "unmembrestandardsansachatnientitlementnesatisfaitpasledroitproduit",
         "test-family-pending-ext-001",
         "unecommandepaidrendleproduitachetévisibleaumembrestandard",
@@ -537,6 +549,8 @@ def main()->None:
             "commande paid assouplie":("paid_access_migration","o.status='paid'","o.status<>'cancelled'"),
             "rpc droits produit accepte un UUID":("paid_access_migration","create or replace function sinjira_v25_internal.sinjira_my_product_rights()","create or replace function sinjira_v25_internal.sinjira_my_product_rights(p_user_id uuid)"),
             "wrapper droits produit redevient definer":("paid_access_migration","create or replace function public.sinjira_my_product_rights()\nreturns jsonb\nlanguage sql\nstable\nsecurity invoker","create or replace function public.sinjira_my_product_rights()\nreturns jsonb\nlanguage sql\nstable\nsecurity definer"),
+            "droits produit enfant réexposés":("paid_access_migration","a.band in ('adult','youth')","true"),
+            "licences enfant sans garde capacités":("licenses","const childMode=capabilitiesResolved&&capabilitiesResult.data.library_mode==='reviewed_11_12';","const childMode=false;"),
             "bibliothèque relit directement les entitlements":("library","s.rpc('sinjira_my_product_rights')","s.from('user_entitlements')"),
             "licences relisent directement les commandes":("licenses","s.rpc('sinjira_my_product_rights')","s.from('orders')"),
             "wrapper famille redevient definer":("migration","security invoker\nset search_path=''\nas $wrapper$","security definer\nset search_path=''\nas $wrapper$"),
