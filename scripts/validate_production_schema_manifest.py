@@ -48,7 +48,7 @@ PLANNED_LOCAL_TABLES={
 'security_push_receipt_queue',
 'social_live_rooms','social_live_room_members','social_live_messages','social_live_room_invites','social_live_room_share_codes',
 'junior_community_guardian_consents','junior_community_posts','junior_community_comments',
-'sinjira_private_novel_assets'
+'sinjira_private_novel_assets','sinjira_catalog_family_members'
 }
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|private)\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
