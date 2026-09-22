@@ -93,7 +93,11 @@ def validate(contents:dict[str,str])->None:
     for extension_marker in (
         "altertablepublic.extensionsaddcolumnifnotexistsproduct_slugtext",
         "extensions_product_slug_fkey",
+        "createpolicy\"extensionspublicread\"onpublic.extensions",
         "createpolicyextensions_purchased_read_v25",
+        "parent_project.id=extensions.project_id",
+        "parent_project.status<>'draft'",
+        "p.status<>'draft'and(",
         "statusin('approved','released')",
         "public.sinjira_age_band((selectauth.uid()))in('adult','youth')",
         "public.has_sinjira_product(product_slug,(selectauth.uid()))",
@@ -104,6 +108,9 @@ def validate(contents:dict[str,str])->None:
     ):
         if extension_marker not in extension_access_migration:
             fail(f"accès extension payé: invariant absent: {extension_marker}")
+
+    if extension_access_migration.count("parent_project.status<>'draft'") < 2:
+        fail("accès extension: public et acheté doivent tous deux fermer un projet parent brouillon")
 
     for boundary_marker in (
         "createorreplacefunctionsinjira_v25_internal.has_sinjira_product(",
@@ -131,7 +138,7 @@ def validate(contents:dict[str,str])->None:
         "createpolicyproducts_family_catalog_read_v25onpublic.productsforselecttoauthenticatedusing(public.is_sinjira_catalog_family_member((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
         "createpolicyprojects_family_catalog_read_v25onpublic.projectsforselecttoauthenticatedusing(public.is_sinjira_catalog_family_member((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
         "createpolicyextensions_creator_family_catalog_read_v25onpublic.extensionsforselecttoauthenticatedusing(public.sinjira_has_full_catalog_access((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
-        "createpolicyextensions_purchased_read_v25onpublic.extensionsforselecttoauthenticatedusing(statusin('approved','released')andproduct_slugisnotnullandpublic.sinjira_my_age_band()in('adult','youth')andpublic.has_sinjira_product(product_slug,(selectauth.uid())))",
+        "createpolicyextensions_purchased_read_v25onpublic.extensionsforselecttoauthenticatedusing(statusin('approved','released')andproduct_slugisnotnullandexists(select1frompublic.projectsparent_projectwhereparent_project.id=extensions.project_idandparent_project.status<>'draft')andpublic.sinjira_my_age_band()in('adult','youth')andpublic.has_sinjira_product(product_slug,(selectauth.uid())))",
     )
     for policy_marker in effective_age_policies:
         if policy_marker not in age_boundary_migration:
@@ -345,12 +352,13 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(77);" not in test:
-        fail("pgTAP famille: plan(77) absent")
+    if "selectplan(82);" not in test:
+        fail("pgTAP famille: plan(82) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
         "anonnereçoitpaslalignecomplètedunprojetpublicliéàunproduit",
+        "anonnevoitpasuneextensionpubliéedontleprojetparentestencorebrouillon",
         "aucuncourrielneststockédansleregistrefamilial",
         "aucunlibellénominatifneststockédansleregistrefamilial",
         "authenticatednepeuttoujourspassonderlabandeâgedunuuidarbitraire",
@@ -360,6 +368,7 @@ def validate(contents:dict[str,str])->None:
         "unmembrestandardvoitlecontenugratuitinclusavecsoncompte",
         "uncomptefamilialyouth/adultvoituneextensioninterneducataloguecréateur",
         "unmembrestandardnevoitpasuneextensioninternenonpublique",
+        "unmembrestandardnevoitpasuneextensionpubliquesileprojetparentestbrouillon",
         "lecomptefamilial11–12nereçoitpasuneextensioninternenonclassée",
         "lecatalogueextensionself-onlydonnelesmétadonnéescomplètesàlafamille13+",
         "lecatalogueextensionself-onlynerévèlepaslextensioninterneaumembrestandard",
@@ -381,7 +390,10 @@ def validate(contents:dict[str,str])->None:
         "unecommandepaidrendlextensionprivéeachetéevisibleaumembrestandard",
         "lecatalogueextensionreconnaîtunecommandepaidsansentitlementartificiel",
         "lafamilleadult/youthvoitaussiuneextensionproduitencoreenconception",
+        "lafamilleadult/youthconservelavisibilitécataloguesuruneextensiondeprojetbrouillon",
         "unachatnerévèlepasuneextensionencoreenconception",
+        "unachatpaidnerévèlepasuneextensionpubliéesisonprojetparentrestebrouillon",
+        "lecataloguemembremasqueuneextensionachetéedontleprojetparentestbrouillon",
         "lecataloguemembremasqueaussilextensionproduitencoreenconception",
         "uncomptefamilial11–12nesatisfaitpasledroitproduitnonclassé",
         "unaccèsplayerexpliciteresteunrangtechniqueetnedevientpasundroitproduitenfant",
@@ -452,6 +464,9 @@ def main()->None:
             "jeu famille retiré bibliothèque":("library","isOwner||familyCatalog||fractureRight","isOwner||fractureRight"),
             "extension achetée effective ouverte aux comptes child":("age_boundary_migration","product_slug is not null\n  and public.sinjira_my_age_band() in ('adult','youth')\n  and public.has_sinjira_product","product_slug is not null\n  and public.sinjira_my_age_band() in ('adult','youth','child')\n  and public.has_sinjira_product"),
             "extension interne vendue avant approbation":("age_boundary_migration","status in ('approved','released')\n  and product_slug is not null","product_slug is not null"),
+            "extension publique réexpose parent brouillon":("extension_access_migration","and parent_project.status<>'draft'\n  )\n);","\n  )\n);"),
+            "extension achetée effective réexpose parent brouillon":("age_boundary_migration","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band()","\n  )\n  and public.sinjira_my_age_band()"),
+            "rpc extension réexpose parent brouillon":("extension_access_migration","p.status<>'draft'\n        and (","("),
             "rpc extension vendue avant approbation":("extension_access_migration","e.status in ('approved','released')\n          and e.product_slug is not null","e.product_slug is not null"),
             "extension famille effective ouverte aux comptes child":("age_boundary_migration","public.sinjira_has_full_catalog_access((select auth.uid()))\n  and public.sinjira_my_age_band() in ('adult','youth')","public.sinjira_has_full_catalog_access((select auth.uid()))\n  and public.sinjira_my_age_band() in ('adult','youth','child')"),
             "policy catalogue réutilise oracle âge UUID":("age_boundary_migration","public.sinjira_my_age_band() in ('adult','youth')","public.sinjira_age_band((select auth.uid())) in ('adult','youth')"),
