@@ -423,26 +423,12 @@ begin
       a.product_slug,
       coalesce(a.enabled,false) as private_asset_configured,
       a.total_pages,
-      exists(
-        select 1
-        from public.products p
-        join public.user_entitlements ue
-          on ue.product_id=p.id
-         and ue.user_id=uid
-        where p.slug=a.product_slug
-      ) as entitled
+      public.has_sinjira_product(a.product_slug,uid) as product_access
     from public.sinjira_novels n
     left join private.sinjira_private_novel_assets a on a.novel_id=n.id
     where full_catalog_mode
        or n.status in ('announced','published')
-       or exists(
-         select 1
-         from public.products p
-         join public.user_entitlements ue
-           on ue.product_id=p.id
-          and ue.user_id=uid
-         where p.slug=a.product_slug
-       )
+       or public.has_sinjira_product(a.product_slug,uid)
   )
   select coalesce(
     jsonb_agg(
@@ -466,14 +452,14 @@ begin
         'full_access',
           private_asset_configured
           and band in ('adult','youth')
-          and (full_catalog_mode or entitled),
+          and (full_catalog_mode or product_access),
         'private_asset_configured',private_asset_configured,
         'total_pages',case when band='child' then null else total_pages end,
         'access_source',case
           when band='child' and family_mode then 'family_catalog'
           when private_asset_configured and owner_mode then 'owner'
           when private_asset_configured and family_mode then 'family'
-          when private_asset_configured and entitled then 'entitlement'
+          when private_asset_configured and product_access then 'product'
           when family_mode then 'family_catalog'
           else 'catalogue'
         end
