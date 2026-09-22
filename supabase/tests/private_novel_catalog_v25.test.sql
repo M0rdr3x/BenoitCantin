@@ -181,7 +181,7 @@ select ok(
     from jsonb_array_elements(public.sinjira_my_novel_catalog()) item
     where item->>'slug'='private-novel-announced'
       and (item->>'full_access')::boolean=true
-      and item->>'access_source'='entitlement'
+      and item->>'access_source'='product'
       and (item->>'total_pages')::integer=321
   ),
   'un entitlement donne accès intégral au roman privé configuré'
