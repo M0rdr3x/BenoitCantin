@@ -95,17 +95,20 @@ Deno.serve(async(req)=>{
     }
     const {data:doc,error}=await service
       .from('documents')
-      .select('project_id,status,access_level,child_access_status,external_url,storage_bucket,storage_path,projects(id,visibility,status,child_access_status)')
+      .select('project_id,status,access_level,child_access_status,external_url,storage_bucket,storage_path,projects(id,visibility,status,child_access_status,product_slug)')
       .eq('id',document_id)
       .maybeSingle();
     if(error||!doc||doc.status!=='approved'||doc.projects?.status!=='active'){
       return privateJson({ok:false,error:'Document introuvable ou non approuvé.'},404);
     }
 
+    const productSlug=typeof doc.projects?.product_slug==='string'?doc.projects.product_slug.trim():'';
+
     if(ageBand==='child'&&(
       doc.child_access_status!=='approved_11_12'
       || doc.projects?.child_access_status!=='approved_11_12'
       || !['public','account'].includes(String(doc.projects?.visibility||''))
+      || productSlug.length>0
     )){
       return privateJson({ok:false,error:'Ce document n’est pas encore approuvé pour les comptes de 11–12 ans.'},403);
     }
@@ -127,6 +130,21 @@ Deno.serve(async(req)=>{
 
     if(userRank<(ranks[doc.access_level]||999)){
       return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
+    }
+
+    if(productSlug&&userRank<20){
+      if(!user)return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
+      const {data:hasProduct,error:productError}=await service.rpc('has_sinjira_product',{
+        p_product_slug:productSlug,
+        p_user_id:user.id
+      });
+      if(productError){
+        console.error('[get-document-url]',{code:'PRODUCT_ACCESS_UNAVAILABLE'});
+        return privateJson({ok:false,error:'La vérification du droit produit est temporairement indisponible.'},503);
+      }
+      if(hasProduct!==true){
+        return privateJson({ok:false,error:'Votre compte ne possède pas le droit produit requis.'},403);
+      }
     }
 
     if(doc.external_url){
