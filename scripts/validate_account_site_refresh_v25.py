@@ -300,7 +300,8 @@ def validate(contents: dict[str, str]) -> None:
     if "accèsauteur" in libj:
         fail("bibliothèque: rôle créateur encore présenté comme droit numérique privé")
     for marker in (
-        "s.rpc('sinjira_my_project_catalog')",
+        "constprojectquery=s.rpc('sinjira_my_project_catalog')",
+        "s.rpc('is_sinjira_admin',{p_user_id:user.id}),s.rpc('is_sinjira_owner',{p_user_id:user.id}),s.rpc('sinjira_my_project_catalog'),s.from('project_access')",
         "constsource=string(project.access_source||'free')",
         "source==='product'",
         "acheté/droitnumérique",
@@ -827,7 +828,7 @@ def main() -> None:
             "preuve RLS playtest self-only retirée":("test","policyname='participants own apply'","policyname='participants missing apply'"),
             "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
             "projet principal jouable sans catalogue canonique":("library_js","project.play_path&&childApproved","project.play_path"),
-            "catalogue projet principal retiré":("library_js","s.rpc('sinjira_my_project_catalog')","s.from('projects').select('*')"),
+            "catalogue projet principal retiré":("library_js","s.rpc('is_sinjira_admin',{p_user_id:user.id}),s.rpc('is_sinjira_owner',{p_user_id:user.id}),s.rpc('sinjira_my_project_catalog'),s.from('project_access')","s.rpc('is_sinjira_admin',{p_user_id:user.id}),s.rpc('is_sinjira_owner',{p_user_id:user.id}),s.from('projects').select('*'),s.from('project_access')"),
             "droits produit bibliothèque relus directement":("library_js","s.rpc('sinjira_my_product_rights')","s.from('user_entitlements')"),
             "droits produit licences relus directement":("licenses_js","s.rpc('sinjira_my_product_rights')","s.from('orders')"),
             "policy produit paid rouverte enfant":("paid_access_migration","public.sinjira_my_age_band() in ('adult','youth')\n  and exists(","exists("),
