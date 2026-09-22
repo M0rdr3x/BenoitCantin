@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(47);
+select plan(50);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -204,6 +204,7 @@ select is(
         'sinjira_my_catalog_access_mode',
         'set_sinjira_catalog_family_access_by_email',
         'sinjira_my_project_catalog',
+        'sinjira_my_extension_catalog',
         'sinjira_my_novel_catalog'
       )
       and p.prosecdef
@@ -223,12 +224,13 @@ select is(
         'sinjira_my_catalog_access_mode',
         'set_sinjira_catalog_family_access_by_email',
         'sinjira_my_project_catalog',
+        'sinjira_my_extension_catalog',
         'sinjira_my_novel_catalog'
       )
       and p.prosecdef
   ),
-  6,
-  'les six implémentations privilégiées famille restent hors du schéma public'
+  7,
+  'les sept implémentations privilégiées famille restent hors du schéma public'
 );
 
 select set_config(
@@ -324,6 +326,16 @@ select is(
   'un compte familial youth/adult voit une extension interne du catalogue créateur'
 );
 select ok(
+  exists(
+    select 1
+    from jsonb_array_elements(public.sinjira_my_extension_catalog()) item
+    where item->>'id'='fd000000-0000-4000-8000-00000000000d'
+      and item->>'title'='Extension interne famille'
+      and (item->>'content_available')::boolean
+  ),
+  'le catalogue extension self-only donne les métadonnées complètes à la famille 13+'
+);
+select ok(
   public.has_sinjira_product(
     'family-private-novel-product',
     'f1000000-0000-4000-8000-000000000001'
@@ -383,6 +395,15 @@ select is(
   (select count(*)::integer from public.extensions where id='fd000000-0000-4000-8000-00000000000d'),
   0,
   'un membre standard ne voit pas une extension interne non publique'
+);
+select is(
+  (
+    select count(*)::integer
+    from jsonb_array_elements(public.sinjira_my_extension_catalog()) item
+    where item->>'id'='fd000000-0000-4000-8000-00000000000d'
+  ),
+  0,
+  'le catalogue extension self-only ne révèle pas l extension interne au membre standard'
 );
 select throws_ok(
   $$ select public.sinjira_my_project_catalog() $$,
@@ -486,6 +507,17 @@ select is(
   (select count(*)::integer from public.extensions where id='fd000000-0000-4000-8000-00000000000d'),
   0,
   'le compte familial 11–12 ne reçoit pas une extension interne non classée'
+);
+select ok(
+  exists(
+    select 1
+    from jsonb_array_elements(public.sinjira_my_extension_catalog()) item
+    where item->>'id'='fd000000-0000-4000-8000-00000000000d'
+      and item->>'title'='Extension SINJIRA™ protégée'
+      and item->>'status'='protected'
+      and (item->>'content_available')::boolean=false
+  ),
+  'le compte familial 11–12 voit une fiche extension minimisée sans contenu ouvrable'
 );
 select is(
   sinjira_catalog_internal.project_access_rank(
