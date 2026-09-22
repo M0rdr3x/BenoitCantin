@@ -26,7 +26,7 @@ REQUIRED = {
     'référent masqué': "'Referrer-Policy':'no-referrer'",
     'auth optionnelle': 'optionalUser(req)',
     'document approuvé': "doc.status!=='approved'",
-    'projet actif': "doc.projects?.status!=='active'",
+    'projet non brouillon reconnu': "['development','testing','active','archived'].includes(projectStatus)",
     'product_slug projet chargé': 'child_access_status,product_slug)',
     'slug produit normalisé': "const productSlug=typeof doc.projects?.product_slug==='string'?doc.projects.product_slug.trim():'';",
     'projet payant fermé aux comptes child': '|| productSlug.length>0',
@@ -150,7 +150,8 @@ Deno.serve(async(req)=>{
   if(!UUID_RE.test(document_id))return privateJson({},400);
   const service=serviceClient(),user=await optionalUser(req);
   const {data:doc}=await service.from('documents').select('project_id,status,access_level,child_access_status,storage_bucket,storage_path,projects(status,child_access_status,product_slug)').eq('id',document_id).maybeSingle();
-  if(doc.status!=='approved'||doc.projects?.status!=='active')return privateJson({},404);
+  const projectStatus=String(doc?.projects?.status||'');
+  if(doc.status!=='approved'||!['development','testing','active','archived'].includes(projectStatus))return privateJson({},404);
   const productSlug=typeof doc.projects?.product_slug==='string'?doc.projects.product_slug.trim():'';
   const ageBand='adult';
   if(ageBand==='child'&&(doc.child_access_status!=='approved_11_12'||doc.projects?.child_access_status!=='approved_11_12'|| productSlug.length>0))return privateJson({},403);
@@ -202,6 +203,7 @@ Deno.serve(async(req)=>{
             'admin truthy permissif': safe.replace('if(isAdmin===true)userRank=100;', 'if(isAdmin)userRank=100;'),
             'rang non fini accepté': safe.replace('!Number.isFinite(normalizedRank)||', ''),
             'fallback niveau inconnu retiré': safe.replace('(ranks[doc.access_level]||999)', 'ranks[doc.access_level]'),
+            'brouillon projet livré': safe.replace("['development','testing','active','archived'].includes(projectStatus)","['draft','development','testing','active','archived'].includes(projectStatus)"),
             'product_slug non chargé': safe.replace(',product_slug)', ')'),
             'garde child produit retirée': safe.replace('|| productSlug.length>0', ''),
             'rang player produit affaibli': safe.replace('if(productSlug&&userRank<20)', 'if(productSlug&&userRank<10)'),
