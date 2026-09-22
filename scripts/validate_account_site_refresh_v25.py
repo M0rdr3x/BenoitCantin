@@ -208,6 +208,9 @@ def validate(contents: dict[str, str]) -> None:
             fail(f"migration privilèges catalogue: garde absente: {marker}")
 
     for marker in (
+        "createpolicyproducts_ordered_read",
+        "public.sinjira_my_age_band()in('adult','youth')",
+        "o.status='paid'",
         "createorreplacefunctionsinjira_v25_internal.sinjira_my_product_rights()",
         "selectauth.uid()asuid",
         "'paid_order'::textassource",
@@ -798,6 +801,7 @@ def main() -> None:
             "catalogue projet principal retiré":("library_js","s.rpc('sinjira_my_project_catalog')","s.from('projects').select('*')"),
             "droits produit bibliothèque relus directement":("library_js","s.rpc('sinjira_my_product_rights')","s.from('user_entitlements')"),
             "droits produit licences relus directement":("licenses_js","s.rpc('sinjira_my_product_rights')","s.from('orders')"),
+            "policy produit paid rouverte enfant":("paid_access_migration","public.sinjira_my_age_band() in ('adult','youth')\n  and exists(","exists("),
             "cache licences revenu ancien":("licenses_html","v24-licenses.js?v=25.1.1","v24-licenses.js?v=24.4.62"),
             "licences enfant sans garde capacités":("licenses_js","const childMode=capabilitiesResolved&&capabilitiesResult.data.library_mode==='reviewed_11_12';","const childMode=false;"),
             "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.8\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
