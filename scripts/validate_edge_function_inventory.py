@@ -185,6 +185,10 @@ def main() -> int:
             if marker not in source:
                 errors.append(f"{slug}: garde-fou custom auth/access manquant: {marker}.")
 
+    document_source=read_tree_text(FUNCTIONS / "get-document-url")
+    if "doc.projects?.status!=='active'" in document_source:
+        errors.append("get-document-url: le contrat active-only historique est interdit; utiliser l allowlist non-draft explicite.")
+
     for slug in ("get-document-url", "send-game-report"):
         source = read_tree_text(FUNCTIONS / slug)
         for forbidden in ("await req.text()", "await req.json()", "startsWith('application/json')"):
@@ -232,6 +236,12 @@ def main() -> int:
     for forbidden in ("external_url", "getPublicUrl(", "clientRole", ".from('user_entitlements')", ".insert(", ".upsert("):
         if forbidden in book_helper:
             errors.append(f"Livre I helper: repli/assertion client interdit: {forbidden}.")
+
+    owner_pos=book_helper.find("service.rpc('is_sinjira_owner'")
+    family_pos=book_helper.find("'sinjira_has_full_catalog_access'")
+    product_pos=book_helper.find("'has_sinjira_product'")
+    if not (0 <= owner_pos < family_pos < product_pos):
+        errors.append("Livre I helper: ordre attendu owner -> famille -> droit produit canonique.")
 
     book_download_source = read_tree_text(FUNCTIONS / "get-private-book-url")
     book_reader_source = read_tree_text(FUNCTIONS / "get-private-book-reading-url")
