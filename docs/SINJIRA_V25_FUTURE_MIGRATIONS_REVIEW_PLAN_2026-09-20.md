@@ -290,7 +290,7 @@ Relecture technique effectuée sur le HEAD `1a54e110762a5249e99c70fc40e6667ce285
 - sur le run Compte/catalogue `35677574948`, la validation statique, la reconstruction locale, la preuve membre/créateur et la preuve 11–12 / absence d'oracle ont terminé en succès avant le nettoyage de la pile.
 
 **Preuves techniques maintenant satisfaites pour le Lot C :**
-- le workflow Compte/catalogue est vert après reconstruction avec **47/47** assertions membre/créateur et **23/23** assertions classement 11–12 / absence d'oracle;
+- la dernière preuve verte antérieure du workflow Compte/catalogue reste **45/45** assertions membre/créateur + **23/23** classement 11–12; la suite courante est portée à **49 assertions** et doit être relue sur le HEAD final après les durcissements famille/commande payée;
 - le workflow Catalogue romans privés est vert avec auto-test **8/8** et pgTAP **13/13**;
 - l'Edge `get-private-novel-url` réévalue côté serveur identité, âge, rôle créateur/entitlement, actif `enabled` et stockage avant URL signée 300 s; la régression `Content-Length` doublement échappée est corrigée et gardée;
 - les preuves négatives couvrent `anon/authenticated/service_role`, absence de lecture directe du registre privé, absence de chemin Storage dans le navigateur et sondage UUID self-only.
@@ -323,7 +323,7 @@ Cette migration appartient fonctionnellement au **Lot A — Mode Voyage**, mais 
   - Conserve l’OID de `sinjira_catalog_internal.project_access_rank(uuid,uuid)` utilisé par les policies RLS, mais retourne `0` lorsqu’un rôle navigateur fournit un `p_user_id` différent de `auth.uid()`; `service_role` conserve l’usage serveur arbitraire.
   - Ferme l’oracle anonyme de `sinjira_child_project_available(uuid)` : un projet `visibility='account'` exige désormais une session authentifiée.
   - Aligne `sinjira_child_document_available(uuid)` sur le rang réel du compte courant via `project_access_rank >= document_access_rank`.
-  - Preuves attendues : pgTAP Compte à 47 assertions et classement 11–12 à 23 assertions.
+  - Preuves attendues : pgTAP Compte à 49 assertions et classement 11–12 à 23 assertions.
   - Migration transversale B/C : revue conjointe avec la frontière RPC V25 et les policies projets/documents.
 
 ### Notes de revue statique du Lot D — non approbatives
@@ -343,7 +343,7 @@ La revue croisée des définitions et des preuves runtime confirme actuellement 
 
 **Preuves techniques maintenant satisfaites pour le Lot D :**
 - les workflows Compte/catalogue et Communauté/accès enfant sont verts après reconstruction complète avec `20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql`;
-- le pgTAP Compte passe **47/47** assertions, dont le refus de sondage d'un autre UUID par un rôle navigateur et la conservation du ciblage explicite par `service_role`;
+- le pgTAP Compte courant contient **49 assertions**, dont le refus de sondage d'un autre UUID, le ciblage explicite `service_role`, l'entitlement durable, la commande `paid` et le refus d'une commande `pending`; validation CI finale encore requise sur le SHA gelé;
 - le classement 11–12 passe **23/23** assertions, incluant l'absence d'oracle anon sur contenu `account` et le rang réel pour les documents;
 - la reconstruction confirme que les policies RLS continuent de fonctionner après conservation de l'OID du helper interne.
 
@@ -371,11 +371,11 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
   - Preuve dédiée : `creator_family_catalog_access_v25.test.sql` et validateur statique de confidentialité, incluant l'interdiction d'une adresse courriel littérale dans la migration.
 
 - [ ] `20260922023000_sinjira_v25_paid_order_product_access.sql`
-  - Aligne `has_sinjira_product(text,uuid)` sur les droits réels déjà reconnus par la RLS produits.
+  - Aligne la RLS `products_ordered_read` et `has_sinjira_product(text,uuid)` sur un achat réellement payé.
   - Un entitlement reste un droit même si le produit n'est plus actif à la vente.
   - Une commande avec `status='paid'` conserve le droit produit même si le produit devient ensuite inactif.
-  - Une commande non payée ne crée aucun droit et aucun entitlement artificiel n'est inséré.
-  - Le garde self-only reste inchangé : un navigateur ne peut pas sonder l'accès produit d'un autre UUID.
+  - Une commande `pending` ne rend plus le produit privé visible et ne satisfait jamais `has_sinjira_product()`.
+  - Aucun faux entitlement n'est créé; le garde self-only reste inchangé et un navigateur ne peut pas sonder l'accès produit d'un autre UUID.
   - Cette migration doit être retestée à la fois par le workflow Compte/catalogue et par le workflow Romans privés.
 
 ### Notes de revue préparatoire du Lot E — non approbatives
