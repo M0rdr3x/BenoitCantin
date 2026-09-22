@@ -76,7 +76,7 @@ function renderNovels(novels,libraryRows,isOwner,childMode=false,familyCatalog=f
         ?(fullAccess?'Créateur · intégrale privée':'Créateur · catalogue complet')
         :(source==='family'||source==='family_catalog')
           ?(fullAccess?'Famille créateur · intégrale privée':'Famille créateur · catalogue complet')
-          :fullAccess&&source==='entitlement'?'Acheté / droit numérique':novel.status==='published'?'Disponible':'Annoncé';
+          :fullAccess&&(source==='entitlement'||source==='product')?'Acheté / droit numérique':novel.status==='published'?'Disponible':'Annoncé';
     const statusLabel=novel.status==='draft'?'Brouillon créateur':novel.status==='published'?'Publié':novel.status==='announced'?'Annoncé':novel.status||'—';
     const actions=childMode?'':[
       novel.demo_path?`<a class="btn btn-secondary" href="${escapeHtml(novel.demo_path)}">Lire la démo</a>`:'',
