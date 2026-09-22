@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(47);
+select plan(49);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -140,16 +140,21 @@ insert into public.products(id,slug,name,product_type,active)
 values
 ('b4000000-0000-4000-8000-000000000004','content-entitled','Produit attribué','novel',false),
 ('b5000000-0000-4000-8000-000000000005','content-ordered','Produit acheté','game',false),
-('b6000000-0000-4000-8000-000000000006','content-private','Produit privé créateur','digital',false);
+('b6000000-0000-4000-8000-000000000006','content-private','Produit privé créateur','digital',false),
+('ba000000-0000-4000-8000-00000000000a','content-pending','Produit commande non payée','digital',false);
 
 insert into public.user_entitlements(user_id,product_id,source)
 values('b2000000-0000-4000-8000-000000000002','b4000000-0000-4000-8000-000000000004','test');
 
 insert into public.orders(id,user_id,order_number,status,currency,total_cents)
-values('b7000000-0000-4000-8000-000000000007','b2000000-0000-4000-8000-000000000002','TEST-CONTENT-HUB-001','paid','CAD',2500);
+values
+('b7000000-0000-4000-8000-000000000007','b2000000-0000-4000-8000-000000000002','TEST-CONTENT-HUB-001','paid','CAD',2500),
+('bb000000-0000-4000-8000-00000000000b','b2000000-0000-4000-8000-000000000002','TEST-CONTENT-HUB-PENDING','pending','CAD',1800);
 
 insert into public.order_items(order_id,product_id,quantity,unit_price_cents)
-values('b7000000-0000-4000-8000-000000000007','b5000000-0000-4000-8000-000000000005',1,2500);
+values
+('b7000000-0000-4000-8000-000000000007','b5000000-0000-4000-8000-000000000005',1,2500),
+('bb000000-0000-4000-8000-00000000000b','ba000000-0000-4000-8000-00000000000a',1,1800);
 
 select set_config(
   'request.jwt.claims',
@@ -196,6 +201,11 @@ select is(
   0,
   'un membre ne voit pas un produit inactif sans droit ni achat'
 );
+select is(
+  (select count(*)::integer from public.products where slug='content-pending'),
+  0,
+  'une commande pending ne rend pas le produit privé visible comme achat'
+);
 select ok(
   public.has_sinjira_product(
     'content-entitled',
@@ -209,6 +219,13 @@ select ok(
     'b2000000-0000-4000-8000-000000000002'
   ),
   'une commande paid conserve le droit produit même si le produit devient inactif'
+);
+select ok(
+  not public.has_sinjira_product(
+    'content-pending',
+    'b2000000-0000-4000-8000-000000000002'
+  ),
+  'une commande pending ne satisfait jamais le droit produit'
 );
 
 reset role;
