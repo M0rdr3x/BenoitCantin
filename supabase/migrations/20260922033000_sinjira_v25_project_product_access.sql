@@ -136,34 +136,38 @@ on public.projects
 for select
 to anon,authenticated
 using (
-  status<>'draft' and (
-    (
-      visibility='public'
-      and product_slug is null
-      and (
-        (select auth.uid()) is null
-        or public.sinjira_my_age_band() in ('adult','youth')
-        or (
-          public.sinjira_my_age_band()='child'
-          and child_access_status='approved_11_12'
-        )
+  (
+    status<>'draft'
+    and visibility='public'
+    and product_slug is null
+    and (
+      (select auth.uid()) is null
+      or public.sinjira_my_age_band() in ('adult','youth')
+      or (
+        public.sinjira_my_age_band()='child'
+        and child_access_status='approved_11_12'
       )
     )
-    or (
-      (select auth.uid()) is not null
-      and public.sinjira_my_age_band() in ('adult','youth')
-      and (
-        (visibility='account' and product_slug is null)
-        or sinjira_catalog_internal.project_access_rank(id,(select auth.uid()))>=20
+  )
+  or (
+    (select auth.uid()) is not null
+    and public.sinjira_my_age_band() in ('adult','youth')
+    and (
+      (
+        status<>'draft'
+        and visibility='account'
+        and product_slug is null
       )
+      or sinjira_catalog_internal.project_access_rank(id,(select auth.uid()))>=20
     )
-    or (
-      (select auth.uid()) is not null
-      and public.sinjira_my_age_band()='child'
-      and visibility='account'
-      and child_access_status='approved_11_12'
-      and product_slug is null
-    )
+  )
+  or (
+    (select auth.uid()) is not null
+    and public.sinjira_my_age_band()='child'
+    and status<>'draft'
+    and visibility='account'
+    and child_access_status='approved_11_12'
+    and product_slug is null
   )
 );
 
@@ -285,18 +289,20 @@ begin
         )
       when full_catalog then true
       else
-        p.status<>'draft'
-        and (
-          (
-            p.visibility in ('public','account')
-            and p.product_slug is null
+        (
+          p.status<>'draft'
+          and (
+            (
+              p.visibility in ('public','account')
+              and p.product_slug is null
+            )
+            or (
+              p.product_slug is not null
+              and sinjira_v25_internal.has_sinjira_product(p.product_slug,uid)
+            )
           )
-          or (
-            p.product_slug is not null
-            and sinjira_v25_internal.has_sinjira_product(p.product_slug,uid)
-          )
-          or sinjira_catalog_internal.project_access_rank(p.id,uid)>=20
         )
+        or sinjira_catalog_internal.project_access_rank(p.id,uid)>=20
     end;
 
   return result;
