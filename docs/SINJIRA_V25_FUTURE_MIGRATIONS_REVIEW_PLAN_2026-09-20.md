@@ -10,13 +10,14 @@ PR : #435
 
 ## Source de vérité du périmètre
 
-Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only porte le delta courant à **36 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
+Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only a porté le delta à **36 migrations futures non revues**. La demande de catalogue complet pour le créateur et ses comptes familiaux, sans publier de courriel ni fabriquer de faux achat, ajoute maintenant une migration forward-only dédiée : le delta courant est de **37 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
 
 Répartition :
 - **Lot A — Mode Voyage : 4 migrations**
 - **Lot B — Enfant / Junior / Tuteur : 22 migrations**
 - **Lot C — Compte / Catalogue / RPC : 9 migrations**
 - **Lot D — Frontières helpers navigateur : 1 migration**
+- **Lot E — Catalogue famille créateur : 1 migration**
 
 L'ordre ci-dessous est un **ordre de revue**, pas un ordre d'autorisation production.
 
@@ -213,7 +214,7 @@ Relecture technique effectuée sur le HEAD `6ace8163c5a68d496d77e635c6b29132876a
 - `get_guardian_youth_contacts()` exige supervision active + opt-in + AAL2 et ne renvoie que `contact_label`, `network`, `last_contact_date`; les tests prouvent l'absence d'UUID de contact, `display_name`, timestamp précis et contenu, ainsi que l'isolation entre identité Compte et identité Personnage;
 - `junior_guardian_summary()` exige AAL2, ne renvoie aucun contenu de publication/message et réduit la dernière activité à une date UTC; la liste parentale ne révèle jamais `junior_alias`;
 - le workflow Communauté Junior est entièrement vert : **51/51** assertions Junior, **13/13** frontière serveur 11–12, **23/23** classement contenu, **25/25** capacités self-only et **8/8** compatibilité protection mineurs, plus la preuve navigateur locale;
-- le snapshot release sur ce même HEAD reste vert et confirme **36 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
+- le snapshot release sur ce même HEAD reste vert et confirme **37 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
 
 **Portes encore ouvertes avant toute approbation du Lot B :**
 - relire humainement les 22 diffs B1→B5 dans l'ordre final, notamment les interactions entre policies RLS et fonctions `SECURITY DEFINER`;
@@ -282,7 +283,7 @@ Relecture technique effectuée sur le HEAD `1a54e110762a5249e99c70fc40e6667ce285
 - l'Edge Function `get-private-novel-url` exige un JWT, réévalue côté serveur la bande d'âge, le rôle créateur ou l'entitlement, exige `enabled=true` et ne signe l'URL privée qu'après ces contrôles; la durée signée reste bornée à 300 secondes;
 - le seed Livre I conserve l'actif privé désactivé et ne publie aucun chemin privé;
 - `sync_social_profile_from_profile()` copie uniquement le pseudonyme public vers `social_profiles.pseudo` et `social_profiles.display_name`; le `profiles.display_name` privé n'est pas propagé;
-- le workflow Profil privé `35677574965` a reconstruit la base locale puis validé **22/22** assertions historiques et **11/11** assertions enfant; son unique rouge est le ledger attendu parce que les 36 migrations restent non revues;
+- le workflow Profil privé `35677574965` a reconstruit la base locale puis validé **22/22** assertions historiques et **11/11** assertions enfant; son unique rouge est le ledger attendu parce que les 37 migrations restent non revues;
 - la frontière RPC V25 exige exactement 23 cibles `public SECURITY DEFINER` et exactement 3 cibles anon avant déplacement, puis recrée uniquement des wrappers `public SECURITY INVOKER`;
 - `sinjira_catalog_internal.project_access_rank(uuid,uuid)` conserve son OID pour les policies RLS mais retourne `0` à un navigateur qui tente de cibler un UUID différent de `auth.uid()`; `service_role` conserve le ciblage serveur explicite;
 - les privilèges navigateur du catalogue restent limités à `SELECT` et aux deux insertions self-service nécessaires (`access_requests`, `playtest_participants`), toujours derrière RLS;
@@ -353,6 +354,33 @@ La revue croisée des définitions et des preuves runtime confirme actuellement 
 
 Aucune case n'est cochée : cette section documente seulement la préparation technique.
 
+---
+
+## Lot E — Catalogue famille créateur (1)
+
+- [ ] `20260922014000_sinjira_v25_creator_family_catalog_access.sql`
+  - Ajoute un registre privé de comptes familiaux **par UUID uniquement**; aucun courriel n'est stocké dans la table ni inscrit en clair dans la migration publique.
+  - Le provisionnement par courriel est réservé à `service_role` : le courriel est utilisé seulement pour résoudre `auth.users.id`, puis seul l'UUID est conservé.
+  - Le propriétaire conserve son accès complet existant; un compte famille 13+ obtient la visibilité catalogue complète sans création de commande, entitlement ou `project_access` artificiel.
+  - Les membres ordinaires restent limités aux contenus publics/gratuits et à leurs achats, entitlements ou accès explicites.
+  - Pour un compte famille 11–12, la visibilité supplémentaire passe par des RPC self-only minimisés : titres/fiches visibles, mais projets non approuvés sans chemin ouvrable et romans privés sans `full_access`, `public_path`, `demo_path` ni nombre de pages.
+  - `project_access_rank` n'accorde le rang famille `90` qu'aux bandes `adult` / `youth`; un compte `child` ne contourne donc jamais `child_access_status`.
+  - L'Edge de roman privé reconnaît le rôle famille uniquement après la vérification d'âge déjà existante; les 11–12 restent refusés pour une intégrale non classée.
+  - Preuve dédiée : `creator_family_catalog_access_v25.test.sql` et validateur statique de confidentialité, incluant l'interdiction d'une adresse courriel littérale dans la migration.
+
+### Notes de revue préparatoire du Lot E — non approbatives
+
+Objectif fonctionnel : le créateur et les comptes familiaux explicitement autorisés voient toutes les créations SINJIRA dans leur compte, alors qu'un membre standard voit seulement le gratuit/public et ce qu'il a réellement acheté ou reçu comme droit.
+
+Points à confirmer humainement avant toute approbation :
+- le mécanisme de provisionnement production doit être exécuté séparément sous `service_role`, après déploiement de la migration, sans inscrire les adresses familiales dans Git;
+- les UUID familiaux doivent être ceux des comptes voulus et aucun autre compte;
+- la visibilité 11–12 doit rester strictement « catalogue », avec ouverture uniquement du contenu explicitement `approved_11_12`;
+- aucune ligne de commande, entitlement ou `project_access` ne doit être créée pour simuler la propriété familiale;
+- les comptes ordinaires doivent continuer à échouer sur les brouillons, produits internes et projets restreints sans droit.
+
+Aucune case du Lot E n'est cochée : cette section documente une **préparation technique de revue**, pas une approbation.
+
 ## Portes de sortie de revue
 
 Une famille ne peut être proposée comme « revue » que si :
@@ -366,7 +394,7 @@ Une famille ne peut être proposée comme « revue » que si :
 
 ## État au moment de la création de ce document
 
-- 36 / 36 migrations : **NON REVUES**
+- 37 / 37 migrations : **NON REVUES**
 - 0 migration ajoutée au lot production par ce document
 - 0 changement du ledger production
 - 0 déploiement production

@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import re
+from pathlib import Path
+
+ROOT=Path(__file__).resolve().parents[1]
+
+FILES={
+    "migration":ROOT/"supabase/migrations/20260922014000_sinjira_v25_creator_family_catalog_access.sql",
+    "shared":ROOT/"supabase/functions/_shared/privateNovel.ts",
+    "library":ROOT/"assets/js/sinjira-library-v24-4-61.js",
+    "purchases":ROOT/"assets/js/sinjira-purchases-v25.js",
+    "literature":ROOT/"assets/js/sinjira-literature-catalog-v25.js",
+    "library_html":ROOT/"compte/bibliotheque.html",
+    "purchases_html":ROOT/"compte/mes-achats.html",
+    "literature_html":ROOT/"projets/sinjira/romans/index.html",
+    "test":ROOT/"supabase/tests/creator_family_catalog_access_v25.test.sql",
+    "account_workflow":ROOT/".github/workflows/sinjira-account-content-hub-v25.yml",
+    "novel_workflow":ROOT/".github/workflows/sinjira-private-novel-catalog-v25.yml",
+}
+
+EMAIL_LITERAL_RE=re.compile(r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b")
+
+def fail(message:str)->None:
+    raise ValueError(message)
+
+def compact(value:str)->str:
+    return "".join(value.lower().split())
+
+def validate(contents:dict[str,str])->None:
+    migration=compact(contents["migration"])
+    shared=compact(contents["shared"])
+    library=compact(contents["library"])
+    purchases=compact(contents["purchases"])
+    literature=compact(contents["literature"])
+    test=compact(contents["test"])
+    account_workflow=contents["account_workflow"]
+    novel_workflow=contents["novel_workflow"]
+
+    # Aucune adresse réelle ou synthétique ne doit être gravée dans la migration publique.
+    if EMAIL_LITERAL_RE.search(contents["migration"]):
+        fail("accès famille: une adresse courriel littérale est présente dans la migration publique")
+
+    for marker in (
+        "createtableifnotexistsprivate.sinjira_catalog_family_members(",
+        "user_iduuidprimarykeyreferencesauth.users(id)ondeletecascade",
+        "revokeallontableprivate.sinjira_catalog_family_membersfrompublic,anon,authenticated",
+        "createorreplacefunctionpublic.is_sinjira_catalog_family_member(",
+        "createorreplacefunctionpublic.sinjira_has_full_catalog_access(",
+        "createorreplacefunctionpublic.sinjira_my_catalog_access_mode()",
+        "createorreplacefunctionpublic.set_sinjira_catalog_family_access_by_email(",
+        "coalesce(auth.jwt()->>'role','')<>'service_role'",
+        "fromauth.usersu",
+        "where lower(coalesce(u.email,''))=v_email",
+        "revokeallonfunctionpublic.set_sinjira_catalog_family_access_by_email(text,boolean,text)frompublic,anon,authenticated",
+        "grantexecuteonfunctionpublic.set_sinjira_catalog_family_access_by_email(text,boolean,text)toservice_role",
+    ):
+        if marker not in migration:
+            fail(f"accès famille: invariant de provisionnement absent: {marker}")
+
+    if "emailtext" in migration[migration.find("createtableifnotexistsprivate.sinjira_catalog_family_members"):migration.find("altertableprivate.sinjira_catalog_family_members")]:
+        fail("accès famille: le registre privé ne doit pas stocker le courriel")
+
+    for marker in (
+        "createpolicysinjira_novels_family_catalog_read_v25",
+        "createpolicyproducts_family_catalog_read_v25",
+        "createpolicyprojects_family_catalog_read_v25",
+        "public.is_sinjira_catalog_family_member((selectauth.uid()))",
+        "public.sinjira_age_band((selectauth.uid()))in('adult','youth')",
+    ):
+        if marker not in migration:
+            fail(f"accès famille: policy standard manquante: {marker}")
+
+    for marker in (
+        "createorreplacefunctionpublic.sinjira_my_project_catalog()",
+        "raiseexception'catalog_access_required'",
+        "p.child_access_status='approved_11_12'",
+        "'content_available',case",
+        "whenband='child'thennull",
+        "contenuprotégéselonl’âge",
+    ):
+        if marker not in migration:
+            fail(f"catalogue projet famille: garde 11–12 absente: {marker}")
+
+    for marker in (
+        "createorreplacefunctionpublic.sinjira_my_novel_catalog()",
+        "full_catalog_mode:=owner_modeorfamily_mode",
+        "ifband='child'andnotfull_catalog_modethen",
+        "private_asset_configuredandbandin('adult','youth')and(full_catalog_modeorentitled)",
+        "whenband='child'andfamily_modethen'family_catalog'",
+        "'demo_path',casewhenband='child'thennullelsedemo_pathend",
+    ):
+        if marker not in migration:
+            fail(f"catalogue roman famille: garde absente: {marker}")
+
+    for marker in (
+        "public.sinjira_has_full_catalog_access(p_user_id)",
+        "public.sinjira_age_band(p_user_id)in('adult','youth')then90",
+        "p_user_idisdistinctfromauth.uid()then0",
+    ):
+        if marker not in migration:
+            fail(f"rang projet famille: garde absente: {marker}")
+
+    for marker in (
+        "privatenovelaccess='entitlement'|'owner'|'family'",
+        "sinjira_has_full_catalog_access",
+        "if(fullcatalog===true)return'family'",
+    ):
+        if marker not in shared:
+            fail(f"roman privé famille: garde Edge partagée absente: {marker}")
+
+    for marker in (
+        "sinjira_my_catalog_access_mode",
+        "constfamilycatalog=catalogaccessmode==='family'",
+        "sinjira_my_project_catalog",
+        "cataloguefamilial·accèsprotégé",
+        "touteslescréationssontvisibles,maisseulslescontenusapprouvés11–12anspeuventêtreouverts",
+        "rendernovels(juniorresolved?juniornovels:[],[],false,true,familycatalog)",
+    ):
+        if marker not in library:
+            fail(f"bibliothèque famille: invariant absent: {marker}")
+
+    for marker in (
+        "sinjira_my_catalog_access_mode",
+        "constisfamily=catalogaccessmode==='family'",
+        "consthascreatorcatalog=isowner||isfamily",
+        "comptefamillecréateursinjira",
+    ):
+        if marker not in purchases:
+            fail(f"achats famille: invariant absent: {marker}")
+
+    for marker in (
+        "sinjira_my_catalog_access_mode",
+        "constfamilycatalog=catalogaccessmode==='family'",
+        "famillecréateur·intégraleprivée",
+        "modefamillecréateur",
+    ):
+        if marker not in literature:
+            fail(f"littérature famille: invariant absent: {marker}")
+
+    if "sinjira-library-v24-4-61.js?v=25.1.2" not in contents["library_html"]:
+        fail("cache bibliothèque famille non forcé")
+    if "sinjira-purchases-v25.js?v=25.0.3" not in contents["purchases_html"]:
+        fail("cache achats famille non forcé")
+    if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
+        fail("cache littérature famille non forcé")
+
+    if "selectplan(33);" not in test:
+        fail("pgTAP famille: plan(33) absent")
+    for marker in (
+        "aucuncourrielneststockédansleregistrefamilial",
+        "service_rolepeutassocieruncomptefamilialparcourrielsansconserverlecourriel",
+        "unmembrestandardnereçoitpaslecataloguefamilial",
+        "lerôlefamilialnecontournepaslarlschild",
+        "lafiche11–12nonclasséeestminimiséeetsanscheminouvrable",
+        "laficheromanfamiliale11–12nedonnejamaislintégraleprivée",
+    ):
+        if marker not in test:
+            fail(f"pgTAP famille: preuve absente: {marker}")
+
+    for path in (
+        "supabase/migrations/20260922014000_sinjira_v25_creator_family_catalog_access.sql",
+        "supabase/tests/creator_family_catalog_access_v25.test.sql",
+        "scripts/validate_creator_family_catalog_v25.py",
+        "supabase/functions/_shared/privateNovel.ts",
+    ):
+        if path not in account_workflow:
+            fail(f"CI compte famille: path absent: {path}")
+    if "python3 scripts/validate_creator_family_catalog_v25.py --self-test" not in account_workflow:
+        fail("CI compte famille: auto-test statique non exécuté")
+    if "supabase test db supabase/tests/creator_family_catalog_access_v25.test.sql" not in account_workflow:
+        fail("CI compte famille: pgTAP non exécuté")
+
+    if "supabase/migrations/20260922014000_sinjira_v25_creator_family_catalog_access.sql" not in novel_workflow:
+        fail("CI romans privés: migration famille non surveillée")
+
+def main()->None:
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--self-test",action="store_true")
+    args=parser.parse_args()
+    contents={name:path.read_text(encoding="utf-8") for name,path in FILES.items()}
+    validate(contents)
+    if args.self_test:
+        mutations={
+            "courriel gravé dans migration":("migration","commit;","-- contact: person@example.test\ncommit;"),
+            "provisionnement ouvert navigateur":("migration","from public,anon,authenticated;\ngrant execute on function public.set_sinjira_catalog_family_access_by_email","from public,anon;\ngrant execute on function public.set_sinjira_catalog_family_access_by_email"),
+            "rang famille enfant élevé":("migration","and public.sinjira_age_band(p_user_id) in ('adult','youth') then 90","then 90"),
+            "intégrale child ouverte":("migration","private_asset_configured\n          and band in ('adult','youth')","private_asset_configured"),
+            "catalogue enfant navigateur ancien":("library","s.rpc('sinjira_my_project_catalog')","s.from('projects').select('*')"),
+            "helper famille roman retiré":("shared","sinjira_has_full_catalog_access","is_sinjira_owner"),
+        }
+        for label,(key,old,new) in mutations.items():
+            broken=dict(contents)
+            if old not in broken[key]:
+                fail(f"auto-test: marqueur source absent pour {label}")
+            broken[key]=broken[key].replace(old,new,1)
+            try:
+                validate(broken)
+            except ValueError:
+                continue
+            fail(f"auto-test: dérive non détectée: {label}")
+        print(f"OK auto-test catalogue famille créateur: {len(mutations)}/{len(mutations)} dérives critiques détectées")
+        return
+    print("OK V25 catalogue famille: UUID privé, provisionnement service_role, visibilité complète standard et catalogue 11–12 minimisé.")
+
+if __name__=="__main__":
+    main()

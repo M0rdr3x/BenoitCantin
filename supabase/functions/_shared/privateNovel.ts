@@ -1,6 +1,6 @@
 export const PRIVATE_NOVEL_SIGNED_URL_SECONDS=300;
 
-export type PrivateNovelAccess='entitlement'|'owner';
+export type PrivateNovelAccess='entitlement'|'owner'|'family';
 
 export type PrivateNovelAsset={
   novel_id:string;
@@ -27,6 +27,10 @@ export async function requirePrivateNovelAccess(service:any,userId:string,asset:
   const {data:isOwner,error:ownerError}=await service.rpc('is_sinjira_owner',{p_user_id:userId});
   if(ownerError)throw new Error('NOVEL_ACCESS_CHECK_FAILED');
   if(isOwner===true)return 'owner';
+
+  const {data:fullCatalog,error:fullCatalogError}=await service.rpc('sinjira_has_full_catalog_access',{p_user_id:userId});
+  if(fullCatalogError)throw new Error('NOVEL_ACCESS_CHECK_FAILED');
+  if(fullCatalog===true)return 'family';
 
   const productSlug=String(asset.product_slug||'').trim();
   if(!productSlug)throw new Error('NOVEL_ACCESS_DENIED');

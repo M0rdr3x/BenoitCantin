@@ -246,7 +246,7 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in libj:
             fail(f"bibliothèque: dégradation fail-closed absente: {marker}")
-    if "sinjira-library-v24-4-61.js?v=25.1.1" not in contents["library_html"]:
+    if "sinjira-library-v24-4-61.js?v=25.1.2" not in contents["library_html"]:
         fail("bibliothèque: cache module principal V25.1.1 absent")
     if "issinjiraowner" in secondary_library:
         fail("bibliothèque secondaire: rôle créateur encore déduit côté navigateur")
@@ -322,7 +322,7 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in pj:
             fail(f"achats: faux état vide encore possible: {marker}")
-    if "sinjira-purchases-v25.js?v=25.0.2" not in contents["purchases_html"]:
+    if "sinjira-purchases-v25.js?v=25.0.3" not in contents["purchases_html"]:
         fail("achats: cache module V25.0.2 absent")
 
     if 'name="pseudo"required' not in prof or 'name="email"requiredtype="email"' not in prof:
@@ -554,7 +554,7 @@ def validate(contents: dict[str, str]) -> None:
     if "sinjira-account-v18.js?v=25.0.2" not in contents["secondary_mes_lectures"]:
         fail("mes lectures: cache module V25.0.2 absent")
 
-    if "data-literature-catalog" not in lith or "sinjira-literature-catalog-v25.js?v=25.1.1" not in lith:
+    if "data-literature-catalog" not in lith or "sinjira-literature-catalog-v25.js?v=25.1.2" not in lith:
         fail("littérature: catalogue dynamique V25 absent")
     if "sinjira_my_novel_catalog" not in contents["literature_js"] or "is_sinjira_owner" not in contents["literature_js"]:
         fail("littérature: catalogue self-only/créateur absent")
@@ -699,12 +699,12 @@ def main() -> None:
             "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
             "Fracture jouable sans droit produit":("library_js","project.play_path&&canPlay","project.play_path"),
             "Fracture droit produit forcé":("library_js","const productRight=isOwner||entitledProductSlugs.has(project.slug);","const productRight=true;"),
-            "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.1\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
+            "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.2\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
             "bibliothèque principale masque erreur projets":("library_js","const projectResolved=!projectsResult.error&&!accessResult.error&&!documentsResult.error&&!pendingResult.error;","const projectResolved=true;"),
             "bibliothèque principale masque erreur romans":("library_js","const readsResolved=!readsResult.error,entitlementsResolved=!entitlementsResult.error,novelsResolved=!novelsResult.error;","const readsResolved=true,entitlementsResolved=true,novelsResolved=true;"),
             "bibliothèque principale suppose rôle membre":("library_js","const roleResolved=ownerResolved&&(isOwner||adminResolved);","const roleResolved=true;"),
             "bibliothèque Junior masque erreur":("library_js","juniorResolved=!projectsResult.error&&!documentsResult.error","juniorResolved=true"),
-            "cache bibliothèque principale revenu V25.1.0":("library_html","sinjira-library-v24-4-61.js?v=25.1.1","sinjira-library-v24-4-61.js?v=25.1.0"),
+            "cache bibliothèque principale revenu V25.1.0":("library_html","sinjira-library-v24-4-61.js?v=25.1.2","sinjira-library-v24-4-61.js?v=25.1.0"),
             "raccourci Mes achats retiré":("library_html",'<a href="mes-achats.html"><strong>Mes achats</strong>','<a href="licences.html"><strong>Mes achats</strong>'),
             "rôle créateur secondaire revenu côté client":("secondary_library_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "projet public secondaire présenté comme compte":("secondary_library_js","p.visibility==='restricted'?'Accès restreint':p.visibility==='account'?'Inclus avec le compte':'Page publique'","p.visibility==='restricted'?'Accès restreint':'Inclus avec le compte'"),
@@ -727,7 +727,7 @@ def main() -> None:
             "échec portefeuille créateur masqué":("purchases_js","Catalogue des projets temporairement indisponible.","Aucun projet enregistré."),
             "échec commandes masqué en zéro":("purchases_js","const ordersResolved=!ordersResult.error,entitlementsResolved=!entitlementsResult.error;","const ordersResolved=true,entitlementsResolved=!entitlementsResult.error;"),
             "échec droits masqué en zéro":("purchases_js","renderEntitlements(entitlements,entitlementsResolved);","renderEntitlements(entitlements,true);"),
-            "cache achats revenu V25.0.1":("purchases_html","sinjira-purchases-v25.js?v=25.0.2","sinjira-purchases-v25.js?v=25.0.1"),
+            "cache achats revenu V25.0.1":("purchases_html","sinjira-purchases-v25.js?v=25.0.3","sinjira-purchases-v25.js?v=25.0.1"),
             "nom affiché redevenu ambigu":("profile_html","Nom affiché privé","Nom affiché"),
             "profil privé sauvegarde sans chargement":("private_profile_js","if(!loadedSnapshot){","if(false){"),
             "profil privé réactivé après échec de chargement":("private_profile_js","setStatus(status,userMessage(error)+' Le formulaire reste verrouillé tant que vos données n’ont pas été chargées. Rechargez la page pour réessayer.','error');","setBusy(false); setStatus(status,userMessage(error),'error');"),
@@ -750,7 +750,7 @@ def main() -> None:
             "lecteur démo revenu à reader_library":("reader_js","from('sinjira_reader_library').select('last_page')","from('reader_library').select('last_page')"),
             "lecteur démo ignore erreur upsert":("reader_js","return {synced:!error,error:error||null}","return {synced:true,error:null}"),
             "lecteur démo annonce toujours synchronisé":("reader_js","sync.synced?`Page ${current} sauvegardée sur cet appareil et synchronisée avec votre compte.`:`Page ${current} sauvegardée sur cet appareil · synchronisation du compte indisponible.`","`Page ${current} sauvegardée sur cet appareil et synchronisée avec votre compte.`"),
-            "cache catalogue littérature revenu V25.1.0":("literature_html","sinjira-literature-catalog-v25.js?v=25.1.1","sinjira-literature-catalog-v25.js?v=25.1.0"),
+            "cache catalogue littérature revenu V25.1.0":("literature_html","sinjira-literature-catalog-v25.js?v=25.1.2","sinjira-literature-catalog-v25.js?v=25.1.0"),
             "cache lecteur démo revenu V19":("demo_html","sinjira-reader.js?v=25.0.3","sinjira-reader.js?v=19.0"),
         }
         for label,(key,old,new) in mutations.items():

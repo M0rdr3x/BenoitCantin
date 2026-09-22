@@ -70,6 +70,8 @@ async function init(){
     s.from('user_entitlements').select('product_id,source,granted_at,products(id,slug,name,product_type,active)').eq('user_id',user.id).order('granted_at',{ascending:false})
   ]);
 
+  const catalogAccessResult=await s.rpc('sinjira_my_catalog_access_mode');
+
   const orders=rows(ordersResult.data);
   const entitlements=rows(entitlementsResult.data);
   const ordersResolved=!ordersResult.error,entitlementsResolved=!entitlementsResult.error;
@@ -83,11 +85,15 @@ async function init(){
 
   const ownerResolved=!ownerResult.error;
   const isOwner=ownerResolved&&ownerResult.data===true;
+  const catalogAccessResolved=!catalogAccessResult.error;
+  const catalogAccessMode=catalogAccessResolved?String(catalogAccessResult.data||'member'):'member';
+  const isFamily=catalogAccessMode==='family';
+  const hasCreatorCatalog=isOwner||isFamily;
   const role=document.querySelector('[data-purchase-account-role]');
-  if(role)role.textContent=!ownerResolved?'Rôle du compte non confirmé':isOwner?'Compte créateur SINJIRA™':'Compte membre SINJIRA™';
+  if(role)role.textContent=!ownerResolved&&!catalogAccessResolved?'Rôle du compte non confirmé':isOwner?'Compte créateur SINJIRA™':isFamily?'Compte famille créateur SINJIRA™':'Compte membre SINJIRA™';
 
   let creatorResults=[];
-  if(isOwner){
+  if(hasCreatorCatalog){
     creatorResults=await Promise.all([
       s.from('projects').select('id,slug,name,type,status,visibility,sort_order').order('sort_order'),
       s.from('sinjira_novels').select('id,slug,title,status,sort_order').order('sort_order'),
@@ -97,6 +103,7 @@ async function init(){
   }
 
   const errors=[ownerResult,ordersResult,entitlementsResult,...creatorResults].filter(result=>result.error);
+  if(catalogAccessResult.error)errors.push(catalogAccessResult);
   const status=document.querySelector('[data-purchases-v25-status]');
   if(errors.length&&status){
     status.hidden=false;

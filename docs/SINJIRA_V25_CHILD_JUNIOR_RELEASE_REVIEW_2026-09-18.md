@@ -39,9 +39,9 @@ La vague CI associée au dossier précédent a confirmé que les parcours Commun
 - Profil privé : **22/22** historique et **11/11** enfant;
 - romans privés : **13/13**, avec auto-test statique **8/8**;
 - Mode Voyage : rétention **11/11** et visibilité client **28/28**, les workflows consentement/self-only/minimisation restant également verts;
-- snapshot release : **36 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
+- snapshot release : **37 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
 
-La classification exhaustive des workflows rouges de ce HEAD montre que leurs étapes métier/sécurité passent avant de s'arrêter sur le **ledger production volontairement bloqué** par les 36 migrations non revues. Le prévol Supabase suit la même logique : ses tests de sécurité passent, puis la vérification du dépôt s'arrête sur ce ledger.
+La classification exhaustive des workflows rouges de ce HEAD montre que leurs étapes métier/sécurité passent avant de s'arrêter sur le **ledger production volontairement bloqué** par les 37 migrations non revues. Le prévol Supabase suit la même logique : ses tests de sécurité passent, puis la vérification du dépôt s'arrête sur ce ledger.
 
 ## 2. Correctifs forward-only issus de la revue technique
 
@@ -463,6 +463,26 @@ Le pgTAP Compte passe à **45 assertions** et le pgTAP classement 11–12 à **2
 
 Cette trente-sixième migration reste **non revue production**.
 
+### Catalogue complet pour la famille du créateur, sans faux achat
+
+La demande fonctionnelle est de conserver trois comportements distincts :
+
+- le propriétaire SINJIRA voit toutes ses créations;
+- les comptes familiaux explicitement autorisés voient eux aussi le catalogue complet, sans créer de fausse commande, entitlement ou ligne `project_access`;
+- les autres membres restent limités au contenu public/gratuit et à leurs achats ou droits réels.
+
+La migration forward-only :
+
+`20260922014000_sinjira_v25_creator_family_catalog_access.sql`
+
+ajoute un registre privé par UUID et un provisionnement réservé à `service_role`. Le courriel fourni au moment du provisionnement sert uniquement à résoudre `auth.users.id`; il n'est ni stocké dans le registre familial ni écrit dans cette migration publique.
+
+Pour 13+ (`youth` / `adult`), un compte familial peut relire les projets, romans et produits internes sans faux achat. Pour 11–12 ans, l'accès supplémentaire est limité à des RPC de catalogue minimisés : la fiche d'une création peut être visible, mais un projet non approuvé ne contient aucun chemin ouvrable et un roman privé ne reçoit jamais `full_access`, `public_path`, `demo_path` ou nombre de pages. `project_access_rank` n'accorde le rang famille qu'à `youth/adult`.
+
+Les adresses réelles des comptes familiaux ne sont volontairement pas inscrites dans Git. Leur association production devra être exécutée séparément sous `service_role`, après revue et déploiement de la migration.
+
+Cette trente-septième migration reste **non revue production**.
+
 ### Revue réouverte après durcissements du 21 septembre 2026
 
 Le snapshot a volontairement détecté que plusieurs migrations non revues avaient changé depuis leurs empreintes précédentes. Elles ont été relues avant mise à jour de ce dossier; les changements sont des **resserrements**, pas des élargissements de droits :
@@ -477,11 +497,11 @@ Le snapshot a volontairement détecté que plusieurs migrations non revues avaie
 - `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` : la réponse des implémentations internes est maintenant minimisée dès A3, supprimant la fenêtre transitoire avant `20260921005000`;
 - `20260919093000_sinjira_v25_private_novel_catalog.sql` : RLS activée dès la création du registre privé et rôle propriétaire résolu par la frontière serveur canonique.
 
-Cette réouverture de revue **ne transforme aucune migration en migration production revue**. Les 36 migrations restent non revues au sens du `production-reviewed-migration-batch.txt`.
+Cette réouverture de revue **ne transforme aucune migration en migration production revue**. Les 37 migrations restent non revues au sens du `production-reviewed-migration-batch.txt`.
 
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **36 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **37 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -497,6 +517,12 @@ Le snapshot de revue attend exactement **36 migrations locales futures non revue
 | Migration | Git blob SHA-1 |
 |---|---|
 | `20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql` | `1a6f22628bf7dc944e7d3b77c2744c40e3204b03` |
+
+### Catalogue famille créateur
+
+| Migration | Git blob SHA-1 |
+|---|---|
+| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `1d5b33501b9e20dc5f58488c14d49921c272b4f5` |
 
 ### Enfant 11–12 / Junior
 
@@ -577,7 +603,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **36 migrations** dans l’ordre chronologique canonique; la migration `20260921005000` appartient fonctionnellement au lot Mode Voyage mais reste la dernière par timestamp.
+2. Relire les **37 migrations** dans l’ordre chronologique canonique; la migration `20260921005000` appartient fonctionnellement au lot Mode Voyage mais reste la dernière par timestamp.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.

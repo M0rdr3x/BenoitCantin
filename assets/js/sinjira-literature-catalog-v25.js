@@ -11,12 +11,18 @@ async function init(){
   if(!box)return;
   const s=getSupabase();
   const user=await getCurrentUser();
-  let isOwner=false,ownerResolved=true;
+  let isOwner=false,ownerResolved=true,catalogAccessMode='member',catalogAccessResolved=true;
   if(user){
-    const ownerResult=await s.rpc('is_sinjira_owner',{p_user_id:user.id});
+    const [ownerResult,catalogAccessResult]=await Promise.all([
+      s.rpc('is_sinjira_owner',{p_user_id:user.id}),
+      s.rpc('sinjira_my_catalog_access_mode')
+    ]);
     ownerResolved=!ownerResult.error;
     isOwner=ownerResolved&&ownerResult.data===true;
+    catalogAccessResolved=!catalogAccessResult.error;
+    catalogAccessMode=catalogAccessResolved?String(catalogAccessResult.data||'member'):'member';
   }
+  const familyCatalog=catalogAccessMode==='family';
   const result=user?await s.rpc('sinjira_my_novel_catalog'):await s.from('sinjira_novels').select('id,slug,title,subtitle,description,status,cover_url,public_path,demo_path,sort_order').order('sort_order');
   const {data,error}=result;
   if(error){
@@ -26,11 +32,13 @@ async function init(){
   const novels=Array.isArray(data)?data:[];
   box.innerHTML=novels.map(novel=>{
     const integral=Boolean(novel.full_access);
-    const access=!ownerResolved&&user
+    const access=(!ownerResolved||!catalogAccessResolved)&&user
       ?(integral?'Accès intégral confirmé':'Rôle du compte non confirmé')
       :isOwner
         ?(integral?'Créateur · intégrale privée':'Créateur · catalogue complet')
-        :integral?'Acheté / droit numérique':novel.status==='published'?'Public':'Annoncé';
+        :familyCatalog
+          ?(integral?'Famille créateur · intégrale privée':'Famille créateur · catalogue complet')
+          :integral?'Acheté / droit numérique':novel.status==='published'?'Public':'Annoncé';
     const cover=novel.cover_url||'/assets/media/sinjira-litterature.webp';
     const actions=[
       novel.public_path?`<a class="btn btn-secondary" href="${escapeHtml(novel.public_path)}">Voir la fiche</a>`:'',
@@ -43,13 +51,15 @@ async function init(){
 
   const note=document.querySelector('[data-literature-account-note]');
   if(note){
-    note.textContent=user&&!ownerResolved
+    note.textContent=user&&(!ownerResolved||!catalogAccessResolved)
       ?'Rôle du compte non confirmé. Le catalogue affiché vient du serveur et aucun accès supplémentaire n’est supposé.'
       :isOwner
         ?'Mode créateur : les romans en préparation sont visibles ici, sans être rendus publics aux autres comptes.'
-        :user
-          ?'Catalogue adapté à votre compte : les accès intégraux apparaissent seulement lorsqu’un droit numérique existe.'
-          :'Les romans annoncés ou publiés sont visibles ici. Connectez-vous pour voir vos droits de lecture.';
+        :familyCatalog
+          ?'Mode famille créateur : toutes les fiches SINJIRA sont visibles; les accès de lecture restent vérifiés côté serveur et selon l’âge.'
+          :user
+            ?'Catalogue adapté à votre compte : les accès intégraux apparaissent seulement lorsqu’un droit numérique existe.'
+            :'Les romans annoncés ou publiés sont visibles ici. Connectez-vous pour voir vos droits de lecture.';
   }
 }
 
