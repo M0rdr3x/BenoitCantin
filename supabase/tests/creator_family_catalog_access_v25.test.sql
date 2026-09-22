@@ -998,11 +998,11 @@ select set_config(
 set local role authenticated;
 
 select ok(
-  public.has_sinjira_product(
+  not public.has_sinjira_product(
     'family-private-extension-product',
     'f3000000-0000-4000-8000-000000000003'
   ),
-  'une commande paid enfant reste un droit comptable réel'
+  'le wrapper produit navigateur masque une commande paid à 11–12'
 );
 select is(
   (select count(*)::integer from public.products where slug='family-private-extension-product'),
@@ -1053,11 +1053,11 @@ select set_config(
 set local role authenticated;
 
 select ok(
-  public.has_sinjira_product(
+  not public.has_sinjira_product(
     'family-private-novel-product',
     'f3000000-0000-4000-8000-000000000003'
   ),
-  'un droit produit réel peut exister comptablement pour un compte 11–12'
+  'le wrapper produit navigateur masque un entitlement à 11–12'
 );
 select is(
   (select count(*)::integer from public.products where slug='family-private-novel-product'),
