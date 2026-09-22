@@ -15,6 +15,7 @@ FILES={
     "project_access_migration":ROOT/"supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql",
     "shared":ROOT/"supabase/functions/_shared/privateNovel.ts",
     "library":ROOT/"assets/js/sinjira-library-v24-4-61.js",
+    "licenses":ROOT/"assets/js/v24-licenses.js",
     "secondary_library":ROOT/"assets/js/sinjira-library.js",
     "purchases":ROOT/"assets/js/sinjira-purchases-v25.js",
     "literature":ROOT/"assets/js/sinjira-literature-catalog-v25.js",
@@ -45,6 +46,7 @@ def validate(contents:dict[str,str])->None:
     project_access_migration=compact(contents["project_access_migration"])
     shared=compact(contents["shared"])
     library=compact(contents["library"])
+    licenses=compact(contents["licenses"])
     secondary_library=compact(contents["secondary_library"])
     purchases=compact(contents["purchases"])
     literature=compact(contents["literature"])
@@ -82,6 +84,12 @@ def validate(contents:dict[str,str])->None:
         "o.status='paid'",
         "p.slug=p_product_slug",
         "p_user_idisdistinctfromauth.uid()thenfalse",
+        "createorreplacefunctionpublic.sinjira_my_product_rights()",
+        "selectauth.uid()asuid",
+        "'paid_order'::textassource",
+        "distincton(product_id)",
+        "revokeallonfunctionpublic.sinjira_my_product_rights()frompublic,anon",
+        "grantexecuteonfunctionpublic.sinjira_my_product_rights()toauthenticated,service_role",
     ):
         if paid_marker not in paid_access_migration:
             fail(f"droit produit payé: invariant absent: {paid_marker}")
@@ -89,6 +97,19 @@ def validate(contents:dict[str,str])->None:
         fail("droit produit payé: une commande non annulée ne suffit pas; le statut paid doit être explicite")
     if paid_access_migration.count("o.status='paid'") < 2:
         fail("droit produit payé: policy produits et helper canonique doivent tous deux exiger status=paid")
+
+    rights_start=paid_access_migration.find("createorreplacefunctionpublic.sinjira_my_product_rights()")
+    rights_end=paid_access_migration.find("$rights$;",rights_start)
+    if rights_start < 0 or rights_end < 0:
+        fail("droits produit effectifs: fonction self-only absente ou incomplète")
+    rights_segment=paid_access_migration[rights_start:rights_end]
+    if "securitydefiner" not in rights_segment:
+        fail("droits produit effectifs: lecture serveur minimisée doit être SECURITY DEFINER")
+    if "p_user_id" in rights_segment:
+        fail("droits produit effectifs: aucun UUID arbitraire ne doit être accepté")
+    for forbidden in ("order_number","total_cents","currency","email"):
+        if forbidden in rights_segment:
+            fail(f"droits produit effectifs: détail commercial interdit dans la réponse: {forbidden}")
 
     for extension_marker in (
         "altertablepublic.extensionsaddcolumnifnotexistsproduct_slugtext",
@@ -301,9 +322,26 @@ def validate(contents:dict[str,str])->None:
         "cataloguefamilial·accèsprotégé",
         "touteslescréationssontvisibles,maisseulslescontenusapprouvés11–12anspeuventêtreouverts",
         "rendernovels(juniorresolved?juniornovels:[],[],false,true,familycatalog)",
+        "s.rpc('sinjira_my_product_rights')",
+        "product.source==='paid_order'?'achatpayé'",
     ):
         if marker not in library:
             fail(f"bibliothèque famille: invariant absent: {marker}")
+
+    for forbidden in ("s.from('orders')","s.from('order_items')","s.from('user_entitlements')"):
+        if forbidden in library:
+            fail(f"bibliothèque: lecture commerciale directe interdite: {forbidden}")
+
+    for marker in (
+        "s.rpc('sinjira_my_product_rights')",
+        "row.source==='paid_order'?'achatpayé'",
+        "droitnumériquereconnu",
+    ):
+        if marker not in licenses:
+            fail(f"licences: droit produit effectif absent: {marker}")
+    for forbidden in ("s.from('orders')","s.from('order_items')","s.from('user_entitlements')"):
+        if forbidden in licenses:
+            fail(f"licences: lecture commerciale directe interdite: {forbidden}")
 
     for marker in (
         "sinjira_my_catalog_access_mode",
@@ -345,15 +383,15 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-account-dashboard-v24-4-60.js?v=25.0.3" not in contents["account_index"]:
         fail("cache tableau de bord famille non forcé")
 
-    if "sinjira-library-v24-4-61.js?v=25.1.6" not in contents["library_html"]:
+    if "sinjira-library-v24-4-61.js?v=25.1.8" not in contents["library_html"]:
         fail("cache bibliothèque famille non forcé")
     if "sinjira-purchases-v25.js?v=25.0.3" not in contents["purchases_html"]:
         fail("cache achats famille non forcé")
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(82);" not in test:
-        fail("pgTAP famille: plan(82) absent")
+    if "selectplan(86);" not in test:
+        fail("pgTAP famille: plan(86) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
@@ -378,6 +416,11 @@ def validate(contents:dict[str,str])->None:
         "laficheromanfamiliale11–12nedonnejamaislintégraleprivée",
         "uncomptefamilialyouth/adultsatisfaitledroitproduitsansfauxentitlement",
         "uncomptefamilialnevalidejamaisunslugproduitinexistant",
+        "lecataloguefamillenefabriqueaucundroitproduitcommercial",
+        "unecommandependingnapparaîtpasdanslesdroitsproduitducompte",
+        "lesdeuxproduitsdunecommandepaidapparaissentdanslesdroitseffectifsducompte",
+        "lesdroitsissusdunecommandepaidsontidentifiéssansexposerlacommande",
+        "lesentitlementsréelsrestentlistéscomptablementà11–12sansouvrirlecontenu",
         "unmembrestandardsansachatnientitlementnesatisfaitpasledroitproduit",
         "test-family-pending-ext-001",
         "unecommandepaidrendleproduitachetévisibleaumembrestandard",
@@ -427,6 +470,8 @@ def validate(contents:dict[str,str])->None:
         "supabase/migrations/20260922030000_sinjira_v25_extension_product_access.sql",
         "supabase/migrations/20260922031500_sinjira_v25_catalog_age_helper_boundary.sql",
         "supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql",
+        "assets/js/v24-licenses.js",
+        "compte/licences.html",
     ):
         if path not in account_workflow:
             fail(f"CI compte famille: path absent: {path}")
@@ -479,6 +524,9 @@ def main()->None:
             "catalogue projet acheté retiré":("project_access_migration","sinjira_v25_internal.has_sinjira_product(p.product_slug,uid)","false"),
             "extension produit sans droit canonique":("extension_access_migration","public.has_sinjira_product(product_slug,(select auth.uid()))","true"),
             "commande paid assouplie":("paid_access_migration","o.status='paid'","o.status<>'cancelled'"),
+            "rpc droits produit accepte un UUID":("paid_access_migration","create or replace function public.sinjira_my_product_rights()","create or replace function public.sinjira_my_product_rights(p_user_id uuid)"),
+            "bibliothèque relit directement les entitlements":("library","s.rpc('sinjira_my_product_rights')","s.from('user_entitlements')"),
+            "licences relisent directement les commandes":("licenses","s.rpc('sinjira_my_product_rights')","s.from('orders')"),
             "wrapper famille redevient definer":("migration","security invoker\nset search_path=''\nas $wrapper$","security definer\nset search_path=''\nas $wrapper$"),
         }
         for label,(key,old,new) in mutations.items():
