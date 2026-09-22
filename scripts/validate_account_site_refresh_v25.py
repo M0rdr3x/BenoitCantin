@@ -613,13 +613,14 @@ def validate(contents: dict[str, str]) -> None:
 
     if "selectplan(49);" not in test:
         fail("pgTAP contenu: plan(49) absent")
-    if "selectplan(23);" not in child_content_test:
-        fail("pgTAP classement 11–12: plan(23) absent")
+    if "selectplan(24);" not in child_content_test:
+        fail("pgTAP classement 11–12: plan(24) absent")
     for marker in (
         "anonnepeutpassonderunprojetaccountapprouvé11–12paruuid",
         "anonnepeutpassonderundocumentaccountapprouvé11–12paruuid",
         "unprojetaccountactifexplicitementapprouvédevientdisponible",
         "document+projetdoublementapprouvésdeviennentdisponibles",
+        "lapolicyprojetachetéresteinterditeauxcomptes11–12etexigeundroitproduitréel",
     ):
         if marker not in child_content_test:
             fail(f"pgTAP classement 11–12: preuve navigateur absente: {marker}")
