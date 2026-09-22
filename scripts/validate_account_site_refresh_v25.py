@@ -211,6 +211,8 @@ def validate(contents: dict[str, str]) -> None:
         "createorreplacefunctionsinjira_v25_internal.sinjira_my_product_rights()",
         "selectauth.uid()asuid",
         "'paid_order'::textassource",
+        "public.sinjira_age_band(auth.uid())",
+        "a.bandin('adult','youth')",
         "distincton(product_id)",
         "revokeallonfunctionsinjira_v25_internal.sinjira_my_product_rights()frompublic,anon,authenticated",
         "createorreplacefunctionpublic.sinjira_my_product_rights()",
@@ -225,6 +227,9 @@ def validate(contents: dict[str, str]) -> None:
     rights_end=paid_access_migration.find("$rights$;",rights_start)
     if rights_start < 0 or rights_end < 0 or "p_user_id" in paid_access_migration[rights_start:rights_end]:
         fail("migration droits produit effectifs: implémentation self-only invalide")
+    rights_segment=paid_access_migration[rights_start:rights_end]
+    if rights_segment.count("a.bandin('adult','youth')") < 2:
+        fail("migration droits produit effectifs: les deux sources commerciales doivent rester masquées à 11–12")
     wrapper_start=paid_access_migration.find("createorreplacefunctionpublic.sinjira_my_product_rights()")
     wrapper_end=paid_access_migration.find("$wrapper$;",wrapper_start)
     if wrapper_start < 0 or wrapper_end < 0:
@@ -321,14 +326,18 @@ def validate(contents: dict[str, str]) -> None:
         "s.rpc('sinjira_my_product_rights')",
         "row.source==='paid_order'?'achatpayé'",
         "droitnumériquereconnu",
+        "sinjira_my_account_capabilities",
+        "constchildmode=capabilitiesresolved&&capabilitiesresult.data.library_mode==='reviewed_11_12'",
+        "form.hidden=true",
+        "licencesprotégéespourlescomptes11–12ans",
     ):
         if marker not in licenses_js:
             fail(f"licences: droit produit effectif absent: {marker}")
     for forbidden in ("s.from('orders')","s.from('order_items')","s.from('user_entitlements')"):
         if forbidden in licenses_js:
             fail(f"licences: lecture commerciale directe interdite: {forbidden}")
-    if "v24-licenses.js?v=25.1.0" not in contents["licenses_html"]:
-        fail("licences: cache V25.1.0 non forcé")
+    if "v24-licenses.js?v=25.1.1" not in contents["licenses_html"]:
+        fail("licences: cache V25.1.1 non forcé")
 
     if "issinjiraowner" in secondary_library:
         fail("bibliothèque secondaire: rôle créateur encore déduit côté navigateur")
@@ -789,7 +798,8 @@ def main() -> None:
             "catalogue projet principal retiré":("library_js","s.rpc('sinjira_my_project_catalog')","s.from('projects').select('*')"),
             "droits produit bibliothèque relus directement":("library_js","s.rpc('sinjira_my_product_rights')","s.from('user_entitlements')"),
             "droits produit licences relus directement":("licenses_js","s.rpc('sinjira_my_product_rights')","s.from('orders')"),
-            "cache licences revenu ancien":("licenses_html","v24-licenses.js?v=25.1.0","v24-licenses.js?v=24.4.62"),
+            "cache licences revenu ancien":("licenses_html","v24-licenses.js?v=25.1.1","v24-licenses.js?v=24.4.62"),
+            "licences enfant sans garde capacités":("licenses_js","const childMode=capabilitiesResolved&&capabilitiesResult.data.library_mode==='reviewed_11_12';","const childMode=false;"),
             "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.8\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
             "bibliothèque principale masque erreur projets":("library_js","const projectResolved=!projectsResult.error&&!accessResult.error&&!documentsResult.error&&!pendingResult.error;","const projectResolved=true;"),
             "bibliothèque principale masque erreur romans/extensions":("library_js","const readsResolved=!readsResult.error,entitlementsResolved=!entitlementsResult.error,novelsResolved=!novelsResult.error,extensionsResolved=!extensionsResult.error;","const readsResolved=true,entitlementsResolved=true,novelsResolved=true,extensionsResolved=true;"),
