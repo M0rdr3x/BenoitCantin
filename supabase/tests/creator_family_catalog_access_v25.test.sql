@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(56);
+select plan(58);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -142,6 +142,10 @@ values
   'extension',
   false
 );
+
+update public.projects
+set product_slug='family-private-novel-product'
+where id='f8000000-0000-4000-8000-000000000008';
 
 insert into public.extensions(
   id,project_id,title,description,status,is_public,product_slug
@@ -462,11 +466,19 @@ select is(
   0,
   'le RPC extension refuse une extension liée seulement à une commande pending'
 );
-select throws_ok(
-  $$ select public.sinjira_my_project_catalog() $$,
-  '42501',
-  'CATALOG_ACCESS_REQUIRED',
-  'un membre standard ne peut pas appeler le catalogue projet familial'
+select ok(
+  exists(
+    select 1
+    from jsonb_array_elements(public.sinjira_my_project_catalog()) item
+    where item->>'slug'='family-free-account-project'
+      and item->>'access_source'='free'
+  )
+  and not exists(
+    select 1
+    from jsonb_array_elements(public.sinjira_my_project_catalog()) item
+    where item->>'slug'='family-private-game'
+  ),
+  'le catalogue projet standard contient le gratuit mais masque le projet payant non acheté'
 );
 select is(
   (
@@ -528,6 +540,21 @@ select ok(
     'f2000000-0000-4000-8000-000000000002'
   ),
   'une commande paid satisfait le droit produit sans entitlement artificiel'
+);
+select is(
+  (select count(*)::integer from public.projects where slug='family-private-game'),
+  1,
+  'une commande paid rend le projet privé lié au produit visible au membre standard'
+);
+select ok(
+  exists(
+    select 1
+    from jsonb_array_elements(public.sinjira_my_project_catalog()) item
+    where item->>'slug'='family-private-game'
+      and item->>'access_source'='product'
+      and (item->>'content_available')::boolean
+  ),
+  'le catalogue projet reconnaît le projet acheté sans entitlement artificiel'
 );
 select ok(
   exists(
