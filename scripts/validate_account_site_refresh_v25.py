@@ -391,7 +391,7 @@ def validate(contents: dict[str, str]) -> None:
     for marker in (
         "if(form){setbusy(true);awaitrequireuser();try{awaitloadprofile();setbusy(false);",
         "leformulaireresteverrouillétantquevosdonnéesn’ontpasétéchargées",
-        "if(!loadedsnapshot)",
+        "form.addeventlistener('submit',asyncevent=>{event.preventdefault();if(!loadedsnapshot){",
         "aucunemodificationn’estenvoyée",
     ):
         if marker not in private_profile:
