@@ -76,10 +76,15 @@ Relecture technique effectuée sur la branche d'intégration, sans modifier le s
 - La revue a découvert que les fonctions `sinjira_security_internal` restaient directement exécutables par `authenticated`; laisser la minimisation uniquement à `20260921005000` créait donc une fenêtre transitoire pendant un `db push` séquentiel.
 - `20260914223000` redéfinit désormais immédiatement ces fonctions internes avec la même réponse minimale que les wrappers publics. `20260921005000` reste une réaffirmation forward-only de cette frontière finale. Les tests de visibilité restent à 28 assertions et le validateur exige maintenant la minimisation à la fois à l’étape A3 et à l’état final.
 
-**Portes encore ouvertes avant toute approbation du lot A :**
-- exécution verte des workflows Mode Voyage sur le HEAD gelé;
-- reconstruction Supabase locale complète avec la migration `20260921005000`;
-- revue humaine du diff SQL final et des 28 assertions pgTAP;
+**Preuves techniques maintenant satisfaites pour le lot A :**
+- sur le HEAD applicatif `6ace8163c5a68d496d77e635c6b29132876a5b45`, les workflows Rétention, Consentement, Self-only, Vue éphémère, Visibilité client et Minimisation navigateur Mode Voyage sont verts;
+- la reconstruction locale applique bien `20260921005000_sinjira_v25_travel_mode_internal_response_minimization.sql`;
+- la suite rétention passe **11/11** assertions et la visibilité client passe **28/28** assertions, avec garde statique et auto-test verts;
+- le HEAD documentaire ultérieur ne modifie aucun SQL du lot A.
+
+**Restent ouverts avant toute approbation du lot A :**
+- revue humaine du diff SQL final et des assertions pgTAP sur le SHA choisi;
+- confirmation explicite du reviewer sur le périmètre du lot;
 - confirmation séparée qu'aucune promotion reviewed/ledger n'est effectuée par cette revue.
 
 Aucune case n'est cochée ici : cette section documente une **préparation technique de revue**, pas une approbation.
@@ -283,10 +288,15 @@ Relecture technique effectuée sur le HEAD `1a54e110762a5249e99c70fc40e6667ce285
 - les privilèges navigateur du catalogue restent limités à `SELECT` et aux deux insertions self-service nécessaires (`access_requests`, `playtest_participants`), toujours derrière RLS;
 - sur le run Compte/catalogue `35677574948`, la validation statique, la reconstruction locale, la preuve membre/créateur et la preuve 11–12 / absence d'oracle ont terminé en succès avant le nettoyage de la pile.
 
-**Portes encore ouvertes avant toute approbation du Lot C :**
-- terminer et relire les workflows dédiés sur un HEAD gelé, notamment le catalogue romans privés;
+**Preuves techniques maintenant satisfaites pour le Lot C :**
+- le workflow Compte/catalogue est vert après reconstruction avec **45/45** assertions membre/créateur et **23/23** assertions classement 11–12 / absence d'oracle;
+- le workflow Catalogue romans privés est vert avec auto-test **8/8** et pgTAP **13/13**;
+- l'Edge `get-private-novel-url` réévalue côté serveur identité, âge, rôle créateur/entitlement, actif `enabled` et stockage avant URL signée 300 s; la régression `Content-Length` doublement échappée est corrigée et gardée;
+- les preuves négatives couvrent `anon/authenticated/service_role`, absence de lecture directe du registre privé, absence de chemin Storage dans le navigateur et sondage UUID self-only.
+
+**Restent ouverts avant toute approbation du Lot C :**
 - relire humainement les diffs SQL C1 puis C2 dans l'ordre et leurs interactions avec le Lot D;
-- confirmer les preuves négatives `anon/authenticated/service_role` et les ACL après reconstruction;
+- confirmer explicitement le périmètre et le SHA choisi;
 - ne modifier ni `production-reviewed-migration-batch.txt` ni le ledger sans décision humaine séparée.
 
 Aucune case C1/C2 n'est cochée : cette section documente une **préparation technique de revue**, pas une approbation.
@@ -330,11 +340,15 @@ La revue croisée des définitions et des preuves runtime confirme actuellement 
 - les wrappers publics V25 restent `SECURITY INVOKER` et délèguent aux implémentations internes durcies;
 - le workflow Compte et le workflow Communauté/accès enfant surveillent explicitement `20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql`.
 
-**Portes encore ouvertes avant toute approbation du Lot D :**
-- exécution verte des deux workflows sur un HEAD gelé;
-- reconstruction Supabase locale complète avec la migration `20260921010000`;
+**Preuves techniques maintenant satisfaites pour le Lot D :**
+- les workflows Compte/catalogue et Communauté/accès enfant sont verts après reconstruction complète avec `20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql`;
+- le pgTAP Compte passe **45/45** assertions, dont le refus de sondage d'un autre UUID par un rôle navigateur et la conservation du ciblage explicite par `service_role`;
+- le classement 11–12 passe **23/23** assertions, incluant l'absence d'oracle anon sur contenu `account` et le rang réel pour les documents;
+- la reconstruction confirme que les policies RLS continuent de fonctionner après conservation de l'OID du helper interne.
+
+**Restent ouverts avant toute approbation du Lot D :**
 - revue humaine de la sémantique `service_role` pour les appels serveur avec UUID explicite;
-- vérification que les policies RLS dépendantes continuent d'appeler le même OID après reconstruction;
+- confirmation explicite du reviewer sur le SHA et l'interaction B/C;
 - aucune promotion reviewed/ledger par cette revue.
 
 Aucune case n'est cochée : cette section documente seulement la préparation technique.
