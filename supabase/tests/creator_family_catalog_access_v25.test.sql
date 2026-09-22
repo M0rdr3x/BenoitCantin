@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(70);
+select plan(74);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -146,6 +146,45 @@ values
 update public.projects
 set product_slug='family-private-novel-product'
 where id='f8000000-0000-4000-8000-000000000008';
+
+insert into public.projects(
+  id,slug,name,type,status,visibility,description,cover_url,public_path,play_path,
+  allow_tester_requests,sort_order,child_access_status,product_slug
+)
+values(
+  'fb100000-0000-4000-8000-000000000011',
+  'family-paid-draft-project',
+  'Projet payant brouillon',
+  'game',
+  'draft',
+  'account',
+  'Brouillon interne qui ne doit pas être révélé par un achat.',
+  null,
+  '/famille/brouillon-payant',
+  '/famille/brouillon-payant/jouer',
+  false,
+  996,
+  'unreviewed',
+  'family-private-novel-product'
+);
+
+insert into public.documents(
+  id,project_id,title,description,document_type,version,status,access_level,
+  external_url,sort_order,child_access_status
+)
+values(
+  'fb200000-0000-4000-8000-000000000012',
+  'fb100000-0000-4000-8000-000000000011',
+  'Document brouillon payant',
+  'Document approuvé mais parent encore en brouillon.',
+  'document',
+  '1.0',
+  'approved',
+  'account',
+  '/famille/brouillon-payant/document.pdf',
+  996,
+  'blocked_11_12'
+);
 
 insert into public.projects(
   id,slug,name,type,status,visibility,description,cover_url,public_path,play_path,
@@ -602,6 +641,16 @@ select is(
   1,
   'une commande paid rend le projet privé lié au produit visible au membre standard'
 );
+select is(
+  (select count(*)::integer from public.projects where slug='family-paid-draft-project'),
+  0,
+  'un achat paid ne révèle jamais un projet encore en brouillon'
+);
+select is(
+  (select count(*)::integer from public.documents where id='fb200000-0000-4000-8000-000000000012'),
+  0,
+  'un achat paid ne révèle pas le document approuvé d un projet encore en brouillon'
+);
 select ok(
   exists(
     select 1
@@ -638,6 +687,36 @@ select ok(
   'le catalogue extension reconnaît une commande paid sans entitlement artificiel'
 );
 
+reset role;
+
+insert into public.project_access(user_id,project_id,access_level,granted_by,source)
+values(
+  'f2000000-0000-4000-8000-000000000002',
+  'fb100000-0000-4000-8000-000000000011',
+  'player',
+  'f4000000-0000-4000-8000-000000000004',
+  'migration'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object(
+    'sub','f2000000-0000-4000-8000-000000000002',
+    'role','authenticated','aal','aal1'
+  )::text,
+  true
+);
+set local role authenticated;
+select is(
+  (select count(*)::integer from public.projects where slug='family-paid-draft-project'),
+  1,
+  'un accès player explicite peut ouvrir le projet brouillon sans dépendre de l achat'
+);
+select is(
+  (select count(*)::integer from public.documents where id='fb200000-0000-4000-8000-000000000012'),
+  1,
+  'un accès player explicite conserve l accès au document du brouillon'
+);
 reset role;
 
 select set_config(
