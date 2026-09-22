@@ -52,7 +52,7 @@ def validate_text(download:str,reader:str,helper:str,config:str)->list[str]:
     require(errors,0<=owner_pos<owner_allow_pos<family_pos<family_allow_pos<product_pos<product_allow_pos,
             'Ordre attendu: owner serveur -> catalogue famille -> droit produit canonique.')
 
-    for forbidden in ('getPublicUrl(', 'external_url', 'clientRole', 'is_owner_from_client'):
+    for forbidden in ('getPublicUrl(', 'external_url', 'clientRole', 'is_owner_from_client', ".from('products')", ".from('user_entitlements')"):
         require(errors,forbidden not in helper,f'Helper Livre I interdit: {forbidden}')
     for mutation in ('.insert(', '.update(', '.upsert(', '.delete('):
         require(errors,mutation not in helper,f'Helper Livre I ne doit jamais muter un droit ou un rôle: {mutation}')
@@ -158,6 +158,9 @@ def self_test()->None:
         ('catalogue famille retiré',download,reader,helper.replace("'sinjira_has_full_catalog_access'","'catalog_access_missing'",1),config),
         ('droit produit canonique retiré',download,reader,helper.replace("'has_sinjira_product'","'product_access_missing'",1),config),
         ('droit produit truthy permissif',download,reader,helper.replace("if(hasProduct===true)return 'product'","if(hasProduct)return 'product'",1),config),
+        ('retour lecture directe entitlements',download,reader,helper+"\nservice.from('user_entitlements').select('*');\n",config),
+        ('âge child téléchargement retiré',download.replace("if(normalizedAgeBand==='child')throw new Error('BOOK_NOT_AVAILABLE_11_12');","",1),reader,helper,config),
+        ('âge child lecteur retiré',download,reader.replace("if(normalizedAgeBand==='child')throw new Error('BOOK_NOT_AVAILABLE_11_12');","",1),helper,config),
         ('owner serveur retiré',download,reader,helper.replace("  const {data:isOwner,error:ownerError}=await service.rpc('is_sinjira_owner',{p_user_id:userId});\n",'',1),config),
         ('TTL élargi',download,reader,helper.replace('LIVRE_I_SIGNED_URL_SECONDS=300','LIVRE_I_SIGNED_URL_SECONDS=3600',1),config),
         ('mutation entitlement ajoutée',download,reader,helper+"\nservice.from('user_entitlements').insert({});\n",config),
