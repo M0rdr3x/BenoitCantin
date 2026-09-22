@@ -27,7 +27,7 @@ function accessLabel(project,access,isOwner,isAdmin){
   return 'Accès autorisé';
 }
 
-function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmin,childMode=false,selector='[data-library-games]',fractureRight=false,fractureRightVerified=true,familyCatalog=false){
+function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmin,childMode=false,selector='[data-library-games]',familyCatalog=false){
   const box=document.querySelector(selector);if(!box)return;
   const access=new Map(accessRows.map(row=>[row.project_id,row]));
   const pending=new Map(pendingRows.map(row=>[row.project_id,row]));
@@ -37,25 +37,26 @@ function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmi
     const right=activeAccess.get(project.id),docCount=documents.filter(document=>document.project_id===project.id).length,waiting=pending.has(project.id);
     const tester=!childMode&&(isOwner||isAdmin||right?.access_level==='tester');
     const canRequest=!childMode&&!isOwner&&!isAdmin&&!tester&&project.allow_tester_requests;
-    const requiresProductRight=project.slug==='fracture-du-reseau-mere';
-    const productRight=isOwner||familyCatalog||fractureRight;
-    const canPlay=!requiresProductRight||productRight;
     const childApproved=!childMode||project.content_available!==false;
+    const source=String(project.access_source||'free');
     const role=childMode
       ?(childApproved?'Approuvé 11–12 ans':'Catalogue familial · accès protégé')
-      :requiresProductRight&&!isOwner
-        ?(!fractureRightVerified?'Droit de jeu non vérifié':productRight?'Droit numérique actif':'Droit de jeu requis')
-        :accessLabel(project,right,isOwner,isAdmin);
+      :isOwner
+        ?'Propriétaire'
+        :familyCatalog||source==='family'
+          ?'Famille créateur · catalogue complet'
+          :source==='product'
+            ?'Acheté / droit numérique'
+            :accessLabel(project,right,isOwner,isAdmin);
     const visibility=childMode
       ?(childApproved?'Contenu vérifié pour cette tranche d’âge':'Visible dans le catalogue familial · contenu protégé selon l’âge')
-      :project.visibility==='restricted'?'Accès restreint':project.visibility==='account'?'Compte requis':'Page publique';
-    const licenseAction=!childMode&&requiresProductRight&&!isOwner&&!productRight
-      ?`<a class="btn btn-secondary" href="licences.html">${fractureRightVerified?'Activer une licence':'Vérifier mes licences'}</a>`
-      :'';
-    const openAction=!childMode||childApproved
+      :project.product_slug&&source==='product'
+        ?'Droit numérique actif'
+        :project.visibility==='restricted'?'Accès restreint':project.visibility==='account'?'Inclus avec le compte':'Page publique';
+    const openAction=childApproved
       ?`<a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(project.slug)}">Ouvrir l’espace</a>`
       :'';
-    return `<article class="library-project-card"><div class="library-project-art"><img src="${escapeHtml(cover(project))}" alt=""></div><div class="library-project-body"><div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(project.status))}</span><span class="role-chip">${escapeHtml(role)}</span></div><h2>${escapeHtml(project.name)}</h2><p>${escapeHtml(project.description||'')}</p><div class="library-project-stats"><span>${docCount} document${docCount===1?'':'s'} accessible${docCount===1?'':'s'}</span><span>${escapeHtml(visibility)}</span></div><div class="hero-actions">${openAction}${!childMode&&project.play_path&&canPlay?`<a class="btn btn-secondary" href="${escapeHtml(project.play_path)}">Jouer</a>`:''}${licenseAction}${canRequest?`<button class="btn btn-secondary" type="button" data-v2461-request-tester="${project.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div></div></article>`;
+    return `<article class="library-project-card"><div class="library-project-art"><img src="${escapeHtml(cover(project))}" alt=""></div><div class="library-project-body"><div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(project.status))}</span><span class="role-chip">${escapeHtml(role)}</span></div><h2>${escapeHtml(project.name)}</h2><p>${escapeHtml(project.description||'')}</p><div class="library-project-stats"><span>${docCount} document${docCount===1?'':'s'} accessible${docCount===1?'':'s'}</span><span>${escapeHtml(visibility)}</span></div><div class="hero-actions">${openAction}${!childMode&&project.play_path&&childApproved?`<a class="btn btn-secondary" href="${escapeHtml(project.play_path)}">Jouer</a>`:''}${canRequest?`<button class="btn btn-secondary" type="button" data-v2461-request-tester="${project.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div></div></article>`;
   }).join('')||(childMode?'<div class="notice"><strong>Aucun contenu n’a encore été approuvé pour les comptes de 11–12 ans.</strong><p>Les projets apparaîtront ici seulement après une révision humaine explicite.</p></div>':'<div class="notice"><strong>Aucun espace disponible pour ce compte.</strong></div>');
 }
 
@@ -143,9 +144,7 @@ async function init(){
   const familyCatalog=catalogAccessMode==='family';
 
   if(childMode){
-    const projectQuery=familyCatalog
-      ?s.rpc('sinjira_my_project_catalog')
-      :s.from('projects').select('id,slug,name,type,status,visibility,description,cover_url,public_path,play_path,allow_tester_requests,sort_order,child_access_status').order('sort_order');
+    const projectQuery=s.rpc('sinjira_my_project_catalog');
     const novelQuery=familyCatalog?s.rpc('sinjira_my_novel_catalog'):Promise.resolve({data:[],error:null});
     const extensionQuery=familyCatalog?s.rpc('sinjira_my_extension_catalog'):Promise.resolve({data:[],error:null});
     const [projectsResult,documentsResult,novelsResult,extensionsResult]=await Promise.all([
@@ -175,21 +174,20 @@ async function init(){
     return;
   }
 
-  const [adminResult,ownerResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult,extensionsResult,fractureRightResult]=await Promise.all([
-    s.rpc('is_sinjira_admin',{p_user_id:user.id}),s.rpc('is_sinjira_owner',{p_user_id:user.id}),s.from('projects').select('id,slug,name,type,status,visibility,description,cover_url,public_path,play_path,allow_tester_requests,sort_order').order('sort_order'),s.from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id),s.from('documents').select('id,project_id').eq('status','approved'),s.from('access_requests').select('project_id,requested_level,status').eq('user_id',user.id).eq('status','pending'),s.from('sinjira_reader_library').select('novel_id,last_opened_at,last_page,progress_percent,sinjira_novels(id,title,description,status,cover_url,public_path,demo_path)').eq('user_id',user.id).order('updated_at',{ascending:false}),s.from('user_entitlements').select('product_id,source,granted_at,products(id,slug,name,product_type,active)').eq('user_id',user.id).order('granted_at',{ascending:false}),s.rpc('sinjira_my_novel_catalog'),s.rpc('sinjira_my_extension_catalog'),s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'})
+  const [adminResult,ownerResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult,extensionsResult]=await Promise.all([
+    s.rpc('is_sinjira_admin',{p_user_id:user.id}),s.rpc('is_sinjira_owner',{p_user_id:user.id}),s.rpc('sinjira_my_project_catalog'),s.from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id),s.from('documents').select('id,project_id').eq('status','approved'),s.from('access_requests').select('project_id,requested_level,status').eq('user_id',user.id).eq('status','pending'),s.from('sinjira_reader_library').select('novel_id,last_opened_at,last_page,progress_percent,sinjira_novels(id,title,description,status,cover_url,public_path,demo_path)').eq('user_id',user.id).order('updated_at',{ascending:false}),s.from('user_entitlements').select('product_id,source,granted_at,products(id,slug,name,product_type,active)').eq('user_id',user.id).order('granted_at',{ascending:false}),s.rpc('sinjira_my_novel_catalog'),s.rpc('sinjira_my_extension_catalog')
   ]);
   const ownerResolved=!ownerResult.error,adminResolved=!adminResult.error;
   const isAdmin=adminResolved&&adminResult.data===true,isOwner=ownerResolved&&ownerResult.data===true;
   const roleResolved=ownerResolved&&(isOwner||adminResolved);
   const projectResolved=!projectsResult.error&&!accessResult.error&&!documentsResult.error&&!pendingResult.error;
   const readsResolved=!readsResult.error,entitlementsResolved=!entitlementsResult.error,novelsResolved=!novelsResult.error,extensionsResolved=!extensionsResult.error;
-  const fractureRightVerified=!fractureRightResult.error,fractureRight=fractureRightVerified&&fractureRightResult.data===true;
   const projects=rows(projectsResult.data),accessRows=rows(accessResult.data),documents=rows(documentsResult.data),pendingRows=rows(pendingResult.data),libraryRows=rows(readsResult.data),entitlements=rows(entitlementsResult.data),novels=rows(novelsResult.data),extensions=rows(extensionsResult.data);
   setCount('[data-library-project-count]',projectResolved?projects.length:'—');setCount('[data-library-novel-count]',novelsResolved?novels.length:'—');setCount('[data-library-extension-count]',extensionsResolved?extensions.length:'—');setCount('[data-library-entitlement-count]',entitlementsResolved?entitlements.length:'—');setCount('[data-library-request-count]',!pendingResult.error?pendingRows.length:'—');
   const role=document.querySelector('[data-library-role]');if(role)role.textContent=!roleResolved&&!catalogAccessResolved?'Rôle du compte non confirmé':isOwner?'Propriétaire SINJIRA™':familyCatalog?'Famille créateur SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Compte SINJIRA™';
   if(projectResolved){
-    renderProjects(projects.filter(project=>project.type==='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-games]',fractureRight,fractureRightVerified,familyCatalog);
-    renderProjects(projects.filter(project=>project.type!=='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-other]',fractureRight,fractureRightVerified,familyCatalog);
+    renderProjects(projects.filter(project=>project.type==='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-games]',familyCatalog);
+    renderProjects(projects.filter(project=>project.type!=='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-other]',familyCatalog);
   }else{
     renderUnavailable('[data-library-games]','Projets temporairement indisponibles','Les accès projets n’ont pas pu être vérifiés. Aucun accès ou bouton de jeu supplémentaire n’est supposé.');
     renderUnavailable('[data-library-other]','Créations temporairement indisponibles','Les accès projets n’ont pas pu être vérifiés. Aucun accès supplémentaire n’est supposé.');
@@ -202,7 +200,7 @@ async function init(){
   else renderUnavailable('[data-library-reads]','Progression temporairement indisponible','Votre progression de lecture n’a pas pu être vérifiée.');
   if(entitlementsResolved)renderEntitlements(entitlements,isOwner);
   else renderUnavailable('[data-library-entitlements]','Droits numériques temporairement indisponibles','Les droits numériques du compte n’ont pas pu être vérifiés; aucun accès supplémentaire n’est supposé.');
-  const errors=[ownerResult,adminResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult,extensionsResult,fractureRightResult].filter(result=>result.error);if(catalogAccessResult.error)errors.push(catalogAccessResult);if(errors.length)setStatus(status,'Certaines sections privées ou le rôle du compte n’ont pas pu être vérifiés. Aucun accès supplémentaire n’a été accordé.','error');
+  const errors=[ownerResult,adminResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult,extensionsResult].filter(result=>result.error);if(catalogAccessResult.error)errors.push(catalogAccessResult);if(errors.length)setStatus(status,'Certaines sections privées ou le rôle du compte n’ont pas pu être vérifiés. Aucun accès supplémentaire n’a été accordé.','error');
   document.querySelectorAll('[data-v2461-request-tester]').forEach(button=>button.addEventListener('click',async()=>{const message=prompt('Court message pour votre demande (facultatif).')||'';const {error}=await s.from('access_requests').insert({user_id:user.id,project_id:button.dataset.v2461RequestTester,requested_level:'tester',message:message.slice(0,1500)});if(error){setStatus(status,'La demande n’a pas pu être transmise.','error');return}button.disabled=true;button.textContent='Demande testeur en attente';setStatus(status,'Demande testeur transmise.','success')}));
 }
 
