@@ -178,7 +178,7 @@ def validate(contents:dict[str,str])->None:
             fail(f"rang projet famille: garde absente: {marker}")
 
     for marker in (
-        "privatenovelaccess='entitlement'|'owner'|'family'",
+        "privatenovelaccess='product'|'owner'|'family'",
         "sinjira_has_full_catalog_access",
         "if(fullcatalog===true)return'family'",
     ):
@@ -189,7 +189,9 @@ def validate(contents:dict[str,str])->None:
         "sinjira_my_catalog_access_mode",
         "constfamilycatalog=catalogaccessmode==='family'",
         "sinjira_my_project_catalog",
-        "constproductright=isowner||familycatalog||entitledproductslugs.has(project.slug)",
+        "constproductright=isowner||familycatalog||fractureright",
+        "constfracturerightverified=!fracturerightresult.error,fractureright=fracturerightverified&&fracturerightresult.data===true",
+        "s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'})",
         "cataloguefamilial·accèsprotégé",
         "touteslescréationssontvisibles,maisseulslescontenusapprouvés11–12anspeuventêtreouverts",
         "rendernovels(juniorresolved?juniornovels:[],[],false,true,familycatalog)",
@@ -237,15 +239,15 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-account-dashboard-v24-4-60.js?v=25.0.3" not in contents["account_index"]:
         fail("cache tableau de bord famille non forcé")
 
-    if "sinjira-library-v24-4-61.js?v=25.1.2" not in contents["library_html"]:
+    if "sinjira-library-v24-4-61.js?v=25.1.3" not in contents["library_html"]:
         fail("cache bibliothèque famille non forcé")
     if "sinjira-purchases-v25.js?v=25.0.3" not in contents["purchases_html"]:
         fail("cache achats famille non forcé")
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(41);" not in test:
-        fail("pgTAP famille: plan(41) absent")
+    if "selectplan(44);" not in test:
+        fail("pgTAP famille: plan(44) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
@@ -260,6 +262,9 @@ def validate(contents:dict[str,str])->None:
         "uncomptefamilialyouth/adultsatisfaitledroitproduitsansfauxentitlement",
         "uncomptefamilialnevalidejamaisunslugproduitinexistant",
         "unmembrestandardsansachatnientitlementnesatisfaitpasledroitproduit",
+        "unecommandepaidrendleproduitachetévisibleaumembrestandard",
+        "unecommandepaidsatisfaitledroitproduitsansentitlementartificiel",
+        "unromanprivéachetéparcommandepaiddevientdisponibledanslecataloguesansentitlement",
         "uncomptefamilial11–12nesatisfaitpasledroitproduitnonclassé",
         "lesrpcpublicsfamillerestentsecurityinvoker",
         "lessiximplémentationsprivilégiéesfamillerestenthorsduschémapublic",
@@ -306,7 +311,7 @@ def main()->None:
             "helper famille roman retiré":("shared","sinjira_has_full_catalog_access","is_sinjira_owner"),
             "catalogue famille dashboard retiré":("dashboard","s.rpc(\'sinjira_my_project_catalog\')","Promise.resolve({data:[],error:null})"),
             "droit produit famille retiré":("migration","public.is_sinjira_catalog_family_member(p_user_id)","false"),
-            "jeu famille retiré bibliothèque":("library","isOwner||familyCatalog||entitledProductSlugs.has(project.slug)","isOwner||entitledProductSlugs.has(project.slug)"),
+            "jeu famille retiré bibliothèque":("library","isOwner||familyCatalog||fractureRight","isOwner||fractureRight"),
             "wrapper famille redevient definer":("migration","security invoker\nset search_path=''\nas $wrapper$","security definer\nset search_path=''\nas $wrapper$"),
         }
         for label,(key,old,new) in mutations.items():
