@@ -401,8 +401,8 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(86);" not in test:
-        fail("pgTAP famille: plan(86) absent")
+    if "selectplan(87);" not in test:
+        fail("pgTAP famille: plan(87) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
