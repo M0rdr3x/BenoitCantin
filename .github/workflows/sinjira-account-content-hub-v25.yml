@@ -16,6 +16,7 @@ on:
       - 'supabase/tests/child_content_rating_v25.test.sql'
       - 'supabase/tests/creator_family_catalog_access_v25.test.sql'
       - 'scripts/validate_creator_family_catalog_v25.py'
+      - 'scripts/provision_creator_family_catalog.py'
       - 'supabase/functions/_shared/privateNovel.ts'
       - 'scripts/validate_account_site_refresh_v25.py'
       - 'scripts/validate_site.py'
@@ -75,6 +76,8 @@ jobs:
           python3 -m py_compile scripts/validate_creator_family_catalog_v25.py
           python3 scripts/validate_creator_family_catalog_v25.py --self-test
           python3 scripts/validate_creator_family_catalog_v25.py
+          python3 -m py_compile scripts/provision_creator_family_catalog.py
+          python3 scripts/provision_creator_family_catalog.py --self-test
 
       - name: Vérifier routes, références et syntaxe du site en mode draft
         run: |
