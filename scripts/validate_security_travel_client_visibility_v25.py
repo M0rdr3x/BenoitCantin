@@ -16,7 +16,7 @@ WORKFLOW = Path(".github/workflows/sinjira-security-travel-client-visibility-v25
 LEDGER = Path("supabase/production-migration-ledger.txt")
 STAMP = "20260914223000"
 HARDENING_STAMP = "20260921005000"
-EXPECTED_BLOB_SHA = "b08af7275d0d89b122505da413458fa9a24d2603"
+EXPECTED_BLOB_SHA = "927896c1ea303bb6c614373997266b48d46c58eb"
 
 
 def squash(value: str) -> str:
@@ -106,6 +106,43 @@ def validate(
     for key in ("delete_after", "user_id", "created_at", "updated_at", "cancelled_at", "destinations", "starts_at", "ends_at"):
         if f"result->'{key}'" in cancel_fn:
             errors.append(f"wrapper annulation: métadonnée interne exposée: {key}")
+
+    intro_internal_create = squash(function(
+        migration,
+        "create or replace function sinjira_security_internal.security_create_travel_plan(",
+    ))
+    intro_internal_cancel = squash(function(
+        migration,
+        "create or replace function sinjira_security_internal.security_cancel_travel_plan(",
+    ))
+
+    for label, block in (("création interne A3", intro_internal_create), ("annulation interne A3", intro_internal_cancel)):
+        if not block:
+            errors.append(f"{label}: définition absente dès 20260914223000")
+            continue
+        if "security definer" not in block:
+            errors.append(f"{label}: SECURITY DEFINER requis")
+        if "return pg_catalog.jsonb_build_object(" not in block:
+            errors.append(f"{label}: réponse minimale jsonb_build_object absente")
+        if "return to_jsonb(v_row)" in block:
+            errors.append(f"{label}: retour de ligne complète interdit")
+        if "from public, anon" not in block or "to authenticated, service_role" not in block:
+            errors.append(f"{label}: ACL directe interne inattendue")
+
+    for key in ("id", "status", "starts_at", "ends_at"):
+        if f"'{key}',v_row.{key}" not in intro_internal_create:
+            errors.append(f"création interne A3: clé minimale absente: {key}")
+    if "'destinations',to_jsonb(v_row.destinations)" not in intro_internal_create:
+        errors.append("création interne A3: clé minimale absente: destinations")
+    for key in ("user_id", "delete_after", "created_at", "updated_at", "cancelled_at", "multi_country"):
+        if f"'{key}'," in intro_internal_create:
+            errors.append(f"création interne A3: clé serveur exposée: {key}")
+
+    if "'id',v_row.id" not in intro_internal_cancel or "'status',v_row.status" not in intro_internal_cancel:
+        errors.append("annulation interne A3: accusé minimal id/status absent")
+    for key in ("user_id", "delete_after", "created_at", "updated_at", "cancelled_at", "destinations", "starts_at", "ends_at"):
+        if f"'{key}'," in intro_internal_cancel:
+            errors.append(f"annulation interne A3: clé serveur exposée: {key}")
 
     internal_create = squash(function(
         hardening,
@@ -225,6 +262,14 @@ def self_test(values: tuple[str, str, str, str, str]) -> list[str]:
             ),
             (
                 replace_once(migration, "(select auth.uid()) = user_id", "true"),
+                hardening, test_sql, workflow, ledger,
+            ),
+            (
+                replace_once(
+                    migration,
+                    "    'destinations',to_jsonb(v_row.destinations)",
+                    "    'delete_after',v_row.delete_after",
+                ),
                 hardening, test_sql, workflow, ledger,
             ),
             (

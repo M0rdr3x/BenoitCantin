@@ -416,6 +416,8 @@ ne retire aucun garde métier. Elle conserve l'identité dérivée de `auth.uid(
 
 Ainsi, un appel direct à l'implémentation interne ne peut plus contourner la minimisation du wrapper public pour obtenir `user_id`, `delete_after`, `cancelled_at`, timestamps techniques ou `multi_country`.
 
+La même définition minimisée est désormais aussi installée dès `20260914223000`, au moment où les wrappers publics sont introduits. `20260921005000` demeure volontairement présent comme convergence finale, mais il n’existe plus de fenêtre intermédiaire où un appel direct interne peut renvoyer la ligne complète.
+
 Le pgTAP `security_travel_client_visibility_v25.test.sql` passe à **28 assertions** et vérifie désormais aussi l'existence, les ACL et l'absence de retour `to_jsonb(v_row)` des implémentations internes effectives. Les garde-fous `validate_security_travel_client_visibility_v25.py` et `validate_security_travel_self_only_v25.py` lisent explicitement cette migration finale.
 
 Cette trente-cinquième migration reste **non revue production**.
@@ -452,6 +454,7 @@ Le snapshot a volontairement détecté que plusieurs migrations non revues avaie
 - `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` : retrait de `junior_alias` du résultat parental;
 - `20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql` : métadonnées parentales minimisées dès la première exposition et identités Compte/Personnage cloisonnées;
 - `20260919070000_sinjira_v25_guardian_contacts_minimization.sql` : maintien du cloisonnement sans UUID, `display_name` ni heure précise;
+- `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` : la réponse des implémentations internes est maintenant minimisée dès A3, supprimant la fenêtre transitoire avant `20260921005000`;
 - `20260919093000_sinjira_v25_private_novel_catalog.sql` : RLS activée dès la création du registre privé et rôle propriétaire résolu par la frontière serveur canonique.
 
 Cette réouverture de revue **ne transforme aucune migration en migration production revue**. Les 36 migrations restent non revues au sens du `production-reviewed-migration-batch.txt`.
@@ -466,7 +469,7 @@ Le snapshot de revue attend exactement **36 migrations locales futures non revue
 |---|---|
 | `20260913030500_sinjira_v25_travel_mode_geo_scope_hardening.sql` | `7285d1e30ea288004d17c1dbfbf9f01662b36bb7` |
 | `20260913230000_sinjira_v25_travel_mode_retention_purge.sql` | `41b8dc3d1b1e09c018e588755edb053e63e9904a` |
-| `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` | `b08af7275d0d89b122505da413458fa9a24d2603` |
+| `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` | `927896c1ea303bb6c614373997266b48d46c58eb` |
 | `20260921005000_sinjira_v25_travel_mode_internal_response_minimization.sql` | `1653597f4c9fe053a1b691fe810a3d1b8ca60955` |
 
 ### Frontières helpers navigateur

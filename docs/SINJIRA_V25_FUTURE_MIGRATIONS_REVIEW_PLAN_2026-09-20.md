@@ -62,7 +62,7 @@ Pour chaque migration :
   - Revue prioritaire : vérifier que le navigateur ne voit que ses propres plans actifs/non expirés et que les détails de rétention restent serveur.
   - Point sensible : ACL, RLS, `auth.uid()`, remplacement de frontière publique.
 
-**Ordre de revue recommandé : A1 → A2 → A3, puis le correctif forward-only `20260921005000`.**
+**Ordre de revue recommandé : A1 → A2 → A3, puis la réaffirmation forward-only `20260921005000`.**
 
 ### Notes de revue statique du lot A — non approbatives
 
@@ -73,8 +73,8 @@ Relecture technique effectuée sur la branche d'intégration, sans modifier le s
 - Le pgTAP `security_travel_scope_v25.test.sql` prouve qu'un voyage ne réduit ni appareil inconnu, ni action sensible, ni récupération récente, ni voyage impossible.
 - La purge dédiée supprime uniquement les lignes dont `delete_after` est échu, ne reçoit aucun instant arbitraire et n'est exécutable que par `service_role`.
 - La table `security_travel_plans` reste RLS; le navigateur authentifié ne reçoit que `SELECT`, self-only, statut `active`, non expiré; aucun DML direct n'est accordé.
-- La revue a découvert que les fonctions `sinjira_security_internal` restaient directement exécutables par `authenticated` et pouvaient contourner la redaction des wrappers en renvoyant la ligne complète.
-- Le correctif forward-only `20260921005000` minimise donc également les réponses internes. Les tests de visibilité passent à 28 assertions et les gardes self-only/visibilité lisent maintenant la définition finale effective.
+- La revue a découvert que les fonctions `sinjira_security_internal` restaient directement exécutables par `authenticated`; laisser la minimisation uniquement à `20260921005000` créait donc une fenêtre transitoire pendant un `db push` séquentiel.
+- `20260914223000` redéfinit désormais immédiatement ces fonctions internes avec la même réponse minimale que les wrappers publics. `20260921005000` reste une réaffirmation forward-only de cette frontière finale. Les tests de visibilité restent à 28 assertions et le validateur exige maintenant la minimisation à la fois à l’étape A3 et à l’état final.
 
 **Portes encore ouvertes avant toute approbation du lot A :**
 - exécution verte des workflows Mode Voyage sur le HEAD gelé;
