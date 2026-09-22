@@ -9,6 +9,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 FILES={
     "migration":ROOT/"supabase/migrations/20260922014000_sinjira_v25_creator_family_catalog_access.sql",
+    "paid_access_migration":ROOT/"supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql",
     "shared":ROOT/"supabase/functions/_shared/privateNovel.ts",
     "library":ROOT/"assets/js/sinjira-library-v24-4-61.js",
     "secondary_library":ROOT/"assets/js/sinjira-library.js",
@@ -35,6 +36,7 @@ def compact(value:str)->str:
 
 def validate(contents:dict[str,str])->None:
     migration=compact(contents["migration"])
+    paid_access_migration=compact(contents["paid_access_migration"])
     shared=compact(contents["shared"])
     library=compact(contents["library"])
     secondary_library=compact(contents["secondary_library"])
@@ -62,6 +64,20 @@ def validate(contents:dict[str,str])->None:
             fail(f"provisionnement famille: garde absente: {provision_marker}")
     if "outlook.com" in provision or "gmail.com" in provision:
         fail("provisionnement famille: une adresse personnelle ne doit jamais être gravée dans le script")
+
+
+    for paid_marker in (
+        "createorreplacefunctionpublic.has_sinjira_product(",
+        "frompublic.orderso",
+        "joinpublic.order_itemsoiono.order_id=o.id",
+        "o.status='paid'",
+        "p.slug=p_product_slug",
+        "p_user_idisdistinctfromauth.uid()thenfalse",
+    ):
+        if paid_marker not in paid_access_migration:
+            fail(f"droit produit payé: invariant absent: {paid_marker}")
+    if "o.status<>'cancelled'" in paid_access_migration or "o.status!='cancelled'" in paid_access_migration:
+        fail("droit produit payé: une commande non annulée ne suffit pas; le statut paid doit être explicite")
 
     for marker in (
         "createtableifnotexistsprivate.sinjira_catalog_family_members(",
@@ -254,6 +270,7 @@ def validate(contents:dict[str,str])->None:
         "scripts/validate_creator_family_catalog_v25.py",
         "scripts/provision_creator_family_catalog.py",
         "supabase/functions/_shared/privateNovel.ts",
+        "supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql",
     ):
         if path not in account_workflow:
             fail(f"CI compte famille: path absent: {path}")
@@ -267,6 +284,8 @@ def validate(contents:dict[str,str])->None:
 
     if "supabase/migrations/20260922014000_sinjira_v25_creator_family_catalog_access.sql" not in novel_workflow:
         fail("CI romans privés: migration famille non surveillée")
+    if "supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql" not in novel_workflow:
+        fail("CI romans privés: migration droit paid non surveillée")
 
 def main()->None:
     parser=argparse.ArgumentParser()
