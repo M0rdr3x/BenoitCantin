@@ -45,7 +45,8 @@ on public.projects
 for select
 to authenticated
 using (
-  product_slug is not null
+  status<>'draft'
+  and product_slug is not null
   and public.sinjira_my_age_band() in ('adult','youth')
   and public.has_sinjira_product(product_slug,(select auth.uid()))
 );
@@ -83,6 +84,7 @@ using (
         select 1
         from public.projects parent_project
         where parent_project.id=documents.project_id
+          and parent_project.status<>'draft'
           and parent_project.product_slug is not null
           and public.has_sinjira_product(
             parent_project.product_slug,
