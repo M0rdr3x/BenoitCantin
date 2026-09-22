@@ -99,6 +99,7 @@ def validate(contents:dict[str,str])->None:
     for marker in (
         "requireduser(req)",
         "max_request_bytes=2048",
+        r"if(!/^\d+$/.test(normalizedlength))",
         "constbody=awaitreadboundedjson(req)",
         "req.body.getreader()",
         "reader.cancel",
@@ -192,6 +193,7 @@ def main()->None:
             "full_access bibliothèque contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
             "livraison privée réintroduite dans bibliothèque":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=Boolean(novel.full_access); functions.invoke('get-private-novel-url');"),
             "JSON Edge non borné":("edge","const body=await readBoundedJson(req);","const body=await req.json();"),
+            "regex Content-Length doublement échappée":("edge",r"if(!/^\d+$/.test(normalizedLength))",r"if(!/^\\d+$/.test(normalizedLength))"),
             "migration RLS hors paths CI":("workflow","supabase/migrations/20260919113000_sinjira_v25_private_novel_asset_rls.sql","supabase/migrations/rls-missing.sql"),
             "config JWT hors paths CI":("workflow","supabase/config.toml","supabase/config-missing.toml"),
             "JWT Edge désactivé":("config","[functions.get-private-novel-url]\nverify_jwt = true","[functions.get-private-novel-url]\nverify_jwt = false"),
