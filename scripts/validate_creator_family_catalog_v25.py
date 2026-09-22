@@ -83,6 +83,8 @@ def validate(contents:dict[str,str])->None:
             fail(f"droit produit payé: invariant absent: {paid_marker}")
     if "o.status<>'cancelled'" in paid_access_migration or "o.status!='cancelled'" in paid_access_migration:
         fail("droit produit payé: une commande non annulée ne suffit pas; le statut paid doit être explicite")
+    if paid_access_migration.count("o.status='paid'") < 2:
+        fail("droit produit payé: policy produits et helper canonique doivent tous deux exiger status=paid")
 
     for extension_marker in (
         "altertablepublic.extensionsaddcolumnifnotexistsproduct_slugtext",
@@ -361,6 +363,9 @@ def main()->None:
             "catalogue famille dashboard retiré":("dashboard","s.rpc(\'sinjira_my_project_catalog\')","Promise.resolve({data:[],error:null})"),
             "droit produit famille retiré":("migration","public.is_sinjira_catalog_family_member(p_user_id)","false"),
             "jeu famille retiré bibliothèque":("library","isOwner||familyCatalog||fractureRight","isOwner||fractureRight"),
+            "extension ouverte aux comptes child":("extension_access_migration","public.sinjira_age_band((select auth.uid())) in ('adult','youth')","public.sinjira_age_band((select auth.uid())) in ('adult','youth','child')"),
+            "extension produit sans droit canonique":("extension_access_migration","public.has_sinjira_product(product_slug,(select auth.uid()))","true"),
+            "commande paid assouplie":("paid_access_migration","o.status='paid'","o.status<>'cancelled'"),
             "wrapper famille redevient definer":("migration","security invoker\nset search_path=''\nas $wrapper$","security definer\nset search_path=''\nas $wrapper$"),
         }
         for label,(key,old,new) in mutations.items():
