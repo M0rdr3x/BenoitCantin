@@ -172,7 +172,9 @@ Deno.serve(async(req)=>{
    if(productError){console.error('[get-document-url]',{code:'PRODUCT_ACCESS_UNAVAILABLE'});return privateJson({},503)}
    if(hasProduct!==true)return privateJson({},403);
   }
-  const url='https://example.test'; if(!externalUrlAllowed(url))return privateJson({},500);
+  if(doc.external_url){
+   const url='https://example.test'; if(!externalUrlAllowed(url))return privateJson({},500);
+  }
   if(!doc.storage_bucket||typeof doc.storage_path!=='string'||!doc.storage_path)return privateJson({},500);
   const signed=await service.storage.from('x').createSignedUrl(doc.storage_path,600);
   return privateJson({ok:true,url:signed.signedUrl,expires_in:600});
