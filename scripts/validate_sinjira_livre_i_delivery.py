@@ -88,6 +88,8 @@ def validate(root: Path = ROOT) -> list[str]:
         ('full_edition', 'entitlement_anonymous_read_allowed'): False,
         ('full_edition', 'product_slug'): PRODUCT_SLUG,
         ('full_edition', 'owner_role_creates_entitlement'): False,
+        ('full_edition', 'family_access_creates_entitlement'): False,
+        ('full_edition', 'child_full_edition_access_allowed'): False,
         ('full_edition', 'client_role_assertion_allowed'): False,
         ('full_edition', 'activation_env'): 'SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED',
         ('full_edition', 'signed_url_seconds'): 300,
@@ -111,8 +113,11 @@ def validate(root: Path = ROOT) -> list[str]:
             )
 
     access_sources = contract.get('full_edition', {}).get('access_sources', [])
-    if access_sources != ['active_product_entitlement', 'server_verified_owner_role']:
-        errors.append('Les sources d’accès doivent rester entitlement produit + rôle propriétaire vérifié serveur.')
+    if access_sources != ['canonical_product_right', 'server_verified_owner_role', 'server_verified_creator_family']:
+        errors.append('Les sources d’accès doivent rester droit produit canonique + owner serveur + famille V25.')
+    product_sources = contract.get('full_edition', {}).get('canonical_product_right_sources', [])
+    if product_sources != ['active_product_entitlement', 'paid_order']:
+        errors.append('Le droit produit canonique doit couvrir entitlement actif + commande paid uniquement.')
 
     demo_url = str(contract.get('demo', {}).get('public_url', ''))
     if not demo_url.endswith('/projets/sinjira/documents/' + DEMO_BASENAME):
@@ -185,7 +190,10 @@ def validate(root: Path = ROOT) -> list[str]:
             {
                 'utilisateur authentifié': 'requiredUser(req)',
                 'client serveur': 'serviceClient()',
-                'autorisation achat/auteur': 'requirePrivateBookAccess(service,user.id)',
+                'bande âge serveur': "service.rpc('sinjira_age_band',{p_user_id:user.id})",
+                'refus 11–12': "if(normalizedAgeBand==='child')",
+                'bande standard bornée': "if(!['adult','youth'].includes(normalizedAgeBand))",
+                'autorisation owner/famille/produit': 'requirePrivateBookAccess(service,user.id)',
                 'stockage privé serveur': 'privateBookStorageConfig()',
                 'réponse privée non mise en cache': "'Cache-Control':'private, no-store, max-age=0'",
                 'URL signée privée': '.createSignedUrl(storage.storagePath,LIVRE_I_SIGNED_URL_SECONDS',
@@ -195,12 +203,14 @@ def validate(root: Path = ROOT) -> list[str]:
         )
         auth_pos = source.find('requiredUser(req)')
         service_pos = source.find('serviceClient()')
+        age_pos = source.find("service.rpc('sinjira_age_band',{p_user_id:user.id})")
+        child_pos = source.find("if(normalizedAgeBand==='child')")
         access_pos = source.find('requirePrivateBookAccess(service,user.id)')
         storage_pos = source.find('privateBookStorageConfig()')
         signed_pos = source.find('.createSignedUrl(storage.storagePath,LIVRE_I_SIGNED_URL_SECONDS')
-        if not (0 <= auth_pos < service_pos < access_pos < storage_pos < signed_pos):
+        if not (0 <= auth_pos < service_pos < age_pos < child_pos < access_pos < storage_pos < signed_pos):
             errors.append(
-                f'{name}: ordre attendu auth -> service -> autorisation -> stockage -> URL signée non respecté.'
+                f'{name}: ordre attendu auth -> âge -> autorisation -> stockage -> URL signée non respecté.'
             )
         if 'getPublicUrl(' in source or 'external_url' in source:
             errors.append(f'{name}: repli public/externe interdit.')
@@ -209,11 +219,13 @@ def validate(root: Path = ROOT) -> list[str]:
     require_fragments(
         helper,
         {
-            'entitlement explicite': ".from('user_entitlements')",
-            'entitlement lié à la personne': ".eq('user_id',userId)",
-            'entitlement lié au produit': ".eq('product_id',product.id)",
             'rôle auteur/propriétaire serveur': "service.rpc('is_sinjira_owner',{p_user_id:userId})",
             'rôle auteur reconnu uniquement côté serveur': "if(isOwner===true)return 'owner'",
+            'catalogue famille serveur': "'sinjira_has_full_catalog_access'",
+            'famille reconnue uniquement côté serveur': "if(fullCatalog===true)return 'family'",
+            'droit produit canonique': "'has_sinjira_product'",
+            'droit produit lié au Livre I et à la personne': "{p_product_slug:LIVRE_I_PRODUCT_SLUG,p_user_id:userId}",
+            'droit produit booléen strict': "if(hasProduct===true)return 'product'",
             'TTL signé exact': 'LIVRE_I_SIGNED_URL_SECONDS=300',
         },
         'Helper d’autorisation affaibli',
@@ -221,6 +233,8 @@ def validate(root: Path = ROOT) -> list[str]:
     )
     if 'getPublicUrl(' in helper:
         errors.append('helper: stockage public interdit.')
+    if ".from('user_entitlements')" in helper:
+        errors.append('helper: lecture directe user_entitlements interdite; utiliser has_sinjira_product.')
     if "{download:" in texts['reader']:
         errors.append('Le lecteur ne doit pas forcer le téléchargement du PDF.')
     if "{download:'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf'}" not in texts['download']:
@@ -290,7 +304,7 @@ def self_test() -> None:
             1,
         )
         reader.write_text(source, encoding='utf-8')
-        if not any('ordre attendu auth -> service -> autorisation -> stockage' in item for item in validate(root)):
+        if not any('ordre attendu auth -> âge -> autorisation -> stockage' in item for item in validate(root)):
             raise AssertionError('Révélation du stockage avant autorisation non détectée.')
 
     print('OK auto-test frontière Livre I V2: anciennes et nouvelles barrières conservées.')
@@ -311,7 +325,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK Livre I V2: gardes historiques conservés, démo publique, intégrale privée, accès achat/auteur côté serveur, production non déployée.')
+    print('OK Livre I V2: démo publique, intégrale privée, âge puis owner/famille/droit produit canonique entitlement+paid, production non déployée.')
     return 0
 
 
