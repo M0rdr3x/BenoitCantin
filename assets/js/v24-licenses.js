@@ -29,10 +29,27 @@ function productRightCard(row){
 if(form&&list){
   const user=await requireUser();
   const s=getSupabase();
-  const ownerResult=await s.rpc('is_sinjira_owner',{p_user_id:user.id});
+  const [ownerResult,capabilitiesResult]=await Promise.all([
+    s.rpc('is_sinjira_owner',{p_user_id:user.id}),
+    s.rpc('sinjira_my_account_capabilities')
+  ]);
   const owner=!ownerResult.error&&ownerResult.data===true;
+  const capabilitiesResolved=!capabilitiesResult.error&&capabilitiesResult.data;
+  const childMode=capabilitiesResolved&&capabilitiesResult.data.library_mode==='reviewed_11_12';
+  if(!capabilitiesResolved){
+    form.hidden=true;
+    list.innerHTML='<div class="v24-empty">Impossible de vérifier l’état de sécurité du compte. Les licences restent masquées.</div>';
+    setStatus(status,'La vérification de sécurité du compte est temporairement indisponible. Aucun droit commercial n’est affiché.','error');
+    return;
+  }
+  if(childMode){
+    form.hidden=true;
+    list.innerHTML='<div class="notice"><strong>Licences protégées pour les comptes 11–12 ans.</strong><p>Les droits commerciaux peuvent rester associés au compte, mais leurs détails et les contenus payants ne sont pas exposés ici. Les contenus adaptés apparaissent dans la Bibliothèque après vérification humaine.</p></div>';
+    setStatus(status,'Compte Junior 11–12 ans · droits commerciaux masqués.','info');
+    return;
+  }
   if(ownerResult.error){
-    setStatus(status,'Le rôle du compte n’a pas pu être confirmé par le serveur. Les licences individuelles restent consultables.','info');
+    setStatus(status,'Le rôle du compte n’a pas pu être confirmé par le serveur. Les droits commerciaux explicites restent consultables.','info');
   }
 
   async function render(){
