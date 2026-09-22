@@ -12,6 +12,8 @@ on:
       - 'supabase/migrations/20260918023000_sinjira_v25_minor_content_policy_compat.sql'
       - 'supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql'
       - 'supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql'
+      - 'supabase/migrations/20260922031500_sinjira_v25_catalog_age_helper_boundary.sql'
+      - 'supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql'
       - 'supabase/tests/child_community_v25.test.sql'
       - 'supabase/tests/child_sensitive_boundary_v25.test.sql'
       - 'supabase/tests/child_content_rating_v25.test.sql'
