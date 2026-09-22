@@ -64,6 +64,45 @@ async function init(){
   const user=await requireUser('/compte/connexion.html');
   const s=getSupabase();
 
+  const capabilitiesResult=await s.rpc('sinjira_my_account_capabilities');
+  const capabilitiesResolved=!capabilitiesResult.error&&capabilitiesResult.data;
+  const childMode=capabilitiesResolved&&capabilitiesResult.data.library_mode==='reviewed_11_12';
+  const commerceAllowed=capabilitiesResolved&&capabilitiesResult.data.commerce===true;
+  const orderCount=document.querySelector('[data-paid-order-count]');
+  const rightsCount=document.querySelector('[data-purchase-right-count]');
+
+  if(!capabilitiesResolved){
+    renderOrders([],false);
+    renderEntitlements([],false);
+    if(orderCount)orderCount.textContent='—';
+    if(rightsCount)rightsCount.textContent='—';
+    if(role)role.textContent='État du compte non confirmé';
+    if(status){
+      status.hidden=false;
+      status.dataset.statusType='error';
+      status.textContent='La sécurité du compte n’a pas pu être vérifiée. Les informations commerciales restent masquées.';
+    }
+    return;
+  }
+
+  if(!commerceAllowed){
+    setHtml('[data-purchase-history]',childMode
+      ?'<div class="notice"><strong>Achats protégés pour les comptes 11–12 ans.</strong><p>Les commandes peuvent rester associées au compte, mais leurs détails commerciaux ne sont pas exposés ici. Les contenus adaptés apparaissent dans la Bibliothèque après vérification humaine.</p></div>'
+      :'<div class="notice"><strong>Historique commercial non disponible pour cet état de compte.</strong></div>');
+    setHtml('[data-purchase-entitlements]',childMode
+      ?'<div class="notice"><strong>Droits numériques protégés pour les comptes 11–12 ans.</strong><p>Les droits peuvent rester enregistrés côté serveur sans afficher les produits, sources ou dates au navigateur.</p></div>'
+      :'<div class="notice"><strong>Droits commerciaux non disponibles pour cet état de compte.</strong></div>');
+    if(orderCount)orderCount.textContent='—';
+    if(rightsCount)rightsCount.textContent='—';
+    if(role)role.textContent=childMode?'Compte Junior 11–12 ans':'Compte à accès commercial restreint';
+    if(status){
+      status.hidden=false;
+      status.dataset.statusType='info';
+      status.textContent=childMode?'Compte Junior 11–12 ans · informations commerciales masquées.':'Informations commerciales masquées pour cet état de compte.';
+    }
+    return;
+  }
+
   const [ownerResult,ordersResult,entitlementsResult]=await Promise.all([
     s.rpc('is_sinjira_owner',{p_user_id:user.id}),
     s.from('orders').select('id,order_number,status,currency,total_cents,created_at,order_items(quantity,unit_price_cents,products(id,slug,name,product_type,active))').eq('user_id',user.id).order('created_at',{ascending:false}),
@@ -78,8 +117,6 @@ async function init(){
   renderOrders(orders,ordersResolved);
   renderEntitlements(entitlements,entitlementsResolved);
 
-  const orderCount=document.querySelector('[data-paid-order-count]');
-  const rightsCount=document.querySelector('[data-purchase-right-count]');
   if(orderCount)orderCount.textContent=ordersResolved?String(orders.length):'—';
   if(rightsCount)rightsCount.textContent=entitlementsResolved?String(entitlements.length):'—';
 
