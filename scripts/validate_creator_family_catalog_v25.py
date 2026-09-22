@@ -64,6 +64,8 @@ def validate(contents:dict[str,str])->None:
         "createorreplacefunctionpublic.has_sinjira_product(",
         "public.is_sinjira_catalog_family_member(p_user_id)",
         "public.sinjira_age_band(p_user_id)in('adult','youth')",
+        "frompublic.productsfamily_product",
+        "wherefamily_product.slug=p_product_slug",
     ):
         if marker not in migration:
             fail(f"accès famille: invariant de provisionnement absent: {marker}")
@@ -181,8 +183,8 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(37);" not in test:
-        fail("pgTAP famille: plan(37) absent")
+    if "selectplan(38);" not in test:
+        fail("pgTAP famille: plan(38) absent")
     for marker in (
         "aucuncourrielneststockédansleregistrefamilial",
         "aucunlibellénominatifneststockédansleregistrefamilial",
@@ -192,6 +194,7 @@ def validate(contents:dict[str,str])->None:
         "lafiche11–12nonclasséeestminimiséeetsanscheminouvrable",
         "laficheromanfamiliale11–12nedonnejamaislintégraleprivée",
         "uncomptefamilialyouth/adultsatisfaitledroitproduitsansfauxentitlement",
+        "uncomptefamilialnevalidejamaisunslugproduitinexistant",
         "unmembrestandardsansachatnientitlementnesatisfaitpasledroitproduit",
         "uncomptefamilial11–12nesatisfaitpasledroitproduitnonclassé",
     ):

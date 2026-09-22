@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(37);
+select plan(38);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -256,6 +256,13 @@ select ok(
     'f1000000-0000-4000-8000-000000000001'
   ),
   'un compte familial youth/adult satisfait le droit produit sans faux entitlement'
+);
+select ok(
+  not public.has_sinjira_product(
+    'family-product-does-not-exist',
+    'f1000000-0000-4000-8000-000000000001'
+  ),
+  'un compte familial ne valide jamais un slug produit inexistant'
 );
 
 reset role;

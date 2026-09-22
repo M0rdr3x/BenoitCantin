@@ -466,6 +466,11 @@ as $family_product$
       or (
         public.is_sinjira_catalog_family_member(p_user_id)
         and public.sinjira_age_band(p_user_id) in ('adult','youth')
+        and exists(
+          select 1
+          from public.products family_product
+          where family_product.slug=p_product_slug
+        )
       )
       or exists(
         select 1
