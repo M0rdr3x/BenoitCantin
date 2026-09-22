@@ -232,6 +232,7 @@ Ne pas revoir B3/B4/B5 isolément sans avoir validé les invariants de B1/B2 qu'
 - [ ] `20260919130000_sinjira_v25_account_catalog_browser_privileges.sql`
   - Réaccorde uniquement les privilèges navigateur nécessaires pour rendre les RLS atteignables.
   - **Très sensible** : vérifier chaque `GRANT` / `REVOKE`; aucun `UPDATE/DELETE` ou privilège administratif supplémentaire.
+  - Convergence transitoire : dès le déplacement de `project_access_rank(uuid,uuid)`, l’implémentation interne devient self-only pour `anon/authenticated`; `service_role` seul conserve le ciblage d’un UUID explicite. `20260921010000` réaffirme ensuite la même frontière.
 
 **Ordre de revue recommandé : C1 → C2.**  
 La migration RPC `20260919123000` doit être revue avant `20260919130000`, car les privilèges navigateur ne doivent être validés qu'une fois les frontières publiques finalisées.

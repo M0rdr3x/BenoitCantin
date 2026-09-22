@@ -142,6 +142,9 @@ def validate(contents: dict[str, str]) -> None:
     for marker in (
         "createschemaifnotexistssinjira_catalog_internal",
         "alterfunctionpublic.project_access_rank(uuid,uuid)setschemasinjira_catalog_internal",
+        "createorreplacefunctionsinjira_catalog_internal.project_access_rank(",
+        "coalesce(auth.jwt()->>'role','')<>'service_role'",
+        "p_user_idisdistinctfromauth.uid()then0",
         "grantexecuteonfunctionsinjira_catalog_internal.project_access_rank(uuid,uuid)toanon,authenticated,service_role",
         "createfunctionpublic.project_access_rank(",
         "securityinvoker",
@@ -667,6 +670,7 @@ def main() -> None:
             "pgTAP 11–12 non exécuté":("workflow","supabase test db supabase/tests/child_content_rating_v25.test.sql","echo child-content-rating-skipped"),
             "oracle anon projet 11–12 non prouvé":("child_content_test","anon ne peut pas sonder un projet account approuvé 11–12 par UUID","anon oracle projet preuve retirée"),
             "écriture projet navigateur réouverte":("browser_privileges_migration","grant select on table public.projects to anon, authenticated;","grant select, insert on table public.projects to anon, authenticated;"),
+            "rang projet C2 rouvre sonde tiers":("browser_privileges_migration","p_user_id is distinct from auth.uid() then 0","false then 0"),
             "preuve RLS access_requests self-only retirée":("test","policyname='requests own insert'","policyname='requests missing insert'"),
             "preuve RLS playtest self-only retirée":("test","policyname='participants own apply'","policyname='participants missing apply'"),
             "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),

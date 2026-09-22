@@ -41,6 +41,52 @@ begin
 end
 $catalog_boundary$;
 
+-- Fermer immédiatement l'oracle de rang après le déplacement. Les policies RLS
+-- conservent le même OID; anon/authenticated ne peuvent calculer que le rang de
+-- auth.uid() (NULL pour anon). service_role conserve le ciblage UUID explicite.
+create or replace function sinjira_catalog_internal.project_access_rank(
+  p_project_id uuid,
+  p_user_id uuid default auth.uid()
+)
+returns integer
+language sql
+stable
+security definer
+set search_path=pg_catalog,public,auth
+as $catalog_rank$
+  select case
+    when coalesce(auth.jwt()->>'role','') <> 'service_role'
+         and p_user_id is distinct from auth.uid() then 0
+    when public.is_sinjira_admin(p_user_id) then 100
+    when exists(
+      select 1
+      from public.project_access pa
+      where pa.project_id=p_project_id
+        and pa.user_id=p_user_id
+        and (pa.expires_at is null or pa.expires_at>now())
+        and pa.access_level='tester'
+    ) then 30
+    when exists(
+      select 1
+      from public.project_access pa
+      where pa.project_id=p_project_id
+        and pa.user_id=p_user_id
+        and (pa.expires_at is null or pa.expires_at>now())
+        and pa.access_level='player'
+    ) then 20
+    when p_user_id is not null
+         and exists(
+           select 1 from public.projects p
+           where p.id=p_project_id and p.visibility in ('public','account')
+         ) then 10
+    when exists(
+      select 1 from public.projects p
+      where p.id=p_project_id and p.visibility='public'
+    ) then 1
+    else 0
+  end;
+$catalog_rank$;
+
 revoke all on function sinjira_catalog_internal.project_access_rank(uuid,uuid)
 from public, anon, authenticated;
 grant execute on function sinjira_catalog_internal.project_access_rank(uuid,uuid)
