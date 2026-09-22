@@ -81,6 +81,38 @@ using (
   and public.sinjira_my_age_band() in ('adult','youth')
 );
 
+drop policy if exists products_entitled_read on public.products;
+create policy products_entitled_read
+on public.products
+for select
+to authenticated
+using (
+  public.sinjira_my_age_band() in ('adult','youth')
+  and exists(
+    select 1
+    from public.user_entitlements ue
+    where ue.product_id=products.id
+      and ue.user_id=(select auth.uid())
+  )
+);
+
+drop policy if exists products_ordered_read on public.products;
+create policy products_ordered_read
+on public.products
+for select
+to authenticated
+using (
+  public.sinjira_my_age_band() in ('adult','youth')
+  and exists(
+    select 1
+    from public.order_items oi
+    join public.orders o on o.id=oi.order_id
+    where oi.product_id=products.id
+      and o.user_id=(select auth.uid())
+      and o.status='paid'
+  )
+);
+
 drop policy if exists products_family_catalog_read_v25 on public.products;
 create policy products_family_catalog_read_v25
 on public.products
