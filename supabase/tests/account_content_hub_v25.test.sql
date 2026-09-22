@@ -2,13 +2,13 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(45);
+select plan(47);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
 (
   'b1000000-0000-4000-8000-000000000001',
-  'kingtyrano@gmail.com',
+  'creator-catalog-test@example.test',
   jsonb_build_object('birth_date',(current_date-interval '40 years')::date::text,'date_of_birth',(current_date-interval '40 years')::date::text,'gender','Homme','sex','male','pseudo','Créateur test','display_name','Créateur test','residence_country','Canada')
 ),
 (
@@ -195,6 +195,20 @@ select is(
   (select count(*)::integer from public.products where slug='content-private'),
   0,
   'un membre ne voit pas un produit inactif sans droit ni achat'
+);
+select ok(
+  public.has_sinjira_product(
+    'content-entitled',
+    'b2000000-0000-4000-8000-000000000002'
+  ),
+  'un entitlement réel conserve le droit produit même si le produit devient inactif'
+);
+select ok(
+  public.has_sinjira_product(
+    'content-ordered',
+    'b2000000-0000-4000-8000-000000000002'
+  ),
+  'une commande paid conserve le droit produit même si le produit devient inactif'
 );
 
 reset role;
