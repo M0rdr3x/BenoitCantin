@@ -1,6 +1,6 @@
 export const PRIVATE_NOVEL_SIGNED_URL_SECONDS=300;
 
-export type PrivateNovelAccess='entitlement'|'owner'|'family';
+export type PrivateNovelAccess='product'|'owner'|'family';
 
 export type PrivateNovelAsset={
   novel_id:string;
@@ -35,21 +35,12 @@ export async function requirePrivateNovelAccess(service:any,userId:string,asset:
   const productSlug=String(asset.product_slug||'').trim();
   if(!productSlug)throw new Error('NOVEL_ACCESS_DENIED');
 
-  const {data:product,error:productError}=await service
-    .from('products')
-    .select('id,slug')
-    .eq('slug',productSlug)
-    .maybeSingle();
-  if(productError||!product)throw new Error('NOVEL_UNAVAILABLE');
-
-  const {data:entitlement,error:entitlementError}=await service
-    .from('user_entitlements')
-    .select('product_id')
-    .eq('user_id',userId)
-    .eq('product_id',product.id)
-    .maybeSingle();
-  if(entitlementError)throw new Error('NOVEL_ACCESS_CHECK_FAILED');
-  if(entitlement)return 'entitlement';
+  const {data:hasProduct,error:productAccessError}=await service.rpc(
+    'has_sinjira_product',
+    {p_product_slug:productSlug,p_user_id:userId}
+  );
+  if(productAccessError)throw new Error('NOVEL_ACCESS_CHECK_FAILED');
+  if(hasProduct===true)return 'product';
 
   throw new Error('NOVEL_ACCESS_DENIED');
 }
