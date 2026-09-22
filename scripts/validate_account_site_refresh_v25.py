@@ -208,19 +208,30 @@ def validate(contents: dict[str, str]) -> None:
             fail(f"migration privilèges catalogue: garde absente: {marker}")
 
     for marker in (
-        "createorreplacefunctionpublic.sinjira_my_product_rights()",
+        "createorreplacefunctionsinjira_v25_internal.sinjira_my_product_rights()",
         "selectauth.uid()asuid",
         "'paid_order'::textassource",
         "distincton(product_id)",
+        "revokeallonfunctionsinjira_v25_internal.sinjira_my_product_rights()frompublic,anon,authenticated",
+        "createorreplacefunctionpublic.sinjira_my_product_rights()",
+        "securityinvoker",
+        "selectsinjira_v25_internal.sinjira_my_product_rights()",
         "revokeallonfunctionpublic.sinjira_my_product_rights()frompublic,anon",
         "grantexecuteonfunctionpublic.sinjira_my_product_rights()toauthenticated,service_role",
     ):
         if marker not in paid_access_migration:
             fail(f"migration droits produit effectifs: invariant absent: {marker}")
-    rights_start=paid_access_migration.find("createorreplacefunctionpublic.sinjira_my_product_rights()")
+    rights_start=paid_access_migration.find("createorreplacefunctionsinjira_v25_internal.sinjira_my_product_rights()")
     rights_end=paid_access_migration.find("$rights$;",rights_start)
     if rights_start < 0 or rights_end < 0 or "p_user_id" in paid_access_migration[rights_start:rights_end]:
-        fail("migration droits produit effectifs: le RPC doit rester self-only sans UUID arbitraire")
+        fail("migration droits produit effectifs: implémentation self-only invalide")
+    wrapper_start=paid_access_migration.find("createorreplacefunctionpublic.sinjira_my_product_rights()")
+    wrapper_end=paid_access_migration.find("$wrapper$;",wrapper_start)
+    if wrapper_start < 0 or wrapper_end < 0:
+        fail("migration droits produit effectifs: wrapper public absent")
+    wrapper_segment=paid_access_migration[wrapper_start:wrapper_end]
+    if "securityinvoker" not in wrapper_segment or "securitydefiner" in wrapper_segment:
+        fail("migration droits produit effectifs: wrapper public doit rester SECURITY INVOKER")
 
     for marker in (
         "altertablepublic.projectsaddcolumnifnotexistsproduct_slugtext",
