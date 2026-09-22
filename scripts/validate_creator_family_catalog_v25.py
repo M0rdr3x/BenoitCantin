@@ -188,6 +188,7 @@ def validate(contents:dict[str,str])->None:
     for marker in (
         "sinjira_my_catalog_access_mode",
         "constfamilycatalog=catalogaccessmode==='family'",
+        "source==='entitlement'||source==='product'",
         "sinjira_my_project_catalog",
         "constproductright=isowner||familycatalog||fractureright",
         "constfracturerightverified=!fracturerightresult.error,fractureright=fracturerightverified&&fracturerightresult.data===true",
@@ -239,7 +240,7 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-account-dashboard-v24-4-60.js?v=25.0.3" not in contents["account_index"]:
         fail("cache tableau de bord famille non forcé")
 
-    if "sinjira-library-v24-4-61.js?v=25.1.3" not in contents["library_html"]:
+    if "sinjira-library-v24-4-61.js?v=25.1.4" not in contents["library_html"]:
         fail("cache bibliothèque famille non forcé")
     if "sinjira-purchases-v25.js?v=25.0.3" not in contents["purchases_html"]:
         fail("cache achats famille non forcé")
