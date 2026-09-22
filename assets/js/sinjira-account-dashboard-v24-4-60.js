@@ -1,6 +1,7 @@
 import {getSupabase, escapeHtml} from './sinjira-supabase.js';
 
 const s=getSupabase();
+let dashboardFamily=false;
 
 const setText=(selector,value)=>{
   document.querySelectorAll(selector).forEach(node=>{node.textContent=String(value??'—')});
@@ -38,10 +39,12 @@ function renderAccess(projects,isOwner,isAdmin,roleResolved=true,catalogResolved
     ? 'Accès projets temporairement indisponibles; aucun accès supplémentaire n’est supposé.'
     : !roleResolved
       ? `${count} accès projet visible${count===1?'':'s'}; rôle du compte non confirmé.`
-      : (isOwner||isAdmin)&&!catalogResolved
+      : (isOwner||isAdmin||dashboardFamily)&&!catalogResolved
         ? `Catalogue complet temporairement indisponible · ${count} accès confirmé${count===1?'':'s'} affiché${count===1?'':'s'}.`
         : isOwner
           ? `Catalogue propriétaire : ${count} création${count===1?'':'s'} visible${count===1?'':'s'}.`
+          : dashboardFamily
+            ? `Catalogue famille créateur : ${count} création${count===1?'':'s'} visible${count===1?'':'s'}.`
           : isAdmin
             ? `Accès administrateur : ${count} projet${count===1?'':'s'} disponible${count===1?'':'s'}.`
             : count
@@ -61,7 +64,11 @@ function renderAccess(projects,isOwner,isAdmin,roleResolved=true,catalogResolved
   box.innerHTML=projects.slice(0,4).map(project=>{
     const p=project.projects||project;
     if(!p?.slug)return '';
-    return `<a class="account-mini-project" href="/compte/projet.html?slug=${encodeURIComponent(p.slug)}"><span>${escapeHtml(p.name||p.slug)}</span><small>${escapeHtml(isOwner?'Propriétaire':isAdmin?'Administration':project.access_level||'Accès')}</small></a>`;
+    const label=isOwner?'Propriétaire':dashboardFamily?'Famille créateur':isAdmin?'Administration':project.access_level||'Accès';
+    if(dashboardFamily&&p.content_available===false){
+      return `<div class="account-mini-project"><span>${escapeHtml(p.name||p.slug)}</span><small>Catalogue famille · contenu protégé</small></div>`;
+    }
+    return `<a class="account-mini-project" href="/compte/projet.html?slug=${encodeURIComponent(p.slug)}"><span>${escapeHtml(p.name||p.slug)}</span><small>${escapeHtml(label)}</small></a>`;
   }).join('');
 }
 
@@ -122,9 +129,10 @@ async function loadPrivateDashboard(){
 
   await waitForLegacyDashboard();
 
-  const [adminResult,ownerResult,accessResult,libraryResult,characterResult,legacyCharacterResult,applicationResult]=await Promise.all([
+  const [adminResult,ownerResult,catalogAccessResult,accessResult,libraryResult,characterResult,legacyCharacterResult,applicationResult]=await Promise.all([
     s.rpc('is_sinjira_admin',{p_user_id:user.id}),
     s.rpc('is_sinjira_owner',{p_user_id:user.id}),
+    s.rpc('sinjira_my_catalog_access_mode'),
     s.from('project_access').select('project_id,access_level,expires_at,projects(id,slug,name,status)').eq('user_id',user.id),
     s.from('sinjira_reader_library').select('novel_id,last_opened_at,progress_percent').eq('user_id',user.id),
     s.from('characters').select('id,status,public_name,canon_status,novel_note,updated_at').eq('user_id',user.id).eq('visible_to_user',true).order('updated_at',{ascending:false}).limit(1),
@@ -136,7 +144,10 @@ async function loadPrivateDashboard(){
   const isOwner=ownerResolved&&ownerResult.data===true;
   const isAdmin=adminResolved&&adminResult.data===true;
   const roleResolved=ownerResolved&&(isOwner||adminResolved);
-  setText('[data-account-role]',!roleResolved?'Rôle du compte non confirmé':isOwner?'Propriétaire SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Membre SINJIRA™');
+  const catalogAccessResolved=!catalogAccessResult.error;
+  const catalogAccessMode=catalogAccessResolved?String(catalogAccessResult.data||'member'):'member';
+  dashboardFamily=catalogAccessMode==='family';
+  setText('[data-account-role]',!roleResolved||!catalogAccessResolved?'Rôle du compte non confirmé':isOwner?'Propriétaire SINJIRA™':dashboardFamily?'Famille créateur SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Membre SINJIRA™');
 
   const accessResolved=!accessResult.error;
   let projects=(accessResult.data||[]).filter(row=>!row.expires_at||new Date(row.expires_at)>new Date());
@@ -146,6 +157,12 @@ async function loadPrivateDashboard(){
     catalogResolved=!all.error;
     if(catalogResolved)projects=all.data||[];
   }
+  if(catalogAccessResolved&&dashboardFamily){
+    const all=await s.rpc('sinjira_my_project_catalog');
+    catalogResolved=!all.error;
+    if(catalogResolved)projects=Array.isArray(all.data)?all.data:[];
+  }
+  if(roleResolved&&!isOwner&&!isAdmin&&!dashboardFamily)catalogResolved=accessResolved;
 
   renderAccess(projects,isOwner,isAdmin,roleResolved,catalogResolved,accessResolved);
   renderLibrary(libraryResult.data||[],!libraryResult.error);
@@ -157,7 +174,7 @@ async function loadPrivateDashboard(){
   const state=document.querySelector('[data-dashboard-private-state]');
   if(state){
     const characterUnavailable=characterResult.error&&legacyCharacterResult.error;
-    const hadError=!catalogResolved||[adminResult,ownerResult,accessResult,libraryResult,applicationResult].some(result=>result.error)||characterUnavailable;
+    const hadError=!catalogResolved||[adminResult,ownerResult,catalogAccessResult,accessResult,libraryResult,applicationResult].some(result=>result.error)||characterUnavailable;
     state.hidden=!hadError;
     if(hadError)state.textContent='Certaines informations privées n’ont pas pu être chargées. Vos données restent protégées; réessayez après avoir rechargé la page.';
   }

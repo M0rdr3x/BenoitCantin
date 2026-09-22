@@ -130,6 +130,8 @@ def validate(contents:dict[str,str])->None:
 
     if "sinjira_my_novel_catalog" not in library:
         fail("bibliothèque: RPC roman self-only absent")
+    if contents["library_js"].count("sinjira_my_novel_catalog") < 2:
+        fail("bibliothèque: RPC roman self-only absent du parcours standard ou famille Junior")
     if "cataloguecomplet" not in library or "manuscritintégralprivénonchargé" not in library:
         fail("bibliothèque: état créateur honnête absent")
     if "constfullaccess=boolean(novel.full_access);" not in library or "fullaccess?" not in library:

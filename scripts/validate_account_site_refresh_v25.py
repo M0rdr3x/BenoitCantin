@@ -456,7 +456,7 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if watched not in workflow_paths:
             fail(f"CI compte: fichier critique non surveillé: {watched}")
-    if "sinjira-account-dashboard-v24-4-60.js?v=25.0.2" not in contents["account_page:index.html"]:
+    if "sinjira-account-dashboard-v24-4-60.js?v=25.0.3" not in contents["account_page:index.html"]:
         fail("tableau de bord: cache V25 du module dédié absent")
     if "pw.length<12" not in acc or "a.length<12" not in acc:
         fail("authentification: helpers Compte doivent conserver le minimum de 12 caractères")
@@ -745,7 +745,7 @@ def main() -> None:
             "préférences hors paths CI":("workflow","assets/js/v24-preferences.js","assets/js/v24-preferences-missing.js"),
             "centre vie privée hors paths CI":("workflow","assets/js/sinjira-privacy-center-v24-4-83.js","assets/js/privacy-center-missing.js"),
             "lecteur démo HTML hors paths CI":("workflow","projets/sinjira/romans/lire-demo.html","projets/sinjira/romans/lire-demo-missing.html"),
-            "cache Dashboard revenu V24":("account_page:index.html","sinjira-account-dashboard-v24-4-60.js?v=25.0.2","sinjira-account-dashboard-v24-4-60.js?v=24.4.60"),
+            "cache Dashboard revenu V24":("account_page:index.html","sinjira-account-dashboard-v24-4-60.js?v=25.0.3","sinjira-account-dashboard-v24-4-60.js?v=24.4.60"),
             "catalogue littérature masque rôle non résolu":("literature_js","ownerResolved=!ownerResult.error","ownerResolved=true"),
             "lecteur démo revenu à reader_library":("reader_js","from('sinjira_reader_library').select('last_page')","from('reader_library').select('last_page')"),
             "lecteur démo ignore erreur upsert":("reader_js","return {synced:!error,error:error||null}","return {synced:true,error:null}"),

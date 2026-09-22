@@ -16,6 +16,8 @@ FILES={
     "library_html":ROOT/"compte/bibliotheque.html",
     "purchases_html":ROOT/"compte/mes-achats.html",
     "literature_html":ROOT/"projets/sinjira/romans/index.html",
+    "dashboard":ROOT/"assets/js/sinjira-account-dashboard-v24-4-60.js",
+    "account_index":ROOT/"compte/index.html",
     "test":ROOT/"supabase/tests/creator_family_catalog_access_v25.test.sql",
     "account_workflow":ROOT/".github/workflows/sinjira-account-content-hub-v25.yml",
     "novel_workflow":ROOT/".github/workflows/sinjira-private-novel-catalog-v25.yml",
@@ -36,6 +38,7 @@ def validate(contents:dict[str,str])->None:
     purchases=compact(contents["purchases"])
     literature=compact(contents["literature"])
     test=compact(contents["test"])
+    dashboard=compact(contents["dashboard"])
     account_workflow=contents["account_workflow"]
     novel_workflow=contents["novel_workflow"]
 
@@ -53,7 +56,7 @@ def validate(contents:dict[str,str])->None:
         "createorreplacefunctionpublic.set_sinjira_catalog_family_access_by_email(",
         "coalesce(auth.jwt()->>'role','')<>'service_role'",
         "fromauth.usersu",
-        "where lower(coalesce(u.email,''))=v_email",
+        "wherelower(coalesce(u.email,''))=v_email",
         "revokeallonfunctionpublic.set_sinjira_catalog_family_access_by_email(text,boolean,text)frompublic,anon,authenticated",
         "grantexecuteonfunctionpublic.set_sinjira_catalog_family_access_by_email(text,boolean,text)toservice_role",
     ):
@@ -140,6 +143,18 @@ def validate(contents:dict[str,str])->None:
         if marker not in literature:
             fail(f"littérature famille: invariant absent: {marker}")
 
+    for marker in (
+        "sinjira_my_catalog_access_mode",
+        "dashboardfamily=catalogaccessmode==='family'",
+        "sinjira_my_project_catalog",
+        "famillecréateursinjira",
+        "cataloguefamille·contenuprotégé",
+    ):
+        if marker not in dashboard:
+            fail(f"tableau de bord famille: invariant absent: {marker}")
+    if "sinjira-account-dashboard-v24-4-60.js?v=25.0.3" not in contents["account_index"]:
+        fail("cache tableau de bord famille non forcé")
+
     if "sinjira-library-v24-4-61.js?v=25.1.2" not in contents["library_html"]:
         fail("cache bibliothèque famille non forcé")
     if "sinjira-purchases-v25.js?v=25.0.3" not in contents["purchases_html"]:
@@ -190,6 +205,7 @@ def main()->None:
             "intégrale child ouverte":("migration","private_asset_configured\n          and band in ('adult','youth')","private_asset_configured"),
             "catalogue enfant navigateur ancien":("library","s.rpc('sinjira_my_project_catalog')","s.from('projects').select('*')"),
             "helper famille roman retiré":("shared","sinjira_has_full_catalog_access","is_sinjira_owner"),
+            "catalogue famille dashboard retiré":("dashboard","s.rpc(\'sinjira_my_project_catalog\')","Promise.resolve({data:[],error:null})"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
