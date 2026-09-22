@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(74);
+select plan(77);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -238,6 +238,19 @@ insert into public.extensions(
   id,project_id,title,description,status,is_public,product_slug
 )
 values(
+  'fc100000-0000-4000-8000-000000000011',
+  'f8000000-0000-4000-8000-000000000008',
+  'Extension produit en conception',
+  'Extension liée au produit mais encore interne.',
+  'design',
+  false,
+  'family-private-extension-product'
+);
+
+insert into public.extensions(
+  id,project_id,title,description,status,is_public,product_slug
+)
+values(
   'ff000000-0000-4000-8000-00000000000f',
   'f8000000-0000-4000-8000-000000000008',
   'Extension privée achetable',
@@ -467,6 +480,11 @@ select is(
   1,
   'un compte familial youth/adult voit une extension interne du catalogue créateur'
 );
+select is(
+  (select count(*)::integer from public.extensions where id='fc100000-0000-4000-8000-000000000011'),
+  1,
+  'la famille adult/youth voit aussi une extension produit encore en conception'
+);
 select ok(
   exists(
     select 1
@@ -670,6 +688,20 @@ select ok(
       and item->>'access_source'='product'
   ),
   'un roman privé acheté par commande paid devient disponible dans le catalogue sans entitlement'
+);
+select is(
+  (select count(*)::integer from public.extensions where id='fc100000-0000-4000-8000-000000000011'),
+  0,
+  'un achat ne révèle pas une extension encore en conception'
+);
+select is(
+  (
+    select count(*)::integer
+    from jsonb_array_elements(public.sinjira_my_extension_catalog()) item
+    where item->>'id'='fc100000-0000-4000-8000-000000000011'
+  ),
+  0,
+  'le catalogue membre masque aussi l extension produit encore en conception'
 );
 select is(
   (select count(*)::integer from public.extensions where id='ff000000-0000-4000-8000-00000000000f'),
