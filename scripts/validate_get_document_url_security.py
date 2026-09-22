@@ -153,7 +153,7 @@ Deno.serve(async(req)=>{
   if(doc.status!=='approved'||doc.projects?.status!=='active')return privateJson({},404);
   const productSlug=typeof doc.projects?.product_slug==='string'?doc.projects.product_slug.trim():'';
   const ageBand='adult';
-  if(ageBand==='child'&&(doc.child_access_status!=='approved_11_12'||doc.projects?.child_access_status!=='approved_11_12'||productSlug.length>0))return privateJson({},403);
+  if(ageBand==='child'&&(doc.child_access_status!=='approved_11_12'||doc.projects?.child_access_status!=='approved_11_12'|| productSlug.length>0))return privateJson({},403);
   let userRank=0;
   if(user){
    const {data:isAdmin}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
@@ -201,7 +201,7 @@ Deno.serve(async(req)=>{
             'rang non fini accepté': safe.replace('!Number.isFinite(normalizedRank)||', ''),
             'fallback niveau inconnu retiré': safe.replace('(ranks[doc.access_level]||999)', 'ranks[doc.access_level]'),
             'product_slug non chargé': safe.replace(',product_slug)', ')'),
-            'garde child produit retirée': safe.replace('||productSlug.length>0', ''),
+            'garde child produit retirée': safe.replace('|| productSlug.length>0', ''),
             'rang player produit affaibli': safe.replace('if(productSlug&&userRank<20)', 'if(productSlug&&userRank<10)'),
             'RPC droit produit retiré': safe.replace("service.rpc('has_sinjira_product'", "service.rpc('product_access_missing'"),
             'erreur droit produit ignorée': safe.replace('if(productError){', 'if(false){'),
