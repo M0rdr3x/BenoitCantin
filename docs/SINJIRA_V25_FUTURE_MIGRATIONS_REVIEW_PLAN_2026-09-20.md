@@ -10,14 +10,14 @@ PR : #435
 
 ## Source de vérité du périmètre
 
-Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only a porté le delta à **36 migrations futures non revues**. La demande de catalogue complet pour le créateur et ses comptes familiaux, sans publier de courriel ni fabriquer de faux achat, ajoute maintenant une migration forward-only dédiée : le delta courant est désormais de **38 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
+Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only a porté le delta à **36 migrations futures non revues**. La demande de catalogue complet pour le créateur et ses comptes familiaux, sans publier de courriel ni fabriquer de faux achat, ajoute maintenant une migration forward-only dédiée : le delta courant est désormais de **39 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
 
 Répartition :
 - **Lot A — Mode Voyage : 4 migrations**
 - **Lot B — Enfant / Junior / Tuteur : 22 migrations**
 - **Lot C — Compte / Catalogue / RPC : 9 migrations**
 - **Lot D — Frontières helpers navigateur : 1 migration**
-- **Lot E — Catalogue famille créateur : 2 migrations**
+- **Lot E — Catalogue famille créateur : 3 migrations**
 
 L'ordre ci-dessous est un **ordre de revue**, pas un ordre d'autorisation production.
 
@@ -214,7 +214,7 @@ Relecture technique effectuée sur le HEAD `6ace8163c5a68d496d77e635c6b29132876a
 - `get_guardian_youth_contacts()` exige supervision active + opt-in + AAL2 et ne renvoie que `contact_label`, `network`, `last_contact_date`; les tests prouvent l'absence d'UUID de contact, `display_name`, timestamp précis et contenu, ainsi que l'isolation entre identité Compte et identité Personnage;
 - `junior_guardian_summary()` exige AAL2, ne renvoie aucun contenu de publication/message et réduit la dernière activité à une date UTC; la liste parentale ne révèle jamais `junior_alias`;
 - le workflow Communauté Junior est entièrement vert : **51/51** assertions Junior, **13/13** frontière serveur 11–12, **23/23** classement contenu, **25/25** capacités self-only et **8/8** compatibilité protection mineurs, plus la preuve navigateur locale;
-- le snapshot release sur ce même HEAD reste vert et confirme **38 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
+- le snapshot release sur ce même HEAD reste vert et confirme **39 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
 
 **Portes encore ouvertes avant toute approbation du Lot B :**
 - relire humainement les 22 diffs B1→B5 dans l'ordre final, notamment les interactions entre policies RLS et fonctions `SECURITY DEFINER`;
@@ -283,7 +283,7 @@ Relecture technique effectuée sur le HEAD `1a54e110762a5249e99c70fc40e6667ce285
 - l'Edge Function `get-private-novel-url` exige un JWT, réévalue côté serveur la bande d'âge, le rôle créateur ou l'entitlement, exige `enabled=true` et ne signe l'URL privée qu'après ces contrôles; la durée signée reste bornée à 300 secondes;
 - le seed Livre I conserve l'actif privé désactivé et ne publie aucun chemin privé;
 - `sync_social_profile_from_profile()` copie uniquement le pseudonyme public vers `social_profiles.pseudo` et `social_profiles.display_name`; le `profiles.display_name` privé n'est pas propagé;
-- le workflow Profil privé `35677574965` a reconstruit la base locale puis validé **22/22** assertions historiques et **11/11** assertions enfant; son unique rouge est le ledger attendu parce que les 38 migrations restent non revues;
+- le workflow Profil privé `35677574965` a reconstruit la base locale puis validé **22/22** assertions historiques et **11/11** assertions enfant; son unique rouge est le ledger attendu parce que les 39 migrations restent non revues;
 - la frontière RPC V25 exige exactement 23 cibles `public SECURITY DEFINER` et exactement 3 cibles anon avant déplacement, puis recrée uniquement des wrappers `public SECURITY INVOKER`;
 - `sinjira_catalog_internal.project_access_rank(uuid,uuid)` conserve son OID pour les policies RLS mais retourne `0` à un navigateur qui tente de cibler un UUID différent de `auth.uid()`; `service_role` conserve le ciblage serveur explicite;
 - les privilèges navigateur du catalogue restent limités à `SELECT` et aux deux insertions self-service nécessaires (`access_requests`, `playtest_participants`), toujours derrière RLS;
@@ -356,7 +356,7 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
 
 ---
 
-## Lot E — Catalogue famille créateur (2)
+## Lot E — Catalogue famille créateur (3)
 
 - [ ] `20260922014000_sinjira_v25_creator_family_catalog_access.sql`
   - Ajoute un registre privé de comptes familiaux **par UUID uniquement**; aucun courriel n'est stocké dans la table ni inscrit en clair dans la migration publique.
@@ -369,7 +369,7 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
   - `project_access_rank` n'accorde le rang famille `90` qu'aux bandes `adult` / `youth`; un compte `child` ne contourne donc jamais `child_access_status`.
   - `has_sinjira_product(text,uuid)` reconnaît le propriétaire ou la famille `adult/youth` sans créer d'entitlement; le garde anti-énumération self-only reste actif et `child` reste refusé.
   - L'Edge de roman privé reconnaît le rôle famille uniquement après la vérification d'âge déjà existante; les 11–12 restent refusés pour une intégrale non classée.
-  - Preuve dédiée : `creator_family_catalog_access_v25.test.sql` porté à **50 assertions** et validateur statique de confidentialité, incluant l'interdiction d'une adresse courriel littérale, le scénario roman payé sans entitlement et la visibilité des extensions internes pour créateur/famille 13+ seulement.
+  - Preuve dédiée : `creator_family_catalog_access_v25.test.sql` porté à **54 assertions** et validateur statique de confidentialité, incluant l'interdiction d'une adresse courriel littérale, le scénario roman payé sans entitlement et la visibilité des extensions internes pour créateur/famille 13+ seulement.
 
 - [ ] `20260922023000_sinjira_v25_paid_order_product_access.sql`
   - Aligne la RLS `products_ordered_read` et `has_sinjira_product(text,uuid)` sur un achat réellement payé.
@@ -378,6 +378,15 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
   - Une commande `pending` ne rend plus le produit privé visible et ne satisfait jamais `has_sinjira_product()`.
   - Aucun faux entitlement n'est créé; le garde self-only reste inchangé et un navigateur ne peut pas sonder l'accès produit d'un autre UUID.
   - Cette migration doit être retestée à la fois par le workflow Compte/catalogue et par le workflow Romans privés.
+
+- [ ] `20260922030000_sinjira_v25_extension_product_access.sql`
+  - Ajoute `extensions.product_slug` comme lien commercial optionnel; aucune extension existante n'est transformée automatiquement en contenu payant.
+  - Une extension publique `approved/released` reste gratuite et lisible selon la policy publique existante.
+  - Une extension privée liée à un produit devient lisible pour un membre standard uniquement si `has_sinjira_product()` confirme un entitlement réel ou une commande `paid`.
+  - Une commande `pending` ne suffit jamais, car la policy délègue au droit produit canonique.
+  - Les rôles créateur/famille 13+ conservent le catalogue complet; les 11–12 famille restent limités à une fiche minimisée et non ouvrable.
+  - Le RPC `sinjira_my_extension_catalog()` expose `access_source='product'` pour distinguer proprement un achat réel du gratuit/public.
+  - Preuve dédiée dans `creator_family_catalog_access_v25.test.sql` : invisible avant achat en RLS + RPC, visible après commande `paid` en RLS + RPC, sans faux entitlement.
 
 ### Notes de revue préparatoire du Lot E — non approbatives
 
@@ -390,7 +399,7 @@ Points à confirmer humainement avant toute approbation :
 - les UUID familiaux doivent être ceux des comptes voulus et aucun autre compte;
 - la visibilité 11–12 doit rester strictement « catalogue », avec ouverture uniquement du contenu explicitement `approved_11_12`;
 - aucune ligne de commande, entitlement ou `project_access` ne doit être créée pour simuler la propriété familiale;
-- les comptes ordinaires doivent continuer à échouer sur les brouillons, produits internes et projets restreints sans droit;
+- les comptes ordinaires doivent continuer à échouer sur les brouillons, produits internes, extensions privées et projets restreints sans droit;
 - un produit commandé ne doit devenir ouvrable que lorsque la commande est réellement `paid`; une simple commande en attente ne suffit jamais.
 
 Aucune case du Lot E n'est cochée : cette section documente une **préparation technique de revue**, pas une approbation.
@@ -408,7 +417,7 @@ Une famille ne peut être proposée comme « revue » que si :
 
 ## État au moment de la création de ce document
 
-- 38 / 38 migrations : **NON REVUES**
+- 39 / 39 migrations : **NON REVUES**
 - 0 migration ajoutée au lot production par ce document
 - 0 changement du ledger production
 - 0 déploiement production
