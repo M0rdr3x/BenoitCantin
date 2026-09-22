@@ -218,7 +218,7 @@ def validate(contents: dict[str, str]) -> None:
         fail("bibliothèque: rôle créateur encore présenté comme droit numérique privé")
     for marker in (
         "constrequiresproductright=project.slug==='fracture-du-reseau-mere';",
-        "constproductright=isowner||entitledproductslugs.has(project.slug);",
+        "constproductright=isowner||familycatalog||entitledproductslugs.has(project.slug);",
         "droitnumériqueactif",
         "droitdejeurequis",
         "droitdejeunonvérifié",
@@ -256,7 +256,7 @@ def validate(contents: dict[str, str]) -> None:
         "p.visibility==='restricted'?'accèsrestreint':p.visibility==='account'?'inclusaveclecompte':'pagepublique'",
         "rolechip=owner?'propriétaire':a?.access_level==='tester'?'testeur':''",
         "propriétaire·cataloguecomplet",
-        "lerôlepropriétairen’apaspuêtreconfirmé.aucunaccèspropriétairesupplémentairen’estsupposé.",
+        "lerôlepropriétaireoufamillen’apaspuêtreconfirmé.aucunaccèssupplémentairen’estsupposé.",
         "asyncfunctionresolvefractureright(projects,s)",
         "constfractureright=awaitresolvefractureright(projects,s);",
         "constresult=awaits.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'});",
@@ -283,7 +283,7 @@ def validate(contents: dict[str, str]) -> None:
     if "assets/js/sinjira-library.js" not in workflow_paths:
         fail("CI compte: module bibliothèque secondaire non surveillé")
     for name in ("secondary_project","secondary_documents"):
-        if "sinjira-library.js?v=25.1.1" not in contents[name]:
+        if "sinjira-library.js?v=25.1.2" not in contents[name]:
             fail(f"bibliothèque secondaire: cache V25 absent dans {name}")
 
     for marker in ("data-purchase-history", "data-purchase-entitlements", "data-creator-portfolio"):
@@ -716,7 +716,7 @@ def main() -> None:
             "Fracture secondaire jouable sans droit":("secondary_library_js","const canPlay=!licensedGame||owner||(fractureRight.verified&&fractureRight.active);","const canPlay=true;"),
             "contrôle Fracture secondaire retiré":("secondary_library_js","s.rpc('has_sinjira_product',{p_product_slug:p.slug})","Promise.resolve({data:true,error:null})"),
             "module bibliothèque secondaire hors paths CI":("workflow","assets/js/sinjira-library.js","assets/js/sinjira-library-missing.js"),
-            "cache Projet bibliothèque revenu V24":("secondary_project","sinjira-library.js?v=25.1.1","sinjira-library.js?v=24.1"),
+            "cache Projet bibliothèque revenu V24":("secondary_project","sinjira-library.js?v=25.1.2","sinjira-library.js?v=24.1"),
             "navigation mobile redevenue absolue":("account_css",".account-nav-panel{position:static;width:100%;max-width:none;margin-top:6px}",".account-nav-panel{position:absolute;width:min(88vw,320px)}"),
             "barre supérieure Compte redevenue multiple":("account_js","nav.replaceChildren(universe);","nav.append(universe);"),
             "famille courante refermée":("account_js","details.open=true;","details.open=false;"),

@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(33);
+select plan(36);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -241,6 +241,13 @@ select ok(
   ),
   'le catalogue roman familial standard donne l intégrale configurée sans entitlement'
 );
+select ok(
+  public.has_sinjira_product(
+    'family-private-novel-product',
+    'f1000000-0000-4000-8000-000000000001'
+  ),
+  'un compte familial youth/adult satisfait le droit produit sans faux entitlement'
+);
 
 reset role;
 
@@ -292,6 +299,13 @@ select is(
   ),
   0,
   'un membre standard ne reçoit pas le roman brouillon via le RPC self-only'
+);
+select ok(
+  not public.has_sinjira_product(
+    'family-private-novel-product',
+    'f2000000-0000-4000-8000-000000000002'
+  ),
+  'un membre standard sans achat ni entitlement ne satisfait pas le droit produit'
 );
 
 reset role;
@@ -381,6 +395,13 @@ select is(
   (select count(*)::integer from public.products where slug='family-private-novel-product'),
   0,
   'le rôle familial 11–12 ne contourne pas la frontière commerce produit'
+);
+select ok(
+  not public.has_sinjira_product(
+    'family-private-novel-product',
+    'f3000000-0000-4000-8000-000000000003'
+  ),
+  'un compte familial 11–12 ne satisfait pas le droit produit non classé'
 );
 
 reset role;

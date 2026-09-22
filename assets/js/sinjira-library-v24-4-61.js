@@ -27,7 +27,7 @@ function accessLabel(project,access,isOwner,isAdmin){
   return 'Accès autorisé';
 }
 
-function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmin,childMode=false,selector='[data-library-games]',entitlements=[],entitlementsVerified=true){
+function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmin,childMode=false,selector='[data-library-games]',entitlements=[],entitlementsVerified=true,familyCatalog=false){
   const box=document.querySelector(selector);if(!box)return;
   const access=new Map(accessRows.map(row=>[row.project_id,row]));
   const pending=new Map(pendingRows.map(row=>[row.project_id,row]));
@@ -39,7 +39,7 @@ function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmi
     const tester=!childMode&&(isOwner||isAdmin||right?.access_level==='tester');
     const canRequest=!childMode&&!isOwner&&!isAdmin&&!tester&&project.allow_tester_requests;
     const requiresProductRight=project.slug==='fracture-du-reseau-mere';
-    const productRight=isOwner||entitledProductSlugs.has(project.slug);
+    const productRight=isOwner||familyCatalog||entitledProductSlugs.has(project.slug);
     const canPlay=!requiresProductRight||productRight;
     const childApproved=!childMode||project.content_available!==false;
     const role=childMode
@@ -161,8 +161,8 @@ async function init(){
   setCount('[data-library-project-count]',projectResolved?projects.length:'—');setCount('[data-library-novel-count]',novelsResolved?novels.length:'—');setCount('[data-library-entitlement-count]',entitlementsResolved?entitlements.length:'—');setCount('[data-library-request-count]',!pendingResult.error?pendingRows.length:'—');
   const role=document.querySelector('[data-library-role]');if(role)role.textContent=!roleResolved&&!catalogAccessResolved?'Rôle du compte non confirmé':isOwner?'Propriétaire SINJIRA™':familyCatalog?'Famille créateur SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Compte SINJIRA™';
   if(projectResolved){
-    renderProjects(projects.filter(project=>project.type==='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-games]',entitlements,entitlementsResolved);
-    renderProjects(projects.filter(project=>project.type!=='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-other]',entitlements,entitlementsResolved);
+    renderProjects(projects.filter(project=>project.type==='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-games]',entitlements,entitlementsResolved,familyCatalog);
+    renderProjects(projects.filter(project=>project.type!=='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-other]',entitlements,entitlementsResolved,familyCatalog);
   }else{
     renderUnavailable('[data-library-games]','Projets temporairement indisponibles','Les accès projets n’ont pas pu être vérifiés. Aucun accès ou bouton de jeu supplémentaire n’est supposé.');
     renderUnavailable('[data-library-other]','Créations temporairement indisponibles','Les accès projets n’ont pas pu être vérifiés. Aucun accès supplémentaire n’est supposé.');

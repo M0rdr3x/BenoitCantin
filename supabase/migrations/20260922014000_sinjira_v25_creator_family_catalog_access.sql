@@ -451,6 +451,44 @@ from public,anon,authenticated;
 grant execute on function sinjira_catalog_internal.project_access_rank(uuid,uuid)
 to anon,authenticated,service_role;
 
+create or replace function public.has_sinjira_product(
+  p_product_slug text,
+  p_user_id uuid default auth.uid()
+)
+returns boolean
+language sql
+stable
+security invoker
+set search_path=pg_catalog,public,private,auth
+as $family_product$
+  select case
+    when p_user_id is null then false
+    when coalesce(auth.jwt()->>'role','')<>'service_role'
+         and p_user_id is distinct from auth.uid() then false
+    else public.is_sinjira_owner(p_user_id)
+      or (
+        public.is_sinjira_catalog_family_member(p_user_id)
+        and public.sinjira_age_band(p_user_id) in ('adult','youth')
+      )
+      or exists(
+        select 1
+        from public.user_entitlements ue
+        join public.products p on p.id=ue.product_id
+        where ue.user_id=p_user_id
+          and p.slug=p_product_slug
+          and p.active=true
+      )
+  end;
+$family_product$;
+
+revoke all on function public.has_sinjira_product(text,uuid)
+from public,anon;
+grant execute on function public.has_sinjira_product(text,uuid)
+to authenticated,service_role;
+
+comment on function public.has_sinjira_product(text,uuid) is
+  'Droit produit self-only: propriétaire, compte famille adult/youth ou entitlement réel actif. Aucun faux entitlement; child reste fail-closed.';
+
 comment on table private.sinjira_catalog_family_members is
   'Registre serveur par UUID des comptes familiaux bénéficiant du catalogue créateur. Aucun courriel n est stocké dans cette table.';
 comment on function public.set_sinjira_catalog_family_access_by_email(text,boolean,text) is

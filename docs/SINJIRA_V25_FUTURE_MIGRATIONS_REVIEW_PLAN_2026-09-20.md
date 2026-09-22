@@ -365,6 +365,7 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
   - Les membres ordinaires restent limités aux contenus publics/gratuits et à leurs achats, entitlements ou accès explicites.
   - Pour un compte famille 11–12, la visibilité supplémentaire passe par des RPC self-only minimisés : titres/fiches visibles, mais projets non approuvés sans chemin ouvrable et romans privés sans `full_access`, `public_path`, `demo_path` ni nombre de pages.
   - `project_access_rank` n'accorde le rang famille `90` qu'aux bandes `adult` / `youth`; un compte `child` ne contourne donc jamais `child_access_status`.
+  - `has_sinjira_product(text,uuid)` reconnaît le propriétaire ou la famille `adult/youth` sans créer d'entitlement; le garde anti-énumération self-only reste actif et `child` reste refusé.
   - L'Edge de roman privé reconnaît le rôle famille uniquement après la vérification d'âge déjà existante; les 11–12 restent refusés pour une intégrale non classée.
   - Preuve dédiée : `creator_family_catalog_access_v25.test.sql` et validateur statique de confidentialité, incluant l'interdiction d'une adresse courriel littérale dans la migration.
 

@@ -11,6 +11,7 @@ FILES={
     "migration":ROOT/"supabase/migrations/20260922014000_sinjira_v25_creator_family_catalog_access.sql",
     "shared":ROOT/"supabase/functions/_shared/privateNovel.ts",
     "library":ROOT/"assets/js/sinjira-library-v24-4-61.js",
+    "secondary_library":ROOT/"assets/js/sinjira-library.js",
     "purchases":ROOT/"assets/js/sinjira-purchases-v25.js",
     "literature":ROOT/"assets/js/sinjira-literature-catalog-v25.js",
     "library_html":ROOT/"compte/bibliotheque.html",
@@ -35,6 +36,7 @@ def validate(contents:dict[str,str])->None:
     migration=compact(contents["migration"])
     shared=compact(contents["shared"])
     library=compact(contents["library"])
+    secondary_library=compact(contents["secondary_library"])
     purchases=compact(contents["purchases"])
     literature=compact(contents["literature"])
     test=compact(contents["test"])
@@ -59,6 +61,9 @@ def validate(contents:dict[str,str])->None:
         "wherelower(coalesce(u.email,''))=v_email",
         "revokeallonfunctionpublic.set_sinjira_catalog_family_access_by_email(text,boolean,text)frompublic,anon,authenticated",
         "grantexecuteonfunctionpublic.set_sinjira_catalog_family_access_by_email(text,boolean,text)toservice_role",
+        "createorreplacefunctionpublic.has_sinjira_product(",
+        "public.is_sinjira_catalog_family_member(p_user_id)",
+        "public.sinjira_age_band(p_user_id)in('adult','youth')",
     ):
         if marker not in migration:
             fail(f"accès famille: invariant de provisionnement absent: {marker}")
@@ -118,12 +123,23 @@ def validate(contents:dict[str,str])->None:
         "sinjira_my_catalog_access_mode",
         "constfamilycatalog=catalogaccessmode==='family'",
         "sinjira_my_project_catalog",
+        "constproductright=isowner||familycatalog||entitledproductslugs.has(project.slug)",
         "cataloguefamilial·accèsprotégé",
         "touteslescréationssontvisibles,maisseulslescontenusapprouvés11–12anspeuventêtreouverts",
         "rendernovels(juniorresolved?juniornovels:[],[],false,true,familycatalog)",
     ):
         if marker not in library:
             fail(f"bibliothèque famille: invariant absent: {marker}")
+
+    for marker in (
+        "sinjira_my_catalog_access_mode",
+        "familycatalog=!catalogaccessresult.error",
+        "constfamilyproductaccess=familycatalog&&!childmode",
+        "active:owner||familyproductaccess",
+        "s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'})",
+    ):
+        if marker not in secondary_library:
+            fail(f"bibliothèque secondaire famille: invariant absent: {marker}")
 
     for marker in (
         "sinjira_my_catalog_access_mode",
@@ -162,8 +178,8 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(33);" not in test:
-        fail("pgTAP famille: plan(33) absent")
+    if "selectplan(36);" not in test:
+        fail("pgTAP famille: plan(36) absent")
     for marker in (
         "aucuncourrielneststockédansleregistrefamilial",
         "service_rolepeutassocieruncomptefamilialparcourrielsansconserverlecourriel",
@@ -171,6 +187,9 @@ def validate(contents:dict[str,str])->None:
         "lerôlefamilialnecontournepaslarlschild",
         "lafiche11–12nonclasséeestminimiséeetsanscheminouvrable",
         "laficheromanfamiliale11–12nedonnejamaislintégraleprivée",
+        "uncomptefamilialyouth/adultsatisfaitledroitproduitsansfauxentitlement",
+        "unmembrestandardsansachatnientitlementnesatisfaitpasledroitproduit",
+        "uncomptefamilial11–12nesatisfaitpasledroitproduitnonclassé",
     ):
         if marker not in test:
             fail(f"pgTAP famille: preuve absente: {marker}")
@@ -206,6 +225,8 @@ def main()->None:
             "catalogue enfant navigateur ancien":("library","s.rpc('sinjira_my_project_catalog')","s.from('projects').select('*')"),
             "helper famille roman retiré":("shared","sinjira_has_full_catalog_access","is_sinjira_owner"),
             "catalogue famille dashboard retiré":("dashboard","s.rpc(\'sinjira_my_project_catalog\')","Promise.resolve({data:[],error:null})"),
+            "droit produit famille retiré":("migration","public.is_sinjira_catalog_family_member(p_user_id)","false"),
+            "jeu famille retiré bibliothèque":("library","isOwner||familyCatalog||entitledProductSlugs.has(project.slug)","isOwner||entitledProductSlugs.has(project.slug)"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)

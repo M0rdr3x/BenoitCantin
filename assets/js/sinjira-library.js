@@ -1,7 +1,7 @@
 import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabel} from './sinjira-supabase.js';
 
 const page=document.body.dataset.libraryPage||'',status=document.querySelector('[data-library-status]');
-let user=null,owner=false,ownerResolved=true,childMode=false;
+let user=null,owner=false,ownerResolved=true,familyCatalog=false,childMode=false;
 const rows=v=>Array.isArray(v)?v:[];
 function cover(p){if(p.cover_url)return p.cover_url;if(p.slug==='fracture-du-reseau-mere')return '/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp';if(p.slug==='reseau-mere-resistance')return '/assets/media/sinjira-reseau-mere-resistance-officiel.webp';return '/assets/media/sinjira-emblem.webp'}
 async function openDoc(id){
@@ -17,8 +17,9 @@ async function accessMap(){
   return new Map(rows(data).map(x=>[x.project_id,x]));
 }
 async function resolveFractureRight(projects,s){
-  const needsCheck=!owner&&!childMode&&projects.some(p=>p.slug==='fracture-du-reseau-mere');
-  if(!needsCheck)return {active:owner,verified:true};
+  const familyProductAccess=familyCatalog&&!childMode;
+  const needsCheck=!owner&&!familyProductAccess&&!childMode&&projects.some(p=>p.slug==='fracture-du-reseau-mere');
+  if(!needsCheck)return {active:owner||familyProductAccess,verified:true};
   const result=await s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'});
   return {active:!result.error&&result.data===true,verified:!result.error};
 }
@@ -127,15 +128,17 @@ async function playtests(){
 (async()=>{
   user=await requireUser();
   const s=getSupabase();
-  const [capabilityResult,ownerResult]=await Promise.all([
+  const [capabilityResult,ownerResult,catalogAccessResult]=await Promise.all([
     s.rpc('sinjira_my_account_capabilities'),
-    s.rpc('is_sinjira_owner',{p_user_id:user.id})
+    s.rpc('is_sinjira_owner',{p_user_id:user.id}),
+    s.rpc('sinjira_my_catalog_access_mode')
   ]);
   const {data:capabilities,error:capabilityError}=capabilityResult;
   if(capabilityError||!capabilities){setStatus(status,'Impossible de vérifier les capacités du compte.','error');return}
   ownerResolved=!ownerResult.error;
   owner=ownerResolved&&ownerResult.data===true;
-  if(!ownerResolved)setStatus(status,'Le rôle propriétaire n’a pas pu être confirmé. Aucun accès propriétaire supplémentaire n’est supposé.','error');
+  familyCatalog=!catalogAccessResult.error&&String(catalogAccessResult.data||'member')==='family';
+  if(!ownerResolved||catalogAccessResult.error)setStatus(status,'Le rôle propriétaire ou famille n’a pas pu être confirmé. Aucun accès supplémentaire n’est supposé.','error');
   childMode=capabilities.library_mode==='reviewed_11_12';
   try{
     if(page==='library')await library();
