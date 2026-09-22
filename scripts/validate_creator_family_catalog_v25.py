@@ -174,7 +174,7 @@ def validate(contents:dict[str,str])->None:
         "createorreplacefunctionpublic.sinjira_my_novel_catalog()",
         "full_catalog_mode:=owner_modeorfamily_mode",
         "ifband='child'andnotfull_catalog_modethen",
-        "private_asset_configuredandbandin('adult','youth')and(full_catalog_modeorentitled)",
+        "private_asset_configuredandbandin('adult','youth')and(full_catalog_modeorproduct_access)",
         "whenband='child'andfamily_modethen'family_catalog'",
         "'demo_path',casewhenband='child'thennullelsedemo_pathend",
         "'cover_url',casewhenband='child'thennullelsecover_urlend",
