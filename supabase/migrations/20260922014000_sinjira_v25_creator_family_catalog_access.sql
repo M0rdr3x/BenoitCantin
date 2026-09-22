@@ -265,6 +265,16 @@ using (
   and public.sinjira_age_band((select auth.uid())) in ('adult','youth')
 );
 
+drop policy if exists extensions_creator_family_catalog_read_v25 on public.extensions;
+create policy extensions_creator_family_catalog_read_v25
+on public.extensions
+for select
+to authenticated
+using (
+  public.sinjira_has_full_catalog_access((select auth.uid()))
+  and public.sinjira_age_band((select auth.uid())) in ('adult','youth')
+);
+
 create or replace function sinjira_v25_internal.sinjira_my_project_catalog()
 returns jsonb
 language plpgsql
