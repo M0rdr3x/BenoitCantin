@@ -31,11 +31,13 @@ def validate_text(download:str,reader:str,helper:str,config:str)->list[str]:
         "Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED')==='true'",
         "Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_BUCKET')",
         "Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_PATH')",
-        ".from('user_entitlements')",
-        ".eq('user_id',userId)",
-        ".eq('product_id',product.id)",
         "service.rpc('is_sinjira_owner',{p_user_id:userId})",
         "if(isOwner===true)return 'owner'",
+        "service.rpc(\n    'sinjira_has_full_catalog_access'",
+        "if(fullCatalog===true)return 'family'",
+        "service.rpc(\n    'has_sinjira_product'",
+        "{p_product_slug:LIVRE_I_PRODUCT_SLUG,p_user_id:userId}",
+        "if(hasProduct===true)return 'product'",
         "throw new Error('BOOK_ACCESS_DENIED')",
     )
     for marker in helper_required:
@@ -43,10 +45,12 @@ def validate_text(download:str,reader:str,helper:str,config:str)->list[str]:
 
     owner_pos=helper.find("service.rpc('is_sinjira_owner'")
     owner_allow_pos=helper.find("if(isOwner===true)return 'owner'")
-    product_pos=helper.find(".from('products')")
-    entitlement_pos=helper.find(".from('user_entitlements')")
-    require(errors,0<=owner_pos<owner_allow_pos<product_pos<entitlement_pos,
-            'Le rôle auteur vérifié serveur doit être évalué avant toute dépendance au produit commercial.')
+    family_pos=helper.find("'sinjira_has_full_catalog_access'")
+    family_allow_pos=helper.find("if(fullCatalog===true)return 'family'")
+    product_pos=helper.find("'has_sinjira_product'")
+    product_allow_pos=helper.find("if(hasProduct===true)return 'product'")
+    require(errors,0<=owner_pos<owner_allow_pos<family_pos<family_allow_pos<product_pos<product_allow_pos,
+            'Ordre attendu: owner serveur -> catalogue famille -> droit produit canonique.')
 
     for forbidden in ('getPublicUrl(', 'external_url', 'clientRole', 'is_owner_from_client'):
         require(errors,forbidden not in helper,f'Helper Livre I interdit: {forbidden}')
@@ -58,6 +62,9 @@ def validate_text(download:str,reader:str,helper:str,config:str)->list[str]:
             "req.method!=='POST'",
             'const user=await requiredUser(req);',
             'const service=serviceClient();',
+            "service.rpc('sinjira_age_band',{p_user_id:user.id})",
+            "if(normalizedAgeBand==='child')",
+            "if(!['adult','youth'].includes(normalizedAgeBand))",
             'await requirePrivateBookAccess(service,user.id);',
             'const storage=privateBookStorageConfig();',
             "'Cache-Control':'private, no-store, max-age=0'",
@@ -69,11 +76,13 @@ def validate_text(download:str,reader:str,helper:str,config:str)->list[str]:
             require(errors,marker in source,f'{name}: garde absent: {marker}')
         auth=source.find('const user=await requiredUser(req);')
         service=source.find('const service=serviceClient();')
+        age=source.find("service.rpc('sinjira_age_band',{p_user_id:user.id})")
+        child_block=source.find("if(normalizedAgeBand==='child')")
         access=source.find('await requirePrivateBookAccess(service,user.id);')
         storage=source.find('const storage=privateBookStorageConfig();')
         signed=source.find('.createSignedUrl(storage.storagePath,LIVRE_I_SIGNED_URL_SECONDS')
-        require(errors,0<=auth<service<access<storage<signed,
-                f'{name}: ordre auth -> service -> autorisation -> stockage -> URL signée invalide')
+        require(errors,0<=auth<service<age<child_block<access<storage<signed,
+                f'{name}: ordre auth -> âge -> autorisation -> stockage -> URL signée invalide')
         require(errors,'getPublicUrl(' not in source and 'external_url' not in source,
                 f'{name}: aucun repli public/externe permis')
         require(errors,"console.error(error)" not in source and 'console.error(signedError)' not in source,
@@ -136,8 +145,8 @@ def self_test()->None:
 
 """
     helper_owner_after_product=helper.replace(owner_block,'',1).replace(
-        "  if(productError||!product)throw new Error('BOOK_UNAVAILABLE');\n\n",
-        "  if(productError||!product)throw new Error('BOOK_UNAVAILABLE');\n\n"+owner_block,
+        "  const {data:hasProduct,error:productAccessError}=await service.rpc(\n",
+        owner_block+"  const {data:hasProduct,error:productAccessError}=await service.rpc(\n",
         1,
     )
     mutations=[
@@ -146,7 +155,9 @@ def self_test()->None:
         ('autorisation lecteur retirée',download,reader.replace('await requirePrivateBookAccess(service,user.id);','',1),helper,config),
         ('stockage révélé avant autorisation',download,reader_storage_before_access,helper,config),
         ('auteur dépend du produit commercial',download,reader,helper_owner_after_product,config),
-        ('entitlement user retiré',download,reader,helper.replace("    .eq('user_id',userId)\n",'',1),config),
+        ('catalogue famille retiré',download,reader,helper.replace("'sinjira_has_full_catalog_access'","'catalog_access_missing'",1),config),
+        ('droit produit canonique retiré',download,reader,helper.replace("'has_sinjira_product'","'product_access_missing'",1),config),
+        ('droit produit truthy permissif',download,reader,helper.replace("if(hasProduct===true)return 'product'","if(hasProduct)return 'product'",1),config),
         ('owner serveur retiré',download,reader,helper.replace("  const {data:isOwner,error:ownerError}=await service.rpc('is_sinjira_owner',{p_user_id:userId});\n",'',1),config),
         ('TTL élargi',download,reader,helper.replace('LIVRE_I_SIGNED_URL_SECONDS=300','LIVRE_I_SIGNED_URL_SECONDS=3600',1),config),
         ('mutation entitlement ajoutée',download,reader,helper+"\nservice.from('user_entitlements').insert({});\n",config),
@@ -169,7 +180,7 @@ def main()->int:
     errors=validate()
     if errors:
         print(f'ÉCHEC Livre I privé: {len(errors)} problème(s).');[print('- '+e) for e in errors];return 1
-    print('OK Livre I privé: auteur serveur indépendant du statut commercial; acheteurs par entitlement actif; stockage révélé seulement après autorisation; URLs signées 300 s.')
+    print('OK Livre I privé: owner/famille V25/droit produit canonique; âge vérifié avant autorisation; stockage privé après contrôle; URLs signées 300 s.')
     return 0
 
 if __name__=='__main__':raise SystemExit(main())
