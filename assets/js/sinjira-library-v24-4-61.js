@@ -59,6 +59,27 @@ function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmi
   }).join('')||(childMode?'<div class="notice"><strong>Aucun contenu n’a encore été approuvé pour les comptes de 11–12 ans.</strong><p>Les projets apparaîtront ici seulement après une révision humaine explicite.</p></div>':'<div class="notice"><strong>Aucun espace disponible pour ce compte.</strong></div>');
 }
 
+function renderExtensions(extensions,childMode=false,familyCatalog=false){
+  const box=document.querySelector('[data-library-extensions]');if(!box)return;
+  if(childMode&&!familyCatalog){
+    box.innerHTML='<div class="notice"><strong>Extensions fermées par défaut pour les comptes 11–12 ans.</strong><p>Une extension interne n’apparaît ici que dans le catalogue familial protégé.</p></div>';
+    return;
+  }
+  box.innerHTML=extensions.map(extension=>{
+    const available=extension.content_available!==false;
+    const role=childMode
+      ?'Catalogue familial · accès protégé'
+      :extension.creator_mode
+        ?'Créateur · catalogue complet'
+        :extension.family_mode
+          ?'Famille créateur · catalogue complet'
+          :extension.is_public?'Public':'Accès autorisé';
+    const statusLabel=childMode?'Protégé':String(extension.status||'—');
+    const projectLabel=extension.project_slug?'Projet : '+escapeHtml(extension.project_slug):'Projet SINJIRA™';
+    return '<article class="library-project-card"><div class="library-project-body"><div class="library-project-meta"><span class="status-badge">'+escapeHtml(statusLabel)+'</span><span class="role-chip">'+escapeHtml(role)+'</span></div><h2>'+escapeHtml(extension.title||'Extension SINJIRA™')+'</h2><p>'+escapeHtml(extension.description||'')+'</p><div class="library-project-stats"><span>'+projectLabel+'</span><span>'+(available?'Contenu disponible':'Contenu protégé selon l’âge')+'</span></div></div></article>';
+  }).join('')||'<div class="notice"><strong>Aucune extension disponible pour ce compte.</strong></div>';
+}
+
 function renderNovels(novels,libraryRows,isOwner,childMode=false,familyCatalog=false){
   const box=document.querySelector('[data-library-novels]');if(!box)return;
   if(childMode&&!familyCatalog){
@@ -123,14 +144,16 @@ async function init(){
       ?s.rpc('sinjira_my_project_catalog')
       :s.from('projects').select('id,slug,name,type,status,visibility,description,cover_url,public_path,play_path,allow_tester_requests,sort_order,child_access_status').order('sort_order');
     const novelQuery=familyCatalog?s.rpc('sinjira_my_novel_catalog'):Promise.resolve({data:[],error:null});
-    const [projectsResult,documentsResult,novelsResult]=await Promise.all([
+    const extensionQuery=familyCatalog?s.rpc('sinjira_my_extension_catalog'):Promise.resolve({data:[],error:null});
+    const [projectsResult,documentsResult,novelsResult,extensionsResult]=await Promise.all([
       projectQuery,
       s.from('documents').select('id,project_id,child_access_status').eq('status','approved'),
-      novelQuery
+      novelQuery,
+      extensionQuery
     ]);
-    const projects=rows(projectsResult.data),documents=rows(documentsResult.data),juniorResolved=!projectsResult.error&&!documentsResult.error&&(!familyCatalog||!novelsResult.error);
-    const juniorNovels=familyCatalog?rows(novelsResult.data):[];
-    setCount('[data-library-project-count]',juniorResolved?projects.length:'—');setCount('[data-library-novel-count]',juniorResolved?juniorNovels.length:'—');setCount('[data-library-entitlement-count]',0);setCount('[data-library-request-count]',0);
+    const projects=rows(projectsResult.data),documents=rows(documentsResult.data),juniorResolved=!projectsResult.error&&!documentsResult.error&&(!familyCatalog||(!novelsResult.error&&!extensionsResult.error));
+    const juniorNovels=familyCatalog?rows(novelsResult.data):[],juniorExtensions=familyCatalog?rows(extensionsResult.data):[];
+    setCount('[data-library-project-count]',juniorResolved?projects.length:'—');setCount('[data-library-novel-count]',juniorResolved?juniorNovels.length:'—');setCount('[data-library-extension-count]',juniorResolved?juniorExtensions.length:'—');setCount('[data-library-entitlement-count]',0);setCount('[data-library-request-count]',0);
     const role=document.querySelector('[data-library-role]');if(role)role.textContent=familyCatalog?'Compte famille créateur · Junior 11–12 ans':'Compte Junior 11–12 ans';
     if(juniorResolved){
       renderProjects(projects.filter(project=>project.type==='game'),documents,[],[],false,false,true,'[data-library-games]');
@@ -140,6 +163,7 @@ async function init(){
       renderUnavailable('[data-library-other]','Bibliothèque Junior temporairement indisponible','Les contenus approuvés 11–12 ans n’ont pas pu être vérifiés. Aucun contenu supplémentaire n’est affiché.');
     }
     renderNovels(juniorResolved?juniorNovels:[],[],false,true,familyCatalog);
+    renderExtensions(juniorResolved?juniorExtensions:[],true,familyCatalog);
     const reads=document.querySelector('[data-library-reads]');if(reads)reads.innerHTML='<div class="notice"><strong>Lectures privées non classées.</strong><p>Elles resteront fermées jusqu’à une révision adaptée aux 11–12 ans.</p></div>';
     const entitlements=document.querySelector('[data-library-entitlements]');if(entitlements)entitlements.innerHTML='<div class="notice"><strong>Licences et achats indisponibles à 11–12 ans.</strong><p>Cette section ne s’active pas automatiquement avec un compte supervisé.</p></div>';
     if(!juniorResolved)setStatus(status,'La bibliothèque Junior n’a pas pu terminer sa vérification. Aucun contenu supplémentaire n’est affiché.','error');
@@ -148,17 +172,17 @@ async function init(){
     return;
   }
 
-  const [adminResult,ownerResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult,fractureRightResult]=await Promise.all([
-    s.rpc('is_sinjira_admin',{p_user_id:user.id}),s.rpc('is_sinjira_owner',{p_user_id:user.id}),s.from('projects').select('id,slug,name,type,status,visibility,description,cover_url,public_path,play_path,allow_tester_requests,sort_order').order('sort_order'),s.from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id),s.from('documents').select('id,project_id').eq('status','approved'),s.from('access_requests').select('project_id,requested_level,status').eq('user_id',user.id).eq('status','pending'),s.from('sinjira_reader_library').select('novel_id,last_opened_at,last_page,progress_percent,sinjira_novels(id,title,description,status,cover_url,public_path,demo_path)').eq('user_id',user.id).order('updated_at',{ascending:false}),s.from('user_entitlements').select('product_id,source,granted_at,products(id,slug,name,product_type,active)').eq('user_id',user.id).order('granted_at',{ascending:false}),s.rpc('sinjira_my_novel_catalog'),s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'})
+  const [adminResult,ownerResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult,extensionsResult,fractureRightResult]=await Promise.all([
+    s.rpc('is_sinjira_admin',{p_user_id:user.id}),s.rpc('is_sinjira_owner',{p_user_id:user.id}),s.from('projects').select('id,slug,name,type,status,visibility,description,cover_url,public_path,play_path,allow_tester_requests,sort_order').order('sort_order'),s.from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id),s.from('documents').select('id,project_id').eq('status','approved'),s.from('access_requests').select('project_id,requested_level,status').eq('user_id',user.id).eq('status','pending'),s.from('sinjira_reader_library').select('novel_id,last_opened_at,last_page,progress_percent,sinjira_novels(id,title,description,status,cover_url,public_path,demo_path)').eq('user_id',user.id).order('updated_at',{ascending:false}),s.from('user_entitlements').select('product_id,source,granted_at,products(id,slug,name,product_type,active)').eq('user_id',user.id).order('granted_at',{ascending:false}),s.rpc('sinjira_my_novel_catalog'),s.rpc('sinjira_my_extension_catalog'),s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'})
   ]);
   const ownerResolved=!ownerResult.error,adminResolved=!adminResult.error;
   const isAdmin=adminResolved&&adminResult.data===true,isOwner=ownerResolved&&ownerResult.data===true;
   const roleResolved=ownerResolved&&(isOwner||adminResolved);
   const projectResolved=!projectsResult.error&&!accessResult.error&&!documentsResult.error&&!pendingResult.error;
-  const readsResolved=!readsResult.error,entitlementsResolved=!entitlementsResult.error,novelsResolved=!novelsResult.error;
+  const readsResolved=!readsResult.error,entitlementsResolved=!entitlementsResult.error,novelsResolved=!novelsResult.error,extensionsResolved=!extensionsResult.error;
   const fractureRightVerified=!fractureRightResult.error,fractureRight=fractureRightVerified&&fractureRightResult.data===true;
-  const projects=rows(projectsResult.data),accessRows=rows(accessResult.data),documents=rows(documentsResult.data),pendingRows=rows(pendingResult.data),libraryRows=rows(readsResult.data),entitlements=rows(entitlementsResult.data),novels=rows(novelsResult.data);
-  setCount('[data-library-project-count]',projectResolved?projects.length:'—');setCount('[data-library-novel-count]',novelsResolved?novels.length:'—');setCount('[data-library-entitlement-count]',entitlementsResolved?entitlements.length:'—');setCount('[data-library-request-count]',!pendingResult.error?pendingRows.length:'—');
+  const projects=rows(projectsResult.data),accessRows=rows(accessResult.data),documents=rows(documentsResult.data),pendingRows=rows(pendingResult.data),libraryRows=rows(readsResult.data),entitlements=rows(entitlementsResult.data),novels=rows(novelsResult.data),extensions=rows(extensionsResult.data);
+  setCount('[data-library-project-count]',projectResolved?projects.length:'—');setCount('[data-library-novel-count]',novelsResolved?novels.length:'—');setCount('[data-library-extension-count]',extensionsResolved?extensions.length:'—');setCount('[data-library-entitlement-count]',entitlementsResolved?entitlements.length:'—');setCount('[data-library-request-count]',!pendingResult.error?pendingRows.length:'—');
   const role=document.querySelector('[data-library-role]');if(role)role.textContent=!roleResolved&&!catalogAccessResolved?'Rôle du compte non confirmé':isOwner?'Propriétaire SINJIRA™':familyCatalog?'Famille créateur SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Compte SINJIRA™';
   if(projectResolved){
     renderProjects(projects.filter(project=>project.type==='game'),documents,accessRows,pendingRows,isOwner,isAdmin,false,'[data-library-games]',fractureRight,fractureRightVerified,familyCatalog);
@@ -169,11 +193,13 @@ async function init(){
   }
   if(novelsResolved)renderNovels(novels,readsResolved?libraryRows:[],isOwner,false);
   else renderUnavailable('[data-library-novels]','Romans temporairement indisponibles','Le catalogue de romans n’a pas pu être vérifié.');
+  if(extensionsResolved)renderExtensions(extensions,false,familyCatalog);
+  else renderUnavailable('[data-library-extensions]','Extensions temporairement indisponibles','Le catalogue des extensions n’a pas pu être vérifié.');
   if(readsResolved)renderReads(libraryRows);
   else renderUnavailable('[data-library-reads]','Progression temporairement indisponible','Votre progression de lecture n’a pas pu être vérifiée.');
   if(entitlementsResolved)renderEntitlements(entitlements,isOwner);
   else renderUnavailable('[data-library-entitlements]','Droits numériques temporairement indisponibles','Les droits numériques du compte n’ont pas pu être vérifiés; aucun accès supplémentaire n’est supposé.');
-  const errors=[ownerResult,adminResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult,fractureRightResult].filter(result=>result.error);if(catalogAccessResult.error)errors.push(catalogAccessResult);if(errors.length)setStatus(status,'Certaines sections privées ou le rôle du compte n’ont pas pu être vérifiés. Aucun accès supplémentaire n’a été accordé.','error');
+  const errors=[ownerResult,adminResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult,extensionsResult,fractureRightResult].filter(result=>result.error);if(catalogAccessResult.error)errors.push(catalogAccessResult);if(errors.length)setStatus(status,'Certaines sections privées ou le rôle du compte n’ont pas pu être vérifiés. Aucun accès supplémentaire n’a été accordé.','error');
   document.querySelectorAll('[data-v2461-request-tester]').forEach(button=>button.addEventListener('click',async()=>{const message=prompt('Court message pour votre demande (facultatif).')||'';const {error}=await s.from('access_requests').insert({user_id:user.id,project_id:button.dataset.v2461RequestTester,requested_level:'tester',message:message.slice(0,1500)});if(error){setStatus(status,'La demande n’a pas pu être transmise.','error');return}button.disabled=true;button.textContent='Demande testeur en attente';setStatus(status,'Demande testeur transmise.','success')}));
 }
 
