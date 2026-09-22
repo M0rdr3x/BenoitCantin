@@ -126,7 +126,7 @@ select lives_ok(
 );
 
 select lives_ok(
-  $ select public.private_profile_get() $,
+  $read$ select public.private_profile_get() $read$,
   'un enfant de 11 ans avec tuteur actif peut relire son coffre privé'
 );
 
@@ -174,7 +174,7 @@ select throws_ok(
 );
 
 select throws_ok(
-  $ select public.private_profile_get() $,
+  $read$ select public.private_profile_get() $read$,
   'P0001',
   'GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14',
   'un enfant de 11 ans sans tuteur actif ne peut pas relire son coffre'
@@ -246,7 +246,7 @@ select throws_ok(
 );
 
 select throws_ok(
-  $ select public.private_profile_get() $,
+  $read$ select public.private_profile_get() $read$,
   'P0001',
   'GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14',
   'un lien tuteur révoqué bloque aussi la lecture du coffre'
