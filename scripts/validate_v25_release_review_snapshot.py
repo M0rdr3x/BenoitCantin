@@ -56,6 +56,7 @@ EXPECTED_NON_REVIEWED = {
     "20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql": "1a6f22628bf7dc944e7d3b77c2744c40e3204b03",
     "20260922014000_sinjira_v25_creator_family_catalog_access.sql": "378b32d59781285c9781785075ba73c15b0a66e9",
     "20260922023000_sinjira_v25_paid_order_product_access.sql": "edb262781911679ff740573cc3830b9dddfabf94",
+    "20260922030000_sinjira_v25_extension_product_access.sql": "c144d834fcf4201c79cf4f0a8407b49e3f1d29ea",
 }
 
 
@@ -229,7 +230,7 @@ def main() -> None:
 
     validate_snapshot(*values)
     print(
-        "OK snapshot release V25: 38 migrations futures non revues correspondent au dossier, "
+        "OK snapshot release V25: 39 migrations futures non revues correspondent au dossier, "
         "empreintes intactes, reviewed/ledger inchangés et garde humaine conservée."
     )
 
