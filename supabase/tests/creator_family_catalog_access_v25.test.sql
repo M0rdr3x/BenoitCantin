@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(77);
+select plan(82);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -260,6 +260,19 @@ values(
   'family-private-extension-product'
 );
 
+insert into public.extensions(
+  id,project_id,title,description,status,is_public,product_slug
+)
+values(
+  'fc200000-0000-4000-8000-000000000012',
+  'fb100000-0000-4000-8000-000000000011',
+  'Extension publiée d un projet brouillon',
+  'Même publiée, cette extension ne doit pas révéler son projet parent encore brouillon.',
+  'released',
+  true,
+  'family-private-extension-product'
+);
+
 insert into public.orders(id,user_id,order_number,status,currency,total_cents)
 values(
   'fb000000-0000-4000-8000-00000000000b',
@@ -293,6 +306,11 @@ select is(
   (select count(*)::integer from public.projects where slug='family-private-game'),
   0,
   'anon ne reçoit pas la ligne complète d un projet public lié à un produit'
+);
+select is(
+  (select count(*)::integer from public.extensions where id='fc200000-0000-4000-8000-000000000012'),
+  0,
+  'anon ne voit pas une extension publiée dont le projet parent est encore brouillon'
 );
 reset role;
 
@@ -485,6 +503,11 @@ select is(
   1,
   'la famille adult/youth voit aussi une extension produit encore en conception'
 );
+select is(
+  (select count(*)::integer from public.extensions where id='fc200000-0000-4000-8000-000000000012'),
+  1,
+  'la famille adult/youth conserve la visibilité catalogue sur une extension de projet brouillon'
+);
 select ok(
   exists(
     select 1
@@ -555,6 +578,11 @@ select is(
   (select count(*)::integer from public.extensions where id='fd000000-0000-4000-8000-00000000000d'),
   0,
   'un membre standard ne voit pas une extension interne non publique'
+);
+select is(
+  (select count(*)::integer from public.extensions where id='fc200000-0000-4000-8000-000000000012'),
+  0,
+  'un membre standard ne voit pas une extension publique si le projet parent est brouillon'
 );
 select is(
   (
@@ -693,6 +721,20 @@ select is(
   (select count(*)::integer from public.extensions where id='fc100000-0000-4000-8000-000000000011'),
   0,
   'un achat ne révèle pas une extension encore en conception'
+);
+select is(
+  (select count(*)::integer from public.extensions where id='fc200000-0000-4000-8000-000000000012'),
+  0,
+  'un achat paid ne révèle pas une extension publiée si son projet parent reste brouillon'
+);
+select is(
+  (
+    select count(*)::integer
+    from jsonb_array_elements(public.sinjira_my_extension_catalog()) item
+    where item->>'id'='fc200000-0000-4000-8000-000000000012'
+  ),
+  0,
+  'le catalogue membre masque une extension achetée dont le projet parent est brouillon'
 );
 select is(
   (
