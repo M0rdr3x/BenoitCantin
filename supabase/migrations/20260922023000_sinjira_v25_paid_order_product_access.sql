@@ -68,10 +68,78 @@ from public,anon;
 grant execute on function public.has_sinjira_product(text,uuid)
 to authenticated,service_role;
 
+create or replace function public.sinjira_my_product_rights()
+returns jsonb
+language sql
+stable
+security definer
+set search_path=pg_catalog,public,auth
+as $rights$
+  with current_account as (
+    select auth.uid() as uid
+  ),
+  rights as (
+    select
+      p.id as product_id,
+      p.slug,
+      p.name,
+      p.product_type,
+      ue.source::text as source,
+      0 as source_rank
+    from current_account a
+    join public.user_entitlements ue on ue.user_id=a.uid
+    join public.products p on p.id=ue.product_id
+    where a.uid is not null
+
+    union all
+
+    select
+      p.id as product_id,
+      p.slug,
+      p.name,
+      p.product_type,
+      'paid_order'::text as source,
+      1 as source_rank
+    from current_account a
+    join public.orders o on o.user_id=a.uid
+    join public.order_items oi on oi.order_id=o.id
+    join public.products p on p.id=oi.product_id
+    where a.uid is not null
+      and o.status='paid'
+  ),
+  deduplicated as (
+    select distinct on(product_id)
+      product_id,slug,name,product_type,source
+    from rights
+    order by product_id,source_rank,source
+  )
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'product_id',product_id,
+        'slug',slug,
+        'name',name,
+        'product_type',product_type,
+        'source',source
+      )
+      order by name,slug
+    ),
+    '[]'::jsonb
+  )
+  from deduplicated;
+$rights$;
+
+revoke all on function public.sinjira_my_product_rights()
+from public,anon;
+grant execute on function public.sinjira_my_product_rights()
+to authenticated,service_role;
+
 comment on policy products_ordered_read on public.products is
   'V25: un produit commandé reste lisible au compte uniquement après paiement confirmé status=paid; une commande pending ne confère aucun droit.';
 
 comment on function public.has_sinjira_product(text,uuid) is
   'Droit produit self-only: propriétaire, famille adult/youth, entitlement durable ou commande paid. Une commande non payée ne donne aucun accès; aucun faux entitlement n est créé.';
+comment on function public.sinjira_my_product_rights() is
+  'Liste self-only et minimisée des droits produit commerciaux réellement associés au compte courant: entitlement durable ou commande paid. Aucun détail de commande, aucun faux droit owner/famille.';
 
 commit;
