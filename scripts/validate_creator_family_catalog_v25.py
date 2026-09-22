@@ -84,10 +84,14 @@ def validate(contents:dict[str,str])->None:
         "o.status='paid'",
         "p.slug=p_product_slug",
         "p_user_idisdistinctfromauth.uid()thenfalse",
-        "createorreplacefunctionpublic.sinjira_my_product_rights()",
+        "createorreplacefunctionsinjira_v25_internal.sinjira_my_product_rights()",
         "selectauth.uid()asuid",
         "'paid_order'::textassource",
         "distincton(product_id)",
+        "revokeallonfunctionsinjira_v25_internal.sinjira_my_product_rights()frompublic,anon,authenticated",
+        "createorreplacefunctionpublic.sinjira_my_product_rights()",
+        "securityinvoker",
+        "selectsinjira_v25_internal.sinjira_my_product_rights()",
         "revokeallonfunctionpublic.sinjira_my_product_rights()frompublic,anon",
         "grantexecuteonfunctionpublic.sinjira_my_product_rights()toauthenticated,service_role",
     ):
@@ -98,18 +102,25 @@ def validate(contents:dict[str,str])->None:
     if paid_access_migration.count("o.status='paid'") < 2:
         fail("droit produit payé: policy produits et helper canonique doivent tous deux exiger status=paid")
 
-    rights_start=paid_access_migration.find("createorreplacefunctionpublic.sinjira_my_product_rights()")
+    rights_start=paid_access_migration.find("createorreplacefunctionsinjira_v25_internal.sinjira_my_product_rights()")
     rights_end=paid_access_migration.find("$rights$;",rights_start)
     if rights_start < 0 or rights_end < 0:
-        fail("droits produit effectifs: fonction self-only absente ou incomplète")
+        fail("droits produit effectifs: implémentation self-only absente ou incomplète")
     rights_segment=paid_access_migration[rights_start:rights_end]
     if "securitydefiner" not in rights_segment:
-        fail("droits produit effectifs: lecture serveur minimisée doit être SECURITY DEFINER")
+        fail("droits produit effectifs: implémentation interne doit rester SECURITY DEFINER")
     if "p_user_id" in rights_segment:
         fail("droits produit effectifs: aucun UUID arbitraire ne doit être accepté")
     for forbidden in ("order_number","total_cents","currency","email"):
         if forbidden in rights_segment:
             fail(f"droits produit effectifs: détail commercial interdit dans la réponse: {forbidden}")
+    wrapper_start=paid_access_migration.find("createorreplacefunctionpublic.sinjira_my_product_rights()")
+    wrapper_end=paid_access_migration.find("$wrapper$;",wrapper_start)
+    if wrapper_start < 0 or wrapper_end < 0:
+        fail("droits produit effectifs: wrapper public absent")
+    wrapper_segment=paid_access_migration[wrapper_start:wrapper_end]
+    if "securityinvoker" not in wrapper_segment or "securitydefiner" in wrapper_segment:
+        fail("droits produit effectifs: wrapper public doit rester SECURITY INVOKER")
 
     for extension_marker in (
         "altertablepublic.extensionsaddcolumnifnotexistsproduct_slugtext",
@@ -524,7 +535,8 @@ def main()->None:
             "catalogue projet acheté retiré":("project_access_migration","sinjira_v25_internal.has_sinjira_product(p.product_slug,uid)","false"),
             "extension produit sans droit canonique":("extension_access_migration","public.has_sinjira_product(product_slug,(select auth.uid()))","true"),
             "commande paid assouplie":("paid_access_migration","o.status='paid'","o.status<>'cancelled'"),
-            "rpc droits produit accepte un UUID":("paid_access_migration","create or replace function public.sinjira_my_product_rights()","create or replace function public.sinjira_my_product_rights(p_user_id uuid)"),
+            "rpc droits produit accepte un UUID":("paid_access_migration","create or replace function sinjira_v25_internal.sinjira_my_product_rights()","create or replace function sinjira_v25_internal.sinjira_my_product_rights(p_user_id uuid)"),
+            "wrapper droits produit redevient definer":("paid_access_migration","create or replace function public.sinjira_my_product_rights()\nreturns jsonb\nlanguage sql\nstable\nsecurity invoker","create or replace function public.sinjira_my_product_rights()\nreturns jsonb\nlanguage sql\nstable\nsecurity definer"),
             "bibliothèque relit directement les entitlements":("library","s.rpc('sinjira_my_product_rights')","s.from('user_entitlements')"),
             "licences relisent directement les commandes":("licenses","s.rpc('sinjira_my_product_rights')","s.from('orders')"),
             "wrapper famille redevient definer":("migration","security invoker\nset search_path=''\nas $wrapper$","security definer\nset search_path=''\nas $wrapper$"),
