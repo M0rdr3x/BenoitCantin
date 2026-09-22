@@ -698,7 +698,7 @@ def main() -> None:
             "preuve RLS playtest self-only retirée":("test","policyname='participants own apply'","policyname='participants missing apply'"),
             "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
             "Fracture jouable sans droit produit":("library_js","project.play_path&&canPlay","project.play_path"),
-            "Fracture droit produit forcé":("library_js","const productRight=isOwner||entitledProductSlugs.has(project.slug);","const productRight=true;"),
+            "Fracture droit produit forcé":("library_js","const productRight=isOwner||familyCatalog||entitledProductSlugs.has(project.slug);","const productRight=true;"),
             "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.2\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
             "bibliothèque principale masque erreur projets":("library_js","const projectResolved=!projectsResult.error&&!accessResult.error&&!documentsResult.error&&!pendingResult.error;","const projectResolved=true;"),
             "bibliothèque principale masque erreur romans":("library_js","const readsResolved=!readsResult.error,entitlementsResolved=!entitlementsResult.error,novelsResolved=!novelsResult.error;","const readsResolved=true,entitlementsResolved=true,novelsResolved=true;"),
