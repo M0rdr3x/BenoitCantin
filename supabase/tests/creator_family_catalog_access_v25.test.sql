@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(54);
+select plan(56);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -209,6 +209,14 @@ select is(
 select ok(
   not has_table_privilege('authenticated','private.sinjira_catalog_family_members','SELECT'),
   'authenticated ne peut pas lire le registre familial privé'
+);
+select ok(
+  not has_function_privilege('authenticated','public.sinjira_age_band(uuid)','EXECUTE'),
+  'authenticated ne peut toujours pas sonder la bande âge d un UUID arbitraire'
+);
+select ok(
+  has_function_privilege('authenticated','public.sinjira_my_age_band()','EXECUTE'),
+  'authenticated conserve uniquement le helper âge self-only du compte courant'
 );
 select ok(
   not has_function_privilege(
