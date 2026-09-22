@@ -13,6 +13,7 @@ FILES = {
     "public_rpc_boundary_migration": ROOT / "supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql",
     "browser_privileges_migration": ROOT / "supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql",
     "browser_helper_hardening_migration": ROOT / "supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql",
+    "project_product_migration": ROOT / "supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql",
     "library_html": ROOT / "compte/bibliotheque.html",
     "library_js": ROOT / "assets/js/sinjira-library-v24-4-61.js",
     "secondary_library_js": ROOT / "assets/js/sinjira-library.js",
@@ -67,6 +68,7 @@ def validate(contents: dict[str, str]) -> None:
     public_rpc_boundary = compact(contents["public_rpc_boundary_migration"])
     browser_privileges = compact(contents["browser_privileges_migration"])
     browser_helper_hardening = compact(contents["browser_helper_hardening_migration"])
+    project_product_migration = compact(contents["project_product_migration"])
     libh = compact(contents["library_html"])
     libj = compact(contents["library_js"])
     secondary_library = compact(contents["secondary_library_js"])
@@ -145,6 +147,8 @@ def validate(contents: dict[str, str]) -> None:
         fail("CI compte: convergence des privilèges catalogue navigateur non surveillée")
     if "supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql" not in workflow_paths:
         fail("CI compte: durcissement self-only des helpers navigateur non surveillé")
+    if "supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql" not in workflow_paths:
+        fail("CI compte: accès produit générique des projets non surveillé")
     if "supabase/tests/child_content_rating_v25.test.sql" not in workflow_paths:
         fail("CI compte: pgTAP classement 11–12 non surveillé")
     if "supabase test db supabase/tests/child_content_rating_v25.test.sql" not in workflow:
@@ -192,6 +196,21 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in browser_privileges:
             fail(f"migration privilèges catalogue: garde absente: {marker}")
+
+    for marker in (
+        "altertablepublic.projectsaddcolumnifnotexistsproduct_slugtext",
+        "projects_product_slug_fkey",
+        "createpolicyprojects_purchased_read_v25",
+        "public.has_sinjira_product(product_slug,(selectauth.uid()))",
+        "createorreplacefunctionsinjira_v25_internal.sinjira_my_project_catalog()",
+        "p.product_slugisnull",
+        "sinjira_v25_internal.has_sinjira_product(p.product_slug,uid)",
+        "then'product'",
+        "else'free'",
+        "parent_project.product_slugisnotnull",
+    ):
+        if marker not in project_product_migration:
+            fail(f"migration accès produit projet: invariant absent: {marker}")
 
     for marker in ("data-library-games", "data-library-novels", "data-library-other", "data-library-extensions", "data-library-extension-count"):
         if marker not in libh:
