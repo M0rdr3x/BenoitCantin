@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(90);
+select plan(94);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -141,6 +141,13 @@ values
   'Extension privée achetable',
   'extension',
   false
+),
+(
+  'fd200000-0000-4000-8000-000000000014',
+  'child-active-commercial-product',
+  'Produit actif masqué Junior',
+  'digital',
+  true
 );
 
 update public.projects
@@ -1003,6 +1010,22 @@ select is(
   'une commande paid enfant ne révèle pas les métadonnées du produit à 11–12'
 );
 
+select is(
+  (select count(*)::integer from public.orders where id='fd100000-0000-4000-8000-000000000013'),
+  0,
+  'un compte 11–12 ne lit pas directement sa ligne de commande commerciale'
+);
+select is(
+  (select count(*)::integer from public.order_items where order_id='fd100000-0000-4000-8000-000000000013'),
+  0,
+  'un compte 11–12 ne lit pas directement les détails de sa commande commerciale'
+);
+select is(
+  (select count(*)::integer from public.products where slug='child-active-commercial-product'),
+  0,
+  'un compte 11–12 ne reçoit pas le catalogue des produits commerciaux actifs'
+);
+
 reset role;
 
 insert into public.user_entitlements(user_id,product_id,source)
@@ -1040,6 +1063,12 @@ select is(
   (select count(*)::integer from public.products where slug='family-private-novel-product'),
   0,
   'un entitlement enfant ne révèle pas les métadonnées du produit à 11–12'
+);
+
+select is(
+  (select count(*)::integer from public.user_entitlements where user_id='f3000000-0000-4000-8000-000000000003'),
+  0,
+  'un compte 11–12 ne lit pas directement ses lignes entitlement commerciales'
 );
 
 select is(
