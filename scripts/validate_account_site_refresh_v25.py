@@ -819,7 +819,7 @@ def main() -> None:
             "migration helpers navigateur hors paths CI":("workflow","supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql","supabase/migrations/browser-helper-hardening-missing.sql"),
             "migration produit projet hors paths CI":("workflow","supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql","supabase/migrations/project-product-access-missing.sql"),
             "projet payant sans droit canonique":("project_product_migration","public.has_sinjira_product(product_slug,(select auth.uid()))","true"),
-            "projet public payant réexposé":("project_product_migration","visibility='public'\n      and product_slug is null","visibility='public'"),
+            "projet public payant réexposé":("project_product_migration","status<>'draft'\n    and visibility='public'\n    and product_slug is null","visibility='public'\n    and product_slug is null"),
             "achat projet révèle brouillon":("project_product_migration","status<>'draft'\n  and product_slug is not null","product_slug is not null"),
             "accès player draft retiré":("project_product_migration","or sinjira_catalog_internal.project_access_rank(id,(select auth.uid()))>=20",""),
             "pgTAP 11–12 hors paths CI":("workflow","supabase/tests/child_content_rating_v25.test.sql","supabase/tests/child-content-rating-missing.sql"),
