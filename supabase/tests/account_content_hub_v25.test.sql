@@ -8,7 +8,7 @@ insert into auth.users(id,email,raw_user_meta_data)
 values
 (
   'b1000000-0000-4000-8000-000000000001',
-  'creator-catalog-test@example.test',
+  'kingtyrano@gmail.com',
   jsonb_build_object('birth_date',(current_date-interval '40 years')::date::text,'date_of_birth',(current_date-interval '40 years')::date::text,'gender','Homme','sex','male','pseudo','Créateur test','display_name','Créateur test','residence_country','Canada')
 ),
 (
