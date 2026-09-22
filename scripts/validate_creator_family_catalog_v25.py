@@ -20,6 +20,7 @@ FILES={
     "dashboard":ROOT/"assets/js/sinjira-account-dashboard-v24-4-60.js",
     "account_index":ROOT/"compte/index.html",
     "test":ROOT/"supabase/tests/creator_family_catalog_access_v25.test.sql",
+    "provision":ROOT/"scripts/provision_creator_family_catalog.py",
     "account_workflow":ROOT/".github/workflows/sinjira-account-content-hub-v25.yml",
     "novel_workflow":ROOT/".github/workflows/sinjira-private-novel-catalog-v25.yml",
 }
@@ -43,10 +44,24 @@ def validate(contents:dict[str,str])->None:
     dashboard=compact(contents["dashboard"])
     account_workflow=contents["account_workflow"]
     novel_workflow=contents["novel_workflow"]
+    provision=compact(contents["provision"])
 
     # Aucune adresse réelle ou synthétique ne doit être gravée dans la migration publique.
     if EMAIL_LITERAL_RE.search(contents["migration"]):
         fail("accès famille: une adresse courriel littérale est présente dans la migration publique")
+
+    for provision_marker in (
+        'sinjira_creator_family_emails',
+        'supabase_service_role_key',
+        'set_sinjira_catalog_family_access_by_email',
+        'authorization',
+        'bearer{service_key}',
+        'comptefamilial{index}/{len(emails)}',
+    ):
+        if provision_marker not in provision:
+            fail(f"provisionnement famille: garde absente: {provision_marker}")
+    if "outlook.com" in provision or "gmail.com" in provision:
+        fail("provisionnement famille: une adresse personnelle ne doit jamais être gravée dans le script")
 
     for marker in (
         "createtableifnotexistsprivate.sinjira_catalog_family_members(",
@@ -236,12 +251,16 @@ def validate(contents:dict[str,str])->None:
         "supabase/migrations/20260922014000_sinjira_v25_creator_family_catalog_access.sql",
         "supabase/tests/creator_family_catalog_access_v25.test.sql",
         "scripts/validate_creator_family_catalog_v25.py",
+        "scripts/provision_creator_family_catalog.py",
         "supabase/functions/_shared/privateNovel.ts",
     ):
         if path not in account_workflow:
             fail(f"CI compte famille: path absent: {path}")
     if "python3 scripts/validate_creator_family_catalog_v25.py --self-test" not in account_workflow:
         fail("CI compte famille: auto-test statique non exécuté")
+
+    if "python3 scripts/provision_creator_family_catalog.py --self-test" not in account_workflow:
+        fail("CI compte famille: auto-test provisionnement sécurisé non exécuté")
     if "supabase test db supabase/tests/creator_family_catalog_access_v25.test.sql" not in account_workflow:
         fail("CI compte famille: pgTAP non exécuté")
 
