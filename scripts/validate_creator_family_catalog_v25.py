@@ -67,6 +67,9 @@ def validate(contents:dict[str,str])->None:
 
 
     for paid_marker in (
+        "droppolicyifexistsproducts_ordered_readonpublic.products",
+        "createpolicyproducts_ordered_read",
+        "o.status='paid'",
         "createorreplacefunctionpublic.has_sinjira_product(",
         "frompublic.orderso",
         "joinpublic.order_itemsoiono.order_id=o.id",
