@@ -35,7 +35,8 @@ on public.extensions
 for select
 to authenticated
 using (
-  product_slug is not null
+  status in ('approved','released')
+  and product_slug is not null
   and public.sinjira_age_band((select auth.uid())) in ('adult','youth')
   and public.has_sinjira_product(product_slug,(select auth.uid()))
 );
@@ -110,7 +111,8 @@ begin
       else (
         (e.is_public=true and e.status in ('approved','released'))
         or (
-          e.product_slug is not null
+          e.status in ('approved','released')
+          and e.product_slug is not null
           and public.has_sinjira_product(e.product_slug,uid)
         )
       )
