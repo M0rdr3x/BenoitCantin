@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(40);
+select plan(41);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -65,7 +65,8 @@ insert into public.projects(
   id,slug,name,type,status,visibility,description,cover_url,public_path,play_path,
   allow_tester_requests,sort_order,child_access_status
 )
-values(
+values
+(
   'f8000000-0000-4000-8000-000000000008',
   'family-private-game',
   'Jeu privé famille',
@@ -79,6 +80,21 @@ values(
   false,
   999,
   'unreviewed'
+),
+(
+  'f8000000-0000-4000-8000-000000000009',
+  'family-free-account-project',
+  'Création gratuite avec compte',
+  'experience',
+  'published',
+  'account',
+  'Contenu gratuit inclus avec un compte SINJIRA.',
+  null,
+  '/gratuit/creation-compte',
+  null,
+  false,
+  998,
+  'approved_11_12'
 );
 
 insert into public.sinjira_novels(
@@ -330,6 +346,11 @@ select is(
   (select count(*)::integer from public.projects where slug='family-private-game'),
   0,
   'un membre standard ne voit pas le projet interne'
+);
+select is(
+  (select count(*)::integer from public.projects where slug='family-free-account-project'),
+  1,
+  'un membre standard voit le contenu gratuit inclus avec son compte'
 );
 select is(
   (select count(*)::integer from public.sinjira_novels where slug='family-private-novel'),
