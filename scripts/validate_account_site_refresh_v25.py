@@ -13,9 +13,12 @@ FILES = {
     "public_rpc_boundary_migration": ROOT / "supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql",
     "browser_privileges_migration": ROOT / "supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql",
     "browser_helper_hardening_migration": ROOT / "supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql",
+    "paid_access_migration": ROOT / "supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql",
     "project_product_migration": ROOT / "supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql",
     "library_html": ROOT / "compte/bibliotheque.html",
     "library_js": ROOT / "assets/js/sinjira-library-v24-4-61.js",
+    "licenses_html": ROOT / "compte/licences.html",
+    "licenses_js": ROOT / "assets/js/v24-licenses.js",
     "secondary_library_js": ROOT / "assets/js/sinjira-library.js",
     "purchases_html": ROOT / "compte/mes-achats.html",
     "purchases_js": ROOT / "assets/js/sinjira-purchases-v25.js",
@@ -68,9 +71,12 @@ def validate(contents: dict[str, str]) -> None:
     public_rpc_boundary = compact(contents["public_rpc_boundary_migration"])
     browser_privileges = compact(contents["browser_privileges_migration"])
     browser_helper_hardening = compact(contents["browser_helper_hardening_migration"])
+    paid_access_migration = compact(contents["paid_access_migration"])
     project_product_migration = compact(contents["project_product_migration"])
     libh = compact(contents["library_html"])
     libj = compact(contents["library_js"])
+    licenses_html = compact(contents["licenses_html"])
+    licenses_js = compact(contents["licenses_js"])
     secondary_library = compact(contents["secondary_library_js"])
     ph = compact(contents["purchases_html"])
     pj = compact(contents["purchases_js"])
@@ -147,8 +153,12 @@ def validate(contents: dict[str, str]) -> None:
         fail("CI compte: convergence des privilèges catalogue navigateur non surveillée")
     if "supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql" not in workflow_paths:
         fail("CI compte: durcissement self-only des helpers navigateur non surveillé")
+    if "supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql" not in workflow_paths:
+        fail("CI compte: droits produit paid non surveillés")
     if "supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql" not in workflow_paths:
         fail("CI compte: accès produit générique des projets non surveillé")
+    if "assets/js/v24-licenses.js" not in workflow_paths:
+        fail("CI compte: page Licences non surveillée")
     if "supabase/tests/child_content_rating_v25.test.sql" not in workflow_paths:
         fail("CI compte: pgTAP classement 11–12 non surveillé")
     if "supabase test db supabase/tests/child_content_rating_v25.test.sql" not in workflow:
@@ -196,6 +206,21 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in browser_privileges:
             fail(f"migration privilèges catalogue: garde absente: {marker}")
+
+    for marker in (
+        "createorreplacefunctionpublic.sinjira_my_product_rights()",
+        "selectauth.uid()asuid",
+        "'paid_order'::textassource",
+        "distincton(product_id)",
+        "revokeallonfunctionpublic.sinjira_my_product_rights()frompublic,anon",
+        "grantexecuteonfunctionpublic.sinjira_my_product_rights()toauthenticated,service_role",
+    ):
+        if marker not in paid_access_migration:
+            fail(f"migration droits produit effectifs: invariant absent: {marker}")
+    rights_start=paid_access_migration.find("createorreplacefunctionpublic.sinjira_my_product_rights()")
+    rights_end=paid_access_migration.find("$rights$;",rights_start)
+    if rights_start < 0 or rights_end < 0 or "p_user_id" in paid_access_migration[rights_start:rights_end]:
+        fail("migration droits produit effectifs: le RPC doit rester self-only sans UUID arbitraire")
 
     for marker in (
         "altertablepublic.projectsaddcolumnifnotexistsproduct_slugtext",
@@ -252,9 +277,13 @@ def validate(contents: dict[str, str]) -> None:
         "project.product_slug&&source==='product'",
         "project.play_path&&childapproved",
         "source==='entitlement'||source==='product'",
+        "s.rpc('sinjira_my_product_rights')",
     ):
         if marker not in libj:
             fail(f"bibliothèque: catalogue projet générique mal lié aux droits réels: {marker}")
+    for forbidden in ("s.from('orders')","s.from('order_items')","s.from('user_entitlements')"):
+        if forbidden in libj:
+            fail(f"bibliothèque: lecture commerciale directe interdite: {forbidden}")
     for marker in (
         "functionrenderunavailable(selector,title,message)",
         "juniorresolved=!projectsresult.error&&!documentsresult.error",
@@ -275,8 +304,21 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in libj:
             fail(f"bibliothèque: dégradation fail-closed absente: {marker}")
-    if "sinjira-library-v24-4-61.js?v=25.1.7" not in contents["library_html"]:
-        fail("bibliothèque: cache module principal V25.1.1 absent")
+    if "sinjira-library-v24-4-61.js?v=25.1.8" not in contents["library_html"]:
+        fail("bibliothèque: cache module principal V25.1.8 absent")
+    for marker in (
+        "s.rpc('sinjira_my_product_rights')",
+        "row.source==='paid_order'?'achatpayé'",
+        "droitnumériquereconnu",
+    ):
+        if marker not in licenses_js:
+            fail(f"licences: droit produit effectif absent: {marker}")
+    for forbidden in ("s.from('orders')","s.from('order_items')","s.from('user_entitlements')"):
+        if forbidden in licenses_js:
+            fail(f"licences: lecture commerciale directe interdite: {forbidden}")
+    if "v24-licenses.js?v=25.1.0" not in contents["licenses_html"]:
+        fail("licences: cache V25.1.0 non forcé")
+
     if "issinjiraowner" in secondary_library:
         fail("bibliothèque secondaire: rôle créateur encore déduit côté navigateur")
     if "s.rpc('is_sinjira_owner',{p_user_id:user.id})" not in contents["secondary_library_js"]:
@@ -734,12 +776,15 @@ def main() -> None:
             "full_access roman privé contourné":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=true;"),
             "projet principal jouable sans catalogue canonique":("library_js","project.play_path&&childApproved","project.play_path"),
             "catalogue projet principal retiré":("library_js","s.rpc('sinjira_my_project_catalog')","s.from('projects').select('*')"),
-            "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.7\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
+            "droits produit bibliothèque relus directement":("library_js","s.rpc('sinjira_my_product_rights')","s.from('user_entitlements')"),
+            "droits produit licences relus directement":("licenses_js","s.rpc('sinjira_my_product_rights')","s.from('orders')"),
+            "cache licences revenu ancien":("licenses_html","v24-licenses.js?v=25.1.0","v24-licenses.js?v=24.4.62"),
+            "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.8\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
             "bibliothèque principale masque erreur projets":("library_js","const projectResolved=!projectsResult.error&&!accessResult.error&&!documentsResult.error&&!pendingResult.error;","const projectResolved=true;"),
             "bibliothèque principale masque erreur romans/extensions":("library_js","const readsResolved=!readsResult.error,entitlementsResolved=!entitlementsResult.error,novelsResolved=!novelsResult.error,extensionsResolved=!extensionsResult.error;","const readsResolved=true,entitlementsResolved=true,novelsResolved=true,extensionsResolved=true;"),
             "bibliothèque principale suppose rôle membre":("library_js","const roleResolved=ownerResolved&&(isOwner||adminResolved);","const roleResolved=true;"),
             "bibliothèque Junior masque erreur":("library_js","juniorResolved=!projectsResult.error&&!documentsResult.error","juniorResolved=true"),
-            "cache bibliothèque principale revenu V25.1.0":("library_html","sinjira-library-v24-4-61.js?v=25.1.7","sinjira-library-v24-4-61.js?v=25.1.0"),
+            "cache bibliothèque principale revenu V25.1.0":("library_html","sinjira-library-v24-4-61.js?v=25.1.8","sinjira-library-v24-4-61.js?v=25.1.0"),
             "raccourci Mes achats retiré":("library_html",'<a href="mes-achats.html"><strong>Mes achats</strong>','<a href="licences.html"><strong>Mes achats</strong>'),
             "rôle créateur secondaire revenu côté client":("secondary_library_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "projet public secondaire présenté comme compte":("secondary_library_js","p.visibility==='restricted'?'Accès restreint':p.visibility==='account'?'Inclus avec le compte':'Page publique'","p.visibility==='restricted'?'Accès restreint':'Inclus avec le compte'"),
