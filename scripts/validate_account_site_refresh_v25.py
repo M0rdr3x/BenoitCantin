@@ -553,6 +553,7 @@ def validate(contents: dict[str, str]) -> None:
     for marker in (
         "const{error}=awaitgetsupabase().from('sinjira_reader_library').upsert(",
         "return{synced:!error,error:error||null}",
+        "resume.textcontent=sync.synced?",
         "sauvegardéesurcetappareiletsynchroniséeavecvotrecompte",
         "synchronisationducompteindisponible",
         "if(!resumesyncavailable||!initialsync.synced)",
