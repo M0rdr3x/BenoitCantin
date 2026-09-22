@@ -345,6 +345,9 @@ def validate(contents: dict[str, str]) -> None:
         "droitnumériquereconnu",
         "sinjira_my_account_capabilities",
         "constchildmode=capabilitiesresolved&&capabilitiesresult.data.library_mode==='reviewed_11_12'",
+        "asyncfunctioninit(){",
+        "if(!form||!list)return;",
+        "init().catch(error=>",
         "form.hidden=true",
         "licencesprotégéespourlescomptes11–12ans",
     ):
@@ -353,8 +356,10 @@ def validate(contents: dict[str, str]) -> None:
     for forbidden in ("s.from('orders')","s.from('order_items')","s.from('user_entitlements')"):
         if forbidden in licenses_js:
             fail(f"licences: lecture commerciale directe interdite: {forbidden}")
-    if "v24-licenses.js?v=25.1.1" not in contents["licenses_html"]:
-        fail("licences: cache V25.1.1 non forcé")
+    if "if(form&&list){" in licenses_js:
+        fail("licences: ancien bloc top-level avec return hors fonction interdit")
+    if "v24-licenses.js?v=25.1.2" not in contents["licenses_html"]:
+        fail("licences: cache V25.1.2 non forcé")
 
     if "issinjiraowner" in secondary_library:
         fail("bibliothèque secondaire: rôle créateur encore déduit côté navigateur")
