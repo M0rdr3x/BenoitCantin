@@ -364,12 +364,12 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
   - Les implémentations privilégiées famille résident dans `sinjira_v25_internal`; les RPC publics restent `SECURITY INVOKER`, afin de ne pas rouvrir la frontière C2.
   - Le propriétaire conserve son accès complet existant; un compte famille 13+ obtient la visibilité catalogue complète sans création de commande, entitlement ou `project_access` artificiel.
   - Les membres ordinaires restent limités aux contenus publics/gratuits et à leurs achats, entitlements ou accès explicites.
-  - Les extensions internes non publiques suivent le catalogue complet uniquement pour le créateur/famille `adult`/`youth`; elles restent invisibles au membre standard et au compte famille 11–12 tant qu'aucune classification dédiée n'existe.
+  - Les extensions internes non publiques suivent le catalogue complet pour le créateur/famille `adult`/`youth`. Le membre standard ne voit que le public; un compte famille 11–12 reçoit seulement une fiche self-only minimisée (`protected`, sans contenu ouvrable) tant qu'aucune classification dédiée n'existe.
   - Pour un compte famille 11–12, la visibilité supplémentaire passe par des RPC self-only minimisés : titres/fiches visibles, mais projets non approuvés sans chemin ouvrable ni couverture non classée et romans privés sans `full_access`, `public_path`, `demo_path`, couverture privée ni nombre de pages.
   - `project_access_rank` n'accorde le rang famille `90` qu'aux bandes `adult` / `youth`; un compte `child` ne contourne donc jamais `child_access_status`.
   - `has_sinjira_product(text,uuid)` reconnaît le propriétaire ou la famille `adult/youth` sans créer d'entitlement; le garde anti-énumération self-only reste actif et `child` reste refusé.
   - L'Edge de roman privé reconnaît le rôle famille uniquement après la vérification d'âge déjà existante; les 11–12 restent refusés pour une intégrale non classée.
-  - Preuve dédiée : `creator_family_catalog_access_v25.test.sql` porté à **47 assertions** et validateur statique de confidentialité, incluant l'interdiction d'une adresse courriel littérale, le scénario roman payé sans entitlement et la visibilité des extensions internes pour créateur/famille 13+ seulement.
+  - Preuve dédiée : `creator_family_catalog_access_v25.test.sql` porté à **50 assertions** et validateur statique de confidentialité, incluant l'interdiction d'une adresse courriel littérale, le scénario roman payé sans entitlement et la visibilité des extensions internes pour créateur/famille 13+ seulement.
 
 - [ ] `20260922023000_sinjira_v25_paid_order_product_access.sql`
   - Aligne la RLS `products_ordered_read` et `has_sinjira_product(text,uuid)` sur un achat réellement payé.
