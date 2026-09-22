@@ -242,21 +242,16 @@ def validate(contents: dict[str, str]) -> None:
     if "accèsauteur" in libj:
         fail("bibliothèque: rôle créateur encore présenté comme droit numérique privé")
     for marker in (
-        "constrequiresproductright=project.slug==='fracture-du-reseau-mere';",
-        "constproductright=isowner||familycatalog||fractureright;",
-        "s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'})",
-        "constfracturerightverified=!fracturerightresult.error,fractureright=fracturerightverified&&fracturerightresult.data===true;",
-        "droitnumériqueactif",
-        "droitdejeurequis",
-        "droitdejeunonvérifié",
-        "project.play_path&&canplay",
-        "fractureright,fracturerightverified,familycatalog",
+        "s.rpc('sinjira_my_project_catalog')",
+        "constsource=string(project.access_source||'free')",
+        "source==='product'",
+        "acheté/droitnumérique",
+        "project.product_slug&&source==='product'",
+        "project.play_path&&childapproved",
         "source==='entitlement'||source==='product'",
-        "activerunelicence",
-        "vérifiermeslicences",
     ):
         if marker not in libj:
-            fail(f"bibliothèque: droit de jeu Fracture mal distingué de la visibilité projet: {marker}")
+            fail(f"bibliothèque: catalogue projet générique mal lié aux droits réels: {marker}")
     for marker in (
         "functionrenderunavailable(selector,title,message)",
         "juniorresolved=!projectsresult.error&&!documentsresult.error",
@@ -277,21 +272,24 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in libj:
             fail(f"bibliothèque: dégradation fail-closed absente: {marker}")
-    if "sinjira-library-v24-4-61.js?v=25.1.6" not in contents["library_html"]:
+    if "sinjira-library-v24-4-61.js?v=25.1.7" not in contents["library_html"]:
         fail("bibliothèque: cache module principal V25.1.1 absent")
     if "issinjiraowner" in secondary_library:
         fail("bibliothèque secondaire: rôle créateur encore déduit côté navigateur")
     if "s.rpc('is_sinjira_owner',{p_user_id:user.id})" not in contents["secondary_library_js"]:
         fail("bibliothèque secondaire: RPC serveur is_sinjira_owner absent")
     for marker in (
-        "p.visibility==='restricted'?'accèsrestreint':p.visibility==='account'?'inclusaveclecompte':'pagepublique'",
-        "rolechip=owner?'propriétaire':a?.access_level==='tester'?'testeur':''",
-        "propriétaire·cataloguecomplet",
-        "lerôlepropriétaireoufamillen’apaspuêtreconfirmé.aucunaccèssupplémentairen’estsupposé.",
-        "asyncfunctionresolvefractureright(projects,s)",
-        "constfractureright=awaitresolvefractureright(projects,s);",
-        "constresult=awaits.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'});",
-        "return{active:!result.error&&result.data===true,verified:!result.error};",
+        "s.rpc('sinjira_my_project_catalog')",
+        "constsource=string(p.access_source||'free')",
+        "p.product_slug&&source==='product'",
+        "constlicensedproject=boolean(p.product_slug)",
+        "p_product_slug:p.product_slug",
+        "constexplicitaccess=boolean(",
+        "constcanplay=!licensedproject||owner||productright||explicitaccess",
+        "licenseaction=!childmode&&licensedproject&&!owner&&!productright&&!explicitaccess",
+        "droitdeprojetnonvérifié",
+        "droitnumériqueactif",
+        "droitproduitrequis",
         "if(error)throwerror;",
         "if(pr.error||dr.error||rr.error)",
         "bibliothèquetemporairementindisponible",
@@ -300,21 +298,13 @@ def validate(contents: dict[str, str]) -> None:
         "if(playtesterror)",
         "if(pr.error||mr.error)",
         "aucunenouvelleactionn’estproposée",
-        "constcanplay=!licensedgame||owner||(fractureright.verified&&fractureright.active);",
-        "licenseaction=licensedgame&&!owner&&!fractureright.active",
-        "licensedgame=p.slug==='fracture-du-reseau-mere'",
-        "s.rpc('has_sinjira_product',{p_product_slug:p.slug})",
-        "droitdejeunonvérifié",
-        "droitnumériqueactif",
-        "droitdejeurequis",
-        "p.play_path&&canplay",
     ):
         if marker not in secondary_library:
             fail(f"bibliothèque secondaire: sémantique projet incohérente: {marker}")
     if "assets/js/sinjira-library.js" not in workflow_paths:
         fail("CI compte: module bibliothèque secondaire non surveillé")
     for name in ("secondary_project","secondary_documents"):
-        if "sinjira-library.js?v=25.1.2" not in contents[name]:
+        if "sinjira-library.js?v=25.1.3" not in contents[name]:
             fail(f"bibliothèque secondaire: cache V25 absent dans {name}")
 
     for marker in ("data-purchase-history", "data-purchase-entitlements", "data-creator-portfolio"):
