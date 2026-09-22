@@ -137,20 +137,23 @@ using (
   status<>'draft' and (
     (
       visibility='public'
+      and product_slug is null
       and (
         (select auth.uid()) is null
         or public.sinjira_my_age_band() in ('adult','youth')
         or (
           public.sinjira_my_age_band()='child'
           and child_access_status='approved_11_12'
-          and product_slug is null
         )
       )
     )
     or (
       (select auth.uid()) is not null
       and public.sinjira_my_age_band() in ('adult','youth')
-      and (visibility='account' or sinjira_catalog_internal.project_access_rank(id,(select auth.uid()))>=20)
+      and (
+        (visibility='account' and product_slug is null)
+        or sinjira_catalog_internal.project_access_rank(id,(select auth.uid()))>=20
+      )
     )
     or (
       (select auth.uid()) is not null
