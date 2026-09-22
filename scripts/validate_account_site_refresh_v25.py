@@ -402,6 +402,8 @@ def validate(contents: dict[str, str]) -> None:
         "sinjira_my_account_capabilities",
         "constchildmode=capabilitiesresolved&&capabilitiesresult.data.library_mode==='reviewed_11_12'",
         "constcommerceallowed=capabilitiesresolved&&capabilitiesresult.data.commerce===true",
+        "constrole=document.queryselector('[data-purchase-account-role]')",
+        "conststatus=document.queryselector('[data-purchases-v25-status]')",
         "if(!capabilitiesresolved)",
         "if(!commerceallowed)",
         "achatsprotégéspourlescomptes11–12ans",
@@ -411,11 +413,19 @@ def validate(contents: dict[str, str]) -> None:
         if marker not in pj:
             fail(f"achats Junior: garde fail-closed absente: {marker}")
     purchase_capability_pos=pj.find("sinjira_my_account_capabilities")
+    purchase_role_pos=pj.find("constrole=document.queryselector('[data-purchase-account-role]')")
+    purchase_status_pos=pj.find("conststatus=document.queryselector('[data-purchases-v25-status]')")
+    purchase_capabilities_fail_pos=pj.find("if(!capabilitiesresolved)")
     purchase_gate_pos=pj.find("if(!commerceallowed)")
     purchase_orders_pos=pj.find("s.from('orders')")
     purchase_entitlements_pos=pj.find("s.from('user_entitlements')")
-    if not (0 <= purchase_capability_pos < purchase_gate_pos < purchase_orders_pos and purchase_gate_pos < purchase_entitlements_pos):
-        fail("achats Junior: capacités et garde commerce doivent précéder toute lecture commerciale")
+    if not (
+        0 <= purchase_capability_pos < purchase_role_pos < purchase_capabilities_fail_pos
+        and purchase_capability_pos < purchase_status_pos < purchase_capabilities_fail_pos
+        and purchase_capabilities_fail_pos < purchase_gate_pos < purchase_orders_pos
+        and purchase_gate_pos < purchase_entitlements_pos
+    ):
+        fail("achats Junior: nœuds statut/rôle et gardes commerce doivent précéder toute branche fail-closed et lecture commerciale")
     if "rendercreatorportfolio" not in pj:
         fail("achats: séparation portefeuille créateur absente")
     for marker in (
@@ -443,8 +453,8 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in pj:
             fail(f"achats: faux état vide encore possible: {marker}")
-    if "sinjira-purchases-v25.js?v=25.0.4" not in contents["purchases_html"]:
-        fail("achats: cache module V25.0.4 absent")
+    if "sinjira-purchases-v25.js?v=25.0.5" not in contents["purchases_html"]:
+        fail("achats: cache module V25.0.5 absent")
 
     if 'name="pseudo"required' not in prof or 'name="email"requiredtype="email"' not in prof:
         fail("profil: pseudo/courriel ne sont pas éditables")
