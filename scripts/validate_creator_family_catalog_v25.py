@@ -312,7 +312,7 @@ def validate(contents:dict[str,str])->None:
         "unecommandepaidsatisfaitledroitproduitsansentitlementartificiel",
         "unromanprivéachetéparcommandepaiddevientdisponibledanslecataloguesansentitlement",
         "unecommandependingnerendpaslextensionprivéevisibleaumembrestandard",
-        "lerpcextensionrefuseuneextensionliéeuniquementàunecommandepending",
+        "lerpcextensionrefuseuneextensionliéeseulementàunecommandepending",
         "unecommandepaidrendlextensionprivéeachetéevisibleaumembrestandard",
         "lecatalogueextensionreconnaîtunecommandepaidsansentitlementartificiel",
         "uncomptefamilial11–12nesatisfaitpasledroitproduitnonclassé",
