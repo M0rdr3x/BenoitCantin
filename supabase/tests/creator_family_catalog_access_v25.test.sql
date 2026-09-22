@@ -1000,8 +1000,8 @@ select ok(
 
 select is(
   jsonb_array_length(public.sinjira_my_product_rights()),
-  2,
-  'les entitlements réels restent listés comptablement à 11–12 sans ouvrir le contenu'
+  0,
+  'les droits commerciaux restent masqués côté navigateur à 11–12 malgré des entitlements réels'
 );
 select is(
   (select count(*)::integer from public.projects where slug='family-private-game'),
