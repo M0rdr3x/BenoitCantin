@@ -23,8 +23,9 @@
     "entitlement_anonymous_read_allowed": false,
     "product_slug": "sinjira-livre-01-la-cendre-du-jugement",
     "access_sources": [
-      "active_product_entitlement",
-      "server_verified_owner_role"
+      "canonical_product_right",
+      "server_verified_owner_role",
+      "server_verified_creator_family"
     ],
     "owner_role_creates_entitlement": false,
     "client_role_assertion_allowed": false,
@@ -34,6 +35,12 @@
     "reader_signed_url_refresh": true,
     "reader_progress_storage": "local_device_only",
     "activation_requires_explicit_human_decision": true,
-    "production_deployment_authorized": false
+    "production_deployment_authorized": false,
+    "canonical_product_right_sources": [
+      "active_product_entitlement",
+      "paid_order"
+    ],
+    "child_full_edition_access_allowed": false,
+    "family_access_creates_entitlement": false
   }
 }
