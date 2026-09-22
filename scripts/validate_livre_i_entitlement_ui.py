@@ -77,8 +77,8 @@ def validate(
         'Bibliothèque: slug Livre I': (library, BOOK_SLUG),
         'Licences: droit réellement reconnu': (licenses, 'Droit numérique reconnu'),
         'Bibliothèque: droit réellement reconnu': (library, 'Droit numérique reconnu'),
-        'Licences: source user_entitlements': (licenses, "from('user_entitlements')"),
-        'Bibliothèque: source user_entitlements': (library, "from('user_entitlements')"),
+        'Licences: droits produit self-only': (licenses, "rpc('sinjira_my_product_rights')"),
+        'Bibliothèque: droits produit self-only': (library, "rpc('sinjira_my_product_rights')"),
         'Licences: frontière de diffusion privée expliquée': (licenses, 'diffusion privée'),
         'Bibliothèque: disponibilité privée expliquée': (library, 'La disponibilité de l’intégrale privée est vérifiée séparément dans la section Romans'),
         'Bibliothèque HTML: rôle propriétaire séparé des produits': (
@@ -112,6 +112,11 @@ def validate(
 
     if "from('products').select('slug,name,product_type,active')" in licenses:
         errors.append('La page Licences ne doit pas fabriquer la possession propriétaire depuis tout le catalogue actif.')
+
+    for label,text in (('Licences',licenses),('Bibliothèque',library)):
+        for forbidden in ("from('orders')","from('order_items')","from('user_entitlements')"):
+            if forbidden in text:
+                errors.append(f'{label}: lecture commerciale directe interdite ({forbidden}); utiliser le RPC self-only des droits produit.')
 
     # La porte de lecture ne doit jamais décider avec un rôle/email client.
     # La Bibliothèque reste une vue de catalogue : aucun appel direct à la
@@ -196,12 +201,12 @@ def self_test() -> None:
             },
         }), encoding='utf-8')
         paths['licenses'].write_text(
-            f"const BOOK='{BOOK_SLUG}'; s.from('user_entitlements'); 'Droit numérique reconnu'; 'diffusion privée';",
+            f"const BOOK='{BOOK_SLUG}'; s.rpc('sinjira_my_product_rights'); 'Droit numérique reconnu'; 'diffusion privée';",
             encoding='utf-8',
         )
         paths['library'].write_text(
             f"const BOOK='{BOOK_SLUG}'; const PRIVATE_READER_PATH='{READER_PATH}'; "
-            "s.from('user_entitlements'); s.rpc('sinjira_my_novel_catalog'); "
+            "s.rpc('sinjira_my_product_rights'); s.rpc('sinjira_my_novel_catalog'); "
             "'Droit numérique reconnu'; "
             "'La disponibilité de l’intégrale privée est vérifiée séparément dans la section Romans'; "
             "const fullAccess=Boolean(novel.full_access); "
@@ -232,6 +237,19 @@ def self_test() -> None:
         clean = validate(*args)
         if clean:
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
+
+        paths['licenses'].write_text(
+            read(paths['licenses']).replace("s.rpc('sinjira_my_product_rights')","s.from('orders')",1),
+            encoding='utf-8',
+        )
+        direct_orders = validate(*args)
+        if not any('lecture commerciale directe interdite' in item for item in direct_orders):
+            raise AssertionError('Une lecture directe des commandes depuis Licences doit être bloquée.')
+
+        paths['licenses'].write_text(
+            f"const BOOK='{BOOK_SLUG}'; s.rpc('sinjira_my_product_rights'); 'Droit numérique reconnu'; 'diffusion privée';",
+            encoding='utf-8',
+        )
 
         healthy_library = read(paths['library'])
         paths['library'].write_text(
