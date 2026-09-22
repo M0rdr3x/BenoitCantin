@@ -78,6 +78,7 @@ def validate(contents:dict[str,str])->None:
     for paid_marker in (
         "droppolicyifexistsproducts_ordered_readonpublic.products",
         "createpolicyproducts_ordered_read",
+        "public.sinjira_my_age_band()in('adult','youth')",
         "o.status='paid'",
         "createorreplacefunctionpublic.has_sinjira_product(",
         "frompublic.orderso",
@@ -160,6 +161,10 @@ def validate(contents:dict[str,str])->None:
         "public.sinjira_my_age_band()in('adult','youth')",
         "visibility='public'andproduct_slugisnulland(",
         "(visibility='account'andproduct_slugisnull)orsinjira_catalog_internal.project_access_rank(id,(selectauth.uid()))>=20",
+        "createpolicyproducts_entitled_read",
+        "createpolicyproducts_ordered_read",
+        "public.sinjira_my_age_band()in('adult','youth')",
+        "o.status='paid'",
         "createpolicyproducts_family_catalog_read_v25",
         "createpolicyprojects_family_catalog_read_v25",
         "createpolicyextensions_creator_family_catalog_read_v25",
@@ -172,6 +177,8 @@ def validate(contents:dict[str,str])->None:
 
     effective_age_policies=(
         "createpolicysinjira_novels_family_catalog_read_v25onpublic.sinjira_novelsforselecttoauthenticatedusing(public.is_sinjira_catalog_family_member((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
+        "createpolicyproducts_entitled_readonpublic.productsforselecttoauthenticatedusing(public.sinjira_my_age_band()in('adult','youth')andexists(select1frompublic.user_entitlementsuewhereue.product_id=products.idandue.user_id=(selectauth.uid())))",
+        "createpolicyproducts_ordered_readonpublic.productsforselecttoauthenticatedusing(public.sinjira_my_age_band()in('adult','youth')andexists(select1frompublic.order_itemsoijoinpublic.ordersoono.id=oi.order_idwhereoi.product_id=products.idando.user_id=(selectauth.uid())ando.status='paid'))",
         "createpolicyproducts_family_catalog_read_v25onpublic.productsforselecttoauthenticatedusing(public.is_sinjira_catalog_family_member((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
         "createpolicyprojects_family_catalog_read_v25onpublic.projectsforselecttoauthenticatedusing(public.is_sinjira_catalog_family_member((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
         "createpolicyextensions_creator_family_catalog_read_v25onpublic.extensionsforselecttoauthenticatedusing(public.sinjira_has_full_catalog_access((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
@@ -413,8 +420,8 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(87);" not in test:
-        fail("pgTAP famille: plan(87) absent")
+    if "selectplan(90);" not in test:
+        fail("pgTAP famille: plan(90) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
@@ -444,6 +451,9 @@ def validate(contents:dict[str,str])->None:
         "lesdeuxproduitsdunecommandepaidapparaissentdanslesdroitseffectifsducompte",
         "lesdroitsissusdunecommandepaidsontidentifiéssansexposerlacommande",
         "lesdroitscommerciauxrestentmasquéscôténavigateurà11–12malgrédesentitlementsréels",
+        "unecommandepaidenfantresteundroitcomptableréel",
+        "unecommandepaidenfantnerévèlepaslesmétadonnéesduproduità11–12",
+        "unentitlementenfantnerévèlepaslesmétadonnéesduproduità11–12",
         "unmembrestandardsansachatnientitlementnesatisfaitpasledroitproduit",
         "test-family-pending-ext-001",
         "unecommandepaidrendleproduitachetévisibleaumembrestandard",
@@ -550,6 +560,8 @@ def main()->None:
             "rpc droits produit accepte un UUID":("paid_access_migration","create or replace function sinjira_v25_internal.sinjira_my_product_rights()","create or replace function sinjira_v25_internal.sinjira_my_product_rights(p_user_id uuid)"),
             "wrapper droits produit redevient definer":("paid_access_migration","create or replace function public.sinjira_my_product_rights()\nreturns jsonb\nlanguage sql\nstable\nsecurity invoker","create or replace function public.sinjira_my_product_rights()\nreturns jsonb\nlanguage sql\nstable\nsecurity definer"),
             "droits produit enfant réexposés":("paid_access_migration","a.band in ('adult','youth')","true"),
+            "policy commande produit rouverte enfant":("paid_access_migration","public.sinjira_my_age_band() in ('adult','youth')\n  and exists(","exists("),
+            "policy entitlement produit rouverte enfant":("age_boundary_migration","create policy products_entitled_read\non public.products\nfor select\nto authenticated\nusing (\n  public.sinjira_my_age_band() in ('adult','youth')","create policy products_entitled_read\non public.products\nfor select\nto authenticated\nusing (\n  true"),
             "licences enfant sans garde capacités":("licenses","const childMode=capabilitiesResolved&&capabilitiesResult.data.library_mode==='reviewed_11_12';","const childMode=false;"),
             "bibliothèque relit directement les entitlements":("library","s.rpc('sinjira_my_product_rights')","s.from('user_entitlements')"),
             "licences relisent directement les commandes":("licenses","s.rpc('sinjira_my_product_rights')","s.from('orders')"),
