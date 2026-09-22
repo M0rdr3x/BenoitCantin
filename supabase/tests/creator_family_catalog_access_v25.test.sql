@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(82);
+select plan(86);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -533,6 +533,12 @@ select ok(
   'un compte familial ne valide jamais un slug produit inexistant'
 );
 
+select is(
+  jsonb_array_length(public.sinjira_my_product_rights()),
+  0,
+  'le catalogue famille ne fabrique aucun droit produit commercial'
+);
+
 reset role;
 
 select set_config(
@@ -638,6 +644,12 @@ select ok(
   'un membre standard sans achat ni entitlement ne satisfait pas le droit produit'
 );
 
+select is(
+  jsonb_array_length(public.sinjira_my_product_rights()),
+  0,
+  'une commande pending n apparaît pas dans les droits produit du compte'
+);
+
 reset role;
 
 insert into public.orders(id,user_id,order_number,status,currency,total_cents)
@@ -681,6 +693,27 @@ select ok(
     'f2000000-0000-4000-8000-000000000002'
   ),
   'une commande paid satisfait le droit produit sans entitlement artificiel'
+);
+
+select is(
+  jsonb_array_length(public.sinjira_my_product_rights()),
+  2,
+  'les deux produits d une commande paid apparaissent dans les droits effectifs du compte'
+);
+select ok(
+  exists(
+    select 1
+    from jsonb_array_elements(public.sinjira_my_product_rights()) item
+    where item->>'slug'='family-private-novel-product'
+      and item->>'source'='paid_order'
+  )
+  and exists(
+    select 1
+    from jsonb_array_elements(public.sinjira_my_product_rights()) item
+    where item->>'slug'='family-private-extension-product'
+      and item->>'source'='paid_order'
+  ),
+  'les droits issus d une commande paid sont identifiés sans exposer la commande'
 );
 select is(
   (select count(*)::integer from public.projects where slug='family-private-game'),
@@ -963,6 +996,12 @@ select ok(
     'f3000000-0000-4000-8000-000000000003'
   ),
   'un droit produit réel peut exister comptablement pour un compte 11–12'
+);
+
+select is(
+  jsonb_array_length(public.sinjira_my_product_rights()),
+  2,
+  'les entitlements réels restent listés comptablement à 11–12 sans ouvrir le contenu'
 );
 select is(
   (select count(*)::integer from public.projects where slug='family-private-game'),
