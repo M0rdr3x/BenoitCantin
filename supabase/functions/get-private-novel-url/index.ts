@@ -28,7 +28,7 @@ async function readBoundedJson(req:Request){
   const rawLength=req.headers.get('content-length');
   if(rawLength!==null){
     const normalizedLength=rawLength.trim();
-    if(!/^\\d+$/.test(normalizedLength))throw new Error('REQUEST_TOO_LARGE');
+    if(!/^\d+$/.test(normalizedLength))throw new Error('REQUEST_TOO_LARGE');
     const declared=Number(normalizedLength);
     if(!Number.isSafeInteger(declared)||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   }
