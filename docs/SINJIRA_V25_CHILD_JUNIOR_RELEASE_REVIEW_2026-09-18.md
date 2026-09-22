@@ -35,7 +35,7 @@ La vague CI associée au dossier précédent a confirmé que les parcours Commun
 - capacités compte self-only : **25/25**;
 - compatibilité protection mineurs : **8/8**;
 - révocation Junior multi-tuteur : **25/25**, avec auto-test du garde **10/10**;
-- Compte/catalogue : **47/47** accès membre/créateur et **23/23** absence d'oracle/classement 11–12;
+- Compte/catalogue : suite actuelle **49 assertions** accès membre/créateur et **23/23** absence d'oracle/classement 11–12;
 - Profil privé : **22/22** historique et **11/11** enfant;
 - romans privés : **13/13**, avec auto-test statique **8/8**;
 - Mode Voyage : rétention **11/11** et visibilité client **28/28**, les workflows consentement/self-only/minimisation restant également verts;
@@ -459,7 +459,7 @@ conserve les OID nécessaires aux policies et les droits d’exécution requis p
 - un projet `account` n’est plus confirmable par anon via le helper 11–12;
 - un document 11–12 exige désormais aussi le rang d’accès réel du compte courant.
 
-Le pgTAP Compte passe à **47 assertions** et le pgTAP classement 11–12 à **23 assertions**.
+Le pgTAP Compte passe à **49 assertions** et le pgTAP classement 11–12 à **23 assertions**.
 
 Cette trente-sixième migration reste **non revue production**.
 
@@ -498,7 +498,7 @@ aligne le droit produit sur les droits réels :
 - aucun faux entitlement n'est créé;
 - le garde self-only par UUID est conservé.
 
-Le pgTAP Compte passe maintenant à **47 assertions** et prouve séparément l'entitlement durable et la commande payée.
+Le pgTAP Compte est maintenant porté à **49 assertions** : entitlement durable, commande `paid`, produit d'une commande `pending` invisible comme achat et `has_sinjira_product()` faux pour cette commande non payée. La preuve CI doit être relue sur le HEAD final gelé.
 
 Cette trente-huitième migration reste **non revue production**.
 
@@ -542,7 +542,7 @@ Le snapshot de revue attend exactement **38 migrations locales futures non revue
 | Migration | Git blob SHA-1 |
 |---|---|
 | `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `b81aac5aff3531c341a4495343515fbc8d1d76eb` |
-| `20260922023000_sinjira_v25_paid_order_product_access.sql` | `2d7e4f32257044b9172a77a5ba3986b3985072b1` |
+| `20260922023000_sinjira_v25_paid_order_product_access.sql` | `edb262781911679ff740573cc3830b9dddfabf94` |
 
 ### Enfant 11–12 / Junior
 
