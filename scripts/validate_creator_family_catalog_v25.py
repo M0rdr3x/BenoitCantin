@@ -11,6 +11,7 @@ FILES={
     "migration":ROOT/"supabase/migrations/20260922014000_sinjira_v25_creator_family_catalog_access.sql",
     "paid_access_migration":ROOT/"supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql",
     "extension_access_migration":ROOT/"supabase/migrations/20260922030000_sinjira_v25_extension_product_access.sql",
+    "age_boundary_migration":ROOT/"supabase/migrations/20260922031500_sinjira_v25_catalog_age_helper_boundary.sql",
     "shared":ROOT/"supabase/functions/_shared/privateNovel.ts",
     "library":ROOT/"assets/js/sinjira-library-v24-4-61.js",
     "secondary_library":ROOT/"assets/js/sinjira-library.js",
@@ -39,6 +40,7 @@ def validate(contents:dict[str,str])->None:
     migration=compact(contents["migration"])
     paid_access_migration=compact(contents["paid_access_migration"])
     extension_access_migration=compact(contents["extension_access_migration"])
+    age_boundary_migration=compact(contents["age_boundary_migration"])
     shared=compact(contents["shared"])
     library=compact(contents["library"])
     secondary_library=compact(contents["secondary_library"])
@@ -99,6 +101,25 @@ def validate(contents:dict[str,str])->None:
     ):
         if extension_marker not in extension_access_migration:
             fail(f"accès extension payé: invariant absent: {extension_marker}")
+
+    for boundary_marker in (
+        "createorreplacefunctionsinjira_v25_internal.has_sinjira_product(",
+        "securitydefiner",
+        "p_user_idisdistinctfromauth.uid()thenfalse",
+        "public.sinjira_age_band(p_user_id)in('adult','youth')",
+        "createorreplacefunctionpublic.has_sinjira_product(",
+        "securityinvoker",
+        "selectsinjira_v25_internal.has_sinjira_product(p_product_slug,p_user_id)",
+        "public.sinjira_my_age_band()in('adult','youth')",
+        "createpolicyproducts_family_catalog_read_v25",
+        "createpolicyprojects_family_catalog_read_v25",
+        "createpolicyextensions_creator_family_catalog_read_v25",
+        "createpolicyextensions_purchased_read_v25",
+    ):
+        if boundary_marker not in age_boundary_migration:
+            fail(f"frontière âge catalogue: invariant absent: {boundary_marker}")
+    if "public.sinjira_age_band((selectauth.uid()))" in age_boundary_migration:
+        fail("frontière âge catalogue: une policy navigateur appelle encore sinjira_age_band(uuid)")
 
     for marker in (
         "createtableifnotexistsprivate.sinjira_catalog_family_members(",
@@ -330,6 +351,7 @@ def validate(contents:dict[str,str])->None:
         "supabase/functions/_shared/privateNovel.ts",
         "supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql",
         "supabase/migrations/20260922030000_sinjira_v25_extension_product_access.sql",
+        "supabase/migrations/20260922031500_sinjira_v25_catalog_age_helper_boundary.sql",
     ):
         if path not in account_workflow:
             fail(f"CI compte famille: path absent: {path}")
@@ -345,6 +367,8 @@ def validate(contents:dict[str,str])->None:
         fail("CI romans privés: migration famille non surveillée")
     if "supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql" not in novel_workflow:
         fail("CI romans privés: migration droit paid non surveillée")
+    if "supabase/migrations/20260922031500_sinjira_v25_catalog_age_helper_boundary.sql" not in novel_workflow:
+        fail("CI romans privés: frontière âge catalogue non surveillée")
 
 def main()->None:
     parser=argparse.ArgumentParser()
@@ -364,6 +388,8 @@ def main()->None:
             "droit produit famille retiré":("migration","public.is_sinjira_catalog_family_member(p_user_id)","false"),
             "jeu famille retiré bibliothèque":("library","isOwner||familyCatalog||fractureRight","isOwner||fractureRight"),
             "extension ouverte aux comptes child":("extension_access_migration","public.sinjira_age_band((select auth.uid())) in ('adult','youth')","public.sinjira_age_band((select auth.uid())) in ('adult','youth','child')"),
+            "policy catalogue réutilise oracle âge UUID":("age_boundary_migration","public.sinjira_my_age_band() in ('adult','youth')","public.sinjira_age_band((select auth.uid())) in ('adult','youth')"),
+            "wrapper droit produit redevient privilégié":("age_boundary_migration","language sql\nstable\nsecurity invoker\nset search_path=''\nas $wrapper$","language sql\nstable\nsecurity definer\nset search_path=''\nas $wrapper$"),
             "extension produit sans droit canonique":("extension_access_migration","public.has_sinjira_product(product_slug,(select auth.uid()))","true"),
             "commande paid assouplie":("paid_access_migration","o.status='paid'","o.status<>'cancelled'"),
             "wrapper famille redevient definer":("migration","security invoker\nset search_path=''\nas $wrapper$","security definer\nset search_path=''\nas $wrapper$"),
