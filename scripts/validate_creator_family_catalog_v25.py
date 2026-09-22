@@ -225,8 +225,8 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(40);" not in test:
-        fail("pgTAP famille: plan(40) absent")
+    if "selectplan(41);" not in test:
+        fail("pgTAP famille: plan(41) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
@@ -234,6 +234,7 @@ def validate(contents:dict[str,str])->None:
         "aucunlibellénominatifneststockédansleregistrefamilial",
         "service_rolepeutassocieruncomptefamilialparcourrielsansconserverlecourriel",
         "unmembrestandardnereçoitpaslecataloguefamilial",
+        "unmembrestandardvoitlecontenugratuitinclusavecsoncompte",
         "lerôlefamilialnecontournepaslarlschild",
         "lafiche11–12nonclasséeestminimiséeetsanscheminouvrable",
         "laficheromanfamiliale11–12nedonnejamaislintégraleprivée",
