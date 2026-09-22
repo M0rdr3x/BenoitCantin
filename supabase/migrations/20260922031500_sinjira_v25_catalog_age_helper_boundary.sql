@@ -63,7 +63,15 @@ stable
 security invoker
 set search_path=''
 as $wrapper$
-  select sinjira_v25_internal.has_sinjira_product(p_product_slug,p_user_id);
+  select case
+    when coalesce(auth.jwt()->>'role','')='service_role'
+      then sinjira_v25_internal.has_sinjira_product(p_product_slug,p_user_id)
+    when auth.uid() is null
+      or p_user_id is distinct from auth.uid()
+      or public.sinjira_my_age_band() not in ('adult','youth')
+      then false
+    else sinjira_v25_internal.has_sinjira_product(p_product_slug,p_user_id)
+  end;
 $wrapper$;
 
 revoke all on function public.has_sinjira_product(text,uuid)
@@ -216,7 +224,7 @@ comment on policy entitlements_own_read on public.user_entitlements is
   'Entitlements self-only lisibles seulement adult/youth; le droit serveur peut subsister sans exposition commerciale Junior.';
 
 comment on function public.has_sinjira_product(text,uuid) is
-  'Wrapper self-only SECURITY INVOKER vers une implémentation interne: propriétaire, famille adult/youth, entitlement durable ou commande paid. Aucun sondage âge UUID par le navigateur.';
+  'Wrapper self-only SECURITY INVOKER: service_role conserve le droit comptable complet; le navigateur adult/youth peut vérifier son propre droit, tandis que 11–12 et états non vérifiés reçoivent false sans exposition commerciale.';
 comment on function sinjira_v25_internal.has_sinjira_product(text,uuid) is
   'Implémentation privilégiée self-only du droit produit. authenticated ne peut cibler que auth.uid(); service_role conserve le ciblage serveur explicite.';
 
