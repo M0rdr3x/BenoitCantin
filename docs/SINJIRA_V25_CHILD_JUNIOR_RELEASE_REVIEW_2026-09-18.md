@@ -25,6 +25,24 @@ Le périmètre enfant/Junior couvre notamment :
 
 La vague CI associée au dossier précédent a confirmé que les parcours Communauté Junior et inscription enfant 11 ans passent. Les validations sécurité/conformité restantes atteignent la frontière ledger/lot production avant d’échouer, ce qui est attendu tant que la revue humaine de production n’a pas eu lieu.
 
+
+### Preuves techniques consolidées au HEAD applicatif `6ace8163c5a68d496d77e635c6b29132876a5b45`
+
+- inscription/supervision enfant : **67/67** assertions, plus **11/11** coffre privé enfant et un vrai parcours Auth HTTP à exactement 11 ans;
+- Communauté Junior : **51/51** assertions;
+- frontière serveur 11–12 : **13/13**;
+- classement contenu 11–12 : **23/23**;
+- capacités compte self-only : **25/25**;
+- compatibilité protection mineurs : **8/8**;
+- révocation Junior multi-tuteur : **25/25**, avec auto-test du garde **10/10**;
+- Compte/catalogue : **45/45** accès membre/créateur et **23/23** absence d'oracle/classement 11–12;
+- Profil privé : **22/22** historique et **11/11** enfant;
+- romans privés : **13/13**, avec auto-test statique **8/8**;
+- Mode Voyage : rétention **11/11** et visibilité client **28/28**, les workflows consentement/self-only/minimisation restant également verts;
+- snapshot release : **36 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
+
+La classification exhaustive des workflows rouges de ce HEAD montre que leurs étapes métier/sécurité passent avant de s'arrêter sur le **ledger production volontairement bloqué** par les 36 migrations non revues. Le prévol Supabase suit la même logique : ses tests de sécurité passent, puis la vérification du dépôt s'arrête sur ce ledger.
+
 ## 2. Correctifs forward-only issus de la revue technique
 
 La revue a identifié un cas multi-tuteur : un lien `guardian_links` ayant `status='verified'` mais un `revoked_at` non nul pouvait encore contribuer à l’activation Junior ou rester visible dans la liste du tuteur si un autre tuteur valide maintenait la bande `child`.
@@ -52,7 +70,7 @@ La migration forward-only suivante aligne le serveur avec la bande V25 :
 
 Elle autorise un compte `child_pending` à consommer un **nouveau code parental adulte valide et à usage unique**. Le trigger canonique `sync_guardian_signup_invite_link` réactive/crée alors le lien `guardian_links` en `verified`, remet `revoked_at` à `null` et la classification repasse immédiatement à `child`. Un compte déjà supervisé ne reçoit pas un nouveau droit implicite. La consommation est maintenant sérialisée par un verrou transactionnel sur `account_safety_profiles` avant le recalcul de la bande : deux codes distincts présentés en parallèle pour le même compte pending ne peuvent plus créer deux liens implicites.
 
-Le pgTAP d'inscription enfant couvre explicitement `child_pending → child`, la réactivation du lien, la consommation unique du code, la révocation asymétrique et la transition de majorité; il compte désormais **62 assertions**.
+Le pgTAP d'inscription enfant couvre explicitement `child_pending → child`, la réactivation du lien, la consommation unique du code, la révocation asymétrique et la transition de majorité; il compte désormais **67 assertions**.
 
 Cette onzième migration reste **non revue production**.
 
@@ -82,7 +100,7 @@ Elle refuse explicitement AAL1 avec `MFA_AAL2_REQUIRED`, conserve les gardes MFA
 
 L’interface Relations vérifie le niveau d’assurance avant l’appel RPC. Si un facteur existe mais que la session est AAL1, elle utilise le parcours `/compte/mfa.html` puis revient vers Relations. Si aucun second facteur n’est configuré, elle renvoie vers le Centre de sécurité.
 
-Le pgTAP enfant contient maintenant **62 assertions** au total; il prouve notamment le refus AAL1 à l’émission, la réussite AAL2, le format du code, la minimisation du secret et la fermeture de la relecture sous AAL1. Deux délimiteurs SQL `$$` endommagés dans la preuve précédente ont également été réparés et sont désormais verrouillés par le validateur statique.
+Le pgTAP enfant contient maintenant **67 assertions** au total; il prouve notamment le refus AAL1 à l’émission, la réussite AAL2, le format du code, la minimisation du secret et la fermeture de la relecture sous AAL1. Deux délimiteurs SQL `$$` endommagés dans la preuve précédente ont également été réparés et sont désormais verrouillés par le validateur statique.
 
 Cette treizième migration reste **non revue production**.
 
@@ -141,7 +159,7 @@ La migration forward-only suivante applique donc une règle asymétrique :
 - un lien déjà révoqué reste idempotent;
 - l'interface distingue les deux parcours et ne présente plus un lien avec `revoked_at` comme actif.
 
-Le pgTAP enfant compte maintenant **62 assertions** et prouve notamment : tuteur AAL1 refusé, tuteur AAL2 accepté, puis enfant AAL1 capable de quitter immédiatement son propre lien avec retour fail-closed vers `child_pending`.
+Le pgTAP enfant compte maintenant **67 assertions** et prouve notamment : tuteur AAL1 refusé, tuteur AAL2 accepté, puis enfant AAL1 capable de quitter immédiatement son propre lien avec retour fail-closed vers `child_pending`.
 
 Cette dix-septième migration reste **non revue production**.
 
@@ -155,7 +173,7 @@ La migration forward-only suivante ferme cette rétention de visibilité :
 
 La nouvelle policy utilise un helper self-only par ID de lien. La personne concernée conserve l'accès à son propre historique, tandis que l'ancien tuteur ne peut lire le lien que tant que le compte est dans une bande sous 18 ans (`child`, `child_pending`, `youth`, `youth_pending`). Un tiers obtient toujours `false` et ne peut pas sonder un lien arbitraire.
 
-Le pgTAP enfant compte désormais **62 assertions** et prouve la transition exacte vers `adult` à 18 ans, **0 lien visible pour l'ancien tuteur**, conservation de l'historique pour la personne devenue adulte, fermeture du helper aux tiers et disparition des invitations consommées côté ancien tuteur.
+Le pgTAP enfant compte désormais **67 assertions** et prouve la transition exacte vers `adult` à 18 ans, **0 lien visible pour l'ancien tuteur**, conservation de l'historique pour la personne devenue adulte, fermeture du helper aux tiers et disparition des invitations consommées côté ancien tuteur.
 
 Cette dix-huitième migration reste **non revue production**.
 
@@ -169,7 +187,7 @@ La migration forward-only suivante aligne cette table avec la fin de supervision
 
 Les codes non consommés du tuteur restent lisibles sous AAL2. En revanche, une invitation consommée n'est plus visible que si le `guardian_link` correspondant est lui-même encore visible. Le passage à `adult` masque donc automatiquement cette trace au tuteur sans supprimer l'historique interne.
 
-Le pgTAP enfant compte désormais **62 assertions** et prouve qu'à 18 ans l'ancien tuteur voit **0 invitation consommée** liée au compte devenu adulte.
+Le pgTAP enfant compte désormais **67 assertions** et prouve qu'à 18 ans l'ancien tuteur voit **0 invitation consommée** liée au compte devenu adulte.
 
 Cette dix-neuvième migration reste **non revue production**.
 
@@ -183,7 +201,7 @@ La migration forward-only suivante ferme cette incohérence :
 
 Le RPC exige maintenant simultanément : supervision active, `can_view_contact_metadata=true` et session tuteur **AAL2**. Il continue à ne renvoyer aucun contenu de message.
 
-Le pgTAP enfant compte désormais **62 assertions** et prouve les trois états : refus sans consentement explicite, refus en AAL1 malgré le consentement, puis accès aux seules métadonnées sous consentement + AAL2.
+Le pgTAP enfant compte désormais **67 assertions** et prouve les trois états : refus sans consentement explicite, refus en AAL1 malgré le consentement, puis accès aux seules métadonnées sous consentement + AAL2.
 
 Cette vingtième migration reste **non revue production**.
 
@@ -199,7 +217,7 @@ passe la permission par défaut à `false`, neutralise les permissions actives h
 
 L'écran Relations expose ce choix uniquement au compte enfant/jeunesse. Le parent voit l'état mais ne peut pas l'activer lui-même. Même après opt-in, `get_guardian_youth_contacts` exige toujours AAL2 et ne révèle jamais le contenu des messages.
 
-Le pgTAP enfant compte désormais **62 assertions** et prouve le cycle complet : désactivé par défaut, refus parent, opt-in du jeune, step-up AAL2 du parent, retrait du jeune, puis retrait d'accès immédiat.
+Le pgTAP enfant compte désormais **67 assertions** et prouve le cycle complet : désactivé par défaut, refus parent, opt-in du jeune, step-up AAL2 du parent, retrait du jeune, puis retrait d'accès immédiat.
 
 Cette vingt-et-unième migration reste **non revue production**.
 
@@ -213,7 +231,7 @@ La migration forward-only :
 
 réduit la réponse à trois éléments : **pseudo**, **réseaux concernés** et **date UTC du dernier contact à la journée**. L'UUID, le `display_name`, le timestamp précis et le contenu des messages ne sont pas exposés.
 
-Le pgTAP enfant compte désormais **62 assertions** et utilise un vrai contact jeunesse de preuve pour verrouiller la forme JSON minimisée.
+Le pgTAP enfant compte désormais **67 assertions** et utilise un vrai contact jeunesse de preuve pour verrouiller la forme JSON minimisée.
 
 Cette vingt-deuxième migration reste **non revue production**.
 
@@ -241,7 +259,7 @@ La migration forward-only :
 
 sépare désormais les deux espaces. Le réseau **Compte** utilise uniquement le pseudo public du compte; le réseau **Personnage** utilise uniquement le `public_name` du personnage résolu par `character_id`. Les deux identités restent dans des entrées distinctes et aucun identifiant interne n'est retourné.
 
-Le pgTAP enfant compte désormais **62 assertions** et prouve explicitement qu'un personnage nommé `Avatar Secret` n'est jamais remplacé par le pseudo réel `Contact Jeunesse`, même lorsque les deux appartiennent au même compte de test.
+Le pgTAP enfant compte désormais **67 assertions** et prouve explicitement qu'un personnage nommé `Avatar Secret` n'est jamais remplacé par le pseudo réel `Contact Jeunesse`, même lorsque les deux appartiennent au même compte de test.
 
 Cette vingt-quatrième migration reste **non revue production**.
 
