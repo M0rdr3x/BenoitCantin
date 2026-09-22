@@ -121,22 +121,3 @@ def main():
     return 0
 
 if __name__=='__main__': raise SystemExit(main())
-,
-        'un enfant de 11 ans avec tuteur actif peut relire son coffre privé',
-        'un enfant de 11 ans sans tuteur actif ne peut pas relire son coffre',
-        'un lien tuteur révoqué bloque aussi la lecture du coffre'
-    ]:
-        if marker not in test_child.lower(): errors.append(f'pgTAP V25 Profil enfant incomplet: {marker}')
-
-    forbidden=['stripe','paypal','twilio','api.resend.com','openai.com','shippo','easypost','fedex','purolator']
-    for token in forbidden:
-        if token in jl or token in sl: errors.append(f'Intégration externe interdite dans V24.5.23: {token}')
-
-    if errors:
-        print(f'ECHEC V24.5.23 profil privé modifiable: {len(errors)} problème(s).')
-        for e in errors: print('- '+e)
-        return 1
-    print('OK Profil privé: historique immuable, coffre self-only, MFA conservé et compatibilité enfant 11+ forward-only validée.')
-    return 0
-
-if __name__=='__main__': raise SystemExit(main())
