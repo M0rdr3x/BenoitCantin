@@ -118,8 +118,9 @@ function renderReads(libraryRows){
 }
 
 function entitlementCard(row){
-  const product=row.products;if(!product)return '';
-  const name=escapeHtml(product.name||product.slug||'Produit SINJIRA™'),source=escapeHtml(row.source||'compte');
+  const product=row||{};
+  const name=escapeHtml(product.name||product.slug||'Produit SINJIRA™');
+  const source=escapeHtml(product.source==='paid_order'?'achat payé':product.source||'compte');
   if(product.slug===BOOK_ONE_SLUG){
     return `<article class="account-card"><span class="eyebrow">Droit numérique reconnu</span><h2>${name}</h2><p>${escapeHtml(product.product_type||'Accès')} · source ${source}</p><p>Ce droit est réellement associé au compte. La disponibilité de l’intégrale privée est vérifiée séparément dans la section Romans : le bouton de lecture n’apparaît que lorsqu’un actif privé est configuré et que le serveur confirme l’accès.</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Voir mes licences</a><a class="btn btn-secondary" href="/projets/sinjira/romans/">Page du roman</a></div></article>`;
   }
@@ -175,7 +176,7 @@ async function init(){
   }
 
   const [adminResult,ownerResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult,novelsResult,extensionsResult]=await Promise.all([
-    s.rpc('is_sinjira_admin',{p_user_id:user.id}),s.rpc('is_sinjira_owner',{p_user_id:user.id}),s.rpc('sinjira_my_project_catalog'),s.from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id),s.from('documents').select('id,project_id').eq('status','approved'),s.from('access_requests').select('project_id,requested_level,status').eq('user_id',user.id).eq('status','pending'),s.from('sinjira_reader_library').select('novel_id,last_opened_at,last_page,progress_percent,sinjira_novels(id,title,description,status,cover_url,public_path,demo_path)').eq('user_id',user.id).order('updated_at',{ascending:false}),s.from('user_entitlements').select('product_id,source,granted_at,products(id,slug,name,product_type,active)').eq('user_id',user.id).order('granted_at',{ascending:false}),s.rpc('sinjira_my_novel_catalog'),s.rpc('sinjira_my_extension_catalog')
+    s.rpc('is_sinjira_admin',{p_user_id:user.id}),s.rpc('is_sinjira_owner',{p_user_id:user.id}),s.rpc('sinjira_my_project_catalog'),s.from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id),s.from('documents').select('id,project_id').eq('status','approved'),s.from('access_requests').select('project_id,requested_level,status').eq('user_id',user.id).eq('status','pending'),s.from('sinjira_reader_library').select('novel_id,last_opened_at,last_page,progress_percent,sinjira_novels(id,title,description,status,cover_url,public_path,demo_path)').eq('user_id',user.id).order('updated_at',{ascending:false}),s.rpc('sinjira_my_product_rights'),s.rpc('sinjira_my_novel_catalog'),s.rpc('sinjira_my_extension_catalog')
   ]);
   const ownerResolved=!ownerResult.error,adminResolved=!adminResult.error;
   const isAdmin=adminResolved&&adminResult.data===true,isOwner=ownerResolved&&ownerResult.data===true;
