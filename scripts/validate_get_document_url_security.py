@@ -27,16 +27,24 @@ REQUIRED = {
     'auth optionnelle': 'optionalUser(req)',
     'document approuvé': "doc.status!=='approved'",
     'projet actif': "doc.projects?.status!=='active'",
+    'product_slug projet chargé': 'child_access_status,product_slug)',
+    'slug produit normalisé': "const productSlug=typeof doc.projects?.product_slug==='string'?doc.projects.product_slug.trim():'';",
+    'projet payant fermé aux comptes child': '|| productSlug.length>0',
     'admin booléen exact': 'if(isAdmin===true)userRank=100;',
     'rang projet serveur': "service.rpc('project_access_rank'",
     'rang projet numérique': 'Number.isFinite(normalizedRank)',
     'rang projet non négatif': 'normalizedRank<0',
     'niveau inconnu refusé': 'if(userRank<(ranks[doc.access_level]||999))',
+    'garde produit sous rang player': 'if(productSlug&&userRank<20)',
+    'droit produit serveur': "service.rpc('has_sinjira_product'",
+    'erreur droit produit fail-closed': 'if(productError)',
+    'droit produit booléen exact': 'if(hasProduct!==true)',
     'storage path typé': "typeof doc.storage_path!=='string'",
     'validation URL externe': 'externalUrlAllowed(url)',
     'lien signé 600 secondes': 'createSignedUrl(doc.storage_path,600)',
     'TTL réponse 600 secondes': 'expires_in:600',
     'log ACL à code fixe': "console.error('[get-document-url]',{code:'INVALID_PROJECT_ACCESS_RANK'});",
+    'log produit à code fixe': "console.error('[get-document-url]',{code:'PRODUCT_ACCESS_UNAVAILABLE'});",
     'log à code fixe': "console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});",
 }
 
@@ -88,6 +96,11 @@ def validate(path: Path) -> list[str]:
     if rank_validation_pos < 0 or rank_assignment_pos < 0 or rank_validation_pos > rank_assignment_pos:
         errors.append('Le rang projet doit être validé avant son utilisation dans la décision ACL.')
 
+    product_gate_pos = source.find('if(productSlug&&userRank<20)')
+    external_url_pos = source.find('if(doc.external_url)')
+    if product_gate_pos < 0 or external_url_pos < 0 or product_gate_pos > external_url_pos:
+        errors.append('Le droit produit doit être vérifié avant toute livraison de document externe ou privé.')
+
     signed_pos = source.find('createSignedUrl(doc.storage_path,600)')
     response_ttl_pos = source.find('expires_in:600', signed_pos)
     if signed_pos < 0 or response_ttl_pos < signed_pos:
@@ -136,8 +149,11 @@ Deno.serve(async(req)=>{
   const document_id=typeof documentIdValue==='string'?documentIdValue.trim():'';
   if(!UUID_RE.test(document_id))return privateJson({},400);
   const service=serviceClient(),user=await optionalUser(req);
-  const {data:doc}=await service.from('documents').select('project_id,status,access_level,storage_bucket,storage_path,projects(status)').eq('id',document_id).maybeSingle();
+  const {data:doc}=await service.from('documents').select('project_id,status,access_level,child_access_status,storage_bucket,storage_path,projects(status,child_access_status,product_slug)').eq('id',document_id).maybeSingle();
   if(doc.status!=='approved'||doc.projects?.status!=='active')return privateJson({},404);
+  const productSlug=typeof doc.projects?.product_slug==='string'?doc.projects.product_slug.trim():'';
+  const ageBand='adult';
+  if(ageBand==='child'&&(doc.child_access_status!=='approved_11_12'||doc.projects?.child_access_status!=='approved_11_12'||productSlug.length>0))return privateJson({},403);
   let userRank=0;
   if(user){
    const {data:isAdmin}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
@@ -150,6 +166,12 @@ Deno.serve(async(req)=>{
    }
   }
   if(userRank<(ranks[doc.access_level]||999))return privateJson({},403);
+  if(productSlug&&userRank<20){
+   if(!user)return privateJson({},403);
+   const {data:hasProduct,error:productError}=await service.rpc('has_sinjira_product',{p_product_slug:productSlug,p_user_id:user.id});
+   if(productError){console.error('[get-document-url]',{code:'PRODUCT_ACCESS_UNAVAILABLE'});return privateJson({},503)}
+   if(hasProduct!==true)return privateJson({},403);
+  }
   const url='https://example.test'; if(!externalUrlAllowed(url))return privateJson({},500);
   if(!doc.storage_bucket||typeof doc.storage_path!=='string'||!doc.storage_path)return privateJson({},500);
   const signed=await service.storage.from('x').createSignedUrl(doc.storage_path,600);
@@ -178,6 +200,12 @@ Deno.serve(async(req)=>{
             'admin truthy permissif': safe.replace('if(isAdmin===true)userRank=100;', 'if(isAdmin)userRank=100;'),
             'rang non fini accepté': safe.replace('!Number.isFinite(normalizedRank)||', ''),
             'fallback niveau inconnu retiré': safe.replace('(ranks[doc.access_level]||999)', 'ranks[doc.access_level]'),
+            'product_slug non chargé': safe.replace(',product_slug)', ')'),
+            'garde child produit retirée': safe.replace('||productSlug.length>0', ''),
+            'rang player produit affaibli': safe.replace('if(productSlug&&userRank<20)', 'if(productSlug&&userRank<10)'),
+            'RPC droit produit retiré': safe.replace("service.rpc('has_sinjira_product'", "service.rpc('product_access_missing'"),
+            'erreur droit produit ignorée': safe.replace('if(productError){', 'if(false){'),
+            'droit produit truthy permissif': safe.replace('if(hasProduct!==true)', 'if(!hasProduct)'),
             'storage path non typé': safe.replace("typeof doc.storage_path!=='string'||", ''),
             'log ACL avec identifiant': safe.replace("{code:'INVALID_PROJECT_ACCESS_RANK'}", "{code:'INVALID_PROJECT_ACCESS_RANK',userId:user.id}"),
             'no-store retiré': safe.replace(" 'Cache-Control':'private, no-store, max-age=0',\n", ''),
@@ -206,7 +234,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK get-document-url: POST JSON exact et allowlisté, 512 octets bornés pendant la lecture, UUID typé, ACL fail-closed, réponses no-store, lien signé 600 s et logs sanitizés.')
+    print('OK get-document-url: requête bornée, ACL + droit produit fail-closed, contenu 11–12 payant fermé, réponses no-store et lien signé 600 s.')
     return 0
 
 
