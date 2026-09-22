@@ -469,7 +469,7 @@ Le snapshot de revue attend exactement **36 migrations locales futures non revue
 |---|---|
 | `20260913030500_sinjira_v25_travel_mode_geo_scope_hardening.sql` | `7285d1e30ea288004d17c1dbfbf9f01662b36bb7` |
 | `20260913230000_sinjira_v25_travel_mode_retention_purge.sql` | `41b8dc3d1b1e09c018e588755edb053e63e9904a` |
-| `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` | `927896c1ea303bb6c614373997266b48d46c58eb` |
+| `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` | `2d7b8ccbfc79fed6a03208086a138618779d6e2d` |
 | `20260921005000_sinjira_v25_travel_mode_internal_response_minimization.sql` | `1653597f4c9fe053a1b691fe810a3d1b8ca60955` |
 
 ### Frontières helpers navigateur

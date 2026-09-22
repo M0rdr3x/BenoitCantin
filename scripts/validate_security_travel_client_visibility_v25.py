@@ -16,7 +16,7 @@ WORKFLOW = Path(".github/workflows/sinjira-security-travel-client-visibility-v25
 LEDGER = Path("supabase/production-migration-ledger.txt")
 STAMP = "20260914223000"
 HARDENING_STAMP = "20260921005000"
-EXPECTED_BLOB_SHA = "927896c1ea303bb6c614373997266b48d46c58eb"
+EXPECTED_BLOB_SHA = "2d7b8ccbfc79fed6a03208086a138618779d6e2d"
 
 
 def squash(value: str) -> str:
@@ -122,6 +122,8 @@ def validate(
             continue
         if "security definer" not in block:
             errors.append(f"{label}: SECURITY DEFINER requis")
+        if "as $" not in block or "$;" not in block:
+            errors.append(f"{label}: délimiteur PL/pgSQL $ invalide")
         if "return pg_catalog.jsonb_build_object(" not in block:
             errors.append(f"{label}: réponse minimale jsonb_build_object absente")
         if "return to_jsonb(v_row)" in block:

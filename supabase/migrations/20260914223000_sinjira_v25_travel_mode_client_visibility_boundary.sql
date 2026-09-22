@@ -22,7 +22,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = pg_catalog, public, private, auth, sinjira_security_internal
-as $
+as $$
 declare
   v_user uuid := auth.uid();
   v_row public.security_travel_plans;
@@ -93,7 +93,7 @@ begin
     'destinations',to_jsonb(v_row.destinations)
   );
 end;
-$;
+$$;
 
 revoke all on function sinjira_security_internal.security_create_travel_plan(
   timestamptz,timestamptz,text[],boolean
@@ -109,7 +109,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = pg_catalog, public, private, auth, sinjira_security_internal
-as $
+as $$
 declare
   v_user uuid := auth.uid();
   v_row public.security_travel_plans;
@@ -141,7 +141,7 @@ begin
     'status',v_row.status
   );
 end;
-$;
+$$;
 
 revoke all on function sinjira_security_internal.security_cancel_travel_plan(uuid)
 from public, anon;
