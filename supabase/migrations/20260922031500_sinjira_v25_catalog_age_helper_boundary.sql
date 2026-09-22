@@ -113,6 +113,51 @@ using (
   )
 );
 
+drop policy if exists products_active_read on public.products;
+create policy products_active_read
+on public.products
+for select
+to authenticated
+using (
+  active=true
+  and public.sinjira_my_age_band() in ('adult','youth')
+);
+
+drop policy if exists orders_own_read on public.orders;
+create policy orders_own_read
+on public.orders
+for select
+to authenticated
+using (
+  (select auth.uid())=user_id
+  and public.sinjira_my_age_band() in ('adult','youth')
+);
+
+drop policy if exists order_items_own_read on public.order_items;
+create policy order_items_own_read
+on public.order_items
+for select
+to authenticated
+using (
+  public.sinjira_my_age_band() in ('adult','youth')
+  and exists(
+    select 1
+    from public.orders o
+    where o.id=order_items.order_id
+      and o.user_id=(select auth.uid())
+  )
+);
+
+drop policy if exists entitlements_own_read on public.user_entitlements;
+create policy entitlements_own_read
+on public.user_entitlements
+for select
+to authenticated
+using (
+  (select auth.uid())=user_id
+  and public.sinjira_my_age_band() in ('adult','youth')
+);
+
 drop policy if exists products_family_catalog_read_v25 on public.products;
 create policy products_family_catalog_read_v25
 on public.products
@@ -160,6 +205,15 @@ using (
   and public.sinjira_my_age_band() in ('adult','youth')
   and public.has_sinjira_product(product_slug,(select auth.uid()))
 );
+
+comment on policy products_active_read on public.products is
+  'Catalogue commercial actif visible seulement aux comptes adult/youth; 11–12 reste sans métadonnées commerciales directes.';
+comment on policy orders_own_read on public.orders is
+  'Historique commercial self-only réservé adult/youth; les commandes peuvent subsister comptablement pour 11–12 sans être exposées au navigateur.';
+comment on policy order_items_own_read on public.order_items is
+  'Détails de commande self-only réservés adult/youth; aucun détail commercial navigateur à 11–12.';
+comment on policy entitlements_own_read on public.user_entitlements is
+  'Entitlements self-only lisibles seulement adult/youth; le droit serveur peut subsister sans exposition commerciale Junior.';
 
 comment on function public.has_sinjira_product(text,uuid) is
   'Wrapper self-only SECURITY INVOKER vers une implémentation interne: propriétaire, famille adult/youth, entitlement durable ou commande paid. Aucun sondage âge UUID par le navigateur.';
