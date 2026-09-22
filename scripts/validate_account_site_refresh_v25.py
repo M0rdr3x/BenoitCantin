@@ -225,7 +225,8 @@ def validate(contents: dict[str, str]) -> None:
         "droitdejeurequis",
         "droitdejeunonvérifié",
         "project.play_path&&canplay",
-        "entitlements,entitlementsresolved",
+        "fractureright,fracturerightverified,familycatalog",
+        "source==='entitlement'||source==='product'",
         "activerunelicence",
         "vérifiermeslicences",
     ):
