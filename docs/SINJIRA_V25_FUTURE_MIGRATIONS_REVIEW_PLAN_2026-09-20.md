@@ -191,6 +191,33 @@ Aucune case n'est cochée ici : cette section documente une **préparation techn
 **Ordre de revue recommandé : B1 → B2 → B3 → B4 → B5.**  
 Ne pas revoir B3/B4/B5 isolément sans avoir validé les invariants de B1/B2 qu'ils remplacent ou resserrent.
 
+
+### Notes de revue statique du Lot B — non approbatives
+
+Relecture technique effectuée sur le HEAD `6ace8163c5a68d496d77e635c6b29132876a5b45`, sans modifier le statut des cases B1–B5 :
+
+- la migration d'introduction 11+ ferme dès B1 les fenêtres transitoires sensibles : code parental créé et relu sous AAL2, révocation tuteur AAL2 avec sortie immédiate du mineur, `guardian_code` supprimé des métadonnées Auth, visibilité tuteur coupée à la majorité, métadonnées de contacts remises à `false` par défaut et RPC contacts déjà minimisé;
+- `handle_new_sinjira_user()` refuse <11 ans, exige un code parental valide avant 14 ans, limite le lancement jeunesse au Canada, neutralise le Programme Contributeur à 11–12 ans et crée un lien tuteur `verified` sans activer les métadonnées de contacts;
+- la preuve locale d'inscription reconstruit la base puis passe **67/67** assertions `child_guardian_signup_v25.test.sql`, **11/11** assertions du coffre privé enfant et un vrai parcours Auth HTTP à exactement 11 ans; le navigateur 11 ans est également vert;
+- B2 sérialise le rétablissement `child_pending` avec un verrou `FOR UPDATE` sur `account_safety_profiles`, verrouille aussi l'invitation consommée, interdit l'auto-tutelle et empêche deux codes concurrents de créer deux liens actifs depuis le même état pending;
+- la révocation ou suppression d'un `guardian_link` révoque durablement le consentement Junior associé; une réactivation ultérieure de supervision ne réactive jamais implicitement Junior;
+- la suite multi-tuteur est verte avec **25/25** assertions et l'auto-test du garde détecte **10/10** dérives critiques; un second tuteur valide ne maintient pas le consentement Junior du tuteur révoqué;
+- les redéfinitions B3 conservent les protections de B1/B2 : émission AAL2, invalidation des codes ouverts précédents, minimisation du secret, lecture AAL2 self-only, activation Junior AAL2, désactivation fail-safe AAL1 et révocation immédiate par l'enfant;
+- B4 conserve l'historique pour la personne concernée mais masque `guardian_links` et invitations consommées à l'ancien tuteur dès la bande `adult`; le pgTAP vérifie explicitement les deux vues à zéro pour le tuteur à 18 ans;
+- B5 applique privacy-by-default : seul le compte `child/youth` lié peut activer ou retirer `can_view_contact_metadata`; le retrait est immédiat et une réactivation du lien remet la permission à `false`;
+- `get_guardian_youth_contacts()` exige supervision active + opt-in + AAL2 et ne renvoie que `contact_label`, `network`, `last_contact_date`; les tests prouvent l'absence d'UUID de contact, `display_name`, timestamp précis et contenu, ainsi que l'isolation entre identité Compte et identité Personnage;
+- `junior_guardian_summary()` exige AAL2, ne renvoie aucun contenu de publication/message et réduit la dernière activité à une date UTC; la liste parentale ne révèle jamais `junior_alias`;
+- le workflow Communauté Junior est entièrement vert : **51/51** assertions Junior, **13/13** frontière serveur 11–12, **23/23** classement contenu, **25/25** capacités self-only et **8/8** compatibilité protection mineurs, plus la preuve navigateur locale;
+- le snapshot release sur ce même HEAD reste vert et confirme **36 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
+
+**Portes encore ouvertes avant toute approbation du Lot B :**
+- relire humainement les 22 diffs B1→B5 dans l'ordre final, notamment les interactions entre policies RLS et fonctions `SECURITY DEFINER`;
+- confirmer séparément que la portée juridictionnelle jeunesse reste volontairement limitée au Canada pour cette version;
+- ne modifier ni `production-reviewed-migration-batch.txt` ni le ledger sans décision humaine explicite sur le SHA gelé;
+- aucune promotion production ne doit être déduite des preuves vertes ci-dessus.
+
+Aucune case B1–B5 n'est cochée : cette section documente une **préparation technique de revue**, pas une approbation.
+
 ---
 
 ## Lot C — Compte / Catalogue / RPC (9)
