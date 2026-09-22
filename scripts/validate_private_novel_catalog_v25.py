@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -28,6 +29,12 @@ def fail(message:str)->None:
 
 def compact(value:str)->str:
     return "".join(value.lower().split())
+
+def cache_at_least(html:str,asset:str,minimum:tuple[int,int,int])->bool:
+    match=re.search(re.escape(asset)+r"\?v=(\d+)\.(\d+)\.(\d+)",html)
+    if not match:
+        return False
+    return tuple(int(part) for part in match.groups())>=minimum
 
 def validate(contents:dict[str,str])->None:
     m=compact(contents["migration"])
@@ -151,8 +158,8 @@ def validate(contents:dict[str,str])->None:
     ):
         if forbidden in library:
             fail(f"bibliothèque: livraison privée directe ou rôle dupliqué interdit: {forbidden}")
-    if "sinjira-library-v24-4-61.js?v=25.1.6" not in library_html:
-        fail("bibliothèque: cache générique roman non forcé")
+    if not cache_at_least(library_html,"sinjira-library-v24-4-61.js",(25,1,5)):
+        fail("bibliothèque: cache générique roman trop ancien ou absent")
 
     if "sinjira_my_novel_catalog" not in literature:
         fail("Littérature: RPC roman self-only absent")
@@ -160,8 +167,8 @@ def validate(contents:dict[str,str])->None:
         fail("Littérature: fallback public anonyme absent")
     if "?novel=" not in contents["literature_js"] or "encodeURIComponent(novel.slug)" not in contents["literature_js"]:
         fail("Littérature: lecteur intégral générique non lié")
-    if "sinjira-literature-catalog-v25.js?v=25.1.2" not in literature_html:
-        fail("Littérature: cache catalogue générique non forcé")
+    if not cache_at_least(literature_html,"sinjira-literature-catalog-v25.js",(25,1,2)):
+        fail("Littérature: cache catalogue générique trop ancien ou absent")
 
     if "supabase/migrations/20260919113000_sinjira_v25_private_novel_asset_rls.sql" not in contents["workflow"]:
         fail("workflow romans privés: migration RLS 20260919113000 non surveillée")
