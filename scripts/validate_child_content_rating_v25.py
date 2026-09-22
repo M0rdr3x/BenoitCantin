@@ -80,6 +80,8 @@ req('data-child-review-status="blocked_11_12"' in admin,'Bouton admin Bloquer 11
 
 req("doc.child_access_status!=='approved_11_12'" in de,'get-document-url ne revérifie pas le classement document.')
 req("doc.projects?.child_access_status!=='approved_11_12'" in de,'get-document-url ne revérifie pas le classement projet.')
+req("doc.projects?.product_slug" in de and "||productslug.length>0" in de,'get-document-url ne ferme pas explicitement les projets payants pour 11–12.')
+req("service.rpc('has_sinjira_product'" in de and "if(hasproduct!==true)" in de,'get-document-url ne revérifie pas le droit produit avant livraison.')
 
 req('selectplan(26);' in t,'Plan pgTAP classement 11–12 inattendu.')
 for marker in ('unprojetnonréviséestindisponible11–12','unprojetaccountactifexplicitementapprouvédevientdisponible','anonnepeutpassonderunprojetaccountapprouvé11–12paruuid','unprojetrestrictednedevientpasjuniorparsimpleclassement','undocumentnonréviséestindisponible11–12','document+projetdoublementapprouvésdeviennentdisponibles','unprojetpayantresteindisponible11–12mêmeavecapprobationhumaine','undocumentdunprojetpayantresteindisponible11–12mêmedoublementapprouvé','anonnepeutpassonderundocumentaccountapprouvé11–12paruuid','bloquerensuiteleprojetrefermeimmédiatementledocument','uneseulepolitiquegénéraleprojetsresteactive;lesexceptionsowner,familleetachatv25restentexplicitementbornées','uneseulepolitiqueselectdocumentsresteactive','rlsprojetsséparestandard,childetbandesrestreintes','lapolicyprojetachetéresteinterditeauxcomptes11–12etexigeundroitproduitréel','rlsdocumentsséparestandard,childetbandesrestreintes'):
