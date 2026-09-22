@@ -161,6 +161,10 @@ def validate(contents:dict[str,str])->None:
         "public.sinjira_my_age_band()in('adult','youth')",
         "visibility='public'andproduct_slugisnulland(",
         "(visibility='account'andproduct_slugisnull)orsinjira_catalog_internal.project_access_rank(id,(selectauth.uid()))>=20",
+        "createpolicyproducts_active_read",
+        "createpolicyorders_own_read",
+        "createpolicyorder_items_own_read",
+        "createpolicyentitlements_own_read",
         "createpolicyproducts_entitled_read",
         "createpolicyproducts_ordered_read",
         "public.sinjira_my_age_band()in('adult','youth')",
@@ -177,6 +181,10 @@ def validate(contents:dict[str,str])->None:
 
     effective_age_policies=(
         "createpolicysinjira_novels_family_catalog_read_v25onpublic.sinjira_novelsforselecttoauthenticatedusing(public.is_sinjira_catalog_family_member((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
+        "createpolicyproducts_active_readonpublic.productsforselecttoauthenticatedusing(active=trueandpublic.sinjira_my_age_band()in('adult','youth'))",
+        "createpolicyorders_own_readonpublic.ordersforselecttoauthenticatedusing((selectauth.uid())=user_idandpublic.sinjira_my_age_band()in('adult','youth'))",
+        "createpolicyorder_items_own_readonpublic.order_itemsforselecttoauthenticatedusing(public.sinjira_my_age_band()in('adult','youth')andexists(select1frompublic.ordersowhereo.id=order_items.order_idando.user_id=(selectauth.uid())))",
+        "createpolicyentitlements_own_readonpublic.user_entitlementsforselecttoauthenticatedusing((selectauth.uid())=user_idandpublic.sinjira_my_age_band()in('adult','youth'))",
         "createpolicyproducts_entitled_readonpublic.productsforselecttoauthenticatedusing(public.sinjira_my_age_band()in('adult','youth')andexists(select1frompublic.user_entitlementsuewhereue.product_id=products.idandue.user_id=(selectauth.uid())))",
         "createpolicyproducts_ordered_readonpublic.productsforselecttoauthenticatedusing(public.sinjira_my_age_band()in('adult','youth')andexists(select1frompublic.order_itemsoijoinpublic.ordersoono.id=oi.order_idwhereoi.product_id=products.idando.user_id=(selectauth.uid())ando.status='paid'))",
         "createpolicyproducts_family_catalog_read_v25onpublic.productsforselecttoauthenticatedusing(public.is_sinjira_catalog_family_member((selectauth.uid()))andpublic.sinjira_my_age_band()in('adult','youth'))",
@@ -328,6 +336,23 @@ def validate(contents:dict[str,str])->None:
             fail(f"roman privé famille: garde Edge partagée absente: {marker}")
 
     for marker in (
+        "sinjira_my_account_capabilities",
+        "constchildmode=capabilitiesresolved&&capabilitiesresult.data.library_mode==='reviewed_11_12'",
+        "constcommerceallowed=capabilitiesresolved&&capabilitiesresult.data.commerce===true",
+        "if(!commerceallowed)",
+        "achatsprotégéspourlescomptes11–12ans",
+        "droitsnumériquesprotégéspourlescomptes11–12ans",
+    ):
+        if marker not in purchases:
+            fail(f"achats Junior: garde commerce absente: {marker}")
+    purchases_capability_pos=purchases.find("sinjira_my_account_capabilities")
+    purchases_gate_pos=purchases.find("if(!commerceallowed)")
+    purchases_orders_pos=purchases.find("s.from('orders')")
+    purchases_entitlements_pos=purchases.find("s.from('user_entitlements')")
+    if not (0 <= purchases_capability_pos < purchases_gate_pos < purchases_orders_pos and purchases_gate_pos < purchases_entitlements_pos):
+        fail("achats Junior: la décision commerce doit précéder toute lecture orders/entitlements")
+
+    for marker in (
         "sinjira_my_catalog_access_mode",
         "constfamilycatalog=catalogaccessmode==='family'",
         "source==='entitlement'||source==='product'",
@@ -415,13 +440,13 @@ def validate(contents:dict[str,str])->None:
 
     if "sinjira-library-v24-4-61.js?v=25.1.8" not in contents["library_html"]:
         fail("cache bibliothèque famille non forcé")
-    if "sinjira-purchases-v25.js?v=25.0.3" not in contents["purchases_html"]:
+    if "sinjira-purchases-v25.js?v=25.0.4" not in contents["purchases_html"]:
         fail("cache achats famille non forcé")
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(90);" not in test:
-        fail("pgTAP famille: plan(90) absent")
+    if "selectplan(94);" not in test:
+        fail("pgTAP famille: plan(94) absent")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
@@ -453,6 +478,10 @@ def validate(contents:dict[str,str])->None:
         "lesdroitscommerciauxrestentmasquéscôténavigateurà11–12malgrédesentitlementsréels",
         "unecommandepaidenfantresteundroitcomptableréel",
         "unecommandepaidenfantnerévèlepaslesmétadonnéesduproduità11–12",
+        "uncompte11–12nelitpasdirectementsalignedecommandecommerciale",
+        "uncompte11–12nelitpasdirectementlesdétailsdesacommandecommerciale",
+        "uncompte11–12nereçoitpaslecataloguedesproduitscommerciauxactifs",
+        "uncompte11–12nelitpasdirectementseslignesentitlementcommerciales",
         "unentitlementenfantnerévèlepaslesmétadonnéesduproduità11–12",
         "unmembrestandardsansachatnientitlementnesatisfaitpasledroitproduit",
         "test-family-pending-ext-001",
@@ -548,6 +577,11 @@ def main()->None:
             "rpc extension vendue avant approbation":("extension_access_migration","e.status in ('approved','released')\n          and e.product_slug is not null","e.product_slug is not null"),
             "extension famille effective ouverte aux comptes child":("age_boundary_migration","public.sinjira_has_full_catalog_access((select auth.uid()))\n  and public.sinjira_my_age_band() in ('adult','youth')","public.sinjira_has_full_catalog_access((select auth.uid()))\n  and public.sinjira_my_age_band() in ('adult','youth','child')"),
             "policy catalogue réutilise oracle âge UUID":("age_boundary_migration","public.sinjira_my_age_band() in ('adult','youth')","public.sinjira_age_band((select auth.uid())) in ('adult','youth')"),
+            "catalogue actif réouvert aux comptes child":("age_boundary_migration","active=true\n  and public.sinjira_my_age_band() in ('adult','youth')","active=true"),
+            "commandes brutes réouvertes aux comptes child":("age_boundary_migration","(select auth.uid())=user_id\n  and public.sinjira_my_age_band() in ('adult','youth')","(select auth.uid())=user_id"),
+            "détails commande bruts réouverts aux comptes child":("age_boundary_migration","public.sinjira_my_age_band() in ('adult','youth')\n  and exists(\n    select 1\n    from public.orders o\n    where o.id=order_items.order_id","exists(\n    select 1\n    from public.orders o\n    where o.id=order_items.order_id"),
+            "entitlements bruts réouverts aux comptes child":("age_boundary_migration","(select auth.uid())=user_id\n  and public.sinjira_my_age_band() in ('adult','youth')\n);\n\ndrop policy if exists products_family_catalog_read_v25","(select auth.uid())=user_id\n);\n\ndrop policy if exists products_family_catalog_read_v25"),
+            "page achats lit avant garde Junior":("purchases","if(!commerceAllowed){","if(false){"),
             "wrapper droit produit redevient privilégié":("age_boundary_migration","language sql\nstable\nsecurity invoker\nset search_path=''\nas $wrapper$","language sql\nstable\nsecurity definer\nset search_path=''\nas $wrapper$"),
             "projet payant rouvert aux comptes child":("project_access_migration","p.child_access_status='approved_11_12'\n      and p.product_slug is null\n      and (","p.child_access_status='approved_11_12'\n      and ("),
             "droit projet acheté retiré":("project_access_migration","public.has_sinjira_product(product_slug,(select auth.uid()))","true"),
