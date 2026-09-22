@@ -72,7 +72,7 @@ def validate(contents:dict[str,str])->None:
         "o.status='paid'",
         "createorreplacefunctionpublic.has_sinjira_product(",
         "frompublic.orderso",
-        "joinpublic.order_itemsoiono.order_id=o.id",
+        "joinpublic.order_itemsoionoi.order_id=o.id",
         "o.status='paid'",
         "p.slug=p_product_slug",
         "p_user_idisdistinctfromauth.uid()thenfalse",
