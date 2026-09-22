@@ -477,11 +477,11 @@ La migration forward-only :
 
 ajoute un registre privé par UUID et un provisionnement réservé à `service_role`. Les implémentations privilégiées famille restent dans `sinjira_v25_internal`; les RPC publics correspondants sont uniquement des wrappers `SECURITY INVOKER`, conformément à la frontière C2. Le courriel fourni au moment du provisionnement sert uniquement à résoudre `auth.users.id`; il n'est ni stocké dans le registre familial ni écrit dans cette migration publique.
 
-Pour 13+ (`youth` / `adult`), un compte familial peut relire les projets, romans et produits internes sans faux achat. `has_sinjira_product()` reconnaît aussi ce rôle pour lancer un jeu/licence appartenant à l'univers, tout en conservant l'anti-énumération et sans créer d'entitlement. Pour 11–12 ans, l'accès supplémentaire est limité à des RPC de catalogue minimisés : la fiche d'une création peut être visible, mais un projet non approuvé ne contient ni chemin ouvrable ni couverture non classée; un roman privé ne reçoit jamais `full_access`, `public_path`, `demo_path`, couverture privée ou nombre de pages, et le droit produit reste faux. `project_access_rank` n'accorde le rang famille qu'à `youth/adult`.
+Pour 13+ (`youth` / `adult`), un compte familial peut relire les projets, romans, produits et extensions internes sans faux achat. `has_sinjira_product()` reconnaît aussi ce rôle pour lancer un jeu/licence appartenant à l'univers, tout en conservant l'anti-énumération et sans créer d'entitlement. Pour 11–12 ans, l'accès supplémentaire est limité à des RPC de catalogue minimisés : la fiche d'une création peut être visible, mais un projet non approuvé ne contient ni chemin ouvrable ni couverture non classée; un roman privé ne reçoit jamais `full_access`, `public_path`, `demo_path`, couverture privée ou nombre de pages, et le droit produit reste faux. `project_access_rank` n'accorde le rang famille qu'à `youth/adult`.
 
 Les adresses réelles des comptes familiaux ne sont volontairement pas inscrites dans Git. Leur association production devra être exécutée séparément sous `service_role`, après revue et déploiement de la migration.
 
-Le pgTAP famille est maintenant porté à **44 assertions**. Il couvre notamment le gratuit visible au membre standard, le privé refusé sans droit, puis un roman privé rendu accessible par une commande `paid` sans créer d'entitlement artificiel.
+Le pgTAP famille est maintenant porté à **47 assertions**. Il couvre notamment le gratuit visible au membre standard, le privé refusé sans droit, puis un roman privé rendu accessible par une commande `paid` sans créer d'entitlement artificiel.
 
 Cette trente-septième migration reste **non revue production**.
 
@@ -543,7 +543,7 @@ Le snapshot de revue attend exactement **38 migrations locales futures non revue
 
 | Migration | Git blob SHA-1 |
 |---|---|
-| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `5b3ee72a1e5fab921e2aeb87782bb88ef6d61aa0` |
+| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `4a8be93092b747aedfe3bae00077c28ad6e3aa4e` |
 | `20260922023000_sinjira_v25_paid_order_product_access.sql` | `edb262781911679ff740573cc3830b9dddfabf94` |
 
 ### Enfant 11–12 / Junior
