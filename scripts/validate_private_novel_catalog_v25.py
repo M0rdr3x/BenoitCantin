@@ -121,6 +121,9 @@ def validate(contents:dict[str,str])->None:
     if "awaitreq.json()" in edge:
         fail("Edge roman privé: lecture JSON directe non bornée interdite")
 
+    if "source==='entitlement'||source==='product'" not in library:
+        fail("bibliothèque: achat paid non étiqueté comme droit numérique")
+
     if "get-private-novel-url" not in reader:
         fail("lecteur intégral: fonction générique absente")
     if "params.get('novel')" not in reader:
@@ -148,7 +151,7 @@ def validate(contents:dict[str,str])->None:
     ):
         if forbidden in library:
             fail(f"bibliothèque: livraison privée directe ou rôle dupliqué interdit: {forbidden}")
-    if "sinjira-library-v24-4-61.js?v=25.1.3" not in library_html:
+    if "sinjira-library-v24-4-61.js?v=25.1.4" not in library_html:
         fail("bibliothèque: cache générique roman non forcé")
 
     if "sinjira_my_novel_catalog" not in literature:
