@@ -8,7 +8,6 @@ begin;
 
 create table if not exists private.sinjira_catalog_family_members(
   user_id uuid primary key references auth.users(id) on delete cascade,
-  label text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -116,8 +115,7 @@ to authenticated,service_role;
 
 create or replace function public.set_sinjira_catalog_family_access_by_email(
   p_email text,
-  p_enabled boolean default true,
-  p_label text default null
+  p_enabled boolean default true
 )
 returns jsonb
 language plpgsql
@@ -149,11 +147,10 @@ begin
   end if;
 
   if v_enabled then
-    insert into private.sinjira_catalog_family_members(user_id,label,updated_at)
-    values(v_user_id,nullif(trim(coalesce(p_label,'')),''),now())
+    insert into private.sinjira_catalog_family_members(user_id,updated_at)
+    values(v_user_id,now())
     on conflict(user_id) do update
-      set label=excluded.label,
-          updated_at=now();
+      set updated_at=now();
   else
     delete from private.sinjira_catalog_family_members
     where user_id=v_user_id;
@@ -167,9 +164,9 @@ begin
 end;
 $family$;
 
-revoke all on function public.set_sinjira_catalog_family_access_by_email(text,boolean,text)
+revoke all on function public.set_sinjira_catalog_family_access_by_email(text,boolean)
 from public,anon,authenticated;
-grant execute on function public.set_sinjira_catalog_family_access_by_email(text,boolean,text)
+grant execute on function public.set_sinjira_catalog_family_access_by_email(text,boolean)
 to service_role;
 
 drop policy if exists sinjira_novels_family_catalog_read_v25 on public.sinjira_novels;
@@ -491,8 +488,8 @@ comment on function public.has_sinjira_product(text,uuid) is
 
 comment on table private.sinjira_catalog_family_members is
   'Registre serveur par UUID des comptes familiaux bénéficiant du catalogue créateur. Aucun courriel n est stocké dans cette table.';
-comment on function public.set_sinjira_catalog_family_access_by_email(text,boolean,text) is
-  'Provisionnement service_role: résout temporairement un courriel Auth vers son UUID puis ne conserve que l UUID et un libellé facultatif.';
+comment on function public.set_sinjira_catalog_family_access_by_email(text,boolean) is
+  'Provisionnement service_role: résout temporairement un courriel Auth vers son UUID puis ne conserve que l UUID.';
 comment on function public.sinjira_my_project_catalog() is
   'Catalogue complet owner/famille; pour 11–12 ans, expose seulement des métadonnées minimisées et ne contourne jamais child_access_status.';
 comment on function public.sinjira_my_novel_catalog() is

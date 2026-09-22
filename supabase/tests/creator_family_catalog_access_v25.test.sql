@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(36);
+select plan(37);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -133,6 +133,15 @@ select is(
   0,
   'aucun courriel n est stocké dans le registre familial'
 );
+select is(
+  (select count(*)::integer
+   from information_schema.columns
+   where table_schema='private'
+     and table_name='sinjira_catalog_family_members'
+     and column_name='label'),
+  0,
+  'aucun libellé nominatif n est stocké dans le registre familial'
+);
 select ok(
   not has_table_privilege('authenticated','private.sinjira_catalog_family_members','SELECT'),
   'authenticated ne peut pas lire le registre familial privé'
@@ -140,7 +149,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.set_sinjira_catalog_family_access_by_email(text,boolean,text)',
+    'public.set_sinjira_catalog_family_access_by_email(text,boolean)',
     'EXECUTE'
   ),
   'le navigateur ne peut pas provisionner un accès familial'
@@ -148,7 +157,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.set_sinjira_catalog_family_access_by_email(text,boolean,text)',
+    'public.set_sinjira_catalog_family_access_by_email(text,boolean)',
     'EXECUTE'
   ),
   'service_role peut provisionner un accès familial'
@@ -162,15 +171,15 @@ select set_config(
 set local role service_role;
 
 select lives_ok(
-  $$ select public.set_sinjira_catalog_family_access_by_email(
-    'catalog-family-youth@example.test',true,'Famille test'
-  ) $$,
+  $ select public.set_sinjira_catalog_family_access_by_email(
+    'catalog-family-youth@example.test',true
+  ) $,
   'service_role peut associer un compte familial par courriel sans conserver le courriel'
 );
 select lives_ok(
-  $$ select public.set_sinjira_catalog_family_access_by_email(
-    'catalog-family-child@example.test',true,'Famille enfant test'
-  ) $$,
+  $ select public.set_sinjira_catalog_family_access_by_email(
+    'catalog-family-child@example.test',true
+  ) $,
   'service_role peut associer un second compte familial'
 );
 

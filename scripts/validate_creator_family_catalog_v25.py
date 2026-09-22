@@ -59,8 +59,8 @@ def validate(contents:dict[str,str])->None:
         "coalesce(auth.jwt()->>'role','')<>'service_role'",
         "fromauth.usersu",
         "wherelower(coalesce(u.email,''))=v_email",
-        "revokeallonfunctionpublic.set_sinjira_catalog_family_access_by_email(text,boolean,text)frompublic,anon,authenticated",
-        "grantexecuteonfunctionpublic.set_sinjira_catalog_family_access_by_email(text,boolean,text)toservice_role",
+        "revokeallonfunctionpublic.set_sinjira_catalog_family_access_by_email(text,boolean)frompublic,anon,authenticated",
+        "grantexecuteonfunctionpublic.set_sinjira_catalog_family_access_by_email(text,boolean)toservice_role",
         "createorreplacefunctionpublic.has_sinjira_product(",
         "public.is_sinjira_catalog_family_member(p_user_id)",
         "public.sinjira_age_band(p_user_id)in('adult','youth')",
@@ -68,8 +68,11 @@ def validate(contents:dict[str,str])->None:
         if marker not in migration:
             fail(f"accès famille: invariant de provisionnement absent: {marker}")
 
-    if "emailtext" in migration[migration.find("createtableifnotexistsprivate.sinjira_catalog_family_members"):migration.find("altertableprivate.sinjira_catalog_family_members")]:
+    family_table=migration[migration.find("createtableifnotexistsprivate.sinjira_catalog_family_members"):migration.find("altertableprivate.sinjira_catalog_family_members")]
+    if "emailtext" in family_table:
         fail("accès famille: le registre privé ne doit pas stocker le courriel")
+    if "labeltext" in family_table:
+        fail("accès famille: le registre privé ne doit pas stocker de libellé nominatif")
 
     for marker in (
         "createpolicysinjira_novels_family_catalog_read_v25",
@@ -178,10 +181,11 @@ def validate(contents:dict[str,str])->None:
     if "sinjira-literature-catalog-v25.js?v=25.1.2" not in contents["literature_html"]:
         fail("cache littérature famille non forcé")
 
-    if "selectplan(36);" not in test:
-        fail("pgTAP famille: plan(36) absent")
+    if "selectplan(37);" not in test:
+        fail("pgTAP famille: plan(37) absent")
     for marker in (
         "aucuncourrielneststockédansleregistrefamilial",
+        "aucunlibellénominatifneststockédansleregistrefamilial",
         "service_rolepeutassocieruncomptefamilialparcourrielsansconserverlecourriel",
         "unmembrestandardnereçoitpaslecataloguefamilial",
         "lerôlefamilialnecontournepaslarlschild",

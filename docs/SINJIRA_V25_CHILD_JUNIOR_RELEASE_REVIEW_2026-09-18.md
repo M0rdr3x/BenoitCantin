@@ -522,7 +522,7 @@ Le snapshot de revue attend exactement **37 migrations locales futures non revue
 
 | Migration | Git blob SHA-1 |
 |---|---|
-| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `e64bafa58e94b5e2de9187f328fb43c618d93a52` |
+| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `5d5db98cfdde6fbd23624abdb98578cc5b6ebc68` |
 
 ### Enfant 11–12 / Junior
 
