@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(58);
+select plan(59);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -187,6 +187,14 @@ values(
   321,
   true
 );
+
+set local role anon;
+select is(
+  (select count(*)::integer from public.projects where slug='family-private-game'),
+  0,
+  'anon ne reçoit pas la ligne complète d un projet public lié à un produit'
+);
+reset role;
 
 select ok(
   to_regclass('private.sinjira_catalog_family_members') is not null,
