@@ -11,6 +11,7 @@ on:
       - 'assets/js/sinjira-dating-safety-v24-4-78.js'
       - 'assets/js/sinjira-community-rules.js'
       - 'scripts/validate_minor_exploitation_safety_v24_4_82.py'
+      - 'scripts/validate_minor_safety_workflow_security.py'
       - '.github/workflows/validate-safety-v24-4-82.yml'
   push:
     branches: [main]
@@ -23,6 +24,7 @@ on:
       - 'assets/js/sinjira-dating-safety-v24-4-78.js'
       - 'assets/js/sinjira-community-rules.js'
       - 'scripts/validate_minor_exploitation_safety_v24_4_82.py'
+      - 'scripts/validate_minor_safety_workflow_security.py'
       - '.github/workflows/validate-safety-v24-4-82.yml'
 
 permissions:
@@ -41,6 +43,10 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
+      - name: Auto-tester le workflow sécurité mineurs
+        run: python scripts/validate_minor_safety_workflow_security.py --self-test
+      - name: Vérifier le workflow sécurité mineurs
+        run: python scripts/validate_minor_safety_workflow_security.py
       - name: Valider le contrat V24.4.82
         run: python scripts/validate_minor_exploitation_safety_v24_4_82.py
       - name: Vérifier la syntaxe JavaScript
