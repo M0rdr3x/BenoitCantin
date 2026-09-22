@@ -89,7 +89,9 @@ def validate(contents:dict[str,str])->None:
     for marker in (
         "sinjira_private_novel_asset_for_delivery",
         "is_sinjira_owner",
-        "user_entitlements",
+        "has_sinjira_product",
+        "p_product_slug",
+        "privatenovelaccess='product'|'owner'|'family'",
         "legacy_env",
         "sinjira_livre_i_private_bucket",
     ):
@@ -146,7 +148,7 @@ def validate(contents:dict[str,str])->None:
     ):
         if forbidden in library:
             fail(f"bibliothèque: livraison privée directe ou rôle dupliqué interdit: {forbidden}")
-    if "sinjira-library-v24-4-61.js?v=25.1.2" not in library_html:
+    if "sinjira-library-v24-4-61.js?v=25.1.3" not in library_html:
         fail("bibliothèque: cache générique roman non forcé")
 
     if "sinjira_my_novel_catalog" not in literature:
@@ -196,6 +198,7 @@ def main()->None:
             "livraison privée réintroduite dans bibliothèque":("library_js","const fullAccess=Boolean(novel.full_access);","const fullAccess=Boolean(novel.full_access); functions.invoke('get-private-novel-url');"),
             "JSON Edge non borné":("edge","const body=await readBoundedJson(req);","const body=await req.json();"),
             "regex Content-Length doublement échappée":("edge",r"if(!/^\d+$/.test(normalizedLength))",r"if(!/^\\d+$/.test(normalizedLength))"),
+            "droit produit canonique Edge retiré":("shared","has_sinjira_product","missing_product_right"),
             "migration RLS hors paths CI":("workflow","supabase/migrations/20260919113000_sinjira_v25_private_novel_asset_rls.sql","supabase/migrations/rls-missing.sql"),
             "config JWT hors paths CI":("workflow","supabase/config.toml","supabase/config-missing.toml"),
             "JWT Edge désactivé":("config","[functions.get-private-novel-url]\nverify_jwt = true","[functions.get-private-novel-url]\nverify_jwt = false"),
