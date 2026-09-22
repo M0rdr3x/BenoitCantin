@@ -4,6 +4,22 @@
 
 begin;
 
+drop policy if exists products_ordered_read on public.products;
+create policy products_ordered_read
+on public.products
+for select
+to authenticated
+using (
+  exists(
+    select 1
+    from public.order_items oi
+    join public.orders o on o.id=oi.order_id
+    where oi.product_id=products.id
+      and o.user_id=(select auth.uid())
+      and o.status='paid'
+  )
+);
+
 create or replace function public.has_sinjira_product(
   p_product_slug text,
   p_user_id uuid default auth.uid()
@@ -51,6 +67,9 @@ revoke all on function public.has_sinjira_product(text,uuid)
 from public,anon;
 grant execute on function public.has_sinjira_product(text,uuid)
 to authenticated,service_role;
+
+comment on policy products_ordered_read on public.products is
+  'V25: un produit commandé reste lisible au compte uniquement après paiement confirmé status=paid; une commande pending ne confère aucun droit.';
 
 comment on function public.has_sinjira_product(text,uuid) is
   'Droit produit self-only: propriétaire, famille adult/youth, entitlement durable ou commande paid. Une commande non payée ne donne aucun accès; aucun faux entitlement n est créé.';
