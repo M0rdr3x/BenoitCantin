@@ -10,14 +10,14 @@ PR : #435
 
 ## Source de vérité du périmètre
 
-Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only a porté le delta à **36 migrations futures non revues**. La demande de catalogue complet pour le créateur et ses comptes familiaux, sans publier de courriel ni fabriquer de faux achat, ajoute maintenant une migration forward-only dédiée : le delta courant est de **37 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
+Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only a porté le delta à **36 migrations futures non revues**. La demande de catalogue complet pour le créateur et ses comptes familiaux, sans publier de courriel ni fabriquer de faux achat, ajoute maintenant une migration forward-only dédiée : le delta courant est désormais de **38 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
 
 Répartition :
 - **Lot A — Mode Voyage : 4 migrations**
 - **Lot B — Enfant / Junior / Tuteur : 22 migrations**
 - **Lot C — Compte / Catalogue / RPC : 9 migrations**
 - **Lot D — Frontières helpers navigateur : 1 migration**
-- **Lot E — Catalogue famille créateur : 1 migration**
+- **Lot E — Catalogue famille créateur : 2 migrations**
 
 L'ordre ci-dessous est un **ordre de revue**, pas un ordre d'autorisation production.
 
@@ -214,7 +214,7 @@ Relecture technique effectuée sur le HEAD `6ace8163c5a68d496d77e635c6b29132876a
 - `get_guardian_youth_contacts()` exige supervision active + opt-in + AAL2 et ne renvoie que `contact_label`, `network`, `last_contact_date`; les tests prouvent l'absence d'UUID de contact, `display_name`, timestamp précis et contenu, ainsi que l'isolation entre identité Compte et identité Personnage;
 - `junior_guardian_summary()` exige AAL2, ne renvoie aucun contenu de publication/message et réduit la dernière activité à une date UTC; la liste parentale ne révèle jamais `junior_alias`;
 - le workflow Communauté Junior est entièrement vert : **51/51** assertions Junior, **13/13** frontière serveur 11–12, **23/23** classement contenu, **25/25** capacités self-only et **8/8** compatibilité protection mineurs, plus la preuve navigateur locale;
-- le snapshot release sur ce même HEAD reste vert et confirme **37 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
+- le snapshot release sur ce même HEAD reste vert et confirme **38 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
 
 **Portes encore ouvertes avant toute approbation du Lot B :**
 - relire humainement les 22 diffs B1→B5 dans l'ordre final, notamment les interactions entre policies RLS et fonctions `SECURITY DEFINER`;
@@ -283,14 +283,14 @@ Relecture technique effectuée sur le HEAD `1a54e110762a5249e99c70fc40e6667ce285
 - l'Edge Function `get-private-novel-url` exige un JWT, réévalue côté serveur la bande d'âge, le rôle créateur ou l'entitlement, exige `enabled=true` et ne signe l'URL privée qu'après ces contrôles; la durée signée reste bornée à 300 secondes;
 - le seed Livre I conserve l'actif privé désactivé et ne publie aucun chemin privé;
 - `sync_social_profile_from_profile()` copie uniquement le pseudonyme public vers `social_profiles.pseudo` et `social_profiles.display_name`; le `profiles.display_name` privé n'est pas propagé;
-- le workflow Profil privé `35677574965` a reconstruit la base locale puis validé **22/22** assertions historiques et **11/11** assertions enfant; son unique rouge est le ledger attendu parce que les 37 migrations restent non revues;
+- le workflow Profil privé `35677574965` a reconstruit la base locale puis validé **22/22** assertions historiques et **11/11** assertions enfant; son unique rouge est le ledger attendu parce que les 38 migrations restent non revues;
 - la frontière RPC V25 exige exactement 23 cibles `public SECURITY DEFINER` et exactement 3 cibles anon avant déplacement, puis recrée uniquement des wrappers `public SECURITY INVOKER`;
 - `sinjira_catalog_internal.project_access_rank(uuid,uuid)` conserve son OID pour les policies RLS mais retourne `0` à un navigateur qui tente de cibler un UUID différent de `auth.uid()`; `service_role` conserve le ciblage serveur explicite;
 - les privilèges navigateur du catalogue restent limités à `SELECT` et aux deux insertions self-service nécessaires (`access_requests`, `playtest_participants`), toujours derrière RLS;
 - sur le run Compte/catalogue `35677574948`, la validation statique, la reconstruction locale, la preuve membre/créateur et la preuve 11–12 / absence d'oracle ont terminé en succès avant le nettoyage de la pile.
 
 **Preuves techniques maintenant satisfaites pour le Lot C :**
-- le workflow Compte/catalogue est vert après reconstruction avec **45/45** assertions membre/créateur et **23/23** assertions classement 11–12 / absence d'oracle;
+- le workflow Compte/catalogue est vert après reconstruction avec **47/47** assertions membre/créateur et **23/23** assertions classement 11–12 / absence d'oracle;
 - le workflow Catalogue romans privés est vert avec auto-test **8/8** et pgTAP **13/13**;
 - l'Edge `get-private-novel-url` réévalue côté serveur identité, âge, rôle créateur/entitlement, actif `enabled` et stockage avant URL signée 300 s; la régression `Content-Length` doublement échappée est corrigée et gardée;
 - les preuves négatives couvrent `anon/authenticated/service_role`, absence de lecture directe du registre privé, absence de chemin Storage dans le navigateur et sondage UUID self-only.
@@ -323,7 +323,7 @@ Cette migration appartient fonctionnellement au **Lot A — Mode Voyage**, mais 
   - Conserve l’OID de `sinjira_catalog_internal.project_access_rank(uuid,uuid)` utilisé par les policies RLS, mais retourne `0` lorsqu’un rôle navigateur fournit un `p_user_id` différent de `auth.uid()`; `service_role` conserve l’usage serveur arbitraire.
   - Ferme l’oracle anonyme de `sinjira_child_project_available(uuid)` : un projet `visibility='account'` exige désormais une session authentifiée.
   - Aligne `sinjira_child_document_available(uuid)` sur le rang réel du compte courant via `project_access_rank >= document_access_rank`.
-  - Preuves attendues : pgTAP Compte à 45 assertions et classement 11–12 à 23 assertions.
+  - Preuves attendues : pgTAP Compte à 47 assertions et classement 11–12 à 23 assertions.
   - Migration transversale B/C : revue conjointe avec la frontière RPC V25 et les policies projets/documents.
 
 ### Notes de revue statique du Lot D — non approbatives
@@ -343,7 +343,7 @@ La revue croisée des définitions et des preuves runtime confirme actuellement 
 
 **Preuves techniques maintenant satisfaites pour le Lot D :**
 - les workflows Compte/catalogue et Communauté/accès enfant sont verts après reconstruction complète avec `20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql`;
-- le pgTAP Compte passe **45/45** assertions, dont le refus de sondage d'un autre UUID par un rôle navigateur et la conservation du ciblage explicite par `service_role`;
+- le pgTAP Compte passe **47/47** assertions, dont le refus de sondage d'un autre UUID par un rôle navigateur et la conservation du ciblage explicite par `service_role`;
 - le classement 11–12 passe **23/23** assertions, incluant l'absence d'oracle anon sur contenu `account` et le rang réel pour les documents;
 - la reconstruction confirme que les policies RLS continuent de fonctionner après conservation de l'OID du helper interne.
 
@@ -356,7 +356,7 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
 
 ---
 
-## Lot E — Catalogue famille créateur (1)
+## Lot E — Catalogue famille créateur (2)
 
 - [ ] `20260922014000_sinjira_v25_creator_family_catalog_access.sql`
   - Ajoute un registre privé de comptes familiaux **par UUID uniquement**; aucun courriel n'est stocké dans la table ni inscrit en clair dans la migration publique.
@@ -370,6 +370,14 @@ Aucune case n'est cochée : cette section documente seulement la préparation te
   - L'Edge de roman privé reconnaît le rôle famille uniquement après la vérification d'âge déjà existante; les 11–12 restent refusés pour une intégrale non classée.
   - Preuve dédiée : `creator_family_catalog_access_v25.test.sql` et validateur statique de confidentialité, incluant l'interdiction d'une adresse courriel littérale dans la migration.
 
+- [ ] `20260922023000_sinjira_v25_paid_order_product_access.sql`
+  - Aligne `has_sinjira_product(text,uuid)` sur les droits réels déjà reconnus par la RLS produits.
+  - Un entitlement reste un droit même si le produit n'est plus actif à la vente.
+  - Une commande avec `status='paid'` conserve le droit produit même si le produit devient ensuite inactif.
+  - Une commande non payée ne crée aucun droit et aucun entitlement artificiel n'est inséré.
+  - Le garde self-only reste inchangé : un navigateur ne peut pas sonder l'accès produit d'un autre UUID.
+  - Cette migration doit être retestée à la fois par le workflow Compte/catalogue et par le workflow Romans privés.
+
 ### Notes de revue préparatoire du Lot E — non approbatives
 
 Objectif fonctionnel : le créateur et les comptes familiaux explicitement autorisés voient toutes les créations SINJIRA dans leur compte, alors qu'un membre standard voit seulement le gratuit/public et ce qu'il a réellement acheté ou reçu comme droit.
@@ -379,7 +387,8 @@ Points à confirmer humainement avant toute approbation :
 - les UUID familiaux doivent être ceux des comptes voulus et aucun autre compte;
 - la visibilité 11–12 doit rester strictement « catalogue », avec ouverture uniquement du contenu explicitement `approved_11_12`;
 - aucune ligne de commande, entitlement ou `project_access` ne doit être créée pour simuler la propriété familiale;
-- les comptes ordinaires doivent continuer à échouer sur les brouillons, produits internes et projets restreints sans droit.
+- les comptes ordinaires doivent continuer à échouer sur les brouillons, produits internes et projets restreints sans droit;
+- un produit commandé ne doit devenir ouvrable que lorsque la commande est réellement `paid`; une simple commande en attente ne suffit jamais.
 
 Aucune case du Lot E n'est cochée : cette section documente une **préparation technique de revue**, pas une approbation.
 
@@ -396,7 +405,7 @@ Une famille ne peut être proposée comme « revue » que si :
 
 ## État au moment de la création de ce document
 
-- 37 / 37 migrations : **NON REVUES**
+- 38 / 38 migrations : **NON REVUES**
 - 0 migration ajoutée au lot production par ce document
 - 0 changement du ledger production
 - 0 déploiement production
