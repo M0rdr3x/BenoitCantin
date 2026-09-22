@@ -435,8 +435,8 @@ def validate(contents: dict[str, str]) -> None:
         fail("tableau de bord: catalogue complet owner/admin non chargé")
     if "rôleducomptenonconfirmé" not in dashboard:
         fail("tableau de bord: état fail-closed du rôle non confirmé absent")
-    if "catalogresolved=!all.error" not in dashboard or "cataloguecomplettemporairementindisponible" not in dashboard:
-        fail("tableau de bord: échec du catalogue complet owner/admin non signalé")
+    if dashboard.count("catalogresolved=!all.error") != 2 or "cataloguecomplettemporairementindisponible" not in dashboard:
+        fail("tableau de bord: échec du catalogue complet owner/admin ou famille non signalé")
     for marker in (
         "constaccessresolved=!accessresult.error",
         "letcatalogresolved=false",
