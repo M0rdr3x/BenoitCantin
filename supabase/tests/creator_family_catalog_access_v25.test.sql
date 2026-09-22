@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(64);
+select plan(70);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -776,6 +776,81 @@ select ok(
     'f3000000-0000-4000-8000-000000000003'
   ),
   'un compte familial 11–12 ne satisfait pas le droit produit non classé'
+);
+
+reset role;
+
+insert into public.user_entitlements(user_id,product_id,source)
+values
+(
+  'f3000000-0000-4000-8000-000000000003',
+  'f6000000-0000-4000-8000-000000000006',
+  'physical_activation'
+),
+(
+  'f3000000-0000-4000-8000-000000000003',
+  'fe000000-0000-4000-8000-00000000000e',
+  'physical_activation'
+)
+on conflict (user_id,product_id) do nothing;
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object(
+    'sub','f3000000-0000-4000-8000-000000000003',
+    'role','authenticated','aal','aal1'
+  )::text,
+  true
+);
+set local role authenticated;
+
+select ok(
+  public.has_sinjira_product(
+    'family-private-novel-product',
+    'f3000000-0000-4000-8000-000000000003'
+  ),
+  'un droit produit réel peut exister comptablement pour un compte 11–12'
+);
+select is(
+  (select count(*)::integer from public.projects where slug='family-private-game'),
+  0,
+  'un droit produit réel ne rouvre pas la ligne projet au compte 11–12'
+);
+select ok(
+  exists(
+    select 1
+    from jsonb_array_elements(public.sinjira_my_project_catalog()) item
+    where item->>'slug'='family-private-game'
+      and (item->>'content_available')::boolean=false
+      and item->>'play_path' is null
+  ),
+  'le catalogue familial garde le projet acheté non ouvrable à 11–12'
+);
+select is(
+  (select count(*)::integer from public.extensions where id='ff000000-0000-4000-8000-00000000000f'),
+  0,
+  'un droit produit réel ne rouvre pas l extension privée au compte 11–12'
+);
+select ok(
+  exists(
+    select 1
+    from jsonb_array_elements(public.sinjira_my_extension_catalog()) item
+    where item->>'id'='ff000000-0000-4000-8000-00000000000f'
+      and (item->>'content_available')::boolean=false
+      and item->>'status'='protected'
+  ),
+  'le catalogue familial garde l extension achetée minimisée à 11–12'
+);
+select ok(
+  exists(
+    select 1
+    from jsonb_array_elements(public.sinjira_my_novel_catalog()) item
+    where item->>'slug'='family-private-novel'
+      and (item->>'full_access')::boolean=false
+      and item->>'demo_path' is null
+      and item->>'public_path' is null
+  ),
+  'le droit produit réel ne donne jamais l intégrale du roman au compte 11–12'
 );
 
 reset role;
