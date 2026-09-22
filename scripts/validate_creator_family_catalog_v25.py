@@ -144,6 +144,8 @@ def validate(contents:dict[str,str])->None:
             fail(f"accès projet produit: invariant absent: {project_marker}")
     if "public.sinjira_age_band((selectauth.uid()))" in project_access_migration:
         fail("accès projet produit: une policy navigateur appelle encore sinjira_age_band(uuid)")
+    if project_access_migration.count("sinjira_v25_internal.has_sinjira_product(p.product_slug,uid)") < 2:
+        fail("accès projet produit: droit produit requis à la fois pour la source d accès et le filtrage du catalogue")
 
     for marker in (
         "createtableifnotexistsprivate.sinjira_catalog_family_members(",
