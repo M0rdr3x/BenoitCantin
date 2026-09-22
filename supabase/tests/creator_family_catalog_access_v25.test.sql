@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(50);
+select plan(54);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -127,12 +127,33 @@ values(
 );
 
 insert into public.products(id,slug,name,product_type,active)
-values(
+values
+(
   'f6000000-0000-4000-8000-000000000006',
   'family-private-novel-product',
   'Produit privé famille',
   'novel',
   false
+),
+(
+  'fe000000-0000-4000-8000-00000000000e',
+  'family-private-extension-product',
+  'Extension privée achetable',
+  'extension',
+  false
+);
+
+insert into public.extensions(
+  id,project_id,title,description,status,is_public,product_slug
+)
+values(
+  'ff000000-0000-4000-8000-00000000000f',
+  'f8000000-0000-4000-8000-000000000008',
+  'Extension privée achetable',
+  'Extension SINJIRA privée liée à un produit réel.',
+  'released',
+  false,
+  'family-private-extension-product'
 );
 
 insert into private.sinjira_private_novel_assets(
@@ -405,6 +426,20 @@ select is(
   0,
   'le catalogue extension self-only ne révèle pas l extension interne au membre standard'
 );
+select is(
+  (select count(*)::integer from public.extensions where id='ff000000-0000-4000-8000-00000000000f'),
+  0,
+  'une extension privée liée à un produit reste invisible avant achat'
+);
+select is(
+  (
+    select count(*)::integer
+    from jsonb_array_elements(public.sinjira_my_extension_catalog()) item
+    where item->>'id'='ff000000-0000-4000-8000-00000000000f'
+  ),
+  0,
+  'le RPC extension ne révèle pas une extension payante avant achat'
+);
 select throws_ok(
   $$ select public.sinjira_my_project_catalog() $$,
   '42501',
@@ -438,10 +473,16 @@ values(
   'paid','CAD',3200
 );
 insert into public.order_items(order_id,product_id,quantity,unit_price_cents)
-values(
+values
+(
   'fc000000-0000-4000-8000-00000000000c',
   'f6000000-0000-4000-8000-000000000006',
   1,3200
+),
+(
+  'fc000000-0000-4000-8000-00000000000c',
+  'fe000000-0000-4000-8000-00000000000e',
+  1,900
 );
 
 select set_config(
@@ -475,6 +516,21 @@ select ok(
       and item->>'access_source'='product'
   ),
   'un roman privé acheté par commande paid devient disponible dans le catalogue sans entitlement'
+);
+select is(
+  (select count(*)::integer from public.extensions where id='ff000000-0000-4000-8000-00000000000f'),
+  1,
+  'une commande paid rend l extension privée achetée visible au membre standard'
+);
+select ok(
+  exists(
+    select 1
+    from jsonb_array_elements(public.sinjira_my_extension_catalog()) item
+    where item->>'id'='ff000000-0000-4000-8000-00000000000f'
+      and item->>'access_source'='product'
+      and (item->>'content_available')::boolean
+  ),
+  'le catalogue extension reconnaît une commande paid sans entitlement artificiel'
 );
 
 reset role;
