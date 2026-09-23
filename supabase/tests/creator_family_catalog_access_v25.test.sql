@@ -1040,6 +1040,12 @@ select is(
 
 reset role;
 
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('role','service_role','fixture','child_entitlement')::text,
+  true
+);
+
 insert into public.user_entitlements(user_id,product_id,source)
 values
 (
