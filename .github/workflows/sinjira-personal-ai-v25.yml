@@ -92,7 +92,7 @@ jobs:
           version: 2.111.0
 
       - name: Démarrer Supabase local
-        run: supabase db start
+        run: bash -o pipefail -c 'for attempt in 1 2 3; do log="$(mktemp)"; set +e; supabase db start 2>&1 | tee "$log"; rc=${PIPESTATUS[0]}; set -e; if [ "$rc" -eq 0 ]; then rm -f "$log"; exit 0; fi; if ! grep -Eqi "toomanyrequests|too many requests|rate.?limit|http[^0-9]*429|status[^0-9]*429" "$log"; then rm -f "$log"; exit "$rc"; fi; if [ "$attempt" -eq 3 ]; then rm -f "$log"; exit "$rc"; fi; rm -f "$log"; supabase stop --no-backup >/dev/null 2>&1 || true; sleep $((attempt * 15)); done; exit 1'
 
       - name: Tester Mon IA avec pgTAP local
         run: supabase test db supabase/tests/personal_ai_v25.test.sql --local

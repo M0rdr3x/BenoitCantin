@@ -177,6 +177,14 @@ def validate(contents:dict[str,str])->None:
     ):
         if boundary_marker not in age_boundary_migration:
             fail(f"frontière âge catalogue: invariant absent: {boundary_marker}")
+    product_wrapper_start=age_boundary_migration.find("createorreplacefunctionpublic.has_sinjira_product(")
+    product_wrapper_end=age_boundary_migration.find("$wrapper$;",product_wrapper_start)
+    if product_wrapper_start < 0 or product_wrapper_end < 0:
+        fail("frontière âge catalogue: wrapper public droit produit absent ou incomplet")
+    product_wrapper_segment=age_boundary_migration[product_wrapper_start:product_wrapper_end]
+    if "securityinvoker" not in product_wrapper_segment or "securitydefiner" in product_wrapper_segment:
+        fail("frontière âge catalogue: wrapper public droit produit doit rester SECURITY INVOKER")
+
     if "public.sinjira_age_band((selectauth.uid()))" in age_boundary_migration:
         fail("frontière âge catalogue: une policy navigateur appelle encore sinjira_age_band(uuid)")
 

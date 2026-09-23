@@ -13,13 +13,14 @@ SETUP_PYTHON = 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1'
 SETUP_SUPABASE = 'supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf'
 SELF_TEST = 'python3 scripts/validate_personal_ai_contract_workflow_security.py --self-test'
 SELF_CHECK = 'python3 scripts/validate_personal_ai_contract_workflow_security.py'
+SUPABASE_START = "bash -o pipefail -c 'for attempt in 1 2 3; do log=\"$(mktemp)\"; set +e; supabase db start 2>&1 | tee \"$log\"; rc=${PIPESTATUS[0]}; set -e; if [ \"$rc\" -eq 0 ]; then rm -f \"$log\"; exit 0; fi; if ! grep -Eqi \"toomanyrequests|too many requests|rate.?limit|http[^0-9]*429|status[^0-9]*429\" \"$log\"; then rm -f \"$log\"; exit \"$rc\"; fi; if [ \"$attempt\" -eq 3 ]; then rm -f \"$log\"; exit \"$rc\"; fi; rm -f \"$log\"; supabase stop --no-backup >/dev/null 2>&1 || true; sleep $((attempt * 15)); done; exit 1'"
 HISTORICAL = (
     'python3 scripts/validate_personal_ai_v25.py',
     'python3 scripts/validate_personal_ai_production_readiness.py',
     'python3 scripts/validate_personal_ai_postdeployment_workflow.py',
     'python3 scripts/validate_edge_function_inventory.py',
     'python3 scripts/validate_production_schema_manifest.py',
-    'supabase db start',
+    SUPABASE_START,
     'supabase test db supabase/tests/personal_ai_v25.test.sql --local',
     'supabase stop --no-backup || true',
 )
