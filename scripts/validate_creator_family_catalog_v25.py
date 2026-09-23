@@ -244,6 +244,7 @@ def validate(contents:dict[str,str])->None:
         fail("accès projet produit: droit produit requis à la fois pour la source d accès et le filtrage du catalogue")
 
     for marker in (
+        "altertablepublic.projectsaddcolumnifnotexistsproduct_slugtext",
         "createtableifnotexistsprivate.sinjira_catalog_family_members(",
         "user_iduuidprimarykeyreferencesauth.users(id)ondeletecascade",
         "revokeallontableprivate.sinjira_catalog_family_membersfrompublic,anon,authenticated",
@@ -612,6 +613,7 @@ def main()->None:
     if args.self_test:
         mutations={
             "courriel gravé dans migration":("migration","commit;","-- contact: person@example.test\ncommit;"),
+            "prérequis product_slug famille retiré":("migration","alter table public.projects\n  add column if not exists product_slug text;","-- product_slug prerequisite removed"),
             "provisionnement ouvert navigateur":("migration","from public,anon,authenticated;\ngrant execute on function public.set_sinjira_catalog_family_access_by_email","from public,anon;\ngrant execute on function public.set_sinjira_catalog_family_access_by_email"),
             "rang famille enfant élevé":("migration","and public.sinjira_age_band(p_user_id) in ('adult','youth') then 90","then 90"),
             "rang implicite réouvre projet payant":("migration","and p.visibility in ('public','account')\n             and p.product_slug is null","and p.visibility in ('public','account')"),
