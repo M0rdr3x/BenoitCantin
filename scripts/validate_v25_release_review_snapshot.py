@@ -54,7 +54,7 @@ EXPECTED_NON_REVIEWED = {
     "20260919130000_sinjira_v25_account_catalog_browser_privileges.sql": "4436b3d183fa975f5eedeb0427d66da050dfa961",
     "20260921005000_sinjira_v25_travel_mode_internal_response_minimization.sql": "1653597f4c9fe053a1b691fe810a3d1b8ca60955",
     "20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql": "1a6f22628bf7dc944e7d3b77c2744c40e3204b03",
-    "20260922014000_sinjira_v25_creator_family_catalog_access.sql": "7f5326263860bf9579b876d532c329ac13fdade6",
+    "20260922014000_sinjira_v25_creator_family_catalog_access.sql": "44f0e779fc667aaf6b39dbcb121b47a0f2e1054a",
     "20260922023000_sinjira_v25_paid_order_product_access.sql": "41643696fdfba9f1075e1388dcf9fab64132a09e",
     "20260922030000_sinjira_v25_extension_product_access.sql": "0bdc1677d4efe669b8ec1503ed41f745136c6680",
     "20260922031500_sinjira_v25_catalog_age_helper_boundary.sql": "b0b2495e24cc0a23c7d50f32f4caef24314cc85a",
