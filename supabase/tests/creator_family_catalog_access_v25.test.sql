@@ -421,15 +421,15 @@ select set_config(
 set local role service_role;
 
 select lives_ok(
-  $ select public.set_sinjira_catalog_family_access_by_email(
+  $$ select public.set_sinjira_catalog_family_access_by_email(
     'catalog-family-youth@example.test',true
-  ) $,
+  ) $$,
   'service_role peut associer un compte familial par courriel sans conserver le courriel'
 );
 select lives_ok(
-  $ select public.set_sinjira_catalog_family_access_by_email(
+  $$ select public.set_sinjira_catalog_family_access_by_email(
     'catalog-family-child@example.test',true
-  ) $,
+  ) $$,
   'service_role peut associer un second compte familial'
 );
 
