@@ -217,6 +217,8 @@ def validate(contents:dict[str,str])->None:
         "droppolicyifexistsadmin_read_all_documentsonpublic.documents",
         "droppolicyifexistsdocuments_anon_readonpublic.documents",
         "droppolicyifexistsdocuments_authenticated_readonpublic.documents",
+        "frompg_policieswhereschemaname='public'andtablename='documents'andcmd='select'",
+        "drop policy if exists %i on public.documents",
         "status<>'draft'andvisibility='public'andproduct_slugisnulland(",
         "(status<>'draft'andvisibility='account'andproduct_slugisnull)orsinjira_catalog_internal.project_access_rank(id,(selectauth.uid()))>=20",
         "status<>'draft'andproduct_slugisnotnull",
@@ -344,6 +346,8 @@ def validate(contents:dict[str,str])->None:
     for marker in (
         "sinjira_v25_internal.sinjira_has_full_catalog_access(p_user_id)",
         "public.sinjira_age_band(p_user_id)in('adult','youth')then90",
+        "p.visibilityin('public','account')andp.product_slugisnull",
+        "p.visibility='public'andp.product_slugisnull",
         "p_user_idisdistinctfromauth.uid()then0",
     ):
         if marker not in migration:
@@ -608,6 +612,7 @@ def main()->None:
             "courriel gravé dans migration":("migration","commit;","-- contact: person@example.test\ncommit;"),
             "provisionnement ouvert navigateur":("migration","from public,anon,authenticated;\ngrant execute on function public.set_sinjira_catalog_family_access_by_email","from public,anon;\ngrant execute on function public.set_sinjira_catalog_family_access_by_email"),
             "rang famille enfant élevé":("migration","and public.sinjira_age_band(p_user_id) in ('adult','youth') then 90","then 90"),
+            "rang implicite réouvre projet payant":("migration","and p.visibility in ('public','account')\n             and p.product_slug is null","and p.visibility in ('public','account')"),
             "intégrale child ouverte":("migration","private_asset_configured\n          and band in ('adult','youth')","private_asset_configured"),
             "catalogue enfant navigateur ancien":("library","const projectQuery=s.rpc('sinjira_my_project_catalog');","const projectQuery=s.from('projects').select('*');"),
             "helper famille roman retiré":("shared","sinjira_has_full_catalog_access","is_sinjira_owner"),
@@ -632,7 +637,9 @@ def main()->None:
             "wrapper droit produit redevient privilégié":("age_boundary_migration","language sql\nstable\nsecurity invoker\nset search_path=''\nas $wrapper$","language sql\nstable\nsecurity definer\nset search_path=''\nas $wrapper$"),
             "wrapper droit produit réexpose 11–12":("age_boundary_migration","or public.sinjira_my_age_band() not in ('adult','youth')\n      then false","or false\n      then false"),
             "ancienne policy document authentifiée conservée":("project_access_migration","drop policy if exists documents_authenticated_read on public.documents;","-- legacy documents_authenticated_read left active"),
+            "balayage policies documents retiré":("project_access_migration","from pg_policies\n    where schemaname='public'\n      and tablename='documents'\n      and cmd='SELECT'","select policyname\n    from pg_policies\n    where false"),
             "oracle âge UUID réintroduit dans pgTAP Junior":("test","public.sinjira_my_age_band(),\n  'child',\n  'le compte familial de preuve est bien classé 11–12 ans via le helper self-only'","public.sinjira_age_band('f3000000-0000-4000-8000-000000000003'),\n  'child',\n  'le compte familial de preuve est bien classé 11–12 ans via le helper self-only'"),
+            "fixture achat enfant sans contexte serveur":("test","jsonb_build_object('role','service_role')::text","jsonb_build_object('role','authenticated')::text"),
             "projet payant rouvert aux comptes child":("project_access_migration","p.child_access_status='approved_11_12'\n      and p.product_slug is null\n      and (","p.child_access_status='approved_11_12'\n      and ("),
             "droit projet acheté retiré":("project_access_migration","public.has_sinjira_product(product_slug,(select auth.uid()))","true"),
             "projet public payant réexposé sans droit":("project_access_migration","status<>'draft'\n    and visibility='public'\n    and product_slug is null","visibility='public'\n    and product_slug is null"),
