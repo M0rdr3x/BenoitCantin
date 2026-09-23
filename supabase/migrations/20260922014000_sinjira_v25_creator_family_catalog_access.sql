@@ -6,6 +6,12 @@
 
 begin;
 
+-- Prérequis de schéma : project_access_rank() doit pouvoir distinguer les projets
+-- commerciaux dès cette migration. La contrainte/index et la convergence des
+-- données restent volontairement dans 20260922033000_project_product_access.
+alter table public.projects
+  add column if not exists product_slug text;
+
 create table if not exists private.sinjira_catalog_family_members(
   user_id uuid primary key references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
