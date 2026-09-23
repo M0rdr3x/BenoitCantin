@@ -129,6 +129,7 @@ def validate(contents:dict[str,str])->None:
         fail("droits produit effectifs: wrapper public doit rester SECURITY INVOKER")
 
     for extension_marker in (
+        "altertablepublic.extensionsenablerowlevelsecurity",
         "altertablepublic.extensionsaddcolumnifnotexistsproduct_slugtext",
         "extensions_product_slug_fkey",
         "createpolicy\"extensionspublicread\"onpublic.extensions",
@@ -602,6 +603,7 @@ def main()->None:
             "badge projet famille retiré bibliothèque":("library","familyCatalog||source==='family'","false"),
             "extension achetée effective ouverte aux comptes child":("age_boundary_migration","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band() in ('adult','youth')\n  and public.has_sinjira_product","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band() in ('adult','youth','child')\n  and public.has_sinjira_product"),
             "extension interne vendue avant approbation":("age_boundary_migration","status in ('approved','released')\n  and product_slug is not null","product_slug is not null"),
+            "RLS extensions désactivée":("extension_access_migration","alter table public.extensions\n  enable row level security;","-- RLS intentionally removed"),
             "extension publique réexpose parent brouillon":("extension_access_migration","and parent_project.status<>'draft'\n  )\n);","\n  )\n);"),
             "extension achetée effective réexpose parent brouillon":("age_boundary_migration","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band()","\n  )\n  and public.sinjira_my_age_band()"),
             "rpc extension réexpose parent brouillon":("extension_access_migration","p.status<>'draft'\n        and (","("),
