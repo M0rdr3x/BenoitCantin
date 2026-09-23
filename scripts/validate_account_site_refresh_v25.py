@@ -275,6 +275,10 @@ def validate(contents: dict[str, str]) -> None:
     for marker in ("data-library-games", "data-library-novels", "data-library-other", "data-library-extensions", "data-library-extension-count"):
         if marker not in libh:
             fail(f"bibliothèque: séparation manquante: {marker}")
+    if libj.count("projects.filter(project=>project.type==='game')") < 2:
+        fail("bibliothèque: filtre Jeux absent d'une branche adulte/Junior")
+    if libj.count("projects.filter(project=>project.type!=='game')") < 2:
+        fail("bibliothèque: filtre Autres créations absent d'une branche adulte/Junior")
     if 'href="mes-achats.html"><strong>mesachats</strong>' not in libh:
         fail("bibliothèque: raccourci Mes achats absent")
     if "commandesetachatsenregistrésrestentconsultablesséparémentdans«mesachats»" not in libh:
@@ -868,6 +872,8 @@ def main() -> None:
             "bibliothèque Junior masque erreur":("library_js","juniorResolved=!projectsResult.error&&!documentsResult.error","juniorResolved=true"),
             "cache bibliothèque principale revenu V25.1.0":("library_html","sinjira-library-v24-4-61.js?v=25.1.8","sinjira-library-v24-4-61.js?v=25.1.0"),
             "raccourci Mes achats retiré":("library_html",'<a href="mes-achats.html"><strong>Mes achats</strong>','<a href="licences.html"><strong>Mes achats</strong>'),
+            "jeux remélangés avec tous les projets":("library_js","projects.filter(project=>project.type==='game')","projects"),
+            "autres créations remélangées avec jeux":("library_js","projects.filter(project=>project.type!=='game')","projects"),
             "rôle créateur secondaire revenu côté client":("secondary_library_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "projet public secondaire présenté comme compte":("secondary_library_js","const visibility=childMode?(available?'Contenu vérifié 11–12 ans':'Contenu protégé selon l’âge'):p.product_slug&&source==='product'?'Droit numérique actif':p.visibility==='restricted'?'Accès restreint':p.visibility==='account'?'Inclus avec le compte':'Page publique';","const visibility=childMode?(available?'Contenu vérifié 11–12 ans':'Contenu protégé selon l’âge'):p.product_slug&&source==='product'?'Droit numérique actif':p.visibility==='restricted'?'Accès restreint':'Inclus avec le compte';"),
             "détail projet public secondaire présenté comme compte":("secondary_library_js","owner?'Propriétaire · catalogue complet':a?.access_level==='tester'?'Testeur approuvé':explicitAccess?'Accès privé autorisé':p.visibility==='restricted'?'Accès privé autorisé':p.visibility==='account'?'Inclus avec le compte':'Page publique';","owner?'Propriétaire · catalogue complet':a?.access_level==='tester'?'Testeur approuvé':explicitAccess?'Accès privé autorisé':p.visibility==='restricted'?'Accès privé autorisé':'Inclus avec le compte';"),
