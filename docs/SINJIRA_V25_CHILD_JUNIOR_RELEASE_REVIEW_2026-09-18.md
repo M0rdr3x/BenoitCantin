@@ -558,8 +558,8 @@ Le snapshot de revue attend exactement **41 migrations locales futures non revue
 | Migration | Git blob SHA-1 |
 |---|---|
 | `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `378b32d59781285c9781785075ba73c15b0a66e9` |
-| `20260922023000_sinjira_v25_paid_order_product_access.sql` | `edb262781911679ff740573cc3830b9dddfabf94` |
-| `20260922030000_sinjira_v25_extension_product_access.sql` | `c144d834fcf4201c79cf4f0a8407b49e3f1d29ea` |
+| `20260922023000_sinjira_v25_paid_order_product_access.sql` | `41643696fdfba9f1075e1388dcf9fab64132a09e` |
+| `20260922030000_sinjira_v25_extension_product_access.sql` | `c172758cb7dac6be9fbf247dfad4c5b7fc042ecf` |
 | `20260922031500_sinjira_v25_catalog_age_helper_boundary.sql` | `b0b2495e24cc0a23c7d50f32f4caef24314cc85a` |
 | `20260922033000_sinjira_v25_project_product_access.sql` | `f95a4d85fdcd679682228fc865dad9be106d0ffe` |
 
@@ -600,6 +600,8 @@ Le snapshot de revue attend exactement **41 migrations locales futures non revue
 | `20260919130000_sinjira_v25_account_catalog_browser_privileges.sql` | `4436b3d183fa975f5eedeb0427d66da050dfa961` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
+
+Les empreintes des migrations `20260922023000_sinjira_v25_paid_order_product_access.sql` et `20260922030000_sinjira_v25_extension_product_access.sql` ont été rafraîchies après leurs durcissements locaux (frontière d’âge, droits produit minimisés, fermeture des extensions liées à un projet brouillon). Elles restent **non revues pour la production** et ce rafraîchissement ne constitue ni une approbation humaine ni une autorisation de déploiement.
 
 ## 4. Garde automatisé de snapshot
 
