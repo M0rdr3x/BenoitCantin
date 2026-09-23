@@ -289,6 +289,8 @@ def validate(contents: dict[str, str]) -> None:
         fail("bibliothèque: résumé acquisition neutre et exact absent")
     if "aucunachatouservicepayantn’estactivéactuellement" in libh:
         fail("bibliothèque: ancien résumé commerce absolu encore publié")
+    if "ressourcesgratuitesactivéesseulement" in libh:
+        fail("bibliothèque: ancien pied de page gratuit-only encore publié")
     if "sinjira_my_novel_catalog" not in contents["library_js"]:
         fail("bibliothèque: catalogue roman self-only canonique absent")
     if "sinjira_my_extension_catalog" not in contents["library_js"]:
@@ -364,6 +366,8 @@ def validate(contents: dict[str, str]) -> None:
         fail("licences: ancien bloc top-level avec return hors fonction interdit")
     if "v24-licenses.js?v=25.1.2" not in contents["licenses_html"]:
         fail("licences: cache V25.1.2 non forcé")
+    if "licencessinjira™—modegratuit." in licenses_html:
+        fail("licences: ancien pied de page mode gratuit encore publié")
 
     if "issinjiraowner" in secondary_library:
         fail("bibliothèque secondaire: rôle créateur encore déduit côté navigateur")
@@ -864,6 +868,8 @@ def main() -> None:
             "page achats contourne garde commerce":("purchases_js","if(!commerceAllowed){","if(false){"),
             "nœuds achats fail-closed retirés":("purchases_js","  const role=document.querySelector('[data-purchase-account-role]');\n  const status=document.querySelector('[data-purchases-v25-status]');\n",""),
             "cache licences revenu ancien":("licenses_html","v24-licenses.js?v=25.1.2","v24-licenses.js?v=24.4.62"),
+            "pied licences revenu mode gratuit":("licenses_html","Licences SINJIRA™ — droits associés au compte.","Licences SINJIRA™ — mode gratuit."),
+            "pied bibliothèque revenu gratuit-only":("library_html","Compte SINJIRA™ — accès selon votre compte et vos droits numériques.","Compte SINJIRA™ — ressources gratuites activées seulement."),
             "licences enfant sans garde capacités":("licenses_js","const childMode=capabilitiesResolved&&capabilitiesResult.data.library_mode==='reviewed_11_12';","const childMode=false;"),
             "ancien module bibliothèque rechargé":("library_html","<script src=\"../assets/js/sinjira-library-v24-4-61.js?v=25.1.8\" type=\"module\"></script>","<script src=\"../assets/js/sinjira-library.js?v=24.1\" type=\"module\"></script>"),
             "bibliothèque principale masque erreur projets":("library_js","const projectResolved=!projectsResult.error&&!accessResult.error&&!documentsResult.error&&!pendingResult.error;","const projectResolved=true;"),
