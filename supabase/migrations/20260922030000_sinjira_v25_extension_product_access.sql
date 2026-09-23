@@ -5,6 +5,9 @@
 begin;
 
 alter table public.extensions
+  enable row level security;
+
+alter table public.extensions
   add column if not exists product_slug text;
 
 do $$
