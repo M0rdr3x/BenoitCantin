@@ -520,6 +520,8 @@ Cette trente-neuvième migration reste **non revue production**.
 
 Le 23 septembre 2026, sa preuve a été durcie pour rendre la migration autonome : `public.extensions` active explicitement la RLS avant de recréer les policies publiques/achetées. Ce changement ferme le cas où une extension publiée pouvait rester visible si la table n'était pas déjà protégée par RLS. L'empreinte ci-dessous a été rafraîchie pour cette version durcie, sans constituer une approbation production.
 
+Une seconde relecture le 23 septembre 2026 a fermé les policies V24 permissives encore actives en parallèle (`extensions_anon_public` / `extensions_authenticated_read`). PostgreSQL combinant les policies permissives avec `OR`, elles pouvaient contourner la vérification « projet parent non brouillon ». La migration projet `20260922033000_sinjira_v25_project_product_access.sql` retire de la même manière les anciennes policies documents qui pouvaient contourner la frontière d'un projet payant encore en brouillon. Les accès administrateur et `player/tester` explicites restent distincts et conservés. Ces deux migrations restent **non revues production**; les nouvelles empreintes n'accordent aucune autorisation de déploiement.
+
 ### Revue réouverte après durcissements du 21 septembre 2026
 
 Le snapshot a volontairement détecté que plusieurs migrations non revues avaient changé depuis leurs empreintes précédentes. Elles ont été relues avant mise à jour de ce dossier; les changements sont des **resserrements**, pas des élargissements de droits :
@@ -561,9 +563,9 @@ Le snapshot de revue attend exactement **41 migrations locales futures non revue
 |---|---|
 | `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `378b32d59781285c9781785075ba73c15b0a66e9` |
 | `20260922023000_sinjira_v25_paid_order_product_access.sql` | `41643696fdfba9f1075e1388dcf9fab64132a09e` |
-| `20260922030000_sinjira_v25_extension_product_access.sql` | `1eef2537b45a074f06857ec20596d320194dc4d1` |
+| `20260922030000_sinjira_v25_extension_product_access.sql` | `0bdc1677d4efe669b8ec1503ed41f745136c6680` |
 | `20260922031500_sinjira_v25_catalog_age_helper_boundary.sql` | `b0b2495e24cc0a23c7d50f32f4caef24314cc85a` |
-| `20260922033000_sinjira_v25_project_product_access.sql` | `f95a4d85fdcd679682228fc865dad9be106d0ffe` |
+| `20260922033000_sinjira_v25_project_product_access.sql` | `a68114baaa6d6f057da1aa6c80da09c9fadc70a2` |
 
 ### Enfant 11–12 / Junior
 
