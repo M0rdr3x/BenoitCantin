@@ -624,11 +624,15 @@ as $family_rank$
     when p_user_id is not null
          and exists(
            select 1 from public.projects p
-           where p.id=p_project_id and p.visibility in ('public','account')
+           where p.id=p_project_id
+             and p.visibility in ('public','account')
+             and p.product_slug is null
          ) then 10
     when exists(
       select 1 from public.projects p
-      where p.id=p_project_id and p.visibility='public'
+      where p.id=p_project_id
+        and p.visibility='public'
+        and p.product_slug is null
     ) then 1
     else 0
   end;
