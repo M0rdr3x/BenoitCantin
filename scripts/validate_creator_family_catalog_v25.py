@@ -378,9 +378,9 @@ def validate(contents:dict[str,str])->None:
         "constsource=string(extension.access_source||'catalogue')",
         "source==='product'",
         "acheté/droitnumérique",
-        "constproductright=isowner||familycatalog||fractureright",
-        "constfracturerightverified=!fracturerightresult.error,fractureright=fracturerightverified&&fracturerightresult.data===true",
-        "s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'})",
+        "constsource=string(project.access_source||'free')",
+        "familycatalog||source==='family'",
+        "project.product_slug&&source==='product'",
         "cataloguefamilial·accèsprotégé",
         "touteslescréationssontvisibles,maisseulslescontenusapprouvés11–12anspeuventêtreouverts",
         "rendernovels(juniorresolved?juniornovels:[],[],false,true,familycatalog)",
@@ -420,9 +420,10 @@ def validate(contents:dict[str,str])->None:
     for marker in (
         "sinjira_my_catalog_access_mode",
         "familycatalog=!catalogaccessresult.error",
-        "constfamilyproductaccess=familycatalog&&!childmode",
-        "active:owner||familyproductaccess",
-        "s.rpc('has_sinjira_product',{p_product_slug:'fracture-du-reseau-mere'})",
+        "familycatalog||source==='family'",
+        "constlicensedproject=boolean(p.product_slug)",
+        "s.rpc('has_sinjira_product',{p_product_slug:p.product_slug})",
+        "constcanplay=!licensedproject||owner||productright||explicitaccess",
     ):
         if marker not in secondary_library:
             fail(f"bibliothèque secondaire famille: invariant absent: {marker}")
@@ -587,7 +588,7 @@ def main()->None:
             "helper famille roman retiré":("shared","sinjira_has_full_catalog_access","is_sinjira_owner"),
             "catalogue famille dashboard retiré":("dashboard","s.rpc(\'sinjira_my_project_catalog\')","Promise.resolve({data:[],error:null})"),
             "droit produit famille retiré":("migration","public.is_sinjira_catalog_family_member(p_user_id)","false"),
-            "jeu famille retiré bibliothèque":("library","isOwner||familyCatalog||fractureRight","isOwner||fractureRight"),
+            "badge projet famille retiré bibliothèque":("library","familyCatalog||source==='family'","false"),
             "extension achetée effective ouverte aux comptes child":("age_boundary_migration","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band() in ('adult','youth')\n  and public.has_sinjira_product","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band() in ('adult','youth','child')\n  and public.has_sinjira_product"),
             "extension interne vendue avant approbation":("age_boundary_migration","status in ('approved','released')\n  and product_slug is not null","product_slug is not null"),
             "extension publique réexpose parent brouillon":("extension_access_migration","and parent_project.status<>'draft'\n  )\n);","\n  )\n);"),
