@@ -270,6 +270,11 @@ def validate(contents:dict[str,str])->None:
         if marker not in migration:
             fail(f"accès famille: invariant de provisionnement absent: {marker}")
 
+    project_slug_prereq_pos=migration.find("altertablepublic.projectsaddcolumnifnotexistsproduct_slugtext")
+    family_rank_pos=migration.find("createorreplacefunctionsinjira_catalog_internal.project_access_rank(")
+    if not (0 <= project_slug_prereq_pos < family_rank_pos):
+        fail("accès famille: projects.product_slug doit exister avant project_access_rank pour permettre un db reset complet")
+
     family_table=migration[migration.find("createtableifnotexistsprivate.sinjira_catalog_family_members"):migration.find("altertableprivate.sinjira_catalog_family_members")]
     if "emailtext" in family_table:
         fail("accès famille: le registre privé ne doit pas stocker le courriel")
