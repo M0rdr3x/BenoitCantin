@@ -52,9 +52,29 @@ using (
 );
 
 -- Les documents d'un projet lié à un produit ne deviennent pas lisibles par la
--- seule visibilité publique/account du projet. Les anciennes policies V24
--- doivent être retirées : des policies SELECT permissives actives en parallèle
--- seraient combinées avec OR et contourneraient la frontière du projet parent.
+-- seule visibilité publique/account du projet. Toutes les policies SELECT
+-- historiques sont retirées avant de recréer la policy canonique : des policies
+-- permissives actives en parallèle seraient combinées avec OR et contourneraient
+-- la frontière du projet parent.
+do $documents_policy_cleanup$
+declare
+  policy_row record;
+begin
+  for policy_row in
+    select policyname
+    from pg_policies
+    where schemaname='public'
+      and tablename='documents'
+      and cmd='SELECT'
+  loop
+    execute format(
+      'drop policy if exists %I on public.documents',
+      policy_row.policyname
+    );
+  end loop;
+end;
+$documents_policy_cleanup$;
+
 drop policy if exists documents_read_by_access on public.documents;
 drop policy if exists admin_read_all_documents on public.documents;
 drop policy if exists documents_anon_read on public.documents;
