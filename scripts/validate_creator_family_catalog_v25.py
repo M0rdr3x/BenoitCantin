@@ -141,6 +141,7 @@ def validate(contents:dict[str,str])->None:
         "public.has_sinjira_product(product_slug,(selectauth.uid()))",
         "createorreplacefunctionsinjira_v25_internal.sinjira_my_extension_catalog()",
         "whenband='child'thenfull_catalog",
+        "e.statusin('approved','released')ande.product_slugisnotnullandpublic.has_sinjira_product(e.product_slug,uid)",
         "e.product_slugisnotnullandpublic.has_sinjira_product(e.product_slug,uid)",
         "then'product'",
     ):
@@ -595,7 +596,7 @@ def main()->None:
             "extension publique réexpose parent brouillon":("extension_access_migration","and parent_project.status<>'draft'\n  )\n);","\n  )\n);"),
             "extension achetée effective réexpose parent brouillon":("age_boundary_migration","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band()","\n  )\n  and public.sinjira_my_age_band()"),
             "rpc extension réexpose parent brouillon":("extension_access_migration","p.status<>'draft'\n        and (","("),
-            "rpc extension vendue avant approbation":("extension_access_migration","e.status in ('approved','released')\n          and e.product_slug is not null","e.product_slug is not null"),
+            "rpc extension vendue avant approbation":("extension_access_migration","e.status in ('approved','released')\n            and e.product_slug is not null\n            and public.has_sinjira_product(e.product_slug,uid)","e.product_slug is not null\n            and public.has_sinjira_product(e.product_slug,uid)"),
             "extension famille effective ouverte aux comptes child":("age_boundary_migration","public.sinjira_has_full_catalog_access((select auth.uid()))\n  and public.sinjira_my_age_band() in ('adult','youth')","public.sinjira_has_full_catalog_access((select auth.uid()))\n  and public.sinjira_my_age_band() in ('adult','youth','child')"),
             "policy catalogue réutilise oracle âge UUID":("age_boundary_migration","public.sinjira_my_age_band() in ('adult','youth')","public.sinjira_age_band((select auth.uid())) in ('adult','youth')"),
             "catalogue actif réouvert aux comptes child":("age_boundary_migration","active=true\n  and public.sinjira_my_age_band() in ('adult','youth')","active=true"),
