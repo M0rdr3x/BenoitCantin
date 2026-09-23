@@ -12,7 +12,7 @@ values
   jsonb_build_object(
     'birth_date',(current_date-interval '15 years')::date::text,
     'date_of_birth',(current_date-interval '15 years')::date::text,
-    'gender','Autre','sex','other','pseudo','Famille jeunesse test',
+    'gender','Femme','sex','female','pseudo','Famille jeunesse test',
     'display_name','Famille jeunesse test','residence_country','Canada'
   )
 ),
@@ -22,7 +22,7 @@ values
   jsonb_build_object(
     'birth_date',(current_date-interval '30 years')::date::text,
     'date_of_birth',(current_date-interval '30 years')::date::text,
-    'gender','Autre','sex','other','pseudo','Membre standard test',
+    'gender','Femme','sex','female','pseudo','Membre standard test',
     'display_name','Membre standard test','residence_country','Canada'
   )
 ),
@@ -32,7 +32,7 @@ values
   jsonb_build_object(
     'birth_date',(current_date-interval '15 years')::date::text,
     'date_of_birth',(current_date-interval '15 years')::date::text,
-    'gender','Autre','sex','other','pseudo','Famille enfant test',
+    'gender','Femme','sex','female','pseudo','Famille enfant test',
     'display_name','Famille enfant test','residence_country','Canada'
   )
 ),
@@ -42,7 +42,7 @@ values
   jsonb_build_object(
     'birth_date',(current_date-interval '40 years')::date::text,
     'date_of_birth',(current_date-interval '40 years')::date::text,
-    'gender','Autre','sex','other','pseudo','Tuteur test',
+    'gender','Femme','sex','female','pseudo','Tuteur test',
     'display_name','Tuteur test','residence_country','Canada'
   )
 );
