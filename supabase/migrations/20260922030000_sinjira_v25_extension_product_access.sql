@@ -32,7 +32,16 @@ create index if not exists extensions_product_slug_idx
   on public.extensions(product_slug)
   where product_slug is not null;
 
+-- Supprimer les anciennes policies permissives : PostgreSQL combine les policies
+-- SELECT permissives avec OR. Les laisser actives contournerait les nouvelles
+-- contraintes de projet parent non brouillon.
+drop policy if exists extensions_public on public.extensions;
+drop policy if exists admin_read_all_extensions on public.extensions;
+drop policy if exists extensions_anon_public on public.extensions;
+drop policy if exists extensions_authenticated_read on public.extensions;
 drop policy if exists "extensions public read" on public.extensions;
+drop policy if exists extensions_admin_read_v25 on public.extensions;
+
 create policy "extensions public read"
 on public.extensions
 for select
@@ -47,6 +56,12 @@ using (
       and parent_project.status<>'draft'
   )
 );
+
+create policy extensions_admin_read_v25
+on public.extensions
+for select
+to authenticated
+using (public.is_sinjira_admin((select auth.uid())));
 
 drop policy if exists extensions_purchased_read_v25 on public.extensions;
 create policy extensions_purchased_read_v25
