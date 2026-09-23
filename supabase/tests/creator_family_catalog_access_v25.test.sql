@@ -55,7 +55,13 @@ where user_id='f3000000-0000-4000-8000-000000000003';
 insert into public.guardian_links(
   minor_user_id,guardian_user_id,status,guardian_role,can_view_contact_metadata,consented_at
 )
-values(
+values
+(
+  'f1000000-0000-4000-8000-000000000001',
+  'f4000000-0000-4000-8000-000000000004',
+  'verified','parent',false,now()
+),
+(
   'f3000000-0000-4000-8000-000000000003',
   'f4000000-0000-4000-8000-000000000004',
   'verified','parent',false,now()
@@ -844,9 +850,9 @@ select set_config(
 set local role authenticated;
 
 select is(
-  public.sinjira_age_band('f3000000-0000-4000-8000-000000000003'),
+  public.sinjira_my_age_band(),
   'child',
-  'le compte familial de preuve est bien classé 11–12 ans'
+  'le compte familial de preuve est bien classé 11–12 ans via le helper self-only'
 );
 select ok(
   public.is_sinjira_catalog_family_member('f3000000-0000-4000-8000-000000000003'),
