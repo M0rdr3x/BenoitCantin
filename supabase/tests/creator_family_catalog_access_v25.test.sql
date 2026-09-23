@@ -979,6 +979,12 @@ select ok(
 
 reset role;
 
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('role','service_role')::text,
+  true
+);
+
 insert into public.orders(id,user_id,order_number,status,currency,total_cents)
 values(
   'fd100000-0000-4000-8000-000000000013',
