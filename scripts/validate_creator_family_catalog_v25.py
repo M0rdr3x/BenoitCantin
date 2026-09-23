@@ -132,7 +132,10 @@ def validate(contents:dict[str,str])->None:
         "altertablepublic.extensionsenablerowlevelsecurity",
         "altertablepublic.extensionsaddcolumnifnotexistsproduct_slugtext",
         "extensions_product_slug_fkey",
+        "droppolicyifexistsextensions_anon_publiconpublic.extensions",
+        "droppolicyifexistsextensions_authenticated_readonpublic.extensions",
         "createpolicy\"extensionspublicread\"onpublic.extensions",
+        "createpolicyextensions_admin_read_v25",
         "createpolicyextensions_purchased_read_v25",
         "parent_project.id=extensions.project_id",
         "parent_project.status<>'draft'",
@@ -210,6 +213,10 @@ def validate(contents:dict[str,str])->None:
         "altertablepublic.projectsaddcolumnifnotexistsproduct_slugtext",
         "projects_product_slug_fkey",
         "createpolicyprojects_purchased_read_v25",
+        "droppolicyifexistsdocuments_read_by_accessonpublic.documents",
+        "droppolicyifexistsadmin_read_all_documentsonpublic.documents",
+        "droppolicyifexistsdocuments_anon_readonpublic.documents",
+        "droppolicyifexistsdocuments_authenticated_readonpublic.documents",
         "status<>'draft'andvisibility='public'andproduct_slugisnulland(",
         "(status<>'draft'andvisibility='account'andproduct_slugisnull)orsinjira_catalog_internal.project_access_rank(id,(selectauth.uid()))>=20",
         "status<>'draft'andproduct_slugisnotnull",
@@ -479,6 +486,12 @@ def validate(contents:dict[str,str])->None:
 
     if "selectplan(94);" not in test:
         fail("pgTAP famille: plan(94) absent")
+    if test.count("'verified','parent',false,now()") < 2:
+        fail("pgTAP famille: le youth familial doit rester supervisé et le compte 11–12 doit conserver son tuteur")
+    if "public.sinjira_age_band('f3000000-0000-4000-8000-000000000003')" in test:
+        fail("pgTAP famille: le test Junior ne doit pas réintroduire l'oracle âge UUID navigateur")
+    if "public.sinjira_my_age_band(),'child','lecomptefamilialdepreuveestbienclassé11–12ansvialehelperself-only'" not in test:
+        fail("pgTAP famille: preuve âge Junior self-only absente")
     if test.count("anditem->>'cover_url'isnull") < 2:
         fail("pgTAP famille: masquage des couvertures 11–12 non prouvé sur projet et roman")
     for marker in (
@@ -604,6 +617,7 @@ def main()->None:
             "extension achetée effective ouverte aux comptes child":("age_boundary_migration","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band() in ('adult','youth')\n  and public.has_sinjira_product","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band() in ('adult','youth','child')\n  and public.has_sinjira_product"),
             "extension interne vendue avant approbation":("age_boundary_migration","status in ('approved','released')\n  and product_slug is not null","product_slug is not null"),
             "RLS extensions désactivée":("extension_access_migration","alter table public.extensions\n  enable row level security;","-- RLS intentionally removed"),
+            "ancienne policy extension anonyme conservée":("extension_access_migration","drop policy if exists extensions_anon_public on public.extensions;","-- legacy extensions_anon_public left active"),
             "extension publique réexpose parent brouillon":("extension_access_migration","and parent_project.status<>'draft'\n  )\n);","\n  )\n);"),
             "extension achetée effective réexpose parent brouillon":("age_boundary_migration","and parent_project.status<>'draft'\n  )\n  and public.sinjira_my_age_band()","\n  )\n  and public.sinjira_my_age_band()"),
             "rpc extension réexpose parent brouillon":("extension_access_migration","p.status<>'draft'\n        and (","("),
@@ -617,6 +631,8 @@ def main()->None:
             "page achats lit avant garde Junior":("purchases","if(!commerceAllowed){","if(false){"),
             "wrapper droit produit redevient privilégié":("age_boundary_migration","language sql\nstable\nsecurity invoker\nset search_path=''\nas $wrapper$","language sql\nstable\nsecurity definer\nset search_path=''\nas $wrapper$"),
             "wrapper droit produit réexpose 11–12":("age_boundary_migration","or public.sinjira_my_age_band() not in ('adult','youth')\n      then false","or false\n      then false"),
+            "ancienne policy document authentifiée conservée":("project_access_migration","drop policy if exists documents_authenticated_read on public.documents;","-- legacy documents_authenticated_read left active"),
+            "oracle âge UUID réintroduit dans pgTAP Junior":("test","public.sinjira_my_age_band(),\n  'child',\n  'le compte familial de preuve est bien classé 11–12 ans via le helper self-only'","public.sinjira_age_band('f3000000-0000-4000-8000-000000000003'),\n  'child',\n  'le compte familial de preuve est bien classé 11–12 ans via le helper self-only'"),
             "projet payant rouvert aux comptes child":("project_access_migration","p.child_access_status='approved_11_12'\n      and p.product_slug is null\n      and (","p.child_access_status='approved_11_12'\n      and ("),
             "droit projet acheté retiré":("project_access_migration","public.has_sinjira_product(product_slug,(select auth.uid()))","true"),
             "projet public payant réexposé sans droit":("project_access_migration","status<>'draft'\n    and visibility='public'\n    and product_slug is null","visibility='public'\n    and product_slug is null"),
