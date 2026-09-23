@@ -561,11 +561,11 @@ Le snapshot de revue attend exactement **41 migrations locales futures non revue
 
 | Migration | Git blob SHA-1 |
 |---|---|
-| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `378b32d59781285c9781785075ba73c15b0a66e9` |
+| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `7f5326263860bf9579b876d532c329ac13fdade6` |
 | `20260922023000_sinjira_v25_paid_order_product_access.sql` | `41643696fdfba9f1075e1388dcf9fab64132a09e` |
 | `20260922030000_sinjira_v25_extension_product_access.sql` | `0bdc1677d4efe669b8ec1503ed41f745136c6680` |
 | `20260922031500_sinjira_v25_catalog_age_helper_boundary.sql` | `b0b2495e24cc0a23c7d50f32f4caef24314cc85a` |
-| `20260922033000_sinjira_v25_project_product_access.sql` | `a68114baaa6d6f057da1aa6c80da09c9fadc70a2` |
+| `20260922033000_sinjira_v25_project_product_access.sql` | `a07f22b7801a6182e0c15dc05e2cf09df92e7dde` |
 
 ### Enfant 11–12 / Junior
 
@@ -604,6 +604,8 @@ Le snapshot de revue attend exactement **41 migrations locales futures non revue
 | `20260919130000_sinjira_v25_account_catalog_browser_privileges.sql` | `4436b3d183fa975f5eedeb0427d66da050dfa961` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
+
+Mise à jour de preuve du 23 septembre 2026 : les empreintes de `20260922014000_sinjira_v25_creator_family_catalog_access.sql` et `20260922033000_sinjira_v25_project_product_access.sql` ont été rafraîchies après durcissement de la frontière projets payants/documents et du rang Junior. Elles restent **non revues production**; cette mise à jour n'est ni une approbation humaine ni une autorisation de déploiement.
 
 Les empreintes des migrations `20260922023000_sinjira_v25_paid_order_product_access.sql` et `20260922030000_sinjira_v25_extension_product_access.sql` ont été rafraîchies après leurs durcissements locaux (frontière d’âge, droits produit minimisés, fermeture des extensions liées à un projet brouillon). Elles restent **non revues pour la production** et ce rafraîchissement ne constitue ni une approbation humaine ni une autorisation de déploiement.
 
