@@ -477,6 +477,8 @@ La migration forward-only :
 
 ajoute un registre privé par UUID et un provisionnement réservé à `service_role`. Les implémentations privilégiées famille restent dans `sinjira_v25_internal`; les RPC publics correspondants sont uniquement des wrappers `SECURITY INVOKER`, conformément à la frontière C2. Le courriel fourni au moment du provisionnement sert uniquement à résoudre `auth.users.id`; il n'est ni stocké dans le registre familial ni écrit dans cette migration publique.
 
+Cette migration crée aussi, de façon idempotente, la colonne `projects.product_slug` avant de définir `project_access_rank()`. Ce prérequis corrige l'ordre de reconstruction d'une base neuve; la contrainte, l'index et la convergence des valeurs restent dans `20260922033000_sinjira_v25_project_product_access.sql`. La migration demeure **non revue pour la production**.
+
 Pour 13+ (`youth` / `adult`), un compte familial peut relire les projets, romans, produits et extensions internes sans faux achat. Pour 11–12 ans, `sinjira_my_extension_catalog()` expose uniquement une fiche protégée minimisée par extension (`content_available=false`) sans rendre la ligne interne directement lisible sous RLS. `has_sinjira_product()` reconnaît aussi ce rôle pour lancer un jeu/licence appartenant à l'univers, tout en conservant l'anti-énumération et sans créer d'entitlement. Pour 11–12 ans, l'accès supplémentaire est limité à des RPC de catalogue minimisés : la fiche d'une création peut être visible, mais un projet non approuvé ne contient ni chemin ouvrable ni couverture non classée; un roman privé ne reçoit jamais `full_access`, `public_path`, `demo_path`, couverture privée ou nombre de pages, et le droit produit reste faux. `project_access_rank` n'accorde le rang famille qu'à `youth/adult`.
 
 Les adresses réelles des comptes familiaux ne sont volontairement pas inscrites dans Git. Leur association production devra être exécutée séparément sous `service_role`, après revue et déploiement de la migration.
@@ -561,7 +563,7 @@ Le snapshot de revue attend exactement **41 migrations locales futures non revue
 
 | Migration | Git blob SHA-1 |
 |---|---|
-| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `7f5326263860bf9579b876d532c329ac13fdade6` |
+| `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | `44f0e779fc667aaf6b39dbcb121b47a0f2e1054a` |
 | `20260922023000_sinjira_v25_paid_order_product_access.sql` | `41643696fdfba9f1075e1388dcf9fab64132a09e` |
 | `20260922030000_sinjira_v25_extension_product_access.sql` | `0bdc1677d4efe669b8ec1503ed41f745136c6680` |
 | `20260922031500_sinjira_v25_catalog_age_helper_boundary.sql` | `b0b2495e24cc0a23c7d50f32f4caef24314cc85a` |
