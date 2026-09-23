@@ -216,6 +216,7 @@ def validate(contents:dict[str,str])->None:
         "orsinjira_catalog_internal.project_access_rank(p.id,uid)>=20",
         "public.sinjira_my_age_band()in('adult','youth')",
         "public.has_sinjira_product(product_slug,(selectauth.uid()))",
+        "parent_project.status<>'draft'andparent_project.product_slugisnotnullandpublic.has_sinjira_product(",
         "p.product_slugisnull",
         "p.child_access_status='approved_11_12'andp.product_slugisnulland(",
         "createorreplacefunctionsinjira_v25_internal.sinjira_my_project_catalog()",
