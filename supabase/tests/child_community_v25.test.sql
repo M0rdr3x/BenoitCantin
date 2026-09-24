@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(51);
+select plan(55);
 
 select ok(to_regprocedure('private.sinjira_junior_community_enabled(uuid)') is not null,'garde privée d activation Junior existe');
 select ok(to_regprocedure('public.junior_community_feed(integer)') is not null,'RPC fil Junior existe');
@@ -138,6 +138,42 @@ select ok((select id is not null from junior_test_ids where name='comment1'),'le
 
 select set_config('request.jwt.claim.sub','72000000-0000-4000-8000-000000000011',true);
 select ok(public.junior_community_feed(30)::text like '%Moi aussi, surtout les jeux!%','le commentaire Junior apparaît dans le fil');
+
+select set_config('request.jwt.claim.sub','71000000-0000-4000-8000-000000000001',true);
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','71000000-0000-4000-8000-000000000001','aal','aal2')::text,
+  true
+);
+select is(
+  (public.guardian_set_junior_community('73000000-0000-4000-8000-000000000012',false)->>'enabled')::boolean,
+  false,
+  'le parent retire l accès Junior de l auteur du commentaire'
+);
+
+select set_config('request.jwt.claim.sub','72000000-0000-4000-8000-000000000011',true);
+select ok(
+  position('Moi aussi, surtout les jeux!' in public.junior_community_feed(30)::text)=0,
+  'le commentaire disparaît du fil dès que son auteur perd l accès Junior'
+);
+
+select set_config('request.jwt.claim.sub','71000000-0000-4000-8000-000000000001',true);
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','71000000-0000-4000-8000-000000000001','aal','aal2')::text,
+  true
+);
+select is(
+  (public.guardian_set_junior_community('73000000-0000-4000-8000-000000000012',true)->>'enabled')::boolean,
+  true,
+  'le parent réactive explicitement l accès Junior de l auteur du commentaire'
+);
+
+select set_config('request.jwt.claim.sub','72000000-0000-4000-8000-000000000011',true);
+select ok(
+  public.junior_community_feed(30)::text like '%Moi aussi, surtout les jeux!%',
+  'le commentaire redevient visible après réactivation explicite du même enfant'
+);
 
 select throws_ok(
   $$select public.junior_community_create_post('Ajoute-moi sur https://example.com')$$,
