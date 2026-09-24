@@ -30,7 +30,7 @@ Ce scan ne conclut pas qu'une migration est sûre pour la production.
 
 | Migration | Signaux statiques à relire |
 |---|---|
-| `20260916210000_sinjira_v25_child_guardian_signup.sql` | ~912 lignes; nombreux `SECURITY DEFINER`; policies créées/remplacées; écritures de données; 5 triggers; flux tuteur/enfant |
+| `20260916210000_sinjira_v25_child_guardian_signup.sql` | ~920 lignes; nombreux `SECURITY DEFINER`; policies créées/remplacées; écritures de données; 5 triggers; flux tuteur/enfant; retrait explicite des anciennes policies projets/documents |
 | `20260917223000_sinjira_v25_junior_community.sql` | ~671 lignes; RLS sur plusieurs tables; nombreux RPC privilégiés; grants/revokes; 3 triggers; surface sociale Junior |
 | `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | ~707 lignes; RLS; policies; `SECURITY DEFINER` + `SECURITY INVOKER`; nombreux grants; `service_role`; catalogue famille complet |
 | `20260922033000_sinjira_v25_project_product_access.sql` | ~350 lignes; policies projet/documents; suppressions d’anciennes policies permissives; mutations de données; dépendance `projects.product_slug` |
@@ -116,6 +116,8 @@ Le scan statique ne prouve pas :
 Ces éléments restent des étapes humaines ou de prévol séparées.
 
 ## Conclusion de triage
+
+La revue du 24 septembre a confirmé un risque d’addition RLS par `OR` dans les migrations #4/#6 : les anciennes policies projets/documents sont désormais retirées avant les gardes `child`; leurs empreintes ont été rafraîchies sans approbation production.
 
 Aucun motif mécanique de type `DROP TABLE`, `DROP COLUMN`, `TRUNCATE` ou `SECURITY DEFINER` sans `search_path` n'a été détecté dans le lot figé de 42 migrations.
 
