@@ -112,7 +112,7 @@ Mise à jour du **2026-09-24** : la migration #42 corrige forward-only la visibi
 Suspendre la promotion si une seule des conditions suivantes apparaît :
 
 - empreinte différente de celle figée dans le snapshot;
-- migration nouvelle ou absente du lot de 41;
+- migration nouvelle ou absente du lot de 42;
 - élargissement de droits non expliqué;
 - policy permissive historique encore active et combinable avec une nouvelle policy;
 - accès navigateur à un helper prévu pour `service_role`;
@@ -126,6 +126,6 @@ Suspendre la promotion si une seule des conditions suivantes apparaît :
 La sortie correcte de cette feuille est soit :
 
 1. **NON APPROUVÉ** avec les points à corriger; ou
-2. une **approbation humaine explicite**, séparée de cette feuille, qui précise le HEAD, les 41 blobs relus et la prochaine étape autorisée.
+2. une **approbation humaine explicite**, séparée de cette feuille, qui précise le HEAD, les 42 blobs relus et la prochaine étape autorisée.
 
 Même après approbation du SQL, la fusion, le prévol distant, la configuration des secrets, l’application Supabase et la réconciliation du ledger restent des décisions séparées.
