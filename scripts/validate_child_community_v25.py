@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260917223000_sinjira_v25_junior_community.sql'
+COMMENT_VISIBILITY=ROOT/'supabase/migrations/20260924173000_sinjira_v25_junior_comment_author_visibility.sql'
 BOUNDARY=ROOT/'supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql'
 TEST=ROOT/'supabase/tests/child_community_v25.test.sql'
 PAGE=ROOT/'compte/communaute-junior.html'
@@ -34,6 +35,7 @@ def req(condition,message):
         errors.append(message)
 
 mig=read(MIG)
+comment_visibility=read(COMMENT_VISIBILITY)
 boundary=read(BOUNDARY)
 test=read(TEST)
 page=read(PAGE)
@@ -50,6 +52,7 @@ admin_edge=read(ADMIN_EDGE)
 admin_client=read(ADMIN_CLIENT)
 
 m=compact(mig)
+cv=compact(comment_visibility)
 b=compact(boundary)
 t=compact(test)
 p=page.lower()
@@ -103,6 +106,19 @@ req("'author_alias',private.sinjira_junior_alias" in m,'Le fil ne renvoie pas le
 req('p.author_user_id=uidmine' in m and "'mine',c.author_user_id=uid" in m,'Le client doit recevoir seulement un indicateur own/mine, pas l identité auteur.')
 req('social_real_messages' not in m and 'social_character_messages' not in m,'La migration Junior ne doit créer aucune messagerie privée.')
 req('public.sinjira_can_social_interact' not in feed_section,'Le fil Junior ne doit pas réutiliser la frontière sociale youth/adulte.')
+
+# Révocation cohérente des auteurs de commentaires : le correctif forward-only
+# modifie l implémentation interne après la frontière RPC sans réouvrir un DEFINER public.
+req('createorreplacefunctionsinjira_v25_internal.junior_community_feed(p_limitintegerdefault30)' in cv,
+    'Le correctif de visibilité des commentaires Junior ne redéfinit pas le fil interne final.')
+req('private.sinjira_is_junior(c.author_user_id)' in cv
+    and 'private.sinjira_junior_community_enabled(c.author_user_id)' in cv,
+    'Le fil Junior laisse encore visible un commentaire dont l auteur a quitté la bande Junior ou perdu son consentement.')
+req('createorreplacefunctionpublic.junior_community_feed' not in cv,
+    'Le correctif commentaires ne doit pas recréer un SECURITY DEFINER dans le schéma public.')
+req('revokeallonfunctionsinjira_v25_internal.junior_community_feed(integer)frompublic,anon,authenticated' in cv
+    and 'grantexecuteonfunctionsinjira_v25_internal.junior_community_feed(integer)toauthenticated,service_role' in cv,
+    'Les ACL finales du fil Junior interne ne sont pas bornées.')
 
 # Garde de contenu Junior.
 for marker,msg in (
@@ -235,6 +251,11 @@ req('authenticatedconservelewrapperdebandeself-only' in t,'Le pgTAP ne prouve pa
 req('anonconservelewrapperself-onlyrequisparlesrlspubliques' in t,'Le pgTAP ne prouve pas l accès anon self-only requis par les RLS publiques.')
 req('junior_guardian_consent_required' in t and 'aprèsrévocationlefiljuniorestimmédiatementrefusécôtéserveur' in t,'Le fil Junior n est pas prouvé fermé après révocation.')
 req('leparentpeutréactiverlacommunautéjunior' in t,'La réactivation parentale n est pas couverte.')
+req('leparentretirelaccèsjuniordel’auteurducommentaire' in t
+    and 'lecommentairedisparaîtdufildèsquesonauteurperdlaccèsjunior' in t
+    and 'leparentréactiveexplicitementlaccèsjuniordel’auteurducommentaire' in t
+    and 'lecommentaireredevientvisibleaprèsréactivationexplicitedumêmeenfant' in t,
+    'Le pgTAP ne prouve pas que la visibilité des commentaires suit immédiatement le consentement Junior de leur auteur.')
 for marker,msg in (
     ('aucunselectdirectsurpublicationsjunior','Le test ne prouve pas l absence de SELECT direct.'),
     ('leparentactiveexplicitementlacommunautéjunior','Le test ne prouve pas l opt-in parent.'),
