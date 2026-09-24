@@ -566,8 +566,8 @@ def validate(contents: dict[str, str]) -> None:
     ):
         if marker not in private_profile:
             fail(f"profil privé: verrou de chargement absent: {marker}")
-    if "sinjira-private-profile-v24-5-23.js?v=25.1.1" not in contents["profile_html"]:
-        fail("profil privé: cache module V25.1.1 absent")
+    if "sinjira-private-profile-v24-5-23.js?v=25.1.2" not in contents["profile_html"]:
+        fail("profil privé: cache module V25.1.2 absent")
     if "data-stat-reader" in contents["account_js"] or "data-account-role" in contents["account_js"] or "data-project-access-summary" in contents["account_js"]:
         fail("tableau de bord: données privées dupliquées dans le module Compte générique")
     if "from('sinjira_reader_library').select('novel_id,last_opened_at,progress_percent').eq('user_id',user.id)" not in contents["dashboard_js"]:
@@ -906,7 +906,7 @@ def main() -> None:
             "nom affiché redevenu ambigu":("profile_html","Nom affiché privé","Nom affiché"),
             "profil privé sauvegarde sans chargement":("private_profile_js","if(!loadedSnapshot){","if(false){"),
             "profil privé réactivé après échec de chargement":("private_profile_js","setStatus(status,userMessage(error)+' Le formulaire reste verrouillé tant que vos données n’ont pas été chargées. Rechargez la page pour réessayer.','error');","setBusy(false); setStatus(status,userMessage(error),'error');"),
-            "cache profil privé revenu V25.1.0":("profile_html","sinjira-private-profile-v24-5-23.js?v=25.1.1","sinjira-private-profile-v24-5-23.js?v=25.1.0"),
+            "cache profil privé revenu V25.1.1":("profile_html","sinjira-private-profile-v24-5-23.js?v=25.1.2","sinjira-private-profile-v24-5-23.js?v=25.1.1"),
             "compteur romans suivis retiré":("dashboard_js","setText('[data-stat-reader]',count)","setText('[data-stat-reader]',0)"),
             "rôle dashboard supposé côté client":("dashboard_js","s.rpc('is_sinjira_owner',{p_user_id:user.id})","Promise.resolve({data:false,error:null})"),
             "owner retiré du catalogue dashboard":("dashboard_js","if(roleResolved&&(isAdmin||isOwner)){","if(roleResolved&&isAdmin){"),
