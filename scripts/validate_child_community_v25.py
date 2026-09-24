@@ -253,9 +253,11 @@ req('junior_guardian_consent_required' in t and 'aprèsrévocationlefiljuniorest
 req('leparentpeutréactiverlacommunautéjunior' in t,'La réactivation parentale n est pas couverte.')
 req('leparentretirelaccèsjuniordelauteurducommentaire' in t
     and 'lecommentairedisparaîtdufildèsquesonauteurperdlaccèsjunior' in t
+    and 'lapublicationdisparaîtdufildèsquesonauteurperdlaccèsjunior' in t
     and 'leparentréactiveexplicitementlaccèsjuniordelauteurducommentaire' in t
-    and 'lecommentaireredevientvisibleaprèsréactivationexplicitedumêmeenfant' in t,
-    'Le pgTAP ne prouve pas que la visibilité des commentaires suit immédiatement le consentement Junior de leur auteur.')
+    and 'lecommentaireredevientvisibleaprèsréactivationexplicitedumêmeenfant' in t
+    and 'lapublicationredevientvisibleaprèsréactivationexplicitedumêmeenfant' in t,
+    'Le pgTAP ne prouve pas que la visibilité des publications et commentaires suit immédiatement le consentement Junior de leur auteur.')
 for marker,msg in (
     ('aucunselectdirectsurpublicationsjunior','Le test ne prouve pas l absence de SELECT direct.'),
     ('leparentactiveexplicitementlacommunautéjunior','Le test ne prouve pas l opt-in parent.'),
