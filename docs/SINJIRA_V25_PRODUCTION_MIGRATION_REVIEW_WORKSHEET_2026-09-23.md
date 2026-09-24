@@ -96,10 +96,13 @@ Lire les migrations dans l’ordre chronologique canonique. Les colonnes de cont
 | 40 | `20260922031500_sinjira_v25_catalog_age_helper_boundary.sql` | `b0b2495e24cc0a23c7d50f32f4caef24314cc85a` | Catalogue / droits produit | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 41 | `20260922033000_sinjira_v25_project_product_access.sql` | `a07f22b7801a6182e0c15dc05e2cf09df92e7dde` | Catalogue / droits produit | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 42 | `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | `3c80073c9bc027707d1f12a129cebd91a8d7ba4f` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 43 | `20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql` | `5cdb8c576aae2ff7adcf75dd1270ba446b063e59` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 
 Mise à jour du **2026-09-24** : les migrations #4 et #6 ont aussi été durcies pour retirer les anciennes policies SELECT projets/documents avant d’installer les gardes `child`, fermant une combinaison permissive par `OR`. Elles restent **NON REVUES / NON APPROUVÉES**.
 
 Mise à jour du **2026-09-24** : la migration #42 corrige forward-only la visibilité des commentaires Junior après révocation de l’accès de leur auteur. Elle reste **NON REVUE / NON APPROUVÉE** et n’autorise aucune promotion.
+
+Mise à jour du **2026-09-24** : la migration #43 ferme la possibilité de commenter une publication Junior pendant un masquage humain `hide_content`. Elle reste **NON REVUE / NON APPROUVÉE**; aucune case de revue n’est cochée automatiquement.
 
 Mise à jour du **2026-09-24** : une relecture automatisée ciblée des migrations #37 à #42 a été consignée dans la matrice technique. Elle confirme la cohérence des gardes famille/achat/âge/projet/Junior avec les preuves CI vertes du HEAD fonctionnel `aac9aa92ef4b6ab14eff53c8fcd230b3a5f17729`. **Aucune case de cette feuille n’est cochée par cette relecture automatisée**; le comportement `project_access` explicite `player/tester` pour adult/youth reste notamment un point de décision humaine distinct d’un achat.
 
@@ -116,7 +119,7 @@ Mise à jour du **2026-09-24** : une relecture automatisée ciblée des migratio
 Suspendre la promotion si une seule des conditions suivantes apparaît :
 
 - empreinte différente de celle figée dans le snapshot;
-- migration nouvelle ou absente du lot de 42;
+- migration nouvelle ou absente du lot de 43;
 - élargissement de droits non expliqué;
 - policy permissive historique encore active et combinable avec une nouvelle policy;
 - accès navigateur à un helper prévu pour `service_role`;
@@ -130,6 +133,6 @@ Suspendre la promotion si une seule des conditions suivantes apparaît :
 La sortie correcte de cette feuille est soit :
 
 1. **NON APPROUVÉ** avec les points à corriger; ou
-2. une **approbation humaine explicite**, séparée de cette feuille, qui précise le HEAD, les 42 blobs relus et la prochaine étape autorisée.
+2. une **approbation humaine explicite**, séparée de cette feuille, qui précise le HEAD, les 43 blobs relus et la prochaine étape autorisée.
 
 Même après approbation du SQL, la fusion, le prévol distant, la configuration des secrets, l’application Supabase et la réconciliation du ledger restent des décisions séparées.
