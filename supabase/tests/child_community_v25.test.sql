@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(59);
+select plan(60);
 
 select ok(to_regprocedure('private.sinjira_junior_community_enabled(uuid)') is not null,'garde privée d activation Junior existe');
 select ok(to_regprocedure('public.junior_community_feed(integer)') is not null,'RPC fil Junior existe');
@@ -126,6 +126,15 @@ values(
   'standard'
 );
 select ok(position('J aime explorer les histoires de SINJIRA' in public.junior_community_feed(30)::text)=0,'une décision humaine hide_content masque la publication Junior');
+select throws_ok(
+  $select public.junior_community_create_comment(
+    (select id from junior_test_ids where name='post1'),
+    'Ce commentaire doit être refusé pendant le masquage'
+  )$,
+  'P0001',
+  'JUNIOR_POST_UNAVAILABLE',
+  'une publication masquée par modération ne peut plus recevoir de commentaire Junior'
+);
 update private.moderation_decisions
 set status='reversed',reversed_at=now(),reversal_reason='Test automatique : décision renversée après révision humaine.'
 where target_id=(select id from junior_test_ids where name='post1')
