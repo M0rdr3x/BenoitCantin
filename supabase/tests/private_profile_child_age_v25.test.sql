@@ -131,7 +131,7 @@ select lives_ok(
 );
 
 select throws_ok(
-  $ select public.private_profile_save(
+  $age_review$ select public.private_profile_save(
     (current_date-interval '18 years')::date,
     'prefer_not_to_say',
     array['Français'],
@@ -144,7 +144,7 @@ select throws_ok(
     'not_set',
     null,
     null
-  ) $,
+  ) $age_review$,
   'P0001',
   'BIRTH_DATE_PROTECTION_BOUNDARY_REQUIRES_REVIEW',
   'un compte mineur ne peut pas se vieillir lui-même pour sortir des protections Junior'
