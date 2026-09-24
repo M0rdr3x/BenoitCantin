@@ -538,11 +538,11 @@ Le snapshot a volontairement détecté que plusieurs migrations non revues avaie
 - `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` : la réponse des implémentations internes est maintenant minimisée dès A3, supprimant la fenêtre transitoire avant `20260921005000`;
 - `20260919093000_sinjira_v25_private_novel_catalog.sql` : RLS activée dès la création du registre privé et rôle propriétaire résolu par la frontière serveur canonique.
 
-Cette réouverture de revue **ne transforme aucune migration en migration production revue**. Les 42 migrations restent non revues au sens du `production-reviewed-migration-batch.txt`.
+Cette réouverture de revue **ne transforme aucune migration en migration production revue**. Le lot courant compte désormais 43 migrations, toutes non revues au sens du `production-reviewed-migration-batch.txt`.
 
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **42 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **43 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -605,6 +605,7 @@ Le snapshot de revue attend exactement **42 migrations locales futures non revue
 | `20260919123000_sinjira_v25_public_rpc_boundary.sql` | `61377e409f769ed94646791acaf8f3c1f86328d0` |
 | `20260919130000_sinjira_v25_account_catalog_browser_privileges.sql` | `4436b3d183fa975f5eedeb0427d66da050dfa961` |
 | `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | `3c80073c9bc027707d1f12a129cebd91a8d7ba4f` |
+| `20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql` | `5cdb8c576aae2ff7adcf75dd1270ba446b063e59` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -617,6 +618,8 @@ Les empreintes des migrations `20260922023000_sinjira_v25_paid_order_product_acc
 Mise à jour du 24 septembre 2026 : `20260916210000_sinjira_v25_child_guardian_signup.sql` et `20260918010000_sinjira_v25_child_sensitive_boundary.sql` retirent désormais explicitement les policies héritées `projects_*` / `documents_*` avant d’installer les gardes 11–12. Cela ferme la fenêtre séquentielle où PostgreSQL aurait combiné une ancienne policy permissive avec la nouvelle policy par `OR`. Leurs nouvelles empreintes restent **NON REVUES / NON APPROUVÉES**.
 
 Mise à jour du 24 septembre 2026 : `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` ferme une incohérence de révocation du fil Junior. Un commentaire est maintenant servi uniquement si son auteur est encore dans la bande `child` et dispose d’un consentement Junior actif. Le contenu historique n’est pas supprimé; il est masqué tant que l’accès n’est plus valide. Cette migration est ajoutée au snapshot comme **NON REVUE / NON APPROUVÉE**.
+
+Mise à jour du 24 septembre 2026 : `20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql` ferme une incohérence de modération : une publication sous `hide_content` ne peut plus recevoir de nouveaux commentaires Junior, même si un client conserve son UUID. La réversion humaine restaure le comportement normal; aucun contenu historique n’est supprimé. Cette migration est ajoutée au snapshot comme **NON REVUE / NON APPROUVÉE**.
 
 ## 4. Garde automatisé de snapshot
 
@@ -659,7 +662,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **42 migrations** dans l’ordre chronologique canonique; `20260921005000` appartient fonctionnellement au lot Mode Voyage et `20260924173000` ferme ensuite la visibilité des commentaires Junior après révocation.
+2. Relire les **43 migrations** dans l’ordre chronologique canonique; `20260921005000` appartient fonctionnellement au lot Mode Voyage, `20260924173000` ferme la visibilité des contenus Junior après révocation d’auteur et `20260924191000` arrête les nouveaux commentaires sur une publication masquée.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.
