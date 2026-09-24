@@ -50,6 +50,23 @@ req(projects_policy and "(selectauth.uid())isnullorpublic.sinjira_my_age_band()i
 req(documents_policy and "(selectauth.uid())isnullorpublic.sinjira_my_age_band()in('adult','youth')" in documents_policy and "sinjira_my_age_band()='child'" not in documents_policy,
     'Avant le classement 11–12, la policy documents expose encore du contenu non classé à child.')
 
+for marker in (
+    'droppolicyifexistsadmin_read_all_projectsonpublic.projects',
+    'droppolicyifexistsprojects_readonpublic.projects',
+    'droppolicyifexistsprojects_public_readonpublic.projects',
+    'droppolicyifexistsprojects_authenticated_readonpublic.projects',
+):
+    req(0 <= m.find(marker) < projects_start,
+        f'Une ancienne policy projets permissive peut encore contourner le garde child avant classement: {marker}')
+for marker in (
+    'droppolicyifexistsdocuments_read_by_accessonpublic.documents',
+    'droppolicyifexistsadmin_read_all_documentsonpublic.documents',
+    'droppolicyifexistsdocuments_anon_readonpublic.documents',
+    'droppolicyifexistsdocuments_authenticated_readonpublic.documents',
+):
+    req(0 <= m.find(marker) < documents_start,
+        f'Une ancienne policy documents permissive peut encore contourner le garde child avant classement: {marker}')
+
 req("service.rpc('sinjira_age_band',{p_user_id:user.id})" in d,'get-document-url ne vérifie pas l âge serveur.')
 req("ageband==='child'" in d and "doc.child_access_status!=='approved_11_12'" in d and "doc.projects?.child_access_status!=='approved_11_12'" in d,'get-document-url ne revérifie pas le classement 11–12 document + projet.')
 req("!['adult','youth','child'].includes(ageband)" in d and 'account_access_restricted' in d,'get-document-url ne ferme pas les bandes authentifiées restreintes.')
