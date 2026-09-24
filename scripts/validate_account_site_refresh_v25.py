@@ -735,8 +735,8 @@ def validate(contents: dict[str, str]) -> None:
     if "sinjira-reader.js?v=25.0.3" not in contents["demo_html"]:
         fail("lecteur démo: cache lecteur V25.0.3 absent")
 
-    if "selectplan(49);" not in test:
-        fail("pgTAP contenu: plan(49) absent")
+    if "selectplan(50);" not in test:
+        fail("pgTAP contenu: plan(50) absent")
     if "selectplan(26);" not in child_content_test:
         fail("pgTAP classement 11–12: plan(26) absent")
     for marker in (
@@ -766,6 +766,7 @@ def validate(contents: dict[str, str]) -> None:
         "unmembrenevoitpasunromanbrouilloncréateur",
         "unmembrenevoitpasunprojetinternecréateur",
         "lecréateurvoit sonprojetinternesansfauxachat".replace(" ", ""),
+        "lecataloguecompletducréateurnefabriqueaucundroitproduitcommercial",
         "unmembrevoitencoreunproduitinactifliéàsonentitlement",
         "unmembrevoitencoreunproduitinactifprésentdanssapropcommande".replace("propcommande", "proprecommande"),
         "unentitlementréelconserveledroitproduitmêmesileproduitdevientinactif",
