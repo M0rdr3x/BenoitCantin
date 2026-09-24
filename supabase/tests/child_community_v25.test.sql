@@ -127,10 +127,10 @@ values(
 );
 select ok(position('J aime explorer les histoires de SINJIRA' in public.junior_community_feed(30)::text)=0,'une décision humaine hide_content masque la publication Junior');
 select throws_ok(
-  $select public.junior_community_create_comment(
+  $hidden_post$select public.junior_community_create_comment(
     (select id from junior_test_ids where name='post1'),
     'Ce commentaire doit être refusé pendant le masquage'
-  )$,
+  )$hidden_post$,
   'P0001',
   'JUNIOR_POST_UNAVAILABLE',
   'une publication masquée par modération ne peut plus recevoir de commentaire Junior'
