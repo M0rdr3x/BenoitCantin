@@ -1,4 +1,4 @@
-# SINJIRA™ V25 — Matrice technique de revue des 41 migrations futures
+# SINJIRA™ V25 — Matrice technique de revue des 42 migrations futures
 
 Date de préparation : **2026-09-23 (America/Toronto)**  
 PR : **#435** — branche `a1/integration-rehearsal`
@@ -59,12 +59,13 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 | 39 | `20260922030000_sinjira_v25_extension_product_access.sql` | 181 lignes; RLS extensions; 3 policies créées/7 retirées; 1 definer; update | Vérifier suppression exhaustive des anciennes policies permissives, parent non brouillon et extension approuvée avant accès produit. |
 | 40 | `20260922031500_sinjira_v25_catalog_age_helper_boundary.sql` | 232 lignes; 11 policies créées/11 retirées; 1 definer + 2 invoker; âge/`service_role` | Revue prioritaire : frontière âge/commerce, helper produit self-only et non-réouverture des comptes 11–12. |
 | 41 | `20260922033000_sinjira_v25_project_product_access.sql` | 350 lignes; projets; 3 policies créées/8 retirées; 2 definer; 2 updates | Revue prioritaire : projet payant, documents enfants du projet, parent brouillon, droits explicites distincts et suppression des anciennes policies SELECT permissives. |
+| 42 | `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | 88 lignes; 1 `SECURITY DEFINER`; redéfinition du fil Junior interne; aucune mutation de données | Vérifier que publications **et commentaires** exigent encore une bande child active et un consentement Junior courant, sans recréer de DEFINER public ni supprimer l’historique. |
 
 ## Ordre conseillé de lecture technique
 
 Sans constituer un classement de sûreté, un ordre efficace pour la **lecture humaine** est :
 
-1. commencer par les frontières qui ont la plus grande surface de privilèges/RLS : 4, 5, 33, 34, 37, 39, 40, 41;
+1. commencer par les frontières qui ont la plus grande surface de privilèges/RLS : 4, 5, 33, 34, 37, 39, 40, 41, puis relire 42 avec la révocation Junior;
 2. relire ensuite les transitions de supervision et AAL2 : 10 à 25;
 3. relire les écritures/retentions/seeds : 2, 3, 26 à 30, 35;
 4. terminer par les migrations plus courtes dont l'effet dépend surtout des migrations précédentes.
@@ -89,7 +90,7 @@ Pour chaque migration concernée :
 Cette matrice peut réduire le coût de lecture, mais **elle ne doit jamais remplir automatiquement la colonne « Décision humaine »** de la feuille de revue.
 
 Tant qu'une décision humaine explicite n'existe pas :
-- les 41 migrations restent non revues;
+- les 42 migrations restent non revues;
 - le reviewed batch reste inchangé;
 - le ledger reste inchangé;
 - aucun prévol distant ni déploiement production n'est autorisé;
