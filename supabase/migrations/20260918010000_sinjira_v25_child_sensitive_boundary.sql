@@ -91,6 +91,10 @@ for each row execute function private.sinjira_child_research_consent_guard();
 -- Avant le classement explicite 11–12, un compte child authentifié ne reçoit aucun projet/document via le catalogue.
 -- Les visiteurs anonymes conservent la lecture des contenus réellement publics; 20260918013000 rouvre ensuite uniquement le contenu explicitement approved_11_12.
 drop policy if exists "projects readable when accessible" on public.projects;
+drop policy if exists admin_read_all_projects on public.projects;
+drop policy if exists projects_read on public.projects;
+drop policy if exists projects_public_read on public.projects;
+drop policy if exists projects_authenticated_read on public.projects;
 create policy "projects readable when accessible" on public.projects for select to anon,authenticated
 using(
   status<>'draft' and (
@@ -110,6 +114,10 @@ using(
 );
 
 drop policy if exists "approved documents visible by access" on public.documents;
+drop policy if exists documents_read_by_access on public.documents;
+drop policy if exists admin_read_all_documents on public.documents;
+drop policy if exists documents_anon_read on public.documents;
+drop policy if exists documents_authenticated_read on public.documents;
 create policy "approved documents visible by access" on public.documents for select to anon,authenticated
 using(
   status='approved'
