@@ -176,6 +176,25 @@ req("createpolicyplaytests_read_authorized" in m
 pre_rating_read_gate="(selectauth.uid())isnullorpublic.sinjira_my_age_band()in('adult','youth')"
 req(m.count(pre_rating_read_gate)>=2,
     "La migration d'introduction enfant expose encore à child du contenu projet/document non classé avant approved_11_12.")
+
+projects_gate_pos=m.find('createpolicy"projectsreadablewhenaccessible"')
+documents_gate_pos=m.find('createpolicy"approveddocumentsvisiblebyaccess"')
+for marker in (
+    'droppolicyifexistsadmin_read_all_projectsonpublic.projects',
+    'droppolicyifexistsprojects_readonpublic.projects',
+    'droppolicyifexistsprojects_public_readonpublic.projects',
+    'droppolicyifexistsprojects_authenticated_readonpublic.projects',
+):
+    req(0 <= m.find(marker) < projects_gate_pos,
+        f"La migration d'introduction enfant laisse une ancienne policy projets permissive active avant le garde child: {marker}")
+for marker in (
+    'droppolicyifexistsdocuments_read_by_accessonpublic.documents',
+    'droppolicyifexistsadmin_read_all_documentsonpublic.documents',
+    'droppolicyifexistsdocuments_anon_readonpublic.documents',
+    'droppolicyifexistsdocuments_authenticated_readonpublic.documents',
+):
+    req(0 <= m.find(marker) < documents_gate_pos,
+        f"La migration d'introduction enfant laisse une ancienne policy documents permissive active avant le garde child: {marker}")
 req('createpolicy"requestsowninsert"' in m
     and "status='pending'" in m,
     "La migration d'introduction enfant ne borne pas access_requests à self + adulte/youth + pending.")
