@@ -63,6 +63,7 @@ function userMessage(error){
     [/AUTH_REQUIRED/i,'Votre session n’est plus valide. Reconnectez-vous puis réessayez.'],
     [/SINJIRA_MINIMUM_AGE_11/i,'Un Compte SINJIRA™ supervisé est disponible à partir de 11 ans.'],
     [/SINJIRA_MINIMUM_AGE_13/i,'Le serveur utilise encore une ancienne règle d’âge. La synchronisation du module enfant 11 ans est requise avant cette modification.'],
+    [/BIRTH_DATE_PROTECTION_BOUNDARY_REQUIRES_REVIEW/i,'Pour protéger les comptes mineurs, une correction de date qui augmenterait l’âge doit être revue séparément. Aucune protection Junior n’est retirée automatiquement.'],
     [/INVALID_BIRTH_DATE/i,'La date de naissance indiquée n’est pas valide.'],
     [/INVALID_GENDER/i,'La valeur de genre choisie n’est pas valide.'],
     [/INVALID_RELATIONSHIP_STATUS/i,'Le statut relationnel choisi n’est pas valide.'],
