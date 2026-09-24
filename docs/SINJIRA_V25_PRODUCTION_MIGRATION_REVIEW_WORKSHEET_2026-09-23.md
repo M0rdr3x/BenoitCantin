@@ -31,6 +31,10 @@ Avant toute future promotion, le reviewer doit notamment vérifier :
 - issue #135 résolue et protection serveur de `main` vérifiée avant toute séquence de fusion;
 - issue #240 traitée séparément seulement au moment autorisé de la production.
 
+## Appui de triage statique
+
+Le scan mécanique complémentaire est consigné dans `docs/SINJIRA_V25_PRODUCTION_MIGRATION_STATIC_RISK_SCAN_2026-09-23.md`. Il aide à prioriser la lecture, mais ne vaut aucune approbation.
+
 ## Checklist globale avant décision
 
 - [ ] HEAD exact de revue gelé et consigné.
