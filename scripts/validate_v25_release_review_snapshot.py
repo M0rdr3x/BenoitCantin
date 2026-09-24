@@ -17,6 +17,7 @@ DOSSIER = ROOT / "docs/SINJIRA_V25_CHILD_JUNIOR_RELEASE_REVIEW_2026-09-18.md"
 WORKSHEET = ROOT / "docs/SINJIRA_V25_PRODUCTION_MIGRATION_REVIEW_WORKSHEET_2026-09-23.md"
 MATRIX = ROOT / "docs/SINJIRA_V25_PRODUCTION_MIGRATION_TECHNICAL_REVIEW_MATRIX_2026-09-23.md"
 STATIC_SCAN = ROOT / "docs/SINJIRA_V25_PRODUCTION_MIGRATION_STATIC_RISK_SCAN_2026-09-23.md"
+WORKFLOW = ROOT / ".github/workflows/sinjira-v25-release-review-snapshot.yml"
 
 EXPECTED_REVIEWED_BLOB = "2392a7b9f2ce06952555446771933b05d6d47387"
 EXPECTED_LEDGER_BLOB = "0eb7b0d886e9f24d5592b7014ed4d92d28fded63"
@@ -135,6 +136,7 @@ def validate_snapshot(
     worksheet: str,
     matrix: str,
     static_scan: str,
+    workflow: str,
 ) -> None:
     if git_blob_sha1(reviewed) != EXPECTED_REVIEWED_BLOB:
         fail("snapshot release: production-reviewed-migration-batch.txt a changé")
@@ -236,8 +238,19 @@ def validate_snapshot(
         if statement not in static_scan:
             fail(f"snapshot release: garde scan statique manquante: {statement}")
 
+    workflow_paths = (
+        "docs/SINJIRA_V25_CHILD_JUNIOR_RELEASE_REVIEW_2026-09-18.md",
+        "docs/SINJIRA_V25_PRODUCTION_MIGRATION_REVIEW_WORKSHEET_2026-09-23.md",
+        "docs/SINJIRA_V25_PRODUCTION_MIGRATION_TECHNICAL_REVIEW_MATRIX_2026-09-23.md",
+        "docs/SINJIRA_V25_PRODUCTION_MIGRATION_STATIC_RISK_SCAN_2026-09-23.md",
+        "scripts/validate_v25_release_review_snapshot.py",
+    )
+    for path in workflow_paths:
+        if path not in workflow:
+            fail(f"snapshot release: workflow ne surveille pas {path}")
 
-def load_inputs() -> tuple[list[str], dict[str, bytes], bytes, bytes, str, str, str, str]:
+
+def load_inputs() -> tuple[list[str], dict[str, bytes], bytes, bytes, str, str, str, str, str]:
     migration_names = sorted(path.name for path in MIGRATIONS.glob("*.sql") if path.is_file())
     snapshot_contents = {
         filename: (MIGRATIONS / filename).read_bytes()
@@ -252,11 +265,12 @@ def load_inputs() -> tuple[list[str], dict[str, bytes], bytes, bytes, str, str, 
         WORKSHEET.read_text(encoding="utf-8"),
         MATRIX.read_text(encoding="utf-8"),
         STATIC_SCAN.read_text(encoding="utf-8"),
+        WORKFLOW.read_text(encoding="utf-8"),
     )
 
 
-def self_test(values: tuple[list[str], dict[str, bytes], bytes, bytes, str, str, str, str]) -> None:
-    migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix, static_scan = values
+def self_test(values: tuple[list[str], dict[str, bytes], bytes, bytes, str, str, str, str, str]) -> None:
+    migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix, static_scan, workflow = values
     validate_snapshot(*values)
 
     first_name = next(iter(EXPECTED_NON_REVIEWED))
@@ -272,22 +286,24 @@ def self_test(values: tuple[list[str], dict[str, bytes], bytes, bytes, str, str,
     matrix_bad_gate = matrix.replace("**Statut : AIDE DE REVUE AUTOMATISÉE — NON REVU / NON APPROUVÉ**", "**Statut : APPROUVÉ**", 1)
     matrix_bad_set = matrix.replace(first_name, "20260913030500_sinjira_v25_unreviewed_probe.sql", 1)
     static_scan_bad_gate = static_scan.replace("**Statut : TRIAGE AUTOMATISÉ — AUCUNE APPROBATION PRODUCTION**", "**Statut : APPROUVÉ PRODUCTION**", 1)
+    workflow_bad_path = workflow.replace("docs/SINJIRA_V25_PRODUCTION_MIGRATION_TECHNICAL_REVIEW_MATRIX_2026-09-23.md", "docs/matrix-review-missing.md", 1)
     reviewed_changed = reviewed + b"\n# mutation test\n"
     ledger_changed = ledger + b"\n# mutation test\n"
     migration_names_extra = migration_names + ["20260919000000_sinjira_v25_unreviewed_probe.sql"]
 
     mutations = {
-        "migration modifiée après empreinte": (migration_names, changed_contents, reviewed, ledger, dossier, worksheet, matrix, static_scan),
-        "empreinte dossier altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier_bad_hash, worksheet, matrix, static_scan),
-        "garde humaine documentaire altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier_bad_gate, worksheet, matrix, static_scan),
-        "empreinte feuille de revue altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet_bad_hash, matrix, static_scan),
-        "garde feuille de revue altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet_bad_gate, matrix, static_scan),
-        "garde matrice technique altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix_bad_gate, static_scan),
-        "ensemble matrice technique altéré": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix_bad_set, static_scan),
-        "garde scan statique altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix, static_scan_bad_gate),
-        "lot reviewed modifié": (migration_names, snapshot_contents, reviewed_changed, ledger, dossier, worksheet, matrix, static_scan),
-        "ledger production modifié": (migration_names, snapshot_contents, reviewed, ledger_changed, dossier, worksheet, matrix, static_scan),
-        "nouvelle migration future non documentée": (migration_names_extra, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix, static_scan),
+        "migration modifiée après empreinte": (migration_names, changed_contents, reviewed, ledger, dossier, worksheet, matrix, static_scan, workflow),
+        "empreinte dossier altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier_bad_hash, worksheet, matrix, static_scan, workflow),
+        "garde humaine documentaire altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier_bad_gate, worksheet, matrix, static_scan, workflow),
+        "empreinte feuille de revue altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet_bad_hash, matrix, static_scan, workflow),
+        "garde feuille de revue altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet_bad_gate, matrix, static_scan, workflow),
+        "garde matrice technique altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix_bad_gate, static_scan, workflow),
+        "ensemble matrice technique altéré": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix_bad_set, static_scan, workflow),
+        "garde scan statique altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix, static_scan_bad_gate, workflow),
+        "workflow matrice non surveillée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix, static_scan, workflow_bad_path),
+        "lot reviewed modifié": (migration_names, snapshot_contents, reviewed_changed, ledger, dossier, worksheet, matrix, static_scan, workflow),
+        "ledger production modifié": (migration_names, snapshot_contents, reviewed, ledger_changed, dossier, worksheet, matrix, static_scan, workflow),
+        "nouvelle migration future non documentée": (migration_names_extra, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix, static_scan, workflow),
     }
 
     for label, mutated in mutations.items():
