@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(11);
+select plan(13);
 
 select ok(
   position(
@@ -130,7 +130,37 @@ select lives_ok(
   'un enfant de 11 ans avec tuteur actif peut relire son coffre privé'
 );
 
+select throws_ok(
+  $ select public.private_profile_save(
+    (current_date-interval '18 years')::date,
+    'prefer_not_to_say',
+    array['Français'],
+    'Montréal',
+    'Québec',
+    'Canada',
+    null,
+    null,
+    null,
+    'not_set',
+    null,
+    null
+  ) $,
+  'P0001',
+  'BIRTH_DATE_PROTECTION_BOUNDARY_REQUIRES_REVIEW',
+  'un compte mineur ne peut pas se vieillir lui-même pour sortir des protections Junior'
+);
+
 reset role;
+
+select is(
+  (
+    select date_of_birth
+    from public.account_safety_profiles
+    where user_id='d2000000-0000-4000-8000-000000000002'
+  ),
+  (current_date-interval '11 years')::date,
+  'la tentative de vieillissement ne modifie pas la date de sécurité canonique'
+);
 
 select is(
   (
