@@ -308,6 +308,8 @@ if workflow:
     for forbidden in ('supabase db push','supabase link','supabase functions deploy','supabase secrets set'):
         req(forbidden not in w,f'Commande production interdite dans le workflow Junior: {forbidden}')
     req('supabase db reset' in w and 'supabase test db supabase/tests/child_community_v25.test.sql' in w,'Le workflow Junior ne rejoue pas la base et le pgTAP local.')
+    req('supabase/migrations/20260924173000_sinjira_v25_junior_comment_author_visibility.sql' in workflow,
+        'Le workflow Junior ne surveille pas le correctif de visibilité des commentaires après révocation.')
     req('python tests/e2e/test_child_community.py' in w,'Le workflow Junior ne lance pas la preuve navigateur isolée.')
     req('mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:' in w,'L image Playwright Junior n est pas épinglée par digest.')
     req("      - name: Démarrer le site statique local\n        shell: bash\n        run: |\n          set -euo pipefail" in workflow,'Le serveur navigateur Junior doit utiliser bash lorsque pipefail est activé.')
