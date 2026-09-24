@@ -108,6 +108,7 @@ def main():
         '$read$ select public.private_profile_get() $read$',
         'un enfant de 11 ans avec tuteur actif peut relire son coffre privé',
         'birth_date_protection_boundary_requires_review',
+        '$age_review$ select public.private_profile_save(',
         'un compte mineur ne peut pas se vieillir lui-même pour sortir des protections junior',
         'la tentative de vieillissement ne modifie pas la date de sécurité canonique',
         'un enfant de 11 ans sans tuteur actif ne peut pas relire son coffre',
