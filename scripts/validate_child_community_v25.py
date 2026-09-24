@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260917223000_sinjira_v25_junior_community.sql'
 COMMENT_VISIBILITY=ROOT/'supabase/migrations/20260924173000_sinjira_v25_junior_comment_author_visibility.sql'
+HIDDEN_POST_COMMENT_GUARD=ROOT/'supabase/migrations/20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql'
 BOUNDARY=ROOT/'supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql'
 TEST=ROOT/'supabase/tests/child_community_v25.test.sql'
 PAGE=ROOT/'compte/communaute-junior.html'
@@ -36,6 +37,7 @@ def req(condition,message):
 
 mig=read(MIG)
 comment_visibility=read(COMMENT_VISIBILITY)
+hidden_post_comment_guard=read(HIDDEN_POST_COMMENT_GUARD)
 boundary=read(BOUNDARY)
 test=read(TEST)
 page=read(PAGE)
@@ -53,6 +55,7 @@ admin_client=read(ADMIN_CLIENT)
 
 m=compact(mig)
 cv=compact(comment_visibility)
+hpc=compact(hidden_post_comment_guard)
 b=compact(boundary)
 t=compact(test)
 p=page.lower()
@@ -119,6 +122,17 @@ req('createorreplacefunctionpublic.junior_community_feed' not in cv,
 req('revokeallonfunctionsinjira_v25_internal.junior_community_feed(integer)frompublic,anon,authenticated' in cv
     and 'grantexecuteonfunctionsinjira_v25_internal.junior_community_feed(integer)toauthenticated,service_role' in cv,
     'Les ACL finales du fil Junior interne ne sont pas bornées.')
+
+# Une publication masquée par une décision humaine ne doit plus accepter de nouveaux commentaires.
+req('createorreplacefunctionsinjira_v25_internal.junior_community_create_comment(p_post_iduuid,p_bodytext)' in hpc,
+    'Le correctif de modération ne redéfinit pas la création de commentaire Junior interne finale.')
+req("public.moderation_content_visible('real','post',p.id)" in hpc,
+    'La création de commentaire Junior ne respecte pas encore la visibilité de modération du post.')
+req('createorreplacefunctionpublic.junior_community_create_comment' not in hpc,
+    'Le correctif de commentaire masqué ne doit pas recréer un SECURITY DEFINER public.')
+req('revokeallonfunctionsinjira_v25_internal.junior_community_create_comment(uuid,text)frompublic,anon,authenticated' in hpc
+    and 'grantexecuteonfunctionsinjira_v25_internal.junior_community_create_comment(uuid,text)toauthenticated,service_role' in hpc,
+    'Les ACL finales de création de commentaire Junior interne ne sont pas bornées.')
 
 # Garde de contenu Junior.
 for marker,msg in (
@@ -244,13 +258,15 @@ req("if(!child_11_12_allowed_routes.has(leaf))link.hidden=true" in a,'La navigat
 req("capabilities.child_11_12===true" in co and "communaute-junior.html" in co and "capabilities.general_community!==true" in co,'La Communauté générale n est pas bornée par les capacités serveur.')
 
 # Tests comportementaux.
-req('selectplan(59);' in t,'Plan pgTAP Junior inattendu.')
+req('selectplan(60);' in t,'Plan pgTAP Junior inattendu.')
 req('leparentpeutrévoquerimmédiatementlacommunautéjunior' in t,'La preuve de révocation parentale immédiate est absente.')
 req('wrapperpublicdebandeself-onlyrestesecurityinvokeretsonimplémentationinternesecuritydefiner' in t,'Le pgTAP ne prouve pas la séparation INVOKER public / DEFINER interne du wrapper self-only final.')
 req('authenticatedconservelewrapperdebandeself-only' in t,'Le pgTAP ne prouve pas l accès authenticated au wrapper self-only final.')
 req('anonconservelewrapperself-onlyrequisparlesrlspubliques' in t,'Le pgTAP ne prouve pas l accès anon self-only requis par les RLS publiques.')
 req('junior_guardian_consent_required' in t and 'aprèsrévocationlefiljuniorestimmédiatementrefusécôtéserveur' in t,'Le fil Junior n est pas prouvé fermé après révocation.')
 req('leparentpeutréactiverlacommunautéjunior' in t,'La réactivation parentale n est pas couverte.')
+req('unepublicationmasquéeparmodérationnepeutplusrecevoirdecommentairejunior' in t,
+    'Le pgTAP ne prouve pas qu un post Junior masqué refuse immédiatement les nouveaux commentaires.')
 req('leparentretirelaccèsjuniordelauteurducommentaire' in t
     and 'lecommentairedisparaîtdufildèsquesonauteurperdlaccèsjunior' in t
     and 'lapublicationdisparaîtdufildèsquesonauteurperdlaccèsjunior' in t
@@ -312,6 +328,8 @@ if workflow:
     req('supabase db reset' in w and 'supabase test db supabase/tests/child_community_v25.test.sql' in w,'Le workflow Junior ne rejoue pas la base et le pgTAP local.')
     req('supabase/migrations/20260924173000_sinjira_v25_junior_comment_author_visibility.sql' in workflow,
         'Le workflow Junior ne surveille pas le correctif de visibilité des commentaires après révocation.')
+    req('supabase/migrations/20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql' in workflow,
+        'Le workflow Junior ne surveille pas le refus de commentaire sur publication masquée.')
     req('python tests/e2e/test_child_community.py' in w,'Le workflow Junior ne lance pas la preuve navigateur isolée.')
     req('mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:' in w,'L image Playwright Junior n est pas épinglée par digest.')
     req("      - name: Démarrer le site statique local\n        shell: bash\n        run: |\n          set -euo pipefail" in workflow,'Le serveur navigateur Junior doit utiliser bash lorsque pipefail est activé.')
