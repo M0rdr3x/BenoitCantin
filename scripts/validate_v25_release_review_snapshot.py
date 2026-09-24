@@ -14,6 +14,7 @@ MIGRATIONS = ROOT / "supabase/migrations"
 REVIEWED = ROOT / "supabase/production-reviewed-migration-batch.txt"
 LEDGER = ROOT / "supabase/production-migration-ledger.txt"
 DOSSIER = ROOT / "docs/SINJIRA_V25_CHILD_JUNIOR_RELEASE_REVIEW_2026-09-18.md"
+WORKSHEET = ROOT / "docs/SINJIRA_V25_PRODUCTION_MIGRATION_REVIEW_WORKSHEET_2026-09-23.md"
 
 EXPECTED_REVIEWED_BLOB = "2392a7b9f2ce06952555446771933b05d6d47387"
 EXPECTED_LEDGER_BLOB = "0eb7b0d886e9f24d5592b7014ed4d92d28fded63"
@@ -115,6 +116,7 @@ def validate_snapshot(
     reviewed: bytes,
     ledger: bytes,
     dossier: str,
+    worksheet: str,
 ) -> None:
     if git_blob_sha1(reviewed) != EXPECTED_REVIEWED_BLOB:
         fail("snapshot release: production-reviewed-migration-batch.txt a changé")
@@ -157,6 +159,9 @@ def validate_snapshot(
         row = f"| `{filename}` | `{expected_blob}` |"
         if row not in dossier:
             fail(f"snapshot release: empreinte absente ou différente dans le dossier pour {filename}")
+        worksheet_row = f"| `{filename}` | `{expected_blob}` |"
+        if worksheet_row not in worksheet:
+            fail(f"snapshot release: empreinte absente ou différente dans la feuille de revue pour {filename}")
 
     required_statements = (
         "**lot production revu : non**",
@@ -169,8 +174,18 @@ def validate_snapshot(
         if statement not in dossier:
             fail(f"snapshot release: garde documentaire manquante: {statement}")
 
+    worksheet_statements = (
+        "**Statut global : NON REVU / NON APPROUVÉ**",
+        "Aucune case cochée ne vaut à elle seule approbation production.",
+        "Ne pas modifier automatiquement `supabase/production-reviewed-migration-batch.txt`",
+        "L’humain avant tout. Protéger sans surveiller.",
+    )
+    for statement in worksheet_statements:
+        if statement not in worksheet:
+            fail(f"snapshot release: garde feuille de revue manquante: {statement}")
 
-def load_inputs() -> tuple[list[str], dict[str, bytes], bytes, bytes, str]:
+
+def load_inputs() -> tuple[list[str], dict[str, bytes], bytes, bytes, str, str]:
     migration_names = sorted(path.name for path in MIGRATIONS.glob("*.sql") if path.is_file())
     snapshot_contents = {
         filename: (MIGRATIONS / filename).read_bytes()
@@ -182,11 +197,12 @@ def load_inputs() -> tuple[list[str], dict[str, bytes], bytes, bytes, str]:
         REVIEWED.read_bytes(),
         LEDGER.read_bytes(),
         DOSSIER.read_text(encoding="utf-8"),
+        WORKSHEET.read_text(encoding="utf-8"),
     )
 
 
-def self_test(values: tuple[list[str], dict[str, bytes], bytes, bytes, str]) -> None:
-    migration_names, snapshot_contents, reviewed, ledger, dossier = values
+def self_test(values: tuple[list[str], dict[str, bytes], bytes, bytes, str, str]) -> None:
+    migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet = values
     validate_snapshot(*values)
 
     first_name = next(iter(EXPECTED_NON_REVIEWED))
@@ -197,17 +213,21 @@ def self_test(values: tuple[list[str], dict[str, bytes], bytes, bytes, str]) -> 
 
     dossier_bad_hash = dossier.replace(first_blob, "0" * 40, 1)
     dossier_bad_gate = dossier.replace("**lot production revu : non**", "**lot production revu : oui**", 1)
+    worksheet_bad_hash = worksheet.replace(first_blob, "0" * 40, 1)
+    worksheet_bad_gate = worksheet.replace("**Statut global : NON REVU / NON APPROUVÉ**", "**Statut global : APPROUVÉ**", 1)
     reviewed_changed = reviewed + b"\n# mutation test\n"
     ledger_changed = ledger + b"\n# mutation test\n"
     migration_names_extra = migration_names + ["20260919000000_sinjira_v25_unreviewed_probe.sql"]
 
     mutations = {
-        "migration modifiée après empreinte": (migration_names, changed_contents, reviewed, ledger, dossier),
-        "empreinte dossier altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier_bad_hash),
-        "garde humaine documentaire altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier_bad_gate),
-        "lot reviewed modifié": (migration_names, snapshot_contents, reviewed_changed, ledger, dossier),
-        "ledger production modifié": (migration_names, snapshot_contents, reviewed, ledger_changed, dossier),
-        "nouvelle migration future non documentée": (migration_names_extra, snapshot_contents, reviewed, ledger, dossier),
+        "migration modifiée après empreinte": (migration_names, changed_contents, reviewed, ledger, dossier, worksheet),
+        "empreinte dossier altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier_bad_hash, worksheet),
+        "garde humaine documentaire altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier_bad_gate, worksheet),
+        "empreinte feuille de revue altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet_bad_hash),
+        "garde feuille de revue altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet_bad_gate),
+        "lot reviewed modifié": (migration_names, snapshot_contents, reviewed_changed, ledger, dossier, worksheet),
+        "ledger production modifié": (migration_names, snapshot_contents, reviewed, ledger_changed, dossier, worksheet),
+        "nouvelle migration future non documentée": (migration_names_extra, snapshot_contents, reviewed, ledger, dossier, worksheet),
     }
 
     for label, mutated in mutations.items():
@@ -233,7 +253,7 @@ def main() -> None:
     validate_snapshot(*values)
     print(
         "OK snapshot release V25: 41 migrations futures non revues correspondent au dossier, "
-        "empreintes intactes, reviewed/ledger inchangés et garde humaine conservée."
+        "empreintes intactes, feuille de revue synchronisée, reviewed/ledger inchangés et garde humaine conservée."
     )
 
 
