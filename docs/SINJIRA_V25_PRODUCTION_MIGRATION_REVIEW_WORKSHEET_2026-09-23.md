@@ -101,6 +101,8 @@ Mise à jour du **2026-09-24** : les migrations #4 et #6 ont aussi été durcies
 
 Mise à jour du **2026-09-24** : la migration #42 corrige forward-only la visibilité des commentaires Junior après révocation de l’accès de leur auteur. Elle reste **NON REVUE / NON APPROUVÉE** et n’autorise aucune promotion.
 
+Mise à jour du **2026-09-24** : une relecture automatisée ciblée des migrations #37 à #42 a été consignée dans la matrice technique. Elle confirme la cohérence des gardes famille/achat/âge/projet/Junior avec les preuves CI vertes du HEAD fonctionnel `aac9aa92ef4b6ab14eff53c8fcd230b3a5f17729`. **Aucune case de cette feuille n’est cochée par cette relecture automatisée**; le comportement `project_access` explicite `player/tester` pour adult/youth reste notamment un point de décision humaine distinct d’un achat.
+
 ## Signification des colonnes
 
 - **SQL / RLS** : DDL, policies, grants, fonctions, triggers, `SECURITY DEFINER`, `search_path`.
