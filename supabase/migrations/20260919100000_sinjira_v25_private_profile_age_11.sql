@@ -194,6 +194,17 @@ begin
 
   v_effective_birth:=coalesce(p_birth_date,s.date_of_birth);
 
+  -- Une date de naissance déjà enregistrée dans le profil sécurité est une frontière
+  -- de protection. Un compte mineur peut corriger sa date vers un état au moins aussi
+  -- protecteur, mais ne peut pas se vieillir lui-même pour sortir de Junior/tuteur/youth.
+  if s.user_id is not null
+     and s.date_of_birth is not null
+     and extract(year from age(current_date,s.date_of_birth))::integer < 18
+     and v_effective_birth is not null
+     and v_effective_birth < s.date_of_birth then
+    raise exception 'BIRTH_DATE_PROTECTION_BOUNDARY_REQUIRES_REVIEW';
+  end if;
+
   if v_effective_birth is not null then
     if v_effective_birth>current_date then
       raise exception 'INVALID_BIRTH_DATE';
@@ -307,4 +318,4 @@ grant execute on function sinjira_profile_internal.private_profile_save(
 comment on function sinjira_profile_internal.private_profile_save(
   date,text,text[],text,text,text,text,text,text,text,date,text
 ) is
-  'V25: profil privé modifiable à partir de 11 ans; tuteur actif requis avant 14 ans; accès direct à private_profiles toujours fermé.';
+  'V25: profil privé modifiable à partir de 11 ans; tuteur actif requis avant 14 ans; un mineur ne peut pas augmenter son âge déclaré sans revue séparée; accès direct à private_profiles toujours fermé.';
