@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(49);
+select plan(50);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -289,6 +289,11 @@ select is(
   (select count(*)::integer from public.products where slug='content-private'),
   1,
   'le créateur voit les produits internes inactifs sans créer un achat'
+);
+select is(
+  jsonb_array_length(public.sinjira_my_product_rights()),
+  0,
+  'le catalogue complet du créateur ne fabrique aucun droit produit commercial'
 );
 
 reset role;
