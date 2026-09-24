@@ -22,6 +22,7 @@ Constats mécaniques :
 - plusieurs migrations contiennent volontairement des `INSERT`, `UPDATE` ou `DELETE`, des triggers, des changements RLS et des grants navigateur : elles demandent donc une lecture humaine attentive même si les suites locales sont vertes;
 - les helpers internes exécutables depuis un rôle navigateur restent des zones de revue prioritaire : leur sûreté dépend de la frontière self-only/fail-closed, pas seulement du nom du schéma.
 - les seeds d’actifs romans privés utilisent désormais `ON CONFLICT ... DO NOTHING` sur `novel_id` : une configuration existante de stockage privé n’est ni vidée ni désactivée automatiquement lors d’une reprise partielle.
+- le coffre profil privé refuse désormais qu’un compte dont la date canonique indique un mineur fournisse une date plus ancienne pour augmenter son âge déclaré; ce changement doit passer par une revue séparée et ne retire aucune protection Junior automatiquement.
 
 Ce scan ne conclut pas qu'une migration est sûre pour la production.
 
@@ -33,7 +34,7 @@ Ce scan ne conclut pas qu'une migration est sûre pour la production.
 | `20260917223000_sinjira_v25_junior_community.sql` | ~671 lignes; RLS sur plusieurs tables; nombreux RPC privilégiés; grants/revokes; 3 triggers; surface sociale Junior |
 | `20260922014000_sinjira_v25_creator_family_catalog_access.sql` | ~707 lignes; RLS; policies; `SECURITY DEFINER` + `SECURITY INVOKER`; nombreux grants; `service_role`; catalogue famille complet |
 | `20260922033000_sinjira_v25_project_product_access.sql` | ~350 lignes; policies projet/documents; suppressions d’anciennes policies permissives; mutations de données; dépendance `projects.product_slug` |
-| `20260919100000_sinjira_v25_private_profile_age_11.sql` | ~311 lignes; coffre privé; écritures profil/sécurité; fonctions privilégiées; règles 11+/tuteur |
+| `20260919100000_sinjira_v25_private_profile_age_11.sql` | 322 lignes; coffre privé; écritures profil/sécurité; fonctions privilégiées; règles 11+/tuteur; refus de l’auto-vieillissement d’un mineur via correction de date |
 | `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` | RLS + policy; écritures; fonctions privileged/invoker; grants navigateur; exposition Mode Voyage |
 | `20260922031500_sinjira_v25_catalog_age_helper_boundary.sql` | 11 policies recréées et 11 anciennes retirées; frontière âge + commerce + helpers |
 | `20260919123000_sinjira_v25_public_rpc_boundary.sql` | déplacement/wrapping de RPC; fonctions privilégiées/invoker; grants dynamiques selon rôles |
