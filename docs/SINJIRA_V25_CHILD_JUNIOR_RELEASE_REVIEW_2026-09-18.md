@@ -324,11 +324,11 @@ La migration forward-only :
 
 `20260919100000_sinjira_v25_private_profile_age_11.sql`
 
-conserve les barrières MFA, juridiction jeunesse et confidentialité du coffre, remplace la limite effective par **11 ans**, exige toujours un tuteur vérifié avant 14 ans et refuse explicitement un lien dont `revoked_at` n'est pas nul. La même supervision est maintenant imposée à `private_profile_get()` : après révocation ou en l’absence de tuteur valide, un compte de 11–13 ans ne peut plus relire le coffre privé.
+conserve les barrières MFA, juridiction jeunesse et confidentialité du coffre, remplace la limite effective par **11 ans**, exige toujours un tuteur vérifié avant 14 ans et refuse explicitement un lien dont `revoked_at` n'est pas nul. Elle bloque aussi l’auto-élévation d’âge : lorsqu’une date canonique existe déjà pour un compte mineur, une date plus ancienne — qui augmenterait l’âge déclaré et pourrait retirer des protections Junior/youth — est refusée avec `BIRTH_DATE_PROTECTION_BOUNDARY_REQUIRES_REVIEW`. La même supervision est imposée à `private_profile_get()` : après révocation ou en l’absence de tuteur valide, un compte de 11–13 ans ne peut plus relire le coffre privé.
 
 Le navigateur affiche désormais un message cohérent avec la règle 11+, tout en reconnaissant une éventuelle erreur historique `SINJIRA_MINIMUM_AGE_13` comme un serveur non encore synchronisé.
 
-Deux preuves SQL sont exécutées par le workflow Profil privé après reconstruction locale : le test historique de **22 assertions** et un nouveau pgTAP de **11 assertions** couvrant 11 ans avec tuteur actif, 11 ans sans tuteur, moins de 11 ans et lien tuteur révoqué.
+Deux preuves SQL sont exécutées par le workflow Profil privé après reconstruction locale : le test historique de **22 assertions** et le pgTAP V25 de **13 assertions** couvrant 11 ans avec tuteur actif, 11 ans sans tuteur, moins de 11 ans, lien tuteur révoqué et refus d’une tentative de vieillissement autonome avec conservation de la date de sécurité canonique.
 
 Cette vingt-huitième migration reste **non revue production**.
 
@@ -597,7 +597,7 @@ Le snapshot de revue attend exactement **41 migrations locales futures non revue
 | `20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql` | `8e0fd367bd0c30ed77f947ae0583408b370121a1` |
 | `20260919090000_sinjira_v25_account_content_hub.sql` | `29358d27f8f505897b924062e208b8d5c740f8c5` |
 | `20260919093000_sinjira_v25_private_novel_catalog.sql` | `41fec69fe7b720a909558a8a1429a7c39cd4772c` |
-| `20260919100000_sinjira_v25_private_profile_age_11.sql` | `db4d0c04f4fba2a6044e12b28d882382ed077086` |
+| `20260919100000_sinjira_v25_private_profile_age_11.sql` | `d51142e51ba109492b31c14216367287ef51fbc0` |
 | `20260919103000_sinjira_v25_livre_i_catalog_seed.sql` | `2a5bb6ae5c25b92c8f963909e95d5949bb82df07` |
 | `20260919110000_sinjira_v25_social_public_pseudo_privacy.sql` | `ac4f11e8e1591c35f0be91f541a21763fdb3ec8d` |
 | `20260919113000_sinjira_v25_private_novel_asset_rls.sql` | `745ae12098e538415dde16bac198d05610b99954` |
