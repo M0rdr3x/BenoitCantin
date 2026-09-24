@@ -7,6 +7,8 @@ on:
     paths:
       - 'docs/SINJIRA_V25_CHILD_JUNIOR_RELEASE_REVIEW_2026-09-18.md'
       - 'docs/SINJIRA_V25_PRODUCTION_MIGRATION_REVIEW_WORKSHEET_2026-09-23.md'
+      - 'docs/SINJIRA_V25_PRODUCTION_MIGRATION_TECHNICAL_REVIEW_MATRIX_2026-09-23.md'
+      - 'docs/SINJIRA_V25_PRODUCTION_MIGRATION_STATIC_RISK_SCAN_2026-09-23.md'
       - 'scripts/validate_v25_release_review_snapshot.py'
       - 'supabase/migrations/**'
       - 'supabase/production-reviewed-migration-batch.txt'
