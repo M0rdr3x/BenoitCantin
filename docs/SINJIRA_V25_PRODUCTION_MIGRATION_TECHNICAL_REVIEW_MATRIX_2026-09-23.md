@@ -59,7 +59,7 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 | 39 | `20260922030000_sinjira_v25_extension_product_access.sql` | 181 lignes; RLS extensions; 3 policies créées/7 retirées; 1 definer; update | Vérifier suppression exhaustive des anciennes policies permissives, parent non brouillon et extension approuvée avant accès produit. |
 | 40 | `20260922031500_sinjira_v25_catalog_age_helper_boundary.sql` | 232 lignes; 11 policies créées/11 retirées; 1 definer + 2 invoker; âge/`service_role` | Revue prioritaire : frontière âge/commerce, helper produit self-only et non-réouverture des comptes 11–12. |
 | 41 | `20260922033000_sinjira_v25_project_product_access.sql` | 350 lignes; projets; 3 policies créées/8 retirées; 2 definer; 2 updates | Revue prioritaire : projet payant, documents enfants du projet, parent brouillon, droits explicites distincts et suppression des anciennes policies SELECT permissives. |
-| 42 | `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | 88 lignes; 1 `SECURITY DEFINER`; redéfinition du fil Junior interne; aucune mutation de données | Vérifier que publications **et commentaires** exigent encore une bande child active et un consentement Junior courant, sans recréer de DEFINER public ni supprimer l’historique. |
+| 42 | `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | 89 lignes; 1 `SECURITY DEFINER`; redéfinition du fil Junior interne; aucune mutation de données | Vérifier que publications **et commentaires** exigent encore une bande child active et un consentement Junior courant, sans recréer de DEFINER public ni supprimer l’historique. |
 
 ## Ordre conseillé de lecture technique
 
