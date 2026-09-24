@@ -21,6 +21,7 @@ Constats mécaniques :
 - les migrations contenant des `SECURITY DEFINER` ont été contrôlées : aucune fonction privilégiée réelle détectée sans `search_path` explicite (`SET search_path = ...` ou `SET search_path TO ...`);
 - plusieurs migrations contiennent volontairement des `INSERT`, `UPDATE` ou `DELETE`, des triggers, des changements RLS et des grants navigateur : elles demandent donc une lecture humaine attentive même si les suites locales sont vertes;
 - les helpers internes exécutables depuis un rôle navigateur restent des zones de revue prioritaire : leur sûreté dépend de la frontière self-only/fail-closed, pas seulement du nom du schéma.
+- les seeds d’actifs romans privés utilisent désormais `ON CONFLICT ... DO NOTHING` sur `novel_id` : une configuration existante de stockage privé n’est ni vidée ni désactivée automatiquement lors d’une reprise partielle.
 
 Ce scan ne conclut pas qu'une migration est sûre pour la production.
 
