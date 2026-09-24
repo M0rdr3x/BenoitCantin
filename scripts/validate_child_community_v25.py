@@ -251,9 +251,9 @@ req('authenticatedconservelewrapperdebandeself-only' in t,'Le pgTAP ne prouve pa
 req('anonconservelewrapperself-onlyrequisparlesrlspubliques' in t,'Le pgTAP ne prouve pas l accès anon self-only requis par les RLS publiques.')
 req('junior_guardian_consent_required' in t and 'aprèsrévocationlefiljuniorestimmédiatementrefusécôtéserveur' in t,'Le fil Junior n est pas prouvé fermé après révocation.')
 req('leparentpeutréactiverlacommunautéjunior' in t,'La réactivation parentale n est pas couverte.')
-req('leparentretirelaccèsjuniordel’auteurducommentaire' in t
+req('leparentretirelaccèsjuniordelauteurducommentaire' in t
     and 'lecommentairedisparaîtdufildèsquesonauteurperdlaccèsjunior' in t
-    and 'leparentréactiveexplicitementlaccèsjuniordel’auteurducommentaire' in t
+    and 'leparentréactiveexplicitementlaccèsjuniordelauteurducommentaire' in t
     and 'lecommentaireredevientvisibleaprèsréactivationexplicitedumêmeenfant' in t,
     'Le pgTAP ne prouve pas que la visibilité des commentaires suit immédiatement le consentement Junior de leur auteur.')
 for marker,msg in (
