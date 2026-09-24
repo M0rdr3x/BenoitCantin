@@ -68,15 +68,27 @@ select ok(
 );
 
 select ok(
-  pg_get_functiondef(
-    'public.security_evaluate_context(uuid,text,text,text,text,text,text,text)'::regprocedure
-  ) like '%v_unexpected_region := v_previous.country_code <> v_country and not v_travel_match%'
-  and pg_get_functiondef(
-    'public.security_evaluate_context(uuid,text,text,text,text,text,text,text)'::regprocedure
-  ) like '%if v_impossible_travel then%'
-  and pg_get_functiondef(
-    'public.security_evaluate_context(uuid,text,text,text,text,text,text,text)'::regprocedure
-  ) like '%v_force_challenge := true%',
+  (
+    select
+      body like '%v_unexpected_region := v_previous.country_code <> v_country and not v_travel_match%'
+      and position('if v_impossible_travel then' in body)>0
+      and position(
+        'v_force_challenge := true;'
+        in substring(body from position('if v_impossible_travel then' in body))
+      )>0
+      and position(
+        'v_force_challenge := true;'
+        in substring(body from position('if v_impossible_travel then' in body))
+      ) < position(
+        'end if;'
+        in substring(body from position('if v_impossible_travel then' in body))
+      )
+    from (
+      select pg_get_functiondef(
+        'public.security_evaluate_context(uuid,text,text,text,text,text,text,text)'::regprocedure
+      ) as body
+    ) evaluator
+  ),
   'le chemin réel neutralise seulement l’anomalie géographique et conserve le challenge de voyage impossible'
 );
 
