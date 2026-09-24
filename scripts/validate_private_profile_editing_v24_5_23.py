@@ -33,16 +33,17 @@ def main():
         'enregistrer mes informations personnelles','annuler les modifications',
         'value="woman"','value="man"','value="non_binary"','value="other"','value="prefer_not_to_say"',
         'value="single"','value="partnered"','value="engaged"','value="married"','value="separated"','value="divorced"','value="widowed"',
-        'sinjira-private-profile-v24-5-23.js?v=25.1.1'
+        'sinjira-private-profile-v24-5-23.js?v=25.1.2'
     ]:
         if marker not in pl: errors.append(f'Page Profil incomplète: {marker}')
     if re.search(r'<fieldset[^>]*\bdisabled\b',pl): errors.append('Le coffre privé ne doit plus être enfermé dans un fieldset disabled.')
+    if 'pour un compte mineur, une correction qui augmenterait l’âge déclaré doit être revue séparément' not in pl: errors.append('Le Profil doit expliquer la frontière de correction de date des mineurs.')
     if 'v24-private-profile.js' in pl: errors.append('L’ancien contrôleur lecture seule ne doit plus être chargé.')
     if 'ils ne peuvent pas être modifiés' in pl or 'lecture seule' in pl: errors.append('Le texte de l’ancien mode lecture seule ne doit plus être affiché.')
 
     for marker in [
         "rpc('private_profile_get'","rpc('private_profile_save'",'dating_reconfirmation_required',
-        'youth_jurisdiction_not_enabled','guardian_authorization_required_under_14','mfa_required',
+        'youth_jurisdiction_not_enabled','guardian_authorization_required_under_14','birth_date_protection_boundary_requires_review','mfa_required',
         'setbusy(true);','await loadprofile();','setbusy(false);','if(!loadedsnapshot)',
         'le formulaire reste verrouillé tant que vos données n’ont pas été chargées',
         'aucune modification n’est envoyée'
@@ -72,6 +73,8 @@ def main():
         'sinjira_minimum_age_11',
         'guardian_authorization_required_under_14',
         'g.revoked_at is null',
+        'birth_date_protection_boundary_requires_review',
+        'and v_effective_birth < s.date_of_birth then',
         'sinjira_mfa_access_allowed',
         'security definer'
     ]:
@@ -98,12 +101,15 @@ def main():
         if marker not in test.lower(): errors.append(f'pgTAP V24.5.23 incomplet: {marker}')
 
     for marker in [
-        'select plan(11);',
+        'select plan(13);',
         'sinjira_minimum_age_11',
         'guardian_authorization_required_under_14',
         'revoked_at is null',
         '$read$ select public.private_profile_get() $read$',
         'un enfant de 11 ans avec tuteur actif peut relire son coffre privé',
+        'birth_date_protection_boundary_requires_review',
+        'un compte mineur ne peut pas se vieillir lui-même pour sortir des protections junior',
+        'la tentative de vieillissement ne modifie pas la date de sécurité canonique',
         'un enfant de 11 ans sans tuteur actif ne peut pas relire son coffre',
         'un lien tuteur révoqué bloque aussi la lecture du coffre'
     ]:
