@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(55);
+select plan(59);
 
 select ok(to_regprocedure('private.sinjira_junior_community_enabled(uuid)') is not null,'garde privée d activation Junior existe');
 select ok(to_regprocedure('public.junior_community_feed(integer)') is not null,'RPC fil Junior existe');
@@ -139,6 +139,20 @@ select ok((select id is not null from junior_test_ids where name='comment1'),'le
 select set_config('request.jwt.claim.sub','72000000-0000-4000-8000-000000000011',true);
 select ok(public.junior_community_feed(30)::text like '%Moi aussi, surtout les jeux!%','le commentaire Junior apparaît dans le fil');
 
+select set_config('request.jwt.claim.sub','73000000-0000-4000-8000-000000000012',true);
+insert into junior_test_ids(name,id)
+select 'post-revoked-author',(public.junior_community_create_post('Publication à masquer si son auteur perd Junior')->>'id')::uuid;
+select ok(
+  (select id is not null from junior_test_ids where name='post-revoked-author'),
+  'le second enfant crée une publication utilisée pour prouver la révocation auteur'
+);
+
+select set_config('request.jwt.claim.sub','72000000-0000-4000-8000-000000000011',true);
+select ok(
+  public.junior_community_feed(30)::text like '%Publication à masquer si son auteur perd Junior%',
+  'la publication du second enfant est visible avant révocation de son accès Junior'
+);
+
 select set_config('request.jwt.claim.sub','71000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
@@ -155,6 +169,10 @@ select set_config('request.jwt.claim.sub','72000000-0000-4000-8000-000000000011'
 select ok(
   position('Moi aussi, surtout les jeux!' in public.junior_community_feed(30)::text)=0,
   'le commentaire disparaît du fil dès que son auteur perd l accès Junior'
+);
+select ok(
+  position('Publication à masquer si son auteur perd Junior' in public.junior_community_feed(30)::text)=0,
+  'la publication disparaît du fil dès que son auteur perd l accès Junior'
 );
 
 select set_config('request.jwt.claim.sub','71000000-0000-4000-8000-000000000001',true);
@@ -173,6 +191,10 @@ select set_config('request.jwt.claim.sub','72000000-0000-4000-8000-000000000011'
 select ok(
   public.junior_community_feed(30)::text like '%Moi aussi, surtout les jeux!%',
   'le commentaire redevient visible après réactivation explicite du même enfant'
+);
+select ok(
+  public.junior_community_feed(30)::text like '%Publication à masquer si son auteur perd Junior%',
+  'la publication redevient visible après réactivation explicite du même enfant'
 );
 
 select throws_ok(
