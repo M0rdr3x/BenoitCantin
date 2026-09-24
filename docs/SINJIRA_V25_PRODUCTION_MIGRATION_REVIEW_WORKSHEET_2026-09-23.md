@@ -57,9 +57,9 @@ Lire les migrations dans l’ordre chronologique canonique. Les colonnes de cont
 | 1 | `20260913030500_sinjira_v25_travel_mode_geo_scope_hardening.sql` | `7285d1e30ea288004d17c1dbfbf9f01662b36bb7` | Mode Voyage | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 2 | `20260913230000_sinjira_v25_travel_mode_retention_purge.sql` | `41b8dc3d1b1e09c018e588755edb053e63e9904a` | Mode Voyage | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 3 | `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` | `2d7b8ccbfc79fed6a03208086a138618779d6e2d` | Mode Voyage | [ ] | [ ] | [ ] | [ ] | [ ] |
-| 4 | `20260916210000_sinjira_v25_child_guardian_signup.sql` | `51544dee4322d809a8116fb5614962de78691b31` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 4 | `20260916210000_sinjira_v25_child_guardian_signup.sql` | `baa11566a920ee8ba9f08810f542d9ad78046d24` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 5 | `20260917223000_sinjira_v25_junior_community.sql` | `64e66dc8d9c45de9ecbb1174fdb842e4444b9b6b` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
-| 6 | `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `d526702c0c32bda7628a37134b9f64e9c66d6351` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 6 | `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `ea0426172caba27fc3446c696575a19a1eae08d7` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 7 | `20260918013000_sinjira_v25_child_content_rating.sql` | `b0a2bfda90579830083d128035ee533d06dd2159` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 8 | `20260918020000_sinjira_v25_account_capabilities.sql` | `0a16bfcc49e51ee2b96cb98742442ae3d00e5c76` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 9 | `20260918023000_sinjira_v25_minor_content_policy_compat.sql` | `c0556e3baa218f9529f185010455984a0bc1cd03` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
@@ -96,6 +96,8 @@ Lire les migrations dans l’ordre chronologique canonique. Les colonnes de cont
 | 40 | `20260922031500_sinjira_v25_catalog_age_helper_boundary.sql` | `b0b2495e24cc0a23c7d50f32f4caef24314cc85a` | Catalogue / droits produit | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 41 | `20260922033000_sinjira_v25_project_product_access.sql` | `a07f22b7801a6182e0c15dc05e2cf09df92e7dde` | Catalogue / droits produit | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 42 | `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | `3c80073c9bc027707d1f12a129cebd91a8d7ba4f` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
+
+Mise à jour du **2026-09-24** : les migrations #4 et #6 ont aussi été durcies pour retirer les anciennes policies SELECT projets/documents avant d’installer les gardes `child`, fermant une combinaison permissive par `OR`. Elles restent **NON REVUES / NON APPROUVÉES**.
 
 Mise à jour du **2026-09-24** : la migration #42 corrige forward-only la visibilité des commentaires Junior après révocation de l’accès de leur auteur. Elle reste **NON REVUE / NON APPROUVÉE** et n’autorise aucune promotion.
 
