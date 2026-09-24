@@ -596,9 +596,9 @@ Le snapshot de revue attend exactement **41 migrations locales futures non revue
 | `20260919080000_sinjira_v25_guardian_character_identity_isolation.sql` | `7c169564095bb440bde8a2a106c4e00aa2f307e4` |
 | `20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql` | `8e0fd367bd0c30ed77f947ae0583408b370121a1` |
 | `20260919090000_sinjira_v25_account_content_hub.sql` | `29358d27f8f505897b924062e208b8d5c740f8c5` |
-| `20260919093000_sinjira_v25_private_novel_catalog.sql` | `7ca3cf47f5f67205cb2a36310513273faacb7dea` |
+| `20260919093000_sinjira_v25_private_novel_catalog.sql` | `41fec69fe7b720a909558a8a1429a7c39cd4772c` |
 | `20260919100000_sinjira_v25_private_profile_age_11.sql` | `db4d0c04f4fba2a6044e12b28d882382ed077086` |
-| `20260919103000_sinjira_v25_livre_i_catalog_seed.sql` | `04929202946a0cda629c1f8005dbf51e4bfb2d68` |
+| `20260919103000_sinjira_v25_livre_i_catalog_seed.sql` | `2a5bb6ae5c25b92c8f963909e95d5949bb82df07` |
 | `20260919110000_sinjira_v25_social_public_pseudo_privacy.sql` | `ac4f11e8e1591c35f0be91f541a21763fdb3ec8d` |
 | `20260919113000_sinjira_v25_private_novel_asset_rls.sql` | `745ae12098e538415dde16bac198d05610b99954` |
 | `20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql` | `5ed558a9426173fdb714479d28f170ada542803b` |
@@ -606,6 +606,8 @@ Le snapshot de revue attend exactement **41 migrations locales futures non revue
 | `20260919130000_sinjira_v25_account_catalog_browser_privileges.sql` | `4436b3d183fa975f5eedeb0427d66da050dfa961` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
+
+Les seeds d’actifs romans privés sont désormais non destructifs sur conflit : une configuration existante (bucket, chemin, mode ou activation) n’est pas réinitialisée automatiquement. Cette correction reste **non revue pour la production**.
 
 Mise à jour de preuve du 23 septembre 2026 : les empreintes de `20260922014000_sinjira_v25_creator_family_catalog_access.sql` et `20260922033000_sinjira_v25_project_product_access.sql` ont été rafraîchies après durcissement de la frontière projets payants/documents et du rang Junior. Elles restent **non revues production**; cette mise à jour n'est ni une approbation humaine ni une autorisation de déploiement.
 
