@@ -1,5 +1,11 @@
 project_id = "gpvivleexywljowcqkru"
 
+[api]
+# Frontière Data API explicite : les schémas d'implémentation privilégiée
+# sinjira_v25_internal / sinjira_catalog_internal ne doivent jamais être exposés.
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+
 [edge_runtime]
 # Les notifications de sécurité utilisent EdgeRuntime.waitUntil().
 # per_worker empêche le runtime local de terminer la fonction dès la réponse HTTP.
