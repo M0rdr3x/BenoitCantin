@@ -68,6 +68,14 @@ def validate(contents:dict[str,str])->None:
         'authorization',
         'bearer{service_key}',
         'comptefamilial{index}/{len(emails)}',
+        'supabase/config.toml',
+        'project_id',
+        'urlsplit',
+        'expectedsupabasehost()',
+        'parsed.hostname',
+        'parsed.pathnotin("","/")',
+        'portnotin(none,443)',
+        'supabase_urlnecorrespondpasauprojetsupabasecanonique',
     ):
         if provision_marker not in provision:
             fail(f"provisionnement famille: garde absente: {provision_marker}")
@@ -584,6 +592,7 @@ def validate(contents:dict[str,str])->None:
         "supabase/tests/creator_family_catalog_access_v25.test.sql",
         "scripts/validate_creator_family_catalog_v25.py",
         "scripts/provision_creator_family_catalog.py",
+        "supabase/config.toml",
         "supabase/functions/_shared/privateNovel.ts",
         "supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql",
         "supabase/migrations/20260922030000_sinjira_v25_extension_product_access.sql",
@@ -620,6 +629,7 @@ def main()->None:
             "courriel gravé dans migration":("migration","commit;","-- contact: person@example.test\ncommit;"),
             "prérequis product_slug famille retiré":("migration","alter table public.projects\n  add column if not exists product_slug text;","-- product_slug prerequisite removed"),
             "provisionnement ouvert navigateur":("migration","from public,anon,authenticated;\ngrant execute on function public.set_sinjira_catalog_family_access_by_email","from public,anon;\ngrant execute on function public.set_sinjira_catalog_family_access_by_email"),
+            "provisionnement vers hôte arbitraire":("provision","if (parsed.hostname or \"\").lower() != expected_host:","if false:"),
             "rang famille enfant élevé":("migration","and public.sinjira_age_band(p_user_id) in ('adult','youth') then 90","then 90"),
             "rang implicite réouvre projet payant":("migration","and p.visibility in ('public','account')\n             and p.product_slug is null","and p.visibility in ('public','account')"),
             "intégrale child ouverte":("migration","private_asset_configured\n          and band in ('adult','youth')","private_asset_configured"),
