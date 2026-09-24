@@ -63,6 +63,7 @@ def validate(contents:dict[str,str])->None:
         "'full_access',private_asset_configuredand(owner_modeorentitled)",
         "'access_source',case",
         "1066,falsefrompublic.sinjira_novels",
+        "onconflict(novel_id)donothing",
     ):
         if marker not in m:
             fail(f"catalogue privé: garde SQL absente: {marker}")
@@ -76,10 +77,15 @@ def validate(contents:dict[str,str])->None:
         "'legacy_env'",
         "1066",
         "enabled=false",
-        "onconflict(novel_id)doupdate",
+        "onconflict(novel_id)donothing",
     ):
         if marker not in seed:
             fail(f"seed Livre I: garde absente: {marker}")
+
+    if "onconflict(novel_id)doupdate" in m:
+        fail("catalogue privé: un conflit ne doit jamais écraser une configuration d actif privé existante")
+    if "onconflict(novel_id)doupdate" in seed:
+        fail("seed Livre I: un conflit ne doit jamais réinitialiser une configuration d actif privé existante")
 
     for marker in (
         "altertableprivate.sinjira_private_novel_assetsenablerowlevelsecurity",
@@ -212,6 +218,8 @@ def main()->None:
             "migration RLS hors paths CI":("workflow","supabase/migrations/20260919113000_sinjira_v25_private_novel_asset_rls.sql","supabase/migrations/rls-missing.sql"),
             "config JWT hors paths CI":("workflow","supabase/config.toml","supabase/config-missing.toml"),
             "JWT Edge désactivé":("config","[functions.get-private-novel-url]\nverify_jwt = true","[functions.get-private-novel-url]\nverify_jwt = false"),
+            "migration actif privé rendue destructive":("migration","on conflict(novel_id) do nothing;","on conflict(novel_id) do update set enabled=false;"),
+            "seed actif privé rendu destructif":("catalog_seed","on conflict(novel_id) do nothing;","on conflict(novel_id) do update set storage_bucket=null,storage_path=null,enabled=false;"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
