@@ -61,6 +61,27 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 | 41 | `20260922033000_sinjira_v25_project_product_access.sql` | 350 lignes; projets; 3 policies créées/8 retirées; 2 definer; 2 updates | Revue prioritaire : projet payant, documents enfants du projet, parent brouillon, droits explicites distincts et suppression des anciennes policies SELECT permissives. |
 | 42 | `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | 89 lignes; 1 `SECURITY DEFINER`; redéfinition du fil Junior interne; aucune mutation de données | Vérifier que publications **et commentaires** exigent encore une bande child active et un consentement Junior courant, sans recréer de DEFINER public ni supprimer l’historique. |
 
+## Journal de relecture automatisée ciblée — 2026-09-24
+
+> **Information technique uniquement — toujours NON REVU / NON APPROUVÉ.**  
+> Les observations ci-dessous documentent une lecture automatisée et la cohérence avec les preuves locales/CI. Elles ne remplissent aucune case de décision humaine et n'autorisent ni promotion, ni fusion, ni production.
+
+### Migrations 37 à 42
+
+- **#37 — catalogue famille créateur** : registre familial privé borné au `user_id`, aucun courriel stocké dans la table, provisionnement réservé au `service_role`, catalogue complet distinct des entitlements commerciaux. Les comptes 11–12 famille ne reçoivent que des fiches minimisées; l'accès intégral reste fermé. Le script de provisionnement est en plus borné au host Supabase canonique dérivé de `supabase/config.toml`.
+- **#38 — droits produits issus des commandes** : le droit canonique exige explicitement `o.status='paid'` ou un entitlement réel; une commande `pending` ne donne aucun droit. Le RPC des droits effectifs est self-only et ne retourne ni numéro de commande, ni montant, ni devise, ni courriel.
+- **#39 — extensions produit** : les anciennes policies SELECT connues sont retirées avant recréation. Une extension achetée doit être `approved` ou `released`, et son projet parent ne doit pas être `draft`. Une extension interne en conception reste invisible au membre standard même avec un produit associé.
+- **#40 — frontière âge/catalogue** : les policies navigateur utilisent le helper âge self-only; le wrapper public `has_sinjira_product` retourne `false` aux comptes 11–12 et aux UUID non self. Les lignes de commandes, order items, entitlements et métadonnées produits commerciales restent masquées aux comptes child.
+- **#41 — projets/documents produit** : toutes les anciennes policies SELECT de `public.documents` sont supprimées dynamiquement avant la policy canonique. Les projets payants exigent un droit produit réel pour adult/youth. Pour 11–12, le helper interne final exige `product_slug is null`; les wrappers publics déplacés par #33 délèguent vers ces helpers internes, ce qui ferme aussi les documents d'un projet payant même avec un rang `player`. Un accès explicite `player/tester` peut toujours ouvrir un brouillon pour adult/youth : ce comportement est distinct d'un achat et doit rester un point de décision humaine.
+- **#42 — visibilité auteur Junior** : le fil interne exige pour les publications **et** les commentaires que l'auteur soit encore dans la bande Junior et conserve un consentement Junior actif. La révocation masque le contenu sans supprimer l'historique et aucun nouveau `SECURITY DEFINER` public n'est créé.
+
+### Preuves CI associées observées sur le HEAD fonctionnel `aac9aa92ef4b6ab14eff53c8fcd230b3a5f17729`
+
+- **Refonte compte et catalogue** : succès, incluant la preuve `plan(50)` que le propriétaire voit le catalogue complet sans fabriquer de droit produit commercial;
+- **Communauté Junior 11–12** : succès avec `plan(59)`, incluant disparition/réapparition des publications et commentaires lorsque le consentement Junior de leur auteur est retiré/rétabli;
+- **Catalogue romans privés** : succès, avec frontière de livraison privée toujours bornée à l'âge et au droit canonique;
+- **Snapshot revue release enfant Junior** : succès; les 42 migrations restent non revues et non approuvées.
+
 ## Ordre conseillé de lecture technique
 
 Sans constituer un classement de sûreté, un ordre efficace pour la **lecture humaine** est :
