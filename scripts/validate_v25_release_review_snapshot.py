@@ -113,7 +113,7 @@ def reviewed_filenames(reviewed_text: str) -> set[str]:
 
 def matrix_migration_names(matrix: str) -> list[str]:
     rows: list[tuple[int, str]] = []
-    pattern = re.compile(r"^\|\s*(\d+)\s*\|\s*\`([^\`]+\.sql)\`\s*\|", re.MULTILINE)
+    pattern = re.compile(r"^\|\s*(\d+)\s*\|\s*`([^`]+\.sql)`\s*\|", re.MULTILINE)
     for match in pattern.finditer(matrix):
         rows.append((int(match.group(1)), match.group(2)))
     if not rows:
