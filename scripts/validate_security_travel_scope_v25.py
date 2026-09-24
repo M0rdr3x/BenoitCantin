@@ -79,6 +79,9 @@ def validate_texts(migration: str, risk_test: str, travel_test: str, workflow: s
         "30::integer,\n  'Mode Voyage ne réduit pas le signal voyage impossible'",
         "20::integer,\n  'travel_match ne réduit pas directement le composant géographique dans le scoreur'",
         "v_unexpected_region := v_previous.country_code <> v_country and not v_travel_match",
+        "position('if v_impossible_travel then' in body)>0",
+        "position(\n        'v_force_challenge := true;'",
+        ") < position(\n        'end if;'",
         "v_force_challenge := true",
     ):
         if needle not in travel_test:
@@ -116,6 +119,13 @@ def self_test(values: tuple[str, str, str, str, str]) -> None:
         'bonus voyage global': (global_bonus, risk_test, travel_test, workflow, ledger),
         'ancien contrat score 55': (migration, risk_test.replace('70::integer,', '55::integer,', 1), travel_test, workflow, ledger),
         'preuve appareil/action affaiblie': (migration, risk_test, travel_test.replace('50::integer,', '35::integer,', 1), workflow, ledger),
+        'preuve challenge impossible découplée': (
+            migration,
+            risk_test,
+            travel_test.replace("      ) < position(\n        'end if;'", "      ) > position(\n        'end if;'", 1),
+            workflow,
+            ledger,
+        ),
         'pgTAP Mode Voyage non exécuté': (migration, risk_test, travel_test, workflow.replace('          ' + TRAVEL_TEST_COMMAND + '\n', '', 1), ledger),
         'garde non déclenché': (migration, risk_test, travel_test, workflow.replace("      - 'scripts/validate_security_travel_scope_v25.py'\n", '', 1), ledger),
         'empreinte migration changée': (migration + '\n-- mutation non revue\n', risk_test, travel_test, workflow, ledger),
