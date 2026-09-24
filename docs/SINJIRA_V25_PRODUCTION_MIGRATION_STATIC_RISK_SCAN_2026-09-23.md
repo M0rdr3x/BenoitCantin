@@ -1,4 +1,4 @@
-# SINJIRA™ V25 — Triage statique des 41 migrations futures
+# SINJIRA™ V25 — Triage statique des 42 migrations futures
 
 Date du scan : **2026-09-23 (America/Toronto)**  
 PR : **#435** — branche `a1/integration-rehearsal`
@@ -11,7 +11,7 @@ PR : **#435** — branche `a1/integration-rehearsal`
 
 ## Résultat global
 
-Le scan a porté sur les **41 migrations futures non revues** figées par le snapshot release.
+Le scan a porté sur les **42 migrations futures non revues** figées par le snapshot release.
 
 Constats mécaniques :
 
@@ -40,6 +40,7 @@ Ce scan ne conclut pas qu'une migration est sûre pour la production.
 | `20260919123000_sinjira_v25_public_rpc_boundary.sql` | déplacement/wrapping de RPC; fonctions privilégiées/invoker; grants dynamiques selon rôles |
 | `20260919130000_sinjira_v25_account_catalog_browser_privileges.sql` | convergence des privilèges navigateur; helpers RLS internes; grants/revokes explicites |
 | `20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql` | helpers internes accessibles aux rôles navigateur; sécurité dépend du ciblage `auth.uid()` et du fail-closed |
+| `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | redéfinition `SECURITY DEFINER` du fil Junior interne; commentaires désormais bornés à l’éligibilité Junior courante de leur auteur; aucun effacement de contenu |
 
 ## Priorité de lecture 2 — mutations de données / cycle de vie
 
@@ -116,6 +117,6 @@ Ces éléments restent des étapes humaines ou de prévol séparées.
 
 ## Conclusion de triage
 
-Aucun motif mécanique de type `DROP TABLE`, `DROP COLUMN`, `TRUNCATE` ou `SECURITY DEFINER` sans `search_path` n'a été détecté dans le lot figé de 41 migrations.
+Aucun motif mécanique de type `DROP TABLE`, `DROP COLUMN`, `TRUNCATE` ou `SECURITY DEFINER` sans `search_path` n'a été détecté dans le lot figé de 42 migrations.
 
 Cela réduit le champ de revue, mais **ne transforme aucune migration en migration revue production**.
