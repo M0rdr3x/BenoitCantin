@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MIG = ROOT / 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
 TEST = ROOT / 'supabase/tests/child_guardian_signup_v25.test.sql'
+PRIVATE_PROFILE_CHILD_TEST = ROOT / 'supabase/tests/private_profile_child_age_v25.test.sql'
 REDEEM_MIG = ROOT / 'supabase/migrations/20260919013000_sinjira_v25_child_pending_guardian_redeem.sql'
 GUARDIAN_AAL2_MIG = ROOT / 'supabase/migrations/20260919023000_sinjira_v25_guardian_invite_aal2.sql'
 GUARDIAN_SECRET_MIN_MIG = ROOT / 'supabase/migrations/20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql'
@@ -42,6 +43,7 @@ def compact(text):
 
 mig = read(MIG)
 test = read(TEST)
+private_profile_child_test = read(PRIVATE_PROFILE_CHILD_TEST)
 redeem_mig = read(REDEEM_MIG)
 guardian_aal2_mig = read(GUARDIAN_AAL2_MIG)
 guardian_secret_min_mig = read(GUARDIAN_SECRET_MIN_MIG)
@@ -65,6 +67,7 @@ child_browser_test = read(CHILD_BROWSER_TEST)
 
 m = compact(mig)
 t = compact(test)
+ppct = compact(private_profile_child_test)
 rm = compact(redeem_mig)
 gm = compact(guardian_aal2_mig)
 gsm = compact(guardian_secret_min_mig)
@@ -85,6 +88,11 @@ h = signup_html.lower()
 rh = relations_html.lower()
 bt = compact(browser_test)
 cbt = compact(child_browser_test)
+
+# Le workflow exécute aussi le coffre privé enfant : sa preuve SQL doit rester syntaxiquement ciblée.
+req("$age_review$selectpublic.private_profile_save(" in ppct
+    and ")$age_review$," in ppct,
+    "Le pgTAP du coffre privé enfant ne protège plus correctement le scénario de revue de date de naissance.")
 
 # Autorité serveur et seuil minimal.
 req("ifyears<11thenraiseexception'sinjira_minimum_age_11'" in m,
