@@ -75,8 +75,7 @@ def validate(contents:dict[str,str])->None:
         "onconflict(slug)doupdate",
         "insertintoprivate.sinjira_private_novel_assets",
         "'legacy_env'",
-        "1066",
-        "enabled=false",
+        "'sinjira_livre_01_la_cendre_du_jugement.pdf',1066,falsefrompublic.sinjira_novels",
         "onconflict(novel_id)donothing",
     ):
         if marker not in seed:
@@ -218,6 +217,7 @@ def main()->None:
             "migration RLS hors paths CI":("workflow","supabase/migrations/20260919113000_sinjira_v25_private_novel_asset_rls.sql","supabase/migrations/rls-missing.sql"),
             "config JWT hors paths CI":("workflow","supabase/config.toml","supabase/config-missing.toml"),
             "JWT Edge désactivé":("config","[functions.get-private-novel-url]\nverify_jwt = true","[functions.get-private-novel-url]\nverify_jwt = false"),
+            "seed Livre I activé par défaut":("catalog_seed","'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf',\n       1066,\n       false","'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf',\n       1066,\n       true"),
             "migration actif privé rendue destructive":("migration","on conflict(novel_id) do nothing;","on conflict(novel_id) do update set enabled=false;"),
             "seed actif privé rendu destructif":("catalog_seed","on conflict(novel_id) do nothing;","on conflict(novel_id) do update set storage_bucket=null,storage_path=null,enabled=false;"),
         }
