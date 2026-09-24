@@ -528,9 +528,9 @@ Une seconde relecture le 23 septembre 2026 a fermé les policies V24 permissives
 
 Le snapshot a volontairement détecté que plusieurs migrations non revues avaient changé depuis leurs empreintes précédentes. Elles ont été relues avant mise à jour de ce dossier; les changements sont des **resserrements**, pas des élargissements de droits :
 
-- `20260916210000_sinjira_v25_child_guardian_signup.sql` : privacy-by-default dès la première supervision, purge immédiate de `guardian_code`, visibilité tuteur bornée à la minorité; le RPC historique de contacts est remplacé dès cette étape par la version consentement explicite + AAL2 + réponse minimisée; publication mémorielle publique et souhait d’anniversaire restent à `false` par défaut; avant le classement explicite, le compte `child` authentifié reste aussi fermé aux projets/documents non classés;
+- `20260916210000_sinjira_v25_child_guardian_signup.sql` : privacy-by-default dès la première supervision, purge immédiate de `guardian_code`, visibilité tuteur bornée à la minorité; le RPC historique de contacts est remplacé dès cette étape par la version consentement explicite + AAL2 + réponse minimisée; publication mémorielle publique et souhait d’anniversaire restent à `false` par défaut; avant le classement explicite, le compte `child` authentifié reste aussi fermé aux projets/documents non classés, avec retrait explicite des anciennes policies projets/documents permissives avant création du garde;
 - `20260917223000_sinjira_v25_junior_community.sql` : révocation durable du consentement Junior, AAL2 à l’activation, retrait de l’alias Junior du résumé tuteur;
-- `20260918010000_sinjira_v25_child_sensitive_boundary.sql` : conserve la fermeture complète `projects/documents` pour `child` jusqu’à la migration de classement explicite `approved_11_12`, évitant une réouverture intermédiaire;
+- `20260918010000_sinjira_v25_child_sensitive_boundary.sql` : conserve la fermeture complète `projects/documents` pour `child` jusqu’à la migration de classement explicite `approved_11_12`, en retirant d’abord les anciennes policies SELECT qui seraient combinées par `OR`;
 - `20260918013000_sinjira_v25_child_content_rating.sql` : fermeture de l’oracle `anon` sur les projets `account` dès l’introduction du helper et exigence immédiate du rang d’accès réel pour les documents;
 - `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` : retrait de `junior_alias` du résultat parental;
 - `20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql` : métadonnées parentales minimisées dès la première exposition et identités Compte/Personnage cloisonnées;
@@ -573,9 +573,9 @@ Le snapshot de revue attend exactement **42 migrations locales futures non revue
 
 | Migration | Git blob SHA-1 |
 |---|---|
-| `20260916210000_sinjira_v25_child_guardian_signup.sql` | `51544dee4322d809a8116fb5614962de78691b31` |
+| `20260916210000_sinjira_v25_child_guardian_signup.sql` | `baa11566a920ee8ba9f08810f542d9ad78046d24` |
 | `20260917223000_sinjira_v25_junior_community.sql` | `64e66dc8d9c45de9ecbb1174fdb842e4444b9b6b` |
-| `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `d526702c0c32bda7628a37134b9f64e9c66d6351` |
+| `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `ea0426172caba27fc3446c696575a19a1eae08d7` |
 | `20260918013000_sinjira_v25_child_content_rating.sql` | `b0a2bfda90579830083d128035ee533d06dd2159` |
 | `20260918020000_sinjira_v25_account_capabilities.sql` | `0a16bfcc49e51ee2b96cb98742442ae3d00e5c76` |
 | `20260918023000_sinjira_v25_minor_content_policy_compat.sql` | `c0556e3baa218f9529f185010455984a0bc1cd03` |
@@ -613,6 +613,8 @@ Les seeds d’actifs romans privés sont désormais non destructifs sur conflit 
 Mise à jour de preuve du 23 septembre 2026 : les empreintes de `20260922014000_sinjira_v25_creator_family_catalog_access.sql` et `20260922033000_sinjira_v25_project_product_access.sql` ont été rafraîchies après durcissement de la frontière projets payants/documents et du rang Junior. Elles restent **non revues production**; cette mise à jour n'est ni une approbation humaine ni une autorisation de déploiement.
 
 Les empreintes des migrations `20260922023000_sinjira_v25_paid_order_product_access.sql` et `20260922030000_sinjira_v25_extension_product_access.sql` ont été rafraîchies après leurs durcissements locaux (frontière d’âge, droits produit minimisés, fermeture des extensions liées à un projet brouillon). Elles restent **non revues pour la production** et ce rafraîchissement ne constitue ni une approbation humaine ni une autorisation de déploiement.
+
+Mise à jour du 24 septembre 2026 : `20260916210000_sinjira_v25_child_guardian_signup.sql` et `20260918010000_sinjira_v25_child_sensitive_boundary.sql` retirent désormais explicitement les policies héritées `projects_*` / `documents_*` avant d’installer les gardes 11–12. Cela ferme la fenêtre séquentielle où PostgreSQL aurait combiné une ancienne policy permissive avec la nouvelle policy par `OR`. Leurs nouvelles empreintes restent **NON REVUES / NON APPROUVÉES**.
 
 Mise à jour du 24 septembre 2026 : `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` ferme une incohérence de révocation du fil Junior. Un commentaire est maintenant servi uniquement si son auteur est encore dans la bande `child` et dispose d’un consentement Junior actif. Le contenu historique n’est pas supprimé; il est masqué tant que l’accès n’est plus valide. Cette migration est ajoutée au snapshot comme **NON REVUE / NON APPROUVÉE**.
 
