@@ -10,7 +10,7 @@ PR : #435
 
 ## Source de vérité du périmètre
 
-Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only a porté le delta à **36 migrations futures non revues**. La demande de catalogue complet pour le créateur et ses comptes familiaux, sans publier de courriel ni fabriquer de faux achat, ajoute maintenant une migration forward-only dédiée : les frontières self-only d’âge/catalogue et l’accès produit générique projets ajoutent ensuite deux migrations forward-only supplémentaires : le delta courant est désormais de **41 migrations futures non revues**. Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
+Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only a porté le delta à **36 migrations futures non revues**. La demande de catalogue complet pour le créateur et ses comptes familiaux, sans publier de courriel ni fabriquer de faux achat, ajoute maintenant une migration forward-only dédiée : les frontières self-only d’âge/catalogue et l’accès produit générique projets ajoutent ensuite deux migrations forward-only supplémentaires : le delta courant est désormais de **43 migrations futures non revues** après deux correctifs Junior forward-only supplémentaires (#42 visibilité auteur et #43 arrêt des commentaires sur publication masquée). Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
 
 Répartition :
 - **Lot A — Mode Voyage : 4 migrations**
@@ -420,6 +420,19 @@ Points à confirmer humainement avant toute approbation :
 
 Aucune case du Lot E n'est cochée : cette section documente une **préparation technique de revue**, pas une approbation.
 
+## Lot F — Correctifs Junior forward-only récents (2)
+
+- [ ] `20260924173000_sinjira_v25_junior_comment_author_visibility.sql`
+  - Masque publications et commentaires lorsque leur auteur quitte la bande Junior ou perd son consentement courant, sans supprimer l’historique.
+  - La preuve pgTAP couvre retrait puis réactivation explicite de l’auteur.
+
+- [ ] `20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql`
+  - Empêche la création d’un nouveau commentaire sur une publication actuellement masquée par une décision humaine de modération.
+  - Redéfinit uniquement l’implémentation interne finale après la frontière RPC; aucun `SECURITY DEFINER` public n’est recréé.
+  - La preuve pgTAP exige `JUNIOR_POST_UNAVAILABLE` pendant `hide_content`, puis conserve le commentaire normal après réversion humaine.
+
+Aucune case du Lot F n’est cochée : ces migrations restent **NON REVUES / NON APPROUVÉES**.
+
 ## Portes de sortie de revue
 
 Une famille ne peut être proposée comme « revue » que si :
@@ -433,7 +446,7 @@ Une famille ne peut être proposée comme « revue » que si :
 
 ## État au moment de la création de ce document
 
-- 41 / 41 migrations : **NON REVUES**
+- 43 / 43 migrations : **NON REVUES**
 - 0 migration ajoutée au lot production par ce document
 - 0 changement du ledger production
 - 0 déploiement production
