@@ -48,13 +48,7 @@ select n.id,
        false
 from public.sinjira_novels n
 where n.slug='la-cendre-du-jugement'
-on conflict(novel_id) do update
-set product_slug=excluded.product_slug,
-    delivery_mode=excluded.delivery_mode,
-    download_name=excluded.download_name,
-    total_pages=excluded.total_pages,
-    enabled=false,
-    updated_at=now();
+on conflict(novel_id) do nothing;
 
 create or replace function public.sinjira_my_novel_catalog()
 returns jsonb
