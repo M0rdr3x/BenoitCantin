@@ -64,6 +64,7 @@ EXPECTED_NON_REVIEWED = {
     "20260922031500_sinjira_v25_catalog_age_helper_boundary.sql": "b0b2495e24cc0a23c7d50f32f4caef24314cc85a",
     "20260922033000_sinjira_v25_project_product_access.sql": "a07f22b7801a6182e0c15dc05e2cf09df92e7dde",
     "20260924173000_sinjira_v25_junior_comment_author_visibility.sql": "3c80073c9bc027707d1f12a129cebd91a8d7ba4f",
+    "20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql": "5cdb8c576aae2ff7adcf75dd1270ba446b063e59",
 }
 
 
@@ -231,7 +232,7 @@ def validate_snapshot(
 
     static_scan_statements = (
         "**Statut : TRIAGE AUTOMATISÉ — AUCUNE APPROBATION PRODUCTION**",
-        "Le scan a porté sur les **42 migrations futures non revues** figées par le snapshot release.",
+        "Le scan a porté sur les **43 migrations futures non revues** figées par le snapshot release.",
         "Ce scan ne conclut pas qu'une migration est sûre pour la production.",
         "**L’humain avant tout. Protéger sans surveiller.**",
     )
@@ -329,7 +330,7 @@ def main() -> None:
 
     validate_snapshot(*values)
     print(
-        "OK snapshot release V25: 42 migrations futures non revues correspondent au dossier, "
+        "OK snapshot release V25: 43 migrations futures non revues correspondent au dossier, "
         "empreintes intactes, feuille/matrice/scan de revue synchronisés, reviewed/ledger inchangés et garde humaine conservée."
     )
 
