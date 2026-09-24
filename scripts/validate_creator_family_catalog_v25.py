@@ -71,7 +71,7 @@ def validate(contents:dict[str,str])->None:
         'supabase/config.toml',
         'project_id',
         'urlsplit',
-        'expectedsupabasehost()',
+        'expected_supabase_host()',
         'parsed.hostname',
         'parsed.pathnotin("","/")',
         'portnotin(none,443)',
