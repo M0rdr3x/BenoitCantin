@@ -44,15 +44,7 @@ select n.id,
        false
 from public.sinjira_novels n
 where n.slug='la-cendre-du-jugement'
-on conflict(novel_id) do update
-set product_slug=excluded.product_slug,
-    delivery_mode='legacy_env',
-    storage_bucket=null,
-    storage_path=null,
-    download_name=excluded.download_name,
-    total_pages=1066,
-    enabled=false,
-    updated_at=now();
+on conflict(novel_id) do nothing;
 
 comment on table private.sinjira_private_novel_assets is
   'Registre serveur des actifs romans intégraux. Les chemins privés ne sont jamais livrés au catalogue navigateur; Livre I reste désactivé tant qu un stockage privé n est pas explicitement configuré.';
