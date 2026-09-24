@@ -95,6 +95,9 @@ Lire les migrations dans l’ordre chronologique canonique. Les colonnes de cont
 | 39 | `20260922030000_sinjira_v25_extension_product_access.sql` | `0bdc1677d4efe669b8ec1503ed41f745136c6680` | Catalogue / droits produit | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 40 | `20260922031500_sinjira_v25_catalog_age_helper_boundary.sql` | `b0b2495e24cc0a23c7d50f32f4caef24314cc85a` | Catalogue / droits produit | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 41 | `20260922033000_sinjira_v25_project_product_access.sql` | `a07f22b7801a6182e0c15dc05e2cf09df92e7dde` | Catalogue / droits produit | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 42 | `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | `3c80073c9bc027707d1f12a129cebd91a8d7ba4f` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
+
+Mise à jour du **2026-09-24** : la migration #42 corrige forward-only la visibilité des commentaires Junior après révocation de l’accès de leur auteur. Elle reste **NON REVUE / NON APPROUVÉE** et n’autorise aucune promotion.
 
 ## Signification des colonnes
 
