@@ -38,6 +38,7 @@ FILES = {
     "reset_html": ROOT / "compte/reinitialiser-mot-de-passe.html",
     "mfa_html": ROOT / "compte/mfa.html",
     "workflow": ROOT / ".github/workflows/sinjira-account-content-hub-v25.yml",
+    "supabase_config": ROOT / "supabase/config.toml",
     "reader_js": ROOT / "assets/js/sinjira-reader.js",
     "comments_js": ROOT / "assets/js/sinjira-account-v18.js",
     "comments_html": ROOT / "compte/mes-commentaires.html",
@@ -69,6 +70,19 @@ def compact(value: str) -> str:
 def validate(contents: dict[str, str]) -> None:
     m = compact(contents["migration"])
     project_owner_migration = compact(contents["project_owner_migration"])
+    supabase_config = compact(contents["supabase_config"])
+
+    for marker in (
+        '[api]',
+        'schemas=["public","storage","graphql_public"]',
+        'extra_search_path=["public","extensions"]',
+    ):
+        if marker not in supabase_config:
+            fail(f"frontière Data API Supabase: configuration explicite absente: {marker}")
+    for forbidden_schema in ('sinjira_v25_internal','sinjira_catalog_internal','private'):
+        api_section=supabase_config[supabase_config.find('[api]'):supabase_config.find('[edge_runtime]')]
+        if forbidden_schema in api_section:
+            fail(f"frontière Data API Supabase: schéma interne exposé: {forbidden_schema}")
     public_rpc_boundary = compact(contents["public_rpc_boundary_migration"])
     browser_privileges = compact(contents["browser_privileges_migration"])
     browser_helper_hardening = compact(contents["browser_helper_hardening_migration"])
@@ -837,6 +851,7 @@ def main() -> None:
             "script récupération hors paths CI":("workflow","assets/js/sinjira-recovery-v24-4-99.js","assets/js/sinjira-recovery-missing.js"),
             "inscription avec ancien cache CSS":("signup_html","sinjira-player-account.css?v=25.0.1","sinjira-player-account.css?v=24.4.12"),
             "MFA avec ancien cache CSS":("mfa_html","sinjira-player-account.css?v=25.0.1","sinjira-player-account.css?v=24.4.66"),
+            "schéma interne exposé Data API":("supabase_config",'schemas = ["public", "storage", "graphql_public"]','schemas = ["public", "storage", "graphql_public", "sinjira_v25_internal"]'),
             "policy projets créateur retirée":("project_owner_migration","create policy projects_owner_catalog_read_v25","create policy projects_owner_catalog_missing"),
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
             "migration privilèges catalogue hors paths CI":("workflow","supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql","supabase/migrations/catalog-browser-privileges-missing.sql"),
