@@ -41,7 +41,7 @@ La vague CI associée au dossier précédent a confirmé que les parcours Commun
 - Mode Voyage : rétention **11/11** et visibilité client **28/28**, les workflows consentement/self-only/minimisation restant également verts;
 - snapshot release : **42 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
 
-La classification exhaustive des workflows rouges de ce HEAD montre que leurs étapes métier/sécurité passent avant de s'arrêter sur le **ledger production volontairement bloqué** par les 41 migrations non revues. Le prévol Supabase suit la même logique : ses tests de sécurité passent, puis la vérification du dépôt s'arrête sur ce ledger.
+La classification exhaustive des workflows rouges de ce HEAD montre que leurs étapes métier/sécurité passent avant de s'arrêter sur le **ledger production volontairement bloqué** par les 42 migrations non revues. Le prévol Supabase suit la même logique : ses tests de sécurité passent, puis la vérification du dépôt s'arrête sur ce ledger.
 
 ## 2. Correctifs forward-only issus de la revue technique
 
