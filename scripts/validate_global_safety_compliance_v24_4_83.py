@@ -77,7 +77,7 @@ req('compte disponible à partir de 11 ans' in signup_html.lower() and 'moins de
 req('11–12 ans' in signup_html.lower() and 'fonctions sociales générales' in signup_html.lower() and 'messages privés restent désactivés' in signup_html.lower() and 'communauté junior séparée' in signup_html.lower(),'Interface enfant supervisé incomplète.')
 req('comptes de 11 à 17 ans' in signup_html.lower() and 'canada' in signup_html.lower(),'Gate jeunesse Canada non expliqué à l’inscription.')
 req('data-signup-session-warning' in signup_html.lower() and 'data-signup-session-signout' in signup_html.lower(),'Interface de séparation de session parent/enfant absente.')
-req('v24-signup.js?v=25.0.2&amp;rev=child-11-flow-session' in signup_html,'Version du client inscription enfant non invalidée.')
+req('v24-signup.js?v=25.0.3&amp;rev=guardian-code-16' in signup_html,'Version du client inscription enfant renforcé non invalidée.')
 req('réservés aux personnes de 13 ans et plus' not in signup_html.lower(),'Ancien message global 13+ encore présent dans l’interface.')
 
 for phrase in ('registre interne','cinq ans','30 jours','13 ans','comptes jeunesse 13–17 ans','canada','rencontres sinjira™ est strictement 18+','ia distante payante est désactivée','paiements en ligne','responsable de la protection des renseignements personnels','gouvernance-vie-privee.html','formspree','états-unis','canada central'):
@@ -99,7 +99,7 @@ req('paid_sexual_content' in v82.lower() and 'human_trafficking' in v82.lower() 
 req('select plan(31);' in test,'Plan pgTAP V83 inattendu.')
 req('SINJIRA_MINIMUM_AGE_11' in test and 'YOUTH_JURISDICTION_NOT_ENABLED' in test and "'sinjira_content_policy_guard'" in test and "'dating_profiles_adult_only'" in test,'Les tests V83/V25 ne protègent pas le minimum 11 ans, les gates jeunesse ou V82.')
 req(
-    'select plan(67);' in child_test_lower
+    'select plan(69);' in child_test_lower
     and 'sinjira_minimum_age_11' in child_test_lower
     and "'child','la veille des 13 ans" in child_test_lower
     and "'youth','le jour des 13 ans" in child_test_lower
