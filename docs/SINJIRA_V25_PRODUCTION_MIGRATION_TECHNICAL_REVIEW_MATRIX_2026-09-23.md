@@ -43,7 +43,7 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 | 23 | `20260919073000_sinjira_v25_junior_guardian_summary_aal2.sql` | 72 lignes; 1 definer; âge+AAL2 | Vérifier que le résumé tuteur reste minimal et uniquement accessible au tuteur autorisé. |
 | 24 | `20260919080000_sinjira_v25_guardian_character_identity_isolation.sql` | 106 lignes; 1 definer; AAL2 | Vérifier l'isolation identité réelle/personnage et l'absence de fuite via les contacts tuteur. |
 | 25 | `20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql` | 53 lignes; 1 definer; âge | Vérifier que les alias Junior ne révèlent ni identité réelle ni identifiant sensible. |
-| 26 | `20260919090000_sinjira_v25_account_content_hub.sql` | 79 lignes; 4 policies créées/4 retirées; insert + update | Vérifier seed/convergence du hub Compte, ownership des lignes et absence d'accès supplémentaire implicite. |
+| 26 | `20260919090000_sinjira_v25_account_content_hub.sql` | 80 lignes; 4 policies créées/4 retirées; insert + update | Vérifier seed/convergence du hub Compte, ownership des lignes, commande strictement `paid` et absence d'accès supplémentaire implicite. |
 | 27 | `20260919093000_sinjira_v25_private_novel_catalog.sql` | 185 lignes; table privée + RLS; 2 definer; seed actif privé non mutant sur conflit; `service_role` | Vérifier séparation métadonnées/catalogue/asset privé, reprise partielle non destructive et délivrance seulement avec droit canonique. |
 | 28 | `20260919100000_sinjira_v25_private_profile_age_11.sql` | 322 lignes; 2 definer; 2 inserts + 2 updates; âge; frontière anti-auto-vieillissement mineur | Vérifier coffre profil privé, âge minimum, champs permis, isolation totale entre comptes et refus d’une date plus ancienne qui augmenterait l’âge d’un mineur sans revue séparée. |
 | 29 | `20260919103000_sinjira_v25_livre_i_catalog_seed.sql` | 53 lignes; 2 inserts; métadonnées roman convergées; actif privé non mutant sur conflit | Vérifier idempotence du seed, slugs stables et préservation d’une configuration privée déjà existante. |
@@ -75,6 +75,11 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 ### Migration 16
 
 - **#16 — activation Junior AAL2** : l'autorisation parent/tuteur est désormais sérialisée sur la ligne `guardian_links` active avec `FOR UPDATE` avant l'écriture du consentement. Cela ferme la course où une révocation pouvait auparavant tomber entre la vérification du lien et l'insert/upsert du consentement, puis laisser un consentement dormant susceptible de réapparaître après réactivation. Le pgTAP multi-tuteur compte désormais 26 assertions et vérifie la présence du verrou sur l'implémentation interne finale après la frontière RPC #33.
+
+### Migrations 26 et 27
+
+- **#26 — hub compte / acquisitions** : la policy de lecture d'un produit commandé exige désormais `o.status='paid'` **dès cette migration**, au lieu d'attendre la convergence #38. Une commande `pending` ne peut donc plus créer une fenêtre transitoire de visibilité sur un produit privé pendant l'application séquentielle des migrations. Entitlement réel et droit créateur restent des chemins distincts sans faux achat.
+- **#27 — catalogue romans privés** : le catalogue self-only ne retourne aucune colonne de stockage; les métadonnées de livraison privée restent réservées au `service_role`. Les comptes 11–12 reçoivent un catalogue vide, et un actif intégral n'est accessible qu'une fois explicitement activé et couvert par le droit canonique final.
 
 ### Migrations 28 à 32
 

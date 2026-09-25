@@ -285,11 +285,11 @@ La migration forward-only :
 
 `20260919090000_sinjira_v25_account_content_hub.sql`
 
-ajoute trois garanties de lecture sans créer de faux achats : un membre peut relire un produit inactif s'il est lié à son propre entitlement ou à sa propre commande; le compte créateur peut lire les romans brouillons et produits internes; les autres membres ne voient pas ces éléments privés. Le Livre II `Le Sang du Sauveur` est aussi convergé vers `sinjira_novels` afin que le catalogue canonique reflète les romans déjà annoncés sur le site.
+ajoute trois garanties de lecture sans créer de faux achats : un membre peut relire un produit inactif s'il est lié à son propre entitlement ou à sa propre commande dont le paiement est confirmé (`status='paid'`); une commande pending ne révèle jamais le produit privé; le compte créateur peut lire les romans brouillons et produits internes; les autres membres ne voient pas ces éléments privés. Le Livre II `Le Sang du Sauveur` est aussi convergé vers `sinjira_novels` afin que le catalogue canonique reflète les romans déjà annoncés sur le site.
 
 La refonte front-end regroupe la navigation du compte en familles, sépare Bibliothèque en **Jeux / Romans / Autres créations**, ajoute un historique réel **Achats / Droits / Créations**, rend pseudo et courriel modifiables par le propriétaire du compte, convertit les commentaires vers les tables/RPC `sinjira_*`, et transforme Littérature en catalogue multi-romans piloté par les droits du compte.
 
-Le pgTAP `account_content_hub_v25.test.sql` contient **9 assertions** dédiées aux frontières membre/créateur.
+Le pgTAP `account_content_hub_v25.test.sql` compte désormais **52 assertions** au total, incluant les frontières membre/créateur, l'absence de faux achat, l'anti-auto-attribution `project_access` et la non-fuite du nom affiché privé vers le profil social.
 
 Cette vingt-sixième migration reste **non revue production**.
 
@@ -595,7 +595,7 @@ Le snapshot de revue attend exactement **43 migrations locales futures non revue
 | `20260919073000_sinjira_v25_junior_guardian_summary_aal2.sql` | `07b1ea063e57d3dd4a31e689fac6f44fd1ca6d18` |
 | `20260919080000_sinjira_v25_guardian_character_identity_isolation.sql` | `7c169564095bb440bde8a2a106c4e00aa2f307e4` |
 | `20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql` | `8e0fd367bd0c30ed77f947ae0583408b370121a1` |
-| `20260919090000_sinjira_v25_account_content_hub.sql` | `29358d27f8f505897b924062e208b8d5c740f8c5` |
+| `20260919090000_sinjira_v25_account_content_hub.sql` | `f5d31db41bfda7f880d6fd04bb06b6f7b26454eb` |
 | `20260919093000_sinjira_v25_private_novel_catalog.sql` | `41fec69fe7b720a909558a8a1429a7c39cd4772c` |
 | `20260919100000_sinjira_v25_private_profile_age_11.sql` | `d51142e51ba109492b31c14216367287ef51fbc0` |
 | `20260919103000_sinjira_v25_livre_i_catalog_seed.sql` | `2a5bb6ae5c25b92c8f963909e95d5949bb82df07` |

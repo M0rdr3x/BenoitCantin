@@ -47,7 +47,7 @@ EXPECTED_NON_REVIEWED = {
     "20260919073000_sinjira_v25_junior_guardian_summary_aal2.sql": "07b1ea063e57d3dd4a31e689fac6f44fd1ca6d18",
     "20260919080000_sinjira_v25_guardian_character_identity_isolation.sql": "7c169564095bb440bde8a2a106c4e00aa2f307e4",
     "20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql": "8e0fd367bd0c30ed77f947ae0583408b370121a1",
-    "20260919090000_sinjira_v25_account_content_hub.sql": "29358d27f8f505897b924062e208b8d5c740f8c5",
+    "20260919090000_sinjira_v25_account_content_hub.sql": "f5d31db41bfda7f880d6fd04bb06b6f7b26454eb",
     "20260919093000_sinjira_v25_private_novel_catalog.sql": "41fec69fe7b720a909558a8a1429a7c39cd4772c",
     "20260919100000_sinjira_v25_private_profile_age_11.sql": "d51142e51ba109492b31c14216367287ef51fbc0",
     "20260919103000_sinjira_v25_livre_i_catalog_seed.sql": "2a5bb6ae5c25b92c8f963909e95d5949bb82df07",

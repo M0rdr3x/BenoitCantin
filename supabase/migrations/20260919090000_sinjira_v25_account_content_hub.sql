@@ -36,6 +36,7 @@ using (
     join public.orders o on o.id=oi.order_id
     where oi.product_id=products.id
       and o.user_id=(select auth.uid())
+      and o.status='paid'
   )
 );
 
@@ -73,6 +74,6 @@ comment on policy sinjira_novels_owner_read on public.sinjira_novels is
 comment on policy products_entitled_read on public.products is
   'V25: un membre peut relire un produit lié à son propre entitlement même si ce produit devient inactif.';
 comment on policy products_ordered_read on public.products is
-  'V25: un membre peut relire un produit présent dans sa propre commande même si ce produit devient inactif.';
+  'V25: un membre peut relire un produit présent dans sa propre commande uniquement après paiement confirmé status=paid, même si ce produit devient ensuite inactif.';
 comment on policy products_owner_read on public.products is
   'V25: le propriétaire SINJIRA voit tout le catalogue produit pour gérer ses créations; ce droit n est pas un achat.';

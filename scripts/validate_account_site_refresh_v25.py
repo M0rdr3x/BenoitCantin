@@ -139,6 +139,7 @@ def validate(contents: dict[str, str]) -> None:
         "createpolicyproducts_owner_read",
         "public.is_sinjira_owner((selectauth.uid()))",
         "insertintopublic.sinjira_novels",
+        "o.status='paid'",
         "'le-sang-du-sauveur'",
     )
     for marker in required_migration:
@@ -880,6 +881,7 @@ def main() -> None:
             "schéma interne exposé Data API":("supabase_config",'schemas = ["public", "storage", "graphql_public"]','schemas = ["public", "storage", "graphql_public", "sinjira_v25_internal"]'),
             "pseudo social recopie le nom privé":("social_pseudo_migration","v_public_pseudo,\n    v_public_pseudo,","v_public_pseudo,\n    new.display_name,"),
             "migration pseudo social hors paths CI":("workflow","supabase/migrations/20260919110000_sinjira_v25_social_public_pseudo_privacy.sql","supabase/migrations/social-pseudo-privacy-missing.sql"),
+            "commande pending visible avant convergence paid":("migration","and o.status='paid'",""),
             "policy projets créateur retirée":("project_owner_migration","create policy projects_owner_catalog_read_v25","create policy projects_owner_catalog_missing"),
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
             "migration privilèges catalogue hors paths CI":("workflow","supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql","supabase/migrations/catalog-browser-privileges-missing.sql"),
