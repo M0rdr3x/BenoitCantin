@@ -64,9 +64,9 @@ Lire les migrations dans l’ordre chronologique canonique. Les colonnes de cont
 | 8 | `20260918020000_sinjira_v25_account_capabilities.sql` | `0a16bfcc49e51ee2b96cb98742442ae3d00e5c76` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 9 | `20260918023000_sinjira_v25_minor_content_policy_compat.sql` | `c0556e3baa218f9529f185010455984a0bc1cd03` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 10 | `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` | `efa9d6a29c4decfe0180e9262827022ff752f670` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
-| 11 | `20260919013000_sinjira_v25_child_pending_guardian_redeem.sql` | `faaccf3cce0bf725d0f42a5cbecaecbba4b89aa2` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 11 | `20260919013000_sinjira_v25_child_pending_guardian_redeem.sql` | `ca20740a0ba7597fad1468b498eed7946dea2358` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 12 | `20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql` | `e14c41364246929054282bccb0e4abc5641b8643` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
-| 13 | `20260919023000_sinjira_v25_guardian_invite_aal2.sql` | `5700bfaa2b5a95d84d37ad475524960bdb78fc9b` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 13 | `20260919023000_sinjira_v25_guardian_invite_aal2.sql` | `0f5b609014df6406f105e7c46a9685e15ce9df32` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 14 | `20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql` | `f08102d4bc2485bc229e21076f361bf31552c928` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 15 | `20260919033000_sinjira_v25_guardian_invite_read_aal2.sql` | `b2439fbad69798db42c17a04887dff50d9f184cc` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 16 | `20260919040000_sinjira_v25_junior_enable_aal2.sql` | `df5475777abd5bb8fff26510a727d3d04cffce53` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
@@ -103,6 +103,8 @@ Mise à jour du **2026-09-24** : les migrations #4 et #6 ont aussi été durcies
 Mise à jour du **2026-09-24** : la migration #42 corrige forward-only la visibilité des commentaires Junior après révocation de l’accès de leur auteur. Elle reste **NON REVUE / NON APPROUVÉE** et n’autorise aucune promotion.
 
 Mise à jour du **2026-09-24** : la migration #43 ferme la possibilité de commenter une publication Junior pendant un masquage humain `hide_content`. Elle reste **NON REVUE / NON APPROUVÉE**; aucune case de revue n’est cochée automatiquement.
+
+Mise à jour du **2026-09-25** : les migrations #11 et #13 renforcent les codes parentaux sans casser les codes déjà émis : anciens codes 10 caractères acceptés jusqu’à expiration, nouveaux codes 16 caractères (64 bits), émission toujours adulte AAL2 et consommation toujours sérialisée/fail-closed. Elles restent **NON REVUES / NON APPROUVÉES**; aucune case n’est cochée automatiquement.
 
 Mise à jour du **2026-09-24** : une relecture automatisée ciblée des migrations #37 à #42 a été consignée dans la matrice technique. Elle confirme la cohérence des gardes famille/achat/âge/projet/Junior avec les preuves CI vertes du HEAD fonctionnel `aac9aa92ef4b6ab14eff53c8fcd230b3a5f17729`. **Aucune case de cette feuille n’est cochée par cette relecture automatisée**; le comportement `project_access` explicite `player/tester` pour adult/youth reste notamment un point de décision humaine distinct d’un achat.
 
