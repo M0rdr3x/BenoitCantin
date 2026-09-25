@@ -12,7 +12,7 @@ const guardianInput=form?.querySelector('[data-guardian-code]');
 const contributorPanel=form?.querySelector('[data-contributor-panel]');
 const contributorInput=form?.querySelector('[name="initial_contributor_opt_in"]');
 const shareFreeTextInput=form?.querySelector('[name="share_free_text"]');
-const GUARDIAN_CODE_RE=/^YOUTH-[A-Z0-9]{10}$/;
+const GUARDIAN_CODE_RE=/^YOUTH-[A-Z0-9]{10}(?:[A-Z0-9]{6})?$/;
 const MIN_ACCOUNT_AGE=11;
 let busyState=false;
 let sessionBoundaryState='checking';
@@ -170,7 +170,7 @@ if(form){
     if(age<18&&!isCanada(residenceCountry)){setStatus(status,'Pour le moment, les comptes jeunesse de 11 à 17 ans sont disponibles uniquement pour les personnes résidant au Canada. Les autres juridictions jeunesse resteront fermées jusqu’à leur validation spécifique.','error');return}
     if(!['Femme','Homme'].includes(gender)){setStatus(status,'Choisissez Femme ou Homme pour ce profil.','error');return}
     if(age<14&&!guardianCode){setStatus(status,'De 11 à 13 ans, un code parental est obligatoire. Le parent ou tuteur adulte doit se connecter à son Compte SINJIRA™, ouvrir Relations, générer un code à usage unique, puis vous le remettre.','error');return}
-    if(guardianCode&&!GUARDIAN_CODE_RE.test(guardianCode)){setStatus(status,'Le code parental doit respecter le format YOUTH-XXXXXXXXXX. Utilisez le code à usage unique généré depuis le compte adulte du parent ou tuteur.','error');return}
+    if(guardianCode&&!GUARDIAN_CODE_RE.test(guardianCode)){setStatus(status,'Utilisez le code parental exactement tel qu’il a été généré depuis le compte adulte du parent ou tuteur.','error');return}
     const minor=age<18;
     const child=age<13;
     const languages=String(d.get('languages')||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,12);
