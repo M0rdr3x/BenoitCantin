@@ -19,9 +19,9 @@ begin
   where id=p_link_id
   for update;
 
-  if r.id is null then raise exception 'GUARDIAN_LINK_NOT_FOUND'; end if;
-  if uid not in (r.guardian_user_id,r.minor_user_id) then
-    raise exception 'GUARDIAN_LINK_FORBIDDEN';
+  if r.id is null
+     or uid not in (r.guardian_user_id,r.minor_user_id) then
+    raise exception 'GUARDIAN_LINK_UNAVAILABLE';
   end if;
 
   if r.status='revoked' or r.revoked_at is not null then
@@ -50,4 +50,4 @@ grant execute on function public.revoke_guardian_link(uuid)
 to authenticated;
 
 comment on function public.revoke_guardian_link(uuid) is
-  'V25: tuteur exige AAL2 pour révoquer; mineur lié peut révoquer immédiatement son propre lien sans MFA.';
+  'V25: tuteur exige AAL2 pour révoquer; mineur lié peut révoquer immédiatement son propre lien sans MFA; lien absent ou tiers partage la même erreur fail-closed.';
