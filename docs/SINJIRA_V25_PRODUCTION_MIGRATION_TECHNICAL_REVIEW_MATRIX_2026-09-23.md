@@ -33,7 +33,7 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 | 13 | `20260919023000_sinjira_v25_guardian_invite_aal2.sql` | 82 lignes; 1 definer; contrainte + insert + delete; AAL2 | Vérifier AAL2 obligatoire, rotation/invalidation, nouveau code 16 hex à 64 bits réels et compatibilité temporaire des codes 10 caractères. |
 | 14 | `20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql` | 37 lignes; 1 definer; 1 trigger; update | Vérifier que les métadonnées sensibles sont supprimées/minimisées au bon moment sans casser la reprise légitime. |
 | 15 | `20260919033000_sinjira_v25_guardian_invite_read_aal2.sql` | 32 lignes; 1 policy créée/2 retirées; AAL2 | Vérifier que la lecture d'invitation reste bornée au bon compte et au bon niveau AAL. |
-| 16 | `20260919040000_sinjira_v25_junior_enable_aal2.sql` | 58 lignes; 1 definer; insert + update; AAL2 | Vérifier qu'aucune activation Junior n'est possible sans tuteur valide et AAL2 effectif. |
+| 16 | `20260919040000_sinjira_v25_junior_enable_aal2.sql` | 71 lignes; 1 definer; insert + update; AAL2 + verrou transactionnel | Vérifier qu'aucune activation Junior n'est possible sans tuteur valide, AAL2 effectif et sérialisation du lien tuteur avant consentement. |
 | 17 | `20260919043000_sinjira_v25_guardian_revoke_aal2.sql` | 54 lignes; 1 definer; update; AAL2 | Vérifier autorité du révocateur, idempotence et retrait immédiat des capacités dérivées. |
 | 18 | `20260919050000_sinjira_v25_guardian_majority_visibility.sql` | 45 lignes; 1 policy créée/2 retirées; 1 definer; âge | Vérifier la transition de majorité et la fermeture des données de supervision devenues inutiles. |
 | 19 | `20260919053000_sinjira_v25_guardian_invite_majority_visibility.sql` | 30 lignes; 1 policy créée/1 retirée; AAL2 | Vérifier qu'une invitation de supervision ne reste pas visible/utilisable après majorité. |
@@ -71,6 +71,10 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 
 - **#11 — rétablissement child_pending** : la consommation reste sérialisée par compte, à usage unique et limitée aux bandes pending admissibles. Le validateur exige exactement les formats historiques 10 caractères ou renforcés 16 caractères; aucun format plus large n'est accepté.
 - **#13 — émission AAL2 du code parental** : l'émission reste adulte + AAL2, invalide les anciens codes ouverts du même tuteur et génère désormais 16 chiffres hexadécimaux en excluant les nibbles version/variant de l'UUID v4, soit 64 bits aléatoires effectifs. Les codes historiques 10 caractères restent consommables seulement jusqu'à leur expiration existante. Aucun suivi supplémentaire des tentatives n'est ajouté.
+
+### Migration 16
+
+- **#16 — activation Junior AAL2** : l'autorisation parent/tuteur est désormais sérialisée sur la ligne `guardian_links` active avec `FOR UPDATE` avant l'écriture du consentement. Cela ferme la course où une révocation pouvait auparavant tomber entre la vérification du lien et l'insert/upsert du consentement, puis laisser un consentement dormant susceptible de réapparaître après réactivation. Le pgTAP multi-tuteur compte désormais 26 assertions et vérifie la présence du verrou sur l'implémentation interne finale après la frontière RPC #33.
 
 ### Migrations 33 et 34
 
