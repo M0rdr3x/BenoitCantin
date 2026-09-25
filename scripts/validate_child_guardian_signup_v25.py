@@ -259,10 +259,9 @@ req("createorreplacefunctionpublic.revoke_guardian_link(p_link_iduuid)" in grv,
 req("ifuid=r.guardian_user_idandcoalesce(auth.jwt()->>'aal','aal1')<>'aal2'" in grv
     and "mfa_aal2_required" in grv,
     "La révocation initiée par le tuteur n'exige pas AAL2.")
-req("uidnotin(r.guardian_user_id,r.minor_user_id)" in grv,
-    "Le RPC de révocation ne borne plus l'action aux deux parties du lien.")
-req("r.idisnulloruidnotin(r.guardian_user_id,r.minor_user_id)" in grv
-    and "guardian_link_unavailable" in grv
+req("whereid=p_link_idanduidin(guardian_user_id,minor_user_id)forupdate" in grv,
+    "Le RPC de révocation doit autoriser la partie concernée avant tout verrou FOR UPDATE.")
+req("ifr.idisnullthenraiseexception'guardian_link_unavailable'" in grv
     and "guardian_link_not_found" not in grv
     and "guardian_link_forbidden" not in grv,
     "La révocation réintroduit un oracle d'existence entre lien absent et lien tiers.")
