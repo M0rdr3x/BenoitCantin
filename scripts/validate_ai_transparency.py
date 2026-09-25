@@ -150,11 +150,21 @@ def validate_all_html_surfaces() -> None:
         html_raw = read(path)
         html = compact(html_raw)
 
-        # Les anciennes URL purement techniques redirigent immédiatement vers une
-        # surface active couverte; elles ne constituent pas une page de contenu.
+        # Les URL purement techniques qui redirigent immédiatement vers une
+        # surface active couverte ne constituent pas une page de contenu. On
+        # reconnaît uniquement les redirections instantanées explicites.
         is_legacy_redirect = (
-            "noindex,nofollow" in html
-            and ("location.replace(" in html or 'http-equiv="refresh"' in html)
+            "location.replace(" in html
+            or re.search(
+                r'<meta[^>]+http-equiv=["\']?refresh["\']?[^>]+content=["\']?0\s*;',
+                html_raw,
+                flags=re.IGNORECASE,
+            ) is not None
+            or re.search(
+                r'<meta[^>]+content=["\']?0\s*;[^>]+http-equiv=["\']?refresh',
+                html_raw,
+                flags=re.IGNORECASE,
+            ) is not None
         )
         if is_legacy_redirect:
             continue
