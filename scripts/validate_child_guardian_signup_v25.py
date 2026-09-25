@@ -985,8 +985,11 @@ if errors:
 print('OK V25: compte enfant 11 ans, parcours parent, séparation de session, minimisation, régression navigateur et transition automatique child -> youth à 13 ans sont verrouillés par le contrat et les tests.')
 )" in gm,
     "La migration AAL2 ne conserve pas la compatibilité 10 caractères tout en autorisant le nouveau format 16.")
-req("substr(replace(gen_random_uuid()::text,'-',''),1,16)" in gm,
-    "Les nouveaux codes parentaux ne disposent pas encore de 16 caractères aléatoires.")
+req("v_uuid_hex:=replace(gen_random_uuid()::text,'-','')" in gm
+    and "substr(v_uuid_hex,1,12)" in gm
+    and "substr(v_uuid_hex,14,3)" in gm
+    and "substr(v_uuid_hex,18,1)" in gm,
+    "Les nouveaux codes parentaux ne disposent pas encore de 16 nibbles aléatoires hors métadonnées UUID v4.")
 req("revokeallonfunctionpublic.create_guardian_signup_invite()frompublic,anon" in gm
     and "grantexecuteonfunctionpublic.create_guardian_signup_invite()toauthenticated" in gm,
     "Les ACL de création du code parental AAL2 ne sont pas bornées.")
