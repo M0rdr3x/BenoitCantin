@@ -70,7 +70,7 @@ La migration forward-only suivante aligne le serveur avec la bande V25 :
 
 Elle autorise un compte `child_pending` à consommer un **nouveau code parental adulte valide et à usage unique**. Le trigger canonique `sync_guardian_signup_invite_link` réactive/crée alors le lien `guardian_links` en `verified`, remet `revoked_at` à `null` et la classification repasse immédiatement à `child`. Un compte déjà supervisé ne reçoit pas un nouveau droit implicite. La consommation est maintenant sérialisée par un verrou transactionnel sur `account_safety_profiles` avant le recalcul de la bande : deux codes distincts présentés en parallèle pour le même compte pending ne peuvent plus créer deux liens implicites.
 
-Le pgTAP d'inscription enfant couvre explicitement `child_pending → child`, la réactivation du lien, la consommation unique du code, la révocation asymétrique et la transition de majorité; il compte désormais **67 assertions**.
+Le pgTAP d'inscription enfant couvre explicitement `child_pending → child`, la réactivation du lien, la consommation unique du code, la révocation asymétrique, l'absence d'oracle de lien tuteur et la transition de majorité; il compte désormais **69 assertions**. Le RPC de rétablissement accepte les codes historiques à 10 caractères jusqu'à leur expiration et les nouveaux codes à 16 caractères, sans élargir les bandes autorisées.
 
 Cette onzième migration reste **non revue production**.
 
@@ -96,11 +96,11 @@ La migration forward-only suivante impose une session adulte **AAL2** :
 
 `20260919023000_sinjira_v25_guardian_invite_aal2.sql`
 
-Elle refuse explicitement AAL1 avec `MFA_AAL2_REQUIRED`, conserve les gardes MFA historiques additionnelles lorsqu’elles sont activées, invalide les anciens codes non consommés du même tuteur et maintient les ACL bornées à `authenticated`.
+Elle refuse explicitement AAL1 avec `MFA_AAL2_REQUIRED`, conserve les gardes MFA historiques additionnelles lorsqu’elles sont activées, invalide les anciens codes non consommés du même tuteur et maintient les ACL bornées à `authenticated`. Les nouveaux codes utilisent désormais **16 caractères hexadécimaux (64 bits)** au lieu de 10; la contrainte SQL accepte temporairement les formats historiques 10 caractères et renforcés 16 caractères afin de ne pas casser un code déjà émis pendant sa fenêtre d'expiration de 7 jours.
 
 L’interface Relations vérifie le niveau d’assurance avant l’appel RPC. Si un facteur existe mais que la session est AAL1, elle utilise le parcours `/compte/mfa.html` puis revient vers Relations. Si aucun second facteur n’est configuré, elle renvoie vers le Centre de sécurité.
 
-Le pgTAP enfant contient maintenant **67 assertions** au total; il prouve notamment le refus AAL1 à l’émission, la réussite AAL2, le format du code, la minimisation du secret et la fermeture de la relecture sous AAL1. Deux délimiteurs SQL `$$` endommagés dans la preuve précédente ont également été réparés et sont désormais verrouillés par le validateur statique.
+Le pgTAP enfant contient maintenant **69 assertions** au total; il prouve notamment le refus AAL1 à l’émission, la réussite AAL2, le nouveau format 16 caractères, la compatibilité d'un ancien code 10 caractères, la minimisation du secret, l'absence d'oracle de révocation et la fermeture de la relecture sous AAL1. Deux délimiteurs SQL `$$` endommagés dans la preuve précédente ont également été réparés et sont désormais verrouillés par le validateur statique.
 
 Cette treizième migration reste **non revue production**.
 
@@ -580,9 +580,9 @@ Le snapshot de revue attend exactement **43 migrations locales futures non revue
 | `20260918020000_sinjira_v25_account_capabilities.sql` | `0a16bfcc49e51ee2b96cb98742442ae3d00e5c76` |
 | `20260918023000_sinjira_v25_minor_content_policy_compat.sql` | `c0556e3baa218f9529f185010455984a0bc1cd03` |
 | `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` | `efa9d6a29c4decfe0180e9262827022ff752f670` |
-| `20260919013000_sinjira_v25_child_pending_guardian_redeem.sql` | `faaccf3cce0bf725d0f42a5cbecaecbba4b89aa2` |
+| `20260919013000_sinjira_v25_child_pending_guardian_redeem.sql` | `ca20740a0ba7597fad1468b498eed7946dea2358` |
 | `20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql` | `e14c41364246929054282bccb0e4abc5641b8643` |
-| `20260919023000_sinjira_v25_guardian_invite_aal2.sql` | `5700bfaa2b5a95d84d37ad475524960bdb78fc9b` |
+| `20260919023000_sinjira_v25_guardian_invite_aal2.sql` | `0f5b609014df6406f105e7c46a9685e15ce9df32` |
 | `20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql` | `f08102d4bc2485bc229e21076f361bf31552c928` |
 | `20260919033000_sinjira_v25_guardian_invite_read_aal2.sql` | `b2439fbad69798db42c17a04887dff50d9f184cc` |
 | `20260919040000_sinjira_v25_junior_enable_aal2.sql` | `df5475777abd5bb8fff26510a727d3d04cffce53` |
