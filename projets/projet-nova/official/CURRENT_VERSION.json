@@ -7,7 +7,7 @@
   "history_commitment_root_sha256": "1ee0d37bbbf29167307cc1592b970b6dd29cc530a97601dafc5f5bd40fbf2a28",
   "current_checkpoint_canonical_sha256": "c44ce2454a41134046a151dfce07b0174b167e9b968cccde122b23fe96b17ea0",
   "source_v319_checkpoint_canonical_sha256": "fe352a264384c379218968a5d247584b83191554ef01ee76af41831f8632a402",
-  "source_v318_history_commitment_root_sha256": "adc1f9c12e82a03a129331e21a39e1ea6edc5ac82e2b324a44f56907fc10bad4f",
+  "source_v318_history_commitment_root_sha256": "adc1f9c12e82a03a129331e21a39e1ea6edc5ac82e2b324a44f56907fc10bad4",
   "source_provenance_bundle_count": 133,
   "fresh_v319_replay": "141/141 PASS",
   "verifier": "160/160 PASS",
