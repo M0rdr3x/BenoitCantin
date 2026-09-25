@@ -143,6 +143,39 @@ def validate_public_pages(sitemap: str) -> None:
     if uncovered:
         fail("pages publiques sans mécanisme de transparence IA: " + ", ".join(uncovered))
 
+def validate_all_html_surfaces() -> None:
+    uncovered: list[str] = []
+    for path in sorted(ROOT.rglob("*.html")):
+        rel = path.relative_to(ROOT).as_posix()
+        html_raw = read(path)
+        html = compact(html_raw)
+
+        # Les anciennes URL purement techniques redirigent immédiatement vers une
+        # surface active couverte; elles ne constituent pas une page de contenu.
+        is_legacy_redirect = (
+            "noindex,nofollow" in html
+            and ("location.replace(" in html or "http-equiv="refresh"" in html)
+        )
+        if is_legacy_redirect:
+            continue
+
+        if rel == "transparence-ia.html":
+            continue
+        if "data-ai-transparency" in html:
+            continue
+        if "site.js" in html:
+            continue
+        if rel.startswith("projets/projet-nova/") and "script.js" in html:
+            continue
+
+        uncovered.append(rel)
+
+    if uncovered:
+        fail(
+            "surfaces HTML actives sans mécanisme de transparence IA: "
+            + ", ".join(uncovered)
+        )
+
 def self_test(contents: dict[str, str]) -> None:
     mutations = [
         ("lien public retiré", "ai_js", "/transparence-ia.html", "/transparence-ia-retiree.html"),
@@ -175,7 +208,8 @@ def main() -> None:
 
     validate_core(contents)
     validate_public_pages(contents["sitemap"])
-    print("OK transparence IA: déclaration publique, bandeaux, politique et couverture sitemap validés.")
+    validate_all_html_surfaces()
+    print("OK transparence IA: déclaration publique, bandeaux, politique, sitemap et surfaces HTML actives validés.")
 
 if __name__ == "__main__":
     main()
