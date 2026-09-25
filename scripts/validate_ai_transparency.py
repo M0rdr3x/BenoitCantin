@@ -24,6 +24,7 @@ FILES = {
     "sitemap": ROOT / "sitemap.xml",
     "home": ROOT / "index.html",
     "nova_home": ROOT / "projets/projet-nova/index.html",
+    "native_home": ROOT / "mobile-native/NativeHomeHub.tsx",
 }
 
 def compact(value: str) -> str:
@@ -44,6 +45,7 @@ def validate_core(contents: dict[str, str]) -> None:
     readme = compact(contents["readme"])
     home = compact(contents["home"])
     nova_home = compact(contents["nova_home"])
+    native_home = compact(contents["native_home"])
 
     for marker in (
         "data-ai-transparency",
@@ -94,6 +96,16 @@ def validate_core(contents: dict[str, str]) -> None:
             fail(f"{key}: bandeau IA statique absent")
         if "/transparence-ia.html" not in content:
             fail(f"{key}: lien vers la déclaration IA absent")
+
+    for marker in (
+        "transparenceia",
+        "lesidéesetdécisionsrestenthumaines",
+        "idées,visionetdécisions:benoitcantin",
+        "validationfinaleetlaresponsabilitéducontenurestenthumaines",
+        "onopenpath('/transparence-ia.html')",
+    ):
+        if marker not in native_home:
+            fail(f"application native sans transparence IA: {marker}")
 
 def sitemap_file_for_url(url: str) -> Path:
     path = urlparse(url).path
