@@ -17,10 +17,10 @@ begin
   select * into r
   from public.guardian_links
   where id=p_link_id
+    and uid in (guardian_user_id,minor_user_id)
   for update;
 
-  if r.id is null
-     or uid not in (r.guardian_user_id,r.minor_user_id) then
+  if r.id is null then
     raise exception 'GUARDIAN_LINK_UNAVAILABLE';
   end if;
 
