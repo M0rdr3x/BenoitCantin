@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(67);
+select plan(69);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -432,6 +432,40 @@ select throws_ok(
   'après retrait le tuteur AAL2 perd immédiatement l accès aux métadonnées de contacts'
 );
 
+insert into auth.users(id,email,raw_user_meta_data)
+values(
+  '10000000-0000-4000-8000-000000000099',
+  'unrelated-guardian-probe@example.test',
+  jsonb_build_object(
+    'birth_date',(current_date-interval '34 years')::date::text,
+    'date_of_birth',(current_date-interval '34 years')::date::text,
+    'gender','Homme','sex','male','pseudo','Adulte tiers','display_name','Adulte tiers','residence_country','Canada'
+  )
+);
+
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000099',true);
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub','10000000-0000-4000-8000-000000000099','aal','aal2')::text,
+  true
+);
+select throws_ok(
+  $ select public.revoke_guardian_link((
+    select id from public.guardian_links
+    where minor_user_id='20000000-0000-4000-8000-000000000011'
+      and guardian_user_id='10000000-0000-4000-8000-000000000001'
+  )) $,
+  'P0001',
+  'GUARDIAN_LINK_UNAVAILABLE',
+  'un compte tiers ne peut pas distinguer un lien de supervision existant'
+);
+select throws_ok(
+  $ select public.revoke_guardian_link('ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid) $,
+  'P0001',
+  'GUARDIAN_LINK_UNAVAILABLE',
+  'un lien inexistant renvoie la même erreur fail-closed qu un lien tiers'
+);
+
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select set_config(
   'request.jwt.claims',
@@ -439,7 +473,7 @@ select set_config(
   true
 );
 select throws_ok(
-  $$ select public.revoke_guardian_link((
+  $ select public.revoke_guardian_link((
     select id from public.guardian_links
     where minor_user_id='20000000-0000-4000-8000-000000000011'
       and guardian_user_id='10000000-0000-4000-8000-000000000001'
