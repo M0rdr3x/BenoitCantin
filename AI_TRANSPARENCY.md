@@ -14,7 +14,7 @@ L'intelligence artificielle ne doit pas être présentée comme l'auteur des ori
 
 ## Application
 
-Cette règle s'applique aux surfaces publiques du portail, à SINJIRA™, au Registre des Consciences, à Projet Nova et aux nouveaux livrables publics produits dans ce dépôt.
+Cette règle s'applique aux surfaces publiques du portail, à SINJIRA™, au Registre des Consciences, à Projet Nova, à l'application mobile SINJIRA et aux nouveaux livrables publics produits dans ce dépôt.
 
 Pour les pages web actives, la mention doit être visible au moyen du bandeau de transparence commun et renvoyer vers `/transparence-ia.html`.
 
