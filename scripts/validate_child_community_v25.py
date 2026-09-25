@@ -258,9 +258,10 @@ req("if(!child_11_12_allowed_routes.has(leaf))link.hidden=true" in a,'La navigat
 req("capabilities.child_11_12===true" in co and "communaute-junior.html" in co and "capabilities.general_community!==true" in co,'La Communauté générale n est pas bornée par les capacités serveur.')
 
 # Tests comportementaux.
-req('selectplan(60);' in t,'Plan pgTAP Junior inattendu.')
+req('selectplan(61);' in t,'Plan pgTAP Junior inattendu.')
 req('leparentpeutrévoquerimmédiatementlacommunautéjunior' in t,'La preuve de révocation parentale immédiate est absente.')
 req('wrapperpublicdebandeself-onlyrestesecurityinvokeretsonimplémentationinternesecuritydefiner' in t,'Le pgTAP ne prouve pas la séparation INVOKER public / DEFINER interne du wrapper self-only final.')
+req('aucunrpcv25sensibleneredevientsecuritydefinerdanspublicaprèsconvergencefinale' in t,'Le pgTAP ne prouve pas la frontière finale INVOKER des 23 RPC V25 sensibles.')
 req('authenticatedconservelewrapperdebandeself-only' in t,'Le pgTAP ne prouve pas l accès authenticated au wrapper self-only final.')
 req('anonconservelewrapperself-onlyrequisparlesrlspubliques' in t,'Le pgTAP ne prouve pas l accès anon self-only requis par les RLS publiques.')
 req('junior_guardian_consent_required' in t and 'aprèsrévocationlefiljuniorestimmédiatementrefusécôtéserveur' in t,'Le fil Junior n est pas prouvé fermé après révocation.')
