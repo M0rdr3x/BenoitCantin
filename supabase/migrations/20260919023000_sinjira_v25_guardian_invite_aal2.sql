@@ -19,6 +19,7 @@ as $$
 declare
   uid uuid:=auth.uid();
   v_code text;
+  v_uuid_hex text;
 begin
   if uid is null then raise exception 'AUTH_REQUIRED'; end if;
   if public.sinjira_age_band(uid) <> 'adult' then
@@ -43,7 +44,15 @@ begin
     and used_at is null;
 
   loop
-    v_code:='YOUTH-'||upper(substr(replace(gen_random_uuid()::text,'-',''),1,16));
+    -- UUID v4 contient des nibbles réservés (version/variant). Pour obtenir
+    -- 16 chiffres hexadécimaux réellement aléatoires, on exclut ces positions
+    -- au lieu de tronquer naïvement les 16 premiers caractères.
+    v_uuid_hex:=replace(gen_random_uuid()::text,'-','');
+    v_code:='YOUTH-'||upper(
+      substr(v_uuid_hex,1,12)
+      ||substr(v_uuid_hex,14,3)
+      ||substr(v_uuid_hex,18,1)
+    );
     exit when not exists(
       select 1
       from public.guardian_signup_invites
