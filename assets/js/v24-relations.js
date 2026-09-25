@@ -16,7 +16,7 @@ const redeemButton=document.querySelector('[data-redeem-guardian-code-button]');
 for(const el of form?.elements||[])el.disabled=true;
 const user=await requireUser();
 const s=getSupabase();
-const CODE_RE=/^YOUTH-[A-Z0-9]{10}$/;
+const CODE_RE=/^YOUTH-[A-Z0-9]{10}(?:[A-Z0-9]{6})?$/;
 let ageBand='unverified';
 
 function serverMissing(error){const code=String(error?.code||''),text=String(error?.message||'');return code==='PGRST205'||code==='PGRST202'||/family_relationships|guardian_signup_invites|guardian_links|relation .* does not exist|schema cache|Could not find/i.test(text)}
@@ -273,7 +273,7 @@ guardianButton?.addEventListener('click',async()=>{
 
 redeemButton?.addEventListener('click',async()=>{
   const code=normalizeCode(redeemInput?.value||'');
-  if(!CODE_RE.test(code)){setStatus(guardianStatus,'Entrez un code valide au format YOUTH-XXXXXXXXXX.','error');return}
+  if(!CODE_RE.test(code)){setStatus(guardianStatus,'Entrez le code exactement tel qu’il a été généré (10 ou 16 caractères après YOUTH-).','error');return}
   redeemButton.disabled=true;setStatus(guardianStatus,'Vérification du code parental…','info');
   const {data,error}=await s.rpc('redeem_guardian_signup_invite',{p_code:code});
   redeemButton.disabled=false;
