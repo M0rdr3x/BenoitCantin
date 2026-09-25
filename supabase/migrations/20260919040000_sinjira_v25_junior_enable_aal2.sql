@@ -17,9 +17,22 @@ declare
   v_enabled boolean:=coalesce(p_enabled,false);
 begin
   if uid is null then raise exception 'AUTH_REQUIRED'; end if;
-  if not public.sinjira_parent_can_supervise(uid,p_child_user_id) then
+
+  -- Sérialise activation/révocation sur le lien de supervision lui-même.
+  -- Une révocation concurrente ne peut donc pas passer entre le contrôle
+  -- d'autorité et l'écriture du consentement Junior.
+  perform 1
+  from public.guardian_links g
+  where g.guardian_user_id=uid
+    and g.minor_user_id=p_child_user_id
+    and g.status='verified'
+    and g.revoked_at is null
+  for update;
+
+  if not found then
     raise exception 'GUARDIAN_ACCESS_REQUIRED';
   end if;
+
   if public.sinjira_age_band(p_child_user_id)<>'child' then
     raise exception 'JUNIOR_COMMUNITY_11_12_ONLY';
   end if;
@@ -54,4 +67,4 @@ grant execute on function public.guardian_set_junior_community(uuid,boolean)
 to authenticated;
 
 comment on function public.guardian_set_junior_community(uuid,boolean) is
-  'V25: activation Junior exige parent/tuteur valide + enfant 11–12 + session AAL2; désactivation reste fail-safe en AAL1.';
+  'V25: activation Junior exige lien tuteur actif verrouillé transactionnellement + enfant 11–12 + session AAL2; désactivation reste fail-safe en AAL1.';
