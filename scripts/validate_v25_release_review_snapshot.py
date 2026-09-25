@@ -38,7 +38,7 @@ EXPECTED_NON_REVIEWED = {
     "20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql": "f08102d4bc2485bc229e21076f361bf31552c928",
     "20260919033000_sinjira_v25_guardian_invite_read_aal2.sql": "b2439fbad69798db42c17a04887dff50d9f184cc",
     "20260919040000_sinjira_v25_junior_enable_aal2.sql": "df5475777abd5bb8fff26510a727d3d04cffce53",
-    "20260919043000_sinjira_v25_guardian_revoke_aal2.sql": "4cfdd9e66c70070a7f4484190a60a492651d973c",
+    "20260919043000_sinjira_v25_guardian_revoke_aal2.sql": "260c4723af7245af27744fbc8472e5ed0954b93e",
     "20260919050000_sinjira_v25_guardian_majority_visibility.sql": "d7a65f65e1a870620809f1a2e669ef031d6f6d8a",
     "20260919053000_sinjira_v25_guardian_invite_majority_visibility.sql": "ac18154c958b707d94ddc557b1af6b2af01ba62f",
     "20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql": "d2ef613bfb372efe620e413d5e059b4d1b1e6c64",
