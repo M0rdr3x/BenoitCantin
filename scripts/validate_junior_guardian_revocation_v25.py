@@ -68,6 +68,12 @@ def validate(migration: str, cascade: str, enable_aal2: str, summary_aal2: str, 
         fail("activation Junior: erreur MFA_AAL2_REQUIRED absente")
     if "ifv_enabled" not in enable_compact or "revoked_at=casewhenv_enabledthennullelsenow()end" not in enable_compact:
         fail("activation Junior: activation/désactivation fail-safe non conservée")
+    if (
+        "frompublic.guardian_linksgwhereg.guardian_user_id=uidandg.minor_user_id=p_child_user_idandg.status='verified'andg.revoked_atisnullforupdate"
+        not in enable_compact
+        or "ifnotfoundthenraiseexception'guardian_access_required'" not in enable_compact
+    ):
+        fail("activation Junior: lien tuteur non sérialisé avant écriture du consentement")
 
     summary_compact = "".join(summary_aal2.lower().split())
     if "createorreplacefunctionpublic.junior_guardian_summary(p_child_user_iduuid)" not in summary_compact:
@@ -108,7 +114,7 @@ def validate(migration: str, cascade: str, enable_aal2: str, summary_aal2: str, 
         fail("interface Junior: explication de confidentialité de l'alias absente")
 
     required_test = (
-        "select plan(25);",
+        "select plan(26);",
         "junior-revocation-guardian-a@example.test",
         "junior-revocation-guardian-b@example.test",
         "set revoked_at=now()",
@@ -123,6 +129,7 @@ def validate(migration: str, cascade: str, enable_aal2: str, summary_aal2: str, 
         "une nouvelle activation Junior explicite est nécessaire",
         "MFA_AAL2_REQUIRED",
         "tuteur AAL1 ne peut pas activer la Communauté Junior",
+        "activation Junior sérialise le lien tuteur avant le consentement",
         "tuteur A active Junior sous AAL2 avant révocation",
         "tuteur AAL1 peut toujours désactiver Junior en voie fail-safe",
         "la désactivation AAL1 coupe immédiatement Junior pour l enfant",
@@ -188,6 +195,7 @@ def self_test(migration: str, cascade: str, enable_aal2: str, summary_aal2: str,
         "revoked_at liste parent retiré": (migration.rsplit("    and g.revoked_at is null\n", 1)[0] + migration.rsplit("    and g.revoked_at is null\n", 1)[1], cascade, enable_aal2, summary_aal2, alias_privacy, relations_js, test, workflow),
         "cascade consentement retirée": (migration, cascade.replace("  update public.junior_community_guardian_consents\n", "  -- update retiré\n", 1), enable_aal2, summary_aal2, alias_privacy, relations_js, test, workflow),
         "AAL2 activation retiré": (migration, cascade, enable_aal2.replace("if v_enabled and coalesce(auth.jwt()->>'aal','aal1')<>'aal2' then", "if false then", 1), summary_aal2, alias_privacy, relations_js, test, workflow),
+        "verrou activation retiré": (migration, cascade, enable_aal2.replace("  for update;\n", "  ;\n", 1), summary_aal2, alias_privacy, relations_js, test, workflow),
         "preuve second tuteur retirée": (migration, cascade, enable_aal2, summary_aal2, alias_privacy, relations_js, test.replace("junior-revocation-guardian-b@example.test", "guardian-b-missing"), workflow),
         "contexte auth.uid tuteur retiré": (migration, cascade, enable_aal2, summary_aal2, alias_privacy, relations_js, test.replace("select set_config('request.jwt.claim.sub','75000000-0000-4000-8000-000000000001',true);", "-- contexte tuteur retiré", 1), workflow),
         "contexte reconsent tuteur retiré": (
