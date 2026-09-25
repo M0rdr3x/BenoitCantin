@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(60);
+select plan(61);
 
 select ok(to_regprocedure('private.sinjira_junior_community_enabled(uuid)') is not null,'garde privée d activation Junior existe');
 select ok(to_regprocedure('public.junior_community_feed(integer)') is not null,'RPC fil Junior existe');
@@ -16,6 +16,41 @@ select ok(
   not (select prosecdef from pg_proc where oid='public.sinjira_my_age_band()'::regprocedure)
   and (select prosecdef from pg_proc where oid='sinjira_v25_internal.sinjira_my_age_band()'::regprocedure),
   'wrapper public de bande self-only reste SECURITY INVOKER et son implémentation interne SECURITY DEFINER'
+);
+select ok(
+  not exists(
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public'
+      and p.prosecdef
+      and p.proname=any(array[
+        'create_guardian_signup_invite',
+        'get_guardian_youth_contacts',
+        'guardian_junior_community_children',
+        'guardian_set_junior_community',
+        'has_accepted_junior_community_rules',
+        'junior_community_accept_rules',
+        'junior_community_create_comment',
+        'junior_community_create_post',
+        'junior_community_delete_comment',
+        'junior_community_delete_post',
+        'junior_community_feed',
+        'junior_community_report_content',
+        'junior_guardian_summary',
+        'redeem_guardian_signup_invite',
+        'revoke_guardian_link',
+        'set_my_guardian_contact_metadata',
+        'sinjira_can_read_guardian_link',
+        'sinjira_child_document_available',
+        'sinjira_child_project_available',
+        'sinjira_junior_community_enabled',
+        'sinjira_my_account_capabilities',
+        'sinjira_my_age_band',
+        'sinjira_my_novel_catalog'
+      ]::text[])
+  ),
+  'aucun RPC V25 sensible ne redevient SECURITY DEFINER dans public après convergence finale'
 );
 select ok(has_function_privilege('authenticated','public.sinjira_my_age_band()','EXECUTE'),'authenticated conserve le wrapper de bande self-only');
 select ok(has_function_privilege('anon','public.sinjira_my_age_band()','EXECUTE'),'anon conserve le wrapper self-only requis par les RLS publiques');
