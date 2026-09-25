@@ -45,7 +45,43 @@ begin
     raise exception 'GUARDIAN_ALREADY_VERIFIED';
   end if;
 
-  if v_code !~ '^YOUTH-[A-Z0-9]{10}$' then
+  if v_code !~ '^YOUTH-[A-Z0-9]{10}([A-Z0-9]{6})?    raise exception 'INVALID_GUARDIAN_CODE_FORMAT';
+  end if;
+
+  select * into inv
+  from public.guardian_signup_invites
+  where invite_code=v_code
+    and used_at is null
+    and expires_at>now()
+  for update;
+
+  if inv.id is null then raise exception 'INVALID_OR_EXPIRED_GUARDIAN_CODE'; end if;
+  if inv.guardian_user_id=uid then raise exception 'SELF_GUARDIAN_FORBIDDEN'; end if;
+  if public.sinjira_age_band(inv.guardian_user_id)<>'adult' then
+    raise exception 'ADULT_GUARDIAN_REQUIRED';
+  end if;
+
+  update public.guardian_signup_invites
+  set used_at=now(),minor_user_id=uid
+  where id=inv.id;
+
+  -- sync_guardian_signup_invite_link réactive/crée guardian_links en verified,
+  -- remet revoked_at à null et la bande est recalculée immédiatement.
+  return jsonb_build_object(
+    'ok',true,
+    'status','verified',
+    'minor_user_id',uid,
+    'age_band',public.sinjira_age_band(uid)
+  );
+end;
+$$;
+
+revoke all on function public.redeem_guardian_signup_invite(text) from public,anon;
+grant execute on function public.redeem_guardian_signup_invite(text) to authenticated;
+
+comment on function public.redeem_guardian_signup_invite(text) is
+  'V25: rétablissement sérialisé par compte via verrou account_safety_profiles; accepte les codes historiques 10 caractères et les nouveaux codes 16 caractères, uniquement depuis un état pending admissible.';
+ then
     raise exception 'INVALID_GUARDIAN_CODE_FORMAT';
   end if;
 
