@@ -580,9 +580,9 @@ Le snapshot de revue attend exactement **43 migrations locales futures non revue
 | `20260918020000_sinjira_v25_account_capabilities.sql` | `0a16bfcc49e51ee2b96cb98742442ae3d00e5c76` |
 | `20260918023000_sinjira_v25_minor_content_policy_compat.sql` | `c0556e3baa218f9529f185010455984a0bc1cd03` |
 | `20260919010000_sinjira_v25_junior_guardian_revocation_hardening.sql` | `efa9d6a29c4decfe0180e9262827022ff752f670` |
-| `20260919013000_sinjira_v25_child_pending_guardian_redeem.sql` | `ca20740a0ba7597fad1468b498eed7946dea2358` |
+| `20260919013000_sinjira_v25_child_pending_guardian_redeem.sql` | `04561c62e7f4002e5ef34d34775c846784fb9727` |
 | `20260919020000_sinjira_v25_junior_consent_revocation_cascade.sql` | `e14c41364246929054282bccb0e4abc5641b8643` |
-| `20260919023000_sinjira_v25_guardian_invite_aal2.sql` | `2d9c68ed36b0cf505ddd2aaeebd896b6fe331a62` |
+| `20260919023000_sinjira_v25_guardian_invite_aal2.sql` | `2e440ddfc9aa3f082cc271a61288abe3d3b6ac2a` |
 | `20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql` | `f08102d4bc2485bc229e21076f361bf31552c928` |
 | `20260919033000_sinjira_v25_guardian_invite_read_aal2.sql` | `b2439fbad69798db42c17a04887dff50d9f184cc` |
 | `20260919040000_sinjira_v25_junior_enable_aal2.sql` | `df5475777abd5bb8fff26510a727d3d04cffce53` |
