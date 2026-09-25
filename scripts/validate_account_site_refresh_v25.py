@@ -70,17 +70,25 @@ def compact(value: str) -> str:
 def validate(contents: dict[str, str]) -> None:
     m = compact(contents["migration"])
     project_owner_migration = compact(contents["project_owner_migration"])
-    supabase_config = compact(contents["supabase_config"])
+    supabase_config_raw = contents["supabase_config"]
+    api_start = supabase_config_raw.find("[api]")
+    api_end = supabase_config_raw.find("[edge_runtime]", api_start)
+    if api_start < 0 or api_end < 0:
+        fail("frontière Data API Supabase: section [api] introuvable ou non bornée")
+    api_effective = "\n".join(
+        line.split("#", 1)[0]
+        for line in supabase_config_raw[api_start:api_end].splitlines()
+    )
+    api_section = compact(api_effective)
 
     for marker in (
         '[api]',
         'schemas=["public","storage","graphql_public"]',
         'extra_search_path=["public","extensions"]',
     ):
-        if marker not in supabase_config:
+        if marker not in api_section:
             fail(f"frontière Data API Supabase: configuration explicite absente: {marker}")
     for forbidden_schema in ('sinjira_v25_internal','sinjira_catalog_internal','private'):
-        api_section=supabase_config[supabase_config.find('[api]'):supabase_config.find('[edge_runtime]')]
         if forbidden_schema in api_section:
             fail(f"frontière Data API Supabase: schéma interne exposé: {forbidden_schema}")
     public_rpc_boundary = compact(contents["public_rpc_boundary_migration"])
