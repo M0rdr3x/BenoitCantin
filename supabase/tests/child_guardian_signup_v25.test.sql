@@ -450,17 +450,17 @@ select set_config(
   true
 );
 select throws_ok(
-  $ select public.revoke_guardian_link((
+  $revoke$ select public.revoke_guardian_link((
     select id from public.guardian_links
     where minor_user_id='20000000-0000-4000-8000-000000000011'
       and guardian_user_id='10000000-0000-4000-8000-000000000001'
-  )) $,
+  )) $revoke$,
   'P0001',
   'GUARDIAN_LINK_UNAVAILABLE',
   'un compte tiers ne peut pas distinguer un lien de supervision existant'
 );
 select throws_ok(
-  $ select public.revoke_guardian_link('ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid) $,
+  $revoke$ select public.revoke_guardian_link('ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid) $revoke$,
   'P0001',
   'GUARDIAN_LINK_UNAVAILABLE',
   'un lien inexistant renvoie la même erreur fail-closed qu un lien tiers'
@@ -473,11 +473,11 @@ select set_config(
   true
 );
 select throws_ok(
-  $ select public.revoke_guardian_link((
+  $revoke$ select public.revoke_guardian_link((
     select id from public.guardian_links
     where minor_user_id='20000000-0000-4000-8000-000000000011'
       and guardian_user_id='10000000-0000-4000-8000-000000000001'
-  )) $$,
+  )) $revoke$,
   'P0001',
   'MFA_AAL2_REQUIRED',
   'un tuteur AAL1 ne peut pas révoquer le lien de supervision'
