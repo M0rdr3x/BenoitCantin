@@ -134,6 +134,22 @@ class RecoveryDrillSecurityTests(unittest.TestCase):
             )
         )
 
+    def test_extended_canon_contract_cannot_be_removed(self) -> None:
+        self.assertRejected(
+            self.baseline.replace(
+                '          test -s supabase/tests/extended_canon_continuity_v25.test.sql\n',
+                '',
+            )
+        )
+
+    def test_canon_provenance_contract_cannot_be_removed(self) -> None:
+        self.assertRejected(
+            self.baseline.replace(
+                '          test -s supabase/tests/canon_provenance_v25.test.sql\n',
+                '',
+            )
+        )
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

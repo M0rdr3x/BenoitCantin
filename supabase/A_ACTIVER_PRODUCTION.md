@@ -46,7 +46,7 @@ Les migrations Fracture les plus récentes sont :
 3. `20260816110000_fracture_web_engine_v24_4_2_privacy.sql`
 4. `20260816120000_sinjira_v24_4_6_fracture_vote_hardening.sql`
 
-La V24.4.6 rend notamment l'accusation finale **immuable après sa première soumission côté serveur** et porte le marqueur serveur attendu à `24.4.6`.
+La V24.4.6 rend notamment l'accusation finale **immuable après sa première soumission côté serveur**. Attention : `24.4.6` est la version attendue du **moteur Fracture**, pas le marqueur global de plateforme. Le diagnostic de plateforme actuel attend `24.4.13`.
 
 ## 4. Premier passage : prévisualisation uniquement
 
@@ -77,7 +77,29 @@ Le workflow :
 7. relit l'historique des migrations;
 8. refait un `db push --dry-run` final pour confirmer qu'aucune migration n'est encore en attente.
 
-Le marqueur serveur attendu après synchronisation est **`24.4.6`**.
+Après synchronisation, le diagnostic actuel distingue deux valeurs : **plateforme SINJIRA™ `24.4.13`** et **moteur Fracture `24.4.6`**. Ne pas remplacer l’une par l’autre dans les contrôles.
+
+## 5.1. V25 — Canon étendu, Calendrier-Monde et Atlas
+
+La branche de travail `sinjira-univers-etendu-registre-v25` ajoute deux migrations **préparées mais non appliquées à la production** :
+
+1. `20260918193000_sinjira_v25_extended_canon_chronicles.sql`
+2. `20260918201500_sinjira_v25_world_calendar_atlas_continuity.sql`
+3. `20260918220000_sinjira_v25_canon_provenance.sql`
+
+Elles introduisent les Chroniques officielles du Canon étendu, les segments de présence, l’Atlas canonique, le Calendrier-Monde, les présences canoniques, les règles de déplacement, les contrôles de collision ainsi que le Registre des sources et les faits de provenance vérifiables.
+
+**Procédure obligatoire avant application :**
+
+1. exécuter le workflow avec `apply = false`;
+2. vérifier que le dry-run ne propose que les migrations réellement attendues;
+3. vérifier que les fonctions Edge modifiées sont incluses dans le déploiement;
+4. ne jamais utiliser `migration repair` pour forcer artificiellement l’historique;
+5. ne lancer `apply = true` qu’après un dry-run propre;
+6. après application, ouvrir **Administration → État du système** puis **Calendrier-Monde**;
+7. créer d’abord les lieux et sources canoniques réelles avant de promouvoir une Chronique en CANON ÉTENDU.
+
+Tant que ces migrations ne sont pas appliquées, le code utilisateur doit rester tolérant à l’absence des nouvelles tables et aucune Chronique ne doit être considérée comme canonisée en production.
 
 ## 6. Compatibilité des clés serveur
 

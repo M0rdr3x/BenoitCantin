@@ -83,14 +83,20 @@ insert into expected_server_only_rls(schema_name,table_name,presence_scope,acces
   ('private','social_live_room_invites','reconstruction_only','strict_no_direct'),
   ('private','social_live_room_share_codes','reconstruction_only','strict_no_direct'),
   ('public','content_versions','reconstruction_only','service_role_allowed'),
-  ('public','security_push_receipt_queue','reconstruction_only','service_role_allowed');
+  ('public','security_push_receipt_queue','reconstruction_only','service_role_allowed'),
+  ('public','sinjira_world_locations','reconstruction_only','service_role_allowed'),
+  ('public','sinjira_world_travel_rules','reconstruction_only','service_role_allowed'),
+  ('public','sinjira_canon_events','reconstruction_only','service_role_allowed'),
+  ('public','sinjira_canon_event_characters','reconstruction_only','service_role_allowed'),
+  ('public','sinjira_canon_sources','reconstruction_only','service_role_allowed'),
+  ('public','sinjira_story_claims','reconstruction_only','service_role_allowed');
 
 select plan(12);
 
 select is(
   (select count(*)::int from expected_server_only_rls),
-  53,
-  'le contrat classifie les 49 tables production et quatre tables RLS reconstruction-only'
+  59,
+  'le contrat classifie les 49 tables production et dix tables RLS reconstruction-only'
 );
 
 select is(
@@ -101,8 +107,8 @@ select is(
 
 select is(
   (select count(*)::int from expected_server_only_rls where presence_scope='reconstruction_only'),
-  4,
-  'quatre tables RLS sans policy sont explicitement propres à la reconstruction locale'
+  10,
+  'dix tables RLS sans policy sont explicitement propres à la reconstruction locale'
 );
 
 select is(
@@ -111,8 +117,8 @@ select is(
     from expected_server_only_rls
     where presence_scope='reconstruction_only'
   ),
-  'private.social_live_room_invites, private.social_live_room_share_codes, public.content_versions, public.security_push_receipt_queue'::text,
-  'les exceptions RLS reconstruction-only sont explicitement nommées'
+  'private.social_live_room_invites, private.social_live_room_share_codes, public.content_versions, public.security_push_receipt_queue, public.sinjira_canon_event_characters, public.sinjira_canon_events, public.sinjira_canon_sources, public.sinjira_story_claims, public.sinjira_world_locations, public.sinjira_world_travel_rules'::text,
+  'les dix exceptions RLS reconstruction-only sont explicitement nommées'
 );
 
 select is(
@@ -123,8 +129,8 @@ select is(
 
 select is(
   (select count(*)::int from expected_server_only_rls where access_class='service_role_allowed'),
-  37,
-  '35 tables production et deux tables reconstruction-only peuvent conserver un CRUD direct service_role explicitement autorisé'
+  43,
+  '35 tables production et huit tables reconstruction-only peuvent conserver un CRUD direct service_role explicitement autorisé'
 );
 
 select is(

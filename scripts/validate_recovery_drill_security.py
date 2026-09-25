@@ -82,6 +82,8 @@ def validate_text(text: str) -> None:
 
     require('python3 scripts/validate_recovery_drill_security.py' in text, 'Le recovery drill doit exécuter son validateur avant la CLI.')
     require('python3 scripts/test_recovery_drill_security.py' in text, 'Le recovery drill doit exécuter les tests du garde avant la CLI.')
+    require('test -s supabase/tests/extended_canon_continuity_v25.test.sql' in text, 'Le contrat de continuité V25 doit être explicitement requis.')
+    require('test -s supabase/tests/canon_provenance_v25.test.sql' in text, 'Le contrat de provenance V25 doit être explicitement requis.')
 
     expected_steps = [
         f'uses: actions/setup-python@{SETUP_PYTHON_SHA}',
