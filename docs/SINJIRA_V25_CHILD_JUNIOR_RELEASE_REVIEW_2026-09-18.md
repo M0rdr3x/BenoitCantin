@@ -159,7 +159,7 @@ La migration forward-only suivante applique donc une règle asymétrique :
 - un lien déjà révoqué reste idempotent;
 - l'interface distingue les deux parcours et ne présente plus un lien avec `revoked_at` comme actif.
 
-Le pgTAP enfant compte maintenant **69 assertions** et prouve notamment : tuteur AAL1 refusé, tuteur AAL2 accepté, enfant AAL1 capable de quitter immédiatement son propre lien avec retour fail-closed vers `child_pending`, et absence d'oracle d'existence entre un UUID de lien tiers et un UUID inexistant (`GUARDIAN_LINK_UNAVAILABLE` dans les deux cas).
+Le pgTAP enfant compte maintenant **69 assertions** et prouve notamment : tuteur AAL1 refusé, tuteur AAL2 accepté, enfant AAL1 capable de quitter immédiatement son propre lien avec retour fail-closed vers `child_pending`, absence d'oracle d'existence entre un UUID de lien tiers et un UUID inexistant (`GUARDIAN_LINK_UNAVAILABLE` dans les deux cas), et autorisation de la partie concernée directement dans la requête avant `FOR UPDATE` afin qu'un compte tiers ne puisse pas verrouiller une relation qui ne le concerne pas.
 
 Cette dix-septième migration reste **non revue production**.
 
@@ -586,7 +586,7 @@ Le snapshot de revue attend exactement **43 migrations locales futures non revue
 | `20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql` | `f08102d4bc2485bc229e21076f361bf31552c928` |
 | `20260919033000_sinjira_v25_guardian_invite_read_aal2.sql` | `b2439fbad69798db42c17a04887dff50d9f184cc` |
 | `20260919040000_sinjira_v25_junior_enable_aal2.sql` | `df5475777abd5bb8fff26510a727d3d04cffce53` |
-| `20260919043000_sinjira_v25_guardian_revoke_aal2.sql` | `4cfdd9e66c70070a7f4484190a60a492651d973c` |
+| `20260919043000_sinjira_v25_guardian_revoke_aal2.sql` | `260c4723af7245af27744fbc8472e5ed0954b93e` |
 | `20260919050000_sinjira_v25_guardian_majority_visibility.sql` | `d7a65f65e1a870620809f1a2e669ef031d6f6d8a` |
 | `20260919053000_sinjira_v25_guardian_invite_majority_visibility.sql` | `ac18154c958b707d94ddc557b1af6b2af01ba62f` |
 | `20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql` | `d2ef613bfb372efe620e413d5e059b4d1b1e6c64` |
