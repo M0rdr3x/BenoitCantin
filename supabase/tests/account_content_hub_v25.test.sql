@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(50);
+select plan(51);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -52,6 +52,7 @@ select ok(has_table_privilege('authenticated','public.projects','SELECT'),'authe
 select ok(has_table_privilege('anon','public.projects','SELECT'),'anon peut lire les projets publics sous RLS');
 select ok(not has_table_privilege('authenticated','public.projects','INSERT'),'authenticated ne peut pas créer un projet directement');
 select ok(has_table_privilege('authenticated','public.project_access','SELECT'),'authenticated peut relire son project_access sous RLS');
+select ok(not has_table_privilege('authenticated','public.project_access','INSERT'),'authenticated ne peut pas s auto-attribuer project_access par INSERT');
 select ok(not has_table_privilege('anon','public.project_access','SELECT'),'anon ne peut pas lire project_access');
 select ok(has_table_privilege('authenticated','public.access_requests','SELECT'),'authenticated peut relire ses demandes sous RLS');
 select ok(has_table_privilege('authenticated','public.access_requests','INSERT'),'authenticated peut créer une demande sous RLS');
