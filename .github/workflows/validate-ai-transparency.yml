@@ -10,6 +10,7 @@ on:
       - 'assets/js/ai-transparency.js'
       - 'assets/css/ai-transparency.css'
       - 'projets/projet-nova/script.js'
+      - 'mobile-native/NativeHomeHub.tsx'
       - 'AI_TRANSPARENCY.md'
       - 'README.md'
       - 'sitemap.xml'
