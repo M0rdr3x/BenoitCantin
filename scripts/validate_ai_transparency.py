@@ -154,7 +154,7 @@ def validate_all_html_surfaces() -> None:
         # surface active couverte; elles ne constituent pas une page de contenu.
         is_legacy_redirect = (
             "noindex,nofollow" in html
-            and ("location.replace(" in html or "http-equiv="refresh"" in html)
+            and ("location.replace(" in html or 'http-equiv="refresh"' in html)
         )
         if is_legacy_redirect:
             continue
