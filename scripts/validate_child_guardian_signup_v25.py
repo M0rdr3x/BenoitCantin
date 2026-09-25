@@ -261,6 +261,11 @@ req("ifuid=r.guardian_user_idandcoalesce(auth.jwt()->>'aal','aal1')<>'aal2'" in 
     "La révocation initiée par le tuteur n'exige pas AAL2.")
 req("uidnotin(r.guardian_user_id,r.minor_user_id)" in grv,
     "Le RPC de révocation ne borne plus l'action aux deux parties du lien.")
+req("r.idisnulloruidnotin(r.guardian_user_id,r.minor_user_id)" in grv
+    and "guardian_link_unavailable" in grv
+    and "guardian_link_not_found" not in grv
+    and "guardian_link_forbidden" not in grv,
+    "La révocation réintroduit un oracle d'existence entre lien absent et lien tiers.")
 req("ifuid=r.guardian_user_id" in grv and "uid=r.minor_user_id" not in grv,
     "Le contrat ne préserve pas clairement la sortie immédiate du mineur.")
 req("r.status='revoked'orr.revoked_atisnotnull" in grv,
@@ -517,7 +522,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(67);' in t,
+req('selectplan(69);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 req(
     t.find("request.jwt.claim.sub','20000000-0000-4000-8000-000000000011'") >= 0
@@ -559,6 +564,8 @@ for marker, message in (
     ("unesessiontuteuraal1nepeutpasrelireuncodeparental", "Le pgTAP ne prouve pas le masquage RLS des codes sous AAL1."),
     ("unesessiontuteuraal2peutreliresonproprecodeparental", "Le pgTAP ne prouve pas la relecture self-only sous AAL2."),
     ("setlocalroleauthenticated", "Le pgTAP ne teste pas la policy avec le rôle API authenticated."),
+    ("uncomptetiersnepeutpasdistinguerunliendesupervisionexistant", "Le pgTAP ne prouve pas l'absence d'oracle sur un lien tiers existant."),
+    ("unlieninexistantrenvoielamêmeerreurfail-closedquunlientiers", "Le pgTAP ne prouve pas l'indistinguabilité lien absent / lien tiers."),
     ("untuteuraal1nepeutpasrévoquerleliendesupervision", "Le pgTAP ne prouve pas le refus de révocation tuteur en AAL1."),
     ("untuteuraal2peutrévoquerleliendesupervision", "Le pgTAP ne prouve pas la révocation tuteur en AAL2."),
     ("lenfantaal1peutquitterimmédiatementsonpropreliendesupervision", "Le pgTAP ne préserve pas la sortie fail-safe de l enfant."),
