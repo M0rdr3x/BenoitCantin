@@ -78,7 +78,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "commentl'iam'aide",
         "responsabilitéhumaine",
         "projetscitoyensetpositionspubliques",
-        "l'ianechoisitpasunepositionpolitique",
+        "ellenechoisitpasunepositionpolitique",
     ):
         if marker not in page:
             fail(f"page Transparence IA incomplète: {marker}")
