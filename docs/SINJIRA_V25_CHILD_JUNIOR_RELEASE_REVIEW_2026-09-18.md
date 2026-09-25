@@ -84,7 +84,7 @@ La migration forward-only suivante ferme ce scénario :
 
 Un trigger sur `guardian_links` révoque désormais durablement le consentement Junior associé lors d'une révocation **ou suppression** du lien. Après rétablissement de la supervision, Junior reste fermé jusqu'à une **nouvelle activation explicite** du parent/tuteur.
 
-Le pgTAP de révocation Junior passe désormais à **25 assertions** et prouve la chaîne complète : révocation du lien, révocation du consentement, passage `child_pending`, nouveau code, retour à `child`, Junior toujours fermé, puis réactivation explicite seulement.
+Le pgTAP de révocation Junior passe désormais à **26 assertions** et prouve la chaîne complète : révocation du lien, révocation du consentement, passage `child_pending`, nouveau code, retour à `child`, Junior toujours fermé, puis réactivation explicite seulement.
 
 Cette douzième migration reste **non revue production**.
 
@@ -140,9 +140,9 @@ La migration forward-only suivante impose AAL2 uniquement à l'activation :
 
 `20260919040000_sinjira_v25_junior_enable_aal2.sql`
 
-Le serveur exige désormais une session parent/tuteur **AAL2** lorsque `p_enabled=true`. La désactivation reste volontairement disponible en AAL1 afin de conserver une voie fail-safe immédiate de retrait d'accès.
+Le serveur exige désormais une session parent/tuteur **AAL2** lorsque `p_enabled=true`. La désactivation reste volontairement disponible en AAL1 afin de conserver une voie fail-safe immédiate de retrait d'accès. L'activation sérialise maintenant aussi la ligne `guardian_links` active avec `FOR UPDATE` avant d'écrire le consentement Junior : une révocation concurrente ne peut plus passer entre le contrôle d'autorité et l'activation.
 
-L'interface Relations applique la même règle et réutilise le parcours MFA existant. Le pgTAP Junior compte maintenant **25 assertions** : activation refusée en AAL1, activation permise en AAL2, révocation durable, réactivation explicite et désactivation fail-safe en AAL1. La preuve a aussi réparé un délimiteur SQL `$$` cassé et le workflow corrige son nettoyage local `command -v supabase`.
+L'interface Relations applique la même règle et réutilise le parcours MFA existant. Le pgTAP Junior compte maintenant **26 assertions** : activation refusée en AAL1, activation permise en AAL2, révocation durable, réactivation explicite et désactivation fail-safe en AAL1. La preuve a aussi réparé un délimiteur SQL `$$` cassé et le workflow corrige son nettoyage local `command -v supabase`.
 
 Cette seizième migration reste **non revue production**.
 
@@ -245,7 +245,7 @@ La migration forward-only :
 
 exige désormais AAL2 pour lire le résumé et remplace `last_activity_at` par `last_activity_date` en UTC. Les comptes de publications/commentaires restent disponibles, tandis que le contenu et les messages privés restent explicitement invisibles au tuteur. La désactivation de Junior demeure disponible en AAL1 comme voie fail-safe.
 
-Le pgTAP Junior compte désormais **25 assertions** et prouve le refus AAL1, la lecture AAL2, l'absence du timestamp précis et la conservation du seul compte d'activité utile.
+Le pgTAP Junior compte désormais **26 assertions** et prouve le refus AAL1, la lecture AAL2, l'absence du timestamp précis et la conservation du seul compte d'activité utile.
 
 Cette vingt-troisième migration reste **non revue production**.
 
@@ -273,7 +273,7 @@ La migration forward-only :
 
 retire donc l'alias Junior de la réponse parentale. L'interface Relations affiche seulement le libellé du compte enfant et précise que l'alias Junior n'est pas montré au tuteur.
 
-Le pgTAP Junior compte désormais **25 assertions** et prouve qu'aucun objet de la liste tuteur ne contient `junior_alias`.
+Le pgTAP Junior compte désormais **26 assertions** et prouve qu'aucun objet de la liste tuteur ne contient `junior_alias`.
 
 Cette vingt-cinquième migration reste **non revue production**.
 
@@ -585,7 +585,7 @@ Le snapshot de revue attend exactement **43 migrations locales futures non revue
 | `20260919023000_sinjira_v25_guardian_invite_aal2.sql` | `2e440ddfc9aa3f082cc271a61288abe3d3b6ac2a` |
 | `20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql` | `f08102d4bc2485bc229e21076f361bf31552c928` |
 | `20260919033000_sinjira_v25_guardian_invite_read_aal2.sql` | `b2439fbad69798db42c17a04887dff50d9f184cc` |
-| `20260919040000_sinjira_v25_junior_enable_aal2.sql` | `df5475777abd5bb8fff26510a727d3d04cffce53` |
+| `20260919040000_sinjira_v25_junior_enable_aal2.sql` | `eaaff78322e0ea02235dbf3f4a4d1507a85e72f4` |
 | `20260919043000_sinjira_v25_guardian_revoke_aal2.sql` | `260c4723af7245af27744fbc8472e5ed0954b93e` |
 | `20260919050000_sinjira_v25_guardian_majority_visibility.sql` | `d7a65f65e1a870620809f1a2e669ef031d6f6d8a` |
 | `20260919053000_sinjira_v25_guardian_invite_majority_visibility.sql` | `ac18154c958b707d94ddc557b1af6b2af01ba62f` |
