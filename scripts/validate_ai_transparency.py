@@ -28,7 +28,7 @@ FILES = {
 }
 
 def compact(value: str) -> str:
-    return "".join(value.lower().split())
+    return "".join(value.lower().replace("’", "'").replace(" ", " ").split())
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
@@ -52,7 +52,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "transparenceia",
         "/transparence-ia.html",
         "idées,visionetdécisions",
-        "miseenœuvreassistéepardesoutilsd’intelligenceartificielle",
+        "miseenœuvreassistéepardesoutilsd'intelligenceartificielle",
         "validationfinaleetresponsabilitéducontenu",
     ):
         if marker not in ai_js:
@@ -73,12 +73,12 @@ def validate_core(contents: dict[str, str]) -> None:
         fail("style du bandeau IA absent")
 
     for marker in (
-        "mesidées.unemiseenœuvreassistéeparl’ia.",
+        "mesidées.unemiseenœuvreassistéeparl'ia.",
         "cequivientdemoi",
-        "commentl’iam’aide",
+        "commentl'iam'aide",
         "responsabilitéhumaine",
         "projetscitoyensetpositionspubliques",
-        "l’ianechoisitpasunepositionpolitique",
+        "l'ianechoisitpasunepositionpolitique",
     ):
         if marker not in page:
             fail(f"page Transparence IA incomplète: {marker}")
