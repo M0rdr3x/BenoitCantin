@@ -67,8 +67,12 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 > **Information technique uniquement — toujours NON REVU / NON APPROUVÉ.**  
 > Les observations ci-dessous documentent une lecture automatisée et la cohérence avec les preuves locales/CI. Elles ne remplissent aucune case de décision humaine et n'autorisent ni promotion, ni fusion, ni production.
 
-### Migrations 37 à 43
+### Migrations 33 et 34
 
+- **#33 — frontière RPC publique V25** : 23 implémentations `SECURITY DEFINER` sont déplacées hors du schéma API public puis remplacées par des wrappers `SECURITY INVOKER`; les trois seuls wrappers anonymes attendus restent bornés aux helpers nécessaires aux RLS. Le pgTAP Communauté Junior vérifie désormais l'état **final reconstruit** et échoue si l'un de ces 23 noms redevient `SECURITY DEFINER` dans `public` après une migration ultérieure.
+- **#34 — privilèges navigateur catalogue** : `project_access_rank()` privilégié est déplacé dans `sinjira_catalog_internal`, son wrapper public reste réservé au `service_role`, et les rôles navigateur ne reçoivent que les opérations de tables explicitement nécessaires. La preuve finale couvre en plus l'absence d'auto-attribution `project_access` et le retour `0` lors d'un sondage UUID non self.
+
+### Migrations 37 à 43
 - **#37 — catalogue famille créateur** : registre familial privé borné au `user_id`, aucun courriel stocké dans la table, provisionnement réservé au `service_role`, catalogue complet distinct des entitlements commerciaux. Les comptes 11–12 famille ne reçoivent que des fiches minimisées; l'accès intégral reste fermé. Le script de provisionnement est en plus borné au host Supabase canonique dérivé de `supabase/config.toml`.
 - **#38 — droits produits issus des commandes** : le droit canonique exige explicitement `o.status='paid'` ou un entitlement réel; une commande `pending` ne donne aucun droit. Le RPC des droits effectifs est self-only et ne retourne ni numéro de commande, ni montant, ni devise, ni courriel.
 - **#39 — extensions produit** : les anciennes policies SELECT connues sont retirées avant recréation. Une extension achetée doit être `approved` ou `released`, et son projet parent ne doit pas être `draft`. Une extension interne en conception reste invisible au membre standard même avec un produit associé.
