@@ -224,6 +224,22 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity, accountMode }: Props
           </Pressable>
         </View>
 
+        <View style={styles.transparencyCard}>
+          <Text style={styles.transparencyKicker}>TRANSPARENCE IA</Text>
+          <Text style={styles.transparencyTitle}>Les idées et décisions restent humaines</Text>
+          <Text style={styles.transparencyText}>
+            Idées, vision et décisions : Benoit Cantin. Des outils d’intelligence artificielle peuvent aider à la mise en œuvre; la validation finale et la responsabilité du contenu restent humaines.
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Lire la déclaration de transparence sur l’intelligence artificielle"
+            onPress={() => onOpenPath('/transparence-ia.html')}
+            style={styles.transparencyButton}
+          >
+            <Text style={styles.transparencyButtonText}>Lire la déclaration</Text>
+          </Pressable>
+        </View>
+
         <Text style={styles.sectionTitle}>{isChild ? 'Mon espace 11–12 ans' : 'Vérification du compte'}</Text>
         <Text style={styles.sectionText}>
           {isChild
@@ -482,6 +498,22 @@ export function NativeHomeHub({ onOpenPath, onOpenSecurity, accountMode }: Props
         </Pressable>
       </View>
 
+      <View style={styles.transparencyCard}>
+        <Text style={styles.transparencyKicker}>TRANSPARENCE IA</Text>
+        <Text style={styles.transparencyTitle}>Les idées et décisions restent humaines</Text>
+        <Text style={styles.transparencyText}>
+          Idées, vision et décisions : Benoit Cantin. Des outils d’intelligence artificielle peuvent aider à la mise en œuvre; la validation finale et la responsabilité du contenu restent humaines.
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Lire la déclaration de transparence sur l’intelligence artificielle"
+          onPress={() => onOpenPath('/transparence-ia.html')}
+          style={styles.transparencyButton}
+        >
+          <Text style={styles.transparencyButtonText}>Lire la déclaration</Text>
+        </Pressable>
+      </View>
+
       <Text style={styles.sectionTitle}>Continuer dans SINJIRA</Text>
       <Text style={styles.sectionText}>
         Les données et décisions restent dans leurs modules actuels. Cet écran ne garde aucun résumé local de votre activité.
@@ -533,6 +565,12 @@ const styles = StyleSheet.create({
   securityText: { color: '#b8c2df', fontSize: 13, lineHeight: 19 },
   primaryButton: { alignSelf: 'flex-start', borderRadius: 10, backgroundColor: '#e4e9ff', paddingHorizontal: 14, paddingVertical: 10 },
   primaryButtonText: { color: '#10152a', fontWeight: '800', fontSize: 12 },
+  transparencyCard: { borderWidth: 1, borderColor: '#2d746f', borderRadius: 18, backgroundColor: '#0d1d24', padding: 15, gap: 6 },
+  transparencyKicker: { color: '#91f8ee', fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
+  transparencyTitle: { color: '#ffffff', fontSize: 17, fontWeight: '900' },
+  transparencyText: { color: '#c5d9dc', fontSize: 13, lineHeight: 19 },
+  transparencyButton: { alignSelf: 'flex-start', marginTop: 5, borderRadius: 10, borderWidth: 1, borderColor: '#4d9992', paddingHorizontal: 12, paddingVertical: 9 },
+  transparencyButtonText: { color: '#bafef7', fontSize: 12, fontWeight: '800' },
   sectionTitle: { color: '#ffffff', fontSize: 19, fontWeight: '900', marginTop: 2 },
   sectionText: { color: '#aeb9d8', fontSize: 13, lineHeight: 19, marginTop: -10 },
   destinationList: { gap: 9 },
