@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(51);
+select plan(52);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -15,6 +15,23 @@ values
   'b2000000-0000-4000-8000-000000000002',
   'content-hub-member@example.test',
   jsonb_build_object('birth_date',(current_date-interval '30 years')::date::text,'date_of_birth',(current_date-interval '30 years')::date::text,'gender','Femme','sex','female','pseudo','Membre test','display_name','Membre test','residence_country','Canada')
+);
+
+update public.profiles
+set pseudo='Pseudo public test',
+    display_name='Nom privé à ne jamais exposer'
+where user_id='b2000000-0000-4000-8000-000000000002';
+
+select ok(
+  exists(
+    select 1
+    from public.social_profiles
+    where user_id='b2000000-0000-4000-8000-000000000002'
+      and pseudo='Pseudo public test'
+      and display_name='Pseudo public test'
+      and display_name<>'Nom privé à ne jamais exposer'
+  ),
+  'le profil social ne reçoit jamais le nom affiché privé du compte'
 );
 
 insert into public.internal_admin_users(user_id,role)

@@ -9,6 +9,7 @@ ACCOUNT_DIR = ROOT / "compte"
 
 FILES = {
     "migration": ROOT / "supabase/migrations/20260919090000_sinjira_v25_account_content_hub.sql",
+    "social_pseudo_migration": ROOT / "supabase/migrations/20260919110000_sinjira_v25_social_public_pseudo_privacy.sql",
     "project_owner_migration": ROOT / "supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql",
     "public_rpc_boundary_migration": ROOT / "supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql",
     "browser_privileges_migration": ROOT / "supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql",
@@ -69,6 +70,7 @@ def compact(value: str) -> str:
 
 def validate(contents: dict[str, str]) -> None:
     m = compact(contents["migration"])
+    social_pseudo_migration = compact(contents["social_pseudo_migration"])
     project_owner_migration = compact(contents["project_owner_migration"])
     supabase_config_raw = contents["supabase_config"]
     api_start = supabase_config_raw.find("[api]")
@@ -144,6 +146,18 @@ def validate(contents: dict[str, str]) -> None:
             fail(f"migration contenu: garde absente: {marker}")
 
     for marker in (
+        "createorreplacefunctionpublic.sync_social_profile_from_profile()",
+        "v_public_pseudotext:=coalesce(nullif(btrim(new.pseudo),''),'membresinjira')",
+        "values(new.user_id,v_public_pseudo,v_public_pseudo,new.avatar_path,now())",
+        "afterinsertorupdateofpseudo,display_name,avatar_pathonpublic.profiles",
+        "revokeallonfunctionpublic.sync_social_profile_from_profile()frompublic,anon,authenticated",
+    ):
+        if marker not in social_pseudo_migration:
+            fail(f"migration confidentialité pseudo social: garde absente: {marker}")
+    if "new.display_name" in social_pseudo_migration:
+        fail("migration confidentialité pseudo social: display_name privé recopié vers le profil social")
+
+    for marker in (
         "altertablepublic.projectsenablerowlevelsecurity",
         "createpolicyprojects_owner_catalog_read_v25",
         "public.is_sinjira_owner((selectauth.uid()))",
@@ -151,6 +165,8 @@ def validate(contents: dict[str, str]) -> None:
         if marker not in project_owner_migration:
             fail(f"migration projets créateur: garde absente: {marker}")
 
+    if "supabase/migrations/20260919110000_sinjira_v25_social_public_pseudo_privacy.sql" not in workflow_paths:
+        fail("CI compte: migration confidentialité pseudo social non surveillée")
     if "supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql" not in workflow_paths:
         fail("CI compte: migration visibilité projets créateur non surveillée")
     if "supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql" not in workflow_paths:
@@ -757,8 +773,8 @@ def validate(contents: dict[str, str]) -> None:
     if "sinjira-reader.js?v=25.0.3" not in contents["demo_html"]:
         fail("lecteur démo: cache lecteur V25.0.3 absent")
 
-    if "selectplan(51);" not in test:
-        fail("pgTAP contenu: plan(51) absent")
+    if "selectplan(52);" not in test:
+        fail("pgTAP contenu: plan(52) absent")
     if "selectplan(26);" not in child_content_test:
         fail("pgTAP classement 11–12: plan(26) absent")
     for marker in (
@@ -773,6 +789,7 @@ def validate(contents: dict[str, str]) -> None:
         if marker not in child_content_test:
             fail(f"pgTAP classement 11–12: preuve navigateur absente: {marker}")
     for marker in (
+        "leprofilsocialnereçoitjamaislenomaffichéprivéducompte",
         "lapolicyprojetsowner-onlyv25existe",
         "authenticatedpeutlireprojectssousrls",
         "anonnepeutpaslireproject_access",
@@ -861,6 +878,8 @@ def main() -> None:
             "inscription avec ancien cache CSS":("signup_html","sinjira-player-account.css?v=25.0.1","sinjira-player-account.css?v=24.4.12"),
             "MFA avec ancien cache CSS":("mfa_html","sinjira-player-account.css?v=25.0.1","sinjira-player-account.css?v=24.4.66"),
             "schéma interne exposé Data API":("supabase_config",'schemas = ["public", "storage", "graphql_public"]','schemas = ["public", "storage", "graphql_public", "sinjira_v25_internal"]'),
+            "pseudo social recopie le nom privé":("social_pseudo_migration","v_public_pseudo,\n    v_public_pseudo,","v_public_pseudo,\n    new.display_name,"),
+            "migration pseudo social hors paths CI":("workflow","supabase/migrations/20260919110000_sinjira_v25_social_public_pseudo_privacy.sql","supabase/migrations/social-pseudo-privacy-missing.sql"),
             "policy projets créateur retirée":("project_owner_migration","create policy projects_owner_catalog_read_v25","create policy projects_owner_catalog_missing"),
             "migration projets créateur hors paths CI":("workflow","supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql","supabase/migrations/projects-owner-missing.sql"),
             "migration privilèges catalogue hors paths CI":("workflow","supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql","supabase/migrations/catalog-browser-privileges-missing.sql"),

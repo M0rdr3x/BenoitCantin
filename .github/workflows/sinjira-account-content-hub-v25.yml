@@ -7,6 +7,7 @@ on:
     paths:
       - 'supabase/migrations/20260919090000_sinjira_v25_account_content_hub.sql'
       - 'supabase/migrations/20260919103000_sinjira_v25_livre_i_catalog_seed.sql'
+      - 'supabase/migrations/20260919110000_sinjira_v25_social_public_pseudo_privacy.sql'
       - 'supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql'
       - 'supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql'
       - 'supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql'
