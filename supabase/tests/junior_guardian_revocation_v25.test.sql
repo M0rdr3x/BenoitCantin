@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(25);
+select plan(26);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values(
@@ -28,6 +28,19 @@ values(
 
 select is(public.sinjira_age_band('75000000-0000-4000-8000-000000000001'),'adult','tuteur A adulte');
 select is(public.sinjira_age_band('75000000-0000-4000-8000-000000000002'),'adult','tuteur B adulte');
+
+select ok(
+  position(
+    'frompublic.guardian_linksgwhereg.guardian_user_id=uidandg.minor_user_id=p_child_user_idandg.status=''verified''andg.revoked_atisnullforupdate'
+    in regexp_replace(
+      lower(pg_catalog.pg_get_functiondef(
+        'sinjira_v25_internal.guardian_set_junior_community(uuid,boolean)'::regprocedure
+      )),
+      '[[:space:]]+', '', 'g'
+    )
+  ) > 0,
+  'activation Junior sérialise le lien tuteur avant le consentement'
+);
 
 insert into public.guardian_signup_invites(guardian_user_id,invite_code,expires_at)
 values('75000000-0000-4000-8000-000000000001','YOUTH-REVOKE0001',now()+interval '1 day');
