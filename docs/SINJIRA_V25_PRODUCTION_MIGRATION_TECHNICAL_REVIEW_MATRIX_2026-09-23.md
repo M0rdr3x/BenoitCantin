@@ -76,10 +76,23 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 
 - **#16 — activation Junior AAL2** : l'autorisation parent/tuteur est désormais sérialisée sur la ligne `guardian_links` active avec `FOR UPDATE` avant l'écriture du consentement. Cela ferme la course où une révocation pouvait auparavant tomber entre la vérification du lien et l'insert/upsert du consentement, puis laisser un consentement dormant susceptible de réapparaître après réactivation. Le pgTAP multi-tuteur compte désormais 26 assertions et vérifie la présence du verrou sur l'implémentation interne finale après la frontière RPC #33.
 
+### Migrations 28 à 32
+
+- **#28 — profil privé 11+** : lecture et écriture restent self-only sous MFA. Le minimum 11 ans est conservé, un tuteur vérifié et non révoqué reste obligatoire avant 14 ans, et un mineur ne peut pas déplacer sa date de naissance vers une date plus ancienne qui augmenterait son âge sans déclencher `BIRTH_DATE_PROTECTION_BOUNDARY_REQUIRES_REVIEW`. Les comptes jeunesse restent limités aux juridictions explicitement activées.
+- **#29 — seed Livre I** : le seed publie seulement les métadonnées de catalogue et une démo publique; aucun chemin de stockage privé n'est écrit dans le catalogue navigateur. L'actif intégral est créé dans `private.sinjira_private_novel_assets` avec `enabled=false` et `on conflict(novel_id) do nothing`, ce qui préserve une configuration privée existante.
+- **#30 — pseudo public / nom privé** : le trigger social dérive `social_profiles.pseudo` **et** `social_profiles.display_name` uniquement de `profiles.pseudo`; `profiles.display_name` n'est jamais copié dans le profil social. Le workflow Compte/catalogue surveille désormais cette migration et son pgTAP vérifie explicitement qu'un nom affiché privé différent ne fuit pas dans `social_profiles`.
+- **#31 — assets romans privés** : RLS reste activée sans policy membre; `public`, `anon` et `authenticated` n'ont aucun accès direct. Seul `service_role` conserve SELECT/INSERT/UPDATE/DELETE pour les chemins serveur de livraison.
+- **#32 — visibilité catalogue créateur** : la policy ajoute uniquement un droit de lecture au propriétaire canonique via `is_sinjira_owner(auth.uid())`. Elle ne crée ni achat, ni entitlement, ni ligne `project_access`; le pgTAP compte vérifie séparément que le catalogue complet du créateur ne fabrique aucun droit produit commercial.
+
 ### Migrations 33 et 34
 
 - **#33 — frontière RPC publique V25** : 23 implémentations `SECURITY DEFINER` sont déplacées hors du schéma API public puis remplacées par des wrappers `SECURITY INVOKER`; les trois seuls wrappers anonymes attendus restent bornés aux helpers nécessaires aux RLS. Le pgTAP Communauté Junior vérifie désormais l'état **final reconstruit** et échoue si l'un de ces 23 noms redevient `SECURITY DEFINER` dans `public` après une migration ultérieure.
 - **#34 — privilèges navigateur catalogue** : `project_access_rank()` privilégié est déplacé dans `sinjira_catalog_internal`, son wrapper public reste réservé au `service_role`, et les rôles navigateur ne reçoivent que les opérations de tables explicitement nécessaires. La preuve finale couvre en plus l'absence d'auto-attribution `project_access` et le retour `0` lors d'un sondage UUID non self.
+
+### Migrations 35 et 36
+
+- **#35 — minimisation Mode Voyage** : l'implémentation interne dérive toujours le propriétaire de `auth.uid()`, conserve le step-up MFA, normalise/déduplique les codes pays et impose 1 à 12 destinations. `multi_country` est recalculé côté serveur à partir des destinations réelles plutôt que cru depuis le client. Les réponses internes ne retournent ni `user_id`, ni `delete_after`; l'annulation filtre simultanément `id + user_id + status='active'`, ce qui évite un oracle plan tiers / plan inexistant.
+- **#36 — helpers navigateur self-only** : `project_access_rank` retourne `0` lorsqu'un appel non-`service_role` cible un UUID différent de `auth.uid()`. Les helpers projet/document 11–12 restent bornés à l'état approuvé, au rang réel du compte courant et à la visibilité compatible; anon ne peut pas confirmer l'existence d'un contenu `account` ou `restricted`.
 
 ### Migrations 37 à 43
 - **#37 — catalogue famille créateur** : registre familial privé borné au `user_id`, aucun courriel stocké dans la table, provisionnement réservé au `service_role`, catalogue complet distinct des entitlements commerciaux. Les comptes 11–12 famille ne reçoivent que des fiches minimisées; l'accès intégral reste fermé. Le script de provisionnement est en plus borné au host Supabase canonique dérivé de `supabase/config.toml`.
