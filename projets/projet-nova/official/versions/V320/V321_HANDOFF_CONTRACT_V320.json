@@ -1,0 +1,20 @@
+{
+  "version": "V321",
+  "date": "2026-09-25",
+  "contract_id": "V321-HANDOFF-CONTRACT-FROM-V320-001",
+  "source_version": "V320",
+  "requirements": [
+    "Replay V320 append-only history from a clean extraction before any successor work.",
+    "Create V321 detached checkpoint bound to exact V320 commitment/index/current-tip/payload/verifier/replay bytes.",
+    "Carry the exact 133-link V320 provenance union without collapsing inherited root layers.",
+    "Bind V320 public-private finance separation specification, state, eight registers, corpus and standalone DOCX exactly.",
+    "Preserve V319 data-sovereignty, V318 architecture, V317 cybersecurity and V316 identity/privacy controls except where V320 explicitly supersedes private-procurement authorization.",
+    "Preserve V312 Primauté citoyenne and V308 numeric fiscal parameters; prosperity credit remains non-refundable and cannot create a net payment to a private enterprise.",
+    "Preserve the V320 rule that public money does not finance private entities or private services after legal activation; legacy obligations transition lawfully and are not retroactively voided by the technical document.",
+    "Preserve 14 open political decisions and 26 English sections as NOT_VALIDATED / HUMAN_REVIEW_PENDING.",
+    "Preserve LEGAL_ENACTMENT=NOT_AUTHORIZED, publication=PENDING_PUBLICATION_APPROVAL, production=false and internal github_push=false in the immutable chain.",
+    "A next substantive module may address public self-sufficiency, critical inventories, public production capacity, inter-public supply chains and continuity planning required by the no-private-spending rule without inventing undecided numeric thresholds."
+  ],
+  "automatic_legal_effects": false,
+  "authority_inferred": false
+}
