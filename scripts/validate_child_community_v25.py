@@ -241,7 +241,7 @@ for marker,msg in (
     ('<button class="btn btn-primary" disabled type="submit">Ajouter la relation</button>','Le submit Relations HTML n est pas désactivé par défaut.'),
 ):
     req(marker in relations_html,msg)
-req('v24-relations.js?v=25.0.14&amp;rev=junior-alias-private' in relations_html,'Le cache Relations Junior V25.0.14 n est pas forcé.')
+req('v24-relations.js?v=25.0.15&amp;rev=guardian-code-16' in relations_html,'Le cache Relations V25.0.15 renforcé n est pas forcé.')
 
 # Navigation fail-closed pour 11–12 : liste blanche explicite, redirections Junior et refus par défaut.
 req("constaccountmode=string(capabilities.account_mode||'restricted')" in a and "capabilities.child_11_12===true" in a and "if(!childaccount)return" in a and "constchild_11_12_allowed_routes=newset([" in a,'La navigation du compte ne borne pas explicitement les routes child via les capacités serveur.')
