@@ -5,7 +5,6 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 MIG = ROOT / 'supabase' / 'migrations'
 
-OWNER = 'kingtyrano@gmail.com'
 SOCIAL_VERSION = '24.4.42'
 PAGE_VERSION = '24.4.44'
 MESSAGE_VERSION = '24.4.71'
@@ -74,8 +73,9 @@ age = latest_function(sql, 'sinjira_age_band')
 age_compact = compact(age)
 require(bool(age), 'Dernière définition de sinjira_age_band() introuvable.')
 for marker in (
-    OWNER,
-    'fromauth.usersu',
+    'frompublic.internal_admin_usersa',
+    'a.user_id=p_user_id',
+    "a.role='owner'",
     "then'adult'",
     'account_safety_profiles',
     "g.status='verified'",
@@ -87,10 +87,12 @@ for marker in (
     "'unverified'",
 ):
     require(compact(marker) in age_compact, f'sinjira_age_band() incomplet: {marker}')
-owner_pos = age_compact.find(compact(OWNER))
+require('@gmail.com' not in age_compact and '@outlook.com' not in age_compact,
+        'sinjira_age_band() ne doit plus dépendre d une adresse personnelle.')
+owner_pos = age_compact.find("frompublic.internal_admin_usersa")
 unverified_pos = age_compact.find("whens.user_idisnullors.date_of_birthisnullors.date_of_birth>current_datethen'unverified'")
 require(owner_pos >= 0 and unverified_pos >= 0 and owner_pos < unverified_pos,
-        'Le compte propriétaire doit être classé adulte avant le repli unverified, sans inventer une date de naissance.')
+        'Le rôle owner serveur doit classer le propriétaire adulte avant le repli unverified, sans inventer une date de naissance.')
 
 self_band = compact(latest_function(sql, 'sinjira_my_age_band'))
 require('sinjira_age_band(auth.uid())' in self_band,
