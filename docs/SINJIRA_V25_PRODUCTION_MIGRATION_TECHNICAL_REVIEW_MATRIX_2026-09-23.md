@@ -108,12 +108,14 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 - **#42 — visibilité auteur Junior** : le fil interne exige pour les publications **et** les commentaires que l'auteur soit encore dans la bande Junior et conserve un consentement Junior actif. La révocation masque le contenu sans supprimer l'historique et aucun nouveau `SECURITY DEFINER` public n'est créé.
 - **#43 — arrêt d’interaction sur post masqué** : la création de commentaire interne exige désormais `moderation_content_visible('real','post',p.id)`. Un `hide_content` humain doit produire `JUNIOR_POST_UNAVAILABLE`; la migration ne supprime aucun contenu existant et ne recrée aucun `SECURITY DEFINER` public.
 
-### Preuves CI associées observées sur le HEAD fonctionnel `aac9aa92ef4b6ab14eff53c8fcd230b3a5f17729`
+### Preuves CI récentes observées sur la branche
 
-- **Refonte compte et catalogue** : succès, incluant la preuve `plan(50)` que le propriétaire voit le catalogue complet sans fabriquer de droit produit commercial;
-- **Communauté Junior 11–12** : dernière preuve verte avant #43 avec `plan(59)`; le nouveau `plan(60)` ajoute le refus de commentaire pendant un `hide_content` et doit être confirmé par la nouvelle vague CI;
-- **Catalogue romans privés** : succès, avec frontière de livraison privée toujours bornée à l'âge et au droit canonique;
-- **Snapshot revue release enfant Junior** : le lot est désormais porté à 43 migrations, toutes non revues et non approuvées; le snapshot doit être recalculé avec l’empreinte #43.
+- **Inscription enfant 11 ans** : succès sur le HEAD fonctionnel `92f74a8bb1fc31452b08b67ca27a67ec9008acab`; reconstruction complète de la base, **74/74** assertions pgTAP, coffre privé enfant vert et parcours Auth HTTP réel à exactement 11 ans. Les nouvelles preuves couvrent le second code parental refusé après rétablissement et la frontière `guardian_links` navigateur en lecture seule.
+- **Refonte compte et catalogue** : succès sur `343bc309561e5dc61b957149fa28b29d482ca88b`, incluant **56/56** assertions; le repair propriétaire fonctionne avec l'autorité `owner` sans fabriquer entitlement commercial, faux accès tester ni historique de lecture.
+- **Catalogue romans privés** : succès sur `6b657b136ae3ded743de963ca70b4571d8335fed`; aucune modification runtime/migration ultérieure ne rouvre cette frontière.
+- **Contrat social/RLS** : le job dédié `social-rls-contract` est vert sur le HEAD courant de cette vague et vérifie notamment que le classifieur d'âge final reconnaît l'owner par autorité serveur plutôt que par identité courriel.
+- **Snapshot revue release enfant Junior** : succès sur la vague courante; **43 migrations futures** restent non revues/non approuvées, reviewed batch et ledger inchangés.
+- **Supabase production, contrôle lecture seule** : `guardian_links` n'accorde actuellement que SELECT à `authenticated`; aucune policy UPDATE navigateur n'est active. Ce constat live est une vérification de cohérence, pas une approbation des migrations futures.
 
 ## Ordre conseillé de lecture technique
 
