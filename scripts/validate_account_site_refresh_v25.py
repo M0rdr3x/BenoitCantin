@@ -800,8 +800,8 @@ def validate(contents: dict[str, str]) -> None:
     if "sinjira-reader.js?v=25.0.3" not in contents["demo_html"]:
         fail("lecteur démo: cache lecteur V25.0.3 absent")
 
-    if "selectplan(52);" not in test:
-        fail("pgTAP contenu: plan(52) absent")
+    if "selectplan(56);" not in test:
+        fail("pgTAP contenu: plan(56) absent")
     if "selectplan(26);" not in child_content_test:
         fail("pgTAP classement 11–12: plan(26) absent")
     for marker in (
