@@ -573,7 +573,7 @@ Le snapshot de revue attend exactement **43 migrations locales futures non revue
 
 | Migration | Git blob SHA-1 |
 |---|---|
-| `20260916210000_sinjira_v25_child_guardian_signup.sql` | `3db13f406e40d815e966ecc920f49be0ba7e7dac` |
+| `20260916210000_sinjira_v25_child_guardian_signup.sql` | `8c7239489d57f0a821da104b5df5ead16fc8103e` |
 | `20260917223000_sinjira_v25_junior_community.sql` | `64e66dc8d9c45de9ecbb1174fdb842e4444b9b6b` |
 | `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `ea0426172caba27fc3446c696575a19a1eae08d7` |
 | `20260918013000_sinjira_v25_child_content_rating.sql` | `b0a2bfda90579830083d128035ee533d06dd2159` |
@@ -621,7 +621,7 @@ Mise à jour du 24 septembre 2026 : `20260924173000_sinjira_v25_junior_comment_a
 
 Mise à jour du 24 septembre 2026 : `20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql` ferme une incohérence de modération : une publication sous `hide_content` ne peut plus recevoir de nouveaux commentaires Junior, même si un client conserve son UUID. La réversion humaine restaure le comportement normal; aucun contenu historique n’est supprimé. Cette migration est ajoutée au snapshot comme **NON REVUE / NON APPROUVÉE**.
 
-Mise à jour du 25 septembre 2026 : `20260916210000_sinjira_v25_child_guardian_signup.sql` ne contient plus d’exception créateur fondée sur une adresse personnelle. La classification d’âge s’appuie désormais sur l’autorité serveur canonique `internal_admin_users.role='owner'`; les preuves utilisent une identité synthétique et le validateur interdit la réintroduction d’une adresse personnelle dans ce classifieur. L’empreinte a été rafraîchie uniquement pour refléter ce resserrement de confidentialité : la migration reste **NON REVUE / NON APPROUVÉE**.
+Mise à jour du 25 septembre 2026 : `20260916210000_sinjira_v25_child_guardian_signup.sql` ne contient plus d’exception créateur fondée sur une adresse personnelle. La classification d’âge s’appuie désormais sur l’autorité serveur canonique `internal_admin_users.role='owner'` et le verrou historique `enforce_sinjira_single_admin` est reconvergé vers l’invariant structurel d’un seul compte, sans adresse personnelle. Les preuves utilisent une identité synthétique et le validateur interdit la réintroduction d’une identité courriel dans ces deux gardes. L’empreinte a été rafraîchie uniquement pour refléter ce resserrement de confidentialité : la migration reste **NON REVUE / NON APPROUVÉE**.
 
 ## 4. Garde automatisé de snapshot
 
