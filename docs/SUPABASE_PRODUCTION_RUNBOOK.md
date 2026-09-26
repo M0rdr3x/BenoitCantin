@@ -79,6 +79,22 @@ Le rattachement `environment: production` permet à GitHub d’appliquer les pro
 
 Principe SINJIRA : l’humain garde la décision finale avant toute écriture sensible. Aucun automatisme, agent ou tâche récurrente ne doit transformer un prévol vert en application automatique.
 
+### Préconditions administratives avant toute application réelle
+
+Avant d’utiliser `apply=true`, relire aussi :
+
+`docs/SINJIRA_GITHUB_PRODUCTION_GUARDRAILS_ADMIN_CHECKLIST.md`
+
+La procédure production ne doit pas présenter les protections GitHub comme acquises tant que les vérifications administrateur correspondantes ne sont pas consignées :
+
+- **#135** — protection serveur de `main` réellement appliquée;
+- **#240** — secrets GitHub Actions de connexion Supabase présents hors dépôt, sans jamais exposer leurs valeurs;
+- **#439** — Environment GitHub `production` vérifié et approbation humaine requise lorsque le plan/réglage GitHub le permet.
+
+Ces préconditions restent distinctes de la revue SQL et du ledger. Un lot de migrations techniquement valide n’autorise pas à contourner une protection GitHub manquante, et une protection GitHub active n’approuve aucune migration.
+
+Pour le lot V25 suivi par **#438**, aucune application générique ne doit être engagée avant une décision humaine complète sur les blobs gelés et la revalidation du lot futur attendu par le builder.
+
 La production n’est considérée synchronisée que lorsque le résumé final affiche exactement :
 
 `✅ APPLIQUÉ ET VÉRIFIÉ`
