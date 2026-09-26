@@ -175,6 +175,9 @@ def validate(contents:dict[str,str])->None:
     if not cache_at_least(literature_html,"sinjira-literature-catalog-v25.js",(25,1,2)):
         fail("Littérature: cache catalogue générique trop ancien ou absent")
 
+    if "supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql" not in contents["workflow"]:
+        fail("workflow romans privés: convergence identité owner de la migration enfant non surveillée")
+
     if "supabase/migrations/20260919113000_sinjira_v25_private_novel_asset_rls.sql" not in contents["workflow"]:
         fail("workflow romans privés: migration RLS 20260919113000 non surveillée")
 
