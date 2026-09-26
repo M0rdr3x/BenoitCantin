@@ -166,6 +166,8 @@ def validate(contents: dict[str, str]) -> None:
         if marker not in project_owner_migration:
             fail(f"migration projets créateur: garde absente: {marker}")
 
+    if "supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql" not in workflow_paths:
+        fail("CI compte: convergence identité owner de la migration enfant non surveillée")
     if "supabase/migrations/20260919110000_sinjira_v25_social_public_pseudo_privacy.sql" not in workflow_paths:
         fail("CI compte: migration confidentialité pseudo social non surveillée")
     if "supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql" not in workflow_paths:
