@@ -251,11 +251,20 @@ def validate_runbook(errors):
         '`db push --include-all`',
         '`supabase migration repair`',
         '`supabase db reset --linked`',
-        'ne jamais activer un plan payant sans autorisation explicite',
     )
     for marker in required:
         if marker not in text:
             errors.append(f'Runbook Supabase production obsolète ou incomplet: {marker}')
+
+    plan_change_guard = re.search(
+        r'(?is)ne jamais.{0,80}(?:abonnement|plan payant).{0,120}(?:décision humaine explicite|autorisation explicite)',
+        text,
+    )
+    if not plan_change_guard:
+        errors.append(
+            'Runbook Supabase production obsolète ou incomplet: '
+            'interdiction explicite de changer l abonnement/plan payant sans décision humaine'
+        )
 
     if re.search(r'^\s*(SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD)\s*=\s*\S+', text, flags=re.MULTILINE):
         errors.append('Runbook Supabase production contient une affectation de secret interdite.')
