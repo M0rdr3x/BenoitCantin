@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
+      - 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
       - 'supabase/migrations/20260919090000_sinjira_v25_account_content_hub.sql'
       - 'supabase/migrations/20260919103000_sinjira_v25_livre_i_catalog_seed.sql'
       - 'supabase/migrations/20260919110000_sinjira_v25_social_public_pseudo_privacy.sql'
