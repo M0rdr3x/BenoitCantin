@@ -330,6 +330,8 @@ select is(
   0,
   'le repair créateur ne recrée aucun faux accès tester'
 );
+reset role;
+set local role service_role;
 select is(
   (select count(*)::integer
    from public.reader_library
@@ -337,6 +339,8 @@ select is(
   0,
   'le repair créateur ne fabrique aucun historique de lecture'
 );
+reset role;
+set local role authenticated;
 
 select is(
   jsonb_array_length(public.sinjira_my_product_rights()),
