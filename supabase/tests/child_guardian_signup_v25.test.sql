@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(72);
+select plan(74);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -22,6 +22,21 @@ select ok(not has_function_privilege('authenticated','public.sinjira_age_band(uu
 select ok(has_function_privilege('authenticated','public.sinjira_my_age_band()','EXECUTE'),'authenticated peut lire uniquement sa propre bande âge');
 select ok(has_function_privilege('anon','public.sinjira_my_age_band()','EXECUTE'),'anon peut évaluer uniquement sa propre bande self-only pour les RLS publiques');
 select ok(not has_function_privilege('authenticated','public.sinjira_parent_can_supervise(uuid,uuid)','EXECUTE'),'authenticated ne peut pas sonder une relation parent/enfant arbitraire');
+
+select ok(
+  not has_table_privilege('authenticated','public.guardian_links','UPDATE'),
+  'authenticated ne peut jamais modifier guardian_links directement'
+);
+select ok(
+  not exists(
+    select 1
+    from pg_policies
+    where schemaname='public'
+      and tablename='guardian_links'
+      and policyname='guardian_guardian_update'
+  ),
+  'l ancienne policy guardian_guardian_update est absente après convergence'
+);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values(
@@ -604,7 +619,7 @@ values(
 select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000011',true);
 
 select throws_ok(
-  $ select public.redeem_guardian_signup_invite('YOUTH-SECOND0001') $,
+  $second_guardian$ select public.redeem_guardian_signup_invite('YOUTH-SECOND0001') $second_guardian$,
   'P0001',
   'YOUTH_ACCOUNT_REQUIRED',
   'un deuxième code parental est refusé dès que le compte 11 ans est redevenu child'
