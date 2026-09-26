@@ -18,6 +18,9 @@ Répartition :
 - **Lot C — Compte / Catalogue / RPC : 9 migrations**
 - **Lot D — Frontières helpers navigateur : 1 migration**
 - **Lot E — Catalogue famille créateur : 5 migrations**
+- **Lot F — Correctifs Junior forward-only récents : 2 migrations**
+
+**Total : 43 migrations futures non revues.**
 
 L'ordre ci-dessous est un **ordre de revue**, pas un ordre d'autorisation production.
 
@@ -216,7 +219,7 @@ Relecture technique rafraîchie sur le HEAD fonctionnel `92f74a8bb1fc31452b08b67
 - la chaîne historique ferme aussi l'écriture directe : V24.4.12 retire les policies navigateur INSERT/UPDATE de `guardian_links` et V24.4.36 révoque explicitement INSERT/UPDATE/DELETE; un contrôle live en lecture seule confirme que le rôle `authenticated` ne conserve actuellement que SELECT sur cette table;
 - `get_guardian_youth_contacts()` exige supervision active + opt-in + AAL2 et ne renvoie que `contact_label`, `network`, `last_contact_date`; les tests prouvent l'absence d'UUID de contact, `display_name`, timestamp précis et contenu, ainsi que l'isolation entre identité Compte et identité Personnage;
 - `junior_guardian_summary()` exige AAL2, ne renvoie aucun contenu de publication/message et réduit la dernière activité à une date UTC; la liste parentale ne révèle jamais `junior_alias`;
-- le workflow Communauté Junior est entièrement vert : **51/51** assertions Junior, **13/13** frontière serveur 11–12, **23/23** classement contenu, **25/25** capacités self-only et **8/8** compatibilité protection mineurs, plus la preuve navigateur locale;
+- le workflow Communauté Junior est entièrement vert : **61/61** assertions Junior, **13/13** frontière serveur 11–12, **26/26** classement contenu, **25/25** capacités self-only et **8/8** compatibilité protection mineurs, plus la preuve navigateur locale;
 - le snapshot release reste vert et confirme **43 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés; le job CI `social-rls-contract` est également vert et vérifie la frontière sociale/RLS finale, y compris l'autorité `owner` du classifieur d'âge.
 
 **Portes encore ouvertes avant toute approbation du Lot B :**
@@ -294,7 +297,7 @@ Relecture technique effectuée sur le HEAD `1a54e110762a5249e99c70fc40e6667ce285
 - sur le run Compte/catalogue `35677574948`, la validation statique, la reconstruction locale, la preuve membre/créateur et la preuve 11–12 / absence d'oracle ont terminé en succès avant le nettoyage de la pile.
 
 **Preuves techniques maintenant satisfaites pour le Lot C :**
-- la dernière preuve verte antérieure du workflow Compte/catalogue reste **45/45** assertions membre/créateur + **23/23** classement 11–12; la suite courante est portée à **49 assertions** et doit être relue sur le HEAD final après les durcissements famille/commande payée;
+- le workflow Compte/catalogue est désormais vert avec **56/56** assertions membre/créateur; le classement 11–12 est vert avec **26/26** assertions après les durcissements famille/commande payée et les preuves anti-faux-droit / anti-oracle;
 - la dernière preuve verte Catalogue romans privés reste pgTAP **13/13**; le validateur statique courant est porté à **9 dérives critiques** et doit être relu sur le HEAD final;
 - l'Edge `get-private-novel-url` réévalue côté serveur identité, âge, rôle créateur/entitlement, actif `enabled` et stockage avant URL signée 300 s; la régression `Content-Length` doublement échappée est corrigée et gardée;
 - les preuves négatives couvrent `anon/authenticated/service_role`, absence de lecture directe du registre privé, absence de chemin Storage dans le navigateur et sondage UUID self-only.
@@ -327,7 +330,7 @@ Cette migration appartient fonctionnellement au **Lot A — Mode Voyage**, mais 
   - Conserve l’OID de `sinjira_catalog_internal.project_access_rank(uuid,uuid)` utilisé par les policies RLS, mais retourne `0` lorsqu’un rôle navigateur fournit un `p_user_id` différent de `auth.uid()`; `service_role` conserve l’usage serveur arbitraire.
   - Ferme l’oracle anonyme de `sinjira_child_project_available(uuid)` : un projet `visibility='account'` exige désormais une session authentifiée.
   - Aligne `sinjira_child_document_available(uuid)` sur le rang réel du compte courant via `project_access_rank >= document_access_rank`.
-  - Preuves attendues : pgTAP Compte à 49 assertions et classement 11–12 à 23 assertions.
+  - Preuves attendues : pgTAP Compte à **56 assertions** et classement 11–12 à **26 assertions**.
   - Migration transversale B/C : revue conjointe avec la frontière RPC V25 et les policies projets/documents.
 
 ### Notes de revue statique du Lot D — non approbatives
@@ -347,8 +350,8 @@ La revue croisée des définitions et des preuves runtime confirme actuellement 
 
 **Preuves techniques maintenant satisfaites pour le Lot D :**
 - les workflows Compte/catalogue et Communauté/accès enfant sont verts après reconstruction complète avec `20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql`;
-- le pgTAP Compte courant contient **49 assertions**, dont le refus de sondage d'un autre UUID, le ciblage explicite `service_role`, l'entitlement durable, la commande `paid` et le refus d'une commande `pending`; validation CI finale encore requise sur le SHA gelé;
-- le classement 11–12 passe **23/23** assertions, incluant l'absence d'oracle anon sur contenu `account` et le rang réel pour les documents;
+- le pgTAP Compte courant passe **56/56** assertions, dont le refus de sondage d'un autre UUID, le ciblage explicite `service_role`, l'entitlement durable, la commande `paid`, le refus d'une commande `pending` et l'absence de faux droits issus du repair owner;
+- le classement 11–12 passe **26/26** assertions, incluant l'absence d'oracle anon sur contenu `account` et le rang réel pour les documents;
 - la reconstruction confirme que les policies RLS continuent de fonctionner après conservation de l'OID du helper interne.
 
 **Restent ouverts avant toute approbation du Lot D :**
