@@ -539,7 +539,10 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
 req('selectplan(69);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
-req(test.count('$revoke    t.find("request.jwt.claim.sub','20000000-0000-4000-8000-000000000011'") >= 0
+req(test.count('$revoke$') == 6,
+    "Le pgTAP anti-oracle/révocation doit conserver trois blocs SQL nommés et équilibrés.")
+req(
+    t.find("request.jwt.claim.sub','20000000-0000-4000-8000-000000000011'") >= 0
     and t.find("request.jwt.claim.sub','20000000-0000-4000-8000-000000000011'")
         < t.find("lecontratsocialjeunessepeutsappliquerautomatiquementàpartirde13ans"),
     "Le pgTAP ne fixe pas l identité JWT enfant avant les helpers sociaux self-only."
