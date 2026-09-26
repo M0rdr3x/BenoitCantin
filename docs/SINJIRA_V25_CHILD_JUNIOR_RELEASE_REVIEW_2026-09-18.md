@@ -595,7 +595,7 @@ Le snapshot de revue attend exactement **43 migrations locales futures non revue
 | `20260919073000_sinjira_v25_junior_guardian_summary_aal2.sql` | `07b1ea063e57d3dd4a31e689fac6f44fd1ca6d18` |
 | `20260919080000_sinjira_v25_guardian_character_identity_isolation.sql` | `7c169564095bb440bde8a2a106c4e00aa2f307e4` |
 | `20260919083000_sinjira_v25_guardian_junior_alias_privacy.sql` | `8e0fd367bd0c30ed77f947ae0583408b370121a1` |
-| `20260919090000_sinjira_v25_account_content_hub.sql` | `5d18340c14ee8ccd2649acd366330b41198e0bb1` |
+| `20260919090000_sinjira_v25_account_content_hub.sql` | `a3d82b0096414acb61cf1c4d85d0a0916f921282` |
 | `20260919093000_sinjira_v25_private_novel_catalog.sql` | `41fec69fe7b720a909558a8a1429a7c39cd4772c` |
 | `20260919100000_sinjira_v25_private_profile_age_11.sql` | `d51142e51ba109492b31c14216367287ef51fbc0` |
 | `20260919103000_sinjira_v25_livre_i_catalog_seed.sql` | `2a5bb6ae5c25b92c8f963909e95d5949bb82df07` |
@@ -623,7 +623,7 @@ Mise à jour du 24 septembre 2026 : `20260924191000_sinjira_v25_junior_hidden_po
 
 Mise à jour du 25 septembre 2026 : `20260916210000_sinjira_v25_child_guardian_signup.sql` ne contient plus d’exception créateur fondée sur une adresse personnelle. La classification d’âge s’appuie désormais sur l’autorité serveur canonique `internal_admin_users.role='owner'` et le verrou historique `enforce_sinjira_single_admin` est reconvergé vers l’invariant structurel d’un seul compte, sans adresse personnelle. Les preuves utilisent une identité synthétique et le validateur interdit la réintroduction d’une identité courriel dans ces deux gardes. L’empreinte a été rafraîchie uniquement pour refléter ce resserrement de confidentialité : la migration reste **NON REVUE / NON APPROUVÉE**.
 
-Mise à jour du 25 septembre 2026 : `20260919090000_sinjira_v25_account_content_hub.sql` reconverge le repair historique du personnage propriétaire. Le propriétaire y est résolu par `internal_admin_users.role='owner'`; le repair ne crée plus de `user_entitlements` synthétiques ni de `project_access` tester artificiels, et les anciennes lignes strictement reconnaissables issues de ce mécanisme sont purgées. La réparation du personnage et l’historique de lecture restent conservés. L’empreinte a été rafraîchie uniquement pour ce durcissement : la migration reste **NON REVUE / NON APPROUVÉE**.
+Mise à jour du 25 septembre 2026 : `20260919090000_sinjira_v25_account_content_hub.sql` reconverge le repair historique du personnage propriétaire. Le propriétaire y est résolu par `internal_admin_users.role='owner'`; le repair ne crée plus de `user_entitlements` synthétiques, de `project_access` tester artificiels ni d’écriture `reader_library`; les anciennes lignes commerciales/tester strictement reconnaissables sont purgées, tandis que l’historique de lecture existant est conservé sans être réécrit. L’empreinte a été rafraîchie uniquement pour ce durcissement : la migration reste **NON REVUE / NON APPROUVÉE**.
 
 ## 4. Garde automatisé de snapshot
 
