@@ -24,6 +24,17 @@ Répartition :
 
 L'ordre ci-dessous est un **ordre de revue**, pas un ordre d'autorisation production.
 
+### Promotion production : lot complet obligatoire
+
+La revue peut être organisée par lots fonctionnels A→F, mais le builder production est volontairement **all-or-nothing** sur l'ensemble des migrations locales postérieures au dernier timestamp du ledger.
+
+État courant :
+- **14 migrations futures** figurent déjà dans `supabase/production-reviewed-migration-batch.txt`;
+- **43 migrations futures supplémentaires** de cette revue restent non revues;
+- le workspace production ne peut être construit que lorsque le reviewed batch correspond **exactement à toutes les migrations futures locales** et à leurs blob SHA.
+
+Conséquence : une décision positive sur A, B, C, D, E ou F peut être consignée séparément, mais **ne doit pas déclencher une modification partielle du reviewed batch ni une promotion production**. La promotion ne devient techniquement admissible qu'après décision humaine sur les 43 migrations de cette revue, revalidation du gel SQL et constitution du lot complet attendu.
+
 ## Critères communs avant toute approbation
 
 Pour chaque migration :
