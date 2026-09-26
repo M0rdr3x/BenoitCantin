@@ -128,7 +128,7 @@ Le prévol distant utilise ces secrets sous forme d’`env` borné aux étapes q
 
 Le fichier `supabase/production-migration-ledger.txt` contient les versions déjà appliquées dans `gpvivleexywljowcqkru`.
 
-État hébergé vérifié au **2026-09-07** :
+État hébergé revalidé en lecture seule au **2026-09-25** :
 
 - `186` versions distantes;
 - première version : `20260809050252_sinjira_universal_platform`;
@@ -181,32 +181,43 @@ Après toute application réelle, vérifier :
 
 ## Avertissement Auth actuel — mots de passe compromis
 
-Au 2026-09-07, le Security Advisor peut encore signaler :
+Revalidation en lecture seule du **2026-09-25** :
 
-`auth_leaked_password_protection` — **Leaked Password Protection Disabled**.
+- plan Supabase observé : **Free**;
+- Security Advisor : `auth_leaked_password_protection` est toujours présent au niveau WARN;
+- suivi opérationnel : issue **#437**.
 
-Ce point reste ouvert tant que la protection n’est pas effectivement activée et vérifiée. La fonctionnalité Supabase correspondante peut nécessiter un plan payant; **ne jamais activer un plan payant sans autorisation explicite**.
+Le réglage est un paramètre du service Auth hébergé : ce n’est pas une migration PostgreSQL et il ne doit pas être simulé par du SQL, une policy RLS ou une modification de `auth.users`.
 
-Ce réglage est un paramètre du service Auth hébergé : ce n’est pas une migration PostgreSQL et il ne doit pas être simulé par du SQL, une policy RLS ou une modification de `auth.users`.
+Supabase réserve cette protection aux plans éligibles. **Ne jamais modifier l’abonnement ou activer un plan payant sans décision humaine explicite.**
 
-### Procédure d’activation autorisée après autorisation explicite
+### Voie canonique d’activation
 
-1. ouvrir le projet `gpvivleexywljowcqkru`;
-2. ouvrir les réglages Authentication/Auth du fournisseur Email;
-3. conserver ou renforcer les exigences de mot de passe existantes — ne pas abaisser la longueur minimale de `12` utilisée par SINJIRA;
-4. activer la protection contre les mots de passe compromis si le plan et l’autorisation le permettent;
-5. enregistrer le réglage;
-6. rouvrir Security Advisor;
-7. confirmer que `auth_leaked_password_protection` / `Leaked Password Protection Disabled` n’apparaît plus.
+La seule procédure automatisée autorisée est :
 
-Ne pas contourner une limitation de plan par une implémentation maison non auditée dans le client.
+`.github/workflows/sinjira-v25-auth-password-hardening.yml`
+
+Ce workflow :
+
+1. doit être lancé manuellement depuis `main`;
+2. exige l’Environment GitHub `production`;
+3. exige la confirmation exacte `ENABLE-SINJIRA-V25-LEAKED-PASSWORD-PROTECTION`;
+4. exige `SUPABASE_ACCESS_TOKEN`;
+5. lit le plan courant et s’arrête **avant tout PATCH** si le plan n’est pas `pro`, `team` ou `enterprise`;
+6. lit la configuration Auth actuelle et refuse de continuer si `password_min_length < 12`;
+7. n’autorise qu’un PATCH borné à `{"password_hibp_enabled":true}`;
+8. compare l’empreinte de toute la configuration Auth hors HIBP avant/après et échoue si un autre paramètre change;
+9. vérifie que le Security Advisor ne signale plus `auth_leaked_password_protection`.
+
+Ne pas remplacer cette voie par une modification manuelle improvisée, une migration SQL ou une implémentation client maison.
 
 ### Critère de fermeture
 
-Ce point n’est fermé que lorsque **les deux** conditions sont vraies :
+L’issue #437 ne peut être fermée que lorsque **les trois** preuves suivantes existent simultanément :
 
-- le Dashboard indique la protection activée;
-- une nouvelle lecture du Security Advisor ne contient plus `auth_leaked_password_protection`.
+- le plan Supabase courant est éligible;
+- la configuration Auth retourne `password_hibp_enabled=true`;
+- le Security Advisor ne retourne plus `auth_leaked_password_protection`.
 
 Ne jamais consigner de mot de passe, token ou secret utilisé pendant la vérification.
 
