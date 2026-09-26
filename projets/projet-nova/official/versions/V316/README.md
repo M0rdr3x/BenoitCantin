@@ -24,3 +24,7 @@ Principes liés : identité proportionnée au risque; distinction identité/auth
 - Nomenclature : 0 occurrence interdite
 
 Le dossier contient les spécifications, états, registres et reçus nécessaires pour auditer cette publication technique.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

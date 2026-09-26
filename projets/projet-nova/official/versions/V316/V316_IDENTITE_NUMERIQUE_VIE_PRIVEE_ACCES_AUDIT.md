@@ -104,3 +104,7 @@ Ces valeurs doivent être déterminées par la loi, les normes techniques applic
 La primauté citoyenne demeure inchangée : l’identité numérique est un outil de service et de preuve, pas une source de souveraineté administrative. Aucun administrateur de système, responsable de sécurité ou gestionnaire d’identité n’acquiert un pouvoir personnel sur le citoyen.
 
 V316 ne produit aucun effet juridique automatique, ne ferme aucune des 14 décisions politiques héritées, ne valide aucune des 26 sections anglaises et ne modifie aucun paramètre fiscal V308.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

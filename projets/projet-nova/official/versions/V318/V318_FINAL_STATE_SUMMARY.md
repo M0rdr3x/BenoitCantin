@@ -14,3 +14,7 @@
 - Gates : 261/261 PASS. CI : 1115/1115 conformes.
 - 14 décisions politiques héritées ouvertes; 26 sections anglaises NOT_VALIDATED / HUMAN_REVIEW_PENDING.
 - LEGAL_ENACTMENT=NOT_AUTHORIZED; publication=PENDING_PUBLICATION_APPROVAL; production=false; github_push=false dans le paquet immutable.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.
