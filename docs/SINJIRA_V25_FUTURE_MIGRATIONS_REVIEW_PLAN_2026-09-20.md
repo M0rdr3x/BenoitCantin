@@ -232,7 +232,7 @@ Aucune case B1–B5 n'est cochée : cette section documente une **préparation t
 ### C1 — Catalogue compte et romans privés
 
 - [ ] `20260919090000_sinjira_v25_account_content_hub.sql`
-  - Le repair historique du personnage propriétaire doit résoudre l’owner par rôle serveur et ne jamais fabriquer `user_entitlements` ou `project_access` pour simuler l’accès créateur.
+  - Le repair historique du personnage propriétaire doit résoudre l’owner par rôle serveur et ne jamais fabriquer `user_entitlements`, `project_access` ou historique `reader_library` pour simuler l’accès créateur.
   - Policies catalogue membres/créateur.
   - Revue prioritaire : accès créateur complet sans faux achat/entitlement.
 
