@@ -135,7 +135,7 @@ def main() -> int:
     # Le dépôt doit refléter honnêtement l'état hébergé observé, sans figer le validateur
     # sur une date historique qui rendrait toute revalidation documentaire impossible.
     verification_dates = re.findall(
-        r"(?m)^Dernière vérification : (\\d{4}-\\d{2}-\\d{2})\\.$",
+        r"(?m)^Dernière vérification : (\d{4}-\d{2}-\d{2})\.$",
         status,
     )
     require(
