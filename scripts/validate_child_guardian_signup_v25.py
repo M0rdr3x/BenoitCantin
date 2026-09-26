@@ -104,6 +104,19 @@ for marker,message in (
     ("createorreplacefunctionpublic.handle_new_sinjira_user()returnstriggerlanguageplpgsqlsecuritydefinersetsearch_path=pg_catalog,public,auth","search_path du hook Auth"),
 ):
     req(marker in m,f"La migration d'introduction enfant ne borne pas {message}.")
+
+age_band_start=m.find("createorreplacefunctionpublic.sinjira_age_band")
+age_band_end=m.find("revokeallonfunctionpublic.sinjira_age_band(uuid)",age_band_start)
+req(age_band_start>=0 and age_band_end>age_band_start,
+    "La définition de sinjira_age_band ne peut pas être isolée pour la revue.")
+age_band_section=m[age_band_start:age_band_end]
+req("frompublic.internal_admin_usersa" in age_band_section
+    and "a.user_id=p_user_id" in age_band_section
+    and "a.role='owner'" in age_band_section,
+    "Le créateur n'est pas résolu par l'autorité serveur owner dans la classification d'âge.")
+req("@gmail.com" not in age_band_section and "@outlook.com" not in age_band_section,
+    "La classification d'âge ne doit contenir aucune adresse personnelle gravée dans le SQL.")
+
 req("ifyears<14then" in m and 'guardian_authorization_required_under_14' in m,
     "L'autorisation parentale obligatoire de 11 à 13 ans n'est pas imposée côté serveur.")
 req("years<18andresidence_countrynotin('canada','ca','can')" in m and 'youth_jurisdiction_not_enabled' in m,
