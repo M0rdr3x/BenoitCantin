@@ -309,7 +309,7 @@ select is(
   'le créateur voit les produits internes inactifs sans créer un achat'
 );
 select lives_ok(
-  $ select public.ensure_sinjira_owner_character() $,
+  $owner_repair_test$ select public.ensure_sinjira_owner_character() $owner_repair_test$,
   'le repair personnage créateur fonctionne avec une identité owner synthétique'
 );
 select is(
