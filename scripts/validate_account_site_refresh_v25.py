@@ -804,6 +804,12 @@ def validate(contents: dict[str, str]) -> None:
         fail("pgTAP contenu: plan(56) absent")
     if test.count("$owner_repair_test$") != 2:
         fail("pgTAP contenu: délimiteur nommé du repair owner invalide")
+    reader_proof_pos=test.find("lerepaircréateurnefabriqueaucunhistoriquedelecture")
+    reader_table_pos=test.rfind("frompublic.reader_library",0,reader_proof_pos)
+    reader_service_pos=test.rfind("setlocalroleservice_role",0,reader_table_pos)
+    reader_restore_pos=test.find("setlocalroleauthenticated",reader_proof_pos)
+    if not (0 <= reader_service_pos < reader_table_pos < reader_proof_pos < reader_restore_pos):
+        fail("pgTAP contenu: preuve reader_library doit rester sous service_role puis restaurer authenticated")
     if "selectplan(26);" not in child_content_test:
         fail("pgTAP classement 11–12: plan(26) absent")
     for marker in (
