@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(52);
+select plan(55);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -308,6 +308,29 @@ select is(
   1,
   'le créateur voit les produits internes inactifs sans créer un achat'
 );
+select lives_ok(
+  $ select public.ensure_sinjira_owner_character() $,
+  'le repair personnage créateur fonctionne avec une identité owner synthétique'
+);
+select is(
+  (select count(*)::integer
+   from public.user_entitlements
+   where user_id='b1000000-0000-4000-8000-000000000001'
+     and source='owner'),
+  0,
+  'le repair créateur ne recrée aucun entitlement commercial synthétique'
+);
+select is(
+  (select count(*)::integer
+   from public.project_access
+   where user_id='b1000000-0000-4000-8000-000000000001'
+     and access_level='tester'
+     and granted_by=user_id
+     and source='migration'),
+  0,
+  'le repair créateur ne recrée aucun faux accès tester'
+);
+
 select is(
   jsonb_array_length(public.sinjira_my_product_rights()),
   0,
