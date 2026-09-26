@@ -15,6 +15,8 @@ Aucune case cochée ne vaut à elle seule approbation production. L’approbatio
 
 Ne pas modifier automatiquement `supabase/production-reviewed-migration-batch.txt` ou `supabase/production-migration-ledger.txt` à partir de cette feuille.
 
+**Important — pas de promotion partielle :** la feuille peut être remplie lot par lot, mais le builder production exige que `production-reviewed-migration-batch.txt` corresponde exactement à **toutes** les migrations locales futures. Les 14 migrations déjà présentes dans le lot revu et les 43 migrations de cette feuille forment donc, au moment d'une future promotion, un ensemble complet à revalider. Une approbation partielle d'un lot A–F ne doit jamais être traduite en mise à jour partielle du reviewed batch.
+
 Avant toute future promotion, le reviewer doit notamment vérifier :
 
 - absence de DDL destructif ou de réécriture de données non comprise;
