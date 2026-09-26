@@ -99,6 +99,41 @@ where coalesce(raw_user_meta_data,'{}'::jsonb) ? 'guardian_code';
 comment on function private.sinjira_strip_guardian_signup_secret() is
   'V25 initial: guardian_code est retiré des métadonnées Auth après création; les secrets historiques résiduels sont aussi purgés.';
 
+-- Convergence identité propriétaire : l'ancien verrou V24 validait l'unique
+-- compte admin par une adresse courriel personnelle. À ce stade le rôle serveur
+-- internal_admin_users est déjà canonique et les mutations de cette table sont
+-- réservées au service_role. Le verrou conserve donc l'invariant « un seul compte »
+-- sans dépendre d'une donnée personnelle.
+create or replace function public.enforce_sinjira_single_admin()
+returns trigger
+language plpgsql
+security definer
+set search_path=pg_catalog,public
+as $owner_guard$
+begin
+  if exists(
+    select 1
+    from public.internal_admin_users a
+    where a.user_id is distinct from new.user_id
+  ) then
+    raise exception 'SINJIRA_SINGLE_ADMIN_ACCOUNT_ONLY' using errcode='42501';
+  end if;
+  return new;
+end;
+$owner_guard$;
+
+revoke all on function public.enforce_sinjira_single_admin()
+from public,anon,authenticated;
+
+drop trigger if exists enforce_sinjira_single_admin_trigger
+on public.internal_admin_users;
+create trigger enforce_sinjira_single_admin_trigger
+before insert or update on public.internal_admin_users
+for each row execute function public.enforce_sinjira_single_admin();
+
+comment on function public.enforce_sinjira_single_admin() is
+  'V25: verrou structurel d un seul compte admin/owner; aucune identité personnelle n est codée dans le garde.';
+
 -- 11–12 ans : bande `child`, volontairement exclue des autorisations sociales existantes.
 -- À 13 ans, la bande est recalculée automatiquement depuis la date de naissance et devient `youth`
 -- lorsque le lien de supervision est toujours vérifié.
