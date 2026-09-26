@@ -802,6 +802,8 @@ def validate(contents: dict[str, str]) -> None:
 
     if "selectplan(56);" not in test:
         fail("pgTAP contenu: plan(56) absent")
+    if test.count("$owner_repair_test$") != 2:
+        fail("pgTAP contenu: délimiteur nommé du repair owner invalide")
     if "selectplan(26);" not in child_content_test:
         fail("pgTAP classement 11–12: plan(26) absent")
     for marker in (
