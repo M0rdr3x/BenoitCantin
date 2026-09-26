@@ -146,6 +146,28 @@ def validate(contents: dict[str, str]) -> None:
         if marker not in m:
             fail(f"migration contenu: garde absente: {marker}")
 
+    owner_repair_start=m.find("createorreplacefunctionsinjira_owner_internal.ensure_sinjira_owner_character()")
+    owner_repair_end=m.find("commentonfunctionsinjira_owner_internal.ensure_sinjira_owner_character()",owner_repair_start)
+    if owner_repair_start < 0 or owner_repair_end < 0:
+        fail("migration compte: convergence du repair owner absente")
+    owner_repair=m[owner_repair_start:owner_repair_end]
+    for marker in (
+        "frompublic.internal_admin_usersa",
+        "a.role='owner'",
+        "deletefrompublic.user_entitlementsueusingpublic.internal_admin_usersa",
+        "ue.source='owner'",
+        "deletefrompublic.project_accesspausingpublic.internal_admin_usersa",
+        "pa.source='migration'",
+    ):
+        if marker not in m:
+            fail(f"migration compte: garde repair owner absente: {marker}")
+    if "@gmail.com" in owner_repair or "@outlook.com" in owner_repair:
+        fail("migration compte: le repair owner dépend encore d une adresse personnelle")
+    if "insertintopublic.user_entitlements" in owner_repair:
+        fail("migration compte: le repair owner fabrique encore un entitlement")
+    if "insertintopublic.project_access" in owner_repair:
+        fail("migration compte: le repair owner fabrique encore un project_access")
+
     for marker in (
         "createorreplacefunctionpublic.sync_social_profile_from_profile()",
         "v_public_pseudotext:=coalesce(nullif(btrim(new.pseudo),''),'membresinjira')",
@@ -810,6 +832,9 @@ def validate(contents: dict[str, str]) -> None:
         "unmembrenevoitpasunprojetinternecréateur",
         "lecréateurvoit sonprojetinternesansfauxachat".replace(" ", ""),
         "lecataloguecompletducréateurnefabriqueaucundroitproduitcommercial",
+        "lerepairpersonnagecréateurfonctionneavecuneidentitéownersynthétique",
+        "lerepaircréateurnerecréeaucunentitlementcommercialsynthétique",
+        "lerepaircréateurnerecréeaucunfauxaccèstester",
         "unmembrevoitencoreunproduitinactifliéàsonentitlement",
         "unmembrevoitencoreunproduitinactifprésentdanssapropcommande".replace("propcommande", "proprecommande"),
         "unentitlementréelconserveledroitproduitmêmesileproduitdevientinactif",
