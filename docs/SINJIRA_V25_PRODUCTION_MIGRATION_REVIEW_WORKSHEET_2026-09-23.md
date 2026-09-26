@@ -57,7 +57,7 @@ Lire les migrations dans l’ordre chronologique canonique. Les colonnes de cont
 | 1 | `20260913030500_sinjira_v25_travel_mode_geo_scope_hardening.sql` | `7285d1e30ea288004d17c1dbfbf9f01662b36bb7` | Mode Voyage | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 2 | `20260913230000_sinjira_v25_travel_mode_retention_purge.sql` | `41b8dc3d1b1e09c018e588755edb053e63e9904a` | Mode Voyage | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 3 | `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` | `2d7b8ccbfc79fed6a03208086a138618779d6e2d` | Mode Voyage | [ ] | [ ] | [ ] | [ ] | [ ] |
-| 4 | `20260916210000_sinjira_v25_child_guardian_signup.sql` | `baa11566a920ee8ba9f08810f542d9ad78046d24` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 4 | `20260916210000_sinjira_v25_child_guardian_signup.sql` | `3db13f406e40d815e966ecc920f49be0ba7e7dac` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 5 | `20260917223000_sinjira_v25_junior_community.sql` | `64e66dc8d9c45de9ecbb1174fdb842e4444b9b6b` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 6 | `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `ea0426172caba27fc3446c696575a19a1eae08d7` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 7 | `20260918013000_sinjira_v25_child_content_rating.sql` | `b0a2bfda90579830083d128035ee533d06dd2159` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
