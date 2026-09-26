@@ -95,6 +95,31 @@ Ces préconditions restent distinctes de la revue SQL et du ledger. Un lot de mi
 
 Pour le lot V25 suivi par **#438**, aucune application générique ne doit être engagée avant une décision humaine complète sur les blobs gelés et la revalidation du lot futur attendu par le builder.
 
+### Séquence après décision humaine complète de #438
+
+Le builder `scripts/build_supabase_production_workspace.py` est volontairement **exact-match** : la liste des migrations locales postérieures au cutoff du ledger doit être identique, dans le même ordre, à `supabase/production-reviewed-migration-batch.txt`, et chaque ligne doit porter le blob SHA Git exact.
+
+État préparatoire courant :
+- **14** migrations futures sont déjà consignées dans le reviewed batch;
+- **43** migrations supplémentaires sont soumises à #438;
+- après décision humaine complète et seulement à ce moment-là, le lot candidat doit donc couvrir **57 migrations futures locales**.
+
+Ordre obligatoire :
+
+1. consigner la décision humaine #438 sur les blobs exacts;
+2. revalider que les 43 blobs approuvés sont inchangés;
+3. revalider également les 14 migrations futures déjà présentes dans le reviewed batch;
+4. mettre à jour `production-reviewed-migration-batch.txt` pour qu’il corresponde **exactement aux 57 migrations futures locales**, avec leurs blob SHA réels;
+5. **ne pas avancer le ledger à cette étape** : aucune de ces nouvelles migrations n’est encore prouvée appliquée en production;
+6. exécuter les validateurs et construire le workspace protégé; le builder doit alors produire les marqueurs des versions déjà appliquées + les 57 SQL futurs revus;
+7. satisfaire #135/#240/#439, fusionner selon la gouvernance du dépôt, puis effectuer d’abord le prévol manuel non destructif;
+8. seulement après les approbations et revalidations requises, exécuter l’application production;
+9. après succès réel, récupérer l’historique distant et mettre à jour `production-migration-ledger.txt` avec les versions réellement enregistrées;
+10. dans la même réconciliation post-déploiement, retirer du reviewed batch les migrations désormais couvertes par le nouveau cutoff du ledger, car le builder refuse explicitement qu’un lot revu contienne une migration déjà couverte par le ledger;
+11. rejouer le validateur du ledger et le dry-run final jusqu’à obtenir un état cohérent sans migration déjà appliquée encore présentée comme future.
+
+Cette séparation est essentielle : **reviewed batch = autorisation humaine préalable sur le contenu futur; ledger = preuve historique de ce qui a réellement été enregistré en production**. Les deux fichiers ne doivent jamais être avancés comme s’ils représentaient le même événement.
+
 La production n’est considérée synchronisée que lorsque le résumé final affiche exactement :
 
 `✅ APPLIQUÉ ET VÉRIFIÉ`
