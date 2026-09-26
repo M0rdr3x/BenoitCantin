@@ -112,9 +112,9 @@ as $$
   select case
     when exists(
       select 1
-      from auth.users u
-      where u.id=p_user_id
-        and lower(coalesce(u.email,''))='kingtyrano@gmail.com'
+      from public.internal_admin_users a
+      where a.user_id=p_user_id
+        and a.role='owner'
     ) then 'adult'
     when s.user_id is null or s.date_of_birth is null or s.date_of_birth>current_date then 'unverified'
     when s.legacy_status='memorialized' then 'memorial'
