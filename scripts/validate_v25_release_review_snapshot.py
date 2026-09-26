@@ -200,6 +200,7 @@ def validate_snapshot(
         "**Statut global : NON REVU / NON APPROUVÉ**",
         "Aucune case cochée ne vaut à elle seule approbation production.",
         "Ne pas modifier automatiquement `supabase/production-reviewed-migration-batch.txt`",
+        "**Important — pas de promotion partielle :**",
         "L’humain avant tout. Protéger sans surveiller.",
     )
     for statement in worksheet_statements:
@@ -285,6 +286,11 @@ def self_test(values: tuple[list[str], dict[str, bytes], bytes, bytes, str, str,
     dossier_bad_gate = dossier.replace("**lot production revu : non**", "**lot production revu : oui**", 1)
     worksheet_bad_hash = worksheet.replace(first_blob, "0" * 40, 1)
     worksheet_bad_gate = worksheet.replace("**Statut global : NON REVU / NON APPROUVÉ**", "**Statut global : APPROUVÉ**", 1)
+    worksheet_bad_partial_gate = worksheet.replace(
+        "**Important — pas de promotion partielle :**",
+        "**Important — promotion partielle autorisée :**",
+        1,
+    )
     matrix_bad_gate = matrix.replace("**Statut : AIDE DE REVUE AUTOMATISÉE — NON REVU / NON APPROUVÉ**", "**Statut : APPROUVÉ**", 1)
     matrix_bad_set = matrix.replace(first_name, "20260913030500_sinjira_v25_unreviewed_probe.sql", 1)
     static_scan_bad_gate = static_scan.replace("**Statut : TRIAGE AUTOMATISÉ — AUCUNE APPROBATION PRODUCTION**", "**Statut : APPROUVÉ PRODUCTION**", 1)
@@ -299,6 +305,7 @@ def self_test(values: tuple[list[str], dict[str, bytes], bytes, bytes, str, str,
         "garde humaine documentaire altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier_bad_gate, worksheet, matrix, static_scan, workflow),
         "empreinte feuille de revue altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet_bad_hash, matrix, static_scan, workflow),
         "garde feuille de revue altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet_bad_gate, matrix, static_scan, workflow),
+        "garde anti-promotion partielle altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet_bad_partial_gate, matrix, static_scan, workflow),
         "garde matrice technique altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix_bad_gate, static_scan, workflow),
         "ensemble matrice technique altéré": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix_bad_set, static_scan, workflow),
         "garde scan statique altérée": (migration_names, snapshot_contents, reviewed, ledger, dossier, worksheet, matrix, static_scan_bad_gate, workflow),
