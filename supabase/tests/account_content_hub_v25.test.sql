@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(55);
+select plan(56);
 
 insert into auth.users(id,email,raw_user_meta_data)
 values
@@ -329,6 +329,13 @@ select is(
      and source='migration'),
   0,
   'le repair créateur ne recrée aucun faux accès tester'
+);
+select is(
+  (select count(*)::integer
+   from public.reader_library
+   where user_id='b1000000-0000-4000-8000-000000000001'),
+  0,
+  'le repair créateur ne fabrique aucun historique de lecture'
 );
 
 select is(
