@@ -561,7 +561,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(72);' in t,
+req('selectplan(74);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 req(test.count('$revoke$') == 6,
     "Le pgTAP anti-oracle/révocation doit conserver trois blocs SQL nommés et équilibrés.")
@@ -590,6 +590,8 @@ for marker, message in (
     ("authenticatedpeutlireuniquementsaproprebandeâge", "Le test ne prouve pas le wrapper self-only de cohorte."),
     ("anonpeutévalueruniquementsaproprebandeself-onlypourlesrlspubliques", "Le test ne prouve pas l'accès anon borné au wrapper self-only requis par les RLS publiques."),
     ("authenticatednepeutpassonderunerelationparent/enfantarbitraire", "Le test ne prouve pas la confidentialité du helper de supervision."),
+    ("authenticatednepeutjamaismodifierguardian_linksdirectement", "Le pgTAP ne prouve pas la révocation UPDATE directe sur guardian_links."),
+    ("lanciennepolicyguardian_guardian_updateestabsenteaprèsconvergence", "Le pgTAP ne prouve pas la suppression de l ancienne policy UPDATE tuteur."),
     ("revoked_atseulsuffitàretirerlabandesuperviséemêmesistatusestencoreverified", "Le test ne prouve pas le fail-closed sur revoked_at pour la bande âge."),
     ("revoked_atseulsuffitàretirerlasupervisionparentale", "Le test ne prouve pas le fail-closed sur revoked_at pour la supervision."),
     ("unenfantde11anssanslientuteuractifdevientchild_pending", "Le test ne prouve pas le passage 11–12 vers child_pending après révocation."),
@@ -598,6 +600,7 @@ for marker, message in (
     ("laconsommationdunouveaucoderétablitimmédiatementlabandechild", "Le test ne prouve pas le retour immédiat à child."),
     ("lelientuteurrévoquéestréactivéproprementenverifiednonrévoqué", "Le test ne prouve pas la réactivation propre du lien tuteur."),
     ("lenouveaucodeestconsomméuneseulefoisparlecomptechild_pending", "Le test ne prouve pas la consommation unique du code de rétablissement."),
+    ("$second_guardian$selectpublic.redeem_guardian_signup_invite('youth-second0001')$second_guardian$", "Le pgTAP du second tuteur n utilise pas un dollar-quote nommé valide."),
     ("undeuxièmecodeparentalestrefusédèsquelecompte11ansestredevenuchild", "Le pgTAP ne prouve pas le refus d un second code parental après rétablissement."),
     ("ledeuxièmecodeparentalrefuséresteinutilisé", "Le pgTAP ne prouve pas qu un second code refusé reste inutilisé."),
     ("ledeuxièmecoderefusénecréeaucunsecondlientuteurverified", "Le pgTAP ne prouve pas l absence de second lien verified après rétablissement."),
