@@ -116,6 +116,17 @@ req("frompublic.internal_admin_usersa" in age_band_section
     "Le créateur n'est pas résolu par l'autorité serveur owner dans la classification d'âge.")
 req("@gmail.com" not in age_band_section and "@outlook.com" not in age_band_section,
     "La classification d'âge ne doit contenir aucune adresse personnelle gravée dans le SQL.")
+req("createorreplacefunctionpublic.enforce_sinjira_single_admin()" in m
+    and "wherea.user_idisdistinctfromnew.user_id" in m
+    and "sinjira_single_admin_account_only" in m
+    and "createtriggerenforce_sinjira_single_admin_trigger" in m,
+    "Le verrou owner/admin n'est pas convergé vers un invariant structurel sans identité personnelle.")
+owner_guard_start=m.find("createorreplacefunctionpublic.enforce_sinjira_single_admin()")
+owner_guard_end=m.find("commentonfunctionpublic.enforce_sinjira_single_admin()",owner_guard_start)
+req(owner_guard_start>=0 and owner_guard_end>owner_guard_start
+    and "@gmail.com" not in m[owner_guard_start:owner_guard_end]
+    and "@outlook.com" not in m[owner_guard_start:owner_guard_end],
+    "Le verrou owner/admin conserve une adresse personnelle.")
 
 req("ifyears<14then" in m and 'guardian_authorization_required_under_14' in m,
     "L'autorisation parentale obligatoire de 11 à 13 ans n'est pas imposée côté serveur.")
