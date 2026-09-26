@@ -1,0 +1,18 @@
+{
+  "version": "V319",
+  "from": "V318",
+  "date": "2026-09-24",
+  "point": "NOVA-V319-LOCAL-DETACHED-CHECKPOINT-262",
+  "requirements": [
+    "Independently replay V318 append-only history from a clean extraction.",
+    "Create V319 detached local checkpoint bound to exact V318 commitment/index/current-tip/payload/verifier/replay bytes.",
+    "Carry the 129-link provenance union without collapsing inherited root layers.",
+    "Bind V318 architecture/interoperability/reversibility specification, state, eight register templates, corpus and standalone DOCX exactly.",
+    "Preserve V317 cyber resilience controls and V316 identity/privacy protections exactly.",
+    "Preserve V312 Primauté citoyenne and V308 fiscal parameters exactly absent explicit later user amendment.",
+    "Preserve 14 inherited open political decisions and 26 English sections NOT_VALIDATED absent explicit evidence.",
+    "Preserve LEGAL_ENACTMENT=NOT_AUTHORIZED, publication pending and production=false in the immutable technical chain.",
+    "External GitHub publication may be separately authorized/evidenced and must not rewrite immutable internal github_push=false.",
+    "Next substantive module may address digital sovereignty of public data, records portability across generations and source/escrow/reproducibility safeguards without inventing undecided numeric thresholds."
+  ]
+}

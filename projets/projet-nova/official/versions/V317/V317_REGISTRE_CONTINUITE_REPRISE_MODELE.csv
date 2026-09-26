@@ -1,0 +1,1 @@
+plan_id,service_id,critical_functions,minimum_service_mode,dependencies,alternate_or_manual_fallback,recovery_sequence,responsible_roles,communication_path,last_exercise_at,exercise_result,open_corrective_actions,last_reviewed_at,status,audit_reference

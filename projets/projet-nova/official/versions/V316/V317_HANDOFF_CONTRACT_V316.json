@@ -1,0 +1,22 @@
+{
+  "version": "V317",
+  "from": "V316",
+  "date": "2026-09-24",
+  "point": "NOVA-V317-LOCAL-DETACHED-CHECKPOINT-260",
+  "requirements": [
+    "Independently replay V316 append-only history from a clean extraction.",
+    "Create V317 detached local checkpoint bound to exact V316 commitment/index/current-tip/payload/verifier/replay bytes.",
+    "Carry the 125-link provenance union without collapsing inherited root layers.",
+    "Bind V316 identity/privacy/access/audit specification, state, eight register templates, corpus and standalone DOCX exactly.",
+    "Preserve V312 Primauté citoyenne concept exactly absent explicit later user amendment.",
+    "Preserve V308 fiscal policy parameters exactly absent explicit later user directive.",
+    "Preserve V309 execution, V310 budget, V311 procurement/contract/debt/treasury, V313 public assets, V314 frontline-capacity and V315 citizen-path simplification controls.",
+    "Preserve V316 least privilege, lawful purpose binding, no universal access key, no general surveillance through audit logs, no mandatory universal superdatabase, non-digital accessibility and citizen correction rights.",
+    "Preserve canonical Vortek spelling.",
+    "Preserve 14 inherited open political decisions absent explicit closure evidence.",
+    "Keep 26 English sections NOT_VALIDATED absent human evidence.",
+    "Preserve LEGAL_ENACTMENT=NOT_AUTHORIZED, publication pending and production=false in the immutable technical chain.",
+    "Any external GitHub publication performed under separate explicit user authorization must be evidenced separately and must not retroactively rewrite the immutable V316 internal github_push=false lock.",
+    "Next substantive module may address cybersecurity resilience, incident response, continuity/recovery and secure digital infrastructure without inventing undecided numeric thresholds or creating general surveillance powers."
+  ]
+}
