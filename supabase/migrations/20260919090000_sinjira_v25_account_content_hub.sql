@@ -73,7 +73,7 @@ set title=excluded.title,
 
 -- Convergence V25 du repair personnage propriétaire.
 -- L'accès complet du créateur provient du rôle owner et des catalogues canoniques:
--- ce repair ne doit plus fabriquer d'entitlement commercial ni de statut tester.
+-- ce repair ne doit plus fabriquer d'entitlement commercial, de statut tester ni d historique de lecture.
 create or replace function sinjira_owner_internal.ensure_sinjira_owner_character()
 returns jsonb
 language plpgsql
@@ -202,15 +202,6 @@ begin
       parallel_world_only=false,
       status='active';
 
-  insert into public.reader_library(user_id,novel_id,last_opened_at)
-  select v_user,n.id,now()
-  from public.novels n
-  on conflict(user_id,novel_id) do update
-  set last_opened_at=greatest(
-    public.reader_library.last_opened_at,
-    excluded.last_opened_at
-  );
-
   select exists(
     select 1 from public.character_social_profiles
     where user_id=v_user and character_id=v_character and status='assigned'
@@ -265,7 +256,7 @@ where a.user_id=pa.user_id
   and pa.source='migration';
 
 comment on function sinjira_owner_internal.ensure_sinjira_owner_character() is
-  'V25: repair personnage owner sans identité courriel, entitlement commercial synthétique ni project_access tester artificiel.';
+  'V25: repair personnage owner sans identité courriel, droit commercial synthétique, project_access tester artificiel ni écriture reader_library.';
 
 comment on policy sinjira_novels_owner_read on public.sinjira_novels is
   'V25: le propriétaire SINJIRA voit tout le catalogue roman, y compris les brouillons, sans créer de droit acheté.';
