@@ -191,7 +191,7 @@ def validate(contents:dict[str,str])->None:
         "unentitlementdonneaccèsintégralauromanprivéconfiguré",
         "lecataloguenavigateurnerévèleaucunchemindestockageprivé",
         "insertintopublic.internal_admin_users(user_id,role)",
-        "'kingtyrano@gmail.com'",
+        "'creator-test@example.test'",
         "'owner'",
         "lecréateurvoitlebrouillonetsonintégraleprivéeconfigurée",
         "uncomptenonvérifiénereçoitaucuncatalogueromanprivé",
