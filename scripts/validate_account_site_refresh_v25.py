@@ -167,6 +167,8 @@ def validate(contents: dict[str, str]) -> None:
         fail("migration compte: le repair owner fabrique encore un entitlement")
     if "insertintopublic.project_access" in owner_repair:
         fail("migration compte: le repair owner fabrique encore un project_access")
+    if "insertintopublic.reader_library" in owner_repair:
+        fail("migration compte: le repair owner fabrique encore un historique de lecture")
 
     for marker in (
         "createorreplacefunctionpublic.sync_social_profile_from_profile()",
@@ -835,6 +837,7 @@ def validate(contents: dict[str, str]) -> None:
         "lerepairpersonnagecréateurfonctionneavecuneidentitéownersynthétique",
         "lerepaircréateurnerecréeaucunentitlementcommercialsynthétique",
         "lerepaircréateurnerecréeaucunfauxaccèstester",
+        "lerepaircréateurnefabriqueaucunhistoriquedelecture",
         "unmembrevoitencoreunproduitinactifliéàsonentitlement",
         "unmembrevoitencoreunproduitinactifprésentdanssapropcommande".replace("propcommande", "proprecommande"),
         "unentitlementréelconserveledroitproduitmêmesileproduitdevientinactif",
