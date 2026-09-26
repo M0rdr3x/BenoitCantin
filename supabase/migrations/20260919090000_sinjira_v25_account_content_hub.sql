@@ -79,7 +79,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = pg_catalog, public, auth
-as $
+as $owner_repair$
 declare
   v_user uuid;
   v_submission uuid;
@@ -233,7 +233,7 @@ begin
     'all_content',true
   );
 end;
-$;
+$owner_repair$;
 
 
 revoke all on function sinjira_owner_internal.ensure_sinjira_owner_character()
