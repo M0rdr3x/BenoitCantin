@@ -13,7 +13,13 @@ REQUIRED = {
     'POST uniquement': "req.method !== 'POST'",
     'administrateur authentifié': 'requiredAdmin(req)',
     'lecture JSON bornée': 'readLimitedJson(req)',
-    'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'MIME JSON exact': "contentType !== 'application/json'",
+    'Content-Length numérique strict': "!/^\\d+$/.test(normalizedLength)",
+    'Content-Length entier sûr': '!Number.isSafeInteger(declared)',
+    'lecture par flux': 'req.body.getReader()',
+    'annulation au dépassement': "reader.cancel('REQUEST_TOO_LARGE')",
+    'borne pendant le flux': 'if (total > MAX_REQUEST_BYTES)',
+    'UTF-8 strict': "new TextDecoder('utf-8', { fatal: true })",
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'désactivation cache historique': "'Pragma': 'no-cache'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
@@ -47,6 +53,7 @@ REQUIRED_PATTERNS = {
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
     'lecture JSON directe non bornée espacée': 'await req.json (',
+    'lecture texte intégrale non bornée': 'await req.text()',
     'jeton dans la query string': '?token=',
     'lecture du Registre reader_characters': 'reader_characters',
     'lecture du Registre registry_account_links': 'registry_account_links',
@@ -82,6 +89,16 @@ def validate(path: Path) -> list[str]:
     elif admin_pos > parsed_pos:
         errors.append('Le corps ne doit pas être lu avant la validation administrateur/JWT.')
 
+    content_type_pos = source.find("contentType !== 'application/json'")
+    reader_pos = source.find('req.body.getReader()')
+    bound_pos = source.find('if (total > MAX_REQUEST_BYTES)', reader_pos)
+    decode_pos = source.find("new TextDecoder('utf-8', { fatal: true })", bound_pos)
+    parse_pos = source.find('JSON.parse(', decode_pos)
+    if content_type_pos < 0 or reader_pos < 0 or content_type_pos > reader_pos:
+        errors.append('Le Content-Type JSON exact doit être vérifié avant la lecture du flux.')
+    if reader_pos < 0 or bound_pos < reader_pos or decode_pos < bound_pos or parse_pos < decode_pos:
+        errors.append('Le corps doit être borné pendant le flux avant décodage UTF-8 strict puis parsing JSON.')
+
     if source.count('privateJson(') < 10:
         errors.append('Les réponses sensibles doivent rester uniformément privées et non cachables.')
 
@@ -106,10 +123,30 @@ const SAFE_ERROR_CODES = new Set([
 ]);
 function privateJson(data, status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS})}
 async function readLimitedJson(req){
+ const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+ if(contentType !== 'application/json') return {response:privateJson({},415)};
  const rawLength=req.headers.get('content-length');
- const raw=await req.text();
- new TextEncoder().encode(raw).byteLength;
- return {body:{}};
+ if(rawLength!==null){
+  const normalizedLength=rawLength.trim();
+  if(!/^\\d+$/.test(normalizedLength)) return {response:privateJson({},413)};
+  const declared=Number(normalizedLength);
+  if(!Number.isSafeInteger(declared)||declared>MAX_REQUEST_BYTES)return {response:privateJson({},413)};
+ }
+ if(!req.body)return {body:{}};
+ const reader=req.body.getReader();
+ const chunks=[]; let total=0;
+ while(true){
+  const {done,value}=await reader.read();
+  if(done)break;
+  if(!value)continue;
+  total+=value.byteLength;
+  if (total > MAX_REQUEST_BYTES) {await reader.cancel('REQUEST_TOO_LARGE');return {response:privateJson({},413)}}
+  chunks.push(value);
+ }
+ const bytes=new Uint8Array(total);
+ let offset=0; for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
+ const text=new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+ return {body:JSON.parse(text||'{}')};
 }
 function classifyExportError(error) {
  const candidate = typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string' ? error.message : '';
@@ -155,70 +192,51 @@ privateJson({});
         if clean:
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
 
-        path.write_text(safe.replace('const parsed = await readLimitedJson(req);', 'const parsed = {body: await req.json()};'), encoding='utf-8')
-        direct = validate(path)
-        if not any('lecture JSON directe' in item for item in direct):
-            raise AssertionError('La lecture JSON directe doit être bloquée.')
-
-        path.write_text(safe.replace("'Cache-Control': 'private, no-store, max-age=0',", ''), encoding='utf-8')
-        cache = validate(path)
-        if not any('réponse privée' in item for item in cache):
-            raise AssertionError('La suppression de no-store doit être bloquée.')
-
-        path.write_text(safe.replace('MAX_REQUEST_BYTES = 4096;', 'MAX_REQUEST_BYTES = 40960;'), encoding='utf-8')
-        body_size = validate(path)
-        if not any('4096 octets' in item for item in body_size):
-            raise AssertionError('Une limite de corps affaiblie doit être bloquée.')
-
-        path.write_text(safe.replace('assertLifeStoryBoundary(record);', '// boundary removed'), encoding='utf-8')
-        boundary = validate(path)
-        if not any('frontière Histoire de vie' in item for item in boundary):
-            raise AssertionError('La suppression de la frontière Histoire de vie doit être bloquée.')
-
-        path.write_text(safe.replace('`${DELIVERY_PAGE}#${raw}`', '`${DELIVERY_PAGE}?token=${raw}`'), encoding='utf-8')
-        query_token = validate(path)
-        if not any('query string' in item for item in query_token):
-            raise AssertionError('Un jeton de remise dans la query string doit être bloqué.')
-
-        path.write_text(safe.replace(
-            'const { service } = await requiredAdmin(req);\n  const parsed = await readLimitedJson(req);',
-            'const parsed = await readLimitedJson(req);\n  const { service } = await requiredAdmin(req);',
-        ), encoding='utf-8')
-        auth_order = validate(path)
-        if not any('avant la validation administrateur' in item for item in auth_order):
-            raise AssertionError('La lecture du corps avant l’admin/JWT doit être bloquée.')
-
-        path.write_text(safe.replace(
-            "const code = SAFE_ERROR_CODES.has(candidate) ? candidate : 'LIFE_STORY_EXPORT_FAILED';",
-            "const code = candidate || 'LIFE_STORY_EXPORT_FAILED';",
-        ), encoding='utf-8')
-        allowlist = validate(path)
-        if not any('fallback imposé après allowlist' in item for item in allowlist):
-            raise AssertionError('Le contournement de l’allowlist des erreurs doit être bloqué.')
-
-        path.write_text(safe.replace(
-            'const { code, status } = classifyExportError(error);',
-            "const code = String(error?.message || 'EXPORT_ERROR'); const status = 400;",
-        ), encoding='utf-8')
-        raw_message = validate(path)
-        if not any('message backend brut' in item for item in raw_message):
-            raise AssertionError('Une erreur backend brute convertie en code doit être bloquée.')
-
-        path.write_text(safe.replace(
-            "console.error('[life-story-export]', { code });",
-            "console.error('[life-story-export]', error);",
-        ), encoding='utf-8')
-        raw_log = validate(path)
-        if not any('objet erreur brut journalisé' in item for item in raw_log):
-            raise AssertionError('La journalisation brute d’une erreur backend doit être bloquée.')
-
-        path.write_text(safe.replace(
-            "code === 'LIFE_STORY_EXPORT_FAILED' ? 500",
-            "code === 'LIFE_STORY_EXPORT_FAILED' ? 400",
-        ), encoding='utf-8')
-        fallback_status = validate(path)
-        if not any('HTTP 500' in item for item in fallback_status):
-            raise AssertionError('Une erreur backend inconnue ne doit pas être reclassée en erreur client 400.')
+        mutations = {
+            'JSON direct': safe.replace('const parsed = await readLimitedJson(req);', 'const parsed = {body: await req.json()};', 1),
+            'texte intégral': safe.replace('const reader=req.body.getReader();', 'const unsafe=await req.text();\n const reader=req.body.getReader();', 1),
+            'MIME préfixe': safe.replace("contentType !== 'application/json'", "!contentType.startsWith('application/json')", 1),
+            'Content-Length permissif': safe.replace("if(!/^\\d+$/.test(normalizedLength)) return {response:privateJson({},413)};\n", '', 1),
+            'entier sûr retiré': safe.replace('!Number.isSafeInteger(declared)||', '', 1),
+            'annulation retirée': safe.replace("await reader.cancel('REQUEST_TOO_LARGE');", '', 1),
+            'borne streaming retirée': safe.replace('if (total > MAX_REQUEST_BYTES)', 'if (false)', 1),
+            'UTF-8 permissif': safe.replace("new TextDecoder('utf-8', { fatal: true })", "new TextDecoder('utf-8')", 1),
+            'no-store retiré': safe.replace("'Cache-Control': 'private, no-store, max-age=0',", '', 1),
+            'limite HTTP augmentée': safe.replace('MAX_REQUEST_BYTES = 4096;', 'MAX_REQUEST_BYTES = 40960;', 1),
+            'frontière retirée': safe.replace('assertLifeStoryBoundary(record);', '// boundary removed', 1),
+            'jeton en query': safe.replace('`${DELIVERY_PAGE}#${raw}`', '`${DELIVERY_PAGE}?token=${raw}`', 1),
+            'auth après corps': safe.replace(
+                'const { service } = await requiredAdmin(req);\n  const parsed = await readLimitedJson(req);',
+                'const parsed = await readLimitedJson(req);\n  const { service } = await requiredAdmin(req);',
+                1,
+            ),
+            'allowlist contournée': safe.replace(
+                "const code = SAFE_ERROR_CODES.has(candidate) ? candidate : 'LIFE_STORY_EXPORT_FAILED';",
+                "const code = candidate || 'LIFE_STORY_EXPORT_FAILED';",
+                1,
+            ),
+            'message brut en code': safe.replace(
+                'const { code, status } = classifyExportError(error);',
+                "const code = String(error?.message || 'EXPORT_ERROR'); const status = 400;",
+                1,
+            ),
+            'log brut': safe.replace(
+                "console.error('[life-story-export]', { code });",
+                "console.error('[life-story-export]', error);",
+                1,
+            ),
+            'fallback 400': safe.replace(
+                "code === 'LIFE_STORY_EXPORT_FAILED' ? 500",
+                "code === 'LIFE_STORY_EXPORT_FAILED' ? 400",
+                1,
+            ),
+        }
+        for label, mutated in mutations.items():
+            if mutated == safe:
+                raise AssertionError(f'Mutation sans effet: {label}')
+            path.write_text(mutated, encoding='utf-8')
+            if not validate(path):
+                raise AssertionError(f'Affaiblissement non détecté: {label}')
 
 
 def main() -> int:
@@ -227,7 +245,7 @@ def main() -> int:
     args = parser.parse_args()
     if args.self_test:
         self_test()
-        print('OK auto-test life-story-export.')
+        print('OK auto-test life-story-export streaming.')
         return 0
 
     errors = validate(EDGE)
@@ -236,7 +254,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK life-story-export: admin/JWT avant corps, JSON 4 KiB, réponses no-store, frontière Histoire de vie et erreurs backend sanitizées.')
+    print('OK life-story-export: admin/JWT avant corps, JSON 4 KiB borné en streaming, UTF-8 strict, réponses no-store, frontière Histoire de vie et erreurs backend sanitizées.')
     return 0
 
 

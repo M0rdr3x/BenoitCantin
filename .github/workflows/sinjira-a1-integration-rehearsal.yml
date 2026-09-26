@@ -1,0 +1,178 @@
+name: SINJIRA A1 — Garde de convergence intégration
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'scripts/validate_a1_integration_rehearsal.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_security_context_request_security.py'
+      - 'scripts/validate_security_context_response_v25.py'
+      - 'scripts/validate_security_travel_*.py'
+      - 'scripts/validate_sinjira_livre_i_delivery.py'
+      - 'scripts/validate_get_private_book_url_security.py'
+      - 'scripts/validate_livre_i_*.py'
+      - 'scripts/validate_delete_account_v24_5_51.py'
+      - 'scripts/validate_life_story_*.py'
+      - 'scripts/validate_live_social_*.py'
+      - 'scripts/test_live_social_activation_gate_v25.py'
+      - 'supabase/functions/**'
+      - 'supabase/migrations/20260908*_sinjira_v25_live_social_*.sql'
+      - 'supabase/tests/live_social_*.test.sql'
+      - 'supabase/migrations/20260913030500_sinjira_v25_travel_mode_geo_scope_hardening.sql'
+      - 'supabase/migrations/20260913230000_sinjira_v25_travel_mode_retention_purge.sql'
+      - 'supabase/migrations/20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql'
+      - 'supabase/production-reviewed-migration-batch.txt'
+      - 'supabase/production-migration-ledger.txt'
+      - 'assets/js/sinjira-private-book-reader.js'
+      - 'assets/js/sinjira-live-*.js'
+      - 'assets/css/v25-live-*.css'
+      - 'projets/sinjira/codex/livre-i-delivery-contract.json'
+      - 'projets/sinjira/romans/**'
+      - 'compte/securite.html'
+      - 'compte/communaute.html'
+      - '.github/workflows/sinjira-public-edge-auth-guard.yml'
+      - '.github/workflows/sinjira-security-context-response-v25.yml'
+      - '.github/workflows/sinjira-security-risk-v25.yml'
+      - '.github/workflows/sinjira-livre-i-private-delivery.yml'
+      - '.github/workflows/sinjira-account-life-story-a1.yml'
+      - '.github/workflows/sinjira-live-social-*.yml'
+      - '.github/workflows/sinjira-a1-integration-rehearsal.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'scripts/validate_a1_integration_rehearsal.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_security_context_request_security.py'
+      - 'scripts/validate_security_context_response_v25.py'
+      - 'scripts/validate_security_travel_*.py'
+      - 'scripts/validate_sinjira_livre_i_delivery.py'
+      - 'scripts/validate_get_private_book_url_security.py'
+      - 'scripts/validate_livre_i_*.py'
+      - 'scripts/validate_delete_account_v24_5_51.py'
+      - 'scripts/validate_life_story_*.py'
+      - 'scripts/validate_live_social_*.py'
+      - 'scripts/test_live_social_activation_gate_v25.py'
+      - 'supabase/functions/**'
+      - 'supabase/migrations/20260908*_sinjira_v25_live_social_*.sql'
+      - 'supabase/tests/live_social_*.test.sql'
+      - 'supabase/migrations/20260913030500_sinjira_v25_travel_mode_geo_scope_hardening.sql'
+      - 'supabase/migrations/20260913230000_sinjira_v25_travel_mode_retention_purge.sql'
+      - 'supabase/migrations/20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql'
+      - 'supabase/production-reviewed-migration-batch.txt'
+      - 'supabase/production-migration-ledger.txt'
+      - 'assets/js/sinjira-private-book-reader.js'
+      - 'assets/js/sinjira-live-*.js'
+      - 'assets/css/v25-live-*.css'
+      - 'projets/sinjira/codex/livre-i-delivery-contract.json'
+      - 'projets/sinjira/romans/**'
+      - 'compte/securite.html'
+      - 'compte/communaute.html'
+      - '.github/workflows/sinjira-public-edge-auth-guard.yml'
+      - '.github/workflows/sinjira-security-context-response-v25.yml'
+      - '.github/workflows/sinjira-security-risk-v25.yml'
+      - '.github/workflows/sinjira-livre-i-private-delivery.yml'
+      - '.github/workflows/sinjira-account-life-story-a1.yml'
+      - '.github/workflows/sinjira-live-social-*.yml'
+      - '.github/workflows/sinjira-a1-integration-rehearsal.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-a1-integration-rehearsal-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rehearsal-contract:
+    name: Vérifier la convergence A1 sans promotion production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Compiler les garde-fous A1
+        run: |
+          python3 -m py_compile scripts/validate_a1_integration_rehearsal.py
+          python3 -m py_compile scripts/validate_edge_function_inventory.py
+          python3 -m py_compile scripts/validate_security_context_request_security.py
+          python3 -m py_compile scripts/validate_security_context_response_v25.py
+          python3 -m py_compile scripts/validate_security_travel_scope_v25.py
+          python3 -m py_compile scripts/validate_sinjira_livre_i_delivery.py
+          python3 -m py_compile scripts/validate_get_private_book_url_security.py
+          python3 -m py_compile scripts/validate_livre_i_entitlement_boundary.py
+          python3 -m py_compile scripts/validate_livre_i_entitlement_ui.py
+          python3 -m py_compile scripts/validate_livre_i_source_artifacts.py
+          python3 -m py_compile scripts/validate_delete_account_v24_5_51.py
+          python3 -m py_compile scripts/validate_life_story_export_request_security.py
+          python3 -m py_compile scripts/validate_life_story_legacy_v24_5_2.py
+          python3 -m py_compile scripts/validate_life_story_delivery_v24_5_50.py
+          python3 -m py_compile scripts/validate_live_social_foundation_workflow_security.py
+          python3 -m py_compile scripts/validate_live_social_foundation_v25.py
+          python3 -m py_compile scripts/validate_live_social_safety_workflow_security.py
+          python3 -m py_compile scripts/validate_live_social_safety_v25.py
+          python3 -m py_compile scripts/validate_live_social_share_codes_v25.py
+          python3 -m py_compile scripts/validate_live_social_commands_workflow_security.py
+          python3 -m py_compile scripts/validate_live_social_typed_commands_v25.py
+          python3 -m py_compile scripts/validate_live_social_activation_gate_workflow_security.py
+          python3 -m py_compile scripts/test_live_social_activation_gate_v25.py
+          python3 -m py_compile scripts/validate_live_social_activation_gate_v25.py
+
+      - name: Auto-tester le garde de répétition A1
+        run: python3 scripts/validate_a1_integration_rehearsal.py --self-test
+
+      - name: Vérifier séparation répétition / production
+        run: python3 scripts/validate_a1_integration_rehearsal.py
+
+      - name: Vérifier inventaire Edge convergé
+        run: python3 scripts/validate_edge_function_inventory.py
+
+      - name: Vérifier Security Context
+        run: |
+          python3 scripts/validate_security_context_request_security.py
+          python3 scripts/validate_security_context_response_v25.py
+
+      - name: Vérifier Mode Voyage geo-only et non déployé
+        run: python3 scripts/validate_security_travel_scope_v25.py
+
+      - name: Vérifier En direct dark-launch sans promotion production
+        run: |
+          python3 scripts/validate_live_social_foundation_workflow_security.py --self-test
+          python3 scripts/validate_live_social_foundation_workflow_security.py
+          python3 scripts/validate_live_social_foundation_v25.py
+          python3 scripts/validate_live_social_safety_workflow_security.py --self-test
+          python3 scripts/validate_live_social_safety_workflow_security.py
+          python3 scripts/validate_live_social_safety_v25.py
+          python3 scripts/validate_live_social_share_codes_v25.py
+          python3 scripts/validate_live_social_commands_workflow_security.py --self-test
+          python3 scripts/validate_live_social_commands_workflow_security.py
+          python3 scripts/validate_live_social_typed_commands_v25.py
+          python3 scripts/validate_live_social_activation_gate_workflow_security.py --self-test
+          python3 scripts/validate_live_social_activation_gate_workflow_security.py
+          python3 scripts/test_live_social_activation_gate_v25.py
+          python3 scripts/validate_live_social_activation_gate_v25.py
+
+      - name: Vérifier Livre I privé et droits serveur
+        run: |
+          python3 scripts/validate_sinjira_livre_i_delivery.py
+          python3 scripts/validate_get_private_book_url_security.py
+          python3 scripts/validate_livre_i_entitlement_boundary.py
+          python3 scripts/validate_livre_i_entitlement_ui.py
+          python3 scripts/validate_livre_i_source_artifacts.py
+
+      - name: Vérifier Compte et Histoire de vie
+        run: |
+          python3 scripts/validate_delete_account_v24_5_51.py
+          python3 scripts/validate_life_story_export_request_security.py
+          python3 scripts/validate_life_story_legacy_v24_5_2.py
+          python3 scripts/validate_life_story_delivery_v24_5_50.py

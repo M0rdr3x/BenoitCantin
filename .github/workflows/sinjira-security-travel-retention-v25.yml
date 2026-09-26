@@ -1,0 +1,68 @@
+name: SINJIRA V25 — Rétention Mode Voyage
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20260913230000_sinjira_v25_travel_mode_retention_purge.sql'
+      - 'supabase/tests/security_travel_retention_v25.test.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/config.toml'
+      - 'scripts/validate_security_travel_retention_v25.py'
+      - '.github/workflows/sinjira-security-travel-retention-v25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20260913230000_sinjira_v25_travel_mode_retention_purge.sql'
+      - 'supabase/tests/security_travel_retention_v25.test.sql'
+      - 'supabase/production-migration-ledger.txt'
+      - 'supabase/config.toml'
+      - 'scripts/validate_security_travel_retention_v25.py'
+      - '.github/workflows/sinjira-security-travel-retention-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  travel-retention-pgtap:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat de rétention Mode Voyage
+        run: python scripts/validate_security_travel_retention_v25.py --self-test
+
+      - name: Vérifier le contrat de rétention Mode Voyage
+        run: python scripts/validate_security_travel_retention_v25.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+
+      - name: Démarrer PostgreSQL Supabase local et appliquer les migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db start
+
+      - name: Exécuter les 11 assertions pgTAP de rétention Mode Voyage
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase test db supabase/tests/security_travel_retention_v25.test.sql --local
+
+      - name: Arrêter la base locale
+        if: always()
+        shell: bash
+        run: supabase stop --no-backup || true

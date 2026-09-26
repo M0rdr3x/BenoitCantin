@@ -86,3 +86,7 @@ Ces valeurs doivent dépendre du service, du risque, des normes techniques appli
 La maîtrise technologique sert la continuité et la responsabilité envers le public; elle ne crée pas une nouvelle autorité administrative. Les protections V316 sur la vie privée et V317 sur la sécurité restent inchangées. La portabilité et l’interopérabilité ne justifient ni une superbase, ni un profil citoyen transversal, ni une surveillance générale.
 
 V318 ne produit aucun effet juridique automatique, ne ferme aucune des 14 décisions politiques héritées, ne valide aucune des 26 sections anglaises et ne modifie aucun paramètre fiscal V308.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

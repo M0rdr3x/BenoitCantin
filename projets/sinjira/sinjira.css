@@ -85,3 +85,42 @@
   border-radius:18px;
   background:#05070c;
 }
+
+
+/* V25 — catalogue Littérature professionnel et piloté par les droits du compte */
+.literature-catalog-grid{display:grid;gap:18px}
+.literature-catalog-card{
+  display:grid;
+  grid-template-columns:170px minmax(0,1fr);
+  gap:22px;
+  align-items:center;
+  padding:18px;
+  border:1px solid rgba(184,201,255,.16);
+  border-radius:22px;
+  background:rgba(10,14,28,.82);
+  box-shadow:0 22px 58px rgba(0,0,0,.24);
+}
+.literature-catalog-card>img{
+  width:100%;
+  aspect-ratio:2/3;
+  object-fit:cover;
+  border-radius:16px;
+  background:#070912;
+}
+.literature-catalog-card h3{margin:.45rem 0 .55rem}
+.literature-catalog-card .library-project-meta{display:flex;flex-wrap:wrap;gap:8px}
+.literature-catalog-card .role-chip{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 10px;
+  border:1px solid rgba(145,248,238,.24);
+  border-radius:999px;
+  color:#91f8ee;
+  background:rgba(70,150,143,.10);
+  font-size:.78rem;
+  font-weight:850;
+}
+@media(max-width:700px){
+  .literature-catalog-card{grid-template-columns:1fr}
+  .literature-catalog-card>img{max-width:230px}
+}

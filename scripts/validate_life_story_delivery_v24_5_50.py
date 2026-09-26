@@ -87,7 +87,15 @@ def main() -> int:
         'requestUrl.search',
         'MAX_REQUEST_BYTES=256',
         'MAX_PDF_BYTES=15*1024*1024',
-        "type.startsWith('application/json')",
+        "const type = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();",
+        "type !== 'application/json'",
+        "req.headers.get('content-length')",
+        '/^\\d+$/.test(normalizedLength)',
+        'Number.isSafeInteger(declaredLength)',
+        'req.body?.getReader()',
+        'reader.cancel()',
+        "new TextDecoder('utf-8', { fatal: true })",
+        'RequestBodyTooLargeError',
         'Object.keys(body).length!==1',
         '/^[a-f0-9]{64}$/',
         'sha256Hex(token)',
@@ -96,7 +104,11 @@ def main() -> int:
         'expires_at',
         'max_downloads',
         'download_count',
+        'parseNonNegativeInteger(link.max_downloads)',
+        'parseNonNegativeInteger(link.download_count)',
+        'Number.isFinite(expiresAt)',
         "record.storage_bucket!=='sinjira-life-story-exports'",
+        "typeof record.storage_path !== 'string'",
         'hasPdfSignature(bytes)',
         "String.fromCharCode(...head)==='%PDF-'",
         "service.rpc('service_life_story_register_download'",
@@ -110,6 +122,14 @@ def main() -> int:
     for marker in delivery_markers:
         if compact(marker) not in delivery_flat:
             errors.append(f'Edge delivery incomplète: {marker}')
+    if "startswith('application/json')" in delivery.lower():
+        errors.append("Le type JSON ne doit pas être validé avec startsWith: le media type doit être exact.")
+    if 'await req.text()' in delivery or '.json()' in delivery:
+        errors.append('La remise ne doit pas matérialiser un corps non borné via req.text()/req.json().')
+    content_type_pos = delivery.find("if (type !== 'application/json')")
+    body_pos = delivery.find('rawBody = await readBoundedBody(req)')
+    if content_type_pos < 0 or body_pos < 0 or content_type_pos > body_pos:
+        errors.append('Le media type JSON exact doit être validé avant toute lecture du corps.')
     if "searchparams.get('token')" in delivery.lower() or 'searchparams.get("token")' in delivery.lower():
         errors.append('Le backend ne doit jamais lire le jeton depuis la query string.')
     validate_pos = delivery.find('hasPdfSignature(bytes)')
@@ -169,7 +189,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK V24.5.50: jeton 256 bits en fragment, retrait avant réseau, POST JSON borné, PDF validé avant comptage, réponses no-store, aucune migration V24.5.50 ni service payant.')
+    print('OK V24.5.50: jeton 256 bits en fragment, POST JSON strict et borné en streaming, métadonnées de remise fail-closed, PDF validé avant comptage, réponses no-store, aucune migration V24.5.50 ni service payant.')
     return 0
 
 

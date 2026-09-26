@@ -27,7 +27,9 @@ def main() -> int:
         "req.method!=='POST'",
         'MAX_REQUEST_BYTES=2048',
         'readBoundedJson',
-        'TextEncoder',
+        'req.body.getReader()',
+        'reader.cancel',
+        "new TextDecoder('utf-8',{fatal:true})",
         'JSON_REQUIRED',
         'REQUEST_TOO_LARGE',
         'INVALID_JSON',
@@ -49,6 +51,8 @@ def main() -> int:
 
     if 'await req.json()' in source:
         errors.append('Lecture JSON directe non bornée interdite.')
+    if 'await req.text()' in source:
+        errors.append('Lecture texte intégrale avant contrôle de taille interdite; utiliser le flux Request.body.')
     if 'contribution_id' in source:
         errors.append('UUID interne contribution_id interdit dans la réponse/client.')
     if ".select('*')" in source:
@@ -81,7 +85,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK V24.5.53: contribution JWT, JSON 2 KiB, session UUID/ownership, SQL minimisé, UUID interne non exposé, réponses no-store, aucune migration ni service payant.')
+    print('OK V24.5.53: contribution JWT, JSON 2 KiB borné pendant la lecture, session UUID/ownership, SQL minimisé, UUID interne non exposé, réponses no-store, aucune migration ni service payant.')
     return 0
 
 

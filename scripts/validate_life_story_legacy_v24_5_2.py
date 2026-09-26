@@ -160,8 +160,31 @@ def main() -> int:
         'create_delivery_links', 'crypto.getRandomValues(new Uint8Array(32))',
         'token_hash', 'max_downloads: 3',
         "transport: 'manual_or_future_sender'",
+        'const MAX_REQUEST_BYTES = 4096;',
+        "req.headers.get('content-type')", ".split(';', 1)[0]",
+        "contentType !== 'application/json'", "'UNSUPPORTED_MEDIA_TYPE'", '415',
+        "const rawLength = req.headers.get('content-length');",
+        "!/^\\d+$/.test(normalizedLength)",
+        'Number.isSafeInteger(declared)',
+        'req.body.getReader()',
+        "reader.cancel('REQUEST_TOO_LARGE')",
+        'if (total > MAX_REQUEST_BYTES)',
+        "new TextDecoder('utf-8', { fatal: true })",
     ], 'Edge export')
-    forbid(errors, export, REGISTRY_MARKERS, 'Edge export')
+    content_type_gate = export.find("contentType !== 'application/json'")
+    reader_pos = export.find('req.body.getReader()')
+    if content_type_gate < 0 or reader_pos < 0 or content_type_gate > reader_pos:
+        errors.append('Edge export: le Content-Type JSON doit être vérifié avant toute lecture du flux.')
+    auth_pos = export.find('const { service } = await requiredAdmin(req);')
+    body_call = export.find('const parsed = await readLimitedJson(req);')
+    if auth_pos < 0 or body_call < 0 or auth_pos > body_call:
+        errors.append('Edge export: requiredAdmin/AAL2 doit précéder toute lecture applicative du corps.')
+    bound_pos = export.find('if (total > MAX_REQUEST_BYTES)', reader_pos)
+    decode_pos = export.find("new TextDecoder('utf-8', { fatal: true })", bound_pos)
+    parse_pos = export.find('JSON.parse(', decode_pos)
+    if reader_pos < 0 or bound_pos < reader_pos or decode_pos < bound_pos or parse_pos < decode_pos:
+        errors.append('Edge export: le flux doit être borné avant décodage UTF-8 strict et parsing JSON.')
+    forbid(errors, export, ('await req.text()', 'await req.json()') + REGISTRY_MARKERS, 'Edge export')
     if ".from('life_story_entries')" in export or '.from("life_story_entries")' in export:
         errors.append('Edge export: le générateur doit lire uniquement l’instantané serveur, pas les souvenirs sources.')
 
@@ -242,7 +265,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK Histoire de vie / héritage V24.5.2: consentement explicite, deux validations humaines, délai de 30 jours, contestation, frontière Registre, PDF privé, jetons hashés et services externes payants désactivés vérifiés.')
+    print('OK Histoire de vie / héritage V24.5.2: consentement explicite, deux validations humaines, délai de 30 jours, contestation, frontière Registre, PDF privé, requête export bornée en streaming, jetons hashés et services externes payants désactivés vérifiés.')
     return 0
 
 

@@ -14,10 +14,16 @@ PYTHON_VERSION = '3.12.14'
 NODE_VERSION = '22.23.2'
 REQUEST_TRIGGER = "      - 'scripts/validate_admin_social_request_security.py'\n"
 WORKFLOW_TRIGGER = "      - 'scripts/validate_moderation_workflow_security.py'\n"
+MODERATION = 'python scripts/validate_moderation_appeals_v24_4_90.py'
+JS_ADMIN = 'node --check assets/js/sinjira-admin-social-v20.js'
+JS_APPEALS = 'node --check assets/js/sinjira-moderation-appeals-v24-4-90.js'
+LEDGER = 'python scripts/validate_production_migration_ledger.py'
+MANIFEST = 'python scripts/validate_production_schema_manifest.py'
 
 
 def validate_text(text: str) -> list[str]:
     errors: list[str] = []
+
     def need(ok: bool, message: str) -> None:
         if not ok:
             errors.append(message)
@@ -35,6 +41,7 @@ def validate_text(text: str) -> list[str]:
     need('persist-credentials: true' not in text, 'persist-credentials=true interdit')
     need(f"python-version: '{PYTHON_VERSION}'" in text, 'Python exact requis')
     need(f"node-version: '{NODE_VERSION}'" in text, 'Node exact requis')
+    need('continue-on-error: true' not in text, 'continue-on-error=true interdit')
 
     actions = re.findall(r'^\s*-?\s*uses:\s+(\S+)\s*$', text, flags=re.MULTILINE)
     need(len(actions) == 3, f'nombre inattendu d’actions réutilisables: {len(actions)}')
@@ -46,20 +53,42 @@ def validate_text(text: str) -> list[str]:
         'python scripts/validate_moderation_workflow_security.py\n',
         'python scripts/validate_admin_social_request_security.py --self-test',
         'python scripts/validate_admin_social_request_security.py\n',
-        'python scripts/validate_moderation_appeals_v24_4_90.py',
-        'python scripts/validate_production_migration_ledger.py',
-        'python scripts/validate_production_schema_manifest.py',
-        'node --check assets/js/sinjira-admin-social-v20.js',
-        'node --check assets/js/sinjira-moderation-appeals-v24-4-90.js',
+        MODERATION,
+        JS_ADMIN,
+        JS_APPEALS,
+        LEDGER,
+        MANIFEST,
     ]
     for command in required_commands:
         need(command in text, f'commande de validation absente: {command.strip()}')
+
+    need(text.count(f'        run: {LEDGER}\n') == 1, 'le ledger production doit rester une étape directe, unique et bloquante')
+    need(text.count(f'        run: {MANIFEST}\n') == 1, 'le manifeste production doit rester une étape directe, unique et bloquante')
+    need(text.count(JS_ADMIN) == 1, 'le contrôle syntaxique admin doit rester unique')
+    need(text.count(JS_APPEALS) == 1, 'le contrôle syntaxique appels doit rester unique')
+
+    positions = [text.find(command) for command in (MODERATION, JS_ADMIN, JS_APPEALS, LEDGER, MANIFEST)]
+    need(all(position >= 0 for position in positions), 'les preuves locales et contrôles production doivent tous être présents')
+    need(positions == sorted(positions), 'ordre requis: contrat modération -> syntaxe JS -> ledger -> manifeste')
+
     need(text.count(REQUEST_TRIGGER) == 2, 'le garde HTTP modération doit déclencher PR et push')
     need(text.count(WORKFLOW_TRIGGER) == 2, 'le méta-garde workflow doit déclencher PR et push')
     return errors
 
 
 def self_test(text: str) -> None:
+    js_step = (
+        '\n      - name: Vérifier la syntaxe des clients JavaScript\n'
+        '        run: |\n'
+        f'          {JS_ADMIN}\n'
+        f'          {JS_APPEALS}\n'
+    )
+    manifest_step = (
+        '\n      - name: Valider le manifeste du schéma production\n'
+        f'        run: {MANIFEST}\n'
+    )
+    js_after_production = text.replace(js_step, '', 1).replace(manifest_step, manifest_step + js_step, 1)
+
     mutations = {
         'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
         'python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
@@ -73,7 +102,9 @@ def self_test(text: str) -> None:
         'auto-test HTTP retiré': text.replace('        run: python scripts/validate_admin_social_request_security.py --self-test\n', '', 1),
         'contrôle HTTP retiré': text.replace('        run: python scripts/validate_admin_social_request_security.py\n', '', 1),
         'déclencheur HTTP retiré': text.replace(REQUEST_TRIGGER, '', 1),
-        'contrat appels retiré': text.replace('        run: python scripts/validate_moderation_appeals_v24_4_90.py\n', '', 1),
+        'contrat appels retiré': text.replace(f'        run: {MODERATION}\n', '', 1),
+        'syntaxe JS repoussée après production': js_after_production,
+        'continue-on-error ajouté': text.replace('    timeout-minutes: 10\n', '    timeout-minutes: 10\n    continue-on-error: true\n', 1),
     }
     for label, mutated in mutations.items():
         if mutated == text:
@@ -100,7 +131,10 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK workflow modération: runner et actions immuables, runtimes exacts et gardes HTTP/appels conservés.')
+    print(
+        'OK workflow modération: runner/actions/runtimes immuables, gardes HTTP/appels conservés, '
+        'syntaxe JavaScript prouvée avant ledger/manifeste production bloquants.'
+    )
     return 0
 
 

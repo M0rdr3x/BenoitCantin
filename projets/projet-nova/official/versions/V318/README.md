@@ -20,3 +20,7 @@ V318 devient l’historique append-only construit au-dessus du checkpoint V317. 
 - Nomenclature : 0 occurrence interdite
 
 V318 n’impose ni fournisseur unique, ni nuage unique, ni langage, base de données, système d’exploitation, norme API ou format universel. L’open source est favorisable lorsque pertinent, mais n’est pas universellement obligatoire. Les protections V316–V317 sur la vie privée et la cybersécurité demeurent inchangées.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

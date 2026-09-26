@@ -1,0 +1,74 @@
+name: SINJIRA V25 — Catalogue romans privés
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
+      - 'supabase/migrations/20260919093000_sinjira_v25_private_novel_catalog.sql'
+      - 'supabase/migrations/20260919103000_sinjira_v25_livre_i_catalog_seed.sql'
+      - 'supabase/migrations/20260919113000_sinjira_v25_private_novel_asset_rls.sql'
+      - 'supabase/migrations/20260922014000_sinjira_v25_creator_family_catalog_access.sql'
+      - 'supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql'
+      - 'supabase/migrations/20260922031500_sinjira_v25_catalog_age_helper_boundary.sql'
+      - 'supabase/tests/private_novel_catalog_v25.test.sql'
+      - 'supabase/functions/_shared/privateNovel.ts'
+      - 'supabase/functions/get-private-novel-url/**'
+      - 'supabase/config.toml'
+      - 'assets/js/sinjira-private-book-reader.js'
+      - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/sinjira-literature-catalog-v25.js'
+      - 'compte/bibliotheque.html'
+      - 'projets/sinjira/romans/lire-integral.html'
+      - 'projets/sinjira/romans/index.html'
+      - 'scripts/validate_private_novel_catalog_v25.py'
+      - '.github/workflows/sinjira-private-novel-catalog-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-private-novel-catalog-v25-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  private-novel-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Valider les gardes statiques du catalogue privé
+        run: |
+          python3 -m py_compile scripts/validate_private_novel_catalog_v25.py
+          python3 scripts/validate_private_novel_catalog_v25.py --self-test
+          python3 scripts/validate_private_novel_catalog_v25.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+
+      - name: Démarrer une pile Supabase locale propre
+        run: supabase start
+
+      - name: Reconstruire la base locale depuis zéro
+        run: supabase db reset
+
+      - name: Prouver les frontières romans privés
+        run: supabase test db supabase/tests/private_novel_catalog_v25.test.sql
+
+      - name: Arrêter et supprimer la pile locale
+        if: always()
+        run: |
+          if command -v supabase >/dev/null 2>&1; then supabase stop --no-backup || true; fi

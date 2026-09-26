@@ -11,6 +11,7 @@ DEPRECATED_SAFE_WORKFLOW = ROOT / '.github' / 'workflows' / 'supabase-production
 HISTORY_WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-production-migration-history-guard-v25.yml'
 VALIDATION_WORKFLOW = ROOT / '.github' / 'workflows' / 'validate-production-ledger.yml'
 RUNBOOK = ROOT / 'docs' / 'SUPABASE_PRODUCTION_RUNBOOK.md'
+ADMIN_GUARDRAILS = ROOT / 'docs' / 'SINJIRA_GITHUB_PRODUCTION_GUARDRAILS_ADMIN_CHECKLIST.md'
 ROW_RE = re.compile(r'^(\d{14})\s+([a-zA-Z0-9_]+)$')
 FILE_RE = re.compile(r'^(\d{14})_(.+)\.sql$')
 EXPECTED_COUNT = 186
@@ -251,14 +252,45 @@ def validate_runbook(errors):
         '`db push --include-all`',
         '`supabase migration repair`',
         '`supabase db reset --linked`',
-        'ne jamais activer un plan payant sans autorisation explicite',
+        '`docs/SINJIRA_GITHUB_PRODUCTION_GUARDRAILS_ADMIN_CHECKLIST.md`',
+        '**57 migrations futures locales**',
+        '**ne pas avancer le ledger à cette étape**',
     )
     for marker in required:
         if marker not in text:
             errors.append(f'Runbook Supabase production obsolète ou incomplet: {marker}')
 
+    plan_change_guard = re.search(
+        r'(?is)ne jamais.{0,80}(?:abonnement|plan payant).{0,120}(?:décision humaine explicite|autorisation explicite)',
+        text,
+    )
+    if not plan_change_guard:
+        errors.append(
+            'Runbook Supabase production obsolète ou incomplet: '
+            'interdiction explicite de changer l abonnement/plan payant sans décision humaine'
+        )
+
     if re.search(r'^\s*(SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD)\s*=\s*\S+', text, flags=re.MULTILINE):
         errors.append('Runbook Supabase production contient une affectation de secret interdite.')
+
+    if not ADMIN_GUARDRAILS.is_file():
+        errors.append('Checklist administrateur GitHub production absente.')
+    else:
+        admin_text = ADMIN_GUARDRAILS.read_text('utf-8')
+        admin_required = (
+            '#135',
+            '#439',
+            'SINJIRA — garde secrets Git / no-committed-secrets',
+            'Tests navigateur SINJIRA / Contrat sécurité CI navigateur',
+            'Validation du site SINJIRA / Contrat sécurité validation site',
+            'Supabase production — PRÉVOL',
+            'validate_production_migration_ledger.py',
+            'Environment `production`',
+            'Aucune étape de cette checklist ne doit être interprétée comme une autorisation implicite de production.',
+        )
+        for marker in admin_required:
+            if marker not in admin_text:
+                errors.append(f'Checklist administrateur GitHub production incomplète: {marker}')
 
     if not VALIDATION_WORKFLOW.is_file():
         errors.append('Workflow de validation du ledger absent.')
@@ -266,6 +298,7 @@ def validate_runbook(errors):
     validation_text = VALIDATION_WORKFLOW.read_text('utf-8')
     watched_paths = (
         "- 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'",
+        "- 'docs/SINJIRA_GITHUB_PRODUCTION_GUARDRAILS_ADMIN_CHECKLIST.md'",
         "- '.github/workflows/supabase-production-preflight.yml'",
         "- '.github/workflows/supabase-production-safe.yml'",
         "- '.github/workflows/sinjira-production-migration-history-guard-v25.yml'",

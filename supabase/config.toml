@@ -1,5 +1,11 @@
 project_id = "gpvivleexywljowcqkru"
 
+[api]
+# Frontière Data API explicite : les schémas d'implémentation privilégiée
+# sinjira_v25_internal / sinjira_catalog_internal ne doivent jamais être exposés.
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+
 [edge_runtime]
 # Les notifications de sécurité utilisent EdgeRuntime.waitUntil().
 # per_worker empêche le runtime local de terminer la fonction dès la réponse HTTP.
@@ -26,9 +32,18 @@ verify_jwt = false
 [functions.get-document-url]
 verify_jwt = false
 
-# Livre I : fonction strictement privée, réservée aux comptes authentifiés.
-# L'Edge Function applique en plus un entitlement produit et un drapeau serveur explicite.
+# Livre I : fonctions strictement privées, réservées aux comptes authentifiés.
+# L'Edge Function vérifie d'abord l'âge, puis owner/famille V25 ou le droit produit
+# canonique (entitlement actif ou commande paid), sans faux droit ni accès 11–12.
 [functions.get-private-book-url]
+verify_jwt = true
+
+[functions.get-private-book-reading-url]
+verify_jwt = true
+
+# Catalogue privé multi-romans : JWT obligatoire; l'Edge revalide ensuite
+# l'âge, l'entitlement ou le rôle créateur et ne renvoie qu'une URL signée courte.
+[functions.get-private-novel-url]
 verify_jwt = true
 
 [functions.submit-game-contribution]

@@ -7,3 +7,7 @@ V319 ajoute la souveraineté opérationnelle des données publiques, la portabil
 La publication GitHub est une publication technique seulement. Elle ne crée aucun effet juridique automatique, n'autorise pas la mise en production et ne ferme aucune des 14 décisions politiques encore ouvertes.
 
 Les 26 sections anglaises demeurent NOT_VALIDATED / HUMAN_REVIEW_PENDING. Les protections V316, V317 et V318, la Primauté citoyenne V312 et les paramètres fiscaux V308 restent inchangés.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

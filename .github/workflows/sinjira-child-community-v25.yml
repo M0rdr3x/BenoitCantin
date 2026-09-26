@@ -1,0 +1,178 @@
+name: SINJIRA V25 — Communauté Junior 11-12
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'supabase/migrations/20260917223000_sinjira_v25_junior_community.sql'
+      - 'supabase/migrations/20260918010000_sinjira_v25_child_sensitive_boundary.sql'
+      - 'supabase/migrations/20260918013000_sinjira_v25_child_content_rating.sql'
+      - 'supabase/migrations/20260918020000_sinjira_v25_account_capabilities.sql'
+      - 'supabase/migrations/20260918023000_sinjira_v25_minor_content_policy_compat.sql'
+      - 'supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql'
+      - 'supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql'
+      - 'supabase/migrations/20260922031500_sinjira_v25_catalog_age_helper_boundary.sql'
+      - 'supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql'
+      - 'supabase/migrations/20260924173000_sinjira_v25_junior_comment_author_visibility.sql'
+      - 'supabase/migrations/20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql'
+      - 'supabase/tests/child_community_v25.test.sql'
+      - 'supabase/tests/child_sensitive_boundary_v25.test.sql'
+      - 'supabase/tests/child_content_rating_v25.test.sql'
+      - 'supabase/tests/account_capabilities_v25.test.sql'
+      - 'supabase/tests/minor_content_policy_v25.test.sql'
+      - 'compte/*.html'
+      - 'assets/js/sinjira-community-junior-v25.js'
+      - 'assets/js/sinjira-community-junior-rules-v25.js'
+      - 'assets/js/sinjira-community-real.js'
+      - 'assets/js/sinjira-account.js'
+      - 'assets/js/sinjira-library.js'
+      - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/sinjira-admin-console-core.js'
+      - 'mobile-native/App.tsx'
+      - 'mobile-native/NativeHomeHub.tsx'
+      - 'mobile-native/README.md'
+      - 'assets/js/v24-relations.js'
+      - 'assets/js/sinjira-admin-social-v20.js'
+      - 'supabase/functions/admin-social-v20/index.ts'
+      - 'supabase/functions/admin-console/index.ts'
+      - 'supabase/functions/get-document-url/index.ts'
+      - 'supabase/functions/personal-ai/index.ts'
+      - 'supabase/functions/redeem-license-code/index.ts'
+      - 'supabase/functions/get-private-book-url/index.ts'
+      - 'supabase/functions/get-private-book-reading-url/index.ts'
+      - 'scripts/validate_child_community_v25.py'
+      - 'scripts/validate_child_access_matrix_v25.py'
+      - 'scripts/validate_child_sensitive_boundary_v25.py'
+      - 'scripts/validate_child_content_rating_v25.py'
+      - 'scripts/validate_account_capabilities_v25.py'
+      - 'scripts/validate_minor_exploitation_safety_v24_4_82.py'
+      - 'scripts/validate_mobile_native_home_hub_v25.py'
+      - 'docs/SINJIRA_CHILD_ACCESS_MATRIX_V25.md'
+      - 'tests/e2e/test_child_community.py'
+      - '.github/workflows/sinjira-child-community-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-child-community-v25-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  junior-community-local-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier le contrat statique Communauté Junior
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/validate_child_community_v25.py scripts/validate_child_access_matrix_v25.py scripts/validate_child_sensitive_boundary_v25.py scripts/validate_child_content_rating_v25.py scripts/validate_account_capabilities_v25.py scripts/validate_minor_exploitation_safety_v24_4_82.py scripts/validate_mobile_native_home_hub_v25.py
+          python scripts/validate_child_community_v25.py
+          python scripts/validate_child_access_matrix_v25.py
+          python scripts/validate_child_sensitive_boundary_v25.py
+          python scripts/validate_child_content_rating_v25.py
+          python scripts/validate_account_capabilities_v25.py
+          python scripts/validate_minor_exploitation_safety_v24_4_82.py
+          python scripts/validate_mobile_native_home_hub_v25.py
+          node --check assets/js/sinjira-community-junior-v25.js
+          node --check assets/js/sinjira-community-junior-rules-v25.js
+          node --check assets/js/sinjira-community-real.js
+          node --check assets/js/sinjira-account.js
+          node --check assets/js/sinjira-library.js
+          node --check assets/js/sinjira-library-v24-4-61.js
+          node --check assets/js/sinjira-admin-console-core.js
+          node --check assets/js/v24-relations.js
+          node --check assets/js/sinjira-admin-social-v20.js
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+
+      - name: Démarrer une pile Supabase locale propre
+        run: supabase start
+
+      - name: Reconstruire la base locale depuis zéro
+        run: supabase db reset
+
+      - name: Exécuter le test pgTAP Communauté Junior
+        run: supabase test db supabase/tests/child_community_v25.test.sql
+
+      - name: Exécuter le test pgTAP frontière serveur 11–12 ans
+        run: supabase test db supabase/tests/child_sensitive_boundary_v25.test.sql
+
+      - name: Exécuter le test pgTAP classement contenu 11–12 ans
+        run: supabase test db supabase/tests/child_content_rating_v25.test.sql
+
+      - name: Exécuter le test pgTAP capacités self-only du compte
+        run: supabase test db supabase/tests/account_capabilities_v25.test.sql
+
+      - name: Exécuter le test pgTAP compatibilité protection mineurs V25
+        run: supabase test db supabase/tests/minor_content_policy_v25.test.sql
+
+      - name: Arrêter et supprimer la pile locale
+        if: always()
+        run: |
+          if command -v supabase >/dev/null 2>&1; then supabase stop --no-backup || true; fi
+
+  junior-community-browser-proof:
+    needs: junior-community-local-proof
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    timeout-minutes: 12
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier la syntaxe de la preuve navigateur Junior
+        run: python -m py_compile tests/e2e/test_child_community.py
+
+      - name: Installer le client Playwright épinglé
+        run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
+
+      - name: Démarrer le site statique local
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m http.server 4173 --bind 127.0.0.1 > /tmp/sinjira-junior-http.log 2>&1 &
+          echo $! > /tmp/sinjira-junior-http.pid
+          i=0
+          while [ "$i" -lt 20 ]; do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/compte/communaute-junior.html', timeout=1).read(1)" >/dev/null 2>&1; then exit 0; fi
+            i=$((i + 1))
+            sleep 1
+          done
+          cat /tmp/sinjira-junior-http.log
+          exit 1
+
+      - name: Tester la Communauté Junior sans service distant
+        env:
+          BASE_URL: http://127.0.0.1:4173/
+        run: python tests/e2e/test_child_community.py
+
+      - name: Arrêter le serveur local
+        if: always()
+        run: |
+          if [ -f /tmp/sinjira-junior-http.pid ]; then kill "$(cat /tmp/sinjira-junior-http.pid)" || true; fi

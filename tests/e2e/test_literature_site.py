@@ -12,6 +12,8 @@ BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
 SUPPORTED_BROWSERS = {"chromium", "firefox", "webkit"}
 LITERATURE_ROUTE = "projets/sinjira/romans/"
 READER_ROUTE = "projets/sinjira/romans/lire-demo.html"
+READER_JS_ROUTE = "assets/js/sinjira-reader.js"
+ACCOUNT_COMMENTS_JS_ROUTE = "assets/js/sinjira-account-v18.js"
 SITEMAP_ROUTE = "sitemap.xml"
 DEMO_ROUTE = "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
 DEMO_BASENAME = "SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
@@ -39,6 +41,56 @@ def block_embedded_pdf(context) -> None:
     context.route(
         f"**/{DEMO_BASENAME}",
         lambda route: route.fulfill(status=204, content_type="application/pdf", body=""),
+    )
+
+
+def mock_supabase_anonymous(context) -> None:
+    # Le test navigateur ne dépend jamais de Supabase production. Le mock fournit
+    # un visiteur anonyme, le Livre I canonique et aucun commentaire approuvé.
+    context.route(
+        "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="application/javascript",
+            headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"},
+            body=r"""
+const novel={
+  id:'11111111-1111-4111-8111-111111111111',
+  slug:'la-cendre-du-jugement',
+  title:'SINJIRA — La Cendre du Jugement',
+  subtitle:'Livre I',
+  description:'Roman canonique de test navigateur.',
+  status:'published',
+  cover_url:'/assets/media/sinjira-livre-1-cover.webp',
+  public_path:'/projets/sinjira/romans/index.html',
+  demo_path:'/projets/sinjira/romans/lire-demo.html',
+  sort_order:10
+};
+function table(name){
+  return {
+    select(){
+      return {
+        eq(column,value){
+          return {
+            maybeSingle: async()=>({data:name==='sinjira_novels'&&column==='slug'&&value===novel.slug?novel:null,error:null})
+          };
+        },
+        order: async()=>({data:name==='sinjira_novels'?[novel]:[],error:null})
+      };
+    }
+  };
+}
+export function createClient(){
+  return {
+    auth:{getUser:async()=>({data:{user:null},error:null})},
+    from:(name)=>table(name),
+    rpc:async(name)=>name==='list_sinjira_novel_comments'
+      ? {data:[],error:null}
+      : {data:null,error:null}
+  };
+}
+""",
+        ),
     )
 
 
@@ -83,6 +135,7 @@ def run() -> None:
             reduced_motion="reduce",
         )
         block_embedded_pdf(context)
+        mock_supabase_anonymous(context)
         page = context.new_page()
         errors: list[str] = []
         collect_page_errors(page, errors)
@@ -91,7 +144,8 @@ def run() -> None:
         response = page.goto(literature_url, wait_until="domcontentloaded", timeout=30_000)
         assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: page Littérature inaccessible")
         assert_true(page.locator("main#contenu").count() == 1, f"{BROWSER_NAME}: main Littérature absent")
-        assert_true(page.locator("h1").inner_text().strip() == "Littérature.", f"{BROWSER_NAME}: H1 Littérature inattendu")
+        assert_true(page.locator("h1").inner_text().strip() == "Les romans de l’univers.", f"{BROWSER_NAME}: H1 Littérature inattendu")
+        assert_true(page.locator("[data-literature-catalog]").count() == 1, f"{BROWSER_NAME}: catalogue multi-romans absent")
         assert_true(
             page.locator('link[rel="canonical"]').get_attribute("href") == CANONICAL,
             f"{BROWSER_NAME}: canonical Littérature incorrecte",
@@ -134,6 +188,26 @@ def run() -> None:
         assert_true(sitemap_text.count(reader_loc) == 1, f"{BROWSER_NAME}: canonical du lecteur absente ou dupliquée dans le sitemap")
         assert_true(DEMO_BASENAME not in sitemap_text, f"{BROWSER_NAME}: le PDF démo ne doit pas être indexé directement par le sitemap")
         assert_true(FULL_BASENAME not in sitemap_text, f"{BROWSER_NAME}: édition intégrale exposée dans le sitemap")
+
+        # Régression V25 : l'ancien client demandait novel_comments.contains_spoilers,
+        # colonne inexistante en production. Les deux surfaces doivent utiliser
+        # exclusivement le modèle canonique sinjira_novel_comments.spoiler.
+        reader_js_response = context.request.get(urljoin(BASE_URL, READER_JS_ROUTE), timeout=30_000)
+        assert_true(reader_js_response.status < 400, f"{BROWSER_NAME}: client commentaires Littérature inaccessible")
+        reader_js = reader_js_response.text()
+        assert_true("list_sinjira_novel_comments" in reader_js, f"{BROWSER_NAME}: RPC canonique commentaires absent")
+        assert_true("from('sinjira_novel_comments')" in reader_js, f"{BROWSER_NAME}: insertion commentaire canonique absente")
+        assert_true("from('novel_comments')" not in reader_js, f"{BROWSER_NAME}: ancien novel_comments encore utilisé dans Littérature")
+        assert_true("from('sinjira_reader_library').select('last_page')" in reader_js, f"{BROWSER_NAME}: reprise de lecture n’utilise pas sinjira_reader_library")
+        assert_true("from('reader_library')" not in reader_js, f"{BROWSER_NAME}: ancienne table reader_library encore utilisée pour la reprise")
+        assert_true("return {synced:!error,error:error||null}" in reader_js, f"{BROWSER_NAME}: l’échec de synchronisation progression est encore ignoré")
+        assert_true("synchronisation du compte indisponible" in reader_js, f"{BROWSER_NAME}: état de progression non synchronisée absent")
+
+        account_comments_response = context.request.get(urljoin(BASE_URL, ACCOUNT_COMMENTS_JS_ROUTE), timeout=30_000)
+        assert_true(account_comments_response.status < 400, f"{BROWSER_NAME}: client Mes commentaires inaccessible")
+        account_comments_js = account_comments_response.text()
+        assert_true("from('sinjira_novel_comments')" in account_comments_js, f"{BROWSER_NAME}: Mes commentaires n'utilise pas la table canonique")
+        assert_true("contains_spoilers" not in account_comments_js, f"{BROWSER_NAME}: Mes commentaires demande encore contains_spoilers")
 
         reader_url = urljoin(BASE_URL, READER_ROUTE)
         response = page.goto(reader_url, wait_until="domcontentloaded", timeout=30_000)
@@ -188,6 +262,7 @@ def run() -> None:
             reduced_motion="reduce",
         )
         block_embedded_pdf(mobile)
+        mock_supabase_anonymous(mobile)
         mobile_page = mobile.new_page()
         mobile_errors: list[str] = []
         collect_page_errors(mobile_page, mobile_errors)
@@ -206,7 +281,7 @@ def run() -> None:
         mobile.close()
         context.close()
         browser.close()
-        print(f"OK littérature {BROWSER_NAME}: fiche, SEO, sitemap, lecteur 83 pages, frontière intégrale et mobile vérifiés.")
+        print(f"OK littérature {BROWSER_NAME}: catalogue, commentaires canoniques, SEO, lecteur 83 pages, frontière intégrale et mobile vérifiés.")
 
 
 if __name__ == "__main__":

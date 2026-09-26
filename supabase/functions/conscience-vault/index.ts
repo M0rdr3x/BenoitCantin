@@ -26,7 +26,7 @@ async function readBoundedJson(req: Request) {
   const declaredRaw = req.headers.get('content-length');
   if (declaredRaw) {
     const declared = Number(declaredRaw);
-    if (Number.isFinite(declared) && declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
+    if (!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
   }
 
   if (!req.body) throw new Error('INVALID_JSON');

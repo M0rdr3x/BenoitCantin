@@ -7,6 +7,8 @@ const ALLOWED_ORIGINS = new Set([
   'https://benoitcantin.com',
 ]);
 
+class RequestBodyTooLargeError extends Error {}
+
 function serverKey() {
   const modern = Deno.env.get('SUPABASE_SECRET_KEYS');
   if (modern) {
@@ -67,6 +69,33 @@ function hasPdfSignature(bytes: ArrayBuffer) {
   const head = new Uint8Array(bytes, 0, 5);
   return String.fromCharCode(...head) === '%PDF-';
 }
+function parseNonNegativeInteger(value: unknown) {
+  if (typeof value === 'number') return Number.isSafeInteger(value) && value >= 0 ? value : null;
+  if (typeof value !== 'string' || !/^\d+$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+async function readBoundedBody(req: Request) {
+  const reader = req.body?.getReader();
+  if (!reader) return '';
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    total += value.byteLength;
+    if (total > MAX_REQUEST_BYTES) {
+      try { await reader.cancel(); } catch { /* La réponse 413 reste prioritaire. */ }
+      throw new RequestBodyTooLargeError();
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return preflight(req);
@@ -77,13 +106,30 @@ Deno.serve(async (req) => {
     const requestUrl = new URL(req.url);
     if (requestUrl.search) return errorResponse(req, 400);
 
-    const type = (req.headers.get('content-type') || '').toLowerCase();
-    if (!type.startsWith('application/json')) return errorResponse(req, 415);
-    const declaredLength = Number(req.headers.get('content-length') || '0');
-    if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BYTES) return errorResponse(req, 413);
+    const type = (req.headers.get('content-type') || '')
+      .split(';', 1)[0]
+      .trim()
+      .toLowerCase();
+    if (type !== 'application/json') return errorResponse(req, 415);
 
-    const rawBody = await req.text();
-    if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) return errorResponse(req, 413);
+    const rawLength = req.headers.get('content-length');
+    if (rawLength !== null) {
+      const normalizedLength = rawLength.trim();
+      if (!/^\d+$/.test(normalizedLength)) return errorResponse(req, 400);
+      const declaredLength = Number(normalizedLength);
+      if (!Number.isSafeInteger(declaredLength)) return errorResponse(req, 400);
+      if (declaredLength > MAX_REQUEST_BYTES) return errorResponse(req, 413);
+    }
+
+    let rawBody: string;
+    try {
+      rawBody = await readBoundedBody(req);
+    } catch (bodyError) {
+      if (bodyError instanceof RequestBodyTooLargeError) return errorResponse(req, 413);
+      if (bodyError instanceof TypeError) return errorResponse(req, 400);
+      throw bodyError;
+    }
+
     let payload: unknown;
     try { payload = JSON.parse(rawBody); } catch { return errorResponse(req, 400); }
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return errorResponse(req, 400);
@@ -99,14 +145,20 @@ Deno.serve(async (req) => {
       .select('id,export_id,expires_at,max_downloads,download_count,revoked_at')
       .eq('token_hash', hash)
       .maybeSingle();
-    if (error || !link || link.revoked_at || new Date(link.expires_at).getTime() <= Date.now() || Number(link.download_count) >= Number(link.max_downloads)) return errorResponse(req);
+    if (error || !link) return errorResponse(req);
+
+    const expiresAt = Date.parse(String(link.expires_at ?? ''));
+    const maxDownloads = parseNonNegativeInteger(link.max_downloads);
+    const downloadCount = parseNonNegativeInteger(link.download_count);
+    if (!Number.isFinite(expiresAt) || maxDownloads === null || maxDownloads < 1 || downloadCount === null) return errorResponse(req);
+    if (link.revoked_at || expiresAt <= Date.now() || downloadCount >= maxDownloads) return errorResponse(req);
 
     const { data: record, error: exportError } = await service
       .from('life_story_exports')
       .select('status,storage_bucket,storage_path,audience')
       .eq('id', link.export_id)
       .maybeSingle();
-    if (exportError || !record || !['generated', 'delivered'].includes(record.status) || record.storage_bucket !== 'sinjira-life-story-exports' || !record.storage_path) return errorResponse(req);
+    if (exportError || !record || !['generated', 'delivered'].includes(record.status) || record.storage_bucket !== 'sinjira-life-story-exports' || typeof record.storage_path !== 'string' || !record.storage_path) return errorResponse(req);
 
     const { data: file, error: downloadError } = await service.storage.from('sinjira-life-story-exports').download(record.storage_path);
     if (downloadError || !file) return errorResponse(req, 410);

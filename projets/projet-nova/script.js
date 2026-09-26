@@ -13,6 +13,20 @@
     maturity.setAttribute('data-nova-maturite','');
     document.head.appendChild(maturity);
   }
+  if(!document.querySelector('link[data-ai-transparency-style]')){
+    const transparencyStyle=document.createElement('link');
+    transparencyStyle.rel='stylesheet';
+    transparencyStyle.href='/assets/css/ai-transparency.css?v=1.0.0';
+    transparencyStyle.setAttribute('data-ai-transparency-style','');
+    document.head.appendChild(transparencyStyle);
+  }
+  if(!document.querySelector('script[data-ai-transparency-script]')){
+    const transparencyScript=document.createElement('script');
+    transparencyScript.src='/assets/js/ai-transparency.js?v=1.0.0';
+    transparencyScript.defer=true;
+    transparencyScript.setAttribute('data-ai-transparency-script','');
+    document.head.appendChild(transparencyScript);
+  }
 })();
 
 (function(){

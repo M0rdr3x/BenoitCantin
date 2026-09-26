@@ -45,11 +45,15 @@ document.addEventListener('click',async event=>{
   try{
     const {error}=await s.rpc('security_report_lost_device',{p_device_id:id});
     if(error)throw error;
-    await s.auth.signOut({scope:'others'});
+    const {error:sessionError}=await s.auth.signOut({scope:'others'});
+    if(sessionError){
+      report('Appareil déclaré perdu : sa confiance et ses notifications ont été révoquées, mais la fermeture des autres sessions n’a pas pu être confirmée. Utilisez « Déconnecter tous les appareils » puis réessayez.','error');
+      button.disabled=false;
+      return;
+    }
     report('Appareil déclaré perdu. Sa confiance et ses notifications ont été révoquées; les autres sessions ont été fermées.','success');
     setTimeout(()=>location.reload(),900);
   }catch(error){
-    console.warn('[SINJIRA lost device]',error);
     report(error?.message==='AAL2_REQUIRED'?'Vérification MFA requise avant de déclarer cet appareil perdu.':'Impossible de terminer la protection de cet appareil pour le moment.','error');
     button.disabled=false;
   }

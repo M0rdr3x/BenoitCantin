@@ -16,6 +16,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  social-rls-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Récupérer le dépôt pour le contrat social/RLS
+        uses: actions/checkout@v6
+      - name: Configurer Python pour le contrat social/RLS
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Vérifier le contrat social/RLS final
+        run: python scripts/validate_social_rls_contract.py
+
   validate:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest

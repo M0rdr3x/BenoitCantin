@@ -23,8 +23,8 @@ function privateJson(data:unknown,status=200){
 }
 
 function requireJsonContentType(req:Request){
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json'))throw new Error('UNSUPPORTED_MEDIA_TYPE');
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json')throw new Error('UNSUPPORTED_MEDIA_TYPE');
 }
 
 function moderationLogCode(error:unknown){
@@ -38,8 +38,27 @@ async function readLimitedJson(req:Request){
     const declared=Number(rawLength);
     if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   }
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
+  const reader=req.body?.getReader();
+  if(!reader)throw new Error('INVALID_JSON');
+  const chunks:Uint8Array[]=[];
+  let total=0;
+  while(true){
+    const {done,value}=await reader.read();
+    if(done)break;
+    if(!value)continue;
+    total+=value.byteLength;
+    if(total>MAX_REQUEST_BYTES){
+      try{await reader.cancel()}catch{/* Le rejet de taille reste prioritaire. */}
+      throw new Error('REQUEST_TOO_LARGE');
+    }
+    chunks.push(value);
+  }
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
+  let raw:string;
+  try{raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes)}
+  catch{throw new Error('INVALID_JSON')}
   let body:any;
   try{body=JSON.parse(raw||'{}');}
   catch{throw new Error('INVALID_JSON');}
@@ -65,6 +84,11 @@ async function reportTargetUser(s:any,r:any){
     if(!profileId)return null;
     return canonicalUser(s,'dating_profiles','id','user_id',profileId);
   }
+  if(snap.source==='junior_community'){
+    if(r.target_type==='post')return canonicalUser(s,'junior_community_posts','id','author_user_id',r.target_id);
+    if(r.target_type==='comment')return canonicalUser(s,'junior_community_comments','id','author_user_id',r.target_id);
+    return null;
+  }
   if(r.network==='real'){
     if(r.target_type==='post')return canonicalUser(s,'social_real_posts','id','user_id',r.target_id);
     if(r.target_type==='comment')return canonicalUser(s,'social_real_comments','id','user_id',r.target_id);
@@ -81,6 +105,13 @@ async function reportTargetUser(s:any,r:any){
 }
 
 async function targetSnapshot(s:any,r:any){
+  if(r.snapshot?.source==='junior_community'){
+    const table=r.target_type==='post'?'junior_community_posts':r.target_type==='comment'?'junior_community_comments':null;
+    if(!table)return null;
+    const {data,error}=await s.from(table).select('id,body,status,created_at,updated_at').eq('id',r.target_id).maybeSingle();
+    if(error)throw error;
+    return data||null;
+  }
   const pair=targetTables?.[r.network]?.[r.target_type];
   if(!pair)return null;
   const {data,error}=await s.from(pair[0]).select('*').eq('id',r.target_id).maybeSingle();

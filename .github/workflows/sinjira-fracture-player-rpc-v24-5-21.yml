@@ -6,6 +6,10 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
       - 'supabase/tests/**'
+      - 'supabase/functions/fracture-engine-gateway/index.ts'
+      - 'supabase/functions/submit-fracture-endgame/index.ts'
+      - 'scripts/validate_fracture_endgame_atomic_security.py'
+      - 'scripts/validate_fracture_engine_gateway_security.py'
       - 'scripts/validate_fracture_player_rpc_v24_5_21.py'
       - 'scripts/validate_owner_character_rpc_v24_5_20.py'
       - 'scripts/validate_production_migration_ledger.py'
@@ -22,17 +26,30 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-24.04
+    timeout-minutes: 8
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          python-version: '3.12'
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
       - name: Contrat frontière joueur Fracture V24.5.21
         run: python scripts/validate_fracture_player_rpc_v24_5_21.py
       - name: Contrat personnage propriétaire historique V24.5.20
         run: python scripts/validate_owner_character_rpc_v24_5_20.py
       - name: Moteur Fracture historique
         run: python scripts/validate_fracture_engine.py
+      - name: Auto-tester la finalisation atomique Fracture
+        run: python scripts/validate_fracture_endgame_atomic_security.py --self-test
+      - name: Vérifier la frontière et la transaction de fin de partie Fracture
+        run: python scripts/validate_fracture_endgame_atomic_security.py
+      - name: Auto-tester la gateway moteur Fracture
+        run: python scripts/validate_fracture_engine_gateway_security.py --self-test
+      - name: Vérifier la frontière HTTP et JWT de la gateway moteur Fracture
+        run: python scripts/validate_fracture_engine_gateway_security.py
       - name: Isolation des identités Fracture
         run: python scripts/validate_fracture_identity_isolation.py
       - name: Cohérence de version Fracture

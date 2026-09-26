@@ -51,7 +51,11 @@ async function loadFactors(s){
       return;
     }
     setStatus(status,'Facteur TOTP retiré.','success');
-    await loadFactors(s);
+    try{
+      await loadFactors(s);
+    }catch(error){
+      setStatus(status,'Facteur TOTP retiré, mais la liste des facteurs ne peut pas être rafraîchie pour le moment.','info');
+    }
   }));
 
   if(enrollButton){
@@ -72,7 +76,8 @@ function hideSetup(){
 try{
   const user=await requireUser();
   const s=getSupabase();
-  const {data:{session}}=await s.auth.getSession();
+  const {data:{session},error:sessionError}=await s.auth.getSession();
+  if(sessionError)throw sessionError;
   const {data:aal,error:aalError}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
   if(aalError)throw aalError;
 
@@ -87,7 +92,7 @@ try{
       if(error)throw error;
       setStatus(status,'Les autres sessions ont été révoquées. Cet appareil reste connecté.','success');
     }catch(error){
-      console.warn('[SINJIRA sessions others]',error);
+      
       setStatus(status,'Impossible de révoquer les autres sessions pour le moment.','error');
     }finally{
       signOutOthersButton.disabled=false;
@@ -104,7 +109,7 @@ try{
       if(error)throw error;
       location.replace('/compte/connexion.html?sessions=closed');
     }catch(error){
-      console.warn('[SINJIRA sessions global]',error);
+      
       signOutGlobalButton.disabled=false;
       if(signOutOthersButton)signOutOthersButton.disabled=false;
       setStatus(status,'Impossible de fermer toutes les sessions pour le moment.','error');
@@ -142,7 +147,7 @@ try{
       if(setup)setup.hidden=false;
       setStatus(status,'Scannez le QR ou saisissez le secret, puis entrez le code à 6 chiffres pour terminer l’activation.','info');
     }catch(error){
-      console.warn('[SINJIRA MFA enroll]',error);
+      
       enrollButton.disabled=false;
       setStatus(status,error?.message==='TOTP_FACTOR_LIMIT'?'Le nombre maximal de facteurs TOTP est déjà atteint.':'Impossible de démarrer l’activation TOTP pour le moment.','error');
     }
@@ -166,7 +171,11 @@ try{
     }
     hideSetup();
     setStatus(status,'Authentification TOTP activée. Les prochaines connexions aux pages privées demanderont ce second facteur.','success');
-    await loadFactors(s);
+    try{
+      await loadFactors(s);
+    }catch(error){
+      setStatus(status,'Authentification TOTP activée, mais la liste des facteurs ne peut pas être rafraîchie pour le moment.','info');
+    }
   });
 
   cancelButton?.addEventListener('click',async()=>{
@@ -174,14 +183,22 @@ try{
     cancelButton.disabled=true;
     if(factorId){
       const {error}=await s.auth.mfa.unenroll({factorId});
-      if(error)console.warn('[SINJIRA MFA cancel]',error);
+      if(error){
+        cancelButton.disabled=false;
+        setStatus(status,'Impossible d’annuler cet enrôlement TOTP pour le moment. Le facteur temporaire n’est pas considéré comme supprimé.','error');
+        return;
+      }
     }
     hideSetup();
     cancelButton.disabled=false;
-    await loadFactors(s).catch(()=>{});
-    setStatus(status,'Activation TOTP annulée.','info');
+    try{
+      await loadFactors(s);
+      setStatus(status,'Activation TOTP annulée.','info');
+    }catch(error){
+      setStatus(status,'Activation TOTP annulée, mais l’état des facteurs ne peut pas être rafraîchi pour le moment.','info');
+    }
   });
 }catch(error){
-  console.warn('[SINJIRA security]',error);
+  
   setStatus(status,'Impossible de lire ou modifier l’état de sécurité pour le moment.','error');
 }

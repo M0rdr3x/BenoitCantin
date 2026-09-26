@@ -1,0 +1,125 @@
+name: SINJIRA V25 — Refonte compte et catalogue
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
+      - 'supabase/migrations/20260919090000_sinjira_v25_account_content_hub.sql'
+      - 'supabase/migrations/20260919103000_sinjira_v25_livre_i_catalog_seed.sql'
+      - 'supabase/migrations/20260919110000_sinjira_v25_social_public_pseudo_privacy.sql'
+      - 'supabase/migrations/20260919120000_sinjira_v25_projects_owner_catalog_visibility.sql'
+      - 'supabase/migrations/20260919123000_sinjira_v25_public_rpc_boundary.sql'
+      - 'supabase/migrations/20260919130000_sinjira_v25_account_catalog_browser_privileges.sql'
+      - 'supabase/migrations/20260921010000_sinjira_v25_browser_helper_self_only_hardening.sql'
+      - 'supabase/migrations/20260922014000_sinjira_v25_creator_family_catalog_access.sql'
+      - 'supabase/migrations/20260922023000_sinjira_v25_paid_order_product_access.sql'
+      - 'supabase/migrations/20260922030000_sinjira_v25_extension_product_access.sql'
+      - 'supabase/migrations/20260922031500_sinjira_v25_catalog_age_helper_boundary.sql'
+      - 'supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql'
+      - 'supabase/tests/account_content_hub_v25.test.sql'
+      - 'supabase/tests/child_content_rating_v25.test.sql'
+      - 'supabase/tests/creator_family_catalog_access_v25.test.sql'
+      - 'scripts/validate_creator_family_catalog_v25.py'
+      - 'scripts/provision_creator_family_catalog.py'
+      - 'supabase/config.toml'
+      - 'supabase/functions/_shared/privateNovel.ts'
+      - 'scripts/validate_account_site_refresh_v25.py'
+      - 'scripts/validate_site.py'
+      - 'assets/js/sinjira-account.js'
+      - 'assets/js/v24-data-control.js'
+      - 'assets/js/v24-preferences.js'
+      - 'assets/js/sinjira-privacy-center-v24-4-83.js'
+      - 'assets/js/sinjira-account-dashboard-v24-4-60.js'
+      - 'assets/js/sinjira-recovery-v24-4-99.js'
+      - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/v24-licenses.js'
+      - 'assets/js/sinjira-library.js'
+      - 'assets/js/sinjira-purchases-v25.js'
+      - 'assets/js/sinjira-reader.js'
+      - 'assets/js/sinjira-account-v18.js'
+      - 'assets/js/sinjira-literature-catalog-v25.js'
+      - 'assets/css/sinjira-player-account.css'
+      - 'compte/licences.html'
+      - 'compte/**'
+      - 'projets/sinjira/romans/index.html'
+      - 'projets/sinjira/romans/lire-demo.html'
+      - 'projets/sinjira/sinjira.css'
+      - '.github/workflows/sinjira-account-content-hub-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-account-content-hub-v25-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  account-content-hub-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Configurer Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+
+      - name: Valider la refonte compte et catalogue
+        run: |
+          python3 -m py_compile scripts/validate_account_site_refresh_v25.py
+          python3 scripts/validate_account_site_refresh_v25.py --self-test
+          python3 scripts/validate_account_site_refresh_v25.py
+          python3 -m py_compile scripts/validate_creator_family_catalog_v25.py
+          python3 scripts/validate_creator_family_catalog_v25.py --self-test
+          python3 scripts/validate_creator_family_catalog_v25.py
+          python3 -m py_compile scripts/provision_creator_family_catalog.py
+          python3 scripts/provision_creator_family_catalog.py --self-test
+
+      - name: Vérifier routes, références et syntaxe du site en mode draft
+        run: |
+          python3 scripts/validate_site.py
+          python3 scripts/validate_browser_compat.py
+          python3 scripts/validate_accessibility.py
+
+      - name: Vérifier la syntaxe des modules acquisitions
+        run: |
+          node --check assets/js/sinjira-purchases-v25.js
+          node --check assets/js/v24-licenses.js
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+
+      - name: Démarrer une pile Supabase locale propre
+        run: supabase start
+
+      - name: Reconstruire la base locale depuis zéro
+        run: supabase db reset
+
+      - name: Prouver les accès membre et créateur
+        run: supabase test db supabase/tests/account_content_hub_v25.test.sql
+
+      - name: Prouver le classement 11–12 et l’absence d’oracle navigateur
+        run: supabase test db supabase/tests/child_content_rating_v25.test.sql
+
+      - name: Prouver le catalogue famille créateur sans faux achat
+        run: supabase test db supabase/tests/creator_family_catalog_access_v25.test.sql
+
+      - name: Arrêter et supprimer la pile locale
+        if: always()
+        run: |
+          if command -v supabase >/dev/null 2>&1; then supabase stop --no-backup || true; fi

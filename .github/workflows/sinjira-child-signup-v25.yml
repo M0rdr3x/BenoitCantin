@@ -1,0 +1,146 @@
+name: SINJIRA V25 — Inscription enfant 11 ans
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'compte/inscription.html'
+      - 'compte/relations.html'
+      - 'assets/js/v24-signup.js'
+      - 'assets/js/v24-relations.js'
+      - 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
+      - 'supabase/migrations/20260919013000_sinjira_v25_child_pending_guardian_redeem.sql'
+      - 'supabase/migrations/20260919023000_sinjira_v25_guardian_invite_aal2.sql'
+      - 'supabase/migrations/20260919030000_sinjira_v25_guardian_code_metadata_minimization.sql'
+      - 'supabase/migrations/20260919033000_sinjira_v25_guardian_invite_read_aal2.sql'
+      - 'supabase/migrations/20260919043000_sinjira_v25_guardian_revoke_aal2.sql'
+      - 'supabase/migrations/20260919050000_sinjira_v25_guardian_majority_visibility.sql'
+      - 'supabase/migrations/20260919053000_sinjira_v25_guardian_invite_majority_visibility.sql'
+      - 'supabase/migrations/20260919060000_sinjira_v25_guardian_contacts_consent_aal2.sql'
+      - 'supabase/migrations/20260919063000_sinjira_v25_guardian_contact_metadata_opt_in.sql'
+      - 'supabase/migrations/20260919070000_sinjira_v25_guardian_contacts_minimization.sql'
+      - 'supabase/migrations/20260919080000_sinjira_v25_guardian_character_identity_isolation.sql'
+      - 'supabase/migrations/20260919110000_sinjira_v25_social_public_pseudo_privacy.sql'
+      - 'supabase/migrations/20260919100000_sinjira_v25_private_profile_age_11.sql'
+      - 'supabase/tests/child_guardian_signup_v25.test.sql'
+      - 'supabase/tests/private_profile_child_age_v25.test.sql'
+      - 'scripts/validate_child_guardian_signup_v25.py'
+      - 'tests/e2e/test_public_site.py'
+      - '.github/workflows/sinjira-child-signup-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-child-signup-v25-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  child-signup-local-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier le contrat statique enfant supervisé
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/validate_child_guardian_signup_v25.py
+          python -m py_compile tests/e2e/test_public_site.py
+          python scripts/validate_child_guardian_signup_v25.py
+          node --check assets/js/v24-signup.js
+          node --check assets/js/v24-relations.js
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+
+      - name: Démarrer une pile Supabase locale propre
+        run: supabase start
+
+      - name: Reconstruire la base locale depuis zéro
+        run: supabase db reset
+
+      - name: Exécuter le test pgTAP comportemental 11 ans
+        run: supabase test db supabase/tests/child_guardian_signup_v25.test.sql
+
+      - name: Vérifier le coffre privé du compte enfant 11 ans
+        run: supabase test db supabase/tests/private_profile_child_age_v25.test.sql
+
+      - name: Vérifier une inscription Auth HTTP ayant exactement 11 ans
+        shell: bash
+        run: |
+          set -euo pipefail
+          status_env="$(supabase status -o env)"
+          API_URL="$(sed -n 's/^API_URL="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          ANON_KEY="$(sed -n 's/^ANON_KEY="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          DB_URL="$(sed -n 's/^DB_URL="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          test -n "$API_URL"
+          test -n "$ANON_KEY"
+          test -n "$DB_URL"
+          command -v psql >/dev/null
+          command -v jq >/dev/null
+
+          guardian_payload="$(jq -cn \
+            --arg dob "$(date -u -d '35 years ago' +%F)" \
+            '{email:"guardian-e2e-child11@example.test",password:"Guardian-Child11-2026!",data:{pseudo:"Parent E2E",display_name:"Parent E2E",birth_date:$dob,date_of_birth:$dob,gender:"Homme",sex:"male",residence_country:"Canada"}}')"
+          guardian_code="$(curl --silent --show-error --output /tmp/guardian-signup.json --write-out '%{http_code}' \
+            --request POST "$API_URL/auth/v1/signup" \
+            --header "apikey: $ANON_KEY" \
+            --header 'Content-Type: application/json' \
+            --data "$guardian_payload")"
+          if [ "$guardian_code" -ge 400 ]; then
+            echo "La création locale du compte parent a échoué."
+            cat /tmp/guardian-signup.json
+            exit 1
+          fi
+          GUARDIAN_ID="$(jq -r '.user.id // empty' /tmp/guardian-signup.json)"
+          test -n "$GUARDIAN_ID"
+
+          PARENT_CODE='YOUTH-E2E1100001'
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c \
+            "insert into public.guardian_signup_invites(guardian_user_id,invite_code,expires_at) values('$GUARDIAN_ID'::uuid,'$PARENT_CODE',now()+interval '1 day');"
+
+          CHILD_DOB="$(date -u -d '11 years ago' +%F)"
+          child_payload="$(jq -cn \
+            --arg dob "$CHILD_DOB" \
+            --arg code "$PARENT_CODE" \
+            '{email:"child11-e2e@example.test",password:"Child11-Verified-2026!",data:{pseudo:"Enfant 11 E2E",display_name:"Enfant 11 E2E",birth_date:$dob,date_of_birth:$dob,gender:"Homme",sex:"male",residence_country:"Canada",guardian_code:$code,initial_contributor_opt_in:true,initial_share_free_text:true}}')"
+          child_code="$(curl --silent --show-error --output /tmp/child11-signup.json --write-out '%{http_code}' \
+            --request POST "$API_URL/auth/v1/signup" \
+            --header "apikey: $ANON_KEY" \
+            --header 'Content-Type: application/json' \
+            --data "$child_payload")"
+          if [ "$child_code" -ge 400 ]; then
+            echo "Le point d'entrée Auth a refusé un enfant ayant exactement 11 ans avec un code parental valide."
+            cat /tmp/child11-signup.json
+            exit 1
+          fi
+          CHILD_ID="$(jq -r '.user.id // empty' /tmp/child11-signup.json)"
+          test -n "$CHILD_ID"
+
+          test "$(psql "$DB_URL" -Atc "select public.sinjira_age_band('$CHILD_ID'::uuid);")" = 'child'
+          test "$(psql "$DB_URL" -Atc "select date_of_birth::text from public.account_safety_profiles where user_id='$CHILD_ID'::uuid;")" = "$CHILD_DOB"
+          test "$(psql "$DB_URL" -Atc "select count(*) from public.guardian_links where minor_user_id='$CHILD_ID'::uuid and guardian_user_id='$GUARDIAN_ID'::uuid and status='verified';")" = '1'
+          test "$(psql "$DB_URL" -Atc "select count(*) from public.guardian_signup_invites where invite_code='$PARENT_CODE' and used_at is not null and minor_user_id='$CHILD_ID'::uuid;")" = '1'
+          test "$(psql "$DB_URL" -Atc "select public.sinjira_can_social_interact('$CHILD_ID'::uuid,'$CHILD_ID'::uuid);")" = 'f'
+          test "$(psql "$DB_URL" -AtF '|' -c "select participate,share_free_text from public.research_consents where user_id='$CHILD_ID'::uuid;")" = 'f|f'
+
+          echo "OK E2E local: Auth accepte exactement 11 ans avec code parental valide; lien vérifié créé; social coupé; contribution neutralisée."
+
+      - name: Arrêter et supprimer la pile locale
+        if: always()
+        run: |
+          if command -v supabase >/dev/null 2>&1; then supabase stop --no-backup || true; fi

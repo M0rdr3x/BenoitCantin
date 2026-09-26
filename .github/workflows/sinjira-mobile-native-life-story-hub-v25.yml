@@ -90,9 +90,6 @@ jobs:
       - name: Revalider les index FK Histoire de vie
         run: python3 scripts/validate_life_story_fk_indexes_v24_5_2.py
 
-      - name: Revalider le ledger de production sans écriture
-        run: python3 scripts/validate_production_migration_ledger.py
-
       - name: Revalider le routeur natif central
         run: python3 scripts/validate_mobile_native_route_dispatch_v25.py
 
@@ -133,3 +130,6 @@ jobs:
       - name: Vérifier TypeScript
         working-directory: mobile-native
         run: npm run typecheck
+
+      - name: Revalider le ledger de production sans écriture
+        run: python3 scripts/validate_production_migration_ledger.py

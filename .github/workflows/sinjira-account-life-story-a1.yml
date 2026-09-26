@@ -1,0 +1,81 @@
+name: SINJIRA A1 — Compte et Histoire de vie
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'compte/inscription.html'
+      - 'assets/js/v24-signup.js'
+      - 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
+      - 'supabase/tests/child_guardian_signup_v25.test.sql'
+      - 'supabase/functions/delete-player-account/**'
+      - 'supabase/functions/life-story-export/**'
+      - 'supabase/functions/life-story-delivery/**'
+      - 'scripts/validate_child_guardian_signup_v25.py'
+      - 'scripts/validate_delete_account_v24_5_51.py'
+      - 'scripts/validate_life_story_export_request_security.py'
+      - 'scripts/validate_life_story_legacy_v24_5_2.py'
+      - 'scripts/validate_life_story_delivery_v24_5_50.py'
+      - '.github/workflows/sinjira-account-life-story-a1.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'compte/inscription.html'
+      - 'assets/js/v24-signup.js'
+      - 'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
+      - 'supabase/tests/child_guardian_signup_v25.test.sql'
+      - 'supabase/functions/delete-player-account/**'
+      - 'supabase/functions/life-story-export/**'
+      - 'supabase/functions/life-story-delivery/**'
+      - 'scripts/validate_child_guardian_signup_v25.py'
+      - 'scripts/validate_delete_account_v24_5_51.py'
+      - 'scripts/validate_life_story_export_request_security.py'
+      - 'scripts/validate_life_story_legacy_v24_5_2.py'
+      - 'scripts/validate_life_story_delivery_v24_5_50.py'
+      - '.github/workflows/sinjira-account-life-story-a1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-account-life-story-a1-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  account-life-story-boundaries:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Compiler les validateurs A1
+        run: >-
+          python -m py_compile
+          scripts/validate_child_guardian_signup_v25.py
+          scripts/validate_delete_account_v24_5_51.py
+          scripts/validate_life_story_export_request_security.py
+          scripts/validate_life_story_legacy_v24_5_2.py
+          scripts/validate_life_story_delivery_v24_5_50.py
+      - name: Vérifier le contrat enfant supervisé 11–12 ans
+        run: python scripts/validate_child_guardian_signup_v25.py
+      - name: Vérifier la syntaxe du client inscription
+        run: node --check assets/js/v24-signup.js
+      - name: Auto-tester la frontière de suppression de compte
+        run: python scripts/validate_delete_account_v24_5_51.py --self-test
+      - name: Vérifier la suppression de compte et ses logs bornés
+        run: python scripts/validate_delete_account_v24_5_51.py
+      - name: Auto-tester la frontière d’export Histoire de vie
+        run: python scripts/validate_life_story_export_request_security.py --self-test
+      - name: Vérifier la frontière d’export Histoire de vie
+        run: python scripts/validate_life_story_export_request_security.py
+      - name: Vérifier le contrat historique Histoire de vie
+        run: python scripts/validate_life_story_legacy_v24_5_2.py
+      - name: Vérifier la remise privée Histoire de vie
+        run: python scripts/validate_life_story_delivery_v24_5_50.py

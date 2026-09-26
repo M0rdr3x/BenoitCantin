@@ -51,8 +51,8 @@ async function fetchTemplateBytes(){
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json'){
     return { response: privateJson({ ok:false, error:'Type de contenu non autorisé.', function_version:FUNCTION_VERSION }, 415) };
   }
   const rawLength = req.headers.get('content-length');
@@ -63,11 +63,29 @@ async function readLimitedJson(req: Request): Promise<{ body?: any; response?: R
     }
   }
 
-  const raw = await req.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
-    return { response: privateJson({ ok:false, error:'Requête trop volumineuse.', function_version:FUNCTION_VERSION }, 413) };
+  const reader=req.body?.getReader();
+  if(!reader)return {body:{}};
+  const chunks:Uint8Array[]=[];
+  let total=0;
+  while(true){
+    const {done,value}=await reader.read();
+    if(done)break;
+    if(!value)continue;
+    total+=value.byteLength;
+    if(total>MAX_REQUEST_BYTES){
+      try{await reader.cancel()}catch{/* Réponse 413 prioritaire même si l'annulation échoue. */}
+      return { response: privateJson({ ok:false, error:'Requête trop volumineuse.', function_version:FUNCTION_VERSION }, 413) };
+    }
+    chunks.push(value);
   }
 
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
+  let raw:string;
+  try{raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes)}catch{
+    return { response: privateJson({ ok:false, error:'Corps JSON invalide.', function_version:FUNCTION_VERSION }, 400) };
+  }
   try {
     return { body: JSON.parse(raw || '{}') };
   } catch {

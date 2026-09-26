@@ -24,3 +24,7 @@ Aucune centralisation universelle, résidence universelle des données, publicat
 ## Statut
 
 14 décisions politiques restent ouvertes. Les 26 sections anglaises restent non validées. Aucun effet juridique automatique n’est créé; la mise en production et la promulgation demeurent non autorisées.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

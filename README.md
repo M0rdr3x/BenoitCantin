@@ -22,6 +22,16 @@ Les choix de conception, de sécurité et d'évolution du projet doivent placer 
 
 La sécurité doit être obtenue avec le moins de collecte et de surveillance possible. Une mesure de protection ne doit pas devenir un prétexte pour suivre inutilement les personnes.
 
+### Transparence sur l'intelligence artificielle
+
+Les idées, la vision, les orientations et les décisions finales sont humaines. Benoit Cantin utilise des outils d'intelligence artificielle comme assistance pour structurer, rédiger, programmer, corriger, vérifier et mettre en œuvre certaines de ses idées.
+
+La mention publique standard est :
+
+> **Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.**
+
+La règle détaillée se trouve dans `AI_TRANSPARENCY.md` et la déclaration publique dans `/transparence-ia.html`. Les nouveaux livrables publics autonomes doivent inclure cette mention, ou une formulation équivalente, lorsque leur format le permet.
+
 ### Solaire : surfaces déjà artificialisées d'abord
 
 Pour tout projet solaire soutenu, proposé, conçu, recommandé ou intégré par ce portail et ses projets, la priorité est obligatoire : **installer d'abord les panneaux sur les toitures de bâtiments, les stationnements avec ombrières solaires et, lorsque pertinent, les autres surfaces ou friches déjà artificialisées et adaptées**.

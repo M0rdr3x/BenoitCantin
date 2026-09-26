@@ -65,13 +65,17 @@ permissions:
 
 jobs:
   legacy-contract:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          python-version: '3.12'
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
       - name: Contrat Histoire de vie et héritage V24.5.2
         run: python scripts/validate_life_story_legacy_v24_5_2.py
       - name: Index FK Histoire de vie

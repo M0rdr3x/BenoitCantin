@@ -12,9 +12,9 @@ Cette étape ne migre aucune donnée, ne change aucune règle serveur et ne rend
 
 ## État de référence
 
-Le dépôt contient actuellement **42 pages HTML** directement sous `compte/`.
+Le dépôt contient actuellement **44 pages HTML** directement sous `compte/`.
 
-Elles sont réparties dans sept catégories disjointes :
+Elles sont réparties dans huit catégories disjointes :
 
 1. 31 routes de sas dans `NativeModuleRouter`;
 2. 1 accueil Web de repli du compte;
@@ -22,7 +22,8 @@ Elles sont réparties dans sept catégories disjointes :
 4. 1 Registre personnel Web avec garde local ponctuel puis protections serveur;
 5. 5 flux Web d’authentification/MFA;
 6. 1 procédure Web sensible de signalement de décès;
-7. 2 pages Web contextuelles ou informatives.
+7. 2 pages Web contextuelles ou informatives;
+8. 2 routes Web dédiées à la Communauté Junior 11–12 ans.
 
 Aucune page n’est laissée « non classée ».
 
@@ -129,11 +130,20 @@ Le signalement d’un décès reste une procédure Web/serveur distincte. Aucun 
 
 Ces pages restent Web parce que leur rôle n’est pas celui d’un module natif autonome.
 
+## 8. Communauté Junior Web dédiée — 2
+
+- `/compte/communaute-junior.html`;
+- `/compte/regles-communaute-junior.html`.
+
+Ces routes restent volontairement **hors de `NativeModuleRouter`**. Le hub Communauté natif existant n’est pas considéré comme une implémentation Junior et ne doit pas être utilisé pour contourner la séparation 11–12 ans, le consentement parental, l’absence de messages privés ou la pseudonymisation renforcée.
+
+Tant qu’un contrat natif Junior distinct n’est pas prouvé, l’application doit conserver ces surfaces Web dédiées et leurs contrôles serveur. C’est un choix fail-closed, pas une limitation implicite.
+
 ## Invariant CI
 
 `validate_mobile_native_account_route_classification_v25.py` doit vérifier :
 
-- que les 42 fichiers réels sont exactement couverts par les catégories ci-dessus;
+- que les 44 fichiers réels sont exactement couverts par les catégories ci-dessus;
 - que les catégories sont disjointes;
 - que les 31 routes natives sont exactement celles déclarées dans `NATIVE_MODULE_PATHS`;
 - qu’aucune route Web sensible ou spéciale n’est présente dans `NativeModuleRouter`;

@@ -1,0 +1,45 @@
+name: Consentement Mode Voyage
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'compte/securite.html'
+      - 'assets/js/sinjira-security-travel-consent-v25.js'
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
+      - 'scripts/validate_security_travel_consent_v25.py'
+      - '.github/workflows/sinjira-security-travel-consent-v25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compte/securite.html'
+      - 'assets/js/sinjira-security-travel-consent-v25.js'
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
+      - 'scripts/validate_security_travel_consent_v25.py'
+      - '.github/workflows/sinjira-security-travel-consent-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Vérifier le consentement Voyage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier la syntaxe du garde-fou
+        run: python3 -m py_compile scripts/validate_security_travel_consent_v25.py
+
+      - name: Vérifier les garde-fous de consentement
+        run: python3 scripts/validate_security_travel_consent_v25.py

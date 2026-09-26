@@ -6,6 +6,9 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
+      - 'supabase/production-reviewed-migration-batch.txt'
+      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'
+      - 'scripts/validate_future_migration_review_plan_v25.py'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/validate_production_migration_history_workflow_security.py'
       - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
@@ -14,6 +17,9 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
+      - 'supabase/production-reviewed-migration-batch.txt'
+      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'
+      - 'scripts/validate_future_migration_review_plan_v25.py'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/validate_production_migration_history_workflow_security.py'
       - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
@@ -45,6 +51,14 @@ jobs:
       - name: Vérifier le contrat sécurité du garde historique
         shell: bash
         run: python3 scripts/validate_production_migration_history_workflow_security.py
+
+      - name: Vérifier le plan des migrations futures non revues
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/validate_future_migration_review_plan_v25.py
+          python3 scripts/validate_future_migration_review_plan_v25.py --self-test
+          python3 scripts/validate_future_migration_review_plan_v25.py
 
       - name: Déterminer la base Git
         id: migration_base

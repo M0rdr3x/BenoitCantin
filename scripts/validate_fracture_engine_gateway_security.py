@@ -23,9 +23,15 @@ REQUIRED = {
     'POST uniquement': "req.method!=='POST'",
     'Bearer explicite': "authorization.startsWith('Bearer ')",
     'JWT revérifié côté fonction': 'client.auth.getUser(token)',
-    'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture corps par texte': 'const raw=await req.text();',
-    'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'MIME JSON normalisé': ".split(';',1)[0].trim().toLowerCase()",
+    'MIME JSON exact': "contentType!=='application/json'",
+    'Content-Length numérique strict': "!/^\\d+$/.test(normalizedLength)",
+    'Content-Length entier sûr': '!Number.isSafeInteger(declaredLength)',
+    'lecture corps par flux': 'req.body?.getReader()',
+    'annulation au dépassement': 'reader.cancel()',
+    'borne pendant le flux': 'if(total>MAX_BODY_BYTES)',
+    'UTF-8 strict': "new TextDecoder('utf-8',{fatal:true})",
+    'parsing après lecture bornée': "JSON.parse(raw||'{}')",
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
     'protection MIME': "'X-Content-Type-Options':'nosniff'",
@@ -41,6 +47,8 @@ REQUIRED = {
 
 FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
+    'texte intégral non borné': 'await req.text()',
+    'MIME JSON par préfixe': "startsWith('application/json')",
     'helper JSON public partagé': "import { corsHeaders, json }",
     'retour helper JSON public': 'return json(',
     'log message action brut': 'console.warn(\'[Fracture gateway action]\'',
@@ -87,11 +95,12 @@ def validate_text(source: str, config: str) -> list[str]:
     require(errors, auth_pos >= 0 and body_pos >= 0 and auth_pos < body_pos,
             'Le JWT doit être vérifié avant toute lecture/parsing du corps.')
 
-    text_pos = source.find('const raw=await req.text();')
-    utf8_pos = source.find('new TextEncoder().encode(raw).byteLength')
-    parse_pos = source.find("JSON.parse(raw||'{}')")
-    require(errors, text_pos >= 0 and utf8_pos > text_pos and parse_pos > utf8_pos,
-            'Le corps doit être lu comme texte, mesuré en octets UTF-8, puis seulement parsé en JSON.')
+    reader_pos = source.find('req.body?.getReader()')
+    bound_pos = source.find('if(total>MAX_BODY_BYTES)', reader_pos)
+    decode_pos = source.find("new TextDecoder('utf-8',{fatal:true})", bound_pos)
+    parse_pos = source.find("JSON.parse(raw||'{}')", decode_pos)
+    require(errors, reader_pos >= 0 and bound_pos > reader_pos and decode_pos > bound_pos and parse_pos > decode_pos,
+            'Le flux doit être borné avant décodage UTF-8 strict et parsing JSON.')
 
     action_pos = source.find('const {error:actionError}=await client.rpc(action,args);')
     safe_state_pos = source.find("client.rpc('fracture_engine_get_state_safe',{p_party_code:partyCode})")
@@ -136,16 +145,19 @@ def self_test() -> None:
         raise AssertionError('Le cas réel sain doit passer: ' + ' | '.join(clean))
 
     source_mutations = {
-        'content-type retiré': source.replace("contentType.startsWith('application/json')", "contentType.startsWith('text/plain')", 1),
-        'req.json direct': source.replace('const raw=await req.text();', 'const raw=JSON.stringify(await req.json());', 1),
-        'mesure UTF-8 retirée': source.replace('new TextEncoder().encode(raw).byteLength', 'raw.length', 1),
+        'MIME JSON par préfixe': source.replace("contentType!=='application/json'", "!contentType.startsWith('application/json')", 1),
+        'req.json direct': source.replace('const reader=req.body?.getReader();', 'const unsafe=await req.json();\n  const reader=req.body?.getReader();', 1),
+        'req.text intégral': source.replace('const reader=req.body?.getReader();', 'const unsafe=await req.text();\n  const reader=req.body?.getReader();', 1),
+        'Content-Length permissif': source.replace("if(!/^\\d+$/.test(normalizedLength)){", 'if(false){', 1),
+        'annulation retirée': source.replace('try{await reader.cancel()}catch{/* Le rejet 413 reste prioritaire. */}', '', 1),
+        'UTF-8 permissif': source.replace("new TextDecoder('utf-8',{fatal:true})", "new TextDecoder('utf-8')", 1),
         'limite augmentée': source.replace('MAX_BODY_BYTES=32_000;', 'MAX_BODY_BYTES=320_000;', 1),
         'auth après corps': source.replace(
             '    const token=authorization.slice(7);',
             '    const earlyParsed=await readLimitedJson(req);\n    if(earlyParsed.response) return earlyParsed.response;\n    const token=authorization.slice(7);',
             1,
         ),
-        'getUser retiré': source.replace('const {data:userData,error:userError}=await client.auth.getUser(token);', 'const userData={user:{id:\'bypass\'}}; const userError=null;', 1),
+        'getUser retiré': source.replace("const {data:userData,error:userError}=await client.auth.getUser(token);", "const userData={user:{id:'bypass'}}; const userError=null;", 1),
         'Bearer retiré': source.replace("  if(!authorization.startsWith('Bearer ')) return privateJson({ok:false,error:'Connexion requise.',gateway_version:GATEWAY_VERSION},401);\n", '', 1),
         'no-store retiré': source.replace("  'Cache-Control':'private, no-store, max-age=0',\n", '', 1),
         'action ajoutée': source.replace("  'fracture_engine_submit_accusation'\n", "  'fracture_engine_submit_accusation',\n  'fracture_engine_debug'\n", 1),
@@ -206,7 +218,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK fracture-engine-gateway: JWT avant corps, POST JSON 32 Ko réel, allowlist fermée, état assaini, réponses no-store et logs sanitizés.')
+    print('OK fracture-engine-gateway: JWT avant corps, POST JSON exact 32 Ko borné en streaming, UTF-8 strict, allowlist fermée, état assaini, réponses no-store et logs sanitizés.')
     return 0
 
 

@@ -112,8 +112,51 @@ function renderSecurityEvents(rows){
 
 function renderTravel(rows){
   const node=qs('[data-security-travel-list]');if(!node)return;
-  if(!rows.length){node.innerHTML=empty('Aucun voyage enregistré.');return}
-  node.innerHTML=rows.map(r=>`<article class="security-item"><div class="security-item-head"><div><h3>${escapeHtml((r.destinations||[]).join(' → '))}</h3>${pill(r.status,r.status==='active'?'good':'')}</div><small>${escapeHtml(formatDate(r.starts_at))} → ${escapeHtml(formatDate(r.ends_at))}</small></div><p><small>Suppression prévue : ${escapeHtml(formatDate(r.delete_after))}</small></p>${r.status==='active'?`<div class="security-actions"><button class="btn btn-secondary" type="button" data-travel-cancel="${r.id}">Annuler ce voyage</button></div>`:''}</article>`).join('');
+  const now=Date.now();
+  const visible=(Array.isArray(rows)?rows:[]).filter(row=>{
+    const endsAt=Date.parse(row?.ends_at||'');
+    return row?.status==='active'&&Number.isFinite(endsAt)&&endsAt>=now;
+  });
+  node.replaceChildren();
+  if(!visible.length){
+    const emptyState=document.createElement('p');
+    emptyState.className='security-empty';
+    emptyState.dataset.travelSafeItem='true';
+    emptyState.textContent='Aucun Mode Voyage actif ou futur.';
+    node.append(emptyState);
+    return;
+  }
+  visible.forEach(row=>{
+    const article=document.createElement('article');
+    article.className='security-item';
+    article.dataset.travelSafeItem='true';
+
+    const head=document.createElement('div');
+    head.className='security-item-head';
+    const identity=document.createElement('div');
+    const title=document.createElement('h3');
+    title.textContent=(Array.isArray(row.destinations)?row.destinations:[]).join(' → ');
+    const badge=document.createElement('span');
+    badge.className='security-pill good';
+    const startsAt=Date.parse(row.starts_at||'');
+    badge.textContent=Number.isFinite(startsAt)&&startsAt<=now?'Actif maintenant':'À venir';
+    identity.append(title,badge);
+    const period=document.createElement('small');
+    period.textContent=`${formatDate(row.starts_at)} → ${formatDate(row.ends_at)}`;
+    head.append(identity,period);
+
+    const actions=document.createElement('div');
+    actions.className='security-actions';
+    const cancel=document.createElement('button');
+    cancel.className='btn btn-secondary';
+    cancel.type='button';
+    cancel.dataset.travelCancel=row.id;
+    cancel.textContent='Annuler ce Mode Voyage';
+    actions.append(cancel);
+
+    article.append(head,actions);
+    node.append(article);
+  });
 }
 
 function renderChallenges(rows,devices){
@@ -138,11 +181,12 @@ function fillSettings(settings){
 }
 
 async function loadState(meta,context=null){
+  const travelNowIso=new Date().toISOString();
   const [settings,devices,sessions,travel,connections,events,challenges]=await Promise.all([
     rpc('security_get_settings'),
     rpc('security_list_devices',{p_current_device_key:meta.device_key}),
     rpc('security_list_sessions'),
-    getSupabase().from('security_travel_plans').select('*').order('starts_at',{ascending:false}).limit(20).then(({data,error})=>{if(error)throw error;return data||[]}),
+    getSupabase().from('security_travel_plans').select('id,status,starts_at,ends_at,destinations').eq('status','active').gte('ends_at',travelNowIso).order('starts_at',{ascending:true}).limit(20).then(({data,error})=>{if(error)throw error;return data||[]}),
     getSupabase().from('security_connection_events').select('*').order('occurred_at',{ascending:false}).limit(MAX_RECENT).then(({data,error})=>{if(error)throw error;return data||[]}),
     getSupabase().from('security_events').select('*').order('created_at',{ascending:false}).limit(MAX_RECENT).then(({data,error})=>{if(error)throw error;return data||[]}),
     getSupabase().from('security_connection_challenges').select('*').order('created_at',{ascending:false}).limit(MAX_RECENT).then(({data,error})=>{if(error)throw error;return data||[]})
@@ -151,62 +195,126 @@ async function loadState(meta,context=null){
   return {settings,devices,sessions,travel,connections,events,challenges};
 }
 
+async function refreshAfterMutation(meta,context,message){
+  try{
+    await loadState(meta,context);
+    return true;
+  }catch{
+    status(message,'info');
+    return false;
+  }
+}
+
 async function saveSettings(){
   const values={};qsa('[data-security-setting]').forEach(input=>values[`p_${input.name}`]=Boolean(input.checked));
   await rpc('security_update_settings',values);status('Préférences de sécurité enregistrées.','success');
 }
 
 async function createTravel(form){
+  if(form.dataset.travelConsentApproved!=='true')throw new Error('TRAVEL_CONFIRMATION_REQUIRED');
+  delete form.dataset.travelConsentApproved;
   const data=new FormData(form);const start=String(data.get('starts_at')||'');const end=String(data.get('ends_at')||'');
   const destinations=String(data.get('destinations')||'').split(',').map(x=>x.trim()).filter(Boolean);
-  if(!start||!end||!destinations.length)throw new Error('Indiquez une période et au moins une destination approximative.');
+  if(!start||!end||!destinations.length)throw new Error('Indiquez une période et au moins un code pays.');
   await rpc('security_create_travel_plan',{p_starts_at:new Date(start).toISOString(),p_ends_at:new Date(end).toISOString(),p_destinations:destinations,p_multi_country:data.get('multi_country')==='on'});
   form.reset();status('Mode Voyage enregistré. Les données seront supprimées après la période de sécurité prévue.','success');
 }
 
 function confirmAction(message){return globalThis.confirm(message)}
 
-function friendlySecurityError(error){
+function setCoreActionsEnabled(enabled){
+  for(const selector of ('[data-security-settings-save],[data-security-compromised]').split(',')){
+    const button=qs(selector);
+    if(button)button.disabled=!enabled;
+  }
+}
+
+function bindReloadFallback(){
+  const button=qs('[data-security-refresh]');
+  if(!button||button.dataset.securityReloadBound==='true')return;
+  button.dataset.securityReloadBound='true';
+  button.addEventListener('click',()=>location.reload(),{once:true});
+}
+
+function friendlySecurityError(error,context='security'){
   const message=error?.message||String(error||'Erreur de sécurité.');
   if(message.includes('TRUST_CONFIRMATION_REQUIRED'))return 'Cet appareil doit d’abord être autorisé depuis un autre appareil déjà fiable.';
   if(message.includes('CURRENT_DEVICE_REQUIRED'))return 'Seul l’appareil que vous utilisez actuellement peut être marqué comme fiable.';
-  if(message.includes('AAL2_REQUIRED'))return 'Une vérification MFA récente est requise pour modifier la confiance des appareils.';
+  if(message.includes('TRAVEL_CONFIRMATION_REQUIRED'))return 'Vérifiez d’abord les données du voyage, puis confirmez explicitement son activation.';
+  if(message.includes('AAL2_REQUIRED')){
+    if(context==='travel-create')return 'Une vérification MFA récente est requise pour activer le Mode Voyage. Aucune activation n’a été effectuée.';
+    if(context==='travel-cancel')return 'Une vérification MFA récente est requise pour annuler ce Mode Voyage. Aucune annulation n’a été effectuée.';
+    return 'Une vérification MFA récente est requise pour cette action de sécurité.';
+  }
   return message;
 }
 
 async function boot(){
   const meta=deviceMetadata();
+  setCoreActionsEnabled(false);
   try{
     await requireUser();
     status('Initialisation du Centre de sécurité…');
     const contextResult=await registerContext(meta);
-    let state=await loadState(meta,contextResult.context);
+    await loadState(meta,contextResult.context);
 
-    qs('[data-security-settings-save]')?.addEventListener('click',async()=>{try{await saveSettings();state=await loadState(meta,contextResult.context)}catch(e){status(friendlySecurityError(e),'error')}});
-    qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{e.preventDefault();try{await createTravel(e.currentTarget);state=await loadState(meta,contextResult.context)}catch(err){status(friendlySecurityError(err),'error')}});
-    qs('[data-security-refresh]')?.addEventListener('click',async()=>{try{state=await loadState(meta,contextResult.context);status('État de sécurité actualisé.','success')}catch(e){status(friendlySecurityError(e),'error')}});
+    qs('[data-security-settings-save]')?.addEventListener('click',async()=>{
+      try{
+        await saveSettings();
+        await refreshAfterMutation(meta,contextResult.context,'Préférences enregistrées, mais l’état de sécurité ne peut pas être rafraîchi pour le moment.');
+      }catch(e){status(friendlySecurityError(e),'error')}
+    });
+    qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{
+      e.preventDefault();
+      try{
+        await createTravel(e.currentTarget);
+        await refreshAfterMutation(meta,contextResult.context,'Mode Voyage enregistré, mais la liste des voyages ne peut pas être rafraîchie pour le moment.');
+      }catch(err){status(friendlySecurityError(err,'travel-create'),'error')}
+    });
+    qs('[data-security-refresh]')?.addEventListener('click',async()=>{
+      try{await loadState(meta,contextResult.context);status('État de sécurité actualisé.','success')}
+      catch(e){status(friendlySecurityError(e),'error')}
+    });
     qs('[data-security-compromised]')?.addEventListener('click',async()=>{
       if(!confirmAction('Révoquer les autres appareils SINJIRA et fermer leurs sessions ?'))return;
-      try{await rpc('security_compromise_account',{p_current_device_key:meta.device_key});await getSupabase().auth.signOut({scope:'others'});state=await loadState(meta,contextResult.context);status('Mesures d’urgence appliquées : autres appareils révoqués et autres sessions fermées.','success')}catch(e){status(friendlySecurityError(e),'error')}
+      try{
+        await rpc('security_compromise_account',{p_current_device_key:meta.device_key});
+        const {error:sessionError}=await getSupabase().auth.signOut({scope:'others'});
+        if(sessionError){
+          status('Mesures d’urgence appliquées aux appareils, mais la fermeture des autres sessions n’a pas pu être confirmée. Utilisez aussi « Déconnecter tous les appareils ».','error');
+          return;
+        }
+        status('Mesures d’urgence appliquées : autres appareils révoqués et autres sessions fermées.','success');
+        await refreshAfterMutation(meta,contextResult.context,'Mesures d’urgence appliquées, mais l’état de sécurité ne peut pas être rafraîchi pour le moment.');
+      }catch(e){status(friendlySecurityError(e),'error')}
     });
 
     document.addEventListener('click',async e=>{
       const target=e.target.closest('button');if(!target)return;
+      let errorContext='security';
       try{
         if(target.dataset.deviceTrust){await rpc('security_set_device_trust',{p_device_id:target.dataset.deviceTrust,p_trusted:true,p_primary:false});status('Appareil marqué comme fiable.','success')}
         else if(target.dataset.devicePrimary){await rpc('security_set_device_trust',{p_device_id:target.dataset.devicePrimary,p_trusted:true,p_primary:true});status('Appareil principal mis à jour.','success')}
         else if(target.dataset.deviceUntrust){if(!confirmAction('Retirer la confiance à cet appareil ?'))return;await rpc('security_set_device_trust',{p_device_id:target.dataset.deviceUntrust,p_trusted:false,p_primary:false});status('Confiance retirée.','success')}
         else if(target.dataset.deviceRevoke){if(!confirmAction('Révoquer cet appareil ? Il devra être réautorisé pour être réutilisé.'))return;await rpc('security_revoke_device',{p_device_id:target.dataset.deviceRevoke});status('Appareil révoqué.','success')}
-        else if(target.dataset.travelCancel){if(!confirmAction('Annuler ce Mode Voyage ?'))return;await rpc('security_cancel_travel_plan',{p_plan_id:target.dataset.travelCancel});status('Mode Voyage annulé.','success')}
+        else if(target.dataset.travelCancel){errorContext='travel-cancel';if(!confirmAction('Annuler ce Mode Voyage ? Après confirmation, il ne sera plus utilisé pour réduire les faux positifs géographiques.'))return;await rpc('security_cancel_travel_plan',{p_plan_id:target.dataset.travelCancel});status('Mode Voyage annulé. Il n’est plus utilisé pour le signal géographique.','success')}
         else if(target.dataset.challengeApprove){await rpc('security_resolve_connection_challenge',{p_challenge_id:target.dataset.challengeApprove,p_device_key:meta.device_key,p_decision:'approved'});status('Connexion autorisée.','success')}
         else if(target.dataset.challengeDeny){await rpc('security_resolve_connection_challenge',{p_challenge_id:target.dataset.challengeDeny,p_device_key:meta.device_key,p_decision:'denied'});status('Connexion refusée. Vérifiez vos appareils si vous ne reconnaissez pas cette tentative.','success')}
         else return;
-        state=await loadState(meta,contextResult.context);
-      }catch(err){status(friendlySecurityError(err),'error')}
+        await refreshAfterMutation(meta,contextResult.context,'Action de sécurité appliquée, mais l’état affiché ne peut pas être rafraîchi pour le moment.');
+      }catch(err){status(friendlySecurityError(err,errorContext),'error')}
     });
 
+    setCoreActionsEnabled(true);
+    document.documentElement.dataset.securityCenterReady='true';
+    window.dispatchEvent(new Event('sinjira:security-center-ready'));
     status('Centre de sécurité prêt.','success');
-  }catch(error){console.error('[SINJIRA security center]',error);status(friendlySecurityError(error),'error')}
+  }catch(error){
+    delete document.documentElement.dataset.securityCenterReady;
+    setCoreActionsEnabled(false);
+    bindReloadFallback();
+    status(`${friendlySecurityError(error)} Utilisez « Actualiser » pour réessayer.`,'error');
+  }
 }
 
 boot();

@@ -221,8 +221,11 @@ def main() -> int:
 
     # Imports ES modules / Deno du site statique. L'app native est validée séparément.
     import_patterns = [
-        re.compile(r'\bfrom\s*[\'\"]([^\'\"]+)[\'\"]'),
-        re.compile(r'\bimport\s*[\'\"]([^\'\"]+)[\'\"]'),
+        # Une clause "from" n'est un import que si elle appartient réellement à
+        # une déclaration import/export. Ne pas confondre get('from') / set('from', ...).
+        re.compile(r'(?ms)^\s*import\b(?:(?!;).)*?\bfrom\s*[\'\"]([^\'\"]+)[\'\"]'),
+        re.compile(r'(?ms)^\s*export\s+(?:\*|\{(?:(?!;).)*?\})\s+from\s*[\'\"]([^\'\"]+)[\'\"]'),
+        re.compile(r'(?m)^\s*import\s*[\'\"]([^\'\"]+)[\'\"]'),
         re.compile(r'\bimport\s*\(\s*[\'\"]([^\'\"]+)[\'\"]\s*\)'),
     ]
     for source in code:
@@ -243,9 +246,15 @@ def main() -> int:
         'admin/sinjira/index.html',
         'compte/index.html',
         'compte/profil.html',
+        'compte/bibliotheque.html',
+        'compte/mes-achats.html',
+        'compte/mes-commentaires.html',
         'compte/mon-personnage.html',
         'compte/reseau-personnage.html',
         'projets/sinjira/index.html',
+        'projets/sinjira/romans/index.html',
+        'projets/sinjira/romans/lire-integral.html',
+        'projets/sinjira/romans/le-sang-du-sauveur/index.html',
         'projets/sinjira/registre/index.html',
         'projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html',
         'projets/sinjira/jeux/fracture-du-reseau-mere/partie.html',

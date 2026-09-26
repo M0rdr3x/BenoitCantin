@@ -6,16 +6,20 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/security_risk_model_v25.test.sql'
+      - 'supabase/tests/security_travel_scope_v25.test.sql'
       - 'supabase/config.toml'
       - 'scripts/validate_security_risk_workflow_security.py'
+      - 'scripts/validate_security_travel_scope_v25.py'
       - '.github/workflows/sinjira-security-risk-v25.yml'
   push:
     branches: [main]
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/security_risk_model_v25.test.sql'
+      - 'supabase/tests/security_travel_scope_v25.test.sql'
       - 'supabase/config.toml'
       - 'scripts/validate_security_risk_workflow_security.py'
+      - 'scripts/validate_security_travel_scope_v25.py'
       - '.github/workflows/sinjira-security-risk-v25.yml'
   workflow_dispatch:
 
@@ -43,6 +47,12 @@ jobs:
       - name: Vérifier le contrat CI du moteur de risque
         run: python scripts/validate_security_risk_workflow_security.py
 
+      - name: Auto-tester le contrat Mode Voyage
+        run: python scripts/validate_security_travel_scope_v25.py --self-test
+
+      - name: Vérifier le contrat Mode Voyage
+        run: python scripts/validate_security_travel_scope_v25.py
+
       - name: Installer Supabase CLI
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
         with:
@@ -54,11 +64,12 @@ jobs:
           set -euo pipefail
           supabase db start
 
-      - name: Exécuter les 27 assertions pgTAP V25
+      - name: Exécuter les contrats pgTAP V25
         shell: bash
         run: |
           set -euo pipefail
           supabase test db supabase/tests/security_risk_model_v25.test.sql --local
+          supabase test db supabase/tests/security_travel_scope_v25.test.sql --local
 
       - name: Arrêter la base locale
         if: always()

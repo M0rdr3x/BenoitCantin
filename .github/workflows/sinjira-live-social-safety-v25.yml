@@ -70,14 +70,12 @@ jobs:
       - name: Vérifier le contrat CI sécurité En direct
         run: python scripts/validate_live_social_safety_workflow_security.py
 
-      - name: Contrats statiques sécurité En direct
+      - name: Contrats fonctionnels sécurité En direct
         run: |
           python scripts/validate_live_social_safety_v25.py
           python scripts/validate_live_social_share_codes_v25.py
           python scripts/validate_live_social_foundation_v25.py
           python scripts/validate_supabase.py
-          python scripts/validate_production_migration_ledger.py
-          python scripts/validate_production_schema_manifest.py
 
       - name: Installer Supabase CLI
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
@@ -111,3 +109,9 @@ jobs:
       - name: Arrêter Supabase local
         if: always()
         run: supabase stop --no-backup || true
+
+      - name: Vérifier le ledger production canonique
+        run: python scripts/validate_production_migration_ledger.py
+
+      - name: Vérifier le manifeste de schéma production
+        run: python scripts/validate_production_schema_manifest.py

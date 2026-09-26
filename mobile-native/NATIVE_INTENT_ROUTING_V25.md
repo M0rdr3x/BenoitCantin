@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Les 42 pages `compte/*.html` sont maintenant classées et 31 chemins appartiennent à `NATIVE_MODULE_PATHS`. Le shell mobile doit appliquer cette classification de façon cohérente lorsqu’une navigation provient de l’application, d’un lien profond SINJIRA ou d’une notification.
+Les 44 pages `compte/*.html` sont maintenant classées et 31 chemins appartiennent à `NATIVE_MODULE_PATHS`. Le shell mobile doit appliquer cette classification de façon cohérente lorsqu’une navigation provient de l’application, d’un lien profond SINJIRA ou d’une notification.
 
 **L’HUMAIN AVANT TOUT. PROTÉGER SANS SURVEILLER.**
 
@@ -12,10 +12,12 @@ Cette étape ne copie aucune donnée privée et ne change aucune autorisation se
 
 Dans `navigateToUrl` :
 
-- une URL interne HTTPS vers un chemin de `NATIVE_MODULE_PATHS`, sans fragment et sans `surface=web`, ouvre le hub correspondant via `openNativeModule`;
+- une URL interne HTTPS vers un chemin de `NATIVE_MODULE_PATHS`, sans fragment et sans `surface=web`, n’ouvre le hub correspondant via `openNativeModule` que lorsque le shell a reçu l’état coarse `nonchild` depuis une page `/compte/` authentifiée;
 - `?surface=web` indique une sortie Web explicite et conserve la surface Web existante;
 - un fragment n’est pas absorbé par le routeur natif, afin de ne pas perdre une destination précise d’une surface Web;
-- une URL externe ou un hôte non autorisé ne devient jamais une intention native.
+- une URL externe ou un hôte non autorisé ne devient jamais une intention native;
+- l’état `unknown` est fail-closed : les hubs généraux ne s’ouvrent pas et la navigation retombe sur la surface Web autoritative;
+- l’état `child` utilise une navigation Junior distincte et ne peut pas ouvrir un hub natif général.
 
 Le paramètre `surface=web` n’accorde aucun droit. Il choisit uniquement la surface d’interface. Authentification, RLS, AAL2, moteur de risque, RPC et autres protections restent appliqués par les mécanismes existants.
 
@@ -62,9 +64,11 @@ Les hubs sensibles audités conservent cette règle pour Messages, Rencontres, E
 
 ## Navigation interne de la WebView
 
-Cette étape **n’intercepte pas** les clics internes déjà actifs dans la WebView. `shouldStart` conserve son comportement historique et son traitement spécial du Registre.
+Pour les comptes `nonchild`, `shouldStart` conserve le comportement général historique et le traitement spécial du Registre.
 
-Cette limite est volontaire : changer en même temps les navigations internes d’une surface Web pourrait casser un flux contextuel ou un état déjà ouvert. Le présent lot ferme uniquement l’écart des intentions qui passent par le shell mobile, les hubs, les liens profonds et les notifications.
+Pour un compte déjà identifié `child`, le shell applique toutefois une frontière supplémentaire **avant chargement** : les liens internes vers Messages, Rencontres, Emploi, playtests, Mon IA, Monde parallèle, commerce, licences et autres routes explicitement restreintes sont réécrits vers `/compte/communaute-junior.html?from=restricted&module=...`. La Communauté générale et ses règles sont réécrites vers leurs versions Junior.
+
+Les routes autorisées 11–12 ans, par exemple Profil ou la Bibliothèque filtrée, restent dans la WebView. Cette interception ne décide jamais qu’un contenu est convenable : RLS, RPC et classement humain `approved_11_12` restent l’autorité.
 
 ## Pages volontairement Web
 
@@ -74,6 +78,7 @@ La classification précédente reste inchangée :
 - auth/MFA : connexion, inscription, récupération, réinitialisation et MFA;
 - `/compte/signaler-deces.html` : procédure sensible Web/serveur;
 - `/compte/projet.html` et `/compte/confidentialite-joueur.html` : pages contextuelles/informatives;
+- `/compte/communaute-junior.html` et `/compte/regles-communaute-junior.html` : surfaces Web Junior dédiées, hors du routeur natif général;
 - Registre : Web gardé;
 - fragments Sécurité : Web.
 
@@ -92,6 +97,9 @@ Aucune de ces routes n’est ajoutée à `NATIVE_MODULE_PATHS` par ce changement
 - le passage des liens profonds par `navigateToUrl`;
 - le passage des notifications par `navigate`;
 - l’absence d’interception `openNativeModule` dans `shouldStart`;
+- le refus d’ouvrir un hub général lorsque l’état du compte est `unknown` ou `child`;
+- les redirections préchargement des routes restreintes lorsqu’un compte `child` est déjà connu;
+- la preuve exécutable qu’un lien Messages est réécrit vers Junior tandis qu’un lien Profil reste autorisé;
 - la présence des cinq fragments Web du hub Sécurité;
 - le rechaînage des gardes de classification, routeur, navigation, challenge, secrets, coffre et TypeScript.
 

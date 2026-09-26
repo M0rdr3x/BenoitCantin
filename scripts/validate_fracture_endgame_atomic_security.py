@@ -16,9 +16,17 @@ EDGE_REQUIRED = {
     'auth partagée': "import { requiredUser, serviceClient } from '../_shared/auth.ts';",
     'POST uniquement': "req.method !== 'POST'",
     'auth avant traitement': 'const user = await requiredUser(req);',
-    'lecture texte bornable': 'const rawBody = await req.text();',
-    'taille UTF-8 réelle': 'new TextEncoder().encode(rawBody).byteLength',
-    'content-type JSON': "contentType.startsWith('application/json')",
+    'MIME JSON normalisé': ".split(';', 1)[0].trim().toLowerCase()",
+    'MIME JSON exact': "contentType !== 'application/json'",
+    'Content-Length numérique strict': "!/^\\d+$/.test(normalizedLength)",
+    'Content-Length entier sûr': '!Number.isSafeInteger(declaredLength)',
+    'lecture corps par flux': 'req.body?.getReader()',
+    'annulation au dépassement': 'reader.cancel()',
+    'borne pendant le flux': 'if (total > MAX_REQUEST_BYTES)',
+    'UTF-8 strict': "new TextDecoder('utf-8', { fatal: true })",
+    'parsing après lecture bornée': "JSON.parse(rawBody || '{}')",
+    'corps à clé unique': 'Object.keys(body).length !== 1',
+    'party_code typé': "typeof body.party_code !== 'string'",
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma': 'no-cache'",
     'nosniff': "'X-Content-Type-Options': 'nosniff'",
@@ -39,6 +47,8 @@ EDGE_REQUIRED = {
 
 EDGE_FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
+    'texte intégral non borné': 'await req.text()',
+    'MIME JSON par préfixe': "startsWith('application/json')",
     'insert contribution direct': ".from('internal_gameplay_contributions').insert",
     'update rapport direct': ".from('fracture_endgame_reports').update",
     'update partie direct': ".from('fracture_parties').update",
@@ -62,8 +72,8 @@ SQL_REQUIRED = {
     'réparation partie seulement active': "where id = p_party_id and status = 'in_progress';",
     'partie active': "if v_party.status <> 'in_progress' then raise exception 'fracture_party_not_active'; end if;",
     'rapport non soumis': "if v_report.submitted_at is not null then raise exception 'fracture_endgame_inconsistent'; end if;",
-    'snapshot partie': "v_party.updated_at is distinct from p_party_updated_at",
-    'snapshot rapport': "v_report.updated_at is distinct from p_report_updated_at",
+    'snapshot partie': 'v_party.updated_at is distinct from p_party_updated_at',
+    'snapshot rapport': 'v_report.updated_at is distinct from p_report_updated_at',
     'insert contribution': 'insert into public.internal_gameplay_contributions(',
     'rapport finalisé': 'update public.fracture_endgame_reports',
     'partie finalisée': 'update public.fracture_parties',
@@ -99,11 +109,18 @@ def validate(edge_path: Path, migration_path: Path) -> list[str]:
             errors.append(f'Garde Edge Fracture violé: {label}.')
 
     auth_pos = edge.find('const user = await requiredUser(req);')
-    body_pos = edge.find('const rawBody = await req.text();')
+    body_pos = edge.find('await readLimitedJson(req)')
     if auth_pos < 0 or body_pos < 0:
         errors.append('Ordre auth/corps Fracture impossible à vérifier.')
     elif auth_pos > body_pos:
         errors.append('La fin de partie ne doit pas lire le corps avant authentification.')
+
+    reader_pos = edge.find('req.body?.getReader()')
+    bound_pos = edge.find('if (total > MAX_REQUEST_BYTES)', reader_pos)
+    decode_pos = edge.find("new TextDecoder('utf-8', { fatal: true })", bound_pos)
+    parse_pos = edge.find("JSON.parse(rawBody || '{}')", decode_pos)
+    if reader_pos < 0 or bound_pos < reader_pos or decode_pos < bound_pos or parse_pos < decode_pos:
+        errors.append('La fin de partie doit borner le flux avant décodage UTF-8 strict et parsing JSON.')
 
     sql_lower = sql.lower()
     for label, marker in SQL_REQUIRED.items():
@@ -138,11 +155,15 @@ def self_test() -> None:
         raise AssertionError('Les fichiers réels sains doivent passer: ' + ' | '.join(clean))
 
     edge_cases = {
-        'JSON direct': real_edge.replace('const rawBody = await req.text();', 'const rawBody = JSON.stringify(await req.json());', 1),
+        'JSON direct': real_edge.replace('const reader = req.body?.getReader();', 'const bodyUnsafe = await req.json();\n  const reader = req.body?.getReader();', 1),
+        'texte intégral': real_edge.replace('const reader = req.body?.getReader();', 'const rawUnsafe = await req.text();\n  const reader = req.body?.getReader();', 1),
         'limite HTTP augmentée': real_edge.replace('MAX_REQUEST_BYTES = 4096;', 'MAX_REQUEST_BYTES = 40960;', 1),
-        'content-type retiré': real_edge.replace("    if (!contentType.startsWith('application/json')) {", "    if (false) {", 1),
+        'MIME par préfixe': real_edge.replace("contentType !== 'application/json'", "!contentType.startsWith('application/json')", 1),
+        'Content-Length permissif': real_edge.replace("if (!/^\\d+$/.test(normalizedLength)) {", 'if (false) {', 1),
+        'annulation retirée': real_edge.replace('try { await reader.cancel(); } catch { /* Le rejet 413 reste prioritaire. */ }', '', 1),
+        'UTF-8 permissif': real_edge.replace("new TextDecoder('utf-8', { fatal: true })", "new TextDecoder('utf-8')", 1),
         'no-store retiré': real_edge.replace("      'Cache-Control': 'private, no-store, max-age=0',\n", '', 1),
-        'auth retirée': real_edge.replace('    const user = await requiredUser(req);\n', '', 1),
+        'lecture avant auth': real_edge.replace('    const user = await requiredUser(req);', '    const earlyBody = await readLimitedJson(req);\n    const user = await requiredUser(req);', 1),
         'code partie relâché': real_edge.replace('const PARTY_CODE_RE = /^FRM-[A-Z0-9]{6}$/;', 'const PARTY_CODE_RE = /^FRM-/;', 1),
         'erreur partie ignorée': real_edge.replace("    if (partyError) throw new Error('PARTY_LOOKUP_FAILED');\n", '', 1),
         'erreur rapport ignorée': real_edge.replace("    if (reportError) throw new Error('REPORT_LOOKUP_FAILED');\n", '', 1),
@@ -154,7 +175,7 @@ def self_test() -> None:
     sql_cases = {
         'service_role retiré': real_sql.replace("  if coalesce(auth.jwt()->>'role','') <> 'service_role' then\n    raise exception 'SERVICE_ROLE_REQUIRED';\n  end if;\n", '', 1),
         'verrou partie retiré': real_sql.replace('  for update;\n', ';\n', 1),
-        'archive non préservée': real_sql.replace("    if v_party.status = 'archived' then\n", "    if false then\n", 1),
+        'archive non préservée': real_sql.replace("    if v_party.status = 'archived' then\n", '    if false then\n', 1),
         'snapshot partie retiré': real_sql.replace("  if p_party_updated_at is null or v_party.updated_at is distinct from p_party_updated_at then\n    raise exception 'FRACTURE_PARTY_CHANGED';\n  end if;\n", '', 1),
         'snapshot rapport retiré': real_sql.replace("  if p_report_updated_at is null or v_report.updated_at is distinct from p_report_updated_at then\n    raise exception 'FRACTURE_ENDGAME_REPORT_CHANGED';\n  end if;\n", '', 1),
         'insert contribution retiré': real_sql.replace('  insert into public.internal_gameplay_contributions(', '  insert into public.removed_contributions(', 1),
@@ -200,7 +221,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK fin de partie Fracture: auth avant corps, JSON 4 KiB, lectures fail-closed, réponses privées, archive préservée et finalisation SQL atomique service_role.')
+    print('OK fin de partie Fracture: auth avant corps, JSON exact 4 KiB borné en streaming, UTF-8 strict, lectures fail-closed, réponses privées, archive préservée et finalisation SQL atomique service_role.')
     return 0
 
 

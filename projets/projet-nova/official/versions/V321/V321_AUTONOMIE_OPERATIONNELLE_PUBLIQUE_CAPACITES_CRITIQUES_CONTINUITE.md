@@ -346,3 +346,7 @@ V321 demeure un document de conception technique et politique du Projet Nova.
 `production=false`  
 `github_push=false`  
 `automatic_legal_effects=false`
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

@@ -7,19 +7,30 @@ on:
       - 'supabase/config.toml'
       - 'supabase/functions/**'
       - 'supabase/migrations/20260911225500_sinjira_v25_fracture_endgame_atomic_submit.sql'
+      - 'supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql'
       - 'scripts/validate_public_edge_auth.py'
       - 'scripts/validate_public_edge_auth_workflow_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_edge_response_privacy_v24_5_48.py'
       - 'scripts/validate_get_document_url_security.py'
       - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_send_game_report_security.py'
+      - 'scripts/validate_contribution_revocation_v24_5_52.py'
+      - 'scripts/validate_game_contribution_v24_5_53.py'
       - 'scripts/validate_send_player_sheet_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
+      - 'scripts/validate_conscience_vault_edge_v25.py'
+      - 'scripts/validate_personal_ai_v25.py'
       - 'scripts/validate_admin_reports_request_security.py'
       - 'scripts/validate_admin_license_codes_security.py'
       - 'scripts/validate_admin_console_request_security.py'
+      - 'scripts/validate_admin_console_security.py'
       - 'scripts/validate_admin_sinjira_v18_request_security.py'
+      - 'scripts/validate_admin_v18_privacy_security.py'
       - 'scripts/validate_admin_analytics_request_security.py'
+      - 'scripts/validate_admin_private_reads_security.py'
+      - 'scripts/validate_admin_social_request_security.py'
       - 'scripts/validate_admin_users_privacy.py'
       - 'scripts/validate_character_questionnaire_security.py'
       - 'scripts/validate_fracture_endgame_atomic_security.py'
@@ -31,19 +42,30 @@ on:
       - 'supabase/config.toml'
       - 'supabase/functions/**'
       - 'supabase/migrations/20260911225500_sinjira_v25_fracture_endgame_atomic_submit.sql'
+      - 'supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql'
       - 'scripts/validate_public_edge_auth.py'
       - 'scripts/validate_public_edge_auth_workflow_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_edge_response_privacy_v24_5_48.py'
       - 'scripts/validate_get_document_url_security.py'
       - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_send_game_report_security.py'
+      - 'scripts/validate_contribution_revocation_v24_5_52.py'
+      - 'scripts/validate_game_contribution_v24_5_53.py'
       - 'scripts/validate_send_player_sheet_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
+      - 'scripts/validate_conscience_vault_edge_v25.py'
+      - 'scripts/validate_personal_ai_v25.py'
       - 'scripts/validate_admin_reports_request_security.py'
       - 'scripts/validate_admin_license_codes_security.py'
       - 'scripts/validate_admin_console_request_security.py'
+      - 'scripts/validate_admin_console_security.py'
       - 'scripts/validate_admin_sinjira_v18_request_security.py'
+      - 'scripts/validate_admin_v18_privacy_security.py'
       - 'scripts/validate_admin_analytics_request_security.py'
+      - 'scripts/validate_admin_private_reads_security.py'
+      - 'scripts/validate_admin_social_request_security.py'
       - 'scripts/validate_admin_users_privacy.py'
       - 'scripts/validate_character_questionnaire_security.py'
       - 'scripts/validate_fracture_endgame_atomic_security.py'
@@ -71,6 +93,10 @@ jobs:
         run: python scripts/validate_public_edge_auth_workflow_security.py
       - name: Vérifier les exceptions verify_jwt=false
         run: python scripts/validate_public_edge_auth.py
+      - name: Vérifier l’inventaire Edge convergé
+        run: python scripts/validate_edge_function_inventory.py
+      - name: Vérifier la confidentialité transversale des réponses Edge V24.5.48
+        run: python scripts/validate_edge_response_privacy_v24_5_48.py
       - name: Auto-tester get-document-url
         run: python scripts/validate_get_document_url_security.py --self-test
       - name: Vérifier la frontière publique de get-document-url
@@ -83,6 +109,10 @@ jobs:
         run: python scripts/validate_send_game_report_security.py --self-test
       - name: Vérifier la frontière publique de send-game-report
         run: python scripts/validate_send_game_report_security.py
+      - name: Vérifier la révocation contribution bornée
+        run: python scripts/validate_contribution_revocation_v24_5_52.py
+      - name: Vérifier la soumission contribution bornée
+        run: python scripts/validate_game_contribution_v24_5_53.py
       - name: Auto-tester send-player-sheet
         run: python scripts/validate_send_player_sheet_security.py --self-test
       - name: Vérifier la frontière privée de send-player-sheet
@@ -95,6 +125,10 @@ jobs:
         run: python scripts/validate_security_context_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de security-context
         run: python scripts/validate_security_context_request_security.py
+      - name: Vérifier la frontière du Coffre des consciences
+        run: python scripts/validate_conscience_vault_edge_v25.py
+      - name: Vérifier la frontière Mon IA
+        run: python scripts/validate_personal_ai_v25.py
       - name: Auto-tester admin-reports
         run: python scripts/validate_admin_reports_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de admin-reports
@@ -107,14 +141,30 @@ jobs:
         run: python scripts/validate_admin_console_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de admin-console
         run: python scripts/validate_admin_console_request_security.py
+      - name: Auto-tester le contrat global admin-console
+        run: python scripts/validate_admin_console_security.py --self-test
+      - name: Vérifier le contrat global admin-console
+        run: python scripts/validate_admin_console_security.py
       - name: Auto-tester admin-sinjira-v18
         run: python scripts/validate_admin_sinjira_v18_request_security.py --self-test
       - name: Vérifier la confidentialité et les décisions humaines de admin-sinjira-v18
         run: python scripts/validate_admin_sinjira_v18_request_security.py
+      - name: Auto-tester le contrat global admin V18
+        run: python scripts/validate_admin_v18_privacy_security.py --self-test
+      - name: Vérifier le contrat global admin V18
+        run: python scripts/validate_admin_v18_privacy_security.py
       - name: Auto-tester admin-analytics
         run: python scripts/validate_admin_analytics_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de admin-analytics
         run: python scripts/validate_admin_analytics_request_security.py
+      - name: Auto-tester les lectures admin privées
+        run: python scripts/validate_admin_private_reads_security.py --self-test
+      - name: Vérifier les lectures admin privées
+        run: python scripts/validate_admin_private_reads_security.py
+      - name: Auto-tester admin-social-v20
+        run: python scripts/validate_admin_social_request_security.py --self-test
+      - name: Vérifier la frontière HTTP de la modération admin V20
+        run: python scripts/validate_admin_social_request_security.py
       - name: Auto-tester admin-users
         run: python scripts/validate_admin_users_privacy.py --self-test
       - name: Vérifier la confidentialité et la minimisation de admin-users

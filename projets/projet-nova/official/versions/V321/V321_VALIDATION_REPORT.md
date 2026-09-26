@@ -25,3 +25,7 @@ Le module autonome compte **6 pages** et a été inspecté visuellement. Le corp
 ## Statut
 
 La validation est technique. Elle ne constitue ni promulgation, ni avis juridique, ni mise en production. V321 demeure un checkpoint détaché; V322 devra l’ajouter à l’historique append-only après replay propre.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

@@ -14,3 +14,7 @@
 
 ## Portée
 V322 ferme techniquement la suite logique V321 et organise le cycle de vie, la maintenance et la logistique des capacités publiques.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

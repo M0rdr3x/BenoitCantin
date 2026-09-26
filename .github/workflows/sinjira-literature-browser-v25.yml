@@ -1,0 +1,70 @@
+name: SINJIRA V25 — Navigateur Littérature
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'projets/sinjira/romans/**'
+      - 'assets/js/sinjira-reader.js'
+      - 'assets/js/sinjira-literature-catalog-v25.js'
+      - 'assets/js/sinjira-private-book-reader.js'
+      - 'assets/js/sinjira-account-v18.js'
+      - 'tests/e2e/test_literature_site.py'
+      - '.github/workflows/sinjira-literature-browser-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-literature-browser-v25-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  literature-browser:
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    timeout-minutes: 20
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier la syntaxe du scénario
+        run: python3 -m py_compile tests/e2e/test_literature_site.py
+
+      - name: Installer le client Playwright épinglé
+        run: python -m pip install --disable-pip-version-check 'playwright==1.61.0'
+
+      - name: Démarrer le site statique local
+        run: |
+          python -m http.server 4173 --bind 127.0.0.1 > /tmp/sinjira-http.log 2>&1 &
+          echo $! > /tmp/sinjira-http.pid
+          i=0
+          while [ "$i" -lt 20 ]; do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            i=$((i + 1))
+            sleep 1
+          done
+          cat /tmp/sinjira-http.log
+          exit 1
+
+      - name: Tester Littérature sans dépendance production
+        env:
+          BASE_URL: http://127.0.0.1:4173/
+          BROWSER: chromium
+        run: python tests/e2e/test_literature_site.py
+
+      - name: Arrêter le serveur local
+        if: always()
+        run: |
+          if [ -f /tmp/sinjira-http.pid ]; then kill "$(cat /tmp/sinjira-http.pid)" || true; fi

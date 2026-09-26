@@ -62,6 +62,10 @@ WEB_CONTEXTUAL_INFO = {
     "/compte/projet.html",
     "/compte/confidentialite-joueur.html",
 }
+WEB_CHILD_JUNIOR = {
+    "/compte/communaute-junior.html",
+    "/compte/regles-communaute-junior.html",
+}
 
 CATEGORIES = {
     "native_module": NATIVE_MODULE,
@@ -71,6 +75,7 @@ CATEGORIES = {
     "web_auth_mfa": WEB_AUTH_MFA,
     "web_death_procedure": WEB_DEATH_PROCEDURE,
     "web_contextual_info": WEB_CONTEXTUAL_INFO,
+    "web_child_junior": WEB_CHILD_JUNIOR,
 }
 
 
@@ -89,8 +94,8 @@ def main() -> int:
         require(path.exists(), f"élément manquant: {path.relative_to(ROOT)}")
 
     actual_pages = {f"/compte/{path.name}" for path in ACCOUNT_DIR.glob("*.html") if path.is_file()}
-    require(len(actual_pages) == 42,
-            f"inventaire compte attendu à 42 pages, trouvé {len(actual_pages)}; toute nouvelle page doit être classifiée explicitement")
+    require(len(actual_pages) == 44,
+            f"inventaire compte attendu à 44 pages, trouvé {len(actual_pages)}; toute nouvelle page doit être classifiée explicitement")
 
     seen: dict[str, str] = {}
     for category, routes in CATEGORIES.items():
@@ -104,7 +109,7 @@ def main() -> int:
     stale = sorted(classified - actual_pages)
     require(not missing, f"pages compte non classifiées: {', '.join(missing)}")
     require(not stale, f"routes classifiées sans fichier réel: {', '.join(stale)}")
-    require(len(classified) == 42, f"classification attendue à 42 routes, trouvée {len(classified)}")
+    require(len(classified) == 44, f"classification attendue à 44 routes, trouvée {len(classified)}")
     require(len(NATIVE_MODULE) == 31, f"classification native attendue à 31 routes, trouvée {len(NATIVE_MODULE)}")
 
     router = ROUTER.read_text("utf-8")
@@ -119,7 +124,7 @@ def main() -> int:
     require(not missing_native, f"routes natives classifiées absentes du routeur: {', '.join(missing_native)}")
     require(not extra_native, f"routes du routeur non approuvées par la classification: {', '.join(extra_native)}")
 
-    for category in (WEB_ACCOUNT_HOME, DEDICATED_SECURITY, GUARDED_VAULT, WEB_AUTH_MFA, WEB_DEATH_PROCEDURE, WEB_CONTEXTUAL_INFO):
+    for category in (WEB_ACCOUNT_HOME, DEDICATED_SECURITY, GUARDED_VAULT, WEB_AUTH_MFA, WEB_DEATH_PROCEDURE, WEB_CONTEXTUAL_INFO, WEB_CHILD_JUNIOR):
         for route in category:
             require(route not in router_set, f"route volontairement hors module ajoutée au routeur: {route}")
 
@@ -145,7 +150,7 @@ def main() -> int:
     for route in sorted(classified):
         require(route in doc, f"route absente de la documentation de classification: {route}")
     for marker in (
-        "42 pages html",
+        "44 pages html",
         "31 routes de sas",
         "accueil web de repli",
         "sécurité dédiée hors routeur",
@@ -153,6 +158,7 @@ def main() -> int:
         "authentification et mfa web",
         "procédure décès web sensible",
         "pages web contextuelles ou informatives",
+        "communauté junior web dédiée",
         "révision humaine obligatoire",
         "aucune page n’est laissée",
         "protéger sans surveiller",
@@ -192,7 +198,7 @@ def main() -> int:
         for marker in ("environment: production", "supabase_access_token", "${{ secrets.", "supabase start", "supabase db"):
             require(marker.lower() not in lowered, f"production/secret interdit dans workflow {label}: {marker}")
 
-    print("OK classification routes compte V25: 42/42 pages classifiées; 31 routes natives exactes; surfaces sensibles explicitement hors routeur.")
+    print("OK classification routes compte V25: 44/44 pages classifiées; 31 routes natives exactes; Communauté Junior Web dédiée et surfaces sensibles explicitement hors routeur.")
     return 0
 
 

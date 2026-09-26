@@ -20,16 +20,42 @@ def need_ci(text,marker,label):
 def forbid(text,marker,label):
     if marker in text: errors.append(label)
 
-for marker in ('requiredPersonalAiUser','readBoundedJson','req.body.getReader()','service_personal_ai_evaluate_access','CLIENT_IDENTITY_FORBIDDEN','private, no-store','X-Content-Type-Options','Referrer-Policy'):
+for marker in (
+    'requiredPersonalAiUser','readBoundedJson','req.body.getReader()',
+    'service_personal_ai_evaluate_access','CLIENT_IDENTITY_FORBIDDEN','private, no-store',
+    'X-Content-Type-Options','Referrer-Policy','const MAX_REQUEST_BYTES = 16 * 1024;',
+    "const rawLength = req.headers.get('content-length');",
+    "if (!/^\\d+$/.test(normalizedLength)) throw new Error('REQUEST_TOO_LARGE');",
+    'if (!Number.isSafeInteger(declared) || declared > MAX_REQUEST_BYTES)',
+    "reader.cancel('REQUEST_TOO_LARGE')",
+    "new TextDecoder('utf-8', { fatal: true })",
+):
     need(EDGE,marker,f'Edge: garde manquante {marker}')
 need(EDGE,"service_personal_ai_get_state",'Edge: RPC état absente')
 need(EDGE,"service_personal_ai_update_settings",'Edge: RPC réglages absente')
 need(EDGE,"service_personal_ai_set_source_permission",'Edge: RPC consentement absente')
 need(EDGE,"service_personal_ai_delete_data",'Edge: RPC suppression absente')
-for marker in ("await req.json()","service.rpc('security_evaluate_context'","conscience_entries","service_conscience_","life_story_entries","employment_profiles","employment_applications"):
+for marker in (
+    "await req.json()",
+    "await req.text()",
+    "Number(req.headers.get('content-length') || 0)",
+    "service.rpc('security_evaluate_context'",
+    "conscience_entries","service_conscience_","life_story_entries","employment_profiles","employment_applications",
+):
     forbid(EDGE,marker,f'Edge: accès/lecture interdite détectée {marker}')
 for action in ("'chat'","'memory'","'retrieve_source'","'complete'","'generate'"):
     forbid(EDGE,action,f'Edge: runtime IA prématuré détecté {action}')
+
+auth_pos=EDGE.find('const { user, service } = await requiredPersonalAiUser(req);')
+body_pos=EDGE.find('const body = await readBoundedJson(req);')
+if auth_pos < 0 or body_pos < 0 or auth_pos > body_pos:
+    errors.append('Edge: requiredPersonalAiUser(req) doit précéder toute lecture du corps Mon IA')
+reader_pos=EDGE.find('req.body.getReader()')
+bound_pos=EDGE.find('if (total > MAX_REQUEST_BYTES)', reader_pos)
+decode_pos=EDGE.find("new TextDecoder('utf-8', { fatal: true })", bound_pos)
+parse_pos=EDGE.find('JSON.parse(', decode_pos)
+if reader_pos < 0 or bound_pos < reader_pos or decode_pos < bound_pos or parse_pos < decode_pos:
+    errors.append('Edge: le corps Mon IA doit être borné pendant le flux avant décodage UTF-8 strict et parsing JSON')
 
 for marker in ('personal_ai_settings','personal_ai_source_permissions','personal_ai_audit','ai_private','service_personal_ai_evaluate_access','PERSONAL_AI_AAL2_REQUIRED','PERSONAL_AI_RISK_REFUSED'):
     need(MIG,marker,f'SQL: contrat manquant {marker}')
@@ -63,4 +89,4 @@ if errors:
     print(f'ECHEC contrat Mon IA V25: {len(errors)} problème(s).')
     for error in errors: print('- '+error)
     raise SystemExit(1)
-print('OK Mon IA V25: fondation privée AAL2/ai_private, Edge bornée no-store, aucune mémoire/chat/provider, aucune lecture directe du Registre/Histoire de vie/Emploi et contrôle explicite des consentements.')
+print('OK Mon IA V25: AAL2/ai_private, JSON 16 KiB borné en streaming, Content-Length fail-closed, UTF-8 strict, aucune mémoire/chat/provider, aucune lecture directe du Registre/Histoire de vie/Emploi et contrôle explicite des consentements.')

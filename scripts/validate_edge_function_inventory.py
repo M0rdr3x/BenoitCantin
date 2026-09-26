@@ -11,7 +11,7 @@ CANONICAL = {
     "admin-analytics", "admin-console", "admin-license-codes", "admin-reports",
     "admin-sinjira-v18", "admin-social-v20", "admin-users", "conscience-vault",
     "delete-player-account", "fracture-engine-gateway", "get-document-url",
-    "get-private-book-url", "life-story-delivery", "life-story-export", "personal-ai",
+    "get-private-book-url", "get-private-book-reading-url", "get-private-novel-url", "life-story-delivery", "life-story-export", "personal-ai",
     "redeem-license-code", "revoke-my-contributions", "security-context", "send-game-report",
     "send-player-sheet", "submit-character-questionnaire", "submit-fracture-endgame",
     "submit-game-contribution",
@@ -25,13 +25,19 @@ RETIRED = {
 CUSTOM_AUTH = {
     "get-document-url": (
         "optionalUser", "project_access_rank", "doc.status!=='approved'",
-        "doc.projects?.status!=='active'", "createSignedUrl", "MAX_REQUEST_BYTES", "UUID_RE",
-        "externalUrlAllowed", "TextEncoder", "Cache-Control", "no-store", "Referrer-Policy",
+        "const projectStatus=String(doc?.projects?.status||'')",
+        "!['development','testing','active','archived'].includes(projectStatus)",
+        "productSlug&&userRank<20", "service.rpc('has_sinjira_product'",
+        "if(hasProduct!==true)", "createSignedUrl", "MAX_REQUEST_BYTES", "UUID_RE",
+        "externalUrlAllowed", "readLimitedJson", "req.body?.getReader()", "reader.cancel",
+        "new TextDecoder('utf-8',{fatal:true})", "contentType!=='application/json'",
+        "Cache-Control", "no-store", "Referrer-Policy",
     ),
     "send-game-report": (
-        "optionalUser", "!user?.email", "to: [user.email]", "MAX_REQUEST_BYTES", "TextEncoder",
-        "PAID_EXTERNAL_SERVICES_ENABLED=false", "MAX_TEMPLATE_BYTES=15*1024*1024",
-        "TEMPLATE_ORIGIN='https://www.benoitcantin.com'",
+        "optionalUser", "!user?.email", "to: [user.email]", "MAX_REQUEST_BYTES", "readLimitedJson",
+        "req.body?.getReader()", "reader.cancel", "new TextDecoder('utf-8',{fatal:true})",
+        "contentType!=='application/json'", "PAID_EXTERNAL_SERVICES_ENABLED=false",
+        "MAX_TEMPLATE_BYTES=15*1024*1024", "TEMPLATE_ORIGIN='https://www.benoitcantin.com'",
         "TEMPLATE_PATH_PREFIX='/projets/sinjira/jeux/fracture-du-reseau-mere/documents/'",
         "redirect:'error'", "REPORT_TEMPLATE_TOO_LARGE", "%PDF-", "Cache-Control", "no-store",
         "Referrer-Policy",
@@ -43,6 +49,16 @@ CUSTOM_AUTH = {
         "Content-Security-Policy", "Cache-Control", "no-store",
     ),
 }
+
+PRIVATE_BOOK_ENDPOINT_GUARDS = (
+    "req.method!=='POST'", "requiredUser(req)", "privateBookStorageConfig()",
+    "service.rpc('sinjira_age_band',{p_user_id:user.id})",
+    "if(normalizedAgeBand==='child')",
+    "if(!['adult','youth'].includes(normalizedAgeBand))",
+    "requirePrivateBookAccess(service,user.id)", "createSignedUrl",
+    "LIVRE_I_SIGNED_URL_SECONDS", "Cache-Control", "private, no-store",
+    "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
+)
 
 JWT_SENSITIVE_GUARDS = {
     "conscience-vault": (
@@ -58,32 +74,37 @@ JWT_SENSITIVE_GUARDS = {
         "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
         "conversation_enabled", "source_retrieval_enabled",
     ),
-    "get-private-book-url": (
-        "req.method!=='POST'", "requiredUser(req)", "user_entitlements",
-        ".eq('user_id',user.id)", ".eq('product_id',product.id)",
-        "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED", "SINJIRA_LIVRE_I_PRIVATE_BUCKET",
-        "SINJIRA_LIVRE_I_PRIVATE_PATH", "SIGNED_URL_SECONDS=300", "createSignedUrl",
+    "get-private-book-url": PRIVATE_BOOK_ENDPOINT_GUARDS,
+    "get-private-book-reading-url": PRIVATE_BOOK_ENDPOINT_GUARDS,
+    "get-private-novel-url": (
+        "req.method!=='POST'", "MAX_REQUEST_BYTES = 2048", "requiredUser(req)", "readBoundedJson(req)",
+        "req.body.getReader()", "reader.cancel", "new TextDecoder('utf-8',{fatal:true})",
+        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "sinjira_age_band",
+        "requirePrivateNovelAccess", "resolvePrivateNovelStorage", "createSignedUrl", "novel_slug",
         "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
         "Referrer-Policy", "no-referrer",
     ),
     "delete-player-account": (
-        "req.method !== 'POST'", "MAX_REQUEST_BYTES=1024", "readBoundedJson", "TextEncoder",
+        "req.method !== 'POST'", "readBoundedJson", "req.body.getReader()",
+        "reader.cancel('REQUEST_TOO_LARGE')", "new TextDecoder('utf-8',{fatal:true})",
+        "!/^\\d+$/.test(normalizedLength)", "Number.isSafeInteger(declared)",
         "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "Cache-Control", "private, no-store",
         "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
         "privacy_service_can_delete_user", "MFA_REQUIRED", "OWNER_OR_ADMIN_DELETE_BLOCKED",
         "CONFIRM_PHRASE='SUPPRIMER MON COMPTE'",
     ),
     "revoke-my-contributions": (
-        "req.method !== 'POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
-        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "body.all===true",
-        "AMBIGUOUS_SCOPE", "SESSION_REQUIRED", "revokeAll ? null : sessionId",
-        "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
-        "Referrer-Policy", "no-referrer",
+        "req.method !== 'POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "req.body.getReader()",
+        "reader.cancel", "new TextDecoder('utf-8',{fatal:true})", "JSON_REQUIRED", "REQUEST_TOO_LARGE",
+        "INVALID_JSON", "UUID_RE", "body.all===true", "AMBIGUOUS_SCOPE", "SESSION_REQUIRED",
+        "revokeAll ? null : sessionId", "Cache-Control", "private, no-store",
+        "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
     ),
     "submit-game-contribution": (
-        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
-        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "INVALID_SESSION",
-        "p_user_id:user.id", "select('id,game_slug,play_mode,human_player_count,effective_player_count,player_count,duration_minutes')",
+        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "req.body.getReader()",
+        "reader.cancel", "new TextDecoder('utf-8',{fatal:true})", "JSON_REQUIRED", "REQUEST_TOO_LARGE",
+        "INVALID_JSON", "UUID_RE", "INVALID_SESSION", "p_user_id:user.id",
+        "select('id,game_slug,play_mode,human_player_count,effective_player_count,player_count,duration_minutes')",
         "submitted:true", "Cache-Control", "private, no-store", "X-Content-Type-Options",
         "nosniff", "Referrer-Policy", "no-referrer",
     ),
@@ -164,6 +185,16 @@ def main() -> int:
             if marker not in source:
                 errors.append(f"{slug}: garde-fou custom auth/access manquant: {marker}.")
 
+    document_source=read_tree_text(FUNCTIONS / "get-document-url")
+    if "doc.projects?.status!=='active'" in document_source:
+        errors.append("get-document-url: le contrat active-only historique est interdit; utiliser l allowlist non-draft explicite.")
+
+    for slug in ("get-document-url", "send-game-report"):
+        source = read_tree_text(FUNCTIONS / slug)
+        for forbidden in ("await req.text()", "await req.json()", "startsWith('application/json')"):
+            if forbidden in source:
+                errors.append(f"{slug}: frontière HTTP non bornée ou MIME par préfixe interdite: {forbidden}.")
+
     for slug, markers in JWT_SENSITIVE_GUARDS.items():
         source = read_tree_text(FUNCTIONS / slug)
         for marker in markers:
@@ -172,10 +203,56 @@ def main() -> int:
         if "await req.json()" in source or "await req.json (" in source:
             errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
 
-    book_source = read_tree_text(FUNCTIONS / "get-private-book-url")
-    for forbidden in ("external_url", "getPublicUrl("):
-        if forbidden in book_source:
-            errors.append(f"get-private-book-url: repli public interdit: {forbidden}.")
+    for slug in ("revoke-my-contributions", "submit-game-contribution"):
+        source = read_tree_text(FUNCTIONS / slug)
+        if "await req.text()" in source or "await req.text (" in source:
+            errors.append(f"{slug}: lecture texte intégrale avant contrôle de taille interdite; utiliser le flux Request.body.")
+
+    delete_source = read_tree_text(FUNCTIONS / "delete-player-account")
+    if not re.search(r"\bMAX_REQUEST_BYTES\s*=\s*1_?024\s*;", delete_source):
+        errors.append("delete-player-account: la borne destructive doit rester exactement à 1 024 octets.")
+    if "await req.text()" in delete_source or "await req.text (" in delete_source:
+        errors.append("delete-player-account: lecture texte directe non bornée interdite.")
+    delete_auth = delete_source.find("const user = await requiredUser(req);")
+    delete_body = delete_source.find("const body=await readBoundedJson(req);")
+    if delete_auth < 0 or delete_body < 0 or delete_auth > delete_body:
+        errors.append("delete-player-account: requiredUser/JWT doit précéder la lecture applicative du corps.")
+
+    book_helper_path = FUNCTIONS / "_shared" / "privateBook.ts"
+    book_helper = book_helper_path.read_text("utf-8", errors="ignore") if book_helper_path.is_file() else ""
+    for marker in (
+        "LIVRE_I_PRODUCT_SLUG='sinjira-livre-01-la-cendre-du-jugement'",
+        "LIVRE_I_SIGNED_URL_SECONDS=300",
+        "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED",
+        "SINJIRA_LIVRE_I_PRIVATE_BUCKET",
+        "SINJIRA_LIVRE_I_PRIVATE_PATH",
+        "service.rpc('is_sinjira_owner',{p_user_id:userId})", "if(isOwner===true)return 'owner'",
+        "'sinjira_has_full_catalog_access'", "if(fullCatalog===true)return 'family'",
+        "'has_sinjira_product'", "{p_product_slug:LIVRE_I_PRODUCT_SLUG,p_user_id:userId}",
+        "if(hasProduct===true)return 'product'",
+    ):
+        if marker not in book_helper:
+            errors.append(f"Livre I helper: garde-fou d'accès manquant: {marker}.")
+    for forbidden in ("external_url", "getPublicUrl(", "clientRole", ".from('user_entitlements')", ".insert(", ".upsert("):
+        if forbidden in book_helper:
+            errors.append(f"Livre I helper: repli/assertion client interdit: {forbidden}.")
+
+    owner_pos=book_helper.find("service.rpc('is_sinjira_owner'")
+    family_pos=book_helper.find("'sinjira_has_full_catalog_access'")
+    product_pos=book_helper.find("'has_sinjira_product'")
+    if not (0 <= owner_pos < family_pos < product_pos):
+        errors.append("Livre I helper: ordre attendu owner -> famille -> droit produit canonique.")
+
+    book_download_source = read_tree_text(FUNCTIONS / "get-private-book-url")
+    book_reader_source = read_tree_text(FUNCTIONS / "get-private-book-reading-url")
+    if "{download:'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf'}" not in book_download_source:
+        errors.append("get-private-book-url: le téléchargement privé doit conserver Content-Disposition via l'option download.")
+    if "{download:" in book_reader_source or "download:'" in book_reader_source:
+        errors.append("get-private-book-reading-url: le lecteur ne doit pas forcer le téléchargement.")
+    for source_name, source in (("get-private-book-url", book_download_source), ("get-private-book-reading-url", book_reader_source)):
+        for forbidden in ("external_url", "getPublicUrl("):
+            if forbidden in source:
+                errors.append(f"{source_name}: repli public interdit: {forbidden}.")
 
     vault_source = read_tree_text(FUNCTIONS / "conscience-vault")
     if "service.rpc('security_evaluate_context'" in vault_source or 'service.rpc("security_evaluate_context"' in vault_source:
@@ -225,7 +302,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 23 fonctions canoniques, JWT/custom auth cohérents, porte Livre I entitlement privée, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 25 fonctions canoniques, JWT/custom auth cohérents, get-document-url borne état projet + droit produit avant livraison, Livre I vérifie âge puis owner/famille/droit produit canonique sans mutation d entitlement, frontières HTTP privées bornées/no-store et aucun ancien appel Edge référencé.")
     return 0
 
 

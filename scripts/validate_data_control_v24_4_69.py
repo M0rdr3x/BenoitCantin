@@ -35,10 +35,12 @@ def main():
         "s.from('playtest_participants')","s.from('sinjira_reader_library')","s.from('character_submissions')",
         "s.from('parallel_character_state')","s.from('private_family_links')","s.from('guardian_links')",
         "s.from('social_real_messages')","s.from('social_character_messages')",
-        "s.rpc('privacy_export_my_extended_data')","sections.extended_private=data||{}",
+        "['extended_private','privacy_export_my_extended_data']","['private_profile','private_profile_get']",
+        "const totalSteps=entries.length+rpcExports.length","const {data,error}=await s.rpc(rpc)","sections[section]=data??{}",
         "format:'SINJIRA_USER_EXPORT_V24_4_83'",
-        "s.functions.invoke('delete-player-account'","confirm:'SUPPRIMER MON COMPTE'",
-        "data?.code==='OWNER_OR_ADMIN_DELETE_BLOCKED'","data?.code==='MFA_REQUIRED'","data?.code==='LEGAL_HOLD_ACTIVE'",
+        "s.functions.invoke('delete-player-account'","phrase!=='SUPPRIMER MON COMPTE'","confirm:'SUPPRIMER MON COMPTE'",
+        "async function edgeErrorData(error)","const responseData=error?(await edgeErrorData(error)):(data||null)",
+        "responseData?.code==='OWNER_OR_ADMIN_DELETE_BLOCKED'","responseData?.code==='MFA_REQUIRED'","responseData?.code==='LEGAL_HOLD_ACTIVE'",
         "auth.signOut({scope:'local'})",
     ],'runtime contrôle des données V24.4.83')
 
@@ -47,10 +49,12 @@ def main():
     if 'data-account-page="settings-v69"' not in page and 'data-account-page="settings-v70"' not in page:
         raise AssertionError('page paramètres: version settings V69+ absente')
     require(page,[
-        'sinjira-account.js?v=24.4.69','Les comptes propriétaire et administrateur sont protégés',
-        'L’export indique explicitement s’il est complet','v24-data-control.js?v=24.4.83',
+        'Les comptes propriétaire et administrateur sont protégés',
+        'L’export indique explicitement s’il est complet','v24-data-control.js?v=25.0.2',
         'Points SINJIRA™','Rencontres/Safe Meet','Centre Vie privée'
     ],'page paramètres V24.4.83')
+    if 'sinjira-account.js?v=25.' not in page:
+        raise AssertionError('page paramètres V24.4.83: cache navigation Compte V25 absent')
 
     require(delete_fn,[
         "CONFIRM_PHRASE='SUPPRIMER MON COMPTE'","service.rpc('is_sinjira_admin'","code:'OWNER_OR_ADMIN_DELETE_BLOCKED'",

@@ -50,7 +50,7 @@ def main()->int:
     require(tokens,["from('token_ledger').select"],'Jetons')
     for marker in ("from('token_ledger').insert","from('token_ledger').update",'checkout','stripe'):
         if marker.lower() in tokens.lower():raise AssertionError(f'Jetons: écriture/achat interdit: {marker}')
-    require(purchases,['La boutique n’est pas encore ouverte.'],'Mes achats')
+    require(purchases,['La boutique transactionnelle reste désactivée','paiements désactivés.'],'Mes achats')
 
     # Le navigateur ne doit contenir aucun SDK/end-point payant actif.
     browser_patterns={

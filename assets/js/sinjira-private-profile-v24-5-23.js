@@ -61,7 +61,9 @@ function userMessage(error){
   const rules=[
     [/MFA_REQUIRED/i,'Une authentification renforcée est requise avant de modifier votre coffre privé. Ouvrez Sécurité, complétez la vérification demandée, puis revenez ici.'],
     [/AUTH_REQUIRED/i,'Votre session n’est plus valide. Reconnectez-vous puis réessayez.'],
-    [/SINJIRA_MINIMUM_AGE_13/i,'La date de naissance indiquée ne respecte pas l’âge minimum actuellement permis pour un Compte SINJIRA™.'],
+    [/SINJIRA_MINIMUM_AGE_11/i,'Un Compte SINJIRA™ supervisé est disponible à partir de 11 ans.'],
+    [/SINJIRA_MINIMUM_AGE_13/i,'Le serveur utilise encore une ancienne règle d’âge. La synchronisation du module enfant 11 ans est requise avant cette modification.'],
+    [/BIRTH_DATE_PROTECTION_BOUNDARY_REQUIRES_REVIEW/i,'Pour protéger les comptes mineurs, une correction de date qui augmenterait l’âge doit être revue séparément. Aucune protection Junior n’est retirée automatiquement.'],
     [/INVALID_BIRTH_DATE/i,'La date de naissance indiquée n’est pas valide.'],
     [/INVALID_GENDER/i,'La valeur de genre choisie n’est pas valide.'],
     [/INVALID_RELATIONSHIP_STATUS/i,'Le statut relationnel choisi n’est pas valide.'],
@@ -95,11 +97,13 @@ async function loadProfile(){
 }
 
 if(form){
+  setBusy(true);
   await requireUser();
   try{
     await loadProfile();
+    setBusy(false);
   }catch(error){
-    setStatus(status,userMessage(error),'error');
+    setStatus(status,userMessage(error)+' Le formulaire reste verrouillé tant que vos données n’ont pas été chargées. Rechargez la page pour réessayer.','error');
   }
 
   resetButton?.addEventListener('click',()=>{
@@ -110,6 +114,10 @@ if(form){
 
   form.addEventListener('submit',async event=>{
     event.preventDefault();
+    if(!loadedSnapshot){
+      setStatus(status,'Vos informations privées n’ont pas été chargées. Aucune modification n’est envoyée. Rechargez la page puis réessayez.','error');
+      return;
+    }
     setBusy(true);
     try{
       const s=getSupabase();

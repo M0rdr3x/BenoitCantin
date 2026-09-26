@@ -13,6 +13,16 @@ function safeError(error){
   return text.length>180?`${text.slice(0,177)}…`:text;
 }
 
+async function edgeErrorData(error){
+  const response=error?.context;
+  if(!response||typeof response.json!=='function')return null;
+  try{
+    const readable=typeof response.clone==='function'?response.clone():response;
+    const payload=await readable.json();
+    return payload&&typeof payload==='object'?payload:null;
+  }catch{return null}
+}
+
 async function fetchAll(label,build){
   const rows=[];
   let from=0;
@@ -83,22 +93,36 @@ async function exportData(){
   const sections={};
   const errors=[];
   const entries=Object.entries(queries(user.id));
+  const rpcExports=[
+    ['extended_private','privacy_export_my_extended_data'],
+    ['private_profile','private_profile_get']
+  ];
+  const totalSteps=entries.length+rpcExports.length;
   for(let i=0;i<entries.length;i++){
     const [label,build]=entries[i];
-    exportButton.textContent=`Export ${i+1}/${entries.length+1}`;
+    exportButton.textContent=`Export ${i+1}/${totalSteps}`;
     try{sections[label]=await fetchAll(label,build)}
-    catch(error){errors.push({section:label,error:safeError(error)})}
+    catch(error){
+      const message=safeError(error);
+      const legacyMissing=label.endsWith('_legacy')&&/relation .* does not exist|schema cache|could not find/i.test(message);
+      if(legacyMissing)sections[label]=[];
+      else errors.push({section:label,error:message});
+    }
   }
 
-  // Les modules ajoutés après V24.4.70 sont scellés derrière des RPC. Le complément self-only
-  // couvre Vie privée, Points SINJIRA™, Rencontres/Safe Meet et les métadonnées de signalements.
-  exportButton.textContent=`Export ${entries.length+1}/${entries.length+1}`;
-  try{
-    const {data,error}=await s.rpc('privacy_export_my_extended_data');
-    if(error)throw error;
-    sections.extended_private=data||{};
-  }catch(error){
-    errors.push({section:'extended_private',error:safeError(error)});
+  // Les modules ajoutés après V24.4.70 sont scellés derrière des RPC.
+  // Le premier complément couvre Vie privée, Points SINJIRA™, Rencontres/Safe Meet et les métadonnées de signalements.
+  // Le coffre de profil privé conserve sa frontière RPC dédiée.
+  for(let i=0;i<rpcExports.length;i++){
+    const [section,rpc]=rpcExports[i];
+    exportButton.textContent=`Export ${entries.length+i+1}/${totalSteps}`;
+    try{
+      const {data,error}=await s.rpc(rpc);
+      if(error)throw error;
+      sections[section]=data??{};
+    }catch(error){
+      errors.push({section,error:safeError(error)});
+    }
   }
 
   const payload={
@@ -121,7 +145,7 @@ async function exportData(){
   if(errors.length){
     setStatus(status,`Export partiel téléchargé : ${errors.length} section(s) n’ont pas pu être lues. Le fichier contient la liste exacte des erreurs.`,'error');
   }else{
-    setStatus(status,`Export complet téléchargé : ${entries.length+1} section(s) vérifiées.`,'success');
+    setStatus(status,`Export complet téléchargé : ${totalSteps} section(s) vérifiées.`,'success');
   }
 }
 
@@ -134,17 +158,18 @@ async function deleteAccount(){
   setStatus(status,'Vérification de sécurité et suppression en cours…','info');
   try{
     const {data,error}=await s.functions.invoke('delete-player-account',{body:{confirm:'SUPPRIMER MON COMPTE'}});
-    if(error)throw error;
-    if(!data?.ok){
-      if(data?.code==='OWNER_OR_ADMIN_DELETE_BLOCKED'){
+    const responseData=error?(await edgeErrorData(error)):(data||null);
+    if(error&&!responseData)throw error;
+    if(!responseData?.ok){
+      if(responseData?.code==='OWNER_OR_ADMIN_DELETE_BLOCKED'){
         setStatus(status,'Un compte propriétaire ou administrateur ne peut pas être supprimé depuis cette page.','error');
-      }else if(data?.code==='MFA_REQUIRED'){
+      }else if(responseData?.code==='MFA_REQUIRED'){
         location.href=`/compte/mfa.html?next=${encodeURIComponent('/compte/parametres.html')}`;
         return;
-      }else if(data?.code==='LEGAL_HOLD_ACTIVE'){
+      }else if(responseData?.code==='LEGAL_HOLD_ACTIVE'){
         setStatus(status,'La suppression automatique est temporairement bloquée par une obligation de conservation documentée. Ouvrez le Centre Vie privée pour suivre la demande.','error');
       }else{
-        setStatus(status,data?.error||'Suppression impossible.','error');
+        setStatus(status,responseData?.error||'Suppression impossible.','error');
       }
       deleteButton.disabled=false;
       return;
@@ -152,7 +177,6 @@ async function deleteAccount(){
     await s.auth.signOut({scope:'local'}).catch(()=>{});
     location.replace('/compte/connexion.html?deleted=1');
   }catch(error){
-    console.warn('[SINJIRA delete account]',error);
     setStatus(status,'Suppression impossible pour le moment. Aucune suppression supplémentaire n’a été demandée depuis cette page.','error');
     deleteButton.disabled=false;
   }

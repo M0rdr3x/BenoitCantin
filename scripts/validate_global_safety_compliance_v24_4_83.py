@@ -5,6 +5,7 @@ ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase/migrations/20260820204337_sinjira_v24_4_83_global_safety_compliance.sql'
 GATE=ROOT/'supabase/migrations/20260820204355_sinjira_v24_4_83_youth_jurisdiction_gate.sql'
 HOLD=ROOT/'supabase/migrations/20260820204409_sinjira_v24_4_83_deletion_hold_hardening.sql'
+CHILD=ROOT/'supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql'
 OLD=[
  ROOT/'supabase/migrations/20260820022000_sinjira_v24_4_83_global_safety_compliance.sql',
  ROOT/'supabase/migrations/20260820022100_sinjira_v24_4_83_youth_jurisdiction_gate.sql',
@@ -14,6 +15,7 @@ LEDGER=ROOT/'supabase/production-migration-ledger.txt'
 V82=ROOT/'supabase/migrations/20260820020733_sinjira_v24_4_82_minor_exploitation_safety.sql'
 TEST=ROOT/'supabase/tests/global_safety_compliance_v24_4_83.test.sql'
 HOLD_TEST=ROOT/'supabase/tests/deletion_hold_v24_4_83.test.sql'
+CHILD_TEST=ROOT/'supabase/tests/child_guardian_signup_v25.test.sql'
 DELETE_FN=ROOT/'supabase/functions/delete-player-account/index.ts'
 SIGNUP_JS=ROOT/'assets/js/v24-signup.js'; SIGNUP_HTML=ROOT/'compte/inscription.html'
 PRIVACY=ROOT/'confidentialite.html'; GOVERNANCE=ROOT/'gouvernance-vie-privee.html'; ACCOUNT_PRIVACY=ROOT/'compte/confidentialite-joueur.html'
@@ -26,24 +28,34 @@ def read(p):
 def req(ok,msg):
     if not ok: errors.append(msg)
 
-mig=read(MIG); gate=read(GATE); hold=read(HOLD); ledger=read(LEDGER); v82=read(V82); test=read(TEST); hold_test=read(HOLD_TEST); delete_fn=read(DELETE_FN); signup_js=read(SIGNUP_JS); signup_html=read(SIGNUP_HTML)
+mig=read(MIG); gate=read(GATE); hold=read(HOLD); child=read(CHILD); ledger=read(LEDGER); v82=read(V82); test=read(TEST); hold_test=read(HOLD_TEST); child_test=read(CHILD_TEST); delete_fn=read(DELETE_FN); signup_js=read(SIGNUP_JS); signup_html=read(SIGNUP_HTML)
 privacy=read(PRIVACY); governance=read(GOVERNANCE); account_privacy=read(ACCOUNT_PRIVACY); privacy_center=read(PRIVACY_CENTER); privacy_js=read(PRIVACY_JS); legal=read(LEGAL); contact=read(CONTACT); docs='\n'.join(read(p) for p in DOCS)
-compact=''.join(mig.lower().split()); gatecompact=''.join(gate.lower().split())
-alltext='\n'.join((mig,gate,hold,test,hold_test,delete_fn,signup_js,signup_html,privacy,governance,account_privacy,privacy_center,privacy_js,legal,contact,docs)).lower()
+compact=''.join(mig.lower().split()); gatecompact=''.join(gate.lower().split()); childcompact=''.join(child.lower().split()); signupcompact=''.join(signup_js.lower().split())
+child_test_lower=child_test.lower()
+alltext='\n'.join((mig,gate,hold,child,test,hold_test,child_test,delete_fn,signup_js,signup_html,privacy,governance,account_privacy,privacy_center,privacy_js,legal,contact,docs)).lower()
 
 for old in OLD: req(not old.exists(),f'Ancien timestamp V83 encore présent: {old.name}')
 for marker in ('20260820204337 sinjira_v24_4_83_global_safety_compliance','20260820204355 sinjira_v24_4_83_youth_jurisdiction_gate','20260820204409 sinjira_v24_4_83_deletion_hold_hardening'):
     req(marker in ledger,f'Ledger V83 canonique absent: {marker}')
 for marker in ('create table if not exists private.privacy_incident_register','create table if not exists private.privacy_requests','create table if not exists private.privacy_legal_holds','create table if not exists private.safety_escalation_cases','create or replace function public.privacy_create_request','create or replace function public.privacy_my_requests','create or replace function public.privacy_admin_record_incident','create trigger trg_safety_create_escalation_case','sinjira_minimum_age_13'):
     req(marker in mig.lower(),f'Migration V83 marqueur absent: {marker}')
-req("years<13thenraiseexception'sinjira_minimum_age_13'" in compact,'Le serveur ne refuse pas explicitement les moins de 13 ans.')
-req("ifyears<14then" in compact and 'guardian_authorization_required_under_14' in mig.lower(),'L’autorisation parentale à 13 ans n’est pas préservée.')
+
+# Le contrat V83 historique reste intact. Le seuil courant est ensuite remplacé explicitement par la migration V25 enfant.
+req("years<13thenraiseexception'sinjira_minimum_age_13'" in compact,'Le seuil historique V83 13+ a été réécrit au lieu d’être convergé par une migration ultérieure.')
+req("ifyears<14then" in compact and 'guardian_authorization_required_under_14' in mig.lower(),'L’autorisation parentale historique à 13 ans n’est pas préservée.')
+req("ifyears<11thenraiseexception'sinjira_minimum_age_11'" in childcompact,'La convergence V25 n’impose pas le minimum serveur de 11 ans.')
+req("ifyears<14then" in childcompact and 'guardian_authorization_required_under_14' in child.lower(),'La convergence V25 n’exige pas une autorisation parentale de 11 à 13 ans.')
+req("years<18andresidence_countrynotin('canada','ca','can')" in childcompact and 'youth_jurisdiction_not_enabled' in child.lower(),'La convergence V25 ne conserve pas la porte jeunesse Canada.')
+req("interval'13years'then" in childcompact and "then'child'" in childcompact,'La bande enfant 11–12 ans n’est pas distincte côté serveur.')
+req("public.sinjira_age_band(p_child)in('child','youth')" in childcompact,'La supervision parentale ne couvre pas enfant et jeunesse.')
+req("ifyears<13then" in childcompact and 'c:=false;' in child.lower() and 'f:=false;' in child.lower(),'Le Programme Contributeur n’est pas neutralisé côté serveur pour les 11–12 ans.')
+
 req("interval'5years'" in compact,'La rétention minimale de cinq ans des incidents est absente.')
 req("interval'30days'" in compact,'L’échéance interne de 30 jours des demandes est absente.')
 req('enable row level security' in mig.lower(),'RLS absent des registres V83.')
 req('revoke all on private.privacy_incident_register from public,anon,authenticated' in mig.lower(),'Registre incidents exposé à un rôle navigateur.')
 req('revoke all on private.privacy_requests from public,anon,authenticated' in mig.lower(),'Demandes vie privée exposées directement.')
-req("years<18andresidence_countrynotin('canada','ca','can')" in gatecompact and 'youth_jurisdiction_not_enabled' in gate.lower(),'Gate jeunesse Canada absent côté serveur.')
+req("years<18andresidence_countrynotin('canada','ca','can')" in gatecompact and 'youth_jurisdiction_not_enabled' in gate.lower(),'Gate jeunesse Canada historique absent côté serveur.')
 req("'privacy_policy_update'" in gate.lower() and "'/confidentialite.html'" in gate,'Avis interne de changement de politique absent.')
 for marker in ('private.privacy_has_active_legal_hold','public.privacy_service_can_delete_user','public.privacy_export_my_extended_data','on delete set null','privacy_requests_user_id_fkey','safety_escalation_cases_source_report_id_fkey'):
     req(marker in hold.lower(),f'Durcissement suppression/export absent: {marker}')
@@ -51,20 +63,32 @@ req("service.rpc('privacy_service_can_delete_user'" in delete_fn and "code:'LEGA
 req('LEGAL_HOLD_CHECK_FAILED' in delete_fn,'Échec du contrôle de hold ne provoque pas un arrêt sûr.')
 req('select plan(13);' in hold_test,'Plan pgTAP suppression/hold/export inattendu.')
 req('privacy_service_can_delete_user' in hold_test and 'privacy_export_my_extended_data' in hold_test and 'safety_escalation_cases_source_report_id_fkey' in hold_test,'Tests suppression/hold/export incomplets.')
-req('age<13' in signup_js and '13 ans et plus' in signup_js,'JavaScript inscription pas aligné sur 13+.')
-req('age<18&&!isCanada(residenceCountry)' in signup_js,'Gate jeunesse Canada absent côté client.')
-req('partir de 13 ans' in signup_html.lower() and 'moins de 13 ans' in signup_html.lower(),'Interface inscription pas alignée sur 13+.')
-req('comptes de 13 à 17 ans' in signup_html.lower() and 'canada' in signup_html.lower(),'Gate jeunesse Canada non expliqué à l’inscription.')
-req('v24-signup.js?v=24.4.83' in signup_html,'Version du client inscription non invalidée.')
+
+# Le client courant doit refléter la convergence V25, sans affaiblir les autres protections jeunesse.
+req('constmin_account_age=11;' in signupcompact and 'if(age<min_account_age)' in signupcompact,'JavaScript inscription pas aligné sur le minimum courant de 11 ans.')
+req('constguardianrequired=number.isinteger(age)&&age>=min_account_age&&age<14;' in signupcompact and 'guardianinput.required=guardianrequired;' in signupcompact,'Code parental 11–13 ans non exigé dans le client.')
+req('age<18&&!iscanada(residencecountry)' in signupcompact,'Gate jeunesse Canada absent côté client.')
+req("account_age_band:child?'child_11_12'" in signupcompact,'Bande enfant 11–12 absente des métadonnées client.')
+req("constcontributor=!child&&d.get('initial_contributor_opt_in')==='yes';" in signupcompact,'Programme Contributeur non neutralisé côté client pour les enfants.')
+req("getsupabase().auth.getsession()" in signupcompact and "getsupabase().auth.signout({scope:'local'})" in signupcompact,'Frontière de session parent/enfant absente du client d’inscription.')
+req("if(boundary==='active')" in signupcompact and "if(boundary==='error')" in signupcompact,'La création de compte n’est pas bloquée fail-closed lorsque la session navigateur n’est pas libre.')
+req("submit.disabled=busystate||sessionboundarystate!=='clear';" in signupcompact,'Le bouton de création n’est pas verrouillé pendant la vérification de session.')
+req('compte disponible à partir de 11 ans' in signup_html.lower() and 'moins de 11 ans' in signup_html.lower(),'Interface inscription pas alignée sur le minimum courant de 11 ans.')
+req('11–12 ans' in signup_html.lower() and 'fonctions sociales générales' in signup_html.lower() and 'messages privés restent désactivés' in signup_html.lower() and 'communauté junior séparée' in signup_html.lower(),'Interface enfant supervisé incomplète.')
+req('comptes de 11 à 17 ans' in signup_html.lower() and 'canada' in signup_html.lower(),'Gate jeunesse Canada non expliqué à l’inscription.')
+req('data-signup-session-warning' in signup_html.lower() and 'data-signup-session-signout' in signup_html.lower(),'Interface de séparation de session parent/enfant absente.')
+req('v24-signup.js?v=25.0.3&amp;rev=guardian-code-16' in signup_html,'Version du client inscription enfant renforcé non invalidée.')
+req('réservés aux personnes de 13 ans et plus' not in signup_html.lower(),'Ancien message global 13+ encore présent dans l’interface.')
+
 for phrase in ('registre interne','cinq ans','30 jours','13 ans','comptes jeunesse 13–17 ans','canada','rencontres sinjira™ est strictement 18+','ia distante payante est désactivée','paiements en ligne','responsable de la protection des renseignements personnels','gouvernance-vie-privee.html','formspree','états-unis','canada central'):
-    req(phrase in privacy.lower(),f'Politique vie privée incomplète: {phrase}')
+    req(phrase in privacy.lower(),f'Politique vie privée historique V83 incomplète: {phrase}')
 for phrase in ('responsable de la protection des renseignements personnels','benoit cantin','rôles et responsabilités','conservation et destruction','plaintes et demandes','efvp','formulaire officiel de contact'):
     req(phrase in governance.lower(),f'Gouvernance publique incomplète: {phrase}')
 for phrase in ('accès à mes renseignements','suppression','retrait d’un consentement','plainte de vie privée'):
     req(phrase in privacy_center.lower(),f'Centre Vie privée incomplet: {phrase}')
 req("rpc('privacy_my_requests'" in privacy_js and "rpc('privacy_create_request'" in privacy_js,'Centre Vie privée non relié aux RPC.')
 for phrase in ('prostitution','proxénétisme','traite','vente de drogues','grooming','13+','18+ strict'):
-    req(phrase in legal.lower(),f'Avis légal incomplet: {phrase}')
+    req(phrase in legal.lower(),f'Avis légal historique V83 incomplet: {phrase}')
 for phrase in ('vie privée / renseignements personnels','formspree','états-unis','politique de confidentialité'):
     req(phrase in contact.lower(),f'Formulaire contact/transparence incomplet: {phrase}')
 for phrase in ('québec','canada','rgpd','digital services act','royaume-uni','coppa','australie','formspree','canada central','décisions automatisées','jeunesse hors canada'):
@@ -73,9 +97,22 @@ for phrase in ('confidentialité élevée','efvp','legal holds','21 jours','fonc
     req(phrase in docs.lower(),f'Gouvernance V83 marqueur absent: {phrase}')
 req('paid_sexual_content' in v82.lower() and 'human_trafficking' in v82.lower() and 'dating_profiles_adult_only' in v82.lower(),'Le contrat V24.4.82 de sécurité n’est plus présent.')
 req('select plan(31);' in test,'Plan pgTAP V83 inattendu.')
-req('YOUTH_JURISDICTION_NOT_ENABLED' in test and "'sinjira_content_policy_guard'" in test and "'dating_profiles_adult_only'" in test,'Les tests V83 ne protègent pas les gates jeunesse/V82.')
+req('SINJIRA_MINIMUM_AGE_11' in test and 'YOUTH_JURISDICTION_NOT_ENABLED' in test and "'sinjira_content_policy_guard'" in test and "'dating_profiles_adult_only'" in test,'Les tests V83/V25 ne protègent pas le minimum 11 ans, les gates jeunesse ou V82.')
+req(
+    'select plan(74);' in child_test_lower
+    and 'sinjira_minimum_age_11' in child_test_lower
+    and "'child','la veille des 13 ans" in child_test_lower
+    and "'youth','le jour des 13 ans" in child_test_lower
+    and 'guardian_authorization_required_under_14' in child_test_lower
+    and 'revoked_at seul suffit à retirer la bande supervisée' in child_test_lower
+    and 'revoked_at seul suffit à retirer la supervision parentale' in child_test_lower
+    and 'un deuxième code parental est refusé dès que le compte 11 ans est redevenu child' in child_test_lower
+    and 'authenticated ne peut jamais modifier guardian_links directement' in child_test_lower
+    and 'l ancienne policy guardian_guardian_update est absente après convergence' in child_test_lower,
+    'Le pgTAP V25 enfant supervisé est incomplet.'
+)
 for paid in ('stripe','paypal','openai_api_key','paymentintent','google places api','mapbox token'):
-    req(paid not in alltext,f'V83 introduit une intégration payante/interdite: {paid}')
+    req(paid not in alltext,f'V83/V25 introduit une intégration payante/interdite: {paid}')
 if errors:
-    print(f'ECHEC conformité V24.4.83: {len(errors)} problème(s).'); [print('- '+e) for e in errors]; raise SystemExit(1)
-print('OK V24.4.83: 107 migrations canoniques + 13+ Canada jeunesse + gouvernance/droits/incidents/legal holds/escalade, sans service payant.')
+    print(f'ECHEC conformité V24.4.83 + convergence enfant V25: {len(errors)} problème(s).'); [print('- '+e) for e in errors]; raise SystemExit(1)
+print('OK V24.4.83 + V25: historique V83 intact, compte enfant 11–12 supervisé convergé, séparation de session, Canada jeunesse, droits/incidents/legal holds/escalade, sans service payant.')

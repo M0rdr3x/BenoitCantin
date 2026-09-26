@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'assets/js/sinjira-recovery-v24-4-99.js'
+      - 'assets/js/v24-security.js'
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
       - 'assets/js/sinjira-security-v24-4-99.js'
       - 'compte/reinitialiser-mot-de-passe.html'
       - 'compte/securite.html'

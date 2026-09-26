@@ -34,6 +34,31 @@ async function callReports(action,extra={}){
   if(error||!data?.ok)throw new Error(data?.error||error?.message||'Erreur rapports administrateur');
   return data;
 }
+function childAccessLabel(value){
+  return value==='approved_11_12'?'11–12 approuvé':value==='blocked_11_12'?'11–12 bloqué':'11–12 à revoir';
+}
+async function setChildAccessReview(targetType,targetId,childStatus){
+  const note=childStatus==='unreviewed'?'':(prompt(childStatus==='approved_11_12'?'Note de révision 11–12 (facultative)':'Raison du blocage 11–12 (facultative)')||'');
+  return call('set_child_access_review',{
+    target_type:targetType,
+    target_id:targetId,
+    child_access_status:childStatus,
+    review_note:note.slice(0,1200)
+  });
+}
+function childAccessButtons(type,id,statusValue){
+  return `<div class="admin-row-actions"><span class="role-chip">${escapeHtml(childAccessLabel(statusValue))}</span>${statusValue!=='approved_11_12'?`<button class="btn btn-secondary btn-small" type="button" data-child-review-type="${type}" data-child-review-id="${id}" data-child-review-status="approved_11_12">Approuver 11–12</button>`:''}${statusValue!=='blocked_11_12'?`<button class="btn btn-secondary btn-small" type="button" data-child-review-type="${type}" data-child-review-id="${id}" data-child-review-status="blocked_11_12">Bloquer 11–12</button>`:''}${statusValue!=='unreviewed'?`<button class="btn btn-secondary btn-small" type="button" data-child-review-type="${type}" data-child-review-id="${id}" data-child-review-status="unreviewed">Remettre à revoir</button>`:''}</div>`;
+}
+function bindChildAccessButtons(root,onDone){
+  root.querySelectorAll('[data-child-review-id]').forEach(button=>button.addEventListener('click',async()=>{
+    try{
+      await setChildAccessReview(button.dataset.childReviewType,button.dataset.childReviewId,button.dataset.childReviewStatus);
+      setStatus(status,'Décision d’accès 11–12 enregistrée.','success');
+      await onDone();
+    }catch(error){setStatus(status,error.message||'Décision 11–12 impossible.','error')}
+  }));
+}
+
 function tabs(){
   document.querySelectorAll('[data-admin-tab]').forEach(b=>b.addEventListener('click',()=>{
     document.querySelectorAll('[data-admin-tab]').forEach(x=>x.removeAttribute('aria-current'));b.setAttribute('aria-current','page');
@@ -58,7 +83,7 @@ async function dashboard(){
 async function loadProjects(){
   projects=(await call('list_projects')).projects||[];
   const list=document.querySelector('[data-admin-project-list]');
-  list.innerHTML=projects.map(p=>`<article class="admin-management-row"><div><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.slug)} · ${escapeHtml(p.status)} · ${escapeHtml(p.visibility)}</span></div><button class="btn btn-secondary btn-small" data-edit-project="${p.id}">Modifier</button></article>`).join('');
+  list.innerHTML=projects.map(p=>`<article class="admin-management-row"><div><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.slug)} · ${escapeHtml(p.status)} · ${escapeHtml(p.visibility)}</span><small>${escapeHtml(childAccessLabel(p.child_access_status))}</small></div><div><button class="btn btn-secondary btn-small" data-edit-project="${p.id}">Modifier</button>${childAccessButtons('project',p.id,p.child_access_status||'unreviewed')}</div></article>`).join('');
   const opts=projects.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
   document.querySelectorAll('[data-project-select]').forEach(s=>{const old=s.value;s.innerHTML=opts;if(old)s.value=old});
   list.querySelectorAll('[data-edit-project]').forEach(b=>b.addEventListener('click',()=>{
@@ -66,6 +91,7 @@ async function loadProjects(){
     Object.entries(p).forEach(([k,v])=>{if(f.elements[k]){if(f.elements[k].type==='checkbox')f.elements[k].checked=!!v;else f.elements[k].value=v??''}});
     f.scrollIntoView({behavior:'smooth'});
   }));
+  bindChildAccessButtons(list,async()=>{await loadProjects();await loadDocs();});
 }
 function bindProject(){
   const f=document.querySelector('[data-project-form]');
@@ -74,8 +100,9 @@ function bindProject(){
 }
 async function loadDocs(){
   const rows=(await call('list_documents')).documents||[],box=document.querySelector('[data-admin-document-list]');
-  box.innerHTML=rows.map(d=>`<article class="admin-management-row"><div><strong>${escapeHtml(d.title)}</strong><span>${escapeHtml(d.projects?.name||'')} · v${escapeHtml(d.version)} · ${escapeHtml(d.access_level)} · ${escapeHtml(d.status)}</span></div><div class="admin-row-actions">${d.status!=='approved'?`<button class="btn btn-secondary btn-small" data-doc="${d.id}" data-state="approved">Approuver</button>`:''}${d.status!=='archived'?`<button class="btn btn-secondary btn-small" data-doc="${d.id}" data-state="archived">Archiver</button>`:''}</div></article>`).join('')||'<p>Aucun document.</p>';
+  box.innerHTML=rows.map(d=>`<article class="admin-management-row"><div><strong>${escapeHtml(d.title)}</strong><span>${escapeHtml(d.projects?.name||'')} · v${escapeHtml(d.version)} · ${escapeHtml(d.access_level)} · ${escapeHtml(d.status)}</span><small>${escapeHtml(childAccessLabel(d.child_access_status))}</small></div><div class="admin-row-actions">${d.status!=='approved'?`<button class="btn btn-secondary btn-small" data-doc="${d.id}" data-state="approved">Approuver</button>`:''}${d.status!=='archived'?`<button class="btn btn-secondary btn-small" data-doc="${d.id}" data-state="archived">Archiver</button>`:''}${childAccessButtons('document',d.id,d.child_access_status||'unreviewed')}</div></article>`).join('')||'<p>Aucun document.</p>';
   box.querySelectorAll('[data-doc]').forEach(b=>b.addEventListener('click',async()=>{try{await call('set_document_status',{document_id:b.dataset.doc,status:b.dataset.state});await loadDocs();await dashboard()}catch(x){setStatus(status,x.message,'error')}}));
+  bindChildAccessButtons(box,loadDocs);
 }
 function bindUpload(){
   const f=document.querySelector('[data-document-upload-form]');

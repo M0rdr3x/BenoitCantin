@@ -17,7 +17,10 @@ REQUIRED = {
     'admin/JWT/AAL2 explicite': 'requiredAdmin(req)',
     'lecture JSON bornée': 'readLimitedJson(req)',
     'contrôle Content-Length': "req.headers.get('content-length')",
-    'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'lecture bornée par flux': 'req.body?.getReader()',
+    'annulation au dépassement': 'reader.cancel()',
+    'décodage UTF-8 strict': "new TextDecoder('utf-8', { fatal: true })",
+    'content-type JSON strict pour corps non vide': "if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');",
     'slug jeu validé': GAME_SLUG_MARKER,
     'slug défaut conservé': "DEFAULT_GAME_SLUG = 'fracture-du-reseau-mere'",
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
@@ -38,6 +41,7 @@ REQUIRED = {
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
+    'lecture texte intégrale avant borne': 'await req.text()',
     'helper JSON générique cacheable': 'return json(',
     'import helper JSON générique': 'corsHeaders, json',
     'auth utilisateur simple': 'requiredUser(req)',
@@ -94,6 +98,10 @@ def self_test() -> None:
 
     cases = {
         'json direct': real.replace('const body = await readLimitedJson(req);', 'const body = await req.json();', 1),
+        'texte intégral réintroduit': real.replace('const reader = req.body?.getReader();', 'const rawDirect = await req.text();', 1),
+        'annulation retirée': real.replace('try { await reader.cancel(); } catch { /* Le rejet de taille reste prioritaire. */ }', '', 1),
+        'décodage non strict': real.replace("new TextDecoder('utf-8', { fatal: true })", "new TextDecoder('utf-8')", 1),
+        'content-type JSON retiré': real.replace("  if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');\n", '', 1),
         'no-store retiré': real.replace("'Cache-Control': 'private, no-store, max-age=0',", '', 1),
         'limite requête augmentée': real.replace('MAX_REQUEST_BYTES = 4096;', 'MAX_REQUEST_BYTES = 65536;', 1),
         'admin explicite retiré': real.replace(
@@ -138,7 +146,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK admin-analytics: admin/JWT/AAL2 avant corps, JSON 4 KiB, slug borné, réponses no-store et données analytiques minimisées.')
+    print('OK admin-analytics: admin/JWT/AAL2 avant corps, JSON 4 KiB borné pendant la lecture, slug borné, réponses no-store et données analytiques minimisées.')
     return 0
 
 

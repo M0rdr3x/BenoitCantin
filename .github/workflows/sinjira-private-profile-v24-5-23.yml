@@ -8,8 +8,10 @@ on:
       - 'assets/js/sinjira-private-profile-v24-5-23.js'
       - 'supabase/migrations/20260823035659_sinjira_v24_5_14_private_profile_editing.sql'
       - 'supabase/migrations/20260823040936_sinjira_v24_5_23_private_profile_schema_convergence.sql'
+      - 'supabase/migrations/20260919100000_sinjira_v25_private_profile_age_11.sql'
       - 'supabase/production-migration-ledger.txt'
       - 'supabase/tests/private_profile_editing_v24_5_23.test.sql'
+      - 'supabase/tests/private_profile_child_age_v25.test.sql'
       - 'scripts/validate_private_profile_editing_v24_5_23.py'
       - 'scripts/validate_private_profile_workflow_security.py'
       - 'scripts/validate_production_schema_manifest.py'
@@ -26,8 +28,10 @@ on:
       - 'assets/js/sinjira-private-profile-v24-5-23.js'
       - 'supabase/migrations/20260823035659_sinjira_v24_5_14_private_profile_editing.sql'
       - 'supabase/migrations/20260823040936_sinjira_v24_5_23_private_profile_schema_convergence.sql'
+      - 'supabase/migrations/20260919100000_sinjira_v25_private_profile_age_11.sql'
       - 'supabase/production-migration-ledger.txt'
       - 'supabase/tests/private_profile_editing_v24_5_23.test.sql'
+      - 'supabase/tests/private_profile_child_age_v25.test.sql'
       - 'scripts/validate_private_profile_editing_v24_5_23.py'
       - 'scripts/validate_private_profile_workflow_security.py'
       - 'scripts/validate_production_schema_manifest.py'
@@ -45,7 +49,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - name: Récupérer le dépôt
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -67,11 +71,35 @@ jobs:
         run: python scripts/validate_private_profile_editing_v24_5_23.py
       - name: Manifeste schéma production
         run: python scripts/validate_production_schema_manifest.py
-      - name: Ledger production
-        run: python scripts/validate_production_migration_ledger.py
       - name: Contrat RLS historique V24.5.22
         run: python scripts/validate_rls_helper_rpc_v24_5_22.py
       - name: Sécurité générale
         run: python scripts/validate_security_contract.py
       - name: Mode gratuit
         run: python scripts/validate_free_only_mode.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+
+      - name: Démarrer une pile Supabase locale propre
+        run: supabase start
+
+      - name: Reconstruire la base locale depuis zéro
+        run: supabase db reset
+
+      - name: Prouver le coffre privé historique
+        run: supabase test db supabase/tests/private_profile_editing_v24_5_23.test.sql
+
+      - name: Prouver la compatibilité Profil enfant 11 ans
+        run: supabase test db supabase/tests/private_profile_child_age_v25.test.sql
+
+      - name: Ledger production
+        if: always()
+        run: python scripts/validate_production_migration_ledger.py
+
+      - name: Arrêter et supprimer la pile locale
+        if: always()
+        run: |
+          if command -v supabase >/dev/null 2>&1; then supabase stop --no-backup || true; fi

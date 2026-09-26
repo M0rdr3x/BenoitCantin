@@ -43,8 +43,10 @@ def main():
   for marker,label in [
     ('name="display_name"','nom affiché'),('name="email"','courriel'),('name="birth_date"','date de naissance'),
     ('data-signup-birth-date','garde date locale'),('confidentialite-joueur.html','consentement confidentialité'),
-    ('partir de 13 ans','âge minimum visible 13 ans'),('À 13 ans','autorisation parentale visible à 13 ans'),
-    ('Moins de 13 ans','refus libre-service visible sous 13 ans'),
+    ('Compte disponible à partir de 11 ans','âge minimum visible 11 ans'),
+    ('De 11 à 13 ans','autorisation parentale visible de 11 à 13 ans'),
+    ('Moins de 11 ans','refus visible sous 11 ans'),
+    ('11–12 ans','mode enfant supervisé visible'),
     ('identifiant technique privé','séparation visible du nom affiché et de l’identifiant technique')
   ]:
     if marker not in signup_html: errors.append(f'Inscription: champ/contrat absent: {label}.')
@@ -64,9 +66,10 @@ def main():
     'localDateString()':'date maximale calculée en heure locale',
     'birthInput.max=localDateString()':'borne de naissance locale',
     'GUARDIAN_CODE_RE':'validation du code parental',
-    'age<13':'âge minimum 13 ans',
-    'age<14&&!guardianCode':'autorisation parentale obligatoire à 13 ans',
-    "age>=13&&age<18":'cohorte jeunesse 13–17',
+    'MIN_ACCOUNT_AGE=11':'âge minimum 11 ans',
+    'age<MIN_ACCOUNT_AGE':'refus client sous 11 ans',
+    'age<14&&!guardianCode':'autorisation parentale obligatoire de 11 à 13 ans',
+    "account_age_band:child?'child_11_12':minor?'minor_13_17'":'cohortes enfant 11–12 et jeunesse 13–17',
     'age>120':'borne de date de naissance',
     "window.SINJIRA_AUTH_ROUTE?.next":'destination sécurisée partagée',
   }
@@ -74,8 +77,8 @@ def main():
     require(errors, signup, marker, f'Inscription: contrat absent: {label}.')
   if "d.get('pseudo')" in signup:
     errors.append('Inscription: le client lit encore un pseudo technique saisi par le membre.')
-  if 'age<12' in signup:
-    errors.append('Inscription: ancien seuil 12 ans encore présent dans le client.')
+  if 'if(age<13)' in signup:
+    errors.append('Inscription: ancien minimum global 13 ans encore présent dans le client.')
   if 'toISOString().slice(0,10)' in signup:
     errors.append('Inscription: borne de date UTC détectée; elle peut autoriser demain selon le fuseau horaire.')
 

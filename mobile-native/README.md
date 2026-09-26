@@ -138,9 +138,13 @@ Cette frontière évite de créer deux implémentations de sécurité qui pourra
 
 La racine `/app/` est maintenant représentée par un accueil React Native de navigation uniquement. Il devient l’écran initial du conteneur mobile sans créer une seconde copie du compte.
 
-- aucune donnée utilisateur n’est passée au composant : aucun message, profil, compteur, candidature, rencontre, confidence ou contenu privé;
+- aucune donnée personnelle n’est passée au composant : aucun message, profil, compteur, candidature, rencontre, confidence, date de naissance, courriel, UUID ou contenu privé;
+- le shell reçoit seulement un état d’accès grossier et éphémère — `unknown`, `child` ou `nonchild` — dérivé de `sinjira_my_account_capabilities()` par une page `/compte/` authentifiée; cet état n’est pas persisté comme profil local;
+- tant que cet état est `unknown`, l’accueil est fail-closed : aucun hub natif sensible n’est proposé et la première ouverture passe par la surface Web du compte;
+- pour `child`, l’accueil natif n’affiche que Communauté Junior, Bibliothèque Junior, Profil, Relations/famille et Ma sécurité; Messages, Rencontres, Emploi, Monde parallèle, Mon IA, commerce et playtests restent absents;
+- seuls les comptes vérifiés `nonchild` retrouvent les hubs natifs généraux existants;
+- lorsqu’un compte est déjà identifié `child`, les deep links et liens internes vers Messages, Rencontres, Emploi, playtests, Mon IA, Monde parallèle, commerce et autres routes restreintes sont réécrits vers l’espace Junior **avant** que la surface interdite ne soit chargée;
 - l’accueil n’appelle ni Supabase, ni Edge Function, ni RPC et n’utilise aucun stockage sécurisé;
-- Messages, Rencontres, Emploi, Monde, Mon IA, Alertes et Profil continuent d’ouvrir leurs surfaces existantes;
 - **Ma sécurité** ouvre le hub natif déjà borné, qui renvoie lui-même vers la source de vérité serveur pour les opérations réelles;
 - **Mode Voyage** reste une fonction de sécurité et ouvre uniquement son ancre dans le Centre de sécurité existant;
 - **Registre personnel** reste une zone extrêmement sensible : son raccourci passe par le même `navigate()` que le reste de l’application, donc par la vérification locale ponctuelle puis par les protections MFA/AAL2 et risque côté serveur;

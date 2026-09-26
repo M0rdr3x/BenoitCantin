@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from datetime import date
 from pathlib import Path
 import re
 import sys
@@ -131,9 +132,25 @@ def main() -> int:
         "le workflow doit refuser un rollback Auth aveugle en cas de concurrence",
     )
 
-    # Le dépôt doit refléter honnêtement l'état hébergé observé, sans le transformer en contrat permanent.
-    require("Dernière vérification : 2026-09-06." in status, "date de vérification hébergée absente")
-    require("Plan observé le 2026-09-06 : **Free**" in status, "plan Free observé non documenté")
+    # Le dépôt doit refléter honnêtement l'état hébergé observé, sans figer le validateur
+    # sur une date historique qui rendrait toute revalidation documentaire impossible.
+    verification_dates = re.findall(
+        r"(?m)^Dernière vérification : (\d{4}-\d{2}-\d{2})\.$",
+        status,
+    )
+    require(
+        len(verification_dates) == 1,
+        "une date ISO unique de vérification hébergée est requise",
+    )
+    observed_date = verification_dates[0]
+    try:
+        date.fromisoformat(observed_date)
+    except ValueError:
+        fail("date de vérification hébergée invalide")
+    require(
+        f"Plan observé le {observed_date} : **Free**" in status,
+        "la date du plan Free observé doit correspondre à la dernière vérification",
+    )
     require("auth_leaked_password_protection" in status, "WARN Advisor HIBP non documenté")
     require("n'est donc **pas activée** en production" in status, "état HIBP réel ambigu")
     require("Cette page est un état daté" in status, "le plan observé ne doit pas être traité comme permanent")
