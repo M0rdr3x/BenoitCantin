@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(69);
+select plan(72);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -579,6 +579,59 @@ select ok(
       and minor_user_id='20000000-0000-4000-8000-000000000011'
   ),
   'le nouveau code est consommé une seule fois par le compte child_pending'
+);
+
+-- Régression B2 : une fois la supervision rétablie, un second code provenant
+-- d'un autre tuteur ne doit jamais créer un second lien ni être consommé.
+insert into auth.users(id,email,raw_user_meta_data)
+values(
+  '10000000-0000-4000-8000-000000000002',
+  'guardian-child11-second@example.test',
+  jsonb_build_object(
+    'birth_date',(current_date-interval '37 years')::date::text,
+    'date_of_birth',(current_date-interval '37 years')::date::text,
+    'gender','Femme','sex','female','pseudo','Second parent test','display_name','Second parent test','residence_country','Canada'
+  )
+);
+
+insert into public.guardian_signup_invites(guardian_user_id,invite_code,expires_at)
+values(
+  '10000000-0000-4000-8000-000000000002',
+  'YOUTH-SECOND0001',
+  now()+interval '1 day'
+);
+
+select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000011',true);
+
+select throws_ok(
+  $ select public.redeem_guardian_signup_invite('YOUTH-SECOND0001') $,
+  'P0001',
+  'YOUTH_ACCOUNT_REQUIRED',
+  'un deuxième code parental est refusé dès que le compte 11 ans est redevenu child'
+);
+
+select ok(
+  exists(
+    select 1
+    from public.guardian_signup_invites
+    where invite_code='YOUTH-SECOND0001'
+      and guardian_user_id='10000000-0000-4000-8000-000000000002'
+      and used_at is null
+      and minor_user_id is null
+  ),
+  'le deuxième code parental refusé reste inutilisé'
+);
+
+select ok(
+  not exists(
+    select 1
+    from public.guardian_links
+    where minor_user_id='20000000-0000-4000-8000-000000000011'
+      and guardian_user_id='10000000-0000-4000-8000-000000000002'
+      and status='verified'
+      and revoked_at is null
+  ),
+  'le deuxième code refusé ne crée aucun second lien tuteur verified'
 );
 
 select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000011',true);
