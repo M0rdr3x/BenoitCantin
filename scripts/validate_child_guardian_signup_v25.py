@@ -561,7 +561,7 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
-req('selectplan(69);' in t,
+req('selectplan(72);' in t,
     "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
 req(test.count('$revoke$') == 6,
     "Le pgTAP anti-oracle/révocation doit conserver trois blocs SQL nommés et équilibrés.")
@@ -598,6 +598,9 @@ for marker, message in (
     ("laconsommationdunouveaucoderétablitimmédiatementlabandechild", "Le test ne prouve pas le retour immédiat à child."),
     ("lelientuteurrévoquéestréactivéproprementenverifiednonrévoqué", "Le test ne prouve pas la réactivation propre du lien tuteur."),
     ("lenouveaucodeestconsomméuneseulefoisparlecomptechild_pending", "Le test ne prouve pas la consommation unique du code de rétablissement."),
+    ("undeuxièmecodeparentalestrefusédèsquelecompte11ansestredevenuchild", "Le pgTAP ne prouve pas le refus d un second code parental après rétablissement."),
+    ("ledeuxièmecodeparentalrefuséresteinutilisé", "Le pgTAP ne prouve pas qu un second code refusé reste inutilisé."),
+    ("ledeuxièmecoderefusénecréeaucunsecondlientuteurverified", "Le pgTAP ne prouve pas l absence de second lien verified après rétablissement."),
     ("mfa_aal2_required", "Le pgTAP ne prouve pas le refus AAL1 de création du code parental."),
     ("unesessionadulteaal2peutcréeruncodeparental", "Le pgTAP ne prouve pas la réussite de création sous AAL2."),
     ("request.jwt.claims", "Le pgTAP ne simule pas explicitement les niveaux AAL du JWT."),
