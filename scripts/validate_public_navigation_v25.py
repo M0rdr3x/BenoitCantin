@@ -15,6 +15,12 @@ KEY_PAGES = {
     "gouvernance-vie-privee.html": None,
     "avis-legal.html": None,
     "projets/sinjira/index.html": "SINJIRA™",
+    "projets/sinjira/romans/index.html": "SINJIRA™",
+    "projets/sinjira/jeux/index.html": "SINJIRA™",
+    "projets/sinjira/registre/index.html": "SINJIRA™",
+    "projets/sinjira/communaute/index.html": "SINJIRA™",
+    "projets/sinjira/monde-parallele/index.html": "SINJIRA™",
+    "projets/sinjira/codex/index.html": "SINJIRA™",
 }
 
 INFO_FOOTER_PAGES = (
@@ -185,6 +191,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("gouvernance footer accueil retirée", "index.html", 'href="/gouvernance-vie-privee.html">Gouvernance vie privée</a>', 'href="/gouvernance-retiree.html">Gouvernance retirée</a>'),
         ("libellé fermeture menu retiré", "assets/js/site.js", "toggle.setAttribute('aria-label', 'Fermer le menu')", "toggle.setAttribute('aria-label', 'Menu')"),
         ("ancien menu confidentialité réintroduit", "confidentialite.html", '<a href="/projets/projet-nova/">Projet Nova</a>', '<a href="/projets/sinjira/registre/">Registre</a><a href="/projets/projet-nova/">Projet Nova</a>'),
+        ("Codex sans menu global", "projets/sinjira/codex/index.html", 'id="navigation-principale" data-main-nav', 'id="navigation-codex"'),
     ]
     detected = 0
     for name, path, old, new in mutations:
