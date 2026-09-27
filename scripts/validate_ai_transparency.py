@@ -83,7 +83,7 @@ def validate_core(contents: dict[str, str]) -> None:
 
     for marker in (
         '<meta property="og:title" content="Transparence IA | Benoit Cantin">',
-        '<meta property="og:description" content="Une démarche fondée sur la transparence, l’honnêteté, l’intégrité et la responsabilité humaine dans l’utilisation de l’intelligence artificielle.">',
+        '<meta property="og:description" content="Déclaration publique de Benoit Cantin sur l\'utilisation de l\'intelligence artificielle, fondée sur la transparence, l\'honnêteté, l\'intégrité et la responsabilité humaine.">',
         '<meta property="og:type" content="website">',
         '<meta property="og:url" content="https://www.benoitcantin.com/transparence-ia.html">',
     ):
