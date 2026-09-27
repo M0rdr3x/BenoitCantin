@@ -303,7 +303,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("normalisation runtime retirée", "assets/js/site.js", "function normalizePortalNavigation()", "function navigationRetiree()"),
         ("sous-nav SINJIRA retirée", "projets/sinjira/index.html", 'href="/projets/sinjira/registre/">Registre</a>', 'href="/projets/sinjira/registre-retire/">Registre</a>'),
         ("sous-nav Communauté retirée", "projets/sinjira/communaute/index.html", 'href="/projets/sinjira/monde-parallele/">Monde parallèle</a>', 'href="/projets/sinjira/monde-parallele-retire/">Monde parallèle</a>'),
-        ("sous-nav Romans dupliquée", "projets/sinjira/romans/index.html", '</nav><main id="contenu">', '</nav><nav class="universe-subnav"></nav><main id="contenu">'),
+        ("sous-nav Romans dupliquée", "projets/sinjira/romans/index.html", '</nav>\n<main id="contenu">', '</nav>\n<nav class="universe-subnav"></nav>\n<main id="contenu">'),
         ("footer transparence retiré", "contact.html", 'href="/transparence-ia.html">Transparence IA</a>', 'href="/transparence-ia-retiree.html">Transparence retirée</a>'),
         ("aria-controls retiré", "index.html", 'aria-controls="navigation-principale"', 'aria-controls="navigation-retiree"'),
         ("fermeture Escape retirée", "assets/js/site.js", "event.key === 'Escape'", "event.key === 'F1'"),
