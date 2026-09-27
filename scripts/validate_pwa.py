@@ -22,12 +22,7 @@ SINJIRA_PUBLIC_HUBS = {
 }
 REQUIRED_PUBLIC_ROUTES = {BASE_URL + route for route in SINJIRA_PUBLIC_HUBS}
 REQUIRED_OFFLINE_ROUTES = set(SINJIRA_PUBLIC_HUBS)
-REQUIRED_SHORTCUTS = {
-    '/app/',
-    '/projets/sinjira/romans/',
-    '/projets/sinjira/registre/',
-    '/projets/sinjira/monde-parallele/',
-}
+REQUIRED_SHORTCUTS = {'/app/', *SINJIRA_PUBLIC_HUBS}
 CACHE_PREFIX = 'benoitcantin-v24-4-95-'
 
 
