@@ -18,6 +18,7 @@ INFO_FOOTER_PAGES = (
     "contact.html",
     "transparence-ia.html",
     "confidentialite.html",
+    "gouvernance-vie-privee.html",
     "avis-legal.html",
 )
 
