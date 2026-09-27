@@ -23,6 +23,7 @@ FILES = {
     "readme": ROOT / "README.md",
     "sitemap": ROOT / "sitemap.xml",
     "home": ROOT / "index.html",
+    "about": ROOT / "a-propos.html",
     "nova_home": ROOT / "projets/projet-nova/index.html",
     "native_home": ROOT / "mobile-native/NativeHomeHub.tsx",
 }
@@ -44,6 +45,7 @@ def validate_core(contents: dict[str, str]) -> None:
     policy = compact(contents["policy"])
     readme = compact(contents["readme"])
     home = compact(contents["home"])
+    about = compact(contents["about"])
     nova_home = compact(contents["nova_home"])
     native_home = compact(contents["native_home"])
 
@@ -111,6 +113,17 @@ def validate_core(contents: dict[str, str]) -> None:
         for marker in ("transparence·honnêteté·intégrité", "l'humainavanttout"):
             if marker not in content:
                 fail(f"{key}: valeurs publiques de transparence IA absentes: {marker}")
+
+    for marker in (
+        "/transparence-ia.html",
+        "transparence.honnêteté.intégrité.",
+        "transparence:",
+        "honnêteté:",
+        "intégrité:",
+        "l'humainavanttout.",
+    ):
+        if marker not in about:
+            fail(f"À propos: engagement de transparence IA incomplet: {marker}")
 
     for marker in (
         "transparenceia",
