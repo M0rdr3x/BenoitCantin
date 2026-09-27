@@ -63,6 +63,9 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
         "path === '/compte'",
         "path === '/app'",
         "path === '/admin'",
+        "toggle.setAttribute('aria-controls', nav.id)",
+        "event.key === 'Escape'",
+        "closeMainNavigation(true)",
     ):
         if marker not in site_js:
             errors.append(f"runtime navigation incomplet: {marker}")
@@ -90,6 +93,11 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
 
         if 'href="/compte/" data-sinjira-session-nav' not in nav:
             errors.append(f"{path}: Compte doit rester pilotable par la session")
+
+        if 'id="navigation-principale"' not in nav:
+            errors.append(f"{path}: navigation principale sans id accessible")
+        if 'aria-controls="navigation-principale"' not in contents[path]:
+            errors.append(f"{path}: bouton menu sans aria-controls")
 
         if active_label and f'aria-current="page" href="' not in nav:
             errors.append(f"{path}: lien actif attendu pour {active_label}")
@@ -141,6 +149,8 @@ def self_test(contents: dict[str, str]) -> None:
         ("normalisation runtime retirée", "assets/js/site.js", "function normalizePortalNavigation()", "function navigationRetiree()"),
         ("sous-nav SINJIRA retirée", "projets/sinjira/index.html", 'href="registre/">Registre</a>', 'href="registre/">Entrée retirée</a>'),
         ("footer transparence retiré", "contact.html", 'href="/transparence-ia.html">Transparence IA</a>', 'href="/transparence-ia-retiree.html">Transparence retirée</a>'),
+        ("aria-controls retiré", "index.html", 'aria-controls="navigation-principale"', 'aria-controls="navigation-retiree"'),
+        ("fermeture Escape retirée", "assets/js/site.js", "event.key === 'Escape'", "event.key === 'F1'"),
     ]
     detected = 0
     for name, path, old, new in mutations:
