@@ -82,8 +82,18 @@ TRANSIENT_NOINDEX_PAGES = [
     ROOT / "projets" / "sinjira" / "marche" / "index.html",
 ]
 
+SINJIRA_PRIVATE_NOINDEX_PAGES = [
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "fiche-joueur.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "partie.html",
+    ROOT / "projets" / "sinjira" / "romans" / "lire-integral.html",
+]
+
 UTILITY_NOINDEX_PAGES = [
     ROOT / "projets" / "sinjira" / "compte.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "fiche-solo.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "fiche-web.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "preparer-partie.html",
+    ROOT / "projets" / "sinjira" / "personnages" / "index.html",
     ROOT / "projets" / "sinjira" / "jeux" / "le-premier-refuge" / "index.html",
     ROOT / "projets" / "sinjira" / "registre" / "merci.html",
 ]
@@ -394,6 +404,15 @@ def main() -> int:
         validate_special_seo_page(page, expected, og_type, schema_type, errors)
         if expected not in urls:
             errors.append(f"sitemap.xml: canonique SEO spécialisée absente: {expected}")
+
+    for page in SINJIRA_PRIVATE_NOINDEX_PAGES:
+        if not page.exists():
+            errors.append(f"Page privée SINJIRA absente: {page.relative_to(ROOT)}")
+            continue
+        html = page.read_text("utf-8", errors="ignore")
+        robots_meta = meta_content(html, name="robots").lower()
+        if "noindex" not in robots_meta:
+            errors.append(f"{page.relative_to(ROOT)}: page privée SINJIRA sans noindex.")
 
     for page in PRIVATE_NOINDEX_PAGES:
         if not page.exists():
