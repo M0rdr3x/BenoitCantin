@@ -49,18 +49,18 @@ def validate_core(contents: dict[str, str]) -> None:
 
     for marker in (
         "data-ai-transparency",
-        "transparenceia",
+        "transparence·honnêteté·intégrité",
         "/transparence-ia.html",
-        "idées,visionetdécisions",
-        "miseenœuvreassistéepardesoutilsd'intelligenceartificielle",
-        "validationfinaleetresponsabilitéducontenu",
+        "jetravailleavecl'aidedel'intelligenceartificielle",
+        "lesidées,lavisionetlesdécisionsfinalesrestentlesmiennes",
+        "l'humainavanttout",
     ):
         if marker not in ai_js:
             fail(f"bandeau IA partagé incomplet: {marker}")
 
     for marker in (
-        "/assets/css/ai-transparency.css?v=1.0.0",
-        "/assets/js/ai-transparency.js?v=1.0.0",
+        "/assets/css/ai-transparency.css?v=1.1.0",
+        "/assets/js/ai-transparency.js?v=1.1.0",
         "data-ai-transparency-style",
         "data-ai-transparency-script",
     ):
@@ -69,14 +69,26 @@ def validate_core(contents: dict[str, str]) -> None:
         if marker not in nova_js:
             fail(f"runtime Projet Nova sans transparence IA: {marker}")
 
-    if ".ai-transparency-banner" not in contents["ai_css"]:
-        fail("style du bandeau IA absent")
+    for marker in (
+        ".ai-transparency-banner",
+        ".ai-transparency-values",
+        ".ai-transparency-declaration",
+    ):
+        if marker not in contents["ai_css"]:
+            fail(f"style de transparence IA absent: {marker}")
 
     for marker in (
-        "mesidées.unemiseenœuvreassistéeparl'ia.",
+        "jechoisisdedireclairementcommentl'iam'aide.",
+        "troisvaleursquidoiventrestevisibles.",
+        "transparence",
+        "honnêteté",
+        "intégrité",
         "cequivientdemoi",
         "commentl'iam'aide",
         "responsabilitéhumaine",
+        "déclarationofficielle",
+        "uneaidetechnologiquedéclarée.uneresponsabilitéhumaineassumée.",
+        "l'humainavanttout.",
         "projetscitoyensetpositionspubliques",
         "ellenechoisitpasunepositionpolitique",
     ):
@@ -96,6 +108,9 @@ def validate_core(contents: dict[str, str]) -> None:
             fail(f"{key}: bandeau IA statique absent")
         if "/transparence-ia.html" not in content:
             fail(f"{key}: lien vers la déclaration IA absent")
+        for marker in ("transparence·honnêteté·intégrité", "l'humainavanttout"):
+            if marker not in content:
+                fail(f"{key}: valeurs publiques de transparence IA absentes: {marker}")
 
     for marker in (
         "transparenceia",
@@ -189,7 +204,7 @@ def validate_all_html_surfaces() -> None:
 def self_test(contents: dict[str, str]) -> None:
     mutations = [
         ("lien public retiré", "ai_js", "/transparence-ia.html", "/transparence-ia-retiree.html"),
-        ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.0.0", "/assets/js/absent.js"),
+        ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.1.0", "/assets/js/absent.js"),
         ("mention standard retirée", "policy", "Validation finale et responsabilité du contenu", "Validation retirée"),
     ]
     detected = 0
