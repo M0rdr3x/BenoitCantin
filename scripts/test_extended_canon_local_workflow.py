@@ -54,7 +54,7 @@ class ExtendedCanonLocalWorkflowTests(unittest.TestCase):
     def test_secret_reference_is_rejected(self) -> None:
         self.assertRejected(self.baseline.replace(
             'runs-on: ubuntu-24.04',
-            'runs-on: ubuntu-24.04\\n    env:\\n      TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}',
+            'runs-on: ubuntu-24.04\n    env:\n      TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}',
             1,
         ))
 
@@ -68,29 +68,29 @@ class ExtendedCanonLocalWorkflowTests(unittest.TestCase):
 
     def test_db_push_is_rejected(self) -> None:
         self.assertRejected(self.baseline.replace(
-            'supabase db reset', 'supabase db reset\\n          supabase db push', 1
+            'supabase db reset', 'supabase db reset\n          supabase db push', 1
         ))
 
     def test_production_environment_is_rejected(self) -> None:
         self.assertRejected(self.baseline.replace(
             '    timeout-minutes: 30',
-            '    timeout-minutes: 30\\n    environment: production',
+            '    timeout-minutes: 30\n    environment: production',
             1,
         ))
 
     def test_draft_gate_is_rejected(self) -> None:
         self.assertRejected(self.baseline.replace(
             '    runs-on: ubuntu-24.04',
-            "    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false\\n    runs-on: ubuntu-24.04",
+            "    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false\n    runs-on: ubuntu-24.04",
             1,
         ))
 
     def test_locator_migration_trigger_cannot_be_removed(self) -> None:
-        marker = "      - 'supabase/migrations/20260926212000_sinjira_v25_canon_source_locator_guard.sql'\\n"
+        marker = "      - 'supabase/migrations/20260926212000_sinjira_v25_canon_source_locator_guard.sql'\n"
         self.assertRejected(self.baseline.replace(marker, '', 1))
 
     def test_acl_migration_trigger_cannot_be_removed(self) -> None:
-        marker = "      - 'supabase/migrations/20260926214500_sinjira_v25_extended_canon_rpc_acl_hardening.sql'\\n"
+        marker = "      - 'supabase/migrations/20260926214500_sinjira_v25_extended_canon_rpc_acl_hardening.sql'\n"
         self.assertRejected(self.baseline.replace(marker, '', 1))
 
     def test_provenance_test_cannot_be_removed(self) -> None:
@@ -122,7 +122,7 @@ class ExtendedCanonLocalWorkflowTests(unittest.TestCase):
         ))
 
     def test_cleanup_always_cannot_be_removed(self) -> None:
-        self.assertRejected(self.baseline.replace('        if: always()\\n', '', 1))
+        self.assertRejected(self.baseline.replace('        if: always()\n', '', 1))
 
 
 if __name__ == '__main__':
