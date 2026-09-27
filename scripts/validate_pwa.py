@@ -292,6 +292,7 @@ def validate_offline(errors: list[str]) -> None:
     for marker in (
         'class="skip-link" href="#contenu"',
         'id="contenu"',
+        'name="robots" content="noindex,nofollow"',
         '/assets/css/ai-transparency.css?v=1.1.0',
         'Transparence · Honnêteté · Intégrité',
         'L’humain avant tout.',
