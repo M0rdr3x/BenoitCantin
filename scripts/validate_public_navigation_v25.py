@@ -159,7 +159,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("Compte retiré", "a-propos.html", 'href="/compte/" data-sinjira-session-nav>Compte</a>', 'href="/compte/">Compte retiré</a>'),
         ("Registre accueil retiré", "index.html", "Créer mon personnage", "Accès retiré"),
         ("normalisation runtime retirée", "assets/js/site.js", "function normalizePortalNavigation()", "function navigationRetiree()"),
-        ("sous-nav SINJIRA retirée", "projets/sinjira/index.html", 'href="registre/">Registre</a>', 'href="registre/">Entrée retirée</a>'),
+        ("sous-nav SINJIRA retirée", "projets/sinjira/index.html", 'href="registre/">Registre</a>', 'href="registre-retire/">Registre</a>'),
         ("footer transparence retiré", "contact.html", 'href="/transparence-ia.html">Transparence IA</a>', 'href="/transparence-ia-retiree.html">Transparence retirée</a>'),
         ("aria-controls retiré", "index.html", 'aria-controls="navigation-principale"', 'aria-controls="navigation-retiree"'),
         ("fermeture Escape retirée", "assets/js/site.js", "event.key === 'Escape'", "event.key === 'F1'"),
