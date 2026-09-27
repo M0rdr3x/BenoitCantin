@@ -239,6 +239,17 @@ def main() -> int:
             if target is not None and not target.exists():
                 errors.append(f'Import local manquant dans {rel}: {raw}')
 
+    sitemap_path = ROOT / 'sitemap.xml'
+    if sitemap_path.is_file():
+        sitemap_text = sitemap_path.read_text('utf-8', errors='ignore')
+        for url in (
+            'https://www.benoitcantin.com/confidentialite.html',
+            'https://www.benoitcantin.com/gouvernance-vie-privee.html',
+            'https://www.benoitcantin.com/avis-legal.html',
+        ):
+            if f'<loc>{url}</loc>' not in sitemap_text:
+                errors.append(f'Sitemap public: URL de confiance absente: {url}')
+
     governance_page = ROOT / 'gouvernance-vie-privee.html'
     if governance_page.is_file():
         governance_html = governance_page.read_text('utf-8', errors='ignore')
