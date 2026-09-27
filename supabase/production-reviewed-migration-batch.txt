@@ -4,7 +4,7 @@
 # Ce fichier est fail-closed : toute migration locale postérieure au dernier
 # timestamp du production-migration-ledger.txt doit apparaître ici, dans l'ordre,
 # avec l'empreinte Git exacte de son contenu. Toute divergence bloque le builder
-# et le preflight avant toute connexion ou écriture production.
+# et le préflight avant toute connexion ou écriture production.
 20260907145100 sinjira_v25_security_push_receipt_queue 4c6a4726610aa80517abe420048c00f62feb492e
 20260908120000 sinjira_v25_live_social_foundation 3c33b5e2cc294a80407a5889d91b9de4efea8f76
 20260908121000 sinjira_v25_live_social_realtime_eligibility 772de5e4ceeeb0a6745efa6436d3977134abf918
