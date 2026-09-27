@@ -120,6 +120,30 @@ Ordre obligatoire :
 
 Cette séparation est essentielle : **reviewed batch = autorisation humaine préalable sur le contenu futur; ledger = preuve historique de ce qui a réellement été enregistré en production**. Les deux fichiers ne doivent jamais être avancés comme s’ils représentaient le même événement.
 
+### Traçabilité obligatoire des nouvelles lignes du reviewed batch
+
+Le fichier :
+
+`supabase/production-reviewed-migration-decisions.txt`
+
+est un registre **append-only de provenance**, distinct du reviewed batch et du ledger.
+
+Pour toute **nouvelle** ligne ajoutée à `supabase/production-reviewed-migration-batch.txt`, le même diff doit ajouter exactement une trace :
+
+`<timestamp> <nom> <git_blob_sha1> issue#<numero> APPROVED`
+
+Règles :
+
+- le timestamp, le nom et le blob SHA doivent correspondre exactement à la nouvelle ligne du reviewed batch;
+- la trace doit être ajoutée **dans le même diff** : aucune pré-création d'une future « approbation » n'est admise;
+- le registre est append-only : une trace historique ne doit jamais être supprimée ou réécrite;
+- une modification future du blob d'une migration déjà revue exige une **nouvelle trace exacte** pour le nouveau blob;
+- le numéro d'issue doit pointer vers la décision humaine explicite qui porte la revue;
+- la présence d'une ligne `APPROVED` dans ce registre **ne constitue jamais à elle seule une approbation humaine** : elle est seulement un pointeur auditable vers la décision déjà consignée;
+- les lignes historiques du reviewed batch antérieures à l'introduction de ce garde ne sont pas rétro-étiquetées automatiquement.
+
+Le garde `scripts/validate_production_review_decision_trace.py` compare le diff Git au commit de base. Il échoue si une ligne reviewed est ajoutée sans trace correspondante, si une trace est pré-créée sans ligne batch, ou si l'historique des traces est réécrit.
+
 La production n’est considérée synchronisée que lorsque le résumé final affiche exactement :
 
 `✅ APPLIQUÉ ET VÉRIFIÉ`
