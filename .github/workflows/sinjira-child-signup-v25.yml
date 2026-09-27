@@ -6,6 +6,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'compte/inscription.html'
+      - 'confidentialite.html'
+      - 'avis-legal.html'
       - 'compte/relations.html'
       - 'assets/js/v24-signup.js'
       - 'assets/js/v24-relations.js'
