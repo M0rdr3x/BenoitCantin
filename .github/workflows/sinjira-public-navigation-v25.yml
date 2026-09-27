@@ -10,6 +10,8 @@ on:
       - 'a-propos.html'
       - 'contact.html'
       - 'transparence-ia.html'
+      - 'confidentialite.html'
+      - 'avis-legal.html'
       - 'projets/sinjira/index.html'
       - 'scripts/validate_public_navigation_v25.py'
       - '.github/workflows/sinjira-public-navigation-v25.yml'
