@@ -42,6 +42,28 @@ INFO_FOOTER_LINKS = (
     ("/avis-legal.html", "Avis légal"),
 )
 
+SINJIRA_FOOTER_PAGES = (
+    "projets/sinjira/index.html",
+    "projets/sinjira/romans/index.html",
+    "projets/sinjira/jeux/index.html",
+    "projets/sinjira/registre/index.html",
+    "projets/sinjira/communaute/index.html",
+    "projets/sinjira/monde-parallele/index.html",
+    "projets/sinjira/codex/index.html",
+)
+
+SINJIRA_FOOTER_LINKS = (
+    ("/projets/sinjira/", "Vue d’ensemble"),
+    ("/projets/sinjira/romans/", "Romans"),
+    ("/projets/sinjira/jeux/", "Jeux"),
+    ("/projets/sinjira/registre/", "Registre"),
+    ("/projets/sinjira/communaute/", "Communauté"),
+    ("/projets/sinjira/monde-parallele/", "Monde parallèle"),
+    ("/projets/sinjira/codex/", "Codex"),
+    ("/compte/", "Compte SINJIRA™"),
+    *INFO_FOOTER_LINKS,
+)
+
 EXPECTED_LABELS = ("Accueil", "SINJIRA™", "Projet Nova", "À propos", "Compte")
 FORBIDDEN_GLOBAL_LABELS = (">Registre</a>", ">Contact</a>")
 
@@ -177,6 +199,21 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
         if "site.js?v=24.4.23" not in html:
             errors.append(f"{path}: runtime public footer/navigation obsolète")
 
+    for path in SINJIRA_FOOTER_PAGES:
+        html = contents[path]
+        footer_at = html.find('<footer class="site-footer"')
+        if footer_at < 0:
+            errors.append(f"{path}: footer SINJIRA absent")
+            continue
+        footer = html[footer_at:]
+        if '<div class="footer-grid">' not in footer:
+            errors.append(f"{path}: structure footer SINJIRA incomplète")
+        if "Univers original de Benoit Cantin." not in footer:
+            errors.append(f"{path}: signature footer SINJIRA absente")
+        for href, label in SINJIRA_FOOTER_LINKS:
+            if f'href="{href}"' not in footer or f">{label}</a>" not in footer:
+                errors.append(f"{path}: lien footer SINJIRA manquant: {label}")
+
 
 def self_test(contents: dict[str, str]) -> None:
     mutations = [
@@ -192,6 +229,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("libellé fermeture menu retiré", "assets/js/site.js", "toggle.setAttribute('aria-label', 'Fermer le menu')", "toggle.setAttribute('aria-label', 'Menu')"),
         ("ancien menu confidentialité réintroduit", "confidentialite.html", '<a href="/projets/projet-nova/">Projet Nova</a>', '<a href="/projets/sinjira/registre/">Registre</a><a href="/projets/projet-nova/">Projet Nova</a>'),
         ("Codex sans menu global", "projets/sinjira/codex/index.html", 'id="navigation-principale" data-main-nav', 'id="navigation-codex"'),
+        ("gouvernance footer Codex retirée", "projets/sinjira/codex/index.html", 'href="/gouvernance-vie-privee.html">Gouvernance vie privée</a>', 'href="/gouvernance-retiree.html">Gouvernance retirée</a>'),
     ]
     detected = 0
     for name, path, old, new in mutations:
