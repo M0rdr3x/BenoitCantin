@@ -159,6 +159,28 @@ def main()->int:
         if needle.lower() not in sql.lower():
             fail(errors,f'Contrat Canon étendu V25 incomplet: {needle}')
 
+    canon_server_only_rpc_signatures=(
+      'public.admin_sinjira_story_continuity_check(uuid)',
+      'public.admin_sinjira_promote_extended_story(uuid)',
+      'public.admin_sinjira_publish_extended_story(uuid,text)',
+      'public.admin_sinjira_unpublish_extended_story(uuid)',
+      'public.admin_sinjira_migrate_canon_source_references(uuid,uuid)',
+      'public.admin_sinjira_story_validation_check(uuid)',
+    )
+    for signature in canon_server_only_rpc_signatures:
+        revoke=f'revokeallonfunction{signature}frompublic,anon,authenticated;'
+        service_grant=f'grantexecuteonfunction{signature}toservice_role;'
+        auth_grant=f'grantexecuteonfunction{signature}toauthenticated'
+        revoke_pos=compact.rfind(revoke)
+        service_pos=compact.rfind(service_grant)
+        auth_pos=compact.rfind(auth_grant)
+        if revoke_pos<0:
+            fail(errors,f'RPC Canon SECURITY DEFINER sans révocation navigateur finale: {signature}')
+        if auth_pos>revoke_pos:
+            fail(errors,f'RPC Canon SECURITY DEFINER réexposée à authenticated après révocation: {signature}')
+        if service_pos<revoke_pos:
+            fail(errors,f'RPC Canon SECURITY DEFINER sans réautorisation service_role après révocation: {signature}')
+
     source=[]
     for root in (ROOT/'assets'/'js',FUN):
         if root.exists():source.extend(p for p in root.rglob('*') if p.is_file() and p.suffix in {'.js','.ts'})
@@ -173,7 +195,7 @@ def main()->int:
     if not admin_edge.exists():fail(errors,'Edge Function administration SINJIRA V18 absente.')
     else:
         admin_text=read(admin_edge)
-        for needle in ("admin_sinjira_story_validation_check","status:requestedCanon==='CANON_ETENDU'?'author_review':status","STORY_VALIDATION_INCOMPLETE"):
+        for needle in ("admin_sinjira_story_validation_check","status:requestedCanon==='CANON_ETENDU'?'author_review':status","STORY_VALIDATION_INCOMPLETE","requiredAdmin(req)","service:s"):
             if needle not in admin_text:fail(errors,f'Contrat administration Canon étendu incomplet: {needle}')
 
     admin_html=read(ADMIN_HTML) if ADMIN_HTML.exists() else ''
