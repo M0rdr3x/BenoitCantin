@@ -160,6 +160,8 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
 
         if 'href="/compte/" data-sinjira-session-nav' not in nav:
             errors.append(f"{path}: Compte doit rester pilotable par la session")
+        if '/assets/js/v19-session.js?v=25.0.0' not in contents[path]:
+            errors.append(f"{path}: runtime session public SINJIRA absent ou obsolète")
 
         if 'id="navigation-principale"' not in nav:
             errors.append(f"{path}: navigation principale sans id accessible")
@@ -287,6 +289,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("lien d’évitement Codex retiré", "projets/sinjira/codex/index.html", 'class="skip-link" href="#contenu"', 'class="skip-link" href="#contenu-retire"'),
         ("label Registre désassocié", "projets/sinjira/registre/index.html", 'label for="registry-appearance-build"', 'label'),
         ("cache CSS Codex rétrogradé", "projets/sinjira/codex/index.html", 'site.css?v=25.0.0', 'site.css?v=24.0'),
+        ("runtime session Codex retiré", "projets/sinjira/codex/index.html", '/assets/js/v19-session.js?v=25.0.0', '/assets/js/v19-session-retire.js?v=25.0.0'),
     ]
     detected = 0
     for name, path, old, new in mutations:
