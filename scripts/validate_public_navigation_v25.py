@@ -127,14 +127,30 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
             errors.append(f"Accueil: accès direct Registre perdu: {marker}")
 
     sinjira = contents["projets/sinjira/index.html"]
+    subnav_start = sinjira.find('<nav class="universe-subnav"')
+    subnav_end = sinjira.find("</nav>", subnav_start) if subnav_start >= 0 else -1
+    if subnav_start < 0 or subnav_end < 0:
+        errors.append("SINJIRA: sous-navigation univers absente")
+    else:
+        subnav = sinjira[subnav_start:subnav_end + len("</nav>")]
+        for marker in (
+            'href="./">Vue d’ensemble</a>',
+            'href="romans/">Romans</a>',
+            'href="jeux/">Jeux</a>',
+            'href="registre/">Registre</a>',
+            'href="communaute/">Communauté</a>',
+            'href="monde-parallele/">Monde parallèle</a>',
+            'href="codex/">Codex</a>',
+        ):
+            if marker not in subnav:
+                errors.append(f"SINJIRA: lien sous-navigation manquant: {marker}")
+
     for marker in (
-        'class="universe-subnav"',
-        'href="registre/">Registre</a>',
         'href="/contact.html">Contact</a>',
         'href="/transparence-ia.html">Transparence IA</a>',
     ):
         if marker not in sinjira:
-            errors.append(f"SINJIRA: navigation secondaire/footer incomplet: {marker}")
+            errors.append(f"SINJIRA: footer portail incomplet: {marker}")
 
     contact = contents["contact.html"]
     if 'id="contact-general"' not in contact:
