@@ -206,6 +206,7 @@ def validate_service_worker(errors: list[str]) -> None:
         errors.append('sw.js CORE omet des espaces SINJIRA™ majeurs: ' + ', '.join(missing_offline))
     for required in [
         '/manifest.webmanifest', '/assets/js/sinjira-pwa-install.js',
+        '/assets/css/ai-transparency.css', '/assets/js/ai-transparency.js',
         '/assets/css/sinjira-mobile-app-v24-4-94.css', '/assets/js/sinjira-mobile-social-v24-4-94.js',
         '/assets/css/sinjira-mobile-account-shell-v24-4-95.css', '/assets/js/sinjira-mobile-account-shell-v24-4-95.js',
         '/android-chrome-192x192.png', '/android-chrome-512x512.png'
