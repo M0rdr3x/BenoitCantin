@@ -15,9 +15,9 @@
     notice.setAttribute('aria-label', "Transparence sur l'utilisation de l'intelligence artificielle");
     notice.innerHTML =
       '<div class="ai-transparency-inner">' +
-        '<strong>Transparence IA</strong>' +
-        '<span>Idées, vision et décisions&nbsp;: Benoit Cantin. Mise en œuvre assistée par des outils d’intelligence artificielle. Validation finale et responsabilité du contenu&nbsp;: Benoit Cantin.</span>' +
-        '<a href="/transparence-ia.html">Comment l’IA est utilisée</a>' +
+        '<strong>Transparence · Honnêteté · Intégrité</strong>' +
+        '<span>Je travaille avec l’aide de l’intelligence artificielle pour structurer, développer, vérifier ou mettre en œuvre certaines parties de mes projets. Les idées, la vision et les décisions finales restent les miennes. <em>L’humain avant tout.</em></span>' +
+        '<a href="/transparence-ia.html">Lire ma démarche</a>' +
       '</div>';
 
     var header = document.querySelector('.site-header');
