@@ -15,6 +15,7 @@ KEY_PAGES = {
     "confidentialite.html": None,
     "gouvernance-vie-privee.html": None,
     "avis-legal.html": None,
+    "404.html": None,
     "projets/sinjira/index.html": "SINJIRA™",
     "projets/sinjira/romans/index.html": "SINJIRA™",
     "projets/sinjira/jeux/index.html": "SINJIRA™",
@@ -32,6 +33,7 @@ INFO_FOOTER_PAGES = (
     "confidentialite.html",
     "gouvernance-vie-privee.html",
     "avis-legal.html",
+    "404.html",
 )
 
 INFO_FOOTER_LINKS = (
