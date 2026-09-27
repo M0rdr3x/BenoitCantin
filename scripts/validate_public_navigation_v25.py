@@ -15,6 +15,8 @@ KEY_PAGES = {
 }
 
 INFO_FOOTER_PAGES = (
+    "index.html",
+    "a-propos.html",
     "contact.html",
     "transparence-ia.html",
     "confidentialite.html",
@@ -151,6 +153,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("footer transparence retiré", "contact.html", 'href="/transparence-ia.html">Transparence IA</a>', 'href="/transparence-ia-retiree.html">Transparence retirée</a>'),
         ("aria-controls retiré", "index.html", 'aria-controls="navigation-principale"', 'aria-controls="navigation-retiree"'),
         ("fermeture Escape retirée", "assets/js/site.js", "event.key === 'Escape'", "event.key === 'F1'"),
+        ("gouvernance footer accueil retirée", "index.html", 'href="/gouvernance-vie-privee.html">Gouvernance vie privée</a>', 'href="/gouvernance-retiree.html">Gouvernance retirée</a>'),
     ]
     detected = 0
     for name, path, old, new in mutations:
