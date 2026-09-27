@@ -149,6 +149,12 @@ def validate_core(contents: dict[str, str]) -> None:
     for marker in (
         "/assets/css/ai-transparency.css",
         "/assets/js/ai-transparency.js",
+        "/a-propos.html",
+        "/contact.html",
+        "/transparence-ia.html",
+        "/confidentialite.html",
+        "/gouvernance-vie-privee.html",
+        "/avis-legal.html",
         "benoitcantin-v24-4-95-public-3",
     ):
         if marker not in sw:
@@ -245,6 +251,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("lien public retiré", "ai_js", "/transparence-ia.html", "/transparence-ia-retiree.html"),
         ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.1.0", "/assets/js/absent.js"),
         ("mention standard retirée", "policy", "Validation finale et responsabilité du contenu", "Validation retirée"),
+        ("page Transparence IA hors-ligne retirée", "sw", "/transparence-ia.html", "/transparence-ia-absente.html"),
     ]
     detected = 0
     for name, key, old, new in mutations:
