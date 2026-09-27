@@ -87,14 +87,17 @@ def meta_content(html: str, *, name: str | None = None, prop: str | None = None)
     attr = "name" if name is not None else "property"
     value = name if name is not None else prop
     assert value is not None
-    patterns = [
-        rf"<meta\b(?=[^>]*\b{attr}=[\"']{re.escape(value)}[\"'])[^>]*\bcontent=[\"']([^\"']*)[\"'][^>]*>",
-        rf"<meta\b(?=[^>]*\bcontent=[\"']([^\"']*)[\"'])[^>]*\b{attr}=[\"']{re.escape(value)}[\"'][^>]*>",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, html, flags=re.I)
-        if match:
-            return match.group(1).strip()
+
+    for tag in re.findall(r"<meta\b[^>]*>", html, flags=re.I):
+        attrs: dict[str, str] = {}
+        for key, quote, raw_value in re.findall(
+            r"([:\w-]+)\s*=\s*([\"'])(.*?)\2",
+            tag,
+            flags=re.I | re.S,
+        ):
+            attrs[key.lower()] = raw_value
+        if attrs.get(attr) == value:
+            return attrs.get("content", "").strip()
     return ""
 
 
