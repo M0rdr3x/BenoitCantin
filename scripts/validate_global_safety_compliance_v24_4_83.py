@@ -80,15 +80,15 @@ req('data-signup-session-warning' in signup_html.lower() and 'data-signup-sessio
 req('v24-signup.js?v=25.0.3&amp;rev=guardian-code-16' in signup_html,'Version du client inscription enfant renforcé non invalidée.')
 req('réservés aux personnes de 13 ans et plus' not in signup_html.lower(),'Ancien message global 13+ encore présent dans l’interface.')
 
-for phrase in ('registre interne','cinq ans','30 jours','13 ans','comptes jeunesse 13–17 ans','canada','rencontres sinjira™ est strictement 18+','ia distante payante est désactivée','paiements en ligne','responsable de la protection des renseignements personnels','gouvernance-vie-privee.html','formspree','états-unis','canada central'):
-    req(phrase in privacy.lower(),f'Politique vie privée historique V83 incomplète: {phrase}')
+for phrase in ('registre interne','cinq ans','30 jours','13 ans','11–12 ans','14–17 ans','canada','rencontres sinjira™ est strictement 18+','ia distante payante est désactivée','paiements en ligne','responsable de la protection des renseignements personnels','gouvernance-vie-privee.html','formspree','états-unis','canada central'):
+    req(phrase in privacy.lower(),f'Politique vie privée V83/V25 incomplète: {phrase}')
 for phrase in ('responsable de la protection des renseignements personnels','benoit cantin','rôles et responsabilités','conservation et destruction','plaintes et demandes','efvp','formulaire officiel de contact'):
     req(phrase in governance.lower(),f'Gouvernance publique incomplète: {phrase}')
 for phrase in ('accès à mes renseignements','suppression','retrait d’un consentement','plainte de vie privée'):
     req(phrase in privacy_center.lower(),f'Centre Vie privée incomplet: {phrase}')
 req("rpc('privacy_my_requests'" in privacy_js and "rpc('privacy_create_request'" in privacy_js,'Centre Vie privée non relié aux RPC.')
-for phrase in ('prostitution','proxénétisme','traite','vente de drogues','grooming','13+','18+ strict'):
-    req(phrase in legal.lower(),f'Avis légal historique V83 incomplet: {phrase}')
+for phrase in ('prostitution','proxénétisme','traite','vente de drogues','grooming','11–12 ans','à 13 ans','14–17 ans','strictement 18+'):
+    req(phrase in legal.lower(),f'Avis légal V83/V25 incomplet: {phrase}')
 for phrase in ('vie privée / renseignements personnels','formspree','états-unis','politique de confidentialité'):
     req(phrase in contact.lower(),f'Formulaire contact/transparence incomplet: {phrase}')
 for phrase in ('québec','canada','rgpd','digital services act','royaume-uni','coppa','australie','formspree','canada central','décisions automatisées','jeunesse hors canada'):
