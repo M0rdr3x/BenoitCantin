@@ -43,8 +43,12 @@ NOVA_PAGE_NAMES = [
 ]
 
 SEO_PAGES = {
+    ROOT / "a-propos.html": BASE + "/a-propos.html",
+    ROOT / "contact.html": BASE + "/contact.html",
     ROOT / "transparence-ia.html": BASE + "/transparence-ia.html",
+    ROOT / "confidentialite.html": BASE + "/confidentialite.html",
     ROOT / "gouvernance-vie-privee.html": BASE + "/gouvernance-vie-privee.html",
+    ROOT / "avis-legal.html": BASE + "/avis-legal.html",
     ROOT / "projets" / "sinjira" / "index.html": BASE + "/projets/sinjira/",
     ROOT / "projets" / "sinjira" / "romans" / "index.html": BASE + "/projets/sinjira/romans/",
     ROOT / "projets" / "sinjira" / "jeux" / "index.html": BASE + "/projets/sinjira/jeux/",
@@ -303,6 +307,9 @@ def main() -> int:
 
     home = (ROOT / "index.html").read_text("utf-8", errors="ignore")
     required_home_markers = [
+        'rel="alternate" hreflang="fr-CA"',
+        'rel="alternate" hreflang="x-default"',
+        'property="og:locale"',
         'property="og:title"',
         'property="og:description"',
         'property="og:type"',
