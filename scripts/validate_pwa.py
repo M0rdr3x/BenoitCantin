@@ -11,14 +11,17 @@ ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = 'www.benoitcantin.com'
 BASE_URL = f'https://{DOMAIN}'
 MANIFESTS = [ROOT / 'manifest.webmanifest', ROOT / 'site.webmanifest']
-REQUIRED_PUBLIC_ROUTES = {
-    f'{BASE_URL}/projets/sinjira/communaute/',
-    f'{BASE_URL}/projets/sinjira/monde-parallele/',
-}
-REQUIRED_OFFLINE_ROUTES = {
+SINJIRA_PUBLIC_HUBS = {
+    '/projets/sinjira/',
+    '/projets/sinjira/romans/',
+    '/projets/sinjira/jeux/',
+    '/projets/sinjira/registre/',
     '/projets/sinjira/communaute/',
     '/projets/sinjira/monde-parallele/',
+    '/projets/sinjira/codex/',
 }
+REQUIRED_PUBLIC_ROUTES = {BASE_URL + route for route in SINJIRA_PUBLIC_HUBS}
+REQUIRED_OFFLINE_ROUTES = set(SINJIRA_PUBLIC_HUBS)
 REQUIRED_SHORTCUTS = {
     '/app/',
     '/projets/sinjira/romans/',
@@ -203,7 +206,7 @@ def validate_service_worker(errors: list[str]) -> None:
         errors.append('sw.js: liste CORE vide.')
     missing_offline = sorted(REQUIRED_OFFLINE_ROUTES - set(refs))
     if missing_offline:
-        errors.append('sw.js CORE omet des espaces SINJIRA™ majeurs: ' + ', '.join(missing_offline))
+        errors.append('sw.js CORE omet des hubs publics SINJIRA™: ' + ', '.join(missing_offline))
     for required in [
         '/manifest.webmanifest', '/assets/js/sinjira-pwa-install.js',
         '/assets/css/ai-transparency.css', '/assets/js/ai-transparency.js',
