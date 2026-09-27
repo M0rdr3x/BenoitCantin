@@ -73,6 +73,12 @@ SPECIAL_SEO_PAGES = {
     ),
 }
 
+UTILITY_NOINDEX_PAGES = [
+    ROOT / "projets" / "sinjira" / "compte.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "le-premier-refuge" / "index.html",
+    ROOT / "projets" / "sinjira" / "registre" / "merci.html",
+]
+
 PRIVATE_NOINDEX_PAGES = [
     ROOT / "compte" / "index.html",
     ROOT / "compte" / "connexion.html",
@@ -388,6 +394,17 @@ def main() -> int:
         robots_meta = meta_content(html, name="robots").lower()
         if "noindex" not in robots_meta:
             errors.append(f"{page.relative_to(ROOT)}: page privée sans noindex.")
+
+    for page in UTILITY_NOINDEX_PAGES:
+        if not page.exists():
+            errors.append(f"Page utilitaire de redirection absente: {page.relative_to(ROOT)}")
+            continue
+        html = page.read_text("utf-8", errors="ignore")
+        robots_meta = meta_content(html, name="robots").lower()
+        if "noindex" not in robots_meta or "nofollow" not in robots_meta:
+            errors.append(f"{page.relative_to(ROOT)}: redirection utilitaire sans noindex,nofollow.")
+        if not re.search(r'<meta\b[^>]*http-equiv=["\']refresh["\'][^>]*>', html, flags=re.I):
+            errors.append(f"{page.relative_to(ROOT)}: redirection utilitaire sans meta refresh.")
 
     home = (ROOT / "index.html").read_text("utf-8", errors="ignore")
     required_home_markers = [
