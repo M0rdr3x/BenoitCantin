@@ -68,13 +68,13 @@
     if (!doc.querySelector('link[data-ai-transparency-style]')) {
       var transparencyStyle = doc.createElement('link');
       transparencyStyle.rel = 'stylesheet';
-      transparencyStyle.href = '/assets/css/ai-transparency.css?v=1.0.0';
+      transparencyStyle.href = '/assets/css/ai-transparency.css?v=1.1.0';
       transparencyStyle.setAttribute('data-ai-transparency-style', '');
       doc.head.appendChild(transparencyStyle);
     }
     if (!doc.querySelector('script[data-ai-transparency-script]')) {
       var transparencyScript = doc.createElement('script');
-      transparencyScript.src = '/assets/js/ai-transparency.js?v=1.0.0';
+      transparencyScript.src = '/assets/js/ai-transparency.js?v=1.1.0';
       transparencyScript.defer = true;
       transparencyScript.setAttribute('data-ai-transparency-script', '');
       doc.head.appendChild(transparencyScript);
