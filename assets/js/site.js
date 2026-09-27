@@ -118,17 +118,31 @@
   var toggle = doc.querySelector('[data-menu-toggle]');
   var nav = doc.querySelector('[data-main-nav]');
   if (toggle && nav) {
+    if (!nav.id) nav.id = 'navigation-principale';
+    toggle.setAttribute('aria-controls', nav.id);
+
+    function closeMainNavigation(returnFocus) {
+      toggle.setAttribute('aria-expanded', 'false');
+      removeClass(nav, 'open');
+      if (returnFocus) toggle.focus();
+    }
+
     toggle.addEventListener('click', function () {
       var open = toggle.getAttribute('aria-expanded') === 'true';
-      toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
-      if (open) removeClass(nav, 'open');
-      else addClass(nav, 'open');
+      if (open) closeMainNavigation(false);
+      else {
+        toggle.setAttribute('aria-expanded', 'true');
+        addClass(nav, 'open');
+      }
     });
 
     nav.addEventListener('click', function (event) {
-      if (closestAnchor(event.target, nav)) {
-        toggle.setAttribute('aria-expanded', 'false');
-        removeClass(nav, 'open');
+      if (closestAnchor(event.target, nav)) closeMainNavigation(false);
+    });
+
+    doc.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+        closeMainNavigation(true);
       }
     });
   }
