@@ -1,5 +1,17 @@
 # Transparence sur l'utilisation de l'intelligence artificielle
 
+## Engagement public
+
+Pour Benoit Cantin, trois valeurs doivent rester visibles dans l'utilisation de l'intelligence artificielle :
+
+- **Transparence** — dire clairement quand l'IA est utilisée et à quoi elle sert;
+- **Honnêteté** — ne pas présenter comme entièrement réalisé sans assistance un travail qui a bénéficié d'outils d'IA;
+- **Intégrité** — conserver la responsabilité, les décisions, les valeurs et la validation finale du côté humain.
+
+Principe directeur :
+
+**L'humain avant tout.**
+
 ## Règle publique
 
 Les idées, la vision, les orientations et les décisions finales des projets de Benoit Cantin demeurent humaines et sont attribuées à Benoit Cantin, sauf attribution explicite différente pour une contribution humaine tierce.
@@ -11,6 +23,10 @@ L'intelligence artificielle ne doit pas être présentée comme l'auteur des ori
 ## Mention standard
 
 > **Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.**
+
+## Mention publique courte
+
+> **Je travaille avec l'aide de l'intelligence artificielle pour structurer, développer, vérifier ou mettre en œuvre certaines parties de mes projets. Les idées, la vision et les décisions finales restent les miennes. Transparence, honnêteté et intégrité : l'humain avant tout.**
 
 ## Application
 
@@ -28,4 +44,4 @@ Pour Projet Nova et les contenus citoyens ou politiques, l'utilisation de l'IA n
 
 ## Principe
 
-**L'humain avant tout. Protéger sans surveiller. Être transparent sur les outils utilisés.**
+**L'humain avant tout. Protéger sans surveiller. Être transparent, honnête et intègre sur les outils utilisés.**
