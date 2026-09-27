@@ -32,20 +32,32 @@ select has_function('private','sinjira_invalidate_published_extended_stories',ar
 
 select ok(not has_function_privilege('anon','public.admin_sinjira_story_continuity_check(uuid)','EXECUTE'),
   'anon ne peut pas lancer le contrôle auteur');
-select ok(has_function_privilege('authenticated','public.admin_sinjira_story_continuity_check(uuid)','EXECUTE'),
-  'authenticated peut atteindre le wrapper qui impose ensuite admin AAL2');
+select ok(
+  not has_function_privilege('authenticated','public.admin_sinjira_story_continuity_check(uuid)','EXECUTE')
+  and has_function_privilege('service_role','public.admin_sinjira_story_continuity_check(uuid)','EXECUTE'),
+  'le contrôle de continuité est réservé au chemin serveur service_role après admin AAL2'
+);
 select ok(not has_function_privilege('anon','public.admin_sinjira_promote_extended_story(uuid)','EXECUTE'),
   'anon ne peut pas promouvoir une Chronique');
-select ok(has_function_privilege('authenticated','public.admin_sinjira_promote_extended_story(uuid)','EXECUTE'),
-  'authenticated peut atteindre le wrapper de promotion protégé par admin AAL2');
+select ok(
+  not has_function_privilege('authenticated','public.admin_sinjira_promote_extended_story(uuid)','EXECUTE')
+  and has_function_privilege('service_role','public.admin_sinjira_promote_extended_story(uuid)','EXECUTE'),
+  'la promotion est réservée au chemin serveur service_role après admin AAL2'
+);
 select ok(not has_function_privilege('anon','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE'),
   'anon ne peut pas publier une Chronique');
-select ok(has_function_privilege('authenticated','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE'),
-  'authenticated peut atteindre le wrapper de publication protégé par admin AAL2');
+select ok(
+  not has_function_privilege('authenticated','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE')
+  and has_function_privilege('service_role','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE'),
+  'la publication est réservée au chemin serveur service_role après admin AAL2'
+);
 select ok(not has_function_privilege('anon','public.admin_sinjira_unpublish_extended_story(uuid)','EXECUTE'),
   'anon ne peut pas retirer une Chronique de publication');
-select ok(has_function_privilege('authenticated','public.admin_sinjira_unpublish_extended_story(uuid)','EXECUTE'),
-  'authenticated peut atteindre le wrapper de retrait protégé par admin AAL2');
+select ok(
+  not has_function_privilege('authenticated','public.admin_sinjira_unpublish_extended_story(uuid)','EXECUTE')
+  and has_function_privilege('service_role','public.admin_sinjira_unpublish_extended_story(uuid)','EXECUTE'),
+  'le retrait de publication est réservé au chemin serveur service_role après admin AAL2'
+);
 
 select ok(not has_function_privilege('authenticated','private.sinjira_story_continuity_report(uuid)','EXECUTE'),
   'le moteur privé de continuité n est pas directement invocable par le navigateur');
