@@ -67,6 +67,26 @@ SINJIRA_FOOTER_LINKS = (
 EXPECTED_LABELS = ("Accueil", "SINJIRA™", "Projet Nova", "À propos", "Compte")
 FORBIDDEN_GLOBAL_LABELS = (">Registre</a>", ">Contact</a>")
 
+SINJIRA_SUBNAV_ACTIVE = {
+    "projets/sinjira/index.html": "Vue d’ensemble",
+    "projets/sinjira/romans/index.html": "Romans",
+    "projets/sinjira/jeux/index.html": "Jeux",
+    "projets/sinjira/registre/index.html": "Registre",
+    "projets/sinjira/communaute/index.html": "Communauté",
+    "projets/sinjira/monde-parallele/index.html": "Monde parallèle",
+    "projets/sinjira/codex/index.html": "Codex",
+}
+
+SINJIRA_SUBNAV_LINKS = (
+    ("/projets/sinjira/", "Vue d’ensemble"),
+    ("/projets/sinjira/romans/", "Romans"),
+    ("/projets/sinjira/jeux/", "Jeux"),
+    ("/projets/sinjira/registre/", "Registre"),
+    ("/projets/sinjira/communaute/", "Communauté"),
+    ("/projets/sinjira/monde-parallele/", "Monde parallèle"),
+    ("/projets/sinjira/codex/", "Codex"),
+)
+
 
 def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
@@ -154,25 +174,25 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
         if marker not in home:
             errors.append(f"Accueil: accès direct Registre perdu: {marker}")
 
-    sinjira = contents["projets/sinjira/index.html"]
-    subnav_start = sinjira.find('<nav class="universe-subnav"')
-    subnav_end = sinjira.find("</nav>", subnav_start) if subnav_start >= 0 else -1
-    if subnav_start < 0 or subnav_end < 0:
-        errors.append("SINJIRA: sous-navigation univers absente")
-    else:
-        subnav = sinjira[subnav_start:subnav_end + len("</nav>")]
-        for marker in (
-            'href="./">Vue d’ensemble</a>',
-            'href="romans/">Romans</a>',
-            'href="jeux/">Jeux</a>',
-            'href="registre/">Registre</a>',
-            'href="communaute/">Communauté</a>',
-            'href="monde-parallele/">Monde parallèle</a>',
-            'href="codex/">Codex</a>',
-        ):
-            if marker not in subnav:
-                errors.append(f"SINJIRA: lien sous-navigation manquant: {marker}")
+    for path, active_label in SINJIRA_SUBNAV_ACTIVE.items():
+        html = contents[path]
+        subnav_start = html.find('<nav class="universe-subnav"')
+        subnav_end = html.find("</nav>", subnav_start) if subnav_start >= 0 else -1
+        if subnav_start < 0 or subnav_end < 0:
+            errors.append(f"{path}: sous-navigation SINJIRA absente")
+            continue
+        subnav = html[subnav_start:subnav_end + len("</nav>")]
+        if 'aria-label="Navigation de SINJIRA™"' not in subnav:
+            errors.append(f"{path}: sous-navigation SINJIRA sans libellé accessible")
+        if subnav.count("<a") != len(SINJIRA_SUBNAV_LINKS):
+            errors.append(f"{path}: sous-navigation SINJIRA doit contenir {len(SINJIRA_SUBNAV_LINKS)} liens")
+        for href, label in SINJIRA_SUBNAV_LINKS:
+            if f'href="{href}"' not in subnav or f">{label}</a>" not in subnav:
+                errors.append(f"{path}: lien sous-navigation manquant: {label}")
+        if f'aria-current="page" href="' not in subnav or f">{active_label}</a>" not in subnav:
+            errors.append(f"{path}: section active de sous-navigation absente: {active_label}")
 
+    sinjira = contents["projets/sinjira/index.html"]
     for marker in (
         'href="/contact.html">Contact</a>',
         'href="/transparence-ia.html">Transparence IA</a>',
@@ -221,7 +241,8 @@ def self_test(contents: dict[str, str]) -> None:
         ("Compte retiré", "a-propos.html", 'href="/compte/" data-sinjira-session-nav>Compte</a>', 'href="/compte/">Compte retiré</a>'),
         ("Registre accueil retiré", "index.html", "Créer mon personnage", "Accès retiré"),
         ("normalisation runtime retirée", "assets/js/site.js", "function normalizePortalNavigation()", "function navigationRetiree()"),
-        ("sous-nav SINJIRA retirée", "projets/sinjira/index.html", 'href="registre/">Registre</a>', 'href="registre-retire/">Registre</a>'),
+        ("sous-nav SINJIRA retirée", "projets/sinjira/index.html", 'href="/projets/sinjira/registre/">Registre</a>', 'href="/projets/sinjira/registre-retire/">Registre</a>'),
+        ("sous-nav Communauté retirée", "projets/sinjira/communaute/index.html", 'href="/projets/sinjira/monde-parallele/">Monde parallèle</a>', 'href="/projets/sinjira/monde-parallele-retire/">Monde parallèle</a>'),
         ("footer transparence retiré", "contact.html", 'href="/transparence-ia.html">Transparence IA</a>', 'href="/transparence-ia-retiree.html">Transparence retirée</a>'),
         ("aria-controls retiré", "index.html", 'aria-controls="navigation-principale"', 'aria-controls="navigation-retiree"'),
         ("fermeture Escape retirée", "assets/js/site.js", "event.key === 'Escape'", "event.key === 'F1'"),
