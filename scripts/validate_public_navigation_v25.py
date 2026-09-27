@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -198,6 +199,23 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
         if f'aria-current="page" href="' not in subnav or f">{active_label}</a>" not in subnav:
             errors.append(f"{path}: section active de sous-navigation absente: {active_label}")
 
+    registry = contents["projets/sinjira/registre/index.html"]
+    direct_fields = re.findall(
+        r'<div class="field"><label(?:\s+for="([^"]+)")?>(.*?)</label><(input|select|textarea)\b([^>]*)>',
+        registry,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if len(direct_fields) != 25:
+        errors.append(f"Registre: 25 champs directs étiquetés attendus, trouvé {len(direct_fields)}")
+    for label_for, label_html, tag_name, attrs in direct_fields:
+        id_match = re.search(r'\bid="([^"]+)"', attrs, flags=re.IGNORECASE)
+        control_id = id_match.group(1) if id_match else ""
+        label_text = re.sub(r"<[^>]+>", "", label_html).strip()
+        if not label_for or not control_id or label_for != control_id:
+            errors.append(
+                f"Registre: association label/champ invalide pour {label_text or tag_name}"
+            )
+
     sinjira = contents["projets/sinjira/index.html"]
     for marker in (
         'href="/contact.html">Contact</a>',
@@ -259,6 +277,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("Codex sans menu global", "projets/sinjira/codex/index.html", 'id="navigation-principale" data-main-nav', 'id="navigation-codex"'),
         ("gouvernance footer Codex retirée", "projets/sinjira/codex/index.html", 'href="/gouvernance-vie-privee.html">Gouvernance vie privée</a>', 'href="/gouvernance-retiree.html">Gouvernance retirée</a>'),
         ("lien d’évitement Codex retiré", "projets/sinjira/codex/index.html", 'class="skip-link" href="#contenu"', 'class="skip-link" href="#contenu-retire"'),
+        ("label Registre désassocié", "projets/sinjira/registre/index.html", 'label for="registry-appearance-build"', 'label'),
     ]
     detected = 0
     for name, path, old, new in mutations:
