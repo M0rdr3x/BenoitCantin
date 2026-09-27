@@ -15,7 +15,7 @@ class ProductionReviewDecisionTraceTests(unittest.TestCase):
 
     def test_new_reviewed_row_with_same_diff_trace_is_accepted(self):
         errors = []
-        base_batch = [('20260907145100', 'legacy_reviewed', 'a' * 40)]
+        base_batch = [guard.LEGACY_REVIEWED_ROWS[0]]
         current_batch = base_batch + [('20260913030500', 'new_reviewed', 'b' * 40)]
         base_trace = []
         current_trace = [('20260913030500', 'new_reviewed', 'b' * 40, 438, 'APPROVED')]
@@ -24,14 +24,14 @@ class ProductionReviewDecisionTraceTests(unittest.TestCase):
 
     def test_new_reviewed_row_without_new_trace_is_rejected(self):
         errors = []
-        base_batch = [('20260907145100', 'legacy_reviewed', 'a' * 40)]
+        base_batch = [guard.LEGACY_REVIEWED_ROWS[0]]
         current_batch = base_batch + [('20260913030500', 'new_reviewed', 'b' * 40)]
         guard.validate_transition(errors, base_batch, current_batch, [], [], '20260906035442')
         self.assertTrue(any('sans trace de décision' in error for error in errors), errors)
 
     def test_precreated_trace_without_batch_addition_is_rejected(self):
         errors = []
-        base_batch = [('20260907145100', 'legacy_reviewed', 'a' * 40)]
+        base_batch = [guard.LEGACY_REVIEWED_ROWS[0]]
         trace = [('20260913030500', 'future_precreated', 'b' * 40, 438, 'APPROVED')]
         guard.validate_transition(errors, base_batch, list(base_batch), [], trace, '20260906035442')
         self.assertTrue(any('pré-créée' in error for error in errors), errors)
@@ -91,7 +91,7 @@ class ProductionReviewDecisionTraceTests(unittest.TestCase):
         batch = [guard.LEGACY_REVIEWED_ROWS[0]]
         trace = [('20260913030500', 'future_precreated', 'b' * 40, 438, 'APPROVED')]
         guard.validate_static(errors, batch, trace, '20260906035442')
-        self.assertTrue(any('sans ligne active' in error for error in errors), errors)
+        self.assertTrue(any('sans ligne active correspondante' in error for error in errors), errors)
 
     def test_historical_trace_may_remain_after_ledger_advances(self):
         errors = []
