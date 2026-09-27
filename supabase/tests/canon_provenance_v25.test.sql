@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,auth,extensions;
 
-select plan(126);
+select plan(128);
 
 select has_table('public','sinjira_canon_sources','le Registre des sources canoniques existe');
 select has_table('public','sinjira_story_claims','les faits de provenance des Chroniques existent');
@@ -731,6 +731,30 @@ select ok(
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='private' and p.proname='sinjira_guard_canon_source_lifecycle' limit 1),
   'une source ne peut pas être créée directement en RETIRED'
+);
+
+select ok(
+  (select pg_get_functiondef(p.oid) ilike '%CANON_SOURCE_LOCATOR_REQUIRED%'
+          and pg_get_functiondef(p.oid) ilike '%chapter_reference%'
+          and pg_get_functiondef(p.oid) ilike '%passage_reference%'
+          and pg_get_functiondef(p.oid) ilike '%source_version%'
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='sinjira_guard_canon_source_lifecycle' limit 1),
+  'une source vérifiée sans repère renvoie une erreur canonique explicite'
+);
+
+select ok(
+  (select pg_get_triggerdef(tr.oid) ilike '%chapter_reference%'
+          and pg_get_triggerdef(tr.oid) ilike '%passage_reference%'
+          and pg_get_triggerdef(tr.oid) ilike '%source_version%'
+   from pg_trigger tr
+   join pg_class t on t.oid=tr.tgrelid
+   join pg_namespace n on n.oid=t.relnamespace
+   where n.nspname='public'
+     and t.relname='sinjira_canon_sources'
+     and tr.tgname='sinjira_canon_sources_guard_lifecycle'
+     and not tr.tgisinternal limit 1),
+  'le garde des sources est rejoué lors de toute modification des repères'
 );
 
 select ok(
