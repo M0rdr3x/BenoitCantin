@@ -78,6 +78,9 @@ SINJIRA_SUBNAV_ACTIVE = {
     "projets/sinjira/codex/index.html": "Codex",
 }
 
+COMMON_SINJIRA_CSS_VERSION = "25.0.0"
+COMMON_SINJIRA_CSS_ASSETS = ("site.css", "sinjira.css", "v24-platform.css", "v19-pro.css")
+
 SINJIRA_SUBNAV_LINKS = (
     ("/projets/sinjira/", "Vue d’ensemble"),
     ("/projets/sinjira/romans/", "Romans"),
@@ -245,6 +248,11 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
 
     for path in SINJIRA_FOOTER_PAGES:
         html = contents[path]
+        if f"site.css?v={COMMON_SINJIRA_CSS_VERSION}" not in html:
+            errors.append(f"{path}: version commune de site.css incohérente")
+        for asset in COMMON_SINJIRA_CSS_ASSETS[1:]:
+            if asset in html and f"{asset}?v={COMMON_SINJIRA_CSS_VERSION}" not in html:
+                errors.append(f"{path}: version commune de {asset} incohérente")
         footer_at = html.find('<footer class="site-footer"')
         if footer_at < 0:
             errors.append(f"{path}: footer SINJIRA absent")
@@ -278,6 +286,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("gouvernance footer Codex retirée", "projets/sinjira/codex/index.html", 'href="/gouvernance-vie-privee.html">Gouvernance vie privée</a>', 'href="/gouvernance-retiree.html">Gouvernance retirée</a>'),
         ("lien d’évitement Codex retiré", "projets/sinjira/codex/index.html", 'class="skip-link" href="#contenu"', 'class="skip-link" href="#contenu-retire"'),
         ("label Registre désassocié", "projets/sinjira/registre/index.html", 'label for="registry-appearance-build"', 'label'),
+        ("cache CSS Codex rétrogradé", "projets/sinjira/codex/index.html", 'site.css?v=25.0.0', 'site.css?v=24.0'),
     ]
     detected = 0
     for name, path, old, new in mutations:
