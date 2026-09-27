@@ -181,7 +181,11 @@ select ok(
     join pg_namespace n on n.oid=t.relnamespace
     where n.nspname='public' and t.relname='sinjira_canon_sources'
       and c.contype='c'
-      and pg_get_constraintdef(c.oid) ilike '%book_number between 1 and 12%'
+      and pg_get_constraintdef(c.oid) ilike '%book_number >= 1%'
+      and pg_get_constraintdef(c.oid) ilike '%book_number <= 12%'
+      and pg_get_constraintdef(c.oid) ilike '%LIVRES_1_12%'
+      and pg_get_constraintdef(c.oid) ilike '%book_number >= 13%'
+      and pg_get_constraintdef(c.oid) ilike '%book_number <= 14%'
       and pg_get_constraintdef(c.oid) ilike '%ORIGINES_13_14%'
   ),
   'le numéro du roman détermine automatiquement sa période canonique'
@@ -274,23 +278,26 @@ select has_function('public','admin_sinjira_story_validation_check',array['uuid'
 select ok(not has_function_privilege('anon','public.admin_sinjira_story_validation_check(uuid)','EXECUTE'),
   'anon ne peut pas lancer la prévalidation auteur');
 
-select ok(has_function_privilege('authenticated','public.admin_sinjira_story_validation_check(uuid)','EXECUTE'),
-  'authenticated atteint le wrapper qui impose ensuite admin AAL2');
+select ok(
+  not has_function_privilege('authenticated','public.admin_sinjira_story_validation_check(uuid)','EXECUTE')
+  and has_function_privilege('service_role','public.admin_sinjira_story_validation_check(uuid)','EXECUTE'),
+  'la prévalidation est réservée au chemin serveur service_role après admin AAL2'
+);
 
 select ok(
   (select pg_get_functiondef(p.oid) ilike '%sinjira_story_provenance_report%'
           and pg_get_functiondef(p.oid) ilike '%sinjira_story_continuity_report%'
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-   where n.nspname='public' and p.proname='admin_sinjira_story_validation_check' limit 1),
-  'la prévalidation combine le rapport de provenance et le rapport de continuité'
+   where n.nspname='private' and p.proname='sinjira_story_readiness_report' limit 1),
+  'la source unique de prévalidation combine le rapport de provenance et le rapport de continuité'
 );
 
 
 select ok(
   (select pg_get_functiondef(p.oid) ilike '%''metadata'',jsonb_build_object%'
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-   where n.nspname='public' and p.proname='admin_sinjira_story_validation_check' limit 1),
-  'la prévalidation inclut l état détaillé des métadonnées'
+   where n.nspname='private' and p.proname='sinjira_story_readiness_report' limit 1),
+  'la source unique de prévalidation inclut l état détaillé des métadonnées'
 );
 
 select ok(
@@ -358,14 +365,20 @@ select ok(
 select ok(not has_function_privilege('anon','public.admin_sinjira_promote_extended_story(uuid)','EXECUTE'),
   'anon ne peut pas promouvoir une Chronique vers CANON_ETENDU');
 
-select ok(has_function_privilege('authenticated','public.admin_sinjira_promote_extended_story(uuid)','EXECUTE'),
-  'authenticated atteint le RPC de promotion qui exige ensuite admin AAL2');
+select ok(
+  not has_function_privilege('authenticated','public.admin_sinjira_promote_extended_story(uuid)','EXECUTE')
+  and has_function_privilege('service_role','public.admin_sinjira_promote_extended_story(uuid)','EXECUTE'),
+  'la promotion est réservée au chemin serveur service_role après admin AAL2'
+);
 
 select ok(not has_function_privilege('anon','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE'),
   'anon ne peut pas publier une Chronique');
 
-select ok(has_function_privilege('authenticated','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE'),
-  'authenticated atteint le RPC de publication qui exige ensuite admin AAL2');
+select ok(
+  not has_function_privilege('authenticated','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE')
+  and has_function_privilege('service_role','public.admin_sinjira_publish_extended_story(uuid,text)','EXECUTE'),
+  'la publication est réservée au chemin serveur service_role après admin AAL2'
+);
 
 
 select has_function('private','sinjira_demote_extended_story_on_edit',array[]::text[],
@@ -569,17 +582,20 @@ select has_function('public','admin_sinjira_migrate_canon_source_references',arr
 select ok(not has_function_privilege('anon','public.admin_sinjira_migrate_canon_source_references(uuid,uuid)','EXECUTE'),
   'anon ne peut pas migrer les références de source');
 
-select ok(has_function_privilege('authenticated','public.admin_sinjira_migrate_canon_source_references(uuid,uuid)','EXECUTE'),
-  'authenticated atteint le RPC qui impose ensuite admin AAL2');
+select ok(
+  not has_function_privilege('authenticated','public.admin_sinjira_migrate_canon_source_references(uuid,uuid)','EXECUTE')
+  and has_function_privilege('service_role','public.admin_sinjira_migrate_canon_source_references(uuid,uuid)','EXECUTE'),
+  'la migration de références est réservée au chemin serveur service_role après admin AAL2'
+);
 
 select ok(exists(
   select 1
   from pg_indexes
   where schemaname='public'
     and tablename='sinjira_canon_sources'
-    and indexname='sinjira_canon_sources_one_verified_successor_idx'
+    and indexname='sinjira_canon_sources_one_successor_idx'
     and indexdef ilike '%unique%'
-),'une source ne peut avoir qu un seul successeur canonique vérifié actif');
+),'une source ne peut avoir qu un seul successeur, même avant sa vérification');
 
 select ok(
   (select pg_get_functiondef(p.oid) ilike '%supersedes_source_id is distinct from v_old.id%'
