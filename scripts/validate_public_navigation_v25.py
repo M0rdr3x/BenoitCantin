@@ -299,6 +299,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("cache CSS Codex rétrogradé", "projets/sinjira/codex/index.html", 'site.css?v=25.0.0', 'site.css?v=24.0'),
         ("cache CSS À propos rétrogradé", "a-propos.html", 'site.css?v=25.0.0', 'site.css?v=24.4.12'),
         ("runtime session Codex retiré", "projets/sinjira/codex/index.html", '/assets/js/v19-session.js?v=25.0.0', '/assets/js/v19-session-retire.js?v=25.0.0'),
+        ("Compte 404 retiré", "404.html", 'href="/compte/" data-sinjira-session-nav>Compte</a>', 'href="/contact.html">Contact</a>'),
     ]
     detected = 0
     for name, path, old, new in mutations:
