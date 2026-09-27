@@ -104,6 +104,14 @@ PRIVATE_NOINDEX_PAGES = [
     ROOT / "compte" / "reseau-personnage.html",
 ]
 
+SINJIRA_CLASSIFIED_PAGES = (
+    set(page for page in SEO_PAGES if "projets/sinjira/" in page.relative_to(ROOT).as_posix())
+    | set(SPECIAL_SEO_PAGES)
+    | set(SINJIRA_PRIVATE_NOINDEX_PAGES)
+    | set(TRANSIENT_NOINDEX_PAGES)
+    | set(UTILITY_NOINDEX_PAGES)
+)
+
 
 def local_file_for_url(url: str) -> Path:
     path = urlparse(url).path
@@ -377,6 +385,44 @@ def main() -> int:
 
     urls = read_sitemap(ROOT / "sitemap.xml", errors)
     nova_urls = read_sitemap(ROOT / "projets" / "projet-nova" / "sitemap.xml", errors)
+
+    sinjira_html_pages = set((ROOT / "projets" / "sinjira").rglob("*.html"))
+    unclassified_sinjira = sorted(
+        page.relative_to(ROOT).as_posix()
+        for page in sinjira_html_pages - SINJIRA_CLASSIFIED_PAGES
+    )
+    stale_classification = sorted(
+        page.relative_to(ROOT).as_posix()
+        for page in SINJIRA_CLASSIFIED_PAGES - sinjira_html_pages
+    )
+    if unclassified_sinjira:
+        errors.append(
+            "SINJIRA: pages HTML sans classification SEO/confidentialité: "
+            + ", ".join(unclassified_sinjira)
+        )
+    if stale_classification:
+        errors.append(
+            "SINJIRA: classification référence des pages absentes: "
+            + ", ".join(stale_classification)
+        )
+
+    classification_groups = {
+        "public_standard": set(page for page in SEO_PAGES if "projets/sinjira/" in page.relative_to(ROOT).as_posix()),
+        "public_special": set(SPECIAL_SEO_PAGES),
+        "private": set(SINJIRA_PRIVATE_NOINDEX_PAGES),
+        "transient": set(TRANSIENT_NOINDEX_PAGES),
+        "utility": set(UTILITY_NOINDEX_PAGES),
+    }
+    group_names = list(classification_groups)
+    for index, left_name in enumerate(group_names):
+        for right_name in group_names[index + 1:]:
+            overlap = classification_groups[left_name] & classification_groups[right_name]
+            if overlap:
+                rels = sorted(page.relative_to(ROOT).as_posix() for page in overlap)
+                errors.append(
+                    f"SINJIRA: classification multiple {left_name}/{right_name}: "
+                    + ", ".join(rels)
+                )
     for url in urls:
         validate_public_url(url, "sitemap.xml", errors)
     for url in nova_urls:
@@ -488,6 +534,7 @@ def main() -> int:
         return 1
     print(
         f"OK SEO: {len(urls)} URL(s) racine, {len(nova_urls)} URL(s) Nova, "
+        f"{len(sinjira_html_pages)} page(s) SINJIRA classifiée(s), "
         "canonicalisation, Open Graph, Twitter, JSON-LD, hreflang et zones privées validés."
     )
     return 0
