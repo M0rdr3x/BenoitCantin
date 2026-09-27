@@ -68,6 +68,9 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
         if nav.count("<a") != 5:
             errors.append(f"{path}: le menu global doit contenir exactement 5 liens")
 
+        if "site.js?v=24.4.23" not in contents[path]:
+            errors.append(f"{path}: version de cache navigation publique obsolète")
+
         if 'href="/compte/" data-sinjira-session-nav' not in nav:
             errors.append(f"{path}: Compte doit rester pilotable par la session")
 
