@@ -224,6 +224,27 @@ def validate_seo_page(page: Path, canonical_expected: str, errors: list[str]) ->
 def main() -> int:
     errors: list[str] = []
 
+    parser_samples = (
+        (
+            '<meta name="description" content="L\'humain et l\'intelligence artificielle.">',
+            "description",
+            None,
+            "L'humain et l'intelligence artificielle.",
+        ),
+        (
+            '<meta content="Transparence & intégrité" property="og:description">',
+            None,
+            "og:description",
+            "Transparence & intégrité",
+        ),
+    )
+    for sample, name, prop, expected in parser_samples:
+        actual = meta_content(sample, name=name, prop=prop)
+        if actual != expected:
+            errors.append(
+                f"Parseur meta invalide pour {name or prop}: attendu {expected!r}, trouvé {actual!r}"
+            )
+
     robots_path = ROOT / "robots.txt"
     robots = robots_path.read_text("utf-8", errors="ignore")
     if "Sitemap: https://www.benoitcantin.com/sitemap.xml" not in robots:
