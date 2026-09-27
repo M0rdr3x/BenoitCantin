@@ -43,7 +43,10 @@ NOVA_PAGE_NAMES = [
 ]
 
 SEO_PAGES = {
+    ROOT / "transparence-ia.html": BASE + "/transparence-ia.html",
+    ROOT / "gouvernance-vie-privee.html": BASE + "/gouvernance-vie-privee.html",
     ROOT / "projets" / "sinjira" / "registre" / "index.html": BASE + "/projets/sinjira/registre/",
+    ROOT / "projets" / "sinjira" / "codex" / "index.html": BASE + "/projets/sinjira/codex/",
     ROOT / "projets" / "projet-nova" / "index.html": BASE + "/projets/projet-nova/",
 }
 for nova_name in NOVA_PAGE_NAMES:
