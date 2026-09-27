@@ -1,0 +1,113 @@
+name: SINJIRA V25 — Canon étendu local
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'supabase/config.toml'
+      - 'supabase/migrations/20260918193000_sinjira_v25_extended_canon_chronicles.sql'
+      - 'supabase/migrations/20260918201500_sinjira_v25_world_calendar_atlas_continuity.sql'
+      - 'supabase/migrations/20260918220000_sinjira_v25_canon_provenance.sql'
+      - 'supabase/migrations/20260926212000_sinjira_v25_canon_source_locator_guard.sql'
+      - 'supabase/migrations/20260926214500_sinjira_v25_extended_canon_rpc_acl_hardening.sql'
+      - 'supabase/tests/extended_canon_continuity_v25.test.sql'
+      - 'supabase/tests/canon_provenance_v25.test.sql'
+      - 'supabase/tests/server_only_rls_contract_v25.test.sql'
+      - 'supabase/tests/security_advisor_contract_v24_5_24.test.sql'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'supabase/functions/_shared/sinjira-canon-context.ts'
+      - 'supabase/functions/_shared/sinjira-canon-public.ts'
+      - 'supabase/functions/admin-sinjira-v18/index.ts'
+      - 'supabase/functions/submit-character-questionnaire/index.ts'
+      - 'scripts/validate_supabase.py'
+      - 'scripts/validate_admin_sinjira_v18_request_security.py'
+      - 'scripts/validate_character_questionnaire_security.py'
+      - 'scripts/validate_extended_canon_local_workflow.py'
+      - 'scripts/test_extended_canon_local_workflow.py'
+      - '.github/workflows/sinjira-v25-extended-canon-local.yml'
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'supabase/config.toml'
+      - 'supabase/migrations/20260918193000_sinjira_v25_extended_canon_chronicles.sql'
+      - 'supabase/migrations/20260918201500_sinjira_v25_world_calendar_atlas_continuity.sql'
+      - 'supabase/migrations/20260918220000_sinjira_v25_canon_provenance.sql'
+      - 'supabase/migrations/20260926212000_sinjira_v25_canon_source_locator_guard.sql'
+      - 'supabase/migrations/20260926214500_sinjira_v25_extended_canon_rpc_acl_hardening.sql'
+      - 'supabase/tests/extended_canon_continuity_v25.test.sql'
+      - 'supabase/tests/canon_provenance_v25.test.sql'
+      - 'supabase/tests/server_only_rls_contract_v25.test.sql'
+      - 'supabase/tests/security_advisor_contract_v24_5_24.test.sql'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'supabase/functions/_shared/sinjira-canon-context.ts'
+      - 'supabase/functions/_shared/sinjira-canon-public.ts'
+      - 'supabase/functions/admin-sinjira-v18/index.ts'
+      - 'supabase/functions/submit-character-questionnaire/index.ts'
+      - 'scripts/validate_supabase.py'
+      - 'scripts/validate_admin_sinjira_v18_request_security.py'
+      - 'scripts/validate_character_questionnaire_security.py'
+      - 'scripts/validate_extended_canon_local_workflow.py'
+      - 'scripts/test_extended_canon_local_workflow.py'
+      - '.github/workflows/sinjira-v25-extended-canon-local.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: extended-canon-local-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  canon-local-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Prouver les garde-fous Canon locaux
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_extended_canon_local_workflow.py
+          python3 scripts/test_extended_canon_local_workflow.py
+          python3 scripts/validate_admin_sinjira_v18_request_security.py --self-test
+          python3 scripts/validate_admin_sinjira_v18_request_security.py
+          python3 scripts/validate_character_questionnaire_security.py --self-test
+          python3 scripts/validate_character_questionnaire_security.py
+          python3 scripts/validate_supabase.py
+
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+
+      - name: Vérifier les contrats Canon ciblés
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s supabase/tests/extended_canon_continuity_v25.test.sql
+          test -s supabase/tests/canon_provenance_v25.test.sql
+          test -s supabase/tests/server_only_rls_contract_v25.test.sql
+          test -s supabase/tests/security_advisor_contract_v24_5_24.test.sql
+
+      - name: Démarrer une pile Supabase locale propre
+        run: supabase start
+
+      - name: Reconstruire la base locale depuis zéro
+        run: supabase db reset
+
+      - name: Exécuter les contrats Canon et sécurité ciblés
+        run: supabase test db supabase/tests/extended_canon_continuity_v25.test.sql supabase/tests/canon_provenance_v25.test.sql supabase/tests/server_only_rls_contract_v25.test.sql supabase/tests/security_advisor_contract_v24_5_24.test.sql
+
+      - name: Arrêter et supprimer la pile locale
+        if: always()
+        run: supabase stop --no-backup
