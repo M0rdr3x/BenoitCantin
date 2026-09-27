@@ -41,7 +41,7 @@ class ProductionReviewDecisionTraceTests(unittest.TestCase):
         batch = [('20260907145100', 'legacy_reviewed', 'a' * 40)]
         base_trace = [('20260907145100', 'legacy_reviewed', 'a' * 40, 100, 'APPROVED')]
         current_trace = [('20260907145100', 'legacy_reviewed', 'a' * 40, 101, 'APPROVED')]
-        guard.validate_transition(errors, batch, batch, base_trace, current_trace)
+        guard.validate_transition(errors, batch, batch, base_trace, current_trace, '20260906035442')
         self.assertTrue(any('non append-only' in error for error in errors), errors)
 
     def test_changed_blob_requires_new_exact_trace(self):
