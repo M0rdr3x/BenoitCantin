@@ -82,6 +82,15 @@ def validate_core(contents: dict[str, str]) -> None:
             fail(f"style de transparence IA absent: {marker}")
 
     for marker in (
+        '<meta property="og:title" content="Transparence IA | Benoit Cantin">',
+        '<meta property="og:description" content="Une démarche fondée sur la transparence, l’honnêteté, l’intégrité et la responsabilité humaine dans l’utilisation de l’intelligence artificielle.">',
+        '<meta property="og:type" content="website">',
+        '<meta property="og:url" content="https://www.benoitcantin.com/transparence-ia.html">',
+    ):
+        if marker not in contents["page"]:
+            fail(f"page Transparence IA sans métadonnée sociale: {marker}")
+
+    for marker in (
         "jechoisisdedireclairementcommentl'iam'aide.",
         "troisvaleursquidoiventrestervisibles.",
         "transparence",
