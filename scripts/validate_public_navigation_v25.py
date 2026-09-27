@@ -14,6 +14,22 @@ KEY_PAGES = {
     "projets/sinjira/index.html": "SINJIRA™",
 }
 
+INFO_FOOTER_PAGES = (
+    "contact.html",
+    "transparence-ia.html",
+    "confidentialite.html",
+    "avis-legal.html",
+)
+
+INFO_FOOTER_LINKS = (
+    ("/a-propos.html", "À propos"),
+    ("/contact.html", "Contact"),
+    ("/transparence-ia.html", "Transparence IA"),
+    ("/confidentialite.html", "Confidentialité"),
+    ("/gouvernance-vie-privee.html", "Gouvernance vie privée"),
+    ("/avis-legal.html", "Avis légal"),
+)
+
 EXPECTED_LABELS = ("Accueil", "SINJIRA™", "Projet Nova", "À propos", "Compte")
 FORBIDDEN_GLOBAL_LABELS = (">Registre</a>", ">Contact</a>")
 
@@ -102,6 +118,19 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
     if 'href="/contact.html"' not in contact:
         errors.append("Contact: auto-lien/footer de contact absent")
 
+    for path in INFO_FOOTER_PAGES:
+        html = contents[path]
+        footer_at = html.find('<footer class="site-footer"')
+        if footer_at < 0:
+            errors.append(f"{path}: footer public absent")
+            continue
+        footer = html[footer_at:]
+        for href, label in INFO_FOOTER_LINKS:
+            if f'href="{href}"' not in footer or f">{label}</a>" not in footer:
+                errors.append(f"{path}: lien footer manquant: {label}")
+        if "site.js?v=24.4.23" not in html:
+            errors.append(f"{path}: runtime public footer/navigation obsolète")
+
 
 def self_test(contents: dict[str, str]) -> None:
     mutations = [
@@ -110,6 +139,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("Registre accueil retiré", "index.html", "Créer mon personnage", "Accès retiré"),
         ("normalisation runtime retirée", "assets/js/site.js", "function normalizePortalNavigation()", "function navigationRetiree()"),
         ("sous-nav SINJIRA retirée", "projets/sinjira/index.html", 'href="registre/">Registre</a>', 'href="registre/">Entrée retirée</a>'),
+        ("footer transparence retiré", "contact.html", 'href="/transparence-ia.html">Transparence IA</a>', 'href="/transparence-ia-retiree.html">Transparence retirée</a>'),
     ]
     detected = 0
     for name, path, old, new in mutations:
@@ -131,7 +161,7 @@ def main() -> int:
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
 
-    paths = ["assets/js/site.js", *KEY_PAGES.keys()]
+    paths = ["assets/js/site.js", *KEY_PAGES.keys(), *[p for p in INFO_FOOTER_PAGES if p not in KEY_PAGES]]
     contents = {path: read(path) for path in paths}
 
     if args.self_test:
