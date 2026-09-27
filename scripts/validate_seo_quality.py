@@ -114,6 +114,15 @@ def local_file_for_url(url: str) -> Path:
     return ROOT / path.lstrip("/")
 
 
+def public_url_for_page(page: Path) -> str:
+    rel = page.relative_to(ROOT).as_posix()
+    if rel == "index.html":
+        return BASE + "/"
+    if rel.endswith("/index.html"):
+        return BASE + "/" + rel[:-len("index.html")]
+    return BASE + "/" + rel
+
+
 def read_sitemap(path: Path, errors: list[str]) -> list[str]:
     try:
         tree = ET.parse(path)
@@ -413,6 +422,8 @@ def main() -> int:
         robots_meta = meta_content(html, name="robots").lower()
         if "noindex" not in robots_meta:
             errors.append(f"{page.relative_to(ROOT)}: page privée SINJIRA sans noindex.")
+        if public_url_for_page(page) in urls:
+            errors.append(f"{page.relative_to(ROOT)}: page privée SINJIRA présente dans le sitemap.")
 
     for page in PRIVATE_NOINDEX_PAGES:
         if not page.exists():
@@ -434,6 +445,8 @@ def main() -> int:
         canonical = link_href(html, "canonical")
         if canonical:
             errors.append(f"{page.relative_to(ROOT)}: page transitoire ne doit pas annoncer de canonical indexable.")
+        if public_url_for_page(page) in urls:
+            errors.append(f"{page.relative_to(ROOT)}: page transitoire présente dans le sitemap.")
 
     for page in UTILITY_NOINDEX_PAGES:
         if not page.exists():
@@ -445,6 +458,8 @@ def main() -> int:
             errors.append(f"{page.relative_to(ROOT)}: redirection utilitaire sans noindex,nofollow.")
         if not re.search(r'<meta\b[^>]*http-equiv=["\']refresh["\'][^>]*>', html, flags=re.I):
             errors.append(f"{page.relative_to(ROOT)}: redirection utilitaire sans meta refresh.")
+        if public_url_for_page(page) in urls:
+            errors.append(f"{page.relative_to(ROOT)}: redirection utilitaire présente dans le sitemap.")
 
     home = (ROOT / "index.html").read_text("utf-8", errors="ignore")
     required_home_markers = [
