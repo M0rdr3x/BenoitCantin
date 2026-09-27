@@ -76,6 +76,12 @@ SPECIAL_SEO_PAGES = {
     ),
 }
 
+TRANSIENT_NOINDEX_PAGES = [
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "jouer.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "fin-de-partie.html",
+    ROOT / "projets" / "sinjira" / "marche" / "index.html",
+]
+
 UTILITY_NOINDEX_PAGES = [
     ROOT / "projets" / "sinjira" / "compte.html",
     ROOT / "projets" / "sinjira" / "jeux" / "le-premier-refuge" / "index.html",
@@ -397,6 +403,18 @@ def main() -> int:
         robots_meta = meta_content(html, name="robots").lower()
         if "noindex" not in robots_meta:
             errors.append(f"{page.relative_to(ROOT)}: page privée sans noindex.")
+
+    for page in TRANSIENT_NOINDEX_PAGES:
+        if not page.exists():
+            errors.append(f"Page transitoire absente: {page.relative_to(ROOT)}")
+            continue
+        html = page.read_text("utf-8", errors="ignore")
+        robots_meta = meta_content(html, name="robots").lower()
+        if "noindex" not in robots_meta or "nofollow" not in robots_meta:
+            errors.append(f"{page.relative_to(ROOT)}: page transitoire sans noindex,nofollow.")
+        canonical = link_href(html, "canonical")
+        if canonical:
+            errors.append(f"{page.relative_to(ROOT)}: page transitoire ne doit pas annoncer de canonical indexable.")
 
     for page in UTILITY_NOINDEX_PAGES:
         if not page.exists():

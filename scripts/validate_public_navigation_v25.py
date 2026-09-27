@@ -29,6 +29,9 @@ KEY_PAGES = {
     "projets/sinjira/jeux/fracture-du-reseau-mere/regles.html": "SINJIRA™",
     "projets/sinjira/jeux/reseau-mere-resistance/index.html": "SINJIRA™",
     "projets/sinjira/romans/precommande.html": "SINJIRA™",
+    "projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html": "SINJIRA™",
+    "projets/sinjira/jeux/fracture-du-reseau-mere/fin-de-partie.html": "SINJIRA™",
+    "projets/sinjira/marche/index.html": "SINJIRA™",
 }
 
 INFO_FOOTER_PAGES = (
@@ -65,6 +68,9 @@ SINJIRA_FOOTER_PAGES = (
     "projets/sinjira/jeux/fracture-du-reseau-mere/regles.html",
     "projets/sinjira/jeux/reseau-mere-resistance/index.html",
     "projets/sinjira/romans/precommande.html",
+    "projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html",
+    "projets/sinjira/jeux/fracture-du-reseau-mere/fin-de-partie.html",
+    "projets/sinjira/marche/index.html",
 )
 
 SINJIRA_FOOTER_LINKS = (
