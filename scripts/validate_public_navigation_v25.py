@@ -23,6 +23,9 @@ KEY_PAGES = {
     "projets/sinjira/communaute/index.html": "SINJIRA™",
     "projets/sinjira/monde-parallele/index.html": "SINJIRA™",
     "projets/sinjira/codex/index.html": "SINJIRA™",
+    "projets/sinjira/romans/lire-demo.html": "SINJIRA™",
+    "projets/sinjira/romans/le-sang-du-sauveur/index.html": "SINJIRA™",
+    "projets/sinjira/jeux/fracture-du-reseau-mere/index.html": "SINJIRA™",
 }
 
 INFO_FOOTER_PAGES = (
@@ -53,6 +56,9 @@ SINJIRA_FOOTER_PAGES = (
     "projets/sinjira/communaute/index.html",
     "projets/sinjira/monde-parallele/index.html",
     "projets/sinjira/codex/index.html",
+    "projets/sinjira/romans/lire-demo.html",
+    "projets/sinjira/romans/le-sang-du-sauveur/index.html",
+    "projets/sinjira/jeux/fracture-du-reseau-mere/index.html",
 )
 
 SINJIRA_FOOTER_LINKS = (

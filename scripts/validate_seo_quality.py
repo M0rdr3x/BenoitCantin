@@ -61,6 +61,18 @@ SEO_PAGES = {
 for nova_name in NOVA_PAGE_NAMES:
     SEO_PAGES[ROOT / "projets" / "projet-nova" / nova_name] = BASE + "/projets/projet-nova/" + nova_name
 
+SPECIAL_SEO_PAGES = {
+    ROOT / "projets" / "sinjira" / "romans" / "lire-demo.html": (
+        BASE + "/projets/sinjira/romans/lire-demo.html", "article", "CreativeWork"
+    ),
+    ROOT / "projets" / "sinjira" / "romans" / "le-sang-du-sauveur" / "index.html": (
+        BASE + "/projets/sinjira/romans/le-sang-du-sauveur/", "book", "Book"
+    ),
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "index.html": (
+        BASE + "/projets/sinjira/jeux/fracture-du-reseau-mere/", "website", "WebPage"
+    ),
+}
+
 PRIVATE_NOINDEX_PAGES = [
     ROOT / "compte" / "index.html",
     ROOT / "compte" / "connexion.html",
@@ -230,6 +242,73 @@ def validate_seo_page(page: Path, canonical_expected: str, errors: list[str]) ->
                 errors.append(f"{rel}: inLanguage JSON-LD doit être fr-CA.")
 
 
+def validate_special_seo_page(
+    page: Path,
+    canonical_expected: str,
+    og_type_expected: str,
+    schema_type_expected: str,
+    errors: list[str],
+) -> None:
+    if not page.exists():
+        errors.append(f"Page SEO spécialisée absente: {page.relative_to(ROOT)}")
+        return
+    html = page.read_text("utf-8", errors="ignore")
+    rel = page.relative_to(ROOT)
+    title_match = re.search(r"<title>\s*([^<]+?)\s*</title>", html, flags=re.I)
+    title = title_match.group(1).strip() if title_match else ""
+    description = meta_content(html, name="description")
+    if not title:
+        errors.append(f"{rel}: title absent ou vide.")
+    if len(description) < 25:
+        errors.append(f"{rel}: meta description absente ou trop courte.")
+    if link_href(html, "canonical") != canonical_expected:
+        errors.append(f"{rel}: canonique spécialisé incohérent.")
+    for lang in ("fr-CA", "x-default"):
+        if link_href(html, "alternate", lang) != canonical_expected:
+            errors.append(f"{rel}: hreflang {lang} absent ou incohérent.")
+    expected_meta = {
+        ("property", "og:locale"): "fr_CA",
+        ("property", "og:type"): og_type_expected,
+        ("property", "og:title"): title,
+        ("property", "og:description"): description,
+        ("property", "og:url"): canonical_expected,
+        ("name", "twitter:title"): title,
+        ("name", "twitter:description"): description,
+    }
+    for (kind, key), expected in expected_meta.items():
+        actual = meta_content(html, name=key) if kind == "name" else meta_content(html, prop=key)
+        if actual != expected:
+            errors.append(f"{rel}: {key} spécialisé absent ou incohérent.")
+    og_image = meta_content(html, prop="og:image")
+    twitter_card = meta_content(html, name="twitter:card")
+    twitter_image = meta_content(html, name="twitter:image")
+    if og_image:
+        parsed = urlparse(og_image)
+        if parsed.scheme != "https" or parsed.netloc != DOMAIN:
+            errors.append(f"{rel}: og:image spécialisé hors domaine HTTPS.")
+        if twitter_card != "summary_large_image" or twitter_image != og_image:
+            errors.append(f"{rel}: carte Twitter spécialisée incohérente.")
+    elif twitter_card != "summary":
+        errors.append(f"{rel}: twitter:card spécialisé doit être summary sans image.")
+    schema_match = re.search(
+        r"<script\b(?=[^>]*type=[\"']application/ld\+json[\"'])[^>]*>(.*?)</script>",
+        html,
+        flags=re.I | re.S,
+    )
+    if not schema_match:
+        errors.append(f"{rel}: JSON-LD spécialisé absent.")
+        return
+    try:
+        schema = json.loads(schema_match.group(1))
+    except Exception as exc:
+        errors.append(f"{rel}: JSON-LD spécialisé invalide: {exc}")
+        return
+    if schema.get("@context") != "https://schema.org" or schema.get("@type") != schema_type_expected:
+        errors.append(f"{rel}: type JSON-LD spécialisé attendu {schema_type_expected}.")
+    if schema.get("url") != canonical_expected or schema.get("inLanguage") != "fr-CA":
+        errors.append(f"{rel}: URL/langue JSON-LD spécialisé incohérentes.")
+
+
 def main() -> int:
     errors: list[str] = []
 
@@ -295,6 +374,11 @@ def main() -> int:
         validate_seo_page(page, expected, errors)
         if expected not in urls:
             errors.append(f"sitemap.xml: canonique SEO absente: {expected}")
+
+    for page, (expected, og_type, schema_type) in SPECIAL_SEO_PAGES.items():
+        validate_special_seo_page(page, expected, og_type, schema_type, errors)
+        if expected not in urls:
+            errors.append(f"sitemap.xml: canonique SEO spécialisée absente: {expected}")
 
     for page in PRIVATE_NOINDEX_PAGES:
         if not page.exists():
