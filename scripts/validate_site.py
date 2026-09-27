@@ -246,6 +246,7 @@ def main() -> int:
             'https://www.benoitcantin.com/confidentialite.html',
             'https://www.benoitcantin.com/gouvernance-vie-privee.html',
             'https://www.benoitcantin.com/avis-legal.html',
+            'https://www.benoitcantin.com/projets/sinjira/codex/',
         ):
             if f'<loc>{url}</loc>' not in sitemap_text:
                 errors.append(f'Sitemap public: URL de confiance absente: {url}')
@@ -280,6 +281,7 @@ def main() -> int:
         'projets/sinjira/romans/lire-integral.html',
         'projets/sinjira/romans/le-sang-du-sauveur/index.html',
         'projets/sinjira/registre/index.html',
+        'projets/sinjira/codex/index.html',
         'projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html',
         'projets/sinjira/jeux/fracture-du-reseau-mere/partie.html',
         'projets/sinjira/jeux/fracture-du-reseau-mere/fin-de-partie.html',
