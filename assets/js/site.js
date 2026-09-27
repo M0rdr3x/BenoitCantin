@@ -86,6 +86,35 @@
   appendPwaAssets();
   appendAiTransparencyAssets();
 
+  function normalizePortalNavigation() {
+    var portalNav = doc.querySelector('[data-main-nav]');
+    if (!portalNav) return;
+
+    var path = String(window.location.pathname || '/').toLowerCase().replace(/\/+$/, '') || '/';
+    if (
+      path.indexOf('/projets/projet-nova') === 0 ||
+      path === '/compte' || path.indexOf('/compte/') === 0 ||
+      path === '/app' || path.indexOf('/app/') === 0 ||
+      path === '/admin' || path.indexOf('/admin/') === 0
+    ) {
+      return;
+    }
+
+    var homeCurrent = path === '/';
+    var sinjiraCurrent = path === '/projets/sinjira' || path.indexOf('/projets/sinjira/') === 0;
+    var novaCurrent = path === '/projets/projet-nova' || path.indexOf('/projets/projet-nova/') === 0;
+    var aboutCurrent = path === '/a-propos.html';
+
+    portalNav.innerHTML =
+      '<a' + (homeCurrent ? ' aria-current="page"' : '') + ' href="/">Accueil</a>' +
+      '<a' + (sinjiraCurrent ? ' aria-current="page"' : '') + ' href="/projets/sinjira/">SINJIRA™</a>' +
+      '<a' + (novaCurrent ? ' aria-current="page"' : '') + ' href="/projets/projet-nova/">Projet Nova</a>' +
+      '<a' + (aboutCurrent ? ' aria-current="page"' : '') + ' href="/a-propos.html">À propos</a>' +
+      '<a class="nav-cta" href="/compte/" data-sinjira-session-nav>Compte</a>';
+  }
+
+  normalizePortalNavigation();
+
   var toggle = doc.querySelector('[data-menu-toggle]');
   var nav = doc.querySelector('[data-main-nav]');
   if (toggle && nav) {
