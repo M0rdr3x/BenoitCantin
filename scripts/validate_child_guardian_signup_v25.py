@@ -22,6 +22,8 @@ SIGNUP_JS = ROOT / 'assets/js/v24-signup.js'
 BACKEND_JS = ROOT / 'assets/js/sinjira-supabase.js'
 RELATIONS_JS = ROOT / 'assets/js/v24-relations.js'
 SIGNUP_HTML = ROOT / 'compte/inscription.html'
+PRIVACY_HTML = ROOT / 'confidentialite.html'
+LEGAL_HTML = ROOT / 'avis-legal.html'
 RELATIONS_HTML = ROOT / 'compte/relations.html'
 BROWSER_TEST = ROOT / 'tests/e2e/test_public_site.py'
 CHILD_BROWSER_TEST = ROOT / 'tests/e2e/test_child_signup.py'
@@ -61,6 +63,8 @@ signup_js = read(SIGNUP_JS)
 backend_js = read(BACKEND_JS)
 relations_js = read(RELATIONS_JS)
 signup_html = read(SIGNUP_HTML)
+privacy_html = read(PRIVACY_HTML)
+legal_html = read(LEGAL_HTML)
 relations_html = read(RELATIONS_HTML)
 browser_test = read(BROWSER_TEST)
 child_browser_test = read(CHILD_BROWSER_TEST)
@@ -85,6 +89,8 @@ j = compact(signup_js)
 b = compact(backend_js)
 r = compact(relations_js)
 h = signup_html.lower()
+ph = compact(privacy_html)
+lh = compact(legal_html)
 rh = relations_html.lower()
 bt = compact(browser_test)
 cbt = compact(child_browser_test)
@@ -532,6 +538,25 @@ req('<button class="btn btn-primary" disabled type="submit">créer mon compte</b
     "Le bouton Créer mon compte n'est pas fail-closed dans le HTML avant la vérification de session.")
 req('réservés aux personnes de 13 ans et plus' not in h,
     "Un ancien message 13+ global subsiste dans l'interface.")
+
+# Les pages publiques doivent refléter le même contrat âge que l'inscription réelle.
+for public_page, label in ((ph, "Confidentialité"), (lh, "Avis légal")):
+    for marker in (
+        "moinsde11ans",
+        "11–12ans",
+        "à13ans",
+        "14–17ans",
+        "canada",
+        "rencontressinjira™eststrictement18+",
+    ):
+        req(marker in public_page,
+            f"{label}: politique mineurs non alignée sur les bandes V25: {marker}")
+req("communautéjunior" in ph and "communautéjunior" in lh,
+    "Les pages publiques n'expliquent plus la Communauté Junior séparée pour les 11–12 ans.")
+req("inscriptionlibre-serviceest13+" not in lh,
+    "Avis légal: l'ancien seuil global 13+ subsiste.")
+req("réservéeauxpersonnesde<strong>13ansetplus</strong>" not in ph,
+    "Confidentialité: l'ancien seuil global 13+ subsiste.")
 
 # Régression navigateur : avant toute promotion, Playwright doit vérifier le comportement visible
 # qui avait échoué dans le vrai parcours utilisateur, pas seulement la présence du code source.
