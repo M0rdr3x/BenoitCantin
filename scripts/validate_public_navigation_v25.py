@@ -42,13 +42,21 @@ def read(path: str) -> str:
 
 
 def extract_main_nav(html: str) -> str:
-    start = html.find('<nav class="main-nav" data-main-nav')
-    if start < 0:
-        raise ValueError("navigation principale absente")
-    end = html.find("</nav>", start)
-    if end < 0:
-        raise ValueError("fermeture navigation principale absente")
-    return html[start:end + len("</nav>")]
+    cursor = 0
+    while True:
+        start = html.find("<nav", cursor)
+        if start < 0:
+            raise ValueError("navigation principale absente")
+        open_end = html.find(">", start)
+        if open_end < 0:
+            raise ValueError("ouverture navigation principale invalide")
+        opening = html[start:open_end + 1]
+        if 'class="main-nav"' in opening and "data-main-nav" in opening:
+            end = html.find("</nav>", open_end)
+            if end < 0:
+                raise ValueError("fermeture navigation principale absente")
+            return html[start:end + len("</nav>")]
+        cursor = open_end + 1
 
 
 def validate(errors: list[str], contents: dict[str, str]) -> None:
