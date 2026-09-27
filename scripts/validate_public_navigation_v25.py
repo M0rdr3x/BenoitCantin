@@ -135,7 +135,7 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
 
 def self_test(contents: dict[str, str]) -> None:
     mutations = [
-        ("Registre remis dans le menu global", "index.html", ">SINJIRA™</a>", ">SINJIRA™</a><a href="/projets/sinjira/registre/">Registre</a>"),
+        ("Registre remis dans le menu global", "index.html", ">SINJIRA™</a>", '>SINJIRA™</a><a href="/projets/sinjira/registre/">Registre</a>'),
         ("Compte retiré", "a-propos.html", 'href="/compte/" data-sinjira-session-nav>Compte</a>', 'href="/compte/">Compte retiré</a>'),
         ("Registre accueil retiré", "index.html", "Créer mon personnage", "Accès retiré"),
         ("normalisation runtime retirée", "assets/js/site.js", "function normalizePortalNavigation()", "function navigationRetiree()"),
