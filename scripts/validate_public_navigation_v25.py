@@ -66,6 +66,8 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
         "path === '/app'",
         "path === '/admin'",
         "toggle.setAttribute('aria-controls', nav.id)",
+        "toggle.setAttribute('aria-label', 'Fermer le menu')",
+        "toggle.setAttribute('aria-label', 'Ouvrir le menu')",
         "event.key === 'Escape'",
         "closeMainNavigation(true)",
     ):
@@ -154,6 +156,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("aria-controls retiré", "index.html", 'aria-controls="navigation-principale"', 'aria-controls="navigation-retiree"'),
         ("fermeture Escape retirée", "assets/js/site.js", "event.key === 'Escape'", "event.key === 'F1'"),
         ("gouvernance footer accueil retirée", "index.html", 'href="/gouvernance-vie-privee.html">Gouvernance vie privée</a>', 'href="/gouvernance-retiree.html">Gouvernance retirée</a>'),
+        ("libellé fermeture menu retiré", "assets/js/site.js", "toggle.setAttribute('aria-label', 'Fermer le menu')", "toggle.setAttribute('aria-label', 'Menu')"),
     ]
     detected = 0
     for name, path, old, new in mutations:
