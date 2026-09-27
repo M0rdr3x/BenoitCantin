@@ -123,6 +123,7 @@
 
     function closeMainNavigation(returnFocus) {
       toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-label', 'Ouvrir le menu');
       removeClass(nav, 'open');
       if (returnFocus) toggle.focus();
     }
@@ -132,6 +133,7 @@
       if (open) closeMainNavigation(false);
       else {
         toggle.setAttribute('aria-expanded', 'true');
+        toggle.setAttribute('aria-label', 'Fermer le menu');
         addClass(nav, 'open');
       }
     });
