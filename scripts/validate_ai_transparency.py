@@ -79,7 +79,7 @@ def validate_core(contents: dict[str, str]) -> None:
 
     for marker in (
         "jechoisisdedireclairementcommentl'iam'aide.",
-        "troisvaleursquidoiventrestevisibles.",
+        "troisvaleursquidoiventrestervisibles.",
         "transparence",
         "honnêteté",
         "intégrité",
