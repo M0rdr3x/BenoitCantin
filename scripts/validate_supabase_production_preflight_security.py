@@ -154,6 +154,8 @@ def validate_text(text: str) -> list[str]:
         "      - '.github/workflows/supabase-production-preflight.yml'",
         "      - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'",
         "      - 'scripts/validate_future_migration_review_plan_v25.py'",
+        "      - 'scripts/validate_production_review_decision_trace.py'",
+        "      - 'scripts/test_production_review_decision_trace.py'",
         "      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'",
     ):
         if text.count(trigger_path) < 2:
@@ -187,6 +189,9 @@ def validate_text(text: str) -> list[str]:
             "python -m py_compile scripts/validate_future_migration_review_plan_v25.py",
             "python scripts/validate_future_migration_review_plan_v25.py --self-test",
             "python scripts/validate_future_migration_review_plan_v25.py",
+            "python -m py_compile scripts/validate_production_review_decision_trace.py",
+            "python scripts/test_production_review_decision_trace.py",
+            "python scripts/validate_production_review_decision_trace.py",
             "python scripts/validate_production_migration_ledger.py",
             "python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase",
         ):
@@ -196,12 +201,24 @@ def validate_text(text: str) -> list[str]:
         plan_compile_at = local.find("python -m py_compile scripts/validate_future_migration_review_plan_v25.py")
         plan_self_test_at = local.find("python scripts/validate_future_migration_review_plan_v25.py --self-test")
         plan_check_at = local.find("python scripts/validate_future_migration_review_plan_v25.py\n")
+        trace_compile_at = local.find("python -m py_compile scripts/validate_production_review_decision_trace.py")
+        trace_test_at = local.find("python scripts/test_production_review_decision_trace.py")
+        trace_check_at = local.find("python scripts/validate_production_review_decision_trace.py\n")
         ledger_at = local.find("python scripts/validate_production_migration_ledger.py")
         builder_at = local.find("python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase")
-        if min(plan_compile_at, plan_self_test_at, plan_check_at, ledger_at, builder_at) >= 0:
-            if not plan_compile_at < plan_self_test_at < plan_check_at < ledger_at < builder_at:
+        positions = (
+            plan_compile_at, plan_self_test_at, plan_check_at,
+            trace_compile_at, trace_test_at, trace_check_at,
+            ledger_at, builder_at,
+        )
+        if min(positions) >= 0:
+            if not (
+                plan_compile_at < plan_self_test_at < plan_check_at
+                < trace_compile_at < trace_test_at < trace_check_at
+                < ledger_at < builder_at
+            ):
                 errors.append(
-                    "L'ordre local doit rester compilation plan → auto-test plan → validation plan → ledger → workspace protégé."
+                    "L'ordre local doit rester plan → preuve provenance reviewed → ledger → workspace protégé."
                 )
 
     remote = jobs["remote-preflight"]
@@ -246,6 +263,8 @@ def validate_text(text: str) -> list[str]:
             errors.append("Le job d'application doit être attaché à l'environment GitHub production.")
         if not has_exact_line(apply, "    needs: [local-preflight, remote-preflight]"):
             errors.append("L'application doit dépendre des prévols local et distant.")
+        if "python scripts/validate_production_review_decision_trace.py" not in apply:
+            errors.append("L'application doit revalider la traçabilité reviewed après la frontière d'environment.")
         if "python scripts/validate_production_migration_ledger.py" not in apply:
             errors.append("L'application doit revalider le ledger après la frontière d'environment.")
         if "python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase" not in apply:
@@ -330,7 +349,7 @@ def main() -> int:
     print("- prévol distant manuel limité aux lectures, audits et dry-run")
     print("- application limitée à main + apply=true + confirmation textuelle")
     print("- job mutant isolé derrière environment: production")
-    print("- cible, ledger et workspace revalidés après la frontière d'environnement")
+    print("- cible, provenance reviewed, ledger et workspace revalidés après la frontière d'environnement")
     print("- actions immuables, runners/Python figés et secrets bornés aux étapes")
     return 0
 
