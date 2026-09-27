@@ -101,6 +101,11 @@ def validate_static(errors, batch_rows, trace_rows, cutoff):
                 + ' '.join(row)
             )
 
+    active_by_identity = {
+        (version, name): (version, name, blob_sha)
+        for version, name, blob_sha in batch_rows
+    }
+
     for version, name, blob_sha, issue, decision in trace_rows:
         if issue <= 0:
             errors.append('Registre de décisions: numéro d issue invalide.')
@@ -108,10 +113,13 @@ def validate_static(errors, batch_rows, trace_rows, cutoff):
             errors.append('Registre de décisions: seule la décision APPROVED est autorisée dans ce fichier.')
         key = (version, name, blob_sha)
         if key not in current_batch_set and version > cutoff:
-            errors.append(
-                'Trace de décision future sans ligne active dans le reviewed batch et non couverte par le ledger: '
-                + ' '.join(key)
-            )
+            active = active_by_identity.get((version, name))
+            active_is_traced = active is not None and active in trace_keys_set
+            if not active_is_traced:
+                errors.append(
+                    'Trace de décision future sans ligne active correspondante ni blob de remplacement tracé: '
+                    + ' '.join(key)
+                )
 
 
 def validate_transition(errors, base_batch, current_batch, base_trace, current_trace, cutoff):
