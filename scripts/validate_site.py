@@ -257,7 +257,7 @@ def main() -> int:
         for marker in (
             '<link rel="canonical" href="https://www.benoitcantin.com/gouvernance-vie-privee.html">',
             '<meta property="og:title" content="Gouvernance de la vie privée | Benoit Cantin">',
-            '<meta property="og:description" content="Responsabilités, conservation, incidents, plaintes et gouvernance des renseignements personnels du portail Benoit Cantin et de SINJIRA™.">',
+            '<meta property="og:description" content="Gouvernance des renseignements personnels du portail Benoit Cantin et de SINJIRA™ : responsable, rôles, conservation, incidents et plaintes.">',
             '<meta property="og:type" content="website">',
             '<meta property="og:url" content="https://www.benoitcantin.com/gouvernance-vie-privee.html">',
         ):
