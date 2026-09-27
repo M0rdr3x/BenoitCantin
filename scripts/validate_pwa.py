@@ -126,6 +126,25 @@ def validate_manifests(errors: list[str]) -> None:
             errors.append('Les deux manifestes PWA divergent: ' + ', '.join(drift))
 
 
+def validate_public_hubs(errors: list[str]) -> None:
+    for route in sorted(SINJIRA_PUBLIC_HUBS):
+        target = local_target(route)
+        if target is None or not target.exists():
+            errors.append(f'Hub public SINJIRA™ introuvable: {route}')
+            continue
+        text = target.read_text('utf-8', errors='ignore')
+        if 'sinjira-favicon.png' not in text:
+            errors.append(f'{route}: favicon SINJIRA™ absent.')
+        if '/manifest.webmanifest' not in text:
+            errors.append(f'{route}: manifeste PWA absent.')
+        if not re.search(
+            r'<meta\b(?=[^>]*name=["\']theme-color["\'])(?=[^>]*content=["\']#08090d["\'])[^>]*>',
+            text,
+            re.I,
+        ):
+            errors.append(f'{route}: theme-color SINJIRA™ absent ou incohérent.')
+
+
 def validate_sitemap(errors: list[str]) -> None:
     path = ROOT / 'sitemap.xml'
     if not path.exists():
@@ -304,6 +323,7 @@ def validate_offline(errors: list[str]) -> None:
 def main() -> int:
     errors: list[str] = []
     validate_manifests(errors)
+    validate_public_hubs(errors)
     validate_sitemap(errors)
     validate_robots(errors)
     validate_cname(errors)
