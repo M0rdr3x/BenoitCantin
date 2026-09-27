@@ -161,6 +161,10 @@ def validate(errors: list[str], contents: dict[str, str]) -> None:
             errors.append(f"{path}: navigation principale sans id accessible")
         if 'aria-controls="navigation-principale"' not in contents[path]:
             errors.append(f"{path}: bouton menu sans aria-controls")
+        if 'class="skip-link"' not in contents[path] or 'href="#contenu"' not in contents[path]:
+            errors.append(f"{path}: lien d’évitement vers le contenu absent")
+        if 'id="contenu"' not in contents[path]:
+            errors.append(f"{path}: cible principale #contenu absente")
 
         if active_label and f'aria-current="page" href="' not in nav:
             errors.append(f"{path}: lien actif attendu pour {active_label}")
@@ -254,6 +258,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("ancien menu confidentialité réintroduit", "confidentialite.html", '<a href="/projets/projet-nova/">Projet Nova</a>', '<a href="/projets/sinjira/registre/">Registre</a><a href="/projets/projet-nova/">Projet Nova</a>'),
         ("Codex sans menu global", "projets/sinjira/codex/index.html", 'id="navigation-principale" data-main-nav', 'id="navigation-codex"'),
         ("gouvernance footer Codex retirée", "projets/sinjira/codex/index.html", 'href="/gouvernance-vie-privee.html">Gouvernance vie privée</a>', 'href="/gouvernance-retiree.html">Gouvernance retirée</a>'),
+        ("lien d’évitement Codex retiré", "projets/sinjira/codex/index.html", 'class="skip-link" href="#contenu"', 'class="skip-link" href="#contenu-retire"'),
     ]
     detected = 0
     for name, path, old, new in mutations:
