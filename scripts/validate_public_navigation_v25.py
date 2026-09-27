@@ -26,6 +26,9 @@ KEY_PAGES = {
     "projets/sinjira/romans/lire-demo.html": "SINJIRA™",
     "projets/sinjira/romans/le-sang-du-sauveur/index.html": "SINJIRA™",
     "projets/sinjira/jeux/fracture-du-reseau-mere/index.html": "SINJIRA™",
+    "projets/sinjira/jeux/fracture-du-reseau-mere/regles.html": "SINJIRA™",
+    "projets/sinjira/jeux/reseau-mere-resistance/index.html": "SINJIRA™",
+    "projets/sinjira/romans/precommande.html": "SINJIRA™",
 }
 
 INFO_FOOTER_PAGES = (
@@ -59,6 +62,9 @@ SINJIRA_FOOTER_PAGES = (
     "projets/sinjira/romans/lire-demo.html",
     "projets/sinjira/romans/le-sang-du-sauveur/index.html",
     "projets/sinjira/jeux/fracture-du-reseau-mere/index.html",
+    "projets/sinjira/jeux/fracture-du-reseau-mere/regles.html",
+    "projets/sinjira/jeux/reseau-mere-resistance/index.html",
+    "projets/sinjira/romans/precommande.html",
 )
 
 SINJIRA_FOOTER_LINKS = (

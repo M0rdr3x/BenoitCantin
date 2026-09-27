@@ -56,6 +56,9 @@ SEO_PAGES = {
     ROOT / "projets" / "sinjira" / "communaute" / "index.html": BASE + "/projets/sinjira/communaute/",
     ROOT / "projets" / "sinjira" / "monde-parallele" / "index.html": BASE + "/projets/sinjira/monde-parallele/",
     ROOT / "projets" / "sinjira" / "codex" / "index.html": BASE + "/projets/sinjira/codex/",
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "regles.html": BASE + "/projets/sinjira/jeux/fracture-du-reseau-mere/regles.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "reseau-mere-resistance" / "index.html": BASE + "/projets/sinjira/jeux/reseau-mere-resistance/",
+    ROOT / "projets" / "sinjira" / "romans" / "precommande.html": BASE + "/projets/sinjira/romans/precommande.html",
     ROOT / "projets" / "projet-nova" / "index.html": BASE + "/projets/projet-nova/",
 }
 for nova_name in NOVA_PAGE_NAMES:
