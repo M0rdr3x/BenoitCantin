@@ -104,6 +104,16 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = self.valid.replace(marker, "", 1)
         self.assertRejected(bad, "Chemin critique absent")
 
+    def test_review_trace_validator_changes_must_trigger_preflight(self):
+        marker = "      - 'scripts/validate_production_review_decision_trace.py'\n"
+        bad = self.valid.replace(marker, "", 1)
+        self.assertRejected(bad, "Chemin critique absent")
+
+    def test_review_trace_tests_changes_must_trigger_preflight(self):
+        marker = "      - 'scripts/test_production_review_decision_trace.py'\n"
+        bad = self.valid.replace(marker, "", 1)
+        self.assertRejected(bad, "Chemin critique absent")
+
     def test_migration_review_plan_validator_must_run_locally(self):
         marker = "          python scripts/validate_future_migration_review_plan_v25.py\n"
         bad = self.valid.replace(marker, "          echo plan-retire\n", 1)
@@ -118,6 +128,22 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = self.valid.replace(ledger, temporary, 1)
         bad = bad.replace(plan, ledger, 1)
         bad = bad.replace(temporary, plan, 1)
+        self.assertRejected(bad, "ordre local doit rester")
+
+    def test_review_trace_validator_must_run_locally(self):
+        marker = "          python scripts/validate_production_review_decision_trace.py\n"
+        bad = self.valid.replace(marker, "          echo trace-retire\n", 1)
+        self.assertRejected(bad, "Prévol local incomplet")
+
+    def test_review_trace_must_run_before_ledger(self):
+        trace = "          python scripts/validate_production_review_decision_trace.py\n"
+        ledger = "          python scripts/validate_production_migration_ledger.py\n"
+        self.assertIn(trace, self.valid)
+        self.assertIn(ledger, self.valid)
+        temporary = "          echo __ledger_temp__\n"
+        bad = self.valid.replace(ledger, temporary, 1)
+        bad = bad.replace(trace, ledger, 1)
+        bad = bad.replace(temporary, trace, 1)
         self.assertRejected(bad, "ordre local doit rester")
 
     def test_local_preflight_cannot_receive_secret(self):
@@ -188,6 +214,14 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         marker = '(cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run-approval.txt'
         bad = self.valid.replace(marker, "echo dry-run-retire", 1)
         self.assertRejected(bad, "Revalidation post-environment incomplète")
+
+    def test_post_environment_revalidation_requires_review_trace(self):
+        marker = "          python scripts/validate_production_review_decision_trace.py\n"
+        start = self.valid.index("  apply-production:\n")
+        tail = self.valid[start:]
+        self.assertIn(marker, tail)
+        bad = self.valid[:start] + tail.replace(marker, "          echo trace-retire\n", 1)
+        self.assertRejected(bad, "traçabilité reviewed")
 
     def test_apply_step_keeps_redundant_fail_closed_gate(self):
         marker = "      - name: Appliquer les migrations de production depuis le workspace protégé\n"
