@@ -7,9 +7,12 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
       - 'supabase/production-reviewed-migration-batch.txt'
+      - 'supabase/production-reviewed-migration-decisions.txt'
       - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'
       - 'scripts/validate_future_migration_review_plan_v25.py'
       - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_production_review_decision_trace.py'
+      - 'scripts/test_production_review_decision_trace.py'
       - 'scripts/validate_production_migration_history_workflow_security.py'
       - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
   pull_request:
@@ -18,9 +21,12 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
       - 'supabase/production-reviewed-migration-batch.txt'
+      - 'supabase/production-reviewed-migration-decisions.txt'
       - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'
       - 'scripts/validate_future_migration_review_plan_v25.py'
       - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_production_review_decision_trace.py'
+      - 'scripts/test_production_review_decision_trace.py'
       - 'scripts/validate_production_migration_history_workflow_security.py'
       - '.github/workflows/sinjira-production-migration-history-guard-v25.yml'
   workflow_dispatch:
@@ -76,6 +82,24 @@ jobs:
             fi
           else
             echo "ref=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prouver la traçabilité des nouvelles revues production
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/validate_production_review_decision_trace.py
+          python3 scripts/test_production_review_decision_trace.py
+
+      - name: Vérifier la provenance des nouvelles lignes reviewed
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_REF="${{ steps.migration_base.outputs.ref }}"
+          if [ -n "$BASE_REF" ]; then
+            python3 scripts/validate_production_review_decision_trace.py --base-ref "$BASE_REF"
+          else
+            python3 scripts/validate_production_review_decision_trace.py
           fi
 
       - name: Verrouiller les migrations historiques
