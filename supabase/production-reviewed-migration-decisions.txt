@@ -1,0 +1,10 @@
+# SINJIRA™ — traçabilité des nouvelles décisions de migrations production.
+# Format d'une décision ajoutée avec une nouvelle ligne du reviewed batch :
+# <timestamp> <nom_sans_timestamp_ni_extension> <git_blob_sha1> issue#<numero> APPROVED
+#
+# Ce registre est append-only et ne constitue jamais, à lui seul, une approbation humaine.
+# Il sert de pointeur auditable vers la décision explicite consignée dans l'issue indiquée.
+#
+# Les lignes déjà présentes dans production-reviewed-migration-batch.txt avant l'introduction
+# de ce garde sont volontairement laissées hors de ce registre : elles sont historiques.
+# Toute NOUVELLE ligne future du reviewed batch doit ajouter sa trace dans le même diff.
