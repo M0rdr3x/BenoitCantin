@@ -11,6 +11,7 @@ on:
       - 'contact.html'
       - 'transparence-ia.html'
       - 'confidentialite.html'
+      - 'gouvernance-vie-privee.html'
       - 'avis-legal.html'
       - 'projets/sinjira/index.html'
       - 'scripts/validate_public_navigation_v25.py'
