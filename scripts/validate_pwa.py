@@ -289,6 +289,16 @@ def validate_offline(errors: list[str]) -> None:
     text = path.read_text('utf-8', errors='ignore')
     if 'hors ligne' not in text.lower():
         errors.append('offline.html ne décrit pas clairement l’état hors ligne.')
+    for marker in (
+        'class="skip-link" href="#contenu"',
+        'id="contenu"',
+        '/assets/css/ai-transparency.css?v=1.1.0',
+        'Transparence · Honnêteté · Intégrité',
+        'L’humain avant tout.',
+        *sorted(SINJIRA_PUBLIC_HUBS),
+    ):
+        if marker not in text:
+            errors.append(f'offline.html incomplet: {marker}')
     for raw in re.findall(r'(?:href|src)=["\']([^"\']+)["\']', text, re.I):
         target = local_target(raw, path.parent)
         if target is not None and not target.exists():
