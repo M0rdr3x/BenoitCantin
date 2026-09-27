@@ -140,7 +140,7 @@ def validate_core(contents: dict[str, str]) -> None:
     for marker in (
         "/assets/css/ai-transparency.css",
         "/assets/js/ai-transparency.js",
-        "benoitcantin-v24-4-95-public-2",
+        "benoitcantin-v24-4-95-public-3",
     ):
         if marker not in sw:
             fail(f"cache PWA sans transparence IA courante: {marker}")
