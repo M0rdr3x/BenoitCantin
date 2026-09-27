@@ -239,6 +239,19 @@ def main() -> int:
             if target is not None and not target.exists():
                 errors.append(f'Import local manquant dans {rel}: {raw}')
 
+    governance_page = ROOT / 'gouvernance-vie-privee.html'
+    if governance_page.is_file():
+        governance_html = governance_page.read_text('utf-8', errors='ignore')
+        for marker in (
+            '<link rel="canonical" href="https://www.benoitcantin.com/gouvernance-vie-privee.html">',
+            '<meta property="og:title" content="Gouvernance de la vie privée | Benoit Cantin">',
+            '<meta property="og:description" content="Responsabilités, conservation, incidents, plaintes et gouvernance des renseignements personnels du portail Benoit Cantin et de SINJIRA™.">',
+            '<meta property="og:type" content="website">',
+            '<meta property="og:url" content="https://www.benoitcantin.com/gouvernance-vie-privee.html">',
+        ):
+            if marker not in governance_html:
+                errors.append(f'Gouvernance vie privée: métadonnée publique absente: {marker}')
+
     critical_routes = [
         'index.html',
         '404.html',
