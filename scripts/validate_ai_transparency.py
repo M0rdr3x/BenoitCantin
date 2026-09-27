@@ -177,6 +177,12 @@ def validate_public_pages(sitemap: str) -> None:
             fail(f"sitemap: fichier public introuvable pour {url}")
         html = compact(read(path))
         rel = path.relative_to(ROOT).as_posix()
+        if rel.startswith("projets/sinjira/") and "site.js?v=" in html_raw:
+            if "site.js?v=24.4.23" not in html_raw:
+                fail(
+                    f"surface SINJIRA avec cache site.js obsolète: {rel}"
+                )
+
         if rel == "transparence-ia.html":
             continue
         if "data-ai-transparency" in html:
