@@ -11,6 +11,9 @@ KEY_PAGES = {
     "a-propos.html": "À propos",
     "contact.html": None,
     "transparence-ia.html": None,
+    "confidentialite.html": None,
+    "gouvernance-vie-privee.html": None,
+    "avis-legal.html": None,
     "projets/sinjira/index.html": "SINJIRA™",
 }
 
@@ -165,6 +168,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("fermeture Escape retirée", "assets/js/site.js", "event.key === 'Escape'", "event.key === 'F1'"),
         ("gouvernance footer accueil retirée", "index.html", 'href="/gouvernance-vie-privee.html">Gouvernance vie privée</a>', 'href="/gouvernance-retiree.html">Gouvernance retirée</a>'),
         ("libellé fermeture menu retiré", "assets/js/site.js", "toggle.setAttribute('aria-label', 'Fermer le menu')", "toggle.setAttribute('aria-label', 'Menu')"),
+        ("ancien menu confidentialité réintroduit", "confidentialite.html", '<a href="/projets/projet-nova/">Projet Nova</a>', '<a href="/projets/sinjira/registre/">Registre</a><a href="/projets/projet-nova/">Projet Nova</a>'),
     ]
     detected = 0
     for name, path, old, new in mutations:
