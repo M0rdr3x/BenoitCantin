@@ -12,6 +12,7 @@ HISTORY_WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-production-migratio
 VALIDATION_WORKFLOW = ROOT / '.github' / 'workflows' / 'validate-production-ledger.yml'
 RUNBOOK = ROOT / 'docs' / 'SUPABASE_PRODUCTION_RUNBOOK.md'
 ADMIN_GUARDRAILS = ROOT / 'docs' / 'SINJIRA_GITHUB_PRODUCTION_GUARDRAILS_ADMIN_CHECKLIST.md'
+REVIEW_DECISIONS = ROOT / 'supabase' / 'production-reviewed-migration-decisions.txt'
 ROW_RE = re.compile(r'^(\d{14})\s+([a-zA-Z0-9_]+)$')
 FILE_RE = re.compile(r'^(\d{14})_(.+)\.sql$')
 EXPECTED_COUNT = 186
@@ -218,6 +219,10 @@ def validate_production_workflow(errors):
             '${{ github.event.pull_request.base.sha }}',
             '${{ github.event.before }}',
             'validate_production_migration_ledger.py --base-ref "$BASE_REF"',
+            "'supabase/production-reviewed-migration-decisions.txt'",
+            "'scripts/validate_production_review_decision_trace.py'",
+            "'scripts/test_production_review_decision_trace.py'",
+            'validate_production_review_decision_trace.py --base-ref "$BASE_REF"',
         )
         for marker in history_required:
             if marker not in history_text:
@@ -255,6 +260,9 @@ def validate_runbook(errors):
         '`docs/SINJIRA_GITHUB_PRODUCTION_GUARDRAILS_ADMIN_CHECKLIST.md`',
         '**57 migrations futures locales**',
         '**ne pas avancer le ledger à cette étape**',
+        '`supabase/production-reviewed-migration-decisions.txt`',
+        '`scripts/validate_production_review_decision_trace.py`',
+        'dans le même diff',
     )
     for marker in required:
         if marker not in text:
@@ -292,6 +300,9 @@ def validate_runbook(errors):
             if marker not in admin_text:
                 errors.append(f'Checklist administrateur GitHub production incomplète: {marker}')
 
+    if not REVIEW_DECISIONS.is_file():
+        errors.append('Registre de traçabilité des décisions de migrations absent.')
+
     if not VALIDATION_WORKFLOW.is_file():
         errors.append('Workflow de validation du ledger absent.')
         return
@@ -299,6 +310,9 @@ def validate_runbook(errors):
     watched_paths = (
         "- 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'",
         "- 'docs/SINJIRA_GITHUB_PRODUCTION_GUARDRAILS_ADMIN_CHECKLIST.md'",
+        "- 'supabase/production-reviewed-migration-decisions.txt'",
+        "- 'scripts/validate_production_review_decision_trace.py'",
+        "- 'scripts/test_production_review_decision_trace.py'",
         "- '.github/workflows/supabase-production-preflight.yml'",
         "- '.github/workflows/supabase-production-safe.yml'",
         "- '.github/workflows/sinjira-production-migration-history-guard-v25.yml'",
