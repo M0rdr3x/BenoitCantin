@@ -1,0 +1,29 @@
+{
+  "version": "V320",
+  "date": "2026-09-25",
+  "result": "PASS",
+  "checks": {
+    "fresh_primary_verifier_160_of_160": "PASS",
+    "source_v319_replay_141_of_141": "PASS",
+    "negative_mutations_18_of_18_rejected": "PASS",
+    "prepublication_guard_24_of_24": "PASS",
+    "history_root_exact": "PASS",
+    "checkpoint_exact": "PASS",
+    "provenance_133_exact": "PASS",
+    "public_private_separation_bound": "PASS",
+    "legacy_transition_not_retroactive_voiding": "PASS",
+    "no_emergency_financing_derogation": "PASS",
+    "v308_numeric_parameters_preserved": "PASS",
+    "prosperity_credit_nonrefundable_only": "PASS",
+    "v311_private_procurement_superseded": "PASS",
+    "docx_qa_clean": "PASS",
+    "open_decisions_and_language_fail_closed": "PASS",
+    "legal_and_production_fail_closed": "PASS",
+    "no_automatic_legal_effect": "PASS",
+    "canonical_spelling_vortek": "PASS"
+  },
+  "passed": 18,
+  "total": 18,
+  "history_commitment_root_sha256": "1ee0d37bbbf29167307cc1592b970b6dd29cc530a97601dafc5f5bd40fbf2a28",
+  "current_checkpoint_canonical_sha256": "c44ce2454a41134046a151dfce07b0174b167e9b968cccde122b23fe96b17ea0"
+}

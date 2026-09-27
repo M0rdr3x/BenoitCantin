@@ -1,0 +1,38 @@
+{
+  "project": "Projet Nova",
+  "version": "V321",
+  "date": "2026-09-25",
+  "repository": "M0rdr3x/BenoitCantin",
+  "branch": "main",
+  "path": "projets/projet-nova/official/versions/V321",
+  "publication_type": "EXTERNAL_GITHUB_TECHNICAL_PUBLICATION",
+  "internal_chain_github_push_flag": "UNCHANGED_FALSE",
+  "automatic_legal_effects": false,
+  "files": {
+    "README.md": "0a8afd04767b802feb305680e57e39fe55ed2fcc",
+    "V321_AUTONOMIE_OPERATIONNELLE_PUBLIQUE_CAPACITES_CRITIQUES_CONTINUITE.md": "dea6de42d27a6afc7884c90db19a77ac0e0311ff",
+    "V321_AUTONOMIE_OPERATIONNELLE_PUBLIQUE_CAPACITES_CRITIQUES_CONTINUITE_STATE.json": "57bb057a782e8209b8a9fc6d408646b492e7fd60",
+    "V321_FINAL_STATE_SUMMARY.md": "cb60d089754ad5123eb8db4f33c768934838b1ba",
+    "V321_FINAL_INDEPENDENT_VERIFICATION.json": "528f1477f6fa2905cd9c9ac23b96703da5e5f937",
+    "V321_CURRENT_STATE.json": "ce6eb4404ea6f770baca77efa459e534a3c9af94",
+    "V321_VALIDATION_REPORT.md": "1ffefdd5a53dbeb928acf05758f5ebf7cf19971f",
+    "V321_REGISTRE_CAPACITES_PUBLIQUES_CRITIQUES_MODELE.csv": "1f5fcf94893184bc34f7080144a6daf3efa88a76",
+    "V321_REGISTRE_CHAINES_APPROVISIONNEMENT_INTERPUBLIQUES_MODELE.csv": "6746a2cbf4cb18a5c45a238f82806e5b93732f86",
+    "V321_REGISTRE_COMPETENCES_CRITIQUES_RELEVE_MODELE.csv": "5c3ec622bcc4156ff62be78e52858f47503670a2",
+    "V321_REGISTRE_DECISIONS_PREPARATION_BASCULE_MODELE.csv": "1c71a74e656fdc838007065970611cba61e8af36",
+    "V321_REGISTRE_DEPENDANCES_INFRASTRUCTURES_CONTINUITE_MODELE.csv": "c694d0efe57846b73d8b221c60ec87f9150fb472",
+    "V321_REGISTRE_EXERCICES_DEFAILLANCES_CORRECTIFS_MODELE.csv": "f09e0230a30f1a37c05197bca14cd8dfd19a0766",
+    "V321_REGISTRE_PRODUCTION_MAINTENANCE_REPARATION_MODELE.csv": "ed102638ec265c2acf9d5e00bb6f46a971adb555",
+    "V321_REGISTRE_STOCKS_INTRANTS_CRITIQUES_MODELE.csv": "cad8dffb74fc926601250f26ff8c34968399e5c1",
+    "V322_HANDOFF_CONTRACT_V321.json": "62a6a1f8a9e859cd6f6b8f86473e8736a8495b0d"
+  },
+  "validation": {
+    "source_v320_replay": "160/160 PASS",
+    "verifier": "181/181 PASS",
+    "negative_mutations": "24/24 REJECTED",
+    "prepublication_guard": "33/33 PASS",
+    "independent_verification": "20/20 PASS"
+  },
+  "source_history_commitment_root_sha256": "1ee0d37bbbf29167307cc1592b970b6dd29cc530a97601dafc5f5bd40fbf2a28",
+  "current_checkpoint_canonical_sha256": "3bd535f3b9ca1bb5f80447587eb652bc2bd91baede4edbcbe9e9285feb75ddb6"
+}

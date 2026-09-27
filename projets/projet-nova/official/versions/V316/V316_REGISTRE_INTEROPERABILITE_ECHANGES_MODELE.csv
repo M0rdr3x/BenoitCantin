@@ -1,0 +1,1 @@
+interface_id,provider_service,consumer_service,operation,data_scope,purpose,authorization_reference,authentication_context,rate_or_abuse_control_reference,audit_logging_required,error_handling_reference,schema_version,owner,status,last_reviewed_at

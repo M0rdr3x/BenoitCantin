@@ -1,0 +1,22 @@
+{
+  "version": "V322",
+  "date": "2026-09-25",
+  "contract_id": "V322-HANDOFF-CONTRACT-FROM-V321-001",
+  "source_version": "V321",
+  "requirements": [
+    "Replay V321 detached checkpoint from a clean extraction before any successor work.",
+    "Append V321 into append-only history as V322 without rewriting V320 or earlier layers.",
+    "Carry the exact V320 133-link provenance bundle and add V321-bound artifacts as new provenance links without collapsing inherited roots.",
+    "Bind V321 public operational autonomy specification, state, eight registers, corpus and standalone DOCX exactly.",
+    "Preserve V320 public-private finance separation including no new private procurement after legal activation and lawful transition of legacy obligations.",
+    "Preserve V319 data sovereignty, V318 architecture, V317 cybersecurity and V316 identity/privacy controls.",
+    "Preserve V312 Primauté citoyenne and V308 numeric fiscal parameters; prosperity credit remains non-refundable and cannot create a net payment to a private enterprise.",
+    "Preserve the V321 readiness gate: critical inherited private dependency is not closed until public replacement capability is materially and legally ready.",
+    "Preserve V321 limits: no general public autarky, no automatic transfer or expropriation, no general requisition power, no unbounded public entry into private markets.",
+    "Preserve 14 open political decisions and 26 English sections as NOT_VALIDATED / HUMAN_REVIEW_PENDING.",
+    "Preserve LEGAL_ENACTMENT=NOT_AUTHORIZED, publication=PENDING_PUBLICATION_APPROVAL, production=false and internal github_push=false in the immutable chain.",
+    "A next substantive module may address public asset lifecycle, strategic maintenance engineering, public logistics network governance and cross-agency capacity allocation without inventing undecided numeric thresholds."
+  ],
+  "automatic_legal_effects": false,
+  "authority_inferred": false
+}

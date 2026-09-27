@@ -1,0 +1,21 @@
+{
+  "project": "Projet Nova",
+  "version": "V320",
+  "date": "2026-09-25",
+  "path": "projets/projet-nova/official/CURRENT_VERSION.json",
+  "previous_version": "V319",
+  "current_version": "V320",
+  "initial_update_commit_sha": "1d7730e100cede40d0d6d9dc50e15a80169f1c81",
+  "initial_update_status": "SUPERSEDED_BY_CORRECTION",
+  "correction_reason": "Inherited V318 history root was transcribed with one extra trailing character in the first pointer update.",
+  "final_update_commit_sha": "7682392d5ade63ebe30f108769156f5eefd65943",
+  "final_blob_sha": "996af24843d58552dce7ad452594a8ef9abe9f6b",
+  "verified_current_technical_version": "V320",
+  "verified_history_commitment_root_sha256": "1ee0d37bbbf29167307cc1592b970b6dd29cc530a97601dafc5f5bd40fbf2a28",
+  "verified_current_checkpoint_canonical_sha256": "c44ce2454a41134046a151dfce07b0174b167e9b968cccde122b23fe96b17ea0",
+  "verified_source_v318_history_commitment_root_sha256": "adc1f9c12e82a03a129331e21a39e1ea6edc5ac82e2b324a44f56907fc10bad4",
+  "publication_receipt_commit_sha": "9817c8301a0a1cca9034a45c2ebded632b27fe42",
+  "result": "PASS",
+  "internal_chain_github_push_flag": "UNCHANGED_FALSE",
+  "automatic_legal_effects": false
+}

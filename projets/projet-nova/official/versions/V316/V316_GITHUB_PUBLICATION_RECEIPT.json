@@ -1,0 +1,19 @@
+{
+  "version": "V316",
+  "date": "2026-09-24",
+  "repository": "M0rdr3x/BenoitCantin",
+  "branch": "main",
+  "target": "projets/projet-nova",
+  "explicit_user_authorization": true,
+  "content_commit_sha": "66603f74ffdceb66e2039465a579f661724ad200",
+  "content_tree_sha": "70177593951739299df14c3705ad8c3735d24e0c",
+  "history_commitment_root_sha256": "ea2d98a112037ef62609d38afe3f8d4da536214bce8ba714d46def603db0dd54",
+  "current_checkpoint_canonical_sha256": "3473a3d3c8668ec6d61c885b58ebb07b5121019d98e77242f0408a47402d2ff1",
+  "published_version_directory": "projets/projet-nova/official/versions/V316",
+  "current_version_pointer": "projets/projet-nova/official/CURRENT_VERSION.json",
+  "public_reference": "projets/projet-nova/official/reference/identite-numerique-vie-privee.md",
+  "post_push_branch_verified": true,
+  "post_push_files_verified": true,
+  "immutable_pack_note": "The internal V316 technical chain retains github_push=false as a fail-closed historical state. The external GitHub publication is separately authorized and evidenced by this receipt.",
+  "legal_effect": "NONE_AUTOMATIC"
+}

@@ -1,0 +1,1 @@
+audit_event_id,event_at,principal_or_role,system,subject_or_record_reference,action,data_scope,purpose_or_case_reference,authorization_reference,exceptional_access,export_or_bulk_action,result,source_context,integrity_protection_reference,review_status

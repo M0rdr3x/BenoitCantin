@@ -1,0 +1,18 @@
+{
+  "version": "V318",
+  "from": "V317",
+  "date": "2026-09-24",
+  "point": "NOVA-V318-LOCAL-CHECKPOINT-HISTORY-261",
+  "requirements": [
+    "Independently replay V317 detached checkpoint from a clean extraction.",
+    "Create V318 append-only local checkpoint history whose predecessor is exact V317 checkpoint and whose successor binds exact V317 checkpoint/payload/verifier/replay bytes.",
+    "Carry the 125-link inherited provenance union and add exact V317 checkpoint, payload, verifier and V318 replay receipt without collapsing older root layers.",
+    "Bind V317 cyber resilience specification, state, eight register templates, corpus and standalone DOCX exactly.",
+    "Preserve V316 identity/privacy protections against universal access keys, general surveillance and mandatory superdatabase.",
+    "Preserve V312 Primauté citoyenne and V308 fiscal parameters exactly absent explicit later user amendment.",
+    "Preserve 14 inherited open political decisions and 26 English sections NOT_VALIDATED absent explicit evidence.",
+    "Preserve LEGAL_ENACTMENT=NOT_AUTHORIZED, publication pending and production=false in the immutable technical chain.",
+    "Any external GitHub publication remains separately authorized/evidenced and must not rewrite immutable internal github_push=false.",
+    "Next substantive module may address public digital architecture standards, interoperability contracts, technology lifecycle and anti-lock-in without inventing undecided numeric thresholds."
+  ]
+}

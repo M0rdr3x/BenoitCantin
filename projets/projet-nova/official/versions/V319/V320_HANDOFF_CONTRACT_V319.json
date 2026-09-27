@@ -1,0 +1,20 @@
+{
+  "version": "V320",
+  "date": "2026-09-24",
+  "contract_id": "V320-HANDOFF-CONTRACT-FROM-V319-001",
+  "source_version": "V319",
+  "requirements": [
+    "Replay V319 detached checkpoint verification from a clean extraction before any successor work.",
+    "Append V319 into the append-only history as V320 without rewriting V318 or earlier history layers.",
+    "Carry the exact 129-link V318 provenance union and add V319 artifacts as new provenance rather than collapsing inherited roots.",
+    "Bind V319 data-sovereignty specification, state, eight registers, corpus and standalone DOCX exactly.",
+    "Preserve V316 identity/privacy, V317 cybersecurity and V318 interoperability/reversibility controls exactly.",
+    "Preserve V312 Primauté citoyenne and V308 fiscal parameters absent explicit amendment.",
+    "Preserve 14 open political decisions and 26 English sections as NOT_VALIDATED / HUMAN_REVIEW_PENDING.",
+    "Preserve LEGAL_ENACTMENT=NOT_AUTHORIZED, publication=PENDING_PUBLICATION_APPROVAL, production=false and internal github_push=false in the immutable chain.",
+    "External GitHub publication may be separately authorized and evidenced and must not rewrite the internal github_push=false field.",
+    "A next substantive module may address cryptographic agility, trustworthy public evidence and long-horizon verification without inventing undecided numeric thresholds."
+  ],
+  "automatic_legal_effects": false,
+  "authority_inferred": false
+}

@@ -1,0 +1,37 @@
+{
+  "project": "Projet Nova",
+  "version": "V320",
+  "date": "2026-09-25",
+  "repository": "M0rdr3x/BenoitCantin",
+  "branch": "main",
+  "path": "projets/projet-nova/official/versions/V320",
+  "publication_type": "EXTERNAL_GITHUB_TECHNICAL_PUBLICATION",
+  "internal_chain_github_push_flag": "UNCHANGED_FALSE",
+  "automatic_legal_effects": false,
+  "files": {
+    "README.md": "9403dec687e8d6974285c3f5972249e4351970b6",
+    "V320_SEPARATION_DEPENSES_PUBLIQUES_SECTEUR_PRIVE.md": "1a4f47eba124e58c1da6ab038eac69f5ea331dc1",
+    "V320_SEPARATION_DEPENSES_PUBLIQUES_SECTEUR_PRIVE_STATE.json": "0f603b98be42bffc92476bc152368b7103696b9c",
+    "V320_FINAL_STATE_SUMMARY.md": "6b574bbcdc5c4d2dd36b064188c01dae4ebee218",
+    "V320_FINAL_INDEPENDENT_VERIFICATION.json": "c187cbd4dc608f3e54f8ea97645408caa565b173",
+    "V320_CURRENT_STATE.json": "b8e2719152a34ad5d31c2b8a6347b01304319cdf",
+    "V320_REGISTRE_FLUX_PUBLIC_PRIVE_MODELE.csv": "b9ca16289e47dcecf5c80952d3524676b2b65c06",
+    "V320_REGISTRE_FERMETURE_AIDES_PRIVEES_MODELE.csv": "574a4710045bf43c96f44df7903a966efbaf3734",
+    "V320_REGISTRE_CONTRATS_PRIVES_TRANSITION_MODELE.csv": "a59b350d247dc6d96254aa987f33df94e91aafbd",
+    "V320_REGISTRE_INTERNALISATION_CAPACITES_PUBLIQUES_MODELE.csv": "7f513c9c92f390e0fc021ec641e8c7bc60017af0",
+    "V320_REGISTRE_CONTINUITE_SERVICES_ESSENTIELS_MODELE.csv": "5377872c89a9e3c0cf9d980ffc25c4c8558c3cc6",
+    "V320_REGISTRE_ANTI_CONTOURNEMENT_MODELE.csv": "33f46a5220a7cc252eb50a27bcac018c2f40dfcf",
+    "V320_REGISTRE_OBLIGATIONS_NON_COMMERCIALES_MODELE.csv": "ce1674a9c520829b0ba6a97d8c6606e44fb7cec3",
+    "V320_REGISTRE_CLASSIFICATION_ENTITES_MIXTES_PUBLIQUES_MODELE.csv": "b25d072e96730c9915ef59d9bfae09950e4599ef",
+    "V321_HANDOFF_CONTRACT_V320.json": "e1a3434b42785692f3aadbb1484ec7dfbfbb0c9e"
+  },
+  "validation": {
+    "source_v319_replay": "141/141 PASS",
+    "verifier": "160/160 PASS",
+    "negative_mutations": "18/18 REJECTED",
+    "prepublication_guard": "24/24 PASS",
+    "independent_verification": "18/18 PASS"
+  },
+  "history_commitment_root_sha256": "1ee0d37bbbf29167307cc1592b970b6dd29cc530a97601dafc5f5bd40fbf2a28",
+  "current_checkpoint_canonical_sha256": "c44ce2454a41134046a151dfce07b0174b167e9b968cccde122b23fe96b17ea0"
+}

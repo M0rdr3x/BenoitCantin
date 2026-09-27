@@ -1,0 +1,19 @@
+{
+  "version": "V317",
+  "date": "2026-09-24",
+  "repository": "M0rdr3x/BenoitCantin",
+  "branch": "main",
+  "target": "projets/projet-nova",
+  "explicit_user_authorization": true,
+  "content_commit_sha": "75dcf474fde684152325eaed27db2f6bc93c8751",
+  "content_tree_sha": "4cdd2571ed3d9551b3d7a31f89359b2aab68139e",
+  "source_history_commitment_root_sha256": "ea2d98a112037ef62609d38afe3f8d4da536214bce8ba714d46def603db0dd54",
+  "checkpoint_canonical_sha256": "43a562171b2ea0b0e03a579d93dd1d793f8323efc89533e82fd7a69f327fb750",
+  "published_version_directory": "projets/projet-nova/official/versions/V317",
+  "current_version_pointer": "projets/projet-nova/official/CURRENT_VERSION.json",
+  "public_reference": "projets/projet-nova/official/reference/cybersecurite-resilience-continuite.md",
+  "post_push_branch_verified": true,
+  "post_push_files_verified": true,
+  "immutable_pack_note": "The internal V317 technical chain retains github_push=false as a fail-closed historical state. The external GitHub publication is separately authorized and evidenced by this receipt.",
+  "legal_effect": "NONE_AUTOMATIC"
+}

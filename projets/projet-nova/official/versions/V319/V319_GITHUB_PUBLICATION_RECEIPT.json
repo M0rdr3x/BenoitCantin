@@ -1,0 +1,30 @@
+{
+  "version": "V319",
+  "date": "2026-09-24",
+  "publication_type": "EXTERNAL_GITHUB_TECHNICAL_PUBLICATION",
+  "repository": "M0rdr3x/BenoitCantin",
+  "branch": "main",
+  "path": "projets/projet-nova/official/versions/V319",
+  "authorization_basis": "Continuation explicite du travail Projet Nova avec publication GitHub technique déjà autorisée dans le flux du projet.",
+  "published_files": [
+    {"file":"README.md","commit_sha":"9d11a8f8e358b782430bbb271de3d4340bec47d0"},
+    {"file":"V319_SOUVERAINETE_DONNEES_ARCHIVES_REPRODUCTIBILITE.md","commit_sha":"e8fa2b52f614437ec0fcbcb53a8d3568bf3b9d87"},
+    {"file":"V319_SOUVERAINETE_DONNEES_ARCHIVES_REPRODUCTIBILITE_STATE.json","commit_sha":"e8f485973692e5facf1fc990a029121a441a04ac"},
+    {"file":"V319_FINAL_STATE_SUMMARY.md","commit_sha":"2d490d20656218b2dc09230729fa25901fd58b7a"},
+    {"file":"V319_FINAL_INDEPENDENT_VERIFICATION.json","commit_sha":"5cbaa760f008ccd60a93e4c7c8e3e939963653be"},
+    {"file":"V319_CURRENT_STATE.json","commit_sha":"94148f1c0b576fb6880c978587928d426d4d1e01"},
+    {"file":"V319_REGISTRE_CLASSIFICATION_GARDE_DONNEES_MODELE.csv","commit_sha":"ac502aa4b10f28a6af110ae2aded6c44d30ae5f3"},
+    {"file":"V319_REGISTRE_ARCHIVES_FORMATS_PRESERVATION_MODELE.csv","commit_sha":"850548dc4721d155782e705d709f5eb7b640d051"},
+    {"file":"V319_REGISTRE_MATERIAUX_RECONSTRUCTION_MODELE.csv","commit_sha":"c6782f239d9a88da0236c60be87dc5af1d778b3e"},
+    {"file":"V319_REGISTRE_ENTIERCEMENTS_DROITS_CONTINUITE_MODELE.csv","commit_sha":"4e01ed7665ff51209fccc3635e32582927d7e615"},
+    {"file":"V319_REGISTRE_BUILDS_REPRODUCTIBLES_MODELE.csv","commit_sha":"75d61e4464f4051e4a3de473f8e186250101c76d"},
+    {"file":"V319_REGISTRE_MIGRATIONS_INTERGENERATIONNELLES_MODELE.csv","commit_sha":"0fd7b1a136390516e8a62f67cf9b9c88bb7485d1"},
+    {"file":"V319_REGISTRE_CONTINUITE_SAVOIR_DOCUMENTATION_MODELE.csv","commit_sha":"43baac40f5e3fa7cbe97e9075cdba3ae42770f7b"},
+    {"file":"V319_REGISTRE_EXCEPTIONS_RISQUES_COMPENSATIONS_MODELE.csv","commit_sha":"0f73f3f9b4d3279055d6bc1f5c56152796b39f45"},
+    {"file":"V320_HANDOFF_CONTRACT_V319.json","commit_sha":"f46c8dc4112822d6e2d96497b8a5d47a03e69828"}
+  ],
+  "internal_chain_github_push_remains_false": true,
+  "LEGAL_ENACTMENT": "NOT_AUTHORIZED",
+  "production": false,
+  "automatic_legal_effects": false
+}

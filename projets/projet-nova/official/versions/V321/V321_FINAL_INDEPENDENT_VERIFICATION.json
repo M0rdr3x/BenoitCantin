@@ -1,0 +1,31 @@
+{
+  "version": "V321",
+  "date": "2026-09-25",
+  "result": "PASS",
+  "checks": {
+    "fresh_primary_verifier_181_of_181": "PASS",
+    "source_v320_replay_160_of_160": "PASS",
+    "negative_mutations_24_of_24_rejected": "PASS",
+    "prepublication_guard_33_of_33": "PASS",
+    "source_history_root_exact": "PASS",
+    "checkpoint_exact": "PASS",
+    "provenance_133_exact": "PASS",
+    "v320_policy_bound": "PASS",
+    "v321_module_bound": "PASS",
+    "v321_registers_8_bound": "PASS",
+    "public_capacity_and_readiness_bound": "PASS",
+    "no_general_autarky_bound": "PASS",
+    "no_expropriation_or_requisition_created": "PASS",
+    "state_scope_limit_bound": "PASS",
+    "v320_no_private_financing_preserved": "PASS",
+    "v308_numeric_and_nonrefundable_preserved": "PASS",
+    "docx_qa_clean": "PASS",
+    "open_decisions_and_language_fail_closed": "PASS",
+    "legal_and_production_fail_closed": "PASS",
+    "v322_handoff_ready": "PASS"
+  },
+  "passed": 20,
+  "total": 20,
+  "source_history_commitment_root_sha256": "1ee0d37bbbf29167307cc1592b970b6dd29cc530a97601dafc5f5bd40fbf2a28",
+  "current_checkpoint_canonical_sha256": "3bd535f3b9ca1bb5f80447587eb652bc2bd91baede4edbcbe9e9285feb75ddb6"
+}

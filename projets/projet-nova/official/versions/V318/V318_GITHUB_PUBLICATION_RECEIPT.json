@@ -1,0 +1,19 @@
+{
+  "version": "V318",
+  "date": "2026-09-24",
+  "repository": "M0rdr3x/BenoitCantin",
+  "branch": "main",
+  "target": "projets/projet-nova",
+  "explicit_user_authorization": true,
+  "content_commit_sha": "96330401a20512c9a3aebd434d80e5dd731aaf2b",
+  "content_tree_sha": "972bb85dc081933ad391ef4ab497d3717822a497",
+  "history_commitment_root_sha256": "adc1f9c12e82a03a129331e21a39e1ea6edc5ac82e2b324a44f56907fc10bad4",
+  "current_checkpoint_canonical_sha256": "8ab1e5e8efac58bc625e749ab337eb34e0aa30bb7e6856f166156fb6304ddb4f",
+  "published_version_directory": "projets/projet-nova/official/versions/V318",
+  "current_version_pointer": "projets/projet-nova/official/CURRENT_VERSION.json",
+  "public_reference": "projets/projet-nova/official/reference/architecture-numerique-interoperabilite-reversibilite.md",
+  "post_push_branch_verified": true,
+  "post_push_files_verified": true,
+  "immutable_pack_note": "The internal V318 technical chain retains github_push=false as a fail-closed historical state. The external GitHub publication is separately authorized and evidenced by this receipt.",
+  "legal_effect": "NONE_AUTOMATIC"
+}

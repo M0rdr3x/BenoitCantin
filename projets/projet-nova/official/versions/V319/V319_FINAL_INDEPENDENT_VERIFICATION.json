@@ -1,0 +1,30 @@
+{
+  "version": "V319",
+  "date": "2026-09-24",
+  "result": "PASS",
+  "checks": {
+    "fresh_v318_replay_128_128": "PASS",
+    "v319_primary_verifier_141_141": "PASS",
+    "negative_mutations_24_24_rejected": "PASS",
+    "prepublication_guard_all_pass": "PASS",
+    "source_v318_root_exact": "PASS",
+    "source_v318_tip_exact": "PASS",
+    "provenance_129_exact": "PASS",
+    "registers_8_exact": "PASS",
+    "corpus_182_pages_and_173_identical": "PASS",
+    "standalone_9_pages_visual_pass": "PASS",
+    "open_decisions_preserved": "PASS",
+    "english_pending_preserved": "PASS",
+    "legal_fail_closed": "PASS",
+    "v319_thresholds_uninvented": "PASS"
+  },
+  "errors": [],
+  "primary_verifier_checks": "141/141 PASS",
+  "negative_mutations": "24/24 REJECTED",
+  "fresh_v318_replay": "128/128 PASS",
+  "prepublication_guard": "19/19 PASS",
+  "source_history_root_sha256": "adc1f9c12e82a03a129331e21a39e1ea6edc5ac82e2b324a44f56907fc10bad4",
+  "v319_checkpoint_canonical_sha256": "fe352a264384c379218968a5d247584b83191554ef01ee76af41831f8632a402",
+  "external_notarization_claimed": false,
+  "authority_inferred": false
+}

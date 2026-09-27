@@ -1,0 +1,22 @@
+{
+  "version": "V316",
+  "date": "2026-09-24",
+  "manifest_verified": 4964,
+  "manifest_total": 4964,
+  "manifest_errors": [],
+  "actual_files": 4966,
+  "verifier_result": "PASS",
+  "verifier_checks_passed": 145,
+  "verifier_checks_total": 145,
+  "history_commitment_root_sha256": "ea2d98a112037ef62609d38afe3f8d4da536214bce8ba714d46def603db0dd54",
+  "current_checkpoint_canonical_sha256": "3473a3d3c8668ec6d61c885b58ebb07b5121019d98e77242f0408a47402d2ff1",
+  "source_provenance_bundle_count": 125,
+  "prepublication_result": "PASS",
+  "prepublication_checks_passed": 17,
+  "prepublication_checks_total": 17,
+  "nomenclature_result": "PASS",
+  "nomenclature_hit_count": 0,
+  "nomenclature_files_scanned": 4898,
+  "nomenclature_docx_files_scanned": 128,
+  "result": "PASS"
+}
