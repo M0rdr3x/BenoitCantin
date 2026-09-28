@@ -15,7 +15,9 @@ REQUIRED = {
     'admin explicite': 'requiredAdmin(req)',
     'JSON strict': "contentType!=='application/json'",
     'lecture bornée': 'readBoundedJson(req)',
-    'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'lecture bornée par flux': 'req.body?.getReader()',
+    'annulation au dépassement': 'reader.cancel()',
+    'décodage UTF-8 strict': "new TextDecoder('utf-8',{fatal:true})",
     'Content-Length fini': '!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES',
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
@@ -35,6 +37,7 @@ REQUIRED = {
 
 FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
+    'texte intégral avant borne': 'await req.text()',
     'auth admin indirecte': 'requiredUser(req)',
     'service client recréé': 'serviceClient()',
     'log backend brut': "console.error('[admin-console]',e)",
@@ -100,6 +103,9 @@ def self_test() -> None:
             'if(Number.isFinite(declared)&&declared>MAX_REQUEST_BYTES)throw new Error(\'REQUEST_TOO_LARGE\');',
             1,
         ),
+        'texte intégral réintroduit': real.replace('const reader=req.body?.getReader();', 'const rawDirect=await req.text();', 1),
+        'annulation retirée': real.replace('try{await reader.cancel()}catch{/* Le rejet de taille reste prioritaire. */}', '', 1),
+        'décodage non strict': real.replace("new TextDecoder('utf-8',{fatal:true})", "new TextDecoder('utf-8')", 1),
         'admin après corps': real.replace(
             'const {user,service}=await requiredAdmin(req);\n    const body=await readBoundedJson(req)',
             'const body=await readBoundedJson(req)\n    const {user,service}=await requiredAdmin(req);',
@@ -140,7 +146,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK admin-console: AAL2 avant corps, JSON 32 KiB, logs sanitizés et approbation Playtest avec rollback de cohérence.')
+    print('OK admin-console: AAL2 avant corps, JSON 32 KiB borné pendant la lecture, logs sanitizés et approbation Playtest avec rollback de cohérence.')
     return 0
 
 
