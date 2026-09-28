@@ -252,6 +252,28 @@ def main() -> int:
             if f'<loc>{url}</loc>' not in sitemap_text:
                 errors.append(f'Sitemap public: URL de confiance absente: {url}')
 
+    netlify_path = ROOT / 'netlify.toml'
+    if not netlify_path.is_file():
+        errors.append('netlify.toml absent.')
+    else:
+        netlify_text = netlify_path.read_text('utf-8', errors='ignore')
+        for marker in (
+            'X-Content-Type-Options = "nosniff"',
+            'Strict-Transport-Security = "max-age=31536000"',
+            'X-Frame-Options = "SAMEORIGIN"',
+            'Referrer-Policy = "strict-origin-when-cross-origin"',
+            'X-Permitted-Cross-Domain-Policies = "none"',
+            'Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"',
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+            "connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co",
+            "form-action 'self' https://formspree.io",
+            "base-uri 'self'",
+            "frame-ancestors 'self'",
+            "object-src 'self'",
+        ):
+            if marker not in netlify_text:
+                errors.append(f'netlify.toml sécurité incomplet: {marker}')
+
     robots_path = ROOT / 'robots.txt'
     if not robots_path.is_file():
         errors.append('robots.txt absent.')
