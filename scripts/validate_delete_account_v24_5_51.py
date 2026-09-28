@@ -43,6 +43,8 @@ def main() -> int:
         'nosniff',
         'Referrer-Policy',
         'no-referrer',
+        'SAFE_FAILURE_CODES',
+        "SAFE_FAILURE_CODES.has(error.message)?error.message:'DELETE_FAILED'",
     )
     for marker in markers:
         if marker not in source:
@@ -50,6 +52,23 @@ def main() -> int:
 
     if 'await req.json()' in source:
         errors.append('Lecture JSON directe non bornée interdite.')
+
+    console_lines = [line.strip() for line in source.splitlines() if 'console.' in line]
+    expected_console_lines = [
+        "console.error('[delete-player-account]',{code:'AUTH_DELETE_FAILED'});",
+        "console.error('[delete-player-account]',{code:failureCode(error)});",
+    ]
+    if console_lines != expected_console_lines:
+        errors.append('Les logs de suppression doivent rester limités aux codes bornés approuvés, sans objet d’erreur brut.')
+
+    raw_log_markers = (
+        "console.error('[delete-player-account]',error)",
+        'console.error(`[SINJIRA delete] storage ${bucket}`,error)',
+        "console.error('[SINJIRA delete] auth delete',error)",
+    )
+    for marker in raw_log_markers:
+        if marker in source:
+            errors.append(f'Log d’erreur brut interdit dans delete-player-account: {marker}')
 
     function_cfg = config.get('functions', {}).get('delete-player-account', {})
     if function_cfg.get('verify_jwt') is not True:
@@ -83,7 +102,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK V24.5.51: suppression de compte JWT, POST JSON borné à 1 KiB, réponses privées no-store, conservation légale/MFA/confirmation conservées, aucune migration ni service payant.')
+    print('OK V24.5.51: suppression de compte JWT, POST JSON borné à 1 KiB, réponses privées no-store, conservation légale/MFA/confirmation conservées, logs bornés, aucune migration ni service payant.')
     return 0
 
 
