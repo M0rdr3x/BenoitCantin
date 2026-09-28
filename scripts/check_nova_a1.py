@@ -132,7 +132,16 @@ attr_re = re.compile(r'(?:href|src)=["\']([^"\'#]+)["\']', re.I)
 for p in NOVA.glob("*.html"):
     text = p.read_text(encoding="utf-8", errors="replace")
     is_redirect = bool(re.search(r'<meta\b[^>]*http-equiv=["\']refresh["\'][^>]*>', text, flags=re.I))
-    if not is_redirect:
+    if is_redirect:
+        robots = re.search(
+            r'<meta\b(?=[^>]*name=["\']robots["\'])(?=[^>]*content=["\']([^"\']*)["\'])[^>]*>',
+            text,
+            flags=re.I,
+        )
+        robots_value = robots.group(1).lower() if robots else ""
+        if "noindex" not in robots_value:
+            errors.append(f"{p.name}: redirection publique sans noindex")
+    else:
         main_count = len(re.findall(r"<main\b", text, flags=re.I))
         h1_count = len(re.findall(r"<h1\b", text, flags=re.I))
         if main_count != 1:
