@@ -303,6 +303,18 @@ def main() -> int:
         ):
             if marker not in security_text:
                 errors.append(f'security.txt incomplet: {marker}')
+        contact_page = ROOT / 'contact.html'
+        if not contact_page.is_file():
+            errors.append('contact.html absent pour le signalement sécurité.')
+        else:
+            contact_html = contact_page.read_text('utf-8', errors='ignore')
+            for marker in (
+                '<option value="Sécurité">Sécurité / vulnérabilité</option>',
+                'Benoit Cantin — signalement sécurité',
+                'href="/.well-known/security.txt"',
+            ):
+                if marker not in contact_html:
+                    errors.append(f'Contact sécurité incomplet: {marker}')
         expires_match = re.search(r'^Expires:\s*(\S+)\s*$', security_text, flags=re.M)
         if not expires_match:
             errors.append('security.txt: champ Expires absent.')
