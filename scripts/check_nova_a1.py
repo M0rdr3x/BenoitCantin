@@ -142,6 +142,8 @@ for p in NOVA.glob("*.html"):
         if "noindex" not in robots_value:
             errors.append(f"{p.name}: redirection publique sans noindex")
     else:
+        if 'portal-return-benoit' not in text:
+            errors.append(f"{p.name}: fallback de navigation globale vers Benoit Cantin absent")
         main_count = len(re.findall(r"<main\b", text, flags=re.I))
         h1_count = len(re.findall(r"<h1\b", text, flags=re.I))
         if main_count != 1:
@@ -193,6 +195,33 @@ for rel, needle in required_pages.items():
 constitution = NOVA / "constitution.html"
 if constitution.is_file() and "noindex" in constitution.read_text(encoding="utf-8", errors="replace").lower():
     errors.append("constitution.html: la page constitutionnelle publique ne doit pas être noindex")
+
+nova_runtime = NOVA / "script.js"
+if not nova_runtime.is_file():
+    errors.append("script.js Nova absent")
+else:
+    runtime_text = nova_runtime.read_text(encoding="utf-8", errors="replace")
+    for marker in (
+        "data-portal-global-nav",
+        "Navigation générale du portail",
+        "Navigation de Projet Nova",
+        "/projets/sinjira/",
+        "/projets/projet-nova/",
+        "/a-propos.html",
+        "/compte/",
+        "/assets/js/v19-session.js?v=25.0.0",
+    ):
+        if marker not in runtime_text:
+            errors.append(f"script.js Nova: navigation globale incomplète: {marker}")
+
+portal_css = NOVA / "assets" / "portal-return.css"
+if not portal_css.is_file():
+    errors.append("assets/portal-return.css absent")
+else:
+    portal_css_text = portal_css.read_text(encoding="utf-8", errors="replace")
+    for marker in (".portal-global-nav", ".portal-global-links", ".portal-global-account"):
+        if marker not in portal_css_text:
+            errors.append(f"portal-return.css: style navigation globale absent: {marker}")
 
 for rel in ["SECURITY.md", "DOCUMENT_CONTROL.md"]:
     if not (NOVA / rel).is_file():

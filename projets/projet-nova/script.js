@@ -34,6 +34,30 @@
   ready(function(){
     const page=document.body.getAttribute('data-page')||'';
     const nav=document.querySelector('[data-main-nav]');
+    const toggle=document.querySelector('[data-menu-toggle]');
+    const portalReturn=document.querySelector('.portal-return-benoit');
+
+    if(portalReturn&&!document.querySelector('[data-portal-global-nav]')){
+      const globalNav=document.createElement('nav');
+      globalNav.className='portal-global-nav';
+      globalNav.setAttribute('data-portal-global-nav','');
+      globalNav.setAttribute('aria-label','Navigation générale du portail');
+      globalNav.innerHTML='<div class="portal-global-nav-inner"><a class="portal-global-brand" href="/" aria-label="Accueil de Benoit Cantin"><img src="/assets/icons/benoit-sigil.svg" alt="" width="30" height="30"><strong>Benoit Cantin</strong></a><div class="portal-global-links"><a href="/">Accueil</a><a href="/projets/sinjira/">SINJIRA™</a><a aria-current="page" href="/projets/projet-nova/">Projet Nova</a><a href="/a-propos.html">À propos</a><a class="portal-global-account" href="/compte/" data-sinjira-session-nav>Compte</a></div></div>';
+      portalReturn.replaceWith(globalNav);
+      if(!document.querySelector('script[data-portal-session]')){
+        const session=document.createElement('script');
+        session.type='module';
+        session.src='/assets/js/v19-session.js?v=25.0.0';
+        session.setAttribute('data-portal-session','');
+        document.head.appendChild(session);
+      }
+    }
+
+    if(nav){
+      nav.id='navigation-nova';
+      nav.setAttribute('aria-label','Navigation de Projet Nova');
+    }
+    if(toggle)toggle.setAttribute('aria-controls','navigation-nova');
 
     document.querySelectorAll('.header-project-pro').forEach(el=>el.textContent='Projet Nova');
     document.querySelectorAll('.header-tagline-pro').forEach(el=>el.textContent='Le peuple d’abord — des institutions responsables');
@@ -60,7 +84,6 @@
       }
     });
 
-    const toggle=document.querySelector('[data-menu-toggle]');
     if(toggle&&nav){
       const setMenuState=open=>{nav.classList.toggle('open',open);toggle.setAttribute('aria-expanded',open?'true':'false');};
       toggle.addEventListener('click',()=>setMenuState(!nav.classList.contains('open')));
