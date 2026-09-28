@@ -17,6 +17,15 @@ BASIC_KEY_PAGES = [
     ROOT / "projets" / "sinjira" / "index.html",
 ]
 
+NOVA_LEGACY_REDIRECTS = {
+    ROOT / "accessibilite.html": "/projets/projet-nova/accessibilite.html",
+    ROOT / "actualites.html": "/projets/projet-nova/actualites.html",
+    ROOT / "manifeste.html": "/projets/projet-nova/manifeste.html",
+    ROOT / "livre-nova.html": "/projets/projet-nova/livre-nova.html",
+    ROOT / "transition.html": "/projets/projet-nova/transition.html",
+    ROOT / "code-conduite.html": "/projets/projet-nova/code-conduite.html",
+}
+
 NOVA_PAGE_NAMES = [
     "comprendre-nova.html",
     "programme.html",
@@ -443,6 +452,28 @@ def main() -> int:
     for url in expected_nova_urls:
         if url not in urls:
             errors.append(f"sitemap.xml racine: URL Nova absente: {url}")
+
+    for page, target in NOVA_LEGACY_REDIRECTS.items():
+        if not page.exists():
+            errors.append(f"Redirection Nova héritée absente: {page.relative_to(ROOT)}")
+            continue
+        html = page.read_text("utf-8", errors="ignore")
+        rel = page.relative_to(ROOT)
+        robots_meta = meta_content(html, name="robots").lower()
+        if "noindex" not in robots_meta or "nofollow" not in robots_meta:
+            errors.append(f"{rel}: redirection Nova héritée sans noindex,nofollow.")
+        refresh_match = re.search(
+            r'<meta\b(?=[^>]*http-equiv=["\']refresh["\'])(?=[^>]*content=["\']([^"\']+)["\'])[^>]*>',
+            html,
+            flags=re.I,
+        )
+        refresh_value = refresh_match.group(1).strip() if refresh_match else ""
+        if refresh_value.lower() != f"0; url={target}".lower():
+            errors.append(f"{rel}: meta refresh Nova incohérent.")
+        if f'href="{target}"' not in html:
+            errors.append(f"{rel}: lien de repli Nova incohérent.")
+        if link_href(html, "canonical"):
+            errors.append(f"{rel}: redirection Nova héritée ne doit pas annoncer de canonical.")
 
     registry_url = BASE + "/projets/sinjira/registre/"
     if registry_url not in urls:
