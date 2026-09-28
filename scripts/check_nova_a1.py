@@ -131,18 +131,18 @@ if docjs.is_file():
 attr_re = re.compile(r'(?:href|src)=["\']([^"\'#]+)["\']', re.I)
 for p in NOVA.glob("*.html"):
     text = p.read_text(encoding="utf-8", errors="replace")
-    is_redirect = bool(re.search(r'<meta\\b[^>]*http-equiv=["\\']refresh["\\'][^>]*>', text, flags=re.I))
+    is_redirect = bool(re.search(r'<meta\b[^>]*http-equiv=["\']refresh["\'][^>]*>', text, flags=re.I))
     if not is_redirect:
-        main_count = len(re.findall(r"<main\\b", text, flags=re.I))
-        h1_count = len(re.findall(r"<h1\\b", text, flags=re.I))
+        main_count = len(re.findall(r"<main\b", text, flags=re.I))
+        h1_count = len(re.findall(r"<h1\b", text, flags=re.I))
         if main_count != 1:
             errors.append(f"{p.name}: exactement un <main> attendu, trouvé {main_count}")
         if h1_count != 1:
             errors.append(f"{p.name}: exactement un H1 attendu, trouvé {h1_count}")
-        if not re.search(r'<main\\b(?=[^>]*id=["\\']contenu["\\'])[^>]*>', text, flags=re.I):
+        if not re.search(r'<main\b(?=[^>]*id=["\']contenu["\'])[^>]*>', text, flags=re.I):
             errors.append(f"{p.name}: landmark principal #contenu absent")
         if not re.search(
-            r'<a\\b(?=[^>]*class=["\\'][^"\\']*\\bskip-link\\b[^"\\']*["\\'])(?=[^>]*href=["\\']#contenu["\\'])[^>]*>',
+            r'<a\b(?=[^>]*class=["\'][^"\']*\bskip-link\b[^"\']*["\'])(?=[^>]*href=["\']#contenu["\'])[^>]*>',
             text,
             flags=re.I,
         ):
