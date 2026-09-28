@@ -303,7 +303,26 @@ def main() -> int:
         ):
             if marker not in security_text:
                 errors.append(f'security.txt incomplet: {marker}')
-        expires_match = re.search(r'^Expires:\s*(\S+)\s*    if governance_page.is_file():
+        expires_match = re.search(r'^Expires:\s*(\S+)\s*$', security_text, flags=re.M)
+        if not expires_match:
+            errors.append('security.txt: champ Expires absent.')
+        else:
+            try:
+                expires = datetime.fromisoformat(expires_match.group(1).replace('Z', '+00:00'))
+                now = datetime.now(timezone.utc)
+                if expires.tzinfo is None:
+                    errors.append('security.txt: Expires doit inclure un fuseau horaire.')
+                else:
+                    expires = expires.astimezone(timezone.utc)
+                    if expires <= now:
+                        errors.append('security.txt: Expires est échu.')
+                    if (expires - now).days > 370:
+                        errors.append('security.txt: Expires dépasse environ un an.')
+            except ValueError:
+                errors.append('security.txt: Expires n’est pas une date ISO 8601 valide.')
+
+    governance_page = ROOT / 'gouvernance-vie-privee.html'
+    if governance_page.is_file():
         governance_html = governance_page.read_text('utf-8', errors='ignore')
         for marker in (
             '<link rel="canonical" href="https://www.benoitcantin.com/gouvernance-vie-privee.html">',
