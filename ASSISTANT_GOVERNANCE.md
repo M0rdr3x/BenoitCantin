@@ -82,6 +82,8 @@ Le widget public BubblaV ne doit pas être chargé sous :
 
 Le chatbot public ne constitue pas une voie d’accès aux données privées des comptes SINJIRA ni aux outils d’administration. Par défaut, une surface non indexable n’est pas une surface de chatbot public.
 
+Sur une surface autorisée, le chargeur doit rester **opt-in** : il affiche d’abord un lanceur local et ne crée le script BubblaV qu’après un clic explicite. Avant ce clic, aucune requête vers `www.bubblav.com/widget.js` ne doit être initiée par ce chargeur.
+
 Les traitements du widget sont déclarés dans `/confidentialite.html`.
 
 Les visiteurs ne doivent pas transmettre au chatbot de mots de passe, clés secrètes, renseignements bancaires complets ou autres données sensibles inutiles à leur question.
