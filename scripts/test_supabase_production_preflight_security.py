@@ -10,7 +10,9 @@ from validate_supabase_production_preflight_security import (  # noqa: E402
     APPLY_JOB_GUARD,
     APPLY_STEP_GUARD,
     CONFIRMATION,
+    LOCAL_WORKSPACE_GUARD,
     PINNED_ACTIONS,
+    READY_FOR_REVIEW_TRIGGER,
     REMOTE_JOB_GUARD,
     SELF_CHECK,
     SELF_TEST,
@@ -145,6 +147,16 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = bad.replace(trace, ledger, 1)
         bad = bad.replace(temporary, trace, 1)
         self.assertRejected(bad, "ordre local doit rester")
+
+    def test_ready_for_review_retriggers_strict_preflight(self):
+        self.assertIn(READY_FOR_REVIEW_TRIGGER, self.valid)
+        bad = self.valid.replace(READY_FOR_REVIEW_TRIGGER + "\n", "", 1)
+        self.assertRejected(bad, "ready_for_review")
+
+    def test_draft_pr_skips_only_local_workspace_build(self):
+        self.assertIn(LOCAL_WORKSPACE_GUARD, self.valid)
+        bad = self.valid.replace(LOCAL_WORKSPACE_GUARD, "        if: ${{ always() }}", 1)
+        self.assertRejected(bad, "PR brouillon")
 
     def test_local_preflight_cannot_receive_secret(self):
         bad = self.valid.replace(
