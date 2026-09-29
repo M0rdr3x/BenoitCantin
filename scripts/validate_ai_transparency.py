@@ -29,6 +29,7 @@ FILES = {
     "sw": ROOT / "sw.js",
     "netlify": ROOT / "netlify.toml",
     "assistant": ROOT / "assistant.html",
+    "privacy": ROOT / "confidentialite.html",
 }
 
 def compact(value: str) -> str:
@@ -54,6 +55,7 @@ def validate_core(contents: dict[str, str]) -> None:
     sw = compact(contents["sw"])
     netlify = contents["netlify"]
     assistant = compact(contents["assistant"])
+    privacy = compact(contents["privacy"])
 
     for marker in (
         "data-ai-transparency",
@@ -189,6 +191,18 @@ def validate_core(contents: dict[str, str]) -> None:
             fail(f"assistant public incomplet: {marker}")
 
     for marker in (
+        "assistantpublicnova×sinjiraetbubblav",
+        "bubblav",
+        "lewidgetestchargéuniquementsurlessurfacespubliques",
+        "explicitementdésactivésurlesespaces",
+        "stockagelocaldunavigateur",
+        "/assistant.html",
+        "29septembre2026",
+    ):
+        if marker not in privacy:
+            fail(f"déclaration vie privée BubblaV incomplète: {marker}")
+
+    for marker in (
         "/assets/css/ai-transparency.css",
         "/assets/js/ai-transparency.js",
         "/a-propos.html",
@@ -299,6 +313,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("page Transparence IA hors-ligne retirée", "sw", "/transparence-ia.html", "/transparence-ia-absente.html"),
         ("widget BubblaV retiré", "ai_js", "https://www.bubblav.com/widget.js", "https://www.bubblav.com/widget-retire.js"),
         ("CSP BubblaV retirée", "netlify", " https://www.bubblav.com", ""),
+        ("déclaration BubblaV retirée", "privacy", "Assistant public Nova × SINJIRA et BubblaV", "Assistant public retiré"),
     ]
     detected = 0
     for name, key, old, new in mutations:
