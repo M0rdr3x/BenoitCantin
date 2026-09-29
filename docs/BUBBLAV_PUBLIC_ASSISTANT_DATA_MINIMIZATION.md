@@ -2,6 +2,8 @@
 
 Dernière revue : 29 septembre 2026.
 
+Suivi fournisseur : issue GitHub **#443** — désactivation/retrait des six formulaires hors périmètre.
+
 ## Principe
 
 Le chatbot public **Nova × SINJIRA** sert à expliquer et orienter à partir des contenus publics. Il ne remplace pas les parcours authentifiés de SINJIRA et ne doit pas devenir une seconde voie de collecte pour les fonctions de compte, de jeu, du Registre ou des commentaires.
