@@ -131,6 +131,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "l'humainavanttout.",
         "projetscitoyensetpositionspubliques",
         "ellenechoisitpasunepositionpolitique",
+        "découvrirl’assistantnova×sinjira",
     ):
         if marker not in page:
             fail(f"page Transparence IA incomplète: {marker}")
@@ -175,7 +176,7 @@ def validate_core(contents: dict[str, str]) -> None:
 
     for marker in (
         "assistantnova×sinjira",
-        "aucunspoilerfuturocanoninternenonpublié",
+        "aucunspoilerfuturoucanoninternenonpublié",
         "neutralitéciviquepourprojetnova",
         "ilnedoitpasdireauxvisiteurscommentvoter",
         "vieprivéepar défaut".replace(" ", ""),
@@ -193,6 +194,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "/a-propos.html",
         "/contact.html",
         "/transparence-ia.html",
+        "/assistant.html",
         "/confidentialite.html",
         "/gouvernance-vie-privee.html",
         "/avis-legal.html",
