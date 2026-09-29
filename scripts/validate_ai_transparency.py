@@ -425,7 +425,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("mention standard retirée", "policy", "Validation finale et responsabilité du contenu", "Validation retirée"),
         ("page Transparence IA hors-ligne retirée", "sw", "/transparence-ia.html", "/transparence-ia-absente.html"),
         ("widget BubblaV retiré", "ai_js", "https://www.bubblav.com/widget.js", "https://www.bubblav.com/widget-retire.js"),
-        ("garde noindex retiré", "ai_js", "isNoindexSurface", "isNoindexSurfaceRetire"),
+        ("garde noindex retiré", "ai_js", "if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (!isOfficialHost || isPrivateSurface) return;"),
         ("garde domaine officiel retirée", "ai_js", "if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (isPrivateSurface || isNoindexSurface) return;"),
         ("garde /app retirée", "ai_js", "path === '/app' ||\n      path.indexOf('/app/') === 0;", "path === '/app-retire' ||\n      path.indexOf('/app-retire/') === 0;"),
         ("activation volontaire retirée", "ai_js", "launcher.addEventListener('click'", "launcher.addEventListener('mouseover'"),
