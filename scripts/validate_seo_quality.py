@@ -55,6 +55,7 @@ SEO_PAGES = {
     ROOT / "a-propos.html": BASE + "/a-propos.html",
     ROOT / "contact.html": BASE + "/contact.html",
     ROOT / "transparence-ia.html": BASE + "/transparence-ia.html",
+    ROOT / "assistant.html": BASE + "/assistant.html",
     ROOT / "confidentialite.html": BASE + "/confidentialite.html",
     ROOT / "gouvernance-vie-privee.html": BASE + "/gouvernance-vie-privee.html",
     ROOT / "avis-legal.html": BASE + "/avis-legal.html",
