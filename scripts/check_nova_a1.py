@@ -224,24 +224,17 @@ else:
             errors.append(f"portal-return.css: style navigation globale absent: {marker}")
 
 
-# Pages Nova récemment harmonisées — cache V25.
-recent_cache_pages = (
-    "accessibilite.html",
-    "actualites.html",
-    "avis-legal.html",
-    "livre-nova.html",
-    "manifeste.html",
-    "transition.html",
-)
-for rel in recent_cache_pages:
-    page = NOVA / rel
-    if not page.is_file():
-        errors.append(f"{rel}: page harmonisée absente")
-        continue
+# Cache public Nova — toute page active utilisant les assets principaux doit rester sur V25.
+for page in NOVA.glob("*.html"):
     page_text = page.read_text(encoding="utf-8", errors="replace")
-    for marker in ("styles.css?v=25", "script.js?v=25"):
-        if marker not in page_text:
-            errors.append(f"{rel}: cache Nova V25 absent: {marker}")
+    is_redirect = bool(re.search(r'<meta\\b[^>]*http-equiv=["\\']refresh["\\'][^>]*>', page_text, flags=re.I))
+    if is_redirect:
+        continue
+    for asset in ("styles.css", "script.js"):
+        versions = re.findall(rf'{re.escape(asset)}\\?v=([^"\\'\\s<>]+)', page_text, flags=re.I)
+        for version in versions:
+            if version != "25":
+                errors.append(f"{page.name}: cache Nova obsolète pour {asset}: {version}")
 
 # Visionneuse PDF — contrat CSP, indexation et cohérence publique.
 viewer = NOVA / "visionneuse.html"
