@@ -31,6 +31,7 @@ FILES = {
     "assistant": ROOT / "assistant.html",
     "privacy": ROOT / "confidentialite.html",
     "assistant_governance": ROOT / "ASSISTANT_GOVERNANCE.md",
+    "assistant_data_minimization": ROOT / "docs/BUBBLAV_PUBLIC_ASSISTANT_DATA_MINIMIZATION.md",
 }
 
 def compact(value: str) -> str:
@@ -58,6 +59,7 @@ def validate_core(contents: dict[str, str]) -> None:
     assistant = compact(contents["assistant"])
     privacy = compact(contents["privacy"])
     assistant_governance = compact(contents["assistant_governance"])
+    assistant_data_minimization = compact(contents["assistant_data_minimization"])
 
     for marker in (
         "data-ai-transparency",
@@ -274,6 +276,16 @@ def validate_core(contents: dict[str, str]) -> None:
             fail(f"gouvernance assistant incomplète: {marker}")
 
     for marker in (
+        "bubblav—minimisationdesformulairesduchatbotpublic",
+        "àretireroudésactivercôtéfournisseur",
+        "les8formulairessonttoujours`enabled=true`",
+        "submission_count=0",
+        "aucunesuppressiondesoumissionoud'historiquefournisseurn'aétéeffectuée",
+    ):
+        if marker not in assistant_data_minimization:
+            fail(f"revue minimisation BubblaV incomplète: {marker}")
+
+    for marker in (
         "assistantpublicnova×sinjiraetbubblav",
         "bubblav",
         "leservicetiersn’estpaschargéautomatiquement",
@@ -412,6 +424,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("frontière actions publiques retirée", "assistant", "Il sert à informer et à orienter.", "Il peut aussi agir dans le compte."),
         ("garde parcours officiels retirée", "assistant_governance", "Il ne doit pas devenir une seconde voie fonctionnelle", "Il peut devenir une seconde voie fonctionnelle"),
         ("garde formulaires fournisseur retirée", "assistant_governance", "formulaires fournisseur limités aux besoins publics réellement nécessaires", "formulaires fournisseur sans limite"),
+        ("preuve état formulaires retirée", "assistant_data_minimization", "les 8 formulaires sont toujours `enabled=true`", "état fournisseur inconnu"),
         ("frontière actions politique IA retirée", "policy", "informer et orienter sans devenir une seconde voie", "agir directement dans les comptes"),
         ("référence assistant IA retirée", "policy", "ASSISTANT_GOVERNANCE.md", "ASSISTANT_GOUVERNANCE_RETIRÉE.md"),
     ]
