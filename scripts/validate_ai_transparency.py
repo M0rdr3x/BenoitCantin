@@ -88,9 +88,19 @@ def validate_core(contents: dict[str, str]) -> None:
         "host==='www.benoitcantin.com'",
         "host==='benoitcantin.com'",
         "if(!isofficialhost||isprivatesurface||isnoindexsurface)return;",
+        "data-public-assistant-launcher",
+        "ouvrirl’assistantnova×sinjira,servicebubblav",
+        "chargéseulementaprèsvotreclic",
+        "launcher.addeventlistener('click'",
+        "launcher.setattribute('aria-busy','true')",
     ):
         if marker not in ai_js:
             fail(f"chatbot public Nova × SINJIRA incomplet: {marker}")
+
+    click_index = ai_js.find("launcher.addeventlistener('click'")
+    third_party_index = ai_js.find("script.src='https://www.bubblav.com/widget.js'")
+    if click_index < 0 or third_party_index < 0 or third_party_index < click_index:
+        fail("chatbot public: BubblaV ne doit être créé qu'après une action explicite")
 
     for marker in (
         "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.bubblav.com",
@@ -124,6 +134,8 @@ def validate_core(contents: dict[str, str]) -> None:
         ".ai-transparency-banner",
         ".ai-transparency-values",
         ".ai-transparency-declaration",
+        ".public-assistant-launcher",
+        ".public-assistant-launcher__privacy",
     ):
         if marker not in contents["ai_css"]:
             fail(f"style de transparence IA absent: {marker}")
@@ -359,6 +371,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("widget BubblaV retiré", "ai_js", "https://www.bubblav.com/widget.js", "https://www.bubblav.com/widget-retire.js"),
         ("garde noindex retiré", "ai_js", "isNoindexSurface", "isNoindexSurfaceRetire"),
         ("garde domaine officiel retirée", "ai_js", "if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (isPrivateSurface || isNoindexSurface) return;"),
+        ("activation volontaire retirée", "ai_js", "launcher.addEventListener('click'", "launcher.addEventListener('mouseover'"),
         ("CSP BubblaV retirée", "netlify", " https://www.bubblav.com", ""),
         ("CSP BubblaV élargie retirée", "netlify", "https://www.bubblav.com; worker-src", "https://www.bubblav.com https:; worker-src"),
         ("déclaration BubblaV retirée", "privacy", "Assistant public Nova × SINJIRA et BubblaV", "Assistant public retiré"),
