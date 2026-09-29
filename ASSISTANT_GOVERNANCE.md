@@ -105,7 +105,9 @@ Toute modification qui élargit les données accessibles, active une intégratio
 
 ## 8. Intégration technique
 
-Le chargeur du widget est centralisé dans `assets/js/ai-transparency.js`.
+Le chargeur du widget public est centralisé dans `assets/js/ai-transparency.js`.
+
+Sur le domaine officiel, une surface publique indexable utilise **Nova × SINJIRA via BubblaV** après activation explicite. L’ancien assistant local `sinjira-assistant.js` ne doit pas être chargé simultanément sur cette même surface. Les espaces privés, les pages `noindex` et les environnements non officiels peuvent conserver l’aide locale sans fournisseur externe.
 
 Le script public attendu est :
 
