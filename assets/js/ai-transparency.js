@@ -20,14 +20,52 @@
     var isNoindexSurface = /(^|[,\s])noindex([,\s]|$)/.test(robotsContent);
 
     if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;
-    if (document.querySelector('script[data-bubblav-widget]')) return;
+    if (
+      document.querySelector('script[data-bubblav-widget]') ||
+      document.querySelector('[data-public-assistant-launcher]')
+    ) return;
 
-    var script = document.createElement('script');
-    script.src = 'https://www.bubblav.com/widget.js';
-    script.defer = true;
-    script.setAttribute('data-site-id', 'ca77cd98-bd32-459c-ad55-fdad4fb85316');
-    script.setAttribute('data-bubblav-widget', '');
-    document.head.appendChild(script);
+    var launcher = document.createElement('button');
+    launcher.type = 'button';
+    launcher.className = 'public-assistant-launcher';
+    launcher.setAttribute('data-public-assistant-launcher', '');
+    launcher.setAttribute('aria-label', 'Ouvrir l’assistant Nova × SINJIRA, service BubblaV');
+    launcher.innerHTML =
+      '<span class="public-assistant-launcher__eyebrow">Assistant IA · BubblaV</span>' +
+      '<strong>Ouvrir Nova × SINJIRA</strong>' +
+      '<span class="public-assistant-launcher__privacy">Chargé seulement après votre clic</span>';
+
+    launcher.addEventListener('click', function () {
+      if (document.querySelector('script[data-bubblav-widget]')) {
+        launcher.remove();
+        return;
+      }
+
+      launcher.disabled = true;
+      launcher.setAttribute('aria-busy', 'true');
+      launcher.querySelector('strong').textContent = 'Chargement…';
+
+      var script = document.createElement('script');
+      script.src = 'https://www.bubblav.com/widget.js';
+      script.defer = true;
+      script.setAttribute('data-site-id', 'ca77cd98-bd32-459c-ad55-fdad4fb85316');
+      script.setAttribute('data-bubblav-widget', '');
+
+      script.addEventListener('load', function () {
+        launcher.remove();
+      });
+      script.addEventListener('error', function () {
+        launcher.disabled = false;
+        launcher.removeAttribute('aria-busy');
+        launcher.querySelector('strong').textContent = 'Réessayer Nova × SINJIRA';
+        launcher.querySelector('.public-assistant-launcher__privacy').textContent =
+          'Le service n’a pas pu être chargé';
+      });
+
+      document.head.appendChild(script);
+    });
+
+    document.body.appendChild(launcher);
   }
 
   ready(function () {
