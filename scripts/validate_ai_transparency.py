@@ -28,6 +28,7 @@ FILES = {
     "native_home": ROOT / "mobile-native/NativeHomeHub.tsx",
     "sw": ROOT / "sw.js",
     "netlify": ROOT / "netlify.toml",
+    "assistant": ROOT / "assistant.html",
 }
 
 def compact(value: str) -> str:
@@ -52,11 +53,13 @@ def validate_core(contents: dict[str, str]) -> None:
     native_home = compact(contents["native_home"])
     sw = compact(contents["sw"])
     netlify = contents["netlify"]
+    assistant = compact(contents["assistant"])
 
     for marker in (
         "data-ai-transparency",
         "transparence·honnêteté·intégrité",
         "/transparence-ia.html",
+        "/assistant.html",
         "jetravailleavecl'aidedel'intelligenceartificielle",
         "lesidées,lavisionetlesdécisionsfinalesrestentlesmiennes",
         "l'humainavanttout",
@@ -171,6 +174,20 @@ def validate_core(contents: dict[str, str]) -> None:
             fail(f"application native sans transparence IA: {marker}")
 
     for marker in (
+        "assistantnova×sinjira",
+        "aucunspoilerfuturocanoninternenonpublié",
+        "neutralitéciviquepourprojetnova",
+        "ilnedoitpasdireauxvisiteurscommentvoter",
+        "vieprivéepar défaut".replace(" ", ""),
+        "/compte",
+        "/admin",
+        "transparence·honnêteté·intégrité·l'humainavanttout.",
+        "/transparence-ia.html",
+    ):
+        if marker not in assistant:
+            fail(f"assistant public incomplet: {marker}")
+
+    for marker in (
         "/assets/css/ai-transparency.css",
         "/assets/js/ai-transparency.js",
         "/a-propos.html",
@@ -197,6 +214,8 @@ def validate_public_pages(sitemap: str) -> None:
     urls = re.findall(r"<loc>(https://www\.benoitcantin\.com/[^<]*)</loc>", sitemap)
     if "https://www.benoitcantin.com/transparence-ia.html" not in urls:
         fail("sitemap: page Transparence IA absente")
+    if "https://www.benoitcantin.com/assistant.html" not in urls:
+        fail("sitemap: page Assistant Nova × SINJIRA absente")
     if len(urls) < 10:
         fail("sitemap: liste publique anormalement courte")
 
