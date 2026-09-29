@@ -288,13 +288,20 @@ else:
         errors.append("netlify.toml: cdn.jsdelivr.net absent de la CSP alors que la visionneuse PDF l’utilise")
     if "worker-src 'self' blob:" not in netlify_text:
         errors.append("netlify.toml: worker-src blob absent pour le wrapper cross-origin PDF.js")
-    for cache_marker in (
-        'for = "/projets/projet-nova/script.js"',
-        'for = "/projets/projet-nova/assets/portal-return.css"',
-        'Cache-Control = "public, max-age=0, must-revalidate"',
+    for cache_path in (
+        "/projets/projet-nova/script.js",
+        "/projets/projet-nova/assets/portal-return.css",
     ):
-        if cache_marker not in netlify_text:
-            errors.append(f"netlify.toml: revalidation cache Nova absente: {cache_marker}")
+        cache_pattern = re.compile(
+            rf'\[\[headers\]\]\s*for\s*=\s*"{re.escape(cache_path)}"\s*'
+            rf'\[headers\.values\]\s*'
+            rf'Cache-Control\s*=\s*"public, max-age=0, must-revalidate"',
+            flags=re.S,
+        )
+        if not cache_pattern.search(netlify_text):
+            errors.append(
+                f"netlify.toml: revalidation cache Nova absente ou incomplète pour {cache_path}"
+            )
 
 # Lecteur documentaire Nova — chargement accessible et impression fail-closed.
 document_reader = NOVA / "document.html"
