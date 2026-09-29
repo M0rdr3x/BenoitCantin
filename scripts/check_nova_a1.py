@@ -223,6 +223,43 @@ else:
         if marker not in portal_css_text:
             errors.append(f"portal-return.css: style navigation globale absent: {marker}")
 
+
+# Visionneuse PDF — contrat CSP, indexation et cohérence publique.
+viewer = NOVA / "visionneuse.html"
+if not viewer.is_file():
+    errors.append("visionneuse.html absente")
+else:
+    viewer_text = viewer.read_text(encoding="utf-8", errors="replace")
+    viewer_low = viewer_text.lower()
+    if "cdnjs.cloudflare.com" in viewer_low:
+        errors.append("visionneuse.html: CDN cdnjs interdit par la CSP publique")
+    for marker in (
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js",
+        'styles.css?v=25',
+        'script.js?v=25',
+        'data-ai-transparency',
+        '/assets/js/site-personality-v25.js?v=25.0.0',
+    ):
+        if marker not in viewer_text:
+            errors.append(f"visionneuse.html: contrat public absent: {marker}")
+    robots_match = re.search(
+        r'<meta\\b(?=[^>]*name=["\\']robots["\\'])(?=[^>]*content=["\\']([^"\\']*)["\\'])[^>]*>',
+        viewer_text,
+        flags=re.I,
+    )
+    robots_value = robots_match.group(1).lower() if robots_match else ""
+    if "noindex" not in robots_value:
+        errors.append("visionneuse.html: page utilitaire dynamique sans noindex")
+
+netlify = ROOT / "netlify.toml"
+if not netlify.is_file():
+    errors.append("netlify.toml absent")
+else:
+    netlify_text = netlify.read_text(encoding="utf-8", errors="replace")
+    if "https://cdn.jsdelivr.net" not in netlify_text:
+        errors.append("netlify.toml: cdn.jsdelivr.net absent de la CSP alors que la visionneuse PDF l’utilise")
+
 for rel in ["SECURITY.md", "DOCUMENT_CONTROL.md"]:
     if not (NOVA / rel).is_file():
         errors.append(f"gouvernance documentaire absente: {rel}")
