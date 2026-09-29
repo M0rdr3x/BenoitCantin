@@ -245,6 +245,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "/admin",
         "transparence·honnêteté·intégrité·l'humainavanttout.",
         "/transparence-ia.html",
+        "ilsertàinformeretàorienter",
+        "lesautresactionsliéesàuncomptedoiventpasserparlesparcoursofficielsdusite",
     ):
         if marker not in assistant:
             fail(f"assistant public incomplet: {marker}")
@@ -260,6 +262,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "https://www.bubblav.com/widget.js",
         "lechargeurdoitrester**opt-in**",
         "aprèsunclicexplicite",
+        "outil d'information et d'orientation".replace(" ", ""),
+        "ilnedoitpasdevenirunesecondevoiefonctionnelle",
         "responsabilitéhumaine",
     ):
         if marker not in assistant_governance:
@@ -273,6 +277,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "surlessurfacespubliquesindexablesdudomaineofficiel",
         "lelanceurestabsentdesespaces",
         "stockagelocaldunavigateur",
+        "lechatbotpublicsertàinformeretàorienter",
+        "lesautresactionsdecomptedoiventutiliserlesparcoursofficielsdusite",
         "/assistant.html",
         "29septembre2026",
         "toutepagemarquée<code>noindex</code>",
@@ -399,6 +405,8 @@ def self_test(contents: dict[str, str]) -> None:
         ("CSP BubblaV élargie retirée", "netlify", "https://www.bubblav.com; worker-src", "https://www.bubblav.com https:; worker-src"),
         ("déclaration BubblaV retirée", "privacy", "Assistant public Nova × SINJIRA et BubblaV", "Assistant public retiré"),
         ("gouvernance assistant retirée", "assistant_governance", "Frontière anti-spoiler SINJIRA", "Frontière retirée"),
+        ("frontière actions publiques retirée", "assistant", "Il sert à informer et à orienter.", "Il peut aussi agir dans le compte."),
+        ("garde parcours officiels retirée", "assistant_governance", "Il ne doit pas devenir une seconde voie fonctionnelle", "Il peut devenir une seconde voie fonctionnelle"),
         ("référence assistant IA retirée", "policy", "ASSISTANT_GOVERNANCE.md", "ASSISTANT_GOUVERNANCE_RETIRÉE.md"),
     ]
     detected = 0
