@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-95-public-3';
+const CACHE='benoitcantin-v24-4-95-public-4';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/a-propos.html','/contact.html','/transparence-ia.html',
   '/assistant.html','/confidentialite.html','/gouvernance-vie-privee.html','/avis-legal.html',
@@ -18,6 +18,6 @@ self.addEventListener('fetch',e=>{
     e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{const cp=resp.clone();caches.open(CACHE).then(c=>c.put(r,cp));return resp}).catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));return;
   }
   const liveAsset=/\/assets\/(?:js|css)\//.test(u.pathname);
-  if(liveAsset){e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{if(resp.ok)caches.open(CACHE).then(c=>c.put(r,resp.clone()));return resp}).catch(()=>caches.match(r)));return}
+  if(liveAsset){e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{if(resp.ok)caches.open(CACHE).then(c=>c.put(r,resp.clone()));return resp}).catch(()=>caches.match(r).then(x=>x||caches.match(u.pathname))));return}
   e.respondWith(caches.match(r).then(cached=>cached||fetch(r).then(resp=>{if(resp.ok&&u.pathname.indexOf('/documents/')===-1)caches.open(CACHE).then(c=>c.put(r,resp.clone()));return resp})));
 });
