@@ -1,0 +1,49 @@
+name: Navigation publique V25 — contrat simplifié
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'assets/js/site.js'
+      - 'index.html'
+      - 'a-propos.html'
+      - 'contact.html'
+      - 'transparence-ia.html'
+      - 'confidentialite.html'
+      - 'gouvernance-vie-privee.html'
+      - 'avis-legal.html'
+      - 'projets/sinjira/index.html'
+      - 'scripts/validate_public_navigation_v25.py'
+      - '.github/workflows/sinjira-public-navigation-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-navigation-v25-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-navigation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester le contrat de navigation
+        run: |
+          python3 -m py_compile scripts/validate_public_navigation_v25.py
+          python3 scripts/validate_public_navigation_v25.py --self-test
+
+      - name: Vérifier la navigation publique simplifiée
+        run: python3 scripts/validate_public_navigation_v25.py
