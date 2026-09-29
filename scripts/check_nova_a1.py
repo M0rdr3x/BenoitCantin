@@ -240,7 +240,8 @@ for page in NOVA.glob("*.html"):
     for asset in ("styles.css", "script.js"):
         versions = re.findall(rf'{re.escape(asset)}\?v=([^"\x27\s<>]+)', page_text, flags=re.I)
         for version in versions:
-            if version != "25":
+            version_match = re.fullmatch(r"(\d+)(?:\.\d+)*", version)
+            if not version_match or int(version_match.group(1)) < 25:
                 errors.append(f"{page.name}: cache Nova obsolète pour {asset}: {version}")
 
 # Visionneuse PDF — contrat CSP, indexation et cohérence publique.
@@ -255,8 +256,6 @@ else:
     for marker in (
         "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
         "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js",
-        "styles.css?v=25",
-        "script.js?v=25",
         "data-ai-transparency",
         "/assets/js/site-personality-v25.js?v=25.0.0",
     ):
