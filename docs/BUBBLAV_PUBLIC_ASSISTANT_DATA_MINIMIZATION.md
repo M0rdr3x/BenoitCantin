@@ -13,7 +13,7 @@ La règle appliquée est :
 - connexion, création/rejoindre une partie, Registre des Consciences, commentaire de roman et autres actions de compte : renvoi vers le parcours officiel du site;
 - aucune donnée privée de compte n'est nécessaire pour utiliser le chatbot public.
 
-## État BubblaV observé avant minimisation
+## État BubblaV observé lors de la revue
 
 Huit formulaires BubblaV étaient actifs et affichaient tous `submission_count=0`.
 
@@ -29,9 +29,9 @@ Huit formulaires BubblaV étaient actifs et affichaient tous `submission_count=0
 
 L'intégration BubblaV `contact_form` / **Escalate to Human** reste aussi active uniquement pour une demande explicite de contact humain.
 
-### Retirés du chatbot public
+### À retirer ou désactiver côté fournisseur
 
-Les formulaires suivants avaient zéro soumission au moment de la revue et sont retirés pour réduire la collecte et éviter des parcours concurrents :
+Les formulaires suivants avaient zéro soumission au moment de la revue. Ils ont été identifiés comme non nécessaires au chatbot public et doivent être retirés ou désactivés côté fournisseur afin de réduire la collecte et éviter des parcours concurrents. La tentative de suppression automatique a été bloquée par les contrôles de sécurité du connecteur; ils doivent donc être considérés comme encore actifs tant qu’une vérification fournisseur ne prouve pas le contraire :
 
 - `4bf9fa08-80af-4a71-991f-3c4ea3e3ecf7` — **Se Connecter À Son Compte**;
 - `fb6b7188-0ff5-4eec-b751-2a3af99dfb89` — **Rejoindre Une Partie**;
@@ -39,6 +39,14 @@ Les formulaires suivants avaient zéro soumission au moment de la revue et sont 
 - `f5924b79-7932-4651-9621-5e7f538752ee` — **Inscrire Une Conscience**;
 - `7fa76ade-5322-4465-a579-db56ab21b402` — **Soumettre Un Commentaire**;
 - `a8806fd2-8030-4104-a73c-c3a9470bcd37` — **Support Request Form**.
+
+## État d’application
+
+- règle de gouvernance Git : appliquée;
+- pages publiques et politique de confidentialité : alignées;
+- accueil du widget BubblaV : aligné pour rediriger les actions de compte vers les parcours officiels;
+- suppression/désactivation des six formulaires fournisseur non nécessaires : **non confirmée**;
+- aucune suppression de soumission ou d’historique fournisseur n’a été effectuée.
 
 ## Parcours canoniques
 
