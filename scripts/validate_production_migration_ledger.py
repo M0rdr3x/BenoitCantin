@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import argparse, re, subprocess, tempfile, sys
+import argparse, json, os, re, subprocess, tempfile, sys
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / 'supabase' / 'production-migration-ledger.txt'
@@ -218,7 +218,7 @@ def validate_production_workflow(errors):
             "'supabase/production-migration-ledger.txt'",
             '${{ github.event.pull_request.base.sha }}',
             '${{ github.event.before }}',
-            'validate_production_migration_ledger.py --base-ref "$BASE_REF"',
+            'validate_production_migration_ledger.py --base-ref "$BASE_REF" --require-reviewed-batch',
             "'supabase/production-reviewed-migration-decisions.txt'",
             "'scripts/validate_production_review_decision_trace.py'",
             "'scripts/test_production_review_decision_trace.py'",
@@ -322,11 +322,29 @@ def validate_runbook(errors):
             errors.append(f'Le contrat Supabase doit déclencher la validation du ledger sur PR et push main: {marker}')
 
 
+def is_draft_pull_request():
+    if os.environ.get('GITHUB_EVENT_NAME') != 'pull_request':
+        return False
+    event_path = os.environ.get('GITHUB_EVENT_PATH')
+    if not event_path:
+        return False
+    try:
+        payload = json.loads(Path(event_path).read_text('utf-8'))
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        return False
+    pull_request = payload.get('pull_request')
+    return isinstance(pull_request, dict) and pull_request.get('draft') is True
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--base-ref',
         help='Commit Git de référence à comparer pour rendre les migrations historiques immuables.',
+    )
+    parser.add_argument(
+        '--require-reviewed-batch',
+        action='store_true',
+        help='Exiger le workspace production complet même lorsqu’une pull request est encore brouillon.',
     )
     args = parser.parse_args()
 
@@ -355,25 +373,29 @@ def main():
     validate_ledger_append_only(errors, args.base_ref, rows)
 
     future = [(v, name) for v, name in local if v > EXPECTED_LAST]
-    with tempfile.TemporaryDirectory(prefix='sinjira-ledger-') as td:
-        out = Path(td) / 'supabase'
-        proc = subprocess.run([sys.executable, str(BUILDER), '--output', str(out)], cwd=ROOT, capture_output=True, text=True)
-        if proc.returncode:
-            errors.append('Builder workspace en échec: ' + (proc.stderr or proc.stdout).strip())
-        else:
-            generated = []
-            for path in sorted((out / 'migrations').glob('*.sql')):
-                m = FILE_RE.fullmatch(path.name)
-                if not m:
-                    errors.append(f'Fichier workspace invalide: {path.name}')
-                    continue
-                generated.append((m.group(1), path.name))
-            if [v for v, _ in generated] != versions + [v for v, _ in future]: errors.append('Le workspace lié ne reproduit pas exactement le ledger + migrations futures.')
-            for _, name in generated[:len(rows)]:
-                text = (out / 'migrations' / name).read_text('utf-8', errors='ignore')
-                if 'Marqueur de déploiement lié uniquement' not in text: errors.append(f'Version déjà appliquée contient du DDL dans le workspace: {name}')
-            for _, name in future:
-                if not (out / 'migrations' / name).exists(): errors.append(f'Migration future absente du workspace: {name}')
+    require_reviewed_batch = args.require_reviewed_batch or not is_draft_pull_request()
+    if require_reviewed_batch:
+        with tempfile.TemporaryDirectory(prefix='sinjira-ledger-') as td:
+            out = Path(td) / 'supabase'
+            proc = subprocess.run([sys.executable, str(BUILDER), '--output', str(out)], cwd=ROOT, capture_output=True, text=True)
+            if proc.returncode:
+                errors.append('Builder workspace en échec: ' + (proc.stderr or proc.stdout).strip())
+            else:
+                generated = []
+                for path in sorted((out / 'migrations').glob('*.sql')):
+                    m = FILE_RE.fullmatch(path.name)
+                    if not m:
+                        errors.append(f'Fichier workspace invalide: {path.name}')
+                        continue
+                    generated.append((m.group(1), path.name))
+                if [v for v, _ in generated] != versions + [v for v, _ in future]: errors.append('Le workspace lié ne reproduit pas exactement le ledger + migrations futures.')
+                for _, name in generated[:len(rows)]:
+                    text = (out / 'migrations' / name).read_text('utf-8', errors='ignore')
+                    if 'Marqueur de déploiement lié uniquement' not in text: errors.append(f'Version déjà appliquée contient du DDL dans le workspace: {name}')
+                for _, name in future:
+                    if not (out / 'migrations' / name).exists(): errors.append(f'Migration future absente du workspace: {name}')
+    else:
+        print('INFO ledger production: PR brouillon détectée; construction du workspace production complet reportée, contrôles historiques et statiques conservés.')
 
     validate_production_workflow(errors)
     validate_runbook(errors)
@@ -383,7 +405,8 @@ def main():
         for err in errors: print('- ' + err)
         return 1
     diff_guard = f'; historique Git protégé depuis {args.base_ref}' if args.base_ref else ''
-    print(f'OK ledger production: {EXPECTED_COUNT} versions distantes protégées; {len(future)} migration(s) future(s) transmissible(s); voie générique Supabase unique et bornée; ancien chemin redondant absent; runbook aligné sur la baseline{diff_guard}.')
+    draft_guard = '; workspace production complet reporté pendant la PR brouillon' if not require_reviewed_batch else ''
+    print(f'OK ledger production: {EXPECTED_COUNT} versions distantes protégées; {len(future)} migration(s) future(s) locale(s); voie générique Supabase unique et bornée; ancien chemin redondant absent; runbook aligné sur la baseline{diff_guard}{draft_guard}.')
     return 0
 
 

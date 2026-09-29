@@ -108,7 +108,7 @@ jobs:
           set -euo pipefail
           BASE_REF="${{ steps.migration_base.outputs.ref }}"
           if [ -n "$BASE_REF" ]; then
-            python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF"
+            python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF" --require-reviewed-batch
           else
-            python scripts/validate_production_migration_ledger.py
+            python scripts/validate_production_migration_ledger.py --require-reviewed-batch
           fi

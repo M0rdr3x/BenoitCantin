@@ -14,6 +14,7 @@ PYTHON_VERSION = "          python-version: '3.12.14'"
 SELF_TEST_RUN = "        run: python3 scripts/validate_production_migration_history_workflow_security.py --self-test"
 SELF_CHECK_RUN = "        run: python3 scripts/validate_production_migration_history_workflow_security.py"
 LEDGER_CHECK = "python scripts/validate_production_migration_ledger.py"
+STRICT_LEDGER_CHECK = "python scripts/validate_production_migration_ledger.py --require-reviewed-batch"
 TRIGGER_PATH = "      - 'scripts/validate_production_migration_history_workflow_security.py'"
 PLAN_VALIDATOR_TRIGGER = "      - 'scripts/validate_future_migration_review_plan_v25.py'"
 PLAN_DOC_TRIGGER = "      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'"
@@ -117,7 +118,8 @@ def validate_text(text: str) -> list[str]:
         'python3 -m py_compile scripts/validate_production_review_decision_trace.py',
         'python3 scripts/test_production_review_decision_trace.py',
         'python3 scripts/validate_production_review_decision_trace.py --base-ref "$BASE_REF"',
-        'python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF"',
+        'python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF" --require-reviewed-batch',
+        STRICT_LEDGER_CHECK,
         LEDGER_CHECK,
     )
     for fragment in required_fragments:
@@ -144,7 +146,8 @@ def self_test(valid: str) -> int:
         ("validation retirée", valid.replace(SELF_CHECK_RUN + "\n", "        run: echo validation-retire\n", 1)),
         ("base PR retirée", valid.replace('echo "ref=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"', "echo ref= >> \"$GITHUB_OUTPUT\"", 1)),
         ("base push retirée", valid.replace('before="${{ github.event.before }}"', 'before=""', 1)),
-        ("base-ref ledger retiré", valid.replace('python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF"', LEDGER_CHECK, 1)),
+        ("base-ref ledger retiré", valid.replace('python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF" --require-reviewed-batch', STRICT_LEDGER_CHECK, 1)),
+        ("mode strict reviewed retiré", valid.replace('python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF" --require-reviewed-batch', 'python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF"', 1)),
         ("continue-on-error", valid.replace("    timeout-minutes: 5", "    timeout-minutes: 5\n    continue-on-error: true", 1)),
         ("plan retiré", valid.replace(PLAN_CHECK + "\n", "echo plan-retire\n", 1)),
         ("auto-test plan retiré", valid.replace(PLAN_SELF_TEST, "echo plan-self-test-retire", 1)),
