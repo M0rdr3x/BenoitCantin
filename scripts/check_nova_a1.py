@@ -289,6 +289,25 @@ else:
     if "worker-src 'self' blob:" not in netlify_text:
         errors.append("netlify.toml: worker-src blob absent pour le wrapper cross-origin PDF.js")
 
+# Lecteur documentaire Nova — chargement accessible et impression fail-closed.
+document_reader = NOVA / "document.html"
+if not document_reader.is_file():
+    errors.append("document.html absent")
+else:
+    document_text = document_reader.read_text(encoding="utf-8", errors="replace")
+    for marker in (
+        'id="docPrint" disabled aria-disabled="true"',
+        'id="docLoadStatus" role="status" aria-live="polite" aria-atomic="true"',
+        'id="docContent" aria-busy="true"',
+        "content.setAttribute('aria-busy','false')",
+        "printButton.disabled=false",
+        "printButton.setAttribute('aria-disabled','false')",
+        "Document chargé :",
+        "Impossible de charger le document.",
+    ):
+        if marker not in document_text:
+            errors.append(f"document.html: contrat chargement/accessibilité absent: {marker}")
+
 for rel in ["SECURITY.md", "DOCUMENT_CONTROL.md"]:
     if not (NOVA / rel).is_file():
         errors.append(f"gouvernance documentaire absente: {rel}")
