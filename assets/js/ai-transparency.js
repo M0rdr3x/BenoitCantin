@@ -7,6 +7,8 @@
   }
 
   function loadPublicAssistant() {
+    var host = String(window.location.hostname || '').toLowerCase().replace(/\.$/, '');
+    var isOfficialHost = host === 'www.benoitcantin.com' || host === 'benoitcantin.com';
     var path = String(window.location.pathname || '/').toLowerCase();
     var isPrivateSurface =
       path === '/compte' ||
@@ -17,7 +19,7 @@
     var robotsContent = robots ? String(robots.getAttribute('content') || '').toLowerCase() : '';
     var isNoindexSurface = /(^|[,\s])noindex([,\s]|$)/.test(robotsContent);
 
-    if (isPrivateSurface || isNoindexSurface) return;
+    if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;
     if (document.querySelector('script[data-bubblav-widget]')) return;
 
     var script = document.createElement('script');
