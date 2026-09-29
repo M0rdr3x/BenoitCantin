@@ -92,7 +92,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "host==='benoitcantin.com'",
         "if(!isofficialhost||isprivatesurface||isnoindexsurface)return;",
         "data-public-assistant-launcher",
-        "ouvrirl’assistantnova×sinjira,servicebubblav",
+        "ouvrirl'assistantnova×sinjira,servicebubblav",
         "chargéseulementaprèsvotreclic",
         "launcher.addeventlistener('click'",
         "launcher.setattribute('aria-busy','true')",
@@ -183,7 +183,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "l'humainavanttout.",
         "projetscitoyensetpositionspubliques",
         "ellenechoisitpasunepositionpolitique",
-        "découvrirl’assistantnova×sinjira",
+        "découvrirl'assistantnova×sinjira",
         "/assistant.html",
     ):
         if marker not in page:
@@ -260,7 +260,7 @@ def validate_core(contents: dict[str, str]) -> None:
             fail(f"assistant public incomplet: {marker}")
 
     for marker in (
-        "gouvernancedel’assistantnova×sinjira",
+        "gouvernancedel'assistantnova×sinjira",
         "frontièreanti-spoilersinjira",
         "neutralitéciviquedeprojetnova",
         "yolo_mode=false",
@@ -295,8 +295,8 @@ def validate_core(contents: dict[str, str]) -> None:
     for marker in (
         "assistantpublicnova×sinjiraetbubblav",
         "bubblav",
-        "leservicetiersn’estpaschargéautomatiquement",
-        "larequêteversbubblavetsonscriptnecommencentqu’aprèsuneactionexpliciteduvisiteur",
+        "leservicetiersn'estpaschargéautomatiquement",
+        "larequêteversbubblavetsonscriptnecommencentqu'aprèsuneactionexpliciteduvisiteur",
         "surlessurfacespubliquesindexablesdudomaineofficiel",
         "lelanceurestabsentdesespaces",
         "<code>/app</code>",
@@ -425,6 +425,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("garde domaine officiel retirée", "ai_js", "if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (isPrivateSurface || isNoindexSurface) return;"),
         ("garde /app retirée", "ai_js", "path === '/app' ||\n      path.indexOf('/app/') === 0;", "path === '/app-retire' ||\n      path.indexOf('/app-retire/') === 0;"),
         ("activation volontaire retirée", "ai_js", "launcher.addEventListener('click'", "launcher.addEventListener('mouseover'"),
+        ("libellé accessible du lanceur retiré", "ai_js", "Ouvrir l’assistant Nova × SINJIRA, service BubblaV", "Ouvrir le chatbot"),
         ("séparation assistant public retirée", "site_js", "if (isOfficialHost && !isPrivateSurface && !isNoindexSurface) return;", "if (false) return;"),
         ("séparation assistant Nova retirée", "nova_js", "if(isOfficialHost&&!isNoindexSurface)return;", "if(false)return;"),
         ("CSP BubblaV retirée", "netlify", " https://www.bubblav.com", ""),
