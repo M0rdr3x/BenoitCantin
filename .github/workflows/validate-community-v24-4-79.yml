@@ -47,7 +47,7 @@ jobs:
       - name: Configurer Node
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
-          node-version: '22'
+          node-version: '22.23.3'
           package-manager-cache: false
       - name: Vérifier le contrat Communauté privée V24.4.79
         run: python scripts/validate_community_safety_v24_4_79.py
