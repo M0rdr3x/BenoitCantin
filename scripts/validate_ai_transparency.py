@@ -197,6 +197,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "frontièreanti-spoiler",
         "/compte",
         "/admin",
+        "/app",
         "informeretorientersansdevenirunesecondevoiepourlaconnexion",
         "renvoyercesactionsverslesparcoursofficielsdusite",
     ):
@@ -431,6 +432,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("garde parcours officiels retirée", "assistant_governance", "Il ne doit pas devenir une seconde voie fonctionnelle", "Il peut devenir une seconde voie fonctionnelle"),
         ("garde formulaires fournisseur retirée", "assistant_governance", "formulaires fournisseur limités aux besoins publics réellement nécessaires", "formulaires fournisseur sans limite"),
         ("preuve état formulaires retirée", "assistant_data_minimization", "les 8 formulaires sont toujours `enabled=true`", "état fournisseur inconnu"),
+        ("frontière /app politique IA retirée", "policy", "espaces privés `/compte`, `/admin` et `/app`", "espaces privés `/compte` et `/admin`"),
         ("frontière actions politique IA retirée", "policy", "informer et orienter sans devenir une seconde voie", "agir directement dans les comptes"),
         ("référence assistant IA retirée", "policy", "ASSISTANT_GOVERNANCE.md", "ASSISTANT_GOUVERNANCE_RETIRÉE.md"),
     ]
