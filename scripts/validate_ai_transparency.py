@@ -30,6 +30,7 @@ FILES = {
     "netlify": ROOT / "netlify.toml",
     "assistant": ROOT / "assistant.html",
     "privacy": ROOT / "confidentialite.html",
+    "assistant_governance": ROOT / "ASSISTANT_GOVERNANCE.md",
 }
 
 def compact(value: str) -> str:
@@ -56,6 +57,7 @@ def validate_core(contents: dict[str, str]) -> None:
     netlify = contents["netlify"]
     assistant = compact(contents["assistant"])
     privacy = compact(contents["privacy"])
+    assistant_governance = compact(contents["assistant_governance"])
 
     for marker in (
         "data-ai-transparency",
@@ -191,6 +193,19 @@ def validate_core(contents: dict[str, str]) -> None:
             fail(f"assistant public incomplet: {marker}")
 
     for marker in (
+        "gouvernancedel’assistantnova×sinjira",
+        "frontièreanti-spoilersinjira",
+        "neutralitéciviquedeprojetnova",
+        "yolo_mode=false",
+        "/compte/*",
+        "/admin/*",
+        "https://www.bubblav.com/widget.js",
+        "responsabilitéhumaine",
+    ):
+        if marker not in assistant_governance:
+            fail(f"gouvernance assistant incomplète: {marker}")
+
+    for marker in (
         "assistantpublicnova×sinjiraetbubblav",
         "bubblav",
         "lewidgetestchargéuniquementsurlessurfacespubliques",
@@ -314,6 +329,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("widget BubblaV retiré", "ai_js", "https://www.bubblav.com/widget.js", "https://www.bubblav.com/widget-retire.js"),
         ("CSP BubblaV retirée", "netlify", " https://www.bubblav.com", ""),
         ("déclaration BubblaV retirée", "privacy", "Assistant public Nova × SINJIRA et BubblaV", "Assistant public retiré"),
+        ("gouvernance assistant retirée", "assistant_governance", "Frontière anti-spoiler SINJIRA", "Frontière retirée"),
     ]
     detected = 0
     for name, key, old, new in mutations:
