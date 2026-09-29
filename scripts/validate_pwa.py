@@ -243,6 +243,8 @@ def validate_service_worker(errors: list[str]) -> None:
         errors.append('sw.js: l’app sociale n’est plus explicitement network-only/no-store.')
     if "u.pathname.startsWith('/compte/')" not in text:
         errors.append('sw.js: les pages Compte ne sont plus explicitement network-only/no-store.')
+    if "caches.match(r).then(x=>x||caches.match(u.pathname))" not in text:
+        errors.append('sw.js: fallback canonique absent pour les assets locaux versionnés hors ligne.')
 
 
 def validate_install_runtime(errors: list[str]) -> None:
