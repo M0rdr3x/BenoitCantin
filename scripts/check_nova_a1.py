@@ -277,6 +277,8 @@ else:
     netlify_text = netlify.read_text(encoding="utf-8", errors="replace")
     if "https://cdn.jsdelivr.net" not in netlify_text:
         errors.append("netlify.toml: cdn.jsdelivr.net absent de la CSP alors que la visionneuse PDF l’utilise")
+    if "worker-src 'self' blob:" not in netlify_text:
+        errors.append("netlify.toml: worker-src blob absent pour le wrapper cross-origin PDF.js")
 
 for rel in ["SECURITY.md", "DOCUMENT_CONTROL.md"]:
     if not (NOVA / rel).is_file():
