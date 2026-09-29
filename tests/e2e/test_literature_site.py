@@ -138,8 +138,8 @@ def run() -> None:
         reader_url = urljoin(BASE_URL, READER_ROUTE)
         response = page.goto(reader_url, wait_until="domcontentloaded", timeout=30_000)
         assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: lecteur démo inaccessible")
-        assert_true(page.locator("main#lecteur").count() == 1, f"{BROWSER_NAME}: main lecteur absent")
-        assert_true(page.locator('a.skip-link[href="#lecteur"]').count() == 1, f"{BROWSER_NAME}: lien d’évitement lecteur absent")
+        assert_true(page.locator("main#contenu").count() == 1, f"{BROWSER_NAME}: main lecteur public absent")
+        assert_true(page.locator('a.skip-link[href="#contenu"]').count() == 1, f"{BROWSER_NAME}: lien d’évitement lecteur absent")
         assert_true(
             page.locator('link[rel="canonical"]').get_attribute("href") == READER_CANONICAL,
             f"{BROWSER_NAME}: canonical lecteur incorrecte",
