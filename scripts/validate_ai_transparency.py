@@ -131,6 +131,23 @@ def validate_core(contents: dict[str, str]) -> None:
             fail(f"runtime Projet Nova sans transparence IA: {marker}")
 
     for marker in (
+        "isofficialhost",
+        "isprivatesurface",
+        "isnoindexsurface",
+        "if(isofficialhost&&!isprivatesurface&&!isnoindexsurface)return;",
+    ):
+        if marker not in site_js:
+            fail(f"runtime portail: séparation assistant local/public absente: {marker}")
+
+    for marker in (
+        "isofficialhost",
+        "isnoindexsurface",
+        "if(isofficialhost&&!isnoindexsurface)return;",
+    ):
+        if marker not in nova_js:
+            fail(f"runtime Projet Nova: séparation assistant local/public absente: {marker}")
+
+    for marker in (
         ".ai-transparency-banner",
         ".ai-transparency-values",
         ".ai-transparency-declaration",
@@ -376,6 +393,8 @@ def self_test(contents: dict[str, str]) -> None:
         ("garde noindex retiré", "ai_js", "isNoindexSurface", "isNoindexSurfaceRetire"),
         ("garde domaine officiel retirée", "ai_js", "if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (isPrivateSurface || isNoindexSurface) return;"),
         ("activation volontaire retirée", "ai_js", "launcher.addEventListener('click'", "launcher.addEventListener('mouseover'"),
+        ("séparation assistant public retirée", "site_js", "if (isOfficialHost && !isPrivateSurface && !isNoindexSurface) return;", "if (false) return;"),
+        ("séparation assistant Nova retirée", "nova_js", "if(isOfficialHost&&!isNoindexSurface)return;", "if(false)return;"),
         ("CSP BubblaV retirée", "netlify", " https://www.bubblav.com", ""),
         ("CSP BubblaV élargie retirée", "netlify", "https://www.bubblav.com; worker-src", "https://www.bubblav.com https:; worker-src"),
         ("déclaration BubblaV retirée", "privacy", "Assistant public Nova × SINJIRA et BubblaV", "Assistant public retiré"),
