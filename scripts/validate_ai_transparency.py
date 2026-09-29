@@ -84,6 +84,10 @@ def validate_core(contents: dict[str, str]) -> None:
         "meta[name=\"robots\"]",
         "noindex",
         "loadpublicassistant()",
+        "window.location.hostname",
+        "host==='www.benoitcantin.com'",
+        "host==='benoitcantin.com'",
+        "if(!isofficialhost||isprivatesurface||isnoindexsurface)return;",
     ):
         if marker not in ai_js:
             fail(f"chatbot public Nova × SINJIRA incomplet: {marker}")
@@ -354,6 +358,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("page Transparence IA hors-ligne retirée", "sw", "/transparence-ia.html", "/transparence-ia-absente.html"),
         ("widget BubblaV retiré", "ai_js", "https://www.bubblav.com/widget.js", "https://www.bubblav.com/widget-retire.js"),
         ("garde noindex retiré", "ai_js", "isNoindexSurface", "isNoindexSurfaceRetire"),
+        ("garde domaine officiel retirée", "ai_js", "if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (isPrivateSurface || isNoindexSurface) return;"),
         ("CSP BubblaV retirée", "netlify", " https://www.bubblav.com", ""),
         ("CSP BubblaV élargie retirée", "netlify", "https://www.bubblav.com; worker-src", "https://www.bubblav.com https:; worker-src"),
         ("déclaration BubblaV retirée", "privacy", "Assistant public Nova × SINJIRA et BubblaV", "Assistant public retiré"),
