@@ -160,6 +160,13 @@ def validate_core(contents: dict[str, str]) -> None:
         if marker not in contents["ai_css"]:
             fail(f"style de transparence IA absent: {marker}")
 
+    for surface in ("home", "page", "assistant"):
+        if "/assets/css/ai-transparency.css?v=1.2.0" not in compact(contents[surface]):
+            fail(f"cache transparence IA obsolète sur {surface}: version 1.2.0 requise")
+        if "ai-transparency.css?v=1.1.0" in compact(contents[surface]):
+            fail(f"cache transparence IA obsolète sur {surface}: 1.1.0 interdit")
+
+
     for marker in (
         '<meta property="og:title" content="Transparence IA | Benoit Cantin">',
         '<meta property="og:description" content="Déclaration publique de Benoit Cantin sur l\'utilisation de l\'intelligence artificielle, fondée sur la transparence, l\'honnêteté, l\'intégrité et la responsabilité humaine.">',
@@ -430,6 +437,8 @@ def self_test(contents: dict[str, str]) -> None:
         ("garde /app retirée", "ai_js", "path === '/app' ||\n      path.indexOf('/app/') === 0;", "path === '/app-retire' ||\n      path.indexOf('/app-retire/') === 0;"),
         ("activation volontaire retirée", "ai_js", "launcher.addEventListener('click'", "launcher.addEventListener('mouseover'"),
         ("libellé accessible du lanceur retiré", "ai_js", "Ouvrir l’assistant Nova × SINJIRA, service BubblaV", "Ouvrir le chatbot"),
+        ("cache IA accueil rétrogradé", "home", "/assets/css/ai-transparency.css?v=1.2.0", "/assets/css/ai-transparency.css?v=1.1.0"),
+        ("cache IA page Transparence rétrogradé", "page", "/assets/css/ai-transparency.css?v=1.2.0", "/assets/css/ai-transparency.css?v=1.1.0"),
         ("séparation assistant public retirée", "site_js", "if (isOfficialHost && !isPrivateSurface && !isNoindexSurface) return;", "if (false) return;"),
         ("séparation assistant Nova retirée", "nova_js", "if(isOfficialHost&&!isNoindexSurface)return;", "if(false)return;"),
         ("CSP BubblaV retirée", "netlify", " https://www.bubblav.com", ""),
