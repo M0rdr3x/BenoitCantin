@@ -140,6 +140,18 @@ def validate_core(contents: dict[str, str]) -> None:
         if marker not in page:
             fail(f"page Transparence IA incomplète: {marker}")
 
+    for marker in (
+        "assistantnova×sinjira",
+        "assistant_governance.md",
+        "/assistant.html",
+        "/confidentialite.html",
+        "frontièreanti-spoiler",
+        "/compte",
+        "/admin",
+    ):
+        if marker not in policy:
+            fail(f"politique IA sans gouvernance assistant: {marker}")
+
     standard_compact = compact(STANDARD)
     if standard_compact not in page:
         fail("mention standard absente de la page Transparence IA")
@@ -330,6 +342,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("CSP BubblaV retirée", "netlify", " https://www.bubblav.com", ""),
         ("déclaration BubblaV retirée", "privacy", "Assistant public Nova × SINJIRA et BubblaV", "Assistant public retiré"),
         ("gouvernance assistant retirée", "assistant_governance", "Frontière anti-spoiler SINJIRA", "Frontière retirée"),
+        ("référence assistant IA retirée", "policy", "ASSISTANT_GOVERNANCE.md", "ASSISTANT_GOUVERNANCE_RETIRÉE.md"),
     ]
     detected = 0
     for name, key, old, new in mutations:
