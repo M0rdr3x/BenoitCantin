@@ -30,7 +30,7 @@ La mention publique standard est :
 
 > **Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.**
 
-La règle détaillée se trouve dans `AI_TRANSPARENCY.md` et la déclaration publique dans `/transparence-ia.html`. Les nouveaux livrables publics autonomes doivent inclure cette mention, ou une formulation équivalente, lorsque leur format le permet.
+La règle détaillée se trouve dans `AI_TRANSPARENCY.md` et la déclaration publique dans `/transparence-ia.html`. La gouvernance du chatbot public Nova × SINJIRA est versionnée dans `ASSISTANT_GOVERNANCE.md` et présentée publiquement dans `/assistant.html`. Les nouveaux livrables publics autonomes doivent inclure cette mention, ou une formulation équivalente, lorsque leur format le permet.
 
 ### Solaire : surfaces déjà artificialisées d'abord
 
