@@ -21,6 +21,7 @@ on:
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'supabase/**'
       - 'scripts/validate_supabase.py'
@@ -100,6 +101,7 @@ jobs:
           python scripts/validate_production_migration_ledger.py
 
       - name: Construire le workspace production protégé
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
         shell: bash
         run: |
           set -euo pipefail
@@ -114,7 +116,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ]; then
+            echo '🟠 PR BROUILLON : validations locales exécutées; construction du workspace production reportée jusqu’à ready_for_review. Le garde historique reste strict et aucune opération distante n’est autorisée.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
             echo '🟡 PRÉVOL PR : validations locales et workspace protégé uniquement; aucun secret production exposé au run PR et aucune opération distante.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
             echo '🟡 PRÉVOL SEULEMENT : validations locales et workspace protégé uniquement; aucun secret production exposé au run push et aucune opération distante.' >> "$GITHUB_STEP_SUMMARY"
