@@ -65,7 +65,6 @@ def validate_core(contents: dict[str, str]) -> None:
         "data-ai-transparency",
         "transparence·honnêteté·intégrité",
         "/transparence-ia.html",
-        "/assistant.html",
         "jetravailleavecl'aidedel'intelligenceartificielle",
         "lesidées,lavisionetlesdécisionsfinalesrestentlesmiennes",
         "l'humainavanttout",
@@ -185,6 +184,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "projetscitoyensetpositionspubliques",
         "ellenechoisitpasunepositionpolitique",
         "découvrirl’assistantnova×sinjira",
+        "/assistant.html",
     ):
         if marker not in page:
             fail(f"page Transparence IA incomplète: {marker}")
@@ -414,6 +414,7 @@ def validate_all_html_surfaces() -> None:
 def self_test(contents: dict[str, str]) -> None:
     mutations = [
         ("lien public retiré", "ai_js", "/transparence-ia.html", "/transparence-ia-retiree.html"),
+        ("lien Assistant retiré de Transparence IA", "page", "/assistant.html", "/assistant-retire.html"),
         ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.2.0", "/assets/js/absent.js"),
         ("mention standard retirée", "policy", "Validation finale et responsabilité du contenu", "Validation retirée"),
         ("page Transparence IA hors-ligne retirée", "sw", "/transparence-ia.html", "/transparence-ia-absente.html"),
