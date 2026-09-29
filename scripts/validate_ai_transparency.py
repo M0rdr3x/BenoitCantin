@@ -275,6 +275,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "ilnedoitpasdevenirunesecondevoiefonctionnelle",
         "formulairesfournisseurlimitésauxbesoinspublicsréellementnécessaires",
         "docs/bubblav_public_assistant_data_minimization.md",
+        "issue**#443**",
+        "issue**#444**",
         "responsabilitéhumaine",
     ):
         if marker not in assistant_governance:
