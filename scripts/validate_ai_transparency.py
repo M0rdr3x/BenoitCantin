@@ -27,6 +27,7 @@ FILES = {
     "nova_home": ROOT / "projets/projet-nova/index.html",
     "native_home": ROOT / "mobile-native/NativeHomeHub.tsx",
     "sw": ROOT / "sw.js",
+    "netlify": ROOT / "netlify.toml",
 }
 
 def compact(value: str) -> str:
@@ -50,6 +51,7 @@ def validate_core(contents: dict[str, str]) -> None:
     nova_home = compact(contents["nova_home"])
     native_home = compact(contents["native_home"])
     sw = compact(contents["sw"])
+    netlify = contents["netlify"]
 
     for marker in (
         "data-ai-transparency",
@@ -61,6 +63,28 @@ def validate_core(contents: dict[str, str]) -> None:
     ):
         if marker not in ai_js:
             fail(f"bandeau IA partagé incomplet: {marker}")
+
+    for marker in (
+        "https://www.bubblav.com/widget.js",
+        "data-site-id",
+        "ca77cd98-bd32-459c-ad55-fdad4fb85316",
+        "data-bubblav-widget",
+        "path==='/compte'",
+        "path.indexof('/compte/')===0",
+        "path==='/admin'",
+        "path.indexof('/admin/')===0",
+        "loadpublicassistant()",
+    ):
+        if marker not in ai_js:
+            fail(f"chatbot public Nova × SINJIRA incomplet: {marker}")
+
+    for marker in (
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.bubblav.com",
+        "connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://www.bubblav.com",
+    ):
+        if marker not in netlify:
+            fail(f"CSP BubblaV incomplète: {marker}")
+
 
     for marker in (
         "/assets/css/ai-transparency.css?v=1.1.0",
@@ -252,6 +276,8 @@ def self_test(contents: dict[str, str]) -> None:
         ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.1.0", "/assets/js/absent.js"),
         ("mention standard retirée", "policy", "Validation finale et responsabilité du contenu", "Validation retirée"),
         ("page Transparence IA hors-ligne retirée", "sw", "/transparence-ia.html", "/transparence-ia-absente.html"),
+        ("widget BubblaV retiré", "ai_js", "https://www.bubblav.com/widget.js", "https://www.bubblav.com/widget-retire.js"),
+        ("CSP BubblaV retirée", "netlify", " https://www.bubblav.com", ""),
     ]
     detected = 0
     for name, key, old, new in mutations:
