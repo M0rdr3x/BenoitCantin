@@ -210,9 +210,14 @@ else:
         "/a-propos.html",
         "/compte/",
         "/assets/js/v19-session.js?v=25.0.0",
+        "Fermer le menu",
+        "Ouvrir le menu",
+        "restoreFocus",
+        "toggle.focus()",
+        "setMenuState(false,{restoreFocus:true})",
     ):
         if marker not in runtime_text:
-            errors.append(f"script.js Nova: navigation globale incomplète: {marker}")
+            errors.append(f"script.js Nova: navigation globale/accessibilité incomplète: {marker}")
 
 portal_css = NOVA / "assets" / "portal-return.css"
 if not portal_css.is_file():
