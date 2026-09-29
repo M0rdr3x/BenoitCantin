@@ -13,8 +13,11 @@
       path.indexOf('/compte/') === 0 ||
       path === '/admin' ||
       path.indexOf('/admin/') === 0;
+    var robots = document.querySelector('meta[name="robots"]');
+    var robotsContent = robots ? String(robots.getAttribute('content') || '').toLowerCase() : '';
+    var isNoindexSurface = /(^|[,\s])noindex([,\s]|$)/.test(robotsContent);
 
-    if (isPrivateSurface) return;
+    if (isPrivateSurface || isNoindexSurface) return;
     if (document.querySelector('script[data-bubblav-widget]')) return;
 
     var script = document.createElement('script');
