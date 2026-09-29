@@ -95,6 +95,15 @@ def validate_core(contents: dict[str, str]) -> None:
         if marker not in netlify:
             fail(f"CSP BubblaV incomplète: {marker}")
 
+    for directive in ("script-src", "connect-src"):
+        match = re.search(rf"{directive}\\s+([^;]+)", netlify)
+        if not match:
+            fail(f"CSP BubblaV sans directive {directive}")
+        tokens = match.group(1).split()
+        if "*" in tokens or "https:" in tokens:
+            fail(f"CSP BubblaV trop permissive dans {directive}")
+
+
 
     for marker in (
         "/assets/css/ai-transparency.css?v=1.1.0",
@@ -346,6 +355,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("widget BubblaV retiré", "ai_js", "https://www.bubblav.com/widget.js", "https://www.bubblav.com/widget-retire.js"),
         ("garde noindex retiré", "ai_js", "isNoindexSurface", "isNoindexSurfaceRetire"),
         ("CSP BubblaV retirée", "netlify", " https://www.bubblav.com", ""),
+        ("CSP BubblaV élargie retirée", "netlify", "https://www.bubblav.com; worker-src", "https://www.bubblav.com https:; worker-src"),
         ("déclaration BubblaV retirée", "privacy", "Assistant public Nova × SINJIRA et BubblaV", "Assistant public retiré"),
         ("gouvernance assistant retirée", "assistant_governance", "Frontière anti-spoiler SINJIRA", "Frontière retirée"),
         ("référence assistant IA retirée", "policy", "ASSISTANT_GOVERNANCE.md", "ASSISTANT_GOUVERNANCE_RETIRÉE.md"),
