@@ -17,6 +17,16 @@
   [headers.values]
     Cache-Control = "public, max-age=3600"
 
+[[headers]]
+  for = "/projets/projet-nova/script.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/projets/projet-nova/assets/portal-return.css"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 [[redirects]]
   from = "/nova"
   to = "/projets/projet-nova/index.html"
