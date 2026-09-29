@@ -39,6 +39,23 @@
 
   function appendAssistantAssets() {
     if (root.getAttribute('data-disable-sinjira-assistant') === 'true') return;
+
+    var host = String(window.location.hostname || '').toLowerCase().replace(/\.$/, '');
+    var isOfficialHost = host === 'www.benoitcantin.com' || host === 'benoitcantin.com';
+    var path = String(window.location.pathname || '/').toLowerCase();
+    var isPrivateSurface =
+      path === '/compte' ||
+      path.indexOf('/compte/') === 0 ||
+      path === '/admin' ||
+      path.indexOf('/admin/') === 0 ||
+      path === '/app' ||
+      path.indexOf('/app/') === 0;
+    var robots = doc.querySelector('meta[name="robots"]');
+    var robotsContent = robots ? String(robots.getAttribute('content') || '').toLowerCase() : '';
+    var isNoindexSurface = /(^|[,\s])noindex([,\s]|$)/.test(robotsContent);
+
+    if (isOfficialHost && !isPrivateSurface && !isNoindexSurface) return;
+
     if (!doc.querySelector('link[data-sinjira-assistant-style]')) {
       var assistantStyle = doc.createElement('link');
       assistantStyle.rel = 'stylesheet';
