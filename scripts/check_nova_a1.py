@@ -317,6 +317,22 @@ else:
     if "texts.push(await r.text())" in document_text:
         errors.append("document.html: lecture texte directe interdite sans vérification SHA-256")
 
+# Impression documentaire Nova — conserver statut et intégrité.
+print_markers = (
+    "@page{margin:18mm}",
+    ".portal-global-nav",
+    ".ai-transparency-banner",
+    ".status-banner,.section-muted{display:block!important",
+    ".integrity-list{break-inside:avoid}",
+)
+for marker in print_markers:
+    if marker not in document_text:
+        errors.append(f"document.html: contrat impression absent: {marker}")
+if ".site-header,.status-banner,.page-hero .doc-actions" in document_text:
+    errors.append("document.html: le statut public ne doit pas être masqué à l’impression")
+if ".footer,.section-muted,.skip-link" in document_text:
+    errors.append("document.html: la section d’intégrité ne doit pas être masquée à l’impression")
+
 for rel in ["SECURITY.md", "DOCUMENT_CONTROL.md"]:
     if not (NOVA / rel).is_file():
         errors.append(f"gouvernance documentaire absente: {rel}")
