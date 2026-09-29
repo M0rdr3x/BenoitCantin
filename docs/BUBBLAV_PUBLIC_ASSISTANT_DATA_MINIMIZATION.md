@@ -46,6 +46,7 @@ Les formulaires suivants avaient zéro soumission au moment de la revue. Ils ont
 - pages publiques et politique de confidentialité : alignées;
 - accueil du widget BubblaV : aligné pour rediriger les actions de compte vers les parcours officiels;
 - suppression/désactivation des six formulaires fournisseur non nécessaires : **non confirmée**;
+- revérification fournisseur : les 8 formulaires sont toujours `enabled=true`; les six formulaires ciblés affichent toujours `submission_count=0`;
 - aucune suppression de soumission ou d’historique fournisseur n’a été effectuée.
 
 ## Parcours canoniques
