@@ -258,9 +258,18 @@ else:
         "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js",
         "data-ai-transparency",
         "/assets/js/site-personality-v25.js?v=25.0.0",
+        'for="docSelect"',
+        'id="pageInfo" aria-live="polite" aria-atomic="true"',
+        'aria-label="Réduire le zoom"',
+        'aria-label="Agrandir le zoom"',
+        'id="viewerStatus" role="status" aria-live="polite" aria-atomic="true"',
+        'id="viewerAccessibilityNote"',
+        'aria-describedby="viewerAccessibilityNote"',
+        "canvas.setAttribute('role','img')",
+        "canvas.setAttribute('aria-label'",
     ):
         if marker not in viewer_text:
-            errors.append(f"visionneuse.html: contrat public absent: {marker}")
+            errors.append(f"visionneuse.html: contrat public/accessibilité absent: {marker}")
     robots_match = re.search(
         r'<meta\b(?=[^>]*name=["\x27]robots["\x27])(?=[^>]*content=["\x27]([^"\x27]*)["\x27])[^>]*>',
         viewer_text,
