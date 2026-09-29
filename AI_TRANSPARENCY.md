@@ -38,6 +38,21 @@ Pour un document autonome, un PDF, une présentation, une publication ou un autr
 
 Les documents historiques ne sont pas réécrits uniquement pour modifier leur historique. Lorsqu'ils sont réédités, republiés ou transformés en nouvelle version publique, cette règle de transparence doit être appliquée.
 
+## Assistant Nova × SINJIRA
+
+Le portail utilise un assistant conversationnel public fondé sur l'intelligence artificielle, configuré dans BubblaV sous le nom **Nova × SINJIRA**.
+
+Cet assistant doit :
+
+- s'appuyer sur les contenus publics validés;
+- reconnaître ses limites plutôt que d'inventer;
+- respecter une frontière anti-spoiler stricte pour les éléments SINJIRA non publiés;
+- expliquer les contenus civiques de Projet Nova sans décider à la place du visiteur;
+- rester séparé des espaces privés `/compte` et `/admin`;
+- permettre une escalade vers un humain lorsqu'une situation le justifie.
+
+La gouvernance complète est versionnée dans `ASSISTANT_GOVERNANCE.md` et présentée au public dans `/assistant.html`. Les traitements liés au widget sont déclarés dans `/confidentialite.html`.
+
 ## Projet Nova
 
 Pour Projet Nova et les contenus citoyens ou politiques, l'utilisation de l'IA ne change pas l'origine humaine des positions et décisions : les positions publiques sont celles des personnes humaines qui les proposent, les adoptent ou les valident. L'IA peut assister la rédaction, l'organisation et l'implémentation; elle ne choisit pas une position politique.
