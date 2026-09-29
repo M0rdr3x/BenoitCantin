@@ -195,6 +195,12 @@
 
 (function(){
   if(document.documentElement.getAttribute('data-disable-sinjira-assistant')==='true')return;
+  const host=String(window.location.hostname||'').toLowerCase().replace(/\.$/,'');
+  const isOfficialHost=host==='www.benoitcantin.com'||host==='benoitcantin.com';
+  const robots=document.querySelector('meta[name="robots"]');
+  const robotsContent=robots?String(robots.getAttribute('content')||'').toLowerCase():'';
+  const isNoindexSurface=/(^|[,\s])noindex([,\s]|$)/.test(robotsContent);
+  if(isOfficialHost&&!isNoindexSurface)return;
   if(!document.querySelector('link[data-sinjira-assistant-style]')){
     const style=document.createElement('link');style.rel='stylesheet';style.href='/assets/css/sinjira-assistant.css?v=24.4.48';style.setAttribute('data-sinjira-assistant-style','');document.head.appendChild(style);
   }
