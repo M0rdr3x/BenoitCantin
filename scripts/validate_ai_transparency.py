@@ -113,7 +113,7 @@ def validate_core(contents: dict[str, str]) -> None:
             fail(f"CSP BubblaV incomplète: {marker}")
 
     for directive in ("script-src", "connect-src"):
-        match = re.search(rf"{directive}\\s+([^;]+)", netlify)
+        match = re.search(rf"{directive}\s+([^;]+)", netlify)
         if not match:
             fail(f"CSP BubblaV sans directive {directive}")
         tokens = match.group(1).split()
@@ -414,6 +414,10 @@ def validate_all_html_surfaces() -> None:
         )
 
 def self_test(contents: dict[str, str]) -> None:
+    # La baseline doit être valide avant toute mutation; sinon une erreur
+    # préexistante pourrait faire passer artificiellement tous les cas négatifs.
+    validate_core(contents)
+
     mutations = [
         ("lien public retiré", "ai_js", "/transparence-ia.html", "/transparence-ia-retiree.html"),
         ("lien Assistant retiré de Transparence IA", "page", "/assistant.html", "/assistant-retire.html"),
