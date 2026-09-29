@@ -228,12 +228,12 @@ else:
 for page in NOVA.glob("*.html"):
     page_text = page.read_text(encoding="utf-8", errors="replace")
     is_redirect = bool(
-        re.search(r"<meta\\b[^>]*http-equiv=['\\\"]refresh['\\\"][^>]*>", page_text, flags=re.I)
+        re.search(r'<meta\b[^>]*http-equiv=["\x27]refresh["\x27][^>]*>', page_text, flags=re.I)
     )
     if is_redirect:
         continue
     for asset in ("styles.css", "script.js"):
-        versions = re.findall(rf"{re.escape(asset)}\\?v=([^'\\\"\\s<>]+)", page_text, flags=re.I)
+        versions = re.findall(rf'{re.escape(asset)}\?v=([^"\x27\s<>]+)', page_text, flags=re.I)
         for version in versions:
             if version != "25":
                 errors.append(f"{page.name}: cache Nova obsolète pour {asset}: {version}")
@@ -258,7 +258,7 @@ else:
         if marker not in viewer_text:
             errors.append(f"visionneuse.html: contrat public absent: {marker}")
     robots_match = re.search(
-        r"<meta\\b(?=[^>]*name=['\\\"]robots['\\\"])(?=[^>]*content=['\\\"]([^'\\\"]*)['\\\"])[^>]*>",
+        r'<meta\b(?=[^>]*name=["\x27]robots["\x27])(?=[^>]*content=["\x27]([^"\x27]*)["\x27])[^>]*>',
         viewer_text,
         flags=re.I,
     )
