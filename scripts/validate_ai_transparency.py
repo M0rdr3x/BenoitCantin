@@ -80,6 +80,9 @@ def validate_core(contents: dict[str, str]) -> None:
         "path.indexof('/compte/')===0",
         "path==='/admin'",
         "path.indexof('/admin/')===0",
+        "isnoindexsurface",
+        "meta[name=\"robots\"]",
+        "noindex",
         "loadpublicassistant()",
     ):
         if marker not in ai_js:
@@ -211,6 +214,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "yolo_mode=false",
         "/compte/*",
         "/admin/*",
+        "toutepageportantunedirective`noindex`",
         "https://www.bubblav.com/widget.js",
         "responsabilitéhumaine",
     ):
@@ -225,6 +229,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "stockagelocaldunavigateur",
         "/assistant.html",
         "29septembre2026",
+        "toutepagemarquée<code>noindex</code>",
     ):
         if marker not in privacy:
             fail(f"déclaration vie privée BubblaV incomplète: {marker}")
@@ -339,6 +344,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("mention standard retirée", "policy", "Validation finale et responsabilité du contenu", "Validation retirée"),
         ("page Transparence IA hors-ligne retirée", "sw", "/transparence-ia.html", "/transparence-ia-absente.html"),
         ("widget BubblaV retiré", "ai_js", "https://www.bubblav.com/widget.js", "https://www.bubblav.com/widget-retire.js"),
+        ("garde noindex retiré", "ai_js", "isNoindexSurface", "isNoindexSurfaceRetire"),
         ("CSP BubblaV retirée", "netlify", " https://www.bubblav.com", ""),
         ("déclaration BubblaV retirée", "privacy", "Assistant public Nova × SINJIRA et BubblaV", "Assistant public retiré"),
         ("gouvernance assistant retirée", "assistant_governance", "Frontière anti-spoiler SINJIRA", "Frontière retirée"),
