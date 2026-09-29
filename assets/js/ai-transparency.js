@@ -14,7 +14,9 @@
       path === '/compte' ||
       path.indexOf('/compte/') === 0 ||
       path === '/admin' ||
-      path.indexOf('/admin/') === 0;
+      path.indexOf('/admin/') === 0 ||
+      path === '/app' ||
+      path.indexOf('/app/') === 0;
     var robots = document.querySelector('meta[name="robots"]');
     var robotsContent = robots ? String(robots.getAttribute('content') || '').toLowerCase() : '';
     var isNoindexSurface = /(^|[,\s])noindex([,\s]|$)/.test(robotsContent);
