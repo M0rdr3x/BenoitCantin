@@ -94,7 +94,10 @@ Configuration publique de référence :
 - `yolo_mode=false`;
 - apprentissage automatique publié sans revue : désactivé;
 - accueil : contenus publics, liberté de choix et frontière anti-spoiler;
-- escalade humaine disponible lorsqu’une demande dépasse les sources ou exige une intervention humaine.
+- escalade humaine disponible lorsqu’une demande dépasse les sources ou exige une intervention humaine;
+- cible fournisseur : restreindre l’intégration au domaine officiel `www.benoitcantin.com` dès qu’une allowlist de domaine peut être appliquée et vérifiée.
+
+Tant que le fournisseur autorise encore plusieurs domaines, le chargeur local doit rester **fail-closed** : le widget n’est injecté que lorsque `window.location.hostname` vaut `www.benoitcantin.com` ou `benoitcantin.com`. Les previews, copies locales et miroirs ne doivent pas charger le chatbot automatiquement. Cette garde locale complète une allowlist fournisseur; elle ne la remplace pas.
 
 Toute modification qui élargit les données accessibles, active une intégration externe ou permet une action sensible doit être revue avant activation.
 
