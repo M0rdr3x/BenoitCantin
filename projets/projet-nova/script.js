@@ -85,9 +85,16 @@
     });
 
     if(toggle&&nav){
-      const setMenuState=open=>{nav.classList.toggle('open',open);toggle.setAttribute('aria-expanded',open?'true':'false');};
+      const setMenuState=(open,{restoreFocus=false}={})=>{
+        nav.classList.toggle('open',open);
+        toggle.setAttribute('aria-expanded',open?'true':'false');
+        toggle.setAttribute('aria-label',open?'Fermer le menu':'Ouvrir le menu');
+        if(!open&&restoreFocus)toggle.focus();
+      };
       toggle.addEventListener('click',()=>setMenuState(!nav.classList.contains('open')));
-      document.addEventListener('keydown',event=>{if(event.key==='Escape'&&nav.classList.contains('open'))setMenuState(false);});
+      document.addEventListener('keydown',event=>{
+        if(event.key==='Escape'&&nav.classList.contains('open'))setMenuState(false,{restoreFocus:true});
+      });
       document.addEventListener('click',event=>{
         if(window.innerWidth>1100)return;
         if(!nav.contains(event.target)&&!toggle.contains(event.target)&&nav.classList.contains('open'))setMenuState(false);
