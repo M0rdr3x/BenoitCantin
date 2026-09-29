@@ -302,7 +302,6 @@ else:
         "content.setAttribute('aria-busy','false')",
         "printButton.disabled=false",
         "printButton.setAttribute('aria-disabled','false')",
-        "Document chargé :",
         "Impossible de charger le document.",
         "async function sha256Hex(buffer)",
         "globalThis.crypto.subtle.digest('SHA-256',buffer)",
