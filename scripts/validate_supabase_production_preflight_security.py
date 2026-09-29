@@ -28,6 +28,8 @@ APPLY_JOB_GUARD = (
 )
 REMOTE_STEP_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}"
 APPLY_STEP_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}"
+LOCAL_WORKSPACE_GUARD = "        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}"
+READY_FOR_REVIEW_TRIGGER = "    types: [opened, synchronize, reopened, ready_for_review]"
 
 REMOTE_STEPS = (
     "Auditer l’inventaire Edge Functions de production",
@@ -165,6 +167,8 @@ def validate_text(text: str) -> list[str]:
         errors.append("L'entrée de confirmation textuelle production est absente ou incomplète.")
     if "group: supabase-production-${{ github.event_name == 'workflow_dispatch' && 'manual' || github.ref }}" not in text:
         errors.append("Les lancements manuels production doivent partager une concurrence sérialisée.")
+    if READY_FOR_REVIEW_TRIGGER not in text:
+        errors.append("Le passage ready_for_review doit relancer explicitement le prévol production strict.")
 
     local = jobs["local-preflight"]
     if local:
@@ -220,6 +224,12 @@ def validate_text(text: str) -> list[str]:
                 errors.append(
                     "L'ordre local doit rester plan → preuve provenance reviewed → ledger → workspace protégé."
                 )
+
+        workspace_step = step_block(local, "Construire le workspace production protégé")
+        if not workspace_step:
+            errors.append("Étape de construction du workspace production local absente.")
+        elif LOCAL_WORKSPACE_GUARD not in workspace_step:
+            errors.append("Le workspace production local doit être reporté uniquement pendant une PR brouillon.")
 
     remote = jobs["remote-preflight"]
     if remote:
@@ -315,6 +325,9 @@ def validate_text(text: str) -> list[str]:
             errors.append(f"Référence de secret hors env d'étape autorisé: {line.strip()}")
 
     for marker in (
+        "🟠 PR BROUILLON",
+        "construction du workspace production reportée jusqu’à ready_for_review",
+        "Le garde historique reste strict",
         "🟡 PRÉVOL PR",
         "🟡 PRÉVOL SEULEMENT",
         "aucun secret production exposé au run PR",
