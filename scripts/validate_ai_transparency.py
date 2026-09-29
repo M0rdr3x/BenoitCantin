@@ -120,8 +120,8 @@ def validate_core(contents: dict[str, str]) -> None:
 
 
     for marker in (
-        "/assets/css/ai-transparency.css?v=1.1.0",
-        "/assets/js/ai-transparency.js?v=1.1.0",
+        "/assets/css/ai-transparency.css?v=1.2.0",
+        "/assets/js/ai-transparency.js?v=1.2.0",
         "data-ai-transparency-style",
         "data-ai-transparency-script",
     ):
@@ -241,6 +241,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "/admin/*",
         "toutepageportantunedirective`noindex`",
         "https://www.bubblav.com/widget.js",
+        "lechargeurdoitrester**opt-in**",
+        "aprèsunclicexplicite",
         "responsabilitéhumaine",
     ):
         if marker not in assistant_governance:
@@ -249,6 +251,8 @@ def validate_core(contents: dict[str, str]) -> None:
     for marker in (
         "assistantpublicnova×sinjiraetbubblav",
         "bubblav",
+        "leservicetiersn’estpaschargéautomatiquement",
+        "larequêteversbubblavetsonscriptnecommencentqu’aprèsuneactionexpliciteduvisiteur",
         "lewidgetestchargéuniquementsurlessurfacespubliques",
         "explicitementdésactivésurlesespaces",
         "stockagelocaldunavigateur",
@@ -365,7 +369,7 @@ def validate_all_html_surfaces() -> None:
 def self_test(contents: dict[str, str]) -> None:
     mutations = [
         ("lien public retiré", "ai_js", "/transparence-ia.html", "/transparence-ia-retiree.html"),
-        ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.1.0", "/assets/js/absent.js"),
+        ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.2.0", "/assets/js/absent.js"),
         ("mention standard retirée", "policy", "Validation finale et responsabilité du contenu", "Validation retirée"),
         ("page Transparence IA hors-ligne retirée", "sw", "/transparence-ia.html", "/transparence-ia-absente.html"),
         ("widget BubblaV retiré", "ai_js", "https://www.bubblav.com/widget.js", "https://www.bubblav.com/widget-retire.js"),
