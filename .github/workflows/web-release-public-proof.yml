@@ -1,0 +1,134 @@
+name: Release web publique — navigateurs et Lighthouse
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '**/*.html'
+      - 'assets/css/**'
+      - 'assets/js/site.js'
+      - 'assets/js/ai-transparency.js'
+      - 'assets/css/ai-transparency.css'
+      - 'projets/sinjira/**'
+      - 'projets/projet-nova/**'
+      - 'manifest.webmanifest'
+      - 'sitemap.xml'
+      - 'sw.js'
+      - 'netlify.toml'
+      - 'tests/e2e/**'
+      - 'scripts/check_lighthouse.py'
+      - '.github/workflows/web-release-public-proof.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-release-public-proof-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-smoke:
+    name: Web public — ${{ matrix.browser }}
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Installer Playwright épinglé
+        run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
+
+      - name: Démarrer le site statique local
+        run: |
+          set -euo pipefail
+          python -m http.server 4173 --bind 127.0.0.1 > /tmp/web-release-http.log 2>&1 &
+          echo $! > /tmp/web-release-http.pid
+          i=0
+          while [ "$i" -lt 20 ]; do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/', timeout=1).read(1)" >/dev/null 2>&1; then exit 0; fi
+            i=$((i + 1))
+            sleep 1
+          done
+          cat /tmp/web-release-http.log
+          exit 1
+
+      - name: Tester le portail public local
+        env:
+          BASE_URL: http://127.0.0.1:4173/
+          BROWSER: ${{ matrix.browser }}
+        run: |
+          set -euo pipefail
+          python tests/e2e/test_public_site.py
+          python tests/e2e/test_literature_site.py
+
+      - name: Arrêter le serveur local
+        if: always()
+        run: |
+          if [ -f /tmp/web-release-http.pid ]; then kill "$(cat /tmp/web-release-http.pid)" || true; fi
+
+  lighthouse-mobile:
+    name: Web public — Lighthouse mobile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Configurer Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.3'
+          package-manager-cache: false
+
+      - name: Démarrer le site statique local
+        run: |
+          set -euo pipefail
+          python -m http.server 4173 --bind 127.0.0.1 > /tmp/web-release-http.log 2>&1 &
+          echo $! > /tmp/web-release-http.pid
+          for i in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/web-release-http.log
+          exit 1
+
+      - name: Auditer l’accueil en profil mobile Lighthouse
+        run: |
+          set -euo pipefail
+          npx --yes lighthouse@13.4.1 http://127.0.0.1:4173/ \
+            --quiet \
+            --output=json \
+            --output-path=/tmp/lighthouse-mobile.json \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"
+          python scripts/check_lighthouse.py /tmp/lighthouse-mobile.json
+
+      - name: Arrêter le serveur local
+        if: always()
+        run: |
+          if [ -f /tmp/web-release-http.pid ]; then kill "$(cat /tmp/web-release-http.pid)" || true; fi
