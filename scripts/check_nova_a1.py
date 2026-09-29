@@ -227,11 +227,13 @@ else:
 # Cache public Nova — toute page active utilisant les assets principaux doit rester sur V25.
 for page in NOVA.glob("*.html"):
     page_text = page.read_text(encoding="utf-8", errors="replace")
-    is_redirect = bool(re.search(r'<meta\\b[^>]*http-equiv=["\\']refresh["\\'][^>]*>', page_text, flags=re.I))
+    is_redirect = bool(
+        re.search(r"<meta\\b[^>]*http-equiv=['\\\"]refresh['\\\"][^>]*>", page_text, flags=re.I)
+    )
     if is_redirect:
         continue
     for asset in ("styles.css", "script.js"):
-        versions = re.findall(rf'{re.escape(asset)}\\?v=([^"\\'\\s<>]+)', page_text, flags=re.I)
+        versions = re.findall(rf"{re.escape(asset)}\\?v=([^'\\\"\\s<>]+)", page_text, flags=re.I)
         for version in versions:
             if version != "25":
                 errors.append(f"{page.name}: cache Nova obsolète pour {asset}: {version}")
@@ -248,15 +250,15 @@ else:
     for marker in (
         "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
         "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js",
-        'styles.css?v=25',
-        'script.js?v=25',
-        'data-ai-transparency',
-        '/assets/js/site-personality-v25.js?v=25.0.0',
+        "styles.css?v=25",
+        "script.js?v=25",
+        "data-ai-transparency",
+        "/assets/js/site-personality-v25.js?v=25.0.0",
     ):
         if marker not in viewer_text:
             errors.append(f"visionneuse.html: contrat public absent: {marker}")
     robots_match = re.search(
-        r'<meta\\b(?=[^>]*name=["\\']robots["\\'])(?=[^>]*content=["\\']([^"\\']*)["\\'])[^>]*>',
+        r"<meta\\b(?=[^>]*name=['\\\"]robots['\\\"])(?=[^>]*content=['\\\"]([^'\\\"]*)['\\\"])[^>]*>",
         viewer_text,
         flags=re.I,
     )
