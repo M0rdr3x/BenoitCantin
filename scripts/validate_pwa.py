@@ -312,7 +312,7 @@ def validate_offline(errors: list[str]) -> None:
         '/assets/css/site.css?v=25.0.0',
         '/assets/css/v19-pro.css?v=25.0.0',
         'name="theme-color" content="#08090d"',
-        '/assets/css/ai-transparency.css?v=1.1.0',
+        '/assets/css/ai-transparency.css?v=1.2.0',
         'Transparence · Honnêteté · Intégrité',
         'L’humain avant tout.',
         *sorted(SINJIRA_PUBLIC_HUBS),
