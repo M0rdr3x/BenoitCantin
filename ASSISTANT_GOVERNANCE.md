@@ -15,6 +15,8 @@ Il aide à comprendre et à choisir. Il ne décide pas à la place du visiteur.
 
 ## 2. Sources autorisées
 
+Le chatbot public est un outil d'information et d'orientation. Il ne doit pas devenir une seconde voie fonctionnelle pour la connexion, la création ou l'accès à une partie, le Registre des Consciences, les commentaires de romans ou toute autre action liée à un compte. Ces actions doivent rester dans leurs parcours officiels, avec les contrôles d'authentification, d'autorisation, de consentement et de modération prévus par le site.
+
 Le chatbot public doit privilégier :
 
 1. les pages publiques de `www.benoitcantin.com`;
