@@ -304,9 +304,19 @@ else:
         "printButton.setAttribute('aria-disabled','false')",
         "Document chargé :",
         "Impossible de charger le document.",
+        "async function sha256Hex(buffer)",
+        "globalThis.crypto.subtle.digest('SHA-256',buffer)",
+        "const bytes=await r.arrayBuffer()",
+        "const actual=await sha256Hex(bytes)",
+        "actual!==expected",
+        "new TextDecoder('utf-8',{fatal:true}).decode(bytes)",
+        "<strong>vérifié</strong>",
+        "Document chargé, intégrité vérifiée :",
     ):
         if marker not in document_text:
-            errors.append(f"document.html: contrat chargement/accessibilité absent: {marker}")
+            errors.append(f"document.html: contrat chargement/accessibilité/intégrité absent: {marker}")
+    if "texts.push(await r.text())" in document_text:
+        errors.append("document.html: lecture texte directe interdite sans vérification SHA-256")
 
 for rel in ["SECURITY.md", "DOCUMENT_CONTROL.md"]:
     if not (NOVA / rel).is_file():
