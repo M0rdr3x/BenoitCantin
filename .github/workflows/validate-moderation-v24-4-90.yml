@@ -52,7 +52,7 @@ jobs:
       - name: Configurer Node
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
-          node-version: '22.23.2'
+          node-version: '22.23.3'
 
       - name: Auto-tester le contrat CI modération
         run: python scripts/validate_moderation_workflow_security.py --self-test
