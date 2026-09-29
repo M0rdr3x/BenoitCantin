@@ -107,7 +107,7 @@ def validate_text(text: str) -> None:
 
     require('persist-credentials: false' in text, 'Les credentials Git ne doivent pas être persistés.')
     require("python-version: '3.12.14'" in text, 'Python doit rester figé à 3.12.14.')
-    require("node-version: '22.23.2'" in text, 'Node doit rester figé à 22.23.2.')
+    require("node-version: '22.23.3'" in text, 'Node doit rester figé à 22.23.3.')
     require('cache:' not in active, 'Aucun cache package-manager ne doit être activé sans lockfile revu.')
     require('cache-dependency-path:' not in active, 'Aucun faux chemin de cache ne doit être configuré.')
 
@@ -152,7 +152,7 @@ def validate_repo_state() -> None:
 
 
 def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
-    node_line = "          node-version: '22.23.2'\n"
+    node_line = "          node-version: '22.23.3'\n"
     ledger_step = f"\n      - name: Revalider le ledger de production sans écriture\n        run: {LEDGER}\n"
     route_step = "\n      - name: Revalider le routeur natif central\n"
     ledger_too_early = text.replace(ledger_step, '', 1).replace(route_step, ledger_step + route_step, 1)
@@ -162,7 +162,7 @@ def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
         ('setup-python mutable', text.replace(SETUP_PYTHON, 'actions/setup-python@v6', 1)),
         ('setup-node mutable', text.replace(SETUP_NODE, 'actions/setup-node@v4', 1)),
         ('Python large', text.replace("python-version: '3.12.14'", "python-version: '3.12'", 1)),
-        ('Node large', text.replace("node-version: '22.23.2'", "node-version: '22'", 1)),
+        ('Node large', text.replace("node-version: '22.23.3'", "node-version: '22'", 1)),
         ('credentials persistés', text.replace('persist-credentials: false', 'persist-credentials: true', 1)),
         ('permissions write', text.replace('contents: read', 'contents: write', 1)),
         ('cache npm ajouté', text.replace(node_line, node_line + '          cache: npm\n', 1)),
