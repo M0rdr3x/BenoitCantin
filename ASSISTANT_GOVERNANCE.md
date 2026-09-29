@@ -78,8 +78,9 @@ Le widget public BubblaV ne doit pas être chargé sous :
 - `/compte/*`
 - `/admin`
 - `/admin/*`
+- toute page portant une directive `noindex`
 
-Le chatbot public ne constitue pas une voie d’accès aux données privées des comptes SINJIRA ni aux outils d’administration.
+Le chatbot public ne constitue pas une voie d’accès aux données privées des comptes SINJIRA ni aux outils d’administration. Par défaut, une surface non indexable n’est pas une surface de chatbot public.
 
 Les traitements du widget sont déclarés dans `/confidentialite.html`.
 
