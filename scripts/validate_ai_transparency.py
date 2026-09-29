@@ -266,6 +266,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "aprèsunclicexplicite",
         "outil d'information et d'orientation".replace(" ", ""),
         "ilnedoitpasdevenirunesecondevoiefonctionnelle",
+        "formulairesfournisseurlimitésauxbesoinspublicsréellementnécessaires",
+        "docs/bubblav_public_assistant_data_minimization.md",
         "responsabilitéhumaine",
     ):
         if marker not in assistant_governance:
@@ -409,6 +411,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("gouvernance assistant retirée", "assistant_governance", "Frontière anti-spoiler SINJIRA", "Frontière retirée"),
         ("frontière actions publiques retirée", "assistant", "Il sert à informer et à orienter.", "Il peut aussi agir dans le compte."),
         ("garde parcours officiels retirée", "assistant_governance", "Il ne doit pas devenir une seconde voie fonctionnelle", "Il peut devenir une seconde voie fonctionnelle"),
+        ("garde formulaires fournisseur retirée", "assistant_governance", "formulaires fournisseur limités aux besoins publics réellement nécessaires", "formulaires fournisseur sans limite"),
         ("frontière actions politique IA retirée", "policy", "informer et orienter sans devenir une seconde voie", "agir directement dans les comptes"),
         ("référence assistant IA retirée", "policy", "ASSISTANT_GOVERNANCE.md", "ASSISTANT_GOUVERNANCE_RETIRÉE.md"),
     ]
