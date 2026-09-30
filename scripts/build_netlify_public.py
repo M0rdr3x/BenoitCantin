@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -10,6 +11,10 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "_site"
+DEPLOY_PREVIEW_CONTEXT = "deploy-preview"
+PREVIEW_HEADERS = """/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+"""
 
 PUBLIC_DIRS = (
     ".well-known",
@@ -273,7 +278,7 @@ def validate_plan() -> list[str]:
     return errors
 
 
-def build(output: Path) -> None:
+def build(output: Path, deploy_context: str | None = None) -> None:
     errors = validate_plan()
     if errors:
         raise SystemExit("\n".join(errors))
@@ -306,10 +311,24 @@ def build(output: Path) -> None:
         if root_file_allowed(source):
             shutil.copy2(source, output / source.name)
 
+    context = (deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")).strip()
+    if context == DEPLOY_PREVIEW_CONTEXT:
+        (output / "_headers").write_text(PREVIEW_HEADERS, encoding="utf-8")
 
-def validate_output(output: Path) -> list[str]:
+
+def validate_output(output: Path, deploy_context: str | None = None) -> list[str]:
     errors: list[str] = []
     output = output.resolve()
+    context = (deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")).strip()
+    preview_headers = output / "_headers"
+    if context == DEPLOY_PREVIEW_CONTEXT:
+        if not preview_headers.is_file():
+            errors.append("Fichier _headers absent du deploy preview.")
+        elif preview_headers.read_text(encoding="utf-8", errors="strict") != PREVIEW_HEADERS:
+            errors.append("Fichier _headers du deploy preview inattendu.")
+    elif preview_headers.exists():
+        errors.append("Fichier _headers présent hors deploy preview.")
+
 
     for forbidden in FORBIDDEN_DIRS:
         if (output / forbidden).exists():
@@ -323,6 +342,8 @@ def validate_output(output: Path) -> list[str]:
         if not published.is_file():
             continue
         rel = published.relative_to(output)
+        if rel == Path("_headers") and context == DEPLOY_PREVIEW_CONTEXT:
+            continue
         if not relative_path_allowed(rel):
             errors.append(f"Fichier hors allowlist présent dans le publish: {rel.as_posix()}")
 
@@ -367,18 +388,31 @@ def main() -> int:
 
     if args.check:
         with tempfile.TemporaryDirectory(prefix="sinjira-netlify-public-") as tmp:
-            output = Path(tmp) / "_site"
-            build(output)
-            output_errors = validate_output(output)
-            if output_errors:
-                print(f"ECHEC: {len(output_errors)} problème(s) dans le publish Netlify temporaire.")
-                for error in output_errors:
+            root = Path(tmp)
+
+            production_output = root / "production" / "_site"
+            build(production_output, deploy_context="production")
+            production_errors = validate_output(production_output, deploy_context="production")
+            if production_errors:
+                print(f"ECHEC: {len(production_errors)} problème(s) dans le publish Netlify production temporaire.")
+                for error in production_errors:
                     print("- " + error)
                 return 1
-            file_count = sum(1 for path in output.rglob("*") if path.is_file())
+
+            preview_output = root / "deploy-preview" / "_site"
+            build(preview_output, deploy_context=DEPLOY_PREVIEW_CONTEXT)
+            preview_errors = validate_output(preview_output, deploy_context=DEPLOY_PREVIEW_CONTEXT)
+            if preview_errors:
+                print(f"ECHEC: {len(preview_errors)} problème(s) dans le deploy preview Netlify temporaire.")
+                for error in preview_errors:
+                    print("- " + error)
+                return 1
+
+            file_count = sum(1 for path in production_output.rglob("*") if path.is_file())
         print(
-            "OK publication Netlify: build temporaire vérifié; "
-            f"{file_count} fichiers publics; répertoires techniques exclus; sitemap couvert."
+            "OK publication Netlify: builds production + deploy-preview vérifiés; "
+            f"{file_count} fichiers publics en production; preview noindex; "
+            "répertoires techniques exclus; sitemap couvert."
         )
         return 0
 
