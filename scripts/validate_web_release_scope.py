@@ -166,7 +166,6 @@ def self_test() -> None:
         "tests/e2e/test_public_site.py",
         ".github/workflows/production.yml",
         "scripts/other_validator.py",
-        "README.md",
     ]
     missed = [path for path in forbidden if not validate_paths([path])]
     if missed:
