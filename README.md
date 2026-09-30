@@ -60,7 +60,8 @@ SINJIRA™ fonctionne actuellement en **mode gratuit verrouillé** : les fonctio
 
 ## Déploiement
 
-- GitHub Pages publie depuis `main` à la racine.
 - Domaine canonique : `www.benoitcantin.com`.
+- Le dépôt contient une configuration Netlify qui construit un publish public isolé dans `_site`; la liaison réelle entre le domaine, le site hébergeur et sa branche de production doit être vérifiée dans l’interface de l’hébergeur avant toute publication.
+- Un merge ou un push sur `main` ne doit pas être présenté comme un déploiement confirmé tant que le comportement de publication de l’hébergeur n’a pas été vérifié.
 - Supabase est synchronisé au moyen des workflows protégés et du ledger de migrations de production.
 - Les migrations déjà appliquées en production ne doivent pas être réécrites; toute évolution passe par une nouvelle migration.
