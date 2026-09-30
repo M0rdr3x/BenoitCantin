@@ -14,6 +14,10 @@ READ_ONLY_PR_WORKFLOWS = (
     ".github/workflows/nova-a1.yml",
     ".github/workflows/sinjira-mobile-native.yml",
     ".github/workflows/site-personality-v25.yml",
+    ".github/workflows/validate-site.yml",
+    ".github/workflows/sinjira-public-navigation-v25.yml",
+    ".github/workflows/public-seo-v25.yml",
+    ".github/workflows/e2e-site.yml",
 )
 
 EXPECTED_CONCURRENCY = """concurrency:
@@ -157,7 +161,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK concurrence PR: 7 workflows read-only bornés par workflow/PR; "
+        "OK concurrence PR: 11 workflows read-only bornés par workflow/PR; "
         "annulation limitée aux pull requests, push/main et dispatch préservés."
     )
     return 0
