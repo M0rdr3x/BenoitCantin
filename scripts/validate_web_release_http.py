@@ -79,6 +79,13 @@ def validate_target_url(base_url: str, context: str) -> list[str]:
     if parsed.port not in {None, 443} and not local:
         errors.append("URL de release invalide: port non standard interdit.")
 
+    if parsed.path not in {"", "/"}:
+        errors.append("URL de release invalide: fournir uniquement l’origine, sans sous-chemin.")
+    if parsed.query:
+        errors.append("URL de release invalide: query string interdite.")
+    if parsed.fragment:
+        errors.append("URL de release invalide: fragment interdit.")
+
     if context == "preview" and not local and not host.endswith(".netlify.app"):
         errors.append("Deploy preview invalide: hôte *.netlify.app requis.")
     if context == "production" and not local and host not in OFFICIAL_PRODUCTION_HOSTS:
@@ -289,6 +296,9 @@ def self_test() -> None:
         ("https://example.com", "preview"),
         ("https://user:pass@example.netlify.app", "preview"),
         ("https://www.netlify.app:8443", "preview"),
+        ("https://example.netlify.app/sub/path", "preview"),
+        ("https://example.netlify.app/?draft=1", "preview"),
+        ("https://example.netlify.app/#section", "preview"),
         ("https://example.netlify.app", "production"),
     )
     missed = [
