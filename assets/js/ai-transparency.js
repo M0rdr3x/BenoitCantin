@@ -1,6 +1,8 @@
 (function () {
   'use strict';
 
+  var publicAssistantVendorReady = false;
+
   function ready(fn) {
     if (document.readyState !== 'loading') fn();
     else document.addEventListener('DOMContentLoaded', fn);
@@ -22,6 +24,7 @@
     var isNoindexSurface = /(^|[,\s])noindex([,\s]|$)/.test(robotsContent);
 
     if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;
+    if (!publicAssistantVendorReady) return;
     if (
       document.querySelector('script[data-bubblav-widget]') ||
       document.querySelector('[data-public-assistant-launcher]')
