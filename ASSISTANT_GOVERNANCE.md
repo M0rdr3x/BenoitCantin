@@ -86,7 +86,9 @@ Le widget public BubblaV ne doit pas être chargé sous :
 
 Le chatbot public ne constitue pas une voie d’accès aux données privées des comptes SINJIRA ni aux outils d’administration. Par défaut, une surface non indexable n’est pas une surface de chatbot public.
 
-Sur une surface autorisée, le chargeur doit rester **opt-in** : il affiche d’abord un lanceur local et ne crée le script BubblaV qu’après un clic explicite. Avant ce clic, aucune requête vers `www.bubblav.com/widget.js` ne doit être initiée par ce chargeur.
+Lorsque le fournisseur sera réactivé, une surface autorisée devra rester **opt-in** : le site affichera d’abord un lanceur local et ne créera le script BubblaV qu’après un clic explicite. Avant ce clic, aucune requête vers `www.bubblav.com/widget.js` ne devra être initiée par ce chargeur.
+
+**État actuel : BubblaV est désactivé côté site.** Le verrou `publicAssistantVendorReady=false` empêche la création du lanceur public, et la CSP n’autorise pas `www.bubblav.com`. Tant que les issues #443 et #444 ne sont pas résolues et revérifiées, aucun script ou appel réseau BubblaV ne doit être initié par le portail.
 
 Les traitements du widget sont déclarés dans `/confidentialite.html`.
 
@@ -105,7 +107,7 @@ Configuration publique de référence :
 - inventaire de minimisation et état de revue : `docs/BUBBLAV_PUBLIC_ASSISTANT_DATA_MINIMIZATION.md`; suivi fournisseur : issue **#443**;
 - cible fournisseur : restreindre l’intégration au domaine officiel `www.benoitcantin.com` dès qu’une allowlist de domaine peut être appliquée et vérifiée; suivi fournisseur : issue **#444**.
 
-Tant que le fournisseur autorise encore plusieurs domaines, le chargeur local doit rester **fail-closed** : le widget n’est injecté que lorsque `window.location.hostname` vaut `www.benoitcantin.com` ou `benoitcantin.com`. Les previews, copies locales et miroirs ne doivent pas charger le chatbot automatiquement. Cette garde locale complète une allowlist fournisseur; elle ne la remplace pas.
+Tant que le périmètre fournisseur n’est pas proprement finalisé, le site doit rester **fail-closed** à deux niveaux : `publicAssistantVendorReady=false` bloque l’activation locale et la CSP bloque le réseau BubblaV. La garde de domaine `www.benoitcantin.com` / `benoitcantin.com` reste conservée pour une éventuelle réactivation future; les previews, copies locales et miroirs ne doivent jamais charger le chatbot. Cette garde locale complétera l’allowlist fournisseur; elle ne la remplacera pas.
 
 Toute modification qui élargit les données accessibles, active une intégration externe ou permet une action sensible doit être revue avant activation.
 
@@ -113,15 +115,15 @@ Toute modification qui élargit les données accessibles, active une intégratio
 
 Le chargeur du widget public est centralisé dans `assets/js/ai-transparency.js`.
 
-Sur le domaine officiel, une surface publique indexable utilise **Nova × SINJIRA via BubblaV** après activation explicite. L’ancien assistant local `sinjira-assistant.js` ne doit pas être chargé simultanément sur cette même surface. Les espaces privés, les pages `noindex` et les environnements non officiels peuvent conserver l’aide locale sans fournisseur externe.
+Sur le domaine officiel, l’assistant public est actuellement présenté sans charger BubblaV. Le code du fournisseur reste préparé derrière le verrou local, mais il ne doit pas être activé tant que les contrôles fournisseur #443/#444 ne sont pas terminés. L’ancien assistant local `sinjira-assistant.js` ne doit pas être chargé simultanément avec une future réactivation du widget public. Les espaces privés, les pages `noindex` et les environnements non officiels peuvent conserver l’aide locale sans fournisseur externe.
 
-Le script public attendu est :
+Le script fournisseur prévu pour une réactivation future reste :
 
 `https://www.bubblav.com/widget.js`
 
-La CSP doit autoriser BubblaV uniquement aux endroits nécessaires, sans wildcard général ajouté pour le chatbot.
+**État CSP actuel : BubblaV doit rester absent de `script-src` et `connect-src`.** Lors d’une future réactivation explicitement autorisée, la CSP pourra être élargie uniquement aux directives nécessaires, sans wildcard général.
 
-Un garde anti-doublon doit empêcher plusieurs chargements du widget.
+Un garde anti-doublon devra empêcher plusieurs chargements du widget après réactivation.
 
 ## 9. Responsabilité humaine
 
@@ -149,4 +151,4 @@ Tout changement important doit être :
 3. vérifié avant publication;
 4. compatible avec la vie privée, l’anti-spoiler et la neutralité civique.
 
-Dernière mise à jour : 29 septembre 2026.
+Dernière mise à jour : 30 septembre 2026.
