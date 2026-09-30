@@ -29,6 +29,8 @@ jobs:
         run: python3 scripts/validate_site_workflow_security.py --self-test
       - name: Vérifier le contrat de validation centrale
         run: python3 scripts/validate_site_workflow_security.py
+      - name: Vérifier le périmètre public Netlify
+        run: python3 scripts/build_netlify_public.py --check
 
   validate:
     needs: workflow-contract
