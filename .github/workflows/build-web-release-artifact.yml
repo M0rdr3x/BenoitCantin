@@ -1,0 +1,80 @@
+name: Web release — artefact public isolé
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-artifact:
+    name: Construire et publier l’artefact CI
+    if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'a1/web-release-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier l’allowlist de publication
+        run: python3 scripts/build_netlify_public.py --check
+
+      - name: Construire l’artefact public
+        run: python3 scripts/build_netlify_public.py --output _site
+
+      - name: Vérifier et hacher le contenu public
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _site/.well-known/security.txt
+          test -f _site/.nojekyll
+          test -f _site/CNAME
+          for forbidden in .github docs mobile-native scripts supabase tests; do
+            test ! -e "_site/$forbidden"
+          done
+          find _site -type f -print0 | sort -z | xargs -0 sha256sum > web-release-SHA256SUMS.txt
+          file_count="$(find _site -type f | wc -l | tr -d ' ')"
+          test "$file_count" -gt 0
+          echo "WEB_RELEASE_FILE_COUNT=$file_count" >> "$GITHUB_ENV"
+
+      - name: Téléverser l’artefact public vérifié
+        id: artifact-upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sinjira-web-release-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            _site/
+            web-release-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
+          include-hidden-files: true
+
+      - name: Résumer l’artefact de release
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### Artefact public SINJIRA"
+            echo "- SHA source : \`${{ github.event.pull_request.head.sha || github.sha }}\`"
+            echo "- Fichiers publics : **$WEB_RELEASE_FILE_COUNT**"
+            echo "- Artefact : [ouvrir/télécharger](${{ steps.artifact-upload.outputs.artifact-url }})"
+            echo "- Digest artefact : \`${{ steps.artifact-upload.outputs.artifact-digest }}\`"
+            echo "- Manifeste interne : \`web-release-SHA256SUMS.txt\`"
+            echo
+            echo "> Aucun déploiement n’est effectué par ce workflow."
+          } >> "$GITHUB_STEP_SUMMARY"

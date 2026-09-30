@@ -9,9 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/validate-site.yml'
 PREVIEW_WORKFLOW = ROOT / '.github/workflows/validate-netlify-preview.yml'
 PRODUCTION_WORKFLOW = ROOT / '.github/workflows/validate-web-production.yml'
+ARTIFACT_WORKFLOW = ROOT / '.github/workflows/build-web-release-artifact.yml'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
 SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 SETUP_NODE_SHA = '249970729cb0ef3589644e2896645e5dc5ba9c38'
+UPLOAD_ARTIFACT_SHA = '043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'
 PYTHON_VERSION = '3.12.14'
 NODE_VERSION = '22.23.2'
 V18_SELF = 'python scripts/validate_admin_v18_privacy_security.py --self-test'
@@ -24,6 +26,7 @@ NETLIFY_PUBLIC_CHECK = 'python3 scripts/build_netlify_public.py --check'
 WEB_RELEASE_SCOPE_SELF = 'python3 scripts/validate_web_release_scope.py --self-test'
 WEB_RELEASE_SCOPE_VALIDATE = 'python3 scripts/validate_web_release_scope.py'
 WEB_RELEASE_HTTP_SELF = 'python3 scripts/validate_web_release_http.py --self-test'
+WEB_RELEASE_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _site'
 PUBLIC_AI_ASSISTANT_SELF = 'python3 scripts/validate_public_ai_assistant.py --self-test'
 PUBLIC_AI_ASSISTANT_VALIDATE = 'python3 scripts/validate_public_ai_assistant.py'
 AI_TRANSPARENCY_SELF = 'python3 scripts/validate_ai_transparency.py --self-test'
@@ -90,7 +93,9 @@ def validate_text(text: str) -> list[str]:
     require(errors, '### Readiness web-only' in text, 'résumé readiness web-only absent')
     require(errors, 'Fichiers modifiés : **$changed_count**' in text, 'compteur de diff readiness absent')
     require(errors, 'BubblaV : **fail-closed**' in text, 'état BubblaV fail-closed absent du résumé')
-    require(errors, 'Portes externes restantes : hébergeur Netlify, #135, #443, #444' in text, 'portes externes readiness absentes')
+    require(errors, 'Artefact public : \\`_site\\` allowlisté (hébergeur indépendant)' in text, 'artefact public host-neutral absent du résumé')
+    require(errors, 'Artefact CI : \\`Web release — artefact public isolé\\` (aucun déploiement)' in text, 'workflow artefact CI absent du résumé')
+    require(errors, 'Portes externes restantes : bascule hébergeur sûre (#450), #135, #443, #444' in text, 'portes externes readiness absentes')
     require(errors, exact_run_count(text, AI_TRANSPARENCY_SELF) == 1, 'auto-test Transparence IA absent ou dupliqué')
     require(errors, exact_run_count(text, AI_TRANSPARENCY_VALIDATE) == 1, 'validation Transparence IA absente ou dupliquée')
     require(errors, exact_run_count(text, PUBLIC_AI_ASSISTANT_SELF) == 1, 'auto-test assistant IA public absent ou dupliqué')
@@ -127,6 +132,46 @@ def validate_preview_workflow_text(text: str) -> list[str]:
     return errors
 
 
+
+def validate_artifact_workflow_text(text: str) -> list[str]:
+    errors: list[str] = []
+    require(errors, 'pull_request:' in text, 'artefact web doit pouvoir se construire sur pull_request')
+    require(errors, 'workflow_dispatch:' in text, 'artefact web doit pouvoir être construit manuellement')
+    require(errors, 'push:' not in text, 'artefact web ne doit jamais se déclencher directement sur push')
+    require(errors, 'permissions:\n  contents: read' in text, 'artefact web doit rester contents:read')
+    require(errors, "group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}" in text, 'concurrency artefact web exacte requise')
+    require(errors, "cancel-in-progress: ${{ github.event_name == 'pull_request' }}" in text, 'annulation artefact limitée aux pull requests requise')
+    require(errors, "if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'a1/web-release-')" in text, 'garde branche web-only absente du workflow artefact')
+    require(errors, 'runs-on: ubuntu-24.04' in text, 'artefact web doit utiliser Ubuntu 24.04')
+    require(errors, 'timeout-minutes: 8' in text, 'artefact web doit rester borné à 8 minutes')
+    require(errors, f'uses: actions/checkout@{CHECKOUT_SHA}' in text, 'checkout artefact web non épinglé')
+    require(errors, 'persist-credentials: false' in text, 'artefact web doit désactiver les credentials Git')
+    require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python artefact web non épinglé')
+    require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python artefact web inattendue')
+    require(errors, f'uses: actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}' in text, 'upload-artifact web non épinglé')
+    require(errors, exact_run_count(text, NETLIFY_PUBLIC_CHECK) == 1, 'validation allowlist avant artefact absente ou dupliquée')
+    require(errors, exact_run_count(text, WEB_RELEASE_ARTIFACT_BUILD) == 1, 'construction _site avant artefact absente ou dupliquée')
+    require(errors, 'include-hidden-files: true' in text, 'artefact web doit inclure .well-known et .nojekyll')
+    require(errors, 'if-no-files-found: error' in text, 'artefact web doit échouer si le contenu est absent')
+    require(errors, 'retention-days: 7' in text, 'rétention artefact web doit rester courte')
+    require(errors, 'web-release-SHA256SUMS.txt' in text, 'manifeste SHA-256 de release absent')
+    require(errors, 'test -f _site/.well-known/security.txt' in text, 'security.txt doit être prouvé dans l’artefact')
+    require(errors, 'test -f _site/CNAME' in text, 'CNAME doit être prouvé dans l’artefact')
+    require(errors, 'test ! -e "_site/$forbidden"' in text, 'absence des répertoires techniques non prouvée')
+    require(errors, 'actions/deploy-pages@' not in text, 'workflow artefact ne doit jamais déployer GitHub Pages')
+    require(errors, 'actions/configure-pages@' not in text, 'workflow artefact ne doit pas configurer GitHub Pages')
+    require(errors, 'pages: write' not in text, 'permission Pages write interdite au workflow artefact')
+    require(errors, 'id-token: write' not in text, 'permission OIDC write interdite au workflow artefact')
+    require(errors, 'contents: write' not in text, 'permission contents write interdite au workflow artefact')
+    require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'workflow artefact ne doit référencer aucun secret')
+    require(errors, 'Aucun déploiement n’est effectué par ce workflow.' in text, 'résumé non-déploiement absent du workflow artefact')
+
+    targets = action_targets(text)
+    require(errors, len(targets) == 3, f'nombre inattendu d’actions dans le workflow artefact: {len(targets)}')
+    for target in targets:
+        require(errors, re.search(r'@[0-9a-f]{40}$', target) is not None, f'action artefact non immuable: {target}')
+    return errors
+
 def validate_production_workflow_text(text: str) -> list[str]:
     errors: list[str] = []
     require(errors, 'workflow_dispatch:' in text, 'production smoke doit rester manuel')
@@ -153,6 +198,31 @@ def validate_production_workflow_text(text: str) -> list[str]:
     require(errors, 'inputs:' not in text, 'production smoke ne doit accepter aucune URL ou entrée utilisateur')
     return errors
 
+
+
+def run_artifact_self_tests(text: str) -> None:
+    guard = "if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'a1/web-release-')"
+    cases = {
+        'déclenchement push ajouté': text.replace('  workflow_dispatch:\n', '  push:\n  workflow_dispatch:\n', 1),
+        'permission dépôt écriture': text.replace('contents: read', 'contents: write', 1),
+        'permission Pages ajoutée': text.replace('permissions:\n  contents: read', 'permissions:\n  contents: read\n  pages: write', 1),
+        'permission OIDC ajoutée': text.replace('permissions:\n  contents: read', 'permissions:\n  contents: read\n  id-token: write', 1),
+        'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
+        'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
+        'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
+        'upload-artifact mobile': text.replace(f'actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}', 'actions/upload-artifact@v7', 1),
+        'garde branche retirée': text.replace(guard, 'if: always()', 1),
+        'construction racine': text.replace(WEB_RELEASE_ARTIFACT_BUILD, 'python3 scripts/build_netlify_public.py --output .', 1),
+        'fichiers cachés exclus': text.replace('include-hidden-files: true', 'include-hidden-files: false', 1),
+        'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
+        'résumé non-déploiement retiré': text.replace('            echo "> Aucun déploiement n’est effectué par ce workflow."\n', '', 1),
+    }
+    for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test artifact workflow: mutation sans effet: {name}')
+        if not validate_artifact_workflow_text(mutated):
+            raise SystemExit(f'ERREUR auto-test artifact workflow: mutation non détectée: {name}')
+    print(f'OK auto-tests artifact workflow: {len(cases)} affaiblissements critiques détectés.')
 
 def run_production_self_tests(text: str) -> None:
     cases = {
@@ -266,26 +336,31 @@ def main() -> int:
         raise SystemExit(f'ERREUR validation site: workflow preview absent: {PREVIEW_WORKFLOW.relative_to(ROOT)}')
     if not PRODUCTION_WORKFLOW.is_file():
         raise SystemExit(f'ERREUR validation site: workflow production absent: {PRODUCTION_WORKFLOW.relative_to(ROOT)}')
+    if not ARTIFACT_WORKFLOW.is_file():
+        raise SystemExit(f'ERREUR validation site: workflow artefact absent: {ARTIFACT_WORKFLOW.relative_to(ROOT)}')
 
     text = WORKFLOW.read_text(encoding='utf-8', errors='strict')
     preview_text = PREVIEW_WORKFLOW.read_text(encoding='utf-8', errors='strict')
     production_text = PRODUCTION_WORKFLOW.read_text(encoding='utf-8', errors='strict')
+    artifact_text = ARTIFACT_WORKFLOW.read_text(encoding='utf-8', errors='strict')
     if args.self_test:
         run_self_tests(text)
         run_preview_self_tests(preview_text)
         run_production_self_tests(production_text)
+        run_artifact_self_tests(artifact_text)
         return 0
 
     errors = validate_text(text)
     errors.extend(validate_preview_workflow_text(preview_text))
     errors.extend(validate_production_workflow_text(production_text))
+    errors.extend(validate_artifact_workflow_text(artifact_text))
     if errors:
         for error in errors:
             print(f'ERREUR sécurité validation site: {error}')
         return 1
     print(
         'OK sécurité validation site: actions immuables, runtimes figés, credentials non persistés, '
-        'garde web-only, smoke preview et smoke production manuels read-only obligatoires.'
+        'garde web-only, artefact public inspectable non-déployant, smoke preview et smoke production manuels read-only obligatoires.'
     )
     return 0
 
