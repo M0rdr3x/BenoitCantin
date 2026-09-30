@@ -15,6 +15,7 @@ OFFICIAL_PRODUCTION_HOSTS = {"www.benoitcantin.com", "benoitcantin.com"}
 
 PUBLIC_PATHS = (
     "/",
+    "/.well-known/security.txt",
     "/assistant.html",
     "/transparence-ia.html",
     "/projets/projet-nova/",
@@ -214,6 +215,21 @@ def validate_release(base_url: str, context: str) -> list[str]:
     if transparency and "Transparence IA" not in transparency[2]:
         errors.append("/transparence-ia.html: contenu attendu absent.")
 
+    security = responses.get("/.well-known/security.txt")
+    if security:
+        security_body = security[2]
+        required_security_lines = (
+            "Contact: https://www.benoitcantin.com/contact.html",
+            "Canonical: https://www.benoitcantin.com/.well-known/security.txt",
+            "Preferred-Languages: fr, en",
+            "Expires:",
+        )
+        for expected_line in required_security_lines:
+            if expected_line not in security_body:
+                errors.append(
+                    f"/.well-known/security.txt: champ canonique absent: {expected_line}"
+                )
+
     return errors
 
 
@@ -252,6 +268,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
             body = "<html><body>Assistant Nova</body></html>"
         elif self.path == "/transparence-ia.html":
             body = "<html><body>Transparence IA</body></html>"
+        elif self.path == "/.well-known/security.txt":
+            body = (
+                "Contact: https://www.benoitcantin.com/contact.html\n"
+                "Expires: 2027-09-27T23:59:59Z\n"
+                "Preferred-Languages: fr, en\n"
+                "Canonical: https://www.benoitcantin.com/.well-known/security.txt\n"
+            )
         else:
             body = "<html><body>OK</body></html>"
         self.wfile.write(body.encode("utf-8"))
