@@ -42,6 +42,29 @@ jobs:
         run: python3 scripts/build_netlify_public.py --check
       - name: Auto-tester le smoke HTTP de release
         run: python3 scripts/validate_web_release_http.py --self-test
+      - name: Résumer la readiness web-only
+        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'a1/web-release-')
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed_count="$(git diff --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" | wc -l | tr -d ' ')"
+          {
+            echo "### Readiness web-only"
+            echo "- SHA candidat : `$HEAD_SHA`"
+            echo "- Base PR : `$BASE_SHA`"
+            echo "- Fichiers modifiés : **$changed_count**"
+            echo "- Publish Netlify : `_site` allowlisté"
+            echo "- Deploy preview : noindex/noarchive par construction"
+            echo "- BubblaV : **fail-closed** (widget désactivé + CSP bloquante)"
+            echo "- Smoke preview : `Netlify preview — smoke HTTP` (workflow manuel)"
+            echo "- Smoke production : `Web production — smoke HTTP` (workflow manuel)"
+            echo "- Portes externes restantes : hébergeur Netlify, #135, #443, #444"
+            echo
+            echo "> Ce résumé prouve l'état du candidat Git/CI, pas un déploiement production."
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Auto-tester le contrat Transparence IA
         run: python3 scripts/validate_ai_transparency.py --self-test
       - name: Vérifier le contrat Transparence IA

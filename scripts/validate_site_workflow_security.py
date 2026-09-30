@@ -87,6 +87,10 @@ def validate_text(text: str) -> list[str]:
     require(errors, exact_run_count(text, WEB_RELEASE_SCOPE_VALIDATE) == 1, 'validation portée web-only absente ou dupliquée')
     require(errors, text.count(WEB_RELEASE_SCOPE_IF) == 2, 'la portée web-only doit rester limitée aux branches a1/web-release-*')
     require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke HTTP release absent ou dupliqué')
+    require(errors, '### Readiness web-only' in text, 'résumé readiness web-only absent')
+    require(errors, 'Fichiers modifiés : **$changed_count**' in text, 'compteur de diff readiness absent')
+    require(errors, 'BubblaV : **fail-closed**' in text, 'état BubblaV fail-closed absent du résumé')
+    require(errors, 'Portes externes restantes : hébergeur Netlify, #135, #443, #444' in text, 'portes externes readiness absentes')
     require(errors, exact_run_count(text, AI_TRANSPARENCY_SELF) == 1, 'auto-test Transparence IA absent ou dupliqué')
     require(errors, exact_run_count(text, AI_TRANSPARENCY_VALIDATE) == 1, 'validation Transparence IA absente ou dupliquée')
     require(errors, exact_run_count(text, PUBLIC_AI_ASSISTANT_SELF) == 1, 'auto-test assistant IA public absent ou dupliqué')
@@ -222,6 +226,8 @@ def run_self_tests(text: str) -> None:
         'validation portée web retirée': text.replace(f'        run: {WEB_RELEASE_SCOPE_VALIDATE}\n', '', 1),
         'condition portée web élargie': text.replace(WEB_RELEASE_SCOPE_IF, "if: github.event_name == 'pull_request'", 1),
         'auto-test smoke HTTP retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
+        'résumé readiness retiré': text.replace('            echo "### Readiness web-only"\n', '', 1),
+        'état fail-closed readiness retiré': text.replace('            echo "- BubblaV : **fail-closed** (widget désactivé + CSP bloquante)"\n', '', 1),
         'auto-test Transparence IA retiré': text.replace(f'        run: {AI_TRANSPARENCY_SELF}\n', '', 1),
         'validation Transparence IA retirée': text.replace(f'        run: {AI_TRANSPARENCY_VALIDATE}\n', '', 1),
         'auto-test assistant IA retiré': text.replace(f'        run: {PUBLIC_AI_ASSISTANT_SELF}\n', '', 1),
