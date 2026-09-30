@@ -18,6 +18,7 @@ ADMIN_CONSOLE_SELF = 'python scripts/validate_admin_console_security.py --self-t
 ADMIN_CONSOLE_VALIDATE = 'python scripts/validate_admin_console_security.py'
 ADMIN_PRIVATE_READS_SELF = 'python scripts/validate_admin_private_reads_security.py --self-test'
 ADMIN_PRIVATE_READS_VALIDATE = 'python scripts/validate_admin_private_reads_security.py'
+NETLIFY_PUBLIC_CHECK = 'python3 scripts/build_netlify_public.py --check'
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -65,6 +66,7 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'python3 scripts/validate_site_workflow_security.py\n' in text, 'validation du contrat absente')
     require(errors, text.count('needs: workflow-contract') == 1, 'le job validate doit dépendre du contrat')
     require(errors, 'python scripts/validate_site.py' in text, 'validation principale du site absente')
+    require(errors, exact_run_count(text, NETLIFY_PUBLIC_CHECK) == 1, 'validation périmètre public Netlify absente ou dupliquée')
     require(errors, exact_run_count(text, V18_SELF) == 1, 'auto-test admin V18 absent ou dupliqué')
     require(errors, exact_run_count(text, V18_VALIDATE) == 1, 'validation admin V18 absente ou dupliquée')
     require(errors, exact_run_count(text, ADMIN_CONSOLE_SELF) == 1, 'auto-test admin-console absent ou dupliqué')
@@ -86,6 +88,7 @@ def run_self_tests(text: str) -> None:
         'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
         'node large': text.replace(f"node-version: '{NODE_VERSION}'", "node-version: '22'", 1),
         'dépendance contrat retirée': text.replace('    needs: workflow-contract\n', '', 1),
+        'validation Netlify retirée': text.replace(f'        run: {NETLIFY_PUBLIC_CHECK}\n', '', 1),
         'auto-test V18 retiré': text.replace(f'        run: {V18_SELF}\n', '', 1),
         'validation V18 retirée': text.replace(f'        run: {V18_VALIDATE}\n', '', 1),
         'auto-test admin-console retiré': text.replace(f'        run: {ADMIN_CONSOLE_SELF}\n', '', 1),
