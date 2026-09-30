@@ -26,6 +26,7 @@ WEB_RELEASE_HTTP_SELF = 'python3 scripts/validate_web_release_http.py --self-tes
 PUBLIC_AI_ASSISTANT_SELF = 'python3 scripts/validate_public_ai_assistant.py --self-test'
 PUBLIC_AI_ASSISTANT_VALIDATE = 'python3 scripts/validate_public_ai_assistant.py'
 WEB_RELEASE_SCOPE_IF = "if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'a1/web-release-')"
+WEB_RELEASE_VALIDATE_IF = "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false || startsWith(github.head_ref, 'a1/web-release-')"
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -76,6 +77,7 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'python3 scripts/validate_site_workflow_security.py --self-test' in text, 'auto-tests du contrat absents')
     require(errors, 'python3 scripts/validate_site_workflow_security.py\n' in text, 'validation du contrat absente')
     require(errors, text.count('needs: workflow-contract') == 1, 'le job validate doit dépendre du contrat')
+    require(errors, text.count(WEB_RELEASE_VALIDATE_IF) == 1, 'la validation lourde web-only doit rester bornée aux branches a1/web-release-*')
     require(errors, 'python scripts/validate_site.py' in text, 'validation principale du site absente')
     require(errors, exact_run_count(text, NETLIFY_PUBLIC_CHECK) == 1, 'validation périmètre public Netlify absente ou dupliquée')
     require(errors, exact_run_count(text, WEB_RELEASE_SCOPE_SELF) == 1, 'auto-test portée web-only absent ou dupliqué')
@@ -155,6 +157,8 @@ def run_self_tests(text: str) -> None:
         'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
         'node large': text.replace(f"node-version: '{NODE_VERSION}'", "node-version: '22'", 1),
         'dépendance contrat retirée': text.replace('    needs: workflow-contract\n', '', 1),
+        'exception draft web-only retirée': text.replace(WEB_RELEASE_VALIDATE_IF, "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false", 1),
+        'exception draft web-only élargie': text.replace("startsWith(github.head_ref, 'a1/web-release-')", "true", 1),
         'validation Netlify retirée': text.replace(f'        run: {NETLIFY_PUBLIC_CHECK}\n', '', 1),
         'historique Git retiré': text.replace('          fetch-depth: 0\n', '', 1),
         'auto-test portée web retiré': text.replace(f'        run: {WEB_RELEASE_SCOPE_SELF}\n', '', 1),

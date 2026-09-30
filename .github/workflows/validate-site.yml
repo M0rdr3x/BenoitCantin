@@ -49,7 +49,7 @@ jobs:
 
   validate:
     needs: workflow-contract
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false || startsWith(github.head_ref, 'a1/web-release-')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
