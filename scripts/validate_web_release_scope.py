@@ -11,10 +11,9 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 WEB_RELEASE_BRANCH_PREFIX = "a1/web-release-"
 
-ALLOWED_EXACT = {
+ALLOWED_EXACT = (
     ".github/workflows/validate-netlify-preview.yml",
     ".github/workflows/validate-site.yml",
-    ".github/workflows/validate-netlify-preview.yml",
     ".gitignore",
     "netlify.toml",
     "robots.txt",
@@ -25,7 +24,7 @@ ALLOWED_EXACT = {
     "scripts/validate_site_workflow_security.py",
     "scripts/validate_web_release_http.py",
     "scripts/validate_web_release_scope.py",
-}
+)
 
 ALLOWED_PREFIXES = (
     ".well-known/",
@@ -118,10 +117,12 @@ def changed_paths(base: str | None = None, head: str | None = None) -> list[str]
 
 
 def self_test() -> None:
+    if len(ALLOWED_EXACT) != len(set(ALLOWED_EXACT)):
+        raise SystemExit("ERREUR auto-test web-only: doublon dans ALLOWED_EXACT")
+
     valid = [
         ".github/workflows/validate-netlify-preview.yml",
         ".github/workflows/validate-site.yml",
-        ".github/workflows/validate-netlify-preview.yml",
         ".gitignore",
         "index.html",
         "assistant.html",
