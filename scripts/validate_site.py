@@ -277,134 +277,7 @@ def main() -> int:
             if marker not in netlify_text:
                 errors.append(f'netlify.toml sécurité incomplet: {marker}')
 
-        redirect_blocks = re.split(r'(?m)^\[\[redirects\]\]\s*
-    if not robots_path.is_file():
-        errors.append('robots.txt absent.')
-    else:
-        robots_text = robots_path.read_text('utf-8', errors='ignore')
-        for marker in (
-            'User-agent: *',
-            'Allow: /',
-            'Disallow: /app/',
-            'Disallow: /compte/',
-            'Disallow: /admin/',
-            'Disallow: /supabase/',
-            'Disallow: /scripts/',
-            'Disallow: /docs/',
-            'Disallow: /tests/',
-            'Disallow: /mobile-native/',
-            'Disallow: /.github/',
-            'Sitemap: https://www.benoitcantin.com/sitemap.xml',
-        ):
-            if marker not in robots_text:
-                errors.append(f'robots.txt incomplet: {marker}')
-
-    security_path = ROOT / '.well-known' / 'security.txt'
-    if not security_path.is_file():
-        errors.append('.well-known/security.txt absent.')
-    else:
-        security_text = security_path.read_text('utf-8', errors='ignore')
-        for marker in (
-            'Contact: https://www.benoitcantin.com/contact.html',
-            'Preferred-Languages: fr, en',
-            'Canonical: https://www.benoitcantin.com/.well-known/security.txt',
-        ):
-            if marker not in security_text:
-                errors.append(f'security.txt incomplet: {marker}')
-        contact_page = ROOT / 'contact.html'
-        if not contact_page.is_file():
-            errors.append('contact.html absent pour le signalement sécurité.')
-        else:
-            contact_html = contact_page.read_text('utf-8', errors='ignore')
-            for marker in (
-                '<option value="Sécurité">Sécurité / vulnérabilité</option>',
-                'Benoit Cantin — signalement sécurité',
-                'href="/.well-known/security.txt"',
-            ):
-                if marker not in contact_html:
-                    errors.append(f'Contact sécurité incomplet: {marker}')
-        expires_match = re.search(r'^Expires:\s*(\S+)\s*$', security_text, flags=re.M)
-        if not expires_match:
-            errors.append('security.txt: champ Expires absent.')
-        else:
-            try:
-                expires = datetime.fromisoformat(expires_match.group(1).replace('Z', '+00:00'))
-                now = datetime.now(timezone.utc)
-                if expires.tzinfo is None:
-                    errors.append('security.txt: Expires doit inclure un fuseau horaire.')
-                else:
-                    expires = expires.astimezone(timezone.utc)
-                    if expires <= now:
-                        errors.append('security.txt: Expires est échu.')
-                    if (expires - now).days > 370:
-                        errors.append('security.txt: Expires dépasse environ un an.')
-            except ValueError:
-                errors.append('security.txt: Expires n’est pas une date ISO 8601 valide.')
-
-    governance_page = ROOT / 'gouvernance-vie-privee.html'
-    if governance_page.is_file():
-        governance_html = governance_page.read_text('utf-8', errors='ignore')
-        for marker in (
-            '<link rel="canonical" href="https://www.benoitcantin.com/gouvernance-vie-privee.html">',
-            '<meta property="og:title" content="Gouvernance de la vie privée | Benoit Cantin">',
-            '<meta property="og:description" content="Gouvernance des renseignements personnels du portail Benoit Cantin et de SINJIRA™ : responsable, rôles, conservation, incidents et plaintes.">',
-            '<meta property="og:type" content="website">',
-            '<meta property="og:url" content="https://www.benoitcantin.com/gouvernance-vie-privee.html">',
-        ):
-            if marker not in governance_html:
-                errors.append(f'Gouvernance vie privée: métadonnée publique absente: {marker}')
-
-    critical_routes = [
-        'index.html',
-        '404.html',
-        'admin/index.html',
-        'admin/sinjira/index.html',
-        'compte/index.html',
-        'compte/profil.html',
-        'compte/bibliotheque.html',
-        'compte/mes-achats.html',
-        'compte/mes-commentaires.html',
-        'compte/mon-personnage.html',
-        'compte/reseau-personnage.html',
-        'projets/sinjira/index.html',
-        'projets/sinjira/romans/index.html',
-        'projets/sinjira/romans/lire-integral.html',
-        'projets/sinjira/romans/le-sang-du-sauveur/index.html',
-        'projets/sinjira/registre/index.html',
-        'projets/sinjira/codex/index.html',
-        'projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html',
-        'projets/sinjira/jeux/fracture-du-reseau-mere/partie.html',
-        'projets/sinjira/jeux/fracture-du-reseau-mere/fin-de-partie.html',
-    ]
-    for rel in critical_routes:
-        if not (ROOT / rel).exists():
-            errors.append(f'Route critique absente: {rel}')
-
-    try:
-        subprocess.run(['node', '--version'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        for p in js:
-            r = subprocess.run(['node', '--check', str(p)], text=True, capture_output=True)
-            if r.returncode:
-                errors.append(f'Erreur JavaScript dans {p.relative_to(ROOT)}: {r.stderr.strip()}')
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        print('AVERTISSEMENT: Node indisponible, validation JS ignorée.')
-
-    print(
-        f'Validation SINJIRA profonde: {len(htmls)} HTML, {len(css)} CSS, '
-        f'{len(js)} JS, {len(files)} fichiers.'
-    )
-    if errors:
-        print(f'ECHEC: {len(errors)} problème(s).')
-        for e in errors:
-            print('- ' + e)
-        return 1
-    print('OK: routes, ancres, dépendances, sécurité statique et JavaScript cohérents.')
-    return 0
-
-
-if __name__ == '__main__':
-    raise SystemExit(main())
-, netlify_text)[1:]
+        redirect_blocks = re.split(r'(?m)^\[\[redirects\]\]\s*$', netlify_text)[1:]
         for source in (
             '/supabase/*',
             '/scripts/*',
@@ -454,6 +327,11 @@ if __name__ == '__main__':
             'Disallow: /compte/',
             'Disallow: /admin/',
             'Disallow: /supabase/',
+            'Disallow: /scripts/',
+            'Disallow: /docs/',
+            'Disallow: /tests/',
+            'Disallow: /mobile-native/',
+            'Disallow: /.github/',
             'Sitemap: https://www.benoitcantin.com/sitemap.xml',
         ):
             if marker not in robots_text:
