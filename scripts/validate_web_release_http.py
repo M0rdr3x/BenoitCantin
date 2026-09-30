@@ -151,10 +151,10 @@ def validate_headers(headers: object, context: str) -> list[str]:
     csp = str(get("Content-Security-Policy") or "")
     directives = parse_csp(csp)
 
-    if "https://www.bubblav.com" not in directives.get("script-src", []):
-        errors.append("CSP réseau: BubblaV absent de script-src.")
-    if "https://www.bubblav.com" not in directives.get("connect-src", []):
-        errors.append("CSP réseau: BubblaV absent de connect-src.")
+    if "https://www.bubblav.com" in directives.get("script-src", []):
+        errors.append("CSP réseau: BubblaV doit rester bloqué dans script-src.")
+    if "https://www.bubblav.com" in directives.get("connect-src", []):
+        errors.append("CSP réseau: BubblaV doit rester bloqué dans connect-src.")
     if "'self'" not in directives.get("frame-ancestors", []):
         errors.append("CSP réseau: frame-ancestors 'self' absent.")
     if "'self'" not in directives.get("object-src", []):
@@ -244,8 +244,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
         self.send_header(
             "Content-Security-Policy",
             "default-src 'self'; "
-            "script-src 'self' https://www.bubblav.com; "
-            "connect-src 'self' https://www.bubblav.com; "
+            "script-src 'self'; "
+            "connect-src 'self'; "
             "frame-ancestors 'self'; object-src 'self'; base-uri 'self'",
         )
         if getattr(self.server, "preview", False):
@@ -313,6 +313,22 @@ def self_test() -> None:
     )
     if not broken:
         raise SystemExit("ERREUR auto-test smoke HTTP: en-têtes affaiblis non détectés.")
+
+    provider_enabled = validate_headers(
+        {
+            "Content-Security-Policy": (
+                "default-src 'self'; "
+                "script-src 'self' https://www.bubblav.com; "
+                "connect-src 'self' https://www.bubblav.com; "
+                "frame-ancestors 'self'; object-src 'self'; base-uri 'self'"
+            ),
+            "X-Content-Type-Options": "nosniff",
+            "X-Robots-Tag": "noindex, nofollow, noarchive",
+        },
+        "preview",
+    )
+    if not any("BubblaV doit rester bloqué" in error for error in provider_enabled):
+        raise SystemExit("ERREUR auto-test smoke HTTP: CSP BubblaV réactivée non détectée.")
 
     invalid_targets = (
         ("http://example.netlify.app", "preview"),

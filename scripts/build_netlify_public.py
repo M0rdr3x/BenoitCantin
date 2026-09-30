@@ -316,11 +316,12 @@ def validate_netlify_config() -> list[str]:
         errors.append("En-têtes globaux Netlify absents.")
     else:
         csp = str(global_values.get("Content-Security-Policy") or "")
-        if "script-src" not in csp or "https://www.bubblav.com" not in csp.split("connect-src", 1)[0]:
-            errors.append("CSP Netlify: BubblaV absent de script-src.")
-        connect_section = csp.split("connect-src", 1)[1].split(";", 1)[0] if "connect-src" in csp else ""
-        if "https://www.bubblav.com" not in connect_section:
-            errors.append("CSP Netlify: BubblaV absent de connect-src.")
+        if "script-src" not in csp or "connect-src" not in csp:
+            errors.append("CSP Netlify: script-src et connect-src sont obligatoires.")
+        if "https://www.bubblav.com" in csp:
+            errors.append(
+                "CSP Netlify: BubblaV doit rester bloqué tant que le fournisseur public n’est pas réactivé."
+            )
         for directive in ("frame-ancestors 'self'", "object-src 'self'", "base-uri 'self'"):
             if directive not in csp:
                 errors.append(f"CSP Netlify: directive requise absente: {directive}.")
