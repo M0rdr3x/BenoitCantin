@@ -5,4 +5,9 @@ Disallow: /compte/
 Disallow: /Admin/
 Disallow: /admin/
 Disallow: /supabase/
+Disallow: /.github/
+Disallow: /mobile-native/
+Disallow: /tests/
+Disallow: /docs/
+Disallow: /scripts/
 Sitemap: https://www.benoitcantin.com/sitemap.xml

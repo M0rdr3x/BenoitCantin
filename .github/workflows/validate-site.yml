@@ -30,6 +30,9 @@ jobs:
       - name: Vérifier le contrat de validation centrale
         run: python3 scripts/validate_site_workflow_security.py
 
+      - name: Vérifier le périmètre public Netlify
+        run: python3 scripts/build_netlify_public.py --check
+
   validate:
     needs: workflow-contract
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
