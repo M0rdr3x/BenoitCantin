@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import hashlib
 import os
 import shutil
 import tempfile
@@ -169,6 +170,11 @@ def root_file_allowed(path: Path) -> bool:
     if path.name in PUBLIC_ROOT_EXACT:
         return True
     return path.suffix.lower() in PUBLIC_ROOT_SUFFIXES
+
+
+def re_full_sha256(value: str) -> bool:
+    value = value.strip().lower()
+    return len(value) == 64 and all(ch in "0123456789abcdef" for ch in value)
 
 
 def project_nova_structured_allowed(rel: Path) -> bool:
@@ -386,10 +392,24 @@ def validate_plan() -> list[str]:
                     errors.append(f"Source Projet Nova invalide: {key}")
                     continue
                 rel = Path("projets/projet-nova") / source_path
-                if not (ROOT / rel).is_file():
+                source_file = ROOT / rel
+                if not source_file.is_file():
                     errors.append(f"Source Projet Nova absente: {rel.as_posix()}")
-                elif not relative_path_allowed(rel):
+                    continue
+                if not relative_path_allowed(rel):
                     errors.append(f"Source Projet Nova hors allowlist: {rel.as_posix()}")
+                    continue
+
+                expected_sha = part.get("sha256") if isinstance(part, dict) else None
+                if not isinstance(expected_sha, str) or not re_full_sha256(expected_sha):
+                    errors.append(f"SHA-256 Projet Nova absent ou invalide: {rel.as_posix()}")
+                    continue
+                actual_sha = hashlib.sha256(source_file.read_bytes()).hexdigest()
+                if actual_sha != expected_sha.lower():
+                    errors.append(
+                        f"SHA-256 Projet Nova incohérent: {rel.as_posix()} "
+                        f"(manifest={expected_sha.lower()}, actuel={actual_sha})"
+                    )
 
     sitemap_path = ROOT / "sitemap.xml"
     if sitemap_path.is_file():
