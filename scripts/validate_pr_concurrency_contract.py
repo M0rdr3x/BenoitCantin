@@ -13,6 +13,10 @@ PENDING_CONCURRENCY_NORMALIZATION = {
     ".github/workflows/sinjira-junior-guardian-revocation-v25.yml",
 }
 
+NON_CANCELLABLE_PR_WORKFLOWS = {
+    ".github/workflows/supabase-production-preflight.yml",
+}
+
 READ_ONLY_PR_WORKFLOWS = (
     ".github/workflows/sinjira-mobile-native-route-dispatch-v25.yml",
     ".github/workflows/sinjira-personal-ai-functional-v25.yml",
@@ -148,6 +152,11 @@ READ_ONLY_PR_WORKFLOWS = (
     ".github/workflows/validate-fracture-deduction-simplifiee.yml",
     ".github/workflows/validate-nova-participation.yml",
     ".github/workflows/validate-parallel-world-v24-4-92.yml",
+    ".github/workflows/sinjira-live-social-safety-v25.yml",
+    ".github/workflows/sinjira-live-social-ui-v25.yml",
+    ".github/workflows/sinjira-production-migration-history-guard-v25.yml",
+    ".github/workflows/sinjira-user-rights-rpc-v24-5-14.yml",
+    ".github/workflows/validate-production-ledger.yml",
 )
 
 EXPECTED_CONCURRENCY = """concurrency:
@@ -205,25 +214,63 @@ def validate_repo() -> list[str]:
     if len(READ_ONLY_PR_WORKFLOWS) != len(set(READ_ONLY_PR_WORKFLOWS)):
         errors.append("doublon dans READ_ONLY_PR_WORKFLOWS")
 
+    classes = [
+        set(READ_ONLY_PR_WORKFLOWS),
+        set(PENDING_CONCURRENCY_NORMALIZATION),
+        set(NON_CANCELLABLE_PR_WORKFLOWS),
+    ]
+    if classes[0] & classes[1] or classes[0] & classes[2] or classes[1] & classes[2]:
+        errors.append("workflow classé dans plusieurs catégories concurrency")
+
     workflows_dir = ROOT / ".github" / "workflows"
     for workflow in sorted((*workflows_dir.glob("*.yml"), *workflows_dir.glob("*.yaml"))):
         text = workflow.read_text(encoding="utf-8", errors="strict")
         active = active_text(text)
         rel = workflow.relative_to(ROOT).as_posix()
-        if (
-            "pull_request:" in active
-            and "cancel-in-progress: true" in active
-            and rel not in PENDING_CONCURRENCY_NORMALIZATION
-        ):
+        if "pull_request:" not in active:
+            continue
+
+        classified = (
+            rel in READ_ONLY_PR_WORKFLOWS
+            or rel in PENDING_CONCURRENCY_NORMALIZATION
+            or rel in NON_CANCELLABLE_PR_WORKFLOWS
+        )
+        if not classified:
+            errors.append(f"{rel}: workflow pull_request non classé dans le contrat concurrency")
+            continue
+
+        if "cancel-in-progress: true" in active and rel not in PENDING_CONCURRENCY_NORMALIZATION:
             errors.append(
                 f"{rel}: cancel-in-progress=true interdit; annulation PR conditionnelle requise"
             )
+
+        if rel in NON_CANCELLABLE_PR_WORKFLOWS:
+            if "concurrency:" not in active:
+                errors.append(f"{rel}: bloc concurrency requis pour le workflow non annulable")
+            if "cancel-in-progress: false" not in active:
+                errors.append(f"{rel}: cancel-in-progress=false requis pour le workflow non annulable")
     for rel in READ_ONLY_PR_WORKFLOWS:
         path = ROOT / rel
         if not path.is_file():
             errors.append(f"{rel}: workflow absent")
             continue
         errors.extend(validate_text(rel, path.read_text(encoding="utf-8", errors="strict")))
+
+    for rel in PENDING_CONCURRENCY_NORMALIZATION:
+        path = ROOT / rel
+        if not path.is_file():
+            errors.append(f"{rel}: exception legacy absente")
+            continue
+        active = active_text(path.read_text(encoding="utf-8", errors="strict"))
+        if "pull_request:" not in active:
+            errors.append(f"{rel}: exception legacy sans pull_request")
+        if "cancel-in-progress: true" not in active:
+            errors.append(f"{rel}: exception legacy a changé; reclasser le workflow")
+
+    for rel in NON_CANCELLABLE_PR_WORKFLOWS:
+        path = ROOT / rel
+        if not path.is_file():
+            errors.append(f"{rel}: workflow non annulable absent")
     return errors
 
 
@@ -310,6 +357,7 @@ def main() -> int:
     print(
         f"OK concurrence PR: {len(READ_ONLY_PR_WORKFLOWS)} workflows read-only bornés par workflow/PR; "
         f"{len(PENDING_CONCURRENCY_NORMALIZATION)} exceptions legacy suivies; "
+        f"{len(NON_CANCELLABLE_PR_WORKFLOWS)} workflow production/write non annulable; "
         "annulation limitée aux pull requests, push/main et dispatch préservés."
     )
     return 0
