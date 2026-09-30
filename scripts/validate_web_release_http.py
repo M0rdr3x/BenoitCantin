@@ -17,6 +17,8 @@ PRIVATE_RUNTIME_PATHS = (
     "/compte/",
     "/admin/",
     "/app/",
+    "/Admin/sinjira/",
+    "/histoire-de-vie/remise.html",
 )
 
 PUBLIC_PATHS = (
@@ -28,6 +30,8 @@ PUBLIC_PATHS = (
     "/compte/",
     "/admin/",
     "/app/",
+    "/Admin/sinjira/",
+    "/histoire-de-vie/remise.html",
     "/robots.txt",
     "/sitemap.xml",
 )
