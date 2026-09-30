@@ -61,7 +61,10 @@ SINJIRA™ fonctionne actuellement en **mode gratuit verrouillé** : les fonctio
 ## Déploiement
 
 - Domaine canonique : `www.benoitcantin.com`.
-- Le dépôt contient une configuration Netlify qui construit un publish public isolé dans `_site`; la liaison réelle entre le domaine, le site hébergeur et sa branche de production doit être vérifiée dans l’interface de l’hébergeur avant toute publication.
-- Un merge ou un push sur `main` ne doit pas être présenté comme un déploiement confirmé tant que le comportement de publication de l’hébergeur n’a pas été vérifié.
+- **Hébergement public actuel vérifié le 30 septembre 2026 : GitHub Pages.** Le run GitHub `pages build and deployment` associé à `main` a effectué le checkout de `main` puis téléversé l’artefact Pages avec `path: .`. Le domaine répond aussi avec `Server: GitHub.com`.
+- Cette publication de la racine du dépôt est encore trop large : l’observation HTTP en lecture seule a confirmé `200` pour `/supabase/config.toml`, `/tests/e2e/test_public_site.py` et `/mobile-native/App.tsx`. Ces artefacts ne sont pas des secrets nouveaux puisque le dépôt est public, mais ils ne doivent pas faire partie du site applicatif.
+- Le candidat web-only #449 contient une configuration Netlify qui construit un publish public isolé dans `_site`, mais **Netlify n’est pas l’hébergeur actif observé du domaine**. Les règles `netlify.toml` ne protègent donc pas le site live actuel.
+- Avant toute publication de #449, la source GitHub Pages qui publie `main` avec `path: .` doit être désactivée ou remplacée par un mécanisme qui déploie uniquement l’artefact public allowlisté; alternativement, une migration explicite vers Netlify doit être configurée puis prouvée par une vraie Deploy Preview.
+- Tant que cette bascule n’est pas prouvée, un merge ou un push sur `main` peut republier la racine technique et ne constitue pas une release sûre.
 - Supabase est synchronisé au moyen des workflows protégés et du ledger de migrations de production.
 - Les migrations déjà appliquées en production ne doivent pas être réécrites; toute évolution passe par une nouvelle migration.
