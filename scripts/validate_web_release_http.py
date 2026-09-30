@@ -40,6 +40,19 @@ TECHNICAL_404_PATHS = (
     "/tests/e2e/test_public_site.py",
     "/mobile-native/App.tsx",
 )
+REQUIRED_ROBOTS_DISALLOWS = (
+    "/app/",
+    "/compte/",
+    "/histoire-de-vie/",
+    "/Admin/",
+    "/admin/",
+    "/supabase/",
+    "/.github/",
+    "/mobile-native/",
+    "/tests/",
+    "/docs/",
+    "/scripts/",
+)
 
 EXPECTED_NAV_HREFS = (
     "/",
@@ -242,6 +255,13 @@ def validate_release(base_url: str, context: str) -> list[str]:
     if transparency and "Transparence IA" not in transparency[2]:
         errors.append("/transparence-ia.html: contenu attendu absent.")
 
+    robots = responses.get("/robots.txt")
+    if robots:
+        robots_body = robots[2]
+        for route in REQUIRED_ROBOTS_DISALLOWS:
+            if f"Disallow: {route}" not in robots_body:
+                errors.append(f"/robots.txt: exclusion requise absente: {route}")
+
     security = responses.get("/.well-known/security.txt")
     if security:
         security_body = security[2]
@@ -304,6 +324,10 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "Expires: 2027-09-27T23:59:59Z\n"
                 "Preferred-Languages: fr, en\n"
                 "Canonical: https://www.benoitcantin.com/.well-known/security.txt\n"
+            )
+        elif self.path == "/robots.txt":
+            body = "User-agent: *\n" + "".join(
+                f"Disallow: {route}\n" for route in REQUIRED_ROBOTS_DISALLOWS
             )
         else:
             body = "<html><body>OK</body></html>"
@@ -387,7 +411,7 @@ def self_test() -> None:
 
     print(
         "OK auto-tests smoke HTTP: preview, production, cibles autorisées, "
-        "CSP, noindex, no-store privé et 404 techniques vérifiés."
+        "CSP, noindex, no-store privé, robots privés et 404 techniques vérifiés."
     )
 
 

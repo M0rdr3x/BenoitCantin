@@ -34,6 +34,19 @@ PRIVATE_RUNTIME_HEADER_PATHS = {
     "/app/*",
     "/histoire-de-vie/*",
 }
+REQUIRED_ROBOTS_DISALLOWS = {
+    "/app/",
+    "/compte/",
+    "/histoire-de-vie/",
+    "/Admin/",
+    "/admin/",
+    "/supabase/",
+    "/.github/",
+    "/mobile-native/",
+    "/tests/",
+    "/docs/",
+    "/scripts/",
+}
 
 PUBLIC_DIRS = (
     ".well-known",
@@ -370,6 +383,15 @@ def validate_netlify_config() -> list[str]:
 def validate_plan() -> list[str]:
     errors: list[str] = []
     errors.extend(validate_netlify_config())
+
+    robots_path = ROOT / "robots.txt"
+    if not robots_path.is_file():
+        errors.append("robots.txt absent")
+    else:
+        robots_text = robots_path.read_text(encoding="utf-8", errors="strict")
+        for route in sorted(REQUIRED_ROBOTS_DISALLOWS):
+            if f"Disallow: {route}" not in robots_text:
+                errors.append(f"robots.txt: exclusion requise absente: {route}")
 
     overlap = sorted(set(PUBLIC_DIRS) & set(FORBIDDEN_DIRS))
     if overlap:
