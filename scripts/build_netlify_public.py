@@ -114,6 +114,22 @@ def relative_path_allowed(rel: Path) -> bool:
     ):
         return rel.name == "PROPOSITIONS_PUBLIQUES.md"
 
+    # Le Codex peut contenir des contrats de livraison et inventaires de sources
+    # qui documentent précisément des artefacts privés/non déployés. Ils restent
+    # dans le dépôt de travail mais ne doivent jamais être copiés dans _site.
+    if (
+        len(parts) >= 4
+        and parts[0] == "projets"
+        and parts[1] == "sinjira"
+        and parts[2] == "codex"
+        and rel.suffix.lower() == ".json"
+        and (
+            rel.name.endswith("-delivery-contract.json")
+            or "-source-artifacts-" in rel.name
+        )
+    ):
+        return False
+
     return True
 
 
@@ -163,6 +179,8 @@ def validate_plan() -> list[str]:
         Path("projets/projet-nova/README.md"),
         Path("projets/projet-nova/VERIFICATION_AVANT_PUBLICATION.md"),
         Path("projets/projet-nova/netlify.toml"),
+        Path("projets/sinjira/codex/livre-i-delivery-contract.json"),
+        Path("projets/sinjira/codex/livre-i-source-artifacts-2026-09-15.json"),
     ):
         if relative_path_allowed(rel):
             errors.append(f"Artefact technique sous-arbre autorisé par erreur: {rel.as_posix()}")
