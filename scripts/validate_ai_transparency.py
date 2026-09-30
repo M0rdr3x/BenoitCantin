@@ -7,6 +7,13 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
+PRIVATE_RUNTIME_PREFIXES = (
+    "admin/",
+    "Admin/",
+    "app/",
+    "compte/",
+    "histoire-de-vie/",
+)
 STANDARD = (
     "Idées, vision et décisions : Benoit Cantin. "
     "Mise en œuvre assistée par des outils d'intelligence artificielle. "
@@ -382,6 +389,8 @@ def validate_all_html_surfaces() -> None:
     uncovered: list[str] = []
     for path in sorted(ROOT.rglob("*.html")):
         rel = path.relative_to(ROOT).as_posix()
+        if rel.startswith(PRIVATE_RUNTIME_PREFIXES):
+            continue
         html_raw = read(path)
         html = compact(html_raw)
 
