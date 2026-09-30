@@ -30,6 +30,41 @@ FORBIDDEN_DIRS = (
     "tests",
 )
 
+RESTRICTED_RUNTIME_DIRS = {
+    "Admin",
+    "admin",
+    "app",
+    "compte",
+    "histoire-de-vie",
+}
+
+RUNTIME_WEB_SUFFIXES = {
+    ".html",
+    ".htm",
+    ".css",
+    ".js",
+    ".mjs",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".avif",
+    ".gif",
+    ".svg",
+    ".ico",
+    ".webmanifest",
+    ".xml",
+    ".pdf",
+    ".mp4",
+    ".webm",
+    ".mp3",
+    ".ogg",
+    ".wav",
+    ".woff",
+    ".woff2",
+    ".ttf",
+}
+
 PUBLIC_ROOT_EXACT = {
     ".nojekyll",
     "CNAME",
@@ -98,6 +133,12 @@ def relative_path_allowed(rel: Path) -> bool:
     if parts[0] not in PUBLIC_DIRS:
         return False
 
+    # Les surfaces privées/runtime doivent rester publiables sans jamais
+    # accepter par défaut un futur artefact de maintenance, de configuration
+    # ou de données techniques.
+    if parts[0] in RESTRICTED_RUNTIME_DIRS:
+        return rel.suffix.lower() in RUNTIME_WEB_SUFFIXES
+
     # Les assets runtime ne doivent pas embarquer leurs README de maintenance.
     if parts[0] == "assets" and rel.suffix.lower() in {".md", ".txt", ".toml"}:
         return False
@@ -163,6 +204,13 @@ def validate_plan() -> list[str]:
     for forbidden in FORBIDDEN_DIRS:
         if relative_path_allowed(Path(forbidden) / "probe.txt"):
             errors.append(f"Répertoire technique autorisé par erreur: {forbidden}/")
+
+    for runtime_dir in sorted(RESTRICTED_RUNTIME_DIRS):
+        for probe in ("README.md", "config.json", "secret.env", "schema.sql"):
+            if relative_path_allowed(Path(runtime_dir) / probe):
+                errors.append(
+                    f"Artefact non web autorisé par erreur dans {runtime_dir}/: {probe}"
+                )
 
     for name in (
         "README.md",
