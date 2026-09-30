@@ -95,7 +95,26 @@ def relative_path_allowed(rel: Path) -> bool:
         return False
     if len(parts) == 1:
         return root_file_allowed(ROOT / rel)
-    return parts[0] in PUBLIC_DIRS
+    if parts[0] not in PUBLIC_DIRS:
+        return False
+
+    # Les assets runtime ne doivent pas embarquer leurs README de maintenance.
+    if parts[0] == "assets" and rel.suffix.lower() in {".md", ".txt", ".toml"}:
+        return False
+
+    # Projet Nova conserve ses références publiques structurées sous official/.
+    # Les guides/audits/configs directement à la racine du sous-site ne font
+    # pas partie du site déployé, sauf la proposition publique explicitement
+    # conservée.
+    if (
+        len(parts) == 3
+        and parts[0] == "projets"
+        and parts[1] == "projet-nova"
+        and rel.suffix.lower() in {".md", ".txt", ".toml"}
+    ):
+        return rel.name == "PROPOSITIONS_PUBLIQUES.md"
+
+    return True
 
 
 def sitemap_source_path(url: str) -> Path:
@@ -138,6 +157,22 @@ def validate_plan() -> list[str]:
     ):
         if root_file_allowed(ROOT / name):
             errors.append(f"Document technique racine autorisé par erreur: {name}")
+
+    for rel in (
+        Path("assets/icons/README.md"),
+        Path("projets/projet-nova/README.md"),
+        Path("projets/projet-nova/VERIFICATION_AVANT_PUBLICATION.md"),
+        Path("projets/projet-nova/netlify.toml"),
+    ):
+        if relative_path_allowed(rel):
+            errors.append(f"Artefact technique sous-arbre autorisé par erreur: {rel.as_posix()}")
+
+    for rel in (
+        Path("projets/projet-nova/PROPOSITIONS_PUBLIQUES.md"),
+        Path("projets/projet-nova/official/reference/programme.md"),
+    ):
+        if (ROOT / rel).is_file() and not relative_path_allowed(rel):
+            errors.append(f"Référence publique Projet Nova exclue par erreur: {rel.as_posix()}")
 
     sitemap_path = ROOT / "sitemap.xml"
     if sitemap_path.is_file():
@@ -185,9 +220,18 @@ def build(output: Path) -> None:
     output.mkdir(parents=True)
 
     for name in PUBLIC_DIRS:
-        source = ROOT / name
-        if source.is_dir():
-            shutil.copytree(source, output / name)
+        source_root = ROOT / name
+        if not source_root.is_dir():
+            continue
+        for source in source_root.rglob("*"):
+            if not source.is_file():
+                continue
+            rel = source.relative_to(ROOT)
+            if not relative_path_allowed(rel):
+                continue
+            destination = output / rel
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
 
     for source in ROOT.iterdir():
         if not source.is_file():
