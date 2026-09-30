@@ -85,7 +85,7 @@ def validate_text(text: str) -> list[str]:
     require(errors, exact_run_count(text, NETLIFY_PUBLIC_CHECK) == 1, 'validation périmètre public Netlify absente ou dupliquée')
     require(errors, exact_run_count(text, WEB_RELEASE_SCOPE_SELF) == 1, 'auto-test portée web-only absent ou dupliqué')
     require(errors, exact_run_count(text, WEB_RELEASE_SCOPE_VALIDATE) == 1, 'validation portée web-only absente ou dupliquée')
-    require(errors, text.count(WEB_RELEASE_SCOPE_IF) == 2, 'la portée web-only doit rester limitée aux branches a1/web-release-*')
+    require(errors, text.count(WEB_RELEASE_SCOPE_IF) == 3, 'les gardes et le résumé web-only doivent rester limités aux branches a1/web-release-*')
     require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke HTTP release absent ou dupliqué')
     require(errors, '### Readiness web-only' in text, 'résumé readiness web-only absent')
     require(errors, 'Fichiers modifiés : **$changed_count**' in text, 'compteur de diff readiness absent')
@@ -219,7 +219,16 @@ def run_self_tests(text: str) -> None:
         'node large': text.replace(f"node-version: '{NODE_VERSION}'", "node-version: '22'", 1),
         'dépendance contrat retirée': text.replace('    needs: workflow-contract\n', '', 1),
         'exception draft web-only retirée': text.replace(WEB_RELEASE_VALIDATE_IF, "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false", 1),
-        'exception draft web-only élargie': text.replace("startsWith(github.head_ref, 'a1/web-release-')", "true", 1),
+        'exception draft web-only élargie': text.replace(
+            WEB_RELEASE_VALIDATE_IF,
+            "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false || true",
+            1,
+        ),
+        'condition résumé readiness élargie': text.replace(
+            WEB_RELEASE_SCOPE_IF,
+            "if: github.event_name == 'pull_request'",
+            1,
+        ),
         'validation Netlify retirée': text.replace(f'        run: {NETLIFY_PUBLIC_CHECK}\n', '', 1),
         'historique Git retiré': text.replace('          fetch-depth: 0\n', '', 1),
         'auto-test portée web retiré': text.replace(f'        run: {WEB_RELEASE_SCOPE_SELF}\n', '', 1),
