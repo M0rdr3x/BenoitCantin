@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/validate-site.yml'
+PREVIEW_WORKFLOW = ROOT / '.github/workflows/validate-netlify-preview.yml'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
 SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 SETUP_NODE_SHA = '249970729cb0ef3589644e2896645e5dc5ba9c38'
@@ -88,6 +89,53 @@ def validate_text(text: str) -> list[str]:
     return errors
 
 
+def validate_preview_workflow_text(text: str) -> list[str]:
+    errors: list[str] = []
+    require(errors, 'workflow_dispatch:' in text, 'preview smoke doit rester manuel')
+    require(errors, 'pull_request:' not in text, 'preview smoke ne doit pas se déclencher sur pull_request')
+    require(errors, 'push:' not in text, 'preview smoke ne doit pas se déclencher sur push')
+    require(errors, 'permissions:\n  contents: read' in text, 'preview smoke doit rester contents:read')
+    require(errors, 'cancel-in-progress: false' in text, 'preview smoke manuel ne doit pas être annulé')
+    require(errors, 'runs-on: ubuntu-24.04' in text, 'preview smoke doit utiliser Ubuntu 24.04')
+    require(errors, 'timeout-minutes: 5' in text, 'preview smoke doit rester borné à 5 minutes')
+    require(errors, f'uses: actions/checkout@{CHECKOUT_SHA}' in text, 'checkout preview smoke non épinglé')
+    require(errors, 'persist-credentials: false' in text, 'preview smoke doit désactiver les credentials Git')
+    require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python preview smoke non épinglé')
+    require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python preview smoke inattendue')
+    require(errors, 'PREVIEW_URL: ${{ inputs.preview_url }}' in text, 'URL preview doit passer par une variable d’environnement')
+    require(errors, 'python3 scripts/validate_web_release_http.py "$PREVIEW_URL" --context preview' in text, 'commande smoke preview absente')
+    require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'preview smoke ne doit référencer aucun secret')
+    require(errors, 'contents: write' not in text, 'preview smoke ne doit jamais écrire dans le dépôt')
+    return errors
+
+
+def run_preview_self_tests(text: str) -> None:
+    cases = {
+        'déclenchement PR ajouté': text.replace('  workflow_dispatch:\n', '  pull_request:\n  workflow_dispatch:\n', 1),
+        'annulation activée': text.replace('cancel-in-progress: false', 'cancel-in-progress: true', 1),
+        'permission écriture': text.replace('contents: read', 'contents: write', 1),
+        'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
+        'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
+        'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
+        'injection directe URL': text.replace(
+            'python3 scripts/validate_web_release_http.py "$PREVIEW_URL" --context preview',
+            'python3 scripts/validate_web_release_http.py "${{ inputs.preview_url }}" --context preview',
+            1,
+        ),
+        'secret ajouté': text.replace(
+            'PREVIEW_URL: ${{ inputs.preview_url }}',
+            'PREVIEW_URL: ${{ secrets.PREVIEW_URL }}',
+            1,
+        ),
+    }
+    for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test preview workflow: mutation sans effet: {name}')
+        if not validate_preview_workflow_text(mutated):
+            raise SystemExit(f'ERREUR auto-test preview workflow: mutation non détectée: {name}')
+    print(f'OK auto-tests preview workflow: {len(cases)} affaiblissements critiques détectés.')
+
+
 def run_self_tests(text: str) -> None:
     cases = {
         'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
@@ -128,16 +176,26 @@ def main() -> int:
     args = parser.parse_args()
     if not WORKFLOW.is_file():
         raise SystemExit(f'ERREUR validation site: workflow absent: {WORKFLOW.relative_to(ROOT)}')
+    if not PREVIEW_WORKFLOW.is_file():
+        raise SystemExit(f'ERREUR validation site: workflow preview absent: {PREVIEW_WORKFLOW.relative_to(ROOT)}')
+
     text = WORKFLOW.read_text(encoding='utf-8', errors='strict')
+    preview_text = PREVIEW_WORKFLOW.read_text(encoding='utf-8', errors='strict')
     if args.self_test:
         run_self_tests(text)
+        run_preview_self_tests(preview_text)
         return 0
+
     errors = validate_text(text)
+    errors.extend(validate_preview_workflow_text(preview_text))
     if errors:
         for error in errors:
             print(f'ERREUR sécurité validation site: {error}')
         return 1
-    print('OK sécurité validation site: actions immuables, runtimes figés, credentials non persistés et gardes admin V18/admin-console/lectures privées obligatoires.')
+    print(
+        'OK sécurité validation site: actions immuables, runtimes figés, credentials non persistés, '
+        'garde web-only et smoke preview manuel read-only obligatoires.'
+    )
     return 0
 
 

@@ -13,6 +13,7 @@ WEB_RELEASE_BRANCH_PREFIX = "a1/web-release-"
 
 ALLOWED_EXACT = {
     ".github/workflows/validate-site.yml",
+    ".github/workflows/validate-netlify-preview.yml",
     ".gitignore",
     "netlify.toml",
     "robots.txt",
@@ -117,6 +118,7 @@ def changed_paths(base: str | None = None, head: str | None = None) -> list[str]
 def self_test() -> None:
     valid = [
         ".github/workflows/validate-site.yml",
+        ".github/workflows/validate-netlify-preview.yml",
         ".gitignore",
         "index.html",
         "assistant.html",

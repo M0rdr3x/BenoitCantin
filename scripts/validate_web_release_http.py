@@ -7,10 +7,11 @@ import re
 import threading
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlparse
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 USER_AGENT = "SINJIRA-Web-Release-Smoke/1.0"
 TIMEOUT_SECONDS = 12
+OFFICIAL_PRODUCTION_HOSTS = {"www.benoitcantin.com", "benoitcantin.com"}
 
 PUBLIC_PATHS = (
     "/",
@@ -47,11 +48,54 @@ FORBIDDEN_GLOBAL_NAV_HREFS = (
 )
 
 
+class SameHostRedirectHandler(HTTPRedirectHandler):
+    def __init__(self, allowed_host: str, allow_http: bool = False) -> None:
+        super().__init__()
+        self.allowed_host = allowed_host.lower()
+        self.allow_http = allow_http
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        parsed = urlparse(newurl)
+        host = (parsed.hostname or "").lower()
+        if host != self.allowed_host:
+            raise HTTPError(newurl, code, "Redirection vers un autre hôte refusée", headers, fp)
+        if parsed.scheme != "https" and not self.allow_http:
+            raise HTTPError(newurl, code, "Redirection non HTTPS refusée", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def validate_target_url(base_url: str, context: str) -> list[str]:
+    parsed = urlparse(base_url)
+    host = (parsed.hostname or "").lower()
+    local = host in {"127.0.0.1", "localhost"}
+
+    errors: list[str] = []
+    if parsed.username or parsed.password:
+        errors.append("URL de release invalide: credentials interdits.")
+    if not host:
+        errors.append("URL de release invalide: hôte absent.")
+    if parsed.scheme != "https" and not local:
+        errors.append("URL de release invalide: HTTPS requis.")
+    if parsed.port not in {None, 443} and not local:
+        errors.append("URL de release invalide: port non standard interdit.")
+
+    if context == "preview" and not local and not host.endswith(".netlify.app"):
+        errors.append("Deploy preview invalide: hôte *.netlify.app requis.")
+    if context == "production" and not local and host not in OFFICIAL_PRODUCTION_HOSTS:
+        errors.append("Production invalide: domaine officiel benoîtcantin.com requis.")
+
+    return errors
+
+
 def request(base_url: str, path: str) -> tuple[int, object, str]:
+    parsed_base = urlparse(base_url)
+    host = (parsed_base.hostname or "").lower()
+    local = host in {"127.0.0.1", "localhost"}
     url = urljoin(base_url.rstrip("/") + "/", path.lstrip("/"))
     req = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "text/html,*/*"})
+    opener = build_opener(SameHostRedirectHandler(host, allow_http=local))
     try:
-        with urlopen(req, timeout=TIMEOUT_SECONDS) as response:
+        with opener.open(req, timeout=TIMEOUT_SECONDS) as response:
             body = response.read().decode("utf-8", errors="replace")
             return response.status, response.headers, body
     except HTTPError as exc:
@@ -125,11 +169,9 @@ def validate_headers(headers: object, context: str) -> list[str]:
 
 
 def validate_release(base_url: str, context: str) -> list[str]:
-    errors: list[str] = []
-    parsed = urlparse(base_url)
-    host = (parsed.hostname or "").lower()
-    if parsed.scheme != "https" and host not in {"127.0.0.1", "localhost"}:
-        return ["URL de release invalide: HTTPS requis hors auto-test local."]
+    errors = validate_target_url(base_url, context)
+    if errors:
+        return errors
 
     responses: dict[str, tuple[int, object, str]] = {}
     for path in PUBLIC_PATHS:
@@ -242,7 +284,25 @@ def self_test() -> None:
     if not broken:
         raise SystemExit("ERREUR auto-test smoke HTTP: en-têtes affaiblis non détectés.")
 
-    print("OK auto-tests smoke HTTP: preview, production, CSP, noindex et 404 techniques vérifiés.")
+    invalid_targets = (
+        ("http://example.netlify.app", "preview"),
+        ("https://example.com", "preview"),
+        ("https://user:pass@example.netlify.app", "preview"),
+        ("https://www.netlify.app:8443", "preview"),
+        ("https://example.netlify.app", "production"),
+    )
+    missed = [
+        url
+        for url, context in invalid_targets
+        if not validate_target_url(url, context)
+    ]
+    if missed:
+        raise SystemExit("ERREUR auto-test smoke HTTP: cibles dangereuses acceptées: " + ", ".join(missed))
+
+    print(
+        "OK auto-tests smoke HTTP: preview, production, cibles autorisées, "
+        "CSP, noindex et 404 techniques vérifiés."
+    )
 
 
 def main() -> int:
