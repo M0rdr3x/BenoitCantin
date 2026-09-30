@@ -118,6 +118,36 @@ READ_ONLY_PR_WORKFLOWS = (
     ".github/workflows/sinjira-transaction-acl-v24-5-45.yml",
     ".github/workflows/sinjira-user-rights-convergence-v24-5-33.yml",
     ".github/workflows/sinjira-user-rights-convergence-v24-5-37.yml",
+    ".github/workflows/sinjira-mobile-native-account-route-classification-v25.yml",
+    ".github/workflows/sinjira-mobile-native-alerts-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-character-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-character-network-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-commerce-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-community-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-employment-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-games-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-home-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-intent-routing-v25.yml",
+    ".github/workflows/sinjira-mobile-native-library-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-messages-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-parallel-world-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-personal-ai-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-privacy-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-profile-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-relations-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-secondary-route-aliases-v25.yml",
+    ".github/workflows/sinjira-mobile-native-security-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-settings-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-navigation-boundary-v25.yml",
+    ".github/workflows/sinjira-personal-ai-production-readiness-security.yml",
+    ".github/workflows/sinjira-personal-ai-v25.yml",
+    ".github/workflows/sinjira-public-edge-auth-guard.yml",
+    ".github/workflows/sinjira-security-advisor-v24-5-24.yml",
+    ".github/workflows/sinjira-security-rpc-v24-5-10.yml",
+    ".github/workflows/targeted-production-workflow-security.yml",
+    ".github/workflows/validate-fracture-deduction-simplifiee.yml",
+    ".github/workflows/validate-nova-participation.yml",
+    ".github/workflows/validate-parallel-world-v24-4-92.yml",
 )
 
 EXPECTED_CONCURRENCY = """concurrency:
@@ -171,6 +201,9 @@ def validate_text(path: str, text: str) -> list[str]:
 
 def validate_repo() -> list[str]:
     errors: list[str] = []
+
+    if len(READ_ONLY_PR_WORKFLOWS) != len(set(READ_ONLY_PR_WORKFLOWS)):
+        errors.append("doublon dans READ_ONLY_PR_WORKFLOWS")
 
     workflows_dir = ROOT / ".github" / "workflows"
     for workflow in sorted((*workflows_dir.glob("*.yml"), *workflows_dir.glob("*.yaml"))):
@@ -275,7 +308,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK concurrence PR: 104 workflows read-only bornés par workflow/PR; "
+        f"OK concurrence PR: {len(READ_ONLY_PR_WORKFLOWS)} workflows read-only bornés par workflow/PR; "
         f"{len(PENDING_CONCURRENCY_NORMALIZATION)} exceptions legacy suivies; "
         "annulation limitée aux pull requests, push/main et dispatch préservés."
     )
