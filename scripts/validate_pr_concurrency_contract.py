@@ -18,6 +18,19 @@ READ_ONLY_PR_WORKFLOWS = (
     ".github/workflows/sinjira-public-navigation-v25.yml",
     ".github/workflows/public-seo-v25.yml",
     ".github/workflows/e2e-site.yml",
+    ".github/workflows/recovery-drill.yml",
+    ".github/workflows/sinjira-a1-integration-rehearsal.yml",
+    ".github/workflows/sinjira-a1-publication-isolation.yml",
+    ".github/workflows/sinjira-account-content-hub-v25.yml",
+    ".github/workflows/sinjira-account-life-story-a1.yml",
+    ".github/workflows/sinjira-literature-browser-v25.yml",
+    ".github/workflows/sinjira-livre-i-private-delivery.yml",
+    ".github/workflows/sinjira-private-novel-catalog-v25.yml",
+    ".github/workflows/sinjira-security-context-response-v25.yml",
+    ".github/workflows/sinjira-v25-release-review-snapshot.yml",
+    ".github/workflows/validate-ai-transparency.yml",
+    ".github/workflows/validate-community-v24-4-79.yml",
+    ".github/workflows/validate-dating-v24-4-75.yml",
 )
 
 EXPECTED_CONCURRENCY = """concurrency:
@@ -161,7 +174,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK concurrence PR: 11 workflows read-only bornés par workflow/PR; "
+        "OK concurrence PR: 24 workflows read-only bornés par workflow/PR; "
         "annulation limitée aux pull requests, push/main et dispatch préservés."
     )
     return 0
