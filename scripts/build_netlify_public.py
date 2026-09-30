@@ -27,6 +27,13 @@ REQUIRED_TECHNICAL_404S = {
     "/tests/*",
     "/mobile-native/*",
 }
+PRIVATE_RUNTIME_HEADER_PATHS = {
+    "/compte/*",
+    "/admin/*",
+    "/Admin/*",
+    "/app/*",
+    "/histoire-de-vie/*",
+}
 
 PUBLIC_DIRS = (
     ".well-known",
@@ -327,6 +334,23 @@ def validate_netlify_config() -> list[str]:
                 errors.append(f"CSP Netlify: directive requise absente: {directive}.")
         if global_values.get("X-Content-Type-Options") != "nosniff":
             errors.append("En-tête X-Content-Type-Options=nosniff requis.")
+
+    header_rules = {
+        rule.get("for"): (rule.get("values") or {})
+        for rule in headers
+        if isinstance(rule, dict) and isinstance(rule.get("for"), str)
+    }
+    for private_path in sorted(PRIVATE_RUNTIME_HEADER_PATHS):
+        values = header_rules.get(private_path)
+        if values is None:
+            errors.append(f"En-têtes privés Netlify absents: {private_path}")
+            continue
+        if str(values.get("Cache-Control") or "").lower() != "no-store":
+            errors.append(f"Cache-Control no-store requis: {private_path}")
+        robots = str(values.get("X-Robots-Tag") or "").lower()
+        for token in ("noindex", "nofollow", "noarchive"):
+            if token not in robots:
+                errors.append(f"X-Robots-Tag {token} requis: {private_path}")
 
     redirects = data.get("redirects") or []
     observed = {

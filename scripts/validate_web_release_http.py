@@ -13,6 +13,12 @@ USER_AGENT = "SINJIRA-Web-Release-Smoke/1.0"
 TIMEOUT_SECONDS = 12
 OFFICIAL_PRODUCTION_HOSTS = {"www.benoitcantin.com", "benoitcantin.com"}
 
+PRIVATE_RUNTIME_PATHS = (
+    "/compte/",
+    "/admin/",
+    "/app/",
+)
+
 PUBLIC_PATHS = (
     "/",
     "/.well-known/security.txt",
@@ -176,6 +182,22 @@ def validate_headers(headers: object, context: str) -> list[str]:
     return errors
 
 
+def validate_private_headers(headers: object, path: str) -> list[str]:
+    errors: list[str] = []
+    get = getattr(headers, "get")
+
+    cache_control = str(get("Cache-Control") or "").lower()
+    if "no-store" not in cache_control:
+        errors.append(f"{path}: Cache-Control no-store absent.")
+
+    robots = str(get("X-Robots-Tag") or "").lower()
+    for token in ("noindex", "nofollow", "noarchive"):
+        if token not in robots:
+            errors.append(f"{path}: X-Robots-Tag sans {token}.")
+
+    return errors
+
+
 def validate_release(base_url: str, context: str) -> list[str]:
     errors = validate_target_url(base_url, context)
     if errors:
@@ -206,6 +228,11 @@ def validate_release(base_url: str, context: str) -> list[str]:
         _, headers, body = home
         errors.extend(validate_headers(headers, context))
         errors.extend(validate_home(body))
+
+    for private_path in PRIVATE_RUNTIME_PATHS:
+        response = responses.get(private_path)
+        if response:
+            errors.extend(validate_private_headers(response[1], private_path))
 
     assistant = responses.get("/assistant.html")
     if assistant and "Assistant Nova" not in assistant[2]:
@@ -238,6 +265,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         technical = self.path in TECHNICAL_404_PATHS
+        private_runtime = self.path in PRIVATE_RUNTIME_PATHS
         self.send_response(404 if technical else 200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("X-Content-Type-Options", "nosniff")
@@ -248,7 +276,9 @@ class FixtureHandler(BaseHTTPRequestHandler):
             "connect-src 'self'; "
             "frame-ancestors 'self'; object-src 'self'; base-uri 'self'",
         )
-        if getattr(self.server, "preview", False):
+        if private_runtime:
+            self.send_header("Cache-Control", "no-store")
+        if getattr(self.server, "preview", False) or private_runtime:
             self.send_header("X-Robots-Tag", "noindex, nofollow, noarchive")
         self.end_headers()
 
@@ -314,6 +344,13 @@ def self_test() -> None:
     if not broken:
         raise SystemExit("ERREUR auto-test smoke HTTP: en-têtes affaiblis non détectés.")
 
+    private_broken = validate_private_headers(
+        {"X-Robots-Tag": "noindex"},
+        "/compte/",
+    )
+    if not private_broken:
+        raise SystemExit("ERREUR auto-test smoke HTTP: en-têtes privés affaiblis non détectés.")
+
     provider_enabled = validate_headers(
         {
             "Content-Security-Policy": (
@@ -350,7 +387,7 @@ def self_test() -> None:
 
     print(
         "OK auto-tests smoke HTTP: preview, production, cibles autorisées, "
-        "CSP, noindex et 404 techniques vérifiés."
+        "CSP, noindex, no-store privé et 404 techniques vérifiés."
     )
 
 
