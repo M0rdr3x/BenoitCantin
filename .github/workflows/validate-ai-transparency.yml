@@ -15,6 +15,9 @@ on:
       - 'README.md'
       - 'sitemap.xml'
       - 'sw.js'
+      - 'netlify.toml'
+      - 'ASSISTANT_GOVERNANCE.md'
+      - 'docs/BUBBLAV_PUBLIC_ASSISTANT_DATA_MINIMIZATION.md'
       - 'scripts/validate_ai_transparency.py'
       - '.github/workflows/validate-ai-transparency.yml'
   workflow_dispatch:
