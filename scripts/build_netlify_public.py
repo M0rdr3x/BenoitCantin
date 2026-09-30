@@ -5,6 +5,7 @@ import argparse
 import os
 import shutil
 import tempfile
+import tomllib
 from pathlib import Path
 from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
@@ -15,6 +16,15 @@ DEPLOY_PREVIEW_CONTEXT = "deploy-preview"
 PREVIEW_HEADERS = """/*
   X-Robots-Tag: noindex, nofollow, noarchive
 """
+NETLIFY_CONFIG = ROOT / "netlify.toml"
+REQUIRED_TECHNICAL_404S = {
+    "/supabase/*",
+    "/scripts/*",
+    "/docs/*",
+    "/.github/*",
+    "/tests/*",
+    "/mobile-native/*",
+}
 
 PUBLIC_DIRS = (
     ".well-known",
@@ -193,8 +203,61 @@ def sitemap_source_path(url: str) -> Path:
     return rel
 
 
+def validate_netlify_config() -> list[str]:
+    errors: list[str] = []
+    if not NETLIFY_CONFIG.is_file():
+        return ["netlify.toml absent"]
+
+    try:
+        data = tomllib.loads(NETLIFY_CONFIG.read_text(encoding="utf-8", errors="strict"))
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        return [f"netlify.toml illisible: {exc}"]
+
+    build = data.get("build") or {}
+    if build.get("command") != "python3 scripts/build_netlify_public.py":
+        errors.append("Commande Netlify inattendue: python3 scripts/build_netlify_public.py requis.")
+    if build.get("publish") != "_site":
+        errors.append("Publish Netlify inattendu: _site requis.")
+
+    headers = data.get("headers") or []
+    global_values = None
+    for rule in headers:
+        if rule.get("for") == "/*":
+            global_values = rule.get("values") or {}
+            break
+    if global_values is None:
+        errors.append("En-têtes globaux Netlify absents.")
+    else:
+        csp = str(global_values.get("Content-Security-Policy") or "")
+        if "script-src" not in csp or "https://www.bubblav.com" not in csp.split("connect-src", 1)[0]:
+            errors.append("CSP Netlify: BubblaV absent de script-src.")
+        connect_section = csp.split("connect-src", 1)[1].split(";", 1)[0] if "connect-src" in csp else ""
+        if "https://www.bubblav.com" not in connect_section:
+            errors.append("CSP Netlify: BubblaV absent de connect-src.")
+        for directive in ("frame-ancestors 'self'", "object-src 'self'", "base-uri 'self'"):
+            if directive not in csp:
+                errors.append(f"CSP Netlify: directive requise absente: {directive}.")
+        if global_values.get("X-Content-Type-Options") != "nosniff":
+            errors.append("En-tête X-Content-Type-Options=nosniff requis.")
+
+    redirects = data.get("redirects") or []
+    observed = {
+        rule.get("from")
+        for rule in redirects
+        if rule.get("to") == "/404.html"
+        and rule.get("status") == 404
+        and rule.get("force") is True
+    }
+    missing = sorted(REQUIRED_TECHNICAL_404S - observed)
+    if missing:
+        errors.append("Redirections 404 techniques absentes: " + ", ".join(missing))
+
+    return errors
+
+
 def validate_plan() -> list[str]:
     errors: list[str] = []
+    errors.extend(validate_netlify_config())
 
     overlap = sorted(set(PUBLIC_DIRS) & set(FORBIDDEN_DIRS))
     if overlap:
