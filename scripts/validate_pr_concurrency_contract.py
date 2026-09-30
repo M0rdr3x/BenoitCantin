@@ -6,12 +6,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 
-PENDING_CONCURRENCY_NORMALIZATION = {
-    ".github/workflows/sinjira-child-community-v25.yml",
-    ".github/workflows/sinjira-child-signup-browser-v25.yml",
-    ".github/workflows/sinjira-child-signup-v25.yml",
-    ".github/workflows/sinjira-junior-guardian-revocation-v25.yml",
-}
+PENDING_CONCURRENCY_NORMALIZATION = set()
 
 NON_CANCELLABLE_PR_WORKFLOWS = {
     ".github/workflows/supabase-production-preflight.yml",
@@ -157,6 +152,10 @@ READ_ONLY_PR_WORKFLOWS = (
     ".github/workflows/sinjira-production-migration-history-guard-v25.yml",
     ".github/workflows/sinjira-user-rights-rpc-v24-5-14.yml",
     ".github/workflows/validate-production-ledger.yml",
+    ".github/workflows/sinjira-child-community-v25.yml",
+    ".github/workflows/sinjira-child-signup-browser-v25.yml",
+    ".github/workflows/sinjira-child-signup-v25.yml",
+    ".github/workflows/sinjira-junior-guardian-revocation-v25.yml",
 )
 
 EXPECTED_CONCURRENCY = """concurrency:
