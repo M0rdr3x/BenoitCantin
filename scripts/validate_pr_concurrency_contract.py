@@ -38,6 +38,31 @@ READ_ONLY_PR_WORKFLOWS = (
     ".github/workflows/validate-ai-transparency.yml",
     ".github/workflows/validate-community-v24-4-79.yml",
     ".github/workflows/validate-dating-v24-4-75.yml",
+    ".github/workflows/sinjira-life-story-user-rpc-v24-5-13.yml",
+    ".github/workflows/sinjira-mobile-native-life-story-hub-v25.yml",
+    ".github/workflows/validate-preorders-v24-5-3.yml",
+    ".github/workflows/sinjira-preorder-admin-rpc-v24-5-8.yml",
+    ".github/workflows/sinjira-native-push-producer-boundary-v25.yml",
+    ".github/workflows/sinjira-device-challenge-client-boundary-v25.yml",
+    ".github/workflows/sinjira-user-rights-convergence-v24-5-28.yml",
+    ".github/workflows/sinjira-conscience-vault-functional-v25.yml",
+    ".github/workflows/sinjira-mobile-safe-share-v25.yml",
+    ".github/workflows/sinjira-mobile-native-dating-hub-v25.yml",
+    ".github/workflows/sinjira-private-profile-v24-5-23.yml",
+    ".github/workflows/sinjira-mobile-native-hub-destinations-v25.yml",
+    ".github/workflows/sinjira-live-social-activation-gate-v25.yml",
+    ".github/workflows/sinjira-rls-helper-rpc-v24-5-22.yml",
+    ".github/workflows/sinjira-security-risk-v25.yml",
+    ".github/workflows/sinjira-security-travel-client-visibility-v25.yml",
+    ".github/workflows/sinjira-security-travel-consent-v25.yml",
+    ".github/workflows/sinjira-security-travel-data-minimization-v25.yml",
+    ".github/workflows/sinjira-security-travel-retention-v25.yml",
+    ".github/workflows/sinjira-security-travel-self-only-v25.yml",
+    ".github/workflows/sinjira-security-travel-visibility-v25.yml",
+    ".github/workflows/sinjira-security-v24-4-99.yml",
+    ".github/workflows/sinjira-sensitive-aal2-v25.yml",
+    ".github/workflows/sinjira-social-home-v25.yml",
+    ".github/workflows/sinjira-social-user-rpc-v24-5-15.yml",
 )
 
 EXPECTED_CONCURRENCY = """concurrency:
@@ -195,7 +220,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK concurrence PR: 24 workflows read-only bornés par workflow/PR; "
+        "OK concurrence PR: 49 workflows read-only bornés par workflow/PR; "
         f"{len(PENDING_CONCURRENCY_NORMALIZATION)} exceptions legacy suivies; "
         "annulation limitée aux pull requests, push/main et dispatch préservés."
     )
