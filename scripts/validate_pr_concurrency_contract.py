@@ -87,6 +87,37 @@ READ_ONLY_PR_WORKFLOWS = (
     ".github/workflows/sinjira-live-social-commands-v25.yml",
     ".github/workflows/sinjira-live-social-foundation-v25.yml",
     ".github/workflows/sinjira-live-social-runtime-v25.yml",
+    ".github/workflows/sinjira-family-playtest-rpc-v24-5-17.yml",
+    ".github/workflows/sinjira-family-redeem-rpc-v24-5-19.yml",
+    ".github/workflows/sinjira-owner-character-rpc-v24-5-20.yml",
+    ".github/workflows/sinjira-parallel-user-rpc-v24-5-16.yml",
+    ".github/workflows/sinjira-points-status-rpc-v24-5-18.yml",
+    ".github/workflows/sinjira-preorder-admin-cache-v24-5-43.yml",
+    ".github/workflows/sinjira-preorder-admin-workflow-v24-5-36.yml",
+    ".github/workflows/sinjira-preorder-commercial-convergence-v24-5-42.yml",
+    ".github/workflows/sinjira-preorder-commercial-v24-5-5.yml",
+    ".github/workflows/sinjira-preorder-cost-summary-v24-5-25.yml",
+    ".github/workflows/sinjira-preorder-disclosure-v24-5-31.yml",
+    ".github/workflows/sinjira-preorder-fulfillment-v24-5-6.yml",
+    ".github/workflows/sinjira-preorder-full-cost-v24-5-30.yml",
+    ".github/workflows/sinjira-preorder-logistics-print-hardening-v24-5-40.yml",
+    ".github/workflows/sinjira-preorder-logistics-print-v24-5-39.yml",
+    ".github/workflows/sinjira-preorder-logistics-v24-5-38.yml",
+    ".github/workflows/sinjira-preorder-printable-v24-5-33.yml",
+    ".github/workflows/sinjira-preorder-public-cache-v24-5-44.yml",
+    ".github/workflows/sinjira-preorder-readiness-v24-5-26.yml",
+    ".github/workflows/sinjira-preorder-receipt-v24-5-32.yml",
+    ".github/workflows/sinjira-preorder-reference-admin-lookup-v24-5-35.yml",
+    ".github/workflows/sinjira-preorder-reference-copy-v24-5-34.yml",
+    ".github/workflows/sinjira-preorder-rpc-hardening-v24-5-7.yml",
+    ".github/workflows/sinjira-preorder-sale-readiness-v24-5-41.yml",
+    ".github/workflows/sinjira-preorder-tax-estimates-v24-5-27.yml",
+    ".github/workflows/sinjira-preorder-user-rpc-v24-5-11.yml",
+    ".github/workflows/sinjira-preorder-uuid-output-v24-5-46.yml",
+    ".github/workflows/sinjira-preorders-admin-v24-5-4.yml",
+    ".github/workflows/sinjira-transaction-acl-v24-5-45.yml",
+    ".github/workflows/sinjira-user-rights-convergence-v24-5-33.yml",
+    ".github/workflows/sinjira-user-rights-convergence-v24-5-37.yml",
 )
 
 EXPECTED_CONCURRENCY = """concurrency:
@@ -244,7 +275,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK concurrence PR: 73 workflows read-only bornés par workflow/PR; "
+        "OK concurrence PR: 104 workflows read-only bornés par workflow/PR; "
         f"{len(PENDING_CONCURRENCY_NORMALIZATION)} exceptions legacy suivies; "
         "annulation limitée aux pull requests, push/main et dispatch préservés."
     )
