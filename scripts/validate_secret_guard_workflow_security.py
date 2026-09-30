@@ -48,6 +48,8 @@ def validate_text(text: str) -> list[str]:
 
     require(errors, 'python scripts/validate_secret_guard_workflow_security.py --self-test' in text, 'auto-tests du contrat absents')
     require(errors, 'python scripts/validate_secret_guard_workflow_security.py\n' in text, 'validation du contrat absente')
+    require(errors, 'python scripts/validate_pr_concurrency_contract.py --self-test' in text, 'auto-tests concurrence PR absents')
+    require(errors, 'python scripts/validate_pr_concurrency_contract.py\n' in text, 'validation concurrence PR absente')
     require(errors, 'python scripts/validate_no_committed_secrets.py' in text, 'scan des secrets absent')
     return errors
 
@@ -62,6 +64,8 @@ def run_self_tests(text: str) -> None:
         'runner mobile': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1),
         'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
         'auto-test retiré': text.replace('        run: python scripts/validate_secret_guard_workflow_security.py --self-test\n', '', 1),
+        'auto-test concurrence PR retiré': text.replace('        run: python scripts/validate_pr_concurrency_contract.py --self-test\n', '', 1),
+        'contrat concurrence PR retiré': text.replace('        run: python scripts/validate_pr_concurrency_contract.py\n', '', 1),
     }
     for name, mutated in cases.items():
         if not validate_text(mutated):
