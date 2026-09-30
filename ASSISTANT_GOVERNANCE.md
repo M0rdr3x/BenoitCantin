@@ -86,7 +86,7 @@ Le widget public BubblaV ne doit pas être chargé sous :
 
 Le chatbot public ne constitue pas une voie d’accès aux données privées des comptes SINJIRA ni aux outils d’administration. Par défaut, une surface non indexable n’est pas une surface de chatbot public.
 
-Lorsque le fournisseur sera réactivé, une surface autorisée devra rester **opt-in** : le site affichera d’abord un lanceur local et ne créera le script BubblaV qu’après un clic explicite. Avant ce clic, aucune requête vers `www.bubblav.com/widget.js` ne devra être initiée par ce chargeur.
+Lorsque le fournisseur sera réactivé, le chargeur doit rester **opt-in** : le site affichera d’abord un lanceur local et ne créera le script BubblaV qu’après un clic explicite. Avant ce clic, aucune requête vers `www.bubblav.com/widget.js` ne devra être initiée par ce chargeur.
 
 **État actuel : BubblaV est désactivé côté site.** Le verrou `publicAssistantVendorReady=false` empêche la création du lanceur public, et la CSP n’autorise pas `www.bubblav.com`. Tant que les issues #443 et #444 ne sont pas résolues et revérifiées, aucun script ou appel réseau BubblaV ne doit être initié par le portail.
 
