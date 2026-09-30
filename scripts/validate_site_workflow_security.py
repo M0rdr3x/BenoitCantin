@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/validate-site.yml'
 PREVIEW_WORKFLOW = ROOT / '.github/workflows/validate-netlify-preview.yml'
+PRODUCTION_WORKFLOW = ROOT / '.github/workflows/validate-web-production.yml'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
 SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 SETUP_NODE_SHA = '249970729cb0ef3589644e2896645e5dc5ba9c38'
@@ -116,6 +117,52 @@ def validate_preview_workflow_text(text: str) -> list[str]:
     return errors
 
 
+def validate_production_workflow_text(text: str) -> list[str]:
+    errors: list[str] = []
+    require(errors, 'workflow_dispatch:' in text, 'production smoke doit rester manuel')
+    require(errors, 'pull_request:' not in text, 'production smoke ne doit pas se déclencher sur pull_request')
+    require(errors, 'push:' not in text, 'production smoke ne doit pas se déclencher sur push')
+    require(errors, 'permissions:\n  contents: read' in text, 'production smoke doit rester contents:read')
+    require(errors, 'cancel-in-progress: false' in text, 'production smoke manuel ne doit pas être annulé')
+    require(errors, 'runs-on: ubuntu-24.04' in text, 'production smoke doit utiliser Ubuntu 24.04')
+    require(errors, 'timeout-minutes: 5' in text, 'production smoke doit rester borné à 5 minutes')
+    require(errors, f'uses: actions/checkout@{CHECKOUT_SHA}' in text, 'checkout production smoke non épinglé')
+    require(errors, 'persist-credentials: false' in text, 'production smoke doit désactiver les credentials Git')
+    require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python production smoke non épinglé')
+    require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python production smoke inattendue')
+    require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke HTTP production absent ou dupliqué')
+    require(
+        errors,
+        'python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production' in text,
+        'commande smoke production canonique absente',
+    )
+    require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'production smoke ne doit référencer aucun secret')
+    require(errors, 'contents: write' not in text, 'production smoke ne doit jamais écrire dans le dépôt')
+    require(errors, 'inputs:' not in text, 'production smoke ne doit accepter aucune URL ou entrée utilisateur')
+    return errors
+
+
+def run_production_self_tests(text: str) -> None:
+    cases = {
+        'déclenchement PR ajouté': text.replace('  workflow_dispatch:\n', '  pull_request:\n  workflow_dispatch:\n', 1),
+        'annulation activée': text.replace('cancel-in-progress: false', 'cancel-in-progress: true', 1),
+        'permission écriture': text.replace('contents: read', 'contents: write', 1),
+        'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
+        'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
+        'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
+        'auto-test smoke retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
+        'domaine remplacé': text.replace('https://www.benoitcantin.com --context production', 'https://example.com --context production', 1),
+        'input ajouté': text.replace('  workflow_dispatch:\n', '  workflow_dispatch:\n    inputs:\n      url:\n        required: true\n', 1),
+        'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
+    }
+    for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test production workflow: mutation sans effet: {name}')
+        if not validate_production_workflow_text(mutated):
+            raise SystemExit(f'ERREUR auto-test production workflow: mutation non détectée: {name}')
+    print(f'OK auto-tests production workflow: {len(cases)} affaiblissements critiques détectés.')
+
+
 def run_preview_self_tests(text: str) -> None:
     cases = {
         'déclenchement PR ajouté': text.replace('  workflow_dispatch:\n', '  pull_request:\n  workflow_dispatch:\n', 1),
@@ -190,23 +237,28 @@ def main() -> int:
         raise SystemExit(f'ERREUR validation site: workflow absent: {WORKFLOW.relative_to(ROOT)}')
     if not PREVIEW_WORKFLOW.is_file():
         raise SystemExit(f'ERREUR validation site: workflow preview absent: {PREVIEW_WORKFLOW.relative_to(ROOT)}')
+    if not PRODUCTION_WORKFLOW.is_file():
+        raise SystemExit(f'ERREUR validation site: workflow production absent: {PRODUCTION_WORKFLOW.relative_to(ROOT)}')
 
     text = WORKFLOW.read_text(encoding='utf-8', errors='strict')
     preview_text = PREVIEW_WORKFLOW.read_text(encoding='utf-8', errors='strict')
+    production_text = PRODUCTION_WORKFLOW.read_text(encoding='utf-8', errors='strict')
     if args.self_test:
         run_self_tests(text)
         run_preview_self_tests(preview_text)
+        run_production_self_tests(production_text)
         return 0
 
     errors = validate_text(text)
     errors.extend(validate_preview_workflow_text(preview_text))
+    errors.extend(validate_production_workflow_text(production_text))
     if errors:
         for error in errors:
             print(f'ERREUR sécurité validation site: {error}')
         return 1
     print(
         'OK sécurité validation site: actions immuables, runtimes figés, credentials non persistés, '
-        'garde web-only et smoke preview manuel read-only obligatoires.'
+        'garde web-only, smoke preview et smoke production manuels read-only obligatoires.'
     )
     return 0
 

@@ -13,6 +13,7 @@ WEB_RELEASE_BRANCH_PREFIX = "a1/web-release-"
 
 ALLOWED_EXACT = (
     ".github/workflows/validate-netlify-preview.yml",
+    ".github/workflows/validate-web-production.yml",
     ".github/workflows/validate-site.yml",
     ".gitignore",
     "netlify.toml",
@@ -122,6 +123,7 @@ def self_test() -> None:
 
     valid = [
         ".github/workflows/validate-netlify-preview.yml",
+        ".github/workflows/validate-web-production.yml",
         ".github/workflows/validate-site.yml",
         ".gitignore",
         "index.html",
