@@ -14,6 +14,8 @@ SELF_CHECK = 'python3 scripts/validate_targeted_production_ci_workflow_security.
 SELF_CHECK_LINE = f'        run: {SELF_CHECK}\n'
 
 TARGET_PATHS = (
+    "'.github/workflows/*.yml'",
+    "'.github/workflows/*.yaml'",
     "'.github/workflows/sinjira-v25-production-deploy.yml'",
     "'.github/workflows/sinjira-v25-employment-production.yml'",
     "'.github/workflows/sinjira-v25-personal-ai-production-readiness.yml'",
@@ -125,6 +127,8 @@ def mutations(text: str):
     yield 'python large', text.replace("python-version: '3.12.14'", "python-version: '3.12'", 1)
     yield 'permissions écriture', text.replace('contents: read', 'contents: write', 1)
     yield 'push main retiré', remove_push(text)
+    yield 'glob yml retiré', text.replace("      - '.github/workflows/*.yml'\n", '', 2)
+    yield 'glob yaml retiré', text.replace("      - '.github/workflows/*.yaml'\n", '', 2)
     yield 'cible coffre retirée', text.replace("      - '.github/workflows/sinjira-v25-production-deploy.yml'\n", '', 2)
     yield 'cible emploi retirée', text.replace("      - '.github/workflows/sinjira-v25-employment-production.yml'\n", '', 2)
     yield 'cible IA retirée', text.replace("      - '.github/workflows/sinjira-v25-personal-ai-production-readiness.yml'\n", '', 2)

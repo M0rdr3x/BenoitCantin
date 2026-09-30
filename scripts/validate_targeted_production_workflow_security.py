@@ -20,6 +20,11 @@ TARGETS = {
     "sinjira-v25-auth-password-hardening.yml": False,
 }
 
+PRODUCTION_ENVIRONMENT_WORKFLOWS = {
+    *TARGETS,
+    "supabase-production-preflight.yml",
+}
+
 
 def step_blocks(text: str) -> list[tuple[str, str]]:
     matches = list(re.finditer(r"(?m)^      - name: (.+)$", text))
@@ -89,14 +94,49 @@ def validate_text(filename: str, text: str) -> list[str]:
     return errors
 
 
+def active_text(text: str) -> str:
+    return "\n".join(
+        line for line in text.splitlines()
+        if not line.strip().startswith("#")
+    )
+
+
+def validate_production_environment_inventory(workflows: dict[str, str]) -> list[str]:
+    observed = {
+        filename
+        for filename, text in workflows.items()
+        if "environment: production" in active_text(text)
+    }
+    missing = sorted(PRODUCTION_ENVIRONMENT_WORKFLOWS - observed)
+    unexpected = sorted(observed - PRODUCTION_ENVIRONMENT_WORKFLOWS)
+
+    errors: list[str] = []
+    if missing:
+        errors.append(
+            "workflows environment:production attendus absents: " + ", ".join(missing)
+        )
+    if unexpected:
+        errors.append(
+            "workflows environment:production non classés: " + ", ".join(unexpected)
+        )
+    return errors
+
+
 def validate_repository() -> list[str]:
     errors: list[str] = []
+
+    workflows = {
+        path.name: path.read_text(encoding="utf-8", errors="strict")
+        for path in sorted((*WORKFLOW_DIR.glob("*.yml"), *WORKFLOW_DIR.glob("*.yaml")))
+    }
+    errors.extend(validate_production_environment_inventory(workflows))
+
     for filename in TARGETS:
         path = WORKFLOW_DIR / filename
         if not path.is_file():
             errors.append(f"Workflow production ciblé absent: {filename}")
             continue
-        errors.extend(validate_text(filename, path.read_text(encoding="utf-8")))
+        errors.extend(validate_text(filename, workflows[filename]))
     return errors
 
 
