@@ -327,7 +327,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "/confidentialite.html",
         "/gouvernance-vie-privee.html",
         "/avis-legal.html",
-        "benoitcantin-v24-4-95-public-3",
+        "benoitcantin-v24-4-95-public-4",
     ):
         if marker not in sw:
             fail(f"cache PWA sans transparence IA courante: {marker}")
