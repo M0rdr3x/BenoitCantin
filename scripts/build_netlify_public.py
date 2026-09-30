@@ -2,14 +2,51 @@
 from __future__ import annotations
 
 import argparse
+import json
+import hashlib
+import os
 import shutil
 import tempfile
+import tomllib
 from pathlib import Path
 from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "_site"
+DEPLOY_PREVIEW_CONTEXT = "deploy-preview"
+PREVIEW_HEADERS = """/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+"""
+NETLIFY_CONFIG = ROOT / "netlify.toml"
+REQUIRED_TECHNICAL_404S = {
+    "/supabase/*",
+    "/scripts/*",
+    "/docs/*",
+    "/.github/*",
+    "/tests/*",
+    "/mobile-native/*",
+}
+PRIVATE_RUNTIME_HEADER_PATHS = {
+    "/compte/*",
+    "/admin/*",
+    "/Admin/*",
+    "/app/*",
+    "/histoire-de-vie/*",
+}
+REQUIRED_ROBOTS_DISALLOWS = {
+    "/app/",
+    "/compte/",
+    "/histoire-de-vie/",
+    "/Admin/",
+    "/admin/",
+    "/supabase/",
+    "/.github/",
+    "/mobile-native/",
+    "/tests/",
+    "/docs/",
+    "/scripts/",
+}
 
 PUBLIC_DIRS = (
     ".well-known",
@@ -75,6 +112,69 @@ PUBLIC_ROOT_EXACT = {
     "sitemap.xml",
 }
 
+PROJECT_NOVA_STRUCTURED_SUFFIXES = {
+    ".md",
+    ".csv",
+    ".markdown",
+    ".txt",
+    ".toml",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".sql",
+    ".py",
+    ".sh",
+    ".ts",
+    ".tsx",
+    ".env",
+    ".ini",
+    ".cfg",
+    ".lock",
+    ".zip",
+    ".7z",
+    ".rar",
+    ".tar",
+    ".gz",
+    ".bz2",
+    ".xz",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
+    ".odt",
+    ".ods",
+    ".odp",
+    ".db",
+    ".sqlite",
+    ".sqlite3",
+    ".log",
+    ".bak",
+    ".backup",
+    ".tmp",
+    ".psd",
+    ".ai",
+    ".sketch",
+    ".fig",
+    ".pem",
+    ".key",
+    ".crt",
+    ".p12",
+    ".pfx",
+}
+
+PROJECT_NOVA_PUBLIC_STRUCTURED_EXACT = {
+    Path("projets/projet-nova/PROPOSITIONS_PUBLIQUES.md"),
+    Path("projets/projet-nova/documents.json"),
+    Path("projets/projet-nova/documents-word-only.json"),
+}
+
+PROJECT_NOVA_PUBLIC_STRUCTURED_PREFIXES = (
+    Path("projets/projet-nova/data"),
+    Path("projets/projet-nova/official/reference"),
+)
+
 PUBLIC_ROOT_SUFFIXES = {
     ".html",
     ".css",
@@ -98,6 +198,7 @@ PUBLIC_ROOT_SUFFIXES = {
 }
 
 REQUIRED_PUBLIC_PATHS = (
+    ".well-known/security.txt",
     "index.html",
     "404.html",
     "robots.txt",
@@ -125,6 +226,28 @@ def root_file_allowed(path: Path) -> bool:
     return path.suffix.lower() in PUBLIC_ROOT_SUFFIXES
 
 
+def re_full_sha256(value: str) -> bool:
+    value = value.strip().lower()
+    return len(value) == 64 and all(ch in "0123456789abcdef" for ch in value)
+
+
+def project_nova_structured_allowed(rel: Path) -> bool:
+    if rel in PROJECT_NOVA_PUBLIC_STRUCTURED_EXACT:
+        return True
+    for prefix in PROJECT_NOVA_PUBLIC_STRUCTURED_PREFIXES:
+        try:
+            nested = rel.relative_to(prefix)
+        except ValueError:
+            continue
+        if not nested.parts:
+            return False
+        if prefix.name == "data":
+            return rel.suffix.lower() == ".json"
+        if prefix.name == "reference":
+            return rel.suffix.lower() == ".md"
+    return False
+
+
 def relative_path_allowed(rel: Path) -> bool:
     parts = rel.parts
     if not parts:
@@ -144,17 +267,16 @@ def relative_path_allowed(rel: Path) -> bool:
     if parts[0] == "assets" and rel.suffix.lower() in {".md", ".txt", ".toml"}:
         return False
 
-    # Projet Nova conserve ses références publiques structurées sous official/.
-    # Les guides/audits/configs directement à la racine du sous-site ne font
-    # pas partie du site déployé, sauf la proposition publique explicitement
-    # conservée.
+    # Projet Nova publie uniquement les données runtime explicitement publiques
+    # et les références documentaires déclarées. Les README, rapports,
+    # receipts, états de build et historiques official/versions restent dans Git.
     if (
-        len(parts) == 3
+        len(parts) >= 3
         and parts[0] == "projets"
         and parts[1] == "projet-nova"
-        and rel.suffix.lower() in {".md", ".txt", ".toml"}
+        and rel.suffix.lower() in PROJECT_NOVA_STRUCTURED_SUFFIXES
     ):
-        return rel.name == "PROPOSITIONS_PUBLIQUES.md"
+        return project_nova_structured_allowed(rel)
 
     # Le Codex peut contenir des contrats de livraison et inventaires de sources
     # qui documentent précisément des artefacts privés/non déployés. Ils restent
@@ -188,8 +310,88 @@ def sitemap_source_path(url: str) -> Path:
     return rel
 
 
+def validate_netlify_config() -> list[str]:
+    errors: list[str] = []
+    if not NETLIFY_CONFIG.is_file():
+        return ["netlify.toml absent"]
+
+    try:
+        data = tomllib.loads(NETLIFY_CONFIG.read_text(encoding="utf-8", errors="strict"))
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        return [f"netlify.toml illisible: {exc}"]
+
+    build = data.get("build") or {}
+    if build.get("command") != "python3 scripts/build_netlify_public.py":
+        errors.append("Commande Netlify inattendue: python3 scripts/build_netlify_public.py requis.")
+    if build.get("publish") != "_site":
+        errors.append("Publish Netlify inattendu: _site requis.")
+
+    headers = data.get("headers") or []
+    global_values = None
+    for rule in headers:
+        if rule.get("for") == "/*":
+            global_values = rule.get("values") or {}
+            break
+    if global_values is None:
+        errors.append("En-têtes globaux Netlify absents.")
+    else:
+        csp = str(global_values.get("Content-Security-Policy") or "")
+        if "script-src" not in csp or "connect-src" not in csp:
+            errors.append("CSP Netlify: script-src et connect-src sont obligatoires.")
+        if "https://www.bubblav.com" in csp:
+            errors.append(
+                "CSP Netlify: BubblaV doit rester bloqué tant que le fournisseur public n’est pas réactivé."
+            )
+        for directive in ("frame-ancestors 'self'", "object-src 'self'", "base-uri 'self'"):
+            if directive not in csp:
+                errors.append(f"CSP Netlify: directive requise absente: {directive}.")
+        if global_values.get("X-Content-Type-Options") != "nosniff":
+            errors.append("En-tête X-Content-Type-Options=nosniff requis.")
+
+    header_rules = {
+        rule.get("for"): (rule.get("values") or {})
+        for rule in headers
+        if isinstance(rule, dict) and isinstance(rule.get("for"), str)
+    }
+    for private_path in sorted(PRIVATE_RUNTIME_HEADER_PATHS):
+        values = header_rules.get(private_path)
+        if values is None:
+            errors.append(f"En-têtes privés Netlify absents: {private_path}")
+            continue
+        if str(values.get("Cache-Control") or "").lower() != "no-store":
+            errors.append(f"Cache-Control no-store requis: {private_path}")
+        robots = str(values.get("X-Robots-Tag") or "").lower()
+        for token in ("noindex", "nofollow", "noarchive"):
+            if token not in robots:
+                errors.append(f"X-Robots-Tag {token} requis: {private_path}")
+
+    redirects = data.get("redirects") or []
+    observed = {
+        rule.get("from")
+        for rule in redirects
+        if rule.get("to") == "/404.html"
+        and rule.get("status") == 404
+        and rule.get("force") is True
+    }
+    missing = sorted(REQUIRED_TECHNICAL_404S - observed)
+    if missing:
+        errors.append("Redirections 404 techniques absentes: " + ", ".join(missing))
+
+    return errors
+
+
 def validate_plan() -> list[str]:
     errors: list[str] = []
+    errors.extend(validate_netlify_config())
+
+    robots_path = ROOT / "robots.txt"
+    if not robots_path.is_file():
+        errors.append("robots.txt absent")
+    else:
+        robots_text = robots_path.read_text(encoding="utf-8", errors="strict")
+        for route in sorted(REQUIRED_ROBOTS_DISALLOWS):
+            if f"Disallow: {route}" not in robots_text:
+                errors.append(f"robots.txt: exclusion requise absente: {route}")
 
     overlap = sorted(set(PUBLIC_DIRS) & set(FORBIDDEN_DIRS))
     if overlap:
@@ -225,6 +427,13 @@ def validate_plan() -> list[str]:
 
     for rel in (
         Path("assets/icons/README.md"),
+        Path("projets/projet-nova/official/versions/V320/V320_GITHUB_PUBLICATION_RECEIPT.json"),
+        Path("projets/projet-nova/data/modele_comptabilite.csv"),
+        Path("projets/projet-nova/data/modele_rencontres.csv"),
+        Path("projets/projet-nova/official/versions/V320/V320_REGISTRE_ANTI_CONTOURNEMENT_MODELE.csv"),
+        Path("projets/projet-nova/official/versions/V320/V320_VALIDATION_REPORT.md"),
+        Path("projets/projet-nova/README.md"),
+        Path("projets/projet-nova/SHA256SUMS.txt"),
         Path("projets/projet-nova/README.md"),
         Path("projets/projet-nova/VERIFICATION_AVANT_PUBLICATION.md"),
         Path("projets/projet-nova/netlify.toml"),
@@ -236,10 +445,55 @@ def validate_plan() -> list[str]:
 
     for rel in (
         Path("projets/projet-nova/PROPOSITIONS_PUBLIQUES.md"),
+        Path("projets/projet-nova/documents.json"),
+        Path("projets/projet-nova/data/actualites.json"),
+        Path("projets/projet-nova/data/sources.json"),
+        Path("projets/projet-nova/official/reference/corpus.md"),
+        Path("projets/projet-nova/official/reference/statuts.md"),
         Path("projets/projet-nova/official/reference/programme.md"),
+        Path("projets/projet-nova/official/reference/finances.md"),
     ):
         if (ROOT / rel).is_file() and not relative_path_allowed(rel):
             errors.append(f"Référence publique Projet Nova exclue par erreur: {rel.as_posix()}")
+
+    sources_manifest = ROOT / "projets/projet-nova/data/sources.json"
+    if sources_manifest.is_file():
+        try:
+            manifest = json.loads(sources_manifest.read_text(encoding="utf-8", errors="strict"))
+            documents = manifest.get("documents") or {}
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            errors.append(f"Manifeste sources Projet Nova illisible: {exc}")
+            documents = {}
+
+        for key, document in documents.items():
+            parts_manifest = document.get("parts") if isinstance(document, dict) else None
+            if not isinstance(parts_manifest, list) or not parts_manifest:
+                errors.append(f"Source Projet Nova sans parts: {key}")
+                continue
+            for part in parts_manifest:
+                source_path = part.get("path") if isinstance(part, dict) else None
+                if not isinstance(source_path, str) or not source_path.strip():
+                    errors.append(f"Source Projet Nova invalide: {key}")
+                    continue
+                rel = Path("projets/projet-nova") / source_path
+                source_file = ROOT / rel
+                if not source_file.is_file():
+                    errors.append(f"Source Projet Nova absente: {rel.as_posix()}")
+                    continue
+                if not relative_path_allowed(rel):
+                    errors.append(f"Source Projet Nova hors allowlist: {rel.as_posix()}")
+                    continue
+
+                expected_sha = part.get("sha256") if isinstance(part, dict) else None
+                if not isinstance(expected_sha, str) or not re_full_sha256(expected_sha):
+                    errors.append(f"SHA-256 Projet Nova absent ou invalide: {rel.as_posix()}")
+                    continue
+                actual_sha = hashlib.sha256(source_file.read_bytes()).hexdigest()
+                if actual_sha != expected_sha.lower():
+                    errors.append(
+                        f"SHA-256 Projet Nova incohérent: {rel.as_posix()} "
+                        f"(manifest={expected_sha.lower()}, actuel={actual_sha})"
+                    )
 
     sitemap_path = ROOT / "sitemap.xml"
     if sitemap_path.is_file():
@@ -273,7 +527,7 @@ def validate_plan() -> list[str]:
     return errors
 
 
-def build(output: Path) -> None:
+def build(output: Path, deploy_context: str | None = None) -> None:
     errors = validate_plan()
     if errors:
         raise SystemExit("\n".join(errors))
@@ -306,10 +560,24 @@ def build(output: Path) -> None:
         if root_file_allowed(source):
             shutil.copy2(source, output / source.name)
 
+    context = (deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")).strip()
+    if context == DEPLOY_PREVIEW_CONTEXT:
+        (output / "_headers").write_text(PREVIEW_HEADERS, encoding="utf-8")
 
-def validate_output(output: Path) -> list[str]:
+
+def validate_output(output: Path, deploy_context: str | None = None) -> list[str]:
     errors: list[str] = []
     output = output.resolve()
+    context = (deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")).strip()
+    preview_headers = output / "_headers"
+    if context == DEPLOY_PREVIEW_CONTEXT:
+        if not preview_headers.is_file():
+            errors.append("Fichier _headers absent du deploy preview.")
+        elif preview_headers.read_text(encoding="utf-8", errors="strict") != PREVIEW_HEADERS:
+            errors.append("Fichier _headers du deploy preview inattendu.")
+    elif preview_headers.exists():
+        errors.append("Fichier _headers présent hors deploy preview.")
+
 
     for forbidden in FORBIDDEN_DIRS:
         if (output / forbidden).exists():
@@ -323,6 +591,8 @@ def validate_output(output: Path) -> list[str]:
         if not published.is_file():
             continue
         rel = published.relative_to(output)
+        if rel == Path("_headers") and context == DEPLOY_PREVIEW_CONTEXT:
+            continue
         if not relative_path_allowed(rel):
             errors.append(f"Fichier hors allowlist présent dans le publish: {rel.as_posix()}")
 
@@ -367,18 +637,31 @@ def main() -> int:
 
     if args.check:
         with tempfile.TemporaryDirectory(prefix="sinjira-netlify-public-") as tmp:
-            output = Path(tmp) / "_site"
-            build(output)
-            output_errors = validate_output(output)
-            if output_errors:
-                print(f"ECHEC: {len(output_errors)} problème(s) dans le publish Netlify temporaire.")
-                for error in output_errors:
+            root = Path(tmp)
+
+            production_output = root / "production" / "_site"
+            build(production_output, deploy_context="production")
+            production_errors = validate_output(production_output, deploy_context="production")
+            if production_errors:
+                print(f"ECHEC: {len(production_errors)} problème(s) dans le publish Netlify production temporaire.")
+                for error in production_errors:
                     print("- " + error)
                 return 1
-            file_count = sum(1 for path in output.rglob("*") if path.is_file())
+
+            preview_output = root / "deploy-preview" / "_site"
+            build(preview_output, deploy_context=DEPLOY_PREVIEW_CONTEXT)
+            preview_errors = validate_output(preview_output, deploy_context=DEPLOY_PREVIEW_CONTEXT)
+            if preview_errors:
+                print(f"ECHEC: {len(preview_errors)} problème(s) dans le deploy preview Netlify temporaire.")
+                for error in preview_errors:
+                    print("- " + error)
+                return 1
+
+            file_count = sum(1 for path in production_output.rglob("*") if path.is_file())
         print(
-            "OK publication Netlify: build temporaire vérifié; "
-            f"{file_count} fichiers publics; répertoires techniques exclus; sitemap couvert."
+            "OK publication Netlify: builds production + deploy-preview vérifiés; "
+            f"{file_count} fichiers publics en production; preview noindex; "
+            "répertoires techniques exclus; sitemap couvert."
         )
         return 0
 
