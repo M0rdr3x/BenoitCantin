@@ -96,6 +96,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "chargéseulementaprèsvotreclic",
         "launcher.addeventlistener('click'",
         "launcher.setattribute('aria-busy','true')",
+        "varpublicassistantvendorready=false;",
+        "if(!publicassistantvendorready)return;",
     ):
         if marker not in ai_js:
             fail(f"chatbot public Nova × SINJIRA incomplet: {marker}")
@@ -105,22 +107,27 @@ def validate_core(contents: dict[str, str]) -> None:
     if click_index < 0 or third_party_index < 0 or third_party_index < click_index:
         fail("chatbot public: BubblaV ne doit être créé qu'après une action explicite")
 
-    for marker in (
-        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.bubblav.com",
-        "connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://www.bubblav.com",
-    ):
-        if marker not in netlify:
-            fail(f"CSP BubblaV incomplète: {marker}")
+    if "https://www.bubblav.com" in netlify:
+        fail("CSP BubblaV doit rester bloquée tant que les contrôles fournisseur #443/#444 sont ouverts")
 
     for directive in ("script-src", "connect-src"):
         match = re.search(rf"{directive}\s+([^;]+)", netlify)
         if not match:
-            fail(f"CSP BubblaV sans directive {directive}")
+            fail(f"CSP sans directive {directive}")
         tokens = match.group(1).split()
         if "*" in tokens or "https:" in tokens:
-            fail(f"CSP BubblaV trop permissive dans {directive}")
+            fail(f"CSP trop permissive dans {directive}")
+        if "https://www.bubblav.com" in tokens:
+            fail(f"CSP BubblaV réactivée par erreur dans {directive}")
 
-
+    for marker in (
+        "/assets/css/ai-transparency.css?v=1.2.0",
+        "/assets/js/ai-transparency.js?v=1.3.0",
+        "data-ai-transparency-style",
+        "data-ai-transparency-script",
+    ):
+        if marker not in site_js:
+            fail(f"runtime portail sans transparence IA: {marker}")
 
     for marker in (
         "/assets/css/ai-transparency.css?v=1.2.0",
@@ -128,8 +135,6 @@ def validate_core(contents: dict[str, str]) -> None:
         "data-ai-transparency-style",
         "data-ai-transparency-script",
     ):
-        if marker not in site_js:
-            fail(f"runtime portail sans transparence IA: {marker}")
         if marker not in nova_js:
             fail(f"runtime Projet Nova sans transparence IA: {marker}")
 
@@ -284,6 +289,9 @@ def validate_core(contents: dict[str, str]) -> None:
         "docs/bubblav_public_assistant_data_minimization.md",
         "issue**#443**",
         "issue**#444**",
+        "bubblavestdésactivécôtésite",
+        "publicassistantvendorready=false",
+        "bubblavdoitresterabsentde",
         "responsabilitéhumaine",
     ):
         if marker not in assistant_governance:
@@ -291,8 +299,11 @@ def validate_core(contents: dict[str, str]) -> None:
 
     for marker in (
         "bubblav—minimisationdesformulairesduchatbotpublic",
-        "àretireroudésactivercôtéfournisseur",
-        "les8formulairessonttoujours`enabled=true`",
+        "retiréetconfirmécôtéfournisseur",
+        "seconnecteràsoncompte",
+        "encoreàretireroudésactivercôtéfournisseur",
+        "cinqformulaireshorspérimètrerestentàreconfirmer",
+        "rate_limited",
         "submission_count=0",
         "aucunesuppressiondesoumissionoud'historiquefournisseurn'aétéeffectuée",
     ):
@@ -302,16 +313,16 @@ def validate_core(contents: dict[str, str]) -> None:
     for marker in (
         "assistantpublicnova×sinjiraetbubblav",
         "bubblav",
-        "leservicetiersn'estpaschargéautomatiquement",
-        "larequêteversbubblavetsonscriptnecommencentqu'aprèsuneactionexpliciteduvisiteur",
+        "lewidgetfournisseurestactuellementdésactivé",
+        "aucunlanceur,scriptouappelréseaububblavn'estinitialiséparlesite",
+        "sileserviceestréactivéultérieurement",
         "surlessurfacespubliquesindexablesdudomaineofficiel",
-        "lelanceurestabsentdesespaces",
         "<code>/app</code>",
         "stockagelocaldunavigateur",
         "lechatbotpublicsertàinformeretàorienter",
         "lesautresactionsdecomptedoiventutiliserlesparcoursofficielsdusite",
         "/assistant.html",
-        "29septembre2026",
+        "30septembre2026",
         "toutepagemarquée<code>noindex</code>",
     ):
         if marker not in privacy:
@@ -428,7 +439,7 @@ def self_test(contents: dict[str, str]) -> None:
     mutations = [
         ("lien public retiré", "ai_js", "/transparence-ia.html", "/transparence-ia-retiree.html"),
         ("lien Assistant retiré de Transparence IA", "page", "/assistant.html", "/assistant-retire.html"),
-        ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.2.0", "/assets/js/absent.js"),
+        ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.3.0", "/assets/js/absent.js"),
         ("mention standard retirée", "policy", "Validation finale et responsabilité du contenu", "Validation retirée"),
         ("page Transparence IA hors-ligne retirée", "sw", "/transparence-ia.html", "/transparence-ia-absente.html"),
         ("widget BubblaV retiré", "ai_js", "https://www.bubblav.com/widget.js", "https://www.bubblav.com/widget-retire.js"),
@@ -436,20 +447,22 @@ def self_test(contents: dict[str, str]) -> None:
         ("garde domaine officiel retirée", "ai_js", "if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (isPrivateSurface || isNoindexSurface) return;"),
         ("garde /app retirée", "ai_js", "path === '/app' ||\n      path.indexOf('/app/') === 0;", "path === '/app-retire' ||\n      path.indexOf('/app-retire/') === 0;"),
         ("activation volontaire retirée", "ai_js", "launcher.addEventListener('click'", "launcher.addEventListener('mouseover'"),
+        ("gate fournisseur réactivé", "ai_js", "var publicAssistantVendorReady = false;", "var publicAssistantVendorReady = true;"),
+        ("verrou fournisseur retiré", "ai_js", "if (!publicAssistantVendorReady) return;", "if (publicAssistantVendorReady) return;"),
         ("libellé accessible du lanceur retiré", "ai_js", "Ouvrir l’assistant Nova × SINJIRA, service BubblaV", "Ouvrir le chatbot"),
         ("cache IA accueil rétrogradé", "home", "/assets/css/ai-transparency.css?v=1.2.0", "/assets/css/ai-transparency.css?v=1.1.0"),
         ("cache IA page Transparence rétrogradé", "page", "/assets/css/ai-transparency.css?v=1.2.0", "/assets/css/ai-transparency.css?v=1.1.0"),
         ("cache IA accueil Nova rétrogradé", "nova_home", "/assets/css/ai-transparency.css?v=1.2.0", "/assets/css/ai-transparency.css?v=1.1.0"),
         ("séparation assistant public retirée", "site_js", "if (isOfficialHost && !isPrivateSurface && !isNoindexSurface) return;", "if (false) return;"),
         ("séparation assistant Nova retirée", "nova_js", "if(isOfficialHost&&!isNoindexSurface)return;", "if(false)return;"),
-        ("CSP BubblaV retirée", "netlify", " https://www.bubblav.com", ""),
-        ("CSP BubblaV élargie retirée", "netlify", "https://www.bubblav.com; worker-src", "https://www.bubblav.com https:; worker-src"),
+        ("CSP BubblaV réactivée script", "netlify", "https://cdn.jsdelivr.net; worker-src", "https://cdn.jsdelivr.net https://www.bubblav.com; worker-src"),
+        ("CSP BubblaV réactivée connect", "netlify", "wss://gpvivleexywljowcqkru.supabase.co; form-action", "wss://gpvivleexywljowcqkru.supabase.co https://www.bubblav.com; form-action"),
         ("déclaration BubblaV retirée", "privacy", "Assistant public Nova × SINJIRA et BubblaV", "Assistant public retiré"),
         ("gouvernance assistant retirée", "assistant_governance", "Frontière anti-spoiler SINJIRA", "Frontière retirée"),
         ("frontière actions publiques retirée", "assistant", "Il sert à informer et à orienter.", "Il peut aussi agir dans le compte."),
         ("garde parcours officiels retirée", "assistant_governance", "Il ne doit pas devenir une seconde voie fonctionnelle", "Il peut devenir une seconde voie fonctionnelle"),
         ("garde formulaires fournisseur retirée", "assistant_governance", "formulaires fournisseur limités aux besoins publics réellement nécessaires", "formulaires fournisseur sans limite"),
-        ("preuve état formulaires retirée", "assistant_data_minimization", "les 8 formulaires sont toujours `enabled=true`", "état fournisseur inconnu"),
+        ("preuve état formulaires retirée", "assistant_data_minimization", "cinq formulaires hors périmètre restent à reconfirmer puis retirer/désactiver", "état fournisseur inconnu"),
         ("frontière /app politique IA retirée", "policy", "espaces privés `/compte`, `/admin` et `/app`", "espaces privés `/compte` et `/admin`"),
         ("frontière actions politique IA retirée", "policy", "informer et orienter sans devenir une seconde voie", "agir directement dans les comptes"),
         ("référence assistant IA retirée", "policy", "ASSISTANT_GOVERNANCE.md", "ASSISTANT_GOUVERNANCE_RETIRÉE.md"),
