@@ -65,6 +65,47 @@ jobs:
             echo
             echo "> Ce résumé prouve l'état du candidat Git/CI, pas un déploiement production."
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Observer l’hébergement public sans modifier la production
+        if: startsWith(github.head_ref, 'a1/web-release-') && github.event_name == 'pull_request'
+        shell: bash
+        continue-on-error: true
+        run: |
+          set -u
+          origin="https://www.benoitcantin.com"
+          headers="$(mktemp)"
+          body="$(mktemp)"
+          http_code="$(curl -sS --connect-timeout 5 --max-time 15 -D "$headers" -o "$body" -w '%{http_code}' "$origin/" || true)"
+          server="$(awk 'BEGIN{IGNORECASE=1} /^server:/ {sub(/\r$/,""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$headers")"
+          nf_request="$(awk 'BEGIN{IGNORECASE=1} /^x-nf-request-id:/ {found=1} END{print found ? "présent" : "absent"}' "$headers")"
+          if grep -qiE '^server:[[:space:]]*Netlify|^x-nf-request-id:' "$headers"; then
+            netlify_signature="observée"
+          else
+            netlify_signature="non observée"
+          fi
+          {
+            echo "### Observation hébergement public — lecture seule"
+            echo "- Origine : \`$origin\`"
+            echo "- HTTP accueil : \`${http_code:-000}\`"
+            echo "- En-tête Server : \`${server:-non exposé}\`"
+            echo "- x-nf-request-id : **$nf_request**"
+            echo "- Signature Netlify HTTP : **$netlify_signature**"
+            echo
+            echo "| Chemin technique | HTTP observé |"
+            echo "|---|---:|"
+            for p in \
+              /supabase/config.toml \
+              /scripts/build_netlify_public.py \
+              /docs/README.md \
+              /.github/workflows/validate-site.yml \
+              /tests/e2e/test_public_site.py \
+              /mobile-native/App.tsx
+            do
+              status="$(curl -sS --connect-timeout 5 --max-time 15 -o /dev/null -w '%{http_code}' "$origin$p" || true)"
+              echo "| \`$p\` | \`${status:-000}\` |"
+            done
+            echo
+            echo "> Observation uniquement : aucun déploiement, aucune écriture hébergeur et aucun secret utilisé."
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Auto-tester le contrat Transparence IA
         run: python3 scripts/validate_ai_transparency.py --self-test
       - name: Vérifier le contrat Transparence IA
