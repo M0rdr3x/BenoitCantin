@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import shutil
+import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
@@ -306,6 +307,51 @@ def build(output: Path) -> None:
             shutil.copy2(source, output / source.name)
 
 
+def validate_output(output: Path) -> list[str]:
+    errors: list[str] = []
+    output = output.resolve()
+
+    for forbidden in FORBIDDEN_DIRS:
+        if (output / forbidden).exists():
+            errors.append(f"Répertoire technique présent dans le publish: {forbidden}/")
+
+    for rel in REQUIRED_PUBLIC_PATHS:
+        if not (output / rel).is_file():
+            errors.append(f"Fichier public requis absent du publish: {rel}")
+
+    for published in output.rglob("*"):
+        if not published.is_file():
+            continue
+        rel = published.relative_to(output)
+        if not relative_path_allowed(rel):
+            errors.append(f"Fichier hors allowlist présent dans le publish: {rel.as_posix()}")
+
+    sitemap_path = output / "sitemap.xml"
+    if sitemap_path.is_file():
+        try:
+            root = ET.parse(sitemap_path).getroot()
+            ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+            locs = [
+                (node.text or "").strip()
+                for node in root.findall(".//sm:loc", ns)
+                if (node.text or "").strip()
+            ]
+        except (ET.ParseError, OSError) as exc:
+            errors.append(f"Sitemap du publish illisible: {exc}")
+            locs = []
+
+        for url in locs:
+            try:
+                rel = sitemap_source_path(url)
+            except ValueError as exc:
+                errors.append(str(exc))
+                continue
+            if not (output / rel).is_file():
+                errors.append(f"URL sitemap absente du publish: {url} -> {rel.as_posix()}")
+
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Construire le publish directory public Netlify.")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
@@ -320,14 +366,30 @@ def main() -> int:
         return 1
 
     if args.check:
+        with tempfile.TemporaryDirectory(prefix="sinjira-netlify-public-") as tmp:
+            output = Path(tmp) / "_site"
+            build(output)
+            output_errors = validate_output(output)
+            if output_errors:
+                print(f"ECHEC: {len(output_errors)} problème(s) dans le publish Netlify temporaire.")
+                for error in output_errors:
+                    print("- " + error)
+                return 1
+            file_count = sum(1 for path in output.rglob("*") if path.is_file())
         print(
-            "OK publication Netlify: allowlist racine validée; "
-            "répertoires techniques exclus; sitemap couvert."
+            "OK publication Netlify: build temporaire vérifié; "
+            f"{file_count} fichiers publics; répertoires techniques exclus; sitemap couvert."
         )
         return 0
 
     build(args.output)
-    print(f"OK publication Netlify construite dans {args.output.resolve()}")
+    output_errors = validate_output(args.output)
+    if output_errors:
+        print(f"ECHEC: {len(output_errors)} problème(s) dans le publish Netlify.")
+        for error in output_errors:
+            print("- " + error)
+        return 1
+    print(f"OK publication Netlify construite et vérifiée dans {args.output.resolve()}")
     return 0
 
 
