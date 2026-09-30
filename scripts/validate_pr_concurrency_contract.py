@@ -68,6 +68,25 @@ READ_ONLY_PR_WORKFLOWS = (
     ".github/workflows/validate-moderation-v24-4-90.yml",
     ".github/workflows/validate-safety-v24-4-82.yml",
     ".github/workflows/sinjira-consciousness-vault-v25.yml",
+    ".github/workflows/main-governance-contract.yml",
+    ".github/workflows/sinjira-admin-privacy-safety-aal2-v24-5-14.yml",
+    ".github/workflows/sinjira-advisor-ci-guardrails-v24-5-47.yml",
+    ".github/workflows/sinjira-auth-hibp-production-security.yml",
+    ".github/workflows/sinjira-character-network-owner-privacy-v25.yml",
+    ".github/workflows/sinjira-contribution-revocation-v24-5-52.yml",
+    ".github/workflows/sinjira-dating-rpc-v24-5-12.yml",
+    ".github/workflows/sinjira-delete-account-v24-5-51.yml",
+    ".github/workflows/sinjira-device-challenge-continuity-v25.yml",
+    ".github/workflows/sinjira-edge-response-privacy-v24-5-48.yml",
+    ".github/workflows/sinjira-edge-template-v24-5-49.yml",
+    ".github/workflows/sinjira-employment-production-security.yml",
+    ".github/workflows/sinjira-fracture-player-rpc-v24-5-21.yml",
+    ".github/workflows/sinjira-game-contribution-v24-5-53.yml",
+    ".github/workflows/sinjira-global-admin-rpc-v24-5-9.yml",
+    ".github/workflows/sinjira-life-story-delivery-v24-5-50.yml",
+    ".github/workflows/sinjira-live-social-commands-v25.yml",
+    ".github/workflows/sinjira-live-social-foundation-v25.yml",
+    ".github/workflows/sinjira-live-social-runtime-v25.yml",
 )
 
 EXPECTED_CONCURRENCY = """concurrency:
@@ -225,7 +244,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK concurrence PR: 54 workflows read-only bornés par workflow/PR; "
+        "OK concurrence PR: 73 workflows read-only bornés par workflow/PR; "
         f"{len(PENDING_CONCURRENCY_NORMALIZATION)} exceptions legacy suivies; "
         "annulation limitée aux pull requests, push/main et dispatch préservés."
     )
