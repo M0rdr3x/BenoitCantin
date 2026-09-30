@@ -1,6 +1,6 @@
 # BubblaV — minimisation des formulaires du chatbot public
 
-Dernière revue : 29 septembre 2026.
+Dernière revue : 30 septembre 2026.
 
 Suivi fournisseur : issue GitHub **#443** — désactivation/retrait des six formulaires hors périmètre.
 
@@ -17,7 +17,9 @@ La règle appliquée est :
 
 ## État BubblaV observé lors de la revue
 
-Huit formulaires BubblaV étaient actifs et affichaient tous `submission_count=0`.
+La revue initiale du 29 septembre 2026 avait relevé huit formulaires BubblaV actifs, tous avec `submission_count=0`.
+
+Depuis cette revue, le formulaire hors périmètre **Se Connecter À Son Compte** a été retiré côté fournisseur. Les lectures BubblaV suivantes ont ensuite été temporairement bloquées par une limite de débit fournisseur; aucune autre suppression n'est donc considérée confirmée sans nouvelle lecture fraîche.
 
 ### Conservés
 
@@ -31,24 +33,32 @@ Huit formulaires BubblaV étaient actifs et affichaient tous `submission_count=0
 
 L'intégration BubblaV `contact_form` / **Escalate to Human** reste aussi active uniquement pour une demande explicite de contact humain.
 
-### À retirer ou désactiver côté fournisseur
+### Retiré et confirmé côté fournisseur
 
-Les formulaires suivants avaient zéro soumission au moment de la revue. Ils ont été identifiés comme non nécessaires au chatbot public et doivent être retirés ou désactivés côté fournisseur afin de réduire la collecte et éviter des parcours concurrents. La tentative de suppression automatique a été bloquée par les contrôles de sécurité du connecteur; ils doivent donc être considérés comme encore actifs tant qu’une vérification fournisseur ne prouve pas le contraire :
+- `4bf9fa08-80af-4a71-991f-3c4ea3e3ecf7` — **Se Connecter À Son Compte**.
+  - retrait confirmé lors de la dernière lecture fournisseur réussie;
+  - aucune soumission n’était présente au moment de la revue préalable.
 
-- `4bf9fa08-80af-4a71-991f-3c4ea3e3ecf7` — **Se Connecter À Son Compte**;
+### Encore à retirer ou désactiver côté fournisseur
+
+Les cinq formulaires suivants avaient zéro soumission lors de la dernière lecture qui les a confirmés. Ils restent à reconfirmer juste avant toute suppression; aucune action destructive ne doit être faite sur la base d’un état périmé :
+
 - `fb6b7188-0ff5-4eec-b751-2a3af99dfb89` — **Rejoindre Une Partie**;
 - `89288220-eda7-4a73-8d71-832e1c31ad6f` — **Créer Une Partie**;
 - `f5924b79-7932-4651-9621-5e7f538752ee` — **Inscrire Une Conscience**;
 - `7fa76ade-5322-4465-a579-db56ab21b402` — **Soumettre Un Commentaire**;
 - `a8806fd2-8030-4104-a73c-c3a9470bcd37` — **Support Request Form**.
 
+La tentative de relecture du 30 septembre 2026 a répondu `RATE_LIMITED`. Le site public maintient donc BubblaV désactivé et fail-closed jusqu’à ce que #443 et #444 puissent être revérifiés côté fournisseur.
+
 ## État d’application
 
 - règle de gouvernance Git : appliquée;
 - pages publiques et politique de confidentialité : alignées;
 - accueil du widget BubblaV : aligné pour rediriger les actions de compte vers les parcours officiels;
-- suppression/désactivation des six formulaires fournisseur non nécessaires : **non confirmée**;
-- revérification fournisseur : les 8 formulaires sont toujours `enabled=true`; les six formulaires ciblés affichent toujours `submission_count=0`;
+- retrait de **Se Connecter À Son Compte** : **confirmé**;
+- cinq formulaires hors périmètre restent à reconfirmer puis retirer/désactiver;
+- dernière tentative de relecture fournisseur : **RATE_LIMITED**; aucun état nouveau n’est inventé;
 - aucune suppression de soumission ou d’historique fournisseur n’a été effectuée.
 
 ## Parcours canoniques
