@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import tempfile
@@ -90,6 +91,36 @@ PUBLIC_ROOT_EXACT = {
     "sitemap.xml",
 }
 
+PROJECT_NOVA_STRUCTURED_SUFFIXES = {
+    ".md",
+    ".markdown",
+    ".txt",
+    ".toml",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".sql",
+    ".py",
+    ".sh",
+    ".ts",
+    ".tsx",
+    ".env",
+    ".ini",
+    ".cfg",
+    ".lock",
+}
+
+PROJECT_NOVA_PUBLIC_STRUCTURED_EXACT = {
+    Path("projets/projet-nova/PROPOSITIONS_PUBLIQUES.md"),
+    Path("projets/projet-nova/documents.json"),
+    Path("projets/projet-nova/documents-word-only.json"),
+}
+
+PROJECT_NOVA_PUBLIC_STRUCTURED_PREFIXES = (
+    Path("projets/projet-nova/data"),
+    Path("projets/projet-nova/official/reference"),
+)
+
 PUBLIC_ROOT_SUFFIXES = {
     ".html",
     ".css",
@@ -140,6 +171,23 @@ def root_file_allowed(path: Path) -> bool:
     return path.suffix.lower() in PUBLIC_ROOT_SUFFIXES
 
 
+def project_nova_structured_allowed(rel: Path) -> bool:
+    if rel in PROJECT_NOVA_PUBLIC_STRUCTURED_EXACT:
+        return True
+    for prefix in PROJECT_NOVA_PUBLIC_STRUCTURED_PREFIXES:
+        try:
+            nested = rel.relative_to(prefix)
+        except ValueError:
+            continue
+        if not nested.parts:
+            return False
+        if prefix.name == "data":
+            return rel.suffix.lower() == ".json"
+        if prefix.name == "reference":
+            return rel.suffix.lower() == ".md"
+    return False
+
+
 def relative_path_allowed(rel: Path) -> bool:
     parts = rel.parts
     if not parts:
@@ -159,17 +207,16 @@ def relative_path_allowed(rel: Path) -> bool:
     if parts[0] == "assets" and rel.suffix.lower() in {".md", ".txt", ".toml"}:
         return False
 
-    # Projet Nova conserve ses références publiques structurées sous official/.
-    # Les guides/audits/configs directement à la racine du sous-site ne font
-    # pas partie du site déployé, sauf la proposition publique explicitement
-    # conservée.
+    # Projet Nova publie uniquement les données runtime explicitement publiques
+    # et les références documentaires déclarées. Les README, rapports,
+    # receipts, états de build et historiques official/versions restent dans Git.
     if (
-        len(parts) == 3
+        len(parts) >= 3
         and parts[0] == "projets"
         and parts[1] == "projet-nova"
-        and rel.suffix.lower() in {".md", ".txt", ".toml"}
+        and rel.suffix.lower() in PROJECT_NOVA_STRUCTURED_SUFFIXES
     ):
-        return rel.name == "PROPOSITIONS_PUBLIQUES.md"
+        return project_nova_structured_allowed(rel)
 
     # Le Codex peut contenir des contrats de livraison et inventaires de sources
     # qui documentent précisément des artefacts privés/non déployés. Ils restent
@@ -293,6 +340,10 @@ def validate_plan() -> list[str]:
 
     for rel in (
         Path("assets/icons/README.md"),
+        Path("projets/projet-nova/official/versions/V320/V320_GITHUB_PUBLICATION_RECEIPT.json"),
+        Path("projets/projet-nova/official/versions/V320/V320_VALIDATION_REPORT.md"),
+        Path("projets/projet-nova/README.md"),
+        Path("projets/projet-nova/SHA256SUMS.txt"),
         Path("projets/projet-nova/README.md"),
         Path("projets/projet-nova/VERIFICATION_AVANT_PUBLICATION.md"),
         Path("projets/projet-nova/netlify.toml"),
@@ -304,10 +355,41 @@ def validate_plan() -> list[str]:
 
     for rel in (
         Path("projets/projet-nova/PROPOSITIONS_PUBLIQUES.md"),
+        Path("projets/projet-nova/documents.json"),
+        Path("projets/projet-nova/data/actualites.json"),
+        Path("projets/projet-nova/data/sources.json"),
+        Path("projets/projet-nova/official/reference/corpus.md"),
+        Path("projets/projet-nova/official/reference/statuts.md"),
         Path("projets/projet-nova/official/reference/programme.md"),
+        Path("projets/projet-nova/official/reference/finances.md"),
     ):
         if (ROOT / rel).is_file() and not relative_path_allowed(rel):
             errors.append(f"Référence publique Projet Nova exclue par erreur: {rel.as_posix()}")
+
+    sources_manifest = ROOT / "projets/projet-nova/data/sources.json"
+    if sources_manifest.is_file():
+        try:
+            manifest = json.loads(sources_manifest.read_text(encoding="utf-8", errors="strict"))
+            documents = manifest.get("documents") or {}
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            errors.append(f"Manifeste sources Projet Nova illisible: {exc}")
+            documents = {}
+
+        for key, document in documents.items():
+            parts_manifest = document.get("parts") if isinstance(document, dict) else None
+            if not isinstance(parts_manifest, list) or not parts_manifest:
+                errors.append(f"Source Projet Nova sans parts: {key}")
+                continue
+            for part in parts_manifest:
+                source_path = part.get("path") if isinstance(part, dict) else None
+                if not isinstance(source_path, str) or not source_path.strip():
+                    errors.append(f"Source Projet Nova invalide: {key}")
+                    continue
+                rel = Path("projets/projet-nova") / source_path
+                if not (ROOT / rel).is_file():
+                    errors.append(f"Source Projet Nova absente: {rel.as_posix()}")
+                elif not relative_path_allowed(rel):
+                    errors.append(f"Source Projet Nova hors allowlist: {rel.as_posix()}")
 
     sitemap_path = ROOT / "sitemap.xml"
     if sitemap_path.is_file():
