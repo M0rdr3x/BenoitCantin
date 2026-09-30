@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WEB_RELEASE_BRANCH_PREFIX = "a1/web-release-"
 
 ALLOWED_EXACT = {
+    ".github/workflows/validate-netlify-preview.yml",
     ".github/workflows/validate-site.yml",
     ".github/workflows/validate-netlify-preview.yml",
     ".gitignore",
@@ -117,6 +118,7 @@ def changed_paths(base: str | None = None, head: str | None = None) -> list[str]
 
 def self_test() -> None:
     valid = [
+        ".github/workflows/validate-netlify-preview.yml",
         ".github/workflows/validate-site.yml",
         ".github/workflows/validate-netlify-preview.yml",
         ".gitignore",
