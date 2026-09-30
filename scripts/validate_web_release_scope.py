@@ -27,6 +27,7 @@ ALLOWED_EXACT = (
     "scripts/validate_web_release_http.py",
     "scripts/validate_web_release_scope.py",
     "scripts/validate_ai_transparency.py",
+    "AI_TRANSPARENCY.md",
     "ASSISTANT_GOVERNANCE.md",
     "docs/BUBBLAV_PUBLIC_ASSISTANT_DATA_MINIMIZATION.md",
 )
@@ -146,6 +147,7 @@ def self_test() -> None:
         "scripts/validate_web_release_http.py",
         "scripts/validate_web_release_scope.py",
         "scripts/validate_ai_transparency.py",
+        "AI_TRANSPARENCY.md",
         "ASSISTANT_GOVERNANCE.md",
         "docs/BUBBLAV_PUBLIC_ASSISTANT_DATA_MINIMIZATION.md",
     ]

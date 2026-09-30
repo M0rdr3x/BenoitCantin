@@ -212,6 +212,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "/app",
         "informeretorientersansdevenirunesecondevoiepourlaconnexion",
         "renvoyercesactionsverslesparcoursofficielsdusite",
+        "étatactuel:bubblavestdésactivécôtésite.",
+        "publicassistantvendorready=false",
     ):
         if marker not in policy:
             fail(f"politique IA sans gouvernance assistant: {marker}")
@@ -465,6 +467,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("preuve état formulaires retirée", "assistant_data_minimization", "cinq formulaires hors périmètre restent à reconfirmer puis retirer/désactiver", "état fournisseur inconnu"),
         ("frontière /app politique IA retirée", "policy", "espaces privés `/compte`, `/admin` et `/app`", "espaces privés `/compte` et `/admin`"),
         ("frontière actions politique IA retirée", "policy", "informer et orienter sans devenir une seconde voie", "agir directement dans les comptes"),
+        ("état fournisseur politique IA retiré", "policy", "**État actuel : BubblaV est désactivé côté site.**", "**État actuel : BubblaV peut être chargé côté site.**"),
         ("référence assistant IA retirée", "policy", "ASSISTANT_GOVERNANCE.md", "ASSISTANT_GOUVERNANCE_RETIRÉE.md"),
     ]
     detected = 0
