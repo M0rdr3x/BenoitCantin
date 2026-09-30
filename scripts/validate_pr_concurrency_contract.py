@@ -63,6 +63,11 @@ READ_ONLY_PR_WORKFLOWS = (
     ".github/workflows/sinjira-sensitive-aal2-v25.yml",
     ".github/workflows/sinjira-social-home-v25.yml",
     ".github/workflows/sinjira-social-user-rpc-v24-5-15.yml",
+    ".github/workflows/validate-global-safety-v24-4-83.yml",
+    ".github/workflows/validate-life-story-v24-5-2.yml",
+    ".github/workflows/validate-moderation-v24-4-90.yml",
+    ".github/workflows/validate-safety-v24-4-82.yml",
+    ".github/workflows/sinjira-consciousness-vault-v25.yml",
 )
 
 EXPECTED_CONCURRENCY = """concurrency:
@@ -220,7 +225,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK concurrence PR: 49 workflows read-only bornés par workflow/PR; "
+        "OK concurrence PR: 54 workflows read-only bornés par workflow/PR; "
         f"{len(PENDING_CONCURRENCY_NORMALIZATION)} exceptions legacy suivies; "
         "annulation limitée aux pull requests, push/main et dispatch préservés."
     )
