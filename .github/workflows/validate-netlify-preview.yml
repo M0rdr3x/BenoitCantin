@@ -36,3 +36,14 @@ jobs:
       - name: Vérifier la Deploy Preview Netlify
         shell: bash
         run: python3 scripts/validate_web_release_http.py "$PREVIEW_URL" --context preview
+      - name: Résumer la preuve Deploy Preview
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### Smoke HTTP — Deploy Preview Netlify"
+            echo "- Cible : \`$PREVIEW_URL\`"
+            echo "- Contexte : \`preview\`"
+            echo "- SHA testé : \`$GITHUB_SHA\`"
+            echo "- Verdict : **SUCCESS**"
+          } >> "$GITHUB_STEP_SUMMARY"

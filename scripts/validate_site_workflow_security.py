@@ -116,6 +116,8 @@ def validate_preview_workflow_text(text: str) -> list[str]:
     require(errors, 'PREVIEW_URL: ${{ inputs.preview_url }}' in text, 'URL preview doit passer par une variable d’environnement')
     require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke HTTP preview absent ou dupliqué')
     require(errors, 'python3 scripts/validate_web_release_http.py "$PREVIEW_URL" --context preview' in text, 'commande smoke preview absente')
+    require(errors, '### Smoke HTTP — Deploy Preview Netlify' in text, 'résumé preuve preview absent')
+    require(errors, 'GITHUB_STEP_SUMMARY' in text, 'preview smoke doit écrire une preuve dans GITHUB_STEP_SUMMARY')
     require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'preview smoke ne doit référencer aucun secret')
     require(errors, 'contents: write' not in text, 'preview smoke ne doit jamais écrire dans le dépôt')
     return errors
@@ -140,6 +142,8 @@ def validate_production_workflow_text(text: str) -> list[str]:
         'python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production' in text,
         'commande smoke production canonique absente',
     )
+    require(errors, '### Smoke HTTP — production officielle' in text, 'résumé preuve production absent')
+    require(errors, 'GITHUB_STEP_SUMMARY' in text, 'production smoke doit écrire une preuve dans GITHUB_STEP_SUMMARY')
     require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'production smoke ne doit référencer aucun secret')
     require(errors, 'contents: write' not in text, 'production smoke ne doit jamais écrire dans le dépôt')
     require(errors, 'inputs:' not in text, 'production smoke ne doit accepter aucune URL ou entrée utilisateur')
@@ -158,6 +162,7 @@ def run_production_self_tests(text: str) -> None:
         'domaine remplacé': text.replace('https://www.benoitcantin.com --context production', 'https://example.com --context production', 1),
         'input ajouté': text.replace('  workflow_dispatch:\n', '  workflow_dispatch:\n    inputs:\n      url:\n        required: true\n', 1),
         'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
+        'résumé preuve retiré': text.replace('            echo "### Smoke HTTP — production officielle"\n', '', 1),
     }
     for name, mutated in cases.items():
         if mutated == text:
@@ -186,6 +191,7 @@ def run_preview_self_tests(text: str) -> None:
             'PREVIEW_URL: ${{ secrets.PREVIEW_URL }}',
             1,
         ),
+        'résumé preuve retiré': text.replace('            echo "### Smoke HTTP — Deploy Preview Netlify"\n', '', 1),
     }
     for name, mutated in cases.items():
         if mutated == text:

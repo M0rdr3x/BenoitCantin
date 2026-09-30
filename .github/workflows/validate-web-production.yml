@@ -28,3 +28,14 @@ jobs:
         run: python3 scripts/validate_web_release_http.py --self-test
       - name: Vérifier la production officielle
         run: python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production
+      - name: Résumer la preuve production
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### Smoke HTTP — production officielle"
+            echo "- Cible : \`https://www.benoitcantin.com\`"
+            echo "- Contexte : \`production\`"
+            echo "- SHA testé : \`$GITHUB_SHA\`"
+            echo "- Verdict : **SUCCESS**"
+          } >> "$GITHUB_STEP_SUMMARY"
