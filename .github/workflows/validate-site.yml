@@ -42,6 +42,10 @@ jobs:
         run: python3 scripts/build_netlify_public.py --check
       - name: Auto-tester le smoke HTTP de release
         run: python3 scripts/validate_web_release_http.py --self-test
+      - name: Auto-tester la frontière assistant IA public
+        run: python3 scripts/validate_public_ai_assistant.py --self-test
+      - name: Vérifier la frontière assistant IA public
+        run: python3 scripts/validate_public_ai_assistant.py
 
   validate:
     needs: workflow-contract

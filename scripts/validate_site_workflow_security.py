@@ -23,6 +23,8 @@ NETLIFY_PUBLIC_CHECK = 'python3 scripts/build_netlify_public.py --check'
 WEB_RELEASE_SCOPE_SELF = 'python3 scripts/validate_web_release_scope.py --self-test'
 WEB_RELEASE_SCOPE_VALIDATE = 'python3 scripts/validate_web_release_scope.py'
 WEB_RELEASE_HTTP_SELF = 'python3 scripts/validate_web_release_http.py --self-test'
+PUBLIC_AI_ASSISTANT_SELF = 'python3 scripts/validate_public_ai_assistant.py --self-test'
+PUBLIC_AI_ASSISTANT_VALIDATE = 'python3 scripts/validate_public_ai_assistant.py'
 WEB_RELEASE_SCOPE_IF = "if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'a1/web-release-')"
 
 
@@ -80,6 +82,8 @@ def validate_text(text: str) -> list[str]:
     require(errors, exact_run_count(text, WEB_RELEASE_SCOPE_VALIDATE) == 1, 'validation portée web-only absente ou dupliquée')
     require(errors, text.count(WEB_RELEASE_SCOPE_IF) == 2, 'la portée web-only doit rester limitée aux branches a1/web-release-*')
     require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke HTTP release absent ou dupliqué')
+    require(errors, exact_run_count(text, PUBLIC_AI_ASSISTANT_SELF) == 1, 'auto-test assistant IA public absent ou dupliqué')
+    require(errors, exact_run_count(text, PUBLIC_AI_ASSISTANT_VALIDATE) == 1, 'validation assistant IA public absente ou dupliquée')
     require(errors, exact_run_count(text, V18_SELF) == 1, 'auto-test admin V18 absent ou dupliqué')
     require(errors, exact_run_count(text, V18_VALIDATE) == 1, 'validation admin V18 absente ou dupliquée')
     require(errors, exact_run_count(text, ADMIN_CONSOLE_SELF) == 1, 'auto-test admin-console absent ou dupliqué')
@@ -155,6 +159,8 @@ def run_self_tests(text: str) -> None:
         'validation portée web retirée': text.replace(f'        run: {WEB_RELEASE_SCOPE_VALIDATE}\n', '', 1),
         'condition portée web élargie': text.replace(WEB_RELEASE_SCOPE_IF, "if: github.event_name == 'pull_request'", 1),
         'auto-test smoke HTTP retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
+        'auto-test assistant IA retiré': text.replace(f'        run: {PUBLIC_AI_ASSISTANT_SELF}\n', '', 1),
+        'validation assistant IA retirée': text.replace(f'        run: {PUBLIC_AI_ASSISTANT_VALIDATE}\n', '', 1),
         'auto-test V18 retiré': text.replace(f'        run: {V18_SELF}\n', '', 1),
         'validation V18 retirée': text.replace(f'        run: {V18_VALIDATE}\n', '', 1),
         'auto-test admin-console retiré': text.replace(f'        run: {ADMIN_CONSOLE_SELF}\n', '', 1),
