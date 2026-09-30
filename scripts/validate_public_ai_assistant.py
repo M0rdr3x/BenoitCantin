@@ -82,7 +82,7 @@ def validate_site_loader(text: str) -> list[str]:
 
 def validate_pages(index: str, assistant: str, transparency: str) -> list[str]:
     errors: list[str] = []
-    require(errors, 'data-ai-transparency' in index, "index: bandeau transparence IA absent")
+    require(errors, '<aside class="ai-transparency-banner" data-ai-transparency' in index, "index: bandeau transparence IA absent")
     require(errors, '/transparence-ia.html' in index, "index: lien transparence IA absent")
     require(errors, 'Assistant Nova × SINJIRA' in assistant, "assistant: identité publique absente")
     require(errors, 'sans décider à votre place' in assistant, "assistant: frontière de décision humaine absente")
@@ -91,7 +91,11 @@ def validate_pages(index: str, assistant: str, transparency: str) -> list[str]:
     require(errors, '<code>/compte</code>' in assistant and '<code>/admin</code>' in assistant and '<code>/app</code>' in assistant, "assistant: exclusions privées absentes")
     require(errors, 'Transparence · Honnêteté · Intégrité' in transparency, "transparence: valeurs publiques absentes")
     require(errors, 'L’humain avant tout.' in transparency, "transparence: principe humain absent")
-    require(errors, 'Validation finale et responsabilité du contenu : Benoit Cantin.' in transparency, "transparence: responsabilité humaine absente")
+    require(
+        errors,
+        transparency.count('Validation finale et responsabilité du contenu : Benoit Cantin.') >= 2,
+        "transparence: responsabilité humaine absente ou incomplète",
+    )
     return errors
 
 
@@ -121,9 +125,30 @@ def self_test() -> None:
         ("URL BubblaV changée", widget.replace(BUBBLAV_WIDGET_URL, "https://example.com/widget.js", 1), site, index, assistant, transparency),
         ("site-id changé", widget.replace(BUBBLAV_SITE_ID, "00000000-0000-0000-0000-000000000000", 1), site, index, assistant, transparency),
         ("loader site retiré", widget, site.replace("/assets/js/ai-transparency.js?v=1.2.0", "/assets/js/other.js", 1), index, assistant, transparency),
-        ("bandeau accueil retiré", widget, site, index.replace("data-ai-transparency", "data-ai-hidden", 1), assistant, transparency),
+        (
+            "bandeau accueil retiré",
+            widget,
+            site,
+            index.replace(
+                '<aside class="ai-transparency-banner" data-ai-transparency',
+                '<aside class="ai-transparency-banner" data-ai-hidden',
+                1,
+            ),
+            assistant,
+            transparency,
+        ),
         ("neutralité retirée", widget, site, index, assistant.replace("Il ne doit pas dire aux visiteurs comment voter", "Il peut recommander un vote", 1), transparency),
-        ("responsabilité retirée", widget, site, index, assistant, transparency.replace("Validation finale et responsabilité du contenu : Benoit Cantin.", "Validation automatisée.", 1)),
+        (
+            "responsabilité retirée",
+            widget,
+            site,
+            index,
+            assistant,
+            transparency.replace(
+                "Validation finale et responsabilité du contenu : Benoit Cantin.",
+                "Validation automatisée.",
+            ),
+        ),
     ]
     missed: list[str] = []
     for label, ww, ss, ii, aa, tt in fixtures:
