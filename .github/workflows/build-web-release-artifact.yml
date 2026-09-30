@@ -34,7 +34,7 @@ jobs:
         run: python3 scripts/build_netlify_public.py --check
 
       - name: Construire l’artefact public
-        run: python3 scripts/build_netlify_public.py --output _site
+        run: python3 scripts/build_netlify_public.py --output _site --standalone-netlify
 
       - name: Vérifier et hacher le contenu public
         shell: bash
@@ -43,6 +43,10 @@ jobs:
           test -f _site/.well-known/security.txt
           test -f _site/.nojekyll
           test -f _site/CNAME
+          test -f _site/_headers
+          test -f _site/_redirects
+          grep -Fq "Content-Security-Policy:" _site/_headers
+          grep -Fq "/supabase/* /404.html 404!" _site/_redirects
           for forbidden in .github docs mobile-native scripts supabase tests; do
             test ! -e "_site/$forbidden"
           done
@@ -75,6 +79,7 @@ jobs:
             echo "- Artefact : [ouvrir/télécharger](${{ steps.artifact-upload.outputs.artifact-url }})"
             echo "- Digest artefact : \`${{ steps.artifact-upload.outputs.artifact-digest }}\`"
             echo "- Manifeste interne : \`web-release-SHA256SUMS.txt\`"
+            echo "- Configuration embarquée : \`_headers\` + \`_redirects\`"
             echo
             echo "> Aucun déploiement n’est effectué par ce workflow."
           } >> "$GITHUB_STEP_SUMMARY"

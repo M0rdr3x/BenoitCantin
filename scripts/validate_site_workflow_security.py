@@ -26,7 +26,7 @@ NETLIFY_PUBLIC_CHECK = 'python3 scripts/build_netlify_public.py --check'
 WEB_RELEASE_SCOPE_SELF = 'python3 scripts/validate_web_release_scope.py --self-test'
 WEB_RELEASE_SCOPE_VALIDATE = 'python3 scripts/validate_web_release_scope.py'
 WEB_RELEASE_HTTP_SELF = 'python3 scripts/validate_web_release_http.py --self-test'
-WEB_RELEASE_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _site'
+WEB_RELEASE_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _site --standalone-netlify'
 PUBLIC_AI_ASSISTANT_SELF = 'python3 scripts/validate_public_ai_assistant.py --self-test'
 PUBLIC_AI_ASSISTANT_VALIDATE = 'python3 scripts/validate_public_ai_assistant.py'
 AI_TRANSPARENCY_SELF = 'python3 scripts/validate_ai_transparency.py --self-test'
@@ -93,7 +93,7 @@ def validate_text(text: str) -> list[str]:
     require(errors, '### Readiness web-only' in text, 'résumé readiness web-only absent')
     require(errors, 'Fichiers modifiés : **$changed_count**' in text, 'compteur de diff readiness absent')
     require(errors, 'BubblaV : **fail-closed**' in text, 'état BubblaV fail-closed absent du résumé')
-    require(errors, 'Artefact public : \\`_site\\` allowlisté (hébergeur indépendant)' in text, 'artefact public host-neutral absent du résumé')
+    require(errors, 'Artefact public : \\`_site\\` allowlisté + package Netlify autonome \\`_headers\\`/\\`_redirects\\`' in text, 'artefact Netlify autonome absent du résumé')
     require(errors, 'Artefact CI : \\`Web release — artefact public isolé\\` (aucun déploiement)' in text, 'workflow artefact CI absent du résumé')
     require(errors, 'Portes externes restantes : bascule hébergeur sûre (#450), #135, #443, #444' in text, 'portes externes readiness absentes')
     require(errors, exact_run_count(text, AI_TRANSPARENCY_SELF) == 1, 'auto-test Transparence IA absent ou dupliqué')
@@ -157,6 +157,11 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, 'web-release-SHA256SUMS.txt' in text, 'manifeste SHA-256 de release absent')
     require(errors, 'test -f _site/.well-known/security.txt' in text, 'security.txt doit être prouvé dans l’artefact')
     require(errors, 'test -f _site/CNAME' in text, 'CNAME doit être prouvé dans l’artefact')
+    require(errors, 'test -f _site/_headers' in text, '_headers autonome doit être prouvé dans l’artefact')
+    require(errors, 'test -f _site/_redirects' in text, '_redirects autonome doit être prouvé dans l’artefact')
+    require(errors, 'Content-Security-Policy:' in text, 'preuve CSP embarquée absente du workflow artefact')
+    require(errors, '/supabase/* /404.html 404!' in text, 'preuve 404 forcée embarquée absente du workflow artefact')
+    require(errors, 'Configuration embarquée : \\`_headers\\` + \\`_redirects\\`' in text, 'résumé configuration autonome absent')
     require(errors, 'test ! -e "_site/$forbidden"' in text, 'absence des répertoires techniques non prouvée')
     require(errors, 'actions/deploy-pages@' not in text, 'workflow artefact ne doit jamais déployer GitHub Pages')
     require(errors, 'actions/configure-pages@' not in text, 'workflow artefact ne doit pas configurer GitHub Pages')

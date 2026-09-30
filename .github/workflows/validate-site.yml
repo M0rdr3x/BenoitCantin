@@ -56,7 +56,7 @@ jobs:
             echo "- SHA candidat : \`$HEAD_SHA\`"
             echo "- Base PR : \`$BASE_SHA\`"
             echo "- Fichiers modifiés : **$changed_count**"
-            echo "- Artefact public : \`_site\` allowlisté (hébergeur indépendant)"
+            echo "- Artefact public : \`_site\` allowlisté + package Netlify autonome \`_headers\`/\`_redirects\`"
             echo "- Artefact CI : \`Web release — artefact public isolé\` (aucun déploiement)"
             echo "- Deploy preview Netlify : noindex/noarchive par construction"
             echo "- BubblaV : **fail-closed** (widget désactivé + CSP bloquante)"

@@ -15,9 +15,11 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "_site"
 DEPLOY_PREVIEW_CONTEXT = "deploy-preview"
-PREVIEW_HEADERS = """/*
-  X-Robots-Tag: noindex, nofollow, noarchive
+PREVIEW_ROBOTS_TAG = "noindex, nofollow, noarchive"
+PREVIEW_HEADERS = f"""/*
+  X-Robots-Tag: {PREVIEW_ROBOTS_TAG}
 """
+GENERATED_NETLIFY_FILES = {"_headers", "_redirects"}
 NETLIFY_CONFIG = ROOT / "netlify.toml"
 REQUIRED_TECHNICAL_404S = {
     "/supabase/*",
@@ -310,6 +312,51 @@ def sitemap_source_path(url: str) -> Path:
     return rel
 
 
+
+def load_netlify_config() -> dict:
+    return tomllib.loads(NETLIFY_CONFIG.read_text(encoding="utf-8", errors="strict"))
+
+
+def normalize_header_value(value: object) -> str:
+    return " ".join(str(value).replace("\r", " ").replace("\n", " ").split())
+
+
+def render_standalone_headers(deploy_context: str | None = None) -> str:
+    data = load_netlify_config()
+    context = (
+        deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")
+    ).strip()
+    lines: list[str] = []
+    for rule in data.get("headers") or []:
+        path = str(rule.get("for") or "").strip()
+        values = dict(rule.get("values") or {})
+        if not path:
+            continue
+        if context == DEPLOY_PREVIEW_CONTEXT and path == "/*":
+            values["X-Robots-Tag"] = PREVIEW_ROBOTS_TAG
+        lines.append(path)
+        for key, value in values.items():
+            header_value = normalize_header_value(value)
+            if header_value:
+                lines.append(f"  {key}: {header_value}")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_standalone_redirects() -> str:
+    data = load_netlify_config()
+    lines: list[str] = []
+    for rule in data.get("redirects") or []:
+        source = str(rule.get("from") or "").strip()
+        target = str(rule.get("to") or "").strip()
+        status = int(rule.get("status") or 301)
+        force = bool(rule.get("force"))
+        if not source or not target:
+            continue
+        status_token = f"{status}{'!' if force else ''}"
+        lines.append(f"{source} {target} {status_token}")
+    return "\n".join(lines).rstrip() + "\n"
+
 def validate_netlify_config() -> list[str]:
     errors: list[str] = []
     if not NETLIFY_CONFIG.is_file():
@@ -366,6 +413,14 @@ def validate_netlify_config() -> list[str]:
                 errors.append(f"X-Robots-Tag {token} requis: {private_path}")
 
     redirects = data.get("redirects") or []
+    for rule in redirects:
+        unsupported = sorted(set(rule) & {"query", "conditions", "headers", "signed"})
+        if unsupported:
+            errors.append(
+                "Redirection Netlify non sérialisable dans l’artefact autonome: "
+                + str(rule.get("from") or "<sans from>")
+                + " (" + ", ".join(unsupported) + ")"
+            )
     observed = {
         rule.get("from")
         for rule in redirects
@@ -527,7 +582,12 @@ def validate_plan() -> list[str]:
     return errors
 
 
-def build(output: Path, deploy_context: str | None = None) -> None:
+
+def build(
+    output: Path,
+    deploy_context: str | None = None,
+    standalone_netlify: bool = False,
+) -> None:
     errors = validate_plan()
     if errors:
         raise SystemExit("\n".join(errors))
@@ -560,24 +620,57 @@ def build(output: Path, deploy_context: str | None = None) -> None:
         if root_file_allowed(source):
             shutil.copy2(source, output / source.name)
 
-    context = (deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")).strip()
-    if context == DEPLOY_PREVIEW_CONTEXT:
+    context = (
+        deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")
+    ).strip()
+    if standalone_netlify:
+        (output / "_headers").write_text(
+            render_standalone_headers(context),
+            encoding="utf-8",
+        )
+        (output / "_redirects").write_text(
+            render_standalone_redirects(),
+            encoding="utf-8",
+        )
+    elif context == DEPLOY_PREVIEW_CONTEXT:
         (output / "_headers").write_text(PREVIEW_HEADERS, encoding="utf-8")
 
 
-def validate_output(output: Path, deploy_context: str | None = None) -> list[str]:
+def validate_output(
+    output: Path,
+    deploy_context: str | None = None,
+    standalone_netlify: bool = False,
+) -> list[str]:
     errors: list[str] = []
     output = output.resolve()
-    context = (deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")).strip()
-    preview_headers = output / "_headers"
-    if context == DEPLOY_PREVIEW_CONTEXT:
-        if not preview_headers.is_file():
-            errors.append("Fichier _headers absent du deploy preview.")
-        elif preview_headers.read_text(encoding="utf-8", errors="strict") != PREVIEW_HEADERS:
-            errors.append("Fichier _headers du deploy preview inattendu.")
-    elif preview_headers.exists():
-        errors.append("Fichier _headers présent hors deploy preview.")
+    context = (
+        deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")
+    ).strip()
+    headers_path = output / "_headers"
+    redirects_path = output / "_redirects"
 
+    expected_headers: str | None = None
+    if standalone_netlify:
+        expected_headers = render_standalone_headers(context)
+    elif context == DEPLOY_PREVIEW_CONTEXT:
+        expected_headers = PREVIEW_HEADERS
+
+    if expected_headers is None:
+        if headers_path.exists():
+            errors.append("Fichier _headers inattendu dans ce contexte.")
+    elif not headers_path.is_file():
+        errors.append("Fichier _headers requis absent du publish.")
+    elif headers_path.read_text(encoding="utf-8", errors="strict") != expected_headers:
+        errors.append("Fichier _headers du publish inattendu.")
+
+    if standalone_netlify:
+        expected_redirects = render_standalone_redirects()
+        if not redirects_path.is_file():
+            errors.append("Fichier _redirects requis absent de l’artefact Netlify autonome.")
+        elif redirects_path.read_text(encoding="utf-8", errors="strict") != expected_redirects:
+            errors.append("Fichier _redirects de l’artefact Netlify autonome inattendu.")
+    elif redirects_path.exists():
+        errors.append("Fichier _redirects inattendu hors artefact Netlify autonome.")
 
     for forbidden in FORBIDDEN_DIRS:
         if (output / forbidden).exists():
@@ -591,8 +684,11 @@ def validate_output(output: Path, deploy_context: str | None = None) -> list[str
         if not published.is_file():
             continue
         rel = published.relative_to(output)
-        if rel == Path("_headers") and context == DEPLOY_PREVIEW_CONTEXT:
-            continue
+        if rel.as_posix() in GENERATED_NETLIFY_FILES:
+            if rel == Path("_headers") and expected_headers is not None:
+                continue
+            if rel == Path("_redirects") and standalone_netlify:
+                continue
         if not relative_path_allowed(rel):
             errors.append(f"Fichier hors allowlist présent dans le publish: {rel.as_posix()}")
 
@@ -625,7 +721,12 @@ def validate_output(output: Path, deploy_context: str | None = None) -> list[str
 def main() -> int:
     parser = argparse.ArgumentParser(description="Construire le publish directory public Netlify.")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--check", action="store_true", help="Valider l'allowlist sans copier de fichiers.")
+    parser.add_argument("--check", action="store_true", help="Valider l'allowlist sans conserver de fichiers.")
+    parser.add_argument(
+        "--standalone-netlify",
+        action="store_true",
+        help="Embarquer _headers et _redirects dans _site pour un déploiement Netlify autonome.",
+    )
     args = parser.parse_args()
 
     errors = validate_plan()
@@ -641,7 +742,10 @@ def main() -> int:
 
             production_output = root / "production" / "_site"
             build(production_output, deploy_context="production")
-            production_errors = validate_output(production_output, deploy_context="production")
+            production_errors = validate_output(
+                production_output,
+                deploy_context="production",
+            )
             if production_errors:
                 print(f"ECHEC: {len(production_errors)} problème(s) dans le publish Netlify production temporaire.")
                 for error in production_errors:
@@ -650,29 +754,83 @@ def main() -> int:
 
             preview_output = root / "deploy-preview" / "_site"
             build(preview_output, deploy_context=DEPLOY_PREVIEW_CONTEXT)
-            preview_errors = validate_output(preview_output, deploy_context=DEPLOY_PREVIEW_CONTEXT)
+            preview_errors = validate_output(
+                preview_output,
+                deploy_context=DEPLOY_PREVIEW_CONTEXT,
+            )
             if preview_errors:
                 print(f"ECHEC: {len(preview_errors)} problème(s) dans le deploy preview Netlify temporaire.")
                 for error in preview_errors:
                     print("- " + error)
                 return 1
 
+            standalone_output = root / "standalone-production" / "_site"
+            build(
+                standalone_output,
+                deploy_context="production",
+                standalone_netlify=True,
+            )
+            standalone_errors = validate_output(
+                standalone_output,
+                deploy_context="production",
+                standalone_netlify=True,
+            )
+            if standalone_errors:
+                print(f"ECHEC: {len(standalone_errors)} problème(s) dans l’artefact Netlify autonome.")
+                for error in standalone_errors:
+                    print("- " + error)
+                return 1
+
+            standalone_preview_output = root / "standalone-preview" / "_site"
+            build(
+                standalone_preview_output,
+                deploy_context=DEPLOY_PREVIEW_CONTEXT,
+                standalone_netlify=True,
+            )
+            standalone_preview_errors = validate_output(
+                standalone_preview_output,
+                deploy_context=DEPLOY_PREVIEW_CONTEXT,
+                standalone_netlify=True,
+            )
+            if standalone_preview_errors:
+                print(
+                    f"ECHEC: {len(standalone_preview_errors)} problème(s) "
+                    "dans l’artefact Netlify autonome preview."
+                )
+                for error in standalone_preview_errors:
+                    print("- " + error)
+                return 1
+
             file_count = sum(1 for path in production_output.rglob("*") if path.is_file())
+            standalone_file_count = sum(
+                1 for path in standalone_output.rglob("*") if path.is_file()
+            )
         print(
-            "OK publication Netlify: builds production + deploy-preview vérifiés; "
-            f"{file_count} fichiers publics en production; preview noindex; "
+            "OK publication Netlify: builds dépôt + artefacts autonomes production/preview vérifiés; "
+            f"{file_count} fichiers publics via build dépôt; "
+            f"{standalone_file_count} fichiers dans l’artefact autonome; "
+            "_headers/_redirects embarqués; preview noindex; "
             "répertoires techniques exclus; sitemap couvert."
         )
         return 0
 
-    build(args.output)
-    output_errors = validate_output(args.output)
+    build(
+        args.output,
+        standalone_netlify=args.standalone_netlify,
+    )
+    output_errors = validate_output(
+        args.output,
+        standalone_netlify=args.standalone_netlify,
+    )
     if output_errors:
         print(f"ECHEC: {len(output_errors)} problème(s) dans le publish Netlify.")
         for error in output_errors:
             print("- " + error)
         return 1
-    print(f"OK publication Netlify construite et vérifiée dans {args.output.resolve()}")
+    mode = "autonome" if args.standalone_netlify else "lié au dépôt"
+    print(
+        f"OK publication Netlify {mode} construite et vérifiée dans {args.output.resolve()}"
+    )
     return 0
 
 
