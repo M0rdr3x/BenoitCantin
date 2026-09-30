@@ -6,6 +6,13 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 
+PENDING_CONCURRENCY_NORMALIZATION = {
+    ".github/workflows/sinjira-child-community-v25.yml",
+    ".github/workflows/sinjira-child-signup-browser-v25.yml",
+    ".github/workflows/sinjira-child-signup-v25.yml",
+    ".github/workflows/sinjira-junior-guardian-revocation-v25.yml",
+}
+
 READ_ONLY_PR_WORKFLOWS = (
     ".github/workflows/sinjira-mobile-native-route-dispatch-v25.yml",
     ".github/workflows/sinjira-personal-ai-functional-v25.yml",
@@ -84,6 +91,20 @@ def validate_text(path: str, text: str) -> list[str]:
 
 def validate_repo() -> list[str]:
     errors: list[str] = []
+
+    workflows_dir = ROOT / ".github" / "workflows"
+    for workflow in sorted((*workflows_dir.glob("*.yml"), *workflows_dir.glob("*.yaml"))):
+        text = workflow.read_text(encoding="utf-8", errors="strict")
+        active = active_text(text)
+        rel = workflow.relative_to(ROOT).as_posix()
+        if (
+            "pull_request:" in active
+            and "cancel-in-progress: true" in active
+            and rel not in PENDING_CONCURRENCY_NORMALIZATION
+        ):
+            errors.append(
+                f"{rel}: cancel-in-progress=true interdit; annulation PR conditionnelle requise"
+            )
     for rel in READ_ONLY_PR_WORKFLOWS:
         path = ROOT / rel
         if not path.is_file():
@@ -175,6 +196,7 @@ def main() -> int:
 
     print(
         "OK concurrence PR: 24 workflows read-only bornés par workflow/PR; "
+        f"{len(PENDING_CONCURRENCY_NORMALIZATION)} exceptions legacy suivies; "
         "annulation limitée aux pull requests, push/main et dispatch préservés."
     )
     return 0
