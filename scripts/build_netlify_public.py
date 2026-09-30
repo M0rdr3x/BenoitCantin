@@ -178,6 +178,7 @@ PUBLIC_ROOT_SUFFIXES = {
 }
 
 REQUIRED_PUBLIC_PATHS = (
+    ".well-known/security.txt",
     "index.html",
     "404.html",
     "robots.txt",
