@@ -85,11 +85,18 @@ class SameHostRedirectHandler(HTTPRedirectHandler):
 
 
 def validate_target_url(base_url: str, context: str) -> list[str]:
+    errors: list[str] = []
+    if len(base_url) > 2048:
+        errors.append("URL de release invalide: longueur supérieure à 2048 caractères.")
+    if any(ord(char) < 32 or ord(char) == 127 for char in base_url):
+        errors.append("URL de release invalide: caractères de contrôle interdits.")
+    if errors:
+        return errors
+
     parsed = urlparse(base_url)
     host = (parsed.hostname or "").lower()
     local = host in {"127.0.0.1", "localhost"}
 
-    errors: list[str] = []
     if parsed.username or parsed.password:
         errors.append("URL de release invalide: credentials interdits.")
     if not host:
@@ -399,6 +406,9 @@ def self_test() -> None:
         ("https://example.netlify.app/sub/path", "preview"),
         ("https://example.netlify.app/?draft=1", "preview"),
         ("https://example.netlify.app/#section", "preview"),
+        ("https://example.netlify.app\n#summary-injection", "preview"),
+        ("https://example.netlify.app\t", "preview"),
+        ("https://" + ("a" * 2040) + ".netlify.app", "preview"),
         ("https://example.netlify.app", "production"),
     )
     missed = [
