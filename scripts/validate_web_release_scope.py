@@ -25,6 +25,9 @@ ALLOWED_EXACT = (
     "scripts/validate_site_workflow_security.py",
     "scripts/validate_web_release_http.py",
     "scripts/validate_web_release_scope.py",
+    "scripts/validate_ai_transparency.py",
+    "ASSISTANT_GOVERNANCE.md",
+    "docs/BUBBLAV_PUBLIC_ASSISTANT_DATA_MINIMIZATION.md",
 )
 
 ALLOWED_PREFIXES = (
@@ -140,6 +143,9 @@ def self_test() -> None:
         "scripts/validate_site_workflow_security.py",
         "scripts/validate_web_release_http.py",
         "scripts/validate_web_release_scope.py",
+        "scripts/validate_ai_transparency.py",
+        "ASSISTANT_GOVERNANCE.md",
+        "docs/BUBBLAV_PUBLIC_ASSISTANT_DATA_MINIMIZATION.md",
     ]
     if validate_paths(valid):
         raise SystemExit("ERREUR auto-test web-only: allowlist valide rejetée")
