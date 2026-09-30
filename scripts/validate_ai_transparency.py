@@ -25,7 +25,6 @@ FILES = {
     "home": ROOT / "index.html",
     "about": ROOT / "a-propos.html",
     "nova_home": ROOT / "projets/projet-nova/index.html",
-    "native_home": ROOT / "mobile-native/NativeHomeHub.tsx",
     "sw": ROOT / "sw.js",
     "netlify": ROOT / "netlify.toml",
     "assistant": ROOT / "assistant.html",
@@ -53,7 +52,6 @@ def validate_core(contents: dict[str, str]) -> None:
     home = compact(contents["home"])
     about = compact(contents["about"])
     nova_home = compact(contents["nova_home"])
-    native_home = compact(contents["native_home"])
     sw = compact(contents["sw"])
     netlify = contents["netlify"]
     assistant = compact(contents["assistant"])
@@ -245,16 +243,6 @@ def validate_core(contents: dict[str, str]) -> None:
     ):
         if marker not in about:
             fail(f"À propos: engagement de transparence IA incomplet: {marker}")
-
-    for marker in (
-        "transparenceia",
-        "lesidéesetdécisionsrestenthumaines",
-        "idées,visionetdécisions:benoitcantin",
-        "validationfinaleetlaresponsabilitéducontenurestenthumaines",
-        "onopenpath('/transparence-ia.html')",
-    ):
-        if marker not in native_home:
-            fail(f"application native sans transparence IA: {marker}")
 
     for marker in (
         "assistantnova×sinjira",

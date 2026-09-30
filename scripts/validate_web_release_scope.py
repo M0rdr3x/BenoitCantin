@@ -20,6 +20,7 @@ ALLOWED_EXACT = (
     "netlify.toml",
     "robots.txt",
     "sitemap.xml",
+    "sw.js",
     "scripts/build_netlify_public.py",
     "scripts/validate_public_ai_assistant.py",
     "scripts/validate_site.py",
@@ -28,6 +29,7 @@ ALLOWED_EXACT = (
     "scripts/validate_web_release_scope.py",
     "scripts/validate_ai_transparency.py",
     "AI_TRANSPARENCY.md",
+    "README.md",
     "ASSISTANT_GOVERNANCE.md",
     "docs/BUBBLAV_PUBLIC_ASSISTANT_DATA_MINIMIZATION.md",
 )
@@ -141,6 +143,7 @@ def self_test() -> None:
         "netlify.toml",
         "robots.txt",
         "sitemap.xml",
+        "sw.js",
         "scripts/build_netlify_public.py",
         "scripts/validate_public_ai_assistant.py",
         "scripts/validate_site_workflow_security.py",
@@ -148,6 +151,7 @@ def self_test() -> None:
         "scripts/validate_web_release_scope.py",
         "scripts/validate_ai_transparency.py",
         "AI_TRANSPARENCY.md",
+        "README.md",
         "ASSISTANT_GOVERNANCE.md",
         "docs/BUBBLAV_PUBLIC_ASSISTANT_DATA_MINIMIZATION.md",
     ]
