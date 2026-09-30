@@ -40,6 +40,8 @@ jobs:
 
       - name: Vérifier le périmètre public Netlify
         run: python3 scripts/build_netlify_public.py --check
+      - name: Auto-tester le smoke HTTP de release
+        run: python3 scripts/validate_web_release_http.py --self-test
 
   validate:
     needs: workflow-contract

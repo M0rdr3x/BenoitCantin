@@ -20,6 +20,7 @@ ALLOWED_EXACT = {
     "scripts/build_netlify_public.py",
     "scripts/validate_site.py",
     "scripts/validate_site_workflow_security.py",
+    "scripts/validate_web_release_http.py",
     "scripts/validate_web_release_scope.py",
 }
 
@@ -128,6 +129,7 @@ def self_test() -> None:
         "sitemap.xml",
         "scripts/build_netlify_public.py",
         "scripts/validate_site_workflow_security.py",
+        "scripts/validate_web_release_http.py",
         "scripts/validate_web_release_scope.py",
     ]
     if validate_paths(valid):
