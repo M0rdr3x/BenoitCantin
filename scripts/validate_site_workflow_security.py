@@ -43,6 +43,9 @@ def exact_run_count(text: str, command: str) -> int:
 def validate_text(text: str) -> list[str]:
     errors: list[str] = []
     require(errors, 'permissions:\n  contents: read' in text, 'permissions.contents doit rester read')
+    require(errors, "group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}" in text, 'groupe concurrency PR exact requis')
+    require(errors, "cancel-in-progress: ${{ github.event_name == 'pull_request' }}" in text, 'annulation limitée aux pull requests requise')
+    require(errors, 'cancel-in-progress: true' not in text, 'annulation inconditionnelle interdite')
     require(errors, 'contents: write' not in text, 'permission contents:write interdite')
     require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'la validation centrale ne doit référencer aucun secret GitHub')
     require(errors, text.count('runs-on: ubuntu-24.04') == 2, 'les deux jobs doivent utiliser Ubuntu 24.04 explicite')
@@ -83,6 +86,7 @@ def run_self_tests(text: str) -> None:
         'setup-node mobile': text.replace(f'actions/setup-node@{SETUP_NODE_SHA}', 'actions/setup-node@v6', 1),
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
         'permission écriture': text.replace('contents: read', 'contents: write', 1),
+        'annulation globale': text.replace("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", 'cancel-in-progress: true', 1),
         'secret ajouté': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-24.04\n    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}', 1),
         'runner mobile': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1),
         'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
