@@ -120,19 +120,19 @@ def validate_target_url(base_url: str, context: str) -> list[str]:
     if parsed.fragment:
         errors.append("URL de release invalide: fragment interdit.")
 
-    if context == "preview" and not local:
+    if context in {"preview", "production-candidate"} and not local:
         if not host.endswith(".netlify.app"):
-            errors.append("Deploy preview invalide: hôte *.netlify.app requis.")
+            errors.append("Deploy Netlify invalide: hôte *.netlify.app requis.")
         else:
             netlify_label = host.removesuffix(".netlify.app")
             if "--" not in netlify_label:
-                errors.append("Deploy preview invalide: permalink atomique Netlify requis (deploy-id--site.netlify.app).")
+                errors.append("Deploy Netlify invalide: permalink atomique requis (deploy-id--site.netlify.app).")
             else:
                 deploy_id, site_name = netlify_label.split("--", 1)
                 if not re.fullmatch(r"[0-9a-f]{12,64}", deploy_id):
-                    errors.append("Deploy preview invalide: préfixe deploy-id hexadécimal requis; alias preview/branche refusé.")
+                    errors.append("Deploy Netlify invalide: préfixe deploy-id hexadécimal requis; alias preview/branche refusé.")
                 if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", site_name or ""):
-                    errors.append("Deploy preview invalide: nom de site Netlify inattendu.")
+                    errors.append("Deploy Netlify invalide: nom de site inattendu.")
     if context == "production" and not local and host not in OFFICIAL_PRODUCTION_HOSTS:
         errors.append("Production invalide: domaine officiel benoîtcantin.com requis.")
 
@@ -319,8 +319,9 @@ def validate_release_metadata(body: str, context: str, expected_sha: str) -> lis
         errors.append(f"{RELEASE_METADATA_PATH}: schema_version=1 requis.")
     if str(metadata.get("source_sha") or "").lower() != normalized_sha:
         errors.append(f"{RELEASE_METADATA_PATH}: source_sha ne correspond pas au SHA attendu.")
-    if metadata.get("context") != context:
-        errors.append(f"{RELEASE_METADATA_PATH}: contexte {context!r} attendu.")
+    metadata_context = "preview" if context == "preview" else "production"
+    if metadata.get("context") != metadata_context:
+        errors.append(f"{RELEASE_METADATA_PATH}: contexte {metadata_context!r} attendu.")
     return errors
 
 
@@ -487,16 +488,16 @@ class FixtureHandler(BaseHTTPRequestHandler):
         return
 
 
-def run_fixture(preview: bool) -> str:
+def run_fixture(context: str) -> str:
     server = ThreadingHTTPServer(("127.0.0.1", 0), FixtureHandler)
-    server.preview = preview
+    server.preview = context == "preview"
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
         base = f"http://127.0.0.1:{server.server_port}"
         errors = validate_release(
             base,
-            "preview" if preview else "production",
+            context,
             expected_sha=SELF_TEST_RELEASE_SHA,
         )
         if errors:
@@ -509,8 +510,9 @@ def run_fixture(preview: bool) -> str:
 
 
 def self_test() -> None:
-    run_fixture(preview=True)
-    run_fixture(preview=False)
+    run_fixture("preview")
+    run_fixture("production-candidate")
+    run_fixture("production")
 
     broken = validate_headers(
         {
@@ -567,7 +569,37 @@ def self_test() -> None:
 
     valid_atomic_preview = "https://1234abcd12acde000111cdef--example-site.netlify.app"
     if validate_target_url(valid_atomic_preview, "preview"):
-        raise SystemExit("ERREUR auto-test smoke HTTP: permalink atomique Netlify valide refusé.")
+        raise SystemExit("ERREUR auto-test smoke HTTP: permalink atomique Netlify preview valide refusé.")
+    if validate_target_url(valid_atomic_preview, "production-candidate"):
+        raise SystemExit("ERREUR auto-test smoke HTTP: permalink atomique production-candidate valide refusé.")
+
+    candidate_marker_errors = validate_release_metadata(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "source_sha": SELF_TEST_RELEASE_SHA,
+                "context": "production",
+            }
+        ),
+        "production-candidate",
+        SELF_TEST_RELEASE_SHA,
+    )
+    if candidate_marker_errors:
+        raise SystemExit("ERREUR auto-test smoke HTTP: marqueur production-candidate valide refusé.")
+
+    candidate_preview_marker = validate_release_metadata(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "source_sha": SELF_TEST_RELEASE_SHA,
+                "context": "preview",
+            }
+        ),
+        "production-candidate",
+        SELF_TEST_RELEASE_SHA,
+    )
+    if not candidate_preview_marker:
+        raise SystemExit("ERREUR auto-test smoke HTTP: marqueur preview accepté comme production-candidate.")
 
     invalid_targets = (
         ("http://example.netlify.app", "preview"),
@@ -584,6 +616,8 @@ def self_test() -> None:
         ("https://example.netlify.app\t", "preview"),
         ("https://" + ("a" * 2040) + ".netlify.app", "preview"),
         ("https://example.netlify.app", "production"),
+        ("https://example.netlify.app", "production-candidate"),
+        ("https://www.benoitcantin.com", "production-candidate"),
     )
     missed = [
         url
@@ -594,7 +628,7 @@ def self_test() -> None:
         raise SystemExit("ERREUR auto-test smoke HTTP: cibles dangereuses acceptées: " + ", ".join(missed))
 
     print(
-        "OK auto-tests smoke HTTP: permalink atomique preview, production, cibles autorisées, "
+        "OK auto-tests smoke HTTP: permalink atomique preview/production-candidate, production, cibles autorisées, "
         "CSP complète, HSTS, en-têtes défensifs, noindex, no-store privé/release, "
         "robots privés et 404 techniques vérifiés."
     )
@@ -603,7 +637,7 @@ def self_test() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Smoke HTTP d'une preview ou production web SINJIRA.")
     parser.add_argument("url", nargs="?")
-    parser.add_argument("--context", choices=("preview", "production"), default="preview")
+    parser.add_argument("--context", choices=("preview", "production-candidate", "production"), default="preview")
     parser.add_argument("--expected-sha", help="SHA source exact attendu dans /.well-known/release.json")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()

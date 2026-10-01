@@ -1,4 +1,4 @@
-name: Netlify preview — smoke HTTP
+name: Netlify deploy — smoke HTTP
 
 on:
   workflow_dispatch:
@@ -7,6 +7,13 @@ on:
         description: Permalink atomique Netlify (DEPLOY_URL: deploy-id--site.netlify.app), jamais un alias preview/branche
         required: true
         type: string
+      artifact_context:
+        description: Artefact à prouver avant DNS
+        required: true
+        type: choice
+        options:
+          - preview
+          - production-candidate
 
 permissions:
   contents: read
@@ -17,12 +24,13 @@ concurrency:
 
 jobs:
   smoke:
-    name: Smoke HTTP preview Netlify
+    name: Smoke HTTP deploy Netlify
     if: startsWith(github.ref, 'refs/heads/a1/web-release-')
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       DEPLOY_PERMALINK: ${{ inputs.deploy_permalink }}
+      SMOKE_CONTEXT: ${{ inputs.artifact_context }}
     steps:
       - name: Récupérer le dépôt sans credentials persistés
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -36,7 +44,7 @@ jobs:
         run: python3 scripts/validate_web_release_http.py --self-test
       - name: Vérifier le permalink atomique Netlify
         shell: bash
-        run: python3 scripts/validate_web_release_http.py "$DEPLOY_PERMALINK" --context preview --expected-sha "$GITHUB_SHA"
+        run: python3 scripts/validate_web_release_http.py "$DEPLOY_PERMALINK" --context "$SMOKE_CONTEXT" --expected-sha "$GITHUB_SHA"
       - name: Résumer la preuve Deploy Preview
         if: success()
         shell: bash
@@ -44,7 +52,7 @@ jobs:
           {
             echo "### Smoke HTTP — permalink atomique Netlify"
             echo "- Cible immuable : \`$DEPLOY_PERMALINK\`"
-            echo "- Contexte : \`preview\`"
+            echo "- Contexte : \`$SMOKE_CONTEXT\`"
             echo "- SHA source attendu/publié : \`$GITHUB_SHA\`"
             echo "- Ref de validation : \`$GITHUB_REF\`"
             echo "- Verdict : **SUCCESS**"
