@@ -26,6 +26,7 @@ NETLIFY_PUBLIC_CHECK = 'python3 scripts/build_netlify_public.py --check'
 WEB_RELEASE_SCOPE_SELF = 'python3 scripts/validate_web_release_scope.py --self-test'
 WEB_RELEASE_SCOPE_VALIDATE = 'python3 scripts/validate_web_release_scope.py'
 WEB_RELEASE_HTTP_SELF = 'python3 scripts/validate_web_release_http.py --self-test'
+WEB_RELEASE_PRODUCTION_BASELINE = 'python3 scripts/validate_web_release_http.py "$origin" --context production'
 WEB_RELEASE_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _site --standalone-netlify'
 PUBLIC_AI_ASSISTANT_SELF = 'python3 scripts/validate_public_ai_assistant.py --self-test'
 PUBLIC_AI_ASSISTANT_VALIDATE = 'python3 scripts/validate_public_ai_assistant.py'
@@ -90,6 +91,11 @@ def validate_text(text: str) -> list[str]:
     require(errors, exact_run_count(text, WEB_RELEASE_SCOPE_VALIDATE) == 1, 'validation portée web-only absente ou dupliquée')
     require(errors, text.count(WEB_RELEASE_SCOPE_IF) == 3, 'les gardes et le résumé web-only doivent rester limités aux branches a1/web-release-*')
     require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke HTTP release absent ou dupliqué')
+    require(errors, WEB_RELEASE_PRODUCTION_BASELINE in text, 'baseline smoke production read-only absent')
+    require(errors, 'timeout 90s ' + WEB_RELEASE_PRODUCTION_BASELINE in text, 'baseline smoke production doit rester borné à 90 secondes')
+    require(errors, '### Baseline smoke production — lecture seule' in text, 'résumé baseline production absent')
+    require(errors, 'FAIL attendu tant que #450 est ouvert' in text, 'baseline production doit rester explicitement non bloquant avant #450')
+    require(errors, 'Ce baseline est informatif et non bloquant. Il doit devenir PASS après la bascule #450.' in text, 'contrat baseline production non bloquant absent')
     require(errors, '### Readiness web-only' in text, 'résumé readiness web-only absent')
     require(errors, 'Fichiers modifiés : **$changed_count**' in text, 'compteur de diff readiness absent')
     require(errors, 'BubblaV : **fail-closed**' in text, 'état BubblaV fail-closed absent du résumé')
@@ -310,6 +316,7 @@ def run_self_tests(text: str) -> None:
         'validation portée web retirée': text.replace(f'        run: {WEB_RELEASE_SCOPE_VALIDATE}\n', '', 1),
         'condition portée web élargie': text.replace(WEB_RELEASE_SCOPE_IF, "if: github.event_name == 'pull_request'", 1),
         'auto-test smoke HTTP retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
+        'baseline production retiré': text.replace('            echo "### Baseline smoke production — lecture seule"\n', '', 1),
         'résumé readiness retiré': text.replace('            echo "### Readiness web-only"\n', '', 1),
         'état fail-closed readiness retiré': text.replace('            echo "- BubblaV : **fail-closed** (widget désactivé + CSP bloquante)"\n', '', 1),
         'auto-test Transparence IA retiré': text.replace(f'        run: {AI_TRANSPARENCY_SELF}\n', '', 1),
