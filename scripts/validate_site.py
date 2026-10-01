@@ -24,6 +24,9 @@ NATIVE_MOBILE_PREFIX = 'mobile-native/'
 # Ces deux fichiers gardent volontairement la casse legacy /Admin/ uniquement pour
 # protéger/réécrire d'anciens favoris et caches. Ils ne constituent pas des liens actifs.
 LEGACY_ADMIN_COMPAT_FILES = {'sw.js', 'assets/js/v24-3-3-runtime.js'}
+PERSONAL_CONTACT_PAGE = ROOT / 'contact.html'
+LEGACY_PERSONAL_FORMSPREE_ENDPOINT = 'https://formspree.io/f/xdenkzrv'
+NOVA_FORMSPREE_ENDPOINT = 'https://formspree.io/f/xkolwjdg'
 
 
 class Parser(HTMLParser):
@@ -235,6 +238,33 @@ def main() -> int:
             target = resolve_code_ref(source, raw)
             if target is not None and not target.exists():
                 errors.append(f'Import local manquant dans {rel}: {raw}')
+
+    # Le formulaire personnel ne doit jamais réutiliser un endpoint Formspree Nova.
+    if not PERSONAL_CONTACT_PAGE.is_file():
+        errors.append('Page de contact personnelle absente: contact.html')
+    else:
+        contact_text = PERSONAL_CONTACT_PAGE.read_text('utf-8', errors='ignore')
+        if LEGACY_PERSONAL_FORMSPREE_ENDPOINT in contact_text:
+            errors.append('Ancien endpoint Formspree personnel xdenkzrv encore présent dans contact.html')
+        if NOVA_FORMSPREE_ENDPOINT in contact_text:
+            errors.append('Endpoint Formspree Projet Nova interdit dans contact.html')
+        if 'data-personal-formspree-state="pending-separate-endpoint"' not in contact_text:
+            errors.append('État fail-closed Formspree personnel absent de contact.html')
+        if "var PERSONAL_ENDPOINT=''" not in contact_text:
+            match = re.search(r"var PERSONAL_ENDPOINT='([^']+)'", contact_text)
+            endpoint = match.group(1) if match else ''
+            if not re.fullmatch(r'https://formspree\.io/f/[A-Za-z0-9_-]+', endpoint):
+                errors.append('Endpoint Formspree personnel invalide dans contact.html')
+            if endpoint in {LEGACY_PERSONAL_FORMSPREE_ENDPOINT, NOVA_FORMSPREE_ENDPOINT}:
+                errors.append('Endpoint Formspree personnel doit être distinct des endpoints historiques/Nova')
+        if 'id="contact-submit"' not in contact_text:
+            errors.append('Bouton contact personnel identifiable absent')
+        if "PERSONAL_ENDPOINT!=='https://formspree.io/f/xdenkzrv'" not in contact_text:
+            errors.append('Garde runtime contre xdenkzrv absente du contact personnel')
+        if "PERSONAL_ENDPOINT!=='https://formspree.io/f/xkolwjdg'" not in contact_text:
+            errors.append('Garde runtime contre endpoint Nova absente du contact personnel')
+        if '<option value="Projet Nova">Projet Nova</option>' in contact_text:
+            errors.append('Projet Nova ne doit plus être routé par le formulaire personnel')
 
     critical_routes = [
         'index.html',
