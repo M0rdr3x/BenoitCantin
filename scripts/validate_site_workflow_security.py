@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/validate-site.yml'
 PREVIEW_WORKFLOW = ROOT / '.github/workflows/validate-netlify-preview.yml'
+NETLIFY_PRE_DNS_WORKFLOW = ROOT / '.github/workflows/validate-netlify-pre-dns.yml'
 PRODUCTION_WORKFLOW = ROOT / '.github/workflows/validate-web-production.yml'
 ARTIFACT_WORKFLOW = ROOT / '.github/workflows/build-web-release-artifact.yml'
 PAGES_DEPLOY_WORKFLOW = ROOT / '.github/workflows/deploy-github-pages-isolated.yml'
@@ -156,6 +157,58 @@ def validate_preview_workflow_text(text: str) -> list[str]:
     require(errors, 'contents: write' not in text, 'preview smoke ne doit jamais écrire dans le dépôt')
     return errors
 
+
+
+def validate_netlify_pre_dns_workflow_text(text: str) -> list[str]:
+    errors: list[str] = []
+    require(errors, 'workflow_dispatch:' in text, 'gate pré-DNS doit rester manuel')
+    require(errors, 'pull_request:' not in text, 'gate pré-DNS ne doit pas se déclencher sur pull_request')
+    require(errors, 'push:' not in text, 'gate pré-DNS ne doit pas se déclencher sur push')
+    require(errors, 'permissions:\n  contents: read' in text, 'gate pré-DNS doit rester contents:read')
+    require(errors, 'cancel-in-progress: false' in text, 'gate pré-DNS ne doit pas être annulé automatiquement')
+    require(errors, 'preview_permalink:' in text, 'permalink preview requis absent du gate pré-DNS')
+    require(errors, 'production_permalink:' in text, 'permalink production-candidate requis absent du gate pré-DNS')
+    require(errors, 'expected_sha:' not in text, 'gate pré-DNS ne doit accepter aucun SHA manuel')
+    require(errors, "if: startsWith(github.ref, 'refs/heads/a1/web-release-')" in text, 'gate pré-DNS doit rester borné à une branche web-release')
+    require(errors, 'runs-on: ubuntu-24.04' in text, 'gate pré-DNS doit utiliser Ubuntu 24.04')
+    require(errors, 'timeout-minutes: 8' in text, 'gate pré-DNS doit rester borné à 8 minutes')
+    require(errors, f'uses: actions/checkout@{CHECKOUT_SHA}' in text, 'checkout gate pré-DNS non épinglé')
+    require(errors, 'persist-credentials: false' in text, 'gate pré-DNS doit désactiver les credentials Git')
+    require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python gate pré-DNS non épinglé')
+    require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python gate pré-DNS inattendue')
+    require(errors, 'PREVIEW_PERMALINK: ${{ inputs.preview_permalink }}' in text, 'permalink preview doit passer par env')
+    require(errors, 'PRODUCTION_PERMALINK: ${{ inputs.production_permalink }}' in text, 'permalink production doit passer par env')
+    require(errors, '[ "$PREVIEW_PERMALINK" = "$PRODUCTION_PERMALINK" ]' in text, 'garde deploys distincts absente')
+    require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke pré-DNS absent ou dupliqué')
+    require(errors, 'python3 scripts/validate_web_release_http.py "$PREVIEW_PERMALINK" --context preview --expected-sha "$GITHUB_SHA"' in text, 'preuve preview pré-DNS absente')
+    require(errors, 'python3 scripts/validate_web_release_http.py "$PRODUCTION_PERMALINK" --context production-candidate --expected-sha "$GITHUB_SHA"' in text, 'preuve production-candidate pré-DNS absente')
+    require(errors, '### Gate Netlify pré-DNS combiné' in text, 'résumé gate pré-DNS absent')
+    require(errors, 'DNS : **non modifié par ce workflow**' in text, 'frontière non-déploiement DNS absente')
+    require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'gate pré-DNS ne doit référencer aucun secret')
+    require(errors, 'contents: write' not in text, 'gate pré-DNS ne doit jamais écrire dans le dépôt')
+    return errors
+
+
+def run_netlify_pre_dns_self_tests(text: str) -> None:
+    cases = {
+        'déclenchement PR ajouté': text.replace('  workflow_dispatch:\n', '  pull_request:\n  workflow_dispatch:\n', 1),
+        'permission écriture': text.replace('contents: read', 'contents: write', 1),
+        'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
+        'garde branche retirée': text.replace("    if: startsWith(github.ref, 'refs/heads/a1/web-release-')\n", '', 1),
+        'permalink production retiré': text.replace('      production_permalink:\n', '      production_alias:\n', 1),
+        'garde deploys distincts retirée': text.replace('          if [ "$PREVIEW_PERMALINK" = "$PRODUCTION_PERMALINK" ]; then\n', '          if false; then\n', 1),
+        'preuve preview retirée': text.replace('        run: python3 scripts/validate_web_release_http.py "$PREVIEW_PERMALINK" --context preview --expected-sha "$GITHUB_SHA"\n', '', 1),
+        'preuve candidat production retirée': text.replace('        run: python3 scripts/validate_web_release_http.py "$PRODUCTION_PERMALINK" --context production-candidate --expected-sha "$GITHUB_SHA"\n', '', 1),
+        'SHA manuel ajouté': text.replace('      preview_permalink:\n', '      expected_sha:\n        required: true\n      preview_permalink:\n', 1),
+        'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
+        'frontière DNS retirée': text.replace('            echo "- DNS : **non modifié par ce workflow**"\n', '', 1),
+    }
+    for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test gate pré-DNS: mutation sans effet: {name}')
+        if not validate_netlify_pre_dns_workflow_text(mutated):
+            raise SystemExit(f'ERREUR auto-test gate pré-DNS: mutation non détectée: {name}')
+    print(f'OK auto-tests gate pré-DNS: {len(cases)} affaiblissements critiques détectés.')
 
 
 def validate_artifact_workflow_text(text: str) -> list[str]:
@@ -599,6 +652,8 @@ def main() -> int:
         raise SystemExit(f'ERREUR validation site: workflow absent: {WORKFLOW.relative_to(ROOT)}')
     if not PREVIEW_WORKFLOW.is_file():
         raise SystemExit(f'ERREUR validation site: workflow preview absent: {PREVIEW_WORKFLOW.relative_to(ROOT)}')
+    if not NETLIFY_PRE_DNS_WORKFLOW.is_file():
+        raise SystemExit(f'ERREUR validation site: gate pré-DNS absent: {NETLIFY_PRE_DNS_WORKFLOW.relative_to(ROOT)}')
     if not PRODUCTION_WORKFLOW.is_file():
         raise SystemExit(f'ERREUR validation site: workflow production absent: {PRODUCTION_WORKFLOW.relative_to(ROOT)}')
     if not ARTIFACT_WORKFLOW.is_file():
@@ -610,6 +665,7 @@ def main() -> int:
 
     text = WORKFLOW.read_text(encoding='utf-8', errors='strict')
     preview_text = PREVIEW_WORKFLOW.read_text(encoding='utf-8', errors='strict')
+    netlify_pre_dns_text = NETLIFY_PRE_DNS_WORKFLOW.read_text(encoding='utf-8', errors='strict')
     production_text = PRODUCTION_WORKFLOW.read_text(encoding='utf-8', errors='strict')
     artifact_text = ARTIFACT_WORKFLOW.read_text(encoding='utf-8', errors='strict')
     pages_deploy_text = PAGES_DEPLOY_WORKFLOW.read_text(encoding='utf-8', errors='strict')
@@ -617,6 +673,7 @@ def main() -> int:
     if args.self_test:
         run_self_tests(text)
         run_preview_self_tests(preview_text)
+        run_netlify_pre_dns_self_tests(netlify_pre_dns_text)
         run_production_self_tests(production_text)
         run_artifact_self_tests(artifact_text)
         run_pages_deploy_self_tests(pages_deploy_text)
@@ -625,6 +682,7 @@ def main() -> int:
 
     errors = validate_text(text)
     errors.extend(validate_preview_workflow_text(preview_text))
+    errors.extend(validate_netlify_pre_dns_workflow_text(netlify_pre_dns_text))
     errors.extend(validate_production_workflow_text(production_text))
     errors.extend(validate_artifact_workflow_text(artifact_text))
     errors.extend(validate_pages_deploy_workflow_text(pages_deploy_text))
