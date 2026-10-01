@@ -120,8 +120,19 @@ def validate_target_url(base_url: str, context: str) -> list[str]:
     if parsed.fragment:
         errors.append("URL de release invalide: fragment interdit.")
 
-    if context == "preview" and not local and not host.endswith(".netlify.app"):
-        errors.append("Deploy preview invalide: hôte *.netlify.app requis.")
+    if context == "preview" and not local:
+        if not host.endswith(".netlify.app"):
+            errors.append("Deploy preview invalide: hôte *.netlify.app requis.")
+        else:
+            netlify_label = host.removesuffix(".netlify.app")
+            if "--" not in netlify_label:
+                errors.append("Deploy preview invalide: permalink atomique Netlify requis (deploy-id--site.netlify.app).")
+            else:
+                deploy_id, site_name = netlify_label.split("--", 1)
+                if not re.fullmatch(r"[0-9a-f]{12,64}", deploy_id):
+                    errors.append("Deploy preview invalide: préfixe deploy-id hexadécimal requis; alias preview/branche refusé.")
+                if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", site_name or ""):
+                    errors.append("Deploy preview invalide: nom de site Netlify inattendu.")
     if context == "production" and not local and host not in OFFICIAL_PRODUCTION_HOSTS:
         errors.append("Production invalide: domaine officiel benoîtcantin.com requis.")
 
@@ -554,9 +565,16 @@ def self_test() -> None:
     if not marker_broken:
         raise SystemExit("ERREUR auto-test smoke HTTP: mauvais SHA release non détecté.")
 
+    valid_atomic_preview = "https://1234abcd12acde000111cdef--example-site.netlify.app"
+    if validate_target_url(valid_atomic_preview, "preview"):
+        raise SystemExit("ERREUR auto-test smoke HTTP: permalink atomique Netlify valide refusé.")
+
     invalid_targets = (
         ("http://example.netlify.app", "preview"),
         ("https://example.com", "preview"),
+        ("https://example.netlify.app", "preview"),
+        ("https://deploy-preview-449--example.netlify.app", "preview"),
+        ("https://staging--example.netlify.app", "preview"),
         ("https://user:pass@example.netlify.app", "preview"),
         ("https://www.netlify.app:8443", "preview"),
         ("https://example.netlify.app/sub/path", "preview"),
@@ -576,7 +594,7 @@ def self_test() -> None:
         raise SystemExit("ERREUR auto-test smoke HTTP: cibles dangereuses acceptées: " + ", ".join(missed))
 
     print(
-        "OK auto-tests smoke HTTP: preview, production, cibles autorisées, "
+        "OK auto-tests smoke HTTP: permalink atomique preview, production, cibles autorisées, "
         "CSP complète, HSTS, en-têtes défensifs, noindex, no-store privé/release, "
         "robots privés et 404 techniques vérifiés."
     )

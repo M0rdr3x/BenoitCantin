@@ -138,12 +138,14 @@ def validate_preview_workflow_text(text: str) -> list[str]:
     require(errors, 'persist-credentials: false' in text, 'preview smoke doit désactiver les credentials Git')
     require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python preview smoke non épinglé')
     require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python preview smoke inattendue')
-    require(errors, 'PREVIEW_URL: ${{ inputs.preview_url }}' in text, 'URL preview doit passer par une variable d’environnement')
+    require(errors, 'deploy_permalink:' in text, 'input permalink atomique preview absent')
+    require(errors, 'preview_url:' not in text, 'alias preview générique interdit comme input de gate')
+    require(errors, 'DEPLOY_PERMALINK: ${{ inputs.deploy_permalink }}' in text, 'permalink preview doit passer par une variable d’environnement')
     require(errors, 'expected_sha:' not in text, 'preview smoke ne doit accepter aucun SHA saisi manuellement')
     require(errors, "if: startsWith(github.ref, 'refs/heads/a1/web-release-')" in text, 'preview smoke doit rester borné à une branche web-release')
     require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke HTTP preview absent ou dupliqué')
-    require(errors, 'python3 scripts/validate_web_release_http.py "$PREVIEW_URL" --context preview --expected-sha "$GITHUB_SHA"' in text, 'commande smoke preview doit lier la preuve au GITHUB_SHA')
-    require(errors, '### Smoke HTTP — Deploy Preview Netlify' in text, 'résumé preuve preview absent')
+    require(errors, 'python3 scripts/validate_web_release_http.py "$DEPLOY_PERMALINK" --context preview --expected-sha "$GITHUB_SHA"' in text, 'commande smoke permalink doit lier la preuve au GITHUB_SHA')
+    require(errors, '### Smoke HTTP — permalink atomique Netlify' in text, 'résumé preuve permalink preview absent')
     require(errors, 'GITHUB_STEP_SUMMARY' in text, 'preview smoke doit écrire une preuve dans GITHUB_STEP_SUMMARY')
     require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'preview smoke ne doit référencer aucun secret')
     require(errors, 'contents: write' not in text, 'preview smoke ne doit jamais écrire dans le dépôt')
@@ -505,18 +507,19 @@ def run_preview_self_tests(text: str) -> None:
         'auto-test smoke retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
         'garde ref preview retirée': text.replace("    if: startsWith(github.ref, 'refs/heads/a1/web-release-')\n", '', 1),
         'preuve SHA GITHUB retirée de la commande': text.replace(' --expected-sha "$GITHUB_SHA"', '', 1),
-        'SHA manuel ajouté': text.replace('      preview_url:\n', '      expected_sha:\n        required: true\n      preview_url:\n', 1),
+        'SHA manuel ajouté': text.replace('      deploy_permalink:\n', '      expected_sha:\n        required: true\n      deploy_permalink:\n', 1),
+        'alias preview réintroduit': text.replace('      deploy_permalink:\n', '      preview_url:\n', 1),
         'injection directe URL': text.replace(
-            'python3 scripts/validate_web_release_http.py "$PREVIEW_URL" --context preview --expected-sha "$GITHUB_SHA"',
-            'python3 scripts/validate_web_release_http.py "${{ inputs.preview_url }}" --context preview --expected-sha "$GITHUB_SHA"',
+            'python3 scripts/validate_web_release_http.py "$DEPLOY_PERMALINK" --context preview --expected-sha "$GITHUB_SHA"',
+            'python3 scripts/validate_web_release_http.py "${{ inputs.deploy_permalink }}" --context preview --expected-sha "$GITHUB_SHA"',
             1,
         ),
         'secret ajouté': text.replace(
-            'PREVIEW_URL: ${{ inputs.preview_url }}',
-            'PREVIEW_URL: ${{ secrets.PREVIEW_URL }}',
+            'DEPLOY_PERMALINK: ${{ inputs.deploy_permalink }}',
+            'DEPLOY_PERMALINK: ${{ secrets.DEPLOY_PERMALINK }}',
             1,
         ),
-        'résumé preuve retiré': text.replace('            echo "### Smoke HTTP — Deploy Preview Netlify"\n', '', 1),
+        'résumé preuve retiré': text.replace('            echo "### Smoke HTTP — permalink atomique Netlify"\n', '', 1),
     }
     for name, mutated in cases.items():
         if mutated == text:
