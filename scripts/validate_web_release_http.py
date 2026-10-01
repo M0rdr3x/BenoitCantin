@@ -133,7 +133,15 @@ def request(base_url: str, path: str) -> tuple[int, object, str]:
     host = (parsed_base.hostname or "").lower()
     local = host in {"127.0.0.1", "localhost"}
     url = urljoin(base_url.rstrip("/") + "/", path.lstrip("/"))
-    req = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "text/html,*/*"})
+    req = Request(
+        url,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,*/*",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+        },
+    )
     opener = build_opener(SameHostRedirectHandler(host, allow_http=local))
     try:
         with opener.open(req, timeout=TIMEOUT_SECONDS) as response:
@@ -272,6 +280,19 @@ def validate_private_headers(headers: object, path: str) -> list[str]:
     return errors
 
 
+def validate_release_headers(headers: object) -> list[str]:
+    errors: list[str] = []
+    get = getattr(headers, "get")
+    cache_control = str(get("Cache-Control") or "").lower()
+    if "no-store" not in cache_control:
+        errors.append(f"{RELEASE_METADATA_PATH}: Cache-Control no-store absent.")
+    robots = str(get("X-Robots-Tag") or "").lower()
+    for token in ("noindex", "nofollow", "noarchive"):
+        if token not in robots:
+            errors.append(f"{RELEASE_METADATA_PATH}: X-Robots-Tag sans {token}.")
+    return errors
+
+
 def validate_release_metadata(body: str, context: str, expected_sha: str) -> list[str]:
     errors: list[str] = []
     normalized_sha = expected_sha.strip().lower()
@@ -321,13 +342,14 @@ def validate_release(base_url: str, context: str, expected_sha: str | None = Non
 
     if expected_sha:
         try:
-            release_status, _, release_body = request(base_url, RELEASE_METADATA_PATH)
+            release_status, release_headers, release_body = request(base_url, RELEASE_METADATA_PATH)
         except (URLError, OSError, TimeoutError) as exc:
             errors.append(f"{RELEASE_METADATA_PATH}: requête impossible: {exc}")
         else:
             if release_status != 200:
                 errors.append(f"{RELEASE_METADATA_PATH}: HTTP {release_status}, 200 attendu.")
             else:
+                errors.extend(validate_release_headers(release_headers))
                 errors.extend(validate_release_metadata(release_body, context, expected_sha))
 
     home = responses.get("/")
@@ -380,6 +402,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         technical = self.path in TECHNICAL_404_PATHS
         private_runtime = self.path in PRIVATE_RUNTIME_PATHS
+        release_metadata = self.path == RELEASE_METADATA_PATH
         self.send_response(404 if technical else 200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("X-Content-Type-Options", "nosniff")
@@ -404,9 +427,9 @@ class FixtureHandler(BaseHTTPRequestHandler):
             "form-action 'self' https://formspree.io; "
             "frame-ancestors 'self'; object-src 'self'; base-uri 'self'",
         )
-        if private_runtime:
+        if private_runtime or release_metadata:
             self.send_header("Cache-Control", "no-store")
-        if getattr(self.server, "preview", False) or private_runtime:
+        if getattr(self.server, "preview", False) or private_runtime or release_metadata:
             self.send_header("X-Robots-Tag", "noindex, nofollow, noarchive")
         self.end_headers()
 
@@ -495,6 +518,12 @@ def self_test() -> None:
     if not private_broken:
         raise SystemExit("ERREUR auto-test smoke HTTP: en-têtes privés affaiblis non détectés.")
 
+    release_headers_broken = validate_release_headers(
+        {"X-Robots-Tag": "noindex, nofollow, noarchive"}
+    )
+    if not release_headers_broken:
+        raise SystemExit("ERREUR auto-test smoke HTTP: release.json cacheable non détecté.")
+
     provider_enabled = validate_headers(
         {
             "Content-Security-Policy": (
@@ -548,7 +577,7 @@ def self_test() -> None:
 
     print(
         "OK auto-tests smoke HTTP: preview, production, cibles autorisées, "
-        "CSP complète, HSTS, en-têtes défensifs, noindex, no-store privé, "
+        "CSP complète, HSTS, en-têtes défensifs, noindex, no-store privé/release, "
         "robots privés et 404 techniques vérifiés."
     )
 

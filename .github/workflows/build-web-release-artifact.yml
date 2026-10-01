@@ -54,6 +54,9 @@ jobs:
             echo "ERREUR: noindex global interdit dans l’artefact production." >&2
             exit 1
           fi
+          production_release_headers="$(awk 'BEGIN{inside=0} /^\/\.well-known\/release\.json$/ {inside=1; next} inside && NF==0 {exit} inside {print}' _site/_headers)"
+          grep -Fq "Cache-Control: no-store" <<<"$production_release_headers"
+          grep -Fq "X-Robots-Tag: noindex, nofollow, noarchive" <<<"$production_release_headers"
           grep -Fq "/supabase/* /404.html 404!" _site/_redirects
           test ! -e _site/script.js
           for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do
@@ -91,6 +94,9 @@ jobs:
             echo "ERREUR: noindex global requis dans l’artefact preview." >&2
             exit 1
           fi
+          preview_release_headers="$(awk 'BEGIN{inside=0} /^\/\.well-known\/release\.json$/ {inside=1; next} inside && NF==0 {exit} inside {print}' _preview_site/_headers)"
+          grep -Fq "Cache-Control: no-store" <<<"$preview_release_headers"
+          grep -Fq "X-Robots-Tag: noindex, nofollow, noarchive" <<<"$preview_release_headers"
           grep -Fq "/supabase/* /404.html 404!" _preview_site/_redirects
           test ! -e _preview_site/script.js
           for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do
@@ -182,7 +188,7 @@ jobs:
           {
             echo "### Artefacts web SINJIRA"
             echo "- SHA source : \`${{ github.event.pull_request.head.sha || github.sha }}\`"
-            echo "- Marqueur d’identité : \`/.well-known/release.json\` embarque ce SHA dans les trois artefacts"
+            echo "- Marqueur d’identité : \`/.well-known/release.json\` embarque ce SHA; sur Netlify il est \`Cache-Control: no-store\` + \`noindex\`"
             echo "- Fichiers production : **$WEB_RELEASE_FILE_COUNT**"
             echo "- Production : [ouvrir/télécharger](${{ steps.release-upload.outputs.artifact-url }})"
             echo "- Digest production : \`${{ steps.release-upload.outputs.artifact-digest }}\`"

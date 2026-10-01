@@ -429,6 +429,17 @@ def validate_netlify_config() -> list[str]:
         for rule in headers
         if isinstance(rule, dict) and isinstance(rule.get("for"), str)
     }
+    release_values = header_rules.get("/.well-known/release.json")
+    if release_values is None:
+        errors.append("En-têtes Netlify du marqueur release.json absents.")
+    else:
+        if str(release_values.get("Cache-Control") or "").lower() != "no-store":
+            errors.append("Cache-Control no-store requis: /.well-known/release.json")
+        release_robots = str(release_values.get("X-Robots-Tag") or "").lower()
+        for token in ("noindex", "nofollow", "noarchive"):
+            if token not in release_robots:
+                errors.append(f"X-Robots-Tag {token} requis: /.well-known/release.json")
+
     for private_path in sorted(PRIVATE_RUNTIME_HEADER_PATHS):
         values = header_rules.get(private_path)
         if values is None:

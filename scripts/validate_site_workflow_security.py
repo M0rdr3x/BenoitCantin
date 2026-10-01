@@ -195,6 +195,10 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, 'test ! -e _pages_site/_redirects' in text, '_redirects doit être absent de l’artefact Pages')
     require(errors, 'production_global_headers=' in text, 'extraction du bloc global production absente')
     require(errors, 'preview_global_headers=' in text, 'extraction du bloc global preview absente')
+    require(errors, 'production_release_headers=' in text, 'extraction des headers release.json production absente')
+    require(errors, 'preview_release_headers=' in text, 'extraction des headers release.json preview absente')
+    require(errors, text.count('grep -Fq "Cache-Control: no-store" <<<"$production_release_headers"') == 1, 'preuve no-store release.json production absente')
+    require(errors, text.count('grep -Fq "Cache-Control: no-store" <<<"$preview_release_headers"') == 1, 'preuve no-store release.json preview absente')
     require(errors, 'ERREUR: noindex global interdit dans l’artefact production.' in text, 'garde noindex production absente')
     require(errors, 'ERREUR: noindex global requis dans l’artefact preview.' in text, 'garde noindex preview absente')
     require(errors, 'X-Robots-Tag: noindex, nofollow, noarchive' in text, 'preuve noindex globale preview absente')
@@ -453,6 +457,8 @@ def run_artifact_self_tests(text: str) -> None:
         'garde Formspree production retirée': text.replace('          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do\n', '', 1),
         'SHA source artefact retiré': text.replace('      SINJIRA_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}\n', '', 1),
         'release.json production retiré': text.replace('          test -f _site/.well-known/release.json\n', '', 1),
+        'no-store release production retiré': text.replace('          grep -Fq "Cache-Control: no-store" <<<"$production_release_headers"\n', '', 1),
+        'no-store release preview retiré': text.replace('          grep -Fq "Cache-Control: no-store" <<<"$preview_release_headers"\n', '', 1),
         'fichiers cachés exclus': text.replace('include-hidden-files: true', 'include-hidden-files: false', 1),
         'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
         'résumé non-déploiement retiré': text.replace('            echo "> Aucun déploiement n’est effectué par ce workflow."\n', '', 1),
