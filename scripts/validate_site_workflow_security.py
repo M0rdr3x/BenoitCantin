@@ -334,18 +334,45 @@ def validate_anon_netlify_preview_workflow_text(text: str) -> list[str]:
     require(errors, '--auth' not in text and 'NETLIFY_AUTH_TOKEN' not in text, 'auth/token Netlify interdit au preview anonyme')
     require(errors, re.search(r'--site(?:\s|=)', text) is None, 'site Netlify existant interdit au preview anonyme')
     require(errors, '--site-name' not in text, 'création de site nommé interdite au preview anonyme')
-    require(errors, '2>\"$deploy_err\"' in text, 'stderr Netlify doit être capturé hors logs')
-    require(errors, 'cat \"$deploy_json\"' not in text and 'cat \"$deploy_err\"' not in text, 'sortie brute Netlify ne doit jamais être journalisée')
-    require(errors, 'rm -f \"$deploy_json\" \"$deploy_err\"' in text, 'fichiers temporaires Netlify doivent être supprimés')
+    require(errors, '2>"$deploy_err"' in text, 'stderr Netlify doit être capturé hors logs')
+    require(errors, 'cat "$deploy_json"' not in text and 'cat "$deploy_err"' not in text, 'sortie brute Netlify ne doit jamais être journalisée')
+    require(errors, 'rm -f "$deploy_json" "$deploy_err"' in text, 'fichiers temporaires Netlify doivent être supprimés')
     require(errors, "host.endswith('.netlify.app')" in text, 'validation hôte netlify.app absente')
     require(errors, "re.fullmatch(r'https://[a-z0-9-]+(?:--[a-z0-9-]+)?\\.netlify\\.app', url)" in text, 'validation stricte URL preview anonyme absente')
-    require(errors, 'python3 scripts/validate_web_release_http.py \"$NETLIFY_PREVIEW_URL\" --context preview' in text, 'smoke preview anonyme absent')
+    require(errors, 'python3 scripts/validate_web_release_http.py "$NETLIFY_PREVIEW_URL" --context preview' in text, 'smoke preview anonyme absent')
     require(errors, 'Jeton de réclamation : **non journalisé et non conservé**' in text, 'preuve non-conservation token absente')
     require(errors, 'Production/DNS : **inchangés**' in text, 'preuve non-production absente')
     targets = action_targets(text)
     require(errors, len(targets) == 3, f'nombre inattendu d’actions dans le workflow preview anonyme: {len(targets)}')
     for target in targets:
-        require(errors, re.search(r'@[0-9a-f]{40}    errors: list[str] = []
+        require(errors, re.search(r'@[0-9a-f]{40}$', target) is not None, f'action preview anonyme non immuable: {target}')
+    return errors
+
+
+def run_anon_netlify_preview_self_tests(text: str) -> None:
+    cases = {
+        'déclenchement push ajouté': text.replace('  pull_request:\n', '  push:\n  pull_request:\n', 1),
+        'permission écriture ajoutée': text.replace('contents: read', 'contents: write', 1),
+        'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
+        'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
+        'marqueur retiré': text.replace('[netlify-anon-preview]', '[preview]'),
+        'anonyme retiré': text.replace('--allow-anonymous', ''),
+        'prod ajouté': text.replace('--no-build --json', '--no-build --json --prod', 1),
+        'version CLI mobile': text.replace(f'netlify-cli@{NETLIFY_CLI_VERSION}', 'netlify-cli@latest', 1),
+        'noindex retiré': text.replace("          grep -Fq 'X-Robots-Tag: noindex, nofollow, noarchive' <<<\"$preview_global_headers\"\n", '', 1),
+        'sortie brute exposée': text.replace("          python3 - \"$deploy_json\" <<'PY'\n", "          cat \"$deploy_json\"\n          python3 - \"$deploy_json\" <<'PY'\n", 1),
+        'smoke retiré': text.replace('        run: python3 scripts/validate_web_release_http.py "$NETLIFY_PREVIEW_URL" --context preview\n', '', 1),
+    }
+    for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test preview Netlify anonyme: mutation sans effet: {name}')
+        if not validate_anon_netlify_preview_workflow_text(mutated):
+            raise SystemExit(f'ERREUR auto-test preview Netlify anonyme: mutation non détectée: {name}')
+    print(f'OK auto-tests preview Netlify anonyme: {len(cases)} affaiblissements critiques détectés.')
+
+
+def validate_production_workflow_text(text: str) -> list[str]:
+    errors: list[str] = []
     require(errors, 'workflow_dispatch:' in text, 'production smoke doit rester manuel')
     require(errors, 'pull_request:' not in text, 'production smoke ne doit pas se déclencher sur pull_request')
     require(errors, 'push:' not in text, 'production smoke ne doit pas se déclencher sur push')
@@ -369,7 +396,6 @@ def validate_anon_netlify_preview_workflow_text(text: str) -> list[str]:
     require(errors, 'contents: write' not in text, 'production smoke ne doit jamais écrire dans le dépôt')
     require(errors, 'inputs:' not in text, 'production smoke ne doit accepter aucune URL ou entrée utilisateur')
     return errors
-
 
 def run_artifact_self_tests(text: str) -> None:
     guard = "if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'a1/web-release-')"
