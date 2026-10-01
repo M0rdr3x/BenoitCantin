@@ -62,7 +62,7 @@ jobs:
             echo "- BubblaV : **fail-closed** (widget désactivé + CSP bloquante)"
             echo "- Smoke deploy unitaire : \`Netlify deploy — smoke HTTP\` (permalink atomique, preview / production-candidate)"
             echo "- Gate pré-DNS combiné : \`Netlify pré-DNS — gate combiné\` (même site Netlify + même SHA)"
-            echo "- Smoke production : \`Web production — smoke HTTP\` (SHA + signature Netlify obligatoires)"
+            echo "- Smoke production : \`Web production — smoke HTTP\` (SHA + signature Netlify + apex canonique)"
             echo "- Portes externes restantes : bascule hébergeur sûre (#450), #135, #443, #444"
             echo
             echo "> Ce résumé prouve l'état du candidat Git/CI, pas un déploiement production."
@@ -74,8 +74,10 @@ jobs:
         run: |
           set -u
           origin="https://www.benoitcantin.com"
+          apex_origin="https://benoitcantin.com"
           headers="$(mktemp)"
           body="$(mktemp)"
+          apex_headers="$(mktemp)"
           http_code="$(curl -sS --connect-timeout 5 --max-time 15 -D "$headers" -o "$body" -w '%{http_code}' "$origin/" || true)"
           server="$(awk 'BEGIN{IGNORECASE=1} /^server:/ {sub(/\r$/,""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$headers")"
           nf_request="$(awk 'BEGIN{IGNORECASE=1} /^x-nf-request-id:/ {found=1} END{print found ? "présent" : "absent"}' "$headers")"
@@ -84,6 +86,10 @@ jobs:
           else
             netlify_signature="non observée"
           fi
+          apex_http_code="$(curl -sS --connect-timeout 5 --max-time 15 -D "$apex_headers" -o /dev/null -w '%{http_code}' "$apex_origin/" || true)"
+          apex_location="$(awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/\r$/,""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$apex_headers")"
+          apex_server="$(awk 'BEGIN{IGNORECASE=1} /^server:/ {sub(/\r$/,""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$apex_headers")"
+          apex_nf_request="$(awk 'BEGIN{IGNORECASE=1} /^x-nf-request-id:/ {found=1} END{print found ? "présent" : "absent"}' "$apex_headers")"
           {
             echo "### Observation hébergement public — lecture seule"
             echo "- Origine : \`$origin\`"
@@ -91,6 +97,11 @@ jobs:
             echo "- En-tête Server : \`${server:-non exposé}\`"
             echo "- x-nf-request-id : **$nf_request**"
             echo "- Signature Netlify HTTP : **$netlify_signature**"
+            echo "- Apex : \`$apex_origin/\`"
+            echo "- Apex HTTP initial : \`${apex_http_code:-000}\`"
+            echo "- Apex Location : \`${apex_location:-absente}\`"
+            echo "- Apex Server : \`${apex_server:-non exposé}\`"
+            echo "- Apex x-nf-request-id : **$apex_nf_request**"
             echo
             echo "| Chemin technique | HTTP observé |"
             echo "|---|---:|"

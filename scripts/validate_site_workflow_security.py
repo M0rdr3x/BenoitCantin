@@ -104,6 +104,11 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'timeout 90s ' + WEB_RELEASE_PRODUCTION_BASELINE in text, 'baseline smoke production doit rester borné à 90 secondes')
     require(errors, '### Baseline smoke production — lecture seule' in text, 'résumé baseline production absent')
     require(errors, 'echo "- Cible : $origin"' in text, 'résumé baseline production doit éviter la substitution Bash des backticks')
+    require(errors, 'apex_origin="https://benoitcantin.com"' in text, 'baseline apex officiel absent')
+    require(errors, 'Apex HTTP initial :' in text, 'code HTTP apex absent du résumé baseline')
+    require(errors, 'Apex Location :' in text, 'Location apex absente du résumé baseline')
+    require(errors, 'Apex Server :' in text, 'Server apex absent du résumé baseline')
+    require(errors, 'Apex x-nf-request-id :' in text, 'signature Netlify apex absente du résumé baseline')
     require(errors, 'echo "- Code smoke : $smoke_status"' in text, 'code baseline production doit être rendu sans substitution Bash')
     require(errors, 'FAIL attendu tant que #450 est ouvert' in text, 'baseline production doit rester explicitement non bloquant avant #450')
     require(errors, 'Ce baseline est informatif et non bloquant. Il doit devenir PASS après la bascule #450.' in text, 'contrat baseline production non bloquant absent')
@@ -114,7 +119,7 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'Artefact CI : \\`Web release — artefact public isolé\\` (aucun déploiement)' in text, 'workflow artefact CI absent du résumé')
     require(errors, 'Smoke deploy unitaire : \\`Netlify deploy — smoke HTTP\\` (permalink atomique, preview / production-candidate)' in text, 'smoke deploy unitaire absent du résumé readiness')
     require(errors, 'Gate pré-DNS combiné : \\`Netlify pré-DNS — gate combiné\\` (même site Netlify + même SHA)' in text, 'gate pré-DNS combiné absent du résumé readiness')
-    require(errors, 'Smoke production : \\`Web production — smoke HTTP\\` (SHA + signature Netlify obligatoires)' in text, 'preuve finale Netlify absente du résumé readiness')
+    require(errors, 'Smoke production : \\`Web production — smoke HTTP\\` (SHA + signature Netlify + apex canonique)' in text, 'preuve finale Netlify/apex absente du résumé readiness')
     require(errors, 'Portes externes restantes : bascule hébergeur sûre (#450), #135, #443, #444' in text, 'portes externes readiness absentes')
     require(errors, exact_run_count(text, AI_TRANSPARENCY_SELF) == 1, 'auto-test Transparence IA absent ou dupliqué')
     require(errors, exact_run_count(text, AI_TRANSPARENCY_VALIDATE) == 1, 'validation Transparence IA absente ou dupliquée')
@@ -640,11 +645,13 @@ def run_self_tests(text: str) -> None:
         'auto-test smoke HTTP retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
         'baseline production retiré': text.replace('            echo "### Baseline smoke production — lecture seule"\n', '', 1),
         'baseline cible dangereuse': text.replace('            echo "- Cible : $origin"\n', '            echo "- Cible : `$origin`"\n', 1),
+        'baseline apex retiré': text.replace('          apex_origin="https://benoitcantin.com"\n', '', 1),
+        'baseline Location apex retirée': text.replace('            echo "- Apex Location : \\`${apex_location:-absente}\\`"\n', '', 1),
         'résumé readiness retiré': text.replace('            echo "### Readiness web-only"\n', '', 1),
         'état fail-closed readiness retiré': text.replace('            echo "- BubblaV : **fail-closed** (widget désactivé + CSP bloquante)"\n', '', 1),
         'smoke deploy readiness retiré': text.replace('            echo "- Smoke deploy unitaire : \\`Netlify deploy — smoke HTTP\\` (permalink atomique, preview / production-candidate)"\n', '', 1),
         'gate pré-DNS readiness retiré': text.replace('            echo "- Gate pré-DNS combiné : \\`Netlify pré-DNS — gate combiné\\` (même site Netlify + même SHA)"\n', '', 1),
-        'preuve Netlify readiness retirée': text.replace('            echo "- Smoke production : \\`Web production — smoke HTTP\\` (SHA + signature Netlify obligatoires)"\n', '', 1),
+        'preuve Netlify readiness retirée': text.replace('            echo "- Smoke production : \\`Web production — smoke HTTP\\` (SHA + signature Netlify + apex canonique)"\n', '', 1),
         'auto-test Transparence IA retiré': text.replace(f'        run: {AI_TRANSPARENCY_SELF}\n', '', 1),
         'validation Transparence IA retirée': text.replace(f'        run: {AI_TRANSPARENCY_VALIDATE}\n', '', 1),
         'auto-test assistant IA retiré': text.replace(f'        run: {PUBLIC_AI_ASSISTANT_SELF}\n', '', 1),
