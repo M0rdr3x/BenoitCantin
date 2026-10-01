@@ -88,7 +88,7 @@ Le chatbot public ne constitue pas une voie d’accès aux données privées des
 
 Lorsque le fournisseur sera réactivé, le chargeur doit rester **opt-in** : le site affichera d’abord un lanceur local et ne créera le script BubblaV qu’après un clic explicite. Avant ce clic, aucune requête vers `www.bubblav.com/widget.js` ne devra être initiée par ce chargeur.
 
-**État actuel : BubblaV est désactivé côté site.** Le verrou `publicAssistantVendorReady=false` empêche la création du lanceur public, et la CSP n’autorise pas `www.bubblav.com`. Tant que les issues #443 et #444 ne sont pas résolues et revérifiées, aucun script ou appel réseau BubblaV ne doit être initié par le portail.
+**État actuel : BubblaV est désactivé côté site.** Deux verrous indépendants empêchent la création du lanceur public : `publicAssistantFormsMinimized=false` pour #443 et `publicAssistantDomainsRestricted=false` pour #444. La CSP n’autorise pas `www.bubblav.com`. Tant que les deux issues ne sont pas résolues et revérifiées, aucun script ou appel réseau BubblaV ne doit être initié par le portail.
 
 Les traitements du widget sont déclarés dans `/confidentialite.html`.
 
@@ -107,7 +107,7 @@ Configuration publique de référence :
 - inventaire de minimisation et état de revue : `docs/BUBBLAV_PUBLIC_ASSISTANT_DATA_MINIMIZATION.md`; suivi fournisseur : issue **#443**;
 - cible fournisseur : restreindre l’intégration au domaine officiel `www.benoitcantin.com` dès qu’une allowlist de domaine peut être appliquée et vérifiée; suivi fournisseur : issue **#444**.
 
-Tant que le périmètre fournisseur n’est pas proprement finalisé, le site doit rester **fail-closed** à deux niveaux : `publicAssistantVendorReady=false` bloque l’activation locale et la CSP bloque le réseau BubblaV. La garde de domaine `www.benoitcantin.com` / `benoitcantin.com` reste conservée pour une éventuelle réactivation future; les previews, copies locales et miroirs ne doivent jamais charger le chatbot. Cette garde locale complétera l’allowlist fournisseur; elle ne la remplacera pas.
+Tant que le périmètre fournisseur n’est pas proprement finalisé, le site doit rester **fail-closed** à trois niveaux : le verrou #443 (`publicAssistantFormsMinimized=false`), le verrou #444 (`publicAssistantDomainsRestricted=false`) et la CSP qui bloque le réseau BubblaV. La garde de domaine `www.benoitcantin.com` / `benoitcantin.com` reste conservée pour une éventuelle réactivation future; les previews, copies locales et miroirs ne doivent jamais charger le chatbot. Cette garde locale complétera l’allowlist fournisseur; elle ne la remplacera pas.
 
 Toute modification qui élargit les données accessibles, active une intégration externe ou permet une action sensible doit être revue avant activation.
 
@@ -151,4 +151,8 @@ Tout changement important doit être :
 3. vérifié avant publication;
 4. compatible avec la vie privée, l’anti-spoiler et la neutralité civique.
 
-Dernière mise à jour : 30 septembre 2026.
+Dernière mise à jour : 1er octobre 2026.
+
+### Relecture fournisseur du 1er octobre 2026
+
+La lecture BubblaV fraîche confirme : site `ready`, `yolo_mode=false`, apprentissage automatique publié sans revue désactivé, mais `allow_all_domains=true` et `allowed_domains=[]`. Les cinq formulaires hors périmètre de #443 sont toujours `enabled=true` avec `submission_count=0`; les deux formulaires de contact à conserver restent actifs avec consentement. L’intégration **Escalate to Human** est active et ses instructions la réservent à une demande explicite d’un humain. La lecture des flows retourne encore une erreur fournisseur interne; aucune suppression destructive de formulaire n’est donc effectuée tant qu’une dépendance éventuelle par flow ne peut pas être exclue.

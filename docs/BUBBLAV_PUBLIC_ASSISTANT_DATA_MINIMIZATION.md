@@ -1,6 +1,6 @@
 # BubblaV — minimisation des formulaires du chatbot public
 
-Dernière revue : 30 septembre 2026.
+Dernière revue : 1er octobre 2026.
 
 Suivi fournisseur : issue GitHub **#443** — désactivation/retrait des six formulaires hors périmètre.
 
@@ -41,7 +41,7 @@ L'intégration BubblaV `contact_form` / **Escalate to Human** reste aussi active
 
 ### Encore à retirer ou désactiver côté fournisseur
 
-Les cinq formulaires suivants avaient zéro soumission lors de la dernière lecture qui les a confirmés. Ils restent à reconfirmer juste avant toute suppression; aucune action destructive ne doit être faite sur la base d’un état périmé :
+Une relecture fournisseur fraîche du **1er octobre 2026** confirme que les cinq formulaires suivants sont toujours `enabled=true` et ont chacun **`submission_count=0`** :
 
 - `fb6b7188-0ff5-4eec-b751-2a3af99dfb89` — **Rejoindre Une Partie**;
 - `89288220-eda7-4a73-8d71-832e1c31ad6f` — **Créer Une Partie**;
@@ -49,7 +49,7 @@ Les cinq formulaires suivants avaient zéro soumission lors de la dernière lect
 - `7fa76ade-5322-4465-a579-db56ab21b402` — **Soumettre Un Commentaire**;
 - `a8806fd2-8030-4104-a73c-c3a9470bcd37` — **Support Request Form**.
 
-La tentative de relecture du 30 septembre 2026 a répondu `RATE_LIMITED`. Le site public maintient donc BubblaV désactivé et fail-closed jusqu’à ce que #443 et #444 puissent être revérifiés côté fournisseur.
+La lecture `bubblav_list_forms` du 1er octobre réussit et confirme aussi les deux formulaires publics conservés, tous deux actifs à zéro soumission. La lecture des tools confirme `contact_form` / **Escalate to Human** actif avec instruction explicite de n’escalader que lorsque le visiteur demande un humain. En revanche, la lecture des flows échoue encore avec une erreur fournisseur interne. Par prudence, les cinq formulaires hors périmètre ne sont donc pas supprimés tant qu’une éventuelle référence depuis un flow ne peut pas être exclue.
 
 ## État d’application
 
@@ -57,9 +57,10 @@ La tentative de relecture du 30 septembre 2026 a répondu `RATE_LIMITED`. Le sit
 - pages publiques et politique de confidentialité : alignées;
 - accueil du widget BubblaV : aligné pour rediriger les actions de compte vers les parcours officiels;
 - retrait de **Se Connecter À Son Compte** : **confirmé**;
-- cinq formulaires hors périmètre restent à reconfirmer puis retirer/désactiver;
-- dernière tentative de relecture fournisseur : **RATE_LIMITED**; aucun état nouveau n’est inventé;
-- aucune suppression de soumission ou d’historique fournisseur n’a été effectuée.
+- cinq formulaires hors périmètre sont **reconfirmés actifs à zéro soumission** et restent à retirer/désactiver;
+- `allow_all_domains=true` et `allowed_domains=[]` restent confirmés côté fournisseur (#444);
+- la lecture des flows reste indisponible; aucune dépendance cachée n’est donc supposée absente;
+- aucune suppression de formulaire, soumission ou historique fournisseur n’a été effectuée lors de cette revue.
 
 ## Parcours canoniques
 

@@ -13,8 +13,9 @@ TRANSPARENCY = ROOT / "transparence-ia.html"
 
 BUBBLAV_WIDGET_URL = "https://www.bubblav.com/widget.js"
 BUBBLAV_SITE_ID = "ca77cd98-bd32-459c-ad55-fdad4fb85316"
-VENDOR_READY_MARKER = "var publicAssistantVendorReady = false;"
-VENDOR_BLOCK_MARKER = "if (!publicAssistantVendorReady) return;"
+FORMS_READY_MARKER = "var publicAssistantFormsMinimized = false;"
+DOMAINS_READY_MARKER = "var publicAssistantDomainsRestricted = false;"
+VENDOR_BLOCK_MARKER = "if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted) return;"
 LOADER_URL = "/assets/js/ai-transparency.js?v=1.3.0"
 
 
@@ -36,7 +37,8 @@ def validate_widget(text: str) -> list[str]:
         "meta[name=\"robots\"]",
         "noindex",
         "if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;",
-        VENDOR_READY_MARKER,
+        FORMS_READY_MARKER,
+        DOMAINS_READY_MARKER,
         VENDOR_BLOCK_MARKER,
         "data-public-assistant-launcher",
         "launcher.addEventListener('click'",
@@ -59,7 +61,9 @@ def validate_widget(text: str) -> list[str]:
         vendor_block >= 0 and launcher_create > vendor_block,
         "widget: le verrou fournisseur doit précéder toute création du lanceur",
     )
-    require(errors, "publicAssistantVendorReady = true" not in text, "widget: réactivation fournisseur interdite tant que le garde est fail-closed")
+    require(errors, "publicAssistantFormsMinimized = true" not in text, "widget: réactivation formulaires interdite tant que #443 reste ouvert")
+    require(errors, "publicAssistantDomainsRestricted = true" not in text, "widget: réactivation domaines interdite tant que #444 reste ouvert")
+    require(errors, "publicAssistantVendorReady" not in text, "widget: ancien verrou fournisseur unique interdit")
 
     click = text.find("launcher.addEventListener('click'")
     remote = text.find(BUBBLAV_WIDGET_URL)
@@ -133,7 +137,9 @@ def load() -> tuple[str, str, str, str, str]:
 def self_test() -> None:
     widget, site, index, assistant, transparency = load()
     fixtures = [
-        ("gate fournisseur réactivé", widget.replace(VENDOR_READY_MARKER, "var publicAssistantVendorReady = true;", 1), site, index, assistant, transparency),
+        ("gate formulaires réactivé", widget.replace(FORMS_READY_MARKER, "var publicAssistantFormsMinimized = true;", 1), site, index, assistant, transparency),
+        ("gate domaines réactivé", widget.replace(DOMAINS_READY_MARKER, "var publicAssistantDomainsRestricted = true;", 1), site, index, assistant, transparency),
+        ("double garde remplacée", widget.replace(VENDOR_BLOCK_MARKER, "if (!publicAssistantFormsMinimized) return;", 1), site, index, assistant, transparency),
         ("hôte officiel retiré", widget.replace("host === 'www.benoitcantin.com' || host === 'benoitcantin.com'", "host === 'example.com'", 1), site, index, assistant, transparency),
         ("exclusion compte retirée", widget.replace("path === '/compte' ||", "false ||", 1), site, index, assistant, transparency),
         ("noindex retiré", widget.replace("if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (!isOfficialHost || isPrivateSurface) return;", 1), site, index, assistant, transparency),
@@ -194,7 +200,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK assistant IA public: fournisseur fail-closed, chargement futur après clic, domaine officiel, exclusions privées/noindex, "
+        "OK assistant IA public: fournisseur fail-closed à deux preuves (#443 formulaires + #444 domaines), chargement futur après clic, domaine officiel, exclusions privées/noindex, "
         "site-id unique, neutralité civique et responsabilité humaine verrouillés."
     )
     return 0
