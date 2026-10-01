@@ -103,6 +103,34 @@ jobs:
           test "$preview_count" -eq "$WEB_RELEASE_FILE_COUNT"
           echo "WEB_PREVIEW_FILE_COUNT=$preview_count" >> "$GITHUB_ENV"
 
+      - name: Construire l’artefact GitHub Pages isolé
+        run: python3 scripts/build_netlify_public.py --output _pages_site
+
+      - name: Vérifier et hacher l’artefact GitHub Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _pages_site/.well-known/security.txt
+          test -f _pages_site/.nojekyll
+          test -f _pages_site/CNAME
+          test ! -e _pages_site/_headers
+          test ! -e _pages_site/_redirects
+          test ! -e _pages_site/script.js
+          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do
+            if grep -R -F -q -- "$endpoint" _pages_site; then
+              echo "ERREUR: endpoint Formspree historique interdit dans l’artefact Pages: $endpoint" >&2
+              exit 1
+            fi
+          done
+          for forbidden in .github docs mobile-native scripts supabase tests; do
+            test ! -e "_pages_site/$forbidden"
+          done
+          find _pages_site -type f -print0 | sort -z | xargs -0 sha256sum > web-pages-SHA256SUMS.txt
+          pages_count="$(find _pages_site -type f | wc -l | tr -d ' ')"
+          expected_pages_count="$((WEB_RELEASE_FILE_COUNT - 2))"
+          test "$pages_count" -eq "$expected_pages_count"
+          echo "WEB_PAGES_FILE_COUNT=$pages_count" >> "$GITHUB_ENV"
+
       - name: Téléverser l’artefact production vérifié
         id: release-upload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -129,6 +157,19 @@ jobs:
           compression-level: 9
           include-hidden-files: true
 
+      - name: Téléverser l’artefact GitHub Pages vérifié
+        id: pages-upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sinjira-web-pages-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            _pages_site/
+            web-pages-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
+          include-hidden-files: true
+
       - name: Résumer les artefacts de release
         if: success()
         shell: bash
@@ -142,8 +183,11 @@ jobs:
             echo "- Fichiers preview : **$WEB_PREVIEW_FILE_COUNT**"
             echo "- Preview noindex : [ouvrir/télécharger](${{ steps.preview-upload.outputs.artifact-url }})"
             echo "- Digest preview : \`${{ steps.preview-upload.outputs.artifact-digest }}\`"
-            echo "- Manifestes : \`web-release-SHA256SUMS.txt\` + \`web-preview-SHA256SUMS.txt\`"
-            echo "- Configuration embarquée : \`_headers\` + \`_redirects\`"
+            echo "- Fichiers GitHub Pages : **$WEB_PAGES_FILE_COUNT**"
+            echo "- GitHub Pages isolé : [ouvrir/télécharger](${{ steps.pages-upload.outputs.artifact-url }})"
+            echo "- Digest GitHub Pages : \`${{ steps.pages-upload.outputs.artifact-digest }}\`"
+            echo "- Manifestes : \`web-release-SHA256SUMS.txt\` + \`web-preview-SHA256SUMS.txt\` + \`web-pages-SHA256SUMS.txt\`"
+            echo "- Configuration Netlify : \`_headers\` + \`_redirects\`; artefact Pages : aucun fichier de configuration Netlify"
             echo
             echo "> Aucun déploiement n’est effectué par ce workflow."
           } >> "$GITHUB_STEP_SUMMARY"
