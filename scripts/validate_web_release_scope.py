@@ -14,6 +14,7 @@ WEB_RELEASE_BRANCH_PREFIX = "a1/web-release-"
 ALLOWED_EXACT = (
     ".github/workflows/build-web-release-artifact.yml",
     ".github/workflows/deploy-github-pages-isolated.yml",
+    ".github/workflows/create-netlify-anonymous-preview.yml",
     ".github/workflows/validate-netlify-preview.yml",
     ".github/workflows/validate-web-production.yml",
     ".github/workflows/validate-ai-transparency.yml",
@@ -133,6 +134,7 @@ def self_test() -> None:
     valid = [
         ".github/workflows/build-web-release-artifact.yml",
         ".github/workflows/deploy-github-pages-isolated.yml",
+        ".github/workflows/create-netlify-anonymous-preview.yml",
         ".github/workflows/validate-netlify-preview.yml",
         ".github/workflows/validate-web-production.yml",
         ".github/workflows/validate-ai-transparency.yml",

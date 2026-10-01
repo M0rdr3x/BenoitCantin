@@ -1,0 +1,161 @@
+name: Netlify preview anonyme — create + smoke
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: netlify-anon-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    name: Créer preview Netlify anonyme et smoke
+    if: startsWith(github.head_ref, 'a1/web-release-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Récupérer le HEAD PR sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Détecter le marqueur de preview temporaire
+        id: gate
+        shell: bash
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          message="$(git log -1 --format=%B "$HEAD_SHA")"
+          if grep -Fq '[netlify-anon-preview]' <<<"$message"; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo 'Aucun marqueur de preview anonyme sur ce commit; aucun déploiement externe.'
+          fi
+
+      - name: Configurer Python
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Configurer Node
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+
+      - name: Vérifier l’allowlist publique
+        if: steps.gate.outputs.enabled == 'true'
+        run: python3 scripts/build_netlify_public.py --check
+
+      - name: Construire le preview Netlify autonome
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          CONTEXT: deploy-preview
+        run: python3 scripts/build_netlify_public.py --output _preview_site --standalone-netlify
+
+      - name: Vérifier le preview avant sortie réseau
+        if: steps.gate.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _preview_site/_headers
+          test -f _preview_site/_redirects
+          preview_global_headers="$(awk 'BEGIN{inside=0} /^\/\*$/ {inside=1; next} inside && NF==0 {exit} inside {print}' _preview_site/_headers)"
+          grep -Fq 'X-Robots-Tag: noindex, nofollow, noarchive' <<<"$preview_global_headers"
+          grep -Fq '/supabase/* /404.html 404!' _preview_site/_redirects
+          test ! -e _preview_site/script.js
+          for forbidden in .github docs mobile-native scripts supabase tests; do
+            test ! -e "_preview_site/$forbidden"
+          done
+          for endpoint in 'https://formspree.io/f/xdenkzrv' 'https://formspree.io/f/xkolwjdg'; do
+            if grep -R -F -q -- "$endpoint" _preview_site; then
+              echo "ERREUR: endpoint Formspree historique interdit dans le preview: $endpoint" >&2
+              exit 1
+            fi
+          done
+
+      - name: Créer le site Netlify anonyme temporaire
+        if: steps.gate.outputs.enabled == 'true'
+        id: deploy
+        shell: bash
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          NPM_CONFIG_AUDIT: 'false'
+          NPM_CONFIG_FUND: 'false'
+        run: |
+          set -euo pipefail
+          deploy_json="$(mktemp)"
+          deploy_err="$(mktemp)"
+          cleanup() { rm -f "$deploy_json" "$deploy_err"; }
+          trap cleanup EXIT
+          if ! timeout 240s npx --yes netlify-cli@27.10.2 deploy --allow-anonymous --dir _preview_site --no-build --json --message "SINJIRA anonymous preview $HEAD_SHA" >"$deploy_json" 2>"$deploy_err"; then
+            echo 'ERREUR: création Netlify anonyme échouée; sortie détaillée supprimée pour éviter toute fuite de jeton de réclamation.' >&2
+            exit 1
+          fi
+          python3 - "$deploy_json" <<'PY'
+          import json
+          import os
+          import re
+          import sys
+          from urllib.parse import urlparse
+
+          data = json.load(open(sys.argv[1], encoding='utf-8'))
+          candidates = []
+
+          def walk(value, key=''):
+              if isinstance(value, dict):
+                  for child_key, child_value in value.items():
+                      walk(child_value, str(child_key))
+              elif isinstance(value, list):
+                  for child in value:
+                      walk(child, key)
+              elif isinstance(value, str) and value.startswith('https://'):
+                  parsed = urlparse(value)
+                  host = (parsed.hostname or '').lower()
+                  if host.endswith('.netlify.app') and not parsed.username and not parsed.password and parsed.port is None:
+                      score = 0 if key in {'deploy_url', 'deployUrl', 'ssl_url', 'sslUrl', 'url'} else 1
+                      candidates.append((score, value.rstrip('/')))
+
+          walk(data)
+          if not candidates:
+              raise SystemExit('ERREUR: aucune URL HTTPS *.netlify.app trouvée dans la réponse Netlify.')
+          candidates.sort()
+          url = candidates[0][1]
+          if not re.fullmatch(r'https://[a-z0-9-]+(?:--[a-z0-9-]+)?\.netlify\.app', url):
+              raise SystemExit('ERREUR: URL preview Netlify inattendue.')
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as fh:
+              fh.write(f'NETLIFY_PREVIEW_URL={url}\n')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as fh:
+              fh.write(f'preview_url={url}\n')
+          PY
+
+      - name: Exécuter le smoke preview immédiatement
+        if: steps.gate.outputs.enabled == 'true'
+        run: python3 scripts/validate_web_release_http.py "$NETLIFY_PREVIEW_URL" --context preview
+
+      - name: Résumer la preuve temporaire
+        if: steps.gate.outputs.enabled == 'true' && success()
+        shell: bash
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          {
+            echo '### Netlify preview anonyme — smoke PASS'
+            echo "- SHA : $HEAD_SHA"
+            echo "- URL temporaire : $NETLIFY_PREVIEW_URL"
+            echo '- Netlify CLI : `27.10.2`'
+            echo '- Mode : `--allow-anonymous --no-build`'
+            echo '- Secret/token GitHub/Netlify : **aucun**'
+            echo '- Jeton de réclamation : **non journalisé et non conservé**'
+            echo '- Durée : site non réclamé supprimé automatiquement par Netlify après la fenêtre anonyme'
+            echo '- Production/DNS : **inchangés**'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -11,6 +11,7 @@ PREVIEW_WORKFLOW = ROOT / '.github/workflows/validate-netlify-preview.yml'
 PRODUCTION_WORKFLOW = ROOT / '.github/workflows/validate-web-production.yml'
 ARTIFACT_WORKFLOW = ROOT / '.github/workflows/build-web-release-artifact.yml'
 PAGES_DEPLOY_WORKFLOW = ROOT / '.github/workflows/deploy-github-pages-isolated.yml'
+ANON_NETLIFY_PREVIEW_WORKFLOW = ROOT / '.github/workflows/create-netlify-anonymous-preview.yml'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
 SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 SETUP_NODE_SHA = '249970729cb0ef3589644e2896645e5dc5ba9c38'
@@ -19,6 +20,7 @@ UPLOAD_PAGES_ARTIFACT_SHA = '56afc609e74202658d3ffba0e8f6dda462b719fa'
 DEPLOY_PAGES_SHA = '368f82528645a54fb793d4d04e342629a3f51346'
 PYTHON_VERSION = '3.12.14'
 NODE_VERSION = '22.23.2'
+NETLIFY_CLI_VERSION = '27.10.2'
 V18_SELF = 'python scripts/validate_admin_v18_privacy_security.py --self-test'
 V18_VALIDATE = 'python scripts/validate_admin_v18_privacy_security.py'
 ADMIN_CONSOLE_SELF = 'python scripts/validate_admin_console_security.py --self-test'
@@ -296,6 +298,290 @@ def run_pages_deploy_self_tests(text: str) -> None:
             raise SystemExit(f'ERREUR auto-test Pages: mutation non détectée: {name}')
     print(f'OK auto-tests Pages: {len(cases)} affaiblissements critiques détectés.')
 
+
+def validate_anon_netlify_preview_workflow_text(text: str) -> list[str]:
+    errors: list[str] = []
+    require(errors, 'pull_request:' in text, 'preview Netlify anonyme doit partir uniquement d’une PR')
+    require(errors, 'push:' not in text, 'preview Netlify anonyme ne doit jamais partir sur push')
+    require(errors, 'workflow_dispatch:' not in text, 'preview anonyme ne doit pas exposer de dispatch non contrôlé')
+    require(errors, "if: startsWith(github.head_ref, 'a1/web-release-')" in text, 'garde branche web-only absente du preview anonyme')
+    require(errors, 'permissions:\n  contents: read' in text, 'preview anonyme doit rester contents:read')
+    require(errors, 'contents: write' not in text, 'preview anonyme ne doit jamais écrire dans le dépôt')
+    require(errors, 'pages: write' not in text and 'id-token: write' not in text, 'preview anonyme ne doit recevoir aucune permission de déploiement GitHub')
+    require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'preview anonyme ne doit référencer aucun secret')
+    require(errors, 'cancel-in-progress: false' in text, 'preview anonyme déclenché ne doit pas être annulé')
+    require(errors, 'runs-on: ubuntu-24.04' in text, 'preview anonyme doit utiliser Ubuntu 24.04')
+    require(errors, 'timeout-minutes: 12' in text, 'preview anonyme doit rester borné à 12 minutes')
+    require(errors, f'uses: actions/checkout@{CHECKOUT_SHA}' in text, 'checkout preview anonyme non épinglé')
+    require(errors, 'ref: ${{ github.event.pull_request.head.sha }}' in text, 'preview anonyme doit checkout le SHA HEAD PR exact')
+    require(errors, 'persist-credentials: false' in text, 'preview anonyme doit désactiver les credentials Git')
+    require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python preview anonyme non épinglé')
+    require(errors, f'uses: actions/setup-node@{SETUP_NODE_SHA}' in text, 'setup-node preview anonyme non épinglé')
+    require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python preview anonyme inattendue')
+    require(errors, f"node-version: '{NODE_VERSION}'" in text, 'version Node preview anonyme inattendue')
+    require(errors, '[netlify-anon-preview]' in text, 'marqueur explicite preview anonyme absent')
+    require(errors, "steps.gate.outputs.enabled == 'true'" in text, 'garde de déploiement preview anonyme absente')
+    require(errors, exact_run_count(text, NETLIFY_PUBLIC_CHECK) == 1, 'validation allowlist preview anonyme absente ou dupliquée')
+    require(errors, exact_run_count(text, WEB_PREVIEW_ARTIFACT_BUILD) == 1, 'build preview autonome absent ou dupliqué')
+    require(errors, 'CONTEXT: deploy-preview' in text, 'contexte deploy-preview absent')
+    require(errors, 'X-Robots-Tag: noindex, nofollow, noarchive' in text, 'preuve noindex preview anonyme absente')
+    require(errors, 'forbidden in .github docs mobile-native scripts supabase tests' in text, 'garde répertoires techniques preview anonyme absente')
+    require(errors, 'https://formspree.io/f/xdenkzrv' in text and 'https://formspree.io/f/xkolwjdg' in text, 'garde Formspree historique preview anonyme absente')
+    deploy_cmd = f'netlify-cli@{NETLIFY_CLI_VERSION} deploy --allow-anonymous --dir _preview_site --no-build --json'
+    require(errors, deploy_cmd in text, 'commande Netlify anonyme figée absente')
+    require(errors, 'timeout 240s npx --yes ' + deploy_cmd in text, 'déploiement Netlify anonyme doit être borné à 240 secondes')
+    require(errors, '--prod' not in text, 'flag --prod interdit au preview anonyme')
+    require(errors, '--auth' not in text and 'NETLIFY_AUTH_TOKEN' not in text, 'auth/token Netlify interdit au preview anonyme')
+    require(errors, re.search(r'--site(?:\s|=)', text) is None, 'site Netlify existant interdit au preview anonyme')
+    require(errors, '--site-name' not in text, 'création de site nommé interdite au preview anonyme')
+    require(errors, '2>\"$deploy_err\"' in text, 'stderr Netlify doit être capturé hors logs')
+    require(errors, 'cat \"$deploy_json\"' not in text and 'cat \"$deploy_err\"' not in text, 'sortie brute Netlify ne doit jamais être journalisée')
+    require(errors, 'rm -f \"$deploy_json\" \"$deploy_err\"' in text, 'fichiers temporaires Netlify doivent être supprimés')
+    require(errors, "host.endswith('.netlify.app')" in text, 'validation hôte netlify.app absente')
+    require(errors, "re.fullmatch(r'https://[a-z0-9-]+(?:--[a-z0-9-]+)?\\.netlify\\.app', url)" in text, 'validation stricte URL preview anonyme absente')
+    require(errors, 'python3 scripts/validate_web_release_http.py \"$NETLIFY_PREVIEW_URL\" --context preview' in text, 'smoke preview anonyme absent')
+    require(errors, 'Jeton de réclamation : **non journalisé et non conservé**' in text, 'preuve non-conservation token absente')
+    require(errors, 'Production/DNS : **inchangés**' in text, 'preuve non-production absente')
+    targets = action_targets(text)
+    require(errors, len(targets) == 3, f'nombre inattendu d’actions dans le workflow preview anonyme: {len(targets)}')
+    for target in targets:
+        require(errors, re.search(r'@[0-9a-f]{40}    errors: list[str] = []
+    require(errors, 'workflow_dispatch:' in text, 'production smoke doit rester manuel')
+    require(errors, 'pull_request:' not in text, 'production smoke ne doit pas se déclencher sur pull_request')
+    require(errors, 'push:' not in text, 'production smoke ne doit pas se déclencher sur push')
+    require(errors, 'permissions:\n  contents: read' in text, 'production smoke doit rester contents:read')
+    require(errors, 'cancel-in-progress: false' in text, 'production smoke manuel ne doit pas être annulé')
+    require(errors, 'runs-on: ubuntu-24.04' in text, 'production smoke doit utiliser Ubuntu 24.04')
+    require(errors, 'timeout-minutes: 5' in text, 'production smoke doit rester borné à 5 minutes')
+    require(errors, f'uses: actions/checkout@{CHECKOUT_SHA}' in text, 'checkout production smoke non épinglé')
+    require(errors, 'persist-credentials: false' in text, 'production smoke doit désactiver les credentials Git')
+    require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python production smoke non épinglé')
+    require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python production smoke inattendue')
+    require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke HTTP production absent ou dupliqué')
+    require(
+        errors,
+        'python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production' in text,
+        'commande smoke production canonique absente',
+    )
+    require(errors, '### Smoke HTTP — production officielle' in text, 'résumé preuve production absent')
+    require(errors, 'GITHUB_STEP_SUMMARY' in text, 'production smoke doit écrire une preuve dans GITHUB_STEP_SUMMARY')
+    require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'production smoke ne doit référencer aucun secret')
+    require(errors, 'contents: write' not in text, 'production smoke ne doit jamais écrire dans le dépôt')
+    require(errors, 'inputs:' not in text, 'production smoke ne doit accepter aucune URL ou entrée utilisateur')
+    return errors
+
+
+def run_artifact_self_tests(text: str) -> None:
+    guard = "if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'a1/web-release-')"
+    cases = {
+        'déclenchement push ajouté': text.replace('  workflow_dispatch:\n', '  push:\n  workflow_dispatch:\n', 1),
+        'permission dépôt écriture': text.replace('contents: read', 'contents: write', 1),
+        'permission Pages ajoutée': text.replace('permissions:\n  contents: read', 'permissions:\n  contents: read\n  pages: write', 1),
+        'permission OIDC ajoutée': text.replace('permissions:\n  contents: read', 'permissions:\n  contents: read\n  id-token: write', 1),
+        'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
+        'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
+        'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
+        'upload-artifact mobile': text.replace(f'actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}', 'actions/upload-artifact@v7', 1),
+        'garde branche retirée': text.replace(guard, 'if: always()', 1),
+        'construction racine': text.replace(WEB_RELEASE_ARTIFACT_BUILD, 'python3 scripts/build_netlify_public.py --output .', 1),
+        'contexte preview retiré': text.replace('          CONTEXT: deploy-preview\n', '          CONTEXT: production\n', 1),
+        'garde noindex production retirée': text.replace('            echo "ERREUR: noindex global interdit dans l’artefact production." >&2\n', '', 1),
+        'garde noindex preview retirée': text.replace('            echo "ERREUR: noindex global requis dans l’artefact preview." >&2\n', '', 1),
+        'script legacy production réintroduit': text.replace('          test ! -e _site/script.js\n', '', 1),
+        'script legacy preview réintroduit': text.replace('          test ! -e _preview_site/script.js\n', '', 1),
+        'script legacy Pages réintroduit': text.replace('          test ! -e _pages_site/script.js\n', '', 1),
+        'build Pages retiré': text.replace(f'        run: {WEB_PAGES_ARTIFACT_BUILD}\n', '', 1),
+        'garde Formspree production retirée': text.replace('          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do\n', '', 1),
+        'fichiers cachés exclus': text.replace('include-hidden-files: true', 'include-hidden-files: false', 1),
+        'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
+        'résumé non-déploiement retiré': text.replace('            echo "> Aucun déploiement n’est effectué par ce workflow."\n', '', 1),
+    }
+    for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test artifact workflow: mutation sans effet: {name}')
+        if not validate_artifact_workflow_text(mutated):
+            raise SystemExit(f'ERREUR auto-test artifact workflow: mutation non détectée: {name}')
+    print(f'OK auto-tests artifact workflow: {len(cases)} affaiblissements critiques détectés.')
+
+def run_production_self_tests(text: str) -> None:
+    cases = {
+        'déclenchement PR ajouté': text.replace('  workflow_dispatch:\n', '  pull_request:\n  workflow_dispatch:\n', 1),
+        'annulation activée': text.replace('cancel-in-progress: false', 'cancel-in-progress: true', 1),
+        'permission écriture': text.replace('contents: read', 'contents: write', 1),
+        'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
+        'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
+        'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
+        'auto-test smoke retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
+        'domaine remplacé': text.replace('https://www.benoitcantin.com --context production', 'https://example.com --context production', 1),
+        'input ajouté': text.replace('  workflow_dispatch:\n', '  workflow_dispatch:\n    inputs:\n      url:\n        required: true\n', 1),
+        'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
+        'résumé preuve retiré': text.replace('            echo "### Smoke HTTP — production officielle"\n', '', 1),
+    }
+    for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test production workflow: mutation sans effet: {name}')
+        if not validate_production_workflow_text(mutated):
+            raise SystemExit(f'ERREUR auto-test production workflow: mutation non détectée: {name}')
+    print(f'OK auto-tests production workflow: {len(cases)} affaiblissements critiques détectés.')
+
+
+def run_preview_self_tests(text: str) -> None:
+    cases = {
+        'déclenchement PR ajouté': text.replace('  workflow_dispatch:\n', '  pull_request:\n  workflow_dispatch:\n', 1),
+        'annulation activée': text.replace('cancel-in-progress: false', 'cancel-in-progress: true', 1),
+        'permission écriture': text.replace('contents: read', 'contents: write', 1),
+        'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
+        'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
+        'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
+        'auto-test smoke retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
+        'injection directe URL': text.replace(
+            'python3 scripts/validate_web_release_http.py "$PREVIEW_URL" --context preview',
+            'python3 scripts/validate_web_release_http.py "${{ inputs.preview_url }}" --context preview',
+            1,
+        ),
+        'secret ajouté': text.replace(
+            'PREVIEW_URL: ${{ inputs.preview_url }}',
+            'PREVIEW_URL: ${{ secrets.PREVIEW_URL }}',
+            1,
+        ),
+        'résumé preuve retiré': text.replace('            echo "### Smoke HTTP — Deploy Preview Netlify"\n', '', 1),
+    }
+    for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test preview workflow: mutation sans effet: {name}')
+        if not validate_preview_workflow_text(mutated):
+            raise SystemExit(f'ERREUR auto-test preview workflow: mutation non détectée: {name}')
+    print(f'OK auto-tests preview workflow: {len(cases)} affaiblissements critiques détectés.')
+
+
+def run_self_tests(text: str) -> None:
+    cases = {
+        'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
+        'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
+        'setup-node mobile': text.replace(f'actions/setup-node@{SETUP_NODE_SHA}', 'actions/setup-node@v6', 1),
+        'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
+        'permission écriture': text.replace('contents: read', 'contents: write', 1),
+        'annulation globale': text.replace("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", 'cancel-in-progress: true', 1),
+        'secret ajouté': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-24.04\n    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}', 1),
+        'runner mobile': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1),
+        'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
+        'node large': text.replace(f"node-version: '{NODE_VERSION}'", "node-version: '22'", 1),
+        'dépendance contrat retirée': text.replace('    needs: workflow-contract\n', '', 1),
+        'exception draft web-only retirée': text.replace(WEB_RELEASE_VALIDATE_IF, "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false", 1),
+        'exception draft web-only élargie': text.replace(
+            WEB_RELEASE_VALIDATE_IF,
+            "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false || true",
+            1,
+        ),
+        'condition résumé readiness élargie': text.replace(
+            WEB_RELEASE_SCOPE_IF,
+            "if: github.event_name == 'pull_request'",
+            1,
+        ),
+        'validation Netlify retirée': text.replace(f'        run: {NETLIFY_PUBLIC_CHECK}\n', '', 1),
+        'historique Git retiré': text.replace('          fetch-depth: 0\n', '', 1),
+        'auto-test portée web retiré': text.replace(f'        run: {WEB_RELEASE_SCOPE_SELF}\n', '', 1),
+        'validation portée web retirée': text.replace(f'        run: {WEB_RELEASE_SCOPE_VALIDATE}\n', '', 1),
+        'condition portée web élargie': text.replace(WEB_RELEASE_SCOPE_IF, "if: github.event_name == 'pull_request'", 1),
+        'auto-test smoke HTTP retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
+        'baseline production retiré': text.replace('            echo "### Baseline smoke production — lecture seule"\n', '', 1),
+        'baseline cible dangereuse': text.replace('            echo "- Cible : $origin"\n', '            echo "- Cible : `$origin`"\n', 1),
+        'résumé readiness retiré': text.replace('            echo "### Readiness web-only"\n', '', 1),
+        'état fail-closed readiness retiré': text.replace('            echo "- BubblaV : **fail-closed** (widget désactivé + CSP bloquante)"\n', '', 1),
+        'auto-test Transparence IA retiré': text.replace(f'        run: {AI_TRANSPARENCY_SELF}\n', '', 1),
+        'validation Transparence IA retirée': text.replace(f'        run: {AI_TRANSPARENCY_VALIDATE}\n', '', 1),
+        'auto-test assistant IA retiré': text.replace(f'        run: {PUBLIC_AI_ASSISTANT_SELF}\n', '', 1),
+        'validation assistant IA retirée': text.replace(f'        run: {PUBLIC_AI_ASSISTANT_VALIDATE}\n', '', 1),
+        'auto-test V18 retiré': text.replace(f'        run: {V18_SELF}\n', '', 1),
+        'validation V18 retirée': text.replace(f'        run: {V18_VALIDATE}\n', '', 1),
+        'auto-test admin-console retiré': text.replace(f'        run: {ADMIN_CONSOLE_SELF}\n', '', 1),
+        'validation admin-console retirée': text.replace(f'        run: {ADMIN_CONSOLE_VALIDATE}\n', '', 1),
+        'auto-test lectures admin privées retiré': text.replace(f'        run: {ADMIN_PRIVATE_READS_SELF}\n', '', 1),
+        'validation lectures admin privées retirée': text.replace(f'        run: {ADMIN_PRIVATE_READS_VALIDATE}\n', '', 1),
+    }
+    for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test validation site: mutation sans effet: {name}')
+        if not validate_text(mutated):
+            raise SystemExit(f'ERREUR auto-test validation site: mutation non détectée: {name}')
+    print(f'OK auto-tests validation site: {len(cases)} affaiblissements critiques détectés.')
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--self-test', action='store_true')
+    args = parser.parse_args()
+    if not WORKFLOW.is_file():
+        raise SystemExit(f'ERREUR validation site: workflow absent: {WORKFLOW.relative_to(ROOT)}')
+    if not PREVIEW_WORKFLOW.is_file():
+        raise SystemExit(f'ERREUR validation site: workflow preview absent: {PREVIEW_WORKFLOW.relative_to(ROOT)}')
+    if not PRODUCTION_WORKFLOW.is_file():
+        raise SystemExit(f'ERREUR validation site: workflow production absent: {PRODUCTION_WORKFLOW.relative_to(ROOT)}')
+    if not ARTIFACT_WORKFLOW.is_file():
+        raise SystemExit(f'ERREUR validation site: workflow artefact absent: {ARTIFACT_WORKFLOW.relative_to(ROOT)}')
+    if not PAGES_DEPLOY_WORKFLOW.is_file():
+        raise SystemExit(f'ERREUR validation site: workflow Pages isolé absent: {PAGES_DEPLOY_WORKFLOW.relative_to(ROOT)}')
+    if not ANON_NETLIFY_PREVIEW_WORKFLOW.is_file():
+        raise SystemExit(f'ERREUR validation site: workflow preview Netlify anonyme absent: {ANON_NETLIFY_PREVIEW_WORKFLOW.relative_to(ROOT)}')
+
+    text = WORKFLOW.read_text(encoding='utf-8', errors='strict')
+    preview_text = PREVIEW_WORKFLOW.read_text(encoding='utf-8', errors='strict')
+    production_text = PRODUCTION_WORKFLOW.read_text(encoding='utf-8', errors='strict')
+    artifact_text = ARTIFACT_WORKFLOW.read_text(encoding='utf-8', errors='strict')
+    pages_deploy_text = PAGES_DEPLOY_WORKFLOW.read_text(encoding='utf-8', errors='strict')
+    anon_netlify_preview_text = ANON_NETLIFY_PREVIEW_WORKFLOW.read_text(encoding='utf-8', errors='strict')
+    if args.self_test:
+        run_self_tests(text)
+        run_preview_self_tests(preview_text)
+        run_production_self_tests(production_text)
+        run_artifact_self_tests(artifact_text)
+        run_pages_deploy_self_tests(pages_deploy_text)
+        run_anon_netlify_preview_self_tests(anon_netlify_preview_text)
+        return 0
+
+    errors = validate_text(text)
+    errors.extend(validate_preview_workflow_text(preview_text))
+    errors.extend(validate_production_workflow_text(production_text))
+    errors.extend(validate_artifact_workflow_text(artifact_text))
+    errors.extend(validate_pages_deploy_workflow_text(pages_deploy_text))
+    errors.extend(validate_anon_netlify_preview_workflow_text(anon_netlify_preview_text))
+    if errors:
+        for error in errors:
+            print(f'ERREUR sécurité validation site: {error}')
+        return 1
+    print(
+        'OK sécurité validation site: actions immuables, runtimes figés, credentials non persistés, '
+        'garde web-only, artefact public inspectable non-déployant, preview Netlify anonyme bornée, déploiement Pages manuel isolé et smokes read-only obligatoires.'
+    )
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
+, target) is not None, f'action preview anonyme non immuable: {target}')
+    return errors
+
+
+def run_anon_netlify_preview_self_tests(text: str) -> None:
+    cases = {
+        'déclenchement push ajouté': text.replace('  pull_request:\n', '  push:\n  pull_request:\n', 1),
+        'permission écriture ajoutée': text.replace('contents: read', 'contents: write', 1),
+        'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
+        'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
+        'marqueur retiré': text.replace('[netlify-anon-preview]', '[preview]'),
+        'anonyme retiré': text.replace('--allow-anonymous', ''),
+        'prod ajouté': text.replace('--no-build --json', '--no-build --json --prod', 1),
+        'version CLI mobile': text.replace(f'netlify-cli@{NETLIFY_CLI_VERSION}', 'netlify-cli@latest', 1),
+        'noindex retiré': text.replace("          grep -Fq 'X-Robots-Tag: noindex, nofollow, noarchive' <<<\"$preview_global_headers\"\n", '', 1),
+        'sortie brute exposée': text.replace("          python3 - \"$deploy_json\" <<'PY'\n", "          cat \"$deploy_json\"\n          python3 - \"$deploy_json\" <<'PY'\n", 1),
+        'smoke retiré': text.replace('        run: python3 scripts/validate_web_release_http.py \"$NETLIFY_PREVIEW_URL\" --context preview\n', '', 1),
+    }
+    for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test preview Netlify anonyme: mutation sans effet: {name}')
+        if not validate_anon_netlify_preview_workflow_text(mutated):
+            raise SystemExit(f'ERREUR auto-test preview Netlify anonyme: mutation non détectée: {name}')
+    print(f'OK auto-tests preview Netlify anonyme: {len(cases)} affaiblissements critiques détectés.')
 
 def validate_production_workflow_text(text: str) -> list[str]:
     errors: list[str] = []
