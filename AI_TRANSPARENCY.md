@@ -42,7 +42,7 @@ Les documents historiques ne sont pas réécrits uniquement pour modifier leur h
 
 Le portail prépare un assistant conversationnel public fondé sur l'intelligence artificielle sous le nom **Nova × SINJIRA**.
 
-**État actuel : BubblaV est désactivé côté site.** Le verrou local `publicAssistantVendorReady=false` et la CSP empêchent tout chargement réseau du fournisseur tant que les contrôles #443 et #444 ne sont pas finalisés et revérifiés. Une éventuelle réactivation restera opt-in, limitée aux surfaces publiques autorisées et déclenchée seulement après un clic explicite.
+**État actuel : BubblaV est désactivé côté site.** Les verrous locaux `publicAssistantFormsMinimized=false` (#443) et `publicAssistantDomainsRestricted=false` (#444), ainsi que la CSP, empêchent tout chargement réseau du fournisseur tant que les deux contrôles ne sont pas finalisés et revérifiés. Une éventuelle réactivation restera opt-in, limitée aux surfaces publiques autorisées et déclenchée seulement après un clic explicite.
 
 Cet assistant doit :
 

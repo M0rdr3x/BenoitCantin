@@ -101,8 +101,9 @@ def validate_core(contents: dict[str, str]) -> None:
         "chargéseulementaprèsvotreclic",
         "launcher.addeventlistener('click'",
         "launcher.setattribute('aria-busy','true')",
-        "varpublicassistantvendorready=false;",
-        "if(!publicassistantvendorready)return;",
+        "varpublicassistantformsminimized=false;",
+        "varpublicassistantdomainsrestricted=false;",
+        "if(!publicassistantformsminimized||!publicassistantdomainsrestricted)return;",
     ):
         if marker not in ai_js:
             fail(f"chatbot public Nova × SINJIRA incomplet: {marker}")
@@ -127,7 +128,7 @@ def validate_core(contents: dict[str, str]) -> None:
 
     for marker in (
         "/assets/css/ai-transparency.css?v=1.2.0",
-        "/assets/js/ai-transparency.js?v=1.3.0",
+        "/assets/js/ai-transparency.js?v=1.4.0",
         "data-ai-transparency-style",
         "data-ai-transparency-script",
     ):
@@ -136,7 +137,7 @@ def validate_core(contents: dict[str, str]) -> None:
 
     for marker in (
         "/assets/css/ai-transparency.css?v=1.2.0",
-        "/assets/js/ai-transparency.js?v=1.2.0",
+        "/assets/js/ai-transparency.js?v=1.4.0",
         "data-ai-transparency-style",
         "data-ai-transparency-script",
     ):
@@ -218,7 +219,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "informeretorientersansdevenirunesecondevoiepourlaconnexion",
         "renvoyercesactionsverslesparcoursofficielsdusite",
         "étatactuel:bubblavestdésactivécôtésite.",
-        "publicassistantvendorready=false",
+        "publicassistantformsminimized=false",
+        "publicassistantdomainsrestricted=false",
     ):
         if marker not in policy:
             fail(f"politique IA sans gouvernance assistant: {marker}")
@@ -287,7 +289,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "issue**#443**",
         "issue**#444**",
         "bubblavestdésactivécôtésite",
-        "publicassistantvendorready=false",
+        "publicassistantformsminimized=false",
+        "publicassistantdomainsrestricted=false",
         "bubblavdoitresterabsentde",
         "responsabilitéhumaine",
     ):
@@ -299,10 +302,12 @@ def validate_core(contents: dict[str, str]) -> None:
         "retiréetconfirmécôtéfournisseur",
         "seconnecteràsoncompte",
         "encoreàretireroudésactivercôtéfournisseur",
-        "cinqformulaireshorspérimètrerestentàreconfirmer",
-        "rate_limited",
+        "reconfirmésactifsàzérosoumission",
+        "allow_all_domains=true",
+        "allowed_domains=[]",
+        "lecturedesflowsresteindisponible",
         "submission_count=0",
-        "aucunesuppressiondesoumissionoud'historiquefournisseurn'aétéeffectuée",
+        "aucunesuppressiondeformulaire,soumissionouhistoriquefournisseurn'aétéeffectuée",
     ):
         if marker not in assistant_data_minimization:
             fail(f"revue minimisation BubblaV incomplète: {marker}")
@@ -446,8 +451,9 @@ def self_test(contents: dict[str, str]) -> None:
         ("garde domaine officiel retirée", "ai_js", "if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (isPrivateSurface || isNoindexSurface) return;"),
         ("garde /app retirée", "ai_js", "path === '/app' ||\n      path.indexOf('/app/') === 0;", "path === '/app-retire' ||\n      path.indexOf('/app-retire/') === 0;"),
         ("activation volontaire retirée", "ai_js", "launcher.addEventListener('click'", "launcher.addEventListener('mouseover'"),
-        ("gate fournisseur réactivé", "ai_js", "var publicAssistantVendorReady = false;", "var publicAssistantVendorReady = true;"),
-        ("verrou fournisseur retiré", "ai_js", "if (!publicAssistantVendorReady) return;", "if (publicAssistantVendorReady) return;"),
+        ("gate formulaires réactivé", "ai_js", "var publicAssistantFormsMinimized = false;", "var publicAssistantFormsMinimized = true;"),
+        ("gate domaines réactivé", "ai_js", "var publicAssistantDomainsRestricted = false;", "var publicAssistantDomainsRestricted = true;"),
+        ("double verrou fournisseur affaibli", "ai_js", "if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted) return;", "if (!publicAssistantFormsMinimized) return;"),
         ("libellé accessible du lanceur retiré", "ai_js", "Ouvrir l’assistant Nova × SINJIRA, service BubblaV", "Ouvrir le chatbot"),
         ("cache IA accueil rétrogradé", "home", "/assets/css/ai-transparency.css?v=1.2.0", "/assets/css/ai-transparency.css?v=1.1.0"),
         ("cache IA page Transparence rétrogradé", "page", "/assets/css/ai-transparency.css?v=1.2.0", "/assets/css/ai-transparency.css?v=1.1.0"),
@@ -461,7 +467,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("frontière actions publiques retirée", "assistant", "Il sert à informer et à orienter.", "Il peut aussi agir dans le compte."),
         ("garde parcours officiels retirée", "assistant_governance", "Il ne doit pas devenir une seconde voie fonctionnelle", "Il peut devenir une seconde voie fonctionnelle"),
         ("garde formulaires fournisseur retirée", "assistant_governance", "formulaires fournisseur limités aux besoins publics réellement nécessaires", "formulaires fournisseur sans limite"),
-        ("preuve état formulaires retirée", "assistant_data_minimization", "cinq formulaires hors périmètre restent à reconfirmer puis retirer/désactiver", "état fournisseur inconnu"),
+        ("preuve état formulaires retirée", "assistant_data_minimization", "reconfirmés actifs à zéro soumission", "état fournisseur inconnu"),
         ("frontière /app politique IA retirée", "policy", "espaces privés `/compte`, `/admin` et `/app`", "espaces privés `/compte` et `/admin`"),
         ("frontière actions politique IA retirée", "policy", "informer et orienter sans devenir une seconde voie", "agir directement dans les comptes"),
         ("état fournisseur politique IA retiré", "policy", "**État actuel : BubblaV est désactivé côté site.**", "**État actuel : BubblaV peut être chargé côté site.**"),

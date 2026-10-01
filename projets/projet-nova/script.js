@@ -22,7 +22,7 @@
   }
   if(!document.querySelector('script[data-ai-transparency-script]')){
     const transparencyScript=document.createElement('script');
-    transparencyScript.src='/assets/js/ai-transparency.js?v=1.2.0';
+    transparencyScript.src='/assets/js/ai-transparency.js?v=1.4.0';
     transparencyScript.defer=true;
     transparencyScript.setAttribute('data-ai-transparency-script','');
     document.head.appendChild(transparencyScript);

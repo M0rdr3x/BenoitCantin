@@ -16,7 +16,7 @@ BUBBLAV_SITE_ID = "ca77cd98-bd32-459c-ad55-fdad4fb85316"
 FORMS_READY_MARKER = "var publicAssistantFormsMinimized = false;"
 DOMAINS_READY_MARKER = "var publicAssistantDomainsRestricted = false;"
 VENDOR_BLOCK_MARKER = "if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted) return;"
-LOADER_URL = "/assets/js/ai-transparency.js?v=1.3.0"
+LOADER_URL = "/assets/js/ai-transparency.js?v=1.4.0"
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
