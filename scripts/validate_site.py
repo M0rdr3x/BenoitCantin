@@ -266,7 +266,7 @@ def main() -> int:
             governance_path = ROOT / 'gouvernance-vie-privee.html'
             if not privacy_path.is_file() or '<strong>Le formulaire personnel du portail est actuellement désactivé</strong>' not in privacy_path.read_text('utf-8', errors='ignore'):
                 errors.append('Politique de confidentialité non alignée sur le contact personnel fail-closed')
-            if not governance_path.is_file() or 'Le formulaire personnel peut rester désactivé tant qu’un endpoint Formspree distinct de Projet Nova n’est pas configuré et vérifié.' not in governance_path.read_text('utf-8', errors='ignore'):
+            if not governance_path.is_file() or 'Le formulaire officiel de contact personnel peut rester désactivé tant qu’un endpoint Formspree distinct de Projet Nova n’est pas configuré et vérifié.' not in governance_path.read_text('utf-8', errors='ignore'):
                 errors.append('Gouvernance vie privée non alignée sur le contact personnel fail-closed')
 
     critical_routes = [
