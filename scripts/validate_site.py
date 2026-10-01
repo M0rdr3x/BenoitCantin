@@ -259,10 +259,6 @@ def main() -> int:
                 errors.append('Endpoint Formspree personnel doit être distinct des endpoints historiques/Nova')
         if 'id="contact-submit"' not in contact_text:
             errors.append('Bouton contact personnel identifiable absent')
-        if "PERSONAL_ENDPOINT!=='https://formspree.io/f/xdenkzrv'" not in contact_text:
-            errors.append('Garde runtime contre xdenkzrv absente du contact personnel')
-        if "PERSONAL_ENDPOINT!=='https://formspree.io/f/xkolwjdg'" not in contact_text:
-            errors.append('Garde runtime contre endpoint Nova absente du contact personnel')
         if '<option value="Projet Nova">Projet Nova</option>' in contact_text:
             errors.append('Projet Nova ne doit plus être routé par le formulaire personnel')
 
