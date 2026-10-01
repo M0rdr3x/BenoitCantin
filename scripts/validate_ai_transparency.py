@@ -443,7 +443,7 @@ def self_test(contents: dict[str, str]) -> None:
     mutations = [
         ("lien public retiré", "ai_js", "/transparence-ia.html", "/transparence-ia-retiree.html"),
         ("lien Assistant retiré de Transparence IA", "page", "/assistant.html", "/assistant-retire.html"),
-        ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.3.0", "/assets/js/absent.js"),
+        ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.4.0", "/assets/js/absent.js"),
         ("mention standard retirée", "policy", "Validation finale et responsabilité du contenu", "Validation retirée"),
         ("page Transparence IA hors-ligne retirée", "sw", "/transparence-ia.html", "/transparence-ia-absente.html"),
         ("widget BubblaV retiré", "ai_js", "https://www.bubblav.com/widget.js", "https://www.bubblav.com/widget-retire.js"),
