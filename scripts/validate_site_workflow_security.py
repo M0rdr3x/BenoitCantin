@@ -498,7 +498,9 @@ def validate_production_workflow_text(text: str) -> list[str]:
         'python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production --require-netlify --expected-sha "$GITHUB_SHA"' in text,
         'commande smoke production doit lier la preuve au GITHUB_SHA et exiger Netlify',
     )
+    require(errors, 'python3 scripts/validate_web_release_http.py https://benoitcantin.com --check-apex-redirect' in text, 'preuve redirection apex officielle absente')
     require(errors, 'Hébergement : **signature Netlify confirmée**' in text, 'preuve hébergement Netlify absente du résumé production')
+    require(errors, 'Apex : \\`https://benoitcantin.com/\\` → \\`https://www.benoitcantin.com/\\` (**301/308 + Netlify** )' in text, 'preuve apex canonique absente du résumé production')
     require(errors, '### Smoke HTTP — production officielle' in text, 'résumé preuve production absent')
     require(errors, 'GITHUB_STEP_SUMMARY' in text, 'production smoke doit écrire une preuve dans GITHUB_STEP_SUMMARY')
     require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'production smoke ne doit référencer aucun secret')
@@ -554,9 +556,11 @@ def run_production_self_tests(text: str) -> None:
         'garde ref production retirée': text.replace("    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/a1/web-release-')\n", '', 1),
         'preuve Netlify retirée de la commande': text.replace(' --require-netlify', '', 1),
         'preuve SHA GITHUB retirée de la commande': text.replace(' --expected-sha "$GITHUB_SHA"', '', 1),
+        'preuve apex retirée': text.replace('        run: python3 scripts/validate_web_release_http.py https://benoitcantin.com --check-apex-redirect\n', '', 1),
         'input arbitraire ajouté': text.replace('  workflow_dispatch:\n', '  workflow_dispatch:\n    inputs:\n      expected_sha:\n        required: true\n', 1),
         'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
         'résumé hébergeur retiré': text.replace('            echo "- Hébergement : **signature Netlify confirmée**"\n', '', 1),
+        'résumé apex retiré': text.replace('            echo "- Apex : \\`https://benoitcantin.com/\\` → \\`https://www.benoitcantin.com/\\` (**301/308 + Netlify** )"\n', '', 1),
         'résumé preuve retiré': text.replace('            echo "### Smoke HTTP — production officielle"\n', '', 1),
     }
     for name, mutated in cases.items():

@@ -29,6 +29,8 @@ jobs:
         run: python3 scripts/validate_web_release_http.py --self-test
       - name: Vérifier la production officielle
         run: python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production --require-netlify --expected-sha "$GITHUB_SHA"
+      - name: Vérifier la redirection canonique du domaine apex
+        run: python3 scripts/validate_web_release_http.py https://benoitcantin.com --check-apex-redirect
       - name: Résumer la preuve production
         if: success()
         shell: bash
@@ -40,5 +42,6 @@ jobs:
             echo "- SHA source attendu/publié : \`$GITHUB_SHA\`"
             echo "- Ref de validation : \`$GITHUB_REF\`"
             echo "- Hébergement : **signature Netlify confirmée**"
+            echo "- Apex : \`https://benoitcantin.com/\` → \`https://www.benoitcantin.com/\` (**301/308 + Netlify** )"
             echo "- Verdict : **SUCCESS**"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -316,6 +316,21 @@ def validate_netlify_hosting_headers(headers: object) -> list[str]:
     return ["Hébergement production invalide: signature Netlify absente (x-nf-request-id ou Server: Netlify requis)."]
 
 
+def validate_official_apex_redirect_response(status: int, headers: object) -> list[str]:
+    errors: list[str] = []
+    if status not in {301, 308}:
+        errors.append(f"Apex officiel: HTTP {status}, redirection permanente 301 ou 308 attendue.")
+    get = getattr(headers, "get")
+    location = str(get("Location") or "").strip()
+    parsed = urlparse(location)
+    if parsed.scheme != "https" or (parsed.hostname or "").lower() != "www.benoitcantin.com":
+        errors.append("Apex officiel: redirection HTTPS vers www.benoitcantin.com requise.")
+    if parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
+        errors.append("Apex officiel: redirection racine canonique sans query/fragment requise.")
+    errors.extend(validate_netlify_hosting_headers(headers))
+    return errors
+
+
 def validate_private_headers(headers: object, path: str) -> list[str]:
     errors: list[str] = []
     get = getattr(headers, "get")
@@ -580,6 +595,28 @@ def self_test() -> None:
     if not broken:
         raise SystemExit("ERREUR auto-test smoke HTTP: en-têtes affaiblis non détectés.")
 
+    valid_apex_headers = {
+        "Location": "https://www.benoitcantin.com/",
+        "X-Nf-Request-Id": "01HAPEXTEST",
+    }
+    if validate_official_apex_redirect_response(301, valid_apex_headers):
+        raise SystemExit("ERREUR auto-test smoke HTTP: redirection apex Netlify valide refusée.")
+    temporary_apex = validate_official_apex_redirect_response(302, valid_apex_headers)
+    if not any("301 ou 308" in error for error in temporary_apex):
+        raise SystemExit("ERREUR auto-test smoke HTTP: redirection apex temporaire acceptée.")
+    wrong_apex = validate_official_apex_redirect_response(
+        301,
+        {"Location": "https://example.com/", "X-Nf-Request-Id": "01HAPEXTEST"},
+    )
+    if not any("www.benoitcantin.com" in error for error in wrong_apex):
+        raise SystemExit("ERREUR auto-test smoke HTTP: mauvaise cible apex acceptée.")
+    github_apex = validate_official_apex_redirect_response(
+        301,
+        {"Location": "https://www.benoitcantin.com/", "Server": "GitHub.com"},
+    )
+    if not any("GitHub Pages" in error for error in github_apex):
+        raise SystemExit("ERREUR auto-test smoke HTTP: apex GitHub Pages accepté.")
+
     if validate_netlify_hosting_headers({"X-Nf-Request-Id": "01HNETLIFYTEST"}):
         raise SystemExit("ERREUR auto-test smoke HTTP: x-nf-request-id Netlify valide refusé.")
     if validate_netlify_hosting_headers({"Server": "Netlify"}):
@@ -720,7 +757,7 @@ def self_test() -> None:
         raise SystemExit("ERREUR auto-test smoke HTTP: cibles dangereuses acceptées: " + ", ".join(missed))
 
     print(
-        "OK auto-tests smoke HTTP: signature hébergeur Netlify, paire Netlify même site, permalink atomique preview/production-candidate, production, cibles autorisées, "
+        "OK auto-tests smoke HTTP: redirection apex canonique Netlify, signature hébergeur Netlify, paire Netlify même site, permalink atomique preview/production-candidate, production, cibles autorisées, "
         "CSP complète, HSTS, en-têtes défensifs, noindex, no-store privé/release, "
         "robots privés et 404 techniques vérifiés."
     )
@@ -745,6 +782,11 @@ def main() -> int:
         action="store_true",
         help="Exiger une signature HTTP Netlify sur la production officielle",
     )
+    parser.add_argument(
+        "--check-apex-redirect",
+        action="store_true",
+        help="Vérifier que l’apex officiel redirige définitivement vers www avec signature Netlify",
+    )
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
 
@@ -763,6 +805,22 @@ def main() -> int:
             return 1
         _, site_name = netlify_deploy_identity(args.url)
         print(site_name)
+        return 0
+
+    if args.check_apex_redirect:
+        target_errors = validate_target_url(args.url, "production")
+        if target_errors:
+            for error in target_errors:
+                print("- " + error)
+            return 1
+        status, headers, _ = request(args.url, "/")
+        apex_errors = validate_official_apex_redirect_response(status, headers)
+        if apex_errors:
+            print(f"ECHEC redirection apex: {len(apex_errors)} problème(s).")
+            for error in apex_errors:
+                print("- " + error)
+            return 1
+        print("OK redirection apex: HTTPS permanent vers www, signature Netlify confirmée.")
         return 0
 
     errors = validate_release(
