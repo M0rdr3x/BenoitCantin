@@ -186,6 +186,9 @@ def validate_personal_contact_contract(contact_text: str, privacy_text: str, gov
         errors.append('Bouton contact personnel doit rester désactivé par défaut avant validation JavaScript')
     if '<option value="Projet Nova">Projet Nova</option>' in contact_text:
         errors.append('Projet Nova ne doit plus être routé par le formulaire personnel')
+    runtime_gate = "form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'&&/^https:\\/\\/formspree\\.io\\/f\\/[A-Za-z0-9_-]+$/.test(PERSONAL_ENDPOINT)"
+    if runtime_gate not in contact_text:
+        errors.append('Le runtime contact doit exiger état active-separate-endpoint ET endpoint Formspree valide')
 
     if not endpoint:
         if not pending or active:
@@ -210,16 +213,17 @@ def validate_personal_contact_contract(contact_text: str, privacy_text: str, gov
 
 
 def self_test_personal_contact_contract() -> None:
+    runtime_gate = "function endpointReady(){return form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'&&/^https:\\/\\/formspree\\.io\\/f\\/[A-Za-z0-9_-]+$/.test(PERSONAL_ENDPOINT)}"
     pending_contact = (
         '<form id="contact-general" data-personal-formspree-state="pending-separate-endpoint">'
         '<button aria-disabled="true" disabled id="contact-submit">Configuration</button></form>'
-        "<script>var PERSONAL_ENDPOINT='';</script>"
+        "<script>var PERSONAL_ENDPOINT='';" + runtime_gate + "</script>"
     )
     active_endpoint = 'https://formspree.io/f/personalSafe42'
     active_contact = (
         '<form id="contact-general" data-personal-formspree-state="active-separate-endpoint">'
         '<button aria-disabled="true" disabled id="contact-submit">Envoyer</button></form>'
-        f"<script>var PERSONAL_ENDPOINT='{active_endpoint}';</script>"
+        f"<script>var PERSONAL_ENDPOINT='{active_endpoint}';" + runtime_gate + "</script>"
     )
     pending_privacy = PERSONAL_CONTACT_PENDING_PRIVACY_COPY
     pending_governance = PERSONAL_CONTACT_PENDING_GOVERNANCE_COPY
@@ -237,6 +241,7 @@ def self_test_personal_contact_contract() -> None:
         'endpoint Nova réintroduit': active_contact.replace(active_endpoint, NOVA_FORMSPREE_ENDPOINT),
         'action statique ajoutée': pending_contact.replace('<form id="contact-general"', '<form action="https://formspree.io/f/test" id="contact-general"'),
         'déclaration endpoint retirée': pending_contact.replace("var PERSONAL_ENDPOINT='';", "var OTHER_ENDPOINT='';"),
+        'garde runtime état actif retirée': pending_contact.replace("form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'&&", ''),
     }
     for name, mutated_contact in cases.items():
         errors = validate_personal_contact_contract(
