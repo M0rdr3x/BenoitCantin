@@ -195,7 +195,7 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, 'test "$pages_count" -eq "$expected_pages_count"' in text, 'parité artefact Pages non prouvée')
     require(errors, 'Content-Security-Policy:' in text, 'preuve CSP embarquée absente du workflow artefact')
     require(errors, '/supabase/* /404.html 404!' in text, 'preuve 404 forcée embarquée absente du workflow artefact')
-    require(errors, 'Configuration embarquée : \\`_headers\\` + \\`_redirects\\`' in text, 'résumé configuration autonome absent')
+    require(errors, 'Configuration Netlify : \\`_headers\\` + \\`_redirects\\`; artefact Pages : aucun fichier de configuration Netlify' in text, 'résumé configurations Netlify/Pages absent')
     require(errors, 'Preview noindex :' in text, 'lien artefact preview absent du résumé')
     require(errors, 'GitHub Pages isolé :' in text, 'lien artefact Pages absent du résumé')
     require(errors, 'test ! -e _site/script.js' in text, 'script.js racine legacy doit être absent de l’artefact production')
