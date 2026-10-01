@@ -348,10 +348,14 @@ def validate_anon_netlify_preview_workflow_text(text: str) -> list[str]:
     require(errors, "host = f'{deploy_id}--{site_host}'" in text, 'construction permalink immuable Netlify absente')
     require(errors, "re.fullmatch(r'[a-z0-9-]{6,64}--[a-z0-9-]+\\.netlify\\.app', host)" in text, 'validation stricte permalink Netlify absente')
     require(errors, "parsed.query" in text and "parsed.fragment" in text, 'refus query/fragment site_url absent')
-    require(errors, 'python3 scripts/validate_web_release_http.py "$NETLIFY_PREVIEW_URL" --context preview' in text, 'smoke preview anonyme absent')
-    require(errors, 'id: smoke' in text, 'smoke preview anonyme doit être identifiable')
-    require(errors, 'continue-on-error: true' in text, 'diagnostic preview anonyme doit rester non bloquant')
-    require(errors, 'SMOKE_OUTCOME: ${{ steps.smoke.outcome }}' in text, 'résultat smoke anonyme absent du résumé')
+    require(errors, "fh.write(f'NETLIFY_SITE_URL={raw_url}\\n')" in text, 'export alias principal Netlify absent')
+    require(errors, "fh.write(f'NETLIFY_DEPLOY_URL={deploy_url}\\n')" in text, 'export permalink Netlify absent')
+    require(errors, 'python3 scripts/validate_web_release_http.py "$NETLIFY_SITE_URL" --context preview' in text, 'smoke alias principal Netlify absent')
+    require(errors, 'python3 scripts/validate_web_release_http.py "$NETLIFY_DEPLOY_URL" --context preview' in text, 'smoke permalink Netlify absent')
+    require(errors, 'id: smoke_site' in text and 'id: smoke_deploy' in text, 'deux smokes Netlify identifiables requis')
+    require(errors, text.count('continue-on-error: true') == 2, 'les deux diagnostics Netlify doivent rester non bloquants')
+    require(errors, 'SITE_OUTCOME: ${{ steps.smoke_site.outcome }}' in text, 'résultat smoke alias absent du résumé')
+    require(errors, 'DEPLOY_OUTCOME: ${{ steps.smoke_deploy.outcome }}' in text, 'résultat smoke permalink absent du résumé')
     require(errors, 'INCOMPATIBLE — diagnostic non bloquant' in text, 'verdict diagnostic anonyme non bloquant absent')
     require(errors, 'jamais une porte de release' in text, 'frontière release du diagnostic anonyme absente')
     require(errors, 'Jeton de réclamation : **non journalisé et non conservé**' in text, 'preuve non-conservation token absente')
@@ -371,7 +375,8 @@ def run_anon_netlify_preview_self_tests(text: str) -> None:
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
         'marqueur retiré': text.replace('[netlify-anon-preview]', '[preview]'),
         'anonyme retiré': text.replace('--allow-anonymous', ''),
-        'diagnostic rendu bloquant': text.replace('        continue-on-error: true\n', '', 1),
+        'diagnostic alias rendu bloquant': text.replace('        continue-on-error: true\n', '', 1),
+        'diagnostic permalink rendu bloquant': text.replace('        continue-on-error: true\n', '', 2),
         'frontière release retirée': text.replace("            echo '- Portée : **preuve de capacité uniquement; jamais une porte de release**'\n", '', 1),
         'mode integration retiré': text.replace('--created-via integration', ''),
         'prod ajouté': text.replace('--no-build --json', '--no-build --json --prod', 1),
@@ -381,7 +386,8 @@ def run_anon_netlify_preview_self_tests(text: str) -> None:
         'deploy_id retiré': text.replace("          deploy_id = data.get('deploy_id')\n", "          deploy_id = data.get('id')\n", 1),
         'permalink retiré': text.replace("          host = f'{deploy_id}--{site_host}'\n", "          host = site_host\n", 1),
         'sortie brute exposée': text.replace("          python3 - \"$deploy_json\" <<'PY'\n", "          cat \"$deploy_json\"\n          python3 - \"$deploy_json\" <<'PY'\n", 1),
-        'smoke retiré': text.replace('        run: python3 scripts/validate_web_release_http.py "$NETLIFY_PREVIEW_URL" --context preview\n', '', 1),
+        'smoke alias retiré': text.replace('        run: python3 scripts/validate_web_release_http.py "$NETLIFY_SITE_URL" --context preview\n', '', 1),
+        'smoke permalink retiré': text.replace('        run: python3 scripts/validate_web_release_http.py "$NETLIFY_DEPLOY_URL" --context preview\n', '', 1),
     }
     for name, mutated in cases.items():
         if mutated == text:

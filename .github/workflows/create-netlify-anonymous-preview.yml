@@ -145,36 +145,52 @@ jobs:
           host = f'{deploy_id}--{site_host}'
           if not re.fullmatch(r'[a-z0-9-]{6,64}--[a-z0-9-]+\.netlify\.app', host):
               raise SystemExit('ERREUR: permalink Netlify inattendu.')
-          url = f'https://{host}'
+          deploy_url = f'https://{host}'
           with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as fh:
-              fh.write(f'NETLIFY_PREVIEW_URL={url}\n')
+              fh.write(f'NETLIFY_SITE_URL={raw_url}\n')
+              fh.write(f'NETLIFY_DEPLOY_URL={deploy_url}\n')
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as fh:
-              fh.write(f'preview_url={url}\n')
+              fh.write(f'site_url={raw_url}\n')
+              fh.write(f'deploy_url={deploy_url}\n')
           PY
 
-      - name: Exécuter le smoke preview comme diagnostic
-        id: smoke
+      - name: Exécuter le smoke sur l’alias principal
+        id: smoke_site
         if: steps.gate.outputs.enabled == 'true'
         continue-on-error: true
-        run: python3 scripts/validate_web_release_http.py "$NETLIFY_PREVIEW_URL" --context preview
+        run: python3 scripts/validate_web_release_http.py "$NETLIFY_SITE_URL" --context preview
+
+      - name: Exécuter le smoke sur le permalink immuable
+        id: smoke_deploy
+        if: steps.gate.outputs.enabled == 'true'
+        continue-on-error: true
+        run: python3 scripts/validate_web_release_http.py "$NETLIFY_DEPLOY_URL" --context preview
 
       - name: Résumer le diagnostic temporaire
         if: steps.gate.outputs.enabled == 'true'
         shell: bash
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+          SITE_OUTCOME: ${{ steps.smoke_site.outcome }}
+          DEPLOY_OUTCOME: ${{ steps.smoke_deploy.outcome }}
         run: |
-          if [ "$SMOKE_OUTCOME" = "success" ]; then
-            verdict='PASS'
+          if [ "$SITE_OUTCOME" = "success" ]; then
+            site_verdict='PASS'
           else
-            verdict='INCOMPATIBLE — diagnostic non bloquant'
+            site_verdict='INCOMPATIBLE — diagnostic non bloquant'
+          fi
+          if [ "$DEPLOY_OUTCOME" = "success" ]; then
+            deploy_verdict='PASS'
+          else
+            deploy_verdict='INCOMPATIBLE — diagnostic non bloquant'
           fi
           {
-            echo '### Netlify preview anonyme — diagnostic'
+            echo '### Netlify preview anonyme — diagnostic double URL'
             echo "- SHA : $HEAD_SHA"
-            echo "- URL temporaire : $NETLIFY_PREVIEW_URL"
-            echo "- Verdict smoke : **$verdict**"
+            echo "- Alias principal : $NETLIFY_SITE_URL"
+            echo "- Verdict alias : **$site_verdict**"
+            echo "- Permalink immuable : $NETLIFY_DEPLOY_URL"
+            echo "- Verdict permalink : **$deploy_verdict**"
             echo '- Netlify CLI : `27.10.2`'
             echo '- Mode : `--allow-anonymous --no-build`'
             echo '- Secret/token GitHub/Netlify : **aucun**'
