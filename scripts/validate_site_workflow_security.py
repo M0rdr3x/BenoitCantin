@@ -187,6 +187,9 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, 'Preview noindex :' in text, 'lien artefact preview absent du résumé')
     require(errors, 'test ! -e _site/script.js' in text, 'script.js racine legacy doit être absent de l’artefact production')
     require(errors, 'test ! -e _preview_site/script.js' in text, 'script.js racine legacy doit être absent de l’artefact preview')
+    require(errors, text.count('for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do') == 2, 'les deux artefacts doivent refuser les endpoints Formspree historiques')
+    require(errors, 'ERREUR: endpoint Formspree historique interdit dans l’artefact production:' in text, 'garde Formspree historique production absente')
+    require(errors, 'ERREUR: endpoint Formspree historique interdit dans l’artefact preview:' in text, 'garde Formspree historique preview absente')
     require(errors, 'test ! -e "_site/$forbidden"' in text, 'absence des répertoires techniques non prouvée')
     require(errors, 'actions/deploy-pages@' not in text, 'workflow artefact ne doit jamais déployer GitHub Pages')
     require(errors, 'actions/configure-pages@' not in text, 'workflow artefact ne doit pas configurer GitHub Pages')
@@ -248,6 +251,7 @@ def run_artifact_self_tests(text: str) -> None:
         'garde noindex preview retirée': text.replace('            echo "ERREUR: noindex global requis dans l’artefact preview." >&2\n', '', 1),
         'script legacy production réintroduit': text.replace('          test ! -e _site/script.js\n', '', 1),
         'script legacy preview réintroduit': text.replace('          test ! -e _preview_site/script.js\n', '', 1),
+        'garde Formspree production retirée': text.replace('          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do\n', '', 1),
         'fichiers cachés exclus': text.replace('include-hidden-files: true', 'include-hidden-files: false', 1),
         'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
         'résumé non-déploiement retiré': text.replace('            echo "> Aucun déploiement n’est effectué par ce workflow."\n', '', 1),

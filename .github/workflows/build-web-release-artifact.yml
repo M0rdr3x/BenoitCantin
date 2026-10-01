@@ -53,6 +53,12 @@ jobs:
           fi
           grep -Fq "/supabase/* /404.html 404!" _site/_redirects
           test ! -e _site/script.js
+          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do
+            if grep -R -F -q -- "$endpoint" _site; then
+              echo "ERREUR: endpoint Formspree historique interdit dans l’artefact production: $endpoint" >&2
+              exit 1
+            fi
+          done
           for forbidden in .github docs mobile-native scripts supabase tests; do
             test ! -e "_site/$forbidden"
           done
@@ -83,6 +89,12 @@ jobs:
           fi
           grep -Fq "/supabase/* /404.html 404!" _preview_site/_redirects
           test ! -e _preview_site/script.js
+          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do
+            if grep -R -F -q -- "$endpoint" _preview_site; then
+              echo "ERREUR: endpoint Formspree historique interdit dans l’artefact preview: $endpoint" >&2
+              exit 1
+            fi
+          done
           for forbidden in .github docs mobile-native scripts supabase tests; do
             test ! -e "_preview_site/$forbidden"
           done
