@@ -305,6 +305,17 @@ def validate_headers(headers: object, context: str) -> list[str]:
     return errors
 
 
+def validate_netlify_hosting_headers(headers: object) -> list[str]:
+    get = getattr(headers, "get")
+    server = str(get("Server") or "").strip()
+    nf_request = str(get("X-Nf-Request-Id") or "").strip()
+    if nf_request or "netlify" in server.lower():
+        return []
+    if "github" in server.lower():
+        return ["Hébergement production invalide: réponse GitHub Pages encore observée."]
+    return ["Hébergement production invalide: signature Netlify absente (x-nf-request-id ou Server: Netlify requis)."]
+
+
 def validate_private_headers(headers: object, path: str) -> list[str]:
     errors: list[str] = []
     get = getattr(headers, "get")
@@ -360,6 +371,7 @@ def validate_release(
     context: str,
     expected_sha: str | None = None,
     same_netlify_site_as: str | None = None,
+    require_netlify: bool = False,
 ) -> list[str]:
     errors = validate_target_url(base_url, context)
     if expected_sha and not re.fullmatch(r"[0-9a-fA-F]{40}", expected_sha.strip()):
@@ -369,6 +381,8 @@ def validate_release(
             errors.append("--same-netlify-site-as est réservé au contexte production-candidate.")
         else:
             errors.extend(validate_netlify_pair(same_netlify_site_as, base_url))
+    if require_netlify and context != "production":
+        errors.append("--require-netlify est réservé au contexte production officielle.")
     if errors:
         return errors
 
@@ -408,6 +422,8 @@ def validate_release(
     if home:
         _, headers, body = home
         errors.extend(validate_headers(headers, context))
+        if require_netlify:
+            errors.extend(validate_netlify_hosting_headers(headers))
         errors.extend(validate_home(body))
 
     for private_path in PRIVATE_RUNTIME_PATHS:
@@ -564,6 +580,17 @@ def self_test() -> None:
     if not broken:
         raise SystemExit("ERREUR auto-test smoke HTTP: en-têtes affaiblis non détectés.")
 
+    if validate_netlify_hosting_headers({"X-Nf-Request-Id": "01HNETLIFYTEST"}):
+        raise SystemExit("ERREUR auto-test smoke HTTP: x-nf-request-id Netlify valide refusé.")
+    if validate_netlify_hosting_headers({"Server": "Netlify"}):
+        raise SystemExit("ERREUR auto-test smoke HTTP: Server Netlify valide refusé.")
+    github_hosting_errors = validate_netlify_hosting_headers({"Server": "GitHub.com"})
+    if not any("GitHub Pages" in error for error in github_hosting_errors):
+        raise SystemExit("ERREUR auto-test smoke HTTP: GitHub Pages non détecté comme hébergement invalide.")
+    unknown_hosting_errors = validate_netlify_hosting_headers({})
+    if not any("signature Netlify absente" in error for error in unknown_hosting_errors):
+        raise SystemExit("ERREUR auto-test smoke HTTP: absence de signature Netlify non détectée.")
+
     private_broken = validate_private_headers(
         {"X-Robots-Tag": "noindex"},
         "/compte/",
@@ -693,7 +720,7 @@ def self_test() -> None:
         raise SystemExit("ERREUR auto-test smoke HTTP: cibles dangereuses acceptées: " + ", ".join(missed))
 
     print(
-        "OK auto-tests smoke HTTP: paire Netlify même site, permalink atomique preview/production-candidate, production, cibles autorisées, "
+        "OK auto-tests smoke HTTP: signature hébergeur Netlify, paire Netlify même site, permalink atomique preview/production-candidate, production, cibles autorisées, "
         "CSP complète, HSTS, en-têtes défensifs, noindex, no-store privé/release, "
         "robots privés et 404 techniques vérifiés."
     )
@@ -712,6 +739,11 @@ def main() -> int:
         "--print-netlify-site",
         action="store_true",
         help="Valider un permalink Netlify atomique puis imprimer uniquement son nom de site canonique",
+    )
+    parser.add_argument(
+        "--require-netlify",
+        action="store_true",
+        help="Exiger une signature HTTP Netlify sur la production officielle",
     )
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
@@ -738,6 +770,7 @@ def main() -> int:
         args.context,
         expected_sha=args.expected_sha,
         same_netlify_site_as=args.same_netlify_site_as,
+        require_netlify=args.require_netlify,
     )
     if errors:
         print(f"ECHEC smoke HTTP: {len(errors)} problème(s).")

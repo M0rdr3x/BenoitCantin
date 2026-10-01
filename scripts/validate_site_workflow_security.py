@@ -492,9 +492,10 @@ def validate_production_workflow_text(text: str) -> list[str]:
     require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke HTTP production absent ou dupliqué')
     require(
         errors,
-        'python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production --expected-sha "$GITHUB_SHA"' in text,
-        'commande smoke production doit lier la preuve au GITHUB_SHA',
+        'python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production --require-netlify --expected-sha "$GITHUB_SHA"' in text,
+        'commande smoke production doit lier la preuve au GITHUB_SHA et exiger Netlify',
     )
+    require(errors, 'Hébergement : **signature Netlify confirmée**' in text, 'preuve hébergement Netlify absente du résumé production')
     require(errors, '### Smoke HTTP — production officielle' in text, 'résumé preuve production absent')
     require(errors, 'GITHUB_STEP_SUMMARY' in text, 'production smoke doit écrire une preuve dans GITHUB_STEP_SUMMARY')
     require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'production smoke ne doit référencer aucun secret')
@@ -548,9 +549,11 @@ def run_production_self_tests(text: str) -> None:
         'auto-test smoke retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
         'domaine remplacé': text.replace('https://www.benoitcantin.com --context production', 'https://example.com --context production', 1),
         'garde ref production retirée': text.replace("    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/a1/web-release-')\n", '', 1),
+        'preuve Netlify retirée de la commande': text.replace(' --require-netlify', '', 1),
         'preuve SHA GITHUB retirée de la commande': text.replace(' --expected-sha "$GITHUB_SHA"', '', 1),
         'input arbitraire ajouté': text.replace('  workflow_dispatch:\n', '  workflow_dispatch:\n    inputs:\n      expected_sha:\n        required: true\n', 1),
         'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
+        'résumé hébergeur retiré': text.replace('            echo "- Hébergement : **signature Netlify confirmée**"\n', '', 1),
         'résumé preuve retiré': text.replace('            echo "### Smoke HTTP — production officielle"\n', '', 1),
     }
     for name, mutated in cases.items():

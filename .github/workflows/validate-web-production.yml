@@ -28,7 +28,7 @@ jobs:
       - name: Auto-tester le smoke HTTP
         run: python3 scripts/validate_web_release_http.py --self-test
       - name: Vérifier la production officielle
-        run: python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production --expected-sha "$GITHUB_SHA"
+        run: python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production --require-netlify --expected-sha "$GITHUB_SHA"
       - name: Résumer la preuve production
         if: success()
         shell: bash
@@ -39,5 +39,6 @@ jobs:
             echo "- Contexte : \`production\`"
             echo "- SHA source attendu/publié : \`$GITHUB_SHA\`"
             echo "- Ref de validation : \`$GITHUB_REF\`"
+            echo "- Hébergement : **signature Netlify confirmée**"
             echo "- Verdict : **SUCCESS**"
           } >> "$GITHUB_STEP_SUMMARY"
