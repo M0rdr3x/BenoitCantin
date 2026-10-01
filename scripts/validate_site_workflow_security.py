@@ -185,6 +185,8 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, '/supabase/* /404.html 404!' in text, 'preuve 404 forcée embarquée absente du workflow artefact')
     require(errors, 'Configuration embarquée : \\`_headers\\` + \\`_redirects\\`' in text, 'résumé configuration autonome absent')
     require(errors, 'Preview noindex :' in text, 'lien artefact preview absent du résumé')
+    require(errors, 'test ! -e _site/script.js' in text, 'script.js racine legacy doit être absent de l’artefact production')
+    require(errors, 'test ! -e _preview_site/script.js' in text, 'script.js racine legacy doit être absent de l’artefact preview')
     require(errors, 'test ! -e "_site/$forbidden"' in text, 'absence des répertoires techniques non prouvée')
     require(errors, 'actions/deploy-pages@' not in text, 'workflow artefact ne doit jamais déployer GitHub Pages')
     require(errors, 'actions/configure-pages@' not in text, 'workflow artefact ne doit pas configurer GitHub Pages')
@@ -244,6 +246,8 @@ def run_artifact_self_tests(text: str) -> None:
         'contexte preview retiré': text.replace('          CONTEXT: deploy-preview\n', '          CONTEXT: production\n', 1),
         'garde noindex production retirée': text.replace('            echo "ERREUR: noindex global interdit dans l’artefact production." >&2\n', '', 1),
         'garde noindex preview retirée': text.replace('            echo "ERREUR: noindex global requis dans l’artefact preview." >&2\n', '', 1),
+        'script legacy production réintroduit': text.replace('          test ! -e _site/script.js\n', '', 1),
+        'script legacy preview réintroduit': text.replace('          test ! -e _preview_site/script.js\n', '', 1),
         'fichiers cachés exclus': text.replace('include-hidden-files: true', 'include-hidden-files: false', 1),
         'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
         'résumé non-déploiement retiré': text.replace('            echo "> Aucun déploiement n’est effectué par ce workflow."\n', '', 1),

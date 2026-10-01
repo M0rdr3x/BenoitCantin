@@ -114,6 +114,10 @@ PUBLIC_ROOT_EXACT = {
     "sitemap.xml",
 }
 
+PUBLIC_ROOT_DENY = {
+    "script.js",  # legacy racine inutilisé; contenait encore un routage Formspree Nova.
+}
+
 PROJECT_NOVA_STRUCTURED_SUFFIXES = {
     ".md",
     ".csv",
@@ -222,6 +226,8 @@ REQUIRED_PUBLIC_PATHS = (
 
 def root_file_allowed(path: Path) -> bool:
     if path.parent != ROOT:
+        return False
+    if path.name in PUBLIC_ROOT_DENY:
         return False
     if path.name in PUBLIC_ROOT_EXACT:
         return True
@@ -469,6 +475,9 @@ def validate_plan() -> list[str]:
                 errors.append(
                     f"Artefact non web autorisé par erreur dans {runtime_dir}/: {probe}"
                 )
+
+    if root_file_allowed(ROOT / "script.js"):
+        errors.append("Script racine legacy script.js autorisé par erreur.")
 
     for name in (
         "README.md",
