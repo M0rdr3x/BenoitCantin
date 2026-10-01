@@ -60,8 +60,9 @@ jobs:
             echo "- Artefact CI : \`Web release — artefact public isolé\` (aucun déploiement)"
             echo "- Deploy preview Netlify : noindex/noarchive par construction"
             echo "- BubblaV : **fail-closed** (widget désactivé + CSP bloquante)"
-            echo "- Smoke preview : \`Netlify preview — smoke HTTP\` (workflow manuel)"
-            echo "- Smoke production : \`Web production — smoke HTTP\` (workflow manuel)"
+            echo "- Smoke deploy unitaire : \`Netlify deploy — smoke HTTP\` (permalink atomique, preview / production-candidate)"
+            echo "- Gate pré-DNS combiné : \`Netlify pré-DNS — gate combiné\` (même site Netlify + même SHA)"
+            echo "- Smoke production : \`Web production — smoke HTTP\` (SHA + signature Netlify obligatoires)"
             echo "- Portes externes restantes : bascule hébergeur sûre (#450), #135, #443, #444"
             echo
             echo "> Ce résumé prouve l'état du candidat Git/CI, pas un déploiement production."

@@ -112,6 +112,9 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'BubblaV : **fail-closed**' in text, 'état BubblaV fail-closed absent du résumé')
     require(errors, 'Artefact public : \\`_site\\` allowlisté + package Netlify autonome \\`_headers\\`/\\`_redirects\\`' in text, 'artefact Netlify autonome absent du résumé')
     require(errors, 'Artefact CI : \\`Web release — artefact public isolé\\` (aucun déploiement)' in text, 'workflow artefact CI absent du résumé')
+    require(errors, 'Smoke deploy unitaire : \\`Netlify deploy — smoke HTTP\\` (permalink atomique, preview / production-candidate)' in text, 'smoke deploy unitaire absent du résumé readiness')
+    require(errors, 'Gate pré-DNS combiné : \\`Netlify pré-DNS — gate combiné\\` (même site Netlify + même SHA)' in text, 'gate pré-DNS combiné absent du résumé readiness')
+    require(errors, 'Smoke production : \\`Web production — smoke HTTP\\` (SHA + signature Netlify obligatoires)' in text, 'preuve finale Netlify absente du résumé readiness')
     require(errors, 'Portes externes restantes : bascule hébergeur sûre (#450), #135, #443, #444' in text, 'portes externes readiness absentes')
     require(errors, exact_run_count(text, AI_TRANSPARENCY_SELF) == 1, 'auto-test Transparence IA absent ou dupliqué')
     require(errors, exact_run_count(text, AI_TRANSPARENCY_VALIDATE) == 1, 'validation Transparence IA absente ou dupliquée')
@@ -635,6 +638,9 @@ def run_self_tests(text: str) -> None:
         'baseline cible dangereuse': text.replace('            echo "- Cible : $origin"\n', '            echo "- Cible : `$origin`"\n', 1),
         'résumé readiness retiré': text.replace('            echo "### Readiness web-only"\n', '', 1),
         'état fail-closed readiness retiré': text.replace('            echo "- BubblaV : **fail-closed** (widget désactivé + CSP bloquante)"\n', '', 1),
+        'smoke deploy readiness retiré': text.replace('            echo "- Smoke deploy unitaire : \\`Netlify deploy — smoke HTTP\\` (permalink atomique, preview / production-candidate)"\n', '', 1),
+        'gate pré-DNS readiness retiré': text.replace('            echo "- Gate pré-DNS combiné : \\`Netlify pré-DNS — gate combiné\\` (même site Netlify + même SHA)"\n', '', 1),
+        'preuve Netlify readiness retirée': text.replace('            echo "- Smoke production : \\`Web production — smoke HTTP\\` (SHA + signature Netlify obligatoires)"\n', '', 1),
         'auto-test Transparence IA retiré': text.replace(f'        run: {AI_TRANSPARENCY_SELF}\n', '', 1),
         'validation Transparence IA retirée': text.replace(f'        run: {AI_TRANSPARENCY_VALIDATE}\n', '', 1),
         'auto-test assistant IA retiré': text.replace(f'        run: {PUBLIC_AI_ASSISTANT_SELF}\n', '', 1),
