@@ -182,7 +182,9 @@ def validate_netlify_pre_dns_workflow_text(text: str) -> list[str]:
     require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke pré-DNS absent ou dupliqué')
     require(errors, 'python3 scripts/validate_web_release_http.py "$PREVIEW_PERMALINK" --context preview --expected-sha "$GITHUB_SHA"' in text, 'preuve preview pré-DNS absente')
     require(errors, 'python3 scripts/validate_web_release_http.py "$PRODUCTION_PERMALINK" --context production-candidate --same-netlify-site-as "$PREVIEW_PERMALINK" --expected-sha "$GITHUB_SHA"' in text, 'preuve production-candidate même site pré-DNS absente')
-    require(errors, 'Projet Netlify : **même site confirmé pour les deux deploys**' in text, 'preuve même site Netlify absente du résumé')
+    require(errors, 'python3 scripts/validate_web_release_http.py "$PREVIEW_PERMALINK" --print-netlify-site' in text, 'extraction du nom canonique Netlify absente')
+    require(errors, 'NETLIFY_SITE_NAME=$site_name' in text, 'nom canonique Netlify doit être exporté vers le résumé')
+    require(errors, 'Projet Netlify canonique : \\`$NETLIFY_SITE_NAME\\` — **même site confirmé pour les deux deploys**' in text, 'preuve du nom canonique Netlify absente du résumé')
     require(errors, '### Gate Netlify pré-DNS combiné' in text, 'résumé gate pré-DNS absent')
     require(errors, 'DNS : **non modifié par ce workflow**' in text, 'frontière non-déploiement DNS absente')
     require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'gate pré-DNS ne doit référencer aucun secret')
@@ -201,7 +203,9 @@ def run_netlify_pre_dns_self_tests(text: str) -> None:
         'preuve preview retirée': text.replace('        run: python3 scripts/validate_web_release_http.py "$PREVIEW_PERMALINK" --context preview --expected-sha "$GITHUB_SHA"\n', '', 1),
         'preuve candidat production retirée': text.replace('        run: python3 scripts/validate_web_release_http.py "$PRODUCTION_PERMALINK" --context production-candidate --same-netlify-site-as "$PREVIEW_PERMALINK" --expected-sha "$GITHUB_SHA"\n', '', 1),
         'preuve même site retirée': text.replace(' --same-netlify-site-as "$PREVIEW_PERMALINK"', '', 1),
-        'résumé même site retiré': text.replace('            echo "- Projet Netlify : **même site confirmé pour les deux deploys**"\n', '', 1),
+        'extraction site canonique retirée': text.replace('          site_name="$(python3 scripts/validate_web_release_http.py "$PREVIEW_PERMALINK" --print-netlify-site)"\n', '', 1),
+        'export site canonique retiré': text.replace('          echo "NETLIFY_SITE_NAME=$site_name" >> "$GITHUB_ENV"\n', '', 1),
+        'résumé même site retiré': text.replace('            echo "- Projet Netlify canonique : \\`$NETLIFY_SITE_NAME\\` — **même site confirmé pour les deux deploys**"\n', '', 1),
         'SHA manuel ajouté': text.replace('      preview_permalink:\n', '      expected_sha:\n        required: true\n      preview_permalink:\n', 1),
         'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
         'frontière DNS retirée': text.replace('            echo "- DNS : **non modifié par ce workflow**"\n', '', 1),

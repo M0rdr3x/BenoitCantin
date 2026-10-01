@@ -139,6 +139,13 @@ def validate_target_url(base_url: str, context: str) -> list[str]:
     return errors
 
 
+def netlify_deploy_identity(base_url: str) -> tuple[str, str]:
+    host = (urlparse(base_url).hostname or "").lower()
+    label = host.removesuffix(".netlify.app")
+    deploy_id, site_name = label.split("--", 1)
+    return deploy_id, site_name
+
+
 def validate_netlify_pair(preview_url: str, production_url: str) -> list[str]:
     errors: list[str] = []
     preview_errors = validate_target_url(preview_url, "preview")
@@ -148,10 +155,8 @@ def validate_netlify_pair(preview_url: str, production_url: str) -> list[str]:
     if errors:
         return errors
 
-    preview_host = (urlparse(preview_url).hostname or "").lower()
-    production_host = (urlparse(production_url).hostname or "").lower()
-    preview_deploy, preview_site = preview_host.removesuffix(".netlify.app").split("--", 1)
-    production_deploy, production_site = production_host.removesuffix(".netlify.app").split("--", 1)
+    preview_deploy, preview_site = netlify_deploy_identity(preview_url)
+    production_deploy, production_site = netlify_deploy_identity(production_url)
 
     if preview_site != production_site:
         errors.append(
@@ -640,6 +645,12 @@ def self_test() -> None:
     same_site_production = "https://2222ccccdddd--example-site.netlify.app"
     if validate_netlify_pair(same_site_preview, same_site_production):
         raise SystemExit("ERREUR auto-test smoke HTTP: paire Netlify même site valide refusée.")
+    preview_identity = netlify_deploy_identity(same_site_preview)
+    production_identity = netlify_deploy_identity(same_site_production)
+    if preview_identity != ("1111aaaabbbb", "example-site"):
+        raise SystemExit("ERREUR auto-test smoke HTTP: identité preview Netlify mal extraite.")
+    if production_identity != ("2222ccccdddd", "example-site"):
+        raise SystemExit("ERREUR auto-test smoke HTTP: identité production Netlify mal extraite.")
 
     cross_site_errors = validate_netlify_pair(
         same_site_preview,
@@ -697,6 +708,11 @@ def main() -> int:
         "--same-netlify-site-as",
         help="Permalink preview atomique qui doit appartenir au même site Netlify que le production-candidate",
     )
+    parser.add_argument(
+        "--print-netlify-site",
+        action="store_true",
+        help="Valider un permalink Netlify atomique puis imprimer uniquement son nom de site canonique",
+    )
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
 
@@ -706,6 +722,16 @@ def main() -> int:
 
     if not args.url:
         parser.error("URL requise hors --self-test")
+
+    if args.print_netlify_site:
+        identity_errors = validate_target_url(args.url, "preview")
+        if identity_errors:
+            for error in identity_errors:
+                print("- " + error)
+            return 1
+        _, site_name = netlify_deploy_identity(args.url)
+        print(site_name)
+        return 0
 
     errors = validate_release(
         args.url,
