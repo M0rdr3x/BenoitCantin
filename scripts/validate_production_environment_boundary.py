@@ -70,8 +70,11 @@ def write_signals(block: str) -> list[str]:
         if "supabase db push" in line and "--dry-run" not in line:
             signals.append("supabase-db-push")
             break
-    if re.search(r"--request\s+(?:PATCH|POST|PUT|DELETE)\b", active):
-        signals.append("mutating-http-request")
+    if (
+        re.search(r"--request\s+(?:PATCH|POST|PUT|DELETE)\b", active)
+        and ("api.supabase.com" in active or "$SUPABASE_MANAGEMENT_API" in active)
+    ):
+        signals.append("mutating-supabase-management-request")
     return sorted(set(signals))
 
 
@@ -198,7 +201,27 @@ def self_test() -> None:
       - run: supabase functions deploy dangerous --project-ref x
 """,
         ),
+        "PATCH Management API inconnu": (
+            "untracked-auth.yml",
+            """jobs:
+  mutate:
+    environment: production
+    steps:
+      - run: curl --request PATCH "$SUPABASE_MANAGEMENT_API/projects/x/config/auth"
+""",
+        ),
     }
+
+    local_only = """jobs:
+  local-test:
+    steps:
+      - run: |
+          API_URL="http://127.0.0.1:54321"
+          curl --request POST "$API_URL/auth/v1/signup"
+"""
+    if write_signals(job_blocks(local_only)["local-test"]):
+        raise SystemExit("ERREUR auto-test environments: POST Supabase local classé comme écriture production.")
+
     for name, (filename, mutated) in mutations.items():
         case = dict(fixtures)
         case[filename] = mutated
