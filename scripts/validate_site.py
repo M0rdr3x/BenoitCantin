@@ -33,6 +33,16 @@ PERSONAL_CONTACT_PENDING_PRIVACY_COPY = '<strong>Le formulaire personnel du port
 PERSONAL_CONTACT_PENDING_GOVERNANCE_COPY = 'Le formulaire officiel de contact personnel peut rester désactivé tant qu’un endpoint Formspree distinct de Projet Nova n’est pas configuré et vérifié.'
 PERSONAL_CONTACT_ACTIVE_PRIVACY_COPY = '<strong>Le formulaire personnel du portail utilise un endpoint Formspree distinct de Projet Nova configuré et vérifié</strong>'
 PERSONAL_CONTACT_ACTIVE_GOVERNANCE_COPY = 'Le formulaire officiel de contact personnel utilise un endpoint Formspree distinct de Projet Nova configuré et vérifié.'
+PERSONAL_CONTACT_PENDING_COPIES = (
+    'Pendant la configuration de ce nouvel endpoint personnel, le formulaire reste volontairement désactivé',
+    'Lorsque le formulaire personnel sera réactivé, il utilisera <strong>Formspree</strong> avec un endpoint distinct de Projet Nova',
+    'Aucune soumission personnelle n’est envoyée à Formspree tant que le nouvel endpoint distinct n’est pas configuré.',
+)
+PERSONAL_CONTACT_ACTIVE_COPIES = (
+    'Le formulaire personnel utilise un endpoint Formspree distinct de Projet Nova, configuré et vérifié.',
+    'Le formulaire personnel utilise <strong>Formspree</strong> avec un endpoint distinct de Projet Nova configuré et vérifié',
+    'Les soumissions personnelles sont envoyées uniquement au canal Formspree personnel distinct de Projet Nova.',
+)
 
 
 class Parser(HTMLParser):
@@ -193,6 +203,12 @@ def validate_personal_contact_contract(contact_text: str, privacy_text: str, gov
     if not endpoint:
         if not pending or active:
             errors.append('Endpoint personnel vide exige data-personal-formspree-state=pending-separate-endpoint')
+        for copy in PERSONAL_CONTACT_PENDING_COPIES:
+            if copy not in contact_text:
+                errors.append(f'Texte public pending manquant dans contact.html: {copy}')
+        for copy in PERSONAL_CONTACT_ACTIVE_COPIES:
+            if copy in contact_text:
+                errors.append('Texte public actif interdit tant que le contact personnel est pending')
         if PERSONAL_CONTACT_PENDING_PRIVACY_COPY not in privacy_text:
             errors.append('Politique de confidentialité non alignée sur le contact personnel fail-closed')
         if PERSONAL_CONTACT_PENDING_GOVERNANCE_COPY not in governance_text:
@@ -204,6 +220,12 @@ def validate_personal_contact_contract(contact_text: str, privacy_text: str, gov
             errors.append('Endpoint Formspree personnel doit être distinct des endpoints historiques/Nova')
         if not active or pending:
             errors.append('Endpoint personnel configuré exige data-personal-formspree-state=active-separate-endpoint')
+        for copy in PERSONAL_CONTACT_ACTIVE_COPIES:
+            if copy not in contact_text:
+                errors.append(f'Texte public actif manquant dans contact.html: {copy}')
+        for copy in PERSONAL_CONTACT_PENDING_COPIES:
+            if copy in contact_text:
+                errors.append('Texte public pending interdit avec un endpoint personnel actif')
         if PERSONAL_CONTACT_ACTIVE_PRIVACY_COPY not in privacy_text:
             errors.append('Politique de confidentialité doit confirmer explicitement l’activation du canal personnel distinct')
         if PERSONAL_CONTACT_ACTIVE_GOVERNANCE_COPY not in governance_text:
@@ -217,13 +239,15 @@ def self_test_personal_contact_contract() -> None:
     pending_contact = (
         '<form id="contact-general" data-personal-formspree-state="pending-separate-endpoint">'
         '<button aria-disabled="true" disabled id="contact-submit">Configuration</button></form>'
-        "<script>var PERSONAL_ENDPOINT='';" + runtime_gate + "</script>"
+        + ''.join(PERSONAL_CONTACT_PENDING_COPIES)
+        + "<script>var PERSONAL_ENDPOINT='';" + runtime_gate + "</script>"
     )
     active_endpoint = 'https://formspree.io/f/personalSafe42'
     active_contact = (
         '<form id="contact-general" data-personal-formspree-state="active-separate-endpoint">'
         '<button aria-disabled="true" disabled id="contact-submit">Envoyer</button></form>'
-        f"<script>var PERSONAL_ENDPOINT='{active_endpoint}';" + runtime_gate + "</script>"
+        + ''.join(PERSONAL_CONTACT_ACTIVE_COPIES)
+        + f"<script>var PERSONAL_ENDPOINT='{active_endpoint}';" + runtime_gate + "</script>"
     )
     pending_privacy = PERSONAL_CONTACT_PENDING_PRIVACY_COPY
     pending_governance = PERSONAL_CONTACT_PENDING_GOVERNANCE_COPY
@@ -242,6 +266,8 @@ def self_test_personal_contact_contract() -> None:
         'action statique ajoutée': pending_contact.replace('<form id="contact-general"', '<form action="https://formspree.io/f/test" id="contact-general"'),
         'déclaration endpoint retirée': pending_contact.replace("var PERSONAL_ENDPOINT='';", "var OTHER_ENDPOINT='';"),
         'garde runtime état actif retirée': pending_contact.replace("form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'&&", ''),
+        'texte pending retiré': pending_contact.replace(PERSONAL_CONTACT_PENDING_COPIES[0], ''),
+        'texte actif retiré': active_contact.replace(PERSONAL_CONTACT_ACTIVE_COPIES[0], ''),
     }
     for name, mutated_contact in cases.items():
         errors = validate_personal_contact_contract(
