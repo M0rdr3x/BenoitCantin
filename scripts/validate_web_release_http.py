@@ -192,8 +192,55 @@ def validate_headers(headers: object, context: str) -> list[str]:
     if "'self'" not in directives.get("base-uri", []):
         errors.append("CSP réseau: base-uri 'self' absent.")
 
+    if "'self'" not in directives.get("default-src", []):
+        errors.append("CSP réseau: default-src 'self' absent.")
+    if "'self'" not in directives.get("script-src", []):
+        errors.append("CSP réseau: script-src 'self' absent.")
+    if "https://cdn.jsdelivr.net" not in directives.get("script-src", []):
+        errors.append("CSP réseau: CDN JavaScript attendu absent de script-src.")
+    if "'self'" not in directives.get("connect-src", []):
+        errors.append("CSP réseau: connect-src 'self' absent.")
+    for endpoint in (
+        "https://gpvivleexywljowcqkru.supabase.co",
+        "wss://gpvivleexywljowcqkru.supabase.co",
+    ):
+        if endpoint not in directives.get("connect-src", []):
+            errors.append(f"CSP réseau: endpoint Supabase attendu absent: {endpoint}.")
+    if "https://formspree.io" not in directives.get("form-action", []):
+        errors.append("CSP réseau: Formspree attendu absent de form-action.")
+    if "'self'" not in directives.get("form-action", []):
+        errors.append("CSP réseau: form-action 'self' absent.")
+    if "'self'" not in directives.get("img-src", []):
+        errors.append("CSP réseau: img-src 'self' absent.")
+    if "data:" not in directives.get("img-src", []):
+        errors.append("CSP réseau: data: absent de img-src.")
+    if "'self'" not in directives.get("style-src", []):
+        errors.append("CSP réseau: style-src 'self' absent.")
+    if "'self'" not in directives.get("worker-src", []):
+        errors.append("CSP réseau: worker-src 'self' absent.")
+    if "blob:" not in directives.get("worker-src", []):
+        errors.append("CSP réseau: blob: absent de worker-src.")
+    if "'self'" not in directives.get("font-src", []):
+        errors.append("CSP réseau: font-src 'self' absent.")
+
     if str(get("X-Content-Type-Options") or "").lower() != "nosniff":
         errors.append("En-tête réseau X-Content-Type-Options=nosniff absent.")
+    if str(get("X-Permitted-Cross-Domain-Policies") or "").lower() != "none":
+        errors.append("En-tête réseau X-Permitted-Cross-Domain-Policies=none absent.")
+    if str(get("X-Frame-Options") or "").upper() != "SAMEORIGIN":
+        errors.append("En-tête réseau X-Frame-Options=SAMEORIGIN absent.")
+    if str(get("Referrer-Policy") or "").lower() != "strict-origin-when-cross-origin":
+        errors.append("En-tête réseau Referrer-Policy strict-origin-when-cross-origin absent.")
+
+    permissions = str(get("Permissions-Policy") or "").lower().replace(" ", "")
+    for directive in ("camera=()", "microphone=()", "geolocation=()", "payment=()"):
+        if directive not in permissions:
+            errors.append(f"En-tête réseau Permissions-Policy sans {directive}.")
+
+    hsts = str(get("Strict-Transport-Security") or "").lower()
+    match = re.search(r"(?:^|;)\s*max-age=(\d+)", hsts)
+    if not match or int(match.group(1)) < 31536000:
+        errors.append("En-tête réseau HSTS max-age >= 31536000 absent.")
 
     robots = str(get("X-Robots-Tag") or "").lower()
     if context == "preview":
@@ -300,11 +347,25 @@ class FixtureHandler(BaseHTTPRequestHandler):
         self.send_response(404 if technical else 200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Strict-Transport-Security", "max-age=31536000")
+        self.send_header("X-Permitted-Cross-Domain-Policies", "none")
+        self.send_header("X-Frame-Options", "SAMEORIGIN")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header(
+            "Permissions-Policy",
+            "camera=(), microphone=(), geolocation=(), payment=()",
+        )
         self.send_header(
             "Content-Security-Policy",
             "default-src 'self'; "
-            "script-src 'self'; "
-            "connect-src 'self'; "
+            "img-src 'self' data: https:; "
+            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "worker-src 'self' blob:; "
+            "font-src 'self'; "
+            "connect-src 'self' https://gpvivleexywljowcqkru.supabase.co "
+            "wss://gpvivleexywljowcqkru.supabase.co; "
+            "form-action 'self' https://formspree.io; "
             "frame-ancestors 'self'; object-src 'self'; base-uri 'self'",
         )
         if private_runtime:
@@ -425,7 +486,8 @@ def self_test() -> None:
 
     print(
         "OK auto-tests smoke HTTP: preview, production, cibles autorisées, "
-        "CSP, noindex, no-store privé, robots privés et 404 techniques vérifiés."
+        "CSP complète, HSTS, en-têtes défensifs, noindex, no-store privé, "
+        "robots privés et 404 techniques vérifiés."
     )
 
 
