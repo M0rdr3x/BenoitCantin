@@ -139,6 +139,31 @@ def validate_target_url(base_url: str, context: str) -> list[str]:
     return errors
 
 
+def validate_netlify_pair(preview_url: str, production_url: str) -> list[str]:
+    errors: list[str] = []
+    preview_errors = validate_target_url(preview_url, "preview")
+    production_errors = validate_target_url(production_url, "production-candidate")
+    errors.extend(f"preview: {error}" for error in preview_errors)
+    errors.extend(f"production-candidate: {error}" for error in production_errors)
+    if errors:
+        return errors
+
+    preview_host = (urlparse(preview_url).hostname or "").lower()
+    production_host = (urlparse(production_url).hostname or "").lower()
+    preview_deploy, preview_site = preview_host.removesuffix(".netlify.app").split("--", 1)
+    production_deploy, production_site = production_host.removesuffix(".netlify.app").split("--", 1)
+
+    if preview_site != production_site:
+        errors.append(
+            "Gate pré-DNS: preview et production-candidate doivent appartenir au même site Netlify."
+        )
+    if preview_deploy == production_deploy:
+        errors.append(
+            "Gate pré-DNS: preview et production-candidate doivent utiliser deux deploy-id distincts."
+        )
+    return errors
+
+
 def request(base_url: str, path: str) -> tuple[int, object, str]:
     parsed_base = urlparse(base_url)
     host = (parsed_base.hostname or "").lower()
@@ -325,10 +350,20 @@ def validate_release_metadata(body: str, context: str, expected_sha: str) -> lis
     return errors
 
 
-def validate_release(base_url: str, context: str, expected_sha: str | None = None) -> list[str]:
+def validate_release(
+    base_url: str,
+    context: str,
+    expected_sha: str | None = None,
+    same_netlify_site_as: str | None = None,
+) -> list[str]:
     errors = validate_target_url(base_url, context)
     if expected_sha and not re.fullmatch(r"[0-9a-fA-F]{40}", expected_sha.strip()):
         errors.append("SHA de release attendu invalide: 40 caractères hexadécimaux requis.")
+    if same_netlify_site_as:
+        if context != "production-candidate":
+            errors.append("--same-netlify-site-as est réservé au contexte production-candidate.")
+        else:
+            errors.extend(validate_netlify_pair(same_netlify_site_as, base_url))
     if errors:
         return errors
 
@@ -601,6 +636,25 @@ def self_test() -> None:
     if not candidate_preview_marker:
         raise SystemExit("ERREUR auto-test smoke HTTP: marqueur preview accepté comme production-candidate.")
 
+    same_site_preview = "https://1111aaaabbbb--example-site.netlify.app"
+    same_site_production = "https://2222ccccdddd--example-site.netlify.app"
+    if validate_netlify_pair(same_site_preview, same_site_production):
+        raise SystemExit("ERREUR auto-test smoke HTTP: paire Netlify même site valide refusée.")
+
+    cross_site_errors = validate_netlify_pair(
+        same_site_preview,
+        "https://2222ccccdddd--other-site.netlify.app",
+    )
+    if not any("même site Netlify" in error for error in cross_site_errors):
+        raise SystemExit("ERREUR auto-test smoke HTTP: paire Netlify inter-sites acceptée.")
+
+    same_deploy_errors = validate_netlify_pair(
+        same_site_preview,
+        same_site_preview,
+    )
+    if not any("deploy-id distincts" in error for error in same_deploy_errors):
+        raise SystemExit("ERREUR auto-test smoke HTTP: même deploy Netlify accepté deux fois.")
+
     invalid_targets = (
         ("http://example.netlify.app", "preview"),
         ("https://example.com", "preview"),
@@ -628,7 +682,7 @@ def self_test() -> None:
         raise SystemExit("ERREUR auto-test smoke HTTP: cibles dangereuses acceptées: " + ", ".join(missed))
 
     print(
-        "OK auto-tests smoke HTTP: permalink atomique preview/production-candidate, production, cibles autorisées, "
+        "OK auto-tests smoke HTTP: paire Netlify même site, permalink atomique preview/production-candidate, production, cibles autorisées, "
         "CSP complète, HSTS, en-têtes défensifs, noindex, no-store privé/release, "
         "robots privés et 404 techniques vérifiés."
     )
@@ -639,6 +693,10 @@ def main() -> int:
     parser.add_argument("url", nargs="?")
     parser.add_argument("--context", choices=("preview", "production-candidate", "production"), default="preview")
     parser.add_argument("--expected-sha", help="SHA source exact attendu dans /.well-known/release.json")
+    parser.add_argument(
+        "--same-netlify-site-as",
+        help="Permalink preview atomique qui doit appartenir au même site Netlify que le production-candidate",
+    )
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
 
@@ -649,7 +707,12 @@ def main() -> int:
     if not args.url:
         parser.error("URL requise hors --self-test")
 
-    errors = validate_release(args.url, args.context, expected_sha=args.expected_sha)
+    errors = validate_release(
+        args.url,
+        args.context,
+        expected_sha=args.expected_sha,
+        same_netlify_site_as=args.same_netlify_site_as,
+    )
     if errors:
         print(f"ECHEC smoke HTTP: {len(errors)} problème(s).")
         for error in errors:

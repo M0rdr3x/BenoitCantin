@@ -52,7 +52,7 @@ jobs:
         run: python3 scripts/validate_web_release_http.py "$PREVIEW_PERMALINK" --context preview --expected-sha "$GITHUB_SHA"
       - name: Prouver le candidat production avant DNS
         shell: bash
-        run: python3 scripts/validate_web_release_http.py "$PRODUCTION_PERMALINK" --context production-candidate --expected-sha "$GITHUB_SHA"
+        run: python3 scripts/validate_web_release_http.py "$PRODUCTION_PERMALINK" --context production-candidate --same-netlify-site-as "$PREVIEW_PERMALINK" --expected-sha "$GITHUB_SHA"
       - name: Résumer la preuve pré-DNS
         if: success()
         shell: bash
@@ -63,6 +63,7 @@ jobs:
             echo "- SHA source commun : \`$GITHUB_SHA\`"
             echo "- Preview immuable : \`$PREVIEW_PERMALINK\` — **PASS**"
             echo "- Production-candidate immuable : \`$PRODUCTION_PERMALINK\` — **PASS**"
+            echo "- Projet Netlify : **même site confirmé pour les deux deploys**"
             echo "- DNS : **non modifié par ce workflow**"
             echo "- Verdict : **PRÊT POUR LA PHASE DNS CONTRÔLÉE**"
           } >> "$GITHUB_STEP_SUMMARY"
