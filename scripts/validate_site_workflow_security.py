@@ -139,8 +139,10 @@ def validate_preview_workflow_text(text: str) -> list[str]:
     require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python preview smoke non épinglé')
     require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python preview smoke inattendue')
     require(errors, 'PREVIEW_URL: ${{ inputs.preview_url }}' in text, 'URL preview doit passer par une variable d’environnement')
+    require(errors, 'expected_sha:' in text, 'SHA source attendu absent des inputs preview')
+    require(errors, 'EXPECTED_SHA: ${{ inputs.expected_sha }}' in text, 'SHA preview doit passer par une variable d’environnement')
     require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke HTTP preview absent ou dupliqué')
-    require(errors, 'python3 scripts/validate_web_release_http.py "$PREVIEW_URL" --context preview' in text, 'commande smoke preview absente')
+    require(errors, 'python3 scripts/validate_web_release_http.py "$PREVIEW_URL" --context preview --expected-sha "$EXPECTED_SHA"' in text, 'commande smoke preview avec preuve SHA absente')
     require(errors, '### Smoke HTTP — Deploy Preview Netlify' in text, 'résumé preuve preview absent')
     require(errors, 'GITHUB_STEP_SUMMARY' in text, 'preview smoke doit écrire une preuve dans GITHUB_STEP_SUMMARY')
     require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'preview smoke ne doit référencer aucun secret')
@@ -164,6 +166,7 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, 'persist-credentials: false' in text, 'artefact web doit désactiver les credentials Git')
     require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python artefact web non épinglé')
     require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python artefact web inattendue')
+    require(errors, 'SINJIRA_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}' in text, 'SHA source embarqué absent du workflow artefact')
     require(errors, text.count(f'uses: actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}') == 3, 'les trois upload-artifact web doivent être épinglés')
     require(errors, exact_run_count(text, NETLIFY_PUBLIC_CHECK) == 1, 'validation allowlist avant artefact absente ou dupliquée')
     require(errors, exact_run_count(text, WEB_RELEASE_ARTIFACT_BUILD) == 1, 'construction _site avant artefact absente ou dupliquée')
@@ -180,6 +183,9 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, 'sinjira-web-preview-${{ github.event.pull_request.head.sha || github.sha }}' in text, 'nom artefact preview absent')
     require(errors, 'sinjira-web-pages-${{ github.event.pull_request.head.sha || github.sha }}' in text, 'nom artefact Pages absent')
     require(errors, 'test -f _site/.well-known/security.txt' in text, 'security.txt doit être prouvé dans l’artefact')
+    require(errors, 'test -f _site/.well-known/release.json' in text, 'release.json production doit être prouvé dans l’artefact')
+    require(errors, 'test -f _preview_site/.well-known/release.json' in text, 'release.json preview doit être prouvé dans l’artefact')
+    require(errors, 'test -f _pages_site/.well-known/release.json' in text, 'release.json Pages doit être prouvé dans l’artefact')
     require(errors, 'test -f _site/CNAME' in text, 'CNAME doit être prouvé dans l’artefact')
     require(errors, 'test -f _site/_headers' in text, '_headers autonome doit être prouvé dans l’artefact')
     require(errors, 'test -f _site/_redirects' in text, '_redirects autonome doit être prouvé dans l’artefact')
@@ -410,17 +416,19 @@ def validate_production_workflow_text(text: str) -> list[str]:
     require(errors, 'persist-credentials: false' in text, 'production smoke doit désactiver les credentials Git')
     require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python production smoke non épinglé')
     require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python production smoke inattendue')
+    require(errors, 'expected_sha:' in text, 'SHA source attendu absent des inputs production')
+    require(errors, 'EXPECTED_SHA: ${{ inputs.expected_sha }}' in text, 'SHA production doit passer par une variable d’environnement')
     require(errors, exact_run_count(text, WEB_RELEASE_HTTP_SELF) == 1, 'auto-test smoke HTTP production absent ou dupliqué')
     require(
         errors,
-        'python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production' in text,
-        'commande smoke production canonique absente',
+        'python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production --expected-sha "$EXPECTED_SHA"' in text,
+        'commande smoke production canonique avec preuve SHA absente',
     )
     require(errors, '### Smoke HTTP — production officielle' in text, 'résumé preuve production absent')
     require(errors, 'GITHUB_STEP_SUMMARY' in text, 'production smoke doit écrire une preuve dans GITHUB_STEP_SUMMARY')
     require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'production smoke ne doit référencer aucun secret')
     require(errors, 'contents: write' not in text, 'production smoke ne doit jamais écrire dans le dépôt')
-    require(errors, 'inputs:' not in text, 'production smoke ne doit accepter aucune URL ou entrée utilisateur')
+    require(errors, '      url:' not in text and '      preview_url:' not in text, 'production smoke ne doit accepter aucune URL utilisateur')
     return errors
 
 def run_artifact_self_tests(text: str) -> None:
@@ -444,6 +452,8 @@ def run_artifact_self_tests(text: str) -> None:
         'script legacy Pages réintroduit': text.replace('          test ! -e _pages_site/script.js\n', '', 1),
         'build Pages retiré': text.replace(f'        run: {WEB_PAGES_ARTIFACT_BUILD}\n', '', 1),
         'garde Formspree production retirée': text.replace('          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do\n', '', 1),
+        'SHA source artefact retiré': text.replace('      SINJIRA_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}\n', '', 1),
+        'release.json production retiré': text.replace('          test -f _site/.well-known/release.json\n', '', 1),
         'fichiers cachés exclus': text.replace('include-hidden-files: true', 'include-hidden-files: false', 1),
         'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
         'résumé non-déploiement retiré': text.replace('            echo "> Aucun déploiement n’est effectué par ce workflow."\n', '', 1),
@@ -465,7 +475,9 @@ def run_production_self_tests(text: str) -> None:
         'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
         'auto-test smoke retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
         'domaine remplacé': text.replace('https://www.benoitcantin.com --context production', 'https://example.com --context production', 1),
-        'input ajouté': text.replace('  workflow_dispatch:\n', '  workflow_dispatch:\n    inputs:\n      url:\n        required: true\n', 1),
+        'SHA attendu retiré': text.replace('      expected_sha:\n', '      autre_sha:\n', 1),
+        'preuve SHA retirée de la commande': text.replace(' --expected-sha "$EXPECTED_SHA"', '', 1),
+        'input URL ajouté': text.replace('      expected_sha:\n', '      url:\n        required: true\n      expected_sha:\n', 1),
         'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
         'résumé preuve retiré': text.replace('            echo "### Smoke HTTP — production officielle"\n', '', 1),
     }
@@ -486,9 +498,11 @@ def run_preview_self_tests(text: str) -> None:
         'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
         'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
         'auto-test smoke retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
+        'SHA attendu retiré': text.replace('      expected_sha:\n', '      autre_sha:\n', 1),
+        'preuve SHA retirée de la commande': text.replace(' --expected-sha "$EXPECTED_SHA"', '', 1),
         'injection directe URL': text.replace(
-            'python3 scripts/validate_web_release_http.py "$PREVIEW_URL" --context preview',
-            'python3 scripts/validate_web_release_http.py "${{ inputs.preview_url }}" --context preview',
+            'python3 scripts/validate_web_release_http.py "$PREVIEW_URL" --context preview --expected-sha "$EXPECTED_SHA"',
+            'python3 scripts/validate_web_release_http.py "${{ inputs.preview_url }}" --context preview --expected-sha "$EXPECTED_SHA"',
             1,
         ),
         'secret ajouté': text.replace(

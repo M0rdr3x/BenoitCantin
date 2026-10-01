@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import re
 import threading
@@ -12,6 +13,8 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 USER_AGENT = "SINJIRA-Web-Release-Smoke/1.0"
 TIMEOUT_SECONDS = 12
 OFFICIAL_PRODUCTION_HOSTS = {"www.benoitcantin.com", "benoitcantin.com"}
+RELEASE_METADATA_PATH = "/.well-known/release.json"
+SELF_TEST_RELEASE_SHA = "a" * 40
 
 PRIVATE_RUNTIME_PATHS = (
     "/compte/",
@@ -269,8 +272,30 @@ def validate_private_headers(headers: object, path: str) -> list[str]:
     return errors
 
 
-def validate_release(base_url: str, context: str) -> list[str]:
+def validate_release_metadata(body: str, context: str, expected_sha: str) -> list[str]:
+    errors: list[str] = []
+    normalized_sha = expected_sha.strip().lower()
+    if not re.fullmatch(r"[0-9a-f]{40}", normalized_sha):
+        return ["SHA de release attendu invalide: 40 caractères hexadécimaux requis."]
+    try:
+        metadata = json.loads(body)
+    except json.JSONDecodeError as exc:
+        return [f"{RELEASE_METADATA_PATH}: JSON invalide: {exc}"]
+    if not isinstance(metadata, dict):
+        return [f"{RELEASE_METADATA_PATH}: objet JSON attendu."]
+    if metadata.get("schema_version") != 1:
+        errors.append(f"{RELEASE_METADATA_PATH}: schema_version=1 requis.")
+    if str(metadata.get("source_sha") or "").lower() != normalized_sha:
+        errors.append(f"{RELEASE_METADATA_PATH}: source_sha ne correspond pas au SHA attendu.")
+    if metadata.get("context") != context:
+        errors.append(f"{RELEASE_METADATA_PATH}: contexte {context!r} attendu.")
+    return errors
+
+
+def validate_release(base_url: str, context: str, expected_sha: str | None = None) -> list[str]:
     errors = validate_target_url(base_url, context)
+    if expected_sha and not re.fullmatch(r"[0-9a-fA-F]{40}", expected_sha.strip()):
+        errors.append("SHA de release attendu invalide: 40 caractères hexadécimaux requis.")
     if errors:
         return errors
 
@@ -293,6 +318,17 @@ def validate_release(base_url: str, context: str) -> list[str]:
             continue
         if status != 404:
             errors.append(f"{path}: HTTP {status}, 404 attendu.")
+
+    if expected_sha:
+        try:
+            release_status, _, release_body = request(base_url, RELEASE_METADATA_PATH)
+        except (URLError, OSError, TimeoutError) as exc:
+            errors.append(f"{RELEASE_METADATA_PATH}: requête impossible: {exc}")
+        else:
+            if release_status != 200:
+                errors.append(f"{RELEASE_METADATA_PATH}: HTTP {release_status}, 200 attendu.")
+            else:
+                errors.extend(validate_release_metadata(release_body, context, expected_sha))
 
     home = responses.get("/")
     if home:
@@ -390,6 +426,14 @@ class FixtureHandler(BaseHTTPRequestHandler):
             body = "<html><body>Assistant Nova</body></html>"
         elif self.path == "/transparence-ia.html":
             body = "<html><body>Transparence IA</body></html>"
+        elif self.path == RELEASE_METADATA_PATH:
+            body = json.dumps(
+                {
+                    "schema_version": 1,
+                    "source_sha": SELF_TEST_RELEASE_SHA,
+                    "context": "preview" if getattr(self.server, "preview", False) else "production",
+                }
+            )
         elif self.path == "/.well-known/security.txt":
             body = (
                 "Contact: https://www.benoitcantin.com/contact.html\n"
@@ -416,7 +460,11 @@ def run_fixture(preview: bool) -> str:
     thread.start()
     try:
         base = f"http://127.0.0.1:{server.server_port}"
-        errors = validate_release(base, "preview" if preview else "production")
+        errors = validate_release(
+            base,
+            "preview" if preview else "production",
+            expected_sha=SELF_TEST_RELEASE_SHA,
+        )
         if errors:
             raise SystemExit("ERREUR auto-test smoke HTTP: " + " | ".join(errors))
         return base
@@ -463,6 +511,20 @@ def self_test() -> None:
     if not any("BubblaV doit rester bloqué" in error for error in provider_enabled):
         raise SystemExit("ERREUR auto-test smoke HTTP: CSP BubblaV réactivée non détectée.")
 
+    marker_broken = validate_release_metadata(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "source_sha": "b" * 40,
+                "context": "preview",
+            }
+        ),
+        "preview",
+        SELF_TEST_RELEASE_SHA,
+    )
+    if not marker_broken:
+        raise SystemExit("ERREUR auto-test smoke HTTP: mauvais SHA release non détecté.")
+
     invalid_targets = (
         ("http://example.netlify.app", "preview"),
         ("https://example.com", "preview"),
@@ -495,6 +557,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Smoke HTTP d'une preview ou production web SINJIRA.")
     parser.add_argument("url", nargs="?")
     parser.add_argument("--context", choices=("preview", "production"), default="preview")
+    parser.add_argument("--expected-sha", help="SHA source exact attendu dans /.well-known/release.json")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
 
@@ -505,7 +568,7 @@ def main() -> int:
     if not args.url:
         parser.error("URL requise hors --self-test")
 
-    errors = validate_release(args.url, args.context)
+    errors = validate_release(args.url, args.context, expected_sha=args.expected_sha)
     if errors:
         print(f"ECHEC smoke HTTP: {len(errors)} problème(s).")
         for error in errors:
@@ -514,7 +577,7 @@ def main() -> int:
 
     print(
         f"OK smoke HTTP {args.context}: navigation, pages IA, en-têtes, "
-        "routes publiques et 404 techniques conformes."
+        "routes publiques, identité de release et 404 techniques conformes."
     )
     return 0
 

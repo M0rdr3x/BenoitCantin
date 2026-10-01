@@ -20,6 +20,8 @@ PREVIEW_HEADERS = f"""/*
   X-Robots-Tag: {PREVIEW_ROBOTS_TAG}
 """
 GENERATED_NETLIFY_FILES = {"_headers", "_redirects"}
+RELEASE_METADATA_PATH = Path(".well-known/release.json")
+RELEASE_SHA_ENV = "SINJIRA_RELEASE_SHA"
 NETLIFY_CONFIG = ROOT / "netlify.toml"
 REQUIRED_TECHNICAL_404S = {
     "/supabase/*",
@@ -239,6 +241,27 @@ def re_full_sha256(value: str) -> bool:
     return len(value) == 64 and all(ch in "0123456789abcdef" for ch in value)
 
 
+def re_full_git_sha(value: str) -> bool:
+    value = value.strip().lower()
+    return len(value) == 40 and all(ch in "0123456789abcdef" for ch in value)
+
+
+def configured_release_sha() -> str:
+    return os.environ.get(RELEASE_SHA_ENV, "").strip().lower()
+
+
+def release_metadata(deploy_context: str | None) -> dict[str, object] | None:
+    source_sha = configured_release_sha()
+    if not source_sha:
+        return None
+    context = (deploy_context or "").strip()
+    return {
+        "schema_version": 1,
+        "source_sha": source_sha,
+        "context": "preview" if context == DEPLOY_PREVIEW_CONTEXT else "production",
+    }
+
+
 def project_nova_structured_allowed(rel: Path) -> bool:
     if rel in PROJECT_NOVA_PUBLIC_STRUCTURED_EXACT:
         return True
@@ -443,6 +466,9 @@ def validate_netlify_config() -> list[str]:
 
 def validate_plan() -> list[str]:
     errors: list[str] = []
+    release_sha = configured_release_sha()
+    if release_sha and not re_full_git_sha(release_sha):
+        errors.append(f"{RELEASE_SHA_ENV} doit être un SHA Git complet de 40 caractères hexadécimaux.")
     errors.extend(validate_netlify_config())
 
     robots_path = ROOT / "robots.txt"
@@ -632,6 +658,14 @@ def build(
     context = (
         deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")
     ).strip()
+    metadata = release_metadata(context)
+    if metadata is not None:
+        release_path = output / RELEASE_METADATA_PATH
+        release_path.parent.mkdir(parents=True, exist_ok=True)
+        release_path.write_text(
+            json.dumps(metadata, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
     if standalone_netlify:
         (output / "_headers").write_text(
             render_standalone_headers(context),
@@ -657,6 +691,24 @@ def validate_output(
     ).strip()
     headers_path = output / "_headers"
     redirects_path = output / "_redirects"
+    release_path = output / RELEASE_METADATA_PATH
+    expected_release_metadata = release_metadata(context)
+
+    if expected_release_metadata is None:
+        if release_path.exists():
+            errors.append("Marqueur release.json inattendu sans SHA source configuré.")
+    elif not release_path.is_file():
+        errors.append("Marqueur .well-known/release.json requis absent du publish.")
+    else:
+        try:
+            observed_release_metadata = json.loads(
+                release_path.read_text(encoding="utf-8", errors="strict")
+            )
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            errors.append(f"Marqueur release.json illisible: {exc}")
+        else:
+            if observed_release_metadata != expected_release_metadata:
+                errors.append("Marqueur release.json incohérent avec le SHA/contexte de build.")
 
     expected_headers: str | None = None
     if standalone_netlify:

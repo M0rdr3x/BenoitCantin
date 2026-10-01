@@ -2,6 +2,11 @@ name: Web production — smoke HTTP
 
 on:
   workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: SHA source exact attendu en production (40 caractères)
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -15,6 +20,8 @@ jobs:
     name: Smoke HTTP production officielle
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    env:
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
     steps:
       - name: Récupérer le dépôt sans credentials persistés
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -27,7 +34,7 @@ jobs:
       - name: Auto-tester le smoke HTTP
         run: python3 scripts/validate_web_release_http.py --self-test
       - name: Vérifier la production officielle
-        run: python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production
+        run: python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production --expected-sha "$EXPECTED_SHA"
       - name: Résumer la preuve production
         if: success()
         shell: bash
@@ -36,6 +43,7 @@ jobs:
             echo "### Smoke HTTP — production officielle"
             echo "- Cible : \`https://www.benoitcantin.com\`"
             echo "- Contexte : \`production\`"
-            echo "- SHA testé : \`$GITHUB_SHA\`"
+            echo "- SHA source attendu/publié : \`$EXPECTED_SHA\`"
+            echo "- SHA du workflow de validation : \`$GITHUB_SHA\`"
             echo "- Verdict : **SUCCESS**"
           } >> "$GITHUB_STEP_SUMMARY"

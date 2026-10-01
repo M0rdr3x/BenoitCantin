@@ -19,6 +19,8 @@ jobs:
     if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'a1/web-release-')
     runs-on: ubuntu-24.04
     timeout-minutes: 8
+    env:
+      SINJIRA_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Récupérer le dépôt sans credentials persistés
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -41,6 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f _site/.well-known/security.txt
+          test -f _site/.well-known/release.json
           test -f _site/.nojekyll
           test -f _site/CNAME
           test -f _site/_headers
@@ -77,6 +80,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f _preview_site/.well-known/security.txt
+          test -f _preview_site/.well-known/release.json
           test -f _preview_site/.nojekyll
           test -f _preview_site/CNAME
           test -f _preview_site/_headers
@@ -111,6 +115,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f _pages_site/.well-known/security.txt
+          test -f _pages_site/.well-known/release.json
           test -f _pages_site/.nojekyll
           test -f _pages_site/CNAME
           test ! -e _pages_site/_headers
@@ -177,6 +182,7 @@ jobs:
           {
             echo "### Artefacts web SINJIRA"
             echo "- SHA source : \`${{ github.event.pull_request.head.sha || github.sha }}\`"
+            echo "- Marqueur d’identité : \`/.well-known/release.json\` embarque ce SHA dans les trois artefacts"
             echo "- Fichiers production : **$WEB_RELEASE_FILE_COUNT**"
             echo "- Production : [ouvrir/télécharger](${{ steps.release-upload.outputs.artifact-url }})"
             echo "- Digest production : \`${{ steps.release-upload.outputs.artifact-digest }}\`"
