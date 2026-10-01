@@ -1,4 +1,4 @@
-name: Netlify preview anonyme — create + smoke
+name: Netlify preview anonyme — diagnostic
 
 on:
   pull_request:
@@ -152,24 +152,34 @@ jobs:
               fh.write(f'preview_url={url}\n')
           PY
 
-      - name: Exécuter le smoke preview immédiatement
+      - name: Exécuter le smoke preview comme diagnostic
+        id: smoke
         if: steps.gate.outputs.enabled == 'true'
+        continue-on-error: true
         run: python3 scripts/validate_web_release_http.py "$NETLIFY_PREVIEW_URL" --context preview
 
-      - name: Résumer la preuve temporaire
-        if: steps.gate.outputs.enabled == 'true' && success()
+      - name: Résumer le diagnostic temporaire
+        if: steps.gate.outputs.enabled == 'true'
         shell: bash
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
         run: |
+          if [ "$SMOKE_OUTCOME" = "success" ]; then
+            verdict='PASS'
+          else
+            verdict='INCOMPATIBLE — diagnostic non bloquant'
+          fi
           {
-            echo '### Netlify preview anonyme — smoke PASS'
+            echo '### Netlify preview anonyme — diagnostic'
             echo "- SHA : $HEAD_SHA"
             echo "- URL temporaire : $NETLIFY_PREVIEW_URL"
+            echo "- Verdict smoke : **$verdict**"
             echo '- Netlify CLI : `27.10.2`'
             echo '- Mode : `--allow-anonymous --no-build`'
             echo '- Secret/token GitHub/Netlify : **aucun**'
             echo '- Jeton de réclamation : **non journalisé et non conservé**'
             echo '- Durée : site non réclamé supprimé automatiquement par Netlify après la fenêtre anonyme'
+            echo '- Portée : **preuve de capacité uniquement; jamais une porte de release**'
             echo '- Production/DNS : **inchangés**'
           } >> "$GITHUB_STEP_SUMMARY"

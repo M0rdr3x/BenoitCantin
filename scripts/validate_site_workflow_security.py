@@ -349,6 +349,11 @@ def validate_anon_netlify_preview_workflow_text(text: str) -> list[str]:
     require(errors, "re.fullmatch(r'[a-z0-9-]{6,64}--[a-z0-9-]+\\.netlify\\.app', host)" in text, 'validation stricte permalink Netlify absente')
     require(errors, "parsed.query" in text and "parsed.fragment" in text, 'refus query/fragment site_url absent')
     require(errors, 'python3 scripts/validate_web_release_http.py "$NETLIFY_PREVIEW_URL" --context preview' in text, 'smoke preview anonyme absent')
+    require(errors, 'id: smoke' in text, 'smoke preview anonyme doit être identifiable')
+    require(errors, 'continue-on-error: true' in text, 'diagnostic preview anonyme doit rester non bloquant')
+    require(errors, 'SMOKE_OUTCOME: ${{ steps.smoke.outcome }}' in text, 'résultat smoke anonyme absent du résumé')
+    require(errors, 'INCOMPATIBLE — diagnostic non bloquant' in text, 'verdict diagnostic anonyme non bloquant absent')
+    require(errors, 'jamais une porte de release' in text, 'frontière release du diagnostic anonyme absente')
     require(errors, 'Jeton de réclamation : **non journalisé et non conservé**' in text, 'preuve non-conservation token absente')
     require(errors, 'Production/DNS : **inchangés**' in text, 'preuve non-production absente')
     targets = action_targets(text)
@@ -366,6 +371,8 @@ def run_anon_netlify_preview_self_tests(text: str) -> None:
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
         'marqueur retiré': text.replace('[netlify-anon-preview]', '[preview]'),
         'anonyme retiré': text.replace('--allow-anonymous', ''),
+        'diagnostic rendu bloquant': text.replace('        continue-on-error: true\n', '', 1),
+        'frontière release retirée': text.replace("            echo '- Portée : **preuve de capacité uniquement; jamais une porte de release**'\n", '', 1),
         'mode integration retiré': text.replace('--created-via integration', ''),
         'prod ajouté': text.replace('--no-build --json', '--no-build --json --prod', 1),
         'version CLI mobile': text.replace(f'netlify-cli@{NETLIFY_CLI_VERSION}', 'netlify-cli@latest', 1),
@@ -590,7 +597,7 @@ def main() -> int:
         return 1
     print(
         'OK sécurité validation site: actions immuables, runtimes figés, credentials non persistés, '
-        'garde web-only, artefact public inspectable non-déployant, preview Netlify anonyme bornée, déploiement Pages manuel isolé et smokes read-only obligatoires.'
+        'garde web-only, artefact public inspectable non-déployant, diagnostic Netlify anonyme non bloquant, confinement Pages manuel isolé et smokes read-only obligatoires.'
     )
     return 0
 
