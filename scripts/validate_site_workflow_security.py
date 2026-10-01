@@ -162,7 +162,7 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, exact_run_count(text, WEB_RELEASE_ARTIFACT_BUILD) == 1, 'construction _site avant artefact absente ou dupliquée')
     require(errors, exact_run_count(text, WEB_PREVIEW_ARTIFACT_BUILD) == 1, 'construction _preview_site avant artefact absente ou dupliquée')
     require(errors, 'CONTEXT: deploy-preview' in text, 'contexte deploy-preview absent de l’artefact preview')
-    require(errors, 'include-hidden-files: true' in text, 'artefact web doit inclure .well-known et .nojekyll')
+    require(errors, text.count('include-hidden-files: true') == 2, 'les deux artefacts web doivent inclure .well-known et .nojekyll')
     require(errors, 'if-no-files-found: error' in text, 'artefact web doit échouer si le contenu est absent')
     require(errors, 'retention-days: 7' in text, 'rétention artefact web doit rester courte')
     require(errors, 'web-release-SHA256SUMS.txt' in text, 'manifeste SHA-256 de release absent')
