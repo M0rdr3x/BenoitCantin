@@ -46,7 +46,11 @@ jobs:
           test -f _site/_headers
           test -f _site/_redirects
           grep -Fq "Content-Security-Policy:" _site/_headers
-          ! grep -Fq "X-Robots-Tag: noindex, nofollow, noarchive" _site/_headers
+          production_global_headers="$(awk 'BEGIN{inside=0} /^\/\*$/ {inside=1; next} inside && NF==0 {exit} inside {print}' _site/_headers)"
+          if grep -Fq "X-Robots-Tag: noindex, nofollow, noarchive" <<<"$production_global_headers"; then
+            echo "ERREUR: noindex global interdit dans l’artefact production." >&2
+            exit 1
+          fi
           grep -Fq "/supabase/* /404.html 404!" _site/_redirects
           for forbidden in .github docs mobile-native scripts supabase tests; do
             test ! -e "_site/$forbidden"
@@ -71,7 +75,11 @@ jobs:
           test -f _preview_site/_headers
           test -f _preview_site/_redirects
           grep -Fq "Content-Security-Policy:" _preview_site/_headers
-          grep -Fq "X-Robots-Tag: noindex, nofollow, noarchive" _preview_site/_headers
+          preview_global_headers="$(awk 'BEGIN{inside=0} /^\/\*$/ {inside=1; next} inside && NF==0 {exit} inside {print}' _preview_site/_headers)"
+          if ! grep -Fq "X-Robots-Tag: noindex, nofollow, noarchive" <<<"$preview_global_headers"; then
+            echo "ERREUR: noindex global requis dans l’artefact preview." >&2
+            exit 1
+          fi
           grep -Fq "/supabase/* /404.html 404!" _preview_site/_redirects
           for forbidden in .github docs mobile-native scripts supabase tests; do
             test ! -e "_preview_site/$forbidden"

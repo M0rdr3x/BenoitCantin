@@ -175,6 +175,10 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, 'test -f _site/_redirects' in text, '_redirects autonome doit être prouvé dans l’artefact')
     require(errors, 'test -f _preview_site/_headers' in text, '_headers preview doit être prouvé')
     require(errors, 'test -f _preview_site/_redirects' in text, '_redirects preview doit être prouvé')
+    require(errors, 'production_global_headers=' in text, 'extraction du bloc global production absente')
+    require(errors, 'preview_global_headers=' in text, 'extraction du bloc global preview absente')
+    require(errors, 'ERREUR: noindex global interdit dans l’artefact production.' in text, 'garde noindex production absente')
+    require(errors, 'ERREUR: noindex global requis dans l’artefact preview.' in text, 'garde noindex preview absente')
     require(errors, 'X-Robots-Tag: noindex, nofollow, noarchive' in text, 'preuve noindex globale preview absente')
     require(errors, 'test "$preview_count" -eq "$WEB_RELEASE_FILE_COUNT"' in text, 'parité fichiers production/preview non prouvée')
     require(errors, 'Content-Security-Policy:' in text, 'preuve CSP embarquée absente du workflow artefact')
@@ -238,6 +242,8 @@ def run_artifact_self_tests(text: str) -> None:
         'garde branche retirée': text.replace(guard, 'if: always()', 1),
         'construction racine': text.replace(WEB_RELEASE_ARTIFACT_BUILD, 'python3 scripts/build_netlify_public.py --output .', 1),
         'contexte preview retiré': text.replace('          CONTEXT: deploy-preview\n', '          CONTEXT: production\n', 1),
+        'garde noindex production retirée': text.replace('            echo "ERREUR: noindex global interdit dans l’artefact production." >&2\n', '', 1),
+        'garde noindex preview retirée': text.replace('            echo "ERREUR: noindex global requis dans l’artefact preview." >&2\n', '', 1),
         'fichiers cachés exclus': text.replace('include-hidden-files: true', 'include-hidden-files: false', 1),
         'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
         'résumé non-déploiement retiré': text.replace('            echo "> Aucun déploiement n’est effectué par ce workflow."\n', '', 1),
