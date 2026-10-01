@@ -250,7 +250,35 @@ def validate_pages_deploy_workflow_text(text: str) -> list[str]:
     targets = action_targets(text)
     require(errors, len(targets) == 4, f'nombre inattendu d’actions dans le workflow Pages: {len(targets)}')
     for target in targets:
-        require(errors, re.search(r'@[0-9a-f]{40}    errors: list[str] = []
+        require(errors, re.search(r'@[0-9a-f]{40}$', target) is not None, f'action Pages non immuable: {target}')
+    return errors
+
+
+def run_pages_deploy_self_tests(text: str) -> None:
+    guard = "github.ref == 'refs/heads/main' && inputs.confirm_production == 'DEPLOY'"
+    cases = {
+        'déclenchement push ajouté': text.replace('  workflow_dispatch:\n', '  push:\n  workflow_dispatch:\n', 1),
+        'garde main retirée': text.replace(guard, "inputs.confirm_production == 'DEPLOY'", 1),
+        'confirmation retirée': text.replace("inputs.confirm_production == 'DEPLOY'", 'true', 1),
+        'SHA attendu retiré': text.replace('      expected_sha:\n', '      autre_sha:\n', 1),
+        'publication racine': text.replace('          path: _site\n', '          path: .\n', 1),
+        'build racine': text.replace(PAGES_PUBLIC_BUILD, 'python3 scripts/build_netlify_public.py --output .', 1),
+        'upload Pages mobile': text.replace(f'actions/upload-pages-artifact@{UPLOAD_PAGES_ARTIFACT_SHA}', 'actions/upload-pages-artifact@v3', 1),
+        'deploy Pages mobile': text.replace(f'actions/deploy-pages@{DEPLOY_PAGES_SHA}', 'actions/deploy-pages@v5', 1),
+        'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
+        'garde dossiers retirée': text.replace('          for forbidden in .github docs mobile-native scripts supabase tests; do\n', '', 1),
+        'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
+    }
+    for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test Pages: mutation sans effet: {name}')
+        if not validate_pages_deploy_workflow_text(mutated):
+            raise SystemExit(f'ERREUR auto-test Pages: mutation non détectée: {name}')
+    print(f'OK auto-tests Pages: {len(cases)} affaiblissements critiques détectés.')
+
+
+def validate_production_workflow_text(text: str) -> list[str]:
+    errors: list[str] = []
     require(errors, 'workflow_dispatch:' in text, 'production smoke doit rester manuel')
     require(errors, 'pull_request:' not in text, 'production smoke ne doit pas se déclencher sur pull_request')
     require(errors, 'push:' not in text, 'production smoke ne doit pas se déclencher sur push')
@@ -274,7 +302,6 @@ def validate_pages_deploy_workflow_text(text: str) -> list[str]:
     require(errors, 'contents: write' not in text, 'production smoke ne doit jamais écrire dans le dépôt')
     require(errors, 'inputs:' not in text, 'production smoke ne doit accepter aucune URL ou entrée utilisateur')
     return errors
-
 
 
 def run_artifact_self_tests(text: str) -> None:
