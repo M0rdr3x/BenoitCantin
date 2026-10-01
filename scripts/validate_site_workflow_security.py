@@ -94,6 +94,8 @@ def validate_text(text: str) -> list[str]:
     require(errors, WEB_RELEASE_PRODUCTION_BASELINE in text, 'baseline smoke production read-only absent')
     require(errors, 'timeout 90s ' + WEB_RELEASE_PRODUCTION_BASELINE in text, 'baseline smoke production doit rester borné à 90 secondes')
     require(errors, '### Baseline smoke production — lecture seule' in text, 'résumé baseline production absent')
+    require(errors, 'echo "- Cible : $origin"' in text, 'résumé baseline production doit éviter la substitution Bash des backticks')
+    require(errors, 'echo "- Code smoke : $smoke_status"' in text, 'code baseline production doit être rendu sans substitution Bash')
     require(errors, 'FAIL attendu tant que #450 est ouvert' in text, 'baseline production doit rester explicitement non bloquant avant #450')
     require(errors, 'Ce baseline est informatif et non bloquant. Il doit devenir PASS après la bascule #450.' in text, 'contrat baseline production non bloquant absent')
     require(errors, '### Readiness web-only' in text, 'résumé readiness web-only absent')
@@ -317,6 +319,7 @@ def run_self_tests(text: str) -> None:
         'condition portée web élargie': text.replace(WEB_RELEASE_SCOPE_IF, "if: github.event_name == 'pull_request'", 1),
         'auto-test smoke HTTP retiré': text.replace(f'        run: {WEB_RELEASE_HTTP_SELF}\n', '', 1),
         'baseline production retiré': text.replace('            echo "### Baseline smoke production — lecture seule"\n', '', 1),
+        'baseline cible dangereuse': text.replace('            echo "- Cible : $origin"\n', '            echo "- Cible : `$origin`"\n', 1),
         'résumé readiness retiré': text.replace('            echo "### Readiness web-only"\n', '', 1),
         'état fail-closed readiness retiré': text.replace('            echo "- BubblaV : **fail-closed** (widget désactivé + CSP bloquante)"\n', '', 1),
         'auto-test Transparence IA retiré': text.replace(f'        run: {AI_TRANSPARENCY_SELF}\n', '', 1),
