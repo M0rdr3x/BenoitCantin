@@ -40,6 +40,8 @@ jobs:
 
       - name: Vérifier le périmètre public Netlify
         run: python3 scripts/build_netlify_public.py --check
+      - name: Auto-tester la transition Formspree personnelle
+        run: python3 scripts/configure_personal_formspree.py --self-test
       - name: Auto-tester le smoke HTTP de release
         run: python3 scripts/validate_web_release_http.py --self-test
       - name: Résumer la readiness web-only

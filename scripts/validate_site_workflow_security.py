@@ -29,6 +29,7 @@ ADMIN_CONSOLE_VALIDATE = 'python scripts/validate_admin_console_security.py'
 ADMIN_PRIVATE_READS_SELF = 'python scripts/validate_admin_private_reads_security.py --self-test'
 ADMIN_PRIVATE_READS_VALIDATE = 'python scripts/validate_admin_private_reads_security.py'
 NETLIFY_PUBLIC_CHECK = 'python3 scripts/build_netlify_public.py --check'
+PERSONAL_FORMSPREE_CONFIG_SELF = 'python3 scripts/configure_personal_formspree.py --self-test'
 WEB_RELEASE_SCOPE_SELF = 'python3 scripts/validate_web_release_scope.py --self-test'
 WEB_RELEASE_SCOPE_VALIDATE = 'python3 scripts/validate_web_release_scope.py'
 WEB_RELEASE_HTTP_SELF = 'python3 scripts/validate_web_release_http.py --self-test'
@@ -96,6 +97,7 @@ def validate_text(text: str) -> list[str]:
     require(errors, text.count(WEB_RELEASE_VALIDATE_IF) == 1, 'la validation lourde web-only doit rester bornée aux branches a1/web-release-*')
     require(errors, 'python scripts/validate_site.py' in text, 'validation principale du site absente')
     require(errors, exact_run_count(text, NETLIFY_PUBLIC_CHECK) == 1, 'validation périmètre public Netlify absente ou dupliquée')
+    require(errors, exact_run_count(text, PERSONAL_FORMSPREE_CONFIG_SELF) == 1, 'auto-test transition Formspree personnelle absent ou dupliqué')
     require(errors, exact_run_count(text, WEB_RELEASE_SCOPE_SELF) == 1, 'auto-test portée web-only absent ou dupliqué')
     require(errors, exact_run_count(text, WEB_RELEASE_SCOPE_VALIDATE) == 1, 'validation portée web-only absente ou dupliquée')
     require(errors, text.count(WEB_RELEASE_SCOPE_IF) == 3, 'les gardes et le résumé web-only doivent rester limités aux branches a1/web-release-*')
@@ -638,6 +640,7 @@ def run_self_tests(text: str) -> None:
             1,
         ),
         'validation Netlify retirée': text.replace(f'        run: {NETLIFY_PUBLIC_CHECK}\n', '', 1),
+        'auto-test transition Formspree retiré': text.replace(f'        run: {PERSONAL_FORMSPREE_CONFIG_SELF}\n', '', 1),
         'historique Git retiré': text.replace('          fetch-depth: 0\n', '', 1),
         'auto-test portée web retiré': text.replace(f'        run: {WEB_RELEASE_SCOPE_SELF}\n', '', 1),
         'validation portée web retirée': text.replace(f'        run: {WEB_RELEASE_SCOPE_VALIDATE}\n', '', 1),
