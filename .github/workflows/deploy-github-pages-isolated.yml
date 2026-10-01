@@ -1,17 +1,24 @@
-name: Pages production — déploiement public isolé
+name: Pages confinement — publication publique isolée
 
 on:
   workflow_dispatch:
     inputs:
-      confirm_production:
-        description: "Confirmer explicitement le déploiement production"
+      confirm_containment:
+        description: "Confirmer explicitement le confinement temporaire GitHub Pages"
         required: true
         type: choice
         options:
           - "NO"
-          - "DEPLOY"
+          - "CONTAIN"
+      acknowledge_header_gap:
+        description: "Reconnaître que GitHub Pages ne satisfait pas le contrat complet des en-têtes HTTP"
+        required: true
+        type: choice
+        options:
+          - "NO"
+          - "ACK_HEADER_GAP"
       expected_sha:
-        description: "SHA main exact à déployer (40 caractères hexadécimaux)"
+        description: "SHA main exact à confiner (40 caractères hexadécimaux)"
         required: true
         type: string
 
@@ -24,8 +31,8 @@ concurrency:
 
 jobs:
   build:
-    name: Construire l’artefact public Pages
-    if: github.ref == 'refs/heads/main' && inputs.confirm_production == 'DEPLOY'
+    name: Construire l’artefact de confinement Pages
+    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'
     permissions:
       contents: read
     runs-on: ubuntu-24.04
@@ -99,12 +106,15 @@ jobs:
             echo "- Fichiers publics : **$PAGES_PUBLIC_FILE_COUNT**"
             echo "- Source téléversée : `_site`"
             echo "- Racine du dépôt : **non publiée**"
+            echo "- Mode : **confinement temporaire**"
+            echo "- Limite connue : **les en-têtes HTTP complets de #450 ne sont pas fournis par GitHub Pages**"
+            echo "- Cible finale #450 : **Netlify avec _headers/_redirects**"
           } >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
-    name: Déployer l’artefact public Pages
+    name: Publier le confinement Pages
     needs: build
-    if: github.ref == 'refs/heads/main' && inputs.confirm_production == 'DEPLOY'
+    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'
     permissions:
       pages: write
       id-token: write

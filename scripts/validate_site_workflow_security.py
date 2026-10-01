@@ -223,20 +223,22 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
 
 def validate_pages_deploy_workflow_text(text: str) -> list[str]:
     errors: list[str] = []
-    require(errors, 'workflow_dispatch:' in text, 'déploiement Pages doit rester manuel')
-    require(errors, 'pull_request:' not in text, 'déploiement Pages ne doit jamais partir sur pull_request')
-    require(errors, 'push:' not in text, 'déploiement Pages ne doit jamais partir sur push')
-    require(errors, 'confirm_production:' in text, 'confirmation explicite production absente')
+    require(errors, 'workflow_dispatch:' in text, 'confinement Pages doit rester manuel')
+    require(errors, 'pull_request:' not in text, 'confinement Pages ne doit jamais partir sur pull_request')
+    require(errors, 'push:' not in text, 'confinement Pages ne doit jamais partir sur push')
+    require(errors, 'confirm_containment:' in text, 'confirmation explicite confinement absente')
+    require(errors, 'acknowledge_header_gap:' in text, 'reconnaissance explicite du déficit headers absente')
     require(errors, 'expected_sha:' in text, 'SHA approuvé explicite absent')
-    require(errors, text.count("github.ref == 'refs/heads/main' && inputs.confirm_production == 'DEPLOY'") == 2, 'garde main + DEPLOY requise sur build et deploy')
+    guard = "github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'"
+    require(errors, text.count(guard) == 2, 'double garde main + CONTAIN + ACK_HEADER_GAP requise')
     require(errors, 'group: pages-production-isolated' in text, 'concurrency Pages dédiée absente')
-    require(errors, 'cancel-in-progress: false' in text, 'déploiement Pages ne doit jamais être annulé automatiquement')
-    require(errors, 'contents: write' not in text, 'déploiement Pages ne doit jamais écrire dans le dépôt')
+    require(errors, 'cancel-in-progress: false' in text, 'confinement Pages ne doit jamais être annulé automatiquement')
+    require(errors, 'contents: write' not in text, 'confinement Pages ne doit jamais écrire dans le dépôt')
     require(errors, text.count('contents: read') >= 2, 'build Pages doit rester contents:read')
-    require(errors, 'pages: write' in text, 'permission Pages write requise uniquement pour le job deploy')
+    require(errors, 'pages: write' in text, 'permission Pages write requise uniquement pour la publication')
     require(errors, 'id-token: write' in text, 'permission OIDC requise pour deploy-pages')
-    require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'déploiement Pages ne doit référencer aucun secret')
-    require(errors, 'runs-on: ubuntu-24.04' in text, 'déploiement Pages doit utiliser Ubuntu 24.04')
+    require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'confinement Pages ne doit référencer aucun secret')
+    require(errors, 'runs-on: ubuntu-24.04' in text, 'confinement Pages doit utiliser Ubuntu 24.04')
     require(errors, f'uses: actions/checkout@{CHECKOUT_SHA}' in text, 'checkout Pages non épinglé')
     require(errors, 'persist-credentials: false' in text, 'checkout Pages doit désactiver les credentials Git')
     require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python Pages non épinglé')
@@ -254,11 +256,14 @@ def validate_pages_deploy_workflow_text(text: str) -> list[str]:
     require(errors, 'forbidden in .github docs mobile-native scripts supabase tests' in text, 'garde répertoires techniques Pages absente')
     require(errors, 'https://formspree.io/f/xdenkzrv' in text and 'https://formspree.io/f/xkolwjdg' in text, 'garde endpoints Formspree historiques Pages absente')
     require(errors, 'EXPECTED_SHA' in text and '[ "$EXPECTED_SHA" != "$GITHUB_SHA" ]' in text, 'garde SHA exact Pages absente')
-    require(errors, 'needs: build' in text, 'deploy Pages doit dépendre du build vérifié')
+    require(errors, 'needs: build' in text, 'publication Pages doit dépendre du build vérifié')
     require(errors, 'name: github-pages' in text, 'Environment github-pages absent')
     require(errors, 'url: ${{ steps.deployment.outputs.page_url }}' in text, 'URL environnement Pages absente')
     require(errors, 'id: deployment' in text, 'étape deploy Pages identifiable absente')
     require(errors, 'Racine du dépôt : **non publiée**' in text, 'preuve de frontière Pages absente du résumé')
+    require(errors, 'Mode : **confinement temporaire**' in text, 'statut confinement temporaire absent du résumé')
+    require(errors, 'les en-têtes HTTP complets de #450 ne sont pas fournis par GitHub Pages' in text, 'limite headers GitHub Pages absente')
+    require(errors, 'Cible finale #450 : **Netlify avec _headers/_redirects**' in text, 'cible finale Netlify absente')
     targets = action_targets(text)
     require(errors, len(targets) == 4, f'nombre inattendu d’actions dans le workflow Pages: {len(targets)}')
     for target in targets:
@@ -267,11 +272,12 @@ def validate_pages_deploy_workflow_text(text: str) -> list[str]:
 
 
 def run_pages_deploy_self_tests(text: str) -> None:
-    guard = "github.ref == 'refs/heads/main' && inputs.confirm_production == 'DEPLOY'"
+    guard = "github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'"
     cases = {
         'déclenchement push ajouté': text.replace('  workflow_dispatch:\n', '  push:\n  workflow_dispatch:\n', 1),
-        'garde main retirée': text.replace(guard, "inputs.confirm_production == 'DEPLOY'", 1),
-        'confirmation retirée': text.replace("inputs.confirm_production == 'DEPLOY'", 'true', 1),
+        'garde main retirée': text.replace("github.ref == 'refs/heads/main'", 'true', 1),
+        'confirmation confinement retirée': text.replace("inputs.confirm_containment == 'CONTAIN'", 'true', 1),
+        'reconnaissance headers retirée': text.replace("inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'", 'true', 1),
         'SHA attendu retiré': text.replace('      expected_sha:\n', '      autre_sha:\n', 1),
         'publication racine': text.replace('          path: _site\n', '          path: .\n', 1),
         'build racine': text.replace(PAGES_PUBLIC_BUILD, 'python3 scripts/build_netlify_public.py --output .', 1),
@@ -280,6 +286,8 @@ def run_pages_deploy_self_tests(text: str) -> None:
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
         'garde dossiers retirée': text.replace('          for forbidden in .github docs mobile-native scripts supabase tests; do\n', '', 1),
         'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
+        'limite headers retirée': text.replace('            echo "- Limite connue : **les en-têtes HTTP complets de #450 ne sont pas fournis par GitHub Pages**"\n', '', 1),
+        'cible Netlify retirée': text.replace('            echo "- Cible finale #450 : **Netlify avec _headers/_redirects**"\n', '', 1),
     }
     for name, mutated in cases.items():
         if mutated == text:
