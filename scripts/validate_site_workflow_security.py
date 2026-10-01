@@ -337,8 +337,11 @@ def validate_anon_netlify_preview_workflow_text(text: str) -> list[str]:
     require(errors, '2>"$deploy_err"' in text, 'stderr Netlify doit être capturé hors logs')
     require(errors, 'cat "$deploy_json"' not in text and 'cat "$deploy_err"' not in text, 'sortie brute Netlify ne doit jamais être journalisée')
     require(errors, 'rm -f "$deploy_json" "$deploy_err"' in text, 'fichiers temporaires Netlify doivent être supprimés')
-    require(errors, "host.endswith('.netlify.app')" in text, 'validation hôte netlify.app absente')
-    require(errors, "re.fullmatch(r'https://[a-z0-9-]+(?:--[a-z0-9-]+)?\\.netlify\\.app', url)" in text, 'validation stricte URL preview anonyme absente')
+    require(errors, "raw_url = data.get('site_url')" in text, 'lecture explicite site_url Netlify absente')
+    require(errors, "safe_keys = ','.join(sorted(str(key) for key in data.keys()))" in text, 'diagnostic sûr des clés JSON Netlify absent')
+    require(errors, "raw_url.startswith('http://')" in text and "'https://' + raw_url" in text, 'normalisation HTTPS site_url absente')
+    require(errors, "re.fullmatch(r'[a-z0-9-]+(?:--[a-z0-9-]+)?\\.netlify\\.app', host)" in text, 'validation stricte hôte preview anonyme absente')
+    require(errors, "parsed.query" in text and "parsed.fragment" in text, 'refus query/fragment site_url absent')
     require(errors, 'python3 scripts/validate_web_release_http.py "$NETLIFY_PREVIEW_URL" --context preview' in text, 'smoke preview anonyme absent')
     require(errors, 'Jeton de réclamation : **non journalisé et non conservé**' in text, 'preuve non-conservation token absente')
     require(errors, 'Production/DNS : **inchangés**' in text, 'preuve non-production absente')
@@ -360,6 +363,7 @@ def run_anon_netlify_preview_self_tests(text: str) -> None:
         'prod ajouté': text.replace('--no-build --json', '--no-build --json --prod', 1),
         'version CLI mobile': text.replace(f'netlify-cli@{NETLIFY_CLI_VERSION}', 'netlify-cli@latest', 1),
         'noindex retiré': text.replace("          grep -Fq 'X-Robots-Tag: noindex, nofollow, noarchive' <<<\"$preview_global_headers\"\n", '', 1),
+        'site_url retiré': text.replace("          raw_url = data.get('site_url')\n", "          raw_url = data.get('url')\n", 1),
         'sortie brute exposée': text.replace("          python3 - \"$deploy_json\" <<'PY'\n", "          cat \"$deploy_json\"\n          python3 - \"$deploy_json\" <<'PY'\n", 1),
         'smoke retiré': text.replace('        run: python3 scripts/validate_web_release_http.py "$NETLIFY_PREVIEW_URL" --context preview\n', '', 1),
     }
