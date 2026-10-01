@@ -111,10 +111,12 @@ jobs:
           data = json.load(open(sys.argv[1], encoding='utf-8'))
           if data.get('password'):
               raise SystemExit('ERREUR: preview anonyme protégée par mot de passe; smoke public impossible.')
+
           raw_url = data.get('site_url')
-          if not isinstance(raw_url, str) or not raw_url.strip():
+          deploy_id = data.get('deploy_id')
+          if not isinstance(raw_url, str) or not raw_url.strip() or not isinstance(deploy_id, str):
               safe_keys = ','.join(sorted(str(key) for key in data.keys()))
-              raise SystemExit(f'ERREUR: site_url absent de la réponse Netlify; clés reçues: {safe_keys}')
+              raise SystemExit(f'ERREUR: site_url/deploy_id absents de la réponse Netlify; clés reçues: {safe_keys}')
 
           raw_url = raw_url.strip().rstrip('/')
           if raw_url.startswith('http://'):
@@ -123,7 +125,8 @@ jobs:
               raw_url = 'https://' + raw_url
 
           parsed = urlparse(raw_url)
-          host = (parsed.hostname or '').lower()
+          site_host = (parsed.hostname or '').lower()
+          deploy_id = deploy_id.strip().lower()
           if (
               parsed.scheme != 'https'
               or parsed.username
@@ -132,9 +135,16 @@ jobs:
               or parsed.path not in {'', '/'}
               or parsed.query
               or parsed.fragment
-              or not re.fullmatch(r'[a-z0-9-]+(?:--[a-z0-9-]+)?\.netlify\.app', host)
+              or not re.fullmatch(r'[a-z0-9-]+\.netlify\.app', site_host)
+              or not re.fullmatch(r'[a-z0-9-]{6,64}', deploy_id)
           ):
-              raise SystemExit('ERREUR: site_url Netlify inattendue.')
+              raise SystemExit('ERREUR: site_url/deploy_id Netlify inattendus.')
+
+          # Les règles _headers/_redirects doivent être vérifiées sur le permalink
+          # immuable du deploy, pas sur l’alias principal du projet.
+          host = f'{deploy_id}--{site_host}'
+          if not re.fullmatch(r'[a-z0-9-]{6,64}--[a-z0-9-]+\.netlify\.app', host):
+              raise SystemExit('ERREUR: permalink Netlify inattendu.')
           url = f'https://{host}'
           with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as fh:
               fh.write(f'NETLIFY_PREVIEW_URL={url}\n')
