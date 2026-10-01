@@ -46,6 +46,7 @@ jobs:
           test -f _site/_headers
           test -f _site/_redirects
           grep -Fq "Content-Security-Policy:" _site/_headers
+          ! grep -Fq "X-Robots-Tag: noindex, nofollow, noarchive" _site/_headers
           grep -Fq "/supabase/* /404.html 404!" _site/_redirects
           for forbidden in .github docs mobile-native scripts supabase tests; do
             test ! -e "_site/$forbidden"
@@ -55,8 +56,33 @@ jobs:
           test "$file_count" -gt 0
           echo "WEB_RELEASE_FILE_COUNT=$file_count" >> "$GITHUB_ENV"
 
-      - name: Téléverser l’artefact public vérifié
-        id: artifact-upload
+      - name: Construire l’artefact preview noindex
+        env:
+          CONTEXT: deploy-preview
+        run: python3 scripts/build_netlify_public.py --output _preview_site --standalone-netlify
+
+      - name: Vérifier et hacher le preview noindex
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _preview_site/.well-known/security.txt
+          test -f _preview_site/.nojekyll
+          test -f _preview_site/CNAME
+          test -f _preview_site/_headers
+          test -f _preview_site/_redirects
+          grep -Fq "Content-Security-Policy:" _preview_site/_headers
+          grep -Fq "X-Robots-Tag: noindex, nofollow, noarchive" _preview_site/_headers
+          grep -Fq "/supabase/* /404.html 404!" _preview_site/_redirects
+          for forbidden in .github docs mobile-native scripts supabase tests; do
+            test ! -e "_preview_site/$forbidden"
+          done
+          find _preview_site -type f -print0 | sort -z | xargs -0 sha256sum > web-preview-SHA256SUMS.txt
+          preview_count="$(find _preview_site -type f | wc -l | tr -d ' ')"
+          test "$preview_count" -eq "$WEB_RELEASE_FILE_COUNT"
+          echo "WEB_PREVIEW_FILE_COUNT=$preview_count" >> "$GITHUB_ENV"
+
+      - name: Téléverser l’artefact production vérifié
+        id: release-upload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: sinjira-web-release-${{ github.event.pull_request.head.sha || github.sha }}
@@ -68,17 +94,33 @@ jobs:
           compression-level: 9
           include-hidden-files: true
 
-      - name: Résumer l’artefact de release
+      - name: Téléverser l’artefact preview noindex
+        id: preview-upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sinjira-web-preview-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            _preview_site/
+            web-preview-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
+          include-hidden-files: true
+
+      - name: Résumer les artefacts de release
         if: success()
         shell: bash
         run: |
           {
-            echo "### Artefact public SINJIRA"
+            echo "### Artefacts web SINJIRA"
             echo "- SHA source : \`${{ github.event.pull_request.head.sha || github.sha }}\`"
-            echo "- Fichiers publics : **$WEB_RELEASE_FILE_COUNT**"
-            echo "- Artefact : [ouvrir/télécharger](${{ steps.artifact-upload.outputs.artifact-url }})"
-            echo "- Digest artefact : \`${{ steps.artifact-upload.outputs.artifact-digest }}\`"
-            echo "- Manifeste interne : \`web-release-SHA256SUMS.txt\`"
+            echo "- Fichiers production : **$WEB_RELEASE_FILE_COUNT**"
+            echo "- Production : [ouvrir/télécharger](${{ steps.release-upload.outputs.artifact-url }})"
+            echo "- Digest production : \`${{ steps.release-upload.outputs.artifact-digest }}\`"
+            echo "- Fichiers preview : **$WEB_PREVIEW_FILE_COUNT**"
+            echo "- Preview noindex : [ouvrir/télécharger](${{ steps.preview-upload.outputs.artifact-url }})"
+            echo "- Digest preview : \`${{ steps.preview-upload.outputs.artifact-digest }}\`"
+            echo "- Manifestes : \`web-release-SHA256SUMS.txt\` + \`web-preview-SHA256SUMS.txt\`"
             echo "- Configuration embarquée : \`_headers\` + \`_redirects\`"
             echo
             echo "> Aucun déploiement n’est effectué par ce workflow."

@@ -28,6 +28,7 @@ WEB_RELEASE_SCOPE_VALIDATE = 'python3 scripts/validate_web_release_scope.py'
 WEB_RELEASE_HTTP_SELF = 'python3 scripts/validate_web_release_http.py --self-test'
 WEB_RELEASE_PRODUCTION_BASELINE = 'python3 scripts/validate_web_release_http.py "$origin" --context production'
 WEB_RELEASE_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _site --standalone-netlify'
+WEB_PREVIEW_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _preview_site --standalone-netlify'
 PUBLIC_AI_ASSISTANT_SELF = 'python3 scripts/validate_public_ai_assistant.py --self-test'
 PUBLIC_AI_ASSISTANT_VALIDATE = 'python3 scripts/validate_public_ai_assistant.py'
 AI_TRANSPARENCY_SELF = 'python3 scripts/validate_ai_transparency.py --self-test'
@@ -156,20 +157,30 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, 'persist-credentials: false' in text, 'artefact web doit désactiver les credentials Git')
     require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python artefact web non épinglé')
     require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python artefact web inattendue')
-    require(errors, f'uses: actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}' in text, 'upload-artifact web non épinglé')
+    require(errors, text.count(f'uses: actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}') == 2, 'les deux upload-artifact web doivent être épinglés')
     require(errors, exact_run_count(text, NETLIFY_PUBLIC_CHECK) == 1, 'validation allowlist avant artefact absente ou dupliquée')
     require(errors, exact_run_count(text, WEB_RELEASE_ARTIFACT_BUILD) == 1, 'construction _site avant artefact absente ou dupliquée')
+    require(errors, exact_run_count(text, WEB_PREVIEW_ARTIFACT_BUILD) == 1, 'construction _preview_site avant artefact absente ou dupliquée')
+    require(errors, 'CONTEXT: deploy-preview' in text, 'contexte deploy-preview absent de l’artefact preview')
     require(errors, 'include-hidden-files: true' in text, 'artefact web doit inclure .well-known et .nojekyll')
     require(errors, 'if-no-files-found: error' in text, 'artefact web doit échouer si le contenu est absent')
     require(errors, 'retention-days: 7' in text, 'rétention artefact web doit rester courte')
     require(errors, 'web-release-SHA256SUMS.txt' in text, 'manifeste SHA-256 de release absent')
+    require(errors, 'web-preview-SHA256SUMS.txt' in text, 'manifeste SHA-256 preview absent')
+    require(errors, 'sinjira-web-release-${{ github.event.pull_request.head.sha || github.sha }}' in text, 'nom artefact production absent')
+    require(errors, 'sinjira-web-preview-${{ github.event.pull_request.head.sha || github.sha }}' in text, 'nom artefact preview absent')
     require(errors, 'test -f _site/.well-known/security.txt' in text, 'security.txt doit être prouvé dans l’artefact')
     require(errors, 'test -f _site/CNAME' in text, 'CNAME doit être prouvé dans l’artefact')
     require(errors, 'test -f _site/_headers' in text, '_headers autonome doit être prouvé dans l’artefact')
     require(errors, 'test -f _site/_redirects' in text, '_redirects autonome doit être prouvé dans l’artefact')
+    require(errors, 'test -f _preview_site/_headers' in text, '_headers preview doit être prouvé')
+    require(errors, 'test -f _preview_site/_redirects' in text, '_redirects preview doit être prouvé')
+    require(errors, 'X-Robots-Tag: noindex, nofollow, noarchive' in text, 'preuve noindex globale preview absente')
+    require(errors, 'test "$preview_count" -eq "$WEB_RELEASE_FILE_COUNT"' in text, 'parité fichiers production/preview non prouvée')
     require(errors, 'Content-Security-Policy:' in text, 'preuve CSP embarquée absente du workflow artefact')
     require(errors, '/supabase/* /404.html 404!' in text, 'preuve 404 forcée embarquée absente du workflow artefact')
     require(errors, 'Configuration embarquée : \\`_headers\\` + \\`_redirects\\`' in text, 'résumé configuration autonome absent')
+    require(errors, 'Preview noindex :' in text, 'lien artefact preview absent du résumé')
     require(errors, 'test ! -e "_site/$forbidden"' in text, 'absence des répertoires techniques non prouvée')
     require(errors, 'actions/deploy-pages@' not in text, 'workflow artefact ne doit jamais déployer GitHub Pages')
     require(errors, 'actions/configure-pages@' not in text, 'workflow artefact ne doit pas configurer GitHub Pages')
@@ -180,7 +191,7 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, 'Aucun déploiement n’est effectué par ce workflow.' in text, 'résumé non-déploiement absent du workflow artefact')
 
     targets = action_targets(text)
-    require(errors, len(targets) == 3, f'nombre inattendu d’actions dans le workflow artefact: {len(targets)}')
+    require(errors, len(targets) == 4, f'nombre inattendu d’actions dans le workflow artefact: {len(targets)}')
     for target in targets:
         require(errors, re.search(r'@[0-9a-f]{40}$', target) is not None, f'action artefact non immuable: {target}')
     return errors
@@ -226,6 +237,7 @@ def run_artifact_self_tests(text: str) -> None:
         'upload-artifact mobile': text.replace(f'actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}', 'actions/upload-artifact@v7', 1),
         'garde branche retirée': text.replace(guard, 'if: always()', 1),
         'construction racine': text.replace(WEB_RELEASE_ARTIFACT_BUILD, 'python3 scripts/build_netlify_public.py --output .', 1),
+        'contexte preview retiré': text.replace('          CONTEXT: deploy-preview\n', '          CONTEXT: production\n', 1),
         'fichiers cachés exclus': text.replace('include-hidden-files: true', 'include-hidden-files: false', 1),
         'secret ajouté': text.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n', 1),
         'résumé non-déploiement retiré': text.replace('            echo "> Aucun déploiement n’est effectué par ce workflow."\n', '', 1),
