@@ -327,13 +327,15 @@ def validate_anon_netlify_preview_workflow_text(text: str) -> list[str]:
     require(errors, 'X-Robots-Tag: noindex, nofollow, noarchive' in text, 'preuve noindex preview anonyme absente')
     require(errors, 'forbidden in .github docs mobile-native scripts supabase tests' in text, 'garde répertoires techniques preview anonyme absente')
     require(errors, 'https://formspree.io/f/xdenkzrv' in text and 'https://formspree.io/f/xkolwjdg' in text, 'garde Formspree historique preview anonyme absente')
-    deploy_cmd = f'netlify-cli@{NETLIFY_CLI_VERSION} deploy --allow-anonymous --dir _preview_site --no-build --json'
+    deploy_cmd = f'netlify-cli@{NETLIFY_CLI_VERSION} deploy --allow-anonymous --created-via integration --dir _preview_site --no-build --json'
     require(errors, deploy_cmd in text, 'commande Netlify anonyme figée absente')
     require(errors, 'timeout 240s npx --yes ' + deploy_cmd in text, 'déploiement Netlify anonyme doit être borné à 240 secondes')
     require(errors, '--prod' not in text, 'flag --prod interdit au preview anonyme')
     require(errors, '--auth' not in text and 'NETLIFY_AUTH_TOKEN' not in text, 'auth/token Netlify interdit au preview anonyme')
     require(errors, re.search(r'--site(?:\s|=)', text) is None, 'site Netlify existant interdit au preview anonyme')
     require(errors, '--site-name' not in text, 'création de site nommé interdite au preview anonyme')
+    require(errors, '--created-via integration' in text, 'preview anonyme doit utiliser le mode integration sans mot de passe Drop')
+    require(errors, "if data.get('password'):" in text, 'garde mot de passe Netlify anonyme absente')
     require(errors, '2>"$deploy_err"' in text, 'stderr Netlify doit être capturé hors logs')
     require(errors, 'cat "$deploy_json"' not in text and 'cat "$deploy_err"' not in text, 'sortie brute Netlify ne doit jamais être journalisée')
     require(errors, 'rm -f "$deploy_json" "$deploy_err"' in text, 'fichiers temporaires Netlify doivent être supprimés')
@@ -360,6 +362,7 @@ def run_anon_netlify_preview_self_tests(text: str) -> None:
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
         'marqueur retiré': text.replace('[netlify-anon-preview]', '[preview]'),
         'anonyme retiré': text.replace('--allow-anonymous', ''),
+        'mode integration retiré': text.replace('--created-via integration', ''),
         'prod ajouté': text.replace('--no-build --json', '--no-build --json --prod', 1),
         'version CLI mobile': text.replace(f'netlify-cli@{NETLIFY_CLI_VERSION}', 'netlify-cli@latest', 1),
         'noindex retiré': text.replace("          grep -Fq 'X-Robots-Tag: noindex, nofollow, noarchive' <<<\"$preview_global_headers\"\n", '', 1),

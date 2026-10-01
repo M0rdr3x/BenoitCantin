@@ -97,7 +97,7 @@ jobs:
           deploy_err="$(mktemp)"
           cleanup() { rm -f "$deploy_json" "$deploy_err"; }
           trap cleanup EXIT
-          if ! timeout 240s npx --yes netlify-cli@27.10.2 deploy --allow-anonymous --dir _preview_site --no-build --json --message "SINJIRA anonymous preview $HEAD_SHA" >"$deploy_json" 2>"$deploy_err"; then
+          if ! timeout 240s npx --yes netlify-cli@27.10.2 deploy --allow-anonymous --created-via integration --dir _preview_site --no-build --json --message "SINJIRA anonymous preview $HEAD_SHA" >"$deploy_json" 2>"$deploy_err"; then
             echo 'ERREUR: création Netlify anonyme échouée; sortie détaillée supprimée pour éviter toute fuite de jeton de réclamation.' >&2
             exit 1
           fi
@@ -109,6 +109,8 @@ jobs:
           from urllib.parse import urlparse
 
           data = json.load(open(sys.argv[1], encoding='utf-8'))
+          if data.get('password'):
+              raise SystemExit('ERREUR: preview anonyme protégée par mot de passe; smoke public impossible.')
           raw_url = data.get('site_url')
           if not isinstance(raw_url, str) or not raw_url.strip():
               safe_keys = ','.join(sorted(str(key) for key in data.keys()))
