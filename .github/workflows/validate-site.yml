@@ -124,9 +124,9 @@ jobs:
           {
             echo
             echo "### Baseline smoke production — lecture seule"
-            echo "- Cible : `$origin`"
+            echo "- Cible : $origin"
             echo "- Verdict : **$smoke_verdict**"
-            echo "- Code smoke : `$smoke_status`"
+            echo "- Code smoke : $smoke_status"
             echo
             echo "> Ce baseline est informatif et non bloquant. Il doit devenir PASS après la bascule #450."
           } | tee -a "$GITHUB_STEP_SUMMARY"
