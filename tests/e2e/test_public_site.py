@@ -31,8 +31,6 @@ EXPECTED_DOORS = {
     "/projets/sinjira/registre/",
     "/projets/projet-nova/",
 }
-NOVA_ENDPOINT = "https://formspree.io/f/xkolwjdg"
-PERSONAL_ENDPOINT = "https://formspree.io/f/xdenkzrv"
 IS_LOCAL = (urlparse(BASE_URL).hostname or "").lower() in {"127.0.0.1", "localhost"}
 
 
@@ -107,13 +105,18 @@ def run() -> None:
         project = page.locator("#contact-project")
         form = page.locator("#contact-general")
         route = page.locator("#contact-route")
-        project.select_option("Projet Nova")
-        assert_true(form.get_attribute("action") == NOVA_ENDPOINT, f"{BROWSER_NAME}: routage Nova incorrect")
-        assert_true("Projet Nova" in route.inner_text(), f"{BROWSER_NAME}: confirmation Nova absente")
+        submit = page.locator("#contact-submit")
+        assert_true(project.locator('option[value="Projet Nova"]').count() == 0, f"{BROWSER_NAME}: Projet Nova encore routé par le formulaire personnel")
         project.select_option("SINJIRA")
-        assert_true(form.get_attribute("action") == PERSONAL_ENDPOINT, f"{BROWSER_NAME}: routage SINJIRA incorrect")
-        assert_true("Benoit Cantin" in route.inner_text(), f"{BROWSER_NAME}: confirmation SINJIRA absente")
+        assert_true(form.get_attribute("action") is None, f"{BROWSER_NAME}: endpoint personnel actif avant configuration")
+        assert_true(form.get_attribute("method") is None, f"{BROWSER_NAME}: POST personnel actif avant configuration")
+        assert_true(form.get_attribute("data-personal-formspree-state") == "pending-separate-endpoint", f"{BROWSER_NAME}: état fail-closed Formspree absent")
+        assert_true(submit.is_disabled(), f"{BROWSER_NAME}: bouton personnel actif avant endpoint distinct")
+        assert_true("désactivé" in route.inner_text().lower(), f"{BROWSER_NAME}: message fail-closed absent")
+        assert_true(page.locator('a[href="/projets/projet-nova/contact.html"]').count() >= 1, f"{BROWSER_NAME}: lien contact officiel Nova absent")
         contact_html = page.content().lower()
+        assert_true("formspree.io/f/xdenkzrv" not in contact_html, f"{BROWSER_NAME}: ancien endpoint personnel encore exposé")
+        assert_true("formspree.io/f/xkolwjdg" not in contact_html, f"{BROWSER_NAME}: endpoint Nova encore exposé dans le contact personnel")
         assert_true("kingtyrano@gmail.com" not in contact_html, "Adresse privée embarquée dans le formulaire de contact")
 
         if IS_LOCAL:
