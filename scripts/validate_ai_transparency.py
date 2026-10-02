@@ -289,7 +289,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "issue**#443**",
         "issue**#444**",
         "bubblavestdésactivécôtésite",
-        "publicassistantformsminimized=false",
+        "publicassistantformsminimized=true",
         "publicassistantdomainsrestricted=false",
         "bubblavdoitresterabsentde",
         "responsabilitéhumaine",
@@ -301,14 +301,14 @@ def validate_core(contents: dict[str, str]) -> None:
         "bubblav—minimisationdesformulairesduchatbotpublic",
         "retiréetconfirmécôtéfournisseur",
         "seconnecteràsoncompte",
-        "encoreàretireroudésactivercôtéfournisseur",
         "cinqformulaireshorspérimètreontétésuppriméscôtéfournisseur",
+        "chaquesuppressionayantrépondu\`deleted:true\`",
         "total=2",
         "allow_all_domains=true",
         "allowed_domains=[]",
         "lecturedesflowsresteindisponible",
         "submission_count=0",
-        "aucunesuppressiondeformulaire,soumissionouhistoriquefournisseurn'aétéeffectuée",
+        "aucunesoumissionouhistoriqueexistantn'aétésupprimé",
     ):
         if marker not in assistant_data_minimization:
             fail(f"revue minimisation BubblaV incomplète: {marker}")
