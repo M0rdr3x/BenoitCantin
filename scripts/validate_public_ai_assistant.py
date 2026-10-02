@@ -208,7 +208,7 @@ def self_test() -> None:
             sitemap,
             robots,
         ),
-        ("neutralité retirée", widget, site, index, assistant.replace("Il ne doit pas dire aux visiteurs comment voter", "Il peut recommander un vote", 1), transparency),
+        ("neutralité retirée", widget, site, index, assistant.replace("Il ne doit pas dire aux visiteurs comment voter", "Il peut recommander un vote", 1), transparency, sitemap, robots),
         (
             "responsabilité retirée",
             widget,
@@ -219,6 +219,8 @@ def self_test() -> None:
                 "Validation finale et responsabilité du contenu : Benoit Cantin.",
                 "Validation automatisée.",
             ),
+            sitemap,
+            robots,
         ),
         (
             "surface privée ajoutée au sitemap",
