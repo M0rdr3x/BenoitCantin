@@ -2,7 +2,7 @@
 
 Dernière revue : 1er octobre 2026.
 
-Suivi fournisseur : issue GitHub **#443** — désactivation/retrait des six formulaires hors périmètre.
+Suivi fournisseur : issue GitHub **#443** — minimisation fournisseur terminée le 1er octobre 2026.
 
 ## Principe
 
@@ -39,9 +39,9 @@ L'intégration BubblaV `contact_form` / **Escalate to Human** reste aussi active
   - retrait confirmé lors de la dernière lecture fournisseur réussie;
   - aucune soumission n’était présente au moment de la revue préalable.
 
-### Encore à retirer ou désactiver côté fournisseur
+### Retirés et confirmés côté fournisseur — 1er octobre 2026
 
-Une relecture fournisseur fraîche du **1er octobre 2026** confirme que les cinq formulaires suivants sont toujours `enabled=true` et ont chacun **`submission_count=0`** :
+Une lecture fournisseur fraîche a d’abord confirmé `enabled=true` et `submission_count=0` pour chacun des cinq formulaires hors périmètre. Ils ont ensuite été supprimés individuellement, chaque suppression ayant répondu `deleted:true` :
 
 - `fb6b7188-0ff5-4eec-b751-2a3af99dfb89` — **Rejoindre Une Partie**;
 - `89288220-eda7-4a73-8d71-832e1c31ad6f` — **Créer Une Partie**;
@@ -49,7 +49,13 @@ Une relecture fournisseur fraîche du **1er octobre 2026** confirme que les cinq
 - `7fa76ade-5322-4465-a579-db56ab21b402` — **Soumettre Un Commentaire**;
 - `a8806fd2-8030-4104-a73c-c3a9470bcd37` — **Support Request Form**.
 
-La lecture `bubblav_list_forms` du 1er octobre réussit et confirme aussi les deux formulaires publics conservés, tous deux actifs à zéro soumission. La lecture des tools confirme `contact_form` / **Escalate to Human** actif avec instruction explicite de n’escalader que lorsque le visiteur demande un humain. En revanche, la lecture des flows échoue encore avec une erreur fournisseur interne. Par prudence, les cinq formulaires hors périmètre ne sont donc pas supprimés tant qu’une éventuelle référence depuis un flow ne peut pas être exclue.
+Une relecture immédiate de `list_forms` confirme ensuite **`total=2`** et uniquement :
+- **Contacter Le Projet Nova** — actif, consentement explicite obligatoire, zéro soumission;
+- **Contacter Benoit Cantin** — actif, consentement explicite obligatoire, zéro soumission.
+
+L’intégration `contact_form` / **Escalate to Human** reste active avec une instruction fournisseur limitée à une demande explicite de contact humain.
+
+La lecture des flows continue de retourner une erreur interne fournisseur sur le plan actuel, mais aucun formulaire hors périmètre n’existe désormais dans l’inventaire fournisseur. Le widget public reste désactivé tant que #444 n’est pas résolue.
 
 ## État d’application
 
@@ -57,10 +63,11 @@ La lecture `bubblav_list_forms` du 1er octobre réussit et confirme aussi les de
 - pages publiques et politique de confidentialité : alignées;
 - accueil du widget BubblaV : aligné pour rediriger les actions de compte vers les parcours officiels;
 - retrait de **Se Connecter À Son Compte** : **confirmé**;
-- cinq formulaires hors périmètre sont **reconfirmés actifs à zéro soumission** et restent à retirer/désactiver;
+- cinq formulaires hors périmètre ont été **supprimés après confirmation de zéro soumission**;
+- relecture finale `list_forms` : **`total=2`**, uniquement les deux formulaires publics de contact autorisés;
 - `allow_all_domains=true` et `allowed_domains=[]` restent confirmés côté fournisseur (#444);
-- la lecture des flows reste indisponible; aucune dépendance cachée n’est donc supposée absente;
-- aucune suppression de formulaire, soumission ou historique fournisseur n’a été effectuée lors de cette revue.
+- la lecture des flows reste indisponible, mais aucun formulaire hors périmètre ne subsiste dans l’inventaire fournisseur;
+- aucune soumission ou historique existant n’a été supprimé puisque les cinq formulaires retirés avaient chacun `submission_count=0`.
 
 ## Parcours canoniques
 

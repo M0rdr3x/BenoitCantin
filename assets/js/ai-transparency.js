@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var publicAssistantFormsMinimized = false;
+  var publicAssistantFormsMinimized = true;
   var publicAssistantDomainsRestricted = false;
 
   function ready(fn) {

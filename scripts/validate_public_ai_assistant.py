@@ -13,7 +13,7 @@ TRANSPARENCY = ROOT / "transparence-ia.html"
 
 BUBBLAV_WIDGET_URL = "https://www.bubblav.com/widget.js"
 BUBBLAV_SITE_ID = "ca77cd98-bd32-459c-ad55-fdad4fb85316"
-FORMS_READY_MARKER = "var publicAssistantFormsMinimized = false;"
+FORMS_READY_MARKER = "var publicAssistantFormsMinimized = true;"
 DOMAINS_READY_MARKER = "var publicAssistantDomainsRestricted = false;"
 VENDOR_BLOCK_MARKER = "if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted) return;"
 LOADER_URL = "/assets/js/ai-transparency.js?v=1.4.0"
@@ -61,7 +61,7 @@ def validate_widget(text: str) -> list[str]:
         vendor_block >= 0 and launcher_create > vendor_block,
         "widget: le verrou fournisseur doit précéder toute création du lanceur",
     )
-    require(errors, "publicAssistantFormsMinimized = true" not in text, "widget: réactivation formulaires interdite tant que #443 reste ouvert")
+    require(errors, "publicAssistantFormsMinimized = false" not in text, "widget: minimisation formulaires #443 doit rester confirmée")
     require(errors, "publicAssistantDomainsRestricted = true" not in text, "widget: réactivation domaines interdite tant que #444 reste ouvert")
     require(errors, "publicAssistantVendorReady" not in text, "widget: ancien verrou fournisseur unique interdit")
 
@@ -137,7 +137,7 @@ def load() -> tuple[str, str, str, str, str]:
 def self_test() -> None:
     widget, site, index, assistant, transparency = load()
     fixtures = [
-        ("gate formulaires réactivé", widget.replace(FORMS_READY_MARKER, "var publicAssistantFormsMinimized = true;", 1), site, index, assistant, transparency),
+        ("preuve formulaires régressée", widget.replace(FORMS_READY_MARKER, "var publicAssistantFormsMinimized = false;", 1), site, index, assistant, transparency),
         ("gate domaines réactivé", widget.replace(DOMAINS_READY_MARKER, "var publicAssistantDomainsRestricted = true;", 1), site, index, assistant, transparency),
         ("double garde remplacée", widget.replace(VENDOR_BLOCK_MARKER, "if (!publicAssistantFormsMinimized) return;", 1), site, index, assistant, transparency),
         ("hôte officiel retiré", widget.replace("host === 'www.benoitcantin.com' || host === 'benoitcantin.com'", "host === 'example.com'", 1), site, index, assistant, transparency),
@@ -200,7 +200,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK assistant IA public: fournisseur fail-closed à deux preuves (#443 formulaires + #444 domaines), chargement futur après clic, domaine officiel, exclusions privées/noindex, "
+        "OK assistant IA public: formulaires #443 minimisés, domaine fournisseur #444 encore fail-closed, chargement futur après clic, domaine officiel, exclusions privées/noindex, "
         "site-id unique, neutralité civique et responsabilité humaine verrouillés."
     )
     return 0
