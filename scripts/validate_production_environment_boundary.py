@@ -23,6 +23,29 @@ WRITE_ALLOWLIST = {
     ("sinjira-v25-auth-password-hardening.yml", "enable-leaked-password-protection"),
 }
 
+MANUAL_WRITE_JOB_MARKERS = {
+    ("deploy-github-pages-isolated.yml", "deploy"): (
+        "github.ref == 'refs/heads/main'",
+        "inputs.confirm_containment == 'CONTAIN'",
+        "inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'",
+    ),
+    ("supabase-production-preflight.yml", "apply-production"): (
+        "github.event_name == 'workflow_dispatch'",
+        "inputs.apply == true",
+        "inputs.confirmation == 'APPLY-SUPABASE-PRODUCTION'",
+        "github.ref == 'refs/heads/main'",
+    ),
+    ("sinjira-v25-auth-password-hardening.yml", "enable-leaked-password-protection"): (
+        'test "$GITHUB_REF" = "refs/heads/main"',
+        "ENABLE-SINJIRA-V25-LEAKED-PASSWORD-PROTECTION",
+    ),
+}
+
+STRICTLY_MANUAL_WORKFLOWS = {
+    "deploy-github-pages-isolated.yml",
+    "sinjira-v25-auth-password-hardening.yml",
+}
+
 
 def job_blocks(text: str) -> dict[str, str]:
     jobs_match = re.search(r"(?m)^jobs:\s*$", text)
@@ -78,6 +101,37 @@ def write_signals(block: str) -> list[str]:
     return sorted(set(signals))
 
 
+
+def trigger_block(text: str) -> str:
+    jobs_match = re.search(r"(?m)^jobs:\s*$", text)
+    return text[: jobs_match.start()] if jobs_match else text
+
+
+def validate_manual_write_boundary(
+    filename: str,
+    workflow_text: str,
+    job_name: str,
+    block: str,
+) -> list[str]:
+    errors: list[str] = []
+    triggers = trigger_block(workflow_text)
+    pair = (filename, job_name)
+
+    if "workflow_dispatch:" not in triggers:
+        errors.append(f"{filename}/{job_name}: workflow_dispatch obligatoire pour toute écriture distante")
+
+    if filename in STRICTLY_MANUAL_WORKFLOWS:
+        for automatic in ("push:", "pull_request:", "schedule:"):
+            if re.search(rf"(?m)^  {re.escape(automatic)}\s*$", triggers):
+                errors.append(
+                    f"{filename}/{job_name}: déclencheur automatique interdit pour ce workflow: {automatic[:-1]}"
+                )
+
+    for marker in MANUAL_WRITE_JOB_MARKERS.get(pair, ()):
+        if marker not in block:
+            errors.append(f"{filename}/{job_name}: garde manuelle absente: {marker}")
+    return errors
+
 def validate_workflows(texts: dict[str, str]) -> list[str]:
     errors: list[str] = []
     parsed: dict[str, dict[str, str]] = {}
@@ -123,6 +177,9 @@ def validate_workflows(texts: dict[str, str]) -> list[str]:
                 errors.append(
                     f"{filename}/{job_name}: écriture distante hors environment {expected_environment}"
                 )
+            errors.extend(
+                validate_manual_write_boundary(filename, texts[filename], job_name, block)
+            )
 
     return errors
 
@@ -136,8 +193,11 @@ def repository_texts() -> dict[str, str]:
 
 def self_test() -> None:
     fixtures = {
-        "deploy-github-pages-isolated.yml": """jobs:
+        "deploy-github-pages-isolated.yml": """on:
+  workflow_dispatch:
+jobs:
   deploy:
+    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'
     permissions:
       pages: write
     environment:
@@ -145,17 +205,27 @@ def self_test() -> None:
     steps:
       - uses: actions/deploy-pages@0123456789012345678901234567890123456789
 """,
-        "supabase-production-preflight.yml": """jobs:
+        "supabase-production-preflight.yml": """on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
   apply-production:
+    if: github.event_name == 'workflow_dispatch' && inputs.apply == true && inputs.confirmation == 'APPLY-SUPABASE-PRODUCTION' && github.ref == 'refs/heads/main'
     environment: production
     steps:
       - run: supabase db push --linked --password "$DB"
 """,
-        "sinjira-v25-auth-password-hardening.yml": """jobs:
+        "sinjira-v25-auth-password-hardening.yml": """on:
+  workflow_dispatch:
+jobs:
   enable-leaked-password-protection:
     environment: production
     steps:
-      - run: curl --request PATCH "$SUPABASE_MANAGEMENT_API/projects/x/config/auth"
+      - run: |
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$AUTH_CONFIRMATION" = "ENABLE-SINJIRA-V25-LEAKED-PASSWORD-PROTECTION"
+          curl --request PATCH "$SUPABASE_MANAGEMENT_API/projects/x/config/auth"
 """,
         "sinjira-v25-production-deploy.yml": """jobs:
   verify-v25-consciousness-vault:
@@ -210,6 +280,28 @@ def self_test() -> None:
       - run: curl --request PATCH "$SUPABASE_MANAGEMENT_API/projects/x/config/auth"
 """,
         ),
+        "workflow_dispatch Supabase retiré": (
+            "supabase-production-preflight.yml",
+            fixtures["supabase-production-preflight.yml"].replace("  workflow_dispatch:\n", "", 1),
+        ),
+        "confirmation Supabase retirée": (
+            "supabase-production-preflight.yml",
+            fixtures["supabase-production-preflight.yml"].replace(
+                " && inputs.confirmation == 'APPLY-SUPABASE-PRODUCTION'", "", 1
+            ),
+        ),
+        "Pages rendu automatique": (
+            "deploy-github-pages-isolated.yml",
+            fixtures["deploy-github-pages-isolated.yml"].replace(
+                "  workflow_dispatch:\n", "  push:\n", 1
+            ),
+        ),
+        "garde main HIBP retirée": (
+            "sinjira-v25-auth-password-hardening.yml",
+            fixtures["sinjira-v25-auth-password-hardening.yml"].replace(
+                '          test "$GITHUB_REF" = "refs/heads/main"\n', "", 1
+            ),
+        ),
     }
 
     local_only = """jobs:
@@ -230,7 +322,7 @@ def self_test() -> None:
 
     print(
         "OK auto-test environments production: jobs sensibles inventoriés, "
-        "exception github-pages bornée et écritures inconnues refusées."
+        "exception github-pages bornée, écritures inconnues refusées et déclenchements manuels verrouillés."
     )
 
 
@@ -255,6 +347,7 @@ def main() -> int:
     print("- vérifications production ciblées: environment production")
     print("- publication Pages isolée: exception environment github-pages bornée")
     print("- toute nouvelle écriture distante reconnue hors inventaire est refusée")
+    print("- toute écriture distante reconnue exige workflow_dispatch et ses gardes manuelles")
     return 0
 
 
