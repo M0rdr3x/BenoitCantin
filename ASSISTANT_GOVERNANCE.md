@@ -115,7 +115,7 @@ Toute modification qui élargit les données accessibles, active une intégratio
 
 Le chargeur du widget public est centralisé dans `assets/js/ai-transparency.js`.
 
-Sur le domaine officiel, l’assistant public est actuellement présenté sans charger BubblaV. Le code du fournisseur reste préparé derrière le verrou local, mais il ne doit pas être activé tant que les contrôles fournisseur #443/#444 ne sont pas terminés. L’ancien assistant local `sinjira-assistant.js` ne doit pas être chargé simultanément avec une future réactivation du widget public. Les espaces privés, les pages `noindex` et les environnements non officiels peuvent conserver l’aide locale sans fournisseur externe.
+Sur le domaine officiel, l’assistant public est actuellement présenté sans charger BubblaV. La minimisation #443 est terminée, mais le code fournisseur ne doit pas être activé tant que la restriction de domaines #444 n’est pas terminée et revérifiée. L’ancien assistant local `sinjira-assistant.js` ne doit pas être chargé simultanément avec une future réactivation du widget public. Les espaces privés, les pages `noindex` et les environnements non officiels peuvent conserver l’aide locale sans fournisseur externe.
 
 Le script fournisseur prévu pour une réactivation future reste :
 
@@ -153,6 +153,6 @@ Tout changement important doit être :
 
 Dernière mise à jour : 1er octobre 2026.
 
-### Relecture fournisseur du 1er octobre 2026
+### Relecture et minimisation fournisseur — 1er au 2 octobre 2026
 
-La lecture BubblaV fraîche confirme : site `ready`, `yolo_mode=false`, apprentissage automatique publié sans revue désactivé, mais `allow_all_domains=true` et `allowed_domains=[]`. Les cinq formulaires hors périmètre de #443 ont été supprimés après confirmation `submission_count=0`; une relecture fournisseur confirme qu’il ne reste que les deux formulaires de contact autorisés; les deux formulaires de contact à conserver restent actifs avec consentement. L’intégration **Escalate to Human** est active et ses instructions la réservent à une demande explicite d’un humain. La lecture des flows retourne encore une erreur fournisseur interne; aucune suppression destructive de formulaire n’est donc effectuée tant qu’une dépendance éventuelle par flow ne peut pas être exclue.
+La lecture BubblaV fraîche confirme : site `ready`, `yolo_mode=false`, apprentissage automatique publié sans revue désactivé, mais `allow_all_domains=true` et `allowed_domains=[]`. Les cinq formulaires hors périmètre de #443 ont été supprimés après confirmation `submission_count=0`; une relecture fournisseur confirme `total=2`, uniquement les deux formulaires de contact autorisés, tous deux actifs avec consentement. L’intégration **Escalate to Human** reste active et ses instructions la réservent à une demande explicite d’un humain. La lecture des flows retourne encore une erreur fournisseur interne, mais aucun formulaire hors périmètre ne subsiste dans `list_forms`. La réactivation reste interdite tant que #444 n’est pas résolue.
