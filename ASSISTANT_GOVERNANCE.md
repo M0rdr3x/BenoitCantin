@@ -156,3 +156,12 @@ Dernière mise à jour : 1er octobre 2026.
 ### Relecture et minimisation fournisseur — 1er au 2 octobre 2026
 
 La lecture BubblaV fraîche confirme : site `ready`, `yolo_mode=false`, apprentissage automatique publié sans revue désactivé, mais `allow_all_domains=true` et `allowed_domains=[]`. Les cinq formulaires hors périmètre de #443 ont été supprimés après confirmation `submission_count=0`; une relecture fournisseur confirme `total=2`, uniquement les deux formulaires de contact autorisés, tous deux actifs avec consentement. L’intégration **Escalate to Human** reste active et ses instructions la réservent à une demande explicite d’un humain. La lecture des flows retourne encore une erreur fournisseur interne, mais aucun formulaire hors périmètre ne subsiste dans `list_forms`. La réactivation reste interdite tant que #444 n’est pas résolue.
+
+
+### Audit de la frontière de crawl — 2 octobre 2026
+
+La relecture fournisseur BubblaV confirme un crawl prêt : `total_pages=50`, `pending_chunks=0`, `processing_chunks=0`. Les URLs supplémentaires configurées restent sur le domaine officiel et concernent uniquement des surfaces publiques SINJIRA, Projet Nova et transparence IA; le sitemap fournisseur est `https://www.benoitcantin.com/sitemap.xml`.
+
+Des recherches ciblées dans la connaissance BubblaV n’ont retourné aucun résultat pour `supabase/config.toml`, `test_public_site.py`, `mobile-native App.tsx`, `service_role SUPABASE`, `github workflows validate-site` et `scripts build_netlify_public`. Cette preuve est ponctuelle et ne remplace pas la frontière de publication #450.
+
+La CI du dépôt vérifie désormais que `sitemap.xml` n’énumère jamais les surfaces privées/techniques (`/compte/`, `/admin/`, `/app/`, `/histoire-de-vie/`, `/supabase/`, `/.github/`, `/mobile-native/`, `/tests/`, `/docs/`, `/scripts/`) et que `robots.txt` conserve les exclusions correspondantes. Cette barrière complète le verrou local du widget; elle ne rend pas #444 satisfaite tant que l’allowlist de domaines fournisseur n’est pas réellement configurée.

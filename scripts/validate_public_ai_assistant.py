@@ -10,6 +10,8 @@ SITE = ROOT / "assets/js/site.js"
 INDEX = ROOT / "index.html"
 ASSISTANT = ROOT / "assistant.html"
 TRANSPARENCY = ROOT / "transparence-ia.html"
+SITEMAP = ROOT / "sitemap.xml"
+ROBOTS = ROOT / "robots.txt"
 
 BUBBLAV_WIDGET_URL = "https://www.bubblav.com/widget.js"
 BUBBLAV_SITE_ID = "ca77cd98-bd32-459c-ad55-fdad4fb85316"
@@ -17,6 +19,19 @@ FORMS_READY_MARKER = "var publicAssistantFormsMinimized = true;"
 DOMAINS_READY_MARKER = "var publicAssistantDomainsRestricted = false;"
 VENDOR_BLOCK_MARKER = "if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted) return;"
 LOADER_URL = "/assets/js/ai-transparency.js?v=1.4.0"
+PRIVATE_OR_TECHNICAL_PATHS = (
+    "/app/",
+    "/compte/",
+    "/histoire-de-vie/",
+    "/Admin/",
+    "/admin/",
+    "/supabase/",
+    "/.github/",
+    "/mobile-native/",
+    "/tests/",
+    "/docs/",
+    "/scripts/",
+)
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -118,16 +133,48 @@ def validate_pages(index: str, assistant: str, transparency: str) -> list[str]:
     return errors
 
 
-def validate_all(widget: str, site: str, index: str, assistant: str, transparency: str) -> list[str]:
+
+def validate_crawl_boundary(sitemap: str, robots: str) -> list[str]:
+    errors: list[str] = []
+    require(
+        errors,
+        "Sitemap: https://www.benoitcantin.com/sitemap.xml" in robots,
+        "robots.txt: déclaration sitemap officielle absente",
+    )
+    for path in PRIVATE_OR_TECHNICAL_PATHS:
+        require(
+            errors,
+            path not in sitemap,
+            f"sitemap.xml: surface privée/technique interdite: {path}",
+        )
+        require(
+            errors,
+            f"Disallow: {path}" in robots,
+            f"robots.txt: exclusion obligatoire absente: {path}",
+        )
+
+    for line in sitemap.splitlines():
+        if "<loc>" not in line:
+            continue
+        require(
+            errors,
+            "<loc>https://www.benoitcantin.com/" in line,
+            f"sitemap.xml: URL hors domaine officiel: {line.strip()}",
+        )
+    return errors
+
+
+def validate_all(widget: str, site: str, index: str, assistant: str, transparency: str, sitemap: str, robots: str) -> list[str]:
     return [
         *validate_widget(widget),
         *validate_site_loader(site),
         *validate_pages(index, assistant, transparency),
+        *validate_crawl_boundary(sitemap, robots),
     ]
 
 
-def load() -> tuple[str, str, str, str, str]:
-    paths = (WIDGET, SITE, INDEX, ASSISTANT, TRANSPARENCY)
+def load() -> tuple[str, str, str, str, str, str, str]:
+    paths = (WIDGET, SITE, INDEX, ASSISTANT, TRANSPARENCY, SITEMAP, ROBOTS)
     missing = [str(path.relative_to(ROOT)) for path in paths if not path.is_file()]
     if missing:
         raise ValueError("fichiers assistant IA absents: " + ", ".join(missing))
@@ -135,18 +182,18 @@ def load() -> tuple[str, str, str, str, str]:
 
 
 def self_test() -> None:
-    widget, site, index, assistant, transparency = load()
+    widget, site, index, assistant, transparency, sitemap, robots = load()
     fixtures = [
-        ("preuve formulaires régressée", widget.replace(FORMS_READY_MARKER, "var publicAssistantFormsMinimized = false;", 1), site, index, assistant, transparency),
-        ("gate domaines réactivé", widget.replace(DOMAINS_READY_MARKER, "var publicAssistantDomainsRestricted = true;", 1), site, index, assistant, transparency),
-        ("double garde remplacée", widget.replace(VENDOR_BLOCK_MARKER, "if (!publicAssistantFormsMinimized) return;", 1), site, index, assistant, transparency),
-        ("hôte officiel retiré", widget.replace("host === 'www.benoitcantin.com' || host === 'benoitcantin.com'", "host === 'example.com'", 1), site, index, assistant, transparency),
-        ("exclusion compte retirée", widget.replace("path === '/compte' ||", "false ||", 1), site, index, assistant, transparency),
-        ("noindex retiré", widget.replace("if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (!isOfficialHost || isPrivateSurface) return;", 1), site, index, assistant, transparency),
-        ("clic retiré", widget.replace("launcher.addEventListener('click'", "launcher.addEventListener('mouseover'", 1), site, index, assistant, transparency),
-        ("URL BubblaV changée", widget.replace(BUBBLAV_WIDGET_URL, "https://example.com/widget.js", 1), site, index, assistant, transparency),
-        ("site-id changé", widget.replace(BUBBLAV_SITE_ID, "00000000-0000-0000-0000-000000000000", 1), site, index, assistant, transparency),
-        ("loader site retiré", widget, site.replace(LOADER_URL, "/assets/js/other.js", 1), index, assistant, transparency),
+        ("preuve formulaires régressée", widget.replace(FORMS_READY_MARKER, "var publicAssistantFormsMinimized = false;", 1), site, index, assistant, transparency, sitemap, robots),
+        ("gate domaines réactivé", widget.replace(DOMAINS_READY_MARKER, "var publicAssistantDomainsRestricted = true;", 1), site, index, assistant, transparency, sitemap, robots),
+        ("double garde remplacée", widget.replace(VENDOR_BLOCK_MARKER, "if (!publicAssistantFormsMinimized) return;", 1), site, index, assistant, transparency, sitemap, robots),
+        ("hôte officiel retiré", widget.replace("host === 'www.benoitcantin.com' || host === 'benoitcantin.com'", "host === 'example.com'", 1), site, index, assistant, transparency, sitemap, robots),
+        ("exclusion compte retirée", widget.replace("path === '/compte' ||", "false ||", 1), site, index, assistant, transparency, sitemap, robots),
+        ("noindex retiré", widget.replace("if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (!isOfficialHost || isPrivateSurface) return;", 1), site, index, assistant, transparency, sitemap, robots),
+        ("clic retiré", widget.replace("launcher.addEventListener('click'", "launcher.addEventListener('mouseover'", 1), site, index, assistant, transparency, sitemap, robots),
+        ("URL BubblaV changée", widget.replace(BUBBLAV_WIDGET_URL, "https://example.com/widget.js", 1), site, index, assistant, transparency, sitemap, robots),
+        ("site-id changé", widget.replace(BUBBLAV_SITE_ID, "00000000-0000-0000-0000-000000000000", 1), site, index, assistant, transparency, sitemap, robots),
+        ("loader site retiré", widget, site.replace(LOADER_URL, "/assets/js/other.js", 1), index, assistant, transparency, sitemap, robots),
         (
             "bandeau accueil retiré",
             widget,
@@ -158,6 +205,8 @@ def self_test() -> None:
             ),
             assistant,
             transparency,
+            sitemap,
+            robots,
         ),
         ("neutralité retirée", widget, site, index, assistant.replace("Il ne doit pas dire aux visiteurs comment voter", "Il peut recommander un vote", 1), transparency),
         (
@@ -171,10 +220,40 @@ def self_test() -> None:
                 "Validation automatisée.",
             ),
         ),
+        (
+            "surface privée ajoutée au sitemap",
+            widget,
+            site,
+            index,
+            assistant,
+            transparency,
+            sitemap.replace("</urlset>", "  <url><loc>https://www.benoitcantin.com/compte/</loc></url>\n</urlset>", 1),
+            robots,
+        ),
+        (
+            "exclusion robots retirée",
+            widget,
+            site,
+            index,
+            assistant,
+            transparency,
+            sitemap,
+            robots.replace("Disallow: /supabase/\n", "", 1),
+        ),
+        (
+            "URL sitemap hors domaine",
+            widget,
+            site,
+            index,
+            assistant,
+            transparency,
+            sitemap.replace("https://www.benoitcantin.com/", "https://example.com/", 1),
+            robots,
+        ),
     ]
     missed: list[str] = []
-    for label, ww, ss, ii, aa, tt in fixtures:
-        if not validate_all(ww, ss, ii, aa, tt):
+    for label, ww, ss, ii, aa, tt, sm, rb in fixtures:
+        if not validate_all(ww, ss, ii, aa, tt, sm, rb):
             missed.append(label)
     if missed:
         raise SystemExit("ERREUR auto-test assistant IA: mutations non détectées: " + ", ".join(missed))
@@ -201,7 +280,7 @@ def main() -> int:
 
     print(
         "OK assistant IA public: formulaires #443 minimisés, domaine fournisseur #444 encore fail-closed, chargement futur après clic, domaine officiel, exclusions privées/noindex, "
-        "site-id unique, neutralité civique et responsabilité humaine verrouillés."
+        "site-id unique, neutralité civique, frontière sitemap/robots et responsabilité humaine verrouillés."
     )
     return 0
 
