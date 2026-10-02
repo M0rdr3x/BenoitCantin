@@ -302,7 +302,7 @@ def validate_core(contents: dict[str, str]) -> None:
         "retiréetconfirmécôtéfournisseur",
         "seconnecteràsoncompte",
         "ilsontensuiteétésupprimésindividuellement",
-        "chaquesuppressionayantrépondu\`deleted:true\`",
+        "chaquesuppressionayantrépondu`deleted:true`",
         "total=2",
         "allow_all_domains=true",
         "allowed_domains=[]",
