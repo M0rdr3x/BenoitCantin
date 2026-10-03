@@ -82,6 +82,7 @@ def validate_widget(text: str) -> list[str]:
     require(errors, "publicAssistantDomainsRestricted = false" not in text, "widget: restriction domaine fournisseur #444 doit rester confirmée")
     require(errors, "publicAssistantNetworkValidated = true" not in text, "widget: activation réseau interdite avant validation CSP/réseau")
     require(errors, "publicAssistantVendorReady" not in text, "widget: ancien verrou fournisseur unique interdit")
+    require(errors, "host === 'benoitcantin.com'" not in text, "widget: apex interdit comme origine BubblaV")
 
     click = text.find("launcher.addEventListener('click'")
     remote = text.find(BUBBLAV_WIDGET_URL)
