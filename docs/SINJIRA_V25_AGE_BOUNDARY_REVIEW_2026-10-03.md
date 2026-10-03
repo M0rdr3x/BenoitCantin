@@ -29,6 +29,24 @@ age(current_date, s.date_of_birth) < interval '18 years'
 
 Les comparaisons PostgreSQL d'intervalles peuvent normaliser mois et jours de façon à rendre une valeur calendaire comme 12 ans 11 mois 30 jours équivalente au seuil de 13 ans pour la comparaison. Le classement peut donc franchir la frontière avant le jour réel de l'anniversaire.
 
+## Audit du périmètre SQL
+
+Un audit du diff complet de la PR #435 (**555 fichiers modifiés**) a recherché les comparaisons d'âge basées sur `age(current_date, ...)`, les seuils `interval '11 years'`, `interval '13 years'`, `interval '18 years'` et les usages d'âge complété.
+
+Résultat :
+- un seul **classifieur de production** utilise encore les comparaisons fragiles d'intervalles aux seuils 11/13/18 : `public.sinjira_age_band()` dans `20260916210000_sinjira_v25_child_guardian_signup.sql`;
+- les autres contrôles d'âge de cette migration utilisent déjà `extract(year from age(...))::integer`;
+- `20260919100000_sinjira_v25_private_profile_age_11.sql` utilise déjà l'âge complété entier pour ses frontières;
+- les autres occurrences retrouvées concernent des fixtures/tests de dates exactes, pas un classifieur production concurrent.
+
+Le défaut peut donc être corrigé par un diff minimal dans `sinjira_age_band()`, sous réserve de la décision humaine #438. Cette conclusion réduit le périmètre technique mais **ne vaut pas approbation**.
+
+Le test de reproduction construit bien la veille des 13 ans avec :
+
+`current_date - interval '13 years' + interval '1 day'`
+
+et observe actuellement `youth` au lieu de `child`.
+
 ## Changement proposé pour décision humaine
 
 Ne pas appliquer ce diff tant que #438 n'a pas enregistré une décision explicite.
