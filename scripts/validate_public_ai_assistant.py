@@ -16,9 +16,10 @@ ROBOTS = ROOT / "robots.txt"
 BUBBLAV_WIDGET_URL = "https://www.bubblav.com/widget.js"
 BUBBLAV_SITE_ID = "ca77cd98-bd32-459c-ad55-fdad4fb85316"
 FORMS_READY_MARKER = "var publicAssistantFormsMinimized = true;"
-DOMAINS_READY_MARKER = "var publicAssistantDomainsRestricted = false;"
-VENDOR_BLOCK_MARKER = "if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted) return;"
-LOADER_URL = "/assets/js/ai-transparency.js?v=1.4.0"
+DOMAINS_READY_MARKER = "var publicAssistantDomainsRestricted = true;"
+NETWORK_READY_MARKER = "var publicAssistantNetworkValidated = false;"
+VENDOR_BLOCK_MARKER = "if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted || !publicAssistantNetworkValidated) return;"
+LOADER_URL = "/assets/js/ai-transparency.js?v=1.5.0"
 PRIVATE_OR_TECHNICAL_PATHS = (
     "/app/",
     "/compte/",
@@ -54,6 +55,7 @@ def validate_widget(text: str) -> list[str]:
         "if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;",
         FORMS_READY_MARKER,
         DOMAINS_READY_MARKER,
+        NETWORK_READY_MARKER,
         VENDOR_BLOCK_MARKER,
         "data-public-assistant-launcher",
         "launcher.addEventListener('click'",
@@ -77,7 +79,8 @@ def validate_widget(text: str) -> list[str]:
         "widget: le verrou fournisseur doit précéder toute création du lanceur",
     )
     require(errors, "publicAssistantFormsMinimized = false" not in text, "widget: minimisation formulaires #443 doit rester confirmée")
-    require(errors, "publicAssistantDomainsRestricted = true" not in text, "widget: réactivation domaines interdite tant que #444 reste ouvert")
+    require(errors, "publicAssistantDomainsRestricted = false" not in text, "widget: restriction domaine fournisseur #444 doit rester confirmée")
+    require(errors, "publicAssistantNetworkValidated = true" not in text, "widget: activation réseau interdite avant validation CSP/réseau")
     require(errors, "publicAssistantVendorReady" not in text, "widget: ancien verrou fournisseur unique interdit")
 
     click = text.find("launcher.addEventListener('click'")
@@ -185,8 +188,9 @@ def self_test() -> None:
     widget, site, index, assistant, transparency, sitemap, robots = load()
     fixtures = [
         ("preuve formulaires régressée", widget.replace(FORMS_READY_MARKER, "var publicAssistantFormsMinimized = false;", 1), site, index, assistant, transparency, sitemap, robots),
-        ("gate domaines réactivé", widget.replace(DOMAINS_READY_MARKER, "var publicAssistantDomainsRestricted = true;", 1), site, index, assistant, transparency, sitemap, robots),
-        ("double garde remplacée", widget.replace(VENDOR_BLOCK_MARKER, "if (!publicAssistantFormsMinimized) return;", 1), site, index, assistant, transparency, sitemap, robots),
+        ("preuve domaines régressée", widget.replace(DOMAINS_READY_MARKER, "var publicAssistantDomainsRestricted = false;", 1), site, index, assistant, transparency, sitemap, robots),
+        ("gate réseau réactivé", widget.replace(NETWORK_READY_MARKER, "var publicAssistantNetworkValidated = true;", 1), site, index, assistant, transparency, sitemap, robots),
+        ("triple garde affaiblie", widget.replace(VENDOR_BLOCK_MARKER, "if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted) return;", 1), site, index, assistant, transparency, sitemap, robots),
         ("hôte officiel retiré", widget.replace("host === 'www.benoitcantin.com' || host === 'benoitcantin.com'", "host === 'example.com'", 1), site, index, assistant, transparency, sitemap, robots),
         ("exclusion compte retirée", widget.replace("path === '/compte' ||", "false ||", 1), site, index, assistant, transparency, sitemap, robots),
         ("noindex retiré", widget.replace("if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (!isOfficialHost || isPrivateSurface) return;", 1), site, index, assistant, transparency, sitemap, robots),
@@ -281,7 +285,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK assistant IA public: formulaires #443 minimisés, domaine fournisseur #444 encore fail-closed, chargement futur après clic, domaine officiel, exclusions privées/noindex, "
+        "OK assistant IA public: formulaires #443 minimisés, domaine fournisseur #444 restreint, réseau/CSP encore fail-closed, chargement futur après clic, domaine officiel, exclusions privées/noindex, "
         "site-id unique, neutralité civique, frontière sitemap/robots et responsabilité humaine verrouillés."
     )
     return 0

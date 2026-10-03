@@ -42,7 +42,7 @@ Les documents historiques ne sont pas réécrits uniquement pour modifier leur h
 
 Le portail prépare un assistant conversationnel public fondé sur l'intelligence artificielle sous le nom **Nova × SINJIRA**.
 
-**État actuel : BubblaV est désactivé côté site.** La minimisation #443 est confirmée avec `publicAssistantFormsMinimized=true`; le verrou `publicAssistantDomainsRestricted=false` (#444) et la CSP empêchent toujours tout chargement réseau du fournisseur tant que la restriction de domaines n’est pas finalisée et revérifiée. Une éventuelle réactivation restera opt-in, limitée aux surfaces publiques autorisées et déclenchée seulement après un clic explicite.
+**État actuel : BubblaV est désactivé côté site.** La minimisation #443 est confirmée (`publicAssistantFormsMinimized=true`) et l’allowlist #444 est restreinte à `www.benoitcantin.com` (`publicAssistantDomainsRestricted=true`). Le verrou `publicAssistantNetworkValidated=false` et la CSP empêchent encore tout chargement réseau jusqu’à une validation contrôlée du widget. Une éventuelle réactivation restera opt-in et déclenchée seulement après un clic explicite.
 
 Cet assistant doit :
 

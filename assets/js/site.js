@@ -91,7 +91,7 @@
     }
     if (!doc.querySelector('script[data-ai-transparency-script]')) {
       var transparencyScript = doc.createElement('script');
-      transparencyScript.src = '/assets/js/ai-transparency.js?v=1.4.0';
+      transparencyScript.src = '/assets/js/ai-transparency.js?v=1.5.0';
       transparencyScript.defer = true;
       transparencyScript.setAttribute('data-ai-transparency-script', '');
       doc.head.appendChild(transparencyScript);

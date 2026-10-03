@@ -102,8 +102,9 @@ def validate_core(contents: dict[str, str]) -> None:
         "launcher.addeventlistener('click'",
         "launcher.setattribute('aria-busy','true')",
         "varpublicassistantformsminimized=true;",
-        "varpublicassistantdomainsrestricted=false;",
-        "if(!publicassistantformsminimized||!publicassistantdomainsrestricted)return;",
+        "varpublicassistantdomainsrestricted=true;",
+        "varpublicassistantnetworkvalidated=false;",
+        "if(!publicassistantformsminimized||!publicassistantdomainsrestricted||!publicassistantnetworkvalidated)return;",
     ):
         if marker not in ai_js:
             fail(f"chatbot public Nova × SINJIRA incomplet: {marker}")
@@ -114,7 +115,7 @@ def validate_core(contents: dict[str, str]) -> None:
         fail("chatbot public: BubblaV ne doit être créé qu'après une action explicite")
 
     if "https://www.bubblav.com" in netlify:
-        fail("CSP BubblaV doit rester bloquée tant que les contrôles fournisseur #443/#444 sont ouverts")
+        fail("CSP BubblaV doit rester bloquée tant que la validation réseau/CSP du widget n’est pas terminée")
 
     for directive in ("script-src", "connect-src"):
         match = re.search(rf"{directive}\s+([^;]+)", netlify)
@@ -128,7 +129,7 @@ def validate_core(contents: dict[str, str]) -> None:
 
     for marker in (
         "/assets/css/ai-transparency.css?v=1.2.0",
-        "/assets/js/ai-transparency.js?v=1.4.0",
+        "/assets/js/ai-transparency.js?v=1.5.0",
         "data-ai-transparency-style",
         "data-ai-transparency-script",
     ):
@@ -137,7 +138,7 @@ def validate_core(contents: dict[str, str]) -> None:
 
     for marker in (
         "/assets/css/ai-transparency.css?v=1.2.0",
-        "/assets/js/ai-transparency.js?v=1.4.0",
+        "/assets/js/ai-transparency.js?v=1.5.0",
         "data-ai-transparency-style",
         "data-ai-transparency-script",
     ):
@@ -220,7 +221,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "renvoyercesactionsverslesparcoursofficielsdusite",
         "étatactuel:bubblavestdésactivécôtésite.",
         "publicassistantformsminimized=true",
-        "publicassistantdomainsrestricted=false",
+        "publicassistantdomainsrestricted=true",
+        "publicassistantnetworkvalidated=false",
     ):
         if marker not in policy:
             fail(f"politique IA sans gouvernance assistant: {marker}")
@@ -290,7 +292,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "issue**#444**",
         "bubblavestdésactivécôtésite",
         "publicassistantformsminimized=true",
-        "publicassistantdomainsrestricted=false",
+        "publicassistantdomainsrestricted=true",
+        "publicassistantnetworkvalidated=false",
         "bubblavdoitresterabsentde",
         "responsabilitéhumaine",
     ):
@@ -304,8 +307,8 @@ def validate_core(contents: dict[str, str]) -> None:
         "ilsontensuiteétésupprimésindividuellement",
         "chaquesuppressionayantrépondu`deleted:true`",
         "total=2",
-        "allow_all_domains=true",
-        "allowed_domains=[]",
+        "allow_all_domains=false",
+        "allowed_domains=[\"www.benoitcantin.com\"]",
         "lecturedesflowsresteindisponible",
         "submission_count=0",
         "aucunesoumissionouhistoriqueexistantn'aétésupprimé",
@@ -444,7 +447,7 @@ def self_test(contents: dict[str, str]) -> None:
     mutations = [
         ("lien public retiré", "ai_js", "/transparence-ia.html", "/transparence-ia-retiree.html"),
         ("lien Assistant retiré de Transparence IA", "page", "/assistant.html", "/assistant-retire.html"),
-        ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.4.0", "/assets/js/absent.js"),
+        ("runtime portail retiré", "site_js", "/assets/js/ai-transparency.js?v=1.5.0", "/assets/js/absent.js"),
         ("mention standard retirée", "policy", "Validation finale et responsabilité du contenu", "Validation retirée"),
         ("page Transparence IA hors-ligne retirée", "sw", "/transparence-ia.html", "/transparence-ia-absente.html"),
         ("widget BubblaV retiré", "ai_js", "https://www.bubblav.com/widget.js", "https://www.bubblav.com/widget-retire.js"),
@@ -453,8 +456,9 @@ def self_test(contents: dict[str, str]) -> None:
         ("garde /app retirée", "ai_js", "path === '/app' ||\n      path.indexOf('/app/') === 0;", "path === '/app-retire' ||\n      path.indexOf('/app-retire/') === 0;"),
         ("activation volontaire retirée", "ai_js", "launcher.addEventListener('click'", "launcher.addEventListener('mouseover'"),
         ("preuve formulaires régressée", "ai_js", "var publicAssistantFormsMinimized = true;", "var publicAssistantFormsMinimized = false;"),
-        ("gate domaines réactivé", "ai_js", "var publicAssistantDomainsRestricted = false;", "var publicAssistantDomainsRestricted = true;"),
-        ("double verrou fournisseur affaibli", "ai_js", "if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted) return;", "if (!publicAssistantFormsMinimized) return;"),
+        ("preuve domaines régressée", "ai_js", "var publicAssistantDomainsRestricted = true;", "var publicAssistantDomainsRestricted = false;"),
+        ("gate réseau réactivé", "ai_js", "var publicAssistantNetworkValidated = false;", "var publicAssistantNetworkValidated = true;"),
+        ("triple verrou fournisseur affaibli", "ai_js", "if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted || !publicAssistantNetworkValidated) return;", "if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted) return;"),
         ("libellé accessible du lanceur retiré", "ai_js", "Ouvrir l’assistant Nova × SINJIRA, service BubblaV", "Ouvrir le chatbot"),
         ("cache IA accueil rétrogradé", "home", "/assets/css/ai-transparency.css?v=1.2.0", "/assets/css/ai-transparency.css?v=1.1.0"),
         ("cache IA page Transparence rétrogradé", "page", "/assets/css/ai-transparency.css?v=1.2.0", "/assets/css/ai-transparency.css?v=1.1.0"),

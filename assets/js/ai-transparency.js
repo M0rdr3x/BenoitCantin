@@ -2,7 +2,8 @@
   'use strict';
 
   var publicAssistantFormsMinimized = true;
-  var publicAssistantDomainsRestricted = false;
+  var publicAssistantDomainsRestricted = true;
+  var publicAssistantNetworkValidated = false;
 
   function ready(fn) {
     if (document.readyState !== 'loading') fn();
@@ -25,7 +26,7 @@
     var isNoindexSurface = /(^|[,\s])noindex([,\s]|$)/.test(robotsContent);
 
     if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;
-    if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted) return;
+    if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted || !publicAssistantNetworkValidated) return;
     if (
       document.querySelector('script[data-bubblav-widget]') ||
       document.querySelector('[data-public-assistant-launcher]')

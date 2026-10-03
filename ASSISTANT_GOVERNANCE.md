@@ -88,7 +88,7 @@ Le chatbot public ne constitue pas une voie d’accès aux données privées des
 
 Lorsque le fournisseur sera réactivé, le chargeur doit rester **opt-in** : le site affichera d’abord un lanceur local et ne créera le script BubblaV qu’après un clic explicite. Avant ce clic, aucune requête vers `www.bubblav.com/widget.js` ne devra être initiée par ce chargeur.
 
-**État actuel : BubblaV est désactivé côté site.** La minimisation fournisseur #443 est maintenant confirmée (`publicAssistantFormsMinimized=true`), mais le verrou de domaines #444 reste fermé (`publicAssistantDomainsRestricted=false`). La CSP n’autorise pas `www.bubblav.com`. Tant que #444 n’est pas résolue et revérifiée, aucun script ou appel réseau BubblaV ne doit être initié par le portail.
+**État actuel : BubblaV est désactivé côté site.** La minimisation #443 est confirmée (`publicAssistantFormsMinimized=true`) et l’allowlist fournisseur #444 est maintenant restreinte à `www.benoitcantin.com` (`publicAssistantDomainsRestricted=true`). Un troisième verrou local (`publicAssistantNetworkValidated=false`) maintient toutefois le widget désactivé tant que les besoins réseau/CSP n’ont pas été validés sur une cible contrôlée. La CSP n’autorise toujours pas `www.bubblav.com`.
 
 Les traitements du widget sont déclarés dans `/confidentialite.html`.
 
@@ -105,9 +105,9 @@ Configuration publique de référence :
 - escalade humaine disponible lorsqu’une demande dépasse les sources ou exige une intervention humaine;
 - formulaires fournisseur limités aux besoins publics réellement nécessaires, notamment le contact explicite avec consentement; les parcours de connexion, jeu, Registre, commentaires et autres actions de compte ne doivent pas être reproduits dans BubblaV;
 - inventaire de minimisation et état de revue : `docs/BUBBLAV_PUBLIC_ASSISTANT_DATA_MINIMIZATION.md`; suivi fournisseur : issue **#443**;
-- cible fournisseur : restreindre l’intégration au domaine officiel `www.benoitcantin.com` dès qu’une allowlist de domaine peut être appliquée et vérifiée; suivi fournisseur : issue **#444**.
+- allowlist fournisseur : `allow_all_domains=false`, `allowed_domains=["www.benoitcantin.com"]`; suivi fonctionnel final : issue **#444**.
 
-Après la fermeture de #443, le site reste **fail-closed** à deux niveaux tant que #444 n’est pas finalisée : `publicAssistantDomainsRestricted=false` bloque l’activation locale et la CSP bloque le réseau BubblaV. La preuve #443 (`publicAssistantFormsMinimized=true`) doit rester vraie. La garde de domaine `www.benoitcantin.com` / `benoitcantin.com` reste conservée pour une éventuelle réactivation future; les previews, copies locales et miroirs ne doivent jamais charger le chatbot. Cette garde locale complétera l’allowlist fournisseur; elle ne la remplacera pas.
+Après la restriction fournisseur #444, le site reste **fail-closed** à deux niveaux : `publicAssistantNetworkValidated=false` bloque encore l’activation locale et la CSP bloque le réseau BubblaV. Les preuves `publicAssistantFormsMinimized=true` et `publicAssistantDomainsRestricted=true` doivent rester vraies. La garde d’hôte locale reste conservée; les previews, copies locales et miroirs ne doivent jamais charger le chatbot.
 
 Toute modification qui élargit les données accessibles, active une intégration externe ou permet une action sensible doit être revue avant activation.
 
@@ -151,11 +151,11 @@ Tout changement important doit être :
 3. vérifié avant publication;
 4. compatible avec la vie privée, l’anti-spoiler et la neutralité civique.
 
-Dernière mise à jour : 1er octobre 2026.
+Dernière mise à jour : 3 octobre 2026.
 
 ### Relecture et minimisation fournisseur — 1er au 2 octobre 2026
 
-La lecture BubblaV fraîche confirme : site `ready`, `yolo_mode=false`, apprentissage automatique publié sans revue désactivé, mais `allow_all_domains=true` et `allowed_domains=[]`. Les cinq formulaires hors périmètre de #443 ont été supprimés après confirmation `submission_count=0`; une relecture fournisseur confirme `total=2`, uniquement les deux formulaires de contact autorisés, tous deux actifs avec consentement. L’intégration **Escalate to Human** reste active et ses instructions la réservent à une demande explicite d’un humain. La lecture des flows retourne encore une erreur fournisseur interne, mais aucun formulaire hors périmètre ne subsiste dans `list_forms`. La réactivation reste interdite tant que #444 n’est pas résolue.
+La lecture BubblaV fraîche du 3 octobre 2026 confirme : site `ready`, `yolo_mode=false`, apprentissage automatique publié sans revue désactivé, `allow_all_domains=false` et `allowed_domains=["www.benoitcantin.com"]`. Les cinq formulaires hors périmètre de #443 ont été supprimés après confirmation `submission_count=0`; une relecture fournisseur confirme `total=2`, uniquement les deux formulaires de contact autorisés, tous deux actifs avec consentement. L’intégration **Escalate to Human** reste active et ses instructions la réservent à une demande explicite d’un humain. La lecture des flows retourne encore une erreur fournisseur interne, mais aucun formulaire hors périmètre ne subsiste dans `list_forms`. La réactivation reste interdite tant que la validation réseau/CSP contrôlée de #444 n’est pas terminée.
 
 
 ### Audit de la frontière de crawl — 2 octobre 2026
@@ -164,4 +164,4 @@ La relecture fournisseur BubblaV confirme un crawl prêt : `total_pages=50`, `pe
 
 Des recherches ciblées dans la connaissance BubblaV n’ont retourné aucun résultat pour `supabase/config.toml`, `test_public_site.py`, `mobile-native App.tsx`, `service_role SUPABASE`, `github workflows validate-site` et `scripts build_netlify_public`. Cette preuve est ponctuelle et ne remplace pas la frontière de publication #450.
 
-La CI du dépôt vérifie désormais que `sitemap.xml` n’énumère jamais les surfaces privées/techniques (`/compte/`, `/admin/`, `/app/`, `/histoire-de-vie/`, `/supabase/`, `/.github/`, `/mobile-native/`, `/tests/`, `/docs/`, `/scripts/`) et que `robots.txt` conserve les exclusions correspondantes. Cette barrière complète le verrou local du widget; elle ne rend pas #444 satisfaite tant que l’allowlist de domaines fournisseur n’est pas réellement configurée.
+La CI du dépôt vérifie désormais que `sitemap.xml` n’énumère jamais les surfaces privées/techniques (`/compte/`, `/admin/`, `/app/`, `/histoire-de-vie/`, `/supabase/`, `/.github/`, `/mobile-native/`, `/tests/`, `/docs/`, `/scripts/`) et que `robots.txt` conserve les exclusions correspondantes. Cette barrière complète l’allowlist fournisseur désormais configurée. #444 reste ouvert uniquement pour la preuve fonctionnelle finale et la validation réseau/CSP avant activation.

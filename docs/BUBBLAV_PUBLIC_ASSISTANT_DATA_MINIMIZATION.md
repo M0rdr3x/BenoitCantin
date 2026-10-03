@@ -1,6 +1,6 @@
 # BubblaV — minimisation des formulaires du chatbot public
 
-Dernière revue : 1er octobre 2026.
+Dernière revue : 3 octobre 2026.
 
 Suivi fournisseur : issue GitHub **#443** — minimisation fournisseur terminée le 1er octobre 2026.
 
@@ -55,7 +55,7 @@ Une relecture immédiate de `list_forms` confirme ensuite **`total=2`** et uniqu
 
 L’intégration `contact_form` / **Escalate to Human** reste active avec une instruction fournisseur limitée à une demande explicite de contact humain.
 
-La lecture des flows continue de retourner une erreur interne fournisseur sur le plan actuel, mais aucun formulaire hors périmètre n’existe désormais dans l’inventaire fournisseur. Le widget public reste désactivé tant que #444 n’est pas résolue.
+La lecture des flows continue de retourner une erreur interne fournisseur sur le plan actuel, mais aucun formulaire hors périmètre n’existe désormais dans l’inventaire fournisseur. Le widget public reste désactivé tant que la validation réseau/CSP finale de #444 n’est pas terminée.
 
 ## État d’application
 
@@ -65,7 +65,8 @@ La lecture des flows continue de retourner une erreur interne fournisseur sur le
 - retrait de **Se Connecter À Son Compte** : **confirmé**;
 - cinq formulaires hors périmètre ont été **supprimés après confirmation de zéro soumission**;
 - relecture finale `list_forms` : **`total=2`**, uniquement les deux formulaires publics de contact autorisés;
-- `allow_all_domains=true` et `allowed_domains=[]` restent confirmés côté fournisseur (#444);
+- **Projet Nova a été retiré du sélecteur du formulaire personnel `Contacter Benoit Cantin`**; les demandes Nova disposent de leur formulaire fournisseur séparé;
+- `allow_all_domains=false` et `allowed_domains=["www.benoitcantin.com"]` sont confirmés côté fournisseur (#444);
 - la lecture des flows reste indisponible, mais aucun formulaire hors périmètre ne subsiste dans l’inventaire fournisseur;
 - aucune soumission ou historique existant n’a été supprimé puisque les cinq formulaires retirés avaient chacun `submission_count=0`.
 
