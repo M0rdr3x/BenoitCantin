@@ -154,6 +154,7 @@ def validate_preview_workflow_text(text: str) -> list[str]:
     require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python preview smoke non épinglé')
     require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python preview smoke inattendue')
     require(errors, 'deploy_permalink:' in text, 'input permalink atomique Netlify absent')
+    require(errors, 'description: "Permalink atomique Netlify (DEPLOY_URL: deploy-id--site.netlify.app), jamais un alias preview/branche"' in text, 'description deploy_permalink doit rester quotée pour conserver un YAML GitHub valide')
     require(errors, 'preview_url:' not in text, 'alias preview générique interdit comme input de gate')
     require(errors, 'artifact_context:' in text, 'choix de contexte artefact Netlify absent')
     require(errors, 'type: choice' in text, 'contexte artefact Netlify doit rester un choice borné')
@@ -595,6 +596,11 @@ def run_preview_self_tests(text: str) -> None:
         'preuve SHA GITHUB retirée de la commande': text.replace(' --expected-sha "$GITHUB_SHA"', '', 1),
         'SHA manuel ajouté': text.replace('      deploy_permalink:\n', '      expected_sha:\n        required: true\n      deploy_permalink:\n', 1),
         'alias preview réintroduit': text.replace('      deploy_permalink:\n', '      preview_url:\n', 1),
+        'description permalink non quotée': text.replace(
+            '        description: "Permalink atomique Netlify (DEPLOY_URL: deploy-id--site.netlify.app), jamais un alias preview/branche"\n',
+            '        description: Permalink atomique Netlify (DEPLOY_URL: deploy-id--site.netlify.app), jamais un alias preview/branche\n',
+            1,
+        ),
         'production-candidate retiré': text.replace('          - production-candidate\n', '', 1),
         'choice contexte retiré': text.replace('        type: choice\n', '        type: string\n', 1),
         'contexte env retiré': text.replace('      SMOKE_CONTEXT: ${{ inputs.artifact_context }}\n', '', 1),
