@@ -1,0 +1,47 @@
+name: Web production — smoke HTTP
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Smoke HTTP production officielle
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/a1/web-release-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Auto-tester le smoke HTTP
+        run: python3 scripts/validate_web_release_http.py --self-test
+      - name: Vérifier la production officielle
+        run: python3 scripts/validate_web_release_http.py https://www.benoitcantin.com --context production --require-netlify --expected-sha "$GITHUB_SHA"
+      - name: Vérifier la redirection canonique du domaine apex
+        run: python3 scripts/validate_web_release_http.py https://benoitcantin.com --check-apex-redirect
+      - name: Résumer la preuve production
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### Smoke HTTP — production officielle"
+            echo "- Cible : \`https://www.benoitcantin.com\`"
+            echo "- Contexte : \`production\`"
+            echo "- SHA source attendu/publié : \`$GITHUB_SHA\`"
+            echo "- Ref de validation : \`$GITHUB_REF\`"
+            echo "- Hébergement : **signature Netlify confirmée**"
+            echo "- Apex : \`https://benoitcantin.com/\` → \`https://www.benoitcantin.com/\` (**301/308 + Netlify** )"
+            echo "- Verdict : **SUCCESS**"
+          } >> "$GITHUB_STEP_SUMMARY"

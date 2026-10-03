@@ -1,0 +1,76 @@
+name: Netlify pré-DNS — gate combiné
+
+on:
+  workflow_dispatch:
+    inputs:
+      preview_permalink:
+        description: Permalink atomique du deploy preview (deploy-id--site.netlify.app)
+        required: true
+        type: string
+      production_permalink:
+        description: Permalink atomique du deploy production-candidate (deploy-id--site.netlify.app)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: Gate Netlify pré-DNS combiné
+    if: startsWith(github.ref, 'refs/heads/a1/web-release-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      PREVIEW_PERMALINK: ${{ inputs.preview_permalink }}
+      PRODUCTION_PERMALINK: ${{ inputs.production_permalink }}
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Refuser deux permalinks identiques
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$PREVIEW_PERMALINK" = "$PRODUCTION_PERMALINK" ]; then
+            echo "ERREUR: preview et production-candidate doivent être deux deploys atomiques distincts." >&2
+            exit 1
+          fi
+      - name: Auto-tester le smoke HTTP
+        run: python3 scripts/validate_web_release_http.py --self-test
+      - name: Prouver le deploy preview
+        shell: bash
+        run: python3 scripts/validate_web_release_http.py "$PREVIEW_PERMALINK" --context preview --expected-sha "$GITHUB_SHA"
+      - name: Prouver le candidat production avant DNS
+        shell: bash
+        run: python3 scripts/validate_web_release_http.py "$PRODUCTION_PERMALINK" --context production-candidate --same-netlify-site-as "$PREVIEW_PERMALINK" --expected-sha "$GITHUB_SHA"
+      - name: Extraire l’identité canonique du site Netlify
+        shell: bash
+        run: |
+          set -euo pipefail
+          site_name="$(python3 scripts/validate_web_release_http.py "$PREVIEW_PERMALINK" --print-netlify-site)"
+          test -n "$site_name"
+          echo "NETLIFY_SITE_NAME=$site_name" >> "$GITHUB_ENV"
+      - name: Résumer la preuve pré-DNS
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### Gate Netlify pré-DNS combiné"
+            echo "- Ref : \`$GITHUB_REF\`"
+            echo "- SHA source commun : \`$GITHUB_SHA\`"
+            echo "- Preview immuable : \`$PREVIEW_PERMALINK\` — **PASS**"
+            echo "- Production-candidate immuable : \`$PRODUCTION_PERMALINK\` — **PASS**"
+            echo "- Projet Netlify canonique : \`$NETLIFY_SITE_NAME\` — **même site confirmé pour les deux deploys**"
+            echo "- DNS : **non modifié par ce workflow**"
+            echo "- Verdict : **PRÊT POUR LA PHASE DNS CONTRÔLÉE**"
+          } >> "$GITHUB_STEP_SUMMARY"

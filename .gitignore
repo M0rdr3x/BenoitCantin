@@ -18,6 +18,10 @@ service-account*.json
 supabase/.temp/
 supabase/.branches/
 
+# Sorties de build / état hébergeur
+_site/
+.netlify/
+
 # Dépendances / caches / environnements locaux
 node_modules/
 __pycache__/

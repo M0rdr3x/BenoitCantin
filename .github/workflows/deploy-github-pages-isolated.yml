@@ -1,0 +1,129 @@
+name: Pages confinement — publication publique isolée
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_containment:
+        description: "Confirmer explicitement le confinement temporaire GitHub Pages"
+        required: true
+        type: choice
+        options:
+          - "NO"
+          - "CONTAIN"
+      acknowledge_header_gap:
+        description: "Reconnaître que GitHub Pages ne satisfait pas le contrat complet des en-têtes HTTP"
+        required: true
+        type: choice
+        options:
+          - "NO"
+          - "ACK_HEADER_GAP"
+      expected_sha:
+        description: "SHA main exact à confiner (40 caractères hexadécimaux)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-production-isolated
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Construire l’artefact de confinement Pages
+    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier le SHA explicitement approuvé
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "ERREUR: expected_sha doit être un SHA Git complet de 40 caractères." >&2
+            exit 1
+          fi
+          if [ "$EXPECTED_SHA" != "$GITHUB_SHA" ]; then
+            echo "ERREUR: le SHA approuvé ne correspond pas au SHA exécuté." >&2
+            exit 1
+          fi
+
+      - name: Vérifier l’allowlist publique
+        run: python3 scripts/build_netlify_public.py --check
+
+      - name: Construire le publish public isolé
+        run: python3 scripts/build_netlify_public.py --output _site
+
+      - name: Vérifier la frontière de publication Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _site/.well-known/security.txt
+          test -f _site/.nojekyll
+          test -f _site/CNAME
+          test ! -e _site/_headers
+          test ! -e _site/_redirects
+          test ! -e _site/script.js
+          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do
+            if grep -R -F -q -- "$endpoint" _site; then
+              echo "ERREUR: endpoint Formspree historique interdit dans l’artefact Pages: $endpoint" >&2
+              exit 1
+            fi
+          done
+          for forbidden in .github docs mobile-native scripts supabase tests; do
+            test ! -e "_site/$forbidden"
+          done
+          file_count="$(find _site -type f | wc -l | tr -d ' ')"
+          test "$file_count" -gt 0
+          echo "PAGES_PUBLIC_FILE_COUNT=$file_count" >> "$GITHUB_ENV"
+
+      - name: Téléverser uniquement l’artefact public Pages
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        with:
+          path: _site
+
+      - name: Résumer la frontière de publication
+        shell: bash
+        run: |
+          {
+            echo "### GitHub Pages — artefact public isolé"
+            echo "- SHA approuvé : `$GITHUB_SHA`"
+            echo "- Fichiers publics : **$PAGES_PUBLIC_FILE_COUNT**"
+            echo "- Source téléversée : `_site`"
+            echo "- Racine du dépôt : **non publiée**"
+            echo "- Mode : **confinement temporaire**"
+            echo "- Limite connue : **les en-têtes HTTP complets de #450 ne sont pas fournis par GitHub Pages**"
+            echo "- Cible finale #450 : **Netlify avec _headers/_redirects**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Publier le confinement Pages
+    needs: build
+    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Déployer sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346

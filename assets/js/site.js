@@ -39,6 +39,23 @@
 
   function appendAssistantAssets() {
     if (root.getAttribute('data-disable-sinjira-assistant') === 'true') return;
+
+    var host = String(window.location.hostname || '').toLowerCase().replace(/\.$/, '');
+    var isOfficialHost = host === 'www.benoitcantin.com' || host === 'benoitcantin.com';
+    var path = String(window.location.pathname || '/').toLowerCase();
+    var isPrivateSurface =
+      path === '/compte' ||
+      path.indexOf('/compte/') === 0 ||
+      path === '/admin' ||
+      path.indexOf('/admin/') === 0 ||
+      path === '/app' ||
+      path.indexOf('/app/') === 0;
+    var robots = doc.querySelector('meta[name="robots"]');
+    var robotsContent = robots ? String(robots.getAttribute('content') || '').toLowerCase() : '';
+    var isNoindexSurface = /(^|[,\s])noindex([,\s]|$)/.test(robotsContent);
+
+    if (isOfficialHost && !isPrivateSurface && !isNoindexSurface) return;
+
     if (!doc.querySelector('link[data-sinjira-assistant-style]')) {
       var assistantStyle = doc.createElement('link');
       assistantStyle.rel = 'stylesheet';
@@ -64,24 +81,87 @@
     doc.head.appendChild(pwaScript);
   }
 
+  function appendAiTransparencyAssets() {
+    if (!doc.querySelector('link[data-ai-transparency-style]')) {
+      var transparencyStyle = doc.createElement('link');
+      transparencyStyle.rel = 'stylesheet';
+      transparencyStyle.href = '/assets/css/ai-transparency.css?v=1.2.0';
+      transparencyStyle.setAttribute('data-ai-transparency-style', '');
+      doc.head.appendChild(transparencyStyle);
+    }
+    if (!doc.querySelector('script[data-ai-transparency-script]')) {
+      var transparencyScript = doc.createElement('script');
+      transparencyScript.src = '/assets/js/ai-transparency.js?v=1.5.0';
+      transparencyScript.defer = true;
+      transparencyScript.setAttribute('data-ai-transparency-script', '');
+      doc.head.appendChild(transparencyScript);
+    }
+  }
+
   appendCompatStylesheet();
   appendAssistantAssets();
   appendPwaAssets();
+  appendAiTransparencyAssets();
+
+  function normalizePortalNavigation() {
+    var portalNav = doc.querySelector('[data-main-nav]');
+    if (!portalNav) return;
+
+    var path = String(window.location.pathname || '/').toLowerCase().replace(/\/+$/, '') || '/';
+    if (
+      path.indexOf('/projets/projet-nova') === 0 ||
+      path === '/compte' || path.indexOf('/compte/') === 0 ||
+      path === '/app' || path.indexOf('/app/') === 0 ||
+      path === '/admin' || path.indexOf('/admin/') === 0
+    ) {
+      return;
+    }
+
+    var homeCurrent = path === '/';
+    var sinjiraCurrent = path === '/projets/sinjira' || path.indexOf('/projets/sinjira/') === 0;
+    var novaCurrent = path === '/projets/projet-nova' || path.indexOf('/projets/projet-nova/') === 0;
+    var aboutCurrent = path === '/a-propos.html';
+
+    portalNav.innerHTML =
+      '<a' + (homeCurrent ? ' aria-current="page"' : '') + ' href="/">Accueil</a>' +
+      '<a' + (sinjiraCurrent ? ' aria-current="page"' : '') + ' href="/projets/sinjira/">SINJIRA™</a>' +
+      '<a' + (novaCurrent ? ' aria-current="page"' : '') + ' href="/projets/projet-nova/">Projet Nova</a>' +
+      '<a' + (aboutCurrent ? ' aria-current="page"' : '') + ' href="/a-propos.html">À propos</a>' +
+      '<a class="nav-cta" href="/compte/" data-sinjira-session-nav>Compte</a>';
+  }
+
+  normalizePortalNavigation();
 
   var toggle = doc.querySelector('[data-menu-toggle]');
   var nav = doc.querySelector('[data-main-nav]');
   if (toggle && nav) {
+    if (!nav.id) nav.id = 'navigation-principale';
+    toggle.setAttribute('aria-controls', nav.id);
+
+    function closeMainNavigation(returnFocus) {
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-label', 'Ouvrir le menu');
+      removeClass(nav, 'open');
+      if (returnFocus) toggle.focus();
+    }
+
     toggle.addEventListener('click', function () {
       var open = toggle.getAttribute('aria-expanded') === 'true';
-      toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
-      if (open) removeClass(nav, 'open');
-      else addClass(nav, 'open');
+      if (open) closeMainNavigation(false);
+      else {
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.setAttribute('aria-label', 'Fermer le menu');
+        addClass(nav, 'open');
+      }
     });
 
     nav.addEventListener('click', function (event) {
-      if (closestAnchor(event.target, nav)) {
-        toggle.setAttribute('aria-expanded', 'false');
-        removeClass(nav, 'open');
+      if (closestAnchor(event.target, nav)) closeMainNavigation(false);
+    });
+
+    doc.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+        closeMainNavigation(true);
       }
     });
   }
