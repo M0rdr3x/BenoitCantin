@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       deploy_permalink:
-        description: Permalink atomique Netlify (DEPLOY_URL: deploy-id--site.netlify.app), jamais un alias preview/branche
+        description: "Permalink atomique Netlify (DEPLOY_URL: deploy-id--site.netlify.app), jamais un alias preview/branche"
         required: true
         type: string
       artifact_context:
