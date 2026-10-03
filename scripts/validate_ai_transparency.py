@@ -108,6 +108,9 @@ def validate_core(contents: dict[str, str]) -> None:
         if marker not in ai_js:
             fail(f"chatbot public Nova × SINJIRA incomplet: {marker}")
 
+    if "host==='benoitcantin.com'" in ai_js:
+        fail("chatbot public: l’apex ne doit pas être autorisé comme origine BubblaV")
+
     click_index = ai_js.find("launcher.addeventlistener('click'")
     third_party_index = ai_js.find("script.src='https://www.bubblav.com/widget.js'")
     if click_index < 0 or third_party_index < 0 or third_party_index < click_index:
