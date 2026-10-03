@@ -110,7 +110,7 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 
 ### Preuves CI récentes observées sur la branche
 
-- **Inscription enfant 11 ans** : succès sur le HEAD fonctionnel `92f74a8bb1fc31452b08b67ca27a67ec9008acab`; reconstruction complète de la base, **74/74** assertions pgTAP, coffre privé enfant vert et parcours Auth HTTP réel à exactement 11 ans. Les nouvelles preuves couvrent le second code parental refusé après rétablissement et la frontière `guardian_links` navigateur en lecture seule.
+- **Inscription enfant 11 ans — revalidation 2026-10-03** : sur le HEAD `986f103b1757e603ca2d10e138c935817ab0fd83`, reconstruction complète de la base puis **73/74** assertions pgTAP. Le test 28, `la veille des 13 ans reste classée child`, obtient `youth`. La cause est la comparaison de `age(current_date,date_of_birth)` avec `interval '13 years'` dans `sinjira_age_band()`, comparaison d'intervalle inadaptée à une frontière d'anniversaire calendaire. Le coffre privé et les autres preuves restent distincts; ce rouge doit être corrigé et revalidé avant approbation du Lot B.
 - **Refonte compte et catalogue** : succès sur `343bc309561e5dc61b957149fa28b29d482ca88b`, incluant **56/56** assertions; le repair propriétaire fonctionne avec l'autorité `owner` sans fabriquer entitlement commercial, faux accès tester ni historique de lecture.
 - **Catalogue romans privés** : succès sur `6b657b136ae3ded743de963ca70b4571d8335fed`; aucune modification runtime/migration ultérieure ne rouvre cette frontière.
 - **Contrat social/RLS** : le job dédié `social-rls-contract` est vert sur le HEAD courant de cette vague et vérifie notamment que le classifieur d'âge final reconnaît l'owner par autorité serveur plutôt que par identité courriel.
@@ -135,6 +135,7 @@ Pour chaque migration concernée :
 - un rôle `authenticated` peut-il passer un UUID arbitraire au lieu d'être borné à `auth.uid()` ?
 - le rôle `service_role` est-il utilisé uniquement pour une opération serveur réellement nécessaire ?
 - une transition d'âge ou de supervision échoue-t-elle fermée si l'état est incomplet ou révoqué ?
+- **Porte bloquante 13 ans** : la veille du 13e anniversaire doit rester `child` et le jour exact devenir `youth`; ne pas approuver le Lot B tant que le pgTAP `child_guardian_signup_v25.test.sql` n'est pas revenu à **74/74** avec un calcul de frontière basé sur une date d'anniversaire calendaire plutôt que sur une comparaison d'intervalles.
 - les opérations `INSERT`/`UPDATE`/`DELETE` sont-elles idempotentes ou explicitement non réexécutables ?
 - un achat `pending` pourrait-il être confondu avec un droit `paid` ?
 - un projet/roman/extension brouillon pourrait-il redevenir visible par une ancienne policy ?
