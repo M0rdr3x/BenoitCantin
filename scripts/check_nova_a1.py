@@ -131,6 +131,33 @@ if docjs.is_file():
 attr_re = re.compile(r'(?:href|src)=["\']([^"\'#]+)["\']', re.I)
 for p in NOVA.glob("*.html"):
     text = p.read_text(encoding="utf-8", errors="replace")
+    is_redirect = bool(re.search(r'<meta\b[^>]*http-equiv=["\']refresh["\'][^>]*>', text, flags=re.I))
+    if is_redirect:
+        robots = re.search(
+            r'<meta\b(?=[^>]*name=["\']robots["\'])(?=[^>]*content=["\']([^"\']*)["\'])[^>]*>',
+            text,
+            flags=re.I,
+        )
+        robots_value = robots.group(1).lower() if robots else ""
+        if "noindex" not in robots_value:
+            errors.append(f"{p.name}: redirection publique sans noindex")
+    else:
+        if 'portal-return-benoit' not in text:
+            errors.append(f"{p.name}: fallback de navigation globale vers Benoit Cantin absent")
+        main_count = len(re.findall(r"<main\b", text, flags=re.I))
+        h1_count = len(re.findall(r"<h1\b", text, flags=re.I))
+        if main_count != 1:
+            errors.append(f"{p.name}: exactement un <main> attendu, trouvé {main_count}")
+        if h1_count != 1:
+            errors.append(f"{p.name}: exactement un H1 attendu, trouvé {h1_count}")
+        if not re.search(r'<main\b(?=[^>]*id=["\']contenu["\'])[^>]*>', text, flags=re.I):
+            errors.append(f"{p.name}: landmark principal #contenu absent")
+        if not re.search(
+            r'<a\b(?=[^>]*class=["\'][^"\']*\bskip-link\b[^"\']*["\'])(?=[^>]*href=["\']#contenu["\'])[^>]*>',
+            text,
+            flags=re.I,
+        ):
+            errors.append(f"{p.name}: lien d’évitement vers #contenu absent")
     for raw in attr_re.findall(text):
         if raw.startswith(("http://", "https://", "mailto:", "tel:", "data:", "javascript:")):
             continue
@@ -168,6 +195,160 @@ for rel, needle in required_pages.items():
 constitution = NOVA / "constitution.html"
 if constitution.is_file() and "noindex" in constitution.read_text(encoding="utf-8", errors="replace").lower():
     errors.append("constitution.html: la page constitutionnelle publique ne doit pas être noindex")
+
+nova_runtime = NOVA / "script.js"
+if not nova_runtime.is_file():
+    errors.append("script.js Nova absent")
+else:
+    runtime_text = nova_runtime.read_text(encoding="utf-8", errors="replace")
+    for marker in (
+        "data-portal-global-nav",
+        "Navigation générale du portail",
+        "Navigation de Projet Nova",
+        "/projets/sinjira/",
+        "/projets/projet-nova/",
+        "/a-propos.html",
+        "/compte/",
+        "/assets/js/v19-session.js?v=25.0.0",
+        "Fermer le menu",
+        "Ouvrir le menu",
+        "restoreFocus",
+        "toggle.focus()",
+        "setMenuState(false,{restoreFocus:true})",
+    ):
+        if marker not in runtime_text:
+            errors.append(f"script.js Nova: navigation globale/accessibilité incomplète: {marker}")
+
+portal_css = NOVA / "assets" / "portal-return.css"
+if not portal_css.is_file():
+    errors.append("assets/portal-return.css absent")
+else:
+    portal_css_text = portal_css.read_text(encoding="utf-8", errors="replace")
+    for marker in (".portal-global-nav", ".portal-global-links", ".portal-global-account"):
+        if marker not in portal_css_text:
+            errors.append(f"portal-return.css: style navigation globale absent: {marker}")
+
+
+# Cache public Nova — toute page active utilisant les assets principaux doit rester sur V25.
+for page in NOVA.glob("*.html"):
+    page_text = page.read_text(encoding="utf-8", errors="replace")
+    is_redirect = bool(
+        re.search(r'<meta\b[^>]*http-equiv=["\x27]refresh["\x27][^>]*>', page_text, flags=re.I)
+    )
+    if is_redirect:
+        continue
+    for asset in ("styles.css", "script.js"):
+        versions = re.findall(rf'{re.escape(asset)}\?v=([^"\x27\s<>]+)', page_text, flags=re.I)
+        for version in versions:
+            version_match = re.fullmatch(r"(\d+)(?:\.\d+)*", version)
+            if not version_match or int(version_match.group(1)) < 25:
+                errors.append(f"{page.name}: cache Nova obsolète pour {asset}: {version}")
+
+# Visionneuse PDF — contrat CSP, indexation et cohérence publique.
+viewer = NOVA / "visionneuse.html"
+if not viewer.is_file():
+    errors.append("visionneuse.html absente")
+else:
+    viewer_text = viewer.read_text(encoding="utf-8", errors="replace")
+    viewer_low = viewer_text.lower()
+    if "cdnjs.cloudflare.com" in viewer_low:
+        errors.append("visionneuse.html: CDN cdnjs interdit par la CSP publique")
+    for marker in (
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js",
+        "data-ai-transparency",
+        "/assets/js/site-personality-v25.js?v=25.0.0",
+        'for="docSelect"',
+        'id="pageInfo" aria-live="polite" aria-atomic="true"',
+        'aria-label="Réduire le zoom"',
+        'aria-label="Agrandir le zoom"',
+        'id="viewerStatus" role="status" aria-live="polite" aria-atomic="true"',
+        'id="viewerAccessibilityNote"',
+        'aria-describedby="viewerAccessibilityNote"',
+        "canvas.setAttribute('role','img')",
+        "canvas.setAttribute('aria-label'",
+    ):
+        if marker not in viewer_text:
+            errors.append(f"visionneuse.html: contrat public/accessibilité absent: {marker}")
+    robots_match = re.search(
+        r'<meta\b(?=[^>]*name=["\x27]robots["\x27])(?=[^>]*content=["\x27]([^"\x27]*)["\x27])[^>]*>',
+        viewer_text,
+        flags=re.I,
+    )
+    robots_value = robots_match.group(1).lower() if robots_match else ""
+    if "noindex" not in robots_value:
+        errors.append("visionneuse.html: page utilitaire dynamique sans noindex")
+
+netlify = ROOT / "netlify.toml"
+if not netlify.is_file():
+    errors.append("netlify.toml absent")
+else:
+    netlify_text = netlify.read_text(encoding="utf-8", errors="replace")
+    if "https://cdn.jsdelivr.net" not in netlify_text:
+        errors.append("netlify.toml: cdn.jsdelivr.net absent de la CSP alors que la visionneuse PDF l’utilise")
+    if "worker-src 'self' blob:" not in netlify_text:
+        errors.append("netlify.toml: worker-src blob absent pour le wrapper cross-origin PDF.js")
+    for cache_path in (
+        "/projets/projet-nova/script.js",
+        "/projets/projet-nova/assets/portal-return.css",
+    ):
+        cache_pattern = re.compile(
+            rf'\[\[headers\]\]\s*for\s*=\s*"{re.escape(cache_path)}"\s*'
+            rf'\[headers\.values\]\s*'
+            rf'Cache-Control\s*=\s*"public, max-age=0, must-revalidate"',
+            flags=re.S,
+        )
+        if not cache_pattern.search(netlify_text):
+            errors.append(
+                f"netlify.toml: revalidation cache Nova absente ou incomplète pour {cache_path}"
+            )
+
+# Lecteur documentaire Nova — chargement accessible et impression fail-closed.
+document_reader = NOVA / "document.html"
+if not document_reader.is_file():
+    errors.append("document.html absent")
+else:
+    document_text = document_reader.read_text(encoding="utf-8", errors="replace")
+    for marker in (
+        'id="docPrint" disabled aria-disabled="true"',
+        'id="docLoadStatus" role="status" aria-live="polite" aria-atomic="true"',
+        'id="docContent" aria-busy="true"',
+        "content.setAttribute('aria-busy','false')",
+        "printButton.disabled=false",
+        "printButton.setAttribute('aria-disabled','false')",
+        "Impossible de charger le document.",
+        "async function sha256Hex(buffer)",
+        "globalThis.crypto.subtle.digest('SHA-256',buffer)",
+        "const bytes=await r.arrayBuffer()",
+        "const actual=await sha256Hex(bytes)",
+        "actual!==expected",
+        "new TextDecoder('utf-8',{fatal:true}).decode(bytes)",
+        "<strong>vérifié</strong>",
+        "Document chargé, intégrité vérifiée :",
+    ):
+        if marker not in document_text:
+            errors.append(f"document.html: contrat chargement/accessibilité/intégrité absent: {marker}")
+    if "texts.push(await r.text())" in document_text:
+        errors.append("document.html: lecture texte directe interdite sans vérification SHA-256")
+
+# Impression documentaire Nova — conserver transparence, statut et intégrité.
+if document_reader.is_file():
+    print_markers = (
+        "@page{margin:18mm}",
+        ".portal-global-nav",
+        ".ai-transparency-banner,.status-banner,.section-muted{display:block!important",
+        ".ai-transparency-inner{display:block!important",
+        ".integrity-list{break-inside:avoid}",
+    )
+    for marker in print_markers:
+        if marker not in document_text:
+            errors.append(f"document.html: contrat impression absent: {marker}")
+    if ".site-header,.status-banner,.page-hero .doc-actions" in document_text:
+        errors.append("document.html: le statut public ne doit pas être masqué à l’impression")
+    if ".footer,.section-muted,.skip-link" in document_text:
+        errors.append("document.html: la section d’intégrité ne doit pas être masquée à l’impression")
+    if ".site-header,.ai-transparency-banner,.page-hero .doc-actions" in document_text:
+        errors.append("document.html: la transparence IA ne doit pas être masquée à l’impression")
 
 for rel in ["SECURITY.md", "DOCUMENT_CONTROL.md"]:
     if not (NOVA / rel).is_file():

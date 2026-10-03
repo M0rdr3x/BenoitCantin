@@ -11,3 +11,7 @@
 - Module autonome : **6/6 pages vérifiées**.
 - V320 et V321 demeurent verrouillés; aucun seuil universel, pouvoir général de réquisition ou expropriation automatique n'est créé.
 - Statut : `TECHNICAL_CANDIDATE_NON_ADOPTED`; aucun effet juridique automatique.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

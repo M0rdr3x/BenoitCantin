@@ -23,3 +23,7 @@ V320 formalise une directive explicite de séparation entre les dépenses publiq
 - corpus : 188 pages, dont 182/182 héritées pixel-identiques et 6/6 nouvelles pages vérifiées visuellement.
 
 V320 demeure `TECHNICAL_CANDIDATE_NON_ADOPTED`. Il ne produit aucun effet juridique automatique et n'autorise aucune mise en production.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

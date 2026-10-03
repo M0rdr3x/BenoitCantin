@@ -28,6 +28,8 @@ APPLY_JOB_GUARD = (
 )
 REMOTE_STEP_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}"
 APPLY_STEP_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}"
+LOCAL_WORKSPACE_GUARD = "        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}"
+READY_FOR_REVIEW_TRIGGER = "    types: [opened, synchronize, reopened, ready_for_review]"
 
 REMOTE_STEPS = (
     "Auditer l’inventaire Edge Functions de production",
@@ -153,6 +155,10 @@ def validate_text(text: str) -> list[str]:
         "      - 'scripts/test_supabase_production_preflight_security.py'",
         "      - '.github/workflows/supabase-production-preflight.yml'",
         "      - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'",
+        "      - 'scripts/validate_future_migration_review_plan_v25.py'",
+        "      - 'scripts/validate_production_review_decision_trace.py'",
+        "      - 'scripts/test_production_review_decision_trace.py'",
+        "      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'",
     ):
         if text.count(trigger_path) < 2:
             errors.append(f"Chemin critique absent des déclencheurs PR/push: {trigger_path.strip()}")
@@ -161,6 +167,8 @@ def validate_text(text: str) -> list[str]:
         errors.append("L'entrée de confirmation textuelle production est absente ou incomplète.")
     if "group: supabase-production-${{ github.event_name == 'workflow_dispatch' && 'manual' || github.ref }}" not in text:
         errors.append("Les lancements manuels production doivent partager une concurrence sérialisée.")
+    if READY_FOR_REVIEW_TRIGGER not in text:
+        errors.append("Le passage ready_for_review doit relancer explicitement le prévol production strict.")
 
     local = jobs["local-preflight"]
     if local:
@@ -182,11 +190,46 @@ def validate_text(text: str) -> list[str]:
             "python scripts/validate_supabase.py",
             "python scripts/validate_edge_function_inventory.py",
             "python scripts/validate_social_rls_contract.py",
+            "python -m py_compile scripts/validate_future_migration_review_plan_v25.py",
+            "python scripts/validate_future_migration_review_plan_v25.py --self-test",
+            "python scripts/validate_future_migration_review_plan_v25.py",
+            "python -m py_compile scripts/validate_production_review_decision_trace.py",
+            "python scripts/test_production_review_decision_trace.py",
+            "python scripts/validate_production_review_decision_trace.py",
             "python scripts/validate_production_migration_ledger.py",
             "python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase",
         ):
-            if command not in local:
+            if not has_exact_line(local, "          " + command):
                 errors.append(f"Prévol local incomplet: {command}")
+
+        plan_compile_at = local.find("python -m py_compile scripts/validate_future_migration_review_plan_v25.py")
+        plan_self_test_at = local.find("python scripts/validate_future_migration_review_plan_v25.py --self-test")
+        plan_check_at = local.find("python scripts/validate_future_migration_review_plan_v25.py\n")
+        trace_compile_at = local.find("python -m py_compile scripts/validate_production_review_decision_trace.py")
+        trace_test_at = local.find("python scripts/test_production_review_decision_trace.py")
+        trace_check_at = local.find("python scripts/validate_production_review_decision_trace.py\n")
+        ledger_at = local.find("python scripts/validate_production_migration_ledger.py")
+        builder_at = local.find("python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase")
+        positions = (
+            plan_compile_at, plan_self_test_at, plan_check_at,
+            trace_compile_at, trace_test_at, trace_check_at,
+            ledger_at, builder_at,
+        )
+        if min(positions) >= 0:
+            if not (
+                plan_compile_at < plan_self_test_at < plan_check_at
+                < trace_compile_at < trace_test_at < trace_check_at
+                < ledger_at < builder_at
+            ):
+                errors.append(
+                    "L'ordre local doit rester plan → preuve provenance reviewed → ledger → workspace protégé."
+                )
+
+        workspace_step = step_block(local, "Construire le workspace production protégé")
+        if not workspace_step:
+            errors.append("Étape de construction du workspace production local absente.")
+        elif LOCAL_WORKSPACE_GUARD not in workspace_step:
+            errors.append("Le workspace production local doit être reporté uniquement pendant une PR brouillon.")
 
     remote = jobs["remote-preflight"]
     if remote:
@@ -230,6 +273,8 @@ def validate_text(text: str) -> list[str]:
             errors.append("Le job d'application doit être attaché à l'environment GitHub production.")
         if not has_exact_line(apply, "    needs: [local-preflight, remote-preflight]"):
             errors.append("L'application doit dépendre des prévols local et distant.")
+        if "python scripts/validate_production_review_decision_trace.py" not in apply:
+            errors.append("L'application doit revalider la traçabilité reviewed après la frontière d'environment.")
         if "python scripts/validate_production_migration_ledger.py" not in apply:
             errors.append("L'application doit revalider le ledger après la frontière d'environment.")
         if "python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase" not in apply:
@@ -280,6 +325,9 @@ def validate_text(text: str) -> list[str]:
             errors.append(f"Référence de secret hors env d'étape autorisé: {line.strip()}")
 
     for marker in (
+        "🟠 PR BROUILLON",
+        "construction du workspace production reportée jusqu’à ready_for_review",
+        "Le garde historique reste strict",
         "🟡 PRÉVOL PR",
         "🟡 PRÉVOL SEULEMENT",
         "aucun secret production exposé au run PR",
@@ -314,7 +362,7 @@ def main() -> int:
     print("- prévol distant manuel limité aux lectures, audits et dry-run")
     print("- application limitée à main + apply=true + confirmation textuelle")
     print("- job mutant isolé derrière environment: production")
-    print("- cible, ledger et workspace revalidés après la frontière d'environnement")
+    print("- cible, provenance reviewed, ledger et workspace revalidés après la frontière d'environnement")
     print("- actions immuables, runners/Python figés et secrets bornés aux étapes")
     return 0
 

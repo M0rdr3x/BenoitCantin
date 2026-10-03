@@ -1,1 +1,13 @@
 .portal-return-benoit{position:fixed;left:16px;bottom:16px;z-index:10000;display:inline-flex;align-items:center;gap:9px;padding:10px 14px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(3,13,27,.92);color:#fff;font:800 13px/1.2 Inter,Arial,sans-serif;text-decoration:none;box-shadow:0 12px 30px rgba(0,0,0,.32);backdrop-filter:blur(12px)}.portal-return-benoit:hover{background:#0b2946;color:#fff;transform:translateY(-2px)}.portal-return-benoit img{width:26px;height:26px}.nova-official-banner{padding:18px 0 0;background:#06111f}.nova-official-banner .container{width:min(1400px,calc(100% - 32px));margin:auto}.nova-official-banner img{display:block;width:100%;height:auto;aspect-ratio:2033/774;object-fit:cover;border-radius:24px;border:1px solid rgba(64,218,240,.24);box-shadow:0 22px 70px rgba(0,0,0,.28)}@media(max-width:700px){.portal-return-benoit{left:10px;right:10px;bottom:10px;justify-content:center}.nova-official-banner{padding-top:10px}.nova-official-banner .container{width:min(100% - 18px,1400px)}.nova-official-banner img{border-radius:15px;aspect-ratio:16/9}}
+
+.portal-global-nav{position:relative;z-index:1100;background:#020814;color:#e7f4ff;border-bottom:1px solid rgba(255,255,255,.1);font:800 14px/1.2 Inter,Arial,sans-serif}
+.portal-global-nav-inner{width:min(1280px,calc(100% - 40px));min-height:58px;margin-inline:auto;display:flex;align-items:center;justify-content:space-between;gap:22px}
+.portal-global-brand{display:inline-flex;align-items:center;gap:10px;color:#fff;text-decoration:none;white-space:nowrap}
+.portal-global-brand:hover{color:#fff;text-decoration:none}
+.portal-global-brand img{width:30px;height:30px}
+.portal-global-links{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.portal-global-links a{display:inline-flex;align-items:center;min-height:38px;padding:9px 12px;border-radius:999px;color:#dcecf7;text-decoration:none}
+.portal-global-links a:hover,.portal-global-links a:focus-visible{background:rgba(36,196,223,.14);color:#fff;text-decoration:none}
+.portal-global-links a[aria-current="page"]{background:rgba(36,196,223,.2);color:#fff;box-shadow:inset 0 0 0 1px rgba(36,196,223,.3)}
+.portal-global-account{border:1px solid rgba(255,255,255,.18)}
+@media(max-width:760px){.portal-global-nav-inner{width:100%;padding:8px 14px;display:grid;gap:6px}.portal-global-brand{justify-content:center}.portal-global-links{justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;scrollbar-width:thin}.portal-global-links a{white-space:nowrap}}

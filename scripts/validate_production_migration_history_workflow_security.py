@@ -14,7 +14,17 @@ PYTHON_VERSION = "          python-version: '3.12.14'"
 SELF_TEST_RUN = "        run: python3 scripts/validate_production_migration_history_workflow_security.py --self-test"
 SELF_CHECK_RUN = "        run: python3 scripts/validate_production_migration_history_workflow_security.py"
 LEDGER_CHECK = "python scripts/validate_production_migration_ledger.py"
+STRICT_LEDGER_CHECK = "python scripts/validate_production_migration_ledger.py --require-reviewed-batch"
 TRIGGER_PATH = "      - 'scripts/validate_production_migration_history_workflow_security.py'"
+PLAN_VALIDATOR_TRIGGER = "      - 'scripts/validate_future_migration_review_plan_v25.py'"
+PLAN_DOC_TRIGGER = "      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'"
+REVIEWED_BATCH_TRIGGER = "      - 'supabase/production-reviewed-migration-batch.txt'"
+REVIEW_DECISIONS_TRIGGER = "      - 'supabase/production-reviewed-migration-decisions.txt'"
+TRACE_VALIDATOR_TRIGGER = "      - 'scripts/validate_production_review_decision_trace.py'"
+TRACE_TEST_TRIGGER = "      - 'scripts/test_production_review_decision_trace.py'"
+PLAN_SELF_TEST = "python3 scripts/validate_future_migration_review_plan_v25.py --self-test"
+PLAN_CHECK = "python3 scripts/validate_future_migration_review_plan_v25.py"
+PLAN_COMPILE = "python3 -m py_compile scripts/validate_future_migration_review_plan_v25.py"
 
 
 def validate_text(text: str) -> list[str]:
@@ -47,25 +57,69 @@ def validate_text(text: str) -> list[str]:
 
     if text.count(TRIGGER_PATH) < 2:
         errors.append("Le validateur sécurité doit déclencher les contrôles sur push et pull_request.")
+    for marker, label in (
+        (PLAN_VALIDATOR_TRIGGER, "validateur du plan"),
+        (PLAN_DOC_TRIGGER, "document du plan"),
+        (REVIEWED_BATCH_TRIGGER, "lot reviewed"),
+        (REVIEW_DECISIONS_TRIGGER, "registre de décisions reviewed"),
+        (TRACE_VALIDATOR_TRIGGER, "validateur de provenance reviewed"),
+        (TRACE_TEST_TRIGGER, "tests de provenance reviewed"),
+    ):
+        if text.count(marker) < 2:
+            errors.append(f"{label} doit déclencher le garde sur push et pull_request.")
 
     self_test_at = text.find(SELF_TEST_RUN)
     self_check_at = text.find(SELF_CHECK_RUN + "\n")
+    plan_step_at = text.find("      - name: Vérifier le plan des migrations futures non revues")
+    base_step_at = text.find("      - name: Déterminer la base Git")
+    trace_test_step_at = text.find("      - name: Prouver la traçabilité des nouvelles revues production")
+    trace_check_step_at = text.find("      - name: Vérifier la provenance des nouvelles lignes reviewed")
     ledger_step_at = text.find("      - name: Verrouiller les migrations historiques")
     if self_test_at < 0:
         errors.append("L'auto-test mutationnel du garde sécurité est absent.")
     if self_check_at < 0:
         errors.append("La validation du workflow est absente.")
+    if plan_step_at < 0:
+        errors.append("L'étape de synchronisation du plan des migrations futures est absente.")
+    if base_step_at < 0:
+        errors.append("L'étape de détermination de la base Git est absente.")
+    if trace_test_step_at < 0:
+        errors.append("L'étape de preuve de traçabilité reviewed est absente.")
+    if trace_check_step_at < 0:
+        errors.append("L'étape de vérification de provenance reviewed est absente.")
     if ledger_step_at < 0:
         errors.append("L'étape historique de verrouillage des migrations est absente.")
-    if min(self_test_at, self_check_at, ledger_step_at) >= 0 and not self_test_at < self_check_at < ledger_step_at:
-        errors.append("L'ordre doit rester auto-test sécurité → validation sécurité → verrouillage historique.")
+    ordered = (
+        self_test_at, self_check_at, plan_step_at, base_step_at,
+        trace_test_step_at, trace_check_step_at, ledger_step_at
+    )
+    if min(ordered) >= 0 and not (
+        self_test_at < self_check_at < plan_step_at < base_step_at
+        < trace_test_step_at < trace_check_step_at < ledger_step_at
+    ):
+        errors.append(
+            "L'ordre doit rester auto-test sécurité → validation sécurité → plan non revu → "
+            "base Git → preuve provenance → validation provenance → verrouillage historique."
+        )
+
+    for fragment, label in (
+        (PLAN_COMPILE, "compilation du validateur du plan"),
+        (PLAN_SELF_TEST, "auto-test du plan"),
+        (PLAN_CHECK + "\n", "validation du plan"),
+    ):
+        if fragment not in text:
+            errors.append(f"Étape plan migrations incomplète: {label}.")
 
     required_fragments = (
         'if [ "${{ github.event_name }}" = "pull_request" ]; then',
         'echo "ref=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"',
         'before="${{ github.event.before }}"',
         'BASE_REF="${{ steps.migration_base.outputs.ref }}"',
-        'python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF"',
+        'python3 -m py_compile scripts/validate_production_review_decision_trace.py',
+        'python3 scripts/test_production_review_decision_trace.py',
+        'python3 scripts/validate_production_review_decision_trace.py --base-ref "$BASE_REF"',
+        'python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF" --require-reviewed-batch',
+        STRICT_LEDGER_CHECK,
         LEDGER_CHECK,
     )
     for fragment in required_fragments:
@@ -92,8 +146,19 @@ def self_test(valid: str) -> int:
         ("validation retirée", valid.replace(SELF_CHECK_RUN + "\n", "        run: echo validation-retire\n", 1)),
         ("base PR retirée", valid.replace('echo "ref=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"', "echo ref= >> \"$GITHUB_OUTPUT\"", 1)),
         ("base push retirée", valid.replace('before="${{ github.event.before }}"', 'before=""', 1)),
-        ("base-ref ledger retiré", valid.replace('python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF"', LEDGER_CHECK, 1)),
+        ("base-ref ledger retiré", valid.replace('python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF" --require-reviewed-batch', STRICT_LEDGER_CHECK, 1)),
+        ("mode strict reviewed retiré", valid.replace('python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF" --require-reviewed-batch', 'python scripts/validate_production_migration_ledger.py --base-ref "$BASE_REF"', 1)),
         ("continue-on-error", valid.replace("    timeout-minutes: 5", "    timeout-minutes: 5\n    continue-on-error: true", 1)),
+        ("plan retiré", valid.replace(PLAN_CHECK + "\n", "echo plan-retire\n", 1)),
+        ("auto-test plan retiré", valid.replace(PLAN_SELF_TEST, "echo plan-self-test-retire", 1)),
+        ("trigger plan retiré", valid.replace(PLAN_VALIDATOR_TRIGGER, "      - 'scripts/plan-disabled.py'", 1)),
+        ("trigger document retiré", valid.replace(PLAN_DOC_TRIGGER, "      - 'docs/plan-disabled.md'", 1)),
+        ("trigger reviewed retiré", valid.replace(REVIEWED_BATCH_TRIGGER, "      - 'supabase/reviewed-disabled.txt'", 1)),
+        ("trigger registre décisions retiré", valid.replace(REVIEW_DECISIONS_TRIGGER, "      - 'supabase/review-decisions-disabled.txt'", 1)),
+        ("trigger validateur provenance retiré", valid.replace(TRACE_VALIDATOR_TRIGGER, "      - 'scripts/trace-disabled.py'", 1)),
+        ("trigger tests provenance retiré", valid.replace(TRACE_TEST_TRIGGER, "      - 'scripts/trace-tests-disabled.py'", 1)),
+        ("test provenance retiré", valid.replace("python3 scripts/test_production_review_decision_trace.py", "echo trace-test-retire", 1)),
+        ("base-ref provenance retiré", valid.replace('python3 scripts/validate_production_review_decision_trace.py --base-ref "$BASE_REF"', "python3 scripts/validate_production_review_decision_trace.py", 1)),
     ]
 
     failures: list[str] = []
@@ -135,6 +200,7 @@ def main() -> int:
     print("- actions réutilisables épinglées par SHA et checkout sans credentials persistés")
     print("- historique Git complet conservé pour les comparaisons de migrations")
     print("- auto-test mutationnel exécuté avant le verrouillage du ledger")
+    print("- toute nouvelle ligne reviewed exige une trace issue+blob dans le même diff")
     return 0
 
 

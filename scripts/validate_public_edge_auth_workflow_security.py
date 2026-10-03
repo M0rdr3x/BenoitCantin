@@ -23,6 +23,7 @@ ADMIN_USERS_TRIGGER = "      - 'scripts/validate_admin_users_privacy.py'\n"
 CHARACTER_QUESTIONNAIRE_TRIGGER = "      - 'scripts/validate_character_questionnaire_security.py'\n"
 FRACTURE_ENDGAME_TRIGGER = "      - 'scripts/validate_fracture_endgame_atomic_security.py'\n"
 FRACTURE_ENDGAME_MIGRATION_TRIGGER = "      - 'supabase/migrations/20260911225500_sinjira_v25_fracture_endgame_atomic_submit.sql'\n"
+PROJECT_PRODUCT_MIGRATION_TRIGGER = "      - 'supabase/migrations/20260922033000_sinjira_v25_project_product_access.sql'\n"
 FRACTURE_GATEWAY_TRIGGER = "      - 'scripts/validate_fracture_engine_gateway_security.py'\n"
 
 
@@ -111,6 +112,7 @@ def validate_text(text: str) -> list[str]:
     require(errors, text.count(CHARACTER_QUESTIONNAIRE_TRIGGER) == 2, 'le validateur questionnaire Registre doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(FRACTURE_ENDGAME_TRIGGER) == 2, 'le validateur fin de partie Fracture doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(FRACTURE_ENDGAME_MIGRATION_TRIGGER) == 2, 'la migration atomique Fracture doit déclencher le workflow sur pull_request et push')
+    require(errors, text.count(PROJECT_PRODUCT_MIGRATION_TRIGGER) == 2, 'la migration projet/produit doit redéclencher la garde Edge publique')
     require(errors, text.count(FRACTURE_GATEWAY_TRIGGER) == 2, 'le validateur gateway Fracture doit déclencher le workflow sur pull_request et push')
     return errors
 
@@ -162,6 +164,7 @@ def run_self_tests(text: str) -> None:
         'contrôle fin Fracture retiré': text.replace('        run: python scripts/validate_fracture_endgame_atomic_security.py\n', '', 1),
         'déclencheur validateur fin Fracture retiré': text.replace(FRACTURE_ENDGAME_TRIGGER, '', 1),
         'déclencheur migration fin Fracture retiré': text.replace(FRACTURE_ENDGAME_MIGRATION_TRIGGER, '', 1),
+        'déclencheur migration projet/produit retiré': text.replace(PROJECT_PRODUCT_MIGRATION_TRIGGER, '', 1),
         'auto-test gateway Fracture retiré': text.replace('        run: python scripts/validate_fracture_engine_gateway_security.py --self-test\n', '', 1),
         'contrôle gateway Fracture retiré': text.replace('        run: python scripts/validate_fracture_engine_gateway_security.py\n', '', 1),
         'déclencheur gateway Fracture retiré': text.replace(FRACTURE_GATEWAY_TRIGGER, '', 1),

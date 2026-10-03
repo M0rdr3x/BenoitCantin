@@ -79,6 +79,71 @@ Le rattachement `environment: production` permet à GitHub d’appliquer les pro
 
 Principe SINJIRA : l’humain garde la décision finale avant toute écriture sensible. Aucun automatisme, agent ou tâche récurrente ne doit transformer un prévol vert en application automatique.
 
+### Préconditions administratives avant toute application réelle
+
+Avant d’utiliser `apply=true`, relire aussi :
+
+`docs/SINJIRA_GITHUB_PRODUCTION_GUARDRAILS_ADMIN_CHECKLIST.md`
+
+La procédure production ne doit pas présenter les protections GitHub comme acquises tant que les vérifications administrateur correspondantes ne sont pas consignées :
+
+- **#135** — protection serveur de `main` réellement appliquée;
+- **#240** — secrets GitHub Actions de connexion Supabase présents hors dépôt, sans jamais exposer leurs valeurs;
+- **#439** — Environment GitHub `production` vérifié et approbation humaine requise lorsque le plan/réglage GitHub le permet.
+
+Ces préconditions restent distinctes de la revue SQL et du ledger. Un lot de migrations techniquement valide n’autorise pas à contourner une protection GitHub manquante, et une protection GitHub active n’approuve aucune migration.
+
+Pour le lot V25 suivi par **#438**, aucune application générique ne doit être engagée avant une décision humaine complète sur les blobs gelés et la revalidation du lot futur attendu par le builder.
+
+### Séquence après décision humaine complète de #438
+
+Le builder `scripts/build_supabase_production_workspace.py` est volontairement **exact-match** : la liste des migrations locales postérieures au cutoff du ledger doit être identique, dans le même ordre, à `supabase/production-reviewed-migration-batch.txt`, et chaque ligne doit porter le blob SHA Git exact.
+
+État préparatoire courant :
+- **14** migrations futures sont déjà consignées dans le reviewed batch;
+- **43** migrations supplémentaires sont soumises à #438;
+- après décision humaine complète et seulement à ce moment-là, le lot candidat doit donc couvrir **57 migrations futures locales**.
+
+Ordre obligatoire :
+
+1. consigner la décision humaine #438 sur les blobs exacts;
+2. revalider que les 43 blobs approuvés sont inchangés;
+3. revalider également les 14 migrations futures déjà présentes dans le reviewed batch;
+4. mettre à jour `production-reviewed-migration-batch.txt` pour qu’il corresponde **exactement aux 57 migrations futures locales**, avec leurs blob SHA réels;
+5. **ne pas avancer le ledger à cette étape** : aucune de ces nouvelles migrations n’est encore prouvée appliquée en production;
+6. exécuter les validateurs et construire le workspace protégé; le builder doit alors produire les marqueurs des versions déjà appliquées + les 57 SQL futurs revus;
+7. satisfaire #135/#240/#439, fusionner selon la gouvernance du dépôt, puis effectuer d’abord le prévol manuel non destructif;
+8. seulement après les approbations et revalidations requises, exécuter l’application production;
+9. après succès réel, récupérer l’historique distant et mettre à jour `production-migration-ledger.txt` avec les versions réellement enregistrées;
+10. dans la même réconciliation post-déploiement, retirer du reviewed batch les migrations désormais couvertes par le nouveau cutoff du ledger, car le builder refuse explicitement qu’un lot revu contienne une migration déjà couverte par le ledger;
+11. rejouer le validateur du ledger et le dry-run final jusqu’à obtenir un état cohérent sans migration déjà appliquée encore présentée comme future.
+
+Cette séparation est essentielle : **reviewed batch = autorisation humaine préalable sur le contenu futur; ledger = preuve historique de ce qui a réellement été enregistré en production**. Les deux fichiers ne doivent jamais être avancés comme s’ils représentaient le même événement.
+
+### Traçabilité obligatoire des nouvelles lignes du reviewed batch
+
+Le fichier :
+
+`supabase/production-reviewed-migration-decisions.txt`
+
+est un registre **append-only de provenance**, distinct du reviewed batch et du ledger.
+
+Pour toute **nouvelle** ligne ajoutée à `supabase/production-reviewed-migration-batch.txt`, le même diff doit ajouter exactement une trace :
+
+`<timestamp> <nom> <git_blob_sha1> issue#<numero> APPROVED`
+
+Règles :
+
+- le timestamp, le nom et le blob SHA doivent correspondre exactement à la nouvelle ligne du reviewed batch;
+- la trace doit être ajoutée **dans le même diff** : aucune pré-création d'une future « approbation » n'est admise;
+- le registre est append-only : une trace historique ne doit jamais être supprimée ou réécrite;
+- une modification future du blob d'une migration déjà revue exige une **nouvelle trace exacte** pour le nouveau blob;
+- le numéro d'issue doit pointer vers la décision humaine explicite qui porte la revue;
+- la présence d'une ligne `APPROVED` dans ce registre **ne constitue jamais à elle seule une approbation humaine** : elle est seulement un pointeur auditable vers la décision déjà consignée;
+- les lignes historiques du reviewed batch antérieures à l'introduction de ce garde ne sont pas rétro-étiquetées automatiquement.
+
+Le garde `scripts/validate_production_review_decision_trace.py` compare le diff Git au commit de base. Il échoue si une ligne reviewed est ajoutée sans trace correspondante, si une trace est pré-créée sans ligne batch, ou si l'historique des traces est réécrit.
+
 La production n’est considérée synchronisée que lorsque le résumé final affiche exactement :
 
 `✅ APPLIQUÉ ET VÉRIFIÉ`
@@ -128,7 +193,7 @@ Le prévol distant utilise ces secrets sous forme d’`env` borné aux étapes q
 
 Le fichier `supabase/production-migration-ledger.txt` contient les versions déjà appliquées dans `gpvivleexywljowcqkru`.
 
-État hébergé vérifié au **2026-09-07** :
+État hébergé revalidé en lecture seule au **2026-09-25** :
 
 - `186` versions distantes;
 - première version : `20260809050252_sinjira_universal_platform`;
@@ -181,32 +246,43 @@ Après toute application réelle, vérifier :
 
 ## Avertissement Auth actuel — mots de passe compromis
 
-Au 2026-09-07, le Security Advisor peut encore signaler :
+Revalidation en lecture seule du **2026-09-25** :
 
-`auth_leaked_password_protection` — **Leaked Password Protection Disabled**.
+- plan Supabase observé : **Free**;
+- Security Advisor : `auth_leaked_password_protection` est toujours présent au niveau WARN;
+- suivi opérationnel : issue **#437**.
 
-Ce point reste ouvert tant que la protection n’est pas effectivement activée et vérifiée. La fonctionnalité Supabase correspondante peut nécessiter un plan payant; **ne jamais activer un plan payant sans autorisation explicite**.
+Le réglage est un paramètre du service Auth hébergé : ce n’est pas une migration PostgreSQL et il ne doit pas être simulé par du SQL, une policy RLS ou une modification de `auth.users`.
 
-Ce réglage est un paramètre du service Auth hébergé : ce n’est pas une migration PostgreSQL et il ne doit pas être simulé par du SQL, une policy RLS ou une modification de `auth.users`.
+Supabase réserve cette protection aux plans éligibles. **Ne jamais modifier l’abonnement ou activer un plan payant sans décision humaine explicite.**
 
-### Procédure d’activation autorisée après autorisation explicite
+### Voie canonique d’activation
 
-1. ouvrir le projet `gpvivleexywljowcqkru`;
-2. ouvrir les réglages Authentication/Auth du fournisseur Email;
-3. conserver ou renforcer les exigences de mot de passe existantes — ne pas abaisser la longueur minimale de `12` utilisée par SINJIRA;
-4. activer la protection contre les mots de passe compromis si le plan et l’autorisation le permettent;
-5. enregistrer le réglage;
-6. rouvrir Security Advisor;
-7. confirmer que `auth_leaked_password_protection` / `Leaked Password Protection Disabled` n’apparaît plus.
+La seule procédure automatisée autorisée est :
 
-Ne pas contourner une limitation de plan par une implémentation maison non auditée dans le client.
+`.github/workflows/sinjira-v25-auth-password-hardening.yml`
+
+Ce workflow :
+
+1. doit être lancé manuellement depuis `main`;
+2. exige l’Environment GitHub `production`;
+3. exige la confirmation exacte `ENABLE-SINJIRA-V25-LEAKED-PASSWORD-PROTECTION`;
+4. exige `SUPABASE_ACCESS_TOKEN`;
+5. lit le plan courant et s’arrête **avant tout PATCH** si le plan n’est pas `pro`, `team` ou `enterprise`;
+6. lit la configuration Auth actuelle et refuse de continuer si `password_min_length < 12`;
+7. n’autorise qu’un PATCH borné à `{"password_hibp_enabled":true}`;
+8. compare l’empreinte de toute la configuration Auth hors HIBP avant/après et échoue si un autre paramètre change;
+9. vérifie que le Security Advisor ne signale plus `auth_leaked_password_protection`.
+
+Ne pas remplacer cette voie par une modification manuelle improvisée, une migration SQL ou une implémentation client maison.
 
 ### Critère de fermeture
 
-Ce point n’est fermé que lorsque **les deux** conditions sont vraies :
+L’issue #437 ne peut être fermée que lorsque **les trois** preuves suivantes existent simultanément :
 
-- le Dashboard indique la protection activée;
-- une nouvelle lecture du Security Advisor ne contient plus `auth_leaked_password_protection`.
+- le plan Supabase courant est éligible;
+- la configuration Auth retourne `password_hibp_enabled=true`;
+- le Security Advisor ne retourne plus `auth_leaked_password_protection`.
 
 Ne jamais consigner de mot de passe, token ou secret utilisé pendant la vérification.
 

@@ -23,3 +23,7 @@
 - `LEGAL_ENACTMENT=NOT_AUTHORIZED`; `publication=PENDING_PUBLICATION_APPROVAL`; `production=false`; `github_push=false` dans la chaîne technique immuable.
 
 V321 est un checkpoint détaché sur V320. Il **n’est pas encore ajouté comme nouvelle entrée à l’historique append-only**; cette opération est réservée à V322.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

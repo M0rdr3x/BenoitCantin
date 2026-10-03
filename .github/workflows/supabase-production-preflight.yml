@@ -10,6 +10,10 @@ on:
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_social_rls_contract.py'
       - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_future_migration_review_plan_v25.py'
+      - 'scripts/validate_production_review_decision_trace.py'
+      - 'scripts/test_production_review_decision_trace.py'
+      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
@@ -17,12 +21,17 @@ on:
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'supabase/**'
       - 'scripts/validate_supabase.py'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_social_rls_contract.py'
       - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/validate_future_migration_review_plan_v25.py'
+      - 'scripts/validate_production_review_decision_trace.py'
+      - 'scripts/test_production_review_decision_trace.py'
+      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
@@ -83,9 +92,16 @@ jobs:
           python scripts/validate_supabase.py
           python scripts/validate_edge_function_inventory.py
           python scripts/validate_social_rls_contract.py
+          python -m py_compile scripts/validate_future_migration_review_plan_v25.py
+          python scripts/validate_future_migration_review_plan_v25.py --self-test
+          python scripts/validate_future_migration_review_plan_v25.py
+          python -m py_compile scripts/validate_production_review_decision_trace.py
+          python scripts/test_production_review_decision_trace.py
+          python scripts/validate_production_review_decision_trace.py
           python scripts/validate_production_migration_ledger.py
 
       - name: Construire le workspace production protégé
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
         shell: bash
         run: |
           set -euo pipefail
@@ -100,7 +116,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ]; then
+            echo '🟠 PR BROUILLON : validations locales exécutées; construction du workspace production reportée jusqu’à ready_for_review. Le garde historique reste strict et aucune opération distante n’est autorisée.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
             echo '🟡 PRÉVOL PR : validations locales et workspace protégé uniquement; aucun secret production exposé au run PR et aucune opération distante.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
             echo '🟡 PRÉVOL SEULEMENT : validations locales et workspace protégé uniquement; aucun secret production exposé au run push et aucune opération distante.' >> "$GITHUB_STEP_SUMMARY"
@@ -338,6 +356,7 @@ jobs:
           python scripts/validate_supabase.py
           python scripts/validate_edge_function_inventory.py
           python scripts/validate_social_rls_contract.py
+          python scripts/validate_production_review_decision_trace.py
           python scripts/validate_production_migration_ledger.py
           rm -rf .prod-workspace
           python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase

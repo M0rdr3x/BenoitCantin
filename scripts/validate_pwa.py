@@ -11,20 +11,18 @@ ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = 'www.benoitcantin.com'
 BASE_URL = f'https://{DOMAIN}'
 MANIFESTS = [ROOT / 'manifest.webmanifest', ROOT / 'site.webmanifest']
-REQUIRED_PUBLIC_ROUTES = {
-    f'{BASE_URL}/projets/sinjira/communaute/',
-    f'{BASE_URL}/projets/sinjira/monde-parallele/',
-}
-REQUIRED_OFFLINE_ROUTES = {
+SINJIRA_PUBLIC_HUBS = {
+    '/projets/sinjira/',
+    '/projets/sinjira/romans/',
+    '/projets/sinjira/jeux/',
+    '/projets/sinjira/registre/',
     '/projets/sinjira/communaute/',
     '/projets/sinjira/monde-parallele/',
+    '/projets/sinjira/codex/',
 }
-REQUIRED_SHORTCUTS = {
-    '/app/',
-    '/projets/sinjira/romans/',
-    '/projets/sinjira/registre/',
-    '/projets/sinjira/monde-parallele/',
-}
+REQUIRED_PUBLIC_ROUTES = {BASE_URL + route for route in SINJIRA_PUBLIC_HUBS}
+REQUIRED_OFFLINE_ROUTES = set(SINJIRA_PUBLIC_HUBS)
+REQUIRED_SHORTCUTS = {'/app/', *SINJIRA_PUBLIC_HUBS}
 CACHE_PREFIX = 'benoitcantin-v24-4-95-'
 
 
@@ -128,6 +126,25 @@ def validate_manifests(errors: list[str]) -> None:
             errors.append('Les deux manifestes PWA divergent: ' + ', '.join(drift))
 
 
+def validate_public_hubs(errors: list[str]) -> None:
+    for route in sorted(SINJIRA_PUBLIC_HUBS):
+        target = local_target(route)
+        if target is None or not target.exists():
+            errors.append(f'Hub public SINJIRA™ introuvable: {route}')
+            continue
+        text = target.read_text('utf-8', errors='ignore')
+        if 'sinjira-favicon.png' not in text:
+            errors.append(f'{route}: favicon SINJIRA™ absent.')
+        if '/manifest.webmanifest' not in text:
+            errors.append(f'{route}: manifeste PWA absent.')
+        if not re.search(
+            r'<meta\b(?=[^>]*name=["\']theme-color["\'])(?=[^>]*content=["\']#08090d["\'])[^>]*>',
+            text,
+            re.I,
+        ):
+            errors.append(f'{route}: theme-color SINJIRA™ absent ou incohérent.')
+
+
 def validate_sitemap(errors: list[str]) -> None:
     path = ROOT / 'sitemap.xml'
     if not path.exists():
@@ -203,9 +220,10 @@ def validate_service_worker(errors: list[str]) -> None:
         errors.append('sw.js: liste CORE vide.')
     missing_offline = sorted(REQUIRED_OFFLINE_ROUTES - set(refs))
     if missing_offline:
-        errors.append('sw.js CORE omet des espaces SINJIRA™ majeurs: ' + ', '.join(missing_offline))
+        errors.append('sw.js CORE omet des hubs publics SINJIRA™: ' + ', '.join(missing_offline))
     for required in [
         '/manifest.webmanifest', '/assets/js/sinjira-pwa-install.js',
+        '/assets/css/ai-transparency.css', '/assets/js/ai-transparency.js',
         '/assets/css/sinjira-mobile-app-v24-4-94.css', '/assets/js/sinjira-mobile-social-v24-4-94.js',
         '/assets/css/sinjira-mobile-account-shell-v24-4-95.css', '/assets/js/sinjira-mobile-account-shell-v24-4-95.js',
         '/android-chrome-192x192.png', '/android-chrome-512x512.png'
@@ -225,6 +243,8 @@ def validate_service_worker(errors: list[str]) -> None:
         errors.append('sw.js: l’app sociale n’est plus explicitement network-only/no-store.')
     if "u.pathname.startsWith('/compte/')" not in text:
         errors.append('sw.js: les pages Compte ne sont plus explicitement network-only/no-store.')
+    if "caches.match(r).then(x=>x||caches.match(u.pathname))" not in text:
+        errors.append('sw.js: fallback canonique absent pour les assets locaux versionnés hors ligne.')
 
 
 def validate_install_runtime(errors: list[str]) -> None:
@@ -285,6 +305,22 @@ def validate_offline(errors: list[str]) -> None:
     text = path.read_text('utf-8', errors='ignore')
     if 'hors ligne' not in text.lower():
         errors.append('offline.html ne décrit pas clairement l’état hors ligne.')
+    for marker in (
+        'class="skip-link" href="#contenu"',
+        'id="contenu"',
+        'name="robots" content="noindex,nofollow"',
+        '/assets/icons/sinjira-favicon.png',
+        '/manifest.webmanifest',
+        '/assets/css/site.css?v=25.0.0',
+        '/assets/css/v19-pro.css?v=25.0.0',
+        'name="theme-color" content="#08090d"',
+        '/assets/css/ai-transparency.css?v=1.2.0',
+        'Transparence · Honnêteté · Intégrité',
+        'L’humain avant tout.',
+        *sorted(SINJIRA_PUBLIC_HUBS),
+    ):
+        if marker not in text:
+            errors.append(f'offline.html incomplet: {marker}')
     for raw in re.findall(r'(?:href|src)=["\']([^"\']+)["\']', text, re.I):
         target = local_target(raw, path.parent)
         if target is not None and not target.exists():
@@ -294,6 +330,7 @@ def validate_offline(errors: list[str]) -> None:
 def main() -> int:
     errors: list[str] = []
     validate_manifests(errors)
+    validate_public_hubs(errors)
     validate_sitemap(errors)
     validate_robots(errors)
     validate_cname(errors)

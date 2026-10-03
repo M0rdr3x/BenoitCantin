@@ -29,3 +29,7 @@ V321 ne crée pas d’autarcie publique générale, d’expropriation automatiqu
 - module autonome : 6/6 pages vérifiées.
 
 V321 demeure `TECHNICAL_CANDIDATE_NON_ADOPTED` et ne produit aucun effet juridique automatique.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

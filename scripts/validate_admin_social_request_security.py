@@ -13,10 +13,13 @@ LIMIT_RE = re.compile(r'\bMAX_REQUEST_BYTES\s*=\s*8_?192\s*;')
 REQUIRED = {
     'POST uniquement': "req.method!=='POST'",
     'admin explicite': 'requiredAdmin(req)',
-    'Content-Type JSON explicite': "contentType.startsWith('application/json')",
+    'Content-Type JSON exact': "contentType!=='application/json'",
     'erreur média explicite': "e?.message==='UNSUPPORTED_MEDIA_TYPE'",
     'lecture JSON bornée': 'readLimitedJson(req)',
-    'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'Content-Length fermé': '!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES',
+    'lecture streaming': 'req.body?.getReader()',
+    'annulation sur dépassement': 'reader.cancel()',
+    'décodage UTF-8 strict': "new TextDecoder('utf-8',{fatal:true})",
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
     'nosniff': "'X-Content-Type-Options':'nosniff'",
@@ -33,6 +36,8 @@ REQUIRED = {
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
+    'lecture texte directe non bornée': 'await req.text()',
+    'Content-Type accepté par préfixe': "contentType.startsWith('application/json')",
     'helper JSON générique cacheable': 'return json(',
     'import helper JSON générique': "import {corsHeaders,json}",
     'auth admin indirecte': 'requiredUser(req)',
@@ -90,10 +95,20 @@ def self_test() -> None:
 
     cases = {
         'json direct': real.replace('const b=await readLimitedJson(req);', 'const b=await req.json();', 1),
+        'texte direct': real.replace('  const reader=req.body?.getReader();', '  const rawDirect=await req.text();\n  const reader=req.body?.getReader();', 1),
+        'stream retiré': real.replace('  const reader=req.body?.getReader();', '  const reader=undefined;', 1),
+        'annulation retirée': real.replace("      try{await reader.cancel()}catch{/* Le rejet de taille reste prioritaire. */}", '      void reader;', 1),
+        'UTF-8 permissif': real.replace("new TextDecoder('utf-8',{fatal:true})", "new TextDecoder('utf-8')", 1),
+        'Content-Type par préfixe': real.replace("if(contentType!=='application/json')", "if(!contentType.startsWith('application/json'))", 1),
         'Content-Type retiré': real.replace('    requireJsonContentType(req);\n', '', 1),
         'Content-Type après corps': real.replace(
             '    requireJsonContentType(req);\n    const b=await readLimitedJson(req);',
             '    const b=await readLimitedJson(req);\n    requireJsonContentType(req);',
+            1,
+        ),
+        'Content-Length affaibli': real.replace(
+            'if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)',
+            'if(declared>MAX_REQUEST_BYTES)',
             1,
         ),
         'no-store retiré': real.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),
@@ -136,7 +151,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK modération Edge: admin/JWT/AAL2 avant corps, JSON 8 KiB, Content-Type explicite, no-store, logs sanitizés et décisions humaines réversibles préservées.')
+    print('OK modération Edge: admin/JWT/AAL2 avant corps, JSON exact streamé <= 8 KiB, UTF-8 strict, no-store, logs sanitizés et décisions humaines réversibles préservées.')
     return 0
 
 

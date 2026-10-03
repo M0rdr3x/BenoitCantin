@@ -12,5 +12,7 @@
 - [ ] Faire valider les textes juridiques, surtout pour les mineurs et les photographies.
 - [ ] Définir une durée de conservation pour les soumissions non sélectionnées.
 - [ ] Tester le site sur téléphone, tablette et ordinateur.
+- [ ] Vérifier que les pages publiques affichent ou relient clairement la déclaration `/transparence-ia.html`.
+- [ ] Pour tout livrable autonome (PDF, présentation, document, publication), ajouter la mention de transparence IA standard ou une formulation équivalente distinguant les idées humaines de l'assistance IA.
 - [ ] Vérifier tous les liens du site Projet Nova après intégration.
 - [ ] Activer HTTPS et l'authentification multifacteur du compte d'hébergement.

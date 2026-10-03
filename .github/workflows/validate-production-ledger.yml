@@ -8,9 +8,13 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
       - 'supabase/production-reviewed-migration-batch.txt'
+      - 'supabase/production-reviewed-migration-decisions.txt'
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
+      - 'docs/SINJIRA_GITHUB_PRODUCTION_GUARDRAILS_ADMIN_CHECKLIST.md'
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/test_production_reviewed_migration_batch.py'
+      - 'scripts/validate_production_review_decision_trace.py'
+      - 'scripts/test_production_review_decision_trace.py'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
@@ -28,9 +32,13 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
       - 'supabase/production-reviewed-migration-batch.txt'
+      - 'supabase/production-reviewed-migration-decisions.txt'
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
+      - 'docs/SINJIRA_GITHUB_PRODUCTION_GUARDRAILS_ADMIN_CHECKLIST.md'
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/test_production_reviewed_migration_batch.py'
+      - 'scripts/validate_production_review_decision_trace.py'
+      - 'scripts/test_production_review_decision_trace.py'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
@@ -46,6 +54,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate-ledger:
@@ -69,6 +81,10 @@ jobs:
         run: python scripts/validate_production_migration_workflow_security.py
       - name: Prouver que le lot de migrations revu échoue en fermeture sûre
         run: python scripts/test_production_reviewed_migration_batch.py
+      - name: Prouver la syntaxe du registre de décisions production
+        run: python scripts/test_production_review_decision_trace.py
+      - name: Vérifier la syntaxe du registre de décisions production
+        run: python scripts/validate_production_review_decision_trace.py
       - name: Prouver le cloisonnement du préflight Supabase production
         run: python scripts/test_supabase_production_preflight_security.py
       - name: Vérifier le contrat sécurité du préflight Supabase production

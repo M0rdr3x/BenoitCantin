@@ -1,6 +1,6 @@
 {
-  "schema": "sinjira.livre-i.delivery.v1",
-  "publication_state": "not_activated",
+  "schema": "sinjira.livre-i.delivery.v2",
+  "publication_state": "prepared_not_deployed",
   "human_gate_required": true,
   "principle": "L’HUMAIN AVANT TOUT. PROTÉGER SANS SURVEILLER.",
   "source_issue": 363,
@@ -15,14 +15,32 @@
     "public_repository_allowed": false,
     "public_static_url_allowed": false,
     "delivery": "authenticated_private_storage_only",
-    "private_endpoint": "get-private-book-url",
+    "download_endpoint": "get-private-book-url",
+    "reader_endpoint": "get-private-book-reading-url",
+    "reader_page": "/projets/sinjira/romans/lire-integral.html",
     "entitlement_table": "user_entitlements",
     "entitlement_client_mutation_allowed": false,
     "entitlement_anonymous_read_allowed": false,
     "product_slug": "sinjira-livre-01-la-cendre-du-jugement",
+    "access_sources": [
+      "canonical_product_right",
+      "server_verified_owner_role",
+      "server_verified_creator_family"
+    ],
+    "owner_role_creates_entitlement": false,
+    "client_role_assertion_allowed": false,
     "activation_env": "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED",
     "signed_url_seconds": 300,
     "signed_url_max_seconds": 600,
-    "activation_requires_explicit_human_decision": true
+    "reader_signed_url_refresh": true,
+    "reader_progress_storage": "local_device_only",
+    "activation_requires_explicit_human_decision": true,
+    "production_deployment_authorized": false,
+    "canonical_product_right_sources": [
+      "active_product_entitlement",
+      "paid_order"
+    ],
+    "child_full_edition_access_allowed": false,
+    "family_access_creates_entitlement": false
   }
 }

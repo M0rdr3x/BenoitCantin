@@ -10,16 +10,22 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   preorder-receipt-contract:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Récupérer le dépôt
-        uses: actions/checkout@v4
-      - name: Configurer Python
-        uses: actions/setup-python@v5
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          python-version: '3.12'
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
       - name: Vérifier le contrat V24.5.32
         run: python scripts/validate_preorder_receipt_v24_5_32.py
       - name: Vérifier le contrat historique V24.5.31

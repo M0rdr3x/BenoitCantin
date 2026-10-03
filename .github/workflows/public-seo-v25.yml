@@ -1,0 +1,48 @@
+name: SEO public V25 — métadonnées et sitemap
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'index.html'
+      - 'a-propos.html'
+      - 'contact.html'
+      - 'transparence-ia.html'
+      - 'confidentialite.html'
+      - 'gouvernance-vie-privee.html'
+      - 'avis-legal.html'
+      - 'projets/sinjira/**'
+      - 'projets/projet-nova/**'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - 'scripts/validate_seo_quality.py'
+      - '.github/workflows/public-seo-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  public-seo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier le contrat SEO public
+        run: |
+          python3 -m py_compile scripts/validate_seo_quality.py
+          python3 scripts/validate_seo_quality.py
