@@ -43,7 +43,7 @@ def require(errors: list[str], condition: bool, message: str) -> None:
 def validate_widget(text: str) -> list[str]:
     errors: list[str] = []
     required = (
-        "host === 'www.benoitcantin.com' || host === 'benoitcantin.com'",
+        "host === 'www.benoitcantin.com'",
         "path === '/compte'",
         "path.indexOf('/compte/') === 0",
         "path === '/admin'",
@@ -191,7 +191,8 @@ def self_test() -> None:
         ("preuve domaines régressée", widget.replace(DOMAINS_READY_MARKER, "var publicAssistantDomainsRestricted = false;", 1), site, index, assistant, transparency, sitemap, robots),
         ("gate réseau réactivé", widget.replace(NETWORK_READY_MARKER, "var publicAssistantNetworkValidated = true;", 1), site, index, assistant, transparency, sitemap, robots),
         ("triple garde affaiblie", widget.replace(VENDOR_BLOCK_MARKER, "if (!publicAssistantFormsMinimized || !publicAssistantDomainsRestricted) return;", 1), site, index, assistant, transparency, sitemap, robots),
-        ("hôte officiel retiré", widget.replace("host === 'www.benoitcantin.com' || host === 'benoitcantin.com'", "host === 'example.com'", 1), site, index, assistant, transparency, sitemap, robots),
+        ("hôte officiel retiré", widget.replace("host === 'www.benoitcantin.com'", "host === 'example.com'", 1), site, index, assistant, transparency, sitemap, robots),
+        ("apex réautorisé", widget.replace("host === 'www.benoitcantin.com'", "host === 'www.benoitcantin.com' || host === 'benoitcantin.com'", 1), site, index, assistant, transparency, sitemap, robots),
         ("exclusion compte retirée", widget.replace("path === '/compte' ||", "false ||", 1), site, index, assistant, transparency, sitemap, robots),
         ("noindex retiré", widget.replace("if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;", "if (!isOfficialHost || isPrivateSurface) return;", 1), site, index, assistant, transparency, sitemap, robots),
         ("clic retiré", widget.replace("launcher.addEventListener('click'", "launcher.addEventListener('mouseover'", 1), site, index, assistant, transparency, sitemap, robots),

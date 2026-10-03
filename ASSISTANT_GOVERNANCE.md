@@ -115,7 +115,7 @@ Toute modification qui élargit les données accessibles, active une intégratio
 
 Le chargeur du widget public est centralisé dans `assets/js/ai-transparency.js`.
 
-Sur le domaine officiel, l’assistant public est actuellement présenté sans charger BubblaV. La minimisation #443 est terminée, mais le code fournisseur ne doit pas être activé tant que la restriction de domaines #444 n’est pas terminée et revérifiée. L’ancien assistant local `sinjira-assistant.js` ne doit pas être chargé simultanément avec une future réactivation du widget public. Les espaces privés, les pages `noindex` et les environnements non officiels peuvent conserver l’aide locale sans fournisseur externe.
+Sur le domaine officiel canonique `www.benoitcantin.com`, l’assistant public est actuellement présenté sans charger BubblaV. La minimisation #443 et l’allowlist fournisseur #444 sont confirmées; le code fournisseur ne doit toutefois pas être activé tant que la validation réseau/CSP contrôlée n’est pas terminée. La garde locale BubblaV accepte désormais uniquement `www.benoitcantin.com` — l’apex doit rediriger vers `www` et n’est pas une origine widget autorisée. L’ancien assistant local `sinjira-assistant.js` ne doit pas être chargé simultanément avec une future réactivation du widget public. Les espaces privés, les pages `noindex` et les environnements non officiels peuvent conserver l’aide locale sans fournisseur externe.
 
 Le script fournisseur prévu pour une réactivation future reste :
 

@@ -12,7 +12,7 @@
 
   function loadPublicAssistant() {
     var host = String(window.location.hostname || '').toLowerCase().replace(/\.$/, '');
-    var isOfficialHost = host === 'www.benoitcantin.com' || host === 'benoitcantin.com';
+    var isOfficialHost = host === 'www.benoitcantin.com';
     var path = String(window.location.pathname || '/').toLowerCase();
     var isPrivateSurface =
       path === '/compte' ||
