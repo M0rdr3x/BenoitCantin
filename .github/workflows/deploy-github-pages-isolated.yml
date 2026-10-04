@@ -107,7 +107,7 @@ jobs:
             echo "- Source téléversée : `_site`"
             echo "- Racine du dépôt : **non publiée**"
             echo "- Mode : **confinement temporaire**"
-            echo "- Démo Livre I : **version actuelle conservée temporairement; #363 reste obligatoire avant release finale**"
+            echo "- Démo Livre I : **master exact obligatoire, y compris en confinement**"
             echo "- Limite connue : **les en-têtes HTTP complets de #450 ne sont pas fournis par GitHub Pages**"
             echo "- Cible finale #450 : **Netlify avec _headers/_redirects**"
           } >> "$GITHUB_STEP_SUMMARY"
