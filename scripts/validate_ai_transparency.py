@@ -469,7 +469,7 @@ def self_test(contents: dict[str, str]) -> None:
         ("séparation assistant public retirée", "site_js", "if (isOfficialHost && !isPrivateSurface && !isNoindexSurface) return;", "if (false) return;"),
         ("séparation assistant Nova retirée", "nova_js", "if(isOfficialHost&&!isNoindexSurface)return;", "if(false)return;"),
         ("CSP BubblaV réactivée script", "netlify", "https://cdn.jsdelivr.net; worker-src", "https://cdn.jsdelivr.net https://www.bubblav.com; worker-src"),
-        ("CSP BubblaV réactivée connect", "netlify", "wss://gpvivleexywljowcqkru.supabase.co; form-action", "wss://gpvivleexywljowcqkru.supabase.co https://www.bubblav.com; form-action"),
+        ("CSP BubblaV réactivée connect", "netlify", "wss://gpvivleexywljowcqkru.supabase.co; frame-src", "wss://gpvivleexywljowcqkru.supabase.co https://www.bubblav.com; frame-src"),
         ("déclaration BubblaV retirée", "privacy", "Assistant public Nova × SINJIRA et BubblaV", "Assistant public retiré"),
         ("gouvernance assistant retirée", "assistant_governance", "Frontière anti-spoiler SINJIRA", "Frontière retirée"),
         ("frontière actions publiques retirée", "assistant", "Il sert à informer et à orienter.", "Il peut aussi agir dans le compte."),
