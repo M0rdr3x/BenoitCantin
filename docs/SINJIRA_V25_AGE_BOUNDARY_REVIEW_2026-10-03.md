@@ -7,9 +7,25 @@ Revue humaine du lot : #438
 PR : #435  
 HEAD observé au moment de la préparation : `f6b1cff1f6961a1dede6c3ea84bf8d99c4382119`
 
-## Défaut reproduit
 
-Le workflow **SINJIRA V25 — Inscription enfant 11 ans** échoue sur 1 test pgTAP sur 74 :
+## Statut après décision et correction — 4 octobre 2026
+
+La décision de travail a été enregistrée dans #438 puis le correctif minimal a été appliqué sans merge ni production :
+
+- commit SQL : `28c28409bcd610ad873c31e96cac9af46d240a7a`;
+- migration modifiée : `supabase/migrations/20260916210000_sinjira_v25_child_guardian_signup.sql`;
+- ancien blob : `8c7239489d57f0a821da104b5df5ead16fc8103e`;
+- nouveau blob : `3231fc2720a28700be9d1be117e53a9a2448b08b`;
+- garde statique aligné : commit `b065aa6098d335bd84437e2a84e88e10ecdae7a4`;
+- preuve fonctionnelle : run `37181885399`, job `111375942461`, **75/75 assertions pgTAP**;
+- reconstruction Supabase locale, coffre privé et inscription Auth HTTP exactement 11 ans : **SUCCESS**;
+- #453 : **fermé comme terminé**.
+
+Le défaut des veilles des 13 et 18 ans est donc corrigé. La revue globale #438 reste toutefois ouverte : les **43 migrations futures restent explicitement non revues**, le reviewed batch et le ledger production sont inchangés, et aucune promotion Supabase production n'est autorisée par cette correction.
+
+## Défaut reproduit avant correction
+
+Avant le correctif, le workflow **SINJIRA V25 — Inscription enfant 11 ans** a d'abord reproduit le défaut sur la veille des 13 ans, puis l'extension de preuve à 75 assertions a confirmé la même classe d'erreur à la veille des 18 ans :
 
 - test : « la veille des 13 ans reste classée child »;
 - attendu : `child`;
@@ -39,17 +55,17 @@ Résultat :
 - `20260919100000_sinjira_v25_private_profile_age_11.sql` utilise déjà l'âge complété entier pour ses frontières;
 - les autres occurrences retrouvées concernent des fixtures/tests de dates exactes, pas un classifieur production concurrent.
 
-Le défaut peut donc être corrigé par un diff minimal dans `sinjira_age_band()`, sous réserve de la décision humaine #438. Cette conclusion réduit le périmètre technique mais **ne vaut pas approbation**.
+Le défaut a donc été corrigé par un diff minimal dans `sinjira_age_band()` après décision tracée dans #438. Cette correction réduit le périmètre technique mais **ne vaut pas approbation globale des 43 migrations futures**.
 
 Le test de reproduction construit bien la veille des 13 ans avec :
 
 `current_date - interval '13 years' + interval '1 day'`
 
-et observe actuellement `youth` au lieu de `child`.
+et observait `youth` au lieu de `child` avant le correctif.
 
-## Changement proposé pour décision humaine
+## Changement retenu et appliqué
 
-Ne pas appliquer ce diff tant que #438 n'a pas enregistré une décision explicite.
+La décision explicite a été enregistrée dans #438 avant modification. Le diff minimal retenu remplace les comparaisons d'intervalles par l'âge complété entier.
 
 Remplacer le calcul répété par un âge complété entier :
 
