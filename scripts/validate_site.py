@@ -335,6 +335,7 @@ def validate_service_worker_privacy(sw_text: str) -> list[str]:
         "cc.indexOf('no-store')===-1",
         "if(cacheableResponse(resp)){const cp=resp.clone();",
         "if(cacheableResponse(resp))caches.open(CACHE)",
+        "u.pathname.indexOf('/documents/')===-1",
     )
     for marker in required_markers:
         if marker not in sw_text:
@@ -363,6 +364,7 @@ def self_test_service_worker_privacy(sw_text: str) -> None:
             1,
         ),
         'réponses no-store recachables': sw_text.replace("cc.indexOf('no-store')===-1", "true", 1),
+        'documents recachables': sw_text.replace("u.pathname.indexOf('/documents/')===-1", "true", 1),
     }
     for label, mutated in mutations.items():
         if mutated == sw_text:
