@@ -23,6 +23,8 @@ GENERATED_NETLIFY_FILES = {"_headers", "_redirects"}
 RELEASE_METADATA_PATH = Path(".well-known/release.json")
 RELEASE_SHA_ENV = "SINJIRA_RELEASE_SHA"
 NETLIFY_CONFIG = ROOT / "netlify.toml"
+VERCEL_CONFIG = ROOT / "vercel.json"
+VERCEL_BUILD_COMMAND = "CONTEXT=deploy-preview SINJIRA_RELEASE_SHA=$VERCEL_GIT_COMMIT_SHA python3 scripts/build_netlify_public.py"
 REQUIRED_TECHNICAL_404S = {
     "/supabase/*",
     "/scripts/*",
@@ -386,6 +388,94 @@ def render_standalone_redirects() -> str:
         lines.append(f"{source} {target} {status_token}")
     return "\n".join(lines).rstrip() + "\n"
 
+def validate_vercel_config() -> list[str]:
+    errors: list[str] = []
+    if not VERCEL_CONFIG.is_file():
+        return ["vercel.json absent"]
+
+    try:
+        data = json.loads(VERCEL_CONFIG.read_text(encoding="utf-8", errors="strict"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        return [f"vercel.json illisible: {exc}"]
+
+    if data.get("buildCommand") != VERCEL_BUILD_COMMAND:
+        errors.append("Commande Vercel inattendue: builder public fail-closed requis.")
+    if data.get("outputDirectory") != "_site":
+        errors.append("Output Vercel inattendu: _site requis.")
+    if data.get("cleanUrls") is not False:
+        errors.append("Vercel cleanUrls doit rester false pour conserver les routes canoniques explicites.")
+
+    header_rules = {
+        rule.get("source"): {
+            str(item.get("key") or ""): str(item.get("value") or "")
+            for item in (rule.get("headers") or [])
+            if isinstance(item, dict)
+        }
+        for rule in (data.get("headers") or [])
+        if isinstance(rule, dict) and isinstance(rule.get("source"), str)
+    }
+
+    global_values = header_rules.get("/(.*)")
+    if global_values is None:
+        errors.append("En-têtes globaux Vercel absents.")
+    else:
+        robots = global_values.get("X-Robots-Tag", "").lower()
+        for token in ("noindex", "nofollow", "noarchive"):
+            if token not in robots:
+                errors.append(f"Preview Vercel: X-Robots-Tag sans {token}.")
+        if global_values.get("X-Content-Type-Options", "").lower() != "nosniff":
+            errors.append("Preview Vercel: X-Content-Type-Options=nosniff requis.")
+        csp = global_values.get("Content-Security-Policy", "")
+        for directive in (
+            "default-src 'self'",
+            "script-src 'self'",
+            "connect-src 'self'",
+            "frame-ancestors 'self'",
+            "object-src 'self'",
+            "base-uri 'self'",
+        ):
+            if directive not in csp:
+                errors.append(f"Preview Vercel: directive CSP requise absente: {directive}.")
+        if "https://www.bubblav.com" in csp:
+            errors.append("Preview Vercel: BubblaV doit rester bloqué dans la CSP.")
+
+    for source in (
+        "/.well-known/release.json",
+        "/compte/(.*)",
+        "/admin/(.*)",
+        "/Admin/(.*)",
+        "/app/(.*)",
+        "/histoire-de-vie/(.*)",
+    ):
+        values = header_rules.get(source)
+        if values is None:
+            errors.append(f"Preview Vercel: en-têtes privés absents: {source}")
+            continue
+        if values.get("Cache-Control", "").lower() != "no-store":
+            errors.append(f"Preview Vercel: Cache-Control no-store requis: {source}")
+
+    redirects = {
+        (str(rule.get("source") or ""), str(rule.get("destination") or ""), bool(rule.get("permanent")))
+        for rule in (data.get("redirects") or [])
+        if isinstance(rule, dict)
+    }
+    expected_redirects = {
+        ("/nova", "/projets/projet-nova/index.html", True),
+        ("/roman", "/projets/sinjira/index.html", True),
+        ("/registre", "/projets/sinjira/registre/index.html", True),
+        ("/sinjira", "/projets/sinjira/index.html", True),
+        ("/projets/ere-des-consciences/:path*", "/projets/sinjira/:path*", True),
+    }
+    missing_redirects = sorted(expected_redirects - redirects)
+    if missing_redirects:
+        errors.append(
+            "Preview Vercel: redirections publiques requises absentes: "
+            + ", ".join(source for source, _, _ in missing_redirects)
+        )
+
+    return errors
+
+
 def validate_netlify_config() -> list[str]:
     errors: list[str] = []
     if not NETLIFY_CONFIG.is_file():
@@ -481,6 +571,7 @@ def validate_plan() -> list[str]:
     if release_sha and not re_full_git_sha(release_sha):
         errors.append(f"{RELEASE_SHA_ENV} doit être un SHA Git complet de 40 caractères hexadécimaux.")
     errors.extend(validate_netlify_config())
+    errors.extend(validate_vercel_config())
 
     robots_path = ROOT / "robots.txt"
     if not robots_path.is_file():
