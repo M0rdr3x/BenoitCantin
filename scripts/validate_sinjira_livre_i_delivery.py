@@ -14,9 +14,11 @@ PRIVATE_BOOK_EDGE_PATH = ROOT / "supabase/functions/get-private-book-url/index.t
 CONFIG_PATH = ROOT / "supabase/config.toml"
 
 FULL_BASENAME = "SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf"
-FULL_SHA256 = "9acc8f561962850158cb073b122ee038c2731ee3b165deae482260c0cc1ad2d8"\nFULL_SIZE_BYTES = 7_325_502
+FULL_SHA256 = "9acc8f561962850158cb073b122ee038c2731ee3b165deae482260c0cc1ad2d8"
+FULL_SIZE_BYTES = 7_325_502
 DEMO_BASENAME = "SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
-DEMO_SHA256 = "d0668a7b07a07321ef1e02cfceb826d3881330bb36417d53e5ff5bd32635628e"\nDEMO_SIZE_BYTES = 941_065
+DEMO_SHA256 = "d0668a7b07a07321ef1e02cfceb826d3881330bb36417d53e5ff5bd32635628e"
+DEMO_SIZE_BYTES = 941_065
 PRODUCT_SLUG = "sinjira-livre-01-la-cendre-du-jugement"
 STATIC_EXTENSIONS = {".html", ".js", ".mjs", ".css", ".json", ".xml", ".webmanifest", ".txt"}
 SKIP_PARTS = {"codex", ".git", "node_modules"}
