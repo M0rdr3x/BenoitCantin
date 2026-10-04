@@ -75,11 +75,11 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'cancel-in-progress: true' not in text, 'annulation inconditionnelle interdite')
     require(errors, 'contents: write' not in text, 'permission contents:write interdite')
     require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'la validation centrale ne doit référencer aucun secret GitHub')
-    require(errors, text.count('runs-on: ubuntu-24.04') == 2, 'les deux jobs doivent utiliser Ubuntu 24.04 explicite')
+    require(errors, text.count('runs-on: ubuntu-24.04') == 3, 'les trois jobs doivent utiliser Ubuntu 24.04 explicite')
     require(errors, 'ubuntu-latest' not in text, 'ubuntu-latest interdit pour cette barrière critique')
 
-    require(errors, text.count(f'uses: actions/checkout@{CHECKOUT_SHA}') == 2, 'les deux checkouts doivent être épinglés au SHA vérifié')
-    require(errors, text.count('persist-credentials: false') == 2, 'les deux checkouts doivent désactiver la persistance des credentials')
+    require(errors, text.count(f'uses: actions/checkout@{CHECKOUT_SHA}') == 3, 'les trois checkouts doivent être épinglés au SHA vérifié')
+    require(errors, text.count('persist-credentials: false') == 3, 'les trois checkouts doivent désactiver la persistance des credentials')
     require(errors, text.count('fetch-depth: 0') == 1, 'le job de contrat doit disposer de l’historique Git complet pour le contrôle web-only')
     require(errors, 'persist-credentials: true' not in text, 'persist-credentials=true interdit')
     require(errors, text.count(f'uses: actions/setup-python@{SETUP_PYTHON_SHA}') == 1, 'setup-python doit être épinglé au SHA vérifié')
@@ -88,11 +88,16 @@ def validate_text(text: str) -> list[str]:
     require(errors, f"node-version: '{NODE_VERSION}'" in text, 'version Node exacte requise')
 
     targets = action_targets(text)
-    require(errors, len(targets) == 4, f'nombre inattendu d’actions réutilisables: {len(targets)}')
+    require(errors, len(targets) == 5, f'nombre inattendu d’actions réutilisables: {len(targets)}')
     for target in targets:
         require(errors, re.search(r'@[0-9a-f]{40}$', target) is not None, f'référence d’action non immuable: {target}')
 
     require(errors, '  workflow-contract:\n' in text, 'job workflow-contract absent')
+    require(errors, '  public-observation:\n' in text, 'job public-observation absent')
+    require(errors, 'name: Observation production web — lecture seule' in text, 'nom job observation production absent')
+    require(errors, "if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'a1/web-release-')" in text, 'garde job observation production incorrecte')
+    require(errors, 'timeout-minutes: 4' in text, 'timeout observation production absent')
+    require(errors, 'Observer l’hébergement public sans modifier la production' in text, 'étape observation production absente')
     require(errors, 'python3 scripts/validate_site_workflow_security.py --self-test' in text, 'auto-tests du contrat absents')
     require(errors, 'python3 scripts/validate_site_workflow_security.py\n' in text, 'validation du contrat absente')
     require(errors, text.count('needs: workflow-contract') == 1, 'le job validate doit dépendre du contrat')
