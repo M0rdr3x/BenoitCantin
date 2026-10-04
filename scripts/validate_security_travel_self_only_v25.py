@@ -55,6 +55,7 @@ def validate_text(
     base_rpc_sql: str,
     boundary_sql: str,
     create_v25_sql: str,
+    visibility_sql: str,
     hardening_sql: str,
     test_sql: str,
     workflow: str,
@@ -63,6 +64,7 @@ def validate_text(
     table = squash(table_sql)
     boundary = squash(boundary_sql)
     create_v25 = squash(create_v25_sql)
+    visibility = squash(visibility_sql)
     hardening = squash(hardening_sql)
     test = squash(test_sql)
     flow = squash(workflow)
@@ -129,8 +131,9 @@ def validate_text(
             "V25 travel creation must normalize and deduplicate country codes")
     require(errors, "cardinality(coalesce(v_dest,'{}'::text[])) not between 1 and 12" in normalized_create,
             "V25 travel creation must keep the 1..12 country limit")
+    require(errors, "values(v_user,p_starts_at,p_ends_at,v_dest,cardinality(v_dest) > 1," in normalized_create,
+            "V25 travel creation must derive multi_country from normalized destinations")
 
-    visibility_sql = load(VISIBILITY_MIGRATION)
     visibility_create = squash(extract_function(
         visibility_sql, "create or replace function sinjira_security_internal.security_create_travel_plan("
     ))
@@ -143,6 +146,8 @@ def validate_text(
             "A3 travel creation must still derive ownership from auth.uid()")
     require(errors, "p_user_id" not in visibility_create,
             "A3 travel creation must not accept a caller-supplied target user")
+    require(errors, "values(v_user,p_starts_at,p_ends_at,v_dest,cardinality(v_dest) > 1," in visibility_create,
+            "A3 travel creation must derive multi_country server-side instead of trusting p_multi_country")
     require(errors, "return pg_catalog.jsonb_build_object(" in visibility_create
             and "return to_jsonb(v_row)" not in visibility_create,
             "A3 travel creation must already return a minimized JSON object")
@@ -180,6 +185,8 @@ def validate_text(
             "effective travel creation must keep the 1..12 country limit")
     require(errors, "values(v_user," in compact(effective_create),
             "effective travel creation must persist auth.uid() as row owner")
+    require(errors, "values(v_user,p_starts_at,p_ends_at,v_dest,cardinality(v_dest) > 1," in effective_create,
+            "effective travel creation must derive multi_country server-side instead of trusting p_multi_country")
     require(errors, "p_user_id" not in effective_create,
             "effective travel creation must never accept a caller-supplied target user")
     require(errors, "return pg_catalog.jsonb_build_object(" in effective_create
@@ -270,6 +277,7 @@ def run_self_test(
     base_rpc_sql: str,
     boundary_sql: str,
     create_v25_sql: str,
+    visibility_sql: str,
     hardening_sql: str,
     test_sql: str,
     workflow: str,
@@ -280,52 +288,62 @@ def run_self_test(
              mutate_once(table_sql,
                          r"alter\s+table\s+public\.security_travel_plans\s+enable\s+row\s+level\s+security\s*;",
                          "alter table public.security_travel_plans disable row level security;", "RLS"),
-             base_rpc_sql, boundary_sql, create_v25_sql, hardening_sql, test_sql, workflow),
+             base_rpc_sql, boundary_sql, create_v25_sql, visibility_sql, hardening_sql, test_sql, workflow),
             ("read policy widened",
              mutate_once(table_sql,
                          r"(create\s+policy\s+security_travel_plans_read_own[\s\S]*?)using\s*\(\(select\s+auth\.uid\(\)\)\s*=\s*user_id\)\s*;",
                          r"\1using (true);", "read policy"),
-             base_rpc_sql, boundary_sql, create_v25_sql, hardening_sql, test_sql, workflow),
+             base_rpc_sql, boundary_sql, create_v25_sql, visibility_sql, hardening_sql, test_sql, workflow),
             ("direct INSERT granted",
              table_sql + "\ngrant insert on table public.security_travel_plans to authenticated;\n",
-             base_rpc_sql, boundary_sql, create_v25_sql, hardening_sql, test_sql, workflow),
+             base_rpc_sql, boundary_sql, create_v25_sql, visibility_sql, hardening_sql, test_sql, workflow),
             ("base cancel owner filter removed", table_sql,
              mutate_once(base_rpc_sql,
                          r"where\s+id\s*=\s*p_plan_id\s+and\s+user_id\s*=\s*v_user\s+and\s+status\s*=\s*'active'",
                          "where id=p_plan_id and status='active'", "base cancel owner filter"),
-             boundary_sql, create_v25_sql, hardening_sql, test_sql, workflow),
-            ("effective create owner detached", table_sql, base_rpc_sql, boundary_sql, create_v25_sql,
+             boundary_sql, create_v25_sql, visibility_sql, hardening_sql, test_sql, workflow),
+            ("A3 client multi_country trusted", table_sql, base_rpc_sql, boundary_sql, create_v25_sql,
+             mutate_once(visibility_sql,
+                         r"cardinality\(v_dest\)\s*>\s*1",
+                         "p_multi_country", "A3 derived multi_country"),
+             hardening_sql, test_sql, workflow),
+            ("effective multi_country trusted", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, visibility_sql,
+             mutate_once(hardening_sql,
+                         r"cardinality\(v_dest\)\s*>\s*1",
+                         "p_multi_country", "effective derived multi_country"),
+             test_sql, workflow),
+            ("effective create owner detached", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, visibility_sql,
              mutate_once(hardening_sql,
                          r"v_user\s+uuid\s*:=\s*auth\.uid\(\)\s*;",
                          "v_user uuid := gen_random_uuid();", "effective create owner"),
              test_sql, workflow),
-            ("effective cancel owner filter removed", table_sql, base_rpc_sql, boundary_sql, create_v25_sql,
+            ("effective cancel owner filter removed", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, visibility_sql,
              mutate_once(hardening_sql,
                          r"and\s+user_id\s*=\s*v_user",
                          "", "effective cancel owner filter"),
              test_sql, workflow),
-            ("effective response widened", table_sql, base_rpc_sql, boundary_sql, create_v25_sql,
+            ("effective response widened", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, visibility_sql,
              mutate_once(hardening_sql,
                          r"return\s+pg_catalog\.jsonb_build_object\(",
                          "return to_jsonb(v_row); -- ", "effective minimized response"),
              test_sql, workflow),
             ("internalization target removed", table_sql, base_rpc_sql,
              mutate_once(boundary_sql, r"'security_cancel_travel_plan'\s*,", "", "cancel target"),
-             create_v25_sql, hardening_sql, test_sql, workflow),
-            ("SQL contract weakened", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, hardening_sql,
+             create_v25_sql, visibility_sql, hardening_sql, test_sql, workflow),
+            ("SQL contract weakened", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, visibility_sql, hardening_sql,
              mutate_once(test_sql,
                          r"SELF_ONLY_CREATE_RPC_MUST_DERIVE_OWNER_FROM_AUTH_UID",
                          "CREATE_OWNER_CHECK_REMOVED", "SQL create-owner assertion"),
              workflow),
-            ("visibility source unwatched", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, hardening_sql, test_sql,
+            ("visibility source unwatched", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, visibility_sql, hardening_sql, test_sql,
              mutate_once(workflow,
                          re.escape(str(VISIBILITY_MIGRATION)),
                          "supabase/migrations/UNWATCHED_travel_visibility.sql", "workflow visibility watch")),
-            ("hardening source unwatched", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, hardening_sql, test_sql,
+            ("hardening source unwatched", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, visibility_sql, hardening_sql, test_sql,
              mutate_once(workflow,
                          re.escape(str(HARDENING_MIGRATION)),
                          "supabase/migrations/UNWATCHED_travel_hardening.sql", "workflow hardening watch")),
-            ("validator self-test skipped", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, hardening_sql, test_sql,
+            ("validator self-test skipped", table_sql, base_rpc_sql, boundary_sql, create_v25_sql, visibility_sql, hardening_sql, test_sql,
              mutate_once(workflow,
                          r"python3\s+scripts/validate_security_travel_self_only_v25\.py\s+--self-test",
                          "python3 scripts/validate_security_travel_self_only_v25.py", "workflow self-test")),
@@ -334,11 +352,10 @@ def run_self_test(
         return [str(exc)]
 
     failures: list[str] = []
-    for name, t, base, boundary, create_v25, hardening, test, flow in mutations:
-        if not validate_text(t, base, boundary, create_v25, hardening, test, flow):
+    for name, t, base, boundary, create_v25, visibility, hardening, test, flow in mutations:
+        if not validate_text(t, base, boundary, create_v25, visibility, hardening, test, flow):
             failures.append(f"mutation escaped validator: {name}")
     return failures
-
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -350,6 +367,7 @@ def main() -> int:
         load(BASE_RPC_MIGRATION),
         load(BOUNDARY_MIGRATION),
         load(CREATE_V25_MIGRATION),
+        load(VISIBILITY_MIGRATION),
         load(HARDENING_MIGRATION),
         load(SQL_TEST),
         load(WORKFLOW),
