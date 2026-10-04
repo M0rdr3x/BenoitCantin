@@ -159,7 +159,7 @@ def run() -> None:
             f"{BROWSER_NAME}: Twitter Card Littérature absente",
         )
         assert_true(page.locator('nav[aria-label="Navigation principale"]').count() == 1, f"{BROWSER_NAME}: navigation Littérature non nommée")
-        assert_true("83 pages" in page.locator("main").inner_text(), f"{BROWSER_NAME}: pagination de la démo absente de la fiche")
+        assert_true("84 pages" in page.locator("main").inner_text(), f"{BROWSER_NAME}: pagination de la démo absente de la fiche")
 
         graph = json_ld_graph(page)
         books = [node for node in graph if node.get("@type") == "Book"]
@@ -252,7 +252,7 @@ def run() -> None:
         frame = page.locator("iframe[data-pdf-reader]")
         assert_true(frame.count() == 1, f"{BROWSER_NAME}: iframe du lecteur absente")
         assert_true(DEMO_BASENAME in (frame.get_attribute("src") or ""), f"{BROWSER_NAME}: iframe ne pointe plus vers la démo stable")
-        assert_true("83 pages" in page.locator("main").inner_text(), f"{BROWSER_NAME}: lecteur ne décrit plus la démo 83 pages")
+        assert_true("84 pages" in page.locator("main").inner_text(), f"{BROWSER_NAME}: lecteur ne décrit plus la démo 84 pages")
         assert_no_full_edition_link(page, "lecteur")
 
         mobile = browser.new_context(
@@ -281,7 +281,7 @@ def run() -> None:
         mobile.close()
         context.close()
         browser.close()
-        print(f"OK littérature {BROWSER_NAME}: catalogue, commentaires canoniques, SEO, lecteur 83 pages, frontière intégrale et mobile vérifiés.")
+        print(f"OK littérature {BROWSER_NAME}: catalogue, commentaires canoniques, SEO, lecteur 84 pages, frontière intégrale et mobile vérifiés.")
 
 
 if __name__ == "__main__":
