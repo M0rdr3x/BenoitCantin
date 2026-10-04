@@ -29,6 +29,12 @@ LEGACY_PERSONAL_FORMSPREE_ENDPOINT = 'https://formspree.io/f/xdenkzrv'
 NOVA_FORMSPREE_ENDPOINT = 'https://formspree.io/f/xkolwjdg'
 PERSONAL_CONTACT_PENDING_STATE = 'pending-separate-endpoint'
 PERSONAL_CONTACT_ACTIVE_STATE = 'active-separate-endpoint'
+PERSONAL_CONTACT_PENDING_META = 'Canaux de contact de Benoit Cantin pour SINJIRA™, le Registre des Consciences, la vie privée et Projet Nova. Formulaire personnel temporairement désactivé.'
+PERSONAL_CONTACT_ACTIVE_META = 'Canaux de contact de Benoit Cantin pour SINJIRA™, le Registre des Consciences, la vie privée et Projet Nova. Formulaire personnel actif sur un canal distinct.'
+PERSONAL_CONTACT_PENDING_HERO = 'Choisissez la destination concernée. Le formulaire personnel reste temporairement désactivé pendant la configuration de son canal distinct; Projet Nova conserve son contact officiel séparé.'
+PERSONAL_CONTACT_ACTIVE_HERO = 'Choisissez la destination concernée. Le formulaire personnel utilise son canal Formspree distinct; Projet Nova conserve son contact officiel séparé.'
+PERSONAL_CONTACT_PENDING_SECURITY = 'Le formulaire personnel est temporairement désactivé. Ne publiez pas un signalement de sécurité contenant des détails sensibles sur un canal public. À sa réactivation, choisissez « Sécurité / vulnérabilité » et ne transmettez aucun mot de passe, clé ou jeton.'
+PERSONAL_CONTACT_ACTIVE_SECURITY = 'Pour signaler un problème de sécurité, choisissez « Sécurité / vulnérabilité » dans le formulaire. Indiquez la page concernée, le comportement observé et les étapes de reproduction, sans transmettre de mot de passe, clé, jeton ou donnée personnelle inutile.'
 PERSONAL_CONTACT_PENDING_PRIVACY_COPY = '<strong>Le formulaire personnel du portail est actuellement désactivé</strong>'
 PERSONAL_CONTACT_PENDING_GOVERNANCE_COPY = 'Le formulaire officiel de contact personnel peut rester désactivé tant qu’un endpoint Formspree distinct de Projet Nova n’est pas configuré et vérifié.'
 PERSONAL_CONTACT_ACTIVE_PRIVACY_COPY = '<strong>Le formulaire personnel du portail utilise un endpoint Formspree distinct de Projet Nova configuré et vérifié</strong>'
@@ -206,7 +212,12 @@ def validate_personal_contact_contract(contact_text: str, privacy_text: str, gov
         for copy in PERSONAL_CONTACT_PENDING_COPIES:
             if copy not in contact_text:
                 errors.append(f'Texte public pending manquant dans contact.html: {copy}')
-        for copy in PERSONAL_CONTACT_ACTIVE_COPIES:
+        if contact_text.count(PERSONAL_CONTACT_PENDING_META) != 4:
+            errors.append('Métadonnées Contact pending: 4 occurrences exactes requises (description/OG/Twitter/JSON-LD)')
+        for copy in (PERSONAL_CONTACT_PENDING_HERO, PERSONAL_CONTACT_PENDING_SECURITY):
+            if copy not in contact_text:
+                errors.append(f'Texte public pending manquant dans contact.html: {copy}')
+        for copy in (*PERSONAL_CONTACT_ACTIVE_COPIES, PERSONAL_CONTACT_ACTIVE_META, PERSONAL_CONTACT_ACTIVE_HERO, PERSONAL_CONTACT_ACTIVE_SECURITY):
             if copy in contact_text:
                 errors.append('Texte public actif interdit tant que le contact personnel est pending')
         if PERSONAL_CONTACT_PENDING_PRIVACY_COPY not in privacy_text:
@@ -223,7 +234,12 @@ def validate_personal_contact_contract(contact_text: str, privacy_text: str, gov
         for copy in PERSONAL_CONTACT_ACTIVE_COPIES:
             if copy not in contact_text:
                 errors.append(f'Texte public actif manquant dans contact.html: {copy}')
-        for copy in PERSONAL_CONTACT_PENDING_COPIES:
+        if contact_text.count(PERSONAL_CONTACT_ACTIVE_META) != 4:
+            errors.append('Métadonnées Contact actives: 4 occurrences exactes requises (description/OG/Twitter/JSON-LD)')
+        for copy in (PERSONAL_CONTACT_ACTIVE_HERO, PERSONAL_CONTACT_ACTIVE_SECURITY):
+            if copy not in contact_text:
+                errors.append(f'Texte public actif manquant dans contact.html: {copy}')
+        for copy in (*PERSONAL_CONTACT_PENDING_COPIES, PERSONAL_CONTACT_PENDING_META, PERSONAL_CONTACT_PENDING_HERO, PERSONAL_CONTACT_PENDING_SECURITY):
             if copy in contact_text:
                 errors.append('Texte public pending interdit avec un endpoint personnel actif')
         if PERSONAL_CONTACT_ACTIVE_PRIVACY_COPY not in privacy_text:
