@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-95-public-4';
+const CACHE='benoitcantin-v24-4-95-public-5';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/a-propos.html','/contact.html','/transparence-ia.html',
   '/assistant.html','/confidentialite.html','/gouvernance-vie-privee.html','/avis-legal.html',
@@ -12,7 +12,9 @@ self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise
 self.addEventListener('fetch',e=>{
   const r=e.request,u=new URL(r.url);
   if(r.method!=='GET'||u.origin!==location.origin)return;
-  const privatePath=u.pathname.startsWith('/app/')||u.pathname.startsWith('/compte/')||u.pathname.startsWith('/Admin/')||u.pathname.startsWith('/admin/')||u.pathname.startsWith('/supabase/');
+  const privatePath=u.pathname.startsWith('/app/')||u.pathname.startsWith('/compte/')||u.pathname.startsWith('/Admin/')||u.pathname.startsWith('/admin/')||u.pathname.startsWith('/histoire-de-vie/')||u.pathname.startsWith('/supabase/');
+  const releaseMarker=u.pathname==='/.well-known/release.json';
+  if(releaseMarker){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}
   if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})).catch(()=>caches.match('/offline.html')));return}
   if(r.destination==='document'){
     e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{const cp=resp.clone();caches.open(CACHE).then(c=>c.put(r,cp));return resp}).catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));return;
