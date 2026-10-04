@@ -26,20 +26,20 @@ Le périmètre enfant/Junior couvre notamment :
 La vague CI associée au dossier précédent a confirmé que les parcours Communauté Junior et inscription enfant 11 ans passent. Les validations sécurité/conformité restantes atteignent la frontière ledger/lot production avant d’échouer, ce qui est attendu tant que la revue humaine de production n’a pas eu lieu.
 
 
-### Preuves techniques consolidées au HEAD applicatif `6ace8163c5a68d496d77e635c6b29132876a5b45`
+### Preuves techniques revalidées au HEAD `517a1e8dd0037db56899896dc848585789320f81`
 
-- inscription/supervision enfant : **67/67** assertions, plus **11/11** coffre privé enfant et un vrai parcours Auth HTTP à exactement 11 ans;
-- Communauté Junior : **51/51** assertions;
+- inscription/supervision enfant : **75/75** assertions, plus **13/13** coffre privé enfant et un vrai parcours Auth HTTP à exactement 11 ans;
+- Communauté Junior : **61/61** assertions;
 - frontière serveur 11–12 : **13/13**;
-- classement contenu 11–12 : **23/23**;
+- classement contenu 11–12 : **26/26**;
 - capacités compte self-only : **25/25**;
 - compatibilité protection mineurs : **8/8**;
-- révocation Junior multi-tuteur : **25/25**, avec auto-test du garde **10/10**;
-- Compte/catalogue : suite actuelle **49 assertions** accès membre/créateur et **23/23** absence d'oracle/classement 11–12;
-- Profil privé : **22/22** historique et **11/11** enfant;
+- révocation Junior multi-tuteur : **26/26**, avec auto-test du garde **10/10**;
+- Compte/catalogue : suite actuelle **56/56** assertions;
+- Profil privé : **22/22** historique et **13/13** enfant;
 - romans privés : **13/13**, avec auto-test statique courant **9/9**;
 - Mode Voyage : rétention **11/11** et visibilité client **28/28**, les workflows consentement/self-only/minimisation restant également verts;
-- snapshot release : **42 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés.
+- snapshot release : **43 migrations futures non revues**, empreintes rebaselinées après #453, reviewed batch et ledger inchangés.
 
 La classification exhaustive des workflows rouges de ce HEAD montre que leurs étapes métier/sécurité passent avant de s'arrêter sur le **ledger production volontairement bloqué** par les 42 migrations non revues. Le prévol Supabase suit la même logique : ses tests de sécurité passent, puis la vérification du dépôt s'arrête sur ce ledger.
 
