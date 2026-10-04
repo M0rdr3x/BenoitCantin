@@ -247,7 +247,7 @@ select ok(
     where n.slug='la-cendre-du-jugement'
       and a.delivery_mode='legacy_env'
       and a.enabled=false
-      and a.total_pages=1066
+      and a.total_pages=1027
   ),
   'le Livre I reste enregistré mais désactivé tant que le stockage privé n est pas configuré'
 );
