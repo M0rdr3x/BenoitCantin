@@ -223,11 +223,13 @@ def self_test() -> None:
             "demo": {
                 "pages": 84,
                 "sha256": DEMO_SHA256,
+                "size_bytes": DEMO_SIZE_BYTES,
                 "public_url": "https://www.benoitcantin.com/projets/sinjira/documents/" + DEMO_BASENAME,
             },
             "full_edition": {
                 "pages": 1027,
                 "sha256": FULL_SHA256,
+                "size_bytes": FULL_SIZE_BYTES,
                 "public_repository_allowed": False,
                 "public_static_url_allowed": False,
                 "delivery": "authenticated_private_storage_only",
