@@ -66,6 +66,17 @@ PUBLIC_DIRS = (
     "projets",
 )
 
+# Frontière fail-closed des PDF SINJIRA publics. Le dossier documents ne doit
+# jamais devenir une allowlist implicite par extension : l'édition intégrale
+# du Livre I reste privée/non publiée tant qu'une décision humaine explicite
+# et un mécanisme de diffusion autorisé ne sont pas en place.
+SINJIRA_PUBLIC_DOCUMENTS = {
+    Path("projets/sinjira/documents/Questionnaire_Registre_des_Consciences_Fans.pdf"),
+    Path("projets/sinjira/documents/Questionnaire_SINJIRA_Registre_des_Consciences.pdf"),
+    Path("projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"),
+}
+SINJIRA_DOCUMENTS_DIR = Path("projets/sinjira/documents")
+
 FORBIDDEN_DIRS = (
     ".github",
     "docs",
@@ -300,6 +311,17 @@ def relative_path_allowed(rel: Path) -> bool:
     # Les assets runtime ne doivent pas embarquer leurs README de maintenance.
     if parts[0] == "assets" and rel.suffix.lower() in {".md", ".txt", ".toml"}:
         return False
+
+    # Les documents SINJIRA sont publiés par allowlist exacte. Une future
+    # intégrale, un nouveau master ou une pièce de travail ajoutée dans ce
+    # dossier reste donc hors _site jusqu'à décision explicite.
+    if (
+        len(parts) >= 3
+        and parts[0] == "projets"
+        and parts[1] == "sinjira"
+        and parts[2] == "documents"
+    ):
+        return rel in SINJIRA_PUBLIC_DOCUMENTS
 
     # Projet Nova publie uniquement les données runtime explicitement publiques
     # et les références documentaires déclarées. Les README, rapports,
@@ -673,6 +695,35 @@ def validate_plan() -> list[str]:
                 errors.append(
                     f"Artefact non web autorisé par erreur dans {runtime_dir}/: {probe}"
                 )
+
+    for rel in sorted(SINJIRA_PUBLIC_DOCUMENTS):
+        source = ROOT / rel
+        if not source.is_file():
+            errors.append(f"Document SINJIRA public allowlisté absent: {rel.as_posix()}")
+        elif not relative_path_allowed(rel):
+            errors.append(f"Document SINJIRA public allowlisté refusé: {rel.as_posix()}")
+
+    sinjira_documents_root = ROOT / SINJIRA_DOCUMENTS_DIR
+    if sinjira_documents_root.is_dir():
+        for source in sorted(sinjira_documents_root.rglob("*")):
+            if not source.is_file():
+                continue
+            rel = source.relative_to(ROOT)
+            if rel not in SINJIRA_PUBLIC_DOCUMENTS and relative_path_allowed(rel):
+                errors.append(
+                    f"Document SINJIRA non allowlisté publiable par erreur: {rel.as_posix()}"
+                )
+
+    for private_probe in (
+        Path("projets/sinjira/documents/SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf"),
+        Path("projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf"),
+        Path("projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_MAITRE_OFFICIEL.pdf"),
+        Path("projets/sinjira/documents/Livre_01_La_Cendre_du_Jugement.pdf"),
+    ):
+        if relative_path_allowed(private_probe):
+            errors.append(
+                f"Master/intégrale Livre I autorisé par erreur: {private_probe.as_posix()}"
+            )
 
     if root_file_allowed(ROOT / "script.js"):
         errors.append("Script racine legacy script.js autorisé par erreur.")
