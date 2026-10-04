@@ -7,7 +7,8 @@
   "demo": {
     "pages": 83,
     "sha256": "aad491ce8861928c561caa035fe5ee8cb16d42a8e307c93828758346cc93f26f",
-    "public_url": "https://www.benoitcantin.com/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
+    "public_url": "https://www.benoitcantin.com/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
+    "size_bytes": 6530033
   },
   "full_edition": {
     "pages": 1066,
@@ -23,6 +24,7 @@
     "activation_env": "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED",
     "signed_url_seconds": 300,
     "signed_url_max_seconds": 600,
-    "activation_requires_explicit_human_decision": true
+    "activation_requires_explicit_human_decision": true,
+    "size_bytes": 10371834
   }
 }
