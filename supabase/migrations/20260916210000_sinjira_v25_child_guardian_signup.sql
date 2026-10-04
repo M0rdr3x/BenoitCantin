@@ -153,8 +153,8 @@ as $$
     ) then 'adult'
     when s.user_id is null or s.date_of_birth is null or s.date_of_birth>current_date then 'unverified'
     when s.legacy_status='memorialized' then 'memorial'
-    when age(current_date,s.date_of_birth)<interval '11 years' then 'under11'
-    when age(current_date,s.date_of_birth)<interval '13 years' then
+    when extract(year from age(current_date,s.date_of_birth))::integer<11 then 'under11'
+    when extract(year from age(current_date,s.date_of_birth))::integer<13 then
       case
         when exists(
           select 1 from public.guardian_links g
@@ -162,7 +162,7 @@ as $$
         ) then 'child'
         else 'child_pending'
       end
-    when age(current_date,s.date_of_birth)<interval '18 years' then
+    when extract(year from age(current_date,s.date_of_birth))::integer<18 then
       case
         when exists(
           select 1 from public.guardian_links g
