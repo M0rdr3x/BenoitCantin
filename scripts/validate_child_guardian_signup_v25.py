@@ -402,10 +402,20 @@ req("data-contact-metadata-toggle" in r
     "L'interface Relations n'expose pas le contrôle self-only des métadonnées de contacts.")
 
 # Bande enfant distincte : elle ne doit pas hériter automatiquement des droits sociaux jeunesse.
-req("interval'11years'then'under11'" in m,
-    "La bande under11 est absente.")
-req("interval'13years'then" in m and "then'child'" in m and "else'child_pending'" in m,
-    "La bande enfant 11–12 ans n'est pas définie distinctement.")
+req("extract(yearfromage(current_date,s.date_of_birth))::integer<11then'under11'" in m,
+    "La bande under11 n'utilise pas l'âge complété entier.")
+req("extract(yearfromage(current_date,s.date_of_birth))::integer<13then" in m
+    and "then'child'" in m and "else'child_pending'" in m,
+    "La bande enfant 11–12 ans n'est pas définie avec une frontière calendaire robuste.")
+req("extract(yearfromage(current_date,s.date_of_birth))::integer<18then" in m
+    and "then'youth'" in m and "else'youth_pending'" in m,
+    "La bande jeunesse 13–17 ans n'est pas définie avec une frontière calendaire robuste.")
+req(
+    "age(current_date,s.date_of_birth)<interval'11years'" not in age_band_section
+    and "age(current_date,s.date_of_birth)<interval'13years'" not in age_band_section
+    and "age(current_date,s.date_of_birth)<interval'18years'" not in age_band_section,
+    "sinjira_age_band réintroduit une comparaison d'intervalles fragile aux frontières 11/13/18 ans."
+)
 req("public.sinjira_age_band(p_child)in('child','youth')" in m,
     "La supervision parentale ne couvre pas enfant + jeunesse.")
 req("g.status='verified'andg.revoked_atisnull" in m,
