@@ -32,6 +32,66 @@ jobs:
         with:
           python-version: '3.12.14'
 
+      - name: Construire l’artefact de confinement GitHub Pages
+        run: python3 scripts/build_netlify_public.py --output _containment_site --security-containment
+
+      - name: Vérifier et hacher le confinement GitHub Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _containment_site/.well-known/security.txt
+          test -f _containment_site/.well-known/release.json
+          test -f _containment_site/.nojekyll
+          test -f _containment_site/CNAME
+          test ! -e _containment_site/_headers
+          test ! -e _containment_site/_redirects
+          test ! -e _containment_site/script.js
+          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do
+            if grep -R -F -q -- "$endpoint" _containment_site; then
+              echo "ERREUR: endpoint Formspree historique interdit dans l’artefact confinement: $endpoint" >&2
+              exit 1
+            fi
+          done
+          for forbidden in .github docs mobile-native scripts supabase tests; do
+            test ! -e "_containment_site/$forbidden"
+          done
+          for exposed in             supabase/config.toml             scripts/build_netlify_public.py             docs/README.md             .github/workflows/validate-site.yml             tests/e2e/test_public_site.py             mobile-native/App.tsx
+          do
+            test ! -e "_containment_site/$exposed"
+          done
+          find _containment_site -type f -print0 | sort -z | xargs -0 sha256sum > web-containment-SHA256SUMS.txt
+          containment_count="$(find _containment_site -type f | wc -l | tr -d ' ')"
+          test "$containment_count" -gt 0
+          echo "WEB_CONTAINMENT_FILE_COUNT=$containment_count" >> "$GITHUB_ENV"
+
+      - name: Téléverser l’artefact confinement inspectable
+        id: containment-upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sinjira-web-containment-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            _containment_site/
+            web-containment-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
+          include-hidden-files: true
+
+      - name: Résumer l’artefact de confinement
+        shell: bash
+        run: |
+          {
+            echo "### Artefact confinement GitHub Pages — aucun déploiement"
+            echo "- SHA source : `${{ github.event.pull_request.head.sha || github.sha }}`"
+            echo "- Fichiers : **$WEB_CONTAINMENT_FILE_COUNT**"
+            echo "- Artefact : [ouvrir/télécharger](${{ steps.containment-upload.outputs.artifact-url }})"
+            echo "- Digest : `${{ steps.containment-upload.outputs.artifact-digest }}`"
+            echo "- Démo Livre I : **version actuelle tolérée uniquement pour confinement; #363 reste bloquant pour toute release finale**"
+            echo "- Six chemins techniques critiques : **absents de l’artefact**"
+            echo
+            echo "> Ce bloc produit une preuve inspectable seulement; il ne publie rien."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Vérifier l’allowlist de publication
         run: python3 scripts/build_netlify_public.py --check
 
