@@ -1,0 +1,65 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "CONTEXT=deploy-preview SINJIRA_RELEASE_SHA=$VERCEL_GIT_COMMIT_SHA python3 scripts/build_netlify_public.py",
+  "outputDirectory": "_site",
+  "cleanUrls": false,
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {"key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive"},
+        {"key": "X-Content-Type-Options", "value": "nosniff"},
+        {"key": "Strict-Transport-Security", "value": "max-age=31536000"},
+        {"key": "X-Permitted-Cross-Domain-Policies", "value": "none"},
+        {"key": "X-Frame-Options", "value": "SAMEORIGIN"},
+        {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"},
+        {"key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()"},
+        {"key": "Content-Security-Policy", "value": "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; worker-src 'self' blob:; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'self'"}
+      ]
+    },
+    {
+      "source": "/.well-known/release.json",
+      "headers": [
+        {"key": "Cache-Control", "value": "no-store"}
+      ]
+    },
+    {
+      "source": "/compte/(.*)",
+      "headers": [
+        {"key": "Cache-Control", "value": "no-store"}
+      ]
+    },
+    {
+      "source": "/admin/(.*)",
+      "headers": [
+        {"key": "Cache-Control", "value": "no-store"}
+      ]
+    },
+    {
+      "source": "/Admin/(.*)",
+      "headers": [
+        {"key": "Cache-Control", "value": "no-store"}
+      ]
+    },
+    {
+      "source": "/app/(.*)",
+      "headers": [
+        {"key": "Cache-Control", "value": "no-store"}
+      ]
+    },
+    {
+      "source": "/histoire-de-vie/(.*)",
+      "headers": [
+        {"key": "Cache-Control", "value": "no-store"}
+      ]
+    }
+  ],
+  "redirects": [
+    {"source": "/nova", "destination": "/projets/projet-nova/index.html", "permanent": true},
+    {"source": "/roman", "destination": "/projets/sinjira/index.html", "permanent": true},
+    {"source": "/registre", "destination": "/projets/sinjira/registre/index.html", "permanent": true},
+    {"source": "/sinjira", "destination": "/projets/sinjira/index.html", "permanent": true},
+    {"source": "/projets/ere-des-consciences/:path*", "destination": "/projets/sinjira/:path*", "permanent": true}
+  ]
+}
