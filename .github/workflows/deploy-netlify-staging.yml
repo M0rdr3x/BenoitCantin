@@ -1,0 +1,235 @@
+name: Netlify staging — deux deploys immuables
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: SHA Git complet exact à publier depuis ce ref
+        required: true
+        type: string
+      expected_site_name:
+        description: Nom canonique exact du site Netlify (*.netlify.app)
+        required: true
+        type: string
+      confirmation:
+        description: Saisir exactement STAGING_ONLY
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: netlify-staging-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  staging:
+    name: Déployer preview + production-candidate sans promotion
+    if: startsWith(github.ref, 'refs/heads/a1/web-release-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
+      EXPECTED_SITE_NAME: ${{ inputs.expected_site_name }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      NPM_CONFIG_AUDIT: 'false'
+      NPM_CONFIG_FUND: 'false'
+      SINJIRA_RELEASE_SHA: ${{ github.sha }}
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Configurer Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+
+      - name: Verrouiller ref, SHA, site et secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRMATION" != "STAGING_ONLY" ]; then
+            echo "ERREUR: confirmation exacte STAGING_ONLY requise." >&2
+            exit 1
+          fi
+          if ! [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "ERREUR: expected_sha doit être un SHA Git complet en minuscules." >&2
+            exit 1
+          fi
+          if [ "$EXPECTED_SHA" != "$GITHUB_SHA" ]; then
+            echo "ERREUR: expected_sha ne correspond pas au GITHUB_SHA du ref déclenché." >&2
+            exit 1
+          fi
+          if ! [[ "$EXPECTED_SITE_NAME" =~ ^[a-z0-9-]+$ ]]; then
+            echo "ERREUR: expected_site_name Netlify invalide." >&2
+            exit 1
+          fi
+          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "ERREUR: secrets NETLIFY_AUTH_TOKEN et NETLIFY_SITE_ID requis." >&2
+            exit 1
+          fi
+
+      - name: Auto-tester le smoke HTTP
+        run: python3 scripts/validate_web_release_http.py --self-test
+
+      - name: Vérifier l’allowlist publique
+        run: python3 scripts/build_netlify_public.py --check
+
+      - name: Construire le preview noindex
+        env:
+          CONTEXT: deploy-preview
+        run: python3 scripts/build_netlify_public.py --output _preview_site --standalone-netlify
+
+      - name: Déployer le preview staging sans promotion
+        id: preview_deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          json="$(mktemp)"
+          trap 'rm -f "$json"' EXIT
+          npx --yes netlify-cli@27.10.2 deploy             --auth "$NETLIFY_AUTH_TOKEN"             --site "$NETLIFY_SITE_ID"             --dir _preview_site             --no-build             --json             --message "SINJIRA staging preview $GITHUB_SHA" > "$json"
+          python3 - "$json" "$EXPECTED_SITE_NAME" <<'PY'
+          import json, os, re, sys
+          from urllib.parse import urlparse
+
+          data = json.load(open(sys.argv[1], encoding="utf-8"))
+          expected_site = sys.argv[2]
+          deploy_id = str(data.get("deploy_id") or "").strip().lower()
+          raw_site = str(data.get("site_url") or data.get("url") or "").strip().rstrip("/")
+          if raw_site.startswith("http://"):
+              raw_site = "https://" + raw_site[7:]
+          elif raw_site and not raw_site.startswith("https://"):
+              raw_site = "https://" + raw_site
+          parsed = urlparse(raw_site)
+          host = (parsed.hostname or "").lower()
+          if (
+              parsed.scheme != "https"
+              or parsed.username
+              or parsed.password
+              or parsed.port is not None
+              or parsed.path not in {"", "/"}
+              or parsed.query
+              or parsed.fragment
+              or host != f"{expected_site}.netlify.app"
+              or not re.fullmatch(r"[a-z0-9-]{6,64}", deploy_id)
+          ):
+              raise SystemExit("ERREUR: identité du site/deploy Netlify inattendue.")
+          permalink = f"https://{deploy_id}--{host}"
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
+              fh.write(f"PREVIEW_PERMALINK={permalink}\n")
+              fh.write(f"NETLIFY_SITE_NAME={expected_site}\n")
+          PY
+
+      - name: Prouver le preview immuable
+        run: python3 scripts/validate_web_release_http.py "$PREVIEW_PERMALINK" --context preview --expected-sha "$GITHUB_SHA"
+
+      - name: Construire le production-candidate
+        env:
+          CONTEXT: production
+        run: python3 scripts/build_netlify_public.py --output _site --standalone-netlify
+
+      - name: Déployer le production-candidate sans promotion
+        id: production_deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          json="$(mktemp)"
+          trap 'rm -f "$json"' EXIT
+          npx --yes netlify-cli@27.10.2 deploy             --auth "$NETLIFY_AUTH_TOKEN"             --site "$NETLIFY_SITE_ID"             --dir _site             --no-build             --json             --message "SINJIRA staging production-candidate $GITHUB_SHA" > "$json"
+          python3 - "$json" "$EXPECTED_SITE_NAME" <<'PY'
+          import json, os, re, sys
+          from urllib.parse import urlparse
+
+          data = json.load(open(sys.argv[1], encoding="utf-8"))
+          expected_site = sys.argv[2]
+          deploy_id = str(data.get("deploy_id") or "").strip().lower()
+          raw_site = str(data.get("site_url") or data.get("url") or "").strip().rstrip("/")
+          if raw_site.startswith("http://"):
+              raw_site = "https://" + raw_site[7:]
+          elif raw_site and not raw_site.startswith("https://"):
+              raw_site = "https://" + raw_site
+          parsed = urlparse(raw_site)
+          host = (parsed.hostname or "").lower()
+          if (
+              parsed.scheme != "https"
+              or parsed.username
+              or parsed.password
+              or parsed.port is not None
+              or parsed.path not in {"", "/"}
+              or parsed.query
+              or parsed.fragment
+              or host != f"{expected_site}.netlify.app"
+              or not re.fullmatch(r"[a-z0-9-]{6,64}", deploy_id)
+          ):
+              raise SystemExit("ERREUR: identité du site/deploy Netlify inattendue.")
+          permalink = f"https://{deploy_id}--{host}"
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
+              fh.write(f"PRODUCTION_PERMALINK={permalink}\n")
+          PY
+
+      - name: Refuser le même deploy deux fois
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$PREVIEW_PERMALINK" = "$PRODUCTION_PERMALINK" ]; then
+            echo "ERREUR: preview et production-candidate doivent être deux deploys distincts." >&2
+            exit 1
+          fi
+
+      - name: Prouver le production-candidate immuable
+        run: python3 scripts/validate_web_release_http.py "$PRODUCTION_PERMALINK" --context production-candidate --same-netlify-site-as "$PREVIEW_PERMALINK" --expected-sha "$GITHUB_SHA"
+
+      - name: Écrire la preuve staging non sensible
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          proof = {
+              "schema_version": 1,
+              "source_sha": os.environ["GITHUB_SHA"],
+              "site_name": os.environ["NETLIFY_SITE_NAME"],
+              "preview_permalink": os.environ["PREVIEW_PERMALINK"],
+              "production_candidate_permalink": os.environ["PRODUCTION_PERMALINK"],
+              "production_promoted": False,
+              "dns_changed": False,
+          }
+          with open("netlify-staging-proof.json", "w", encoding="utf-8") as fh:
+              json.dump(proof, fh, ensure_ascii=False, sort_keys=True, indent=2)
+              fh.write("\n")
+          PY
+
+      - name: Téléverser la preuve staging
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: netlify-staging-proof-${{ github.sha }}
+          path: netlify-staging-proof.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Résumer la preuve pré-DNS
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### Netlify staging — preuve combinée"
+            echo "- Ref : `$GITHUB_REF`"
+            echo "- SHA source : `$GITHUB_SHA`"
+            echo "- Site Netlify : `$NETLIFY_SITE_NAME`"
+            echo "- Preview immuable : `$PREVIEW_PERMALINK` — **PASS**"
+            echo "- Production-candidate immuable : `$PRODUCTION_PERMALINK` — **PASS**"
+            echo "- Deux deploys distincts : **oui**"
+            echo "- Même site : **oui**"
+            echo "- Promotion production Netlify : **non**"
+            echo "- DNS : **inchangé**"
+            echo "- Verdict : **PRÊT POUR LE GATE DNS CONTRÔLÉ**"
+          } >> "$GITHUB_STEP_SUMMARY"
