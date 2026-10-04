@@ -10,6 +10,7 @@ ROOT=Path(__file__).resolve().parents[1]
 FILES={
     "migration":ROOT/"supabase/migrations/20260919093000_sinjira_v25_private_novel_catalog.sql",
     "catalog_seed":ROOT/"supabase/migrations/20260919103000_sinjira_v25_livre_i_catalog_seed.sql",
+    "master_rebaseline":ROOT/"supabase/migrations/20261004235000_sinjira_v25_livre_i_master_2026_10_04.sql",
     "rls":ROOT/"supabase/migrations/20260919113000_sinjira_v25_private_novel_asset_rls.sql",
     "shared":ROOT/"supabase/functions/_shared/privateNovel.ts",
     "edge":ROOT/"supabase/functions/get-private-novel-url/index.ts",
@@ -39,6 +40,7 @@ def cache_at_least(html:str,asset:str,minimum:tuple[int,int,int])->bool:
 def validate(contents:dict[str,str])->None:
     m=compact(contents["migration"])
     seed=compact(contents["catalog_seed"])
+    master_rebaseline=compact(contents["master_rebaseline"])
     rls=compact(contents["rls"])
     shared=compact(contents["shared"])
     edge=compact(contents["edge"])
@@ -85,6 +87,19 @@ def validate(contents:dict[str,str])->None:
         fail("catalogue privé: un conflit ne doit jamais écraser une configuration d actif privé existante")
     if "onconflict(novel_id)doupdate" in seed:
         fail("seed Livre I: un conflit ne doit jamais réinitialiser une configuration d actif privé existante")
+
+    for marker in (
+        "updateprivate.sinjira_private_novel_assetsa",
+        "settotal_pages=1027",
+        "frompublic.sinjira_novelsn",
+        "n.slug='la-cendre-du-jugement'",
+        "a.total_pagesisdistinctfrom1027",
+    ):
+        if marker not in master_rebaseline:
+            fail(f"rebaseline Livre I 2026-10-04: garde absente: {marker}")
+    for forbidden in ("enabled=true","storage_bucket=","storage_path=","delivery_mode="):
+        if forbidden in master_rebaseline:
+            fail(f"rebaseline Livre I: mutation de diffusion interdite: {forbidden}")
 
     for marker in (
         "altertableprivate.sinjira_private_novel_assetsenablerowlevelsecurity",
@@ -199,6 +214,7 @@ def validate(contents:dict[str,str])->None:
         "lecréateurvoitlebrouillonetsonintégraleprivéeconfigurée",
         "uncomptenonvérifiénereçoitaucuncatalogueromanprivé",
         "lelivreiresteenregistrémaisdésactivétantquelestockageprivénestpasconfiguré",
+        "a.total_pages=1027",
     ):
         if marker not in test:
             fail(f"pgTAP roman privé: preuve absente: {marker}")
@@ -223,6 +239,8 @@ def main()->None:
             "seed Livre I activé par défaut":("catalog_seed","'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf',\n       1066,\n       false","'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf',\n       1066,\n       true"),
             "migration actif privé rendue destructive":("migration","on conflict(novel_id) do nothing;","on conflict(novel_id) do update set enabled=false;"),
             "seed actif privé rendu destructif":("catalog_seed","on conflict(novel_id) do nothing;","on conflict(novel_id) do update set storage_bucket=null,storage_path=null,enabled=false;"),
+            "rebaseline pages retirée":("master_rebaseline","set total_pages = 1027","set total_pages = 1066"),
+            "rebaseline active la diffusion":("master_rebaseline","    updated_at = now()","    updated_at = now(), enabled = true"),
         }
         for label,(key,old,new) in mutations.items():
             broken=dict(contents)
