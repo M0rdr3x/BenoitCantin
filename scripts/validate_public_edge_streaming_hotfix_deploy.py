@@ -61,6 +61,7 @@ def validate_text(text: str) -> list[str]:
         "python3 scripts/validate_send_game_report_security.py",
         "python3 scripts/validate_life_story_delivery_v24_5_50.py",
         "python3 scripts/validate_edge_function_inventory.py",
+        "python3 scripts/validate_edge_response_privacy_v24_5_48.py",
         "supabase functions list --project-ref",
         "application/json-patch+json",
         'test "$status" = "415"',
@@ -93,6 +94,8 @@ def validate_text(text: str) -> list[str]:
         )
     if text.count("--no-verify-jwt") != 3:
         errors.append("--no-verify-jwt doit apparaître exactement sur les trois deploys.")
+    if text.count("python3 scripts/validate_edge_response_privacy_v24_5_48.py") != 2:
+        errors.append("Le contrat confidentialité Edge doit être revalidé avant et après Environment.")
 
     lower = text.lower()
     for pattern, label in (
@@ -179,6 +182,11 @@ def self_test(text: str) -> None:
             1,
         ),
         "credentials checkout": text.replace("persist-credentials: false", "persist-credentials: true", 1),
+        "contrat confidentialité post-Environment retiré": text.replace(
+            "          python3 scripts/validate_edge_response_privacy_v24_5_48.py\n",
+            "",
+            1,
+        ),
         "postflight 415 retiré": text.replace('test "$status" = "415"', 'test -n "$status"', 1),
         "MIME postflight retiré": text.replace("Content-Type: application/json-patch+json", "Content-Type: application/json", 1),
     }
