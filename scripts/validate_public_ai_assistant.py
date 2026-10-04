@@ -50,6 +50,8 @@ def validate_widget(text: str) -> list[str]:
         "path.indexOf('/admin/') === 0",
         "path === '/app'",
         "path.indexOf('/app/') === 0",
+        "path === '/histoire-de-vie'",
+        "path.indexOf('/histoire-de-vie/') === 0",
         "meta[name=\"robots\"]",
         "noindex",
         "if (!isOfficialHost || isPrivateSurface || isNoindexSurface) return;",
@@ -113,6 +115,8 @@ def validate_site_loader(text: str) -> list[str]:
     errors: list[str] = []
     require(errors, LOADER_URL in text, "site.js: loader ai-transparency absent ou version obsolète")
     require(errors, "data-ai-transparency-script" in text, "site.js: marqueur de déduplication absent")
+    require(errors, "path === '/histoire-de-vie'" in text and "path.indexOf('/histoire-de-vie/') === 0" in text, "site.js: garde Histoire de vie absente")
+    require(errors, "if (isSensitiveSurface) return;" in text, "site.js: Histoire de vie doit refuser l’assistant général")
     require(errors, text.count("appendAiTransparencyAssets();") == 1, "site.js: appel du loader transparence doit rester unique")
     return errors
 
