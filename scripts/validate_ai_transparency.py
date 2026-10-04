@@ -349,7 +349,7 @@ def validate_core(contents: dict[str, str]) -> None:
     ):
         if marker not in sw:
             fail(f"cache PWA sans transparence IA courante: {marker}")
-    if not re.search(r"constcache=['\"]benoitcantin-v24-4-95-public-\\d+['\"];", sw):
+    if not re.search(r"constcache=['\"]benoitcantin-v24-4-95-public-\d+['\"];", sw):
         fail("cache PWA: version publique explicite absente")
 
 def sitemap_file_for_url(url: str) -> Path:
