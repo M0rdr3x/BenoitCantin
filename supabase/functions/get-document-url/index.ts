@@ -23,22 +23,51 @@ function externalUrlAllowed(value:string){
 }
 
 async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json'){
     return {response:privateJson({ok:false,error:'Type de contenu non autorisé.'},415)};
   }
+
   const rawLength=req.headers.get('content-length');
-  if(rawLength){
-    const declared=Number(rawLength);
-    if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES){
+  if(rawLength!==null){
+    const normalizedLength=rawLength.trim();
+    if(!/^\d+$/.test(normalizedLength)){
+      return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
+    }
+    const declared=Number(normalizedLength);
+    if(!Number.isSafeInteger(declared)||declared>MAX_REQUEST_BYTES){
       return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
     }
   }
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
-    return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
+
+  const reader=req.body?.getReader();
+  if(!reader)return {body:{}};
+  const chunks:Uint8Array[]=[];
+  let total=0;
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(!value)continue;
+      total+=value.byteLength;
+      if(total>MAX_REQUEST_BYTES){
+        try{await reader.cancel()}catch{/* Le rejet 413 reste prioritaire. */}
+        return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
+      }
+      chunks.push(value);
+    }
+  }finally{
+    try{reader.releaseLock()}catch{/* Le résultat HTTP reste prioritaire. */}
   }
-  try{return {body:JSON.parse(raw||'{}')}}catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
+
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
+  let raw:string;
+  try{raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes)}
+  catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
+  try{return {body:JSON.parse(raw||'{}')}}
+  catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
 }
 
 Deno.serve(async(req)=>{
