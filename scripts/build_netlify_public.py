@@ -24,6 +24,7 @@ RELEASE_METADATA_PATH = Path(".well-known/release.json")
 RELEASE_SHA_ENV = "SINJIRA_RELEASE_SHA"
 NETLIFY_CONFIG = ROOT / "netlify.toml"
 VERCEL_CONFIG = ROOT / "vercel.json"
+NETLIFY_STAGING_WORKFLOW = ROOT / ".github/workflows/deploy-netlify-staging.yml"
 VERCEL_BUILD_COMMAND = "CONTEXT=deploy-preview SINJIRA_RELEASE_SHA=$VERCEL_GIT_COMMIT_SHA python3 scripts/build_netlify_public.py"
 REQUIRED_TECHNICAL_404S = {
     "/supabase/*",
@@ -477,6 +478,68 @@ def validate_vercel_config() -> list[str]:
     return errors
 
 
+def validate_netlify_staging_workflow() -> list[str]:
+    errors: list[str] = []
+    if not NETLIFY_STAGING_WORKFLOW.is_file():
+        return ["Workflow staging Netlify authentifié absent."]
+
+    try:
+        text = NETLIFY_STAGING_WORKFLOW.read_text(encoding="utf-8", errors="strict")
+    except (OSError, UnicodeError) as exc:
+        return [f"Workflow staging Netlify illisible: {exc}"]
+
+    required_markers = (
+        "workflow_dispatch:",
+        "expected_sha:",
+        "expected_site_name:",
+        "confirmation:",
+        "STAGING_ONLY",
+        "permissions:\n  contents: read",
+        "startsWith(github.ref, 'refs/heads/a1/web-release-')",
+        "secrets.NETLIFY_AUTH_TOKEN",
+        "secrets.NETLIFY_SITE_ID",
+        "netlify-cli@27.10.2 deploy",
+        "--auth \"$NETLIFY_AUTH_TOKEN\"",
+        "--site \"$NETLIFY_SITE_ID\"",
+        "--dir _preview_site",
+        "--dir _site",
+        "--no-build",
+        "CONTEXT: deploy-preview",
+        "CONTEXT: production",
+        "--context preview --expected-sha \"$GITHUB_SHA\"",
+        "--context production-candidate --same-netlify-site-as \"$PREVIEW_PERMALINK\" --expected-sha \"$GITHUB_SHA\"",
+        "production_promoted",
+        '"dns_changed": False',
+    )
+    for marker in required_markers:
+        if marker not in text:
+            errors.append(f"Workflow staging Netlify: marqueur requis absent: {marker}")
+
+    forbidden_markers = (
+        "\npush:",
+        "\npull_request:",
+        "--prod ",
+        "--prod\n",
+        "--prod-if-unlocked",
+        "netlify deploy --prod",
+        "github.ref == 'refs/heads/main'",
+    )
+    for marker in forbidden_markers:
+        if marker in text:
+            errors.append(f"Workflow staging Netlify: comportement interdit détecté: {marker.strip()}")
+
+    deploy_count = text.count("netlify-cli@27.10.2 deploy")
+    if deploy_count != 2:
+        errors.append(
+            f"Workflow staging Netlify: exactement 2 deploys brouillon requis, observé={deploy_count}."
+        )
+
+    if text.count("--no-build") != 2:
+        errors.append("Workflow staging Netlify: --no-build requis sur les deux deploys.")
+
+    return errors
+
+
 def validate_netlify_config() -> list[str]:
     errors: list[str] = []
     if not NETLIFY_CONFIG.is_file():
@@ -578,6 +641,7 @@ def validate_plan() -> list[str]:
         errors.append(f"{RELEASE_SHA_ENV} doit être un SHA Git complet de 40 caractères hexadécimaux.")
     errors.extend(validate_netlify_config())
     errors.extend(validate_vercel_config())
+    errors.extend(validate_netlify_staging_workflow())
 
     robots_path = ROOT / "robots.txt"
     if not robots_path.is_file():
