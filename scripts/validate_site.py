@@ -287,11 +287,17 @@ def self_test_personal_contact_contract() -> None:
 def validate_service_worker_privacy(sw_text: str) -> list[str]:
     errors: list[str] = []
     required_markers = (
+        "u.pathname==='/app'",
         "u.pathname.startsWith('/app/')",
+        "u.pathname==='/compte'",
         "u.pathname.startsWith('/compte/')",
+        "u.pathname==='/Admin'",
         "u.pathname.startsWith('/Admin/')",
+        "u.pathname==='/admin'",
         "u.pathname.startsWith('/admin/')",
+        "u.pathname==='/histoire-de-vie'",
         "u.pathname.startsWith('/histoire-de-vie/')",
+        "u.pathname==='/supabase'",
         "u.pathname.startsWith('/supabase/')",
         "const releaseMarker=u.pathname==='/.well-known/release.json';",
         "if(releaseMarker){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}",
@@ -311,7 +317,8 @@ def self_test_service_worker_privacy(sw_text: str) -> None:
         raise SystemExit('ERREUR auto-test service worker: cas sain refusé: ' + ' | '.join(clean))
 
     mutations = {
-        'histoire de vie recachable': sw_text.replace("||u.pathname.startsWith('/histoire-de-vie/')", '', 1),
+        'histoire de vie recachable': sw_text.replace("u.pathname==='/histoire-de-vie'||u.pathname.startsWith('/histoire-de-vie/')||", '', 1),
+        'compte sans slash recachable': sw_text.replace("u.pathname==='/compte'||", '', 1),
         'release marker recachable': sw_text.replace(
             "if(releaseMarker){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}",
             "if(releaseMarker){return}",
