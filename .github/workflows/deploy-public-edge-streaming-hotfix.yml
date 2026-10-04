@@ -91,6 +91,7 @@ jobs:
           python3 scripts/validate_send_game_report_security.py
           python3 scripts/validate_life_story_delivery_v24_5_50.py
           python3 scripts/validate_edge_function_inventory.py
+          python3 scripts/validate_edge_response_privacy_v24_5_48.py
 
       - name: Vérifier la configuration JWT immuable
         shell: bash
