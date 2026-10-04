@@ -430,6 +430,7 @@ def validate_vercel_config() -> list[str]:
             "default-src 'self'",
             "script-src 'self'",
             "connect-src 'self'",
+            "frame-src 'self' https://gpvivleexywljowcqkru.supabase.co",
             "frame-ancestors 'self'",
             "object-src 'self'",
             "base-uri 'self'",
@@ -508,7 +509,12 @@ def validate_netlify_config() -> list[str]:
             errors.append(
                 "CSP Netlify: BubblaV doit rester bloqué tant que le fournisseur public n’est pas réactivé."
             )
-        for directive in ("frame-ancestors 'self'", "object-src 'self'", "base-uri 'self'"):
+        for directive in (
+            "frame-src 'self' https://gpvivleexywljowcqkru.supabase.co",
+            "frame-ancestors 'self'",
+            "object-src 'self'",
+            "base-uri 'self'",
+        ):
             if directive not in csp:
                 errors.append(f"CSP Netlify: directive requise absente: {directive}.")
         if global_values.get("X-Content-Type-Options") != "nosniff":
