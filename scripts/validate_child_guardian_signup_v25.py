@@ -587,11 +587,11 @@ req('metadata.get("initial_contributor_opt_in")isfalse' in cbt
 # Le pgTAP crée un vrai parent, un code et un enfant de 11 ans, puis vérifie aussi
 # la transition automatique child -> youth à la frontière exacte du 13e anniversaire.
 req('selectplan(75);' in t,
-
-req("laveilledes11ansresterrefusée".replace("rester","reste") in t,
+    "Le plan pgTAP enfant supervisé doit contenir 75 assertions.")
+req("laveilledes11ansresterefusée" in t,
     "Le pgTAP ne couvre pas la veille du seuil 11 ans.")
 req("laveilledes18ansresteclasséeyouth_pending" in t,
-    "Le pgTAP ne couvre pas la veille du seuil 18 ans.")    "Le plan pgTAP comportemental enfant supervisé et frontière 13 ans est inattendu.")
+    "Le pgTAP ne couvre pas la veille du seuil 18 ans.")
 req(test.count('$revoke$') == 6,
     "Le pgTAP anti-oracle/révocation doit conserver trois blocs SQL nommés et équilibrés.")
 req(
