@@ -131,7 +131,7 @@ def validate_text(
             "V25 travel creation must normalize and deduplicate country codes")
     require(errors, "cardinality(coalesce(v_dest,'{}'::text[])) not between 1 and 12" in normalized_create,
             "V25 travel creation must keep the 1..12 country limit")
-    require(errors, "values(v_user,p_starts_at,p_ends_at,v_dest,cardinality(v_dest) > 1," in normalized_create,
+    require(errors, "values(v_user,p_starts_at,p_ends_at,v_dest,cardinality(v_dest)>1," in compact(normalized_create),
             "V25 travel creation must derive multi_country from normalized destinations")
 
     visibility_create = squash(extract_function(
@@ -146,7 +146,7 @@ def validate_text(
             "A3 travel creation must still derive ownership from auth.uid()")
     require(errors, "p_user_id" not in visibility_create,
             "A3 travel creation must not accept a caller-supplied target user")
-    require(errors, "values(v_user,p_starts_at,p_ends_at,v_dest,cardinality(v_dest) > 1," in visibility_create,
+    require(errors, "values(v_user,p_starts_at,p_ends_at,v_dest,cardinality(v_dest)>1," in compact(visibility_create),
             "A3 travel creation must derive multi_country server-side instead of trusting p_multi_country")
     require(errors, "return pg_catalog.jsonb_build_object(" in visibility_create
             and "return to_jsonb(v_row)" not in visibility_create,
@@ -185,7 +185,7 @@ def validate_text(
             "effective travel creation must keep the 1..12 country limit")
     require(errors, "values(v_user," in compact(effective_create),
             "effective travel creation must persist auth.uid() as row owner")
-    require(errors, "values(v_user,p_starts_at,p_ends_at,v_dest,cardinality(v_dest) > 1," in effective_create,
+    require(errors, "values(v_user,p_starts_at,p_ends_at,v_dest,cardinality(v_dest)>1," in compact(effective_create),
             "effective travel creation must derive multi_country server-side instead of trusting p_multi_country")
     require(errors, "p_user_id" not in effective_create,
             "effective travel creation must never accept a caller-supplied target user")
