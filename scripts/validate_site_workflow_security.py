@@ -29,6 +29,7 @@ ADMIN_CONSOLE_VALIDATE = 'python scripts/validate_admin_console_security.py'
 ADMIN_PRIVATE_READS_SELF = 'python scripts/validate_admin_private_reads_security.py --self-test'
 ADMIN_PRIVATE_READS_VALIDATE = 'python scripts/validate_admin_private_reads_security.py'
 NETLIFY_PUBLIC_CHECK = 'python3 scripts/build_netlify_public.py --check'
+PAGES_CONTAINMENT_CHECK = 'python3 scripts/build_netlify_public.py --check --security-containment'
 PERSONAL_FORMSPREE_CONFIG_SELF = 'python3 scripts/configure_personal_formspree.py --self-test'
 PRODUCTION_ENVIRONMENT_SELF = 'python3 scripts/validate_production_environment_boundary.py --self-test'
 PRODUCTION_ENVIRONMENT_VALIDATE = 'python3 scripts/validate_production_environment_boundary.py'
@@ -104,6 +105,7 @@ def validate_text(text: str) -> list[str]:
     require(errors, text.count('needs: workflow-contract') == 1, 'le job validate doit dépendre du contrat')
     require(errors, text.count(WEB_RELEASE_VALIDATE_IF) == 1, 'la validation lourde web-only doit rester bornée aux branches a1/web-release-*')
     require(errors, 'python scripts/validate_site.py' in text, 'validation principale du site absente')
+    require(errors, exact_run_count(text, PAGES_CONTAINMENT_CHECK) == 1, 'preuve check-only du confinement Pages absente ou dupliquée')
     require(errors, exact_run_count(text, NETLIFY_PUBLIC_CHECK) == 1, 'validation périmètre public Netlify absente ou dupliquée')
     require(errors, exact_run_count(text, PERSONAL_FORMSPREE_CONFIG_SELF) == 1, 'auto-test transition Formspree personnelle absent ou dupliqué')
     require(errors, exact_run_count(text, PRODUCTION_ENVIRONMENT_SELF) == 1, 'auto-test frontière Environments production absent ou dupliqué')
@@ -660,6 +662,7 @@ def run_self_tests(text: str) -> None:
             "if: github.event_name == 'pull_request'",
             1,
         ),
+        'check confinement Pages retiré': text.replace(f'        run: {PAGES_CONTAINMENT_CHECK}\n', '', 1),
         'validation Netlify retirée': text.replace(f'        run: {NETLIFY_PUBLIC_CHECK}\n', '', 1),
         'auto-test transition Formspree retiré': text.replace(f'        run: {PERSONAL_FORMSPREE_CONFIG_SELF}\n', '', 1),
         'auto-test Environments production retiré': text.replace(f'        run: {PRODUCTION_ENVIRONMENT_SELF}\n', '', 1),
