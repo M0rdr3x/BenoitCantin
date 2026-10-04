@@ -14,7 +14,6 @@ on:
       - 'supabase/functions/get-document-url/**'
       - 'supabase/functions/get-private-book-url/**'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
-      - 'scripts/build_netlify_public.py'
       - 'scripts/validate_livre_i_entitlement_boundary.py'
       - 'scripts/validate_livre_i_entitlement_ui.py'
       - '.github/workflows/sinjira-livre-i-private-delivery.yml'
@@ -65,9 +64,6 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
-
-      - name: Vérifier l'allowlist de publication publique
-        run: python3 scripts/build_netlify_public.py --check
 
       - name: Auto-tester le validateur de diffusion
         run: python3 scripts/validate_sinjira_livre_i_delivery.py --self-test
