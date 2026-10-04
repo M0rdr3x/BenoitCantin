@@ -40,6 +40,7 @@ WEB_RELEASE_PRODUCTION_BASELINE = 'python3 scripts/validate_web_release_http.py 
 WEB_RELEASE_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _site --standalone-netlify'
 WEB_PREVIEW_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _preview_site --standalone-netlify'
 WEB_PAGES_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _pages_site'
+WEB_CONTAINMENT_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _containment_site --security-containment'
 PAGES_PUBLIC_CHECK = 'python3 scripts/build_netlify_public.py --check --security-containment'
 PAGES_PUBLIC_BUILD = 'python3 scripts/build_netlify_public.py --output _site --security-containment'
 PUBLIC_AI_ASSISTANT_SELF = 'python3 scripts/validate_public_ai_assistant.py --self-test'
@@ -257,21 +258,24 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, f'uses: actions/setup-python@{SETUP_PYTHON_SHA}' in text, 'setup-python artefact web non épinglé')
     require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python artefact web inattendue')
     require(errors, 'SINJIRA_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}' in text, 'SHA source embarqué absent du workflow artefact')
-    require(errors, text.count(f'uses: actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}') == 3, 'les trois upload-artifact web doivent être épinglés')
+    require(errors, text.count(f'uses: actions/upload-artifact@{UPLOAD_ARTIFACT_SHA}') == 4, 'les quatre upload-artifact web doivent être épinglés')
     require(errors, exact_run_count(text, NETLIFY_PUBLIC_CHECK) == 1, 'validation allowlist avant artefact absente ou dupliquée')
     require(errors, exact_run_count(text, WEB_RELEASE_ARTIFACT_BUILD) == 1, 'construction _site avant artefact absente ou dupliquée')
     require(errors, exact_run_count(text, WEB_PREVIEW_ARTIFACT_BUILD) == 1, 'construction _preview_site avant artefact absente ou dupliquée')
     require(errors, exact_run_count(text, WEB_PAGES_ARTIFACT_BUILD) == 1, 'construction _pages_site avant artefact absente ou dupliquée')
+    require(errors, exact_run_count(text, WEB_CONTAINMENT_ARTIFACT_BUILD) == 1, 'construction _containment_site avant artefact absente ou dupliquée')
     require(errors, 'CONTEXT: deploy-preview' in text, 'contexte deploy-preview absent de l’artefact preview')
-    require(errors, text.count('include-hidden-files: true') == 3, 'les trois artefacts web doivent inclure .well-known et .nojekyll')
+    require(errors, text.count('include-hidden-files: true') == 4, 'les quatre artefacts web doivent inclure .well-known et .nojekyll')
     require(errors, 'if-no-files-found: error' in text, 'artefact web doit échouer si le contenu est absent')
     require(errors, 'retention-days: 7' in text, 'rétention artefact web doit rester courte')
     require(errors, 'web-release-SHA256SUMS.txt' in text, 'manifeste SHA-256 de release absent')
     require(errors, 'web-preview-SHA256SUMS.txt' in text, 'manifeste SHA-256 preview absent')
     require(errors, 'web-pages-SHA256SUMS.txt' in text, 'manifeste SHA-256 Pages absent')
+    require(errors, 'web-containment-SHA256SUMS.txt' in text, 'manifeste SHA-256 confinement absent')
     require(errors, 'sinjira-web-release-${{ github.event.pull_request.head.sha || github.sha }}' in text, 'nom artefact production absent')
     require(errors, 'sinjira-web-preview-${{ github.event.pull_request.head.sha || github.sha }}' in text, 'nom artefact preview absent')
     require(errors, 'sinjira-web-pages-${{ github.event.pull_request.head.sha || github.sha }}' in text, 'nom artefact Pages absent')
+    require(errors, 'sinjira-web-containment-${{ github.event.pull_request.head.sha || github.sha }}' in text, 'nom artefact confinement absent')
     require(errors, 'test -f _site/.well-known/security.txt' in text, 'security.txt doit être prouvé dans l’artefact')
     require(errors, 'test -f _site/.well-known/release.json' in text, 'release.json production doit être prouvé dans l’artefact')
     require(errors, 'test -f _preview_site/.well-known/release.json' in text, 'release.json preview doit être prouvé dans l’artefact')
@@ -318,7 +322,7 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, 'Aucun déploiement n’est effectué par ce workflow.' in text, 'résumé non-déploiement absent du workflow artefact')
 
     targets = action_targets(text)
-    require(errors, len(targets) == 5, f'nombre inattendu d’actions dans le workflow artefact: {len(targets)}')
+    require(errors, len(targets) == 6, f'nombre inattendu d’actions dans le workflow artefact: {len(targets)}')
     for target in targets:
         require(errors, re.search(r'@[0-9a-f]{40}$', target) is not None, f'action artefact non immuable: {target}')
     return errors
