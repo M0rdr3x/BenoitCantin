@@ -255,6 +255,9 @@ def self_test_personal_contact_contract() -> None:
     pending_contact = (
         '<form id="contact-general" data-personal-formspree-state="pending-separate-endpoint">'
         '<button aria-disabled="true" disabled id="contact-submit">Configuration</button></form>'
+        + (PERSONAL_CONTACT_PENDING_META * 4)
+        + PERSONAL_CONTACT_PENDING_HERO
+        + PERSONAL_CONTACT_PENDING_SECURITY
         + ''.join(PERSONAL_CONTACT_PENDING_COPIES)
         + "<script>var PERSONAL_ENDPOINT='';" + runtime_gate + "</script>"
     )
@@ -262,6 +265,9 @@ def self_test_personal_contact_contract() -> None:
     active_contact = (
         '<form id="contact-general" data-personal-formspree-state="active-separate-endpoint">'
         '<button aria-disabled="true" disabled id="contact-submit">Envoyer</button></form>'
+        + (PERSONAL_CONTACT_ACTIVE_META * 4)
+        + PERSONAL_CONTACT_ACTIVE_HERO
+        + PERSONAL_CONTACT_ACTIVE_SECURITY
         + ''.join(PERSONAL_CONTACT_ACTIVE_COPIES)
         + f"<script>var PERSONAL_ENDPOINT='{active_endpoint}';" + runtime_gate + "</script>"
     )
@@ -283,7 +289,13 @@ def self_test_personal_contact_contract() -> None:
         'déclaration endpoint retirée': pending_contact.replace("var PERSONAL_ENDPOINT='';", "var OTHER_ENDPOINT='';"),
         'garde runtime état actif retirée': pending_contact.replace("form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'&&", ''),
         'texte pending retiré': pending_contact.replace(PERSONAL_CONTACT_PENDING_COPIES[0], ''),
+        'métadonnée pending retirée': pending_contact.replace(PERSONAL_CONTACT_PENDING_META, '', 1),
+        'hero pending retiré': pending_contact.replace(PERSONAL_CONTACT_PENDING_HERO, '', 1),
+        'sécurité pending retirée': pending_contact.replace(PERSONAL_CONTACT_PENDING_SECURITY, '', 1),
         'texte actif retiré': active_contact.replace(PERSONAL_CONTACT_ACTIVE_COPIES[0], ''),
+        'métadonnée active retirée': active_contact.replace(PERSONAL_CONTACT_ACTIVE_META, '', 1),
+        'hero actif retiré': active_contact.replace(PERSONAL_CONTACT_ACTIVE_HERO, '', 1),
+        'sécurité active retirée': active_contact.replace(PERSONAL_CONTACT_ACTIVE_SECURITY, '', 1),
     }
     for name, mutated_contact in cases.items():
         errors = validate_personal_contact_contract(
