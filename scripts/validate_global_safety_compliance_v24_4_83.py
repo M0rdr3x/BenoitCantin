@@ -46,7 +46,10 @@ req("ifyears<14then" in compact and 'guardian_authorization_required_under_14' i
 req("ifyears<11thenraiseexception'sinjira_minimum_age_11'" in childcompact,'La convergence V25 n’impose pas le minimum serveur de 11 ans.')
 req("ifyears<14then" in childcompact and 'guardian_authorization_required_under_14' in child.lower(),'La convergence V25 n’exige pas une autorisation parentale de 11 à 13 ans.')
 req("years<18andresidence_countrynotin('canada','ca','can')" in childcompact and 'youth_jurisdiction_not_enabled' in child.lower(),'La convergence V25 ne conserve pas la porte jeunesse Canada.')
-req("interval'13years'then" in childcompact and "then'child'" in childcompact,'La bande enfant 11–12 ans n’est pas distincte côté serveur.')
+req("extract(yearfromage(current_date,s.date_of_birth))::integer<11then'under11'" in childcompact,'La convergence V25 n’utilise pas l’âge complété pour la frontière 11 ans.')
+req("extract(yearfromage(current_date,s.date_of_birth))::integer<13then" in childcompact and "then'child'" in childcompact and "else'child_pending'" in childcompact,'La bande enfant 11–12 ans n’est pas distincte avec une frontière calendaire robuste.')
+req("extract(yearfromage(current_date,s.date_of_birth))::integer<18then" in childcompact and "then'youth'" in childcompact and "else'youth_pending'" in childcompact,'La bande jeunesse 13–17 ans n’est pas distincte avec une frontière calendaire robuste.')
+req("age(current_date,s.date_of_birth)<interval'11years'" not in childcompact and "age(current_date,s.date_of_birth)<interval'13years'" not in childcompact and "age(current_date,s.date_of_birth)<interval'18years'" not in childcompact,'La convergence V25 réintroduit une comparaison d’intervalles fragile aux seuils 11/13/18 ans.')
 req("public.sinjira_age_band(p_child)in('child','youth')" in childcompact,'La supervision parentale ne couvre pas enfant et jeunesse.')
 req("ifyears<13then" in childcompact and 'c:=false;' in child.lower() and 'f:=false;' in child.lower(),'Le Programme Contributeur n’est pas neutralisé côté serveur pour les 11–12 ans.')
 
