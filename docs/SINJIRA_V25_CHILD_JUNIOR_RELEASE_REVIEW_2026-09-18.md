@@ -459,7 +459,7 @@ conserve les OID nécessaires aux policies et les droits d’exécution requis p
 - un projet `account` n’est plus confirmable par anon via le helper 11–12;
 - un document 11–12 exige désormais aussi le rang d’accès réel du compte courant.
 
-Le pgTAP Compte passe à **49 assertions** et le pgTAP classement 11–12 à **23 assertions**.
+À cette étape historique de la revue, le pgTAP Compte était passé à **49 assertions** et le pgTAP classement 11–12 à **23 assertions**. Sur la revalidation du 4 octobre 2026, les plans courants sont respectivement **56/56** et **26/26**.
 
 Cette trente-sixième migration reste **non revue production**.
 
@@ -483,7 +483,7 @@ Pour 13+ (`youth` / `adult`), un compte familial peut relire les projets, romans
 
 Les adresses réelles des comptes familiaux ne sont volontairement pas inscrites dans Git. Leur association production devra être exécutée séparément sous `service_role`, après revue et déploiement de la migration.
 
-Le pgTAP famille est maintenant porté à **54 assertions**. Il couvre notamment le gratuit visible au membre standard, le privé refusé sans droit, puis un roman privé rendu accessible par une commande `paid` sans créer d'entitlement artificiel.
+À cette étape historique, le pgTAP famille avait été porté à **54 assertions**. La suite Compte/catalogue courante a ensuite convergé à **56/56**; elle couvre notamment le gratuit visible au membre standard, le privé refusé sans droit, puis un roman privé rendu accessible par une commande `paid` sans créer d'entitlement artificiel.
 
 Cette trente-septième migration reste **non revue production**.
 
@@ -502,7 +502,7 @@ aligne le droit produit sur les droits réels :
 - aucun faux entitlement n'est créé;
 - le garde self-only par UUID est conservé.
 
-Le pgTAP Compte est maintenant porté à **49 assertions** : entitlement durable, commande `paid`, produit d'une commande `pending` invisible comme achat et `has_sinjira_product()` faux pour cette commande non payée. La preuve CI doit être relue sur le HEAD final gelé.
+À cette étape historique, le pgTAP Compte avait été porté à **49 assertions** : entitlement durable, commande `paid`, produit d'une commande `pending` invisible comme achat et `has_sinjira_product()` faux pour cette commande non payée. La revalidation courante est **56/56** sur le paquet final; cette preuve reste à rattacher au HEAD choisi pour toute décision humaine.
 
 Cette trente-huitième migration reste **non revue production**.
 
