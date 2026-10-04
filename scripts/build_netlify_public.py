@@ -876,8 +876,11 @@ def build(
     output: Path,
     deploy_context: str | None = None,
     standalone_netlify: bool = False,
+    allow_known_stale_demo_for_containment: bool = False,
 ) -> None:
-    errors = validate_plan()
+    errors = validate_plan(
+        allow_known_stale_demo_for_containment=allow_known_stale_demo_for_containment
+    )
     if errors:
         raise SystemExit("\n".join(errors))
 
@@ -1065,6 +1068,38 @@ def main() -> int:
             print("- " + error)
         return 1
 
+    if args.check and args.security_containment:
+        with tempfile.TemporaryDirectory(prefix="sinjira-pages-containment-") as tmp:
+            containment_output = Path(tmp) / "_site"
+            build(
+                containment_output,
+                deploy_context="production",
+                allow_known_stale_demo_for_containment=True,
+            )
+            containment_errors = validate_output(
+                containment_output,
+                deploy_context="production",
+            )
+            if containment_errors:
+                print(
+                    f"ECHEC: {len(containment_errors)} problème(s) "
+                    "dans l’artefact de confinement GitHub Pages."
+                )
+                for error in containment_errors:
+                    print("- " + error)
+                return 1
+            if (containment_output / "_headers").exists() or (containment_output / "_redirects").exists():
+                print("ECHEC: le confinement GitHub Pages ne doit pas embarquer _headers/_redirects.")
+                return 1
+            file_count = sum(
+                1 for path in containment_output.rglob("*") if path.is_file()
+            )
+        print(
+            "OK confinement GitHub Pages: artefact public isolé vérifié; "
+            f"{file_count} fichiers; démo #363 actuelle tolérée uniquement pour confinement."
+        )
+        return 0
+
     if args.check:
         with tempfile.TemporaryDirectory(prefix="sinjira-netlify-public-") as tmp:
             root = Path(tmp)
@@ -1146,6 +1181,7 @@ def main() -> int:
     build(
         args.output,
         standalone_netlify=args.standalone_netlify,
+        allow_known_stale_demo_for_containment=args.security_containment,
     )
     output_errors = validate_output(
         args.output,
