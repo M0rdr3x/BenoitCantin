@@ -101,7 +101,7 @@ def validate(
         'Lecteur: progression locale': (reader_js, 'localStorage.setItem(storageKey'),
         'Lecteur HTML: non indexable': (reader_html, 'content="noindex,nofollow,noarchive"'),
         'Lecteur HTML: politique no-referrer': (reader_html, 'content="no-referrer" name="referrer"'),
-        'Lecteur HTML: total de pages contrôlé': (reader_html, 'data-reader-total-pages="1066"'),
+        'Lecteur HTML: total de pages contrôlé': (reader_html, 'data-reader-total-pages="1027"'),
         'Roman: lien lecteur intégral générique': (roman_html, 'href="lire-integral.html?novel='),
         'Démo: lien lecteur intégral': (demo_html, 'href="lire-integral.html"'),
     }
@@ -239,7 +239,7 @@ def self_test() -> None:
         )
         paths['reader_html'].write_text(
             '<meta content="noindex,nofollow,noarchive" name="robots"><meta content="no-referrer" name="referrer">'
-            '<body data-reader-total-pages="1066"></body>',
+            '<body data-reader-total-pages="1027"></body>',
             encoding='utf-8',
         )
         paths['roman'].write_text('<a href="lire-integral.html?novel=la-cendre-du-jugement">Lire</a>', encoding='utf-8')
