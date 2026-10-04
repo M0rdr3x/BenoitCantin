@@ -86,7 +86,7 @@ jobs:
             echo "- Fichiers : **$WEB_CONTAINMENT_FILE_COUNT**"
             echo "- Artefact : [ouvrir/télécharger](${{ steps.containment-upload.outputs.artifact-url }})"
             echo "- Digest : `${{ steps.containment-upload.outputs.artifact-digest }}`"
-            echo "- Démo Livre I : **version actuelle tolérée uniquement pour confinement; #363 reste bloquant pour toute release finale**"
+            echo "- Démo Livre I : **master exact requis et validé dans tous les artefacts**"
             echo "- Six chemins techniques critiques : **absents de l’artefact**"
             echo
             echo "> Ce bloc produit une preuve inspectable seulement; il ne publie rien."
