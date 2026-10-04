@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-95-public-6';
+const CACHE='benoitcantin-v24-4-95-public-7';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/a-propos.html','/contact.html','/transparence-ia.html',
   '/assistant.html','/confidentialite.html','/gouvernance-vie-privee.html','/avis-legal.html',
@@ -7,6 +7,7 @@ const CORE=[
   '/assets/icons/benoit-sigil.svg','/android-chrome-192x192.png','/android-chrome-512x512.png','/assets/media/sinjira-emblem.webp','/assets/media/sinjira-registre.webp','/assets/media/nova-logo.webp','/assets/media/sinjira-livre-1-cover-480.webp','/assets/media/fracture-card-back.webp',
   '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/jeux/','/projets/sinjira/registre/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/','/projets/sinjira/jeux/fracture-du-reseau-mere/','/projets/projet-nova/'
 ];
+function cacheableResponse(resp){const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();return resp.ok&&cc.indexOf('no-store')===-1}
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
@@ -17,9 +18,9 @@ self.addEventListener('fetch',e=>{
   if(releaseMarker){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}
   if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})).catch(()=>caches.match('/offline.html')));return}
   if(r.destination==='document'){
-    e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{const cp=resp.clone();caches.open(CACHE).then(c=>c.put(r,cp));return resp}).catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));return;
+    e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{if(cacheableResponse(resp)){const cp=resp.clone();caches.open(CACHE).then(c=>c.put(r,cp))}return resp}).catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));return;
   }
   const liveAsset=/\/assets\/(?:js|css)\//.test(u.pathname);
-  if(liveAsset){e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{if(resp.ok)caches.open(CACHE).then(c=>c.put(r,resp.clone()));return resp}).catch(()=>caches.match(r).then(x=>x||caches.match(u.pathname))));return}
-  e.respondWith(caches.match(r).then(cached=>cached||fetch(r).then(resp=>{if(resp.ok&&u.pathname.indexOf('/documents/')===-1)caches.open(CACHE).then(c=>c.put(r,resp.clone()));return resp})));
+  if(liveAsset){e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{if(cacheableResponse(resp))caches.open(CACHE).then(c=>c.put(r,resp.clone()));return resp}).catch(()=>caches.match(r).then(x=>x||caches.match(u.pathname))));return}
+  e.respondWith(caches.match(r).then(cached=>cached||fetch(r).then(resp=>{if(cacheableResponse(resp)&&u.pathname.indexOf('/documents/')===-1)caches.open(CACHE).then(c=>c.put(r,resp.clone()));return resp})));
 });
