@@ -69,7 +69,7 @@ jobs:
             echo "- Smoke deploy unitaire : \`Netlify deploy — smoke HTTP\` (permalink atomique, preview / production-candidate)"
             echo "- Gate pré-DNS combiné : \`Netlify pré-DNS — gate combiné\` (même site Netlify + même SHA)"
             echo "- Smoke production : \`Web production — smoke HTTP\` (SHA + signature Netlify + apex canonique)"
-            echo "- Portes externes restantes : bascule hébergeur sûre (#450), #135, #443, #444"
+            echo "- Portes restantes : master PDF démo exact (#363), bascule hébergeur sûre (#450), Formspree personnel distinct (#451), preuve réseau BubblaV (#444), protection serveur main (#135)"
             echo
             echo "> Ce résumé prouve l'état du candidat Git/CI, pas un déploiement production."
           } >> "$GITHUB_STEP_SUMMARY"
