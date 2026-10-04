@@ -283,9 +283,62 @@ def self_test_personal_contact_contract() -> None:
         raise SystemExit('ERREUR auto-test contact personnel: documentation pending acceptée avec endpoint actif.')
 
 
+
+def validate_service_worker_privacy(sw_text: str) -> list[str]:
+    errors: list[str] = []
+    required_markers = (
+        "u.pathname.startsWith('/app/')",
+        "u.pathname.startsWith('/compte/')",
+        "u.pathname.startsWith('/Admin/')",
+        "u.pathname.startsWith('/admin/')",
+        "u.pathname.startsWith('/histoire-de-vie/')",
+        "u.pathname.startsWith('/supabase/')",
+        "const releaseMarker=u.pathname==='/.well-known/release.json';",
+        "if(releaseMarker){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}",
+        "if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'}))",
+    )
+    for marker in required_markers:
+        if marker not in sw_text:
+            errors.append(f'Service worker: garde privée/no-store absente: {marker}')
+    if "caches.open(CACHE).then(c=>c.put(r,cp))" not in sw_text:
+        errors.append('Service worker: stratégie document publique attendue absente.')
+    return errors
+
+
+def self_test_service_worker_privacy(sw_text: str) -> None:
+    clean = validate_service_worker_privacy(sw_text)
+    if clean:
+        raise SystemExit('ERREUR auto-test service worker: cas sain refusé: ' + ' | '.join(clean))
+
+    mutations = {
+        'histoire de vie recachable': sw_text.replace("||u.pathname.startsWith('/histoire-de-vie/')", '', 1),
+        'release marker recachable': sw_text.replace(
+            "if(releaseMarker){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}",
+            "if(releaseMarker){return}",
+            1,
+        ),
+        'no-store privé retiré': sw_text.replace(
+            "if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'}))",
+            "if(privatePath){e.respondWith(fetch(r)",
+            1,
+        ),
+    }
+    for label, mutated in mutations.items():
+        if mutated == sw_text:
+            raise SystemExit(f'ERREUR auto-test service worker: mutation sans effet: {label}')
+        if not validate_service_worker_privacy(mutated):
+            raise SystemExit(f'ERREUR auto-test service worker: affaiblissement non détecté: {label}')
+
+
 def main() -> int:
     self_test_personal_contact_contract()
+    sw_path = ROOT / 'sw.js'
+    if not sw_path.is_file():
+        raise SystemExit('ERREUR: sw.js absent pour la validation de confidentialité PWA.')
+    sw_text = sw_path.read_text('utf-8', errors='strict')
+    self_test_service_worker_privacy(sw_text)
     errors: list[str] = []
+    errors.extend(validate_service_worker_privacy(sw_text))
     files = all_files()
     htmls = [p for p in files if p.suffix.lower() == '.html']
     js = [p for p in files if p.suffix.lower() == '.js']
