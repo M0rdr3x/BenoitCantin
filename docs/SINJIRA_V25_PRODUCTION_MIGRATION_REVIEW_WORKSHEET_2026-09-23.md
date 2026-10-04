@@ -11,7 +11,9 @@ PR de travail : **#435** — branche `a1/integration-rehearsal`
 
 ## Règles de décision
 
-Aucune case cochée ne vaut à elle seule approbation production. L’approbation doit rester une décision humaine explicite et séparée, documentée après lecture du SQL, des dépendances, des preuves CI et des impacts sécurité/confidentialité.
+Aucune case cochée ne vaut à elle seule approbation production.
+
+> Rebaseline ciblée du 4 octobre 2026 : la ligne #4 (`20260916210000_sinjira_v25_child_guardian_signup.sql`) pointe désormais vers le blob `3231fc2720a28700be9d1be117e53a9a2448b08b` après correction #453 et preuve **75/75**. La migration reste **NON REVUE / NON APPROUVÉE**; aucune case de décision humaine n’est cochée automatiquement. L’approbation doit rester une décision humaine explicite et séparée, documentée après lecture du SQL, des dépendances, des preuves CI et des impacts sécurité/confidentialité.
 
 Ne pas modifier automatiquement `supabase/production-reviewed-migration-batch.txt` ou `supabase/production-migration-ledger.txt` à partir de cette feuille.
 
@@ -59,7 +61,7 @@ Lire les migrations dans l’ordre chronologique canonique. Les colonnes de cont
 | 1 | `20260913030500_sinjira_v25_travel_mode_geo_scope_hardening.sql` | `7285d1e30ea288004d17c1dbfbf9f01662b36bb7` | Mode Voyage | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 2 | `20260913230000_sinjira_v25_travel_mode_retention_purge.sql` | `41b8dc3d1b1e09c018e588755edb053e63e9904a` | Mode Voyage | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 3 | `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` | `2d7b8ccbfc79fed6a03208086a138618779d6e2d` | Mode Voyage | [ ] | [ ] | [ ] | [ ] | [ ] |
-| 4 | `20260916210000_sinjira_v25_child_guardian_signup.sql` | `8c7239489d57f0a821da104b5df5ead16fc8103e` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 4 | `20260916210000_sinjira_v25_child_guardian_signup.sql` | `3231fc2720a28700be9d1be117e53a9a2448b08b` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 5 | `20260917223000_sinjira_v25_junior_community.sql` | `64e66dc8d9c45de9ecbb1174fdb842e4444b9b6b` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 6 | `20260918010000_sinjira_v25_child_sensitive_boundary.sql` | `ea0426172caba27fc3446c696575a19a1eae08d7` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 7 | `20260918013000_sinjira_v25_child_content_rating.sql` | `b0a2bfda90579830083d128035ee533d06dd2159` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
