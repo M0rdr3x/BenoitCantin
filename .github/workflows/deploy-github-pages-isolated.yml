@@ -63,11 +63,11 @@ jobs:
             exit 1
           fi
 
-      - name: Vérifier l’allowlist publique
-        run: python3 scripts/build_netlify_public.py --check
+      - name: Vérifier l’allowlist publique en mode confinement
+        run: python3 scripts/build_netlify_public.py --check --security-containment
 
       - name: Construire le publish public isolé
-        run: python3 scripts/build_netlify_public.py --output _site
+        run: python3 scripts/build_netlify_public.py --output _site --security-containment
 
       - name: Vérifier la frontière de publication Pages
         shell: bash
@@ -107,6 +107,7 @@ jobs:
             echo "- Source téléversée : `_site`"
             echo "- Racine du dépôt : **non publiée**"
             echo "- Mode : **confinement temporaire**"
+            echo "- Démo Livre I : **version actuelle conservée temporairement; #363 reste obligatoire avant release finale**"
             echo "- Limite connue : **les en-têtes HTTP complets de #450 ne sont pas fournis par GitHub Pages**"
             echo "- Cible finale #450 : **Netlify avec _headers/_redirects**"
           } >> "$GITHUB_STEP_SUMMARY"
