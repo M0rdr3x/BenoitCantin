@@ -38,6 +38,9 @@ jobs:
         if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'a1/web-release-')
         run: python3 scripts/validate_web_release_scope.py
 
+      - name: Vérifier le confinement Pages indépendant du master final
+        run: python3 scripts/build_netlify_public.py --check --security-containment
+
       - name: Vérifier le périmètre public Netlify
         run: python3 scripts/build_netlify_public.py --check
       - name: Auto-tester la transition Formspree personnelle
