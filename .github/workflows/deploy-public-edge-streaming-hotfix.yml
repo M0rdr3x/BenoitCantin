@@ -1,0 +1,243 @@
+name: Production — déployer hotfix Edge public streaming
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Autoriser explicitement le déploiement des 3 Edge Functions"
+        required: true
+        default: false
+        type: boolean
+      expected_sha:
+        description: "SHA Git exact de main à déployer (40 caractères hexadécimaux)"
+        required: true
+        type: string
+      confirmation:
+        description: "Saisir exactement DEPLOY-PUBLIC-EDGE-STREAMING-HOTFIX"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-public-edge-streaming-hotfix
+  cancel-in-progress: false
+
+env:
+  PROJECT_REF: gpvivleexywljowcqkru
+  EXPECTED_CONFIRMATION: DEPLOY-PUBLIC-EDGE-STREAMING-HOTFIX
+
+jobs:
+  preflight:
+    name: Prévol non mutant du hotfix Edge public
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Refuser toute intention ambiguë
+        shell: bash
+        env:
+          APPLY_REQUESTED: ${{ inputs.apply }}
+          EXPECTED_SHA_INPUT: ${{ inputs.expected_sha }}
+          CONFIRMATION_INPUT: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main" || {
+            echo "Ce workflow production doit être lancé depuis main." >&2
+            exit 1
+          }
+          test "$APPLY_REQUESTED" = "true" || {
+            echo "apply=true est obligatoire." >&2
+            exit 1
+          }
+          [[ "$EXPECTED_SHA_INPUT" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "expected_sha doit être un SHA Git complet en minuscules." >&2
+            exit 1
+          }
+          test "$EXPECTED_SHA_INPUT" = "$GITHUB_SHA" || {
+            echo "Le SHA demandé ne correspond pas au SHA courant de main." >&2
+            exit 1
+          }
+          test "$CONFIRMATION_INPUT" = "$EXPECTED_CONFIRMATION" || {
+            echo "Confirmation production invalide." >&2
+            exit 1
+          }
+
+      - name: Checkout exact sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Vérifier le contrat du workflow de déploiement
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_public_edge_streaming_hotfix_deploy.py --self-test
+          python3 scripts/validate_public_edge_streaming_hotfix_deploy.py
+
+      - name: Vérifier les trois frontières Edge
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_get_document_url_security.py --self-test
+          python3 scripts/validate_get_document_url_security.py
+          python3 scripts/validate_send_game_report_security.py --self-test
+          python3 scripts/validate_send_game_report_security.py
+          python3 scripts/validate_life_story_delivery_v24_5_50.py
+          python3 scripts/validate_edge_function_inventory.py
+
+      - name: Vérifier la configuration JWT immuable
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import tomllib
+          from pathlib import Path
+          data=tomllib.loads(Path("supabase/config.toml").read_text(encoding="utf-8"))
+          functions=data.get("functions") or {}
+          expected=("get-document-url","send-game-report","life-story-delivery")
+          bad=[slug for slug in expected if (functions.get(slug) or {}).get("verify_jwt") is not False]
+          if bad:
+              raise SystemExit("verify_jwt=false requis pour: " + ", ".join(bad))
+          print("OK config JWT hotfix: 3/3 verify_jwt=false.")
+          PY
+
+      - name: Calculer les empreintes source à déployer
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "### Hotfix Edge public — prévol"
+            echo "- SHA source : `$GITHUB_SHA`"
+            for slug in get-document-url send-game-report life-story-delivery; do
+              digest="$(find "supabase/functions/$slug" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')"
+              echo "- `$slug` source-tree sha256 : `$digest`"
+            done
+            echo "- Mutation distante : **aucune dans ce job**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Déployer exactement 3 Edge Functions
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    environment: production
+    steps:
+      - name: Revalider le gate après la frontière Environment
+        shell: bash
+        env:
+          APPLY_REQUESTED: ${{ inputs.apply }}
+          EXPECTED_SHA_INPUT: ${{ inputs.expected_sha }}
+          CONFIRMATION_INPUT: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$APPLY_REQUESTED" = "true"
+          test "$EXPECTED_SHA_INPUT" = "$GITHUB_SHA"
+          test "$CONFIRMATION_INPUT" = "$EXPECTED_CONFIRMATION"
+
+      - name: Checkout exact sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Installer Supabase CLI figé
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+          github-token: ${{ github.token }}
+
+      - name: Vérifier le secret Supabase
+        shell: bash
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || {
+            echo "SUPABASE_ACCESS_TOKEN manquant." >&2
+            exit 1
+          }
+
+      - name: Revalider les sources après la frontière Environment
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_public_edge_streaming_hotfix_deploy.py
+          python3 scripts/validate_get_document_url_security.py
+          python3 scripts/validate_send_game_report_security.py
+          python3 scripts/validate_life_story_delivery_v24_5_50.py
+          python3 scripts/validate_edge_function_inventory.py
+
+      - name: Déployer get-document-url
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          supabase functions deploy get-document-url --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Déployer send-game-report
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          supabase functions deploy send-game-report --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Déployer life-story-delivery
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          supabase functions deploy life-story-delivery --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Vérifier la présence distante des trois fonctions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          list="$RUNNER_TEMP/functions-list.txt"
+          supabase functions list --project-ref "$PROJECT_REF" | tee "$list"
+          for slug in get-document-url send-game-report life-story-delivery; do
+            grep -Fq "$slug" "$list" || {
+              echo "Fonction absente après déploiement: $slug" >&2
+              exit 1
+            }
+          done
+
+      - name: Prouver le nouveau media type exact sur le réseau
+        shell: bash
+        run: |
+          set -euo pipefail
+          origin='https://www.benoitcantin.com'
+          for slug in get-document-url send-game-report life-story-delivery; do
+            url="https://$PROJECT_REF.supabase.co/functions/v1/$slug"
+            body="$RUNNER_TEMP/$slug-response.txt"
+            status="$(curl --silent --show-error --location               --output "$body"               --write-out '%{http_code}'               --request POST               --header "Origin: $origin"               --header 'Content-Type: application/json-patch+json'               --data '{}'               "$url")"
+            test "$status" = "415" || {
+              echo "$slug: HTTP $status; 415 attendu pour media type JSON non exact." >&2
+              cat "$body" >&2
+              exit 1
+            }
+            echo "$slug: HTTP 415 confirmé."
+          done
+
+      - name: Résumer la preuve de déploiement
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "### Déploiement hotfix Edge public"
+            echo "- SHA source déployé : `$GITHUB_SHA`"
+            echo "- Projet : `$PROJECT_REF`"
+            echo "- Fonctions : `get-document-url`, `send-game-report`, `life-story-delivery`"
+            echo "- verify_jwt : conservé à **false** pour les 3 fonctions"
+            echo "- Postflight réseau : **HTTP 415** sur `application/json-patch+json` pour les 3 endpoints"
+            echo "- Migration DB : **aucune**"
+          } >> "$GITHUB_STEP_SUMMARY"
