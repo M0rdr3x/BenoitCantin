@@ -302,6 +302,11 @@ def validate_service_worker_privacy(sw_text: str) -> list[str]:
         "const releaseMarker=u.pathname==='/.well-known/release.json';",
         "if(releaseMarker){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}",
         "if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'}))",
+        "function cacheableResponse(resp)",
+        "resp.headers.get('Cache-Control')",
+        "cc.indexOf('no-store')===-1",
+        "if(cacheableResponse(resp)){const cp=resp.clone();",
+        "if(cacheableResponse(resp))caches.open(CACHE)",
     )
     for marker in required_markers:
         if marker not in sw_text:
@@ -329,6 +334,7 @@ def self_test_service_worker_privacy(sw_text: str) -> None:
             "if(privatePath){e.respondWith(fetch(r)",
             1,
         ),
+        'réponses no-store recachables': sw_text.replace("cc.indexOf('no-store')===-1", "true", 1),
     }
     for label, mutated in mutations.items():
         if mutated == sw_text:
