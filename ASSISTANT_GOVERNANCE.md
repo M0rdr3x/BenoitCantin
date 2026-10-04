@@ -82,6 +82,8 @@ Le widget public BubblaV ne doit pas être chargé sous :
 - `/admin/*`
 - `/app`
 - `/app/*`
+- `/histoire-de-vie`
+- `/histoire-de-vie/*`
 - toute page portant une directive `noindex`
 
 Le chatbot public ne constitue pas une voie d’accès aux données privées des comptes SINJIRA ni aux outils d’administration. Par défaut, une surface non indexable n’est pas une surface de chatbot public.
@@ -115,7 +117,7 @@ Toute modification qui élargit les données accessibles, active une intégratio
 
 Le chargeur du widget public est centralisé dans `assets/js/ai-transparency.js`.
 
-Sur le domaine officiel canonique `www.benoitcantin.com`, l’assistant public est actuellement présenté sans charger BubblaV. La minimisation #443 et l’allowlist fournisseur #444 sont confirmées; le code fournisseur ne doit toutefois pas être activé tant que la validation réseau/CSP contrôlée n’est pas terminée. La garde locale BubblaV accepte désormais uniquement `www.benoitcantin.com` — l’apex doit rediriger vers `www` et n’est pas une origine widget autorisée. L’ancien assistant local `sinjira-assistant.js` ne doit pas être chargé simultanément avec une future réactivation du widget public. Les espaces privés, les pages `noindex` et les environnements non officiels peuvent conserver l’aide locale sans fournisseur externe.
+Sur le domaine officiel canonique `www.benoitcantin.com`, l’assistant public est actuellement présenté sans charger BubblaV. La minimisation #443 et l’allowlist fournisseur #444 sont confirmées; le code fournisseur ne doit toutefois pas être activé tant que la validation réseau/CSP contrôlée n’est pas terminée. La garde locale BubblaV accepte désormais uniquement `www.benoitcantin.com` — l’apex doit rediriger vers `www` et n’est pas une origine widget autorisée. L’ancien assistant local `sinjira-assistant.js` ne doit pas être chargé simultanément avec une future réactivation du widget public. Les espaces privés et les pages `noindex` ne chargent jamais BubblaV. La surface sensible `/histoire-de-vie` n’injecte pas non plus l’assistant local général : elle conserve uniquement son runtime de remise dédié. Les autres environnements non officiels peuvent conserver l’aide locale sans fournisseur externe.
 
 Le script fournisseur prévu pour une réactivation future reste :
 
