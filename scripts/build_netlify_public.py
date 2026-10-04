@@ -663,7 +663,7 @@ def validate_netlify_config() -> list[str]:
     return errors
 
 
-def validate_plan() -> list[str]:
+def validate_plan(*, allow_known_stale_demo_for_containment: bool = False) -> list[str]:
     errors: list[str] = []
     release_sha = configured_release_sha()
     if release_sha and not re_full_git_sha(release_sha):
@@ -729,16 +729,17 @@ def validate_plan() -> list[str]:
         except OSError as exc:
             errors.append(f"Démo Livre I illisible: {exc}")
         else:
-            if demo_size != LIVRE1_DEMO_MASTER_SIZE_BYTES:
-                errors.append(
-                    "Démo Livre I non conforme au master #363: "
-                    f"taille={demo_size}, attendu={LIVRE1_DEMO_MASTER_SIZE_BYTES}."
-                )
-            if demo_sha != LIVRE1_DEMO_MASTER_SHA256:
-                errors.append(
-                    "Démo Livre I non conforme au master #363: "
-                    f"sha256={demo_sha}, attendu={LIVRE1_DEMO_MASTER_SHA256}."
-                )
+            if not allow_known_stale_demo_for_containment:
+                if demo_size != LIVRE1_DEMO_MASTER_SIZE_BYTES:
+                    errors.append(
+                        "Démo Livre I non conforme au master #363: "
+                        f"taille={demo_size}, attendu={LIVRE1_DEMO_MASTER_SIZE_BYTES}."
+                    )
+                if demo_sha != LIVRE1_DEMO_MASTER_SHA256:
+                    errors.append(
+                        "Démo Livre I non conforme au master #363: "
+                        f"sha256={demo_sha}, attendu={LIVRE1_DEMO_MASTER_SHA256}."
+                    )
     else:
         errors.append(
             f"Démo Livre I publique absente: {LIVRE1_DEMO_PUBLIC_PATH.as_posix()}"
@@ -1041,9 +1042,23 @@ def main() -> int:
         action="store_true",
         help="Embarquer _headers et _redirects dans _site pour un déploiement Netlify autonome.",
     )
+    parser.add_argument(
+        "--security-containment",
+        action="store_true",
+        help=(
+            "Confinement GitHub Pages uniquement: conserve temporairement la démo Livre I "
+            "actuelle même si son hash diffère du master #363, sans relâcher l'allowlist."
+        ),
+    )
     args = parser.parse_args()
 
-    errors = validate_plan()
+    if args.security_containment and args.standalone_netlify:
+        print("ECHEC: --security-containment est interdit avec --standalone-netlify.")
+        return 1
+
+    errors = validate_plan(
+        allow_known_stale_demo_for_containment=args.security_containment
+    )
     if errors:
         print(f"ECHEC: {len(errors)} problème(s) dans le plan de publication Netlify.")
         for error in errors:
@@ -1142,6 +1157,8 @@ def main() -> int:
             print("- " + error)
         return 1
     mode = "autonome" if args.standalone_netlify else "lié au dépôt"
+    if args.security_containment:
+        mode = "confinement sécurité GitHub Pages (démo #363 temporairement tolérée)"
     print(
         f"OK publication Netlify {mode} construite et vérifiée dans {args.output.resolve()}"
     )
