@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(74);
+select plan(75);
 
 select ok(to_regprocedure('public.enforce_sinjira_account_safety_age()') is not null,'garde serveur de date de naissance existe');
 select ok(to_regprocedure('public.handle_new_sinjira_user()') is not null,'pont de création de compte existe');
@@ -519,10 +519,10 @@ select throws_ok($$
   insert into auth.users(id,email,raw_user_meta_data)
   values(
     '30000000-0000-4000-8000-000000000010',
-    'child10@example.test',
-    jsonb_build_object('birth_date',(current_date-interval '10 years')::date::text,'gender','Homme','pseudo','Enfant 10','residence_country','Canada')
+    'child-before-11@example.test',
+    jsonb_build_object('birth_date',(current_date-interval '11 years'+interval '1 day')::date::text,'gender','Homme','pseudo','Veille 11','residence_country','Canada')
   )
-$$,'P0001','SINJIRA_MINIMUM_AGE_11','un enfant de 10 ans est refusé');
+$$,'P0001','SINJIRA_MINIMUM_AGE_11','la veille des 11 ans reste refusée');
 
 select throws_ok($$
   insert into auth.users(id,email,raw_user_meta_data)
@@ -669,7 +669,17 @@ select is(
   'quitter son lien remet immédiatement le compte 11 ans en child_pending'
 );
 
--- Majorité : la supervision cesse aussi comme visibilité pour l'ancien tuteur.
+-- Majorité : vérifier d'abord la frontière calendaire exacte, puis la bascule adulte.
+update public.account_safety_profiles
+set date_of_birth=(current_date-interval '18 years'+interval '1 day')::date
+where user_id='20000000-0000-4000-8000-000000000011';
+
+select is(
+  public.sinjira_age_band('20000000-0000-4000-8000-000000000011'),
+  'youth_pending',
+  'la veille des 18 ans reste classée youth_pending'
+);
+
 update public.account_safety_profiles
 set date_of_birth=(current_date-interval '18 years')::date
 where user_id='20000000-0000-4000-8000-000000000011';
