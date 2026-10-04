@@ -133,6 +133,9 @@ def validate_target_url(base_url: str, context: str) -> list[str]:
                     errors.append("Deploy Netlify invalide: préfixe deploy-id hexadécimal requis; alias preview/branche refusé.")
                 if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", site_name or ""):
                     errors.append("Deploy Netlify invalide: nom de site inattendu.")
+    if context == "preview-vercel" and not local:
+        if not host.endswith(".vercel.app") or host == "vercel.app":
+            errors.append("Deploy Vercel invalide: hôte *.vercel.app requis.")
     if context == "production" and not local and host not in OFFICIAL_PRODUCTION_HOSTS:
         errors.append("Production invalide: domaine officiel benoîtcantin.com requis.")
 
@@ -295,7 +298,7 @@ def validate_headers(headers: object, context: str) -> list[str]:
         errors.append("En-tête réseau HSTS max-age >= 31536000 absent.")
 
     robots = str(get("X-Robots-Tag") or "").lower()
-    if context == "preview":
+    if context in {"preview", "preview-vercel"}:
         for token in ("noindex", "nofollow", "noarchive"):
             if token not in robots:
                 errors.append(f"Deploy preview: X-Robots-Tag sans {token}.")
@@ -375,7 +378,7 @@ def validate_release_metadata(body: str, context: str, expected_sha: str) -> lis
         errors.append(f"{RELEASE_METADATA_PATH}: schema_version=1 requis.")
     if str(metadata.get("source_sha") or "").lower() != normalized_sha:
         errors.append(f"{RELEASE_METADATA_PATH}: source_sha ne correspond pas au SHA attendu.")
-    metadata_context = "preview" if context == "preview" else "production"
+    metadata_context = "preview" if context in {"preview", "preview-vercel"} else "production"
     if metadata.get("context") != metadata_context:
         errors.append(f"{RELEASE_METADATA_PATH}: contexte {metadata_context!r} attendu.")
     return errors
@@ -561,7 +564,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
 
 def run_fixture(context: str) -> str:
     server = ThreadingHTTPServer(("127.0.0.1", 0), FixtureHandler)
-    server.preview = context == "preview"
+    server.preview = context in {"preview", "preview-vercel"}
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
@@ -582,6 +585,7 @@ def run_fixture(context: str) -> str:
 
 def self_test() -> None:
     run_fixture("preview")
+    run_fixture("preview-vercel")
     run_fixture("production-candidate")
     run_fixture("production")
 
@@ -671,6 +675,27 @@ def self_test() -> None:
     if not marker_broken:
         raise SystemExit("ERREUR auto-test smoke HTTP: mauvais SHA release non détecté.")
 
+    valid_vercel_preview = "https://sinjira-web-preview-abc123.vercel.app"
+    if validate_target_url(valid_vercel_preview, "preview-vercel"):
+        raise SystemExit("ERREUR auto-test smoke HTTP: preview Vercel valide refusée.")
+
+    invalid_vercel_targets = (
+        "http://sinjira-web-preview-abc123.vercel.app",
+        "https://example.com",
+        "https://vercel.app",
+        "https://sinjira-web-preview-abc123.vercel.app/sub/path",
+        "https://sinjira-web-preview-abc123.vercel.app/?draft=1",
+    )
+    missed_vercel = [
+        url for url in invalid_vercel_targets
+        if not validate_target_url(url, "preview-vercel")
+    ]
+    if missed_vercel:
+        raise SystemExit(
+            "ERREUR auto-test smoke HTTP: cibles Vercel dangereuses acceptées: "
+            + ", ".join(missed_vercel)
+        )
+
     valid_atomic_preview = "https://1234abcd12acde000111cdef--example-site.netlify.app"
     if validate_target_url(valid_atomic_preview, "preview"):
         raise SystemExit("ERREUR auto-test smoke HTTP: permalink atomique Netlify preview valide refusé.")
@@ -757,7 +782,7 @@ def self_test() -> None:
         raise SystemExit("ERREUR auto-test smoke HTTP: cibles dangereuses acceptées: " + ", ".join(missed))
 
     print(
-        "OK auto-tests smoke HTTP: redirection apex canonique Netlify, signature hébergeur Netlify, paire Netlify même site, permalink atomique preview/production-candidate, production, cibles autorisées, "
+        "OK auto-tests smoke HTTP: redirection apex canonique Netlify, signature hébergeur Netlify, paire Netlify même site, permalink atomique preview/production-candidate, preview Vercel, production, cibles autorisées, "
         "CSP complète, HSTS, en-têtes défensifs, noindex, no-store privé/release, "
         "robots privés et 404 techniques vérifiés."
     )
@@ -766,7 +791,11 @@ def self_test() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Smoke HTTP d'une preview ou production web SINJIRA.")
     parser.add_argument("url", nargs="?")
-    parser.add_argument("--context", choices=("preview", "production-candidate", "production"), default="preview")
+    parser.add_argument(
+        "--context",
+        choices=("preview", "preview-vercel", "production-candidate", "production"),
+        default="preview",
+    )
     parser.add_argument("--expected-sha", help="SHA source exact attendu dans /.well-known/release.json")
     parser.add_argument(
         "--same-netlify-site-as",
