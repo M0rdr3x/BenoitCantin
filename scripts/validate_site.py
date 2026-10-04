@@ -23,7 +23,7 @@ ACTIVE_SINJIRA_PREFIXES = ('projets/sinjira/', 'compte/', 'admin/')
 NATIVE_MOBILE_PREFIX = 'mobile-native/'
 # Ces deux fichiers gardent volontairement la casse legacy /Admin/ uniquement pour
 # protéger/réécrire d'anciens favoris et caches. Ils ne constituent pas des liens actifs.
-LEGACY_ADMIN_COMPAT_FILES = {'sw.js', 'assets/js/v24-3-3-runtime.js'}
+LEGACY_ADMIN_COMPAT_FILES = {'sw.js', 'assets/js/v24-3-3-runtime.js', 'vercel.json'}
 PERSONAL_CONTACT_PAGE = ROOT / 'contact.html'
 LEGACY_PERSONAL_FORMSPREE_ENDPOINT = 'https://formspree.io/f/xdenkzrv'
 NOVA_FORMSPREE_ENDPOINT = 'https://formspree.io/f/xkolwjdg'
