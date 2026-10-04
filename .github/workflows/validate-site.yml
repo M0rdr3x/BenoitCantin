@@ -238,7 +238,6 @@ jobs:
         with:
           persist-credentials: false
       - name: Observer l’hébergement public sans modifier la production
-        if: startsWith(github.head_ref, 'a1/web-release-') && github.event_name == 'pull_request'
         shell: bash
         continue-on-error: true
         run: |
