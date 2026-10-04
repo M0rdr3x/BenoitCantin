@@ -15,8 +15,10 @@ CONFIG_PATH = ROOT / "supabase/config.toml"
 
 FULL_BASENAME = "SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf"
 FULL_SHA256 = "9862a11000fe46a2010e7fb902b9bba3dfea70724855a6fb682e0a6192df88e3"
+FULL_SIZE_BYTES = 10_371_834
 DEMO_BASENAME = "SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
 DEMO_SHA256 = "aad491ce8861928c561caa035fe5ee8cb16d42a8e307c93828758346cc93f26f"
+DEMO_SIZE_BYTES = 6_530_033
 PRODUCT_SLUG = "sinjira-livre-01-la-cendre-du-jugement"
 STATIC_EXTENSIONS = {".html", ".js", ".mjs", ".css", ".json", ".xml", ".webmanifest", ".txt"}
 SKIP_PARTS = {"codex", ".git", "node_modules"}
@@ -68,6 +70,9 @@ def validate(
     private_book_edge_path: Path,
     config_path: Path,
     contract_path: Path,
+    *,
+    expected_demo_sha256: str = DEMO_SHA256,
+    expected_demo_size_bytes: int = DEMO_SIZE_BYTES,
 ) -> list[str]:
     errors: list[str] = []
     try:
@@ -80,9 +85,11 @@ def validate(
         ("publication_state",): "not_activated",
         ("human_gate_required",): True,
         ("demo", "pages"): 83,
-        ("demo", "sha256"): DEMO_SHA256,
+        ("demo", "sha256"): expected_demo_sha256,
+        ("demo", "size_bytes"): expected_demo_size_bytes,
         ("full_edition", "pages"): 1066,
         ("full_edition", "sha256"): FULL_SHA256,
+        ("full_edition", "size_bytes"): FULL_SIZE_BYTES,
         ("full_edition", "public_repository_allowed"): False,
         ("full_edition", "public_static_url_allowed"): False,
         ("full_edition", "delivery"): "authenticated_private_storage_only",
@@ -110,6 +117,27 @@ def validate(
     demo_url = str(contract.get("demo", {}).get("public_url", ""))
     if not demo_url.endswith("/projets/sinjira/documents/" + DEMO_BASENAME):
         errors.append("L'URL publique stable de la démo n'est plus celle attendue.")
+
+    demo_path = root / "projets/sinjira/documents" / DEMO_BASENAME
+    if not demo_path.is_file():
+        errors.append("Le PDF public de démo du Livre I est absent du dépôt.")
+    else:
+        try:
+            demo_size = demo_path.stat().st_size
+            demo_digest = sha256_file(demo_path)
+        except OSError as exc:
+            errors.append(f"Impossible de vérifier la démo Livre I: {exc}")
+        else:
+            if demo_size != expected_demo_size_bytes:
+                errors.append(
+                    "Démo Livre I obsolète/invalide: "
+                    f"taille={demo_size}, attendu={expected_demo_size_bytes}."
+                )
+            if demo_digest != expected_demo_sha256:
+                errors.append(
+                    "Démo Livre I obsolète/invalide: "
+                    f"sha256={demo_digest}, attendu={expected_demo_sha256}."
+                )
 
     full = contract.get("full_edition", {})
     signed_seconds = int(full.get("signed_url_seconds", 999999))
@@ -214,18 +242,26 @@ def self_test() -> None:
         (root / "supabase/functions/get-document-url").mkdir(parents=True)
         (root / "supabase/functions/get-private-book-url").mkdir(parents=True)
 
+        fixture_demo_bytes = b"sinjira-demo-fixture-v1"
+        fixture_demo_sha = hashlib.sha256(fixture_demo_bytes).hexdigest()
+        fixture_demo_size = len(fixture_demo_bytes)
+        demo_path = root / "projets/sinjira/documents" / DEMO_BASENAME
+        demo_path.write_bytes(fixture_demo_bytes)
+
         contract = {
             "schema": "sinjira.livre-i.delivery.v1",
             "publication_state": "not_activated",
             "human_gate_required": True,
             "demo": {
                 "pages": 83,
-                "sha256": DEMO_SHA256,
+                "sha256": fixture_demo_sha,
+                "size_bytes": fixture_demo_size,
                 "public_url": "https://www.benoitcantin.com/projets/sinjira/documents/" + DEMO_BASENAME,
             },
             "full_edition": {
                 "pages": 1066,
                 "sha256": FULL_SHA256,
+                "size_bytes": FULL_SIZE_BYTES,
                 "public_repository_allowed": False,
                 "public_static_url_allowed": False,
                 "delivery": "authenticated_private_storage_only",
@@ -265,32 +301,86 @@ const h={{'Cache-Control':'private, no-store, max-age=0'}};
         config_path = root / "supabase/config.toml"
         config_path.write_text("[functions.get-private-book-url]\nverify_jwt = true\n", encoding="utf-8")
 
-        clean = validate(root, edge_path, private_edge_path, config_path, contract_path)
+        clean = validate(
+            root,
+            edge_path,
+            private_edge_path,
+            config_path,
+            contract_path,
+            expected_demo_sha256=fixture_demo_sha,
+            expected_demo_size_bytes=fixture_demo_size,
+        )
         if clean:
             raise AssertionError("Le cas sain doit passer: " + " | ".join(clean))
 
         leaked = root / "projets/sinjira/documents" / FULL_BASENAME
         leaked.write_bytes(b"not-the-real-pdf")
-        leaked_errors = validate(root, edge_path, private_edge_path, config_path, contract_path)
+        leaked_errors = validate(
+            root,
+            edge_path,
+            private_edge_path,
+            config_path,
+            contract_path,
+            expected_demo_sha256=fixture_demo_sha,
+            expected_demo_size_bytes=fixture_demo_size,
+        )
         if not any("Édition intégrale interdite" in item for item in leaked_errors):
             raise AssertionError("Le nom de fichier intégral exposé doit être bloqué.")
         leaked.unlink()
 
         public_page = root / "projets/sinjira/index.html"
         public_page.write_text(f'<a href="/documents/{FULL_BASENAME}">Livre complet</a>', encoding="utf-8")
-        link_errors = validate(root, edge_path, private_edge_path, config_path, contract_path)
+        link_errors = validate(
+            root,
+            edge_path,
+            private_edge_path,
+            config_path,
+            contract_path,
+            expected_demo_sha256=fixture_demo_sha,
+            expected_demo_size_bytes=fixture_demo_size,
+        )
         if not any("Lien/référence statique" in item for item in link_errors):
             raise AssertionError("Une URL statique vers l'intégrale doit être bloquée.")
         public_page.unlink()
 
+        demo_path.write_bytes(fixture_demo_bytes + b"-tampered")
+        demo_errors = validate(
+            root,
+            edge_path,
+            private_edge_path,
+            config_path,
+            contract_path,
+            expected_demo_sha256=fixture_demo_sha,
+            expected_demo_size_bytes=fixture_demo_size,
+        )
+        if not any("Démo Livre I obsolète/invalide" in item for item in demo_errors):
+            raise AssertionError("Une démo dont les octets diffèrent du master doit être bloquée.")
+        demo_path.write_bytes(fixture_demo_bytes)
+
         private_edge_path.write_text(private_edge + "\nconst external_url='https://example.invalid/full.pdf';\n", encoding="utf-8")
-        private_errors = validate(root, edge_path, private_edge_path, config_path, contract_path)
+        private_errors = validate(
+            root,
+            edge_path,
+            private_edge_path,
+            config_path,
+            contract_path,
+            expected_demo_sha256=fixture_demo_sha,
+            expected_demo_size_bytes=fixture_demo_size,
+        )
         if not any("aucune URL externe/publique" in item for item in private_errors):
             raise AssertionError("Une URL externe dans la porte privée doit être bloquée.")
 
         private_edge_path.write_text(private_edge, encoding="utf-8")
         config_path.write_text("[functions.get-private-book-url]\nverify_jwt = false\n", encoding="utf-8")
-        jwt_errors = validate(root, edge_path, private_edge_path, config_path, contract_path)
+        jwt_errors = validate(
+            root,
+            edge_path,
+            private_edge_path,
+            config_path,
+            contract_path,
+            expected_demo_sha256=fixture_demo_sha,
+            expected_demo_size_bytes=fixture_demo_size,
+        )
         if not any("verify_jwt = true" in item for item in jwt_errors):
             raise AssertionError("La désactivation de la vérification JWT doit être bloquée.")
 
