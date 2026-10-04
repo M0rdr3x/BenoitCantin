@@ -43,6 +43,10 @@
     var host = String(window.location.hostname || '').toLowerCase().replace(/\.$/, '');
     var isOfficialHost = host === 'www.benoitcantin.com' || host === 'benoitcantin.com';
     var path = String(window.location.pathname || '/').toLowerCase();
+    var isSensitiveSurface =
+      path === '/histoire-de-vie' ||
+      path.indexOf('/histoire-de-vie/') === 0;
+    if (isSensitiveSurface) return;
     var isPrivateSurface =
       path === '/compte' ||
       path.indexOf('/compte/') === 0 ||
