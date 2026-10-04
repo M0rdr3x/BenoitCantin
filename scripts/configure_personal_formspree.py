@@ -9,8 +9,14 @@ from validate_site import (
     LEGACY_PERSONAL_FORMSPREE_ENDPOINT,
     NOVA_FORMSPREE_ENDPOINT,
     PERSONAL_CONTACT_ACTIVE_GOVERNANCE_COPY,
+    PERSONAL_CONTACT_ACTIVE_HERO,
+    PERSONAL_CONTACT_ACTIVE_META,
+    PERSONAL_CONTACT_ACTIVE_SECURITY,
     PERSONAL_CONTACT_ACTIVE_STATE,
     PERSONAL_CONTACT_PENDING_GOVERNANCE_COPY,
+    PERSONAL_CONTACT_PENDING_HERO,
+    PERSONAL_CONTACT_PENDING_META,
+    PERSONAL_CONTACT_PENDING_SECURITY,
     PERSONAL_CONTACT_PENDING_STATE,
     validate_personal_contact_contract,
 )
@@ -69,6 +75,13 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
     return text.replace(old, new, 1)
 
 
+def replace_exact_count(text: str, old: str, new: str, count: int, label: str) -> str:
+    observed = text.count(old)
+    if observed != count:
+        raise ValueError(f"{label}: occurrence attendue={count}, observée={observed}.")
+    return text.replace(old, new)
+
+
 def build_active_contents(
     contact_text: str,
     privacy_text: str,
@@ -97,6 +110,25 @@ def build_active_contents(
         f"var PERSONAL_ENDPOINT='{endpoint}'",
         "PERSONAL_ENDPOINT",
     )
+    contact_text = replace_exact_count(
+        contact_text,
+        PERSONAL_CONTACT_PENDING_META,
+        PERSONAL_CONTACT_ACTIVE_META,
+        4,
+        "métadonnées Contact",
+    )
+    contact_text = replace_once(
+        contact_text,
+        PERSONAL_CONTACT_PENDING_HERO,
+        PERSONAL_CONTACT_ACTIVE_HERO,
+        "hero Contact",
+    )
+    contact_text = replace_once(
+        contact_text,
+        PERSONAL_CONTACT_PENDING_SECURITY,
+        PERSONAL_CONTACT_ACTIVE_SECURITY,
+        "bloc sécurité Contact",
+    )
     for index, (old, new) in enumerate(CONTACT_REPLACEMENTS, start=1):
         contact_text = replace_once(contact_text, old, new, f"texte contact #{index}")
 
@@ -124,6 +156,9 @@ def self_test() -> None:
     contact = (
         '<form id="contact-general" data-personal-formspree-state="pending-separate-endpoint">'
         '<button aria-disabled="true" disabled id="contact-submit">Configuration</button></form>'
+        + (PERSONAL_CONTACT_PENDING_META * 4)
+        + PERSONAL_CONTACT_PENDING_HERO
+        + PERSONAL_CONTACT_PENDING_SECURITY
         + "".join(old for old, _ in CONTACT_REPLACEMENTS)
         + "<script>var PERSONAL_ENDPOINT='';"
         + RUNTIME_GATE
@@ -139,6 +174,12 @@ def self_test() -> None:
         raise SystemExit("ERREUR auto-test Formspree: endpoint actif non injecté.")
     if PERSONAL_CONTACT_ACTIVE_STATE not in active_contact or PERSONAL_CONTACT_PENDING_STATE in active_contact:
         raise SystemExit("ERREUR auto-test Formspree: transition d’état DOM incorrecte.")
+    if active_contact.count(PERSONAL_CONTACT_ACTIVE_META) != 4:
+        raise SystemExit("ERREUR auto-test Formspree: métadonnées actives incomplètes.")
+    if PERSONAL_CONTACT_ACTIVE_HERO not in active_contact or PERSONAL_CONTACT_ACTIVE_SECURITY not in active_contact:
+        raise SystemExit("ERREUR auto-test Formspree: copies actives hero/sécurité incomplètes.")
+    if PERSONAL_CONTACT_PENDING_META in active_contact or PERSONAL_CONTACT_PENDING_HERO in active_contact or PERSONAL_CONTACT_PENDING_SECURITY in active_contact:
+        raise SystemExit("ERREUR auto-test Formspree: copie pending résiduelle après activation.")
     if PRIVACY_ACTIVE not in active_privacy:
         raise SystemExit("ERREUR auto-test Formspree: politique active non générée.")
     if PERSONAL_CONTACT_ACTIVE_GOVERNANCE_COPY not in active_governance:
