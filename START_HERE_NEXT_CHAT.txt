@@ -1,0 +1,19 @@
+CONTINUER LE PROJET BENOITCANTIN / SINJIRA
+
+1. Lire CHATGPT_CONTINUITY_2026-10-04.md en entier.
+2. Vérifier l'état GitHub actuel avant toute mutation.
+3. Reprendre le tracker #455.
+4. Prochaine tâche logique : audit sémantique de la PR #404 contre le head canonique #435, puis #405, #406, etc., une par une.
+5. Méthode : finir -> prouver -> fermer -> suivant.
+6. Interdictions sans autorisation humaine explicite :
+   - ne pas merger #435 ni #436 ;
+   - ne pas appliquer de migration Supabase production ;
+   - ne pas modifier production-reviewed-migration-batch.txt ni production-migration-ledger.txt ;
+   - ne pas changer DNS/hébergement production ;
+   - ne pas engager de dépense ou changer de forfait.
+7. Deep Research : session 6ac20694-7cb8-83ea-b1c4-f357cf937249, dernier état connu waiting_for_user_response_on_plan. Vérifier son état avant de prétendre qu'un rapport final existe.
+8. Main connu lors du transfert : 60cb8b60897fde126066bf359eccfe8747417760.
+9. Head #435 connu : 193b686f34ba89fe7ec91022faf1651f14bf3e18.
+10. Head #449 connu : 2ddad2fd11cb689b5236154f9b7a6e39a058f9fa, CI 29 success / 9 skipped / 0 failure.
+
+Le ZIP de cette branche contient le dépôt complet à cet instant + le dossier de continuité.
