@@ -39,7 +39,8 @@ WEB_RELEASE_PRODUCTION_BASELINE = 'python3 scripts/validate_web_release_http.py 
 WEB_RELEASE_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _site --standalone-netlify'
 WEB_PREVIEW_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _preview_site --standalone-netlify'
 WEB_PAGES_ARTIFACT_BUILD = 'python3 scripts/build_netlify_public.py --output _pages_site'
-PAGES_PUBLIC_BUILD = 'python3 scripts/build_netlify_public.py --output _site'
+PAGES_PUBLIC_CHECK = 'python3 scripts/build_netlify_public.py --check --security-containment'
+PAGES_PUBLIC_BUILD = 'python3 scripts/build_netlify_public.py --output _site --security-containment'
 PUBLIC_AI_ASSISTANT_SELF = 'python3 scripts/validate_public_ai_assistant.py --self-test'
 PUBLIC_AI_ASSISTANT_VALIDATE = 'python3 scripts/validate_public_ai_assistant.py'
 AI_TRANSPARENCY_SELF = 'python3 scripts/validate_ai_transparency.py --self-test'
@@ -344,8 +345,9 @@ def validate_pages_deploy_workflow_text(text: str) -> list[str]:
     require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python Pages inattendue')
     require(errors, f'uses: actions/upload-pages-artifact@{UPLOAD_PAGES_ARTIFACT_SHA}' in text, 'upload-pages-artifact non épinglé')
     require(errors, f'uses: actions/deploy-pages@{DEPLOY_PAGES_SHA}' in text, 'deploy-pages non épinglé')
-    require(errors, exact_run_count(text, NETLIFY_PUBLIC_CHECK) == 1, 'validation allowlist Pages absente ou dupliquée')
-    require(errors, exact_run_count(text, PAGES_PUBLIC_BUILD) == 1, 'construction _site Pages absente ou dupliquée')
+    require(errors, exact_run_count(text, PAGES_PUBLIC_CHECK) == 1, 'validation allowlist Pages en mode confinement absente ou dupliquée')
+    require(errors, exact_run_count(text, PAGES_PUBLIC_BUILD) == 1, 'construction _site Pages confinement absente ou dupliquée')
+    require(errors, text.count('--security-containment') == 2, 'le mode confinement doit être utilisé exactement pour check + build Pages')
     require(errors, '--standalone-netlify' not in text, 'artefact GitHub Pages ne doit pas dépendre des fichiers Netlify')
     require(errors, 'path: _site' in text, 'upload Pages doit cibler _site')
     require(errors, 'path: .' not in text, 'publication de la racine du dépôt interdite')
@@ -361,6 +363,7 @@ def validate_pages_deploy_workflow_text(text: str) -> list[str]:
     require(errors, 'id: deployment' in text, 'étape deploy Pages identifiable absente')
     require(errors, 'Racine du dépôt : **non publiée**' in text, 'preuve de frontière Pages absente du résumé')
     require(errors, 'Mode : **confinement temporaire**' in text, 'statut confinement temporaire absent du résumé')
+    require(errors, 'Démo Livre I : **version actuelle conservée temporairement; #363 reste obligatoire avant release finale**' in text, 'frontière #363 du confinement Pages absente')
     require(errors, 'les en-têtes HTTP complets de #450 ne sont pas fournis par GitHub Pages' in text, 'limite headers GitHub Pages absente')
     require(errors, 'Cible finale #450 : **Netlify avec _headers/_redirects**' in text, 'cible finale Netlify absente')
     targets = action_targets(text)
@@ -379,7 +382,10 @@ def run_pages_deploy_self_tests(text: str) -> None:
         'reconnaissance headers retirée': text.replace("inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'", 'true', 1),
         'SHA attendu retiré': text.replace('      expected_sha:\n', '      autre_sha:\n', 1),
         'publication racine': text.replace('          path: _site\n', '          path: .\n', 1),
-        'build racine': text.replace(PAGES_PUBLIC_BUILD, 'python3 scripts/build_netlify_public.py --output .', 1),
+        'build racine': text.replace(PAGES_PUBLIC_BUILD, 'python3 scripts/build_netlify_public.py --output . --security-containment', 1),
+        'confinement check retiré': text.replace(PAGES_PUBLIC_CHECK, NETLIFY_PUBLIC_CHECK, 1),
+        'confinement build retiré': text.replace(PAGES_PUBLIC_BUILD, 'python3 scripts/build_netlify_public.py --output _site', 1),
+        'preuve #363 confinement retirée': text.replace('            echo "- Démo Livre I : **version actuelle conservée temporairement; #363 reste obligatoire avant release finale**"\n', '', 1),
         'upload Pages mobile': text.replace(f'actions/upload-pages-artifact@{UPLOAD_PAGES_ARTIFACT_SHA}', 'actions/upload-pages-artifact@v3', 1),
         'deploy Pages mobile': text.replace(f'actions/deploy-pages@{DEPLOY_PAGES_SHA}', 'actions/deploy-pages@v5', 1),
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
