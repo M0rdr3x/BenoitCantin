@@ -261,6 +261,11 @@ def validate_headers(headers: object, context: str) -> list[str]:
     ):
         if endpoint not in directives.get("connect-src", []):
             errors.append(f"CSP réseau: endpoint Supabase attendu absent: {endpoint}.")
+    expected_frame_sources = ["'self'", "https://gpvivleexywljowcqkru.supabase.co"]
+    if directives.get("frame-src", []) != expected_frame_sources:
+        errors.append(
+            "CSP réseau: frame-src doit autoriser uniquement self et l’origine Supabase officielle."
+        )
     if "https://formspree.io" not in directives.get("form-action", []):
         errors.append("CSP réseau: Formspree attendu absent de form-action.")
     if "'self'" not in directives.get("form-action", []):
@@ -510,6 +515,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
             "font-src 'self'; "
             "connect-src 'self' https://gpvivleexywljowcqkru.supabase.co "
             "wss://gpvivleexywljowcqkru.supabase.co; "
+            "frame-src 'self' https://gpvivleexywljowcqkru.supabase.co; "
             "form-action 'self' https://formspree.io; "
             "frame-ancestors 'self'; object-src 'self'; base-uri 'self'",
         )
@@ -598,6 +604,43 @@ def self_test() -> None:
     )
     if not broken:
         raise SystemExit("ERREUR auto-test smoke HTTP: en-têtes affaiblis non détectés.")
+
+    frame_src_broken = validate_headers(
+        {
+            "Content-Security-Policy": (
+                "default-src 'self'; img-src 'self' data: https:; "
+                "style-src 'self' 'unsafe-inline'; "
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "worker-src 'self' blob:; font-src 'self'; "
+                "connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co; "
+                "form-action 'self' https://formspree.io; "
+                "frame-ancestors 'self'; object-src 'self'; base-uri 'self'"
+            ),
+            "X-Content-Type-Options": "nosniff",
+        },
+        "production",
+    )
+    if not any("frame-src" in error for error in frame_src_broken):
+        raise SystemExit("ERREUR auto-test smoke HTTP: frame-src Supabase manquant non détecté.")
+
+    frame_src_widened = validate_headers(
+        {
+            "Content-Security-Policy": (
+                "default-src 'self'; img-src 'self' data: https:; "
+                "style-src 'self' 'unsafe-inline'; "
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "worker-src 'self' blob:; font-src 'self'; "
+                "connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co; "
+                "frame-src 'self' https://gpvivleexywljowcqkru.supabase.co https:; "
+                "form-action 'self' https://formspree.io; "
+                "frame-ancestors 'self'; object-src 'self'; base-uri 'self'"
+            ),
+            "X-Content-Type-Options": "nosniff",
+        },
+        "production",
+    )
+    if not any("frame-src" in error for error in frame_src_widened):
+        raise SystemExit("ERREUR auto-test smoke HTTP: frame-src élargi à https: non détecté.")
 
     valid_apex_headers = {
         "Location": "https://www.benoitcantin.com/",
