@@ -16,9 +16,9 @@ CONFIG = ROOT / 'supabase/config.toml'
 GENERIC_EDGE = ROOT / 'supabase/functions/get-document-url/index.ts'
 
 FULL_BASENAME = 'SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf'
-FULL_SHA256 = '9862a11000fe46a2010e7fb902b9bba3dfea70724855a6fb682e0a6192df88e3'
+FULL_SHA256 = '9acc8f561962850158cb073b122ee038c2731ee3b165deae482260c0cc1ad2d8'
 DEMO_BASENAME = 'SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf'
-DEMO_SHA256 = 'aad491ce8861928c561caa035fe5ee8cb16d42a8e307c93828758346cc93f26f'
+DEMO_SHA256 = 'd0668a7b07a07321ef1e02cfceb826d3881330bb36417d53e5ff5bd32635628e'
 PRODUCT_SLUG = 'sinjira-livre-01-la-cendre-du-jugement'
 STATIC_EXTENSIONS = {'.html', '.js', '.mjs', '.css', '.json', '.xml', '.webmanifest', '.txt'}
 SKIP_PARTS = {'codex', '.git', 'node_modules'}
@@ -73,10 +73,12 @@ def validate(root: Path = ROOT) -> list[str]:
         ('schema',): 'sinjira.livre-i.delivery.v2',
         ('publication_state',): 'prepared_not_deployed',
         ('human_gate_required',): True,
-        ('demo', 'pages'): 83,
+        ('demo', 'pages'): 84,
         ('demo', 'sha256'): DEMO_SHA256,
-        ('full_edition', 'pages'): 1066,
+        ('demo', 'size_bytes'): 941065,
+        ('full_edition', 'pages'): 1027,
         ('full_edition', 'sha256'): FULL_SHA256,
+        ('full_edition', 'size_bytes'): 7325502,
         ('full_edition', 'public_repository_allowed'): False,
         ('full_edition', 'public_static_url_allowed'): False,
         ('full_edition', 'delivery'): 'authenticated_private_storage_only',
