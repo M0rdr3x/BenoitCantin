@@ -15,6 +15,7 @@ ALLOWED_EXACT = (
     ".github/workflows/build-web-release-artifact.yml",
     ".github/workflows/deploy-github-pages-isolated.yml",
     ".github/workflows/create-netlify-anonymous-preview.yml",
+    ".github/workflows/deploy-netlify-staging.yml",
     ".github/workflows/validate-netlify-preview.yml",
     ".github/workflows/validate-netlify-pre-dns.yml",
     ".github/workflows/validate-web-production.yml",
