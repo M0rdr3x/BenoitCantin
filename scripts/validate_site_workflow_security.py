@@ -369,7 +369,7 @@ def validate_pages_deploy_workflow_text(text: str) -> list[str]:
     require(errors, 'id: deployment' in text, 'étape deploy Pages identifiable absente')
     require(errors, 'Racine du dépôt : **non publiée**' in text, 'preuve de frontière Pages absente du résumé')
     require(errors, 'Mode : **confinement temporaire**' in text, 'statut confinement temporaire absent du résumé')
-    require(errors, 'Démo Livre I : **version actuelle conservée temporairement; #363 reste obligatoire avant release finale**' in text, 'frontière #363 du confinement Pages absente')
+    require(errors, 'Démo Livre I : **master exact obligatoire, y compris en confinement**' in text, 'preuve master Livre I strict du confinement Pages absente')
     require(errors, 'les en-têtes HTTP complets de #450 ne sont pas fournis par GitHub Pages' in text, 'limite headers GitHub Pages absente')
     require(errors, 'Cible finale #450 : **Netlify avec _headers/_redirects**' in text, 'cible finale Netlify absente')
     targets = action_targets(text)
@@ -391,7 +391,7 @@ def run_pages_deploy_self_tests(text: str) -> None:
         'build racine': text.replace(PAGES_PUBLIC_BUILD, 'python3 scripts/build_netlify_public.py --output . --security-containment', 1),
         'confinement check retiré': text.replace(PAGES_PUBLIC_CHECK, NETLIFY_PUBLIC_CHECK, 1),
         'confinement build retiré': text.replace(PAGES_PUBLIC_BUILD, 'python3 scripts/build_netlify_public.py --output _site', 1),
-        'preuve #363 confinement retirée': text.replace('            echo "- Démo Livre I : **version actuelle conservée temporairement; #363 reste obligatoire avant release finale**"\n', '', 1),
+        'preuve master Livre I confinement retirée': text.replace('            echo "- Démo Livre I : **master exact obligatoire, y compris en confinement**"\n', '', 1),
         'upload Pages mobile': text.replace(f'actions/upload-pages-artifact@{UPLOAD_PAGES_ARTIFACT_SHA}', 'actions/upload-pages-artifact@v3', 1),
         'deploy Pages mobile': text.replace(f'actions/deploy-pages@{DEPLOY_PAGES_SHA}', 'actions/deploy-pages@v5', 1),
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
