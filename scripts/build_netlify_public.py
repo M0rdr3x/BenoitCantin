@@ -76,6 +76,13 @@ SINJIRA_PUBLIC_DOCUMENTS = {
     Path("projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"),
 }
 SINJIRA_DOCUMENTS_DIR = Path("projets/sinjira/documents")
+LIVRE1_DEMO_PUBLIC_PATH = Path(
+    "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
+)
+LIVRE1_DEMO_MASTER_SIZE_BYTES = 6_530_033
+LIVRE1_DEMO_MASTER_SHA256 = (
+    "aad491ce8861928c561caa035fe5ee8cb16d42a8e307c93828758346cc93f26f"
+)
 
 FORBIDDEN_DIRS = (
     ".github",
@@ -713,6 +720,29 @@ def validate_plan() -> list[str]:
                 errors.append(
                     f"Document SINJIRA non allowlisté publiable par erreur: {rel.as_posix()}"
                 )
+
+    demo_master = ROOT / LIVRE1_DEMO_PUBLIC_PATH
+    if demo_master.is_file():
+        try:
+            demo_size = demo_master.stat().st_size
+            demo_sha = hashlib.sha256(demo_master.read_bytes()).hexdigest()
+        except OSError as exc:
+            errors.append(f"Démo Livre I illisible: {exc}")
+        else:
+            if demo_size != LIVRE1_DEMO_MASTER_SIZE_BYTES:
+                errors.append(
+                    "Démo Livre I non conforme au master #363: "
+                    f"taille={demo_size}, attendu={LIVRE1_DEMO_MASTER_SIZE_BYTES}."
+                )
+            if demo_sha != LIVRE1_DEMO_MASTER_SHA256:
+                errors.append(
+                    "Démo Livre I non conforme au master #363: "
+                    f"sha256={demo_sha}, attendu={LIVRE1_DEMO_MASTER_SHA256}."
+                )
+    else:
+        errors.append(
+            f"Démo Livre I publique absente: {LIVRE1_DEMO_PUBLIC_PATH.as_posix()}"
+        )
 
     for private_probe in (
         Path("projets/sinjira/documents/SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf"),
