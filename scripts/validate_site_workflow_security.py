@@ -307,7 +307,7 @@ def validate_artifact_workflow_text(text: str) -> list[str]:
     require(errors, 'test ! -e _site/script.js' in text, 'script.js racine legacy doit être absent de l’artefact production')
     require(errors, 'test ! -e _preview_site/script.js' in text, 'script.js racine legacy doit être absent de l’artefact preview')
     require(errors, 'test ! -e _pages_site/script.js' in text, 'script.js racine legacy doit être absent de l’artefact Pages')
-    require(errors, text.count('for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do') == 3, 'les trois artefacts doivent refuser les endpoints Formspree historiques')
+    require(errors, text.count('for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do') == 4, 'les quatre artefacts doivent refuser les endpoints Formspree historiques')
     require(errors, 'ERREUR: endpoint Formspree historique interdit dans l’artefact production:' in text, 'garde Formspree historique production absente')
     require(errors, 'ERREUR: endpoint Formspree historique interdit dans l’artefact preview:' in text, 'garde Formspree historique preview absente')
     require(errors, 'test ! -e "_site/$forbidden"' in text, 'absence des répertoires techniques production non prouvée')
