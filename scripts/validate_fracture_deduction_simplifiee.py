@@ -6,6 +6,8 @@ BASE = ROOT / 'projets/sinjira/jeux/fracture-du-reseau-mere'
 INDEX = BASE / 'index.html'
 RULES = BASE / 'regles.html'
 WEB = BASE / 'jouer.html'
+PARTY = BASE / 'partie.html'
+RESULT = BASE / 'fin-de-partie.html'
 GAMES = ROOT / 'projets/sinjira/jeux/index.html'
 SITEMAP = ROOT / 'sitemap.xml'
 FRONT = ROOT / 'assets/media/sinjira-fracture-deduction-simplifiee-couverture.webp'
@@ -17,7 +19,7 @@ def read(p):
 
 def main():
     errors=[]
-    for p in [INDEX,RULES,WEB,GAMES,SITEMAP,FRONT,BACK,*LEGACY]:
+    for p in [INDEX,RULES,WEB,PARTY,RESULT,GAMES,SITEMAP,FRONT,BACK,*LEGACY]:
         if not p.exists(): errors.append(f'Fichier absent: {p.relative_to(ROOT)}')
     if errors:
         print('\n'.join('- '+e for e in errors)); return 1
@@ -48,7 +50,38 @@ def main():
     if '/projets/sinjira/jeux/fracture-du-reseau-mere/' not in sitemap:
         errors.append('La page Fracture doit être présente dans le sitemap.')
     for p in LEGACY:
-        if 'noindex' not in read(p).lower(): errors.append(f'Page héritée non noindex: {p.name}')
+        legacy=read(p)
+        if 'noindex' not in legacy.lower(): errors.append(f'Page héritée non noindex: {p.name}')
+        if 'noarchive' not in legacy.lower(): errors.append(f'Page héritée non noarchive: {p.name}')
+        if 'http-equiv="refresh"' not in legacy.lower(): errors.append(f'Page héritée sans redirection déclarée: {p.name}')
+        if 'rel="canonical"' not in legacy.lower(): errors.append(f'Page héritée sans canonical vers la règle active: {p.name}')
+
+    global_nav_markers=[
+        'aria-controls="navigation-principale"',
+        'id="navigation-principale"',
+        'data-menu-toggle',
+        'data-main-nav',
+        'href="/"',
+        'href="/projets/sinjira/"',
+        'href="/projets/projet-nova/"',
+        'href="/a-propos.html"',
+        'href="/compte/"',
+    ]
+    for p in [WEB,PARTY,RESULT]:
+        page=read(p)
+        for marker in global_nav_markers:
+            if marker not in page: errors.append(f'Shell global Fracture incomplet dans {p.name}: {marker}')
+        if 'class="skip-link"' not in page or 'id="contenu"' not in page:
+            errors.append(f'Lien d’évitement / main accessible absent dans {p.name}.')
+        if 'aria-label="Navigation de Fracture du Réseau-Mère"' not in page:
+            errors.append(f'Sous-navigation Fracture absente dans {p.name}.')
+
+    if 'noindex,nofollow,noarchive' not in read(PARTY).lower():
+        errors.append('La page de partie privée doit rester noindex/nofollow/noarchive.')
+    if 'noindex,nofollow,noarchive' not in read(RESULT).lower():
+        errors.append('La page de résultat privée doit rester noindex/nofollow/noarchive.')
+    if 'noindex,follow' not in read(WEB).lower():
+        errors.append('La page Mode Web suspendue doit rester noindex,follow tant que le lobby officiel est désactivé.')
 
     # Les deux visuels WebP sont volontairement fortement optimisés pour le Web.
     # On vérifie qu'ils contiennent une charge utile réelle sans imposer une taille
@@ -60,7 +93,7 @@ def main():
         print(f'ECHEC Fracture Déduction simplifiée: {len(errors)} problème(s).')
         for e in errors: print('- '+e)
         return 1
-    print('OK Fracture Déduction simplifiée: règles, couvertures, Solo/Duo, accusation, sitemap et suspension Web cohérents.')
+    print('OK Fracture Déduction simplifiée: règles, couvertures, Solo/Duo, accusation, sitemap, shell secondaire, redirections héritées et suspension Web cohérents.')
     return 0
 
 if __name__ == '__main__':
