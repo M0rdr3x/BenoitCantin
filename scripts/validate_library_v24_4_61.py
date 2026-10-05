@@ -33,7 +33,7 @@ def main()->int:
 
     require(library_html,[
         'data-library-page="library-v24-4-61"',
-        'sinjira-library-v24-4-61.js?v=24.4.61',
+        'sinjira-library-v24-4-61.js?v=',
         'data-library-reads',
         'data-library-entitlements',
         'Aucun achat ou service payant n’est activé actuellement.'
@@ -84,7 +84,7 @@ def main()->int:
     ):
         forbid(text,paid_markers,label)
 
-    print('OK bibliothèque V24.4.61: accès réels, romans canoniques, droits numériques et progression démo cohérents sans service payant.')
+    print('OK bibliothèque V24.4.61+: accès réels, cache-busting évolutif, romans canoniques, droits numériques et progression démo cohérents sans service payant.')
     return 0
 
 
