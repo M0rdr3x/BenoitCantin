@@ -52,6 +52,19 @@ Chemin principal : `projets/sinjira/`
 
 Les anciennes URL conservées dans le dépôt servent uniquement à la compatibilité lorsque nécessaire.
 
+## Livre I — actifs de diffusion courants
+
+Le candidat web #449 utilise désormais comme démo publique officielle de **SINJIRA™ — Livre I : La Cendre du Jugement** le PDF de **84 pages** fourni le 4 octobre 2026 :
+
+- chemin public : `projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf`;
+- taille : **941 065 octets**;
+- SHA-256 : `d0668a7b07a07321ef1e02cfceb826d3881330bb36417d53e5ff5bd32635628e`;
+- contenu annoncé : prologue + chapitres 1 à 3.
+
+Le nouveau master intégral contient **1027 pages**, taille **7 325 502 octets**, SHA-256 `9acc8f561962850158cb073b122ee038c2731ee3b165deae482260c0cc1ad2d8`. Il reste strictement hors de l’artefact public : sa diffusion est préparée côté backend privé #435 et doit passer par un Storage privé et des URL signées après contrôle serveur du droit d’accès.
+
+Le lecteur démo, ses contrôles de progression et la CI sont verrouillés sur 84 pages afin d’empêcher le retour silencieux de l’ancienne limite à 83 pages.
+
 ## Données, secrets et services externes
 
 Les identifiants techniques privés, adresses de destination internes, clés API et autres secrets opérationnels ne doivent pas être documentés ici ni exposés au navigateur. Les formulaires publics utilisent leur configuration de routage sans publier les adresses privées de destination.
