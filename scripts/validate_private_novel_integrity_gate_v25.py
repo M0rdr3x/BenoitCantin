@@ -61,6 +61,10 @@ def validate(migration: str, test: str, edge: str, config: str, workflow: str, m
         if marker not in m:
             errors.append(f"Migration intégrité: marqueur absent: {marker}")
 
+    service_role_guard = "coalesce(auth.jwt()->>'role','')<>'service_role'"
+    if m.count(service_role_guard) != 3:
+        errors.append("Migration intégrité: chaque RPC de release doit vérifier service_role (3/3).")
+
     pre_functions = m[: m.find("createorreplacefunctionpublic.sinjira_private_novel_release_status")]
     for forbidden in ("storage_bucket=", "storage_path=", "delivery_mode='storage'", "enabled=true", "insertintostorage.objects"):
         if forbidden in pre_functions:
@@ -100,6 +104,7 @@ def validate(migration: str, test: str, edge: str, config: str, workflow: str, m
         "service.rpc('sinjira_record_private_novel_integrity'",
         "service.rpc('sinjira_set_private_novel_delivery'",
         f"enable_confirmation='{ENABLE_CONFIRMATION.lower()}'",
+        "if(confirmation!==enable_confirmation)thrownewerror('enable_confirmation_required')",
         "if(!before?.can_enable)thrownewerror('novel_private_release_not_ready')",
         "if(string(before?.expected_sha256||'').tolowercase()!==sha256)",
         "cache-control':'private,no-store,max-age=0",
