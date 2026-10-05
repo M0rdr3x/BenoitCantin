@@ -10,15 +10,84 @@
   "background_color": "#070914",
   "theme_color": "#070914",
   "lang": "fr-CA",
-  "categories": ["books", "games", "social"],
+  "categories": [
+    "books",
+    "games",
+    "social"
+  ],
   "icons": [
-    {"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"},
-    {"src":"/android-chrome-512x512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ],
   "shortcuts": [
-    {"name":"App sociale","short_name":"Fil","url":"/app/","icons":[{"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"}]},
-    {"name":"Romans","short_name":"Romans","url":"/projets/sinjira/romans/","icons":[{"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"}]},
-    {"name":"Registre des Consciences","short_name":"Registre","url":"/projets/sinjira/registre/","icons":[{"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"}]},
-    {"name":"Monde parallèle","short_name":"Monde parallèle","url":"/projets/sinjira/monde-parallele/","icons":[{"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"}]}
+    {
+      "name": "App sociale",
+      "short_name": "Fil",
+      "url": "/app/",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Lire la démo du Livre I",
+      "short_name": "Démo Livre I",
+      "url": "/projets/sinjira/romans/lire-demo.html",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Romans",
+      "short_name": "Romans",
+      "url": "/projets/sinjira/romans/",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Registre des Consciences",
+      "short_name": "Registre",
+      "url": "/projets/sinjira/registre/",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Monde parallèle",
+      "short_name": "Monde parallèle",
+      "url": "/projets/sinjira/monde-parallele/",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }
