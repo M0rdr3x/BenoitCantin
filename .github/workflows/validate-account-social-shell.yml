@@ -1,0 +1,47 @@
+name: Compte SINJIRA — shell social
+
+on:
+  pull_request:
+    paths:
+      - 'compte/relations.html'
+      - 'compte/messages.html'
+      - 'compte/messages-reels.html'
+      - 'compte/messages-personnage.html'
+      - 'compte/reseau-personnage.html'
+      - 'compte/rencontres.html'
+      - 'compte/blocages.html'
+      - 'compte/mes-commentaires.html'
+      - 'scripts/validate_account_social_shell.py'
+      - '.github/workflows/validate-account-social-shell.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'compte/relations.html'
+      - 'compte/messages.html'
+      - 'compte/messages-reels.html'
+      - 'compte/messages-personnage.html'
+      - 'compte/reseau-personnage.html'
+      - 'compte/rencontres.html'
+      - 'compte/blocages.html'
+      - 'compte/mes-commentaires.html'
+      - 'scripts/validate_account_social_shell.py'
+      - '.github/workflows/validate-account-social-shell.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Vérifier le shell social du compte
+        run: python scripts/validate_account_social_shell.py
