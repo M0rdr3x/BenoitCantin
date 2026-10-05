@@ -30,6 +30,7 @@ def main()->int:
     library_js=read('assets/js/sinjira-library-v24-4-61.js')
     reads_js=read('assets/js/sinjira-reads-v24-4-61.js')
     progress_js=read('assets/js/sinjira-reader-progress-v24-4-61.js')
+    reader_js=read('assets/js/sinjira-reader.js')
 
     require(library_html,[
         'data-library-page="library-v24-4-61"',
@@ -72,15 +73,36 @@ def main()->int:
         "onConflict:'user_id,novel_id'"
     ],'sinjira-reader-progress-v24-4-61.js')
 
-    require(demo_html,['sinjira-reader-progress-v24-4-61.js?v=24.4.61'],'lire-demo.html')
+    require(demo_html,[
+        'sinjira-reader-progress-v24-4-61.js?v=24.4.61',
+        'Édition démo · 84 pages · Prologue + chapitres 1 à 3',
+        'data-reader-page-number max="84"',
+        'type="number" value="1"/> / 84',
+        'data-reader-progress-native max="84" value="1">1 sur 84',
+    ],'lire-demo.html')
+    forbid(demo_html,['max="83"','/ 83</label>','>1 sur 83</progress>'],'lire-demo.html')
     if demo_html.index('sinjira-reader.js?v=19.0') > demo_html.index('sinjira-reader-progress-v24-4-61.js?v=24.4.61'):
         raise AssertionError('lire-demo.html: le synchroniseur canonique doit être chargé après le lecteur existant.')
+
+    require(reader_js,[
+        '(lastPage/84)*100',
+        'Math.min(84,Math.max(1,saved))',
+        'Math.round(current/84*100)',
+        '${current} sur 84',
+        'Math.min(84,current+1)',
+        'Math.min(84,Math.max(1,Number(input.value)||1))',
+    ],'sinjira-reader.js')
+    forbid(reader_js,['/83','Math.min(83','${current} sur 83'],'sinjira-reader.js')
+
+    require(progress_js,['Math.round((pageValue/84)*100)'],'sinjira-reader-progress-v24-4-61.js')
+    forbid(progress_js,['pageValue/83'],'sinjira-reader-progress-v24-4-61.js')
 
     paid_markers=['stripe','openai','anthropic','twilio','paypal','lemonsqueezy','paddle','replicate']
     for label,text in (
         ('sinjira-library-v24-4-61.js',library_js),
         ('sinjira-reads-v24-4-61.js',reads_js),
         ('sinjira-reader-progress-v24-4-61.js',progress_js),
+        ('sinjira-reader.js',reader_js),
     ):
         forbid(text,paid_markers,label)
 
