@@ -10,7 +10,7 @@ PR : #435
 
 ## Source de vérité du périmètre
 
-Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only a porté le delta à **36 migrations futures non revues**. La demande de catalogue complet pour le créateur et ses comptes familiaux, sans publier de courriel ni fabriquer de faux achat, ajoute maintenant une migration forward-only dédiée : les frontières self-only d’âge/catalogue et l’accès produit générique projets ajoutent ensuite deux migrations forward-only supplémentaires : le delta courant est désormais de **44 migrations futures non revues** après les deux correctifs Junior forward-only puis la rebaseline Livre I du 4 octobre 2026 (#44, correction de métadonnée 1066 → 1027 pages sans activation de diffusion). Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
+Le prévol production a identifié initialement **34 migrations futures non revues**. La revue statique a ensuite ajouté une migration corrective forward-only pour fermer la réponse interne Mode Voyage, portant le delta à **35 migrations futures non revues**. La revue croisée B1/C a ensuite identifié des helpers navigateur pouvant sonder un autre UUID ou du contenu `account`; leur correctif forward-only a porté le delta à **36 migrations futures non revues**. La demande de catalogue complet pour le créateur et ses comptes familiaux, sans publier de courriel ni fabriquer de faux achat, ajoute maintenant une migration forward-only dédiée : les frontières self-only d’âge/catalogue et l’accès produit générique projets ajoutent ensuite deux migrations forward-only supplémentaires : le delta courant est désormais de **45 migrations futures non revues** après les deux correctifs Junior forward-only, la rebaseline Livre I du 4 octobre 2026 (#44) puis la garde d’intégrité privée du 5 octobre 2026 (#45, sans upload ni activation automatique). Elles sont regroupées ici pour permettre une revue humaine ordonnée par dépendances et surface de risque.
 
 Répartition :
 - **Lot A — Mode Voyage : 4 migrations**
@@ -20,8 +20,9 @@ Répartition :
 - **Lot E — Catalogue famille créateur : 5 migrations**
 - **Lot F — Correctifs Junior forward-only récents : 2 migrations**
 - **Lot G — Rebaseline maître Livre I : 1 migration**
+- **Lot H — Intégrité et activation privée Livre I : 1 migration**
 
-**Total : 44 migrations futures non revues.**
+**Total : 45 migrations futures non revues.**
 
 L'ordre ci-dessous est un **ordre de revue**, pas un ordre d'autorisation production.
 
@@ -31,10 +32,10 @@ La revue peut être organisée par lots fonctionnels A→F, mais le builder prod
 
 État courant :
 - **14 migrations futures** figurent déjà dans `supabase/production-reviewed-migration-batch.txt`;
-- **44 migrations futures supplémentaires** de cette revue restent non revues;
+- **45 migrations futures supplémentaires** de cette revue restent non revues;
 - le workspace production ne peut être construit que lorsque le reviewed batch correspond **exactement à toutes les migrations futures locales** et à leurs blob SHA.
 
-Conséquence : une décision positive sur A, B, C, D, E ou F peut être consignée séparément, mais **ne doit pas déclencher une modification partielle du reviewed batch ni une promotion production**. La promotion ne devient techniquement admissible qu'après décision humaine sur les 44 migrations de cette revue, revalidation du gel SQL et constitution du lot complet attendu.
+Conséquence : une décision positive sur A, B, C, D, E ou F peut être consignée séparément, mais **ne doit pas déclencher une modification partielle du reviewed batch ni une promotion production**. La promotion ne devient techniquement admissible qu'après décision humaine sur les 45 migrations de cette revue, revalidation du gel SQL et constitution du lot complet attendu.
 
 ## Critères communs avant toute approbation
 
@@ -220,7 +221,7 @@ Relecture technique revalidée par delta sur le HEAD `517a1e8dd0037db56899896dc8
 
 - la migration d'introduction 11+ ferme dès B1 les fenêtres transitoires sensibles : code parental créé et relu sous AAL2, révocation tuteur AAL2 avec sortie immédiate du mineur, `guardian_code` supprimé des métadonnées Auth, visibilité tuteur coupée à la majorité, métadonnées de contacts remises à `false` par défaut et RPC contacts déjà minimisé;
 - `handle_new_sinjira_user()` refuse <11 ans, exige un code parental valide avant 14 ans, limite le lancement jeunesse au Canada, neutralise le Programme Contributeur à 11–12 ans et crée un lien tuteur `verified` sans activer les métadonnées de contacts;
-- la preuve locale d'inscription reconstruit la base. Après décision de travail enregistrée dans #438, le correctif calendrier #453 a été appliqué uniquement à `sinjira_age_band()` (`28c28409bcd610ad873c31e96cac9af46d240a7a`) puis le garde statique a été aligné (`b065aa6098d335bd84437e2a84e88e10ecdae7a4`). Le nouveau blob de `20260916210000_sinjira_v25_child_guardian_signup.sql` est `3231fc2720a28700be9d1be117e53a9a2448b08b`. Le run `37181885399`, job `111375942461`, reconstruit Supabase depuis zéro et termine **75/75 assertions pgTAP**, coffre privé et inscription Auth HTTP exactement 11 ans en succès. Les frontières veille/jour des 13 et 18 ans sont donc corrigées sans élargir les droits métier. **Le Lot B reste non approuvé** tant que la revue humaine globale #438 des 44 migrations futures n'est pas terminée; reviewed batch et ledger restent inchangés. Les autres assertions continuent de couvrir le refus d'un second code parental après rétablissement, son maintien inutilisé, l'absence de second lien `verified`, l'absence de privilège `UPDATE` navigateur sur `guardian_links` et la disparition de l'ancienne policy `guardian_guardian_update`; le navigateur 11 ans reste couvert séparément;
+- la preuve locale d'inscription reconstruit la base. Après décision de travail enregistrée dans #438, le correctif calendrier #453 a été appliqué uniquement à `sinjira_age_band()` (`28c28409bcd610ad873c31e96cac9af46d240a7a`) puis le garde statique a été aligné (`b065aa6098d335bd84437e2a84e88e10ecdae7a4`). Le nouveau blob de `20260916210000_sinjira_v25_child_guardian_signup.sql` est `3231fc2720a28700be9d1be117e53a9a2448b08b`. Le run `37181885399`, job `111375942461`, reconstruit Supabase depuis zéro et termine **75/75 assertions pgTAP**, coffre privé et inscription Auth HTTP exactement 11 ans en succès. Les frontières veille/jour des 13 et 18 ans sont donc corrigées sans élargir les droits métier. **Le Lot B reste non approuvé** tant que la revue humaine globale #438 des 45 migrations futures n'est pas terminée; reviewed batch et ledger restent inchangés. Les autres assertions continuent de couvrir le refus d'un second code parental après rétablissement, son maintien inutilisé, l'absence de second lien `verified`, l'absence de privilège `UPDATE` navigateur sur `guardian_links` et la disparition de l'ancienne policy `guardian_guardian_update`; le navigateur 11 ans reste couvert séparément;
 - B2 sérialise le rétablissement `child_pending` avec un verrou `FOR UPDATE` sur `account_safety_profiles`, verrouille aussi l'invitation consommée, interdit l'auto-tutelle et empêche deux codes concurrents de créer deux liens actifs depuis le même état pending;
 - la révocation ou suppression d'un `guardian_link` révoque durablement le consentement Junior associé; une réactivation ultérieure de supervision ne réactive jamais implicitement Junior;
 - la suite multi-tuteur est verte avec **26/26** assertions et l'auto-test du garde détecte **10/10** dérives critiques; un second tuteur valide ne maintient pas le consentement Junior du tuteur révoqué;
@@ -232,7 +233,7 @@ Relecture technique revalidée par delta sur le HEAD `517a1e8dd0037db56899896dc8
 - `get_guardian_youth_contacts()` exige supervision active + opt-in + AAL2 et ne renvoie que `contact_label`, `network`, `last_contact_date`; les tests prouvent l'absence d'UUID de contact, `display_name`, timestamp précis et contenu, ainsi que l'isolation entre identité Compte et identité Personnage;
 - `junior_guardian_summary()` exige AAL2, ne renvoie aucun contenu de publication/message et réduit la dernière activité à une date UTC; la liste parentale ne révèle jamais `junior_alias`;
 - le workflow Communauté Junior est entièrement vert : **61/61** assertions Junior, **13/13** frontière serveur 11–12, **26/26** classement contenu, **25/25** capacités self-only et **8/8** compatibilité protection mineurs, plus la preuve navigateur locale;
-- le snapshot release reste vert et confirme **43 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés; le job CI `social-rls-contract` est également vert et vérifie la frontière sociale/RLS finale, y compris l'autorité `owner` du classifieur d'âge.
+- le snapshot release reste vert et confirme **45 migrations futures non revues**, empreintes intactes, reviewed batch et ledger inchangés; le job CI `social-rls-contract` est également vert et vérifie la frontière sociale/RLS finale, y compris l'autorité `owner` du classifieur d'âge.
 - revalidation par delta du 4 octobre 2026 : **21/22 blobs B1→B5** restent identiques aux paquets humains historiques; seul `20260916210000_sinjira_v25_child_guardian_signup.sql` a changé via #453 et son nouveau blob `3231fc2720a28700be9d1be117e53a9a2448b08b` est revalidé; Communauté Junior SQL+navigateur, inscription enfant et révocation multi-tuteur sont SUCCESS sur le HEAD courant;
 
 **État des portes avant toute approbation du Lot B :**
@@ -468,6 +469,19 @@ Aucune case du Lot F n’est cochée : ces migrations restent **NON REVUES / NON
 
 Aucune case du Lot G n’est cochée : cette migration reste **NON REVUE / NON APPROUVÉE**.
 
+## Lot H — Intégrité et activation privée Livre I du 5 octobre 2026 (1)
+
+- [ ] `20261005150000_sinjira_v25_private_novel_integrity_gate.sql`
+  - Ajoute des métadonnées du maître attendu (SHA-256, taille, MIME, date source) au registre privé, sans exposer ces champs au navigateur.
+  - Ajoute une readiness réservée au `service_role` qui exige `delivery_mode='storage'`, un bucket privé, un objet Storage présent et une concordance taille/MIME.
+  - La preuve d’intégrité SHA-256 est enregistrée séparément; l’activation n’est admissible qu’après cette preuve.
+  - L’activation et la désactivation sont des opérations serveur séparées; la migration elle-même ne passe jamais `enabled=true`.
+  - Aucun PDF n’est ajouté au dépôt ni téléversé par la migration; aucun bucket/chemin Storage n’est configuré automatiquement.
+  - Preuves attendues : workflow `SINJIRA V25 — Intégrité diffusion privée Livre I`, pgTAP dédié, frontière privée Livre I et catalogue romans privés sur reconstruction locale.
+  - Revue prioritaire : `SECURITY DEFINER`, `search_path`, ACL `service_role`, lecture `storage.objects`, métadonnées objet, idempotence et séquence rollback/désactivation.
+
+Aucune case du Lot H n’est cochée : cette migration reste **NON REVUE / NON APPROUVÉE** et ne vaut aucune autorisation d’upload, d’activation ou de déploiement production.
+
 ## Portes de sortie de revue
 
 Une famille ne peut être proposée comme « revue » que si :
@@ -481,7 +495,7 @@ Une famille ne peut être proposée comme « revue » que si :
 
 ## État au moment de la création de ce document
 
-- 44 / 44 migrations : **NON REVUES**
+- 45 / 45 migrations : **NON REVUES**
 - 0 migration ajoutée au lot production par ce document
 - 0 changement du ledger production
 - 0 déploiement production
