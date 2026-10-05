@@ -17,7 +17,7 @@ Aucune case cochée ne vaut à elle seule approbation production.
 
 Ne pas modifier automatiquement `supabase/production-reviewed-migration-batch.txt` ou `supabase/production-migration-ledger.txt` à partir de cette feuille.
 
-**Important — pas de promotion partielle :** la feuille peut être remplie lot par lot, mais le builder production exige que `production-reviewed-migration-batch.txt` corresponde exactement à **toutes** les migrations locales futures. Les 14 migrations déjà présentes dans le lot revu et les 44 migrations de cette feuille forment donc, au moment d'une future promotion, un ensemble complet à revalider. Une approbation partielle d'un lot A–F ne doit jamais être traduite en mise à jour partielle du reviewed batch.
+**Important — pas de promotion partielle :** la feuille peut être remplie lot par lot, mais le builder production exige que `production-reviewed-migration-batch.txt` corresponde exactement à **toutes** les migrations locales futures. Les 14 migrations déjà présentes dans le lot revu et les 45 migrations de cette feuille forment donc, au moment d'une future promotion, un ensemble complet à revalider. Une approbation partielle d'un lot A–F ne doit jamais être traduite en mise à jour partielle du reviewed batch.
 
 Avant toute future promotion, le reviewer doit notamment vérifier :
 
@@ -102,6 +102,7 @@ Lire les migrations dans l’ordre chronologique canonique. Les colonnes de cont
 | 42 | `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | `3c80073c9bc027707d1f12a129cebd91a8d7ba4f` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 43 | `20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql` | `5cdb8c576aae2ff7adcf75dd1270ba446b063e59` | Enfant 11–12 / Junior / confidentialité | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 44 | `20261004235000_sinjira_v25_livre_i_master_2026_10_04.sql` | `7a86cdf0dd6e292e884a22930c9cd8e90d949c31` | Compte / catalogue / romans privés | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 45 | `20261005150000_sinjira_v25_private_novel_integrity_gate.sql` | `6f8b14370fb6e7fcde317a517fa3463dc3525b9e` | Compte / catalogue / romans privés / intégrité Storage | [ ] | [ ] | [ ] | [ ] | [ ] |
 
 Mise à jour du **2026-09-24** : les migrations #4 et #6 ont aussi été durcies pour retirer les anciennes policies SELECT projets/documents avant d’installer les gardes `child`, fermant une combinaison permissive par `OR`. Elles restent **NON REVUES / NON APPROUVÉES**.
 
@@ -110,6 +111,8 @@ Mise à jour du **2026-09-24** : la migration #42 corrige forward-only la visibi
 Mise à jour du **2026-09-24** : la migration #43 ferme la possibilité de commenter une publication Junior pendant un masquage humain `hide_content`. Elle reste **NON REVUE / NON APPROUVÉE**; aucune case de revue n’est cochée automatiquement.
 
 Mise à jour du **2026-10-05** : la migration #44 rebaseline seulement `private.sinjira_private_novel_assets.total_pages` du Livre I à 1027 lorsque nécessaire. Aucun PDF, bucket, chemin Storage ou drapeau d’activation n’est écrit. Elle reste **NON REVUE / NON APPROUVÉE** et toutes les cases de décision demeurent vides.
+
+Mise à jour du **2026-10-05** : la migration #45 ajoute la chaîne d’intégrité de diffusion privée du Livre I. Elle ancre le SHA-256/taille/MIME du maître, exige un bucket Storage privé et un objet conforme, réserve les RPC de readiness/intégrité/activation au `service_role`, et refuse l’activation tant qu’une preuve d’intégrité préalable n’existe pas. La migration elle-même ne téléverse rien, ne configure aucun chemin et n’active rien automatiquement. Elle reste **NON REVUE / NON APPROUVÉE**.
 
 Mise à jour du **2026-09-25** : les migrations #11 et #13 renforcent les codes parentaux sans casser les codes déjà émis : anciens codes 10 caractères acceptés jusqu’à expiration, nouveaux codes 16 caractères (64 bits), émission toujours adulte AAL2 et consommation toujours sérialisée/fail-closed. Elles restent **NON REVUES / NON APPROUVÉES**; aucune case n’est cochée automatiquement.
 
@@ -128,7 +131,7 @@ Mise à jour du **2026-09-24** : une relecture automatisée ciblée des migratio
 Suspendre la promotion si une seule des conditions suivantes apparaît :
 
 - empreinte différente de celle figée dans le snapshot;
-- migration nouvelle ou absente du lot de 43;
+- migration nouvelle ou absente du lot de 45;
 - élargissement de droits non expliqué;
 - policy permissive historique encore active et combinable avec une nouvelle policy;
 - accès navigateur à un helper prévu pour `service_role`;
@@ -142,6 +145,6 @@ Suspendre la promotion si une seule des conditions suivantes apparaît :
 La sortie correcte de cette feuille est soit :
 
 1. **NON APPROUVÉ** avec les points à corriger; ou
-2. une **approbation humaine explicite**, séparée de cette feuille, qui précise le HEAD, les 43 blobs relus et la prochaine étape autorisée.
+2. une **approbation humaine explicite**, séparée de cette feuille, qui précise le HEAD, les 45 blobs relus et la prochaine étape autorisée.
 
 Même après approbation du SQL, la fusion, le prévol distant, la configuration des secrets, l’application Supabase et la réconciliation du ledger restent des décisions séparées.
