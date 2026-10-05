@@ -11,7 +11,7 @@ CANONICAL = {
     "admin-analytics", "admin-console", "admin-license-codes", "admin-reports",
     "admin-sinjira-v18", "admin-social-v20", "admin-users", "conscience-vault",
     "delete-player-account", "fracture-engine-gateway", "get-document-url",
-    "get-private-book-url", "life-story-delivery", "life-story-export", "personal-ai",
+    "get-novel-file-url", "get-private-book-url", "life-story-delivery", "life-story-export", "personal-ai",
     "redeem-license-code", "revoke-my-contributions", "security-context", "send-game-report",
     "send-player-sheet", "submit-character-questionnaire", "submit-fracture-endgame",
     "submit-game-contribution",
@@ -57,6 +57,13 @@ JWT_SENSITIVE_GUARDS = {
         "CLIENT_IDENTITY_FORBIDDEN", "ai_private", "Cache-Control", "private, no-store",
         "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
         "conversation_enabled", "source_retrieval_enabled",
+    ),
+    "get-novel-file-url": (
+        "req.method==='OPTIONS'", "req.method!=='POST'", "requiredUser(req)",
+        "sinjira_novels", "is_sinjira_owner", "is_sinjira_admin", "user_entitlements",
+        "file_ready", "createSignedUrl", "expires_in:600",
+        "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
+        "Referrer-Policy", "no-referrer",
     ),
     "get-private-book-url": (
         "req.method!=='POST'", "requiredUser(req)", "user_entitlements",
@@ -225,7 +232,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 23 fonctions canoniques, JWT/custom auth cohérents, porte Livre I entitlement privée, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 24 fonctions canoniques, JWT/custom auth cohérents, portes Livre I entitlement privées, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
