@@ -1,0 +1,49 @@
+name: Compte SINJIRA — Auth et Sécurité
+
+on:
+  pull_request:
+    paths:
+      - 'compte/securite.html'
+      - 'compte/mfa.html'
+      - 'compte/connexion.html'
+      - 'compte/inscription.html'
+      - 'compte/mot-de-passe-oublie.html'
+      - 'compte/reinitialiser-mot-de-passe.html'
+      - 'scripts/validate_account_auth_security_shell.py'
+      - '.github/workflows/validate-account-auth-security-shell.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'compte/securite.html'
+      - 'compte/mfa.html'
+      - 'compte/connexion.html'
+      - 'compte/inscription.html'
+      - 'compte/mot-de-passe-oublie.html'
+      - 'compte/reinitialiser-mot-de-passe.html'
+      - 'scripts/validate_account_auth_security_shell.py'
+      - '.github/workflows/validate-account-auth-security-shell.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Vérifier le shell Auth et Sécurité
+        run: python scripts/validate_account_auth_security_shell.py
+      - name: Vérifier les contrats Auth existants
+        run: python scripts/validate_auth.py
+      - name: Vérifier le MFA TOTP
+        run: python scripts/validate_mfa_v24_4_66.py
+      - name: Vérifier le Centre de sécurité
+        run: python scripts/validate_security_v24_4_99.py
