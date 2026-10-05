@@ -1,4 +1,4 @@
-# SINJIRA™ V25 — Matrice technique de revue des 44 migrations futures
+# SINJIRA™ V25 — Matrice technique de revue des 45 migrations futures
 
 Date de préparation : **2026-09-23 (America/Toronto)**  
 PR : **#435** — branche `a1/integration-rehearsal`
@@ -62,6 +62,7 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 | 42 | `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | 89 lignes; 1 `SECURITY DEFINER`; redéfinition du fil Junior interne; aucune mutation de données | Vérifier que publications **et commentaires** exigent encore une bande child active et un consentement Junior courant, sans recréer de DEFINER public ni supprimer l’historique. |
 | 43 | `20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql` | correctif forward-only; redéfinition interne de création commentaire Junior; aucune mutation de données existantes | Vérifier qu’un post masqué par modération refuse immédiatement tout nouveau commentaire, que la réversion humaine restaure le comportement normal et qu’aucun DEFINER public n’est recréé. |
 | 44 | `20261004235000_sinjira_v25_livre_i_master_2026_10_04.sql` | 16 lignes; transaction; UPDATE conditionnel de `total_pages` à 1027; aucun DDL/RLS/Storage/activation | Vérifier le ciblage strict du slug Livre I, l’idempotence de `IS DISTINCT FROM 1027` et confirmer qu’aucune configuration privée ni aucun octet PDF n’est modifié. |
+| 45 | `20261005150000_sinjira_v25_private_novel_integrity_gate.sql` | ~300 lignes; DDL additif; 3 `SECURITY DEFINER`; lecture métadonnées `storage.buckets`/`storage.objects`; UPDATE métadonnées/intégrité/activation | Revue prioritaire : vérifier dépendance à #27/#29/#31/#44, accès `service_role` seulement, bucket privé obligatoire, concordance taille/MIME/SHA et séparation stricte preuve d’intégrité → décision humaine → `enabled=true`. |
 
 ## Journal de relecture automatisée ciblée — 2026-09-24
 
@@ -100,7 +101,7 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 - **#35 — minimisation Mode Voyage** : l'implémentation interne dérive toujours le propriétaire de `auth.uid()`, conserve le step-up MFA, normalise/déduplique les codes pays et impose 1 à 12 destinations. `multi_country` est recalculé côté serveur à partir des destinations réelles plutôt que cru depuis le client. Les réponses internes ne retournent ni `user_id`, ni `delete_after`; l'annulation filtre simultanément `id + user_id + status='active'`, ce qui évite un oracle plan tiers / plan inexistant.
 - **#36 — helpers navigateur self-only** : `project_access_rank` retourne `0` lorsqu'un appel non-`service_role` cible un UUID différent de `auth.uid()`. Les helpers projet/document 11–12 restent bornés à l'état approuvé, au rang réel du compte courant et à la visibilité compatible; anon ne peut pas confirmer l'existence d'un contenu `account` ou `restricted`.
 
-### Migrations 37 à 44
+### Migrations 37 à 45
 - **#37 — catalogue famille créateur** : registre familial privé borné au `user_id`, aucun courriel stocké dans la table, provisionnement réservé au `service_role`, catalogue complet distinct des entitlements commerciaux. Les comptes 11–12 famille ne reçoivent que des fiches minimisées; l'accès intégral reste fermé. Le script de provisionnement est en plus borné au host Supabase canonique dérivé de `supabase/config.toml`.
 - **#38 — droits produits issus des commandes** : le droit canonique exige explicitement `o.status='paid'` ou un entitlement réel; une commande `pending` ne donne aucun droit. Le RPC des droits effectifs est self-only et ne retourne ni numéro de commande, ni montant, ni devise, ni courriel.
 - **#39 — extensions produit** : les anciennes policies SELECT connues sont retirées avant recréation. Une extension achetée doit être `approved` ou `released`, et son projet parent ne doit pas être `draft`. Une extension interne en conception reste invisible au membre standard même avec un produit associé.
@@ -109,14 +110,15 @@ Les compteurs ci-dessous sont **mécaniques** : ils aident à orienter la lectur
 - **#42 — visibilité auteur Junior** : le fil interne exige pour les publications **et** les commentaires que l'auteur soit encore dans la bande Junior et conserve un consentement Junior actif. La révocation masque le contenu sans supprimer l'historique et aucun nouveau `SECURITY DEFINER` public n'est créé.
 - **#43 — arrêt d’interaction sur post masqué** : la création de commentaire interne exige désormais `moderation_content_visible('real','post',p.id)`. Un `hide_content` humain doit produire `JUNIOR_POST_UNAVAILABLE`; la migration ne supprime aucun contenu existant et ne recrée aucun `SECURITY DEFINER` public.
 - **#44 — rebaseline maître Livre I** : l’unique mutation fixe `private.sinjira_private_novel_assets.total_pages=1027` pour le roman `la-cendre-du-jugement` lorsque la valeur diffère. Aucun bucket, chemin Storage, drapeau `enabled`, droit produit ou PDF n’est créé/modifié; cette migration reste à relire humainement.
+- **#45 — garde d’intégrité roman privé** : ajoute des métadonnées d’intégrité et trois RPC `SECURITY DEFINER` strictement `service_role`. Le statut de readiness exige `delivery_mode='storage'`, bucket privé, objet Storage présent avec taille/MIME attendus et preuve SHA-256 enregistrée avant qu’une activation soit admissible. La bascule d’activation reste une action séparée; la migration n’upload aucun PDF et ne configure aucun chemin.
 
 ### Preuves CI récentes observées sur la branche
 
-- **Inscription enfant 11 ans — correction calendrier validée 2026-10-04** : après décision tracée dans #438, `sinjira_age_band()` utilise désormais l'âge complété entier aux seuils 11/13/18. Commit SQL `28c28409bcd610ad873c31e96cac9af46d240a7a`, garde statique aligné au HEAD `b065aa6098d335bd84437e2a84e88e10ecdae7a4`, nouveau blob migration `3231fc2720a28700be9d1be117e53a9a2448b08b`. Run `37181885399`, job `111375942461` : reconstruction locale complète, **75/75 assertions pgTAP**, coffre privé et Auth HTTP exactement 11 ans en succès. #453 est fermé comme terminé. Cette preuve résout le défaut calendrier mais **ne vaut pas approbation du Lot B** : #438 reste ouvert avec 44 migrations futures explicitement non revues, reviewed batch et ledger inchangés.
+- **Inscription enfant 11 ans — correction calendrier validée 2026-10-04** : après décision tracée dans #438, `sinjira_age_band()` utilise désormais l'âge complété entier aux seuils 11/13/18. Commit SQL `28c28409bcd610ad873c31e96cac9af46d240a7a`, garde statique aligné au HEAD `b065aa6098d335bd84437e2a84e88e10ecdae7a4`, nouveau blob migration `3231fc2720a28700be9d1be117e53a9a2448b08b`. Run `37181885399`, job `111375942461` : reconstruction locale complète, **75/75 assertions pgTAP**, coffre privé et Auth HTTP exactement 11 ans en succès. #453 est fermé comme terminé. Cette preuve résout le défaut calendrier mais **ne vaut pas approbation du Lot B** : #438 reste ouvert avec 45 migrations futures explicitement non revues, reviewed batch et ledger inchangés.
 - **Refonte compte et catalogue** : succès sur `343bc309561e5dc61b957149fa28b29d482ca88b`, incluant **56/56** assertions; le repair propriétaire fonctionne avec l'autorité `owner` sans fabriquer entitlement commercial, faux accès tester ni historique de lecture.
 - **Catalogue romans privés** : succès sur `6b657b136ae3ded743de963ca70b4571d8335fed`; aucune modification runtime/migration ultérieure ne rouvre cette frontière.
 - **Contrat social/RLS** : le job dédié `social-rls-contract` est vert sur le HEAD courant de cette vague et vérifie notamment que le classifieur d'âge final reconnaît l'owner par autorité serveur plutôt que par identité courriel.
-- **Snapshot revue release enfant Junior** : succès sur la vague courante; **44 migrations futures** restent non revues/non approuvées, reviewed batch et ledger inchangés.
+- **Snapshot revue release enfant Junior** : succès sur la vague courante; **45 migrations futures** restent non revues/non approuvées, reviewed batch et ledger inchangés.
 - **Supabase production, contrôle lecture seule** : `guardian_links` n'accorde actuellement que SELECT à `authenticated`; aucune policy UPDATE navigateur n'est active. Ce constat live est une vérification de cohérence, pas une approbation des migrations futures.
 
 ## Ordre conseillé de lecture technique
@@ -149,7 +151,7 @@ Pour chaque migration concernée :
 Cette matrice peut réduire le coût de lecture, mais **elle ne doit jamais remplir automatiquement la colonne « Décision humaine »** de la feuille de revue.
 
 Tant qu'une décision humaine explicite n'existe pas :
-- les 44 migrations restent non revues;
+- les 45 migrations restent non revues;
 - le reviewed batch reste inchangé;
 - le ledger reste inchangé;
 - aucun prévol distant ni déploiement production n'est autorisé;
