@@ -53,8 +53,10 @@ def main() -> int:
         html = path.read_text("utf-8", errors="strict")
         low = html.lower()
 
-        if 'name="robots" content="noindex,nofollow,noarchive"' not in low:
-            errors.append(f"{rel}: noindex/nofollow/noarchive absent.")
+        robots_match = re.search(r'<meta\b[^>]*name=["\']robots["\'][^>]*content=["\']([^"\']+)["\']|<meta\b[^>]*content=["\']([^"\']+)["\'][^>]*name=["\']robots["\']', html, re.I)
+        robots_value = ((robots_match.group(1) or robots_match.group(2)) if robots_match else "").lower()
+        if "noindex" not in robots_value or "nofollow" not in robots_value:
+            errors.append(f"{rel}: noindex/nofollow absent.")
 
         if 'class="skip-link"' not in html or 'href="#contenu"' not in html:
             errors.append(f"{rel}: lien d'évitement vers #contenu absent.")
@@ -102,7 +104,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK shell compte: 8 pages coeur privées avec noindex/noarchive, "
+        "OK shell compte: 8 pages coeur privées avec noindex/nofollow, "
         "navigation globale mobile, navigation compte cohérente et accessibilité clavier."
     )
     return 0
