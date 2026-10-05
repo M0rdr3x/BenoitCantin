@@ -135,7 +135,7 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'Smoke deploy unitaire : \\`Netlify deploy — smoke HTTP\\` (permalink atomique, preview / production-candidate)' in text, 'smoke deploy unitaire absent du résumé readiness')
     require(errors, 'Gate pré-DNS combiné : \\`Netlify pré-DNS — gate combiné\\` (même site Netlify + même SHA)' in text, 'gate pré-DNS combiné absent du résumé readiness')
     require(errors, 'Smoke production : \\`Web production — smoke HTTP\\` (SHA + signature Netlify + apex canonique)' in text, 'preuve finale Netlify/apex absente du résumé readiness')
-    require(errors, 'Portes restantes : master PDF démo exact (#363), bascule hébergeur sûre (#450), Formspree personnel distinct (#451), preuve réseau BubblaV (#444), protection serveur main (#135)' in text, 'portes readiness actuelles absentes')
+    require(errors, 'Portes web restantes : bascule hébergeur sûre (#450), Formspree personnel distinct (#451), preuve réseau BubblaV (#444), protection serveur main (#135)' in text, 'portes readiness web actuelles absentes')
     require(errors, exact_run_count(text, AI_TRANSPARENCY_SELF) == 1, 'auto-test Transparence IA absent ou dupliqué')
     require(errors, exact_run_count(text, AI_TRANSPARENCY_VALIDATE) == 1, 'validation Transparence IA absente ou dupliquée')
     require(errors, exact_run_count(text, PUBLIC_AI_ASSISTANT_SELF) == 1, 'auto-test assistant IA public absent ou dupliqué')
