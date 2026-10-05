@@ -12,7 +12,7 @@ REQUEST_LIMIT_RE = re.compile(r'\bMAX_REQUEST_BYTES\s*=\s*2\s*\*\s*1024\s*\*\s*1
 ANSWER_LIMIT_RE = re.compile(r'\bMAX_ANSWERS_CHARS\s*=\s*500000\s*;')
 
 REQUIRED = {
-    'version fonctionnelle stable': "const VERSION='24.5.2';",
+    'version fonctionnelle stable': "const VERSION='25.1.0';",
     'POST uniquement': "req.method!=='POST'",
     'auth utilisateur explicite': 'requiredUser(req)',
     'lecture JSON bornée': 'readBoundedJson(req)',
@@ -34,7 +34,7 @@ REQUIRED = {
     'traversée photo refusée': "String(photo_path).includes('..')",
     'canon provisoire': "canon_status:'PROVISOIRE'",
     'revue auteur': "status:'author_review'",
-    'Roman I verrouillé dans le prompt': 'Le Roman 1 — La Cendre du Jugement est verrouillé.',
+    'Canon central verrouillé dans le prompt': 'Les 14 romans principaux constituent le CANON CENTRAL verrouillé.',
     'arbitrage non automatique': 'Les éléments À ARBITRER ne sont jamais tranchés automatiquement.',
     'pas de coordonnées dans génération': 'Ne produis jamais de coordonnées personnelles.',
     'log principal sanitizé': "console.error('[submit-character-questionnaire]',safeLogCode(e));",
@@ -107,6 +107,8 @@ def self_test() -> None:
         raise AssertionError('Le fichier réel sain doit passer: ' + ' | '.join(clean))
 
     cases = {
+        'version fonctionnelle rétrogradée': real.replace("const VERSION='25.1.0';", "const VERSION='24.5.2';", 1),
+        'Canon central retiré du prompt': real.replace('Les 14 romans principaux constituent le CANON CENTRAL verrouillé.', 'Le canon principal peut être modifié automatiquement.', 1),
         'json direct': real.replace('const body=await readBoundedJson(req);', 'const body=await req.json();', 1),
         'content-type retiré': real.replace("  if(contentType!=='application/json')throw new Error('JSON_REQUIRED');\n", '', 1),
         'no-store retiré': real.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),

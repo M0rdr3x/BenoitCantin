@@ -28,9 +28,9 @@ REQUIRED = {
     'effacement payload source': 'source_payload:null,photo_path:null,source_purged_at:new Date().toISOString()',
     'confirmation humaine CANON': "canonStatus==='CANON'&&c.author_confirmed_canon!==true",
     'erreur confirmation CANON': 'CANON_CONFIRMATION_REQUIRED',
-    'Livre I verrouillé': "novel?.slug==='la-cendre-du-jugement'",
+    'Canon central verrouillé': "if(c.novel_id&&c.author_confirmed_retcon!==true)",
     'confirmation humaine retcon': 'c.author_confirmed_retcon!==true',
-    'erreur retcon Livre I': 'ROMAN1_LOCKED',
+    'erreur retcon Canon central': 'CENTRAL_CANON_LOCKED',
     'IA distante désactivée': 'REMOTE_AI_DISABLED_FREE_ONLY',
     'santé confirme IA distante inactive': 'remote_ai:false,free_only:true',
     'MFA explicite': "e?.message==='MFA_REQUIRED'",
@@ -160,7 +160,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK admin-sinjira-v18: admin/JWT/AAL2 avant corps, JSON 256 KiB, réponses no-store, sources privées et décisions CANON/retcon humaines conservées.')
+    print('OK admin-sinjira-v18: admin/JWT/AAL2 avant corps, JSON 256 KiB, réponses no-store, sources privées et Canon central verrouillé derrière une décision auteur explicite.')
     return 0
 
 

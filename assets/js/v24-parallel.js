@@ -1,6 +1,6 @@
 import {getSupabase,requireUser,setStatus,escapeHtml,formatDate} from './sinjira-supabase.js';
 
-const UI_VERSION='24.4.88';
+const UI_VERSION='25.1.0';
 const missionBox=document.querySelector('[data-parallel-mission]');
 const stateBox=document.querySelector('[data-parallel-state]');
 const historyBox=document.querySelector('[data-parallel-history]');
@@ -9,10 +9,10 @@ const empty=msg=>`<div class="v24-empty">${escapeHtml(msg)}</div>`;
 
 function friendlyDate(value){try{return value?formatDate(value):'—'}catch{return String(value||'—')}}
 function stateSummary(state){
-  if(!state)return 'La Chronique technique sera créée automatiquement lorsque votre continuité devient admissible.';
+  if(!state)return 'Le journal technique sera créé automatiquement lorsque votre identité parallèle devient admissible.';
   const data=state.state_data&&typeof state.state_data==='object'?state.state_data:{};
   const summary=String(data.summary||data.private_summary||'').trim();
-  return summary||'Aucun résumé narratif privé n’a encore été enregistré.';
+  return summary||'Aucun résumé privé du journal parallèle n’a encore été enregistré.';
 }
 
 async function load(){
@@ -26,7 +26,7 @@ async function load(){
   if(contextError)throw contextError;
   if(!context?.ok){
     missionBox.innerHTML=empty('Votre identité du Monde parallèle n’est pas encore prête.');
-    stateBox.innerHTML=empty('Aucune Chronique personnelle pour le moment.');
+    stateBox.innerHTML=empty('Aucun journal parallèle pour le moment.');
     if(historyBox)historyBox.innerHTML=empty('Aucune histoire liée à votre continuité.');
     return;
   }
@@ -63,10 +63,10 @@ async function load(){
   }
 
   const eligibility=membership?(
-    membership.pioneer_number?`Pionnier #${membership.pioneer_number} · admissible au canon principal et au Monde parallèle`:
-    membership.parallel_world_only?'Continuité du Monde parallèle uniquement':'Accès propriétaire / canon principal + Monde parallèle'
+    membership.pioneer_number?`Pionnier #${membership.pioneer_number} · distinction historique · histoire officielle évaluée séparément`:
+    'Espace parallèle actif · l’admissibilité à une Chronique du Canon étendu est évaluée séparément'
   ):'Adhésion en attente';
-  stateBox.innerHTML=`<p><strong>${escapeHtml(parallelName)}</strong></p><p><small>Identité de personnage — séparée de l’identifiant privé du compte.</small></p>${parallelBio?`<p>${escapeHtml(parallelBio)}</p>`:''}<p>${escapeHtml(eligibility)}</p>${state?`<p>État : ${escapeHtml(state.life_state||'active')} · Réputation : ${escapeHtml(String(state.reputation??0))}</p>${state.location_name?`<p>Lieu : ${escapeHtml(state.location_name)}</p>`:''}${state.faction_name?`<p>Faction : ${escapeHtml(state.faction_name)}</p>`:''}<p>${escapeHtml(stateSummary(state))}</p><small>Dernière mise à jour : ${escapeHtml(friendlyDate(state.updated_at))}</small>`:'<p>Chronique technique en attente.</p>'}`;
+  stateBox.innerHTML=`<p><strong>${escapeHtml(parallelName)}</strong></p><p><small>Identité de personnage — séparée de l’identifiant privé du compte.</small></p>${parallelBio?`<p>${escapeHtml(parallelBio)}</p>`:''}<p>${escapeHtml(eligibility)}</p>${state?`<p>État : ${escapeHtml(state.life_state||'active')} · Réputation : ${escapeHtml(String(state.reputation??0))}</p>${state.location_name?`<p>Lieu : ${escapeHtml(state.location_name)}</p>`:''}${state.faction_name?`<p>Faction : ${escapeHtml(state.faction_name)}</p>`:''}<p>${escapeHtml(stateSummary(state))}</p><small>Dernière mise à jour : ${escapeHtml(friendlyDate(state.updated_at))}</small>`:'<p>Journal technique en attente.</p>'}`;
 
   if(historyBox){
     const renderStory=(x,label)=>`<article class="v24-panel"><span class="v24-badge">${label}</span><h3>${escapeHtml(x.title||'Chronique')}</h3><p>${escapeHtml(String(x.content||'').slice(0,700))}${String(x.content||'').length>700?'…':''}</p><small>${escapeHtml(friendlyDate(x.published_at))}</small></article>`;
