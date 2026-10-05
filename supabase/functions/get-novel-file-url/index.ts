@@ -2,14 +2,40 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
 
 const HEADERS={...corsHeaders,'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
+const MAX_REQUEST_BYTES=2048;
 function json(data:unknown,status=200){return new Response(JSON.stringify(data),{status,headers:HEADERS});}
+
+async function readBoundedJson(req:Request){
+  if(!req.body)return {};
+  const reader=req.body.getReader();
+  const chunks:Uint8Array[]=[];
+  let total=0;
+  while(true){
+    const {done,value}=await reader.read();
+    if(done)break;
+    if(value){
+      total+=value.byteLength;
+      if(total>MAX_REQUEST_BYTES){
+        try{await reader.cancel();}catch{}
+        throw new Error('REQUEST_TOO_LARGE');
+      }
+      chunks.push(value);
+    }
+  }
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  if(!bytes.length)return {};
+  try{return JSON.parse(new TextDecoder().decode(bytes));}
+  catch{throw new Error('INVALID_JSON');}
+}
 
 Deno.serve(async(req)=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:corsHeaders});
   if(req.method!=='POST')return json({ok:false,error:'Méthode non autorisée.'},405);
   try{
     const user=await requiredUser(req);
-    const body=await req.json().catch(()=>({}));
+    const body=await readBoundedJson(req);
     const slug=String(body?.slug||'').trim();
     if(!slug||slug.length>120)return json({ok:false,error:'Roman invalide.'},400);
     const service=serviceClient();
@@ -30,6 +56,8 @@ Deno.serve(async(req)=>{
   }catch(error){
     const message=String(error?.message||'');
     if(message==='AUTH_REQUIRED')return json({ok:false,error:'Connexion requise.'},401);
+    if(message==='REQUEST_TOO_LARGE')return json({ok:false,error:'Requête trop volumineuse.'},413);
+    if(message==='INVALID_JSON')return json({ok:false,error:'Corps JSON invalide.'},400);
     console.error(error);
     return json({ok:false,error:'Erreur lors de l’accès au roman.'},500);
   }
