@@ -1,0 +1,265 @@
+name: Web release — artefact public isolé
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-artifact:
+    name: Construire et publier l’artefact CI
+    if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'a1/web-release-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      SINJIRA_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Construire l’artefact de confinement GitHub Pages
+        run: python3 scripts/build_netlify_public.py --output _containment_site --security-containment
+
+      - name: Vérifier et hacher le confinement GitHub Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _containment_site/.well-known/security.txt
+          test -f _containment_site/.well-known/release.json
+          test -f _containment_site/.nojekyll
+          test -f _containment_site/CNAME
+          test ! -e _containment_site/_headers
+          test ! -e _containment_site/_redirects
+          test ! -e _containment_site/script.js
+          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do
+            if grep -R -F -q -- "$endpoint" _containment_site; then
+              echo "ERREUR: endpoint Formspree historique interdit dans l’artefact confinement: $endpoint" >&2
+              exit 1
+            fi
+          done
+          for forbidden in .github docs mobile-native scripts supabase tests; do
+            test ! -e "_containment_site/$forbidden"
+          done
+          for exposed in             supabase/config.toml             scripts/build_netlify_public.py             docs/README.md             .github/workflows/validate-site.yml             tests/e2e/test_public_site.py             mobile-native/App.tsx
+          do
+            test ! -e "_containment_site/$exposed"
+          done
+          find _containment_site -type f -print0 | sort -z | xargs -0 sha256sum > web-containment-SHA256SUMS.txt
+          containment_count="$(find _containment_site -type f | wc -l | tr -d ' ')"
+          test "$containment_count" -gt 0
+          echo "WEB_CONTAINMENT_FILE_COUNT=$containment_count" >> "$GITHUB_ENV"
+
+      - name: Téléverser l’artefact confinement inspectable
+        id: containment-upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sinjira-web-containment-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            _containment_site/
+            web-containment-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
+          include-hidden-files: true
+
+      - name: Résumer l’artefact de confinement
+        shell: bash
+        run: |
+          {
+            echo "### Artefact confinement GitHub Pages — aucun déploiement"
+            echo "- SHA source : `${{ github.event.pull_request.head.sha || github.sha }}`"
+            echo "- Fichiers : **$WEB_CONTAINMENT_FILE_COUNT**"
+            echo "- Artefact : [ouvrir/télécharger](${{ steps.containment-upload.outputs.artifact-url }})"
+            echo "- Digest : `${{ steps.containment-upload.outputs.artifact-digest }}`"
+            echo "- Démo Livre I : **master exact requis et validé dans tous les artefacts**"
+            echo "- Six chemins techniques critiques : **absents de l’artefact**"
+            echo
+            echo "> Ce bloc produit une preuve inspectable seulement; il ne publie rien."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Vérifier l’allowlist de publication
+        run: python3 scripts/build_netlify_public.py --check
+
+      - name: Construire l’artefact public
+        run: python3 scripts/build_netlify_public.py --output _site --standalone-netlify
+
+      - name: Vérifier et hacher le contenu public
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _site/.well-known/security.txt
+          test -f _site/.well-known/release.json
+          test -f _site/.nojekyll
+          test -f _site/CNAME
+          test -f _site/_headers
+          test -f _site/_redirects
+          grep -Fq "Content-Security-Policy:" _site/_headers
+          production_global_headers="$(awk 'BEGIN{inside=0} /^\/\*$/ {inside=1; next} inside && NF==0 {exit} inside {print}' _site/_headers)"
+          if grep -Fq "X-Robots-Tag: noindex, nofollow, noarchive" <<<"$production_global_headers"; then
+            echo "ERREUR: noindex global interdit dans l’artefact production." >&2
+            exit 1
+          fi
+          production_release_headers="$(awk 'BEGIN{inside=0} /^\/\.well-known\/release\.json$/ {inside=1; next} inside && NF==0 {exit} inside {print}' _site/_headers)"
+          grep -Fq "Cache-Control: no-store" <<<"$production_release_headers"
+          grep -Fq "X-Robots-Tag: noindex, nofollow, noarchive" <<<"$production_release_headers"
+          grep -Fq "/supabase/* /404.html 404!" _site/_redirects
+          test ! -e _site/script.js
+          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do
+            if grep -R -F -q -- "$endpoint" _site; then
+              echo "ERREUR: endpoint Formspree historique interdit dans l’artefact production: $endpoint" >&2
+              exit 1
+            fi
+          done
+          for forbidden in .github docs mobile-native scripts supabase tests; do
+            test ! -e "_site/$forbidden"
+          done
+          find _site -type f -print0 | sort -z | xargs -0 sha256sum > web-release-SHA256SUMS.txt
+          file_count="$(find _site -type f | wc -l | tr -d ' ')"
+          test "$file_count" -gt 0
+          echo "WEB_RELEASE_FILE_COUNT=$file_count" >> "$GITHUB_ENV"
+
+      - name: Construire l’artefact preview noindex
+        env:
+          CONTEXT: deploy-preview
+        run: python3 scripts/build_netlify_public.py --output _preview_site --standalone-netlify
+
+      - name: Vérifier et hacher le preview noindex
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _preview_site/.well-known/security.txt
+          test -f _preview_site/.well-known/release.json
+          test -f _preview_site/.nojekyll
+          test -f _preview_site/CNAME
+          test -f _preview_site/_headers
+          test -f _preview_site/_redirects
+          grep -Fq "Content-Security-Policy:" _preview_site/_headers
+          preview_global_headers="$(awk 'BEGIN{inside=0} /^\/\*$/ {inside=1; next} inside && NF==0 {exit} inside {print}' _preview_site/_headers)"
+          if ! grep -Fq "X-Robots-Tag: noindex, nofollow, noarchive" <<<"$preview_global_headers"; then
+            echo "ERREUR: noindex global requis dans l’artefact preview." >&2
+            exit 1
+          fi
+          preview_release_headers="$(awk 'BEGIN{inside=0} /^\/\.well-known\/release\.json$/ {inside=1; next} inside && NF==0 {exit} inside {print}' _preview_site/_headers)"
+          grep -Fq "Cache-Control: no-store" <<<"$preview_release_headers"
+          grep -Fq "X-Robots-Tag: noindex, nofollow, noarchive" <<<"$preview_release_headers"
+          grep -Fq "/supabase/* /404.html 404!" _preview_site/_redirects
+          test ! -e _preview_site/script.js
+          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do
+            if grep -R -F -q -- "$endpoint" _preview_site; then
+              echo "ERREUR: endpoint Formspree historique interdit dans l’artefact preview: $endpoint" >&2
+              exit 1
+            fi
+          done
+          for forbidden in .github docs mobile-native scripts supabase tests; do
+            test ! -e "_preview_site/$forbidden"
+          done
+          find _preview_site -type f -print0 | sort -z | xargs -0 sha256sum > web-preview-SHA256SUMS.txt
+          preview_count="$(find _preview_site -type f | wc -l | tr -d ' ')"
+          test "$preview_count" -eq "$WEB_RELEASE_FILE_COUNT"
+          echo "WEB_PREVIEW_FILE_COUNT=$preview_count" >> "$GITHUB_ENV"
+
+      - name: Construire l’artefact GitHub Pages isolé
+        run: python3 scripts/build_netlify_public.py --output _pages_site
+
+      - name: Vérifier et hacher l’artefact GitHub Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _pages_site/.well-known/security.txt
+          test -f _pages_site/.well-known/release.json
+          test -f _pages_site/.nojekyll
+          test -f _pages_site/CNAME
+          test ! -e _pages_site/_headers
+          test ! -e _pages_site/_redirects
+          test ! -e _pages_site/script.js
+          for endpoint in "https://formspree.io/f/xdenkzrv" "https://formspree.io/f/xkolwjdg"; do
+            if grep -R -F -q -- "$endpoint" _pages_site; then
+              echo "ERREUR: endpoint Formspree historique interdit dans l’artefact Pages: $endpoint" >&2
+              exit 1
+            fi
+          done
+          for forbidden in .github docs mobile-native scripts supabase tests; do
+            test ! -e "_pages_site/$forbidden"
+          done
+          find _pages_site -type f -print0 | sort -z | xargs -0 sha256sum > web-pages-SHA256SUMS.txt
+          pages_count="$(find _pages_site -type f | wc -l | tr -d ' ')"
+          expected_pages_count="$((WEB_RELEASE_FILE_COUNT - 2))"
+          test "$pages_count" -eq "$expected_pages_count"
+          echo "WEB_PAGES_FILE_COUNT=$pages_count" >> "$GITHUB_ENV"
+
+      - name: Téléverser l’artefact production vérifié
+        id: release-upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sinjira-web-release-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            _site/
+            web-release-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
+          include-hidden-files: true
+
+      - name: Téléverser l’artefact preview noindex
+        id: preview-upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sinjira-web-preview-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            _preview_site/
+            web-preview-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
+          include-hidden-files: true
+
+      - name: Téléverser l’artefact GitHub Pages vérifié
+        id: pages-upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sinjira-web-pages-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            _pages_site/
+            web-pages-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
+          include-hidden-files: true
+
+      - name: Résumer les artefacts de release
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### Artefacts web SINJIRA"
+            echo "- SHA source : \`${{ github.event.pull_request.head.sha || github.sha }}\`"
+            echo "- Marqueur d’identité : \`/.well-known/release.json\` embarque ce SHA; sur Netlify il est \`Cache-Control: no-store\` + \`noindex\`"
+            echo "- Fichiers production : **$WEB_RELEASE_FILE_COUNT**"
+            echo "- Production : [ouvrir/télécharger](${{ steps.release-upload.outputs.artifact-url }})"
+            echo "- Digest production : \`${{ steps.release-upload.outputs.artifact-digest }}\`"
+            echo "- Fichiers preview : **$WEB_PREVIEW_FILE_COUNT**"
+            echo "- Preview noindex : [ouvrir/télécharger](${{ steps.preview-upload.outputs.artifact-url }})"
+            echo "- Digest preview : \`${{ steps.preview-upload.outputs.artifact-digest }}\`"
+            echo "- Fichiers GitHub Pages : **$WEB_PAGES_FILE_COUNT**"
+            echo "- GitHub Pages isolé : [ouvrir/télécharger](${{ steps.pages-upload.outputs.artifact-url }})"
+            echo "- Digest GitHub Pages : \`${{ steps.pages-upload.outputs.artifact-digest }}\`"
+            echo "- Manifestes : \`web-release-SHA256SUMS.txt\` + \`web-preview-SHA256SUMS.txt\` + \`web-pages-SHA256SUMS.txt\`"
+            echo "- Configuration Netlify : \`_headers\` + \`_redirects\`; artefact Pages : aucun fichier de configuration Netlify"
+            echo
+            echo "> Aucun déploiement n’est effectué par ce workflow."
+          } >> "$GITHUB_STEP_SUMMARY"

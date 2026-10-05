@@ -14,9 +14,11 @@ PRIVATE_BOOK_EDGE_PATH = ROOT / "supabase/functions/get-private-book-url/index.t
 CONFIG_PATH = ROOT / "supabase/config.toml"
 
 FULL_BASENAME = "SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf"
-FULL_SHA256 = "9862a11000fe46a2010e7fb902b9bba3dfea70724855a6fb682e0a6192df88e3"
+FULL_SHA256 = "9acc8f561962850158cb073b122ee038c2731ee3b165deae482260c0cc1ad2d8"
+FULL_SIZE_BYTES = 7_325_502
 DEMO_BASENAME = "SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
-DEMO_SHA256 = "aad491ce8861928c561caa035fe5ee8cb16d42a8e307c93828758346cc93f26f"
+DEMO_SHA256 = "d0668a7b07a07321ef1e02cfceb826d3881330bb36417d53e5ff5bd32635628e"
+DEMO_SIZE_BYTES = 941_065
 PRODUCT_SLUG = "sinjira-livre-01-la-cendre-du-jugement"
 STATIC_EXTENSIONS = {".html", ".js", ".mjs", ".css", ".json", ".xml", ".webmanifest", ".txt"}
 SKIP_PARTS = {"codex", ".git", "node_modules"}
@@ -79,10 +81,12 @@ def validate(
         ("schema",): "sinjira.livre-i.delivery.v1",
         ("publication_state",): "not_activated",
         ("human_gate_required",): True,
-        ("demo", "pages"): 83,
+        ("demo", "pages"): 84,
         ("demo", "sha256"): DEMO_SHA256,
-        ("full_edition", "pages"): 1066,
+        ("demo", "size_bytes"): DEMO_SIZE_BYTES,
+        ("full_edition", "pages"): 1027,
         ("full_edition", "sha256"): FULL_SHA256,
+        ("full_edition", "size_bytes"): FULL_SIZE_BYTES,
         ("full_edition", "public_repository_allowed"): False,
         ("full_edition", "public_static_url_allowed"): False,
         ("full_edition", "delivery"): "authenticated_private_storage_only",
@@ -219,13 +223,15 @@ def self_test() -> None:
             "publication_state": "not_activated",
             "human_gate_required": True,
             "demo": {
-                "pages": 83,
+                "pages": 84,
                 "sha256": DEMO_SHA256,
+                "size_bytes": DEMO_SIZE_BYTES,
                 "public_url": "https://www.benoitcantin.com/projets/sinjira/documents/" + DEMO_BASENAME,
             },
             "full_edition": {
-                "pages": 1066,
+                "pages": 1027,
                 "sha256": FULL_SHA256,
+                "size_bytes": FULL_SIZE_BYTES,
                 "public_repository_allowed": False,
                 "public_static_url_allowed": False,
                 "delivery": "authenticated_private_storage_only",

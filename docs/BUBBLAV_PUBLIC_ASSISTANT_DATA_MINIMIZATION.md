@@ -1,0 +1,94 @@
+# BubblaV — minimisation des formulaires du chatbot public
+
+Dernière revue : 3 octobre 2026.
+
+Suivi fournisseur : issue GitHub **#443** — minimisation fournisseur terminée le 1er octobre 2026.
+
+## Principe
+
+Le chatbot public **Nova × SINJIRA** sert à expliquer et orienter à partir des contenus publics. Il ne remplace pas les parcours authentifiés de SINJIRA et ne doit pas devenir une seconde voie de collecte pour les fonctions de compte, de jeu, du Registre ou des commentaires.
+
+La règle appliquée est :
+
+- contenus publics et orientation : autorisés;
+- contact humain demandé explicitement : autorisé avec minimisation et consentement;
+- connexion, création/rejoindre une partie, Registre des Consciences, commentaire de roman et autres actions de compte : renvoi vers le parcours officiel du site;
+- aucune donnée privée de compte n'est nécessaire pour utiliser le chatbot public.
+
+## État BubblaV observé lors de la revue
+
+La revue initiale du 29 septembre 2026 avait relevé huit formulaires BubblaV actifs, tous avec `submission_count=0`.
+
+Depuis cette revue, le formulaire hors périmètre **Se Connecter À Son Compte** a été retiré côté fournisseur. Les lectures BubblaV suivantes ont ensuite été temporairement bloquées par une limite de débit fournisseur; aucune autre suppression n'est donc considérée confirmée sans nouvelle lecture fraîche.
+
+### Conservés
+
+1. `33f468ed-d73e-40cb-b6e2-fddff06f73eb` — **Contacter Le Projet Nova**
+   - coordonnées, sujet, message;
+   - consentement explicite obligatoire pour l'utilisation des renseignements.
+
+2. `62cdc933-e88a-481d-be2e-f76bc3ba007d` — **Contacter Benoit Cantin**
+   - coordonnées, projet, message;
+   - consentement explicite obligatoire pour l'utilisation des renseignements.
+
+L'intégration BubblaV `contact_form` / **Escalate to Human** reste aussi active uniquement pour une demande explicite de contact humain.
+
+### Retiré et confirmé côté fournisseur
+
+- `4bf9fa08-80af-4a71-991f-3c4ea3e3ecf7` — **Se Connecter À Son Compte**.
+  - retrait confirmé lors de la dernière lecture fournisseur réussie;
+  - aucune soumission n’était présente au moment de la revue préalable.
+
+### Retirés et confirmés côté fournisseur — 1er octobre 2026
+
+Une lecture fournisseur fraîche a d’abord confirmé `enabled=true` et `submission_count=0` pour chacun des cinq formulaires hors périmètre. Ils ont ensuite été supprimés individuellement, chaque suppression ayant répondu `deleted:true` :
+
+- `fb6b7188-0ff5-4eec-b751-2a3af99dfb89` — **Rejoindre Une Partie**;
+- `89288220-eda7-4a73-8d71-832e1c31ad6f` — **Créer Une Partie**;
+- `f5924b79-7932-4651-9621-5e7f538752ee` — **Inscrire Une Conscience**;
+- `7fa76ade-5322-4465-a579-db56ab21b402` — **Soumettre Un Commentaire**;
+- `a8806fd2-8030-4104-a73c-c3a9470bcd37` — **Support Request Form**.
+
+Une relecture immédiate de `list_forms` confirme ensuite **`total=2`** et uniquement :
+- **Contacter Le Projet Nova** — actif, consentement explicite obligatoire, zéro soumission;
+- **Contacter Benoit Cantin** — actif, consentement explicite obligatoire, zéro soumission.
+
+L’intégration `contact_form` / **Escalate to Human** reste active avec une instruction fournisseur limitée à une demande explicite de contact humain.
+
+La lecture des flows continue de retourner une erreur interne fournisseur sur le plan actuel, mais aucun formulaire hors périmètre n’existe désormais dans l’inventaire fournisseur. Le widget public reste désactivé tant que la validation réseau/CSP finale de #444 n’est pas terminée.
+
+## État d’application
+
+- règle de gouvernance Git : appliquée;
+- pages publiques et politique de confidentialité : alignées;
+- accueil du widget BubblaV : aligné pour rediriger les actions de compte vers les parcours officiels;
+- retrait de **Se Connecter À Son Compte** : **confirmé**;
+- cinq formulaires hors périmètre ont été **supprimés après confirmation de zéro soumission**;
+- relecture finale `list_forms` : **`total=2`**, uniquement les deux formulaires publics de contact autorisés;
+- **Projet Nova a été retiré du sélecteur du formulaire personnel `Contacter Benoit Cantin`**; les demandes Nova disposent de leur formulaire fournisseur séparé;
+- `allow_all_domains=false` et `allowed_domains=["www.benoitcantin.com"]` sont confirmés côté fournisseur (#444);
+- la lecture des flows reste indisponible, mais aucun formulaire hors périmètre ne subsiste dans l’inventaire fournisseur;
+- aucune soumission ou historique existant n’a été supprimé puisque les cinq formulaires retirés avaient chacun `submission_count=0`.
+
+## Parcours canoniques
+
+- connexion et récupération : pages officielles du Compte SINJIRA;
+- création/rejoindre une partie : parcours de jeu authentifié;
+- Registre des Consciences : formulaire officiel du Registre avec ses protections de compte;
+- commentaires : parcours roman relié au compte et à la modération;
+- support général : Contact officiel ou escalade humaine explicite;
+- Projet Nova : formulaire public de contact avec consentement.
+
+## Garde de gouvernance
+
+Toute nouvelle forme de collecte ajoutée à BubblaV doit être revue avant activation selon :
+
+1. nécessité réelle;
+2. minimisation des champs;
+3. caractère public ou authentifié du parcours;
+4. consentement lorsque requis;
+5. absence de doublon avec un parcours sécurisé existant;
+6. conservation et destination des données;
+7. protection particulière des mineurs et des données sensibles.
+
+Cette revue ne modifie aucune migration Supabase, aucun secret, aucun reviewed batch et aucune ligne du ledger production.
