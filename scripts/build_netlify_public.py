@@ -76,6 +76,9 @@ SINJIRA_PUBLIC_DOCUMENTS = {
     Path("projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"),
 }
 SINJIRA_DOCUMENTS_DIR = Path("projets/sinjira/documents")
+SINJIRA_PRIVATE_RELEASE_METADATA = {
+    Path("projets/sinjira/romans/livre-1-release.json"),
+}
 LIVRE1_DEMO_PUBLIC_PATH = Path(
     "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
 )
@@ -241,6 +244,9 @@ REQUIRED_PUBLIC_PATHS = (
     "transparence-ia.html",
     "projets/projet-nova/index.html",
     "projets/projet-nova/script.js",
+    "projets/sinjira/romans/index.html",
+    "projets/sinjira/romans/lire-demo.html",
+    "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
     "compte/index.html",
     "admin/index.html",
     "app/index.html",
@@ -317,6 +323,11 @@ def relative_path_allowed(rel: Path) -> bool:
 
     # Les assets runtime ne doivent pas embarquer leurs README de maintenance.
     if parts[0] == "assets" and rel.suffix.lower() in {".md", ".txt", ".toml"}:
+        return False
+
+    # Les métadonnées techniques de release peuvent rester versionnées dans Git,
+    # mais ne sont jamais nécessaires au runtime public.
+    if rel in SINJIRA_PRIVATE_RELEASE_METADATA:
         return False
 
     # Les documents SINJIRA sont publiés par allowlist exacte. Une future
@@ -782,6 +793,7 @@ def validate_plan() -> list[str]:
         Path("projets/projet-nova/netlify.toml"),
         Path("projets/sinjira/codex/livre-i-delivery-contract.json"),
         Path("projets/sinjira/codex/livre-i-source-artifacts-2026-09-15.json"),
+        Path("projets/sinjira/romans/livre-1-release.json"),
     ):
         if relative_path_allowed(rel):
             errors.append(f"Artefact technique sous-arbre autorisé par erreur: {rel.as_posix()}")
