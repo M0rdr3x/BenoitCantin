@@ -8,7 +8,7 @@ FUNCTIONS = ROOT / "supabase" / "functions"
 CONFIG = ROOT / "supabase" / "config.toml"
 
 CANONICAL = {
-    "admin-analytics", "admin-console", "admin-license-codes", "admin-reports",
+    "admin-analytics", "admin-console", "admin-license-codes", "admin-private-novel-release", "admin-reports",
     "admin-sinjira-v18", "admin-social-v20", "admin-users", "conscience-vault",
     "delete-player-account", "fracture-engine-gateway", "get-document-url",
     "get-private-book-url", "get-private-book-reading-url", "get-private-novel-url", "life-story-delivery", "life-story-export", "personal-ai",
@@ -61,6 +61,17 @@ PRIVATE_BOOK_ENDPOINT_GUARDS = (
 )
 
 JWT_SENSITIVE_GUARDS = {
+    "admin-private-novel-release": (
+        "req.method!=='POST'", "MAX_REQUEST_BYTES=4096", "requiredAdmin(req)",
+        "const {service,aal}=await requiredAdmin(req)", "readBoundedJson(req)", "req.body.getReader()",
+        "reader.cancel('REQUEST_TOO_LARGE')", "new TextDecoder('utf-8',{fatal:true})",
+        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON",
+        "if(action!=='disable')", "aal?.nextLevel!=='aal2'", "aal?.currentLevel!=='aal2'",
+        "ACTIVER_LA_DIFFUSION_PRIVEE", "sinjira_private_novel_release_status",
+        "sinjira_record_private_novel_integrity", "sinjira_set_private_novel_delivery",
+        "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
+        "Referrer-Policy", "no-referrer",
+    ),
     "conscience-vault": (
         "req.method !== 'POST'", "MAX_REQUEST_BYTES", "readBoundedJson", "req.body.getReader()",
         "REQUEST_TOO_LARGE", "INVALID_JSON", "requiredVaultUser", "service_conscience_evaluate_access",
@@ -302,7 +313,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 25 fonctions canoniques, JWT/custom auth cohérents, get-document-url borne état projet + droit produit avant livraison, Livre I vérifie âge puis owner/famille/droit produit canonique sans mutation d entitlement, frontières HTTP privées bornées/no-store et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 26 fonctions canoniques, JWT/custom auth cohérents, get-document-url borne état projet + droit produit avant livraison, Livre I vérifie âge puis owner/famille/droit produit canonique sans mutation d entitlement, frontières HTTP privées bornées/no-store et aucun ancien appel Edge référencé.")
     return 0
 
 
