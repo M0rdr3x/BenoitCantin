@@ -39,9 +39,9 @@ La vague CI associée au dossier précédent a confirmé que les parcours Commun
 - Profil privé : **22/22** historique et **13/13** enfant;
 - romans privés : **13/13**, avec auto-test statique courant **9/9**;
 - Mode Voyage : rétention **11/11** et visibilité client **28/28**, les workflows consentement/self-only/minimisation restant également verts;
-- snapshot release : **44 migrations futures non revues**, empreintes rebaselinées après #453, reviewed batch et ledger inchangés.
+- snapshot release : **45 migrations futures non revues**, empreintes rebaselinées après #453, reviewed batch et ledger inchangés.
 
-La classification exhaustive des workflows rouges de ce HEAD montre que leurs étapes métier/sécurité passent avant de s'arrêter sur le **ledger production volontairement bloqué** par les 44 migrations non revues. Le prévol Supabase suit la même logique : ses tests de sécurité passent, puis la vérification du dépôt s'arrête sur ce ledger.
+La classification exhaustive des workflows rouges de ce HEAD montre que leurs étapes métier/sécurité passent avant de s'arrêter sur le **ledger production volontairement bloqué** par les 45 migrations non revues. Le prévol Supabase suit la même logique : ses tests de sécurité passent, puis la vérification du dépôt s'arrête sur ce ledger.
 
 ## 2. Correctifs forward-only issus de la revue technique
 
@@ -538,11 +538,11 @@ Le snapshot a volontairement détecté que plusieurs migrations non revues avaie
 - `20260914223000_sinjira_v25_travel_mode_client_visibility_boundary.sql` : la réponse des implémentations internes est maintenant minimisée dès A3, supprimant la fenêtre transitoire avant `20260921005000`;
 - `20260919093000_sinjira_v25_private_novel_catalog.sql` : RLS activée dès la création du registre privé et rôle propriétaire résolu par la frontière serveur canonique.
 
-Cette réouverture de revue **ne transforme aucune migration en migration production revue**. Le lot courant compte désormais 44 migrations, toutes non revues au sens du `production-reviewed-migration-batch.txt`.
+Cette réouverture de revue **ne transforme aucune migration en migration production revue**. Le lot courant compte désormais 45 migrations, toutes non revues au sens du `production-reviewed-migration-batch.txt`.
 
 ## 3. Lot local futur actuellement non revu
 
-Le snapshot de revue attend exactement **44 migrations locales futures non revues**.
+Le snapshot de revue attend exactement **45 migrations locales futures non revues**.
 
 ### Mode Voyage
 
@@ -607,6 +607,7 @@ Le snapshot de revue attend exactement **44 migrations locales futures non revue
 | `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | `3c80073c9bc027707d1f12a129cebd91a8d7ba4f` |
 | `20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql` | `5cdb8c576aae2ff7adcf75dd1270ba446b063e59` |
 | `20261004235000_sinjira_v25_livre_i_master_2026_10_04.sql` | `7a86cdf0dd6e292e884a22930c9cd8e90d949c31` |
+| `20261005150000_sinjira_v25_private_novel_integrity_gate.sql` | `6f8b14370fb6e7fcde317a517fa3463dc3525b9e` |
 
 Ces empreintes servent uniquement à la **revue humaine**. Elles ne doivent pas être ajoutées automatiquement à `supabase/production-reviewed-migration-batch.txt`.
 
@@ -623,6 +624,8 @@ Mise à jour du 24 septembre 2026 : `20260924173000_sinjira_v25_junior_comment_a
 Mise à jour du 24 septembre 2026 : `20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql` ferme une incohérence de modération : une publication sous `hide_content` ne peut plus recevoir de nouveaux commentaires Junior, même si un client conserve son UUID. La réversion humaine restaure le comportement normal; aucun contenu historique n’est supprimé. Cette migration est ajoutée au snapshot comme **NON REVUE / NON APPROUVÉE**.
 
 Mise à jour du 5 octobre 2026 : `20261004235000_sinjira_v25_livre_i_master_2026_10_04.sql` rebaseline uniquement `total_pages` du Livre I à **1027** lorsque la valeur diffère. Elle ne publie aucun PDF, ne configure aucun bucket/chemin Storage et n’active aucune diffusion privée. Blob courant : `7a86cdf0dd6e292e884a22930c9cd8e90d949c31`. Cette 44e migration reste **NON REVUE / NON APPROUVÉE**.
+
+Mise à jour du 5 octobre 2026 : `20261005150000_sinjira_v25_private_novel_integrity_gate.sql` ajoute une porte forward-only d’intégrité pour les romans privés : métadonnées du maître attendu, vérification d’un bucket privé et de la forme de l’objet Storage, preuve SHA-256 enregistrée côté serveur, puis activation explicitement séparée. Elle ne crée aucun PDF, ne configure aucun chemin Storage et ne passe jamais `enabled=true` automatiquement. Blob courant : `6f8b14370fb6e7fcde317a517fa3463dc3525b9e`. Cette 45e migration reste **NON REVUE / NON APPROUVÉE**.
 
 Mise à jour du 25 septembre 2026 : `20260916210000_sinjira_v25_child_guardian_signup.sql` ne contient plus d’exception créateur fondée sur une adresse personnelle. La classification d’âge s’appuie désormais sur l’autorité serveur canonique `internal_admin_users.role='owner'` et le verrou historique `enforce_sinjira_single_admin` est reconvergé vers l’invariant structurel d’un seul compte, sans adresse personnelle. Les preuves utilisent une identité synthétique et le validateur interdit la réintroduction d’une identité courriel dans ces deux gardes. L’empreinte a été rafraîchie uniquement pour refléter ce resserrement de confidentialité : la migration reste **NON REVUE / NON APPROUVÉE**.
 
@@ -671,7 +674,7 @@ Ne pas, pour rendre la CI verte :
 ## 6. Séquence de revue humaine
 
 1. Geler le HEAD exact de revue.
-2. Relire les **44 migrations** dans l’ordre chronologique canonique; `20260921005000` appartient fonctionnellement au lot Mode Voyage, `20260924173000` ferme la visibilité des contenus Junior après révocation d’auteur et `20260924191000` arrête les nouveaux commentaires sur une publication masquée.
+2. Relire les **45 migrations** dans l’ordre chronologique canonique; `20260921005000` appartient fonctionnellement au lot Mode Voyage, `20260924173000` ferme la visibilité des contenus Junior après révocation d’auteur et `20260924191000` arrête les nouveaux commentaires sur une publication masquée.
 3. Vérifier RLS, privilèges, `SECURITY DEFINER`, `search_path`, rétention, suppression et transitions d’âge.
 4. Comparer les empreintes ci-dessus.
 5. Relire les preuves CI et pgTAP, en particulier la révocation multi-tuteur.
