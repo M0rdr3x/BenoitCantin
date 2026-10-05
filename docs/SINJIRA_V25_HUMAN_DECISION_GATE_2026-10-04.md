@@ -6,15 +6,16 @@ HEAD de référence : `193b686f34ba89fe7ec91022faf1651f14bf3e18`
 
 > **STATUT : DÉCISIONS HUMAINES EN ATTENTE.**
 >
-> Ce document résume les choix qui doivent être explicitement acceptés, refusés ou renvoyés en modification avant toute promotion des 43 migrations futures. Il ne constitue aucune approbation, ne modifie aucun SQL, ne modifie pas `supabase/production-reviewed-migration-batch.txt`, ne modifie pas `supabase/production-migration-ledger.txt` et n'autorise aucune écriture Supabase production.
+> Ce document résume les choix qui doivent être explicitement acceptés, refusés ou renvoyés en modification avant toute promotion des 44 migrations futures. Il ne constitue aucune approbation, ne modifie aucun SQL, ne modifie pas `supabase/production-reviewed-migration-batch.txt`, ne modifie pas `supabase/production-migration-ledger.txt` et n'autorise aucune écriture Supabase production.
 
 ## Preuve technique attachée au HEAD
 
 - PR draft, mergeable, 1698 commits devant `main`, 0 derrière.
 - CI complète : **144 runs terminés = 131 success / 12 skipped / 1 failure**.
 - L'unique failure est le verrou volontaire `migration-history-guard` : toutes les étapes de sécurité, plan, traçabilité et provenance passent; seule la promotion des migrations non approuvées est refusée.
-- **43 migrations futures** restent hors du reviewed batch.
-- **42/43** correspondent aux blobs déjà préparés dans les paquets de revue historiques.
+- **44 migrations futures** restent hors du reviewed batch.
+- **42/44** correspondent aux blobs déjà préparés dans les paquets de revue historiques.
+- La 44e migration est `20261004235000_sinjira_v25_livre_i_master_2026_10_04.sql` : correction forward-only du catalogue Livre I de 1066 à 1027 pages; elle ne configure aucun bucket/path, n’active aucune diffusion et ne modifie aucune migration historique.
 - La migration enfant `20260916210000_sinjira_v25_child_guardian_signup.sql` a été corrigée après la décision technique #453; blob courant : `3231fc2720a28700be9d1be117e53a9a2448b08b`.
 - Les frontières calendaires 11 / 13 / 18 ans repassent **75/75** en pgTAP; cette preuve ne vaut pas approbation du Lot B.
 
@@ -78,9 +79,10 @@ Le reviewed batch ne peut être envisagé que lorsque :
 
 - [ ] H1 à H14 ne contiennent plus aucun `EN ATTENTE`;
 - [ ] toute décision `MODIFIER` a été implémentée puis revalidée;
-- [ ] les 43 migrations du HEAD décidé sont gelées par empreinte;
+- [ ] les 44 migrations du HEAD décidé sont gelées par empreinte;
+- [ ] la migration Livre I 2026-10-04 est revue comme changement technique de métadonnée, sans être confondue avec une autorisation de diffusion privée;
 - [ ] les tests associés sont verts;
-- [ ] le reviewer confirme séparément qu'il approuve **le lot complet des 43 migrations**, pas seulement les principes;
+- [ ] le reviewer confirme séparément qu'il approuve **le lot complet des 44 migrations**, pas seulement les principes;
 - [ ] #240, #439 et #437 restent traités comme des verrous indépendants;
 - [ ] aucune écriture production n'est déduite de la revue.
 
