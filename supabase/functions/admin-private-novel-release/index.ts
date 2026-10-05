@@ -148,10 +148,20 @@ Deno.serve(async(req)=>{
   if(req.method!=='POST')return privateJson({ok:false,error:'Méthode non autorisée.'},405);
 
   try{
-    const {service}=await requiredAdmin(req);
+    const {service,aal}=await requiredAdmin(req);
     const body=await readBoundedJson(req);
     const action=safeAction(body.action);
     const novelSlug=safeSlug(body.novel_slug);
+
+    // La désactivation reste une voie fail-safe disponible à un administrateur
+    // authentifié même sans facteur MFA déjà enrôlé. Toute opération qui lit
+    // l'état de release, enregistre une preuve ou active la diffusion exige
+    // explicitement une session AAL2 et ne dépend pas de la politique admin
+    // progressive générale.
+    if(action!=='disable'){
+      if(aal?.nextLevel!=='aal2')throw new Error('MFA_SETUP_REQUIRED');
+      if(aal?.currentLevel!=='aal2')throw new Error('MFA_REQUIRED');
+    }
 
     if(action==='status'){
       const {data,error}=await service.rpc('sinjira_private_novel_release_status',{p_novel_slug:novelSlug});
