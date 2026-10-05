@@ -1,4 +1,4 @@
-# SINJIRA™ V25 — Triage statique des 44 migrations futures
+# SINJIRA™ V25 — Triage statique des 45 migrations futures
 
 Date du scan : **2026-09-23 (America/Toronto)**  
 PR : **#435** — branche `a1/integration-rehearsal`
@@ -11,7 +11,7 @@ PR : **#435** — branche `a1/integration-rehearsal`
 
 ## Résultat global
 
-Le scan a porté sur les **44 migrations futures non revues** figées par le snapshot release.
+Le scan a porté sur les **45 migrations futures non revues** figées par le snapshot release.
 
 Constats mécaniques :
 
@@ -43,6 +43,7 @@ Ce scan ne conclut pas qu'une migration est sûre pour la production.
 | `20260924173000_sinjira_v25_junior_comment_author_visibility.sql` | redéfinition `SECURITY DEFINER` du fil Junior interne; commentaires désormais bornés à l’éligibilité Junior courante de leur auteur; aucun effacement de contenu |
 | `20260924191000_sinjira_v25_junior_hidden_post_comment_guard.sql` | redéfinition `SECURITY DEFINER` de la création de commentaire Junior interne; exige la visibilité de modération du post; aucune mutation de contenu historique |
 | `20261004235000_sinjira_v25_livre_i_master_2026_10_04.sql` | UPDATE transactionnel ciblé du compteur `total_pages` à 1027; pas de DDL/RLS/Storage/activation; vérifier ciblage slug et idempotence |
+| `20261005150000_sinjira_v25_private_novel_integrity_gate.sql` | DDL additif sur registre privé; 3 `SECURITY DEFINER`; lecture `storage.buckets`/`storage.objects`; RPC `service_role`; mise à jour intégrité et bascule `enabled`; vérifier `search_path`, ACL, bucket privé, métadonnées objet et séparation activation humaine |
 
 ## Priorité de lecture 2 — mutations de données / cycle de vie
 
@@ -60,6 +61,7 @@ Relire particulièrement les effets de bord, l'idempotence et la réexécution d
 - `20260919093000_sinjira_v25_private_novel_catalog.sql` — registre privé + RLS;
 - `20260919103000_sinjira_v25_livre_i_catalog_seed.sql` — seed Livre I;
 - `20261004235000_sinjira_v25_livre_i_master_2026_10_04.sql` — UPDATE conditionnel du nombre de pages du Livre I à 1027; aucun DDL, RLS, chemin Storage ou activation;
+- `20261005150000_sinjira_v25_private_novel_integrity_gate.sql` — DDL additif et UPDATE ciblé des métadonnées du maître; ajoute readiness/intégrité/activation réservées au `service_role`, sans upload ni activation automatique;
 - `20260919110000_sinjira_v25_social_public_pseudo_privacy.sql` — convergence pseudo public + trigger;
 - `20260921005000_sinjira_v25_travel_mode_internal_response_minimization.sql` — réécriture/minimisation de réponses;
 - `20260922030000_sinjira_v25_extension_product_access.sql` — `product_slug`, RLS et retrait d’anciennes policies;
@@ -122,6 +124,6 @@ Ces éléments restent des étapes humaines ou de prévol séparées.
 
 La revue du 24 septembre a confirmé un risque d’addition RLS par `OR` dans les migrations #4/#6 : les anciennes policies projets/documents sont désormais retirées avant les gardes `child`; leurs empreintes ont été rafraîchies sans approbation production.
 
-Aucun motif mécanique de type `DROP TABLE`, `DROP COLUMN`, `TRUNCATE` ou `SECURITY DEFINER` sans `search_path` n'a été détecté dans le lot figé de 44 migrations.
+Aucun motif mécanique de type `DROP TABLE`, `DROP COLUMN`, `TRUNCATE` ou `SECURITY DEFINER` sans `search_path` n'a été détecté dans le lot figé de 45 migrations.
 
 Cela réduit le champ de revue, mais **ne transforme aucune migration en migration revue production**.
