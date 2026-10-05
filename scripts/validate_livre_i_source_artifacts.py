@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Garde Livre I: nouveaux maîtres du 2026-10-04, sans effacer la provenance historique."""
+"""Garde Livre I: démo exacte déployée, intégrale privée staged, provenance préservée."""
 
 from __future__ import annotations
 
@@ -27,8 +27,8 @@ def validate(manifest: dict, contract: dict) -> list[str]:
     errors: list[str] = []
     if manifest.get("schema") != "sinjira.livre-i.source-artifacts.v3":
         errors.append("Le manifeste courant Livre I doit être en schéma v3.")
-    if manifest.get("state") != "staged_source_files_not_deployed":
-        errors.append("Les maîtres doivent rester staged / non déployés par défaut.")
+    if manifest.get("state") != "demo_deployed_full_private_staged":
+        errors.append("La démo doit être déployée exactement; l’intégrale doit rester privée/staged.")
     if manifest.get("production_deployment_authorized") is not False:
         errors.append("Le manifeste ne doit pas autoriser la production par défaut.")
     if manifest.get("historical_manifest_preserved") != HISTORICAL_MANIFEST.name:
@@ -75,8 +75,10 @@ def validate(manifest: dict, contract: dict) -> list[str]:
         errors.append("Le texte extrait du candidat doit être identique à la source.")
     if candidate.get("text_extract_sha256") != DEMO_TEXT_SHA:
         errors.append("L'empreinte du texte extrait de la démo a dérivé.")
-    if candidate.get("deployment_authorized") is not False:
-        errors.append("Le manifeste source ne doit pas auto-autoriser le déploiement.")
+    if candidate.get("deployment_authorized") is not True:
+        errors.append("La démo publique exacte doit être marquée comme déployée/autorisée.")
+    if candidate.get("deployment_state") != "deployed_public_exact_source":
+        errors.append("La démo publique doit rester dans l’état deployed_public_exact_source.")
 
     if contract.get("publication_state") != "prepared_not_deployed":
         errors.append("Le contrat Livre I doit rester préparé mais non déployé.")
@@ -85,9 +87,19 @@ def validate(manifest: dict, contract: dict) -> list[str]:
     for key, value in (("pages",84),("size_bytes",941_065),("sha256",DEMO_SHA)):
         if contract_demo.get(key) != value:
             errors.append(f"Contrat démo incohérent: {key}.")
+    if contract_demo.get("publication_state") != "deployed_public_exact_source":
+        errors.append("Le contrat doit marquer la démo exacte comme publiquement déployée.")
     for key, value in (("pages",1027),("size_bytes",7_325_502),("sha256",FULL_SHA)):
         if contract_full.get(key) != value:
             errors.append(f"Contrat intégrale incohérent: {key}.")
+    if contract_full.get("publication_state") != "prepared_not_deployed":
+        errors.append("L’intégrale doit rester prepared_not_deployed.")
+    if contract_full.get("release_gate") != "private_storage_integrity_plus_explicit_human_confirmation":
+        errors.append("Le contrat intégral doit exiger intégrité + confirmation humaine explicite.")
+    if contract_full.get("generic_delivery_endpoint") != "get-private-novel-url":
+        errors.append("Le contrat intégral doit pointer vers la livraison privée générique.")
+    if contract_full.get("admin_release_endpoint") != "admin-private-novel-release":
+        errors.append("Le contrat intégral doit pointer vers la porte admin de release.")
     if contract_full.get("production_deployment_authorized") is not False:
         errors.append("Le contrat ne doit pas autoriser la production.")
     if contract_full.get("public_repository_allowed") is not False:
@@ -122,6 +134,10 @@ def self_test() -> None:
     cases.append(("candidat transcodé", m, contract))
     m = json.loads(json.dumps(manifest)); m["demo_web_candidate"]["git_blob_sha1"] = "0" * 40
     cases.append(("blob Git différent", m, contract))
+    m = json.loads(json.dumps(manifest)); m["demo_web_candidate"]["deployment_authorized"] = False
+    cases.append(("démo redéclarée non déployée", m, contract))
+    m = json.loads(json.dumps(manifest)); m["state"] = "staged_source_files_not_deployed"
+    cases.append(("état de déploiement démo régressé", m, contract))
     c = json.loads(json.dumps(contract)); c["full_edition"]["production_deployment_authorized"] = True
     cases.append(("contrat production activé", manifest, c))
 
@@ -144,7 +160,7 @@ def main() -> int:
         for error in errors:
             print("- " + error)
         return 1
-    print("OK Livre I: maître démo exact, intégrale privée 1027 pages, historique préservé, production non autorisée.")
+    print("OK Livre I: démo exacte 84 pages déployée, intégrale privée 1027 pages staged, historique préservé, production intégrale non autorisée.")
     return 0
 
 
