@@ -49,7 +49,7 @@ La release privée est volontairement découpée en étapes indépendantes :
 
 La migration de garde d’intégrité ne crée pas le PDF, ne téléverse rien, ne configure aucun chemin Storage, ne rend aucun bucket public et n’active aucun actif automatiquement. Elle exige un objet présent dans un bucket privé, la taille et le MIME attendus, une preuve d’intégrité enregistrée et réserve les RPC de release au `service_role`.
 
-L’Edge Function d’administration exige une session administrateur avec MFA via `requiredAdmin()`, impose un corps JSON borné, ne reçoit jamais les octets du PDF, ne permet pas de remplacer le maître, ne peut activer sans la phrase de confirmation et le SHA-256 attendu, et permet la désactivation immédiate sans barrière supplémentaire.
+L’Edge Function d’administration exige une session administrateur. Les actions `status`, `record_integrity` et `enable` exigent en plus une session **AAL2 réelle**; si aucun facteur MFA n’est enrôlé, elles refusent avec `MFA_SETUP_REQUIRED`. L’action `disable` reste volontairement disponible sous la politique administrateur progressive afin de conserver une voie fail-safe immédiate. Le corps JSON est borné, aucun octet du PDF n’est reçu par cette Edge Function, le maître ne peut pas être remplacé par ce chemin et l’activation exige la phrase de confirmation ainsi que le SHA-256 attendu.
 
 ## Rollback
 
