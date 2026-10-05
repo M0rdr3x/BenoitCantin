@@ -94,7 +94,7 @@ def validate(migration: str, test: str, edge: str, config: str, workflow: str, m
             errors.append(f"pgTAP intégrité: preuve absente: {marker}")
 
     for marker in (
-        "requiredadmin(req)",
+        "const{service,aal}=awaitrequiredadmin(req)",
         "max_request_bytes=4096",
         "req.body.getreader()",
         "reader.cancel('request_too_large')",
@@ -104,6 +104,9 @@ def validate(migration: str, test: str, edge: str, config: str, workflow: str, m
         "service.rpc('sinjira_record_private_novel_integrity'",
         "service.rpc('sinjira_set_private_novel_delivery'",
         f"enable_confirmation='{ENABLE_CONFIRMATION.lower()}'",
+        "if(action!=='disable')",
+        "if(aal?.nextlevel!=='aal2')thrownewerror('mfa_setup_required')",
+        "if(aal?.currentlevel!=='aal2')thrownewerror('mfa_required')",
         "if(confirmation!==enable_confirmation)thrownewerror('enable_confirmation_required')",
         "if(!before?.can_enable)thrownewerror('novel_private_release_not_ready')",
         "if(string(before?.expected_sha256||'').tolowercase()!==sha256)",
@@ -148,6 +151,7 @@ def self_test(contents: dict[str, str]) -> None:
         "bucket forcé par migration": ("migration", "    total_pages=1027,", "    storage_bucket='public-books',\n    total_pages=1027,"),
         "service role retiré": ("migration", "coalesce(auth.jwt()->>'role','') <> 'service_role'", "false"),
         "confirmation humaine retirée": ("edge", "if(confirmation!==ENABLE_CONFIRMATION)throw new Error('ENABLE_CONFIRMATION_REQUIRED');", ""),
+        "AAL2 strict retiré": ("edge", "if(action!=='disable'){", "if(false){"),
         "JWT désactivé": ("config", "[functions.admin-private-novel-release]\nverify_jwt = true", "[functions.admin-private-novel-release]\nverify_jwt = false"),
         "test bucket public retiré": ("test", "set public=true", "set public=false"),
     }
