@@ -71,7 +71,7 @@ def validate(migration: str, test: str, edge: str, config: str, workflow: str, m
         "public.sinjira_record_private_novel_integrity(text,text,bigint)",
         "public.sinjira_set_private_novel_delivery(text,boolean)",
     ):
-        expected = f"not has_function_privilege('authenticated','{signature.lower()}','execute')"
+        expected = compact(f"not has_function_privilege('authenticated','{signature.lower()}','execute')")
         if expected not in t:
             errors.append(f"pgTAP: frontière authenticated absente pour {signature}.")
 
