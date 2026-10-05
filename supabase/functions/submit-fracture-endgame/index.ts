@@ -10,6 +10,8 @@ const MAX_REQUEST_BYTES = 4096;
 const PARTY_CODE_RE = /^FRM-[A-Z0-9]{6}$/;
 const PAID_EXTERNAL_SERVICES_ENABLED = false;
 
+type JsonRecord = Record<string, unknown>;
+
 function privateJson(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -24,6 +26,68 @@ function privateJson(data: unknown, status = 200) {
       'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
     }
   });
+}
+
+async function readLimitedJson(req: Request): Promise<{ body?: JsonRecord; response?: Response }> {
+  const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
+  if (contentType !== 'application/json') {
+    return { response: privateJson({ ok: false, error: 'Corps JSON requis.' }, 415) };
+  }
+
+  const rawLength = req.headers.get('content-length');
+  if (rawLength !== null) {
+    const normalizedLength = rawLength.trim();
+    if (!/^\d+$/.test(normalizedLength)) {
+      return { response: privateJson({ ok: false, error: 'Requête invalide.' }, 400) };
+    }
+    const declaredLength = Number(normalizedLength);
+    if (!Number.isSafeInteger(declaredLength)) {
+      return { response: privateJson({ ok: false, error: 'Requête invalide.' }, 400) };
+    }
+    if (declaredLength > MAX_REQUEST_BYTES) {
+      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+    }
+  }
+
+  const reader = req.body?.getReader();
+  if (!reader) return { body: {} };
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    total += value.byteLength;
+    if (total > MAX_REQUEST_BYTES) {
+      try { await reader.cancel(); } catch { /* Le rejet 413 reste prioritaire. */ }
+      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+    }
+    chunks.push(value);
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  let rawBody: string;
+  try {
+    rawBody = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return { response: privateJson({ ok: false, error: 'JSON invalide.' }, 400) };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawBody || '{}');
+  } catch {
+    return { response: privateJson({ ok: false, error: 'JSON invalide.' }, 400) };
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return { response: privateJson({ ok: false, error: 'JSON invalide.' }, 400) };
+  }
+  return { body: parsed as JsonRecord };
 }
 
 function cleanText(value: unknown, max = 300) {
@@ -54,33 +118,12 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return privateJson({ ok: false, error: 'Méthode non autorisée.' }, 405);
 
   try {
-    const contentType = (req.headers.get('content-type') || '').toLowerCase();
-    if (!contentType.startsWith('application/json')) {
-      return privateJson({ ok: false, error: 'Corps JSON requis.' }, 415);
-    }
-    const declaredLength = Number(req.headers.get('content-length') || '0');
-    if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BYTES) {
-      return privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413);
-    }
-
     const user = await requiredUser(req);
     const service = serviceClient();
 
-    const rawBody = await req.text();
-    if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
-      return privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413);
-    }
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(rawBody);
-    } catch {
-      return privateJson({ ok: false, error: 'JSON invalide.' }, 400);
-    }
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return privateJson({ ok: false, error: 'JSON invalide.' }, 400);
-    }
-    const body = parsed as Record<string, unknown>;
+    const parsedRequest = await readLimitedJson(req);
+    if (parsedRequest.response) return parsedRequest.response;
+    const body = parsedRequest.body || {};
     if (Object.keys(body).length !== 1 || typeof body.party_code !== 'string') {
       return privateJson({ ok: false, error: 'Code de partie requis.' }, 400);
     }

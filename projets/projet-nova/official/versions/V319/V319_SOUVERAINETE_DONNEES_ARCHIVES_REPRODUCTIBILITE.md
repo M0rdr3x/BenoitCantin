@@ -164,3 +164,7 @@ V319 préserve exactement les protections V316 sur l’identité et la vie priv�
 La souveraineté des données publiques ne justifie ni une clé d’accès universelle, ni une superbase de données, ni un profil citoyen transversal, ni une surveillance générale.
 
 V319 ne produit aucun effet juridique automatique, ne ferme aucune des 14 décisions politiques héritées, ne valide aucune des 26 sections anglaises et ne modifie aucun paramètre fiscal V308.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

@@ -10,7 +10,9 @@ from validate_supabase_production_preflight_security import (  # noqa: E402
     APPLY_JOB_GUARD,
     APPLY_STEP_GUARD,
     CONFIRMATION,
+    LOCAL_WORKSPACE_GUARD,
     PINNED_ACTIONS,
+    READY_FOR_REVIEW_TRIGGER,
     REMOTE_JOB_GUARD,
     SELF_CHECK,
     SELF_TEST,
@@ -99,6 +101,63 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = self.valid.replace(marker, "", 1)
         self.assertRejected(bad, "Chemin critique absent")
 
+    def test_migration_review_plan_changes_must_trigger_preflight(self):
+        marker = "      - 'docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md'\n"
+        bad = self.valid.replace(marker, "", 1)
+        self.assertRejected(bad, "Chemin critique absent")
+
+    def test_review_trace_validator_changes_must_trigger_preflight(self):
+        marker = "      - 'scripts/validate_production_review_decision_trace.py'\n"
+        bad = self.valid.replace(marker, "", 1)
+        self.assertRejected(bad, "Chemin critique absent")
+
+    def test_review_trace_tests_changes_must_trigger_preflight(self):
+        marker = "      - 'scripts/test_production_review_decision_trace.py'\n"
+        bad = self.valid.replace(marker, "", 1)
+        self.assertRejected(bad, "Chemin critique absent")
+
+    def test_migration_review_plan_validator_must_run_locally(self):
+        marker = "          python scripts/validate_future_migration_review_plan_v25.py\n"
+        bad = self.valid.replace(marker, "          echo plan-retire\n", 1)
+        self.assertRejected(bad, "Prévol local incomplet")
+
+    def test_migration_review_plan_must_run_before_ledger(self):
+        plan = "          python scripts/validate_future_migration_review_plan_v25.py\n"
+        ledger = "          python scripts/validate_production_migration_ledger.py\n"
+        self.assertIn(plan, self.valid)
+        self.assertIn(ledger, self.valid)
+        temporary = "          echo __ledger_temp__\n"
+        bad = self.valid.replace(ledger, temporary, 1)
+        bad = bad.replace(plan, ledger, 1)
+        bad = bad.replace(temporary, plan, 1)
+        self.assertRejected(bad, "ordre local doit rester")
+
+    def test_review_trace_validator_must_run_locally(self):
+        marker = "          python scripts/validate_production_review_decision_trace.py\n"
+        bad = self.valid.replace(marker, "          echo trace-retire\n", 1)
+        self.assertRejected(bad, "Prévol local incomplet")
+
+    def test_review_trace_must_run_before_ledger(self):
+        trace = "          python scripts/validate_production_review_decision_trace.py\n"
+        ledger = "          python scripts/validate_production_migration_ledger.py\n"
+        self.assertIn(trace, self.valid)
+        self.assertIn(ledger, self.valid)
+        temporary = "          echo __ledger_temp__\n"
+        bad = self.valid.replace(ledger, temporary, 1)
+        bad = bad.replace(trace, ledger, 1)
+        bad = bad.replace(temporary, trace, 1)
+        self.assertRejected(bad, "ordre local doit rester")
+
+    def test_ready_for_review_retriggers_strict_preflight(self):
+        self.assertIn(READY_FOR_REVIEW_TRIGGER, self.valid)
+        bad = self.valid.replace(READY_FOR_REVIEW_TRIGGER + "\n", "", 1)
+        self.assertRejected(bad, "ready_for_review")
+
+    def test_draft_pr_skips_only_local_workspace_build(self):
+        self.assertIn(LOCAL_WORKSPACE_GUARD, self.valid)
+        bad = self.valid.replace(LOCAL_WORKSPACE_GUARD, "        if: ${{ always() }}", 1)
+        self.assertRejected(bad, "PR brouillon")
+
     def test_local_preflight_cannot_receive_secret(self):
         bad = self.valid.replace(
             "    timeout-minutes: 10\n    steps:",
@@ -167,6 +226,14 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         marker = '(cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run-approval.txt'
         bad = self.valid.replace(marker, "echo dry-run-retire", 1)
         self.assertRejected(bad, "Revalidation post-environment incomplète")
+
+    def test_post_environment_revalidation_requires_review_trace(self):
+        marker = "          python scripts/validate_production_review_decision_trace.py\n"
+        start = self.valid.index("  apply-production:\n")
+        tail = self.valid[start:]
+        self.assertIn(marker, tail)
+        bad = self.valid[:start] + tail.replace(marker, "          echo trace-retire\n", 1)
+        self.assertRejected(bad, "traçabilité reviewed")
 
     def test_apply_step_keeps_redundant_fail_closed_gate(self):
         marker = "      - name: Appliquer les migrations de production depuis le workspace protégé\n"

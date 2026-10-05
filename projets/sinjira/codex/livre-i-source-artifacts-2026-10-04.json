@@ -1,0 +1,39 @@
+{
+  "schema": "sinjira.livre-i.source-artifacts.v3",
+  "state": "demo_deployed_full_private_staged",
+  "recorded_at": "2026-10-05",
+  "source_issue": 363,
+  "production_deployment_authorized": false,
+  "full_edition": {
+    "filename": "SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf",
+    "pages": 1027,
+    "size_bytes": 7325502,
+    "sha256": "9acc8f561962850158cb073b122ee038c2731ee3b165deae482260c0cc1ad2d8",
+    "public_repository_allowed": false,
+    "storage_target": "private_storage_only",
+    "mime_type": "application/pdf"
+  },
+  "demo_source": {
+    "filename": "Demo_SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf",
+    "pages": 84,
+    "size_bytes": 941065,
+    "sha256": "d0668a7b07a07321ef1e02cfceb826d3881330bb36417d53e5ff5bd32635628e",
+    "text_extract_engine": "pdftotext",
+    "text_extract_sha256": "fbbd50bd140aef24677228207462e822e4a3f3e5e923ac1f533fdf806facd2ae",
+    "mime_type": "application/pdf"
+  },
+  "demo_web_candidate": {
+    "public_path": "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
+    "pages": 84,
+    "size_bytes": 941065,
+    "sha256": "d0668a7b07a07321ef1e02cfceb826d3881330bb36417d53e5ff5bd32635628e",
+    "git_blob_sha1": "74f925631634c00f39e86aabbf67833091f7a8ff",
+    "binary_identical_to_source": true,
+    "text_extract_matches_source": true,
+    "text_extract_sha256": "fbbd50bd140aef24677228207462e822e4a3f3e5e923ac1f533fdf806facd2ae",
+    "deployment_authorized": true,
+    "note": "Le PDF public est le maître démo fourni lui-même, binaire-identique, sans transcodage ni reconstruction. L’intégrale reste hors dépôt public.",
+    "deployment_state": "deployed_public_exact_source"
+  },
+  "historical_manifest_preserved": "livre-i-source-artifacts-2026-09-15.json"
+}

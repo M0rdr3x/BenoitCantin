@@ -33,3 +33,7 @@ Les salaires des employés publics, les prestations directes aux citoyens, les r
 ## Statut
 
 Ce résultat valide la cohérence technique du paquet; il ne constitue ni promulgation, ni avis juridique, ni mise en production.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

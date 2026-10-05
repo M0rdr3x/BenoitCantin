@@ -19,3 +19,7 @@
 - Module autonome V320 : **6 pages**, **6/6** vérifiées visuellement.
 - 14 décisions politiques héritées demeurent ouvertes; 26 sections anglaises restent `NOT_VALIDATED / HUMAN_REVIEW_PENDING`.
 - `LEGAL_ENACTMENT=NOT_AUTHORIZED`; `publication=PENDING_PUBLICATION_APPROVAL`; `production=false`; `github_push=false` dans la chaîne technique immuable.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

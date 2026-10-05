@@ -26,10 +26,10 @@ select ok(has_function_privilege('authenticated','public.privacy_create_request(
 select ok(not has_function_privilege('anon','public.privacy_create_request(text,text)','execute'),'anon ne crée pas une demande de compte');
 select ok(has_function_privilege('authenticated','public.privacy_my_requests(integer)','execute'),'membre authentifié peut suivre ses demandes');
 select ok(not has_function_privilege('anon','public.privacy_my_requests(integer)','execute'),'anon ne suit pas des demandes privées');
-select ok(position('SINJIRA_MINIMUM_AGE_13' in pg_get_functiondef('public.handle_new_sinjira_user()'::regprocedure))>0,'inscription serveur minimum 13');
+select ok(position('SINJIRA_MINIMUM_AGE_11' in pg_get_functiondef('public.handle_new_sinjira_user()'::regprocedure))>0,'inscription serveur minimum 11 avec supervision 11–13');
 select ok(position('YOUTH_JURISDICTION_NOT_ENABLED' in pg_get_functiondef('public.handle_new_sinjira_user()'::regprocedure))>0,'comptes jeunesse hors juridiction validée bloqués côté serveur');
 select ok(position('years<14' in replace(pg_get_functiondef('public.handle_new_sinjira_user()'::regprocedure),' ',''))>0,'autorisation parentale moins de 14 conservée');
-select ok(position('SINJIRA_MINIMUM_AGE_13' in pg_get_functiondef('public.enforce_sinjira_account_safety_age()'::regprocedure))>0,'profil sécurité minimum 13');
+select ok(position('SINJIRA_MINIMUM_AGE_11' in pg_get_functiondef('public.enforce_sinjira_account_safety_age()'::regprocedure))>0,'profil sécurité minimum 11');
 select ok(position('5 years' in pg_get_functiondef('private.privacy_incident_retention_guard()'::regprocedure))>0,'rétention incidents cinq ans verrouillée');
 select ok(position('30 days' in pg_get_functiondef('sinjira_user_rights_internal.privacy_create_request(text,text)'::regprocedure))>0 or position('target_days' in pg_get_functiondef('sinjira_user_rights_internal.privacy_create_request(text,text)'::regprocedure))>0,'demande informe cible 30 jours');
 select ok(exists(select 1 from pg_trigger where tgrelid='public.social_reports'::regclass and tgname='trg_safety_create_escalation_case' and not tgisinternal),'escalade automatique signalements prioritaires active');

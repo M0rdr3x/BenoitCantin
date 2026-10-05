@@ -6,29 +6,26 @@ const statusLabel=s=>({submitted:'Questionnaire reçu',ai_draft:'Brouillon IA',a
 
 async function reads(user){
   const s=getSupabase();
-  const novelRes=await s.from('novels').select('*').in('status',['demo','announced','published']).order('sort_order');
-  if(novelRes.error)throw novelRes.error;
-  let libRes=await s.from('reader_library').select('novel_id,last_opened_at,last_page,progress_percent').eq('user_id',user.id);
-  if(libRes.error){
-    const fallback=await s.from('reader_library').select('novel_id,last_opened_at').eq('user_id',user.id);
-    if(fallback.error)throw fallback.error;
-    libRes=fallback;
-  }
+  const [novelRes,libRes]=await Promise.all([
+    s.from('sinjira_novels').select('id,title,subtitle,description,status,public_path,demo_path,sort_order').in('status',['announced','published']).order('sort_order'),
+    s.from('sinjira_reader_library').select('novel_id,last_opened_at,last_page,progress_percent').eq('user_id',user.id)
+  ]);
+  if(novelRes.error||libRes.error)throw novelRes.error||libRes.error;
   const novels=rows(novelRes.data),lib=rows(libRes.data),m=new Map(lib.map(x=>[x.novel_id,x]));
   const box=document.querySelector('[data-reader-library]');
   if(!box)return;
-  box.innerHTML=novels.map(n=>{const r=m.get(n.id),progress=Number(r?.progress_percent||0);return `<article class="reader-book-card"><span class="eyebrow">${escapeHtml(n.volume_label||'SINJIRA')}</span><h2>${escapeHtml(n.title)}</h2><p>${escapeHtml(n.description||'')}</p><div class="v19-progress-track"><span style="width:${Math.max(0,Math.min(100,progress))}%"></span></div><p>${r?`Progression mémorisée : ${progress}%${r.last_page?` · page ${r.last_page}`:''}`:'Pas encore ouvert avec ce compte.'}</p><div class="hero-actions">${n.demo_path?`<a class="btn btn-primary" href="${escapeHtml(n.demo_path)}">${r?.last_page>1?'Continuer ma lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(n.public_path||'/projets/sinjira/romans/')}">Page du roman</a></div></article>`}).join('')||'<p>Aucun roman disponible.</p>';
+  box.innerHTML=novels.map(n=>{const r=m.get(n.id),progress=Number(r?.progress_percent||0);return `<article class="reader-book-card"><span class="eyebrow">${escapeHtml(n.subtitle||'SINJIRA')}</span><h2>${escapeHtml(n.title)}</h2><p>${escapeHtml(n.description||'')}</p><div class="v19-progress-track"><span style="width:${Math.max(0,Math.min(100,progress))}%"></span></div><p>${r?`Progression mémorisée : ${progress}%${r.last_page?` · page ${r.last_page}`:''}`:'Pas encore ouvert avec ce compte.'}</p><div class="hero-actions">${n.demo_path?`<a class="btn btn-primary" href="${escapeHtml(n.demo_path)}">${r?.last_page>1?'Continuer ma lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(n.public_path||'/projets/sinjira/romans/')}">Page du roman</a></div></article>`}).join('')||'<p>Aucun roman disponible.</p>';
 }
 
 async function comments(user){
   const s=getSupabase();
   const load=async()=>{
-    const r=await s.from('novel_comments').select('id,body,status,contains_spoilers,created_at,novels(title)').eq('user_id',user.id).order('created_at',{ascending:false});
+    const r=await s.from('sinjira_novel_comments').select('id,body,status,spoiler,created_at,sinjira_novels(title)').eq('user_id',user.id).order('created_at',{ascending:false});
     if(r.error)throw r.error;
     const data=rows(r.data),box=document.querySelector('[data-my-comments]');if(!box)return;
-    box.innerHTML=data.map(c=>`<article class="reader-comment" data-comment-id="${c.id}"><header><strong>${escapeHtml(c.novels?.title||'Roman SINJIRA')}</strong><span class="character-status" data-status="${escapeHtml(c.status)}">${escapeHtml(c.status==='pending'?'En attente':c.status==='approved'?'Publié':c.status==='refused'?'Refusé':c.status)}</span></header><p>${escapeHtml(c.body)}</p>${c.contains_spoilers?'<small>Contient des divulgâcheurs</small>':''}<time>${escapeHtml(formatDate(c.created_at))}</time>${c.status==='pending'?`<div class="hero-actions"><button class="btn btn-secondary btn-small" type="button" data-edit-comment>Modifier</button><button class="btn btn-secondary btn-small" type="button" data-delete-comment>Supprimer</button></div>`:''}</article>`).join('')||'<p>Vous n’avez encore publié aucun commentaire.</p>';
-    box.querySelectorAll('[data-edit-comment]').forEach(b=>b.addEventListener('click',async()=>{const card=b.closest('[data-comment-id]'),row=data.find(x=>x.id===card.dataset.commentId),next=prompt('Modifier votre commentaire en attente :',row?.body||'');if(next===null)return;const body=next.trim();if(body.length<3)return alert('Commentaire trop court.');const {error}=await s.from('novel_comments').update({body}).eq('id',row.id).eq('status','pending');if(error)return alert(error.message);await load()}));
-    box.querySelectorAll('[data-delete-comment]').forEach(b=>b.addEventListener('click',async()=>{const id=b.closest('[data-comment-id]').dataset.commentId;if(!confirm('Supprimer ce commentaire en attente?'))return;const {error}=await s.from('novel_comments').delete().eq('id',id).eq('status','pending');if(error)return alert(error.message);await load()}));
+    box.innerHTML=data.map(c=>`<article class="reader-comment" data-comment-id="${c.id}"><header><strong>${escapeHtml(c.sinjira_novels?.title||'Roman SINJIRA')}</strong><span class="character-status" data-status="${escapeHtml(c.status)}">${escapeHtml(c.status==='pending'?'En attente':c.status==='approved'?'Publié':c.status==='refused'?'Refusé':c.status)}</span></header><p>${escapeHtml(c.body)}</p>${c.spoiler?'<small>Contient des divulgâcheurs</small>':''}<time>${escapeHtml(formatDate(c.created_at))}</time>${c.status==='pending'?`<div class="hero-actions"><button class="btn btn-secondary btn-small" type="button" data-edit-comment>Modifier</button><button class="btn btn-secondary btn-small" type="button" data-delete-comment>Supprimer</button></div>`:''}</article>`).join('')||'<p>Vous n’avez encore publié aucun commentaire.</p>';
+    box.querySelectorAll('[data-edit-comment]').forEach(b=>b.addEventListener('click',async()=>{const card=b.closest('[data-comment-id]'),row=data.find(x=>x.id===card.dataset.commentId),next=prompt('Modifier votre commentaire en attente :',row?.body||'');if(next===null)return;const body=next.trim();if(body.length<3)return alert('Commentaire trop court.');const {error}=await s.from('sinjira_novel_comments').update({body}).eq('id',row.id).eq('status','pending');if(error)return alert(error.message);await load()}));
+    box.querySelectorAll('[data-delete-comment]').forEach(b=>b.addEventListener('click',async()=>{const id=b.closest('[data-comment-id]').dataset.commentId;if(!confirm('Supprimer ce commentaire en attente?'))return;const {error}=await s.from('sinjira_novel_comments').delete().eq('id',id).eq('status','pending');if(error)return alert(error.message);await load()}));
   };
   await load();
 }

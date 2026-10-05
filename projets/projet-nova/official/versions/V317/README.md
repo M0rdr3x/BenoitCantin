@@ -20,3 +20,7 @@ V317 est le checkpoint détaché construit au-dessus de l’historique V316. Il 
 - Nomenclature : 0 occurrence interdite
 
 Les protections V316 restent applicables : aucune clé universelle d’accès, aucune superbase obligatoire, aucune surveillance générale par les journaux d’audit. V317 n’impose pas de RPO/RTO universels, de délai universel de correction, de fournisseur unique ni d’algorithme cryptographique politiquement imposé.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

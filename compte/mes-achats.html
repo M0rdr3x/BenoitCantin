@@ -7,7 +7,7 @@
 <title>Mes achats et précommandes | Compte SINJIRA™</title>
 <link href="../assets/icons/sinjira-favicon.png" rel="icon"/>
 <link href="../assets/css/site.css?v=20.0" rel="stylesheet"/>
-<link href="../assets/css/sinjira-player-account.css?v=24.1" rel="stylesheet"/>
+<link href="../assets/css/sinjira-player-account.css?v=25.0.1" rel="stylesheet"/>
 <link href="../assets/css/sinjira-reader-character.css?v=18.0" rel="stylesheet"/>
 <link href="../assets/css/v19-pro.css?v=19.0" rel="stylesheet"/>
 <link href="../assets/css/v20-social.css?v=20.0" rel="stylesheet"/>
@@ -16,11 +16,29 @@
 <link href="../assets/css/sinjira-preorder-commercial-v24-5-5.css?v=24.5.44" rel="stylesheet"/>
 <link href="../assets/css/sinjira-preorder-fulfillment-v24-5-6.css?v=24.5.44" rel="stylesheet"/>
 </head>
-<body class="account-page" data-v20-page="purchases">
+<body class="account-page" data-v20-page="purchases" data-purchases-v25>
 <header class="site-header"><div class="container nav-shell"><a class="brand" href="/"><img alt="" height="47" src="../assets/media/sinjira-emblem.webp" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Compte universel</span></span></a><nav class="main-nav"><a href="../projets/sinjira/romans/">Littérature</a><a href="../projets/sinjira/jeux/">Jeux</a><a href="../projets/sinjira/registre/">Registre</a></nav></div></header>
 <div class="account-shell account-nav-scroll"><nav aria-label="Navigation du compte" class="account-nav"><a href="index.html">Mon espace</a><a href="bibliotheque.html">Ma bibliothèque</a><a href="licences.html">Licences</a><a href="mon-personnage.html">Mon personnage</a><a href="relations.html">Relations</a><a href="monde-parallele.html">Monde parallèle</a><a href="mes-parties.html">Mes parties</a><a aria-current="page" href="mes-achats.html">Mes achats</a><a href="marche.html">Marché</a><a href="jetons.html">Jetons</a><a href="communaute.html">Communauté</a><a href="reseau-personnage.html">Réseau personnage</a><a href="messages.html">Messages</a><a href="profil.html">Profil</a><a href="securite.html">Sécurité</a><a href="parametres.html">Paramètres</a><a data-admin-nav hidden href="/admin/sinjira/">Administration</a><button data-logout type="button">Déconnexion</button></nav></div>
 <main>
 <section class="account-hero"><div class="account-shell"><span class="eyebrow">Boutique et réservations SINJIRA™</span><h1>Mes achats et précommandes</h1><p>Les achats payants restent désactivés. Cette page peut toutefois enregistrer vos réservations de précommande sans demander de carte bancaire ni effectuer de transaction. Pour un livre physique expédié, les frais de livraison seront à votre charge; le ramassage sur place pourra être choisi lorsqu’un lieu public de retrait sera disponible.</p></div></section>
+<section class="section section-tight" id="acquisitions"><div class="account-shell">
+<div class="section-heading"><span class="eyebrow">Mon compte</span><h2>Achats, droits et accès</h2><p>Cette section distingue ce que vous avez réellement acheté ou reçu comme droit numérique des créations visibles par le créateur ou sa famille autorisée.</p></div>
+<div class="account-stats">
+<div class="account-stat"><span>Commandes enregistrées</span><strong data-paid-order-count>0</strong></div>
+<div class="account-stat"><span>Droits numériques</span><strong data-purchase-right-count>0</strong></div>
+</div>
+<div class="account-welcome-strip"><strong data-purchase-account-role>Compte membre SINJIRA™</strong><span>Une précommande sans paiement n’est jamais comptée comme achat.</span></div>
+<div class="account-card" style="margin-top:18px"><span class="eyebrow">Historique d’achats</span><h3>Mes commandes</h3><div data-purchase-history></div></div>
+<div class="account-card" style="margin-top:18px"><span class="eyebrow">Droits numériques</span><h3>Mes accès acquis</h3><div class="account-content-list" data-purchase-entitlements></div></div>
+<article class="account-card account-owner-note" data-creator-portfolio hidden style="margin-top:18px">
+<span class="eyebrow">Catalogue créateur / famille</span><h3>Créations SINJIRA™</h3><p>Ces éléments sont visibles parce que ce compte dispose d’un accès créateur ou famille autorisé. Ils ne sont pas présentés comme des achats et ne créent aucun faux reçu.</p>
+<div class="account-content-category"><h3>Romans</h3><div class="account-content-list" data-creator-novels></div></div>
+<div class="account-content-category"><h3>Jeux &amp; projets</h3><div class="account-content-list" data-creator-projects></div></div>
+<div class="account-content-category"><h3>Produits et futurs développements</h3><div class="account-content-list" data-creator-products></div></div>
+</article>
+<div class="account-status" data-purchases-v25-status hidden></div>
+</div></section>
+
 <section class="section section-tight" id="precommandes"><div class="account-shell">
 <article class="v20-purchase-card sinjira-preorder-account-card" data-preorder-root>
 <span class="eyebrow">Livre I · Réservation sans paiement</span>
@@ -62,11 +80,12 @@
 <p class="sinjira-fulfillment-fineprint">Cette préférence n’est pas une commande. Le choix final, l’adresse d’expédition éventuelle et le coût réel devront être confirmés dans un futur parcours d’achat distinct.</p>
 </article></div></section>
 
-<section class="section section-tight"><div class="account-shell"><article class="v20-purchase-card"><span class="eyebrow">Achats payants</span><h2>Aucun achat payant associé pour le moment</h2><p><strong>La boutique n’est pas encore ouverte.</strong> La boutique transactionnelle et les paiements restent désactivés. Lorsque la vente en ligne sera explicitement activée, les commandes réellement payées, téléchargements et reçus pourront apparaître ici séparément des réservations de précommande.</p></article></div></section>
+<section class="section section-tight"><div class="account-shell"><article class="v20-purchase-card"><span class="eyebrow">Boutique SINJIRA™</span><h2>Ventes futures</h2><p>La boutique transactionnelle reste désactivée tant qu’un parcours de paiement revu n’est pas explicitement activé. Les achats réels déjà associés au compte restent néanmoins visibles dans la section « Achats, droits et accès » ci-dessus.</p></article></div></section>
 </main>
 <footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Compte SINJIRA™ — paiements désactivés.</span></div></div></footer>
 <script defer src="../assets/js/site.js?v=20.0"></script>
-<script src="../assets/js/sinjira-account.js?v=19.0" type="module"></script>
+<script src="../assets/js/sinjira-account.js?v=25.0.1" type="module"></script>
+<script src="../assets/js/sinjira-purchases-v25.js?v=25.0.5" type="module"></script>
 <script src="../assets/js/sinjira-preorders-v24-5-3.js?v=24.5.44" type="module"></script>
 <script src="../assets/js/sinjira-preorder-commercial-v24-5-5.js?v=24.5.44" type="module"></script>
 <script src="../assets/js/sinjira-preorder-fulfillment-v24-5-6.js?v=24.5.44" type="module"></script>

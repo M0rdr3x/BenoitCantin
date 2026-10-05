@@ -10,6 +10,8 @@ from validate_targeted_production_workflow_security import (  # noqa: E402
     CHECKOUT_SHA,
     SETUP_CLI_SHA,
     TARGETS,
+    PRODUCTION_ENVIRONMENT_WORKFLOWS,
+    validate_production_environment_inventory,
     validate_text,
 )
 
@@ -36,6 +38,48 @@ class TargetedProductionWorkflowSecurityTests(unittest.TestCase):
         for filename, text in self.workflows.items():
             with self.subTest(filename=filename):
                 self.assertEqual(validate_text(filename, text), [])
+
+    def test_current_production_environment_inventory_is_exact(self):
+        workflows = {
+            path.name: path.read_text(encoding="utf-8")
+            for path in WORKFLOW_DIR.glob("*.yml")
+        }
+        workflows.update({
+            path.name: path.read_text(encoding="utf-8")
+            for path in WORKFLOW_DIR.glob("*.yaml")
+        })
+        self.assertEqual(validate_production_environment_inventory(workflows), [])
+        observed = {
+            name for name, text in workflows.items()
+            if "environment: production" in "\n".join(
+                line for line in text.splitlines()
+                if not line.strip().startswith("#")
+            )
+        }
+        self.assertEqual(observed, PRODUCTION_ENVIRONMENT_WORKFLOWS)
+
+    def test_unclassified_production_environment_is_rejected(self):
+        workflows = {
+            name: (WORKFLOW_DIR / name).read_text(encoding="utf-8")
+            for name in PRODUCTION_ENVIRONMENT_WORKFLOWS
+        }
+        workflows["rogue-production.yml"] = (
+            "on:\n  workflow_dispatch:\n"
+            "permissions:\n  contents: read\n"
+            "jobs:\n  apply:\n    environment: production\n"
+        )
+        errors = validate_production_environment_inventory(workflows)
+        self.assertTrue(any("non classés" in error for error in errors), errors)
+
+    def test_missing_classified_production_environment_is_rejected(self):
+        workflows = {
+            name: (WORKFLOW_DIR / name).read_text(encoding="utf-8")
+            for name in PRODUCTION_ENVIRONMENT_WORKFLOWS
+        }
+        victim = "sinjira-v25-production-deploy.yml"
+        workflows[victim] = workflows[victim].replace("    environment: production\n", "", 1)
+        errors = validate_production_environment_inventory(workflows)
+        self.assertTrue(any("attendus absents" in error for error in errors), errors)
 
     def test_job_level_token_is_rejected(self):
         filename = "sinjira-v25-employment-production.yml"

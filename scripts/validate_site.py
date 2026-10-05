@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 from html.parser import HTMLParser
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse, unquote
 import re
 import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_EXTS = {'.html', '.js', '.css', '.json', '.md', '.txt', '.xml', '.webmanifest', '.sql', '.ts', '.tsx'}
@@ -221,8 +223,11 @@ def main() -> int:
 
     # Imports ES modules / Deno du site statique. L'app native est validée séparément.
     import_patterns = [
-        re.compile(r'\bfrom\s*[\'\"]([^\'\"]+)[\'\"]'),
-        re.compile(r'\bimport\s*[\'\"]([^\'\"]+)[\'\"]'),
+        # Une clause "from" n'est un import que si elle appartient réellement à
+        # une déclaration import/export. Ne pas confondre get('from') / set('from', ...).
+        re.compile(r'(?ms)^\s*import\b(?:(?!;).)*?\bfrom\s*[\'\"]([^\'\"]+)[\'\"]'),
+        re.compile(r'(?ms)^\s*export\s+(?:\*|\{(?:(?!;).)*?\})\s+from\s*[\'\"]([^\'\"]+)[\'\"]'),
+        re.compile(r'(?m)^\s*import\s*[\'\"]([^\'\"]+)[\'\"]'),
         re.compile(r'\bimport\s*\(\s*[\'\"]([^\'\"]+)[\'\"]\s*\)'),
     ]
     for source in code:
@@ -236,6 +241,157 @@ def main() -> int:
             if target is not None and not target.exists():
                 errors.append(f'Import local manquant dans {rel}: {raw}')
 
+    sitemap_path = ROOT / 'sitemap.xml'
+    if sitemap_path.is_file():
+        sitemap_text = sitemap_path.read_text('utf-8', errors='ignore')
+        for url in (
+            'https://www.benoitcantin.com/confidentialite.html',
+            'https://www.benoitcantin.com/gouvernance-vie-privee.html',
+            'https://www.benoitcantin.com/avis-legal.html',
+            'https://www.benoitcantin.com/projets/sinjira/codex/',
+        ):
+            if f'<loc>{url}</loc>' not in sitemap_text:
+                errors.append(f'Sitemap public: URL de confiance absente: {url}')
+
+    netlify_path = ROOT / 'netlify.toml'
+    if not netlify_path.is_file():
+        errors.append('netlify.toml absent.')
+    else:
+        netlify_text = netlify_path.read_text('utf-8', errors='ignore')
+        for marker in (
+            'command = "python3 scripts/build_netlify_public.py"',
+            'publish = "_site"',
+            'X-Content-Type-Options = "nosniff"',
+            'Strict-Transport-Security = "max-age=31536000"',
+            'X-Frame-Options = "SAMEORIGIN"',
+            'Referrer-Policy = "strict-origin-when-cross-origin"',
+            'X-Permitted-Cross-Domain-Policies = "none"',
+            'Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"',
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+            "connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co",
+            "form-action 'self' https://formspree.io",
+            "base-uri 'self'",
+            "frame-ancestors 'self'",
+            "object-src 'self'",
+        ):
+            if marker not in netlify_text:
+                errors.append(f'netlify.toml sécurité incomplet: {marker}')
+
+        redirect_blocks = re.split(r'(?m)^\[\[redirects\]\]\s*$', netlify_text)[1:]
+        for source in (
+            '/supabase/*',
+            '/scripts/*',
+            '/docs/*',
+            '/.github/*',
+            '/tests/*',
+            '/mobile-native/*',
+        ):
+            matching = [
+                block for block in redirect_blocks
+                if f'from = "{source}"' in block
+            ]
+            if not matching:
+                errors.append(f'netlify.toml: garde 404 technique absente: {source}')
+                continue
+            normalized = re.sub(r'\s+', '', matching[0])
+            for required in ('to="/404.html"', 'status=404', 'force=true'):
+                if required not in normalized:
+                    errors.append(
+                        f'netlify.toml: garde technique incomplète pour {source}: {required}'
+                    )
+
+    builder_path = ROOT / 'scripts' / 'build_netlify_public.py'
+    if not builder_path.is_file():
+        errors.append('Builder public Netlify absent: scripts/build_netlify_public.py')
+    else:
+        builder_check = subprocess.run(
+            [sys.executable, str(builder_path), '--check'],
+            text=True,
+            capture_output=True,
+        )
+        if builder_check.returncode:
+            details = (builder_check.stdout + '\n' + builder_check.stderr).strip()
+            errors.append(
+                'Builder public Netlify invalide: ' + (details or 'échec sans détail')
+            )
+
+    robots_path = ROOT / 'robots.txt'
+    if not robots_path.is_file():
+        errors.append('robots.txt absent.')
+    else:
+        robots_text = robots_path.read_text('utf-8', errors='ignore')
+        for marker in (
+            'User-agent: *',
+            'Allow: /',
+            'Disallow: /app/',
+            'Disallow: /compte/',
+            'Disallow: /admin/',
+            'Disallow: /supabase/',
+            'Disallow: /scripts/',
+            'Disallow: /docs/',
+            'Disallow: /tests/',
+            'Disallow: /mobile-native/',
+            'Disallow: /.github/',
+            'Sitemap: https://www.benoitcantin.com/sitemap.xml',
+        ):
+            if marker not in robots_text:
+                errors.append(f'robots.txt incomplet: {marker}')
+
+    security_path = ROOT / '.well-known' / 'security.txt'
+    if not security_path.is_file():
+        errors.append('.well-known/security.txt absent.')
+    else:
+        security_text = security_path.read_text('utf-8', errors='ignore')
+        for marker in (
+            'Contact: https://www.benoitcantin.com/contact.html',
+            'Preferred-Languages: fr, en',
+            'Canonical: https://www.benoitcantin.com/.well-known/security.txt',
+        ):
+            if marker not in security_text:
+                errors.append(f'security.txt incomplet: {marker}')
+        contact_page = ROOT / 'contact.html'
+        if not contact_page.is_file():
+            errors.append('contact.html absent pour le signalement sécurité.')
+        else:
+            contact_html = contact_page.read_text('utf-8', errors='ignore')
+            for marker in (
+                '<option value="Sécurité">Sécurité / vulnérabilité</option>',
+                'Benoit Cantin — signalement sécurité',
+                'href="/.well-known/security.txt"',
+            ):
+                if marker not in contact_html:
+                    errors.append(f'Contact sécurité incomplet: {marker}')
+        expires_match = re.search(r'^Expires:\s*(\S+)\s*$', security_text, flags=re.M)
+        if not expires_match:
+            errors.append('security.txt: champ Expires absent.')
+        else:
+            try:
+                expires = datetime.fromisoformat(expires_match.group(1).replace('Z', '+00:00'))
+                now = datetime.now(timezone.utc)
+                if expires.tzinfo is None:
+                    errors.append('security.txt: Expires doit inclure un fuseau horaire.')
+                else:
+                    expires = expires.astimezone(timezone.utc)
+                    if expires <= now:
+                        errors.append('security.txt: Expires est échu.')
+                    if (expires - now).days > 370:
+                        errors.append('security.txt: Expires dépasse environ un an.')
+            except ValueError:
+                errors.append('security.txt: Expires n’est pas une date ISO 8601 valide.')
+
+    governance_page = ROOT / 'gouvernance-vie-privee.html'
+    if governance_page.is_file():
+        governance_html = governance_page.read_text('utf-8', errors='ignore')
+        for marker in (
+            '<link rel="canonical" href="https://www.benoitcantin.com/gouvernance-vie-privee.html">',
+            '<meta property="og:title" content="Gouvernance de la vie privée | Benoit Cantin">',
+            '<meta property="og:description" content="Gouvernance des renseignements personnels du portail Benoit Cantin et de SINJIRA™ : responsable, rôles, conservation, incidents et plaintes.">',
+            '<meta property="og:type" content="website">',
+            '<meta property="og:url" content="https://www.benoitcantin.com/gouvernance-vie-privee.html">',
+        ):
+            if marker not in governance_html:
+                errors.append(f'Gouvernance vie privée: métadonnée publique absente: {marker}')
+
     critical_routes = [
         'index.html',
         '404.html',
@@ -243,10 +399,17 @@ def main() -> int:
         'admin/sinjira/index.html',
         'compte/index.html',
         'compte/profil.html',
+        'compte/bibliotheque.html',
+        'compte/mes-achats.html',
+        'compte/mes-commentaires.html',
         'compte/mon-personnage.html',
         'compte/reseau-personnage.html',
         'projets/sinjira/index.html',
+        'projets/sinjira/romans/index.html',
+        'projets/sinjira/romans/lire-integral.html',
+        'projets/sinjira/romans/le-sang-du-sauveur/index.html',
         'projets/sinjira/registre/index.html',
+        'projets/sinjira/codex/index.html',
         'projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html',
         'projets/sinjira/jeux/fracture-du-reseau-mere/partie.html',
         'projets/sinjira/jeux/fracture-du-reseau-mere/fin-de-partie.html',

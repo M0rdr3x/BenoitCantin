@@ -113,3 +113,7 @@ Ces paramètres doivent découler de la loi, des normes techniques applicables, 
 La cybersécurité protège les services et les droits; elle ne crée pas une nouvelle source de pouvoir sur la population. Aucun responsable cyber, administrateur, fournisseur ou opérateur d’infrastructure n’acquiert une autorité souveraine ou générale sur les citoyens.
 
 V317 ne produit aucun effet juridique automatique, ne ferme aucune des 14 décisions politiques héritées, ne valide aucune des 26 sections anglaises, ne modifie aucun paramètre fiscal V308 et ne retire aucune protection V312 à V316.
+
+---
+
+**Transparence IA —** Idées, vision et décisions : Benoit Cantin. Mise en œuvre assistée par des outils d'intelligence artificielle. Validation finale et responsabilité du contenu : Benoit Cantin.

@@ -60,6 +60,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   native-life-story-hub:
     runs-on: ubuntu-24.04
@@ -90,9 +94,6 @@ jobs:
       - name: Revalider les index FK Histoire de vie
         run: python3 scripts/validate_life_story_fk_indexes_v24_5_2.py
 
-      - name: Revalider le ledger de production sans écriture
-        run: python3 scripts/validate_production_migration_ledger.py
-
       - name: Revalider le routeur natif central
         run: python3 scripts/validate_mobile_native_route_dispatch_v25.py
 
@@ -120,7 +121,7 @@ jobs:
       - name: Configurer Node.js sans cache implicite
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
-          node-version: '22.23.2'
+          node-version: '22.23.3'
 
       - name: Installer les dépendances sans scripts de cycle de vie
         working-directory: mobile-native
@@ -133,3 +134,6 @@ jobs:
       - name: Vérifier TypeScript
         working-directory: mobile-native
         run: npm run typecheck
+
+      - name: Revalider le ledger de production sans écriture
+        run: python3 scripts/validate_production_migration_ledger.py

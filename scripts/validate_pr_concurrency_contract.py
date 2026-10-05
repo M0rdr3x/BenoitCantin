@@ -1,0 +1,367 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+
+PENDING_CONCURRENCY_NORMALIZATION = set()
+
+NON_CANCELLABLE_PR_WORKFLOWS = {
+    ".github/workflows/supabase-production-preflight.yml",
+}
+
+READ_ONLY_PR_WORKFLOWS = (
+    ".github/workflows/sinjira-mobile-native-route-dispatch-v25.yml",
+    ".github/workflows/sinjira-personal-ai-functional-v25.yml",
+    ".github/workflows/sinjira-employment-v25.yml",
+    ".github/workflows/sinjira-secret-guard.yml",
+    ".github/workflows/nova-a1.yml",
+    ".github/workflows/sinjira-mobile-native.yml",
+    ".github/workflows/site-personality-v25.yml",
+    ".github/workflows/validate-site.yml",
+    ".github/workflows/sinjira-public-navigation-v25.yml",
+    ".github/workflows/public-seo-v25.yml",
+    ".github/workflows/e2e-site.yml",
+    ".github/workflows/recovery-drill.yml",
+    ".github/workflows/sinjira-a1-integration-rehearsal.yml",
+    ".github/workflows/sinjira-a1-publication-isolation.yml",
+    ".github/workflows/sinjira-account-content-hub-v25.yml",
+    ".github/workflows/sinjira-account-life-story-a1.yml",
+    ".github/workflows/sinjira-literature-browser-v25.yml",
+    ".github/workflows/sinjira-livre-i-private-delivery.yml",
+    ".github/workflows/sinjira-private-novel-catalog-v25.yml",
+    ".github/workflows/sinjira-private-novel-integrity-gate-v25.yml",
+    ".github/workflows/sinjira-security-context-response-v25.yml",
+    ".github/workflows/sinjira-v25-release-review-snapshot.yml",
+    ".github/workflows/validate-ai-transparency.yml",
+    ".github/workflows/validate-community-v24-4-79.yml",
+    ".github/workflows/validate-dating-v24-4-75.yml",
+    ".github/workflows/sinjira-life-story-user-rpc-v24-5-13.yml",
+    ".github/workflows/sinjira-mobile-native-life-story-hub-v25.yml",
+    ".github/workflows/validate-preorders-v24-5-3.yml",
+    ".github/workflows/sinjira-preorder-admin-rpc-v24-5-8.yml",
+    ".github/workflows/sinjira-native-push-producer-boundary-v25.yml",
+    ".github/workflows/sinjira-device-challenge-client-boundary-v25.yml",
+    ".github/workflows/sinjira-user-rights-convergence-v24-5-28.yml",
+    ".github/workflows/sinjira-conscience-vault-functional-v25.yml",
+    ".github/workflows/sinjira-mobile-safe-share-v25.yml",
+    ".github/workflows/sinjira-mobile-native-dating-hub-v25.yml",
+    ".github/workflows/sinjira-private-profile-v24-5-23.yml",
+    ".github/workflows/sinjira-mobile-native-hub-destinations-v25.yml",
+    ".github/workflows/sinjira-live-social-activation-gate-v25.yml",
+    ".github/workflows/sinjira-rls-helper-rpc-v24-5-22.yml",
+    ".github/workflows/sinjira-security-risk-v25.yml",
+    ".github/workflows/sinjira-security-travel-client-visibility-v25.yml",
+    ".github/workflows/sinjira-security-travel-consent-v25.yml",
+    ".github/workflows/sinjira-security-travel-data-minimization-v25.yml",
+    ".github/workflows/sinjira-security-travel-retention-v25.yml",
+    ".github/workflows/sinjira-security-travel-self-only-v25.yml",
+    ".github/workflows/sinjira-security-travel-visibility-v25.yml",
+    ".github/workflows/sinjira-security-v24-4-99.yml",
+    ".github/workflows/sinjira-sensitive-aal2-v25.yml",
+    ".github/workflows/sinjira-social-home-v25.yml",
+    ".github/workflows/sinjira-social-user-rpc-v24-5-15.yml",
+    ".github/workflows/validate-global-safety-v24-4-83.yml",
+    ".github/workflows/validate-life-story-v24-5-2.yml",
+    ".github/workflows/validate-moderation-v24-4-90.yml",
+    ".github/workflows/validate-safety-v24-4-82.yml",
+    ".github/workflows/sinjira-consciousness-vault-v25.yml",
+    ".github/workflows/main-governance-contract.yml",
+    ".github/workflows/sinjira-admin-privacy-safety-aal2-v24-5-14.yml",
+    ".github/workflows/sinjira-advisor-ci-guardrails-v24-5-47.yml",
+    ".github/workflows/sinjira-auth-hibp-production-security.yml",
+    ".github/workflows/sinjira-character-network-owner-privacy-v25.yml",
+    ".github/workflows/sinjira-contribution-revocation-v24-5-52.yml",
+    ".github/workflows/sinjira-dating-rpc-v24-5-12.yml",
+    ".github/workflows/sinjira-delete-account-v24-5-51.yml",
+    ".github/workflows/sinjira-device-challenge-continuity-v25.yml",
+    ".github/workflows/sinjira-edge-response-privacy-v24-5-48.yml",
+    ".github/workflows/sinjira-edge-template-v24-5-49.yml",
+    ".github/workflows/sinjira-employment-production-security.yml",
+    ".github/workflows/sinjira-fracture-player-rpc-v24-5-21.yml",
+    ".github/workflows/sinjira-game-contribution-v24-5-53.yml",
+    ".github/workflows/sinjira-global-admin-rpc-v24-5-9.yml",
+    ".github/workflows/sinjira-life-story-delivery-v24-5-50.yml",
+    ".github/workflows/sinjira-live-social-commands-v25.yml",
+    ".github/workflows/sinjira-live-social-foundation-v25.yml",
+    ".github/workflows/sinjira-live-social-runtime-v25.yml",
+    ".github/workflows/sinjira-family-playtest-rpc-v24-5-17.yml",
+    ".github/workflows/sinjira-family-redeem-rpc-v24-5-19.yml",
+    ".github/workflows/sinjira-owner-character-rpc-v24-5-20.yml",
+    ".github/workflows/sinjira-parallel-user-rpc-v24-5-16.yml",
+    ".github/workflows/sinjira-points-status-rpc-v24-5-18.yml",
+    ".github/workflows/sinjira-preorder-admin-cache-v24-5-43.yml",
+    ".github/workflows/sinjira-preorder-admin-workflow-v24-5-36.yml",
+    ".github/workflows/sinjira-preorder-commercial-convergence-v24-5-42.yml",
+    ".github/workflows/sinjira-preorder-commercial-v24-5-5.yml",
+    ".github/workflows/sinjira-preorder-cost-summary-v24-5-25.yml",
+    ".github/workflows/sinjira-preorder-disclosure-v24-5-31.yml",
+    ".github/workflows/sinjira-preorder-fulfillment-v24-5-6.yml",
+    ".github/workflows/sinjira-preorder-full-cost-v24-5-30.yml",
+    ".github/workflows/sinjira-preorder-logistics-print-hardening-v24-5-40.yml",
+    ".github/workflows/sinjira-preorder-logistics-print-v24-5-39.yml",
+    ".github/workflows/sinjira-preorder-logistics-v24-5-38.yml",
+    ".github/workflows/sinjira-preorder-printable-v24-5-33.yml",
+    ".github/workflows/sinjira-preorder-public-cache-v24-5-44.yml",
+    ".github/workflows/sinjira-preorder-readiness-v24-5-26.yml",
+    ".github/workflows/sinjira-preorder-receipt-v24-5-32.yml",
+    ".github/workflows/sinjira-preorder-reference-admin-lookup-v24-5-35.yml",
+    ".github/workflows/sinjira-preorder-reference-copy-v24-5-34.yml",
+    ".github/workflows/sinjira-preorder-rpc-hardening-v24-5-7.yml",
+    ".github/workflows/sinjira-preorder-sale-readiness-v24-5-41.yml",
+    ".github/workflows/sinjira-preorder-tax-estimates-v24-5-27.yml",
+    ".github/workflows/sinjira-preorder-user-rpc-v24-5-11.yml",
+    ".github/workflows/sinjira-preorder-uuid-output-v24-5-46.yml",
+    ".github/workflows/sinjira-preorders-admin-v24-5-4.yml",
+    ".github/workflows/sinjira-transaction-acl-v24-5-45.yml",
+    ".github/workflows/sinjira-user-rights-convergence-v24-5-33.yml",
+    ".github/workflows/sinjira-user-rights-convergence-v24-5-37.yml",
+    ".github/workflows/sinjira-mobile-native-account-route-classification-v25.yml",
+    ".github/workflows/sinjira-mobile-native-alerts-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-character-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-character-network-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-commerce-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-community-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-employment-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-games-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-home-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-intent-routing-v25.yml",
+    ".github/workflows/sinjira-mobile-native-library-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-messages-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-parallel-world-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-personal-ai-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-privacy-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-profile-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-relations-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-secondary-route-aliases-v25.yml",
+    ".github/workflows/sinjira-mobile-native-security-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-native-settings-hub-v25.yml",
+    ".github/workflows/sinjira-mobile-navigation-boundary-v25.yml",
+    ".github/workflows/sinjira-personal-ai-production-readiness-security.yml",
+    ".github/workflows/sinjira-personal-ai-v25.yml",
+    ".github/workflows/sinjira-public-edge-auth-guard.yml",
+    ".github/workflows/sinjira-security-advisor-v24-5-24.yml",
+    ".github/workflows/sinjira-security-rpc-v24-5-10.yml",
+    ".github/workflows/targeted-production-workflow-security.yml",
+    ".github/workflows/validate-fracture-deduction-simplifiee.yml",
+    ".github/workflows/validate-nova-participation.yml",
+    ".github/workflows/validate-parallel-world-v24-4-92.yml",
+    ".github/workflows/sinjira-live-social-safety-v25.yml",
+    ".github/workflows/sinjira-live-social-ui-v25.yml",
+    ".github/workflows/sinjira-production-migration-history-guard-v25.yml",
+    ".github/workflows/sinjira-user-rights-rpc-v24-5-14.yml",
+    ".github/workflows/validate-production-ledger.yml",
+    ".github/workflows/sinjira-child-community-v25.yml",
+    ".github/workflows/sinjira-child-signup-browser-v25.yml",
+    ".github/workflows/sinjira-child-signup-v25.yml",
+    ".github/workflows/sinjira-junior-guardian-revocation-v25.yml",
+)
+
+EXPECTED_CONCURRENCY = """concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+"""
+
+FORBIDDEN_ACTIVE = (
+    "contents: write",
+    "environment: production",
+    "${{ secrets.",
+    "SUPABASE_ACCESS_TOKEN",
+    "SUPABASE_DB_PASSWORD",
+    "SERVICE_ROLE_KEY",
+    "supabase db push",
+    "supabase functions deploy",
+    "supabase secrets set",
+    "supabase migration repair",
+    "supabase link",
+    "--linked",
+    "gh api",
+    "git push",
+)
+
+
+def active_text(text: str) -> str:
+    return "\n".join(line for line in text.splitlines() if not line.strip().startswith("#"))
+
+
+def validate_text(path: str, text: str) -> list[str]:
+    errors: list[str] = []
+    active = active_text(text)
+
+    if "pull_request:" not in text:
+        errors.append(f"{path}: déclencheur pull_request absent")
+    if "permissions:\n  contents: read" not in text:
+        errors.append(f"{path}: permissions.contents doit rester read")
+    if text.count(EXPECTED_CONCURRENCY) != 1:
+        errors.append(f"{path}: bloc concurrency PR exact absent ou dupliqué")
+    if "cancel-in-progress: true" in active:
+        errors.append(f"{path}: annulation inconditionnelle interdite; seuls les runs PR peuvent être annulés")
+    if "pull_request_target:" in active:
+        errors.append(f"{path}: pull_request_target interdit dans ce groupe read-only")
+
+    found = [marker for marker in FORBIDDEN_ACTIVE if marker in active]
+    if found:
+        errors.append(f"{path}: capacité d'écriture/production incompatible avec le groupe read-only: {found}")
+
+    return errors
+
+
+def validate_repo() -> list[str]:
+    errors: list[str] = []
+
+    if len(READ_ONLY_PR_WORKFLOWS) != len(set(READ_ONLY_PR_WORKFLOWS)):
+        errors.append("doublon dans READ_ONLY_PR_WORKFLOWS")
+
+    classes = [
+        set(READ_ONLY_PR_WORKFLOWS),
+        set(PENDING_CONCURRENCY_NORMALIZATION),
+        set(NON_CANCELLABLE_PR_WORKFLOWS),
+    ]
+    if classes[0] & classes[1] or classes[0] & classes[2] or classes[1] & classes[2]:
+        errors.append("workflow classé dans plusieurs catégories concurrency")
+
+    workflows_dir = ROOT / ".github" / "workflows"
+    for workflow in sorted((*workflows_dir.glob("*.yml"), *workflows_dir.glob("*.yaml"))):
+        text = workflow.read_text(encoding="utf-8", errors="strict")
+        active = active_text(text)
+        rel = workflow.relative_to(ROOT).as_posix()
+        if "pull_request:" not in active:
+            continue
+
+        classified = (
+            rel in READ_ONLY_PR_WORKFLOWS
+            or rel in PENDING_CONCURRENCY_NORMALIZATION
+            or rel in NON_CANCELLABLE_PR_WORKFLOWS
+        )
+        if not classified:
+            errors.append(f"{rel}: workflow pull_request non classé dans le contrat concurrency")
+            continue
+
+        if "cancel-in-progress: true" in active and rel not in PENDING_CONCURRENCY_NORMALIZATION:
+            errors.append(
+                f"{rel}: cancel-in-progress=true interdit; annulation PR conditionnelle requise"
+            )
+
+        if rel in NON_CANCELLABLE_PR_WORKFLOWS:
+            if "concurrency:" not in active:
+                errors.append(f"{rel}: bloc concurrency requis pour le workflow non annulable")
+            if "cancel-in-progress: false" not in active:
+                errors.append(f"{rel}: cancel-in-progress=false requis pour le workflow non annulable")
+    for rel in READ_ONLY_PR_WORKFLOWS:
+        path = ROOT / rel
+        if not path.is_file():
+            errors.append(f"{rel}: workflow absent")
+            continue
+        errors.extend(validate_text(rel, path.read_text(encoding="utf-8", errors="strict")))
+
+    for rel in PENDING_CONCURRENCY_NORMALIZATION:
+        path = ROOT / rel
+        if not path.is_file():
+            errors.append(f"{rel}: exception legacy absente")
+            continue
+        active = active_text(path.read_text(encoding="utf-8", errors="strict"))
+        if "pull_request:" not in active:
+            errors.append(f"{rel}: exception legacy sans pull_request")
+        if "cancel-in-progress: true" not in active:
+            errors.append(f"{rel}: exception legacy a changé; reclasser le workflow")
+
+    for rel in NON_CANCELLABLE_PR_WORKFLOWS:
+        path = ROOT / rel
+        if not path.is_file():
+            errors.append(f"{rel}: workflow non annulable absent")
+    return errors
+
+
+def self_test() -> None:
+    fixture = f"""name: fixture
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+{EXPECTED_CONCURRENCY}
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: python3 -V
+"""
+    if validate_text("fixture.yml", fixture):
+        raise SystemExit("ECHEC auto-test concurrence PR: fixture valide rejetée")
+
+    mutations = {
+        "bloc retiré": fixture.replace(EXPECTED_CONCURRENCY + "\n", "", 1),
+        "annulation globale": fixture.replace(
+            "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
+            "cancel-in-progress: true",
+            1,
+        ),
+        "groupe non borné à la PR": fixture.replace(
+            "group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}",
+            "group: ${{ github.workflow }}",
+            1,
+        ),
+        "permissions write": fixture.replace("contents: read", "contents: write", 1),
+        "secret ajouté": fixture.replace(
+            "    steps:\n",
+            "    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}\n    steps:\n",
+            1,
+        ),
+        "production ajoutée": fixture.replace(
+            "    runs-on: ubuntu-24.04",
+            "    runs-on: ubuntu-24.04\n    environment: production",
+            1,
+        ),
+        "push Git ajouté": fixture.replace(
+            "      - run: python3 -V",
+            "      - run: git push origin HEAD:main",
+            1,
+        ),
+        "pull_request_target ajouté": fixture.replace(
+            "  pull_request:\n",
+            "  pull_request:\n  pull_request_target:\n",
+            1,
+        ),
+    }
+
+    missed: list[str] = []
+    for name, mutated in mutations.items():
+        if mutated == fixture:
+            missed.append(f"{name} (mutation inactive)")
+            continue
+        if not validate_text("fixture.yml", mutated):
+            missed.append(name)
+
+    if missed:
+        raise SystemExit("ECHEC auto-test concurrence PR: mutations non détectées: " + ", ".join(missed))
+
+    print(f"OK auto-tests concurrence PR: {len(mutations)}/{len(mutations)} affaiblissements détectés.")
+
+
+def main() -> int:
+    if "--self-test" in sys.argv[1:]:
+        self_test()
+
+    errors = validate_repo()
+    if errors:
+        for error in errors:
+            print(f"ERREUR concurrence PR: {error}", file=sys.stderr)
+        return 1
+
+    print(
+        f"OK concurrence PR: {len(READ_ONLY_PR_WORKFLOWS)} workflows read-only bornés par workflow/PR; "
+        f"{len(PENDING_CONCURRENCY_NORMALIZATION)} exceptions legacy suivies; "
+        f"{len(NON_CANCELLABLE_PR_WORKFLOWS)} workflow production/write non annulable; "
+        "annulation limitée aux pull requests, push/main et dispatch préservés."
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

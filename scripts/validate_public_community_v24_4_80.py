@@ -6,6 +6,7 @@ ROOT=Path(__file__).resolve().parents[1]
 PAGE=ROOT/'projets/sinjira/communaute/index.html'
 CSS=ROOT/'assets/css/sinjira-community-public-v24-4-80.css'
 MIN_VERSION=(24,4,91)
+PUBLIC_RUNTIME_VERSION=(24,4,23)
 
 
 def require(text,markers,label):
@@ -18,8 +19,8 @@ def forbid(text,markers,label):
     if found: raise AssertionError(f'{label}: anciens marqueurs encore présents: {found}')
 
 
-def version_at_least(value):
-    try:return tuple(int(x) for x in value.split('.'))>=MIN_VERSION
+def version_at_least(value, minimum=MIN_VERSION):
+    try:return tuple(int(x) for x in value.split('.'))>=minimum
     except Exception:return False
 
 
@@ -33,8 +34,8 @@ def main():
     site_version=re.search(r'site\.js\?v=([0-9.]+)',page)
     if not css_version or not version_at_least(css_version.group(1)):
         raise AssertionError('page publique Communauté: cache CSS non invalidé pour V24.4.91.')
-    if not site_version or not version_at_least(site_version.group(1)):
-        raise AssertionError('page publique Communauté: cache du shell public non invalidé pour V24.4.91.')
+    if not site_version or not version_at_least(site_version.group(1), PUBLIC_RUNTIME_VERSION):
+        raise AssertionError('page publique Communauté: runtime public antérieur à V24.4.23.')
 
     require(page,[
         'sinjira-communaute.webp',

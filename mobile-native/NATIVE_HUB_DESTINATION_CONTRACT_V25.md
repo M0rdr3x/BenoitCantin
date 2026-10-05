@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Les hubs React Native SINJIRA restent des sas de navigation sans copie de données métier. Après la classification exhaustive des **42 pages** `compte/*.html` et le routage central des **31 routes natives**, leurs boutons doivent eux aussi respecter une frontière vérifiable.
+Les hubs React Native SINJIRA restent des sas de navigation sans copie de données métier. Après la classification exhaustive des **44 pages** `compte/*.html` et le routage central des **31 routes natives**, leurs boutons doivent eux aussi respecter une frontière vérifiable.
 
 **L’HUMAIN AVANT TOUT. PROTÉGER SANS SURVEILLER.**
 
@@ -28,6 +28,28 @@ Ainsi un futur bouton ne peut pas changer silencieusement de surface par une var
 - aucune autre ancre ni aucun paramètre de requête n’est accepté depuis un hub.
 
 Le Mode Voyage reste donc une fonction de sécurité existante, sans GPS brut ni nouvelle collecte native.
+
+## Accueil compte Web fail-closed
+
+`/compte/index.html` reste une destination Web spéciale utilisée uniquement par `NativeHomeHub.tsx` lorsque l’état du compte est encore `unknown`.
+
+- le chemin doit rester exact, sans paramètre ni fragment dans le tableau de destinations;
+- il sert à laisser la surface Web authentifiée établir les capacités du compte;
+- il ne doit pas être ajouté comme route native générale;
+- il ne transmet aucune identité au shell : seul l’état coarse `unknown | child | nonchild` revient ensuite au mobile.
+
+Cette destination évite d’exposer des hubs adultes avant que le compte ait été vérifié.
+
+## Communauté Junior Web dédiée
+
+Les surfaces `/compte/communaute-junior.html` et `/compte/regles-communaute-junior.html` restent volontairement **Web-only** et hors des 31 routes natives générales.
+
+- elles peuvent être déclarées comme destinations uniquement depuis `NativeHomeHub.tsx`;
+- elles doivent rester des chemins exacts, sans paramètre ni fragment dans les tableaux de destinations;
+- elles ne deviennent jamais une permission : le serveur, les RPC Junior et la supervision parentale restent l’autorité;
+- le hub Communauté natif général ne peut pas être utilisé comme substitut à la Communauté Junior.
+
+Cette exception évite qu’un compte 11–12 ans soit redirigé vers une surface sociale générale simplement parce qu’elle existe déjà dans le routeur mobile.
 
 ## Registre personnel
 
@@ -61,6 +83,8 @@ Il n’y a donc **aucune destination externe** déclarée directement dans le gr
 - borne les cinq ancres Sécurité;
 - autorise le Registre uniquement depuis l’accueil et vérifie le gate local dans `App.tsx`;
 - interdit auth/MFA et signalement de décès dans les destinations natives;
+- borne l’accueil compte Web fail-closed à `NativeHomeHub.tsx`;
+- borne les surfaces Communauté Junior Web-only à l’accueil natif enfant;
 - refuse les chemins protocol-relative, antislash et destinations externes;
 - se rechaîne aux gardes de classification, routage d’intentions, navigation, secrets, coffre et TypeScript.
 

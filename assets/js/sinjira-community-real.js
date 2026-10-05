@@ -1,4 +1,4 @@
-import {getSupabase,requireCommunityUser,escapeHtml,formatDate,avatarUrl,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.79';
+import {getSupabase,requireUser,requireCommunityUser,escapeHtml,formatDate,avatarUrl,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.79';
 import {editOwnContent,deleteOwnContent,editedSuffix} from './sinjira-social-self-content.js?v=24.4.72';
 import {openSocialReport} from './sinjira-social-safety-v24-4-79.js?v=24.4.79';
 
@@ -150,6 +150,17 @@ function bind(posts,comments){
 
 (async()=>{
   try{
+    const gateUser=await requireUser('/compte/connexion.html');
+    const {data:capabilities,error:capabilityError}=await getSupabase().rpc('sinjira_my_account_capabilities');
+    if(capabilityError||!capabilities)throw new Error('ACCOUNT_CAPABILITIES_UNAVAILABLE');
+    if(capabilities.child_11_12===true){
+      location.replace('/compte/communaute-junior.html');
+      return;
+    }
+    if(capabilities.general_community!==true){
+      location.replace('/compte/index.html?from=community-restricted');
+      return;
+    }
     user=await requireCommunityUser();
     const {data,error}=await getSupabase().from('social_profiles').select('*').eq('user_id',user.id).maybeSingle();
     if(error)throw error;

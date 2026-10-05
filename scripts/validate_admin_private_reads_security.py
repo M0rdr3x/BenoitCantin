@@ -59,7 +59,9 @@ def validate_analytics(source: str) -> list[str]:
         'admin explicite': 'requiredAdmin(req)',
         'lecture JSON bornée': 'readLimitedJson(req)',
         'Content-Length fail-closed': '!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES',
-        'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES',
+        'lecture bornée par flux': 'req.body?.getReader()',
+        'annulation au dépassement': 'reader.cancel()',
+        'décodage UTF-8 strict': "new TextDecoder('utf-8', { fatal: true })",
         'JSON explicite si corps': "contentType !== 'application/json'",
         'slug borné': 'GAME_SLUG_RE',
         'requête contributions bornée': '.limit(10000)',
@@ -82,9 +84,10 @@ def validate_analytics(source: str) -> list[str]:
         "console.error('[admin-analytics]', error?.message",
         "console.error('[admin-analytics]', error.message",
         'await req.json()',
+        'await req.text()',
     ]:
         if forbidden.lower() in lowered:
-            errors.append('admin-analytics: erreur brute ou lecture JSON non bornée détectée.')
+            errors.append('admin-analytics: erreur brute ou lecture de corps non bornée détectée.')
 
     auth_pos = source.find('const { service } = await requiredAdmin(req)')
     body_pos = source.find('const body = await readLimitedJson(req)')
@@ -123,7 +126,10 @@ def self_test() -> None:
         'analytics fallback retiré': analytics.replace("return SAFE_LOG_CODES.has(code) ? code : 'ADMIN_ANALYTICS_BACKEND_FAILED';", 'return code;', 1),
         'analytics no-store retiré': analytics.replace("'Cache-Control': 'private, no-store, max-age=0',", '', 1),
         'analytics limite corps augmentée': analytics.replace('MAX_REQUEST_BYTES = 4096;', 'MAX_REQUEST_BYTES = 65536;', 1),
-        'analytics lecture directe': analytics.replace('const body = await readLimitedJson(req);', 'const body = await req.json();', 1),
+        'analytics lecture directe JSON': analytics.replace('const body = await readLimitedJson(req);', 'const body = await req.json();', 1),
+        'analytics texte intégral': analytics.replace('const reader = req.body?.getReader();', 'const rawDirect = await req.text();', 1),
+        'analytics annulation retirée': analytics.replace('try { await reader.cancel(); } catch { /* Le rejet de taille reste prioritaire. */ }', '', 1),
+        'analytics décodage non strict': analytics.replace("new TextDecoder('utf-8', { fatal: true })", "new TextDecoder('utf-8')", 1),
         'analytics auth après corps': analytics.replace(
             'const { service } = await requiredAdmin(req);\n    const body = await readLimitedJson(req);',
             'const body = await readLimitedJson(req);\n    const { service } = await requiredAdmin(req);',
@@ -165,7 +171,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK lectures admin privées: AAL2/no-store préservés, bornes conservées et logs backend sanitizés pour admin-users/admin-analytics.')
+    print('OK lectures admin privées: AAL2/no-store préservés, admin-analytics borné pendant la lecture, bornes conservées et logs backend sanitizés.')
     return 0
 
 

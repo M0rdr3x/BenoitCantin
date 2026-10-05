@@ -1,14 +1,14 @@
 # SINJIRA V25 — État de sécurité Auth hébergée
 
-Dernière vérification : 2026-09-06.
+Dernière vérification : 2026-09-25.
 
 ## État réel observé
 
 - Projet Supabase : `gpvivleexywljowcqkru` (`ca-central-1`).
 - Organisation : `glaxqwyumblfqmzusqbt`.
-- Plan observé le 2026-09-06 : **Free**.
+- Plan observé le 2026-09-25 : **Free**.
 - Security Advisor : `auth_leaked_password_protection` est encore présent au niveau **WARN**.
-- La protection contre les mots de passe compromis n'est donc **pas activée** en production à cette date.
+- La protection contre les mots de passe compromis n'est donc **pas activée** en production à cette date. Le suivi opérationnel est consigné dans l’issue **#437**.
 - La politique locale/reconstruction SINJIRA conserve une longueur minimale de **12 caractères** dans `supabase/config.toml`.
 
 Cette page est un état daté, pas une hypothèse permanente sur le plan. Le workflow de production relit toujours le plan Supabase au moment de son exécution.

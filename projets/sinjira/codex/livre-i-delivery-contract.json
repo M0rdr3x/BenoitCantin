@@ -1,28 +1,55 @@
 {
-  "schema": "sinjira.livre-i.delivery.v1",
-  "publication_state": "not_activated",
+  "schema": "sinjira.livre-i.delivery.v2",
+  "publication_state": "prepared_not_deployed",
   "human_gate_required": true,
   "principle": "L’HUMAIN AVANT TOUT. PROTÉGER SANS SURVEILLER.",
   "source_issue": 363,
   "demo": {
-    "pages": 83,
-    "sha256": "aad491ce8861928c561caa035fe5ee8cb16d42a8e307c93828758346cc93f26f",
-    "public_url": "https://www.benoitcantin.com/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
+    "pages": 84,
+    "sha256": "d0668a7b07a07321ef1e02cfceb826d3881330bb36417d53e5ff5bd32635628e",
+    "public_url": "https://www.benoitcantin.com/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
+    "size_bytes": 941065,
+    "source_received_at": "2026-10-05",
+    "publication_state": "deployed_public_exact_source"
   },
   "full_edition": {
-    "pages": 1066,
-    "sha256": "9862a11000fe46a2010e7fb902b9bba3dfea70724855a6fb682e0a6192df88e3",
+    "pages": 1027,
+    "sha256": "9acc8f561962850158cb073b122ee038c2731ee3b165deae482260c0cc1ad2d8",
     "public_repository_allowed": false,
     "public_static_url_allowed": false,
     "delivery": "authenticated_private_storage_only",
-    "private_endpoint": "get-private-book-url",
+    "download_endpoint": "get-private-book-url",
+    "reader_endpoint": "get-private-book-reading-url",
+    "reader_page": "/projets/sinjira/romans/lire-integral.html",
     "entitlement_table": "user_entitlements",
     "entitlement_client_mutation_allowed": false,
     "entitlement_anonymous_read_allowed": false,
     "product_slug": "sinjira-livre-01-la-cendre-du-jugement",
+    "access_sources": [
+      "canonical_product_right",
+      "server_verified_owner_role",
+      "server_verified_creator_family"
+    ],
+    "owner_role_creates_entitlement": false,
+    "client_role_assertion_allowed": false,
     "activation_env": "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED",
     "signed_url_seconds": 300,
     "signed_url_max_seconds": 600,
-    "activation_requires_explicit_human_decision": true
+    "reader_signed_url_refresh": true,
+    "reader_progress_storage": "local_device_only",
+    "activation_requires_explicit_human_decision": true,
+    "production_deployment_authorized": false,
+    "canonical_product_right_sources": [
+      "active_product_entitlement",
+      "paid_order"
+    ],
+    "child_full_edition_access_allowed": false,
+    "family_access_creates_entitlement": false,
+    "size_bytes": 7325502,
+    "source_received_at": "2026-10-05",
+    "publication_state": "prepared_not_deployed",
+    "release_gate": "private_storage_integrity_plus_explicit_human_confirmation",
+    "generic_delivery_endpoint": "get-private-novel-url",
+    "admin_release_endpoint": "admin-private-novel-release"
   }
 }

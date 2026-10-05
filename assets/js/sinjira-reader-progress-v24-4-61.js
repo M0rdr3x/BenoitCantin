@@ -5,7 +5,7 @@ const page=document.body.dataset.readerPage||'';
 
 async function syncCanonicalPage(user,novel,pageNumber){
   const pageValue=Math.max(1,Number(pageNumber)||1);
-  const progress=Math.max(0,Math.min(100,Math.round((pageValue/83)*100)));
+  const progress=Math.max(0,Math.min(100,Math.round((pageValue/84)*100)));
   await getSupabase().from('sinjira_reader_library').upsert({
     user_id:user.id,
     novel_id:novel.id,

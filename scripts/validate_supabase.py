@@ -53,6 +53,14 @@ def main()->int:
     hp,hb=latest_function(files,'get_sinjira_runtime_health')
     if not hp or f"'platform_version','{EXPECTED}'" not in re.sub(r'\s+','',hb.lower()):fail(errors,f'Runtime health ne déclare pas {EXPECTED}.')
 
+    product_path,product_block=latest_function(files,'has_sinjira_product')
+    if not product_path:
+        fail(errors,'has_sinjira_product() introuvable.')
+    else:
+        product_compact=re.sub(r'\s+','',product_block.lower())
+        if 'frompublic.user_entitlements' not in product_compact:
+            fail(errors,f'{product_path.name}: has_sinjira_product ne dérive plus le droit depuis user_entitlements.')
+
     for table in ('admin_notifications','guardian_signup_invites','products','user_entitlements','character_submissions','characters'):
         if table not in tables:fail(errors,f'Table contractuelle absente des migrations: {table}')
     for table in tables:

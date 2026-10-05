@@ -5,185 +5,185 @@ import argparse
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-ROOT = Path(__file__).resolve().parents[1]
-EDGE = ROOT / 'supabase/functions/get-private-book-url/index.ts'
-CONFIG = ROOT / 'supabase/config.toml'
-
-REQUIRED = {
-    'POST uniquement': "req.method!=='POST'",
-    'auth utilisateur': 'const user=await requiredUser(req);',
-    'stockage après auth': 'const storage=privateStorageConfig();',
-    'drapeau activation privé': "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED",
-    'bucket privé serveur': 'SINJIRA_LIVRE_I_PRIVATE_BUCKET',
-    'chemin privé serveur': 'SINJIRA_LIVRE_I_PRIVATE_PATH',
-    'slug Livre I exact': "const PRODUCT_SLUG='sinjira-livre-01-la-cendre-du-jugement';",
-    'TTL signé exact': 'const SIGNED_URL_SECONDS=300;',
-    'entitlement compte': ".eq('user_id',user.id)",
-    'entitlement produit': ".eq('product_id',product.id)",
-    'URL signée': '.createSignedUrl(storage.storagePath,SIGNED_URL_SECONDS',
-    'cache privé': "'Cache-Control':'private, no-store, max-age=0'",
-    'pragma no-cache': "'Pragma':'no-cache'",
-    'nosniff': "'X-Content-Type-Options':'nosniff'",
-    'no-referrer': "'Referrer-Policy':'no-referrer'",
-    'log entitlement fixe': "console.error('[get-private-book-url]',{code:'BOOK_ENTITLEMENT_CHECK_FAILED'});",
-    'log URL fixe': "console.error('[get-private-book-url]',{code:'BOOK_SIGNED_URL_FAILED'});",
-    'log config fixe': "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_STORAGE_NOT_CONFIGURED'});",
-    'log global fixe': "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_DELIVERY_FAILED'});",
-}
-
-FORBIDDEN = {
-    'repli URL externe': 'external_url',
-    'repli stockage public': 'getPublicUrl(',
-    'log entitlement brut': "console.error('[SINJIRA Livre I] vérification du droit impossible',entitlementError)",
-    'log storage brut': "console.error('[SINJIRA Livre I] création URL signée impossible',signedError)",
-    'log catch brut': "console.error('[SINJIRA Livre I] erreur téléchargement privé',error)",
-    'objet entitlement loggé': 'console.error(entitlementError)',
-    'objet storage loggé': 'console.error(signedError)',
-    'objet erreur loggé': 'console.error(error)',
-}
+ROOT=Path(__file__).resolve().parents[1]
+DOWNLOAD=ROOT/'supabase/functions/get-private-book-url/index.ts'
+READER=ROOT/'supabase/functions/get-private-book-reading-url/index.ts'
+HELPER=ROOT/'supabase/functions/_shared/privateBook.ts'
+CONFIG=ROOT/'supabase/config.toml'
 
 
-def require(errors: list[str], condition: bool, message: str) -> None:
-    if not condition:
-        errors.append(message)
+def require(errors:list[str],condition:bool,message:str)->None:
+    if not condition: errors.append(message)
 
 
-def config_stanza(config: str) -> str:
-    marker = '[functions.get-private-book-url]'
-    if marker not in config:
-        return ''
-    return config.split(marker, 1)[1].split('[functions.', 1)[0]
+def stanza(config:str,name:str)->str:
+    marker=f'[functions.{name}]'
+    if marker not in config:return ''
+    return config.split(marker,1)[1].split('[functions.',1)[0]
 
 
-def validate_text(source: str, config: str) -> list[str]:
-    errors: list[str] = []
-    for label, marker in REQUIRED.items():
-        require(errors, marker in source, f'Garde Livre I privé absent: {label}.')
-    for label, marker in FORBIDDEN.items():
-        require(errors, marker not in source, f'Garde Livre I privé violé: {label}.')
+def validate_text(download:str,reader:str,helper:str,config:str)->list[str]:
+    errors:list[str]=[]
 
-    auth_pos = source.find('const user=await requiredUser(req);')
-    storage_pos = source.find('const storage=privateStorageConfig();')
-    service_pos = source.find('const service=serviceClient();')
-    require(errors, auth_pos >= 0 and storage_pos > auth_pos,
-            'L’identité doit être validée avant de révéler l’état du stockage privé.')
-    require(errors, service_pos > storage_pos,
-            'Le client service ne doit être construit qu’après auth et validation du stockage privé.')
+    helper_required=(
+        "LIVRE_I_PRODUCT_SLUG='sinjira-livre-01-la-cendre-du-jugement'",
+        'LIVRE_I_SIGNED_URL_SECONDS=300',
+        "Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED')==='true'",
+        "Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_BUCKET')",
+        "Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_PATH')",
+        "service.rpc('is_sinjira_owner',{p_user_id:userId})",
+        "if(isOwner===true)return 'owner'",
+        "service.rpc(\n    'sinjira_has_full_catalog_access'",
+        "if(fullCatalog===true)return 'family'",
+        "service.rpc(\n    'has_sinjira_product'",
+        "{p_product_slug:LIVRE_I_PRODUCT_SLUG,p_user_id:userId}",
+        "if(hasProduct===true)return 'product'",
+        "throw new Error('BOOK_ACCESS_DENIED')",
+    )
+    for marker in helper_required:
+        require(errors,marker in helper,f'Helper Livre I absent: {marker}')
 
-    entitlement_pos = source.find(".from('user_entitlements')")
-    signed_pos = source.find('.createSignedUrl(storage.storagePath,SIGNED_URL_SECONDS')
-    require(errors, entitlement_pos > service_pos and signed_pos > entitlement_pos,
-            'L’URL signée doit être créée seulement après validation de l’entitlement du compte.')
+    owner_pos=helper.find("service.rpc('is_sinjira_owner'")
+    owner_allow_pos=helper.find("if(isOwner===true)return 'owner'")
+    family_pos=helper.find("'sinjira_has_full_catalog_access'")
+    family_allow_pos=helper.find("if(fullCatalog===true)return 'family'")
+    product_pos=helper.find("'has_sinjira_product'")
+    product_allow_pos=helper.find("if(hasProduct===true)return 'product'")
+    require(errors,0<=owner_pos<owner_allow_pos<family_pos<family_allow_pos<product_pos<product_allow_pos,
+            'Ordre attendu: owner serveur -> catalogue famille -> droit produit canonique.')
 
-    console_lines = [line.strip() for line in source.splitlines() if 'console.' in line]
-    expected_console_lines = [
-        "console.error('[get-private-book-url]',{code:'BOOK_ENTITLEMENT_CHECK_FAILED'});",
-        "console.error('[get-private-book-url]',{code:'BOOK_SIGNED_URL_FAILED'});",
-        "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_STORAGE_NOT_CONFIGURED'});",
-        "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_DELIVERY_FAILED'});",
-    ]
-    require(errors, console_lines == expected_console_lines,
-            'Les logs du Livre I privé doivent rester limités aux codes fixes approuvés.')
+    for forbidden in ('getPublicUrl(', 'external_url', 'clientRole', 'is_owner_from_client', ".from('products')", ".from('user_entitlements')"):
+        require(errors,forbidden not in helper,f'Helper Livre I interdit: {forbidden}')
+    for mutation in ('.insert(', '.update(', '.upsert(', '.delete('):
+        require(errors,mutation not in helper,f'Helper Livre I ne doit jamais muter un droit ou un rôle: {mutation}')
 
-    stanza = config_stanza(config)
-    require(errors, bool(stanza), 'Stanza [functions.get-private-book-url] absente de supabase/config.toml.')
-    require(errors, 'verify_jwt = true' in stanza, 'get-private-book-url doit conserver verify_jwt=true.')
-    require(errors, 'verify_jwt = false' not in stanza, 'verify_jwt=false interdit pour get-private-book-url.')
+    for name,source in (('download',download),('reader',reader)):
+        for marker in (
+            "req.method!=='POST'",
+            'const user=await requiredUser(req);',
+            'const service=serviceClient();',
+            "service.rpc('sinjira_age_band',{p_user_id:user.id})",
+            "if(normalizedAgeBand==='child')",
+            "if(!['adult','youth'].includes(normalizedAgeBand))",
+            'await requirePrivateBookAccess(service,user.id);',
+            'const storage=privateBookStorageConfig();',
+            "'Cache-Control':'private, no-store, max-age=0'",
+            "'Pragma':'no-cache'",
+            "'X-Content-Type-Options':'nosniff'",
+            "'Referrer-Policy':'no-referrer'",
+            '.createSignedUrl(storage.storagePath,LIVRE_I_SIGNED_URL_SECONDS',
+        ):
+            require(errors,marker in source,f'{name}: garde absent: {marker}')
+        auth=source.find('const user=await requiredUser(req);')
+        service=source.find('const service=serviceClient();')
+        age=source.find("service.rpc('sinjira_age_band',{p_user_id:user.id})")
+        child_block=source.find("if(normalizedAgeBand==='child')")
+        access=source.find('await requirePrivateBookAccess(service,user.id);')
+        storage=source.find('const storage=privateBookStorageConfig();')
+        signed=source.find('.createSignedUrl(storage.storagePath,LIVRE_I_SIGNED_URL_SECONDS')
+        require(errors,0<=auth<service<age<child_block<access<storage<signed,
+                f'{name}: ordre auth -> âge -> autorisation -> stockage -> URL signée invalide')
+        require(errors,'getPublicUrl(' not in source and 'external_url' not in source,
+                f'{name}: aucun repli public/externe permis')
+        require(errors,"console.error(error)" not in source and 'console.error(signedError)' not in source,
+                f'{name}: les erreurs brutes ne doivent pas être journalisées')
+
+    require(errors,"{download:'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf'}" in download,
+            'Téléchargement: Content-Disposition privé attendu via option download.')
+    require(errors,"{download:" not in reader and "download:'" not in reader,
+            'Lecteur: l’URL signée ne doit pas forcer un téléchargement.')
+    require(errors,"BOOK_ACCESS_DENIED" in download and "BOOK_ACCESS_DENIED" in reader,
+            'Les deux portes doivent refuser explicitement un compte non autorisé.')
+
+    expected_logs={
+        'download':[
+            "console.error('[get-private-book-url]',{code:'BOOK_SIGNED_URL_FAILED'});",
+            "console.error('[get-private-book-url]',{code:'BOOK_ACCESS_CHECK_FAILED'});",
+            "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_STORAGE_NOT_CONFIGURED'});",
+            "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_DELIVERY_FAILED'});",
+        ],
+        'reader':[
+            "console.error('[get-private-book-reading-url]',{code:'BOOK_READER_SIGNED_URL_FAILED'});",
+            "console.error('[get-private-book-reading-url]',{code:'BOOK_READER_ACCESS_CHECK_FAILED'});",
+            "console.error('[get-private-book-reading-url]',{code:'BOOK_READER_STORAGE_NOT_CONFIGURED'});",
+            "console.error('[get-private-book-reading-url]',{code:'BOOK_READER_FAILED'});",
+        ],
+    }
+    for name,source in (('download',download),('reader',reader)):
+        console_lines=[line.strip() for line in source.splitlines() if 'console.' in line]
+        require(errors,console_lines==expected_logs[name],f'{name}: logs fixes approuvés requis')
+
+    for function_name in ('get-private-book-url','get-private-book-reading-url'):
+        current=stanza(config,function_name)
+        require(errors,bool(current),f'Stanza {function_name} absente')
+        require(errors,'verify_jwt = true' in current,f'{function_name}: verify_jwt=true requis')
+        require(errors,'verify_jwt = false' not in current,f'{function_name}: verify_jwt=false interdit')
     return errors
 
 
-def validate(edge_path: Path = EDGE, config_path: Path = CONFIG) -> list[str]:
+def validate(download_path:Path=DOWNLOAD,reader_path:Path=READER,helper_path:Path=HELPER,config_path:Path=CONFIG)->list[str]:
     try:
-        source = edge_path.read_text('utf-8', errors='strict')
-    except OSError as exc:
-        return [f'get-private-book-url illisible: {exc}']
-    try:
-        config = config_path.read_text('utf-8', errors='strict')
-    except OSError as exc:
-        return [f'supabase/config.toml illisible: {exc}']
-    return validate_text(source, config)
+        return validate_text(
+            download_path.read_text('utf-8',errors='strict'),reader_path.read_text('utf-8',errors='strict'),
+            helper_path.read_text('utf-8',errors='strict'),config_path.read_text('utf-8',errors='strict'))
+    except OSError as exc:return [f'Frontière Livre I illisible: {exc}']
 
 
-def self_test() -> None:
-    source = EDGE.read_text('utf-8', errors='strict')
-    config = CONFIG.read_text('utf-8', errors='strict')
-    clean = validate_text(source, config)
-    if clean:
-        raise AssertionError('Le cas réel sain doit passer: ' + ' | '.join(clean))
+def self_test()->None:
+    values=(DOWNLOAD.read_text('utf-8'),READER.read_text('utf-8'),HELPER.read_text('utf-8'),CONFIG.read_text('utf-8'))
+    if (baseline:=validate_text(*values)):
+        raise AssertionError('Le cas réel sain doit passer: '+' | '.join(baseline))
+    download,reader,helper,config=values
+    reader_storage_before_access=reader.replace(
+        "    await requirePrivateBookAccess(service,user.id);\n\n    // L'état de la livraison privée n'est révélé qu'à un compte déjà autorisé.\n    const storage=privateBookStorageConfig();",
+        "    const storage=privateBookStorageConfig();\n    await requirePrivateBookAccess(service,user.id);",
+        1,
+    )
+    owner_block="""  const {data:isOwner,error:ownerError}=await service.rpc('is_sinjira_owner',{p_user_id:userId});
+  if(ownerError)throw new Error('BOOK_ACCESS_CHECK_FAILED');
+  if(isOwner===true)return 'owner';
 
-    ordered = """    const user=await requiredUser(req);
-    const storage=privateStorageConfig();
 """
-    reversed_order = """    const storage=privateStorageConfig();
-    const user=await requiredUser(req);
-"""
-
-    source_mutations = {
-        'auth après stockage': source.replace(ordered, reversed_order, 1),
-        'auth retirée': source.replace('const user=await requiredUser(req);', "const user={id:'bypass'};", 1),
-        'POST retiré': source.replace("  if(req.method!=='POST')return privateJson({ok:false,error:'Méthode non autorisée.'},405);\n", '', 1),
-        'no-store retiré': source.replace("  'Cache-Control':'private, no-store, max-age=0',\n", '', 1),
-        'TTL élargi': source.replace('SIGNED_URL_SECONDS=300', 'SIGNED_URL_SECONDS=3600', 1),
-        'filtre utilisateur retiré': source.replace("      .eq('user_id',user.id)\n", '', 1),
-        'filtre produit retiré': source.replace("      .eq('product_id',product.id)\n", '', 1),
-        'activation privée retirée': source.replace("  const enabled=Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED')==='true';\n", "  const enabled=true;\n", 1),
-        'repli public ajouté': source.replace('    return privateJson({\n      ok:true,', "    service.storage.from(storage.bucket).getPublicUrl(storage.storagePath);\n    return privateJson({\n      ok:true,", 1),
-        'log entitlement brut': source.replace("console.error('[get-private-book-url]',{code:'BOOK_ENTITLEMENT_CHECK_FAILED'});", "console.error(entitlementError);", 1),
-        'log storage brut': source.replace("console.error('[get-private-book-url]',{code:'BOOK_SIGNED_URL_FAILED'});", "console.error(signedError);", 1),
-        'log catch brut': source.replace("console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_DELIVERY_FAILED'});", "console.error(error);", 1),
-    }
-
+    helper_owner_after_product=helper.replace(owner_block,'',1).replace(
+        "  const {data:hasProduct,error:productAccessError}=await service.rpc(\n",
+        owner_block+"  const {data:hasProduct,error:productAccessError}=await service.rpc(\n",
+        1,
+    )
+    mutations=[
+        ('auth téléchargement retirée',download.replace('const user=await requiredUser(req);',"const user={id:'bypass'};",1),reader,helper,config),
+        ('auth lecteur retirée',download,reader.replace('const user=await requiredUser(req);',"const user={id:'bypass'};",1),helper,config),
+        ('autorisation lecteur retirée',download,reader.replace('await requirePrivateBookAccess(service,user.id);','',1),helper,config),
+        ('stockage révélé avant autorisation',download,reader_storage_before_access,helper,config),
+        ('auteur dépend du produit commercial',download,reader,helper_owner_after_product,config),
+        ('catalogue famille retiré',download,reader,helper.replace("'sinjira_has_full_catalog_access'","'catalog_access_missing'",1),config),
+        ('droit produit canonique retiré',download,reader,helper.replace("'has_sinjira_product'","'product_access_missing'",1),config),
+        ('droit produit truthy permissif',download,reader,helper.replace("if(hasProduct===true)return 'product'","if(hasProduct)return 'product'",1),config),
+        ('retour lecture directe entitlements',download,reader,helper+"\nservice.from('user_entitlements').select('*');\n",config),
+        ('âge child téléchargement retiré',download.replace("if(normalizedAgeBand==='child')throw new Error('BOOK_NOT_AVAILABLE_11_12');","",1),reader,helper,config),
+        ('âge child lecteur retiré',download,reader.replace("if(normalizedAgeBand==='child')throw new Error('BOOK_NOT_AVAILABLE_11_12');","",1),helper,config),
+        ('owner serveur retiré',download,reader,helper.replace("  const {data:isOwner,error:ownerError}=await service.rpc('is_sinjira_owner',{p_user_id:userId});\n",'',1),config),
+        ('TTL élargi',download,reader,helper.replace('LIVRE_I_SIGNED_URL_SECONDS=300','LIVRE_I_SIGNED_URL_SECONDS=3600',1),config),
+        ('mutation entitlement ajoutée',download,reader,helper+"\nservice.from('user_entitlements').insert({});\n",config),
+        ('repli public',download,reader,helper+"\nservice.storage.from('x').getPublicUrl('x');\n",config),
+        ('reader force download',download,reader.replace('LIVRE_I_SIGNED_URL_SECONDS);',"LIVRE_I_SIGNED_URL_SECONDS,{download:'x.pdf'});",1),helper,config),
+        ('jwt reader désactivé',download,reader,helper,config.replace('[functions.get-private-book-reading-url]\nverify_jwt = true','[functions.get-private-book-reading-url]\nverify_jwt = false',1)),
+        ('jwt download désactivé',download,reader,helper,config.replace('[functions.get-private-book-url]\nverify_jwt = true','[functions.get-private-book-url]\nverify_jwt = false',1)),
+    ]
     with TemporaryDirectory() as raw:
-        tmp = Path(raw)
-        edge_path = tmp / 'index.ts'
-        config_path = tmp / 'config.toml'
-        config_path.write_text(config, encoding='utf-8')
-        for label, mutated in source_mutations.items():
-            if mutated == source:
-                raise AssertionError(f'Mutation source sans effet: {label}')
-            edge_path.write_text(mutated, encoding='utf-8')
-            if not validate(edge_path, config_path):
-                raise AssertionError(f'Régression source non détectée: {label}')
-
-        edge_path.write_text(source, encoding='utf-8')
-        config_mutations = {
-            'verify_jwt désactivé': config.replace(
-                '[functions.get-private-book-url]\nverify_jwt = true',
-                '[functions.get-private-book-url]\nverify_jwt = false',
-                1,
-            ),
-            'stanza retirée': config.replace(
-                '[functions.get-private-book-url]\nverify_jwt = true\n\n',
-                '',
-                1,
-            ),
-        }
-        for label, mutated in config_mutations.items():
-            if mutated == config:
-                raise AssertionError(f'Mutation config sans effet: {label}')
-            config_path.write_text(mutated, encoding='utf-8')
-            if not validate(edge_path, config_path):
-                raise AssertionError(f'Régression config non détectée: {label}')
-
-    print(f'OK auto-tests Livre I privé: {len(source_mutations) + len(config_mutations)} affaiblissements critiques détectés.')
+        root=Path(raw);d=root/'download.ts';r=root/'reader.ts';h=root/'helper.ts';c=root/'config.toml'
+        for label,md,mr,mh,mc in mutations:
+            d.write_text(md,encoding='utf-8');r.write_text(mr,encoding='utf-8');h.write_text(mh,encoding='utf-8');c.write_text(mc,encoding='utf-8')
+            if not validate(d,r,h,c):raise AssertionError(f'Régression non détectée: {label}')
+    print(f'OK auto-tests Livre I privé: {len(mutations)} affaiblissements critiques détectés.')
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description='Valide la frontière privée de get-private-book-url.')
-    parser.add_argument('--self-test', action='store_true')
-    args = parser.parse_args()
-    if args.self_test:
-        self_test()
-        return 0
-    errors = validate()
+def main()->int:
+    parser=argparse.ArgumentParser();parser.add_argument('--self-test',action='store_true');args=parser.parse_args()
+    if args.self_test:self_test();return 0
+    errors=validate()
     if errors:
-        print(f'ÉCHEC Livre I privé: {len(errors)} problème(s).')
-        for error in errors:
-            print('- ' + error)
-        return 1
-    print('OK Livre I privé: auth avant état du stockage, entitlement compte/produit, URL signée 300 s, aucun repli public et logs sanitizés.')
+        print(f'ÉCHEC Livre I privé: {len(errors)} problème(s).');[print('- '+e) for e in errors];return 1
+    print('OK Livre I privé: owner/famille V25/droit produit canonique; âge vérifié avant autorisation; stockage privé après contrôle; URLs signées 300 s.')
     return 0
 
-
-if __name__ == '__main__':
-    raise SystemExit(main())
+if __name__=='__main__':raise SystemExit(main())

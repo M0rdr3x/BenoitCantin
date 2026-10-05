@@ -50,12 +50,13 @@ export function formatDate(v){if(!v)return '—';return new Intl.DateTimeFormat(
 export function friendlyBackendMessage(message,fallback='Une opération serveur n’a pas pu être terminée.'){
   const raw=String(message||'').trim();if(!raw)return fallback;
   if(/PGRST20[25]|Could not find the (?:table|function)|relation .* does not exist|schema cache/i.test(raw))return 'Le serveur SINJIRA™ doit encore être synchronisé pour cette fonction.';
-  if(/GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14/i.test(raw))return 'Un code d’autorisation parentale est obligatoire pour un compte de 12 ou 13 ans.';
+  if(/GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14/i.test(raw))return 'Un code d’autorisation parentale est obligatoire pour un compte de 11 à 13 ans.';
   if(/INVALID_OR_EXPIRED_GUARDIAN_CODE/i.test(raw))return 'Le code d’autorisation parentale est invalide, expiré ou déjà utilisé.';
   if(/ADULT_GUARDIAN_REQUIRED/i.test(raw))return 'Le code doit provenir d’un parent ou tuteur possédant un compte adulte.';
   if(/MFA_REQUIRED/i.test(raw))return 'Une authentification renforcée est requise pour cette opération sensible.';
   if(/MFA_STATE_UNAVAILABLE/i.test(raw))return 'L’état de votre authentification renforcée ne peut pas être vérifié pour le moment.';
-  if(/SINJIRA_MINIMUM_AGE_12/i.test(raw))return 'Les Comptes SINJIRA™ sont disponibles à partir de 12 ans.';
+  if(/SINJIRA_MINIMUM_AGE_11/i.test(raw))return 'Les Comptes SINJIRA™ supervisés sont disponibles à partir de 11 ans.';
+  if(/SINJIRA_MINIMUM_AGE_(?:12|13)/i.test(raw))return 'Le serveur utilise encore une ancienne règle d’âge. La synchronisation du module enfant 11 ans est requise avant cette inscription.';
   if(/JWT|token.*expired|session.*expired|invalid claim/i.test(raw))return 'Votre session a expiré. Reconnectez-vous puis réessayez.';
   if(/Failed to fetch|NetworkError|FunctionsFetchError|Load failed/i.test(raw))return 'Communication avec le serveur SINJIRA™ impossible pour le moment.';
   if(/row-level security|permission denied|42501|not authorized|forbidden/i.test(raw))return 'Votre compte n’a pas l’autorisation nécessaire pour cette opération.';

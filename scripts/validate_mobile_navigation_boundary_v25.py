@@ -286,6 +286,10 @@ def main() -> int:
         "about:blank",
         "pas une URL",
         "https://www.sinjira.com/compte/profil.html",
+        "https://www.sinjira.com/compte/messages.html",
+        "https://www.sinjira.com/compte/communaute.html",
+        "childAccess: 'child'",
+        "redirectedUrls",
         "https://user:password@sinjira.com/compte/profil.html",
         "https://sinjira.com/compte/profil.html?access_token=interne",
         "https://www.benoitcantin.com/compte/registre-personnel.html",
@@ -306,6 +310,10 @@ def main() -> int:
             "les sorties externes propres doivent vérifier une ouverture OS unique")
     require("assert.deepEqual(harness.navigatedPaths, ['/compte/registre-personnel.html'])" in adversarial_text,
             "le test doit verrouiller l'interception locale du Registre")
+    require("communaute-junior.html?from=restricted&module=messages.html" in adversarial_text,
+            "le test doit prouver la redirection Junior avant chargement d'une route restreinte")
+    require("harness.redirectedUrls[0].tab, 'junior'" in adversarial_text,
+            "le test doit conserver le contexte d'onglet Junior après redirection")
 
     require('"test:navigation-guard": "node scripts/test-external-navigation-guard.mjs"' in package_text,
             "package.json doit exposer le test adversarial de navigation")
@@ -326,7 +334,7 @@ def main() -> int:
     require("npm run test:notification-navigation" in workflow_text,
             "le workflow frontière mobile doit exécuter le test notification")
 
-    print("OK navigation mobile V25: frontière externe bornée, userinfo refusé avant classification, mailto limité à un destinataire visible et subject/body sûrs, tel borné aux numéros ordinaires, deep links et chemins notification épinglés à l'origine par tests exécutables, décodage fail-closed et décision shouldStart complète exécutée avec effets de bord en CI.")
+    print("OK navigation mobile V25: frontière externe bornée, redirections Junior avant chargement, userinfo/mailto/tel sûrs, deep links et notifications testés sur le vrai App.tsx.")
     return 0
 
 

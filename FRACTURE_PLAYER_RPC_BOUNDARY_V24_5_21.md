@@ -29,6 +29,12 @@ Les signatures publiques restent identiques avec des wrappers `SECURITY INVOKER`
 
 Sept implémentations conservent leur vérification directe `auth.uid()`. `fracture_engine_get_state` continue de déléguer à `_fracture_engine_get_state_raw`, qui impose `AUTH_REQUIRED`, résout le siège du membre et refuse `NOT_A_MEMBER`.
 
+### Droit produit Fracture conservé côté serveur
+
+`create_fracture_party` et `join_fracture_party` conservent avant leur déplacement interne la vérification serveur `has_sinjira_product('fracture-du-reseau-mere', auth.uid())`. Sans droit produit Fracture, elles refusent avec `FRACTURE_ACCESS_REQUIRED` **avant toute écriture de partie ou de membre**.
+
+Ce droit produit provient de `user_entitlements` (par exemple après activation d’un code physique). Il reste distinct de `project_access`, qui sert aux niveaux d’accès projet/testeur/documents. Une acquisition Fracture n’a donc pas besoin de fabriquer un faux `project_access` pour rendre le jeu jouable, et le rôle propriétaire ne doit pas être représenté comme un achat.
+
 ## Helper RLS volontairement exclu
 
 `public.is_fracture_party_member(uuid,uuid)` reste dans `public` et n’est pas déplacé par V24.5.21. Quatre politiques RLS l’utilisent directement pour autoriser la lecture de parties, membres, rapports de fin de partie et documents joueur. Le déplacer mécaniquement casserait l’évaluation RLS ou obligerait à ouvrir une permission indue.

@@ -14,7 +14,9 @@ REQUIRED = {
     'admin explicite': 'requiredAdmin(req)',
     'lecture JSON bornée': 'readLimitedJson(req)',
     'content-type JSON strict': "if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');",
-    'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'lecture bornée par flux': 'req.body?.getReader()',
+    'annulation au dépassement': 'reader.cancel()',
+    'décodage UTF-8 strict': "new TextDecoder('utf-8', { fatal: true })",
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma': 'no-cache'",
     'nosniff': "'X-Content-Type-Options': 'nosniff'",
@@ -33,6 +35,7 @@ REQUIRED = {
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
+    'lecture texte intégrale avant borne': 'await req.text()',
     'helper JSON générique cacheable': 'return json(',
     'import helper JSON générique': "import { corsHeaders, json }",
     'auth admin indirecte par requiredUser': 'requiredUser(req)',
@@ -94,6 +97,9 @@ def self_test() -> None:
 
     cases = {
         'json direct': real.replace('const body = await readLimitedJson(req);', 'const body = await req.json();', 1),
+        'texte intégral réintroduit': real.replace('const reader = req.body?.getReader();', 'const rawDirect = await req.text();', 1),
+        'annulation retirée': real.replace('try { await reader.cancel(); } catch { /* Le rejet de taille reste prioritaire. */ }', '', 1),
+        'décodage non strict': real.replace("new TextDecoder('utf-8', { fatal: true })", "new TextDecoder('utf-8')", 1),
         'content-type JSON retiré': real.replace("  if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');\n", '', 1),
         'no-store retiré': real.replace("'Cache-Control': 'private, no-store, max-age=0',", '', 1),
         'limite affaiblie': real.replace('MAX_REQUEST_BYTES = 4096;', 'MAX_REQUEST_BYTES = 40960;', 1),
@@ -135,7 +141,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK admin-reports: admin/JWT/AAL2 avant corps, JSON strict 4 KiB, lectures fail-closed et réponses privées no-store.')
+    print('OK admin-reports: admin/JWT/AAL2 avant corps, JSON strict 4 KiB borné pendant la lecture, lectures fail-closed et réponses privées no-store.')
     return 0
 
 

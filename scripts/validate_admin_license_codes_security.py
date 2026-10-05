@@ -18,7 +18,11 @@ REQUIRED = {
     'admin explicite': 'requiredAdmin(req)',
     'lecture JSON bornée': 'readLimitedJson(req)',
     'content-type JSON strict': "if(contentType!=='application/json')throw new Error('JSON_REQUIRED');",
-    'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'content-length fermé': "if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');",
+    'lecture streaming': 'req.body?.getReader()',
+    'borne streaming': 'if(total>MAX_REQUEST_BYTES){',
+    'annulation dépassement': 'await reader.cancel()',
+    'UTF-8 strict': "new TextDecoder('utf-8',{fatal:true})",
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
     'nosniff': "'X-Content-Type-Options':'nosniff'",
@@ -39,6 +43,7 @@ REQUIRED = {
 }
 
 FORBIDDEN = {
+    'lecture texte complète non bornée': 'await req.text()',
     'lecture JSON directe non bornée': 'await req.json()',
     'helper JSON générique cacheable': 'return json(',
     'import helper JSON générique': 'json} from',
@@ -98,6 +103,15 @@ def self_test() -> None:
         raise AssertionError('Le fichier réel sain doit passer: ' + ' | '.join(clean))
 
     cases = {
+        'lecture texte complète réintroduite': real.replace('const reader=req.body?.getReader();', 'const reader=req.body?.getReader();\n  const legacy=await req.text();', 1),
+        'annulation dépassement retirée': real.replace('      try{await reader.cancel()}catch{/* rejection de taille prioritaire */}\n', '', 1),
+        'décodeur UTF-8 permissif': real.replace("new TextDecoder('utf-8',{fatal:true}).decode(bytes)", 'new TextDecoder().decode(bytes)', 1),
+        'borne streaming retirée': real.replace('if(total>MAX_REQUEST_BYTES){', 'if(false){', 1),
+        'content-length affaibli': real.replace(
+            "if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');",
+            "if(Number.isFinite(declared)&&declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');",
+            1,
+        ),
         'json direct': real.replace('const body=await readLimitedJson(req);', 'const body=await req.json();', 1),
         'content-type JSON retiré': real.replace("  if(contentType!=='application/json')throw new Error('JSON_REQUIRED');\n", '', 1),
         'no-store retiré': real.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),
@@ -143,7 +157,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK licences admin: admin/JWT/AAL2 avant corps, JSON strict 4 KiB, codes no-store, persistance hashée et rollback du lot obligatoires.')
+    print('OK licences admin: admin/JWT/AAL2 avant corps, JSON strict 4 KiB streamé, codes no-store, persistance hashée et rollback du lot obligatoires.')
     return 0
 
 

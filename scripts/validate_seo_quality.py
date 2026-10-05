@@ -17,6 +17,15 @@ BASIC_KEY_PAGES = [
     ROOT / "projets" / "sinjira" / "index.html",
 ]
 
+NOVA_LEGACY_REDIRECTS = {
+    ROOT / "accessibilite.html": "/projets/projet-nova/accessibilite.html",
+    ROOT / "actualites.html": "/projets/projet-nova/actualites.html",
+    ROOT / "manifeste.html": "/projets/projet-nova/manifeste.html",
+    ROOT / "livre-nova.html": "/projets/projet-nova/livre-nova.html",
+    ROOT / "transition.html": "/projets/projet-nova/transition.html",
+    ROOT / "code-conduite.html": "/projets/projet-nova/code-conduite.html",
+}
+
 NOVA_PAGE_NAMES = [
     "comprendre-nova.html",
     "programme.html",
@@ -43,17 +52,75 @@ NOVA_PAGE_NAMES = [
 ]
 
 SEO_PAGES = {
+    ROOT / "a-propos.html": BASE + "/a-propos.html",
+    ROOT / "contact.html": BASE + "/contact.html",
+    ROOT / "transparence-ia.html": BASE + "/transparence-ia.html",
+    ROOT / "assistant.html": BASE + "/assistant.html",
+    ROOT / "confidentialite.html": BASE + "/confidentialite.html",
+    ROOT / "gouvernance-vie-privee.html": BASE + "/gouvernance-vie-privee.html",
+    ROOT / "avis-legal.html": BASE + "/avis-legal.html",
+    ROOT / "projets" / "sinjira" / "index.html": BASE + "/projets/sinjira/",
+    ROOT / "projets" / "sinjira" / "romans" / "index.html": BASE + "/projets/sinjira/romans/",
+    ROOT / "projets" / "sinjira" / "jeux" / "index.html": BASE + "/projets/sinjira/jeux/",
     ROOT / "projets" / "sinjira" / "registre" / "index.html": BASE + "/projets/sinjira/registre/",
+    ROOT / "projets" / "sinjira" / "communaute" / "index.html": BASE + "/projets/sinjira/communaute/",
+    ROOT / "projets" / "sinjira" / "monde-parallele" / "index.html": BASE + "/projets/sinjira/monde-parallele/",
+    ROOT / "projets" / "sinjira" / "codex" / "index.html": BASE + "/projets/sinjira/codex/",
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "regles.html": BASE + "/projets/sinjira/jeux/fracture-du-reseau-mere/regles.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "reseau-mere-resistance" / "index.html": BASE + "/projets/sinjira/jeux/reseau-mere-resistance/",
+    ROOT / "projets" / "sinjira" / "romans" / "precommande.html": BASE + "/projets/sinjira/romans/precommande.html",
     ROOT / "projets" / "projet-nova" / "index.html": BASE + "/projets/projet-nova/",
 }
 for nova_name in NOVA_PAGE_NAMES:
     SEO_PAGES[ROOT / "projets" / "projet-nova" / nova_name] = BASE + "/projets/projet-nova/" + nova_name
+
+SPECIAL_SEO_PAGES = {
+    ROOT / "projets" / "sinjira" / "romans" / "lire-demo.html": (
+        BASE + "/projets/sinjira/romans/lire-demo.html", "article", "CreativeWork"
+    ),
+    ROOT / "projets" / "sinjira" / "romans" / "le-sang-du-sauveur" / "index.html": (
+        BASE + "/projets/sinjira/romans/le-sang-du-sauveur/", "book", "Book"
+    ),
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "index.html": (
+        BASE + "/projets/sinjira/jeux/fracture-du-reseau-mere/", "website", "WebPage"
+    ),
+}
+
+TRANSIENT_NOINDEX_PAGES = [
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "jouer.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "fin-de-partie.html",
+    ROOT / "projets" / "sinjira" / "marche" / "index.html",
+]
+
+SINJIRA_PRIVATE_NOINDEX_PAGES = [
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "fiche-joueur.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "partie.html",
+    ROOT / "projets" / "sinjira" / "romans" / "lire-integral.html",
+]
+
+UTILITY_NOINDEX_PAGES = [
+    ROOT / "projets" / "sinjira" / "compte.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "fiche-solo.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "fiche-web.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "fracture-du-reseau-mere" / "preparer-partie.html",
+    ROOT / "projets" / "sinjira" / "personnages" / "index.html",
+    ROOT / "projets" / "sinjira" / "jeux" / "le-premier-refuge" / "index.html",
+    ROOT / "projets" / "sinjira" / "registre" / "merci.html",
+]
 
 PRIVATE_NOINDEX_PAGES = [
     ROOT / "compte" / "index.html",
     ROOT / "compte" / "connexion.html",
     ROOT / "compte" / "reseau-personnage.html",
 ]
+
+SINJIRA_CLASSIFIED_PAGES = (
+    set(page for page in SEO_PAGES if "projets/sinjira/" in page.relative_to(ROOT).as_posix())
+    | set(SPECIAL_SEO_PAGES)
+    | set(SINJIRA_PRIVATE_NOINDEX_PAGES)
+    | set(TRANSIENT_NOINDEX_PAGES)
+    | set(UTILITY_NOINDEX_PAGES)
+)
 
 
 def local_file_for_url(url: str) -> Path:
@@ -63,6 +130,15 @@ def local_file_for_url(url: str) -> Path:
     if path.endswith("/"):
         return ROOT / path.lstrip("/") / "index.html"
     return ROOT / path.lstrip("/")
+
+
+def public_url_for_page(page: Path) -> str:
+    rel = page.relative_to(ROOT).as_posix()
+    if rel == "index.html":
+        return BASE + "/"
+    if rel.endswith("/index.html"):
+        return BASE + "/" + rel[:-len("index.html")]
+    return BASE + "/" + rel
 
 
 def read_sitemap(path: Path, errors: list[str]) -> list[str]:
@@ -84,14 +160,17 @@ def meta_content(html: str, *, name: str | None = None, prop: str | None = None)
     attr = "name" if name is not None else "property"
     value = name if name is not None else prop
     assert value is not None
-    patterns = [
-        rf"<meta\b(?=[^>]*\b{attr}=[\"']{re.escape(value)}[\"'])[^>]*\bcontent=[\"']([^\"']*)[\"'][^>]*>",
-        rf"<meta\b(?=[^>]*\bcontent=[\"']([^\"']*)[\"'])[^>]*\b{attr}=[\"']{re.escape(value)}[\"'][^>]*>",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, html, flags=re.I)
-        if match:
-            return match.group(1).strip()
+
+    for tag in re.findall(r"<meta\b[^>]*>", html, flags=re.I):
+        attrs: dict[str, str] = {}
+        for key, quote, raw_value in re.findall(
+            r"([:\w-]+)\s*=\s*([\"'])(.*?)\2",
+            tag,
+            flags=re.I | re.S,
+        ):
+            attrs[key.lower()] = raw_value
+        if attrs.get(attr) == value:
+            return attrs.get("content", "").strip()
     return ""
 
 
@@ -215,8 +294,96 @@ def validate_seo_page(page: Path, canonical_expected: str, errors: list[str]) ->
                 errors.append(f"{rel}: inLanguage JSON-LD doit être fr-CA.")
 
 
+def validate_special_seo_page(
+    page: Path,
+    canonical_expected: str,
+    og_type_expected: str,
+    schema_type_expected: str,
+    errors: list[str],
+) -> None:
+    if not page.exists():
+        errors.append(f"Page SEO spécialisée absente: {page.relative_to(ROOT)}")
+        return
+    html = page.read_text("utf-8", errors="ignore")
+    rel = page.relative_to(ROOT)
+    title_match = re.search(r"<title>\s*([^<]+?)\s*</title>", html, flags=re.I)
+    title = title_match.group(1).strip() if title_match else ""
+    description = meta_content(html, name="description")
+    if not title:
+        errors.append(f"{rel}: title absent ou vide.")
+    if len(description) < 25:
+        errors.append(f"{rel}: meta description absente ou trop courte.")
+    if link_href(html, "canonical") != canonical_expected:
+        errors.append(f"{rel}: canonique spécialisé incohérent.")
+    for lang in ("fr-CA", "x-default"):
+        if link_href(html, "alternate", lang) != canonical_expected:
+            errors.append(f"{rel}: hreflang {lang} absent ou incohérent.")
+    expected_meta = {
+        ("property", "og:locale"): "fr_CA",
+        ("property", "og:type"): og_type_expected,
+        ("property", "og:title"): title,
+        ("property", "og:description"): description,
+        ("property", "og:url"): canonical_expected,
+        ("name", "twitter:title"): title,
+        ("name", "twitter:description"): description,
+    }
+    for (kind, key), expected in expected_meta.items():
+        actual = meta_content(html, name=key) if kind == "name" else meta_content(html, prop=key)
+        if actual != expected:
+            errors.append(f"{rel}: {key} spécialisé absent ou incohérent.")
+    og_image = meta_content(html, prop="og:image")
+    twitter_card = meta_content(html, name="twitter:card")
+    twitter_image = meta_content(html, name="twitter:image")
+    if og_image:
+        parsed = urlparse(og_image)
+        if parsed.scheme != "https" or parsed.netloc != DOMAIN:
+            errors.append(f"{rel}: og:image spécialisé hors domaine HTTPS.")
+        if twitter_card != "summary_large_image" or twitter_image != og_image:
+            errors.append(f"{rel}: carte Twitter spécialisée incohérente.")
+    elif twitter_card != "summary":
+        errors.append(f"{rel}: twitter:card spécialisé doit être summary sans image.")
+    schema_match = re.search(
+        r"<script\b(?=[^>]*type=[\"']application/ld\+json[\"'])[^>]*>(.*?)</script>",
+        html,
+        flags=re.I | re.S,
+    )
+    if not schema_match:
+        errors.append(f"{rel}: JSON-LD spécialisé absent.")
+        return
+    try:
+        schema = json.loads(schema_match.group(1))
+    except Exception as exc:
+        errors.append(f"{rel}: JSON-LD spécialisé invalide: {exc}")
+        return
+    if schema.get("@context") != "https://schema.org" or schema.get("@type") != schema_type_expected:
+        errors.append(f"{rel}: type JSON-LD spécialisé attendu {schema_type_expected}.")
+    if schema.get("url") != canonical_expected or schema.get("inLanguage") != "fr-CA":
+        errors.append(f"{rel}: URL/langue JSON-LD spécialisé incohérentes.")
+
+
 def main() -> int:
     errors: list[str] = []
+
+    parser_samples = (
+        (
+            '<meta name="description" content="L\'humain et l\'intelligence artificielle.">',
+            "description",
+            None,
+            "L'humain et l'intelligence artificielle.",
+        ),
+        (
+            '<meta content="Transparence & intégrité" property="og:description">',
+            None,
+            "og:description",
+            "Transparence & intégrité",
+        ),
+    )
+    for sample, name, prop, expected in parser_samples:
+        actual = meta_content(sample, name=name, prop=prop)
+        if actual != expected:
+            errors.append(
+                f"Parseur meta invalide pour {name or prop}: attendu {expected!r}, trouvé {actual!r}"
+            )
 
     robots_path = ROOT / "robots.txt"
     robots = robots_path.read_text("utf-8", errors="ignore")
@@ -228,6 +395,44 @@ def main() -> int:
 
     urls = read_sitemap(ROOT / "sitemap.xml", errors)
     nova_urls = read_sitemap(ROOT / "projets" / "projet-nova" / "sitemap.xml", errors)
+
+    sinjira_html_pages = set((ROOT / "projets" / "sinjira").rglob("*.html"))
+    unclassified_sinjira = sorted(
+        page.relative_to(ROOT).as_posix()
+        for page in sinjira_html_pages - SINJIRA_CLASSIFIED_PAGES
+    )
+    stale_classification = sorted(
+        page.relative_to(ROOT).as_posix()
+        for page in SINJIRA_CLASSIFIED_PAGES - sinjira_html_pages
+    )
+    if unclassified_sinjira:
+        errors.append(
+            "SINJIRA: pages HTML sans classification SEO/confidentialité: "
+            + ", ".join(unclassified_sinjira)
+        )
+    if stale_classification:
+        errors.append(
+            "SINJIRA: classification référence des pages absentes: "
+            + ", ".join(stale_classification)
+        )
+
+    classification_groups = {
+        "public_standard": set(page for page in SEO_PAGES if "projets/sinjira/" in page.relative_to(ROOT).as_posix()),
+        "public_special": set(SPECIAL_SEO_PAGES),
+        "private": set(SINJIRA_PRIVATE_NOINDEX_PAGES),
+        "transient": set(TRANSIENT_NOINDEX_PAGES),
+        "utility": set(UTILITY_NOINDEX_PAGES),
+    }
+    group_names = list(classification_groups)
+    for index, left_name in enumerate(group_names):
+        for right_name in group_names[index + 1:]:
+            overlap = classification_groups[left_name] & classification_groups[right_name]
+            if overlap:
+                rels = sorted(page.relative_to(ROOT).as_posix() for page in overlap)
+                errors.append(
+                    f"SINJIRA: classification multiple {left_name}/{right_name}: "
+                    + ", ".join(rels)
+                )
     for url in urls:
         validate_public_url(url, "sitemap.xml", errors)
     for url in nova_urls:
@@ -249,6 +454,28 @@ def main() -> int:
         if url not in urls:
             errors.append(f"sitemap.xml racine: URL Nova absente: {url}")
 
+    for page, target in NOVA_LEGACY_REDIRECTS.items():
+        if not page.exists():
+            errors.append(f"Redirection Nova héritée absente: {page.relative_to(ROOT)}")
+            continue
+        html = page.read_text("utf-8", errors="ignore")
+        rel = page.relative_to(ROOT)
+        robots_meta = meta_content(html, name="robots").lower()
+        if "noindex" not in robots_meta or "nofollow" not in robots_meta:
+            errors.append(f"{rel}: redirection Nova héritée sans noindex,nofollow.")
+        refresh_match = re.search(
+            r'<meta\b(?=[^>]*http-equiv=["\']refresh["\'])(?=[^>]*content=["\']([^"\']+)["\'])[^>]*>',
+            html,
+            flags=re.I,
+        )
+        refresh_value = refresh_match.group(1).strip() if refresh_match else ""
+        if refresh_value.lower() != f"0; url={target}".lower():
+            errors.append(f"{rel}: meta refresh Nova incohérent.")
+        if f'href="{target}"' not in html:
+            errors.append(f"{rel}: lien de repli Nova incohérent.")
+        if link_href(html, "canonical"):
+            errors.append(f"{rel}: redirection Nova héritée ne doit pas annoncer de canonical.")
+
     registry_url = BASE + "/projets/sinjira/registre/"
     if registry_url not in urls:
         errors.append("sitemap.xml: Registre des Consciences absent de l’index public.")
@@ -260,6 +487,22 @@ def main() -> int:
         if expected not in urls:
             errors.append(f"sitemap.xml: canonique SEO absente: {expected}")
 
+    for page, (expected, og_type, schema_type) in SPECIAL_SEO_PAGES.items():
+        validate_special_seo_page(page, expected, og_type, schema_type, errors)
+        if expected not in urls:
+            errors.append(f"sitemap.xml: canonique SEO spécialisée absente: {expected}")
+
+    for page in SINJIRA_PRIVATE_NOINDEX_PAGES:
+        if not page.exists():
+            errors.append(f"Page privée SINJIRA absente: {page.relative_to(ROOT)}")
+            continue
+        html = page.read_text("utf-8", errors="ignore")
+        robots_meta = meta_content(html, name="robots").lower()
+        if "noindex" not in robots_meta:
+            errors.append(f"{page.relative_to(ROOT)}: page privée SINJIRA sans noindex.")
+        if public_url_for_page(page) in urls:
+            errors.append(f"{page.relative_to(ROOT)}: page privée SINJIRA présente dans le sitemap.")
+
     for page in PRIVATE_NOINDEX_PAGES:
         if not page.exists():
             errors.append(f"Page privée critique absente: {page.relative_to(ROOT)}")
@@ -269,8 +512,38 @@ def main() -> int:
         if "noindex" not in robots_meta:
             errors.append(f"{page.relative_to(ROOT)}: page privée sans noindex.")
 
+    for page in TRANSIENT_NOINDEX_PAGES:
+        if not page.exists():
+            errors.append(f"Page transitoire absente: {page.relative_to(ROOT)}")
+            continue
+        html = page.read_text("utf-8", errors="ignore")
+        robots_meta = meta_content(html, name="robots").lower()
+        if "noindex" not in robots_meta or "nofollow" not in robots_meta:
+            errors.append(f"{page.relative_to(ROOT)}: page transitoire sans noindex,nofollow.")
+        canonical = link_href(html, "canonical")
+        if canonical:
+            errors.append(f"{page.relative_to(ROOT)}: page transitoire ne doit pas annoncer de canonical indexable.")
+        if public_url_for_page(page) in urls:
+            errors.append(f"{page.relative_to(ROOT)}: page transitoire présente dans le sitemap.")
+
+    for page in UTILITY_NOINDEX_PAGES:
+        if not page.exists():
+            errors.append(f"Page utilitaire de redirection absente: {page.relative_to(ROOT)}")
+            continue
+        html = page.read_text("utf-8", errors="ignore")
+        robots_meta = meta_content(html, name="robots").lower()
+        if "noindex" not in robots_meta or "nofollow" not in robots_meta:
+            errors.append(f"{page.relative_to(ROOT)}: redirection utilitaire sans noindex,nofollow.")
+        if not re.search(r'<meta\b[^>]*http-equiv=["\']refresh["\'][^>]*>', html, flags=re.I):
+            errors.append(f"{page.relative_to(ROOT)}: redirection utilitaire sans meta refresh.")
+        if public_url_for_page(page) in urls:
+            errors.append(f"{page.relative_to(ROOT)}: redirection utilitaire présente dans le sitemap.")
+
     home = (ROOT / "index.html").read_text("utf-8", errors="ignore")
     required_home_markers = [
+        'rel="alternate" hreflang="fr-CA"',
+        'rel="alternate" hreflang="x-default"',
+        'property="og:locale"',
         'property="og:title"',
         'property="og:description"',
         'property="og:type"',
@@ -293,6 +566,7 @@ def main() -> int:
         return 1
     print(
         f"OK SEO: {len(urls)} URL(s) racine, {len(nova_urls)} URL(s) Nova, "
+        f"{len(sinjira_html_pages)} page(s) SINJIRA classifiée(s), "
         "canonicalisation, Open Graph, Twitter, JSON-LD, hreflang et zones privées validés."
     )
     return 0

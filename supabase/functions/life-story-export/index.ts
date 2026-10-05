@@ -29,17 +29,58 @@ function privateJson(data: unknown, status = 200) {
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
+  const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
+  if (contentType !== 'application/json') {
+    return {
+      response: privateJson(
+        { ok: false, error: 'Content-Type application/json requis.', code: 'UNSUPPORTED_MEDIA_TYPE' },
+        415,
+      ),
+    };
+  }
+
   const rawLength = req.headers.get('content-length');
-  if (rawLength) {
-    const declared = Number(rawLength);
-    if (!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES) {
+  if (rawLength !== null) {
+    const normalizedLength = rawLength.trim();
+    if (!/^\d+$/.test(normalizedLength)) {
+      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+    }
+    const declared = Number(normalizedLength);
+    if (!Number.isSafeInteger(declared) || declared > MAX_REQUEST_BYTES) {
       return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
     }
   }
 
-  const raw = await req.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
-    return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+  if (!req.body) return { body: {} };
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      total += value.byteLength;
+      if (total > MAX_REQUEST_BYTES) {
+        await reader.cancel('REQUEST_TOO_LARGE').catch(() => undefined);
+        return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  let raw: string;
+  try {
+    raw = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
   }
 
   try {
