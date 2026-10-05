@@ -247,7 +247,7 @@ def run() -> None:
         assert_true(FULL_BASENAME not in page.content(), f"{BROWSER_NAME}: nom du fichier intégral exposé dans le lecteur")
 
         assert_true(page.locator('input[data-reader-page-number][aria-label="Numéro de page"]').count() == 1, f"{BROWSER_NAME}: champ de page lecteur non nommé")
-        assert_true(page.locator("input[data-reader-page-number]").get_attribute("max") == "83", f"{BROWSER_NAME}: maximum du lecteur différent de 83")
+        assert_true(page.locator("input[data-reader-page-number]").get_attribute("max") == "84", f"{BROWSER_NAME}: maximum du lecteur différent de 84")
         assert_true(page.locator('[data-reader-resume][aria-live="polite"]').count() == 1, f"{BROWSER_NAME}: reprise lecteur non annoncée aux aides techniques")
         frame = page.locator("iframe[data-pdf-reader]")
         assert_true(frame.count() == 1, f"{BROWSER_NAME}: iframe du lecteur absente")
