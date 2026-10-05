@@ -61,6 +61,11 @@ verify_jwt = true
 [functions.admin-console]
 verify_jwt = true
 
+# Porte de release privée : session admin + MFA, puis contrôle serveur de
+# l'intégrité et confirmation explicite avant toute activation.
+[functions.admin-private-novel-release]
+verify_jwt = true
+
 [functions.send-player-sheet]
 verify_jwt = true
 
