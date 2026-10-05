@@ -32,6 +32,7 @@ READ_ONLY_PR_WORKFLOWS = (
     ".github/workflows/sinjira-literature-browser-v25.yml",
     ".github/workflows/sinjira-livre-i-private-delivery.yml",
     ".github/workflows/sinjira-private-novel-catalog-v25.yml",
+    ".github/workflows/sinjira-private-novel-integrity-gate-v25.yml",
     ".github/workflows/sinjira-security-context-response-v25.yml",
     ".github/workflows/sinjira-v25-release-review-snapshot.yml",
     ".github/workflows/validate-ai-transparency.yml",
