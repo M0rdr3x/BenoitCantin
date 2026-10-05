@@ -248,6 +248,7 @@ def validate_snapshot(
         "docs/SINJIRA_V25_PRODUCTION_MIGRATION_REVIEW_WORKSHEET_2026-09-23.md",
         "docs/SINJIRA_V25_PRODUCTION_MIGRATION_TECHNICAL_REVIEW_MATRIX_2026-09-23.md",
         "docs/SINJIRA_V25_PRODUCTION_MIGRATION_STATIC_RISK_SCAN_2026-09-23.md",
+        "docs/SINJIRA_V25_FUTURE_MIGRATIONS_REVIEW_PLAN_2026-09-20.md",
         "scripts/validate_v25_release_review_snapshot.py",
     )
     for path in workflow_paths:
