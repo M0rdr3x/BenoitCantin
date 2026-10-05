@@ -87,6 +87,29 @@ def main() -> int:
         if f'aria-label="{subnav_label}"' not in html:
             errors.append(f"{rel}: sous-navigation contextuelle absente.")
 
+    netlify_path = ROOT / "netlify.toml"
+    if not netlify_path.is_file():
+        errors.append("netlify.toml absent.")
+    else:
+        netlify = netlify_path.read_text("utf-8", errors="strict")
+        for private_scope in ("/compte/*", "/admin/*", "/Admin/*", "/app/*", "/supabase/*"):
+            block_pattern = re.compile(
+                rf'\[\[headers\]\]\s*for\s*=\s*["\']{re.escape(private_scope)}["\'][\s\S]*?(?=\n\[\[|\Z)',
+                re.I,
+            )
+            block_match = block_pattern.search(netlify)
+            if not block_match:
+                errors.append(f"netlify.toml: bloc privé absent pour {private_scope}.")
+                continue
+            block = block_match.group(0)
+            for expected in (
+                'Cache-Control = "private, no-store, max-age=0"',
+                'Pragma = "no-cache"',
+                'Referrer-Policy = "no-referrer"',
+            ):
+                if expected not in block:
+                    errors.append(f"netlify.toml: {private_scope} sans {expected}.")
+
     security_path = ROOT / "compte/securite.html"
     if not security_path.is_file():
         errors.append("Centre de sécurité absent.")
@@ -120,7 +143,7 @@ def main() -> int:
 
     print(
         "OK shell Auth/Sécurité: 5 pages Auth/MFA et le Centre de sécurité "
-        "conservent noindex/nofollow, navigation globale mobile et repères accessibles."
+        "conservent noindex/nofollow, navigation globale mobile, repères accessibles et en-têtes HTTP no-store."
     )
     return 0
 
