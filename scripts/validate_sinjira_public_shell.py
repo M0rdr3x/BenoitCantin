@@ -17,6 +17,25 @@ PRIMARY_PAGES = {
     "projets/sinjira/marche/index.html": "https://www.benoitcantin.com/projets/sinjira/marche/",
 }
 
+LEGACY_REDIRECTS = {
+    "projets/sinjira/compte.html": (
+        "/compte/",
+        "https://www.benoitcantin.com/compte/",
+    ),
+    "projets/sinjira/personnages/index.html": (
+        "/projets/sinjira/registre/",
+        "https://www.benoitcantin.com/projets/sinjira/registre/",
+    ),
+    "projets/sinjira/jeux/le-premier-refuge/index.html": (
+        "/projets/sinjira/jeux/reseau-mere-resistance/",
+        "https://www.benoitcantin.com/projets/sinjira/jeux/reseau-mere-resistance/",
+    ),
+    "projets/sinjira/registre/merci.html": (
+        "/projets/sinjira/registre/",
+        "https://www.benoitcantin.com/projets/sinjira/registre/",
+    ),
+}
+
 GLOBAL_NAV_HREFS = (
     "/",
     "/projets/sinjira/",
@@ -110,6 +129,29 @@ def main() -> int:
             if marker not in text:
                 errors.append(f"Métadonnée {marker} absente: {rel}")
 
+    for rel, (target, canonical) in LEGACY_REDIRECTS.items():
+        path = ROOT / rel
+        if not path.is_file():
+            errors.append(f"Route héritée SINJIRA absente: {rel}")
+            continue
+
+        text = path.read_text(encoding="utf-8", errors="strict")
+        low = text.lower()
+        if 'name="robots" content="noindex,nofollow,noarchive"' not in low:
+            errors.append(f"Route héritée non protégée noindex/noarchive: {rel}")
+        if f'http-equiv="refresh" content="0; url={target.lower()}"' not in low:
+            errors.append(f"Redirection héritée incorrecte vers {target}: {rel}")
+        if f'href="{target}"' not in text and f"href='{target}'" not in text:
+            errors.append(f"Lien de secours absent vers {target}: {rel}")
+        canonical_tag = find_tag(
+            text,
+            r"<link\b[^>]*rel=[\"']canonical[\"'][^>]*>|<link\b[^>]*href=[\"'][^\"']+[\"'][^>]*rel=[\"']canonical[\"'][^>]*>",
+        )
+        if not canonical_tag or attribute_value(canonical_tag, "href") != canonical:
+            errors.append(f"Canonical de redirection incorrecte: {rel}")
+        if '<meta name="viewport"' not in low:
+            errors.append(f"Viewport absent de la route héritée: {rel}")
+
     if errors:
         print(f"ECHEC: {len(errors)} problème(s) dans le shell public SINJIRA.")
         for error in errors:
@@ -119,7 +161,7 @@ def main() -> int:
     print(
         "OK shell public SINJIRA: navigation globale, pieds de page, canonical, "
         "Open Graph, Twitter Cards et JSON-LD vérifiés sur "
-        f"{len(PRIMARY_PAGES)} pages."
+        f"{len(PRIMARY_PAGES)} pages et {len(LEGACY_REDIRECTS)} routes héritées."
     )
     return 0
 
