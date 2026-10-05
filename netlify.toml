@@ -15,6 +15,44 @@
   [headers.values]
     Cache-Control = "public, max-age=3600"
 
+# Les surfaces privées/authentifiées ne doivent jamais être mises en cache
+# par le navigateur, le CDN ou un intermédiaire partagé.
+[[headers]]
+  for = "/compte/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/Admin/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/app/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/supabase/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
+
 [[redirects]]
   from = "/nova"
   to = "/projets/projet-nova/index.html"
