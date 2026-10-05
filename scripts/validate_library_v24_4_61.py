@@ -72,8 +72,11 @@ def main()->int:
         "onConflict:'user_id,novel_id'"
     ],'sinjira-reader-progress-v24-4-61.js')
 
-    require(demo_html,['sinjira-reader-progress-v24-4-61.js?v=24.4.61'],'lire-demo.html')
-    if demo_html.index('sinjira-reader.js?v=19.0') > demo_html.index('sinjira-reader-progress-v24-4-61.js?v=24.4.61'):
+    require(demo_html,[
+        'sinjira-reader.js?v=',
+        'sinjira-reader-progress-v24-4-61.js?v='
+    ],'lire-demo.html')
+    if demo_html.index('sinjira-reader.js?v=') > demo_html.index('sinjira-reader-progress-v24-4-61.js?v='):
         raise AssertionError('lire-demo.html: le synchroniseur canonique doit être chargé après le lecteur existant.')
 
     paid_markers=['stripe','openai','anthropic','twilio','paypal','lemonsqueezy','paddle','replicate']
