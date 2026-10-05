@@ -373,8 +373,75 @@ def self_test_service_worker_privacy(sw_text: str) -> None:
             raise SystemExit(f'ERREUR auto-test service worker: affaiblissement non détecté: {label}')
 
 
+
+def validate_livre_i_demo_reader_text(demo_html: str, reader_js: str, progress_js: str) -> list[str]:
+    errors: list[str] = []
+    required_demo = (
+        'Édition démo · 84 pages · Prologue + chapitres 1 à 3',
+        'data-reader-page-number max="84"',
+        'type="number" value="1"/> / 84',
+        'data-reader-progress-native max="84" value="1">1 sur 84',
+    )
+    for marker in required_demo:
+        if marker not in demo_html:
+            errors.append(f'Livre I démo: marqueur 84 pages absent: {marker}')
+    if 'max="83"' in demo_html or '/ 83<' in demo_html or '>1 sur 83<' in demo_html:
+        errors.append('Livre I démo: ancien plafond 83 pages encore présent dans le HTML.')
+
+    required_reader = (
+        '(lastPage/84)*100',
+        'Math.min(84,Math.max(1,saved))',
+        'Math.round(current/84*100)',
+        '${current} sur 84',
+        'Math.min(84,current+1)',
+        'Math.min(84,Math.max(1,Number(input.value)||1))',
+    )
+    for marker in required_reader:
+        if marker not in reader_js:
+            errors.append(f'Livre I lecteur: contrat 84 pages absent: {marker}')
+    if '/83' in reader_js or 'Math.min(83' in reader_js or '${current} sur 83' in reader_js:
+        errors.append('Livre I lecteur: ancien calcul 83 pages encore présent.')
+
+    if 'Math.round((pageValue/84)*100)' not in progress_js:
+        errors.append('Livre I progression canonique: calcul 84 pages absent.')
+    if 'pageValue/83' in progress_js:
+        errors.append('Livre I progression canonique: ancien calcul 83 pages encore présent.')
+    return errors
+
+
+def self_test_livre_i_demo_reader() -> None:
+    demo = (
+        '<span>Édition démo · 84 pages · Prologue + chapitres 1 à 3</span>'
+        '<input data-reader-page-number max="84" type="number" value="1"/> / 84'
+        '<progress data-reader-progress-native max="84" value="1">1 sur 84</progress>'
+    )
+    reader = (
+        'Math.round((lastPage/84)*100);'
+        'Math.min(84,Math.max(1,saved));'
+        'Math.round(current/84*100);'
+        '${current} sur 84;'
+        'Math.min(84,current+1);'
+        'Math.min(84,Math.max(1,Number(input.value)||1));'
+    )
+    progress = 'Math.round((pageValue/84)*100)'
+    clean = validate_livre_i_demo_reader_text(demo, reader, progress)
+    if clean:
+        raise SystemExit('ERREUR auto-test Livre I 84 pages: cas sain rejeté: ' + '; '.join(clean))
+
+    cases = {
+        'HTML 83 pages': (demo.replace('max="84"', 'max="83"', 1), reader, progress),
+        'lecteur 83 pages': (demo, reader.replace('current/84', 'current/83', 1), progress),
+        'progression 83 pages': (demo, reader, progress.replace('pageValue/84', 'pageValue/83')),
+    }
+    for label, values in cases.items():
+        if not validate_livre_i_demo_reader_text(*values):
+            raise SystemExit(f'ERREUR auto-test Livre I 84 pages: régression non détectée: {label}')
+    print(f'OK auto-tests Livre I 84 pages: {len(cases)} régressions détectées.')
+
+
 def main() -> int:
     self_test_personal_contact_contract()
+    self_test_livre_i_demo_reader()
     sw_path = ROOT / 'sw.js'
     if not sw_path.is_file():
         raise SystemExit('ERREUR: sw.js absent pour la validation de confidentialité PWA.')
@@ -382,6 +449,19 @@ def main() -> int:
     self_test_service_worker_privacy(sw_text)
     errors: list[str] = []
     errors.extend(validate_service_worker_privacy(sw_text))
+
+    demo_path = ROOT / 'projets/sinjira/romans/lire-demo.html'
+    reader_path = ROOT / 'assets/js/sinjira-reader.js'
+    progress_path = ROOT / 'assets/js/sinjira-reader-progress-v24-4-61.js'
+    for required_path in (demo_path, reader_path, progress_path):
+        if not required_path.is_file():
+            errors.append(f'Livre I démo: fichier requis absent: {required_path.relative_to(ROOT).as_posix()}')
+    if demo_path.is_file() and reader_path.is_file() and progress_path.is_file():
+        errors.extend(validate_livre_i_demo_reader_text(
+            demo_path.read_text('utf-8', errors='strict'),
+            reader_path.read_text('utf-8', errors='strict'),
+            progress_path.read_text('utf-8', errors='strict'),
+        ))
     files = all_files()
     htmls = [p for p in files if p.suffix.lower() == '.html']
     js = [p for p in files if p.suffix.lower() == '.js']
