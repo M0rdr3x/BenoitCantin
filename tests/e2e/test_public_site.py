@@ -146,6 +146,10 @@ def run() -> None:
             f"{BROWSER_NAME}: visuel officiel absent du héros de la Boussole",
         )
         hero_image = page.locator('.compass-hero-visual img')
+        page.wait_for_function(
+            "() => { const img = document.querySelector('.compass-hero-visual img'); return !!img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0; }",
+            timeout=10_000,
+        )
         assert_true(
             hero_image.evaluate("(img) => img.naturalWidth === 360 && img.naturalHeight === 360"),
             f"{BROWSER_NAME}: dimensions du visuel Boussole inattendues",
