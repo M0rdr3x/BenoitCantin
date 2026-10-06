@@ -63,6 +63,18 @@ def main() -> int:
             )
 
     home = (ROOT / "index.html").read_text("utf-8", errors="ignore")
+    home_assistant_loader = ROOT / "assets" / "js" / "home-assistant-lazy-v24-5-2.js"
+    if 'data-disable-sinjira-assistant="true"' not in home:
+        errors.append("index.html: l’assistant doit être retiré du chemin critique initial.")
+    if '/assets/js/home-assistant-lazy-v24-5-2.js?v=24.5.2' not in home:
+        errors.append("index.html: loader différé de l’assistant accueil absent.")
+    if not home_assistant_loader.exists():
+        errors.append("Loader assistant accueil V24.5.2 absent.")
+    else:
+        loader_text = home_assistant_loader.read_text("utf-8", errors="ignore")
+        for marker in ("loadAssistant", "pointerdown", "keydown", "setTimeout(loadAssistant,12000)"):
+            if marker not in loader_text:
+                errors.append(f"Loader assistant accueil incomplet: {marker}")
     script_count = len(re.findall(r"<script\b", home, flags=re.I))
     stylesheet_count = len(re.findall(r"<link\b[^>]*rel=[\"']stylesheet[\"']", home, flags=re.I))
     if script_count > 6:
