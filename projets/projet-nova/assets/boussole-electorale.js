@@ -215,7 +215,12 @@
     parties.sort((a,b) => String(a.name).localeCompare(String(b.name), "fr-CA"));
     host.innerHTML = parties.map(party => {
       const isFuture = party.entityType === "future_party_project";
-      const status = isFuture ? "Futur parti — non autorisé actuellement" : "Parti provincial autorisé";
+      const isWithdrawn = party.entityType === "authorization_withdrawn_2026";
+      const status = isFuture
+        ? "Futur parti — non autorisé actuellement"
+        : isWithdrawn
+          ? "Autorisation retirée en 2026"
+          : "Parti provincial actuellement autorisé";
       return `<article class="compass-party-card"><h3>${esc(party.name)}</h3><p>${esc(status)}</p><span>${party.comparisonEligible ? "Comparaison activée" : "Comparaison non activée — données à sourcer"}</span></article>`;
     }).join("");
   }
