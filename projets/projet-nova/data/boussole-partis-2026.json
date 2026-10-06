@@ -1,13 +1,14 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "election": "Québec 2026",
   "jurisdiction": "Québec",
   "registryEvidence": {
-    "source": "Élections Québec — Registre des partis politiques autorisés",
-    "url": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+    "source": "Élections Québec",
+    "url": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
     "snapshotDate": "2026-10-06",
-    "authorizedProvincialPartyCount": 21,
-    "note": "La boussole inclut tous les partis provinciaux affichés comme autorisés dans le registre courant. La participation à l’élection 2026 est une donnée distincte du statut d’autorisation."
+    "currentlyAuthorizedProvincialPartyCount": 20,
+    "recentlyWithdrawnCount": 1,
+    "note": "Le communiqué officiel du 17 septembre 2026 indique le retrait de l’autorisation du Parti populaire du Québec en vertu de la règle exigeant au moins deux candidatures à une élection générale."
   },
   "sourcePriority": [
     "election_platform",
@@ -188,11 +189,15 @@
     {
       "id": "party-16",
       "name": "Parti populaire du Québec",
-      "entityType": "authorized_provincial_party",
+      "entityType": "authorization_withdrawn_2026",
       "registrySnapshotDate": "2026-10-06",
       "comparisonEligible": false,
       "coverage": 0,
-      "positions": {}
+      "positions": {},
+      "authorizedCurrent": false,
+      "authorizationStatus": "withdrawn",
+      "authorizationStatusDate": "2026-09-17",
+      "statusSource": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
     },
     {
       "id": "party-17",
