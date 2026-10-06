@@ -263,6 +263,7 @@ if compass_data.is_file():
             errors.append(
                 f"boussole électorale: axe {axis_id} doit avoir 4 questions, 2 par direction"
             )
+    for q in questions:
         loadings = q.get("loadings") or []
         if not loadings:
             errors.append(f"boussole électorale: {q.get('id')} sans chargement dimensionnel")
