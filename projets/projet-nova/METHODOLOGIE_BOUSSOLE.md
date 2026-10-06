@@ -65,7 +65,8 @@ Les positions inconnues sont exclues de la distance et le taux de couverture doi
 
 Le registre de comparaison comprend :
 
-- **tous les partis provinciaux affichés comme autorisés** dans le registre courant d’Élections Québec au moment de la mise à jour;
+- **tous les partis provinciaux actuellement autorisés** selon les sources officielles d’Élections Québec au moment de la mise à jour;
+- les formations dont un **retrait d’autorisation récent** doit être conservé pour exactitude historique, avec un statut distinct et sans les présenter comme actuellement autorisées;
 - **Parti Nova**, identifié séparément comme futur parti tant qu’il n’est pas lui-même affiché comme parti autorisé par Élections Québec.
 
 Le statut électoral, le nombre de candidatures et le statut d’autorisation sont des informations distinctes. Un parti reste présent dans le registre de la boussole lorsqu’il figure dans le registre officiel des partis autorisés, même s’il ne présente pas de candidature dans une élection donnée.
