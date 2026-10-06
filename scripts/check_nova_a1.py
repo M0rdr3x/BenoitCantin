@@ -234,11 +234,12 @@ else:
 compass_page = NOVA / "boussole-electorale.html"
 compass_data = NOVA / "data" / "boussole-electorale-v2.json"
 party_corpus = NOVA / "data" / "boussole-partis-2026.json"
+party_sources = NOVA / "data" / "boussole-sources-partis-2026.json"
 compass_methodology = NOVA / "METHODOLOGIE_BOUSSOLE.md"
 compass_js = NOVA / "assets" / "boussole-electorale.js"
 compass_css = NOVA / "assets" / "boussole-electorale.css"
 
-for required in (compass_page, compass_data, compass_js, compass_css, party_corpus, compass_methodology):
+for required in (compass_page, compass_data, compass_js, compass_css, party_corpus, party_sources, compass_methodology):
     if not required.is_file():
         errors.append(f"boussole électorale: fichier absent: {required.relative_to(NOVA)}")
 
@@ -400,6 +401,47 @@ if party_corpus.is_file():
             errors.append(f"boussole électorale: mécanisme de favoritisme interdit dans le moteur: {token}")
     if 'localeCompare(String(b.name), "fr-CA")' not in compass_runtime:
         errors.append("boussole électorale: tri alphabétique neutre des partis absent")
+
+
+if party_sources.is_file():
+    try:
+        source_inventory = json.loads(party_sources.read_text(encoding="utf-8"))
+    except Exception as exc:
+        source_inventory = {}
+        errors.append(f"boussole électorale: inventaire de sources invalide: {exc}")
+    source_rows = source_inventory.get("parties") or []
+    corpus_ids = {row.get("id") for row in party_rows}
+    source_ids = {row.get("id") for row in source_rows}
+    if len(source_rows) != 22:
+        errors.append(f"boussole électorale: inventaire de sources doit contenir 22 entrées, {len(source_rows)} trouvées")
+    if source_ids != corpus_ids:
+        errors.append("boussole électorale: inventaire de sources désaligné avec le registre des partis")
+    source_rules = source_inventory.get("equalityRules") or {}
+    for key in (
+        "sameSourceFieldsForEveryParty",
+        "registrySourceRequiredForAuthorizedParties",
+        "missingOfficialSiteDoesNotCreatePoliticalPosition",
+        "documentationVolumeDoesNotIncreaseSimilarity",
+        "sourceCountDoesNotIncreaseWeight",
+        "sourceQualityAffectsConfidenceOnly",
+        "futurePartyUsesSameEvidenceFields",
+    ):
+        if source_rules.get(key) is not True:
+            errors.append(f"boussole électorale: règle d’égalité documentaire absente ou fausse: {key}")
+    required_source_fields = {
+        "id", "name", "entityType", "registryUrl", "officialSite", "platformUrls",
+        "pressReleaseUrls", "legislativeRecordUrls", "verificationStatus",
+        "lastVerified", "usableForPositionCoding", "notes"
+    }
+    for row in source_rows:
+        if set(row.keys()) != required_source_fields:
+            errors.append(f"boussole électorale: champs de sources non uniformes pour {row.get('name')}")
+        if row.get("entityType") == "authorized_provincial_party" and not row.get("registryUrl"):
+            errors.append(f"boussole électorale: registre Élections Québec absent pour {row.get('name')}")
+        if row.get("officialSite") is None and row.get("usableForPositionCoding") is True:
+            errors.append(f"boussole électorale: codage interdit sans site/source officielle vérifiée pour {row.get('name')}")
+        if not isinstance(row.get("platformUrls"), list):
+            errors.append(f"boussole électorale: platformUrls doit être une liste pour {row.get('name')}")
 
 if compass_methodology.is_file():
     method_text = compass_methodology.read_text(encoding="utf-8", errors="replace")
