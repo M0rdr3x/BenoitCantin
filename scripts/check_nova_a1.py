@@ -351,6 +351,18 @@ if compass_page.is_file():
             errors.append(f"boussole électorale: visuel officiel ou navigation explicite absent: {marker}")
 
 
+nova_runtime = NOVA / "script.js"
+if nova_runtime.is_file():
+    nova_runtime_text = nova_runtime.read_text(encoding="utf-8", errors="replace")
+    for marker in (
+        "['boussole-electorale.html','Boussole électorale']",
+        "nav-link-boussole",
+    ):
+        if marker not in nova_runtime_text:
+            errors.append(f"boussole électorale: menu runtime Nova incomplet: {marker}")
+else:
+    errors.append("boussole électorale: runtime Projet Nova absent: script.js")
+
 if compass_js.is_file():
     compass_runtime = compass_js.read_text(encoding="utf-8", errors="replace")
     if 'const DATA_URL = "data/boussole-electorale-v2.json"' not in compass_runtime:
