@@ -501,7 +501,42 @@ if evidence_matrix.is_file():
                 walk_keys(nested)
     walk_keys(evidence)
     records = evidence.get("evidenceRecords") or []
-    record_index = {(r.get("questionId"), r.get("partyId")) for r in records}
+    record_ids = [r.get("recordId") for r in records]
+    if len(record_ids) != len(set(record_ids)):
+        errors.append("boussole électorale: identifiant de preuve dupliqué")
+    allowed_confidence = set(evidence.get("confidenceValues") or [])
+    required_record_fields = {
+        "recordId", "questionId", "partyId", "proposedStatus", "sourceUrl",
+        "sourceTitle", "sourceDate", "checkedAt", "sourceType", "evidenceSummary",
+        "rationale", "confidence", "firstReview", "secondIndependentReview", "finalizable"
+    }
+    for record in records:
+        if set(record.keys()) != required_record_fields:
+            errors.append(f"boussole électorale: schéma de preuve incomplet pour {record.get('recordId')}")
+        if record.get("questionId") not in expected_question_ids:
+            errors.append(f"boussole électorale: preuve liée à une question inconnue: {record.get('recordId')}")
+        if record.get("partyId") not in set(matrix_party_ids):
+            errors.append(f"boussole électorale: preuve liée à une formation inconnue: {record.get('recordId')}")
+        if record.get("proposedStatus") not in allowed_statuses - {"unknown"}:
+            errors.append(f"boussole électorale: statut candidat invalide: {record.get('recordId')}")
+        if record.get("confidence") not in allowed_confidence - {"none"}:
+            errors.append(f"boussole électorale: confiance candidate invalide: {record.get('recordId')}")
+        if not str(record.get("sourceUrl") or "").startswith("https://"):
+            errors.append(f"boussole électorale: URL HTTPS de preuve requise: {record.get('recordId')}")
+        if record.get("checkedAt") != "2026-10-06":
+            errors.append(f"boussole électorale: date de vérification inattendue: {record.get('recordId')}")
+        if (record.get("firstReview") or {}).get("status") != "completed":
+            errors.append(f"boussole électorale: première révision absente: {record.get('recordId')}")
+        second = record.get("secondIndependentReview") or {}
+        if second.get("status") == "pending":
+            if record.get("finalizable") is not False:
+                errors.append(f"boussole électorale: preuve en attente de seconde révision ne peut pas être finalisable: {record.get('recordId')}")
+        elif second.get("status") == "completed":
+            if not second.get("reviewer") or not second.get("reviewedAt"):
+                errors.append(f"boussole électorale: seconde révision complétée sans identité/date: {record.get('recordId')}")
+        else:
+            errors.append(f"boussole électorale: statut de seconde révision invalide: {record.get('recordId')}")
+    record_index = {(r.get("questionId"), r.get("partyId")) for r in records if (r.get("secondIndependentReview") or {}).get("status") == "completed" and r.get("finalizable") is True}
     for row in matrix_questions:
         for party_id, status in (row.get("statuses") or {}).items():
             if status != "unknown" and (row.get("questionId"), party_id) not in record_index:
