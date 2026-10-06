@@ -101,9 +101,28 @@ Les règles suivantes sont obligatoires :
 
 L’inventaire courant est versionné dans `data/boussole-sources-partis-2026.json`. Une source doit être vérifiée avant d’être utilisée pour coder une proposition.
 
-## Distance électorale
+## Matrice factuelle de preuves
 
-La proximité future utilisera une distance normalisée entre les réponses de la personne et les positions documentées du parti, avec pondération par l’importance choisie par l’utilisateur. Les résultats devront afficher les plus grands accords et désaccords, et non seulement un pourcentage.
+La couche concernant les formations politiques est séparée du profil personnel. Elle ne produit **aucun classement automatique** des partis.
+
+La matrice `data/boussole-preuves-2026.json` contient les **64 questions × 22 formations**, soit 1 408 cases. Chaque case commence à `unknown`. Un statut ne peut changer que lorsqu’une fiche de preuve relie la formulation exacte de la question à une source publique pertinente.
+
+Statuts documentaires permis :
+
+- `unknown` : aucune preuve suffisante;
+- `documented_support` : la source appuie clairement la proposition telle qu’elle est formulée;
+- `documented_opposition` : la source s’y oppose clairement;
+- `documented_mixed_or_conditional` : la position dépend explicitement de conditions ou combine appui et réserve;
+- `ambiguous` : la source existe mais ne permet pas de trancher la formulation exacte;
+- `contradictory` : plusieurs sources pertinentes conduisent à des positions incompatibles.
+
+L’interface de comparaison future devra présenter les preuves, dates, nuances et contradictions **question par question**, sans déclarer qu’un parti est « meilleur », « gagnant » ou recommandé.
+
+## Comparaison factuelle avec les formations
+
+Le profil personnel peut être calculé sur les 16 dimensions. Pour les formations politiques, le site doit privilégier une lecture factuelle : sélectionner une ou plusieurs formations et consulter, pour chaque proposition, les positions documentées, leurs sources, leur date et leur niveau de confiance.
+
+Aucun ordre automatique des partis n’est nécessaire pour comprendre les accords et désaccords. Une position inconnue ou contradictoire reste visible comme telle.
 
 ## Références méthodologiques
 
