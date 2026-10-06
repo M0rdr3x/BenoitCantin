@@ -265,6 +265,11 @@ if compass_data.is_file():
             errors.append(
                 f"boussole électorale: axe {axis_id} doit avoir 4 questions, 2 par direction"
             )
+    quality_audit = compass.get("qualityAudit") or {}
+    if quality_audit.get("knownAmbiguitiesRemaining") != 0:
+        errors.append("boussole électorale: l’audit qualité doit avoir 0 ambiguïté structurelle connue non traitée")
+    if quality_audit.get("auditedAt") != "2026-10-06":
+        errors.append("boussole électorale: date d’audit qualité inattendue")
     for q in questions:
         quality = q.get("quality") or {}
         for flag in (
@@ -279,6 +284,10 @@ if compass_data.is_file():
         ):
             if quality.get(flag) is not True:
                 errors.append(f"boussole électorale: {q.get('id')} sans validation de rédaction: {flag}")
+        if quality.get("auditStatus") != "reviewed_2026-10-06":
+            errors.append(f"boussole électorale: {q.get('id')} non couverte par l’audit global")
+        if quality.get("knownAmbiguity") is not False:
+            errors.append(f"boussole électorale: {q.get('id')} conserve une ambiguïté connue")
         loadings = q.get("loadings") or []
         if not loadings:
             errors.append(f"boussole électorale: {q.get('id')} sans chargement dimensionnel")
@@ -293,6 +302,19 @@ if compass_data.is_file():
                 errors.append(f"boussole électorale: poids invalide pour {q.get('id')}")
             if loading.get("axis") != q.get("axis") and weight > 0.4:
                 errors.append(f"boussole électorale: chargement secondaire > 0.4 pour {q.get('id')}")
+    forbidden_ambiguous_fragments = (
+        "délais et les contraintes de zonage",
+        "catégories humanitaires et au regroupement familial",
+        "réseaux de santé, d’éducation et de transport",
+        "urgence de santé ou de sécurité",
+        "projets miniers et énergétiques",
+        "capacité suffisante en logement et en services",
+        "pression excessive sur le logement ou les services",
+        "décision administrative importante",
+    )
+    for fragment in forbidden_ambiguous_fragments:
+        if any(fragment.lower() in (q.get("text") or "").lower() for q in questions):
+            errors.append(f"boussole électorale: formulation ambiguë réintroduite: {fragment}")
     unknown_axes = sorted({q.get("axis") for q in questions if q.get("axis") not in axis_ids})
     if unknown_axes:
         errors.append(f"boussole électorale: axes inconnus dans les questions: {unknown_axes}")
