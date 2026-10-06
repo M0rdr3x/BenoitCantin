@@ -353,7 +353,7 @@ if party_corpus.is_file():
     neutrality = parties.get("neutralityRules") or {}
     for key in (
         "equalQuestionSetForEveryParty",
-        "equalDistanceFormulaForEveryParty",
+        "equalPresentationRulesForEveryParty",
         "equalCoverageThresholdForEveryParty",
         "equalSourcePriorityForEveryParty",
         "noHostPartyBonus",
@@ -367,20 +367,22 @@ if party_corpus.is_file():
         if neutrality.get(key) is not True:
             errors.append(f"boussole électorale: règle de neutralité absente ou fausse: {key}")
 
-    formula = parties.get("comparisonFormula") or {}
+    presentation = parties.get("presentationRules") or {}
+    if presentation.get("mode") != "factual_side_by_side":
+        errors.append("boussole électorale: mode de présentation factuelle requis")
     for key in (
-        "sameFormulaForEveryParty",
-        "userImportanceAppliedEqually",
-        "unknownExcludedFromNumeratorAndDenominator",
-        "coverageReportedSeparately",
-        "noPartySpecificCoefficient",
-        "noIncumbencyAdjustment",
-        "noPopularityAdjustment",
-        "noPollingAdjustment",
-        "noHostAdjustment",
+        "noAutomaticRanking",
+        "noWinnerLabel",
+        "noRecommendedParty",
+        "noBestMatchBadge",
+        "evidenceVisiblePerQuestion",
+        "unknownVisible",
+        "contradictoryVisible",
+        "alphabeticalDefault",
+        "allPartiesVisibleRegardlessOfCoverage",
     ):
-        if formula.get(key) is not True:
-            errors.append(f"boussole électorale: formule inégale ou incomplète: {key}")
+        if presentation.get(key) is not True:
+            errors.append(f"boussole électorale: règle de présentation factuelle absente ou fausse: {key}")
     for row in party_rows:
         if row.get("comparisonEligible") is not False:
             errors.append(f"boussole électorale: comparaison prématurément activée pour {row.get('name')}")
@@ -389,10 +391,12 @@ if party_corpus.is_file():
         if row.get("positions") != {}:
             errors.append(f"boussole électorale: positions non sourcées présentes pour {row.get('name')}")
     rules = parties.get("activationRules") or {}
-    if rules.get("minimumQuestionCoverage") != 0.70:
-        errors.append("boussole électorale: seuil de couverture globale doit rester à 70 %")
     if rules.get("minimumIndependentCoders") != 2:
         errors.append("boussole électorale: double codage indépendant requis")
+    if rules.get("allPartiesVisibleRegardlessOfCoverage") is not True:
+        errors.append("boussole électorale: tous les partis doivent rester visibles quelle que soit la couverture")
+    if rules.get("noOverallPartyScore") is not True:
+        errors.append("boussole électorale: aucun score global de parti ne doit être produit")
 
 
     forbidden_party_runtime_tokens = [row.get("name") for row in party_rows if row.get("name")]
