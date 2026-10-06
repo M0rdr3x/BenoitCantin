@@ -110,6 +110,8 @@ jobs:
         run: python scripts/validate_pwa.py
       - name: Vérifier les pages 404 et hors-ligne
         run: python scripts/validate_error_pages.py
+      - name: Vérifier les anciennes routes Projet Nova
+        run: python scripts/validate_nova_legacy_routes.py
       - name: Vérifier la structure Supabase
         run: python scripts/validate_supabase.py
       - name: Vérifier la bibliothèque canonique V24.4.61
