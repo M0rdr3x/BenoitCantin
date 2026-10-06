@@ -361,11 +361,45 @@ if party_corpus.is_file():
     ):
         if neutrality.get(key) is not True:
             errors.append(f"boussole électorale: règle de neutralité absente ou fausse: {key}")
+
+    formula = parties.get("comparisonFormula") or {}
+    for key in (
+        "sameFormulaForEveryParty",
+        "userImportanceAppliedEqually",
+        "unknownExcludedFromNumeratorAndDenominator",
+        "coverageReportedSeparately",
+        "noPartySpecificCoefficient",
+        "noIncumbencyAdjustment",
+        "noPopularityAdjustment",
+        "noPollingAdjustment",
+        "noHostAdjustment",
+    ):
+        if formula.get(key) is not True:
+            errors.append(f"boussole électorale: formule inégale ou incomplète: {key}")
+    for row in party_rows:
+        if row.get("comparisonEligible") is not False:
+            errors.append(f"boussole électorale: comparaison prématurément activée pour {row.get('name')}")
+        if row.get("coverage") != 0:
+            errors.append(f"boussole électorale: couverture initiale non nulle pour {row.get('name')}")
+        if row.get("positions") != {}:
+            errors.append(f"boussole électorale: positions non sourcées présentes pour {row.get('name')}")
     rules = parties.get("activationRules") or {}
     if rules.get("minimumQuestionCoverage") != 0.70:
         errors.append("boussole électorale: seuil de couverture globale doit rester à 70 %")
     if rules.get("minimumIndependentCoders") != 2:
         errors.append("boussole électorale: double codage indépendant requis")
+
+
+    forbidden_party_runtime_tokens = [row.get("name") for row in party_rows if row.get("name")]
+    forbidden_party_runtime_tokens += [row.get("id") for row in party_rows if row.get("id")]
+    for token in forbidden_party_runtime_tokens:
+        if token in compass_runtime:
+            errors.append(f"boussole électorale: moteur runtime ne doit contenir aucun traitement spécifique à {token}")
+    for token in ("partyBoost", "partyBonus", "featuredParty", "preferredParty", "incumbencyWeight", "pollingWeight"):
+        if token in compass_runtime:
+            errors.append(f"boussole électorale: mécanisme de favoritisme interdit dans le moteur: {token}")
+    if 'localeCompare(String(b.name), "fr-CA")' not in compass_runtime:
+        errors.append("boussole électorale: tri alphabétique neutre des partis absent")
 
 if compass_methodology.is_file():
     method_text = compass_methodology.read_text(encoding="utf-8", errors="replace")
