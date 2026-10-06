@@ -17,6 +17,7 @@ PUBLIC_ROUTES = [
     "projets/sinjira/communaute/",
     "projets/sinjira/monde-parallele/",
     "projets/projet-nova/",
+    "projets/projet-nova/boussole-electorale.html",
     "projets/sinjira/jeux/",
     "projets/sinjira/jeux/fracture-du-reseau-mere/",
 ]
@@ -30,6 +31,7 @@ EXPECTED_DOORS = {
     "/projets/sinjira/",
     "/projets/sinjira/registre/",
     "/projets/projet-nova/",
+    "/projets/projet-nova/boussole-electorale.html",
 }
 IS_LOCAL = (urlparse(BASE_URL).hostname or "").lower() in {"127.0.0.1", "localhost"}
 
@@ -91,9 +93,38 @@ def run() -> None:
         assert_true(runtime_version == "24.4.22", f"Runtime public inattendu: {runtime_version!r}")
 
         cards = page.locator("a.home-project")
-        assert_true(cards.count() == 3, f"Accueil: 3 portes attendues, trouvé {cards.count()}")
+        assert_true(cards.count() == 4, f"Accueil: 4 accès attendus, trouvé {cards.count()}")
         hrefs = {cards.nth(i).get_attribute("href") for i in range(cards.count())}
         assert_true(hrefs == EXPECTED_DOORS, f"Accueil: portes inattendues: {hrefs}")
+        assert_true(
+            page.locator('a[href="/projets/projet-nova/boussole-electorale.html"]').count() >= 1,
+            f"{BROWSER_NAME}: accès direct à la Boussole absent de l’accueil principal",
+        )
+
+        page.goto(urljoin(BASE_URL, "projets/projet-nova/"), wait_until="domcontentloaded", timeout=30_000)
+        assert_true(
+            page.locator('a[href="boussole-electorale.html"]').count() >= 2,
+            f"{BROWSER_NAME}: la Boussole doit avoir au moins deux accès depuis l’accueil Nova",
+        )
+
+        page.goto(urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"), wait_until="domcontentloaded", timeout=30_000)
+        page.locator("#compass-start").wait_for(state="visible", timeout=10_000)
+        assert_true(not page.locator("#compass-start").is_disabled(), f"{BROWSER_NAME}: démarrage Boussole indisponible")
+        page.locator("#compass-start").click()
+        page.locator("#compass-question-stage .compass-question").wait_for(state="visible", timeout=10_000)
+        assert_true(
+            page.locator("#compass-question-stage .compass-question").count() == 1,
+            f"{BROWSER_NAME}: une seule question doit être visible à la fois",
+        )
+        assert_true(page.locator("#compass-prev").is_disabled(), f"{BROWSER_NAME}: Précédent doit être désactivé à la question 1")
+        assert_true(page.locator("#compass-next").is_disabled(), f"{BROWSER_NAME}: Suivant doit attendre une réponse")
+        page.locator('#compass-question-stage input[type="radio"]').first.check()
+        assert_true(not page.locator("#compass-next").is_disabled(), f"{BROWSER_NAME}: Suivant doit s’activer après une réponse")
+        page.locator("#compass-next").click()
+        assert_true(
+            "Question 2 sur 64" in page.locator("#compass-progress-text").inner_text(),
+            f"{BROWSER_NAME}: progression guidée vers la question 2 absente",
+        )
         home_text = page.locator("main").inner_text().lower()
         for retired_name in ("lumina", "futurax", "chroniques de l’ombre", "chroniques de l'ombre"):
             assert_true(retired_name not in home_text, f"Accueil: univers secondaire remis au premier plan: {retired_name}")
