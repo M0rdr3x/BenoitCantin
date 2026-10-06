@@ -208,6 +208,27 @@ else:
         if marker not in netlify_text:
             errors.append(f"netlify.toml Projet Nova: contrat de déploiement absent: {marker}")
 
+# Le manifeste PWA de Projet Nova doit rester borné à son sous-site.
+pwa_manifest = NOVA / "site.webmanifest"
+if not pwa_manifest.is_file():
+    errors.append("site.webmanifest Projet Nova absent")
+else:
+    try:
+        pwa = json.loads(pwa_manifest.read_text(encoding="utf-8"))
+    except Exception as exc:
+        pwa = {}
+        errors.append(f"site.webmanifest Projet Nova invalide: {exc}")
+    expected_nova_scope = "/projets/projet-nova/"
+    for field in ("id", "start_url", "scope"):
+        if pwa.get(field) != expected_nova_scope:
+            errors.append(
+                f"site.webmanifest Projet Nova: {field} doit valoir {expected_nova_scope}"
+            )
+    if pwa.get("lang") != "fr-CA":
+        errors.append("site.webmanifest Projet Nova: lang doit être fr-CA")
+    if pwa.get("display") not in {"standalone", "minimal-ui", "fullscreen"}:
+        errors.append("site.webmanifest Projet Nova: display PWA invalide")
+
 if errors:
     print("PROJET NOVA — FAIL")
     for e in errors:
