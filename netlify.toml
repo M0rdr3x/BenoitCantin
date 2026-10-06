@@ -77,3 +77,65 @@
   from = "/sinjira"
   to = "/projets/sinjira/index.html"
   status = 301
+
+# Compatibilité des anciennes routes racine de Projet Nova.
+
+[[redirects]]
+  from = "/participer.html"
+  to = "/projets/projet-nova/participer.html"
+  status = 301
+
+[[redirects]]
+  from = "/presse.html"
+  to = "/projets/projet-nova/presse.html"
+  status = 301
+
+[[redirects]]
+  from = "/programme.html"
+  to = "/projets/projet-nova/programme.html"
+  status = 301
+
+[[redirects]]
+  from = "/propositions.html"
+  to = "/projets/projet-nova/propositions.html"
+  status = 301
+
+[[redirects]]
+  from = "/recrutement.html"
+  to = "/projets/projet-nova/recrutement.html"
+  status = 301
+
+[[redirects]]
+  from = "/registre-conformite.html"
+  to = "/projets/projet-nova/registre-conformite.html"
+  status = 301
+
+[[redirects]]
+  from = "/registre-rencontres.html"
+  to = "/projets/projet-nova/registre-rencontres.html"
+  status = 301
+
+[[redirects]]
+  from = "/reglements.html"
+  to = "/projets/projet-nova/reglements.html"
+  status = 301
+
+[[redirects]]
+  from = "/transparence.html"
+  to = "/projets/projet-nova/transparence.html"
+  status = 301
+
+[[redirects]]
+  from = "/transition.html"
+  to = "/projets/projet-nova/transition.html"
+  status = 301
+
+[[redirects]]
+  from = "/vision.html"
+  to = "/projets/projet-nova/vision.html"
+  status = 301
+
+[[redirects]]
+  from = "/visionneuse.html"
+  to = "/projets/projet-nova/visionneuse.html"
+  status = 301
