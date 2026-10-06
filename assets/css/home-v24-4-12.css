@@ -1,4 +1,4 @@
-:root{--home-orbit-size:min(48vw,560px);--home-node:clamp(132px,12vw,166px)}
+:root{--home-orbit-size:min(48vw,560px);--home-node:clamp(150px,13vw,180px)}
 .home-page .hero{padding:clamp(46px,7vw,92px) 0 36px;overflow:hidden}
 .home-page .hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(380px,.95fr);gap:clamp(36px,6vw,86px);align-items:center}
 .home-page .hero-copy{max-width:720px}
