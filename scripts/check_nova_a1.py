@@ -332,6 +332,7 @@ if compass_page.is_file():
         "ne vous dit pas pour qui voter",
         "assets/boussole-electorale.js?v=2.0.0",
         "assets/boussole-electorale.css?v=2.0.0",
+        "Audit des formulations.",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
