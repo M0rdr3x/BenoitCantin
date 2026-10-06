@@ -1,0 +1,995 @@
+{
+  "version": "2.0.0",
+  "locale": "fr-CA",
+  "jurisdiction": "Québec",
+  "published": "2026-10-06",
+  "methodology": {
+    "profile": "multidimensional",
+    "responseScale": {
+      "min": -3,
+      "max": 3
+    },
+    "importanceWeights": {
+      "faible": 0.5,
+      "normal": 1,
+      "forte": 1.5
+    },
+    "minimumAnsweredRatio": 0.5,
+    "axisMinimumAnswered": 2,
+    "crossLoadingPolicy": "Primary loading weight 1; explicitly declared secondary loadings <= 0.4.",
+    "partyComparison": "disabled until sourced party corpus and coverage thresholds are satisfied"
+  },
+  "axes": [
+    {
+      "id": "economy",
+      "title": "Économie, concurrence et rôle de l’État",
+      "negative": "Marché et concurrence",
+      "positive": "Intervention et planification publiques"
+    },
+    {
+      "id": "tax",
+      "title": "Fiscalité, dette et redistribution",
+      "negative": "Fiscalité plus basse et dépenses ciblées",
+      "positive": "Redistribution et recettes publiques accrues"
+    },
+    {
+      "id": "health",
+      "title": "Santé et services sociaux",
+      "negative": "Pluralité de prestation",
+      "positive": "Réseau public intégré"
+    },
+    {
+      "id": "education",
+      "title": "Éducation, famille et petite enfance",
+      "negative": "Choix et autonomie des établissements/familles",
+      "positive": "Uniformité et offre publique universelle"
+    },
+    {
+      "id": "housing",
+      "title": "Logement, urbanisme et propriété",
+      "negative": "Marché, propriété et offre privée",
+      "positive": "Intervention publique et logement hors marché"
+    },
+    {
+      "id": "environment",
+      "title": "Climat, environnement et énergie",
+      "negative": "Priorité aux coûts et au développement",
+      "positive": "Transition et contraintes environnementales"
+    },
+    {
+      "id": "transport",
+      "title": "Transport et infrastructures",
+      "negative": "Route et choix individuel",
+      "positive": "Transport collectif et planification intégrée"
+    },
+    {
+      "id": "liberties",
+      "title": "Libertés civiles, justice et sécurité",
+      "negative": "Libertés et garanties procédurales",
+      "positive": "Pouvoirs de sécurité et contrôle accru"
+    },
+    {
+      "id": "democracy",
+      "title": "Démocratie, institutions et éthique",
+      "negative": "Délégation représentative",
+      "positive": "Participation et contrôle citoyens"
+    },
+    {
+      "id": "immigration",
+      "title": "Immigration, intégration et capacité d’accueil",
+      "negative": "Ouverture et croissance de l’accueil",
+      "positive": "Contrôle et exigences d’intégration"
+    },
+    {
+      "id": "identity",
+      "title": "Langue, culture, laïcité et identité",
+      "negative": "Pluralisme et neutralité minimale",
+      "positive": "Protection collective renforcée"
+    },
+    {
+      "id": "quebec",
+      "title": "Avenir politique du Québec et fédéralisme",
+      "negative": "Fédéralisme canadien",
+      "positive": "Autonomie maximale et souveraineté"
+    },
+    {
+      "id": "territory",
+      "title": "Régions, municipalités et décentralisation",
+      "negative": "Normes et décisions provinciales",
+      "positive": "Pouvoirs locaux et régionaux"
+    },
+    {
+      "id": "indigenous",
+      "title": "Relations avec les Premières Nations et les Inuit",
+      "negative": "Cadre provincial uniforme",
+      "positive": "Autonomie, partenariats et réconciliation renforcés"
+    },
+    {
+      "id": "labour",
+      "title": "Travail, syndicats et entreprises",
+      "negative": "Flexibilité contractuelle et patronale",
+      "positive": "Protection collective et pouvoir syndical"
+    },
+    {
+      "id": "digital",
+      "title": "Numérique, IA, données et vie privée",
+      "negative": "Innovation et usages permissifs",
+      "positive": "Encadrement, transparence et protection des données"
+    }
+  ],
+  "questions": [
+    {
+      "id": "q01",
+      "axis": "economy",
+      "direction": 1,
+      "text": "L’État devrait intervenir davantage pour orienter les secteurs économiques jugés stratégiques.",
+      "loadings": [
+        {
+          "axis": "economy",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q02",
+      "axis": "economy",
+      "direction": -1,
+      "text": "La concurrence et l’initiative privée devraient être privilégiées même dans plusieurs secteurs aujourd’hui fortement réglementés.",
+      "loadings": [
+        {
+          "axis": "economy",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q03",
+      "axis": "economy",
+      "direction": 1,
+      "text": "Le gouvernement devrait pouvoir prendre des participations ou créer des entreprises publiques lorsqu’un secteur essentiel le justifie.",
+      "loadings": [
+        {
+          "axis": "economy",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q04",
+      "axis": "economy",
+      "direction": -1,
+      "text": "Les aides économiques devraient être limitées au profit de règles générales stables pour toutes les entreprises.",
+      "loadings": [
+        {
+          "axis": "economy",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q05",
+      "axis": "tax",
+      "direction": 1,
+      "text": "Une plus grande redistribution des revenus est souhaitable même si cela exige une fiscalité plus élevée pour les revenus supérieurs.",
+      "loadings": [
+        {
+          "axis": "tax",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q06",
+      "axis": "tax",
+      "direction": -1,
+      "text": "Réduire la pression fiscale devrait être prioritaire, même si cela limite certaines nouvelles dépenses publiques.",
+      "loadings": [
+        {
+          "axis": "tax",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q07",
+      "axis": "tax",
+      "direction": 1,
+      "text": "Une période de déficit peut être justifiée pour financer des investissements publics majeurs à long terme.",
+      "loadings": [
+        {
+          "axis": "tax",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q08",
+      "axis": "tax",
+      "direction": -1,
+      "text": "Le retour à l’équilibre budgétaire devrait primer sur l’ajout de nouveaux programmes permanents.",
+      "loadings": [
+        {
+          "axis": "tax",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q09",
+      "axis": "health",
+      "direction": 1,
+      "text": "Les soins de première ligne devraient être organisés principalement à l’intérieur d’un réseau public intégré.",
+      "loadings": [
+        {
+          "axis": "health",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q10",
+      "axis": "health",
+      "direction": -1,
+      "text": "Le financement public peut être compatible avec davantage de cliniques ou fournisseurs privés lorsqu’ils respectent des normes communes.",
+      "loadings": [
+        {
+          "axis": "health",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q11",
+      "axis": "health",
+      "direction": 1,
+      "text": "Les soins à domicile et services sociaux publics devraient recevoir une part nettement plus importante des budgets de santé.",
+      "loadings": [
+        {
+          "axis": "health",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q12",
+      "axis": "health",
+      "direction": -1,
+      "text": "Les patients devraient avoir davantage de choix entre différents fournisseurs de soins remboursés par l’État.",
+      "loadings": [
+        {
+          "axis": "health",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q13",
+      "axis": "education",
+      "direction": 1,
+      "text": "L’État devrait garantir une offre publique universelle plus uniforme en éducation et en petite enfance.",
+      "loadings": [
+        {
+          "axis": "education",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q14",
+      "axis": "education",
+      "direction": -1,
+      "text": "Les écoles et les familles devraient disposer de davantage d’autonomie pour choisir les approches pédagogiques.",
+      "loadings": [
+        {
+          "axis": "education",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q15",
+      "axis": "education",
+      "direction": 1,
+      "text": "Les services éducatifs spécialisés devraient être renforcés même si cela augmente les dépenses publiques.",
+      "loadings": [
+        {
+          "axis": "education",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q16",
+      "axis": "education",
+      "direction": -1,
+      "text": "Le financement public devrait suivre davantage le choix des familles entre différents types d’établissements reconnus.",
+      "loadings": [
+        {
+          "axis": "education",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q17",
+      "axis": "housing",
+      "direction": 1,
+      "text": "Le gouvernement devrait financer beaucoup plus de logements sociaux, coopératifs et sans but lucratif.",
+      "loadings": [
+        {
+          "axis": "housing",
+          "weight": 1,
+          "direction": 1
+        },
+        {
+          "axis": "territory",
+          "weight": 0.35,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q18",
+      "axis": "housing",
+      "direction": -1,
+      "text": "La priorité en logement devrait être d’accélérer l’offre privée en réduisant les contraintes réglementaires.",
+      "loadings": [
+        {
+          "axis": "housing",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q19",
+      "axis": "housing",
+      "direction": 1,
+      "text": "Les municipalités devraient pouvoir imposer davantage d’obligations de logement abordable dans les nouveaux projets.",
+      "loadings": [
+        {
+          "axis": "housing",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q20",
+      "axis": "housing",
+      "direction": -1,
+      "text": "Les politiques du logement devraient davantage favoriser l’accession à la propriété et l’investissement privé.",
+      "loadings": [
+        {
+          "axis": "housing",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q21",
+      "axis": "environment",
+      "direction": 1,
+      "text": "Les gouvernements devraient imposer des mesures climatiques plus contraignantes même si certains secteurs doivent s’adapter rapidement.",
+      "loadings": [
+        {
+          "axis": "environment",
+          "weight": 1,
+          "direction": 1
+        },
+        {
+          "axis": "transport",
+          "weight": 0.25,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q22",
+      "axis": "environment",
+      "direction": -1,
+      "text": "Les nouvelles contraintes environnementales devraient être limitées lorsqu’elles augmentent fortement le coût de la vie ou réduisent la compétitivité.",
+      "loadings": [
+        {
+          "axis": "environment",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q23",
+      "axis": "environment",
+      "direction": 1,
+      "text": "La protection des écosystèmes devrait pouvoir justifier le refus de projets économiques pourtant rentables.",
+      "loadings": [
+        {
+          "axis": "environment",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q24",
+      "axis": "environment",
+      "direction": -1,
+      "text": "Les grands projets énergétiques ou miniers devraient être facilités lorsqu’ils respectent des normes environnementales claires.",
+      "loadings": [
+        {
+          "axis": "environment",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q25",
+      "axis": "transport",
+      "direction": 1,
+      "text": "Les investissements publics devraient privilégier le transport collectif dans les grands centres urbains.",
+      "loadings": [
+        {
+          "axis": "transport",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q26",
+      "axis": "transport",
+      "direction": -1,
+      "text": "L’entretien et l’augmentation de la capacité routière devraient rester une priorité majeure.",
+      "loadings": [
+        {
+          "axis": "transport",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q27",
+      "axis": "transport",
+      "direction": 1,
+      "text": "L’aménagement du territoire devrait réduire la dépendance à l’automobile par une planification plus dense et intégrée.",
+      "loadings": [
+        {
+          "axis": "transport",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q28",
+      "axis": "transport",
+      "direction": -1,
+      "text": "Les citoyens devraient conserver un maximum de liberté de choix de mode de transport, même si cela limite certaines mesures de réduction du trafic.",
+      "loadings": [
+        {
+          "axis": "transport",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q29",
+      "axis": "liberties",
+      "direction": -1,
+      "text": "Les pouvoirs de surveillance de l’État devraient rester très limités même lorsqu’ils peuvent faciliter certaines enquêtes.",
+      "loadings": [
+        {
+          "axis": "liberties",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q30",
+      "axis": "liberties",
+      "direction": 1,
+      "text": "Dans certaines situations, des pouvoirs de sécurité plus larges sont justifiés pour prévenir des risques graves.",
+      "loadings": [
+        {
+          "axis": "liberties",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q31",
+      "axis": "liberties",
+      "direction": -1,
+      "text": "La liberté d’expression devrait être protégée largement, y compris pour des opinions fortement contestées, sous réserve des limites prévues par la loi.",
+      "loadings": [
+        {
+          "axis": "liberties",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q32",
+      "axis": "liberties",
+      "direction": 1,
+      "text": "Les autorités devraient disposer de moyens plus rapides pour imposer des restrictions lorsqu’un risque collectif important est démontré.",
+      "loadings": [
+        {
+          "axis": "liberties",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q33",
+      "axis": "democracy",
+      "direction": 1,
+      "text": "Les citoyens devraient pouvoir déclencher certains référendums lorsqu’un seuil clair de signatures est atteint.",
+      "loadings": [
+        {
+          "axis": "democracy",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q34",
+      "axis": "democracy",
+      "direction": -1,
+      "text": "Les élus devraient généralement pouvoir décider pendant leur mandat sans recourir fréquemment à des votes populaires.",
+      "loadings": [
+        {
+          "axis": "democracy",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q35",
+      "axis": "democracy",
+      "direction": 1,
+      "text": "Des mécanismes de révocation ou de contrôle citoyen en cours de mandat devraient exister sous des règles strictes.",
+      "loadings": [
+        {
+          "axis": "democracy",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q36",
+      "axis": "democracy",
+      "direction": -1,
+      "text": "La stabilité institutionnelle exige que la plupart des décisions restent confiées aux représentants élus jusqu’à l’élection suivante.",
+      "loadings": [
+        {
+          "axis": "democracy",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q37",
+      "axis": "immigration",
+      "direction": -1,
+      "text": "Le Québec devrait accueillir davantage d’immigrants lorsque les capacités d’intégration et les besoins économiques le permettent.",
+      "loadings": [
+        {
+          "axis": "immigration",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q38",
+      "axis": "immigration",
+      "direction": 1,
+      "text": "Les seuils d’immigration devraient être réduits lorsque le logement, les services publics ou l’intégration linguistique sont sous forte pression.",
+      "loadings": [
+        {
+          "axis": "immigration",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q39",
+      "axis": "immigration",
+      "direction": -1,
+      "text": "Les politiques d’immigration devraient accorder une place importante aux objectifs humanitaires et au regroupement familial.",
+      "loadings": [
+        {
+          "axis": "immigration",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q40",
+      "axis": "immigration",
+      "direction": 1,
+      "text": "La connaissance du français et l’intégration civique devraient peser davantage dans la sélection et l’accompagnement des nouveaux arrivants.",
+      "loadings": [
+        {
+          "axis": "immigration",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q41",
+      "axis": "identity",
+      "direction": 1,
+      "text": "Le Québec devrait utiliser des mesures plus fortes pour protéger le français dans l’espace public et économique.",
+      "loadings": [
+        {
+          "axis": "identity",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q42",
+      "axis": "identity",
+      "direction": -1,
+      "text": "Les politiques culturelles devraient laisser davantage de place au pluralisme même lorsque cela réduit l’uniformité des normes collectives.",
+      "loadings": [
+        {
+          "axis": "identity",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q43",
+      "axis": "identity",
+      "direction": 1,
+      "text": "La laïcité de l’État devrait comporter des règles plus strictes pour certaines fonctions publiques d’autorité.",
+      "loadings": [
+        {
+          "axis": "identity",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q44",
+      "axis": "identity",
+      "direction": -1,
+      "text": "L’État devrait éviter de définir trop précisément une identité collective et se concentrer surtout sur des droits communs.",
+      "loadings": [
+        {
+          "axis": "identity",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q45",
+      "axis": "quebec",
+      "direction": 1,
+      "text": "Le Québec devrait disposer de davantage de pouvoirs exclusifs, même si cela exige une renégociation importante avec le gouvernement fédéral.",
+      "loadings": [
+        {
+          "axis": "quebec",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q46",
+      "axis": "quebec",
+      "direction": -1,
+      "text": "Le fédéralisme canadien demeure le meilleur cadre général pour défendre les intérêts du Québec.",
+      "loadings": [
+        {
+          "axis": "quebec",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q47",
+      "axis": "quebec",
+      "direction": 1,
+      "text": "L’accession du Québec à la souveraineté devrait rester une option politique pleinement envisagée.",
+      "loadings": [
+        {
+          "axis": "quebec",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q48",
+      "axis": "quebec",
+      "direction": -1,
+      "text": "Les priorités québécoises devraient être poursuivies principalement à l’intérieur des institutions canadiennes actuelles.",
+      "loadings": [
+        {
+          "axis": "quebec",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q49",
+      "axis": "territory",
+      "direction": 1,
+      "text": "Les régions et municipalités devraient obtenir davantage de pouvoirs décisionnels et fiscaux.",
+      "loadings": [
+        {
+          "axis": "territory",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q50",
+      "axis": "territory",
+      "direction": -1,
+      "text": "Des normes provinciales uniformes sont souvent préférables à des politiques différentes d’une région à l’autre.",
+      "loadings": [
+        {
+          "axis": "territory",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q51",
+      "axis": "territory",
+      "direction": 1,
+      "text": "Une part plus importante des budgets publics devrait être décidée près des communautés concernées.",
+      "loadings": [
+        {
+          "axis": "territory",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q52",
+      "axis": "territory",
+      "direction": -1,
+      "text": "Les grands services publics gagnent généralement à être planifiés et administrés de façon centralisée.",
+      "loadings": [
+        {
+          "axis": "territory",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q53",
+      "axis": "indigenous",
+      "direction": 1,
+      "text": "Le Québec devrait conclure davantage d’ententes de nation à nation accordant une autonomie réelle aux Premières Nations et aux Inuit.",
+      "loadings": [
+        {
+          "axis": "indigenous",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q54",
+      "axis": "indigenous",
+      "direction": -1,
+      "text": "Les mêmes règles provinciales devraient s’appliquer le plus uniformément possible à l’ensemble du territoire.",
+      "loadings": [
+        {
+          "axis": "indigenous",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q55",
+      "axis": "indigenous",
+      "direction": 1,
+      "text": "La réconciliation devrait inclure davantage de partage de revenus et de pouvoir sur les projets touchant les territoires autochtones.",
+      "loadings": [
+        {
+          "axis": "indigenous",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q56",
+      "axis": "indigenous",
+      "direction": -1,
+      "text": "Les décisions économiques d’intérêt général devraient pouvoir avancer sans accorder de droit de blocage supplémentaire à des gouvernements autochtones.",
+      "loadings": [
+        {
+          "axis": "indigenous",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q57",
+      "axis": "labour",
+      "direction": 1,
+      "text": "Les lois du travail devraient renforcer le pouvoir de négociation collective des salariés.",
+      "loadings": [
+        {
+          "axis": "labour",
+          "weight": 1,
+          "direction": 1
+        },
+        {
+          "axis": "economy",
+          "weight": 0.25,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q58",
+      "axis": "labour",
+      "direction": -1,
+      "text": "Les employeurs devraient disposer de davantage de flexibilité pour organiser le travail et ajuster les conditions d’emploi.",
+      "loadings": [
+        {
+          "axis": "labour",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q59",
+      "axis": "labour",
+      "direction": 1,
+      "text": "Les normes minimales de travail devraient être relevées même si cela augmente les coûts pour certaines entreprises.",
+      "loadings": [
+        {
+          "axis": "labour",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q60",
+      "axis": "labour",
+      "direction": -1,
+      "text": "La réglementation du travail devrait laisser davantage de place aux ententes individuelles entre employeurs et employés.",
+      "loadings": [
+        {
+          "axis": "labour",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q61",
+      "axis": "digital",
+      "direction": 1,
+      "text": "Les systèmes d’intelligence artificielle utilisés par l’État devraient être soumis à des obligations fortes d’explicabilité et d’audit.",
+      "loadings": [
+        {
+          "axis": "digital",
+          "weight": 1,
+          "direction": 1
+        }
+      ]
+    },
+    {
+      "id": "q62",
+      "axis": "digital",
+      "direction": -1,
+      "text": "Le Québec devrait privilégier l’adoption rapide de l’IA et des technologies numériques même si la réglementation évolue ensuite.",
+      "loadings": [
+        {
+          "axis": "digital",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q63",
+      "axis": "digital",
+      "direction": 1,
+      "text": "La collecte et le croisement de données personnelles par les organismes publics devraient être strictement limités par défaut.",
+      "loadings": [
+        {
+          "axis": "digital",
+          "weight": 1,
+          "direction": 1
+        },
+        {
+          "axis": "liberties",
+          "weight": 0.4,
+          "direction": -1
+        }
+      ]
+    },
+    {
+      "id": "q64",
+      "axis": "digital",
+      "direction": -1,
+      "text": "Le partage de données entre organismes publics devrait être facilité lorsqu’il améliore nettement les services aux citoyens.",
+      "loadings": [
+        {
+          "axis": "digital",
+          "weight": 1,
+          "direction": -1
+        }
+      ]
+    }
+  ],
+  "partyComparison": {
+    "enabled": false,
+    "minimumQuestionCoverage": 0.7,
+    "minimumAxisCoverage": 0.5,
+    "unknownPolicy": "Unknown party positions are excluded from distance and always disclosed.",
+    "evidenceRequired": [
+      "official_platform",
+      "official_policy_document",
+      "official_press_release_or_leader_statement",
+      "legislative_record_if_relevant"
+    ],
+    "codingRequires": [
+      "source_url",
+      "source_date",
+      "checked_at",
+      "coder_rationale",
+      "confidence",
+      "status"
+    ],
+    "interCoderReview": true
+  }
+}
