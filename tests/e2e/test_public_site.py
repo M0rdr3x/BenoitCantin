@@ -44,6 +44,9 @@ def register_error_capture(page, target):
 
 
 def wait_for_assistant(page):
+    if page.locator('html[data-disable-sinjira-assistant="true"]').count():
+        page.wait_for_load_state("load")
+        page.evaluate("window.dispatchEvent(new Event('pointerdown'))")
     page.wait_for_function(
         "([version]) => window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === version",
         arg=[ASSISTANT_VERSION],
