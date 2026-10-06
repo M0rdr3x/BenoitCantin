@@ -64,7 +64,7 @@ def main() -> int:
 
     for marker in (
         'node-boussole-home',
-        '/assets/media/nova-boussole-electorale.svg',
+        '/assets/media/nova-boussole-electorale.webp',
         'Quatre portes · une même signature',
         '>Boussole</a>',
     ):
