@@ -1,34 +1,37 @@
-# Administration des formulaires
+# Administration des formulaires — état actuel
 
-## Destination administrative
+## Statut public
 
-Les formulaires seront configurés avec Formspree pour transmettre les avis à `kingtyrano@gmail.com`. Cette adresse ne doit pas être intégrée inutilement dans les pages publiques.
+Les formulaires externes historiques de Projet Nova sont **désactivés**. Les pages publiques actives de contact, participation et propositions utilisent actuellement un **contact direct par courriel** et ne soumettent pas de données à Formspree.
 
-## Formulaires prévus
+Le courriel public affiché par Projet Nova est `officiellenovaparti@gmail.com`.
 
-- Contact général : `contact-general`
-- Registre des Consciences : `registre-des-consciences`
+## Parcours publics actuels
 
-Les envois sont temporairement désactivés dans la version GitHub Pages jusqu’à la configuration de Formspree.
+- Contact : `contact.html`
+- Participation : `recrutement.html`
+- Propositions citoyennes : `propositions.html`
+- Ancien formulaire de soutien : redirection vers `recrutement.html`
+- Ancienne page de confirmation : avis de retrait du parcours; elle ne confirme aucun envoi actuel.
 
-## Principe éditorial du Registre
+## Réactivation future d’un fournisseur de formulaire
 
-Le participant transmet des renseignements **sur lui-même**. Il ne remet pas un personnage inventé. Benoit Cantin transforme les fondations humaines et psychologiques du fan en personnage fictif original.
+Avant toute réactivation d’un service externe de formulaire, il faut documenter et valider au minimum :
 
-## Cycle de vie d’une soumission
+1. la finalité et la nécessité des renseignements demandés;
+2. la minimisation des champs;
+3. la destination administrative et les contrôles d’accès;
+4. la localisation du traitement et les transferts hors Québec;
+5. la durée de conservation et la destruction;
+6. les mentions de confidentialité et le consentement approprié;
+7. les protections particulières applicables aux renseignements sensibles ou à la participation politique;
+8. la configuration distincte des autres projets du portail.
 
-1. Réception dans Formspree et notification à l’adresse administrative.
-2. Vérification du consentement et, s’il y a lieu, de l’autorisation parentale.
-3. Évaluation créative.
-4. Si la proposition n’est pas retenue, appliquer la politique de conservation validée.
-5. Si elle est retenue, créer une fiche de travail sans coordonnées inutiles.
-6. Après création du personnage et lorsque la source personnelle n’est plus nécessaire, supprimer la soumission originale, le courriel, les pièces jointes et toute copie locale.
-7. Conserver seulement les éléments narratifs fictifs nécessaires au roman, selon les modalités juridiques validées.
+Aucun endpoint Formspree ne doit être copié dans une page publique avant cette validation.
 
 ## Sécurité
 
-- Utiliser un mot de passe unique et l’authentification multifacteur sur Formspree et Gmail.
-- Limiter l’accès aux comptes administratifs.
-- Ne jamais placer les réponses ou les photographies dans GitHub.
-- Ne pas télécharger les photos sur un ordinateur partagé.
-- Documenter chaque suppression.
+- Utiliser des comptes administratifs protégés par MFA.
+- Ne jamais publier de réponses, pièces jointes ou exports privés dans GitHub.
+- Ne pas intégrer une adresse administrative privée dans le code ou la documentation publique lorsque le courriel public du projet suffit.
+- Documenter la suppression et la conservation exceptionnelle lorsqu’elles s’appliquent.
