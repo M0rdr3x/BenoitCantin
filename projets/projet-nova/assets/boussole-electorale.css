@@ -20,7 +20,12 @@
 
 
 /* Parcours guidé V3 */
-.compass-hero .container{max-width:980px}
+.compass-hero .container{max-width:1120px}
+.compass-hero-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(240px,.65fr);gap:34px;align-items:center}
+.compass-hero-copy{min-width:0}
+.compass-hero-visual{margin:0;padding:18px;border-radius:28px;background:linear-gradient(145deg,#041b31,#073e59);border:1px solid rgba(36,196,223,.32);box-shadow:0 20px 44px rgba(6,26,47,.18);text-align:center}
+.compass-hero-visual img{display:block;width:min(100%,320px);height:auto;aspect-ratio:1;object-fit:cover;border-radius:22px;margin:0 auto}
+.compass-hero-visual figcaption{margin-top:12px;color:#d8f8fb;font-size:.9rem;font-weight:800;line-height:1.45}
 .compass-how-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
 .compass-how-grid article{background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 8px 22px rgba(6,26,47,.04)}
 .compass-how-grid article>span{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;font-weight:900;margin-bottom:10px}
@@ -73,3 +78,5 @@
 .compass-email-field input{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;color:#10223a;font:inherit}
 .compass-email-field input:focus{outline:3px solid rgba(36,196,223,.18);border-color:#24c4df}
 @media(max-width:700px){.compass-email-field{grid-template-columns:1fr}}
+
+@media(max-width:820px){.compass-hero-grid{grid-template-columns:1fr}.compass-hero-visual{max-width:360px;margin-inline:auto}}
