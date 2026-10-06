@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "updated": "2026-10-06",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -86,7 +86,9 @@
       "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
       "officialSite": "https://coalitionavenirquebec.org/fr/",
       "platformUrls": [],
-      "pressReleaseUrls": [],
+      "pressReleaseUrls": [
+        "https://coalitionavenirquebec.org/fr/blog/2026/09/02/lequipe-christine-frechette-veut-renverser-la-tendance-en-itinerance/"
+      ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site",
       "lastVerified": "2026-10-06",
@@ -196,7 +198,9 @@
       "platformUrls": [
         "https://plq.org/"
       ],
-      "pressReleaseUrls": [],
+      "pressReleaseUrls": [
+        "https://plq.org/communique/plan-habitation-du-parti-liberal-du-quebec-15-g-dinvestissements-pour-40-000-logements-sociaux-et-abordables-supplementaires/"
+      ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_engagements",
       "lastVerified": "2026-10-06",
@@ -268,7 +272,9 @@
       "platformUrls": [
         "https://www.pq.org/"
       ],
-      "pressReleaseUrls": [],
+      "pressReleaseUrls": [
+        "https://pq.org/nouvelles/visite-du-parti-quebecois-en-abitibi-temiscamingue-20-000-logements-sociaux-et-hors-marche/"
+      ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site",
       "lastVerified": "2026-10-06",
@@ -312,7 +318,8 @@
       "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
       "officialSite": "https://www.quebecinnovant.org/",
       "platformUrls": [
-        "https://www.quebecinnovant.org/"
+        "https://www.quebecinnovant.org/",
+        "https://www.quebecinnovant.org/chantiers/"
       ],
       "pressReleaseUrls": [],
       "legislativeRecordUrls": [],
@@ -330,7 +337,9 @@
       "platformUrls": [
         "https://quebecsolidaire.net/"
       ],
-      "pressReleaseUrls": [],
+      "pressReleaseUrls": [
+        "https://quebecsolidaire.net/nouvelle/elections-2026-quebec-solidaire-presente-un-cadre-financier-qui-nous-donne-les-moyens-de-nos-ambitions"
+      ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_platform",
       "lastVerified": "2026-10-06",
