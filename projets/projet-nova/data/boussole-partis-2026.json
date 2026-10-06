@@ -41,14 +41,15 @@
     "none"
   ],
   "activationRules": {
-    "minimumQuestionCoverage": 0.7,
-    "minimumAxisCoverage": 0.5,
     "minimumIndependentCoders": 2,
     "requireResolvableSourceUrl": true,
     "prohibitInferenceFromPartyLabel": true,
     "prohibitInferenceFromLeftRightBrand": true,
-    "unknownPositionsExcludedFromDistance": true,
-    "discloseCoverageInResults": true
+    "unknownPositionsRemainUnknown": true,
+    "contradictoryPositionsRemainVisible": true,
+    "allPartiesVisibleRegardlessOfCoverage": true,
+    "noOverallPartyScore": true,
+    "comparisonOutput": "factual_issue_by_issue_only"
   },
   "parties": [
     {
@@ -258,7 +259,6 @@
   ],
   "neutralityRules": {
     "equalQuestionSetForEveryParty": true,
-    "equalDistanceFormulaForEveryParty": true,
     "equalCoverageThresholdForEveryParty": true,
     "equalSourcePriorityForEveryParty": true,
     "noHostPartyBonus": true,
@@ -267,18 +267,19 @@
     "noFeaturedParty": true,
     "noLogoSizePreference": true,
     "tiesRemainTies": true,
-    "unknownPositionsRemainUnknown": true
+    "unknownPositionsRemainUnknown": true,
+    "equalPresentationRulesForEveryParty": true
   },
-  "comparisonFormula": {
-    "type": "weighted_normalized_distance",
-    "sameFormulaForEveryParty": true,
-    "userImportanceAppliedEqually": true,
-    "unknownExcludedFromNumeratorAndDenominator": true,
-    "coverageReportedSeparately": true,
-    "noPartySpecificCoefficient": true,
-    "noIncumbencyAdjustment": true,
-    "noPopularityAdjustment": true,
-    "noPollingAdjustment": true,
-    "noHostAdjustment": true
+  "presentationRules": {
+    "mode": "factual_side_by_side",
+    "noAutomaticRanking": true,
+    "noWinnerLabel": true,
+    "noRecommendedParty": true,
+    "noBestMatchBadge": true,
+    "evidenceVisiblePerQuestion": true,
+    "unknownVisible": true,
+    "contradictoryVisible": true,
+    "alphabeticalDefault": true,
+    "allPartiesVisibleRegardlessOfCoverage": true
   }
 }

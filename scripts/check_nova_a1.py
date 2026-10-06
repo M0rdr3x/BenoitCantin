@@ -235,11 +235,12 @@ compass_page = NOVA / "boussole-electorale.html"
 compass_data = NOVA / "data" / "boussole-electorale-v2.json"
 party_corpus = NOVA / "data" / "boussole-partis-2026.json"
 party_sources = NOVA / "data" / "boussole-sources-partis-2026.json"
+evidence_matrix = NOVA / "data" / "boussole-preuves-2026.json"
 compass_methodology = NOVA / "METHODOLOGIE_BOUSSOLE.md"
 compass_js = NOVA / "assets" / "boussole-electorale.js"
 compass_css = NOVA / "assets" / "boussole-electorale.css"
 
-for required in (compass_page, compass_data, compass_js, compass_css, party_corpus, party_sources, compass_methodology):
+for required in (compass_page, compass_data, compass_js, compass_css, party_corpus, party_sources, evidence_matrix, compass_methodology):
     if not required.is_file():
         errors.append(f"boussole électorale: fichier absent: {required.relative_to(NOVA)}")
 
@@ -352,7 +353,7 @@ if party_corpus.is_file():
     neutrality = parties.get("neutralityRules") or {}
     for key in (
         "equalQuestionSetForEveryParty",
-        "equalDistanceFormulaForEveryParty",
+        "equalPresentationRulesForEveryParty",
         "equalCoverageThresholdForEveryParty",
         "equalSourcePriorityForEveryParty",
         "noHostPartyBonus",
@@ -366,20 +367,22 @@ if party_corpus.is_file():
         if neutrality.get(key) is not True:
             errors.append(f"boussole électorale: règle de neutralité absente ou fausse: {key}")
 
-    formula = parties.get("comparisonFormula") or {}
+    presentation = parties.get("presentationRules") or {}
+    if presentation.get("mode") != "factual_side_by_side":
+        errors.append("boussole électorale: mode de présentation factuelle requis")
     for key in (
-        "sameFormulaForEveryParty",
-        "userImportanceAppliedEqually",
-        "unknownExcludedFromNumeratorAndDenominator",
-        "coverageReportedSeparately",
-        "noPartySpecificCoefficient",
-        "noIncumbencyAdjustment",
-        "noPopularityAdjustment",
-        "noPollingAdjustment",
-        "noHostAdjustment",
+        "noAutomaticRanking",
+        "noWinnerLabel",
+        "noRecommendedParty",
+        "noBestMatchBadge",
+        "evidenceVisiblePerQuestion",
+        "unknownVisible",
+        "contradictoryVisible",
+        "alphabeticalDefault",
+        "allPartiesVisibleRegardlessOfCoverage",
     ):
-        if formula.get(key) is not True:
-            errors.append(f"boussole électorale: formule inégale ou incomplète: {key}")
+        if presentation.get(key) is not True:
+            errors.append(f"boussole électorale: règle de présentation factuelle absente ou fausse: {key}")
     for row in party_rows:
         if row.get("comparisonEligible") is not False:
             errors.append(f"boussole électorale: comparaison prématurément activée pour {row.get('name')}")
@@ -388,10 +391,12 @@ if party_corpus.is_file():
         if row.get("positions") != {}:
             errors.append(f"boussole électorale: positions non sourcées présentes pour {row.get('name')}")
     rules = parties.get("activationRules") or {}
-    if rules.get("minimumQuestionCoverage") != 0.70:
-        errors.append("boussole électorale: seuil de couverture globale doit rester à 70 %")
     if rules.get("minimumIndependentCoders") != 2:
         errors.append("boussole électorale: double codage indépendant requis")
+    if rules.get("allPartiesVisibleRegardlessOfCoverage") is not True:
+        errors.append("boussole électorale: tous les partis doivent rester visibles quelle que soit la couverture")
+    if rules.get("noOverallPartyScore") is not True:
+        errors.append("boussole électorale: aucun score global de parti ne doit être produit")
 
 
     forbidden_party_runtime_tokens = [row.get("name") for row in party_rows if row.get("name")]
@@ -446,9 +451,65 @@ if party_sources.is_file():
         if not isinstance(row.get("platformUrls"), list):
             errors.append(f"boussole électorale: platformUrls doit être une liste pour {row.get('name')}")
 
+
+if evidence_matrix.is_file():
+    try:
+        evidence = json.loads(evidence_matrix.read_text(encoding="utf-8"))
+    except Exception as exc:
+        evidence = {}
+        errors.append(f"boussole électorale: matrice de preuves invalide: {exc}")
+    matrix_party_ids = evidence.get("partyIds") or []
+    matrix_questions = evidence.get("questions") or []
+    allowed_statuses = set(evidence.get("statusValues") or [])
+    if len(matrix_party_ids) != 22 or set(matrix_party_ids) != {row.get("id") for row in party_rows}:
+        errors.append("boussole électorale: matrice de preuves doit couvrir exactement les 22 formations")
+    if len(matrix_questions) != 64:
+        errors.append(f"boussole électorale: matrice de preuves doit couvrir 64 questions, {len(matrix_questions)} trouvées")
+    expected_question_ids = {q.get("id") for q in questions}
+    if {row.get("questionId") for row in matrix_questions} != expected_question_ids:
+        errors.append("boussole électorale: matrice de preuves désalignée avec les 64 questions")
+    for row in matrix_questions:
+        statuses = row.get("statuses") or {}
+        if set(statuses.keys()) != set(matrix_party_ids):
+            errors.append(f"boussole électorale: {row.get('questionId')} ne couvre pas toutes les formations")
+        for party_id, status in statuses.items():
+            if status not in allowed_statuses:
+                errors.append(f"boussole électorale: statut de preuve invalide {status} pour {row.get('questionId')} / {party_id}")
+    rules = evidence.get("evidenceRules") or {}
+    for key in (
+        "officialSourcesPreferred",
+        "exactQuestionMatchRequired",
+        "noIdeologicalInference",
+        "noPartyNameInference",
+        "noMissingSourceInference",
+        "sameEvidenceStandardForEveryParty",
+        "sourceVolumeDoesNotIncreaseWeight",
+        "contradictoryEvidencePreserved",
+        "secondIndependentReviewRequiredBeforeFinalization",
+    ):
+        if rules.get(key) is not True:
+            errors.append(f"boussole électorale: règle de preuve absente ou fausse: {key}")
+    forbidden_keys = {"score", "rank", "ranking", "winner", "recommendedParty", "bestParty"}
+    def walk_keys(value):
+        if isinstance(value, dict):
+            for key, nested in value.items():
+                if key in forbidden_keys:
+                    errors.append(f"boussole électorale: champ de classement politique interdit dans la matrice: {key}")
+                walk_keys(nested)
+        elif isinstance(value, list):
+            for nested in value:
+                walk_keys(nested)
+    walk_keys(evidence)
+    records = evidence.get("evidenceRecords") or []
+    record_index = {(r.get("questionId"), r.get("partyId")) for r in records}
+    for row in matrix_questions:
+        for party_id, status in (row.get("statuses") or {}).items():
+            if status != "unknown" and (row.get("questionId"), party_id) not in record_index:
+                errors.append(f"boussole électorale: statut documenté sans fiche de preuve pour {row.get('questionId')} / {party_id}")
+
 if compass_methodology.is_file():
     method_text = compass_methodology.read_text(encoding="utf-8", errors="replace")
-    for marker in ("Vote Compass", "Smartvote", "Élections Québec", "70 %", "deux codages indépendants", "Rédaction non ambiguë", "Couverture des partis", "Parti Nova"):
+    for marker in ("Vote Compass", "Smartvote", "Élections Québec", "deux codages indépendants", "Rédaction non ambiguë", "Couverture des partis", "Parti Nova", "Matrice factuelle de preuves", "aucun classement automatique"):
         if marker.lower() not in method_text.lower():
             errors.append(f"boussole électorale: méthodologie incomplète: {marker}")
 
