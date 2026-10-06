@@ -48,7 +48,8 @@
     "prohibitInferenceFromPartyLabel": true,
     "prohibitInferenceFromLeftRightBrand": true,
     "unknownPositionsExcludedFromDistance": true,
-    "discloseCoverageInResults": true
+    "discloseCoverageInResults": true,
+    "comparisonOutput": "factual_issue_by_issue_only"
   },
   "parties": [
     {
@@ -269,16 +270,15 @@
     "tiesRemainTies": true,
     "unknownPositionsRemainUnknown": true
   },
-  "comparisonFormula": {
-    "type": "weighted_normalized_distance",
-    "sameFormulaForEveryParty": true,
-    "userImportanceAppliedEqually": true,
-    "unknownExcludedFromNumeratorAndDenominator": true,
-    "coverageReportedSeparately": true,
-    "noPartySpecificCoefficient": true,
-    "noIncumbencyAdjustment": true,
-    "noPopularityAdjustment": true,
-    "noPollingAdjustment": true,
-    "noHostAdjustment": true
+  "presentationRules": {
+    "mode": "factual_side_by_side",
+    "noAutomaticRanking": true,
+    "noWinnerLabel": true,
+    "noRecommendedParty": true,
+    "noBestMatchBadge": true,
+    "evidenceVisiblePerQuestion": true,
+    "unknownVisible": true,
+    "contradictoryVisible": true,
+    "alphabeticalDefault": true
   }
 }
