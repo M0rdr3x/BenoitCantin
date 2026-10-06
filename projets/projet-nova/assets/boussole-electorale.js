@@ -30,8 +30,7 @@
     const fieldset = document.createElement("fieldset");
     fieldset.className = "compass-question";
     fieldset.dataset.questionId = question.id;
-    fieldset.innerHTML = `
-      <legend><span class="compass-question-number">${index + 1}</span>${esc(question.text)}</legend>
+    const axis = state.data.axes.find(item => item.id === question.axis);\n    fieldset.innerHTML = `\n      <div class="compass-question-axis">${esc(axis?.title || question.axis)}</div>\n      <legend><span class="compass-question-number">${index + 1}</span>${esc(question.text)}</legend>
       <div class="compass-response-grid" role="radiogroup" aria-label="Réponse à la proposition ${index + 1}">
         ${RESPONSES.map(r => `<label><input type="radio" name="${question.id}" value="${r.value}"><span>${esc(r.label)}</span></label>`).join("")}
         <label class="compass-skip"><input type="radio" name="${question.id}" value="skip"><span>Sans opinion / passer</span></label>
