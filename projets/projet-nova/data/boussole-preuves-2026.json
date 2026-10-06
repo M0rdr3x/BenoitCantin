@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1955,6 +1955,102 @@
       "sourceType": "official_party_policy_page",
       "evidenceSummary": "Québec innovant propose un financement plus stable et prévisible pour les promoteurs de logements sociaux et communautaires et souhaite augmenter la proportion de logements hors marché, tout en précisant que l’objectif n’est pas nécessairement d’augmenter massivement les dépenses à court terme.",
       "rationale": "La source appuie un renforcement du financement, mais explicitement sous une forme stable et ciblée plutôt qu’une hausse générale ou massive; q17 est donc seulement partiellement satisfaite.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q18-party-05-20261006-01",
+      "questionId": "q18",
+      "partyId": "party-05",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/09/04/construire-plus-plus-vite-et-a-moindre-cout-le-plan-de-lequipe-christine-frechette/",
+      "sourceTitle": "Construire plus, plus vite et à moindre coût : le plan de l’Équipe Christine Fréchette",
+      "sourceDate": "2026-09-04",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_campaign_page",
+      "evidenceSummary": "L’Équipe Christine Fréchette propose de simplifier les démarches résidentielles et de réduire certains délais de moitié lorsque des projets passent par des étapes municipales et provinciales.",
+      "rationale": "La source vise explicitement la réduction des délais administratifs associés aux projets résidentiels, ce qui correspond à la formulation corrigée de q18.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q18-party-12-20261006-02",
+      "questionId": "q18",
+      "partyId": "party-12",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://plq.org/communique/objectif-ambitieux-100-000-logements-par-annee/",
+      "sourceTitle": "Objectif ambitieux : 100 000 logements par année",
+      "sourceDate": "2026-08-31",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le PLQ propose une approche de performance avec les municipalités pour accélérer la délivrance des permis de construction résidentiels et accompagner celles dont les délais sont plus longs.",
+      "rationale": "La source répond directement à q18 en proposant explicitement d’accélérer les permis résidentiels municipaux.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q18-party-06-20261006-03",
+      "questionId": "q18",
+      "partyId": "party-06",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://osons.quebec/?profil=housing",
+      "sourceTitle": "Osons Québec — Propositions fondatrices — profil habitation",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Osons Québec propose un traitement municipal encadré des demandes complètes avec décision dans les 60 jours pour un projet standard, ainsi qu’un portail commun et des statistiques de délais.",
+      "rationale": "La proposition établit explicitement une réduction et un encadrement mesurable des délais municipaux de permis, correspondant directement à q18.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q18-party-08-20261006-04",
+      "questionId": "q18",
+      "partyId": "party-08",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://www.particanadienquebec.ca/fr/politiques/quebec-housing-growth-act",
+      "sourceTitle": "Loi sur la croissance résidentielle du Québec",
+      "sourceDate": "2026-08-01",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Le document du Parti canadien du Québec prévoit des approbations résidentielles accélérées près du transport collectif et des pôles d’emploi.",
+      "rationale": "La direction correspond à une accélération des autorisations résidentielles, mais la page ne précise pas que la mesure s’applique à toutes les demandes municipales de permis; la correspondance est donc partielle.",
       "confidence": "medium",
       "firstReview": {
         "status": "completed",
