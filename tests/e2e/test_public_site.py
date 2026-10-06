@@ -105,7 +105,7 @@ def run() -> None:
             f"{BROWSER_NAME}: cible de la porte orbitale Boussole incorrecte",
         )
         assert_true(
-            compass_orbit.locator('img[src="/assets/media/nova-boussole-electorale-v2.webp"]').count() == 1,
+            compass_orbit.locator('img[src="/assets/media/nova-boussole-electorale-v3.jpg"]').count() == 1,
             f"{BROWSER_NAME}: visuel officiel absent de la porte Boussole",
         )
         assert_true(
@@ -132,7 +132,7 @@ def run() -> None:
         assert_true(nova_compass_entry.count() == 1, f"{BROWSER_NAME}: accès prioritaire Boussole absent en haut de Nova")
         assert_true(nova_compass_entry.is_visible(), f"{BROWSER_NAME}: accès prioritaire Boussole non visible")
         assert_true(
-            nova_compass_entry.locator('img[src="../../assets/media/nova-boussole-electorale-v2.webp"]').count() == 1,
+            nova_compass_entry.locator('img[src="../../assets/media/nova-boussole-electorale-v3.jpg"]').count() == 1,
             f"{BROWSER_NAME}: visuel officiel absent de l’accès prioritaire Nova",
         )
         assert_true(
@@ -142,7 +142,7 @@ def run() -> None:
 
         page.goto(urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
-            page.locator('.compass-hero-visual img[src="../../assets/media/nova-boussole-electorale-v2.webp"]').count() == 1,
+            page.locator('.compass-hero-visual img[src="../../assets/media/nova-boussole-electorale-v3.jpg"]').count() == 1,
             f"{BROWSER_NAME}: visuel officiel absent du héros de la Boussole",
         )
         hero_image = page.locator('.compass-hero-visual img')
@@ -151,7 +151,7 @@ def run() -> None:
             timeout=10_000,
         )
         assert_true(
-            hero_image.evaluate("(img) => img.naturalWidth === 360 && img.naturalHeight === 360"),
+            hero_image.evaluate("(img) => img.naturalWidth === 256 && img.naturalHeight === 256"),
             f"{BROWSER_NAME}: dimensions du visuel Boussole inattendues",
         )
         assert_true(page.locator(".compass-hero-visual figcaption").count() == 0, f"{BROWSER_NAME}: légende indésirable encore présente")
