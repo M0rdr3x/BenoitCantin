@@ -135,6 +135,19 @@ def run() -> None:
             page.locator('.compass-hero-visual img[src="../../assets/media/nova-boussole-electorale.webp"]').count() == 1,
             f"{BROWSER_NAME}: visuel officiel absent du héros de la Boussole",
         )
+        hero_image = page.locator('.compass-hero-visual img')
+        assert_true(
+            hero_image.evaluate("(img) => img.naturalWidth === 320 && img.naturalHeight === 320"),
+            f"{BROWSER_NAME}: dimensions du visuel Boussole inattendues",
+        )
+        assert_true(page.locator(".compass-hero-visual figcaption").count() == 0, f"{BROWSER_NAME}: légende indésirable encore présente")
+        assert_true(
+            "Votre profil, plusieurs dimensions, aucune consigne de vote" not in page.content(),
+            f"{BROWSER_NAME}: texte indésirable encore présent sur la Boussole",
+        )
+        assert_true(page.locator("#dimensions .compass-dimension-card").count() == 16, f"{BROWSER_NAME}: 16 dimensions publiques attendues")
+        assert_true(page.locator("#lecture-resultat .compass-reading-card").count() == 4, f"{BROWSER_NAME}: explication du résultat incomplète")
+        assert_true(page.locator("#faq-boussole article").count() == 4, f"{BROWSER_NAME}: FAQ Boussole incomplète")
         page.locator("#compass-start").wait_for(state="visible", timeout=10_000)
         assert_true(not page.locator("#compass-start").is_disabled(), f"{BROWSER_NAME}: démarrage Boussole indisponible")
         page.locator("#compass-start").click()
