@@ -75,6 +75,13 @@ def main() -> int:
     for name in ALIASES:
         validate_alias(name, errors)
 
+    netlify = (ROOT / "netlify.toml").read_text("utf-8", errors="strict")
+    for name in ALIASES:
+        from_line = f'from = "/{name}"'
+        to_line = f'to = "{BASE}{name}"'
+        if from_line not in netlify or to_line not in netlify:
+            errors.append(f"netlify.toml: redirection 301 absente pour {name}.")
+
     if errors:
         print(f"ECHEC routes legacy Projet Nova: {len(errors)} problème(s).")
         for error in errors:
