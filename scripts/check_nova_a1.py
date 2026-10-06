@@ -323,6 +323,7 @@ if compass_page.is_file():
         'id="compass-prev"',
         'id="compass-next"',
         'id="compass-share-native"',
+        'id="compass-email-recipient"',
         'id="compass-share-email"',
         'id="compass-share-facebook"',
         'id="compass-share-x"',
@@ -356,6 +357,8 @@ if compass_js.is_file():
         "navigator.share",
         "copyText",
         "buildResultText",
+        "compass-email-recipient",
+        "mailto:",
     ):
         if marker not in compass_runtime:
             errors.append(f"boussole électorale: moteur guidé incomplet: {marker}")
