@@ -65,7 +65,8 @@ Les positions inconnues sont exclues de la distance et le taux de couverture doi
 
 Le registre de comparaison comprend :
 
-- **tous les partis provinciaux affichés comme autorisés** dans le registre courant d’Élections Québec au moment de la mise à jour;
+- **tous les partis provinciaux actuellement autorisés** selon les sources officielles d’Élections Québec au moment de la mise à jour;
+- les formations dont un **retrait d’autorisation récent** doit être conservé pour exactitude historique, avec un statut distinct et sans les présenter comme actuellement autorisées;
 - **Parti Nova**, identifié séparément comme futur parti tant qu’il n’est pas lui-même affiché comme parti autorisé par Élections Québec.
 
 Le statut électoral, le nombre de candidatures et le statut d’autorisation sont des informations distinctes. Un parti reste présent dans le registre de la boussole lorsqu’il figure dans le registre officiel des partis autorisés, même s’il ne présente pas de candidature dans une élection donnée.
@@ -80,6 +81,25 @@ Aucun parti, y compris Parti Nova, ne bénéficie :
 - d’une interprétation favorable d’une position inconnue.
 
 Par défaut, les partis sont affichés par ordre alphabétique. Les égalités restent des égalités.
+
+
+## Égalité documentaire
+
+Le volume de documentation disponible pour un parti ne doit jamais modifier sa proximité avec une personne.
+
+Chaque formation possède exactement les mêmes champs de sources : registre officiel, site officiel, plateformes/programmes, communiqués et archives parlementaires lorsqu’elles existent. Lorsqu’une source n’est pas vérifiée, le champ reste vide au lieu d’être remplacé par une supposition.
+
+Les règles suivantes sont obligatoires :
+
+- le nombre de sources d’un parti ne donne aucun poids supplémentaire;
+- l’absence de site ou de plateforme ne crée aucune position implicite;
+- la qualité d’une source peut modifier le **niveau de confiance documentaire**, jamais le sens ni le poids de la position;
+- un parti peu documenté conserve ses positions inconnues comme inconnues;
+- un parti très documenté n’obtient aucun bonus;
+- Parti Nova utilise les mêmes champs et les mêmes exigences;
+- le statut d’autorisation provient d’Élections Québec et demeure distinct du contenu politique.
+
+L’inventaire courant est versionné dans `data/boussole-sources-partis-2026.json`. Une source doit être vérifiée avant d’être utilisée pour coder une proposition.
 
 ## Distance électorale
 
