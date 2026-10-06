@@ -3,6 +3,8 @@
 
   const DATA_URL = "data/boussole-electorale-v2.json";
   const PARTY_DATA_URL = "data/boussole-partis-2026.json";
+  const PARTY_SOURCE_DATA_URL = "data/boussole-sources-partis-2026.json";
+  const EVIDENCE_DATA_URL = "data/boussole-preuves-2026.json";
   const RESPONSES = [
     {value:-3,label:"Tout à fait en désaccord"},
     {value:-2,label:"En désaccord"},
@@ -410,16 +412,84 @@
     }).join("");
   }
 
-  async function loadPartyRegistry(){
-    const host = $("#compass-parties");
-    if(!host) return;
+  function renderDocumentaryStatus(partyCorpus, sourceCorpus, evidenceCorpus){
+    const summary = $("#compass-evidence-summary");
+    const host = $("#compass-evidence-parties");
+    if(!summary || !host) return;
+
+    const parties = Array.isArray(partyCorpus.parties) ? [...partyCorpus.parties] : [];
+    const sources = Array.isArray(sourceCorpus.parties) ? sourceCorpus.parties : [];
+    const records = Array.isArray(evidenceCorpus.evidenceRecords) ? evidenceCorpus.evidenceRecords : [];
+    const sourceByParty = new Map(sources.map(row => [row.id,row]));
+    const recordsByParty = new Map();
+
+    for(const record of records){
+      if(!recordsByParty.has(record.partyId)) recordsByParty.set(record.partyId,[]);
+      recordsByParty.get(record.partyId).push(record);
+    }
+
+    const secondReviewed = records.filter(record => record.secondIndependentReview?.status === "completed").length;
+    const finalizable = records.filter(record => record.finalizable === true).length;
+    const pendingSecond = records.filter(record => record.secondIndependentReview?.status === "pending").length;
+
+    summary.innerHTML = [
+      ["Formations suivies",parties.length],
+      ["Preuves candidates",records.length],
+      ["Deuxième révision terminée",secondReviewed],
+      ["Positions finalisables",finalizable]
+    ].map(([label,value]) => `<article><strong>${value}</strong><span>${esc(label)}</span></article>`).join("");
+
+    parties.sort((a,b) => String(a.name).localeCompare(String(b.name),"fr-CA"));
+    host.innerHTML = parties.map(party => {
+      const source = sourceByParty.get(party.id) || {};
+      const partyRecords = recordsByParty.get(party.id) || [];
+      const reviewed = partyRecords.filter(record => record.secondIndependentReview?.status === "completed").length;
+      const finalized = partyRecords.filter(record => record.finalizable === true).length;
+      const sourceLabel = source.usableForPositionCoding
+        ? "Source politique vérifiée pour le codage"
+        : source.officialSite
+          ? "Site officiel vérifié — corpus politique à compléter"
+          : "Registre officiel seulement — source politique à vérifier";
+      return `
+        <article class="compass-evidence-card">
+          <h3>${esc(party.name)}</h3>
+          <p class="compass-evidence-source">${esc(sourceLabel)}</p>
+          <dl>
+            <div><dt>Preuves candidates</dt><dd>${partyRecords.length}</dd></div>
+            <div><dt>2e révision terminée</dt><dd>${reviewed}</dd></div>
+            <div><dt>Positions finalisables</dt><dd>${finalized}</dd></div>
+          </dl>
+        </article>
+      `;
+    }).join("");
+
+    const status = $("#compass-evidence-status");
+    if(status){
+      status.textContent = `${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une deuxième révision indépendante. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
+    }
+  }
+
+  async function loadPoliticalRegistryAndEvidence(){
+    const partyHost = $("#compass-parties");
+    const evidenceHost = $("#compass-evidence-parties");
     try{
-      const response = await fetch(PARTY_DATA_URL,{cache:"no-store"});
-      if(!response.ok) throw new Error("HTTP " + response.status);
-      renderPartyRegistry(await response.json());
+      const [partyResponse,sourceResponse,evidenceResponse] = await Promise.all([
+        fetch(PARTY_DATA_URL,{cache:"no-store"}),
+        fetch(PARTY_SOURCE_DATA_URL,{cache:"no-store"}),
+        fetch(EVIDENCE_DATA_URL,{cache:"no-store"})
+      ]);
+      for(const response of [partyResponse,sourceResponse,evidenceResponse]){
+        if(!response.ok) throw new Error("HTTP " + response.status);
+      }
+      const [partyCorpus,sourceCorpus,evidenceCorpus] = await Promise.all([
+        partyResponse.json(),sourceResponse.json(),evidenceResponse.json()
+      ]);
+      renderPartyRegistry(partyCorpus);
+      renderDocumentaryStatus(partyCorpus,sourceCorpus,evidenceCorpus);
     }catch(error){
-      host.innerHTML = "<p>Impossible de charger le registre des formations pour le moment.</p>";
-      console.error("Boussole électorale Nova — formations:",error);
+      if(partyHost) partyHost.innerHTML = "<p>Impossible de charger le registre des formations pour le moment.</p>";
+      if(evidenceHost) evidenceHost.innerHTML = "<p>Impossible de charger l’état documentaire pour le moment.</p>";
+      console.error("Boussole électorale Nova — registre documentaire:",error);
     }
   }
 
@@ -445,6 +515,6 @@
 
   document.addEventListener("DOMContentLoaded",() => {
     init();
-    loadPartyRegistry();
+    loadPoliticalRegistryAndEvidence();
   });
 })();
