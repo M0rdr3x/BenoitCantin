@@ -237,7 +237,7 @@ if not compass_visual.is_file():
 else:
     compass_visual_bytes = compass_visual.read_bytes()
     git_blob_payload = b"blob " + str(len(compass_visual_bytes)).encode("ascii") + b"\0" + compass_visual_bytes
-    expected_compass_visual_git_sha = "44308c995ce7e241ff897558c053942fa217bc12"
+    expected_compass_visual_git_sha = "d750b4ee08a99d4446898aaa86f0286376b194e6"
     actual_compass_visual_git_sha = hashlib.sha1(git_blob_payload).hexdigest()
     if actual_compass_visual_git_sha != expected_compass_visual_git_sha:
         errors.append("boussole électorale: le visuel officiel ne correspond pas au blob approuvé")
