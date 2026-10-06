@@ -20,6 +20,7 @@ BASIC_KEY_PAGES = [
 NOVA_PAGE_NAMES = [
     "comprendre-nova.html",
     "programme.html",
+    "boussole-electorale.html",
     "finances.html",
     "documents.html",
     "recrutement.html",
