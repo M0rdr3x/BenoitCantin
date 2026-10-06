@@ -66,10 +66,10 @@ def main() -> int:
     else:
         css = HOME_CSS.read_text('utf-8', errors='ignore')
         for marker in (
-            '.node-registre-home img{width:104px;height:112px',
-            '.node-sinjira-home img{width:104px;height:104px',
-            '.node-nova-home img{width:126px;height:100px',
-            '.node-boussole-home img{width:112px;height:112px;object-fit:contain',
+            '.home-cosmos .node-registre-home img{width:104px;height:112px',
+            '.home-cosmos .node-sinjira-home img{width:104px;height:104px',
+            '.home-cosmos .node-nova-home img{width:126px;height:100px',
+            '.home-cosmos .node-boussole-home img{width:112px;height:112px;object-fit:contain',
         ):
             if marker not in css:
                 errors.append(f'Proportions dédiées des portes absentes: {marker}')
