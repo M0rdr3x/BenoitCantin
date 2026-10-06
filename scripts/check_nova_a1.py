@@ -231,9 +231,9 @@ else:
         errors.append("site.webmanifest Projet Nova: display PWA invalide")
 
 # Boussole électorale multidimensionnelle : structure, neutralité et transparence.
-compass_visual = ROOT / "assets" / "media" / "nova-boussole-electorale-v3.jpg"
+compass_visual = ROOT / "assets" / "media" / "nova-boussole-electorale-v2.webp"
 if not compass_visual.is_file():
-    errors.append("boussole électorale: visuel officiel absent: assets/media/nova-boussole-electorale-v3.jpg")
+    errors.append("boussole électorale: visuel officiel absent: assets/media/nova-boussole-electorale-v2.webp")
 else:
     compass_visual_bytes = compass_visual.read_bytes()
     git_blob_payload = b"blob " + str(len(compass_visual_bytes)).encode("ascii") + b"\0" + compass_visual_bytes
@@ -363,11 +363,11 @@ if compass_page.is_file():
     if compass_html.count('href="boussole-electorale.html"') < 1:
         errors.append("boussole électorale: lien de retour vers la boussole absent de sa navigation")
     for marker in (
-        '../../assets/media/nova-boussole-electorale-v3.jpg',
+        '../../assets/media/nova-boussole-electorale-v2.webp',
         'compass-hero-grid',
         'class="compass-hero-visual"',
         '>Boussole électorale</a>',
-        'https://www.benoitcantin.com/assets/media/nova-boussole-electorale-v3.jpg',
+        'https://www.benoitcantin.com/assets/media/nova-boussole-electorale-v2.webp',
         'meta property="og:image"',
         'meta name="twitter:image"',
     ):
@@ -685,7 +685,7 @@ if nova_home.is_file():
         'class="nova-compass-entry-link"',
         'class="nav-link nav-link-boussole"',
         'class="hero-side-link-boussole"',
-        '../../assets/media/nova-boussole-electorale-v3.jpg',
+        '../../assets/media/nova-boussole-electorale-v2.webp',
     ):
         if marker not in nova_home_html:
             errors.append(f"boussole électorale: accès accueil incomplet: {marker}")
