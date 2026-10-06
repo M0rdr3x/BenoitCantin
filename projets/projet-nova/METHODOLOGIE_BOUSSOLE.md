@@ -32,6 +32,26 @@ Chaque proposition doit satisfaire simultanément les critères suivants :
 
 La neutralité ne signifie pas qu’une proposition doit éviter les arbitrages. Une proposition peut présenter une conséquence ou une contrainte lorsque celle-ci est nécessaire pour comprendre la décision, mais elle ne doit pas présumer qu’une conséquence est moralement bonne ou mauvaise.
 
+
+## Parcours guidé, résultat et partage
+
+Le questionnaire public affiche **une seule proposition à la fois**. Ce choix vise à réduire la surcharge visuelle et à permettre à la personne de se concentrer sur la formulation exacte de chaque proposition.
+
+Le parcours suit les règles suivantes :
+
+1. une réponse ou l’option « Sans opinion / passer » est requise avant d’activer « Suivant »;
+2. « Précédent » permet de revoir et modifier toute réponse déjà donnée;
+3. l’importance de la proposition reste facultative et modifiable;
+4. après la 64e proposition, la personne choisit « Consulter mes résultats »;
+5. les résultats sont calculés localement et ne sont pas téléversés vers Projet Nova;
+6. un résultat partiel peut être affiché lorsque plusieurs questions ont été passées, mais la couverture réelle doit être clairement indiquée;
+7. le partage est toujours facultatif.
+
+Le partage utilise d’abord les capacités du navigateur ou des liens explicitement déclenchés par la personne. L’envoi par courriel ouvre son application de messagerie avec un résumé prérempli; le site ne collecte pas l’adresse de destination. Les liens de réseaux sociaux partagent la page et un résumé lorsque la plateforme le permet. Le bouton de copie permet de conserver ou de publier le résumé manuellement.
+
+Aucun résultat partagé ne doit être présenté comme une recommandation de vote.
+
+
 ## Comparaison avec les partis
 
 La comparaison reste désactivée tant que le corpus n’a pas atteint les seuils de preuve.

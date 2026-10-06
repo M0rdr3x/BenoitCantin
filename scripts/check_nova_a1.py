@@ -306,13 +306,35 @@ if compass_page.is_file():
     for marker in (
         "16 dimensions",
         "64 propositions",
-        "aucune réponse n’est envoyée",
+        "64 questions, une à la fois",
         "ne vous dit pas pour qui voter",
-        "assets/boussole-electorale.js?v=2.0.0",
-        "assets/boussole-electorale.css?v=2.0.0",
+        "Pourquoi cette boussole existe",
+        "Comment ça fonctionne",
+        "Votre résultat vous appartient",
+        "assets/boussole-electorale.js?v=3.0.0",
+        "assets/boussole-electorale.css?v=3.0.0",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
+
+    for marker in (
+        'id="compass-start-panel"',
+        'id="compass-stepper"',
+        'id="compass-prev"',
+        'id="compass-next"',
+        'id="compass-share-native"',
+        'id="compass-email-recipient"',
+        'id="compass-share-email"',
+        'id="compass-share-facebook"',
+        'id="compass-share-x"',
+        'id="compass-share-linkedin"',
+        'id="compass-copy-result"',
+    ):
+        if marker not in compass_html:
+            errors.append(f"boussole électorale: parcours guidé ou partage absent: {marker}")
+    if compass_html.count('href="boussole-electorale.html"') < 1:
+        errors.append("boussole électorale: lien de retour vers la boussole absent de sa navigation")
+
 
 if compass_js.is_file():
     compass_runtime = compass_js.read_text(encoding="utf-8", errors="replace")
@@ -326,6 +348,23 @@ if compass_js.is_file():
         errors.append("boussole électorale: URL réseau externe interdite dans le moteur")
     if "localStorage" in compass_runtime or "sessionStorage" in compass_runtime:
         errors.append("boussole électorale: stockage navigateur persistant interdit en V2")
+
+    for marker in (
+        "currentIndex",
+        "renderCurrentQuestion",
+        "replaceChildren(renderQuestion",
+        "Consulter mes résultats",
+        "navigator.share",
+        "copyText",
+        "buildResultText",
+        "compass-email-recipient",
+        "mailto:",
+    ):
+        if marker not in compass_runtime:
+            errors.append(f"boussole électorale: moteur guidé incomplet: {marker}")
+    if "mount.appendChild(fieldset)" in compass_runtime:
+        errors.append("boussole électorale: toutes les questions ne doivent plus être rendues simultanément")
+
 
 if party_corpus.is_file():
     try:
@@ -552,6 +591,16 @@ for sitemap_rel in ("sitemap.xml",):
     sitemap_text = (NOVA / sitemap_rel).read_text(encoding="utf-8", errors="replace")
     if "boussole-electorale.html" not in sitemap_text:
         errors.append("boussole électorale: absente du sitemap Projet Nova")
+
+
+nova_home = NOVA / "index.html"
+if nova_home.is_file():
+    nova_home_html = nova_home.read_text(encoding="utf-8", errors="replace")
+    if nova_home_html.count('href="boussole-electorale.html"') < 3:
+        errors.append("boussole électorale: l’accueil Nova doit offrir au moins trois accès visibles vers la boussole")
+    for marker in ("Faire la boussole", ">Boussole</a>", "64 questions, une à la fois"):
+        if marker not in nova_home_html:
+            errors.append(f"boussole électorale: accès accueil incomplet: {marker}")
 
 if compass_page.is_file() and (NOVA / "index.html").is_file():
     if "boussole-electorale.html" not in (NOVA / "index.html").read_text(encoding="utf-8", errors="replace"):

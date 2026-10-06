@@ -17,3 +17,59 @@
 .compass-party-card span{display:block;color:#667b8f;font-size:.86rem}
 @media(max-width:900px){.compass-party-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){.compass-party-grid{grid-template-columns:1fr}}
+
+
+/* Parcours guidé V3 */
+.compass-hero .container{max-width:980px}
+.compass-how-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.compass-how-grid article{background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 8px 22px rgba(6,26,47,.04)}
+.compass-how-grid article>span{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;font-weight:900;margin-bottom:10px}
+.compass-how-grid h3{margin:0 0 8px}
+.compass-how-grid p{margin:0;color:#52667d}
+.compass-start-card{max-width:760px;margin:24px auto;background:#fff;border:1px solid var(--line);border-radius:26px;padding:30px;box-shadow:0 14px 36px rgba(6,26,47,.08);text-align:center}
+.compass-start-card h3{font-size:1.55rem;margin:0 0 10px}
+.compass-start-card p{max-width:640px;margin:0 auto 22px;color:#52667d}
+.compass-stepper{max-width:860px;margin:0 auto}
+.compass-question-single{margin:0;min-height:430px;display:flex;flex-direction:column;justify-content:center;padding:34px}
+.compass-question-single legend{font-size:1.34rem;line-height:1.5;padding:0;margin:4px 0 18px}
+.compass-question-meta{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+.compass-question-counter{font-size:.86rem;font-weight:850;color:#60758b}
+.compass-response-stack{grid-template-columns:1fr 1fr;gap:12px}
+.compass-response-stack label{min-height:58px;align-items:center}
+.compass-response-stack .compass-skip{grid-column:1 / -1}
+.compass-step-actions{display:flex;justify-content:space-between;gap:14px;margin:20px 0 10px}
+.compass-step-actions .btn{min-width:180px}
+.compass-secondary-actions{text-align:center;margin-bottom:10px}
+.compass-secondary-actions .btn{font-size:.9rem}
+.compass-share-card{display:grid;grid-template-columns:1fr 1.25fr;gap:24px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:24px;padding:24px;margin-top:26px;box-shadow:0 10px 28px rgba(6,26,47,.06)}
+.compass-share-card h3{margin:4px 0 8px}
+.compass-share-card p{margin:0;color:#52667d}
+.compass-share-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
+.compass-share-actions .btn{margin:0}
+.compass-progress{position:static;margin:0 0 18px}
+.compass-progress p{display:flex;justify-content:space-between;gap:12px}
+@media(max-width:1050px){.compass-how-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:800px){
+  .compass-how-grid{grid-template-columns:1fr 1fr}
+  .compass-share-card{grid-template-columns:1fr}
+  .compass-share-actions{justify-content:flex-start}
+}
+@media(max-width:620px){
+  .compass-how-grid{grid-template-columns:1fr}
+  .compass-question-single{min-height:0;padding:22px 16px}
+  .compass-question-single legend{font-size:1.12rem}
+  .compass-question-meta{align-items:flex-start;flex-direction:column}
+  .compass-response-stack{grid-template-columns:1fr}
+  .compass-response-stack .compass-skip{grid-column:auto}
+  .compass-step-actions{flex-direction:column-reverse}
+  .compass-step-actions .btn{width:100%;min-width:0}
+  .compass-share-actions{display:grid;grid-template-columns:1fr}
+  .compass-share-actions .btn{width:100%;text-align:center}
+}
+
+.compass-email-field{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.7fr);gap:18px;align-items:end;margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:18px;background:#f8fbfe}
+.compass-email-field label{display:flex;flex-direction:column;gap:4px;color:#20364e}
+.compass-email-field label span{font-size:.86rem;color:#64788d;font-weight:650}
+.compass-email-field input{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;color:#10223a;font:inherit}
+.compass-email-field input:focus{outline:3px solid rgba(36,196,223,.18);border-color:#24c4df}
+@media(max-width:700px){.compass-email-field{grid-template-columns:1fr}}

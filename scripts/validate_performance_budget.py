@@ -83,8 +83,8 @@ def main() -> int:
         errors.append(f"index.html: {stylesheet_count} feuilles de style; budget maximal 8.")
 
     cards = re.findall(r'<a class="home-project".*?</a>', home, flags=re.I | re.S)
-    if len(cards) != 3:
-        errors.append(f"index.html: 3 cartes principales attendues, trouvé {len(cards)}.")
+    if len(cards) != 4:
+        errors.append(f"index.html: 4 cartes principales attendues, trouvé {len(cards)}.")
     else:
         for idx, card in enumerate(cards, start=1):
             image = re.search(r"<img\b[^>]*>", card, flags=re.I)
