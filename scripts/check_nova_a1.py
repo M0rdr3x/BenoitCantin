@@ -340,7 +340,7 @@ if compass_page.is_file():
         errors.append("boussole électorale: lien de retour vers la boussole absent de sa navigation")
     for marker in (
         '../../assets/media/nova-boussole-electorale.webp',
-        'class="compass-hero-grid"',
+        'compass-hero-grid',
         'class="compass-hero-visual"',
         '>Boussole électorale</a>',
         'https://www.benoitcantin.com/assets/media/nova-boussole-electorale.webp',
