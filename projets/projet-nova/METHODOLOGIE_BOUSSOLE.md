@@ -15,6 +15,23 @@ La Boussole Nova produit d’abord un **profil politique multidimensionnel**. El
 7. **Couverture affichée** : une dimension insuffisamment répondue ne doit pas être présentée comme précise.
 8. **Calcul local** : aucune réponse n’est transmise ou stockée de façon persistante par la V2.
 
+## Rédaction non ambiguë des propositions
+
+Chaque proposition doit satisfaire simultanément les critères suivants :
+
+- une seule décision politique principale;
+- un acteur public identifiable lorsque l’action dépend d’un niveau de gouvernement;
+- aucune référence à un parti, une personnalité ou une étiquette idéologique;
+- aucun jugement sur les intentions ou la moralité d’un camp;
+- aucun adjectif émotionnel ou valorisant servant à orienter la réponse;
+- aucune question double exigeant d’approuver deux politiques distinctes à la fois;
+- une direction politique compréhensible sans connaissance partisane préalable;
+- l’option **neutre / partagé** reste distincte de **sans opinion / passer**;
+- une formulation relative à la politique actuelle est permise lorsque la direction du changement est explicite;
+- toute modification d’une question exige une nouvelle révision manuelle de ces critères.
+
+La neutralité ne signifie pas qu’une proposition doit éviter les arbitrages. Une proposition peut présenter une conséquence ou une contrainte lorsque celle-ci est nécessaire pour comprendre la décision, mais elle ne doit pas présumer qu’une conséquence est moralement bonne ou mauvaise.
+
 ## Comparaison avec les partis
 
 La comparaison reste désactivée tant que le corpus n’a pas atteint les seuils de preuve.
@@ -43,6 +60,26 @@ Avant activation d’un score de parti :
 - au moins 50 % des questions d’une dimension doivent être documentées pour afficher une proximité sur cette dimension.
 
 Les positions inconnues sont exclues de la distance et le taux de couverture doit toujours être affiché.
+
+## Couverture des partis
+
+Le registre de comparaison comprend :
+
+- **tous les partis provinciaux affichés comme autorisés** dans le registre courant d’Élections Québec au moment de la mise à jour;
+- **Parti Nova**, identifié séparément comme futur parti tant qu’il n’est pas lui-même affiché comme parti autorisé par Élections Québec.
+
+Le statut électoral, le nombre de candidatures et le statut d’autorisation sont des informations distinctes. Un parti reste présent dans le registre de la boussole lorsqu’il figure dans le registre officiel des partis autorisés, même s’il ne présente pas de candidature dans une élection donnée.
+
+Aucun parti, y compris Parti Nova, ne bénéficie :
+- d’une question réservée;
+- d’un coefficient particulier;
+- d’un seuil de couverture différent;
+- d’un ordre d’affichage privilégié;
+- d’une mise en valeur visuelle préférentielle;
+- d’un ajustement manuel de son résultat;
+- d’une interprétation favorable d’une position inconnue.
+
+Par défaut, les partis sont affichés par ordre alphabétique. Les égalités restent des égalités.
 
 ## Distance électorale
 
