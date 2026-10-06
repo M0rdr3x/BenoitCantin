@@ -198,12 +198,23 @@ def run() -> None:
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à la réinitialisation")
 
             page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
+            page.wait_for_timeout(500)
+            assert_true(
+                page.evaluate("typeof window.__SINJIRA_ASSISTANT__ === 'undefined'"),
+                f"{BROWSER_NAME}: assistant chargé malgré sa désactivation sur l’accueil",
+            )
+            assert_true(
+                page.locator(".sinjira-assistant-toggle").count() == 0,
+                f"{BROWSER_NAME}: bouton assistant présent sur l’accueil désactivé",
+            )
+
+            page.goto(urljoin(BASE_URL, "projets/sinjira/"), wait_until="domcontentloaded", timeout=30_000)
             wait_for_assistant(page)
             assistant = page.evaluate("window.__SINJIRA_ASSISTANT__")
             assert_true(assistant.get("providerMode") == "local", f"{BROWSER_NAME}: assistant non local")
             assert_true(assistant.get("externalProviderEnabled") is False, f"{BROWSER_NAME}: fournisseur externe activé")
             assert_true(assistant.get("privacy") == "ephemeral-memory-only", f"{BROWSER_NAME}: contrat de confidentialité assistant invalide")
-            assert_true(assistant.get("contextLabel") == "Accueil Benoit Cantin", f"{BROWSER_NAME}: contexte accueil assistant invalide")
+            assert_true(assistant.get("contextLabel") == "Portail SINJIRA™", f"{BROWSER_NAME}: contexte SINJIRA assistant invalide")
             assert_true(int(assistant.get("intentCount") or 0) >= 20, f"{BROWSER_NAME}: base d’aide assistant trop limitée")
 
             assistant_toggle = page.locator(".sinjira-assistant-toggle")
@@ -285,11 +296,17 @@ def run() -> None:
         assert_true(toggle.get_attribute("aria-expanded") == "false", f"{BROWSER_NAME}: menu mobile ne se referme pas")
 
         if IS_LOCAL:
+            mobile_page.wait_for_timeout(500)
+            assert_true(
+                mobile_page.locator(".sinjira-assistant-toggle").count() == 0,
+                f"{BROWSER_NAME}: assistant mobile présent sur l’accueil désactivé",
+            )
+            mobile_page.goto(urljoin(BASE_URL, "projets/sinjira/"), wait_until="domcontentloaded", timeout=30_000)
             wait_for_assistant(mobile_page)
             mobile_assistant = mobile_page.locator(".sinjira-assistant-toggle")
             mobile_assistant.click()
             mobile_panel = mobile_page.locator("#sinjira-assistant-panel")
-            assert_true(mobile_panel.is_visible(), f"{BROWSER_NAME}: assistant mobile ne s’ouvre pas")
+            assert_true(mobile_panel.is_visible(), f"{BROWSER_NAME}: assistant mobile SINJIRA ne s’ouvre pas")
             assistant_overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
             assert_true(assistant_overflow, f"{BROWSER_NAME}: assistant crée un débordement horizontal en 390 px")
             mobile_page.keyboard.press("Escape")
