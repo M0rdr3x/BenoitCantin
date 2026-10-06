@@ -2,6 +2,7 @@
   "use strict";
 
   const DATA_URL = "data/boussole-electorale-v2.json";
+  const PARTY_DATA_URL = "data/boussole-partis-2026.json";
   const RESPONSES = [
     {value:-3,label:"Tout à fait en désaccord"},
     {value:-2,label:"En désaccord"},
@@ -203,6 +204,32 @@
     updateProgress();
   }
 
+
+  function renderPartyRegistry(corpus){
+    const host = $("#compass-parties");
+    if(!host) return;
+    const parties = Array.isArray(corpus.parties) ? [...corpus.parties] : [];
+    parties.sort((a,b) => String(a.name).localeCompare(String(b.name), "fr-CA"));
+    host.innerHTML = parties.map(party => {
+      const isFuture = party.entityType === "future_party_project";
+      const status = isFuture ? "Futur parti — non autorisé actuellement" : "Parti provincial autorisé";
+      return `<article class="compass-party-card"><h3>${esc(party.name)}</h3><p>${esc(status)}</p><span>${party.comparisonEligible ? "Comparaison activée" : "Comparaison non activée — données à sourcer"}</span></article>`;
+    }).join("");
+  }
+
+  async function loadPartyRegistry(){
+    const host = $("#compass-parties");
+    if(!host) return;
+    try{
+      const response = await fetch(PARTY_DATA_URL, {cache:"no-store"});
+      if(!response.ok) throw new Error("HTTP " + response.status);
+      renderPartyRegistry(await response.json());
+    }catch(error){
+      host.innerHTML = "<p>Impossible de charger le registre des partis pour le moment.</p>";
+      console.error("Boussole électorale Nova — partis:", error);
+    }
+  }
+
   async function init(){
     const mount = $("#compass-questions");
     if(!mount) return;
@@ -228,5 +255,5 @@
     $("#compass-reset")?.addEventListener("click", reset);
   }
 
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", () => { init(); loadPartyRegistry(); });
 })();
