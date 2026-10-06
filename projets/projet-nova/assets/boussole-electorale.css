@@ -66,3 +66,10 @@
   .compass-share-actions{display:grid;grid-template-columns:1fr}
   .compass-share-actions .btn{width:100%;text-align:center}
 }
+
+.compass-email-field{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.7fr);gap:18px;align-items:end;margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:18px;background:#f8fbfe}
+.compass-email-field label{display:flex;flex-direction:column;gap:4px;color:#20364e}
+.compass-email-field label span{font-size:.86rem;color:#64788d;font-weight:650}
+.compass-email-field input{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;color:#10223a;font:inherit}
+.compass-email-field input:focus{outline:3px solid rgba(36,196,223,.18);border-color:#24c4df}
+@media(max-width:700px){.compass-email-field{grid-template-columns:1fr}}
