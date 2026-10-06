@@ -100,6 +100,7 @@ active_public_files = [
     NOVA / "README.md",
     NOVA / "DOCUMENT_CONTROL.md",
     NOVA / "SECURITY.md",
+    NOVA / "METHODOLOGIE_BOUSSOLE.md",
 ]
 active_public_files.extend(sorted((NOVA / "official" / "reference").glob("*.md")))
 for p in active_public_files:
@@ -231,11 +232,13 @@ else:
 
 # Boussole électorale multidimensionnelle : structure, neutralité et transparence.
 compass_page = NOVA / "boussole-electorale.html"
-compass_data = NOVA / "data" / "boussole-electorale-v1.json"
+compass_data = NOVA / "data" / "boussole-electorale-v2.json"
+party_corpus = NOVA / "data" / "boussole-partis-2026.json"
+compass_methodology = NOVA / "METHODOLOGIE_BOUSSOLE.md"
 compass_js = NOVA / "assets" / "boussole-electorale.js"
 compass_css = NOVA / "assets" / "boussole-electorale.css"
 
-for required in (compass_page, compass_data, compass_js, compass_css):
+for required in (compass_page, compass_data, compass_js, compass_css, party_corpus, compass_methodology):
     if not required.is_file():
         errors.append(f"boussole électorale: fichier absent: {required.relative_to(NOVA)}")
 
@@ -247,10 +250,10 @@ if compass_data.is_file():
         errors.append(f"boussole électorale: JSON invalide: {exc}")
     axes = compass.get("axes") or []
     questions = compass.get("questions") or []
-    if len(axes) != 10:
-        errors.append(f"boussole électorale: 10 axes requis, {len(axes)} trouvés")
-    if len(questions) != 40:
-        errors.append(f"boussole électorale: 40 questions requises, {len(questions)} trouvées")
+    if len(axes) != 16:
+        errors.append(f"boussole électorale: 16 dimensions requises, {len(axes)} trouvées")
+    if len(questions) != 64:
+        errors.append(f"boussole électorale: 64 questions requises, {len(questions)} trouvées")
     axis_ids = {axis.get("id") for axis in axes}
     for axis_id in axis_ids:
         axis_questions = [q for q in questions if q.get("axis") == axis_id]
@@ -260,6 +263,34 @@ if compass_data.is_file():
             errors.append(
                 f"boussole électorale: axe {axis_id} doit avoir 4 questions, 2 par direction"
             )
+    for q in questions:
+        quality = q.get("quality") or {}
+        for flag in (
+            "singlePolicyDecision",
+            "explicitActor",
+            "neutralTone",
+            "noPartyReference",
+            "noIdeologicalLabel",
+            "noPresumedMotive",
+            "reviewedForDoubleBarrel",
+            "reviewedForUndefinedQualifier",
+        ):
+            if quality.get(flag) is not True:
+                errors.append(f"boussole électorale: {q.get('id')} sans validation de rédaction: {flag}")
+        loadings = q.get("loadings") or []
+        if not loadings:
+            errors.append(f"boussole électorale: {q.get('id')} sans chargement dimensionnel")
+        primary = [loading for loading in loadings if loading.get("axis") == q.get("axis")]
+        if len(primary) != 1 or primary[0].get("weight") != 1:
+            errors.append(f"boussole électorale: {q.get('id')} doit avoir un chargement principal de poids 1")
+        for loading in loadings:
+            if loading.get("axis") not in axis_ids:
+                errors.append(f"boussole électorale: {q.get('id')} charge une dimension inconnue")
+            weight = loading.get("weight")
+            if not isinstance(weight, (int, float)) or weight <= 0 or weight > 1:
+                errors.append(f"boussole électorale: poids invalide pour {q.get('id')}")
+            if loading.get("axis") != q.get("axis") and weight > 0.4:
+                errors.append(f"boussole électorale: chargement secondaire > 0.4 pour {q.get('id')}")
     unknown_axes = sorted({q.get("axis") for q in questions if q.get("axis") not in axis_ids})
     if unknown_axes:
         errors.append(f"boussole électorale: axes inconnus dans les questions: {unknown_axes}")
@@ -271,26 +302,110 @@ if compass_data.is_file():
 if compass_page.is_file():
     compass_html = compass_page.read_text(encoding="utf-8", errors="replace")
     for marker in (
-        "10 axes",
-        "40 propositions",
+        "16 dimensions",
+        "64 propositions",
         "aucune réponse n’est envoyée",
         "ne vous dit pas pour qui voter",
-        "assets/boussole-electorale.js?v=1.0.0",
-        "assets/boussole-electorale.css?v=1.0.0",
+        "assets/boussole-electorale.js?v=2.0.0",
+        "assets/boussole-electorale.css?v=2.0.0",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
 
 if compass_js.is_file():
     compass_runtime = compass_js.read_text(encoding="utf-8", errors="replace")
-    if 'const DATA_URL = "data/boussole-electorale-v1.json"' not in compass_runtime:
+    if 'const DATA_URL = "data/boussole-electorale-v2.json"' not in compass_runtime:
         errors.append("boussole électorale: dataset canonique non chargé")
+    if 'PARTY_DATA_URL = "data/boussole-partis-2026.json"' not in compass_runtime:
+        errors.append("boussole électorale: registre des partis non chargé")
     if "fetch(" not in compass_runtime:
         errors.append("boussole électorale: chargement local du dataset absent")
     if re.search(r"https?://", compass_runtime):
         errors.append("boussole électorale: URL réseau externe interdite dans le moteur")
     if "localStorage" in compass_runtime or "sessionStorage" in compass_runtime:
-        errors.append("boussole électorale: stockage navigateur persistant interdit en V1")
+        errors.append("boussole électorale: stockage navigateur persistant interdit en V2")
+
+if party_corpus.is_file():
+    try:
+        parties = json.loads(party_corpus.read_text(encoding="utf-8"))
+    except Exception as exc:
+        parties = {}
+        errors.append(f"boussole électorale: corpus partis invalide: {exc}")
+    party_rows = parties.get("parties") or []
+    if len(party_rows) != 22:
+        errors.append(f"boussole électorale: 22 entrées requises (21 partis autorisés + Parti Nova), {len(party_rows)} trouvées")
+    names = [row.get("name") for row in party_rows]
+    if len(names) != len(set(names)):
+        errors.append("boussole électorale: nom de parti dupliqué")
+    authorized = [row for row in party_rows if row.get("entityType") == "authorized_provincial_party"]
+    future = [row for row in party_rows if row.get("entityType") == "future_party_project"]
+    if len(authorized) != 21:
+        errors.append(f"boussole électorale: 21 partis provinciaux autorisés requis, {len(authorized)} trouvés")
+    if len(future) != 1 or future[0].get("name") != "Parti Nova":
+        errors.append("boussole électorale: Parti Nova doit être l’unique futur parti")
+    if any(row.get("comparisonEligible") is not False for row in party_rows):
+        errors.append("boussole électorale: aucune comparaison de parti ne doit être activée avant codage sourcé")
+    neutrality = parties.get("neutralityRules") or {}
+    for key in (
+        "equalQuestionSetForEveryParty",
+        "equalDistanceFormulaForEveryParty",
+        "equalCoverageThresholdForEveryParty",
+        "equalSourcePriorityForEveryParty",
+        "noHostPartyBonus",
+        "noManualResultBoost",
+        "alphabeticalDisplayDefault",
+        "noFeaturedParty",
+        "noLogoSizePreference",
+        "tiesRemainTies",
+        "unknownPositionsRemainUnknown",
+    ):
+        if neutrality.get(key) is not True:
+            errors.append(f"boussole électorale: règle de neutralité absente ou fausse: {key}")
+
+    formula = parties.get("comparisonFormula") or {}
+    for key in (
+        "sameFormulaForEveryParty",
+        "userImportanceAppliedEqually",
+        "unknownExcludedFromNumeratorAndDenominator",
+        "coverageReportedSeparately",
+        "noPartySpecificCoefficient",
+        "noIncumbencyAdjustment",
+        "noPopularityAdjustment",
+        "noPollingAdjustment",
+        "noHostAdjustment",
+    ):
+        if formula.get(key) is not True:
+            errors.append(f"boussole électorale: formule inégale ou incomplète: {key}")
+    for row in party_rows:
+        if row.get("comparisonEligible") is not False:
+            errors.append(f"boussole électorale: comparaison prématurément activée pour {row.get('name')}")
+        if row.get("coverage") != 0:
+            errors.append(f"boussole électorale: couverture initiale non nulle pour {row.get('name')}")
+        if row.get("positions") != {}:
+            errors.append(f"boussole électorale: positions non sourcées présentes pour {row.get('name')}")
+    rules = parties.get("activationRules") or {}
+    if rules.get("minimumQuestionCoverage") != 0.70:
+        errors.append("boussole électorale: seuil de couverture globale doit rester à 70 %")
+    if rules.get("minimumIndependentCoders") != 2:
+        errors.append("boussole électorale: double codage indépendant requis")
+
+
+    forbidden_party_runtime_tokens = [row.get("name") for row in party_rows if row.get("name")]
+    forbidden_party_runtime_tokens += [row.get("id") for row in party_rows if row.get("id")]
+    for token in forbidden_party_runtime_tokens:
+        if token in compass_runtime:
+            errors.append(f"boussole électorale: moteur runtime ne doit contenir aucun traitement spécifique à {token}")
+    for token in ("partyBoost", "partyBonus", "featuredParty", "preferredParty", "incumbencyWeight", "pollingWeight"):
+        if token in compass_runtime:
+            errors.append(f"boussole électorale: mécanisme de favoritisme interdit dans le moteur: {token}")
+    if 'localeCompare(String(b.name), "fr-CA")' not in compass_runtime:
+        errors.append("boussole électorale: tri alphabétique neutre des partis absent")
+
+if compass_methodology.is_file():
+    method_text = compass_methodology.read_text(encoding="utf-8", errors="replace")
+    for marker in ("Vote Compass", "Smartvote", "Élections Québec", "70 %", "deux codages indépendants", "Rédaction non ambiguë", "Couverture des partis", "Parti Nova"):
+        if marker.lower() not in method_text.lower():
+            errors.append(f"boussole électorale: méthodologie incomplète: {marker}")
 
 for sitemap_rel in ("sitemap.xml",):
     sitemap_text = (NOVA / sitemap_rel).read_text(encoding="utf-8", errors="replace")

@@ -1,0 +1,279 @@
+{
+  "version": "1.1.0",
+  "election": "Québec 2026",
+  "jurisdiction": "Québec",
+  "registryEvidence": {
+    "source": "Élections Québec — Registre des partis politiques autorisés",
+    "url": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+    "snapshotDate": "2026-10-06",
+    "authorizedProvincialPartyCount": 21,
+    "note": "La boussole inclut tous les partis provinciaux affichés comme autorisés dans le registre courant. La participation à l’élection 2026 est une donnée distincte du statut d’autorisation."
+  },
+  "sourcePriority": [
+    "election_platform",
+    "official_policy_document",
+    "party_or_leader_press_release",
+    "official_legislative_or_parliamentary_statement",
+    "statement_from_elected_party_representative",
+    "party_constitution_or_member_resolution"
+  ],
+  "codingScale": {
+    "0": "position neutre, équilibrée ou explicitement inchangée",
+    "1": "appui partiel ou faible",
+    "2": "appui clair mais conditionnel",
+    "3": "appui fort et explicite",
+    "-3": "opposition forte et explicite",
+    "-2": "opposition claire mais conditionnelle",
+    "-1": "opposition partielle ou faible",
+    "null": "position inconnue, ambiguë ou non documentée"
+  },
+  "evidenceStatus": [
+    "known",
+    "ambiguous",
+    "unknown",
+    "contradictory"
+  ],
+  "confidence": [
+    "high",
+    "medium",
+    "low",
+    "none"
+  ],
+  "activationRules": {
+    "minimumQuestionCoverage": 0.7,
+    "minimumAxisCoverage": 0.5,
+    "minimumIndependentCoders": 2,
+    "requireResolvableSourceUrl": true,
+    "prohibitInferenceFromPartyLabel": true,
+    "prohibitInferenceFromLeftRightBrand": true,
+    "unknownPositionsExcludedFromDistance": true,
+    "discloseCoverageInResults": true
+  },
+  "parties": [
+    {
+      "id": "party-01",
+      "name": "Bloc pot",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-02",
+      "name": "Climat Québec - Équipe Martine Ouellet",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-03",
+      "name": "Démocratie directe",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-04",
+      "name": "Équipe autonomiste",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-05",
+      "name": "Équipe Christine Fréchette - Coalition avenir Québec",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-06",
+      "name": "Osons Québec",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-07",
+      "name": "Parti accès propriété et équité - Équipe Québec debout",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-08",
+      "name": "Parti canadien du Québec / Canadian Party of Québec",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-09",
+      "name": "Parti communiste du Québec",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-10",
+      "name": "Parti conservateur du Québec",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-11",
+      "name": "Parti culinaire du Québec",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-12",
+      "name": "Parti libéral du Québec/Quebec Liberal Party",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-13",
+      "name": "Parti libertarien du Québec",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-14",
+      "name": "Parti marxiste-léniniste du Québec",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-15",
+      "name": "Parti nul",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-16",
+      "name": "Parti populaire du Québec",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-17",
+      "name": "Parti québécois",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-18",
+      "name": "Parti vert du Québec/Green Party of Québec",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-19",
+      "name": "Présence Québec",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-20",
+      "name": "Québec innovant",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-21",
+      "name": "Québec solidaire",
+      "entityType": "authorized_provincial_party",
+      "registrySnapshotDate": "2026-10-06",
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-nova",
+      "name": "Parti Nova",
+      "entityType": "future_party_project",
+      "registrySnapshotDate": "2026-10-06",
+      "authorizedCurrent": false,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {},
+      "disclosure": "Futur parti associé au Projet Nova; il n’est pas présenté comme parti autorisé tant qu’Élections Québec ne l’indique pas."
+    }
+  ],
+  "neutralityRules": {
+    "equalQuestionSetForEveryParty": true,
+    "equalDistanceFormulaForEveryParty": true,
+    "equalCoverageThresholdForEveryParty": true,
+    "equalSourcePriorityForEveryParty": true,
+    "noHostPartyBonus": true,
+    "noManualResultBoost": true,
+    "alphabeticalDisplayDefault": true,
+    "noFeaturedParty": true,
+    "noLogoSizePreference": true,
+    "tiesRemainTies": true,
+    "unknownPositionsRemainUnknown": true
+  },
+  "comparisonFormula": {
+    "type": "weighted_normalized_distance",
+    "sameFormulaForEveryParty": true,
+    "userImportanceAppliedEqually": true,
+    "unknownExcludedFromNumeratorAndDenominator": true,
+    "coverageReportedSeparately": true,
+    "noPartySpecificCoefficient": true,
+    "noIncumbencyAdjustment": true,
+    "noPopularityAdjustment": true,
+    "noPollingAdjustment": true,
+    "noHostAdjustment": true
+  }
+}
