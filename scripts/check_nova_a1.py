@@ -231,6 +231,10 @@ else:
         errors.append("site.webmanifest Projet Nova: display PWA invalide")
 
 # Boussole électorale multidimensionnelle : structure, neutralité et transparence.
+compass_visual = ROOT / "assets" / "media" / "nova-boussole-electorale.svg"
+if not compass_visual.is_file():
+    errors.append("boussole électorale: visuel officiel absent: assets/media/nova-boussole-electorale.svg")
+
 compass_page = NOVA / "boussole-electorale.html"
 compass_data = NOVA / "data" / "boussole-electorale-v2.json"
 party_corpus = NOVA / "data" / "boussole-partis-2026.json"
@@ -312,7 +316,7 @@ if compass_page.is_file():
         "Comment ça fonctionne",
         "Votre résultat vous appartient",
         "assets/boussole-electorale.js?v=3.0.0",
-        "assets/boussole-electorale.css?v=3.0.0",
+        "assets/boussole-electorale.css?v=3.1.0",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
@@ -334,6 +338,14 @@ if compass_page.is_file():
             errors.append(f"boussole électorale: parcours guidé ou partage absent: {marker}")
     if compass_html.count('href="boussole-electorale.html"') < 1:
         errors.append("boussole électorale: lien de retour vers la boussole absent de sa navigation")
+    for marker in (
+        '../../assets/media/nova-boussole-electorale.svg',
+        'class="compass-hero-grid"',
+        'class="compass-hero-visual"',
+        '>Boussole électorale</a>',
+    ):
+        if marker not in compass_html:
+            errors.append(f"boussole électorale: visuel officiel ou navigation explicite absent: {marker}")
 
 
 if compass_js.is_file():
@@ -598,7 +610,16 @@ if nova_home.is_file():
     nova_home_html = nova_home.read_text(encoding="utf-8", errors="replace")
     if nova_home_html.count('href="boussole-electorale.html"') < 3:
         errors.append("boussole électorale: l’accueil Nova doit offrir au moins trois accès visibles vers la boussole")
-    for marker in ("Faire la boussole", ">Boussole</a>", "64 questions, une à la fois"):
+    for marker in (
+        "Faire la boussole",
+        ">Boussole électorale</a>",
+        "64 questions, une à la fois",
+        'class="nova-compass-entry"',
+        'class="nova-compass-entry-link"',
+        'class="nav-link nav-link-boussole"',
+        'class="hero-side-link-boussole"',
+        '../../assets/media/nova-boussole-electorale.svg',
+    ):
         if marker not in nova_home_html:
             errors.append(f"boussole électorale: accès accueil incomplet: {marker}")
 
