@@ -40,9 +40,9 @@ def main() -> int:
     else:
         block = home_cosmos.group(0)
         nodes = re.findall(r'class="orbit-node\s+([^\"]+)"', block)
-        if len(nodes) != 3:
-            errors.append(f'La constellation doit contenir exactement 3 portes; détecté: {len(nodes)}.')
-        expected_classes = {'node-sinjira-home', 'node-registre-home', 'node-nova-home'}
+        if len(nodes) != 4:
+            errors.append(f'La constellation doit contenir exactement 4 portes; détecté: {len(nodes)}.')
+        expected_classes = {'node-sinjira-home', 'node-registre-home', 'node-nova-home', 'node-boussole-home'}
         found = set()
         for entry in nodes:
             found.update(entry.split())
@@ -59,8 +59,17 @@ def main() -> int:
     if 'data-default-src="/assets/icons/benoit-sigil.svg"' not in text:
         errors.append('Le sceau Benoit Cantin doit rester l’image centrale par défaut.')
 
-    if text.count('/projets/projet-nova/boussole-electorale.html') < 3:
-        errors.append('La Boussole électorale doit être accessible à au moins trois endroits sur l’accueil principal.')
+    if text.count('/projets/projet-nova/boussole-electorale.html') < 4:
+        errors.append('La Boussole électorale doit être accessible à au moins quatre endroits sur l’accueil principal.')
+
+    for marker in (
+        'node-boussole-home',
+        '/assets/media/nova-boussole-electorale.svg',
+        'Quatre portes · une même signature',
+        '>Boussole</a>',
+    ):
+        if marker not in text:
+            errors.append(f'Boussole électorale: placement visuel principal absent: {marker}')
 
     if errors:
         print(f'ECHEC accueil: {len(errors)} problème(s).')
@@ -68,7 +77,7 @@ def main() -> int:
             print('- ' + error)
         return 1
 
-    print('OK: accueil centré sur SINJIRA™, Registre, Projet Nova et accès direct à la Boussole, avec sceau BC par défaut.')
+    print('OK: accueil à quatre portes — SINJIRA™, Registre, Projet Nova et Boussole électorale — avec sceau BC par défaut.')
     return 0
 
 
