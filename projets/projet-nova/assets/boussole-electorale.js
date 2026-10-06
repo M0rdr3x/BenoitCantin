@@ -289,7 +289,15 @@
     const subject = "Mon résultat — Boussole électorale Nova";
 
     const email = $("#compass-share-email");
-    if(email) email.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(full + "\n\n" + pageUrl)}`;
+    const emailInput = $("#compass-email-recipient");
+    const updateEmailLink = () => {
+      if(!email) return;
+      const recipient = emailInput?.value?.trim() || "";
+      const target = recipient ? encodeURIComponent(recipient) : "";
+      email.href = `mailto:${target}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(full + "\n\n" + pageUrl)}`;
+    };
+    updateEmailLink();
+    if(emailInput) emailInput.oninput = updateEmailLink;
 
     const facebook = $("#compass-share-facebook");
     if(facebook){
