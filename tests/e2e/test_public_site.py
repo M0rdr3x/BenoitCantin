@@ -296,11 +296,17 @@ def run() -> None:
         assert_true(toggle.get_attribute("aria-expanded") == "false", f"{BROWSER_NAME}: menu mobile ne se referme pas")
 
         if IS_LOCAL:
+            mobile_page.wait_for_timeout(500)
+            assert_true(
+                mobile_page.locator(".sinjira-assistant-toggle").count() == 0,
+                f"{BROWSER_NAME}: assistant mobile présent sur l’accueil désactivé",
+            )
+            mobile_page.goto(urljoin(BASE_URL, "projets/sinjira/"), wait_until="domcontentloaded", timeout=30_000)
             wait_for_assistant(mobile_page)
             mobile_assistant = mobile_page.locator(".sinjira-assistant-toggle")
             mobile_assistant.click()
             mobile_panel = mobile_page.locator("#sinjira-assistant-panel")
-            assert_true(mobile_panel.is_visible(), f"{BROWSER_NAME}: assistant mobile ne s’ouvre pas")
+            assert_true(mobile_panel.is_visible(), f"{BROWSER_NAME}: assistant mobile SINJIRA ne s’ouvre pas")
             assistant_overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
             assert_true(assistant_overflow, f"{BROWSER_NAME}: assistant crée un débordement horizontal en 390 px")
             mobile_page.keyboard.press("Escape")
