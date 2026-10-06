@@ -5,6 +5,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 HOME = ROOT / 'index.html'
+HOME_CSS = ROOT / 'assets' / 'css' / 'home-v24-4-12.css'
 
 REQUIRED = {
     '/projets/sinjira/': 'SINJIRA™',
@@ -58,6 +59,20 @@ def main() -> int:
         errors.append('Aperçu central interactif data-core-preview absent.')
     if 'data-default-src="/assets/icons/benoit-sigil.svg"' not in text:
         errors.append('Le sceau Benoit Cantin doit rester l’image centrale par défaut.')
+
+
+    if not HOME_CSS.is_file():
+        errors.append('Feuille de style accueil home-v24-4-12.css absente.')
+    else:
+        css = HOME_CSS.read_text('utf-8', errors='ignore')
+        for marker in (
+            '.home-cosmos .node-registre-home img{width:104px;height:112px',
+            '.home-cosmos .node-sinjira-home img{width:104px;height:104px',
+            '.home-cosmos .node-nova-home img{width:126px;height:100px',
+            '.home-cosmos .node-boussole-home img{width:112px;height:112px;object-fit:contain',
+        ):
+            if marker not in css:
+                errors.append(f'Proportions dédiées des portes absentes: {marker}')
 
     if text.count('/projets/projet-nova/boussole-electorale.html') < 4:
         errors.append('La Boussole électorale doit être accessible à au moins quatre endroits sur l’accueil principal.')
