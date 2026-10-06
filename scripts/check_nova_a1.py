@@ -329,8 +329,14 @@ if compass_page.is_file():
         'id="dimensions"',
         'id="lecture-resultat"',
         'id="faq-boussole"',
-        "assets/boussole-electorale.js?v=3.0.0",
-        "assets/boussole-electorale.css?v=3.2.0",
+        'id="etat-documentaire"',
+        'id="compass-evidence-summary"',
+        'id="compass-evidence-status"',
+        'id="compass-evidence-parties"',
+        "Le nombre de documents n’est pas un score politique",
+        "Même règle pour tout le monde",
+        "assets/boussole-electorale.js?v=3.1.0",
+        "assets/boussole-electorale.css?v=3.3.0",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
@@ -394,6 +400,10 @@ if compass_js.is_file():
         errors.append("boussole électorale: dataset canonique non chargé")
     if 'PARTY_DATA_URL = "data/boussole-partis-2026.json"' not in compass_runtime:
         errors.append("boussole électorale: registre des partis non chargé")
+    if 'PARTY_SOURCE_DATA_URL = "data/boussole-sources-partis-2026.json"' not in compass_runtime:
+        errors.append("boussole électorale: inventaire des sources non chargé")
+    if 'EVIDENCE_DATA_URL = "data/boussole-preuves-2026.json"' not in compass_runtime:
+        errors.append("boussole électorale: matrice de preuves non chargée")
     if "fetch(" not in compass_runtime:
         errors.append("boussole électorale: chargement local du dataset absent")
     if re.search(r"https?://", compass_runtime):
@@ -498,6 +508,19 @@ if party_corpus.is_file():
     for token in ("partyBoost", "partyBonus", "featuredParty", "preferredParty", "incumbencyWeight", "pollingWeight"):
         if token in compass_runtime:
             errors.append(f"boussole électorale: mécanisme de favoritisme interdit dans le moteur: {token}")
+    for marker in (
+        "renderDocumentaryStatus",
+        "loadPoliticalRegistryAndEvidence",
+        "Preuves candidates",
+        "Deuxième révision terminée",
+        "Positions finalisables",
+        "secondIndependentReview",
+        "Aucun de ces nombres ne modifie le poids d’un parti",
+    ):
+        if marker not in compass_runtime:
+            errors.append(f"boussole électorale: transparence documentaire runtime absente: {marker}")
+    if compass_runtime.count("localeCompare(String(b.name)") < 2:
+        errors.append("boussole électorale: registre et état documentaire doivent tous deux rester triés alphabétiquement")
     if 'localeCompare(String(b.name), "fr-CA")' not in compass_runtime:
         errors.append("boussole électorale: tri alphabétique neutre des partis absent")
 
