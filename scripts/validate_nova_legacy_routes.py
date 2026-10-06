@@ -7,6 +7,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 ALIASES = (
+    "accessibilite.html",
+    "actualites.html",
+    "code-conduite.html",
+    "comprendre-nova.html",
+    "comptabilite.html",
+    "constitution.html",
+    "documents.html",
+    "equipe.html",
+    "faq.html",
+    "formulaire-soutien.html",
+    "livre-nova.html",
+    "lois-administratives.html",
+    "lois-ordinaires.html",
+    "lois-organiques.html",
+    "manifeste.html",
+    "merci-formulaire.html",
+    "mises-a-jour.html",
+    "mission.html",
     "participer.html",
     "presse.html",
     "programme.html",
@@ -74,6 +92,20 @@ def main() -> int:
     errors: list[str] = []
     for name in ALIASES:
         validate_alias(name, errors)
+
+    discovered = {
+        path.name
+        for path in ROOT.glob("*.html")
+        if "Projet Nova — redirection" in path.read_text("utf-8", errors="ignore")
+    }
+    expected = set(ALIASES)
+    if discovered != expected:
+        missing = sorted(expected - discovered)
+        extra = sorted(discovered - expected)
+        if missing:
+            errors.append("Alias Nova attendus sans stub reconnu: " + ", ".join(missing))
+        if extra:
+            errors.append("Alias Nova non classés dans le validateur: " + ", ".join(extra))
 
     netlify = (ROOT / "netlify.toml").read_text("utf-8", errors="strict")
     for name in ALIASES:
