@@ -234,6 +234,11 @@ else:
 compass_visual = ROOT / "assets" / "media" / "nova-boussole-electorale.webp"
 if not compass_visual.is_file():
     errors.append("boussole électorale: visuel officiel absent: assets/media/nova-boussole-electorale.webp")
+else:
+    expected_compass_visual_sha256 = "ebbd98e0448d782c86a24af5bdac6347a52d5cac60151a2a56c9d7b70945d0de"
+    actual_compass_visual_sha256 = hashlib.sha256(compass_visual.read_bytes()).hexdigest()
+    if actual_compass_visual_sha256 != expected_compass_visual_sha256:
+        errors.append("boussole électorale: le visuel officiel ne correspond pas à l’image approuvée")
 
 compass_page = NOVA / "boussole-electorale.html"
 compass_data = NOVA / "data" / "boussole-electorale-v2.json"
@@ -315,8 +320,15 @@ if compass_page.is_file():
         "Pourquoi cette boussole existe",
         "Comment ça fonctionne",
         "Votre résultat vous appartient",
+        "Les 16 dimensions",
+        "Voir précisément ce que la boussole mesure",
+        "Ce que votre résultat permet de lire",
+        "Questions fréquentes",
+        'id="dimensions"',
+        'id="lecture-resultat"',
+        'id="faq-boussole"',
         "assets/boussole-electorale.js?v=3.0.0",
-        "assets/boussole-electorale.css?v=3.1.0",
+        "assets/boussole-electorale.css?v=3.2.0",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
@@ -350,6 +362,17 @@ if compass_page.is_file():
         if marker not in compass_html:
             errors.append(f"boussole électorale: visuel officiel ou navigation explicite absent: {marker}")
 
+
+    forbidden_compass_copy = (
+        "Votre profil, plusieurs dimensions, aucune consigne de vote",
+    )
+    for forbidden in forbidden_compass_copy:
+        if forbidden.lower() in compass_html.lower():
+            errors.append(f"boussole électorale: texte public interdit encore présent: {forbidden}")
+    if "<figcaption" in compass_html.lower():
+        errors.append("boussole électorale: légende de visuel non désirée encore présente")
+    if compass_html.count('class="compass-dimension-card"') != 16:
+        errors.append("boussole électorale: les 16 dimensions doivent être visibles sur la page")
 
 nova_runtime = NOVA / "script.js"
 if nova_runtime.is_file():
