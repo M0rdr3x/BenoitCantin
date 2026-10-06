@@ -148,6 +148,21 @@ def run() -> None:
         assert_true(page.locator("#dimensions .compass-dimension-card").count() == 16, f"{BROWSER_NAME}: 16 dimensions publiques attendues")
         assert_true(page.locator("#lecture-resultat .compass-reading-card").count() == 4, f"{BROWSER_NAME}: explication du résultat incomplète")
         assert_true(page.locator("#faq-boussole article").count() == 4, f"{BROWSER_NAME}: FAQ Boussole incomplète")
+        evidence_cards = page.locator("#compass-evidence-parties .compass-evidence-card")
+        evidence_cards.first.wait_for(state="visible", timeout=10_000)
+        assert_true(evidence_cards.count() == 22, f"{BROWSER_NAME}: 22 formations attendues dans l’état documentaire")
+        assert_true(page.locator("#compass-evidence-summary article").count() == 4, f"{BROWSER_NAME}: résumé documentaire incomplet")
+        evidence_status = page.locator("#compass-evidence-status").inner_text()
+        assert_true(
+            "Aucun de ces nombres ne modifie le poids d’un parti" in evidence_status,
+            f"{BROWSER_NAME}: avertissement anti-biais documentaire absent",
+        )
+        evidence_alphabetical = page.evaluate("""() => {
+            const names = Array.from(document.querySelectorAll('#compass-evidence-parties .compass-evidence-card h3')).map(node => node.textContent.trim());
+            const collator = new Intl.Collator('fr-CA');
+            return names.every((name,index) => index === 0 || collator.compare(names[index - 1], name) <= 0);
+        }""")
+        assert_true(evidence_alphabetical, f"{BROWSER_NAME}: état documentaire non alphabétique")
         page.locator("#compass-start").wait_for(state="visible", timeout=10_000)
         assert_true(not page.locator("#compass-start").is_disabled(), f"{BROWSER_NAME}: démarrage Boussole indisponible")
         page.locator("#compass-start").click()
