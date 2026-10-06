@@ -66,10 +66,10 @@ def main() -> int:
     else:
         css = HOME_CSS.read_text('utf-8', errors='ignore')
         for marker in (
-            '.home-cosmos .node-registre-home img{width:104px;height:112px',
-            '.home-cosmos .node-sinjira-home img{width:104px;height:104px',
-            '.home-cosmos .node-nova-home img{width:126px;height:100px',
-            '.home-cosmos .node-boussole-home img{width:112px;height:112px;object-fit:contain',
+            '.home-cosmos .node-registre-home img{width:126px;height:136px',
+            '.home-cosmos .node-sinjira-home img{width:128px;height:128px',
+            '.home-cosmos .node-nova-home img{width:148px;height:118px',
+            '.home-cosmos .node-boussole-home img{width:132px;height:132px;object-fit:contain',
         ):
             if marker not in css:
                 errors.append(f'Proportions dédiées des portes absentes: {marker}')
@@ -79,7 +79,7 @@ def main() -> int:
 
     for marker in (
         'node-boussole-home',
-        '/assets/media/nova-boussole-electorale.webp',
+        '/assets/media/nova-boussole-electorale-v2.webp',
         'Quatre portes · une même signature',
         '>Boussole</a>',
     ):
