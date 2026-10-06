@@ -436,7 +436,7 @@ if party_sources.is_file():
     for row in source_rows:
         if set(row.keys()) != required_source_fields:
             errors.append(f"boussole électorale: champs de sources non uniformes pour {row.get('name')}")
-        if row.get("entityType") == "authorized_provincial_party" and not row.get("registryUrl"):
+        if row.get("entityType") in {"authorized_provincial_party", "authorization_withdrawn_2026"} and not row.get("registryUrl"):
             errors.append(f"boussole électorale: registre Élections Québec absent pour {row.get('name')}")
         if row.get("officialSite") is None and row.get("usableForPositionCoding") is True:
             errors.append(f"boussole électorale: codage interdit sans site/source officielle vérifiée pour {row.get('name')}")
