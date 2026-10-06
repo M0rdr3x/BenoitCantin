@@ -118,6 +118,17 @@ Statuts documentaires permis :
 
 L’interface de comparaison future devra présenter les preuves, dates, nuances et contradictions **question par question**, sans déclarer qu’un parti est « meilleur », « gagnant » ou recommandé.
 
+## Preuves candidates et finalisation
+
+Une première lecture d’une source officielle ne suffit pas à finaliser la position d’une formation. La boussole sépare donc deux étapes :
+
+1. **preuve candidate** : une source pertinente est enregistrée avec un statut proposé, une justification et un niveau de confiance;
+2. **position finalisée** : le statut de la matrice ne peut changer de `unknown` qu’après une seconde révision indépendante documentée.
+
+Une preuve candidate conserve `finalizable: false` tant que cette seconde révision est en attente. Le fait qu’une source semble claire ne permet pas de contourner cette étape.
+
+Pour une question donnée, la recherche doit porter sur **toutes les formations**. Ne pas trouver de source précise pour une formation signifie `unknown`, jamais opposition, neutralité ou désaccord implicite.
+
 ## Comparaison factuelle avec les formations
 
 Le profil personnel peut être calculé sur les 16 dimensions. Pour les formations politiques, le site doit privilégier une lecture factuelle : sélectionner une ou plusieurs formations et consulter, pour chaque proposition, les positions documentées, leurs sources, leur date et leur niveau de confiance.
