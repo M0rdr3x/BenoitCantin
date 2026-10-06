@@ -235,6 +235,8 @@ compass_page = NOVA / "boussole-electorale.html"
 compass_data = NOVA / "data" / "boussole-electorale-v2.json"
 party_corpus = NOVA / "data" / "boussole-partis-2026.json"
 party_sources = NOVA / "data" / "boussole-sources-partis-2026.json"
+position_schema = NOVA / "data" / "boussole-position-evidence.schema.json"
+position_corpus = NOVA / "data" / "boussole-positions-2026.json"
 evidence_matrix = NOVA / "data" / "boussole-preuves-2026.json"
 compass_methodology = NOVA / "METHODOLOGIE_BOUSSOLE.md"
 compass_js = NOVA / "assets" / "boussole-electorale.js"
@@ -541,6 +543,70 @@ if evidence_matrix.is_file():
         for party_id, status in (row.get("statuses") or {}).items():
             if status != "unknown" and (row.get("questionId"), party_id) not in record_index:
                 errors.append(f"boussole électorale: statut documenté sans fiche de preuve pour {row.get('questionId')} / {party_id}")
+
+
+if position_schema.is_file():
+    try:
+        evidence_schema = json.loads(position_schema.read_text(encoding="utf-8"))
+    except Exception as exc:
+        evidence_schema = {}
+        errors.append(f"boussole électorale: schéma de preuve invalide: {exc}")
+    required_fields = set(evidence_schema.get("required") or [])
+    expected_fields = {"partyId","questionId","status","score","confidence","sources","rationale","reviews"}
+    if required_fields != expected_fields:
+        errors.append("boussole électorale: schéma de preuve incomplet ou non uniforme")
+    status_enum = (((evidence_schema.get("properties") or {}).get("status") or {}).get("enum") or [])
+    if set(status_enum) != {"known","ambiguous","unknown","contradictory"}:
+        errors.append("boussole électorale: statuts de preuve invalides")
+
+if position_corpus.is_file():
+    try:
+        positions = json.loads(position_corpus.read_text(encoding="utf-8"))
+    except Exception as exc:
+        positions = {}
+        errors.append(f"boussole électorale: corpus de positions invalide: {exc}")
+    records = positions.get("records") or []
+    if positions.get("scoringEnabled") is not False:
+        errors.append("boussole électorale: scoring doit rester désactivé avant validation du corpus")
+    if positions.get("requiredIndependentReviews") != 2:
+        errors.append("boussole électorale: deux révisions indépendantes requises")
+    if positions.get("questionCount") != 64 or positions.get("partyCount") != 22:
+        errors.append("boussole électorale: dimensions du corpus de positions incohérentes")
+    if positions.get("recordCount") != len(records):
+        errors.append("boussole électorale: recordCount incohérent")
+    position_rules = positions.get("invariants") or {}
+    for key in (
+        "oneRecordPerPartyQuestion",
+        "noScoreWithoutEvidence",
+        "unknownHasNullScore",
+        "ambiguousHasNullScore",
+        "contradictoryHasNullScore",
+        "sourceUrlMustBeHttps",
+        "sameEvidenceSchemaForEveryParty",
+        "partyNovaNoException",
+    ):
+        if position_rules.get(key) is not True:
+            errors.append(f"boussole électorale: invariant de codage absent ou faux: {key}")
+    seen_pairs = set()
+    valid_party_ids = {row.get("id") for row in party_rows}
+    valid_question_ids = {q.get("id") for q in questions}
+    for record in records:
+        pair = (record.get("partyId"), record.get("questionId"))
+        if pair in seen_pairs:
+            errors.append(f"boussole électorale: position dupliquée: {pair}")
+        seen_pairs.add(pair)
+        if record.get("partyId") not in valid_party_ids:
+            errors.append(f"boussole électorale: parti inconnu dans le corpus de positions: {record.get('partyId')}")
+        if record.get("questionId") not in valid_question_ids:
+            errors.append(f"boussole électorale: question inconnue dans le corpus de positions: {record.get('questionId')}")
+        status = record.get("status")
+        score = record.get("score")
+        if status == "known" and not isinstance(score, int):
+            errors.append(f"boussole électorale: score requis pour position connue {pair}")
+        if status in {"unknown","ambiguous","contradictory"} and score is not None:
+            errors.append(f"boussole électorale: score interdit pour position non résolue {pair}")
+        if record.get("partyId") == "party-nova" and record.get("confidence") == "high":
+            pass
 
 if compass_methodology.is_file():
     method_text = compass_methodology.read_text(encoding="utf-8", errors="replace")
