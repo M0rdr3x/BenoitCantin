@@ -139,3 +139,95 @@
   from = "/visionneuse.html"
   to = "/projets/projet-nova/visionneuse.html"
   status = 301
+
+# Deuxième lot d'anciennes routes racine de Projet Nova.
+
+[[redirects]]
+  from = "/accessibilite.html"
+  to = "/projets/projet-nova/accessibilite.html"
+  status = 301
+
+[[redirects]]
+  from = "/actualites.html"
+  to = "/projets/projet-nova/actualites.html"
+  status = 301
+
+[[redirects]]
+  from = "/code-conduite.html"
+  to = "/projets/projet-nova/code-conduite.html"
+  status = 301
+
+[[redirects]]
+  from = "/comprendre-nova.html"
+  to = "/projets/projet-nova/comprendre-nova.html"
+  status = 301
+
+[[redirects]]
+  from = "/comptabilite.html"
+  to = "/projets/projet-nova/comptabilite.html"
+  status = 301
+
+[[redirects]]
+  from = "/constitution.html"
+  to = "/projets/projet-nova/constitution.html"
+  status = 301
+
+[[redirects]]
+  from = "/documents.html"
+  to = "/projets/projet-nova/documents.html"
+  status = 301
+
+[[redirects]]
+  from = "/equipe.html"
+  to = "/projets/projet-nova/equipe.html"
+  status = 301
+
+[[redirects]]
+  from = "/faq.html"
+  to = "/projets/projet-nova/faq.html"
+  status = 301
+
+[[redirects]]
+  from = "/formulaire-soutien.html"
+  to = "/projets/projet-nova/formulaire-soutien.html"
+  status = 301
+
+[[redirects]]
+  from = "/livre-nova.html"
+  to = "/projets/projet-nova/livre-nova.html"
+  status = 301
+
+[[redirects]]
+  from = "/lois-administratives.html"
+  to = "/projets/projet-nova/lois-administratives.html"
+  status = 301
+
+[[redirects]]
+  from = "/lois-ordinaires.html"
+  to = "/projets/projet-nova/lois-ordinaires.html"
+  status = 301
+
+[[redirects]]
+  from = "/lois-organiques.html"
+  to = "/projets/projet-nova/lois-organiques.html"
+  status = 301
+
+[[redirects]]
+  from = "/manifeste.html"
+  to = "/projets/projet-nova/manifeste.html"
+  status = 301
+
+[[redirects]]
+  from = "/merci-formulaire.html"
+  to = "/projets/projet-nova/merci-formulaire.html"
+  status = 301
+
+[[redirects]]
+  from = "/mises-a-jour.html"
+  to = "/projets/projet-nova/mises-a-jour.html"
+  status = 301
+
+[[redirects]]
+  from = "/mission.html"
+  to = "/projets/projet-nova/mission.html"
+  status = 301
