@@ -1,5 +1,5 @@
 {
-  "version": "2.2.0",
+  "version": "2.3.0",
   "locale": "fr-CA",
   "jurisdiction": "Québec",
   "published": "2026-10-06",
@@ -150,7 +150,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -173,7 +175,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -196,7 +200,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -219,7 +225,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -242,7 +250,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -265,7 +275,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -288,7 +300,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -311,7 +325,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -334,7 +350,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -357,7 +375,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -380,7 +400,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -403,7 +425,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -426,7 +450,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -449,7 +475,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -472,7 +500,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -495,7 +525,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -523,7 +555,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -546,7 +580,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       },
       "revision": {
         "date": "2026-10-06",
@@ -558,7 +594,7 @@
       "id": "q19",
       "axis": "housing",
       "direction": 1,
-      "text": "Les municipalités devraient pouvoir exiger une proportion minimale de logements abordables dans les grands projets résidentiels.",
+      "text": "Les municipalités devraient pouvoir obliger les projets résidentiels dépassant un seuil de taille fixé par règlement à réserver une part minimale de logements abordables.",
       "loadings": [
         {
           "axis": "housing",
@@ -574,7 +610,14 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
+      },
+      "revision": {
+        "date": "2026-10-06",
+        "previousText": "Les municipalités devraient pouvoir exiger une proportion minimale de logements abordables dans les grands projets résidentiels.",
+        "reason": "Remplace « grands projets » par un seuil réglementaire explicite et conserve une seule décision : permettre une exigence minimale de logements abordables."
       }
     },
     {
@@ -597,7 +640,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -625,7 +670,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -648,7 +695,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -671,14 +720,16 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
       "id": "q24",
       "axis": "environment",
       "direction": -1,
-      "text": "Les délais d’autorisation des projets miniers et énergétiques devraient être raccourcis lorsqu’ils respectent les normes environnementales en vigueur.",
+      "text": "Les délais d’autorisation environnementale devraient être raccourcis pour les projets dont le dossier respecte toutes les exigences documentaires et techniques prévues par la loi.",
       "loadings": [
         {
           "axis": "environment",
@@ -694,7 +745,14 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
+      },
+      "revision": {
+        "date": "2026-10-06",
+        "previousText": "Les délais d’autorisation des projets miniers et énergétiques devraient être raccourcis lorsqu’ils respectent les normes environnementales en vigueur.",
+        "reason": "Retire le regroupement de deux secteurs distincts (minier et énergétique) et recentre la proposition sur la procédure d’autorisation."
       }
     },
     {
@@ -717,7 +775,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -740,7 +800,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -763,7 +825,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -786,7 +850,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -809,7 +875,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -832,7 +900,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -855,14 +925,16 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
       "id": "q32",
       "axis": "liberties",
       "direction": 1,
-      "text": "En situation d’urgence de santé ou de sécurité, le gouvernement devrait pouvoir imposer temporairement des restrictions sans vote préalable de l’Assemblée nationale.",
+      "text": "Lorsqu’un état d’urgence est officiellement déclaré, le gouvernement devrait pouvoir imposer temporairement des restrictions sans vote préalable de l’Assemblée nationale.",
       "loadings": [
         {
           "axis": "liberties",
@@ -878,7 +950,14 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
+      },
+      "revision": {
+        "date": "2026-10-06",
+        "previousText": "En situation d’urgence de santé ou de sécurité, le gouvernement devrait pouvoir imposer temporairement des restrictions sans vote préalable de l’Assemblée nationale.",
+        "reason": "Remplace l’alternative « santé ou sécurité » par une condition institutionnelle unique."
       }
     },
     {
@@ -901,7 +980,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -924,7 +1005,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -947,7 +1030,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -970,14 +1055,16 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
       "id": "q37",
       "axis": "immigration",
       "direction": -1,
-      "text": "Le Québec devrait augmenter ses seuils annuels d’immigration permanente lorsque des indicateurs publics montrent une capacité suffisante en logement et en services.",
+      "text": "Le Québec devrait augmenter ses seuils annuels d’immigration permanente lorsque les besoins de main-d’œuvre dépassent l’offre de travailleurs disponible au Québec.",
       "loadings": [
         {
           "axis": "immigration",
@@ -993,14 +1080,21 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
+      },
+      "revision": {
+        "date": "2026-10-06",
+        "previousText": "Le Québec devrait augmenter ses seuils annuels d’immigration permanente lorsque des indicateurs publics montrent une capacité suffisante en logement et en services.",
+        "reason": "Retire la combinaison logement + services et mesure un seul motif possible d’augmentation des seuils."
       }
     },
     {
       "id": "q38",
       "axis": "immigration",
       "direction": 1,
-      "text": "Le Québec devrait réduire ses seuils annuels d’immigration permanente lorsque des indicateurs publics montrent une pression excessive sur le logement ou les services.",
+      "text": "Le Québec devrait réduire ses seuils annuels d’immigration permanente lorsque l’offre de logements ne suit pas la croissance de la population.",
       "loadings": [
         {
           "axis": "immigration",
@@ -1016,14 +1110,21 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
+      },
+      "revision": {
+        "date": "2026-10-06",
+        "previousText": "Le Québec devrait réduire ses seuils annuels d’immigration permanente lorsque des indicateurs publics montrent une pression excessive sur le logement ou les services.",
+        "reason": "Retire la combinaison logement + services et mesure un seul motif possible de réduction des seuils."
       }
     },
     {
       "id": "q39",
       "axis": "immigration",
       "direction": -1,
-      "text": "Le Québec devrait augmenter la part de l’immigration permanente attribuée aux catégories humanitaires et au regroupement familial.",
+      "text": "Le Québec devrait augmenter la part de l’immigration permanente consacrée aux admissions pour motifs humanitaires.",
       "loadings": [
         {
           "axis": "immigration",
@@ -1039,7 +1140,14 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
+      },
+      "revision": {
+        "date": "2026-10-06",
+        "previousText": "Le Québec devrait augmenter la part de l’immigration permanente attribuée aux catégories humanitaires et au regroupement familial.",
+        "reason": "Sépare les admissions humanitaires du regroupement familial, qui sont deux catégories pouvant recevoir des préférences différentes."
       }
     },
     {
@@ -1062,7 +1170,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1085,7 +1195,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1108,7 +1220,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1131,7 +1245,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1154,7 +1270,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1177,7 +1295,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1200,7 +1320,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1223,7 +1345,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1246,7 +1370,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1269,7 +1395,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1292,7 +1420,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1315,14 +1445,16 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
       "id": "q52",
       "axis": "territory",
       "direction": -1,
-      "text": "La planification des grands réseaux de santé, d’éducation et de transport devrait rester centralisée au gouvernement du Québec.",
+      "text": "Le gouvernement du Québec devrait conserver la décision finale sur l’affectation des budgets de services publics destinés aux régions.",
       "loadings": [
         {
           "axis": "territory",
@@ -1338,7 +1470,14 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
+      },
+      "revision": {
+        "date": "2026-10-06",
+        "previousText": "La planification des grands réseaux de santé, d’éducation et de transport devrait rester centralisée au gouvernement du Québec.",
+        "reason": "Retire le regroupement santé + éducation + transport et mesure une seule règle de gouvernance budgétaire."
       }
     },
     {
@@ -1361,7 +1500,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1384,7 +1525,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1407,7 +1550,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1430,7 +1575,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1458,7 +1605,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1481,7 +1630,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1504,7 +1655,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1527,14 +1680,16 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
       "id": "q61",
       "axis": "digital",
       "direction": 1,
-      "text": "Toute décision administrative importante prise à l’aide d’un système d’IA devrait pouvoir être expliquée à la personne concernée.",
+      "text": "Lorsqu’un système d’intelligence artificielle contribue à une décision qui modifie l’accès d’une personne à un service public, l’organisme devrait devoir expliquer les principaux facteurs de cette décision.",
       "loadings": [
         {
           "axis": "digital",
@@ -1550,7 +1705,14 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
+      },
+      "revision": {
+        "date": "2026-10-06",
+        "previousText": "Toute décision administrative importante prise à l’aide d’un système d’IA devrait pouvoir être expliquée à la personne concernée.",
+        "reason": "Remplace le terme indéfini « décision administrative importante » par un effet concret sur l’accès à un service public."
       }
     },
     {
@@ -1573,7 +1735,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1601,7 +1765,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     },
     {
@@ -1624,7 +1790,9 @@
         "noIdeologicalLabel": true,
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
-        "reviewedForUndefinedQualifier": true
+        "reviewedForUndefinedQualifier": true,
+        "auditStatus": "reviewed_2026-10-06",
+        "knownAmbiguity": false
       }
     }
   ],
@@ -1654,6 +1822,53 @@
       "date": "2026-10-06",
       "questionId": "q18",
       "reason": "Suppression d’une formulation à deux leviers politiques; q18 mesure désormais uniquement les délais de permis."
+    },
+    {
+      "date": "2026-10-06",
+      "questionId": "q19",
+      "reason": "Remplace « grands projets » par un seuil réglementaire explicite et conserve une seule décision : permettre une exigence minimale de logements abordables."
+    },
+    {
+      "date": "2026-10-06",
+      "questionId": "q24",
+      "reason": "Retire le regroupement de deux secteurs distincts (minier et énergétique) et recentre la proposition sur la procédure d’autorisation."
+    },
+    {
+      "date": "2026-10-06",
+      "questionId": "q32",
+      "reason": "Remplace l’alternative « santé ou sécurité » par une condition institutionnelle unique."
+    },
+    {
+      "date": "2026-10-06",
+      "questionId": "q37",
+      "reason": "Retire la combinaison logement + services et mesure un seul motif possible d’augmentation des seuils."
+    },
+    {
+      "date": "2026-10-06",
+      "questionId": "q38",
+      "reason": "Retire la combinaison logement + services et mesure un seul motif possible de réduction des seuils."
+    },
+    {
+      "date": "2026-10-06",
+      "questionId": "q39",
+      "reason": "Sépare les admissions humanitaires du regroupement familial, qui sont deux catégories pouvant recevoir des préférences différentes."
+    },
+    {
+      "date": "2026-10-06",
+      "questionId": "q52",
+      "reason": "Retire le regroupement santé + éducation + transport et mesure une seule règle de gouvernance budgétaire."
+    },
+    {
+      "date": "2026-10-06",
+      "questionId": "q61",
+      "reason": "Remplace le terme indéfini « décision administrative importante » par un effet concret sur l’accès à un service public."
     }
-  ]
+  ],
+  "qualityAudit": {
+    "auditedAt": "2026-10-06",
+    "scope": "64 propositions",
+    "objective": "Réduire les formulations à plusieurs décisions, les catégories fusionnées et les qualificatifs indéfinis susceptibles de modifier le sens d’une réponse.",
+    "knownAmbiguitiesRemaining": 0,
+    "note": "Aucune formulation ne peut éliminer toute différence d’interprétation humaine. Ce champ signifie qu’aucune ambiguïté structurelle identifiée pendant cet audit ne reste non traitée."
+  }
 }
