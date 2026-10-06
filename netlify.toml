@@ -24,6 +24,14 @@
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
 
+
+[[headers]]
+  for = "/administration.html"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
 [[headers]]
   for = "/admin/*"
   [headers.values]
@@ -230,4 +238,15 @@
 [[redirects]]
   from = "/mission.html"
   to = "/projets/projet-nova/mission.html"
+  status = 301
+
+# Alias historique de l’administration privée.
+[[redirects]]
+  from = "/administration"
+  to = "/admin/sinjira/"
+  status = 301
+
+[[redirects]]
+  from = "/administration.html"
+  to = "/admin/sinjira/"
   status = 301

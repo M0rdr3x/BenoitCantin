@@ -15,6 +15,10 @@ ACTIVE = {
 }
 
 REDIRECTS = {
+    "administration.html": (
+        "/admin/sinjira/",
+        "https://www.benoitcantin.com/admin/sinjira/",
+    ),
     "admin/index.html": (
         "/admin/sinjira/",
         "https://www.benoitcantin.com/admin/sinjira/",
@@ -95,6 +99,9 @@ def robots_value(html: str) -> str:
 
 def html_inventory() -> set[str]:
     result: set[str] = set()
+    root_alias = ROOT / "administration.html"
+    if root_alias.is_file():
+        result.add("administration.html")
     for base in ("admin", "Admin"):
         root = ROOT / base
         if root.is_dir():
@@ -209,13 +216,23 @@ def main() -> int:
             "Inventaire Admin: classifications sans fichier: "
             + ", ".join(missing_files)
         )
-    if len(actual) != 10:
-        errors.append(f"Inventaire Admin: 10 pages HTML attendues, {len(actual)} trouvées.")
+    if len(actual) != 11:
+        errors.append(f"Inventaire Admin: 11 pages HTML attendues, {len(actual)} trouvées.")
 
     for rel, current in ACTIVE.items():
         validate_active(rel, current, errors)
     for rel, (target, canonical) in REDIRECTS.items():
         validate_redirect(rel, target, canonical, errors)
+
+    netlify = (ROOT / "netlify.toml").read_text("utf-8", errors="strict")
+    for marker in (
+        'for = "/administration.html"',
+        'from = "/administration"',
+        'from = "/administration.html"',
+        'to = "/admin/sinjira/"',
+    ):
+        if marker not in netlify:
+            errors.append(f"netlify.toml: contrat alias Admin absent: {marker}")
 
     if errors:
         print(f"ECHEC shell Admin SINJIRA: {len(errors)} problème(s).")
@@ -224,8 +241,8 @@ def main() -> int:
         return 1
 
     print(
-        "OK Admin SINJIRA: 5 pages actives accessibles/mobile, 5 redirections privées "
-        "canoniques et 10 pages HTML classées sans donnée sensible statique."
+        "OK Admin SINJIRA: 5 pages actives accessibles/mobile, 6 redirections privées "
+        "canoniques et 11 pages HTML classées sans donnée sensible statique."
     )
     return 0
 
