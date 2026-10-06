@@ -1,0 +1,219 @@
+{
+  "version": "1.0.0",
+  "election": "Québec 2026",
+  "jurisdiction": "Québec",
+  "registryEvidence": {
+    "source": "Élections Québec",
+    "url": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+    "snapshotDate": "2026-09-17",
+    "note": "Le Parti populaire du Québec est exclu de cette liste de travail parce qu’Élections Québec indiquait le retrait de son autorisation faute du minimum de candidatures."
+  },
+  "sourcePriority": [
+    "election_platform",
+    "official_policy_document",
+    "party_or_leader_press_release",
+    "official_legislative_or_parliamentary_statement",
+    "statement_from_elected_party_representative",
+    "party_constitution_or_member_resolution"
+  ],
+  "codingScale": {
+    "0": "position neutre, équilibrée ou explicitement inchangée",
+    "1": "appui partiel ou faible",
+    "2": "appui clair mais conditionnel",
+    "3": "appui fort et explicite",
+    "-3": "opposition forte et explicite",
+    "-2": "opposition claire mais conditionnelle",
+    "-1": "opposition partielle ou faible",
+    "null": "position inconnue, ambiguë ou non documentée"
+  },
+  "evidenceStatus": [
+    "known",
+    "ambiguous",
+    "unknown",
+    "contradictory"
+  ],
+  "confidence": [
+    "high",
+    "medium",
+    "low",
+    "none"
+  ],
+  "activationRules": {
+    "minimumQuestionCoverage": 0.7,
+    "minimumAxisCoverage": 0.5,
+    "minimumIndependentCoders": 2,
+    "requireResolvableSourceUrl": true,
+    "prohibitInferenceFromPartyLabel": true,
+    "prohibitInferenceFromLeftRightBrand": true,
+    "unknownPositionsExcludedFromDistance": true,
+    "discloseCoverageInResults": true
+  },
+  "parties": [
+    {
+      "id": "party-01",
+      "name": "Bloc pot",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-02",
+      "name": "Climat Québec",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-03",
+      "name": "Démocratie directe",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-04",
+      "name": "Équipe autonomiste",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-05",
+      "name": "Équipe Christine Fréchette – Coalition avenir Québec",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-06",
+      "name": "Osons Québec",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-07",
+      "name": "Parti accès propriété et équité – Équipe Québec debout",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-08",
+      "name": "Parti canadien du Québec/Canadian Party of Québec",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-09",
+      "name": "Parti communiste du Québec",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-10",
+      "name": "Parti conservateur du Québec",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-11",
+      "name": "Parti culinaire du Québec",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-12",
+      "name": "Parti libéral du Québec/Quebec Liberal Party",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-13",
+      "name": "Parti libertarien du Québec",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-14",
+      "name": "Parti marxiste-léniniste du Québec",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-15",
+      "name": "Parti nul",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-16",
+      "name": "Parti québécois",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-17",
+      "name": "Parti vert du Québec/Green Party of Québec",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-18",
+      "name": "Présence Québec",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-19",
+      "name": "Québec innovant",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    },
+    {
+      "id": "party-20",
+      "name": "Québec solidaire",
+      "election2026CandidateList": true,
+      "comparisonEligible": false,
+      "coverage": 0,
+      "positions": {}
+    }
+  ],
+  "projectNova": {
+    "name": "Projet Nova",
+    "status": "political_project_not_in_2026_elections_quebec_candidate_party_list",
+    "comparisonEligible": false,
+    "rule": "Ne peut être comparé comme parti électoral sans le même corpus de preuves et sans statut approprié."
+  }
+}
