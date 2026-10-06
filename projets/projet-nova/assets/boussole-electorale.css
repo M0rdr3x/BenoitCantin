@@ -7,3 +7,5 @@
 .compass-radar-svg polygon{fill:rgba(36,196,223,.18);stroke:#0f6f86;stroke-width:3}
 .compass-radar-svg text{font-size:11px;font-weight:800;fill:#20364e}
 @media(max-width:700px){.compass-radar-svg{min-width:620px}}
+
+.compass-question-axis{display:inline-flex;margin:0 0 10px;padding:6px 10px;border-radius:999px;background:#edf7fb;border:1px solid #cce8f0;color:#0f5e72;font-size:.78rem;font-weight:900}
