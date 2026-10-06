@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "updated": "2026-10-06",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -114,14 +114,16 @@
       "name": "Parti accès propriété et équité - Équipe Québec debout",
       "entityType": "authorized_provincial_party",
       "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
-      "officialSite": null,
-      "platformUrls": [],
+      "officialSite": "https://www.pape.quebec/",
+      "platformUrls": [
+        "https://www.pape.quebec/"
+      ],
       "pressReleaseUrls": [],
       "legislativeRecordUrls": [],
-      "verificationStatus": "registry_only_pending_official_site_verification",
+      "verificationStatus": "verified_official_site",
       "lastVerified": "2026-10-06",
-      "usableForPositionCoding": false,
-      "notes": "Site officiel non encore vérifié; seules les données du registre officiel peuvent être utilisées pour l’identité du parti."
+      "usableForPositionCoding": true,
+      "notes": null
     },
     {
       "id": "party-08",
@@ -234,28 +236,28 @@
       "name": "Parti nul",
       "entityType": "authorized_provincial_party",
       "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
-      "officialSite": null,
+      "officialSite": "https://partinul.net/",
       "platformUrls": [],
       "pressReleaseUrls": [],
       "legislativeRecordUrls": [],
-      "verificationStatus": "registry_only_pending_official_site_verification",
+      "verificationStatus": "verified_official_site",
       "lastVerified": "2026-10-06",
       "usableForPositionCoding": false,
-      "notes": "Site officiel non encore vérifié; seules les données du registre officiel peuvent être utilisées pour l’identité du parti."
+      "notes": "Site officiel vérifié; aucune plateforme générale n’a encore été ajoutée à l’inventaire de codage."
     },
     {
       "id": "party-16",
       "name": "Parti populaire du Québec",
-      "entityType": "authorized_provincial_party",
-      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "entityType": "authorization_withdrawn_2026",
+      "registryUrl": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
       "officialSite": null,
       "platformUrls": [],
       "pressReleaseUrls": [],
       "legislativeRecordUrls": [],
-      "verificationStatus": "registry_only_pending_official_site_verification",
+      "verificationStatus": "authorization_withdrawn_official_source",
       "lastVerified": "2026-10-06",
       "usableForPositionCoding": false,
-      "notes": "Site officiel non encore vérifié; seules les données du registre officiel peuvent être utilisées pour l’identité du parti."
+      "notes": "Élections Québec a annoncé le retrait de l’autorisation le 17 septembre 2026. Le parti demeure dans l’inventaire historique, sans être présenté comme actuellement autorisé."
     },
     {
       "id": "party-17",
