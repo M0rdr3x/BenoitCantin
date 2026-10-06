@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1846,5 +1846,126 @@
       }
     }
   ],
-  "evidenceRecords": []
+  "evidenceRecords": [
+    {
+      "recordId": "q17-party-12-20261006-01",
+      "questionId": "q17",
+      "partyId": "party-12",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://plq.org/communique/plan-habitation-du-parti-liberal-du-quebec-15-g-dinvestissements-pour-40-000-logements-sociaux-et-abordables-supplementaires/",
+      "sourceTitle": "Plan habitation du Parti libéral du Québec : 1,5 G$ d’investissements pour 40 000 logements sociaux et abordables supplémentaires",
+      "sourceDate": "2026-09-01",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le PLQ annonce 1,5 G$ d’investissements et 40 000 logements sociaux et abordables supplémentaires, avec une cible accrue de logements hors marché et des mesures pour les OBNL.",
+      "rationale": "La source annonce explicitement de nouveaux investissements publics et une augmentation du parc social/abordable; elle correspond directement à la direction de q17.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q17-party-21-20261006-01",
+      "questionId": "q17",
+      "partyId": "party-21",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://quebecsolidaire.net/nouvelle/elections-2026-quebec-solidaire-presente-un-cadre-financier-qui-nous-donne-les-moyens-de-nos-ambitions",
+      "sourceTitle": "Élections 2026: Québec solidaire présente un cadre financier qui nous donne les moyens de nos ambitions",
+      "sourceDate": "2026-09-11",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le cadre financier de Québec solidaire identifie le logement comme investissement prioritaire et prévoit 11,8 G$ sur quatre ans; son plan habitation vise une hausse de l’offre réellement abordable et communautaire.",
+      "rationale": "Le financement annoncé est explicitement additionnel et orienté vers une expansion substantielle de l’offre de logements sociaux et communautaires.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q17-party-05-20261006-01",
+      "questionId": "q17",
+      "partyId": "party-05",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/09/02/lequipe-christine-frechette-veut-renverser-la-tendance-en-itinerance/",
+      "sourceTitle": "L’équipe Christine Fréchette veut renverser la tendance en itinérance",
+      "sourceDate": "2026-09-02",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_campaign_page",
+      "evidenceSummary": "L’Équipe Christine Fréchette propose de bonifier de 100 M$ les mesures d’aide au logement et d’ajouter des suppléments au loyer liés notamment à des projets de logements abordables et sociaux.",
+      "rationale": "La source démontre une hausse ciblée du financement lié au logement social/abordable, mais dans un programme centré sur l’itinérance plutôt qu’une hausse générale du financement de tous les logements sociaux, coopératifs et sans but lucratif.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q17-party-17-20261006-01",
+      "questionId": "q17",
+      "partyId": "party-17",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://pq.org/nouvelles/visite-du-parti-quebecois-en-abitibi-temiscamingue-20-000-logements-sociaux-et-hors-marche/",
+      "sourceTitle": "Visite du Parti Québécois en Abitibi-Témiscamingue : 20 000 logements sociaux et hors marché",
+      "sourceDate": "2026-09-30",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti québécois réitère un engagement de construire 20 000 logements sociaux et hors marché et présente cette expansion comme des investissements répartis dans les régions.",
+      "rationale": "L’engagement vise directement une augmentation importante du parc social et hors marché. La formulation parle d’investissements, même si la ventilation précise du financement n’est pas détaillée sur cette page.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q17-party-20-20261006-01",
+      "questionId": "q17",
+      "partyId": "party-20",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://www.quebecinnovant.org/chantiers/",
+      "sourceTitle": "Chantiers prioritaires | Québec Innovant",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Québec innovant propose un financement plus stable et prévisible pour les promoteurs de logements sociaux et communautaires et souhaite augmenter la proportion de logements hors marché, tout en précisant que l’objectif n’est pas nécessairement d’augmenter massivement les dépenses à court terme.",
+      "rationale": "La source appuie un renforcement du financement, mais explicitement sous une forme stable et ciblée plutôt qu’une hausse générale ou massive; q17 est donc seulement partiellement satisfaite.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    }
+  ]
 }
