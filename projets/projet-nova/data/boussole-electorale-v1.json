@@ -1,0 +1,325 @@
+{
+  "version": "1.0.0",
+  "locale": "fr-CA",
+  "jurisdiction": "Québec",
+  "published": "2026-10-06",
+  "purpose": "Profil politique multidimensionnel. La comparaison avec des partis demeure désactivée tant que leurs positions ne sont pas sourcées, datées et révisées.",
+  "responseScale": {
+    "min": -3,
+    "max": 3,
+    "skip": null
+  },
+  "importanceWeights": {
+    "faible": 0.5,
+    "normal": 1,
+    "forte": 1.5
+  },
+  "axes": [
+    {
+      "id": "economy",
+      "title": "Économie et rôle de l’État",
+      "negative": "Marché et initiative privée",
+      "positive": "Intervention publique"
+    },
+    {
+      "id": "tax",
+      "title": "Fiscalité et redistribution",
+      "negative": "Fiscalité plus faible",
+      "positive": "Redistribution plus forte"
+    },
+    {
+      "id": "services",
+      "title": "Services publics et prestation",
+      "negative": "Pluralité public-privé",
+      "positive": "Prestation publique directe"
+    },
+    {
+      "id": "liberties",
+      "title": "Libertés civiles et sécurité",
+      "negative": "Libertés et limites au contrôle",
+      "positive": "Ordre et pouvoirs de sécurité"
+    },
+    {
+      "id": "democracy",
+      "title": "Institutions et démocratie",
+      "negative": "Délégation représentative",
+      "positive": "Participation citoyenne directe"
+    },
+    {
+      "id": "environment",
+      "title": "Environnement et développement",
+      "negative": "Priorité au développement",
+      "positive": "Priorité à la transition écologique"
+    },
+    {
+      "id": "immigration",
+      "title": "Immigration et intégration",
+      "negative": "Ouverture accrue",
+      "positive": "Contrôle et exigences d’intégration"
+    },
+    {
+      "id": "identity",
+      "title": "Langue, culture et identité",
+      "negative": "Pluralisme culturel",
+      "positive": "Protection collective renforcée"
+    },
+    {
+      "id": "quebec",
+      "title": "Avenir politique du Québec",
+      "negative": "Fédéralisme canadien",
+      "positive": "Souveraineté et autonomie accrue"
+    },
+    {
+      "id": "territory",
+      "title": "Pouvoir territorial",
+      "negative": "Décisions plus centralisées",
+      "positive": "Autonomie régionale et municipale"
+    }
+  ],
+  "questions": [
+    {
+      "id": "q01",
+      "axis": "economy",
+      "direction": 1,
+      "text": "L’État devrait intervenir davantage pour orienter les secteurs économiques jugés stratégiques."
+    },
+    {
+      "id": "q02",
+      "axis": "economy",
+      "direction": -1,
+      "text": "La concurrence et l’initiative privée devraient être privilégiées même dans plusieurs secteurs aujourd’hui fortement réglementés."
+    },
+    {
+      "id": "q03",
+      "axis": "economy",
+      "direction": 1,
+      "text": "Le gouvernement devrait pouvoir prendre des participations ou créer des entreprises publiques lorsqu’un secteur essentiel le justifie."
+    },
+    {
+      "id": "q04",
+      "axis": "economy",
+      "direction": -1,
+      "text": "Le rôle économique de l’État devrait surtout être de fixer des règles stables plutôt que de choisir les secteurs à soutenir."
+    },
+    {
+      "id": "q05",
+      "axis": "tax",
+      "direction": 1,
+      "text": "Une plus grande redistribution des revenus est souhaitable même si cela exige une fiscalité plus élevée pour les revenus supérieurs."
+    },
+    {
+      "id": "q06",
+      "axis": "tax",
+      "direction": -1,
+      "text": "Réduire la pression fiscale devrait être prioritaire, même si cela limite certaines nouvelles dépenses publiques."
+    },
+    {
+      "id": "q07",
+      "axis": "tax",
+      "direction": 1,
+      "text": "La fiscalité devrait davantage réduire les écarts de richesse entre ménages."
+    },
+    {
+      "id": "q08",
+      "axis": "tax",
+      "direction": -1,
+      "text": "Les contribuables devraient conserver une plus grande part de leurs revenus, quitte à cibler davantage les programmes publics."
+    },
+    {
+      "id": "q09",
+      "axis": "services",
+      "direction": 1,
+      "text": "Les services essentiels devraient être fournis principalement par des organismes publics."
+    },
+    {
+      "id": "q10",
+      "axis": "services",
+      "direction": -1,
+      "text": "Le financement public peut être compatible avec un plus grand choix entre fournisseurs publics, privés ou communautaires."
+    },
+    {
+      "id": "q11",
+      "axis": "services",
+      "direction": 1,
+      "text": "Pour la santé et l’éducation, l’expansion du réseau public devrait être privilégiée avant le recours au privé."
+    },
+    {
+      "id": "q12",
+      "axis": "services",
+      "direction": -1,
+      "text": "Lorsque des normes publiques sont respectées, différents modèles de prestation devraient pouvoir coexister."
+    },
+    {
+      "id": "q13",
+      "axis": "liberties",
+      "direction": -1,
+      "text": "Les pouvoirs de surveillance de l’État devraient rester très limités, même lorsqu’ils peuvent faciliter certaines enquêtes."
+    },
+    {
+      "id": "q14",
+      "axis": "liberties",
+      "direction": 1,
+      "text": "Dans certaines situations, des pouvoirs de sécurité plus larges sont justifiés pour prévenir des risques graves."
+    },
+    {
+      "id": "q15",
+      "axis": "liberties",
+      "direction": -1,
+      "text": "La liberté d’expression devrait être protégée largement, y compris pour des opinions fortement contestées, sous réserve des limites prévues par la loi."
+    },
+    {
+      "id": "q16",
+      "axis": "liberties",
+      "direction": 1,
+      "text": "Les autorités devraient disposer de davantage de moyens pour imposer rapidement des restrictions lorsqu’un risque collectif important est démontré."
+    },
+    {
+      "id": "q17",
+      "axis": "democracy",
+      "direction": 1,
+      "text": "Les citoyens devraient pouvoir déclencher certains référendums ou consultations obligatoires lorsqu’un seuil clair est atteint."
+    },
+    {
+      "id": "q18",
+      "axis": "democracy",
+      "direction": -1,
+      "text": "Les élus devraient généralement pouvoir décider pendant leur mandat sans recourir fréquemment à des votes populaires."
+    },
+    {
+      "id": "q19",
+      "axis": "democracy",
+      "direction": 1,
+      "text": "Des mécanismes de révocation ou de contrôle citoyen en cours de mandat devraient exister sous des règles strictes."
+    },
+    {
+      "id": "q20",
+      "axis": "democracy",
+      "direction": -1,
+      "text": "La stabilité institutionnelle exige que la plupart des décisions restent confiées aux représentants élus jusqu’à l’élection suivante."
+    },
+    {
+      "id": "q21",
+      "axis": "environment",
+      "direction": 1,
+      "text": "Les gouvernements devraient imposer des mesures climatiques plus contraignantes même si certains secteurs économiques doivent s’adapter rapidement."
+    },
+    {
+      "id": "q22",
+      "axis": "environment",
+      "direction": -1,
+      "text": "Les nouvelles contraintes environnementales devraient être limitées lorsqu’elles menacent fortement la compétitivité ou le coût de la vie."
+    },
+    {
+      "id": "q23",
+      "axis": "environment",
+      "direction": 1,
+      "text": "La protection des écosystèmes devrait pouvoir justifier le refus de projets économiques pourtant rentables."
+    },
+    {
+      "id": "q24",
+      "axis": "environment",
+      "direction": -1,
+      "text": "Les grands projets de développement devraient être facilités lorsqu’ils respectent des normes environnementales raisonnables et mesurables."
+    },
+    {
+      "id": "q25",
+      "axis": "immigration",
+      "direction": -1,
+      "text": "Le Québec devrait accueillir davantage d’immigrants si les capacités d’intégration et les besoins économiques le permettent."
+    },
+    {
+      "id": "q26",
+      "axis": "immigration",
+      "direction": 1,
+      "text": "Les seuils d’immigration devraient être réduits lorsque les services publics, le logement ou l’intégration linguistique sont sous pression."
+    },
+    {
+      "id": "q27",
+      "axis": "immigration",
+      "direction": -1,
+      "text": "Les politiques d’immigration devraient donner une place importante à l’ouverture humanitaire et au regroupement familial."
+    },
+    {
+      "id": "q28",
+      "axis": "immigration",
+      "direction": 1,
+      "text": "La connaissance du français et l’intégration civique devraient peser davantage dans la sélection et l’accompagnement des nouveaux arrivants."
+    },
+    {
+      "id": "q29",
+      "axis": "identity",
+      "direction": 1,
+      "text": "Le Québec devrait utiliser des mesures plus fortes pour protéger le français dans l’espace public et économique."
+    },
+    {
+      "id": "q30",
+      "axis": "identity",
+      "direction": -1,
+      "text": "Les politiques culturelles devraient laisser davantage de place au pluralisme même lorsque cela réduit l’uniformité des normes collectives."
+    },
+    {
+      "id": "q31",
+      "axis": "identity",
+      "direction": 1,
+      "text": "La continuité de la culture québécoise devrait être un objectif explicite des politiques publiques."
+    },
+    {
+      "id": "q32",
+      "axis": "identity",
+      "direction": -1,
+      "text": "L’État devrait éviter de définir une identité collective trop précise et se concentrer surtout sur des droits communs."
+    },
+    {
+      "id": "q33",
+      "axis": "quebec",
+      "direction": 1,
+      "text": "Le Québec devrait disposer de davantage de pouvoirs exclusifs, même si cela exige une renégociation importante avec le gouvernement fédéral."
+    },
+    {
+      "id": "q34",
+      "axis": "quebec",
+      "direction": -1,
+      "text": "Le fédéralisme canadien demeure le meilleur cadre pour défendre les intérêts du Québec."
+    },
+    {
+      "id": "q35",
+      "axis": "quebec",
+      "direction": 1,
+      "text": "L’accession du Québec à la souveraineté devrait rester une option politique pleinement envisagée."
+    },
+    {
+      "id": "q36",
+      "axis": "quebec",
+      "direction": -1,
+      "text": "Les priorités québécoises devraient être poursuivies principalement à l’intérieur des institutions canadiennes actuelles."
+    },
+    {
+      "id": "q37",
+      "axis": "territory",
+      "direction": 1,
+      "text": "Les régions et municipalités devraient obtenir davantage de pouvoirs décisionnels et fiscaux."
+    },
+    {
+      "id": "q38",
+      "axis": "territory",
+      "direction": -1,
+      "text": "Des normes provinciales uniformes sont souvent préférables à des politiques différentes d’une région à l’autre."
+    },
+    {
+      "id": "q39",
+      "axis": "territory",
+      "direction": 1,
+      "text": "Une partie plus importante des budgets publics devrait être décidée près des communautés concernées."
+    },
+    {
+      "id": "q40",
+      "axis": "territory",
+      "direction": -1,
+      "text": "Les grands services publics gagnent généralement à être planifiés et administrés de façon centralisée."
+    }
+  ],
+  "partyComparison": {
+    "enabled": false,
+    "reason": "Aucune position de parti n’est publiée sans corpus de sources vérifiables et protocole de révision."
+  }
+}

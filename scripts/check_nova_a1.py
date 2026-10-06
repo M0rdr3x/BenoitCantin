@@ -229,6 +229,78 @@ else:
     if pwa.get("display") not in {"standalone", "minimal-ui", "fullscreen"}:
         errors.append("site.webmanifest Projet Nova: display PWA invalide")
 
+# Boussole électorale multidimensionnelle : structure, neutralité et transparence.
+compass_page = NOVA / "boussole-electorale.html"
+compass_data = NOVA / "data" / "boussole-electorale-v1.json"
+compass_js = NOVA / "assets" / "boussole-electorale.js"
+compass_css = NOVA / "assets" / "boussole-electorale.css"
+
+for required in (compass_page, compass_data, compass_js, compass_css):
+    if not required.is_file():
+        errors.append(f"boussole électorale: fichier absent: {required.relative_to(NOVA)}")
+
+if compass_data.is_file():
+    try:
+        compass = json.loads(compass_data.read_text(encoding="utf-8"))
+    except Exception as exc:
+        compass = {}
+        errors.append(f"boussole électorale: JSON invalide: {exc}")
+    axes = compass.get("axes") or []
+    questions = compass.get("questions") or []
+    if len(axes) != 10:
+        errors.append(f"boussole électorale: 10 axes requis, {len(axes)} trouvés")
+    if len(questions) != 40:
+        errors.append(f"boussole électorale: 40 questions requises, {len(questions)} trouvées")
+    axis_ids = {axis.get("id") for axis in axes}
+    for axis_id in axis_ids:
+        axis_questions = [q for q in questions if q.get("axis") == axis_id]
+        positive = sum(1 for q in axis_questions if q.get("direction") == 1)
+        negative = sum(1 for q in axis_questions if q.get("direction") == -1)
+        if len(axis_questions) != 4 or positive != 2 or negative != 2:
+            errors.append(
+                f"boussole électorale: axe {axis_id} doit avoir 4 questions, 2 par direction"
+            )
+    unknown_axes = sorted({q.get("axis") for q in questions if q.get("axis") not in axis_ids})
+    if unknown_axes:
+        errors.append(f"boussole électorale: axes inconnus dans les questions: {unknown_axes}")
+    if (compass.get("partyComparison") or {}).get("enabled") is not False:
+        errors.append("boussole électorale: comparaison de partis doit rester désactivée sans corpus sourcé")
+    if compass.get("jurisdiction") != "Québec":
+        errors.append("boussole électorale: juridiction Québec requise")
+
+if compass_page.is_file():
+    compass_html = compass_page.read_text(encoding="utf-8", errors="replace")
+    for marker in (
+        "10 axes",
+        "40 propositions",
+        "aucune réponse n’est envoyée",
+        "ne vous dit pas pour qui voter",
+        "assets/boussole-electorale.js?v=1.0.0",
+        "assets/boussole-electorale.css?v=1.0.0",
+    ):
+        if marker.lower() not in compass_html.lower():
+            errors.append(f"boussole électorale: marqueur public absent: {marker}")
+
+if compass_js.is_file():
+    compass_runtime = compass_js.read_text(encoding="utf-8", errors="replace")
+    if 'const DATA_URL = "data/boussole-electorale-v1.json"' not in compass_runtime:
+        errors.append("boussole électorale: dataset canonique non chargé")
+    if "fetch(" not in compass_runtime:
+        errors.append("boussole électorale: chargement local du dataset absent")
+    if re.search(r"https?://", compass_runtime):
+        errors.append("boussole électorale: URL réseau externe interdite dans le moteur")
+    if "localStorage" in compass_runtime or "sessionStorage" in compass_runtime:
+        errors.append("boussole électorale: stockage navigateur persistant interdit en V1")
+
+for sitemap_rel in ("sitemap.xml",):
+    sitemap_text = (NOVA / sitemap_rel).read_text(encoding="utf-8", errors="replace")
+    if "boussole-electorale.html" not in sitemap_text:
+        errors.append("boussole électorale: absente du sitemap Projet Nova")
+
+if compass_page.is_file() and (NOVA / "index.html").is_file():
+    if "boussole-electorale.html" not in (NOVA / "index.html").read_text(encoding="utf-8", errors="replace"):
+        errors.append("boussole électorale: lien absent de l’accueil Projet Nova")
+
 if errors:
     print("PROJET NOVA — FAIL")
     for e in errors:
