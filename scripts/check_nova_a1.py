@@ -334,14 +334,17 @@ if party_corpus.is_file():
         errors.append(f"boussole électorale: corpus partis invalide: {exc}")
     party_rows = parties.get("parties") or []
     if len(party_rows) != 22:
-        errors.append(f"boussole électorale: 22 entrées requises (21 partis autorisés + Parti Nova), {len(party_rows)} trouvées")
+        errors.append(f"boussole électorale: 22 entrées requises (20 autorisés + 1 retrait 2026 + Parti Nova), {len(party_rows)} trouvées")
     names = [row.get("name") for row in party_rows]
     if len(names) != len(set(names)):
         errors.append("boussole électorale: nom de parti dupliqué")
     authorized = [row for row in party_rows if row.get("entityType") == "authorized_provincial_party"]
+    withdrawn = [row for row in party_rows if row.get("entityType") == "authorization_withdrawn_2026"]
     future = [row for row in party_rows if row.get("entityType") == "future_party_project"]
-    if len(authorized) != 21:
-        errors.append(f"boussole électorale: 21 partis provinciaux autorisés requis, {len(authorized)} trouvés")
+    if len(authorized) != 20:
+        errors.append(f"boussole électorale: 20 partis provinciaux actuellement autorisés requis, {len(authorized)} trouvés")
+    if len(withdrawn) != 1 or withdrawn[0].get("name") != "Parti populaire du Québec":
+        errors.append("boussole électorale: le Parti populaire du Québec doit être conservé avec statut autorisation retirée en 2026")
     if len(future) != 1 or future[0].get("name") != "Parti Nova":
         errors.append("boussole électorale: Parti Nova doit être l’unique futur parti")
     if any(row.get("comparisonEligible") is not False for row in party_rows):
