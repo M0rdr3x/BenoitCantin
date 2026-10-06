@@ -25,7 +25,6 @@
 .compass-hero-copy{min-width:0}
 .compass-hero-visual{margin:0;padding:18px;border-radius:28px;background:linear-gradient(145deg,#041b31,#073e59);border:1px solid rgba(36,196,223,.32);box-shadow:0 20px 44px rgba(6,26,47,.18);display:grid;place-items:center}
 .compass-hero-visual img{display:block;width:min(100%,320px);height:auto;aspect-ratio:1;object-fit:contain;border-radius:22px;margin:0 auto;background:#03233b}
-.compass-hero-visual figcaption{margin-top:12px;color:#d8f8fb;font-size:.9rem;font-weight:800;line-height:1.45}
 .compass-how-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
 .compass-how-grid article{background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 8px 22px rgba(6,26,47,.04)}
 .compass-how-grid article>span{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;font-weight:900;margin-bottom:10px}
@@ -94,3 +93,16 @@
 .compass-faq-grid h3{margin:0 0 8px;color:#10223a;font-size:1.05rem}.compass-faq-grid p{margin:0;color:#52667d;line-height:1.6}
 @media(max-width:980px){.compass-dimensions-grid,.compass-reading-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.compass-dimensions-grid,.compass-reading-grid,.compass-faq-grid{grid-template-columns:1fr}.compass-dimension-card{min-height:0}}
+
+.compass-evidence-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:22px 0 14px}
+.compass-evidence-summary article{display:flex;flex-direction:column;gap:5px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 22px rgba(6,26,47,.045)}
+.compass-evidence-summary strong{font-size:1.8rem;line-height:1;color:#0a2744}.compass-evidence-summary span{font-size:.86rem;color:#52667d;font-weight:800}
+.compass-evidence-status{margin:0 0 16px;padding:12px 14px;border-left:4px solid var(--cyan);background:#f8fcfe;border-radius:10px;color:#40566d;font-weight:750;line-height:1.5}
+.compass-evidence-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.compass-evidence-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 22px rgba(6,26,47,.04)}
+.compass-evidence-card h3{margin:0 0 8px;font-size:1rem;line-height:1.3;color:#10223a}
+.compass-evidence-source{margin:0 0 12px;color:#52667d;font-size:.86rem;font-weight:750;line-height:1.45}
+.compass-evidence-card dl{margin:0;display:grid;gap:7px}.compass-evidence-card dl div{display:flex;justify-content:space-between;gap:14px;border-top:1px solid #e8eef4;padding-top:7px}
+.compass-evidence-card dt{color:#60758b;font-size:.82rem}.compass-evidence-card dd{margin:0;color:#0a2744;font-weight:900}
+@media(max-width:900px){.compass-evidence-summary{grid-template-columns:1fr 1fr}.compass-evidence-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.compass-evidence-summary,.compass-evidence-grid{grid-template-columns:1fr}}
