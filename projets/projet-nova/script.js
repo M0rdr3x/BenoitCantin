@@ -29,13 +29,17 @@
         ['index.html','Accueil'],
         ['comprendre-nova.html','Comprendre Nova'],
         ['programme.html','Programme'],
+        ['boussole-electorale.html','Boussole électorale'],
         ['constitution.html','Constitution'],
         ['documents.html','Documents'],
         ['transparence.html','Transparence'],
         ['recrutement.html','Participer'],
         ['contact.html','Contact']
       ];
-      nav.innerHTML=navItems.map(([href,label])=>`<a class="nav-link" href="${href}">${label}</a>`).join('');
+      nav.innerHTML=navItems.map(([href,label])=>{
+        const boussoleClass=href==='boussole-electorale.html'?' nav-link-boussole':'';
+        return `<a class="nav-link${boussoleClass}" href="${href}">${label}</a>`;
+      }).join('');
     }
 
     document.querySelectorAll('.main-nav .nav-link').forEach(link=>{
