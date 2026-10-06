@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "updated": "2026-10-06",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -87,7 +87,8 @@
       "officialSite": "https://coalitionavenirquebec.org/fr/",
       "platformUrls": [],
       "pressReleaseUrls": [
-        "https://coalitionavenirquebec.org/fr/blog/2026/09/02/lequipe-christine-frechette-veut-renverser-la-tendance-en-itinerance/"
+        "https://coalitionavenirquebec.org/fr/blog/2026/09/02/lequipe-christine-frechette-veut-renverser-la-tendance-en-itinerance/",
+        "https://coalitionavenirquebec.org/fr/blog/2026/09/04/construire-plus-plus-vite-et-a-moindre-cout-le-plan-de-lequipe-christine-frechette/"
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site",
@@ -102,7 +103,8 @@
       "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
       "officialSite": "https://osons.quebec/",
       "platformUrls": [
-        "https://osons.quebec/"
+        "https://osons.quebec/",
+        "https://osons.quebec/?profil=housing"
       ],
       "pressReleaseUrls": [],
       "legislativeRecordUrls": [],
@@ -134,7 +136,8 @@
       "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
       "officialSite": "https://www.particanadienquebec.ca/fr",
       "platformUrls": [
-        "https://www.particanadienquebec.ca/fr"
+        "https://www.particanadienquebec.ca/fr",
+        "https://www.particanadienquebec.ca/fr/politiques/quebec-housing-growth-act"
       ],
       "pressReleaseUrls": [],
       "legislativeRecordUrls": [],
@@ -199,7 +202,8 @@
         "https://plq.org/"
       ],
       "pressReleaseUrls": [
-        "https://plq.org/communique/plan-habitation-du-parti-liberal-du-quebec-15-g-dinvestissements-pour-40-000-logements-sociaux-et-abordables-supplementaires/"
+        "https://plq.org/communique/plan-habitation-du-parti-liberal-du-quebec-15-g-dinvestissements-pour-40-000-logements-sociaux-et-abordables-supplementaires/",
+        "https://plq.org/communique/objectif-ambitieux-100-000-logements-par-annee/"
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_engagements",
