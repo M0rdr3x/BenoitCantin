@@ -9,3 +9,11 @@
 @media(max-width:700px){.compass-radar-svg{min-width:620px}}
 
 .compass-question-axis{display:inline-flex;margin:0 0 10px;padding:6px 10px;border-radius:999px;background:#edf7fb;border:1px solid #cce8f0;color:#0f5e72;font-size:.78rem;font-weight:900}
+
+.compass-party-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}
+.compass-party-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}
+.compass-party-card h3{margin:0 0 6px;font-size:1rem}
+.compass-party-card p{margin:0 0 8px;color:#334b63;font-weight:800}
+.compass-party-card span{display:block;color:#667b8f;font-size:.86rem}
+@media(max-width:900px){.compass-party-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.compass-party-grid{grid-template-columns:1fr}}
