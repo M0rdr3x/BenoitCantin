@@ -264,6 +264,19 @@ if compass_data.is_file():
                 f"boussole électorale: axe {axis_id} doit avoir 4 questions, 2 par direction"
             )
     for q in questions:
+        quality = q.get("quality") or {}
+        for flag in (
+            "singlePolicyDecision",
+            "explicitActor",
+            "neutralTone",
+            "noPartyReference",
+            "noIdeologicalLabel",
+            "noPresumedMotive",
+            "reviewedForDoubleBarrel",
+            "reviewedForUndefinedQualifier",
+        ):
+            if quality.get(flag) is not True:
+                errors.append(f"boussole électorale: {q.get('id')} sans validation de rédaction: {flag}")
         loadings = q.get("loadings") or []
         if not loadings:
             errors.append(f"boussole électorale: {q.get('id')} sans chargement dimensionnel")
@@ -303,6 +316,8 @@ if compass_js.is_file():
     compass_runtime = compass_js.read_text(encoding="utf-8", errors="replace")
     if 'const DATA_URL = "data/boussole-electorale-v2.json"' not in compass_runtime:
         errors.append("boussole électorale: dataset canonique non chargé")
+    if 'PARTY_DATA_URL = "data/boussole-partis-2026.json"' not in compass_runtime:
+        errors.append("boussole électorale: registre des partis non chargé")
     if "fetch(" not in compass_runtime:
         errors.append("boussole électorale: chargement local du dataset absent")
     if re.search(r"https?://", compass_runtime):
@@ -317,13 +332,35 @@ if party_corpus.is_file():
         parties = {}
         errors.append(f"boussole électorale: corpus partis invalide: {exc}")
     party_rows = parties.get("parties") or []
-    if len(party_rows) < 10:
-        errors.append("boussole électorale: inventaire des partis 2026 incomplet")
+    if len(party_rows) != 22:
+        errors.append(f"boussole électorale: 22 entrées requises (21 partis autorisés + Parti Nova), {len(party_rows)} trouvées")
+    names = [row.get("name") for row in party_rows]
+    if len(names) != len(set(names)):
+        errors.append("boussole électorale: nom de parti dupliqué")
+    authorized = [row for row in party_rows if row.get("entityType") == "authorized_provincial_party"]
+    future = [row for row in party_rows if row.get("entityType") == "future_party_project"]
+    if len(authorized) != 21:
+        errors.append(f"boussole électorale: 21 partis provinciaux autorisés requis, {len(authorized)} trouvés")
+    if len(future) != 1 or future[0].get("name") != "Parti Nova":
+        errors.append("boussole électorale: Parti Nova doit être l’unique futur parti")
     if any(row.get("comparisonEligible") is not False for row in party_rows):
-        errors.append("boussole électorale: aucun parti ne doit être activé avant codage sourcé")
-    nova = parties.get("projectNova") or {}
-    if nova.get("comparisonEligible") is not False:
-        errors.append("boussole électorale: Projet Nova ne doit pas être auto-favorisé")
+        errors.append("boussole électorale: aucune comparaison de parti ne doit être activée avant codage sourcé")
+    neutrality = parties.get("neutralityRules") or {}
+    for key in (
+        "equalQuestionSetForEveryParty",
+        "equalDistanceFormulaForEveryParty",
+        "equalCoverageThresholdForEveryParty",
+        "equalSourcePriorityForEveryParty",
+        "noHostPartyBonus",
+        "noManualResultBoost",
+        "alphabeticalDisplayDefault",
+        "noFeaturedParty",
+        "noLogoSizePreference",
+        "tiesRemainTies",
+        "unknownPositionsRemainUnknown",
+    ):
+        if neutrality.get(key) is not True:
+            errors.append(f"boussole électorale: règle de neutralité absente ou fausse: {key}")
     rules = parties.get("activationRules") or {}
     if rules.get("minimumQuestionCoverage") != 0.70:
         errors.append("boussole électorale: seuil de couverture globale doit rester à 70 %")
@@ -332,7 +369,7 @@ if party_corpus.is_file():
 
 if compass_methodology.is_file():
     method_text = compass_methodology.read_text(encoding="utf-8", errors="replace")
-    for marker in ("Vote Compass", "Smartvote", "Élections Québec", "70 %", "deux codages indépendants"):
+    for marker in ("Vote Compass", "Smartvote", "Élections Québec", "70 %", "deux codages indépendants", "Rédaction non ambiguë", "Couverture des partis", "Parti Nova"):
         if marker.lower() not in method_text.lower():
             errors.append(f"boussole électorale: méthodologie incomplète: {marker}")
 
