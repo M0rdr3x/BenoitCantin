@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const DATA_URL = "data/boussole-electorale-v1.json";
+  const DATA_URL = "data/boussole-electorale-v2.json";
   const RESPONSES = [
     {value:-3,label:"Tout à fait en désaccord"},
     {value:-2,label:"En désaccord"},
@@ -77,24 +77,42 @@
   }
 
   function calculate(){
-    const weightMap = state.data.importanceWeights;
-    const axes = new Map(state.data.axes.map(axis => [axis.id, {axis, sum:0, max:0, answered:0, total:0}]));
+    const weightMap = state.data.methodology?.importanceWeights || {faible:0.5,normal:1,forte:1.5};
+    const axes = new Map(state.data.axes.map(axis => [axis.id, {
+      axis, sum:0, max:0, primaryAnswered:0, primaryTotal:0, evidenceWeight:0
+    }]));
+
     state.data.questions.forEach(question => {
-      const bucket = axes.get(question.axis);
-      bucket.total += 1;
+      const primary = axes.get(question.axis);
+      if(primary) primary.primaryTotal += 1;
+
       const answer = state.answers.get(question.id);
       if(!answer || answer.value === null) return;
-      const weight = weightMap[answer.importance] ?? 1;
-      bucket.sum += answer.value * question.direction * weight;
-      bucket.max += 3 * weight;
-      bucket.answered += 1;
+      if(primary) primary.primaryAnswered += 1;
+
+      const userWeight = weightMap[answer.importance] ?? 1;
+      const loadings = Array.isArray(question.loadings) && question.loadings.length
+        ? question.loadings
+        : [{axis:question.axis, weight:1, direction:question.direction}];
+
+      loadings.forEach(loading => {
+        const bucket = axes.get(loading.axis);
+        if(!bucket) return;
+        const loadingWeight = Number(loading.weight) || 0;
+        const direction = Number(loading.direction) || 0;
+        bucket.sum += answer.value * direction * userWeight * loadingWeight;
+        bucket.max += 3 * userWeight * loadingWeight;
+        bucket.evidenceWeight += loadingWeight;
+      });
     });
+
     return Array.from(axes.values()).map(bucket => ({
       ...bucket.axis,
       score: bucket.max ? Math.round((bucket.sum / bucket.max) * 100) : null,
-      answered: bucket.answered,
-      total: bucket.total,
-      coverage: Math.round(bucket.answered / bucket.total * 100)
+      answered: bucket.primaryAnswered,
+      total: bucket.primaryTotal,
+      coverage: bucket.primaryTotal ? Math.round(bucket.primaryAnswered / bucket.primaryTotal * 100) : 0,
+      evidenceWeight: Math.round(bucket.evidenceWeight * 100) / 100
     }));
   }
 
@@ -116,8 +134,50 @@
     `;
   }
 
+  function renderRadar(results){
+    const host = $("#compass-radar");
+    if(!host) return;
+    const valid = results.filter(r => r.score !== null);
+    if(valid.length < 3){
+      host.innerHTML = "<p>Répondez à davantage de dimensions pour afficher la carte.</p>";
+      return;
+    }
+    const size = 620, center = size / 2, radius = 220;
+    const points = valid.map((r, index) => {
+      const angle = (-Math.PI / 2) + (index * 2 * Math.PI / valid.length);
+      const normalized = (r.score + 100) / 200;
+      const rr = radius * normalized;
+      return {
+        x:center + Math.cos(angle) * rr,
+        y:center + Math.sin(angle) * rr,
+        lx:center + Math.cos(angle) * (radius + 64),
+        ly:center + Math.sin(angle) * (radius + 64),
+        sx:center + Math.cos(angle) * radius,
+        sy:center + Math.sin(angle) * radius,
+        result:r
+      };
+    });
+    const polygon = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+    const spokes = points.map(p => `<line x1="${center}" y1="${center}" x2="${p.sx.toFixed(1)}" y2="${p.sy.toFixed(1)}"></line>`).join("");
+    const labels = points.map(p => {
+      const words = esc(p.result.title).split(" ");
+      const short = words.slice(0,3).join(" ");
+      return `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle"><tspan>${short}</tspan><tspan x="${p.lx.toFixed(1)}" dy="15">${p.result.score > 0 ? "+" : ""}${p.result.score}</tspan></text>`;
+    }).join("");
+    host.innerHTML = `
+      <svg class="compass-radar-svg" viewBox="0 0 ${size} ${size}" role="img" aria-labelledby="compass-radar-title compass-radar-desc">
+        <title id="compass-radar-title">Carte multidimensionnelle de votre profil</title>
+        <desc id="compass-radar-desc">Chaque rayon va du pôle négatif au centre vers le pôle positif à l’extérieur. Les scores détaillés restent affichés sous la carte.</desc>
+        <circle cx="${center}" cy="${center}" r="${radius}"></circle>
+        <circle cx="${center}" cy="${center}" r="${radius * .5}"></circle>
+        ${spokes}
+        <polygon points="${polygon}"></polygon>
+        ${labels}
+      </svg>`;
+  }
+
   function showResults(){
-    const minimum = Math.ceil(state.data.questions.length * 0.5);
+    const minimum = Math.ceil(state.data.questions.length * (state.data.methodology?.minimumAnsweredRatio ?? 0.5));
     const answered = Array.from(state.answers.values()).filter(x => x.value !== null).length;
     const status = $("#compass-status");
     if(answered < minimum){
@@ -127,8 +187,9 @@
     }
     const results = calculate();
     $("#compass-results-grid").innerHTML = results.map(resultCard).join("");
+    renderRadar(results);
     const coverage = Math.round(results.reduce((sum,r)=>sum+r.coverage,0)/results.length);
-    $("#compass-summary").textContent = `Profil calculé sur 10 axes. Couverture moyenne : ${coverage} %. Aucun score global gauche/droite n’est généré.`;
+    $("#compass-summary").textContent = `Profil calculé sur ${state.data.axes.length} dimensions. Couverture moyenne : ${coverage} %. Aucun score global gauche/droite n’est généré.`;
     $("#compass-results").hidden = false;
     status.textContent = "Votre profil multidimensionnel a été calculé localement dans votre navigateur.";
     $("#compass-results").scrollIntoView({behavior:"smooth", block:"start"});
