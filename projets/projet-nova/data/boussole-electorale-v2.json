@@ -1,5 +1,5 @@
 {
-  "version": "2.1.0",
+  "version": "2.2.0",
   "locale": "fr-CA",
   "jurisdiction": "Québec",
   "published": "2026-10-06",
@@ -530,7 +530,7 @@
       "id": "q18",
       "axis": "housing",
       "direction": -1,
-      "text": "Les municipalités devraient réduire les délais et les contraintes de zonage qui limitent la construction de logements privés.",
+      "text": "Les municipalités devraient réduire les délais de traitement des demandes complètes de permis de construction résidentielle.",
       "loadings": [
         {
           "axis": "housing",
@@ -547,6 +547,11 @@
         "noPresumedMotive": true,
         "reviewedForDoubleBarrel": true,
         "reviewedForUndefinedQualifier": true
+      },
+      "revision": {
+        "date": "2026-10-06",
+        "previousText": "Les municipalités devraient réduire les délais et les contraintes de zonage qui limitent la construction de logements privés.",
+        "reason": "La formulation précédente combinait délais administratifs et contraintes de zonage, deux décisions distinctes. La proposition est recentrée sur un seul levier."
       }
     },
     {
@@ -1643,5 +1648,12 @@
       "status"
     ],
     "interCoderReview": true
-  }
+  },
+  "revisionHistory": [
+    {
+      "date": "2026-10-06",
+      "questionId": "q18",
+      "reason": "Suppression d’une formulation à deux leviers politiques; q18 mesure désormais uniquement les délais de permis."
+    }
+  ]
 }
