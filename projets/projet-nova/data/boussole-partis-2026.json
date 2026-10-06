@@ -263,5 +263,17 @@
     "noLogoSizePreference": true,
     "tiesRemainTies": true,
     "unknownPositionsRemainUnknown": true
+  },
+  "comparisonFormula": {
+    "type": "weighted_normalized_distance",
+    "sameFormulaForEveryParty": true,
+    "userImportanceAppliedEqually": true,
+    "unknownExcludedFromNumeratorAndDenominator": true,
+    "coverageReportedSeparately": true,
+    "noPartySpecificCoefficient": true,
+    "noIncumbencyAdjustment": true,
+    "noPopularityAdjustment": true,
+    "noPollingAdjustment": true,
+    "noHostAdjustment": true
   }
 }
