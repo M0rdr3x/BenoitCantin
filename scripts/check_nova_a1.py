@@ -235,10 +235,12 @@ compass_visual = ROOT / "assets" / "media" / "nova-boussole-electorale.webp"
 if not compass_visual.is_file():
     errors.append("boussole électorale: visuel officiel absent: assets/media/nova-boussole-electorale.webp")
 else:
-    expected_compass_visual_sha256 = "ebbd98e0448d782c86a24af5bdac6347a52d5cac60151a2a56c9d7b70945d0de"
-    actual_compass_visual_sha256 = hashlib.sha256(compass_visual.read_bytes()).hexdigest()
-    if actual_compass_visual_sha256 != expected_compass_visual_sha256:
-        errors.append("boussole électorale: le visuel officiel ne correspond pas à l’image approuvée")
+    compass_visual_bytes = compass_visual.read_bytes()
+    git_blob_payload = b"blob " + str(len(compass_visual_bytes)).encode("ascii") + b"\0" + compass_visual_bytes
+    expected_compass_visual_git_sha = "44308c995ce7e241ff897558c053942fa217bc12"
+    actual_compass_visual_git_sha = hashlib.sha1(git_blob_payload).hexdigest()
+    if actual_compass_visual_git_sha != expected_compass_visual_git_sha:
+        errors.append("boussole électorale: le visuel officiel ne correspond pas au blob approuvé")
 
 compass_page = NOVA / "boussole-electorale.html"
 compass_data = NOVA / "data" / "boussole-electorale-v2.json"
