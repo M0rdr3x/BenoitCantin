@@ -1,0 +1,355 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-10-06",
+  "jurisdiction": "Québec",
+  "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
+  "authority": {
+    "name": "Élections Québec",
+    "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/"
+  },
+  "equalityRules": {
+    "sameSourceFieldsForEveryParty": true,
+    "registrySourceRequiredForAuthorizedParties": true,
+    "missingOfficialSiteDoesNotCreatePoliticalPosition": true,
+    "documentationVolumeDoesNotIncreaseSimilarity": true,
+    "sourceCountDoesNotIncreaseWeight": true,
+    "sourceQualityAffectsConfidenceOnly": true,
+    "futurePartyUsesSameEvidenceFields": true
+  },
+  "parties": [
+    {
+      "id": "party-01",
+      "name": "Bloc pot",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.blocpot.qc.ca/",
+      "platformUrls": [
+        "https://www.blocpot.qc.ca/fr"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_platform",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-02",
+      "name": "Climat Québec - Équipe Martine Ouellet",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://climat.quebec/",
+      "platformUrls": [
+        "https://climat.quebec/2026/08/28/communique-climat-quebec-lance-sa-plateforme-electorale-et-presente-26-nouvelles-candidatures-de-partout-au-quebec/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_platform",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-03",
+      "name": "Démocratie directe",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://democratiedirectequebec.com/",
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": null
+    },
+    {
+      "id": "party-04",
+      "name": "Équipe autonomiste",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://equipeautonomiste.ca/",
+      "platformUrls": [
+        "https://equipeautonomiste.ca/LeParti"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-05",
+      "name": "Équipe Christine Fréchette - Coalition avenir Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://coalitionavenirquebec.org/fr/",
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": null
+    },
+    {
+      "id": "party-06",
+      "name": "Osons Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://osons.quebec/",
+      "platformUrls": [
+        "https://osons.quebec/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_program",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-07",
+      "name": "Parti accès propriété et équité - Équipe Québec debout",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": null,
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "registry_only_pending_official_site_verification",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": "Site officiel non encore vérifié; seules les données du registre officiel peuvent être utilisées pour l’identité du parti."
+    },
+    {
+      "id": "party-08",
+      "name": "Parti canadien du Québec / Canadian Party of Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.particanadienquebec.ca/fr",
+      "platformUrls": [
+        "https://www.particanadienquebec.ca/fr"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_platform",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-09",
+      "name": "Parti communiste du Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://particommunisteduquebec.ca/",
+      "platformUrls": [
+        "https://particommunisteduquebec.ca/plateforme-2026/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_platform",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-10",
+      "name": "Parti conservateur du Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://conservateur.quebec/",
+      "platformUrls": [
+        "https://conservateur.quebec/documents-officiels/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_platform",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-11",
+      "name": "Parti culinaire du Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.particulinaireduquebec.org/",
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": null
+    },
+    {
+      "id": "party-12",
+      "name": "Parti libéral du Québec/Quebec Liberal Party",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://plq.org/",
+      "platformUrls": [
+        "https://plq.org/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_engagements",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-13",
+      "name": "Parti libertarien du Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": null,
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "registry_only_pending_official_site_verification",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": "Site officiel non encore vérifié; seules les données du registre officiel peuvent être utilisées pour l’identité du parti."
+    },
+    {
+      "id": "party-14",
+      "name": "Parti marxiste-léniniste du Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": null,
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "registry_only_pending_official_site_verification",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": "Site officiel non encore vérifié; seules les données du registre officiel peuvent être utilisées pour l’identité du parti."
+    },
+    {
+      "id": "party-15",
+      "name": "Parti nul",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": null,
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "registry_only_pending_official_site_verification",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": "Site officiel non encore vérifié; seules les données du registre officiel peuvent être utilisées pour l’identité du parti."
+    },
+    {
+      "id": "party-16",
+      "name": "Parti populaire du Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": null,
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "registry_only_pending_official_site_verification",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": "Site officiel non encore vérifié; seules les données du registre officiel peuvent être utilisées pour l’identité du parti."
+    },
+    {
+      "id": "party-17",
+      "name": "Parti québécois",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.pq.org/",
+      "platformUrls": [
+        "https://www.pq.org/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-18",
+      "name": "Parti vert du Québec/Green Party of Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.pvq.qc.ca/",
+      "platformUrls": [
+        "https://www.pvq.qc.ca/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_program",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-19",
+      "name": "Présence Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.presencequebec.com/",
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": null
+    },
+    {
+      "id": "party-20",
+      "name": "Québec innovant",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.quebecinnovant.org/",
+      "platformUrls": [
+        "https://www.quebecinnovant.org/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-21",
+      "name": "Québec solidaire",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://site.quebecsolidaire.net/",
+      "platformUrls": [
+        "https://quebecsolidaire.net/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_platform",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-nova",
+      "name": "Parti Nova",
+      "entityType": "future_party_project",
+      "registryUrl": null,
+      "officialSite": "https://www.benoitcantin.com/projets/projet-nova/",
+      "platformUrls": [
+        "https://www.benoitcantin.com/projets/projet-nova/programme.html"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "future_project_source_not_official_party",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": "Parti Nova est un futur parti. Cette source décrit le projet politique actuel et ne vaut pas autorisation par Élections Québec."
+    }
+  ]
+}
