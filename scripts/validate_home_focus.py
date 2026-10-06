@@ -10,6 +10,7 @@ REQUIRED = {
     '/projets/sinjira/': 'SINJIRA™',
     '/projets/sinjira/registre/': 'Registre des Consciences',
     '/projets/projet-nova/': 'Projet Nova',
+    '/projets/projet-nova/boussole-electorale.html': 'Boussole électorale',
 }
 FORBIDDEN_MARKERS = [
     'Lumina',
@@ -58,13 +59,16 @@ def main() -> int:
     if 'data-default-src="/assets/icons/benoit-sigil.svg"' not in text:
         errors.append('Le sceau Benoit Cantin doit rester l’image centrale par défaut.')
 
+    if text.count('/projets/projet-nova/boussole-electorale.html') < 3:
+        errors.append('La Boussole électorale doit être accessible à au moins trois endroits sur l’accueil principal.')
+
     if errors:
         print(f'ECHEC accueil: {len(errors)} problème(s).')
         for error in errors:
             print('- ' + error)
         return 1
 
-    print('OK: accueil centré sur SINJIRA™, Registre des Consciences et Projet Nova, avec sceau BC par défaut.')
+    print('OK: accueil centré sur SINJIRA™, Registre, Projet Nova et accès direct à la Boussole, avec sceau BC par défaut.')
     return 0
 
 
