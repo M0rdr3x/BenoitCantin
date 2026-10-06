@@ -96,18 +96,45 @@ def run() -> None:
         assert_true(cards.count() == 4, f"Accueil: 4 accès attendus, trouvé {cards.count()}")
         hrefs = {cards.nth(i).get_attribute("href") for i in range(cards.count())}
         assert_true(hrefs == EXPECTED_DOORS, f"Accueil: portes inattendues: {hrefs}")
+        orbit_nodes = page.locator(".home-cosmos a.orbit-node")
+        assert_true(orbit_nodes.count() == 4, f"Accueil: 4 portes orbitales attendues, trouvé {orbit_nodes.count()}")
+        compass_orbit = page.locator(".home-cosmos .node-boussole-home")
+        assert_true(compass_orbit.count() == 1, f"{BROWSER_NAME}: porte orbitale Boussole absente")
         assert_true(
-            page.locator('a[href="/projets/projet-nova/boussole-electorale.html"]').count() >= 1,
-            f"{BROWSER_NAME}: accès direct à la Boussole absent de l’accueil principal",
+            compass_orbit.get_attribute("href") == "/projets/projet-nova/boussole-electorale.html",
+            f"{BROWSER_NAME}: cible de la porte orbitale Boussole incorrecte",
+        )
+        assert_true(
+            compass_orbit.locator('img[src="/assets/media/nova-boussole-electorale.svg"]').count() == 1,
+            f"{BROWSER_NAME}: visuel officiel absent de la porte Boussole",
+        )
+        assert_true(
+            page.locator('a[href="/projets/projet-nova/boussole-electorale.html"]').count() >= 4,
+            f"{BROWSER_NAME}: accès directs à la Boussole insuffisants sur l’accueil principal",
         )
 
         page.goto(urljoin(BASE_URL, "projets/projet-nova/"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
-            page.locator('a[href="boussole-electorale.html"]').count() >= 2,
-            f"{BROWSER_NAME}: la Boussole doit avoir au moins deux accès depuis l’accueil Nova",
+            page.locator('a[href="boussole-electorale.html"]').count() >= 3,
+            f"{BROWSER_NAME}: la Boussole doit avoir au moins trois accès depuis l’accueil Nova",
+        )
+        nova_compass_entry = page.locator(".nova-compass-entry .nova-compass-entry-link")
+        assert_true(nova_compass_entry.count() == 1, f"{BROWSER_NAME}: accès prioritaire Boussole absent en haut de Nova")
+        assert_true(nova_compass_entry.is_visible(), f"{BROWSER_NAME}: accès prioritaire Boussole non visible")
+        assert_true(
+            nova_compass_entry.locator('img[src="../../assets/media/nova-boussole-electorale.svg"]').count() == 1,
+            f"{BROWSER_NAME}: visuel officiel absent de l’accès prioritaire Nova",
+        )
+        assert_true(
+            page.locator('nav .nav-link-boussole').inner_text().strip() == "Boussole électorale",
+            f"{BROWSER_NAME}: libellé complet Boussole électorale absent de la navigation Nova",
         )
 
         page.goto(urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"), wait_until="domcontentloaded", timeout=30_000)
+        assert_true(
+            page.locator('.compass-hero-visual img[src="../../assets/media/nova-boussole-electorale.svg"]').count() == 1,
+            f"{BROWSER_NAME}: visuel officiel absent du héros de la Boussole",
+        )
         page.locator("#compass-start").wait_for(state="visible", timeout=10_000)
         assert_true(not page.locator("#compass-start").is_disabled(), f"{BROWSER_NAME}: démarrage Boussole indisponible")
         page.locator("#compass-start").click()
