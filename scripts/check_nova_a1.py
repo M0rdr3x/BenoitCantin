@@ -173,6 +173,41 @@ for rel in ["SECURITY.md", "DOCUMENT_CONTROL.md"]:
     if not (NOVA / rel).is_file():
         errors.append(f"gouvernance documentaire absente: {rel}")
 
+# Résilience Projet Nova : la 404 doit conserver le shell mobile accessible
+# et la configuration locale ne doit plus pointer vers l'ancien univers.
+nova_404 = NOVA / "404.html"
+if not nova_404.is_file():
+    errors.append("404.html: page de résilience absente")
+else:
+    html_404 = nova_404.read_text(encoding="utf-8", errors="replace")
+    low_404 = html_404.lower()
+    for marker in ("noindex", "nofollow", "noarchive"):
+        if marker not in low_404:
+            errors.append(f"404.html: robots incomplet, {marker} absent")
+    for marker in (
+        'aria-controls="navigation-principale"',
+        'id="navigation-principale"',
+        "data-menu-toggle",
+        "data-main-nav",
+    ):
+        if marker not in html_404:
+            errors.append(f"404.html: contrat menu mobile absent: {marker}")
+
+nova_netlify = NOVA / "netlify.toml"
+if not nova_netlify.is_file():
+    errors.append("netlify.toml Projet Nova absent")
+else:
+    netlify_text = nova_netlify.read_text(encoding="utf-8", errors="replace")
+    if "ere-des-consciences" in netlify_text:
+        errors.append("netlify.toml Projet Nova: ancienne route ere-des-consciences encore présente")
+    for marker in (
+        '/projets/projet-nova/documents/*.pdf',
+        'to = "/projets/sinjira/index.html"',
+        'to = "/projets/sinjira/registre/index.html"',
+    ):
+        if marker not in netlify_text:
+            errors.append(f"netlify.toml Projet Nova: contrat de déploiement absent: {marker}")
+
 if errors:
     print("PROJET NOVA — FAIL")
     for e in errors:
