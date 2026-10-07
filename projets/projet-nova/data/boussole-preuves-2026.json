@@ -1,7 +1,7 @@
 {
-  "version": "1.27.0",
+  "version": "1.28.0",
   "jurisdiction": "Québec",
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
   "statusValues": [
     "unknown",
@@ -61,7 +61,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -117,7 +117,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_mixed_or_conditional",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -150,7 +150,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -3242,9 +3242,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle chiffre plus de 1,2 G$ d’interventions ciblées et annonce que les interventions d’Investissement Québec seront recentrées sur les secteurs stratégiques; la correspondance avec q01 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q03-party-05-20261006-01",
@@ -3264,9 +3269,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle confirme que l’État peut investir en capitaux propres dans des entreprises stratégiques, mais le critère de q03 — secteur considéré essentiel — n’est pas formulé de manière équivalente. La correspondance demeure partielle."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q04-party-10-20261006-01",
@@ -3286,9 +3296,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle oppose une baisse générale de l’impôt des sociétés à la sélection discrétionnaire de bénéficiaires de subventions, sans engagement explicite à remplacer tous les programmes d’aide sectoriels. La correspondance avec q04 demeure partielle."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -3980,8 +3995,14 @@
         "q03": 1,
         "q04": 1
       },
-      "note": "q01 compte un appui candidat direct de l’Équipe Christine Fréchette/CAQ; q03 et q04 comptent des correspondances candidates partielles; q02 demeure entièrement unknown faute de formulation officielle suffisamment exacte sur l’entrée de nouvelles entreprises dans les secteurs actuellement réglementés.",
+      "note": "q01 compte un appui finalisé de l’Équipe Christine Fréchette/CAQ; q03 et q04 comptent des correspondances finalisées partielles; q02 demeure entièrement unknown faute de formulation officielle suffisamment exacte.",
       "evidenceRecordIds": [
+        "q01-party-05-20261006-01",
+        "q03-party-05-20261006-01",
+        "q04-party-10-20261006-01"
+      ],
+      "finalizedAt": "2026-10-07",
+      "finalizedRecordIds": [
         "q01-party-05-20261006-01",
         "q03-party-05-20261006-01",
         "q04-party-10-20261006-01"
