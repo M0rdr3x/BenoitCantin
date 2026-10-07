@@ -1,5 +1,5 @@
 {
-  "version": "1.16.0",
+  "version": "1.17.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1293,7 +1293,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -1321,7 +1321,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_opposition",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -1361,11 +1361,11 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_support",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_support",
         "party-nova": "unknown"
       }
     },
@@ -1377,7 +1377,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -1389,11 +1389,11 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_opposition",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_opposition",
         "party-nova": "unknown"
       }
     },
@@ -2783,11 +2783,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle propose explicitement de rapatrier de nouveaux pouvoirs du gouvernement fédéral et d’aller chercher des pouvoirs supplémentaires afin d’accroître le contrôle du Québec. La correspondance avec q45 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q46-party-05-20261006-01",
@@ -2807,11 +2810,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle rejette explicitement le statu quo institutionnel et annonce la recherche de nouveaux pouvoirs pour le Québec. Elle s’oppose donc directement à l’idée de conserver le partage actuel des compétences comme cadre de référence."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q47-party-17-20261006-01",
@@ -2831,11 +2837,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La feuille de route officielle du Parti Québécois prévoit des travaux préparatoires gouvernementaux menant à un référendum sur l’indépendance; cela correspond directement à la préparation des conditions visée par q47."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q47-party-21-20261006-02",
@@ -2855,11 +2864,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle de Québec solidaire prévoit explicitement un référendum sur la constitution d’un Québec indépendant dans un premier mandat et une réforme du droit de vote destinée à cette consultation; la correspondance avec q47 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q48-party-05-20261006-01",
@@ -2879,11 +2891,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle affirme vouloir renforcer l’autonomie du Québec au sein du Canada tout en excluant un nouveau débat référendaire. Elle soutient donc directement la poursuite de réformes sans objectif de souveraineté."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q48-party-17-20261006-02",
@@ -2903,11 +2918,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La feuille de route officielle du Parti Québécois place explicitement l’indépendance et un référendum au cœur du projet gouvernemental. Elle s’oppose directement à q48, qui exclut l’objectif de souveraineté."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q48-party-21-20261006-03",
@@ -2927,11 +2945,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle de Québec solidaire prévoit un référendum sur la constitution d’un Québec indépendant dans un premier mandat. L’objectif de souveraineté est donc explicite et incompatible avec q48."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -3301,7 +3322,7 @@
         "q47": 2,
         "q48": 3
       },
-      "note": "Les positions autonomistes au sein du Canada et les projets souverainistes sont codés uniquement lorsqu’ils répondent directement à la formulation. L’indépendance n’est pas utilisée pour inférer automatiquement q45 ou q46.",
+      "note": "Après seconde révision indépendante : q45 compte un appui direct; q46 une opposition directe; q47 deux appuis directs; q48 un appui et deux oppositions directes. L’indépendance n’est jamais utilisée pour inférer automatiquement q45 ou q46.",
       "evidenceRecordIds": [
         "q45-party-05-20261006-01",
         "q46-party-05-20261006-01",
@@ -3310,7 +3331,13 @@
         "q48-party-05-20261006-01",
         "q48-party-17-20261006-02",
         "q48-party-21-20261006-03"
-      ]
+      ],
+      "finalizedCountByQuestion": {
+        "q45": 1,
+        "q46": 1,
+        "q47": 2,
+        "q48": 3
+      }
     }
   ]
 }
