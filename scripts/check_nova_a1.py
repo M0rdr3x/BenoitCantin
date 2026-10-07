@@ -524,6 +524,8 @@ if party_corpus.is_file():
         "Positions finalisées",
         "Questions recherchées",
         "Justification du codage",
+        "Vérifiée le",
+        "Deuxième révision",
         "Consulter la source officielle",
         "Non documentée",
         "Cela ne signifie ni appui, ni opposition, ni neutralité",
