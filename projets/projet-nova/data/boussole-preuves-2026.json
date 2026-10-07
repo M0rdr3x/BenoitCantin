@@ -1,5 +1,5 @@
 {
-  "version": "1.57.0",
+  "version": "1.58.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1550,7 +1550,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_opposition",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -4357,6 +4357,33 @@
         "reviewNote": "La seconde lecture confirme que le document oppose explicitement l’État-providence centralisé à un État des régions, cite routes, santé et éducation dans le modèle à transformer, et définit la subsidiarité comme principe directeur. Il maintient néanmoins de grandes orientations nationales et certains standards communs, sans détailler le partage opérationnel de chaque grand réseau; le statut mixte/conditionnel est donc conservé."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q54-party-10-20261007-01",
+      "questionId": "q54",
+      "partyId": "party-10",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://conservateur.quebec/wp-content/uploads/2026/09/Autochtones_Plateforme.pdf",
+      "sourceTitle": "Parti conservateur du Québec — Plateforme Autochtones 2026",
+      "sourceDate": "2026-09-30",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Le PCQ affirme que l’autonomie des nations autochtones peut se manifester par des ententes ou des traités, par des modifications législatives ou d’une autre manière, et qu’une approche peut différer selon les cas. Il s’engage aussi à reconnaître l’autonomie gouvernementale dans plusieurs champs de compétence et à faciliter des ententes de reconnaissance de droits.",
+      "rationale": "q54 affirme que les lois provinciales devraient s’appliquer de la même manière sur tout le territoire, sauf exceptions prévues par traité ou par la Constitution. La plateforme du PCQ prévoit explicitement que des régimes différenciés puissent aussi découler de modifications législatives ou d’autres mécanismes, au-delà des seules exceptions conventionnelles ou constitutionnelles. Cette position contredit directement la limite posée par q54.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la plateforme énumère explicitement, en plus des ententes ou traités, les modifications législatives et d’autres modalités comme voies possibles d’autonomie différenciée, et prévoit une approche pouvant varier selon les cas. Comme q54 limite précisément les exceptions aux traités ou à la Constitution, l’opposition est directe."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4846,19 +4873,20 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q53": 1,
-        "q54": 0,
+        "q54": 1,
         "q55": 1,
         "q56": 1
       },
-      "note": "Recherche approfondie reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q53 conserve l’appui direct du Parti conservateur du Québec sur les ententes d’autonomie gouvernementale; q55 conserve l’appui documenté d’Osons Québec sur le partage des revenus; q56 compte désormais une opposition directe du Parti communiste du Québec, qui revendique explicitement un droit de veto sur tout projet d’exploitation sur le territoire des nations autochtones. q54 demeure unknown faute de formulation officielle suffisamment exacte.",
+      "note": "Recherche approfondie reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q53 conserve l’appui direct du Parti conservateur du Québec sur les ententes d’autonomie gouvernementale; q54 compte désormais une opposition directe du PCQ, dont la plateforme autochtone prévoit que des régimes d’autonomie différenciés puissent découler de traités, de modifications législatives ou d’autres mécanismes; q55 conserve l’appui documenté d’Osons Québec sur le partage des revenus et q56 l’opposition directe du Parti communiste du Québec.",
       "evidenceRecordIds": [
         "q55-party-06-20261006-01",
         "q53-party-10-20261007-01",
-        "q56-party-09-20261007-01"
+        "q56-party-09-20261007-01",
+        "q54-party-10-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q53": 1,
-        "q54": 0,
+        "q54": 1,
         "q55": 1,
         "q56": 1
       }
