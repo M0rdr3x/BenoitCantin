@@ -1,5 +1,5 @@
 {
-  "version": "1.45.0",
+  "version": "1.46.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -4174,7 +4174,7 @@
     },
     {
       "batchId": "immigration-q37-q40-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q37",
         "q38",
@@ -4213,7 +4213,7 @@
         "q39": 0,
         "q40": 2
       },
-      "note": "Après seconde révision indépendante : q37 compte une position mixte/conditionnelle et une position ambiguë; q38 compte deux appuis directs; q39 demeure entièrement unknown; q40 compte deux appuis directs. Les PDF non vérifiables restent exclus.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q37 conserve une position mixte/conditionnelle et une position ambiguë; q38 conserve deux appuis directs; q40 conserve deux appuis directs. q39 demeure entièrement unknown après revérification : des sources officielles traitent de regroupement familial, d’asile, de catégories humanitaires ou de leur traitement, mais aucune ne propose assez précisément d’augmenter leur part relative dans l’ensemble de l’immigration permanente.",
       "evidenceRecordIds": [
         "q37-party-21-20261006-01",
         "q37-party-20-20261006-02",
@@ -4231,7 +4231,7 @@
     },
     {
       "batchId": "identity-q41-q44-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q41",
         "q42",
@@ -4270,7 +4270,7 @@
         "q43": 3,
         "q44": 1
       },
-      "note": "Après seconde révision indépendante : q41 conserve deux correspondances partielles; q42 demeure entièrement unknown; q43 compte trois appuis documentés; q44 compte une opposition directe documentée.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q41 conserve deux correspondances partielles; q43 conserve trois appuis documentés; q44 conserve une opposition directe. q42 demeure entièrement unknown après revérification : plusieurs sources officielles financent ou valorisent la culture, l’inclusion ou l’identité québécoise, mais aucune ne formule assez précisément l’admissibilité au financement public d’expressions culturelles ne se rattachant pas à l’identité historique francophone.",
       "evidenceRecordIds": [
         "q41-party-21-20261006-01",
         "q41-party-17-20261006-02",
