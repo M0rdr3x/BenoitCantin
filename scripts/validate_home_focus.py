@@ -68,16 +68,16 @@ def main() -> int:
         for marker in (
             '.home-cosmos .node-registre-home img{width:126px;height:136px',
             '.home-cosmos .node-sinjira-home img{width:128px;height:128px',
-            '.home-cosmos .node-nova-home img{width:124px;height:124px',
+            '.home-cosmos .node-nova-home img{width:128px;height:128px',
             '.home-cosmos .node-boussole-home img{width:132px;height:132px;object-fit:contain',
         ):
             if marker not in css:
                 errors.append(f'Proportions dédiées des portes absentes: {marker}')
 
-    if '/assets/media/nova-logo.webp' in text:
-        errors.append('L’ancien asset Nova mal cadré ne doit plus être utilisé sur l’accueil.')
-    if text.count('/projets/projet-nova/assets/logo-nova.webp') < 3:
-        errors.append('Le logo Nova propre doit alimenter la porte, l’aperçu central et la carte Projet Nova.')
+    if text.count('/assets/media/nova-logo.webp') < 3:
+        errors.append('Le logo Nova optimisé pour le portail doit alimenter la porte, l’aperçu central et la carte Projet Nova.')
+    if '/projets/projet-nova/assets/logo-nova.webp' in text:
+        errors.append('Le logo Nova interne, moins adapté au cadrage du portail, ne doit plus être utilisé sur l’accueil.')
 
     if text.count('/projets/projet-nova/boussole-electorale.html') < 4:
         errors.append('La Boussole électorale doit être accessible à au moins quatre endroits sur l’accueil principal.')
