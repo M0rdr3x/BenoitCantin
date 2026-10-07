@@ -2178,5 +2178,46 @@
       },
       "finalizable": false
     }
+  ],
+  "researchCoverage": [
+    {
+      "batchId": "housing-q19-q20-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q19",
+        "q20"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q19": 0,
+        "q20": 4
+      },
+      "note": "L’absence de preuve candidate exacte conserve le statut unknown; elle ne constitue ni un appui ni une opposition."
+    }
   ]
 }
