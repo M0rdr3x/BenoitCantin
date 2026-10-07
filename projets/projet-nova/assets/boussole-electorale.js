@@ -424,16 +424,20 @@
 
   function renderEvidenceExplorer(questionCorpus, partyCorpus, evidenceCorpus){
     const select = $("#compass-evidence-question");
+    const filter = $("#compass-evidence-only-documented");
     const host = $("#compass-evidence-question-results");
     const status = $("#compass-evidence-question-status");
-    if(!select || !host || !status) return;
+    if(!select || !filter || !host || !status) return;
 
     const questions = Array.isArray(questionCorpus.questions) ? questionCorpus.questions : [];
-    const parties = Array.isArray(partyCorpus.parties) ? partyCorpus.parties : [];
-    const partyById = new Map(parties.map(party => [party.id,party]));
+    const parties = Array.isArray(partyCorpus.parties) ? [...partyCorpus.parties] : [];
+    parties.sort((a,b) => String(a.name).localeCompare(String(b.name),"fr-CA"));
     const records = Array.isArray(evidenceCorpus.evidenceRecords)
       ? evidenceCorpus.evidenceRecords.filter(record => record.finalizable === true && record.secondIndependentReview?.status === "completed")
       : [];
+    const matrixQuestions = Array.isArray(evidenceCorpus.questions) ? evidenceCorpus.questions : [];
+    const matrixByQuestion = new Map(matrixQuestions.map(row => [row.questionId,row.statuses || {}]));
+    const recordByKey = new Map(records.map(record => [`${record.questionId}::${record.partyId}`,record]));
     const recordsByQuestion = new Map();
     for(const record of records){
       if(!recordsByQuestion.has(record.questionId)) recordsByQuestion.set(record.questionId,[]);
@@ -452,21 +456,43 @@
         host.innerHTML = '<p class="compass-evidence-empty">Aucune proposition disponible.</p>';
         return;
       }
-      const rows = [...(recordsByQuestion.get(question.id) || [])];
-      rows.sort((a,b) => String(partyById.get(a.partyId)?.name || a.partyId).localeCompare(String(partyById.get(b.partyId)?.name || b.partyId),"fr-CA"));
-      status.textContent = `${rows.length} position${rows.length > 1 ? "s" : ""} finalisée${rows.length > 1 ? "s" : ""} pour cette proposition. Les formations absentes restent non documentées pour cette question.`;
-      if(!rows.length){
-        host.innerHTML = '<p class="compass-evidence-empty">Aucune position finalisée pour cette proposition. Cela ne signifie ni appui ni opposition.</p>';
-        return;
-      }
-      host.innerHTML = rows.map(record => {
-        const party = partyById.get(record.partyId);
+
+      const matrixStatuses = matrixByQuestion.get(question.id) || {};
+      const documentedCount = parties.filter(party => (matrixStatuses[party.id] || "unknown") !== "unknown").length;
+      const unknownCount = parties.length - documentedCount;
+      const visibleParties = filter.checked
+        ? parties.filter(party => (matrixStatuses[party.id] || "unknown") !== "unknown")
+        : parties;
+
+      status.textContent = `${documentedCount} position${documentedCount > 1 ? "s" : ""} finalisée${documentedCount > 1 ? "s" : ""}; ${unknownCount} formation${unknownCount > 1 ? "s" : ""} non documentée${unknownCount > 1 ? "s" : ""} pour cette proposition; ${visibleParties.length}/${parties.length} formations affichées.`;
+
+      host.innerHTML = visibleParties.map(party => {
+        const matrixStatus = matrixStatuses[party.id] || "unknown";
+        const record = recordByKey.get(`${question.id}::${party.id}`);
+        if(matrixStatus === "unknown"){
+          return `
+            <article class="compass-evidence-record compass-evidence-record-unknown">
+              <h4>${esc(party.name)}</h4>
+              <span class="compass-evidence-unknown-label">Non documentée</span>
+              <p>Aucune preuve finalisée ne permet de coder cette formation pour cette proposition. Cela ne signifie ni appui, ni opposition, ni neutralité.</p>
+            </article>
+          `;
+        }
+        if(!record){
+          return `
+            <article class="compass-evidence-record compass-evidence-record-unknown">
+              <h4>${esc(party.name)}</h4>
+              <span class="compass-evidence-unknown-label">Donnée indisponible</span>
+              <p>Le statut documentaire existe dans la matrice, mais sa fiche de preuve n’a pas pu être chargée. La CI doit empêcher cet état avant publication.</p>
+            </article>
+          `;
+        }
         const sourceDate = record.sourceDate || "Date non indiquée dans la source";
         const label = DOCUMENTARY_STATUS_LABELS[record.proposedStatus] || record.proposedStatus;
         const confidence = CONFIDENCE_LABELS[record.confidence] || record.confidence;
         return `
           <article class="compass-evidence-record">
-            <h4>${esc(party?.name || record.partyId)}</h4>
+            <h4>${esc(party.name)}</h4>
             <dl>
               <div><dt>Position</dt><dd>${esc(label)}</dd></div>
               <div><dt>Confiance</dt><dd>${esc(confidence)}</dd></div>
@@ -481,6 +507,7 @@
     }
 
     select.addEventListener("change",renderSelected);
+    filter.addEventListener("change",renderSelected);
     const firstWithEvidence = questions.find(question => (recordsByQuestion.get(question.id) || []).length > 0);
     if(firstWithEvidence) select.value = firstWithEvidence.id;
     renderSelected();

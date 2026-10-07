@@ -131,3 +131,10 @@
 .compass-evidence-record a{font-weight:800}
 .compass-evidence-empty{padding:18px;border:1px dashed rgba(255,255,255,.15);border-radius:16px;color:var(--muted)}
 @media(max-width:760px){.compass-evidence-browser-head{grid-template-columns:1fr}.compass-evidence-record dl{grid-template-columns:1fr}}
+
+.compass-evidence-controls{display:grid;gap:12px}
+.compass-evidence-filter{display:flex!important;grid-template-columns:none!important;align-items:center;gap:10px!important;font-weight:700!important;color:var(--muted)!important}
+.compass-evidence-filter input{width:18px;height:18px;accent-color:currentColor}
+.compass-evidence-record-unknown{border-style:dashed;background:rgba(255,255,255,.018)}
+.compass-evidence-record-unknown h4{color:#e7e9f3}
+.compass-evidence-record-unknown .compass-evidence-unknown-label{display:inline-block;margin:.25rem 0 .45rem;padding:5px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.14);font-size:.78rem;font-weight:800;color:var(--muted)}

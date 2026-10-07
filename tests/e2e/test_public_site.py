@@ -187,8 +187,12 @@ def run() -> None:
         evidence_question_results = page.locator("#compass-evidence-question-results")
         evidence_question_results.locator(".compass-evidence-record").first.wait_for(state="visible", timeout=10_000)
         assert_true(
-            evidence_question_results.locator(".compass-evidence-record").count() >= 1,
-            f"{BROWSER_NAME}: aucune position finalisée visible dans l’explorateur",
+            evidence_question_results.locator(".compass-evidence-record").count() == 22,
+            f"{BROWSER_NAME}: les 22 formations doivent être visibles par défaut dans l’explorateur",
+        )
+        assert_true(
+            evidence_question_results.locator(".compass-evidence-record-unknown").count() >= 1,
+            f"{BROWSER_NAME}: les positions non documentées doivent rester visibles",
         )
         assert_true(
             evidence_question_results.locator('a[target="_blank"][rel*="noopener"]').count() >= 1,
@@ -201,6 +205,21 @@ def run() -> None:
         assert_true(
             evidence_question_results.locator("strong", has_text="Justification du codage").count() >= 1,
             f"{BROWSER_NAME}: justification du codage absente de l’explorateur",
+        )
+        evidence_filter = page.locator("#compass-evidence-only-documented")
+        evidence_filter.check()
+        assert_true(
+            evidence_question_results.locator(".compass-evidence-record-unknown").count() == 0,
+            f"{BROWSER_NAME}: filtre des positions finalisées laisse des positions inconnues",
+        )
+        assert_true(
+            1 <= evidence_question_results.locator(".compass-evidence-record").count() < 22,
+            f"{BROWSER_NAME}: filtre documentaire n’a pas réduit les 22 formations",
+        )
+        evidence_filter.uncheck()
+        assert_true(
+            evidence_question_results.locator(".compass-evidence-record").count() == 22,
+            f"{BROWSER_NAME}: restauration des 22 formations après filtrage impossible",
         )
         evidence_alphabetical = page.evaluate("""() => {
             const names = Array.from(document.querySelectorAll('#compass-evidence-parties .compass-evidence-card h3')).map(node => node.textContent.trim());
