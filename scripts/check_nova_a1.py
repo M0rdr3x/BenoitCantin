@@ -517,7 +517,7 @@ if party_corpus.is_file():
         "loadPoliticalRegistryAndEvidence",
         "Preuves candidates",
         "Deuxième révision terminée",
-        "Positions finalisables",
+        "Positions finalisées",
         "secondIndependentReview",
         "Aucun de ces nombres ne modifie le poids d’un parti",
     ):
@@ -654,11 +654,27 @@ if evidence_matrix.is_file():
                 errors.append(f"boussole électorale: seconde révision complétée sans identité/date: {record.get('recordId')}")
         else:
             errors.append(f"boussole électorale: statut de seconde révision invalide: {record.get('recordId')}")
-    record_index = {(r.get("questionId"), r.get("partyId")) for r in records if (r.get("secondIndependentReview") or {}).get("status") == "completed" and r.get("finalizable") is True}
+    finalized_records = {
+        (r.get("questionId"), r.get("partyId")): r
+        for r in records
+        if (r.get("secondIndependentReview") or {}).get("status") == "completed"
+        and r.get("finalizable") is True
+    }
+    matrix_status_by_key = {}
     for row in matrix_questions:
+        question_id = row.get("questionId")
         for party_id, status in (row.get("statuses") or {}).items():
-            if status != "unknown" and (row.get("questionId"), party_id) not in record_index:
-                errors.append(f"boussole électorale: statut documenté sans fiche de preuve pour {row.get('questionId')} / {party_id}")
+            key = (question_id, party_id)
+            matrix_status_by_key[key] = status
+            if status != "unknown":
+                record = finalized_records.get(key)
+                if record is None:
+                    errors.append(f"boussole électorale: statut documenté sans fiche de preuve finalisée pour {question_id} / {party_id}")
+                elif status != record.get("proposedStatus"):
+                    errors.append(f"boussole électorale: statut de matrice différent de la preuve finalisée pour {question_id} / {party_id}")
+    for key, record in finalized_records.items():
+        if matrix_status_by_key.get(key) != record.get("proposedStatus"):
+            errors.append(f"boussole électorale: preuve finalisée non répercutée dans la matrice pour {key[0]} / {key[1]}")
 
 if compass_methodology.is_file():
     method_text = compass_methodology.read_text(encoding="utf-8", errors="replace")
