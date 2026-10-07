@@ -1,5 +1,5 @@
 {
-  "version": "1.46.0",
+  "version": "1.47.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -101,7 +101,7 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_support",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -292,16 +292,16 @@
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "documented_mixed_or_conditional",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_mixed_or_conditional",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_mixed_or_conditional",
         "party-nova": "unknown"
       }
     },
@@ -3952,6 +3952,114 @@
         "reviewNote": "La seconde lecture confirme un rappel électoral encadré mais bien disponible avant la fin du mandat, sur pétition de 25 % des électeurs. Cette possibilité contredit directement le principe d’interdiction de révocation politique formulé par q36."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q02-party-17-20261007-01",
+      "questionId": "q02",
+      "partyId": "party-17",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://pq.org/nouvelles/declaration-du-chef-du-parti-quebecois-le-panier-depicerie-coutera-t-il-encore-plus-cher-dans-quelques-mois/",
+      "sourceTitle": "Déclaration du chef du Parti Québécois : Le panier d’épicerie coûtera-t-il encore plus cher dans quelques mois?",
+      "sourceDate": "2026-05-31",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti Québécois affirme que la réglementation lourde et désuète du secteur alimentaire décourage la concurrence et l’émergence de nouveaux joueurs, puis s’engage à attirer de nouveaux concurrents et à s’attaquer aux règles désuètes qui limitent la concurrence.",
+      "rationale": "q02 propose que le gouvernement réduise les restrictions à l’entrée de nouvelles entreprises dans des secteurs réglementés. La source identifie explicitement la réglementation comme obstacle à l’émergence de nouveaux joueurs dans le commerce alimentaire et engage le gouvernement à retirer ces règles afin de favoriser leur entrée; la correspondance est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme les trois éléments nécessaires : secteur réglementé, réglementation identifiée comme frein à l’émergence de nouveaux joueurs et engagement gouvernemental à retirer les règles qui limitent la concurrence. q02 est donc directement appuyée."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q09-party-17-20261007-01",
+      "questionId": "q09",
+      "partyId": "party-17",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://pq.org/nouvelles/sante-et-service-sociaux-investir-en-prevention-et-faire-des-clsc-la-veritable-porte-dentree-du-reseau/",
+      "sourceTitle": "Santé et services sociaux : investir en prévention et faire des CLSC la véritable porte d’entrée du réseau",
+      "sourceDate": "2026-09-12",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti Québécois propose de faire des CLSC la véritable porte d’entrée du réseau, d’y injecter 150 M$ sur quatre ans et d’y ajouter notamment des IPS, travailleurs sociaux, physiothérapeutes et ergothérapeutes afin de renforcer la première ligne.",
+      "rationale": "La source donne un rôle central et explicitement public aux CLSC dans la première ligne, ce qui va dans la direction de q09. Elle ne chiffre toutefois pas la part de l’ensemble des soins de première ligne financés par l’État qui serait effectivement fournie par des établissements publics; le critère de majorité n’est pas démontré.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_majority_threshold_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que les CLSC publics deviendraient la véritable porte d’entrée et seraient renforcés en ressources professionnelles. La source ne fournit aucune ventilation permettant d’établir que plus de la moitié des soins de première ligne financés par l’État serait livrée par des établissements publics; le statut mixte/conditionnel est maintenu."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q09-party-21-20261007-02",
+      "questionId": "q09",
+      "partyId": "party-21",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://quebecsolidaire.net/nouvelle/quebec-solidaire-va-refaire-des-clsc-la-porte-dentree-du-systeme-de-sante",
+      "sourceTitle": "Québec solidaire va refaire des CLSC la porte d’entrée du système de santé",
+      "sourceDate": "2026-09-05",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Québec solidaire s’engage à créer un réseau de 400 points d’accès en première ligne selon le modèle des CLSC et à renforcer dans ces établissements les ressources professionnelles publiques.",
+      "rationale": "La source privilégie explicitement un vaste réseau de première ligne fondé sur des CLSC publics, ce qui correspond à la direction de q09. Elle ne précise pas la proportion de l’ensemble des soins de première ligne financés par l’État qui serait fournie par ces établissements; le seuil de majorité demeure non démontré.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_majority_threshold_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un déploiement de 400 points d’accès en première ligne fondés sur le modèle des CLSC et le renforcement de ressources professionnelles publiques. Faute d’une part chiffrée de l’offre totale de première ligne, la majorité exigée par q09 ne peut pas être affirmée."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q09-party-12-20261007-03",
+      "questionId": "q09",
+      "partyId": "party-12",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://plq.org/communique/la-telesante-au-coeur-dune-premiere-ligne-plus-accessible/",
+      "sourceTitle": "La télésanté au cœur d’une première ligne plus accessible",
+      "sourceDate": "2026-09-30",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti libéral du Québec propose une porte d’entrée publique de télésanté, affirme que la télésanté doit faire partie intégrante de la première ligne publique et réitère son engagement à faire du CLSC le point d’ancrage de la santé dans les communautés.",
+      "rationale": "La source affirme explicitement une première ligne publique et un ancrage dans les CLSC, ce qui soutient la direction de q09. Elle ne détermine toutefois pas la part de tous les soins de première ligne financés par l’État qui serait fournie par des établissements publics; le critère de majorité reste incomplet.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_majority_threshold_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme le caractère explicitement public de la télésanté de première ligne et le rôle d’ancrage confié aux CLSC. Elle ne fournit aucune répartition public/privé de l’ensemble des soins de première ligne; le statut mixte/conditionnel est donc conservé."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4616,7 +4724,7 @@
     },
     {
       "batchId": "economy-q01-q04-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q01",
         "q02",
@@ -4651,26 +4759,27 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q01": 1,
-        "q02": 0,
+        "q02": 1,
         "q03": 1,
         "q04": 1
       },
-      "note": "q01 compte un appui finalisé de l’Équipe Christine Fréchette/CAQ; q03 et q04 comptent des correspondances finalisées partielles; q02 demeure entièrement unknown faute de formulation officielle suffisamment exacte.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q01 conserve un appui finalisé de l’Équipe Christine Fréchette/CAQ; q02 compte désormais un appui direct du Parti Québécois, qui identifie explicitement la réglementation comme obstacle à l’émergence de nouveaux joueurs dans le commerce alimentaire et s’engage à retirer les règles qui limitent la concurrence; q03 et q04 conservent leurs correspondances finalisées partielles.",
       "evidenceRecordIds": [
         "q01-party-05-20261006-01",
         "q03-party-05-20261006-01",
-        "q04-party-10-20261006-01"
+        "q04-party-10-20261006-01",
+        "q02-party-17-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q01": 1,
-        "q02": 0,
+        "q02": 1,
         "q03": 1,
         "q04": 1
       }
     },
     {
       "batchId": "tax-q05-q08-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q05",
         "q06",
@@ -4709,7 +4818,7 @@
         "q07": 1,
         "q08": 0
       },
-      "note": "q05 compte une correspondance finalisée partielle de Québec solidaire; q06 un appui finalisé direct du Parti conservateur du Québec; q07 une correspondance finalisée partielle de l’Équipe Christine Fréchette/CAQ; q08 demeure entièrement unknown faute de source officielle répondant à la formulation exacte.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q05 conserve une correspondance finalisée partielle de Québec solidaire; q06 un appui direct du Parti conservateur du Québec; q07 une correspondance partielle de l’Équipe Christine Fréchette/CAQ. q08 demeure entièrement unknown : plusieurs formations publient une trajectoire de retour à l’équilibre budgétaire, mais aucune source officielle vérifiée ne formule assez précisément que l’équilibre devrait être visé avant la création de nouveaux programmes permanents.",
       "evidenceRecordIds": [
         "q05-party-21-20261006-01",
         "q06-party-10-20261006-01",
@@ -4724,7 +4833,7 @@
     },
     {
       "batchId": "health-q09-q12-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q09",
         "q10",
@@ -4758,12 +4867,12 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q09": 0,
+        "q09": 3,
         "q10": 2,
         "q11": 4,
         "q12": 1
       },
-      "note": "q09 demeure entièrement unknown faute de formulation officielle suffisamment exacte; q10 compte deux appuis finalisés au financement public de soins privés; q11 quatre correspondances finalisées prudentes sur une hausse des ressources à domicile sans preuve de hausse de leur part relative du budget total de la santé; q12 une correspondance finalisée conditionnelle sur le choix public/privé.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q09 compte désormais trois positions mixtes/conditionnelles (PQ, Québec solidaire et PLQ) : chacune donne un rôle central à une première ligne publique ou aux CLSC, sans démontrer que la majorité de tous les soins de première ligne financés par l’État serait fournie par des établissements publics. q10, q11 et q12 conservent leurs positions finalisées antérieures.",
       "evidenceRecordIds": [
         "q10-party-05-20261006-01",
         "q10-party-10-20261006-02",
@@ -4771,10 +4880,13 @@
         "q11-party-10-20261006-02",
         "q11-party-12-20261006-03",
         "q11-party-17-20261006-04",
-        "q12-party-10-20261006-01"
+        "q12-party-10-20261006-01",
+        "q09-party-17-20261007-01",
+        "q09-party-21-20261007-02",
+        "q09-party-12-20261007-03"
       ],
       "finalizedCountByQuestion": {
-        "q09": 0,
+        "q09": 3,
         "q10": 2,
         "q11": 4,
         "q12": 1
@@ -4782,7 +4894,7 @@
     },
     {
       "batchId": "education-q13-q16-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q13",
         "q14",
@@ -4821,7 +4933,7 @@
         "q15": 1,
         "q16": 0
       },
-      "note": "q13 demeure entièrement unknown faute de source officielle répondant à une uniformisation accrue du programme éducatif dans son ensemble; q14 compte deux correspondances finalisées partielles sur l’autonomie scolaire; q15 un appui finalisé direct du PLQ aux ressources spécialisées; q16 demeure unknown car le choix d’école ou le financement direct d’un établissement ne suffit pas à établir que le financement public suit l’élève.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q13 demeure entièrement unknown : des sources imposent ou poursuivent des programmes communs dans certaines matières, notamment le français, sans proposer une uniformisation accrue du programme éducatif dans son ensemble. q14 conserve deux correspondances partielles et q15 un appui direct. q16 demeure unknown : les propositions de choix d’école et de financement direct des établissements ne disent toujours pas qu’une plus grande part du financement public devrait suivre individuellement l’élève.",
       "evidenceRecordIds": [
         "q14-party-06-20261006-01",
         "q14-party-10-20261006-02",
