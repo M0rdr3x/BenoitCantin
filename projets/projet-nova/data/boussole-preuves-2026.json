@@ -1533,7 +1533,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_support",
         "party-nova": "unknown"
       }
     },
@@ -4816,6 +4816,33 @@
         "reviewNote": "La seconde lecture confirme une exigence explicite de consentement libre et éclairé pour tout projet d’exploitation ou de développement sur les territoires autochtones. La campagne 2026 maintient une posture de Nation à Nations et de participation des Premiers Peuples aux décisions; aucun renversement de cette exigence n’a été relevé dans les sources officielles consultées."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q53-party-21-20261007-01",
+      "questionId": "q53",
+      "partyId": "party-21",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/02/programmeqs-2019.pdf",
+      "sourceTitle": "Programme de Québec solidaire — 8.2.3 Principe pour aborder les questions territoriales",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_program_document",
+      "evidenceSummary": "Le programme officiel de Québec solidaire prévoit que, pour tout développement situé sur un territoire revendiqué par un peuple autochtone, le gouvernement négociera de nation à nation avec le peuple concerné afin d’établir un traité concernant la gestion de ce territoire. La campagne 2026 réitère la volonté de collaborer de Nation à Nations et d’associer les Premiers Peuples aux décisions qui les concernent.",
+      "rationale": "q53 propose davantage d’ententes de gouvernement à gouvernement reconnaissant des pouvoirs décisionnels propres aux Premières Nations et aux Inuit. Une négociation de nation à nation visant un traité qui organise la gestion du territoire reconnaît explicitement un rôle décisionnel propre au peuple concerné et correspond directement au mécanisme demandé.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_nation_to_nation_treaty_for_territorial_management"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (programme officiel et corroboration 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_program_recheck_plus_current_position_corroboration",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme les trois éléments déterminants de q53 : négociation de nation à nation, conclusion d’un traité et gestion du territoire. La campagne 2026 réitère en outre une relation de Nation à Nations et la participation des peuples autochtones aux décisions qui les concernent."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5309,21 +5336,22 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q53": 1,
+        "q53": 2,
         "q54": 1,
         "q55": 1,
         "q56": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q53 conserve l’appui direct du Parti conservateur du Québec; q54 conserve son opposition directe du PCQ; q55 conserve l’appui documenté d’Osons Québec. q56 compte maintenant deux oppositions directes : le Parti communiste revendique explicitement un droit de veto sur tout projet d’exploitation sur les territoires autochtones, tandis que Québec solidaire exige le consentement libre et éclairé des communautés pour tout projet d’exploitation ou de développement sur leurs territoires, position cohérente avec sa relation Nation à Nations réitérée en 2026.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q53 compte maintenant deux appuis directs : le Parti conservateur du Québec sur des ententes d’autonomie gouvernementale et Québec solidaire sur une négociation de nation à nation visant un traité de gestion territoriale. q54 conserve l’opposition directe du PCQ; q55 l’appui documenté d’Osons Québec. q56 compte deux oppositions directes : le Parti communiste revendique un droit de veto sur tout projet d’exploitation sur les territoires autochtones, tandis que Québec solidaire exige le consentement libre et éclairé des communautés pour tout projet d’exploitation ou de développement sur leurs territoires.",
       "evidenceRecordIds": [
         "q55-party-06-20261006-01",
         "q53-party-10-20261007-01",
         "q56-party-09-20261007-01",
         "q54-party-10-20261007-01",
-        "q56-party-21-20261007-01"
+        "q56-party-21-20261007-01",
+        "q53-party-21-20261007-01"
       ],
       "finalizedCountByQuestion": {
-        "q53": 1,
+        "q53": 2,
         "q54": 1,
         "q55": 1,
         "q56": 2
