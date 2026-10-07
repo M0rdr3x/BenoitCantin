@@ -1,0 +1,46 @@
+name: Temp — remplacer la démo Livre I
+
+on:
+  push:
+    branches:
+      - replace-sinjira-livre-i-pdfs-20261007
+    paths:
+      - '.github/workflows/tmp-replace-sinjira-demo-20261007.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  replace-demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Récupérer la branche
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: true
+          ref: replace-sinjira-livre-i-pdfs-20261007
+
+      - name: Télécharger et vérifier la démo exacte
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
+          curl -L --fail --retry 3 --retry-delay 2 -o "$target" "https://at.adobe.com/TWjEpIALEaO51Sda"
+          test "$(wc -c < "$target" | tr -d ' ')" = "1244667"
+          echo "0851852f586ea619ee7435a1b70c38087a7997ab6809bb10fdad0ed4bd0c352b  $target" | sha256sum -c -
+
+      - name: Committer la nouvelle démo
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf
+          if git diff --cached --quiet; then
+            echo "Aucun changement binaire à committer."
+            exit 0
+          fi
+          git commit -m "SINJIRA — remplacer la démo du Livre I"
+          git push origin HEAD:replace-sinjira-livre-i-pdfs-20261007
