@@ -1,5 +1,5 @@
 {
-  "version": "1.11.0",
+  "version": "1.12.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -62,9 +62,9 @@
       "pressReleaseUrls": [],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_program",
-      "lastVerified": "2026-10-06",
+      "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Le programme public 2026 présente explicitement le vote de circonscription, le référendum d’initiative citoyenne et le rappel d’un élu avant la fin du mandat; les pages de circonscription reprennent les mêmes engagements et indiquent une mise à jour du 19 août 2026."
+      "notes": "Programme public 2026 revérifié le 7 octobre : référendum d’initiative citoyenne, vote de l’élu lié à une consultation tranchée et rappel d’un député avant la fin du mandat. Ces éléments sont utilisés séparément pour q34, q35 et q36 selon la précision de chaque formulation."
     },
     {
       "id": "party-04",
@@ -114,9 +114,9 @@
       "pressReleaseUrls": [],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_program",
-      "lastVerified": "2026-10-06",
+      "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": null
+      "notes": "Programme électoral final 2026 revérifié le 7 octobre. La proposition de démocratie directe prévoit des seuils précis pour l’initiative populaire et le rappel d’un député; elle est utilisée pour q33, q35 et, par opposition directe, q36."
     },
     {
       "id": "party-07",
