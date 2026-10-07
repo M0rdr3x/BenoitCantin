@@ -1,5 +1,5 @@
 {
-  "version": "1.58.0",
+  "version": "1.59.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -568,7 +568,7 @@
         "party-05": "unknown",
         "party-06": "unknown",
         "party-07": "unknown",
-        "party-08": "unknown",
+        "party-08": "ambiguous",
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
@@ -4384,6 +4384,33 @@
         "reviewNote": "La seconde lecture confirme que la plateforme énumère explicitement, en plus des ententes ou traités, les modifications législatives et d’autres modalités comme voies possibles d’autonomie différenciée, et prévoit une approche pouvant varier selon les cas. Comme q54 limite précisément les exceptions aux traités ou à la Constitution, l’opposition est directe."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q19-party-08-20261007-01",
+      "questionId": "q19",
+      "partyId": "party-08",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://www.particanadienquebec.ca/fr/politiques/quebec-housing-growth-act",
+      "sourceTitle": "Parti canadien du Québec — Loi sur la croissance résidentielle du Québec",
+      "sourceDate": "2026-08-01",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Le Parti canadien du Québec propose qu’un nouveau projet résidentiel devienne admissible à un régime fiscal foncier avantageux lorsqu’au moins 20 % de ses unités sont des logements locatifs abordables assujettis à une entente d’abordabilité.",
+      "rationale": "q19 vise le pouvoir municipal d’exiger une proportion minimale de logements abordables dans les grands projets résidentiels. La source fixe bien un seuil explicite de 20 % de logements abordables au niveau du projet, mais comme condition volontaire d’admissibilité à un avantage fiscal plutôt que comme obligation municipale. Elle est donc directement pertinente sans permettre de trancher la direction exacte de q19.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_enforcement_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un seuil de 20 % de logements locatifs abordables dans les nouveaux projets, mais ce seuil déclenche un traitement fiscal favorable et n’est pas présenté comme une exigence imposée par les municipalités. Le mécanisme coercitif et l’acteur exact de q19 demeurent absents; le statut ambiguous est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4421,19 +4448,20 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q19": 0,
+        "q19": 1,
         "q20": 4
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q19 demeure entièrement unknown : les sources officielles récentes consultées soutiennent la construction ou le financement de logements abordables, mais aucune ne formule assez précisément le pouvoir municipal d’exiger une proportion minimale de logements abordables dans les grands projets résidentiels. q20 conserve ses quatre positions finalisées.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q19 compte désormais une correspondance ambiguë du Parti canadien du Québec : sa Loi sur la croissance résidentielle utilise un seuil de 20 % de logements locatifs abordables dans un nouveau projet pour l’admissibilité à un avantage fiscal, sans créer un pouvoir municipal d’imposer ce seuil. q20 conserve ses quatre positions finalisées.",
       "finalizedCountByQuestion": {
-        "q19": 0,
+        "q19": 1,
         "q20": 4
       },
       "evidenceRecordIds": [
         "q20-party-05-20261006-01",
         "q20-party-06-20261006-02",
         "q20-party-17-20261006-03",
-        "q20-party-21-20261006-04"
+        "q20-party-21-20261006-04",
+        "q19-party-08-20261007-01"
       ]
     },
     {
