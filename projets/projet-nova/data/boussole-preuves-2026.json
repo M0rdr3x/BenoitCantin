@@ -1,5 +1,5 @@
 {
-  "version": "1.60.0",
+  "version": "1.61.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1717,7 +1717,7 @@
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
-        "party-09": "unknown",
+        "party-09": "documented_opposition",
         "party-10": "unknown",
         "party-11": "unknown",
         "party-12": "unknown",
@@ -4438,6 +4438,33 @@
         "reviewNote": "La seconde lecture confirme une surveillance électronique obligatoire et ciblée pour des personnes accusées de violence conjugale ou libérées présentant un niveau de dangerosité élevé, afin de protéger une victime. Comme la mesure dépend de catégories juridiques précises et ne constitue pas une habilitation policière générale en cas de menace grave et immédiate, le statut mixed/conditional est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q60-party-09-20261007-01",
+      "questionId": "q60",
+      "partyId": "party-09",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://particommunisteduquebec.ca/programme-ch5/",
+      "sourceTitle": "Parti communiste du Québec — Programme, chapitre 5 : La lutte de la classe ouvrière et du peuple",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_program_page",
+      "evidenceSummary": "Le programme officiel du Parti communiste du Québec appelle à résister aux concessions patronales et à étendre les domaines couverts par la convention collective. Il demande aussi que les syndicats exercent un plus grand contrôle sur les changements technologiques, la durée du travail, la santé-sécurité et d’autres décisions touchant les conditions de travail.",
+      "rationale": "q60 propose de laisser davantage de conditions d’emploi à la négociation individuelle entre employeur et salarié. La source officielle défend explicitement la direction opposée : étendre le champ des conditions couvertes collectivement et accroître le contrôle syndical sur les changements touchant le travail. La correspondance avec une opposition à q60 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_inverse_direction"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le programme demande explicitement l’extension des domaines couverts par la convention collective et davantage de contrôle syndical sur des changements touchant les conditions de travail. La plateforme électorale 2026 du parti corrobore cette orientation en revendiquant l’expansion des droits syndicaux. Cela s’oppose directement au transfert de davantage de conditions d’emploi vers la négociation individuelle."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4984,19 +5011,20 @@
         "q57": 2,
         "q58": 0,
         "q59": 1,
-        "q60": 0
+        "q60": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 sur des sources officielles récentes, en conservant le même standard pour les 22 formations. q57 conserve un appui direct de Québec solidaire et une position ambiguë du Parti Québécois; q59 demeure ambiguë pour Québec solidaire. Pour q58 et q60, les sources 2026 revérifiées abordent la négociation collective, la démocratie syndicale, l’organisation du travail ou des assouplissements sectoriels, mais aucune ne formule assez précisément un droit patronal de modifier l’organisation du travail sans négociation préalable ni un transfert de normes légales vers la négociation individuelle. q58 et q60 restent donc entièrement unknown.",
+      "note": "Recherche reprise le 7 octobre 2026 sur des sources officielles, selon le même standard pour les 22 formations. q57 conserve un appui direct de Québec solidaire et une position ambiguë du Parti Québécois; q59 demeure ambiguë pour Québec solidaire. q60 compte désormais une opposition documentée du Parti communiste du Québec : son programme demande l’extension des domaines couverts par la convention collective et davantage de contrôle syndical sur les conditions de travail, orientation corroborée par sa plateforme électorale 2026. q58 reste entièrement unknown faute de formulation suffisamment exacte sur un droit patronal de modifier l’organisation du travail sans négociation préalable.",
       "evidenceRecordIds": [
         "q57-party-17-20261006-01",
         "q57-party-21-20261006-02",
-        "q59-party-21-20261006-01"
+        "q59-party-21-20261006-01",
+        "q60-party-09-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q57": 2,
         "q58": 0,
         "q59": 1,
-        "q60": 0
+        "q60": 1
       }
     },
     {
