@@ -192,3 +192,17 @@ Aucun ordre automatique des partis n’est nécessaire pour comprendre les accor
 ## Révision
 
 Les questions et axes doivent être révisés à chaque élection. Les profils produits lors d’élections différentes ne doivent pas être présentés comme directement comparables sans recalibration méthodologique.
+
+## Verrou sémantique du questionnaire
+
+Le corpus documentaire est lié à la **version exacte et au texte exact des 64 propositions**. Une preuve finalisée ne peut donc pas être conservée silencieusement si la proposition à laquelle elle répond change de sens.
+
+Toute modification du texte d’une proposition exige une migration explicite :
+
+1. incrémenter la version du questionnaire;
+2. reprendre la recherche documentaire de la proposition modifiée pour les 22 formations selon les mêmes règles;
+3. revalider les preuves antérieures concernées au lieu de les considérer automatiquement transférables;
+4. refaire la seconde révision indépendante avant toute nouvelle finalisation;
+5. mettre à jour le lien questionnaire ↔ corpus seulement après cette révision.
+
+La CI compare le texte public de chaque question au texte auquel le corpus de preuves est lié. Une différence fait échouer la validation. Ce verrou évite qu’une ancienne branche, une reformulation éditoriale ou une fusion tardive change le sens d’une question tout en conservant des positions codées sur une formulation antérieure.
