@@ -70,7 +70,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 5,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Bloc pot"
     },
     {
       "id": "party-02",
@@ -83,7 +84,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 52,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Climat Québec"
     },
     {
       "id": "party-03",
@@ -96,7 +98,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 28,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Démocratie directe"
     },
     {
       "id": "party-04",
@@ -109,7 +112,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 8,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Équipe autonomiste"
     },
     {
       "id": "party-05",
@@ -122,7 +126,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 127,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Équipe Christine Fréchette – Coalition avenir Québec"
     },
     {
       "id": "party-06",
@@ -135,7 +140,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 2,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Osons Québec"
     },
     {
       "id": "party-07",
@@ -148,7 +154,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 6,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Parti accès propriété et équité – Équipe Québec debout"
     },
     {
       "id": "party-08",
@@ -161,7 +168,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 29,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Parti canadien du Québec/Canadian Party of Québec"
     },
     {
       "id": "party-09",
@@ -174,7 +182,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 10,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Parti communiste du Québec"
     },
     {
       "id": "party-10",
@@ -187,7 +196,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 127,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Parti conservateur du Québec"
     },
     {
       "id": "party-11",
@@ -200,7 +210,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 4,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Parti culinaire du Québec"
     },
     {
       "id": "party-12",
@@ -213,7 +224,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 127,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Parti libéral du Québec/Quebec Liberal Party"
     },
     {
       "id": "party-13",
@@ -226,7 +238,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 3,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Parti libertarien du Québec"
     },
     {
       "id": "party-14",
@@ -239,7 +252,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 12,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Parti marxiste-léniniste du Québec"
     },
     {
       "id": "party-15",
@@ -252,7 +266,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 38,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Parti nul"
     },
     {
       "id": "party-16",
@@ -268,7 +283,8 @@
       "statusSource": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
       "election2026Listed": true,
       "candidateCount2026": 0,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Parti populaire du Québec"
     },
     {
       "id": "party-17",
@@ -281,7 +297,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 127,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Parti québécois"
     },
     {
       "id": "party-18",
@@ -294,7 +311,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 37,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Parti vert du Québec/Green Party of Québec"
     },
     {
       "id": "party-19",
@@ -307,7 +325,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 18,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Présence Québec"
     },
     {
       "id": "party-20",
@@ -320,7 +339,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 2,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Québec innovant"
     },
     {
       "id": "party-21",
@@ -333,7 +353,8 @@
       "authorizedCurrent": true,
       "election2026Listed": true,
       "candidateCount2026": 127,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": "Québec solidaire"
     },
     {
       "id": "party-nova",
@@ -347,7 +368,8 @@
       "disclosure": "Futur parti associé au Projet Nova; il n’est pas présenté comme parti autorisé tant qu’Élections Québec ne l’indique pas.",
       "election2026Listed": false,
       "candidateCount2026": null,
-      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+      "election2026Source": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialElectionName2026": null
     }
   ],
   "neutralityRules": {
