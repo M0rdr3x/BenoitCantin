@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -509,23 +509,23 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_mixed_or_conditional",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "documented_support",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_support",
         "party-18": "unknown",
         "party-19": "unknown",
-        "party-20": "unknown",
-        "party-21": "unknown",
+        "party-20": "documented_mixed_or_conditional",
+        "party-21": "documented_support",
         "party-nova": "unknown"
       }
     },
@@ -537,14 +537,14 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
-        "party-06": "unknown",
+        "party-05": "documented_mixed_or_conditional",
+        "party-06": "documented_support",
         "party-07": "unknown",
-        "party-08": "unknown",
+        "party-08": "documented_mixed_or_conditional",
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "documented_support",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
@@ -1865,11 +1865,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle annonce explicitement 1,5 G$ et 40 000 logements sociaux et abordables supplémentaires; la hausse de financement et de capacité hors marché correspond directement à q17."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q17-party-21-20261006-01",
@@ -1889,11 +1892,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle chiffre 11,8 G$ sur quatre ans et 50 000 logements sociaux et communautaires; la correspondance avec q17 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q17-party-05-20261006-01",
@@ -1913,11 +1919,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle bonifie l’aide au logement de 100 M$ et ajoute des suppléments au loyer liés à des projets sociaux/abordables, mais l’engagement est ciblé sur l’itinérance plutôt que sur l’ensemble du financement social, coopératif et OBNL."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q17-party-17-20261006-01",
@@ -1937,11 +1946,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle réitère 20 000 logements sociaux et hors marché et qualifie leur déploiement d’investissements; elle soutient la direction de q17 sans détailler toute la ventilation financière."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q17-party-20-20261006-01",
@@ -1961,35 +1973,41 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle veut stabiliser et mieux cibler le financement du logement social et communautaire et accroître le hors-marché, tout en précisant qu’elle ne vise pas nécessairement une hausse massive des dépenses à court terme."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q18-party-05-20261006-01",
       "questionId": "q18",
       "partyId": "party-05",
-      "proposedStatus": "documented_support",
+      "proposedStatus": "documented_mixed_or_conditional",
       "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/09/04/construire-plus-plus-vite-et-a-moindre-cout-le-plan-de-lequipe-christine-frechette/",
       "sourceTitle": "Construire plus, plus vite et à moindre coût : le plan de l’Équipe Christine Fréchette",
       "sourceDate": "2026-09-04",
       "checkedAt": "2026-10-06",
       "sourceType": "official_party_campaign_page",
-      "evidenceSummary": "L’Équipe Christine Fréchette propose de simplifier les démarches résidentielles et de réduire certains délais de moitié lorsque des projets passent par des étapes municipales et provinciales.",
-      "rationale": "La source vise explicitement la réduction des délais administratifs associés aux projets résidentiels, ce qui correspond à la formulation corrigée de q18.",
-      "confidence": "high",
+      "evidenceSummary": "L’Équipe Christine Fréchette propose de simplifier des démarches résidentielles impliquant la municipalité et le gouvernement du Québec et indique que certains délais seront réduits de moitié.",
+      "rationale": "La source appuie l’objectif de réduire des délais administratifs touchant des projets résidentiels, mais ne vise pas explicitement toutes les demandes complètes de permis de construction résidentielle; la correspondance avec q18 est donc partielle.",
+      "confidence": "medium",
       "firstReview": {
         "status": "completed",
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "adjusted",
+        "reviewNote": "La source officielle vise clairement à réduire des délais administratifs de projets résidentiels impliquant les municipalités et le Québec, mais ne formule pas une règle générale visant toutes les demandes complètes de permis municipaux. Le statut est donc abaissé de support direct à correspondance partielle."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q18-party-12-20261006-02",
@@ -2009,11 +2027,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle propose explicitement d’accélérer la délivrance des permis de construction résidentiels municipaux et d’accompagner les municipalités aux délais plus longs."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q18-party-06-20261006-03",
@@ -2033,11 +2054,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle prévoit, pour les dossiers conformes et complets, un accusé de réception rapide et une décision municipale dans les 60 jours pour un projet standard; la correspondance avec q18 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q18-party-08-20261006-04",
@@ -2057,11 +2081,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle soutient des approbations résidentielles plus rapides près du transport collectif et des pôles d’emploi, mais ne généralise pas la mesure à toutes les demandes complètes de permis municipaux."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ]
 }

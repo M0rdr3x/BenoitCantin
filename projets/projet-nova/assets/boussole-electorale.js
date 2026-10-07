@@ -428,15 +428,26 @@
       recordsByParty.get(record.partyId).push(record);
     }
 
+    const matrixQuestions = Array.isArray(evidenceCorpus.questions) ? evidenceCorpus.questions : [];
     const secondReviewed = records.filter(record => record.secondIndependentReview?.status === "completed").length;
-    const finalizable = records.filter(record => record.finalizable === true).length;
     const pendingSecond = records.filter(record => record.secondIndependentReview?.status === "pending").length;
+    const finalizedByParty = new Map(parties.map(party => [party.id,0]));
+    let finalizedCount = 0;
+
+    for(const question of matrixQuestions){
+      const statuses = question?.statuses || {};
+      for(const [partyId,statusValue] of Object.entries(statuses)){
+        if(statusValue === "unknown") continue;
+        finalizedCount += 1;
+        finalizedByParty.set(partyId,(finalizedByParty.get(partyId) || 0) + 1);
+      }
+    }
 
     summary.innerHTML = [
       ["Formations suivies",parties.length],
       ["Preuves candidates",records.length],
       ["Deuxième révision terminée",secondReviewed],
-      ["Positions finalisables",finalizable]
+      ["Positions finalisées",finalizedCount]
     ].map(([label,value]) => `<article><strong>${value}</strong><span>${esc(label)}</span></article>`).join("");
 
     parties.sort((a,b) => String(a.name).localeCompare(String(b.name),"fr-CA"));
@@ -444,7 +455,7 @@
       const source = sourceByParty.get(party.id) || {};
       const partyRecords = recordsByParty.get(party.id) || [];
       const reviewed = partyRecords.filter(record => record.secondIndependentReview?.status === "completed").length;
-      const finalized = partyRecords.filter(record => record.finalizable === true).length;
+      const finalized = finalizedByParty.get(party.id) || 0;
       const sourceLabel = source.usableForPositionCoding
         ? "Source politique vérifiée pour le codage"
         : source.officialSite
@@ -457,7 +468,7 @@
           <dl>
             <div><dt>Preuves candidates</dt><dd>${partyRecords.length}</dd></div>
             <div><dt>2e révision terminée</dt><dd>${reviewed}</dd></div>
-            <div><dt>Positions finalisables</dt><dd>${finalized}</dd></div>
+            <div><dt>Positions finalisées</dt><dd>${finalized}</dd></div>
           </dl>
         </article>
       `;
@@ -465,7 +476,7 @@
 
     const status = $("#compass-evidence-status");
     if(status){
-      status.textContent = `${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une deuxième révision indépendante. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
+      status.textContent = `${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une deuxième révision indépendante; ${finalizedCount} position${finalizedCount > 1 ? "s" : ""} finalisée${finalizedCount > 1 ? "s" : ""}. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
     }
   }
 
