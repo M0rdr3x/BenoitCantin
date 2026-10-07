@@ -4001,12 +4001,12 @@
         "q03-party-05-20261006-01",
         "q04-party-10-20261006-01"
       ],
-      "finalizedAt": "2026-10-07",
-      "finalizedRecordIds": [
-        "q01-party-05-20261006-01",
-        "q03-party-05-20261006-01",
-        "q04-party-10-20261006-01"
-      ]
+      "finalizedCountByQuestion": {
+        "q01": 1,
+        "q02": 0,
+        "q03": 1,
+        "q04": 1
+      }
     }
   ]
 }
