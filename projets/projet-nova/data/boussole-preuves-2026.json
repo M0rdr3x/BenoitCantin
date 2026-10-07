@@ -1,5 +1,5 @@
 {
-  "version": "1.13.0",
+  "version": "1.14.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -2602,6 +2602,150 @@
         "reviewNote": "La seconde lecture confirme que la CAQ rend la connaissance du français obligatoire dans l’immigration économique et vise explicitement une proportion accrue d’immigrants économiques connaissant le français."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q41-party-21-20261006-01",
+      "questionId": "q41",
+      "partyId": "party-21",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://quebecsolidaire.net/nouvelle/projet-de-loi-96-quebec-solidaire-veut-obliger-les-entreprises-a-faire-de-la-francisation-en-milieu-de-travail",
+      "sourceTitle": "Projet de loi 96 - Québec solidaire veut obliger les entreprises à faire de la francisation en milieu de travail",
+      "sourceDate": "2021-10-06",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Québec solidaire propose d’étendre la démarche de francisation de la loi 101 aux entreprises de 10 personnes et plus et d’imposer à certaines entreprises de Montréal des investissements dédiés à la francisation en milieu de travail.",
+      "rationale": "La source veut clairement renforcer les exigences linguistiques en entreprise, y compris au-delà des grandes entreprises, mais elle vise surtout les obligations de francisation de l’employeur plutôt qu’une exigence explicite de connaissance du français comme condition pour travailler; la correspondance avec q41 est partielle.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q41-party-17-20261006-02",
+      "questionId": "q41",
+      "partyId": "party-17",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://pq.org/nouvelles/le-parti-quebecois-sengage-a-renverser-le-declin-du-francais/",
+      "sourceTitle": "Le Parti Québécois s’engage à renverser le déclin du français",
+      "sourceDate": "2026-08-30",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti Québécois propose de rehausser les critères de français pour l’obtention ou le renouvellement d’un permis de travail, selon le type d’emploi occupé.",
+      "rationale": "La proposition renforce directement des exigences de français liées au travail, mais elle n’est pas limitée aux grandes entreprises et ne porte pas spécifiquement sur leurs exigences internes d’embauche; la correspondance avec q41 reste partielle.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q43-party-05-20261006-01",
+      "questionId": "q43",
+      "partyId": "party-05",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/nos-bons-coups/",
+      "sourceTitle": "Nos bons coups - Coalition Avenir Québec",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "La CAQ présente l’adoption de la Loi sur la laïcité de l’État comme ayant consacré la laïcité de l’État et interdit le port de signes religieux au personnel en position d’autorité.",
+      "rationale": "La source correspond directement à q43 en appuyant une restriction supplémentaire visant précisément des membres du personnel exerçant une position d’autorité.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q43-party-17-20261006-02",
+      "questionId": "q43",
+      "partyId": "party-17",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://pq.org/nouvelles/le-parti-quebecois-sengage-a-defendre-le-consensus-quebecois-sur-la-laicite/",
+      "sourceTitle": "Le Parti Québécois s’engage à défendre le consensus québécois sur la laïcité",
+      "sourceDate": "2026-09-27",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti Québécois s’engage à maintenir les acquis de la Loi sur la laïcité de l’État dans sa forme actuelle et à reconduire la clause dérogatoire qui la protège.",
+      "rationale": "Le maintien explicite de la Loi sur la laïcité conserve les restrictions existantes visant les fonctions d’autorité; la direction correspond à q43, même si la page ne réénumère pas chacune des fonctions concernées.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q43-party-21-20261006-03",
+      "questionId": "q43",
+      "partyId": "party-21",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://quebecsolidaire.net/nouvelle/port-des-signes-religieux-une-laicite-au-dela-des-debats-steriles",
+      "sourceTitle": "Port des signes religieux - Une laïcité au-delà des débats stériles",
+      "sourceDate": "2017-02-16",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Québec solidaire a appuyé une interdiction du port de signes religieux pour les magistrats, procureurs de la Couronne, policiers, gardiens de prison et la présidence de l’Assemblée nationale.",
+      "rationale": "La source vise directement plusieurs fonctions étatiques exerçant un pouvoir coercitif et correspond donc à q43.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q44-party-05-20261006-01",
+      "questionId": "q44",
+      "partyId": "party-05",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2025/05/28/adoption-du-projet-de-loi-sur-lintegration-a-la-nation-quebecoise/",
+      "sourceTitle": "Adoption du projet de loi sur l’intégration à la nation québécoise",
+      "sourceDate": "2025-05-28",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_government_record",
+      "evidenceSummary": "La CAQ présente la Loi sur l’intégration à la nation québécoise comme définissant formellement un modèle d’intégration, une culture commune et des fondements de la nation québécoise, et affirme qu’elle définit pour la première fois « qui nous sommes ».",
+      "rationale": "q44 propose d’éviter qu’une loi provinciale impose une définition officielle de l’identité québécoise; la source décrit explicitement l’action inverse, ce qui constitue une opposition directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
     }
   ],
   "researchCoverage": [
@@ -2872,6 +3016,57 @@
         "q39": 0,
         "q40": 2
       }
+    },
+    {
+      "batchId": "identity-q41-q44-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q41",
+        "q42",
+        "q43",
+        "q44"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q41": 2,
+        "q42": 0,
+        "q43": 3,
+        "q44": 1
+      },
+      "note": "q42 demeure entièrement unknown faute de source officielle suffisamment exacte. q41 ne comporte que des correspondances partielles. q43 compte trois appuis documentaires candidats et q44 une opposition directe candidate.",
+      "evidenceRecordIds": [
+        "q41-party-21-20261006-01",
+        "q41-party-17-20261006-02",
+        "q43-party-05-20261006-01",
+        "q43-party-17-20261006-02",
+        "q43-party-21-20261006-03",
+        "q44-party-05-20261006-01"
+      ]
     }
   ]
 }
