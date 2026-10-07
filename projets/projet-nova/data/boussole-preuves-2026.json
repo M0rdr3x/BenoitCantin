@@ -1,5 +1,5 @@
 {
-  "version": "1.23.0",
+  "version": "1.24.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -3088,6 +3088,116 @@
         "reviewNote": "Le manifeste fixe clairement une cible de salaire minimum à 20 $/h, mais ne précise pas une trajectoire pluriannuelle explicitement supérieure au taux d’inflation. La preuve reste donc ambiguë pour la formulation exacte de q59."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q61-party-06-20261006-01",
+      "questionId": "q61",
+      "partyId": "party-06",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://osons.quebec/",
+      "sourceTitle": "Osons Québec — Identité numérique libre et IA responsable",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Osons Québec propose de garantir une révision humaine lorsqu’une décision administrative utilise l’IA et de maintenir des alternatives humaines.",
+      "rationale": "La source établit un droit à une révision humaine d’une décision administrative utilisant l’IA, mais ne prévoit pas explicitement que la décision elle-même doit pouvoir être expliquée à la personne concernée. Elle est pertinente pour q61 sans correspondance exacte.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q61-party-12-20261006-02",
+      "questionId": "q61",
+      "partyId": "party-12",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://plq.org/communique/un-changement-majeur-dans-la-gestion-de-la-transformation-numerique/",
+      "sourceTitle": "Un changement majeur dans la gestion de la transformation numérique",
+      "sourceDate": "2026-09-18",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le PLQ propose une loi-cadre fondée notamment sur la transparence entourant l’utilisation de l’IA et maintient qu’un humain doit rester responsable de toute décision gouvernementale affectant directement un citoyen.",
+      "rationale": "La transparence et la responsabilité humaine sont proches de l’exigence d’explicabilité de q61, mais la source ne crée pas explicitement un droit individuel à obtenir l’explication d’une décision administrative importante.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q63-party-06-20261006-01",
+      "questionId": "q63",
+      "partyId": "party-06",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://osons.quebec/",
+      "sourceTitle": "Osons Québec — Identité numérique libre et IA responsable",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Osons Québec fonde son identité numérique sur la liberté de choix, le consentement et la souveraineté des données, avec un consentement explicite, éclairé et limité à une finalité.",
+      "rationale": "La source soutient une forte limitation de l’usage des données personnelles par finalité et consentement, mais ne formule pas exactement l’interdiction de combiner des données provenant de plusieurs services sauf consentement ou autorisation légale précise. Le lien avec q63 reste partiel.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q64-party-06-20261006-01",
+      "questionId": "q64",
+      "partyId": "party-06",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://osons.quebec/",
+      "sourceTitle": "Osons Québec — Identité numérique libre et IA responsable",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Osons Québec affirme qu’une identité numérique peut éviter aux citoyens de transmettre plusieurs fois les mêmes renseignements et propose une approche où les démarches sont simplifiées sans rendre l’identité numérique obligatoire.",
+      "rationale": "La réduction de la répétition des renseignements suppose une réutilisation contrôlée de données, mais la source ne prévoit pas explicitement un partage automatique entre organismes publics limité aux renseignements nécessaires à un service déjà demandé. La correspondance avec q64 demeure partielle.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q64-party-10-20261006-02",
+      "questionId": "q64",
+      "partyId": "party-10",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/les-conservateurs-misent-sur-le-numerique-pour-economiser-345-milliards-de-dollars-et-accelerer-lacces-aux-services-publics/",
+      "sourceTitle": "Les conservateurs misent sur le numérique pour économiser 3,45 milliards de dollars et accélérer l’accès aux services publics",
+      "sourceDate": "2026-09-05",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti conservateur du Québec propose d’améliorer le partage sécurisé des données entre les ministères dans le cadre de sa plateforme numérique gouvernementale.",
+      "rationale": "La source appuie explicitement un meilleur partage interministériel des données, mais ne précise ni qu’il serait automatique ni qu’il serait limité aux renseignements nécessaires à un service déjà demandé par le citoyen. Elle ne suffit donc pas à coder un appui direct à q64.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
     }
   ],
   "researchCoverage": [
@@ -3631,6 +3741,56 @@
         "q59": 1,
         "q60": 0
       }
+    },
+    {
+      "batchId": "digital-q61-q64-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q61",
+        "q62",
+        "q63",
+        "q64"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q61": 2,
+        "q62": 0,
+        "q63": 1,
+        "q64": 2
+      },
+      "note": "q61, q63 et q64 comptent uniquement des correspondances partielles conservées comme ambiguës; q62 demeure entièrement unknown faute de position officielle suffisamment exacte sur l’utilisation de nouveaux systèmes d’IA avant l’adoption d’un cadre réglementaire spécifique.",
+      "evidenceRecordIds": [
+        "q61-party-06-20261006-01",
+        "q61-party-12-20261006-02",
+        "q63-party-06-20261006-01",
+        "q64-party-06-20261006-01",
+        "q64-party-10-20261006-02"
+      ]
     }
   ]
 }
