@@ -1,5 +1,5 @@
 {
-  "version": "1.29.0",
+  "version": "1.30.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -189,7 +189,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_mixed_or_conditional",
         "party-nova": "unknown"
       }
     },
@@ -206,7 +206,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_support",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -229,7 +229,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_mixed_or_conditional",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -3323,9 +3323,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La calculatrice officielle confirme de nouveaux paliers d’impôt sur le revenu et une hausse nette de la charge fiscale pour les revenus élevés, mais elle ne relie pas explicitement cette hausse précise à l’objectif de financer davantage de redistribution. Le codage demeure donc partiel."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q06-party-10-20261006-01",
@@ -3345,9 +3350,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle annonce une baisse importante de l’impôt sur le revenu des particuliers et précise que des économies de dépenses publiques dégageront la marge nécessaire pour la financer. La correspondance avec q06 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q07-party-05-20261006-01",
@@ -3367,9 +3377,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "Le cadre officiel maintient le retour à l’équilibre seulement en 2029-2030 tout en augmentant fortement les investissements d’infrastructure dès maintenant. Il démontre l’acceptation d’investir pendant une période déficitaire, mais ne justifie pas explicitement ce choix par la durée de vie pluridécennale des actifs."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4115,12 +4130,18 @@
         "q07": 1,
         "q08": 0
       },
-      "note": "q05 compte une correspondance candidate partielle de Québec solidaire; q06 un appui candidat direct du Parti conservateur du Québec; q07 une correspondance candidate partielle de l’Équipe Christine Fréchette/CAQ; q08 demeure entièrement unknown faute de source officielle répondant à la formulation exacte.",
+      "note": "q05 compte une correspondance finalisée partielle de Québec solidaire; q06 un appui finalisé direct du Parti conservateur du Québec; q07 une correspondance finalisée partielle de l’Équipe Christine Fréchette/CAQ; q08 demeure entièrement unknown faute de source officielle répondant à la formulation exacte.",
       "evidenceRecordIds": [
         "q05-party-21-20261006-01",
         "q06-party-10-20261006-01",
         "q07-party-05-20261006-01"
-      ]
+      ],
+      "finalizedCountByQuestion": {
+        "q05": 1,
+        "q06": 1,
+        "q07": 1,
+        "q08": 0
+      }
     }
   ]
 }
