@@ -1,5 +1,5 @@
 {
-  "version": "1.40.0",
+  "version": "1.41.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -4258,7 +4258,7 @@
     },
     {
       "batchId": "labour-q57-q60-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q57",
         "q58",
@@ -4297,7 +4297,7 @@
         "q59": 1,
         "q60": 0
       },
-      "note": "Après seconde révision indépendante : q57 compte un appui direct de Québec solidaire et une position ambiguë du Parti Québécois faute de référence explicite aux règles d’accréditation; q59 demeure ambiguë pour Québec solidaire car la cible de 20 $/h ne décrit pas une trajectoire pluriannuelle explicitement supérieure à l’inflation; q58 et q60 demeurent entièrement unknown.",
+      "note": "Recherche reprise le 7 octobre 2026 sur des sources officielles récentes, en conservant le même standard pour les 22 formations. q57 conserve un appui direct de Québec solidaire et une position ambiguë du Parti Québécois; q59 demeure ambiguë pour Québec solidaire. Pour q58 et q60, les sources 2026 revérifiées abordent la négociation collective, la démocratie syndicale, l’organisation du travail ou des assouplissements sectoriels, mais aucune ne formule assez précisément un droit patronal de modifier l’organisation du travail sans négociation préalable ni un transfert de normes légales vers la négociation individuelle. q58 et q60 restent donc entièrement unknown.",
       "evidenceRecordIds": [
         "q57-party-17-20261006-01",
         "q57-party-21-20261006-02",
