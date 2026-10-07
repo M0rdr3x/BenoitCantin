@@ -151,6 +151,21 @@ La seconde révision repart de la formulation exacte de la question et de la sou
 
 Pour une question donnée, la recherche doit porter sur **toutes les formations**. Ne pas trouver de source précise pour une formation signifie `unknown`, jamais opposition, neutralité ou désaccord implicite.
 
+## Couverture de recherche exhaustive
+
+Le registre `researchCoverage` sert à prouver que la recherche documentaire a réellement parcouru l’ensemble du questionnaire, y compris lorsqu’aucune preuve candidate n’a été trouvée.
+
+À partir de la couverture complète du corpus 2026 :
+
+- chacune des 64 questions doit appartenir à exactement un lot de recherche;
+- chaque lot doit couvrir les 22 formations avec le même protocole;
+- chaque fiche de preuve doit être rattachée à exactement un lot;
+- une question recherchée sans preuve suffisante demeure `unknown`;
+- la CI refuse une question sans lot, une question présente dans plusieurs lots ou une preuve orpheline;
+- le compteur public de couverture est calculé à partir des lots réellement présents dans les données, et non saisi manuellement.
+
+Cette règle distingue explicitement **absence de position documentée** et **absence de recherche**.
+
 ## Comparaison factuelle avec les formations
 
 Le profil personnel peut être calculé sur les 16 dimensions. Pour les formations politiques, le site doit privilégier une lecture factuelle : sélectionner une ou plusieurs formations et consulter, pour chaque proposition, les positions documentées, leurs sources, leur date et leur niveau de confiance.
