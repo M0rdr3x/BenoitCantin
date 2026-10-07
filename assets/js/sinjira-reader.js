@@ -3,8 +3,8 @@ import {getSupabase,getCurrentUser,escapeHtml,formatDate} from './sinjira-supaba
 const page=document.body.dataset.readerPage||'';
 const slug=document.body.dataset.novelSlug||'';
 const status=document.querySelector('[data-reader-status]');
-const configuredTotalPages=Number(document.body.dataset.readerTotalPages||84);
-const totalPages=Number.isFinite(configuredTotalPages)&&configuredTotalPages>0?Math.floor(configuredTotalPages):84;
+const configuredTotalPages=Number(document.body.dataset.readerTotalPages||82);
+const totalPages=Number.isFinite(configuredTotalPages)&&configuredTotalPages>0?Math.floor(configuredTotalPages):82;
 
 function setStatus(msg,type='info'){
   if(!status)return;
