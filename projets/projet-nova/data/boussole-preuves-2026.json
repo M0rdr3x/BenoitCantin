@@ -1,5 +1,5 @@
 {
-  "version": "1.31.0",
+  "version": "1.32.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -313,12 +313,12 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_support",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -341,19 +341,19 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_mixed_or_conditional",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "documented_mixed_or_conditional",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_mixed_or_conditional",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -374,7 +374,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -3404,9 +3404,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la mesure finance explicitement, à même le budget de Santé Québec, des interventions et examens réalisés au privé sans frais pour les patients. La source ne reprend pas mot pour mot le critère de qualité de q10, mais le recours est intégré au parcours clinique public; l’appui à la direction de q10 est suffisamment direct."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q10-party-10-20261006-02",
@@ -3426,9 +3431,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une correspondance directe : l’État achèterait par contrat des soins fournis dans des établissements privés, gratuits pour les patients, avec évaluation explicite de la qualité, de la sécurité et des résultats cliniques."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q11-party-05-20261006-01",
@@ -3448,9 +3458,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une hausse absolue importante du financement des soins et services à domicile, sans preuve que leur part relative du budget total de la santé augmenterait. Le statut partiel est maintenu."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q11-party-10-20261006-02",
@@ -3470,9 +3485,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme de nouveaux crédits et un volume annuel accru de soins à domicile, mais pas une hausse explicitement mesurée de leur part dans le budget total de la santé. Le statut partiel est maintenu."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q11-party-12-20261006-03",
@@ -3492,9 +3512,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme la bonification de 700 M$ du soutien à domicile, sans indication explicite de la part relative de ce poste dans le budget total de la santé. Le statut partiel est maintenu."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q11-party-17-20261006-04",
@@ -3514,9 +3539,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un engagement explicite d’augmenter de 50 % le budget des soins à domicile. Comme q11 porte sur la part du budget total de la santé et non seulement sur le montant du poste, le codage reste volontairement partiel."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q12-party-10-20261006-01",
@@ -3536,9 +3566,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un choix entre fournisseur public et fournisseur privé pour des soins couverts par l’État, mais seulement lorsque des conditions de délai raisonnable ou de coût sont satisfaites. Le statut conditionnel est donc maintenu."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4338,7 +4373,7 @@
         "q11": 4,
         "q12": 1
       },
-      "note": "q09 demeure unknown faute de source officielle établissant clairement que la majorité de la première ligne financée par l’État doit être fournie par des établissements publics; q10 compte deux appuis candidats au financement public de soins privés; q11 quatre correspondances candidates prudentes sur une hausse des ressources à domicile; q12 une correspondance candidate conditionnelle sur le choix public/privé.",
+      "note": "q09 demeure entièrement unknown faute de formulation officielle suffisamment exacte; q10 compte deux appuis finalisés au financement public de soins privés; q11 quatre correspondances finalisées prudentes sur une hausse des ressources à domicile sans preuve de hausse de leur part relative du budget total de la santé; q12 une correspondance finalisée conditionnelle sur le choix public/privé.",
       "evidenceRecordIds": [
         "q10-party-05-20261006-01",
         "q10-party-10-20261006-02",
@@ -4347,7 +4382,13 @@
         "q11-party-12-20261006-03",
         "q11-party-17-20261006-04",
         "q12-party-10-20261006-01"
-      ]
+      ],
+      "finalizedCountByQuestion": {
+        "q09": 0,
+        "q10": 2,
+        "q11": 4,
+        "q12": 1
+      }
     }
   ]
 }
