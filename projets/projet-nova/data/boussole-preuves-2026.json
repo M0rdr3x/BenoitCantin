@@ -1,5 +1,5 @@
 {
-  "version": "1.48.0",
+  "version": "1.49.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1440,7 +1440,7 @@
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "documented_mixed_or_conditional",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
@@ -4087,6 +4087,33 @@
         "reviewNote": "La seconde lecture confirme que le PaCQ protège explicitement les débats politiques légitimes et les manifestations pacifiques tout en excluant menaces, violence, harcèlement et intimidation ciblée. Cette distinction est très proche de q31, mais la source ne formule pas un principe général protégeant tous les propos offensants non infractionnels; le statut ambiguous est donc maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q50-party-12-20261007-01",
+      "questionId": "q50",
+      "partyId": "party-12",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://plq.org/engagements/",
+      "sourceTitle": "Parti libéral du Québec — Nos engagements — Pour nos régions",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Le Parti libéral du Québec propose de garantir un noyau de services de proximité stable et prévisible dans l’ensemble des régions, tout en instaurant une asymétrie réglementaire régionale permettant à chaque MRC de désigner trois règlements à adapter à sa réalité régionale, avec obligation pour Québec de négocier ces aménagements de bonne foi.",
+      "rationale": "q50 propose des normes provinciales de services publics uniformes d’une région à l’autre. La source libérale combine explicitement un socle commun de services dans toutes les régions avec des adaptations réglementaires régionales. Elle soutient donc une uniformité de base assortie d’exceptions territoriales, ce qui correspond à une position mixte ou conditionnelle plutôt qu’à un appui ou une opposition entière.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_explicit_regional_exception"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme les deux éléments simultanément : un noyau stable et prévisible de services de proximité dans toutes les régions, et une asymétrie réglementaire permettant à chaque MRC d’adapter trois règlements à sa réalité. Cette combinaison justifie un statut mixed/conditional pour q50."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4516,18 +4543,19 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q49": 0,
-        "q50": 0,
+        "q50": 1,
         "q51": 2,
         "q52": 0
       },
-      "note": "Recherche reprise le 7 octobre 2026 avec le même protocole pour les 22 formations. q49, q50 et q52 restent sans source officielle suffisamment exacte. q51 comprend désormais la position ambiguë du Parti Québécois (proposition budgétaire directe de 2022 non réaffirmée avec la même précision en 2026) et une position mixte/conditionnelle du Parti conservateur du Québec fondée sur sa plateforme 2026 de tables régionales dotées de pouvoirs décisionnels, notamment en développement économique, sans formulation explicite sur la part des budgets.",
+      "note": "Recherche reprise le 7 octobre 2026 avec le même protocole pour les 22 formations. q49 et q52 restent sans source officielle suffisamment exacte. q50 compte désormais une position mixte/conditionnelle du Parti libéral du Québec : son programme 2026 garantit un noyau stable de services de proximité dans l’ensemble des régions tout en permettant une asymétrie réglementaire régionale négociée par les MRC. q51 conserve les positions du Parti Québécois et du Parti conservateur du Québec.",
       "evidenceRecordIds": [
         "q51-party-17-20261006-01",
-        "q51-party-10-20261007-01"
+        "q51-party-10-20261007-01",
+        "q50-party-12-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q49": 0,
-        "q50": 0,
+        "q50": 1,
         "q51": 2,
         "q52": 0
       }
