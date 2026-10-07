@@ -1,6 +1,6 @@
 {
-  "version": "1.3.0",
-  "updated": "2026-10-06",
+  "version": "1.4.0",
+  "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
   "authority": {
@@ -172,14 +172,15 @@
       "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
       "officialSite": "https://conservateur.quebec/",
       "platformUrls": [
-        "https://conservateur.quebec/documents-officiels/"
+        "https://conservateur.quebec/documents-officiels/",
+        "https://conservateur.quebec/wp-content/uploads/2024/11/PROPOSITIONS-ADOPTEES-Revise-28-oct-2024.pdf"
       ],
       "pressReleaseUrls": [],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_platform",
-      "lastVerified": "2026-10-06",
+      "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": null
+      "notes": "La page officielle des documents 2026 et le recueil officiel de propositions adoptées ont été revérifiés le 7 octobre 2026. Le recueil sert notamment à documenter prudemment le contrôle parlementaire d’une prolongation de l’état d’urgence sanitaire au-delà de 30 jours."
     },
     {
       "id": "party-11",

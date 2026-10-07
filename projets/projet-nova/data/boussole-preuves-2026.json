@@ -1,5 +1,5 @@
 {
-  "version": "1.36.0",
+  "version": "1.37.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -934,7 +934,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -3655,6 +3655,33 @@
         "reviewNote": "La seconde lecture confirme l’engagement d’ajouter 1 000 ressources spécialisées supplémentaires dans les écoles publiques, dont des orthopédagogues, psychoéducateurs, psychologues, orthophonistes et techniciens en éducation spécialisée. La direction de q15 est directement soutenue."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q32-party-10-20261007-01",
+      "questionId": "q32",
+      "partyId": "party-10",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://conservateur.quebec/wp-content/uploads/2024/11/PROPOSITIONS-ADOPTEES-Revise-28-oct-2024.pdf",
+      "sourceTitle": "Propositions adoptées au Congrès national du Parti conservateur du Québec — Lévis, 20 et 21 novembre 2023 (révision 28 octobre 2024)",
+      "sourceDate": "2024-10-28",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_adopted_resolutions",
+      "evidenceSummary": "Le Parti conservateur du Québec propose qu’une prolongation de l’état d’urgence sanitaire au-delà de 30 jours exige l’accord de 80 % des députés de l’Assemblée nationale, renouvelé tous les 30 jours.",
+      "rationale": "La source impose explicitement un contrôle parlementaire renforcé après 30 jours, mais ne décrit pas avec la même précision les restrictions pouvant être imposées avant ce seuil ni leur adoption sans vote préalable. La correspondance avec q32 est donc réelle mais seulement partielle et conditionnelle.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la proposition officielle lie la poursuite de l’état d’urgence sanitaire au-delà de 30 jours à un vote de 80 % de l’Assemblée nationale. Elle ne suffit pas à affirmer un appui général à des restrictions sans vote préalable; le statut mixte/conditionnel et la confiance moyenne sont maintenus."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4257,7 +4284,7 @@
     },
     {
       "batchId": "liberties-q29-q32-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q29",
         "q30",
@@ -4294,15 +4321,17 @@
         "q29": 0,
         "q30": 0,
         "q31": 0,
-        "q32": 0
+        "q32": 1
       },
-      "note": "Aucune source officielle suffisamment exacte n’a été retenue pour q29 à q32. Les engagements généraux sur les droits fondamentaux, la liberté d’expression, la sécurité publique ou les moyens policiers ne sont pas convertis en positions sur les mandats judiciaires, la surveillance d’urgence, les propos offensants ou les restrictions gouvernementales d’urgence sans vote préalable.",
-      "evidenceRecordIds": [],
+      "note": "Recherche reprise le 7 octobre 2026 avec le même standard pour les 22 formations. q29 à q31 demeurent sans source officielle suffisamment exacte. Pour q32, une résolution officielle du Parti conservateur du Québec sur la prolongation de l’état d’urgence sanitaire au-delà de 30 jours établit un contrôle parlementaire renforcé; elle est codée prudemment comme correspondance mixte/conditionnelle, sans extrapoler un appui général aux restrictions sans vote préalable.",
+      "evidenceRecordIds": [
+        "q32-party-10-20261007-01"
+      ],
       "finalizedCountByQuestion": {
         "q29": 0,
         "q30": 0,
         "q31": 0,
-        "q32": 0
+        "q32": 1
       }
     },
     {
