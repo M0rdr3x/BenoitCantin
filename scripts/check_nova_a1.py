@@ -518,6 +518,8 @@ if party_corpus.is_file():
         "Preuves candidates",
         "Deuxième révision terminée",
         "Positions finalisées",
+        "Questions recherchées",
+        "researchCoverage",
         "secondIndependentReview",
         "Aucun de ces nombres ne modifie le poids d’un parti",
     ):
@@ -661,6 +663,7 @@ if evidence_matrix.is_file():
     if len(batch_ids) != len(set(batch_ids)):
         errors.append("boussole électorale: identifiant de lot de recherche dupliqué")
     referenced_record_ids = set()
+    question_batch_membership = {question_id: [] for question_id in expected_question_ids}
     required_batch_fields = {
         "batchId", "checkedAt", "questionIds", "partyIds", "scope", "sourcePolicy",
         "candidateCountByQuestion", "note", "evidenceRecordIds"
@@ -679,6 +682,9 @@ if evidence_matrix.is_file():
             errors.append(f"boussole électorale: date de lot de recherche inattendue pour {batch_id}")
         if not question_ids or len(question_ids) != len(set(question_ids)) or not set(question_ids).issubset(expected_question_ids):
             errors.append(f"boussole électorale: questions invalides dans le lot {batch_id}")
+        for question_id in question_ids:
+            if question_id in question_batch_membership:
+                question_batch_membership[question_id].append(batch_id)
         if set(party_ids) != set(matrix_party_ids) or len(party_ids) != len(matrix_party_ids):
             errors.append(f"boussole électorale: le lot {batch_id} ne couvre pas exactement les 22 formations")
         if set(counts.keys()) != set(question_ids):
@@ -725,6 +731,21 @@ if evidence_matrix.is_file():
                         f"boussole électorale: compte finalisé incohérent dans {batch_id} / {question_id}: "
                         f"{actual_finalized} preuves finalisées pour {expected_finalized} annoncées"
                     )
+
+    for question_id, memberships in question_batch_membership.items():
+        if len(memberships) == 0:
+            errors.append(f"boussole électorale: question sans lot de recherche: {question_id}")
+        elif len(memberships) > 1:
+            errors.append(
+                f"boussole électorale: question présente dans plusieurs lots de recherche: "
+                f"{question_id} ({', '.join(memberships)})"
+            )
+    unbatched_record_ids = set(record_by_id) - referenced_record_ids
+    if unbatched_record_ids:
+        errors.append(
+            "boussole électorale: preuves non rattachées à un lot de recherche: "
+            + ", ".join(sorted(unbatched_record_ids))
+        )
 
     finalized_records = {
         (r.get("questionId"), r.get("partyId")): r
