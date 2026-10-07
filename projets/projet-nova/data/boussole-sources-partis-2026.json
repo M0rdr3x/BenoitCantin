@@ -1,5 +1,5 @@
 {
-  "version": "1.13.0",
+  "version": "1.14.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -144,12 +144,14 @@
         "https://www.particanadienquebec.ca/fr",
         "https://www.particanadienquebec.ca/fr/politiques/quebec-housing-growth-act"
       ],
-      "pressReleaseUrls": [],
+      "pressReleaseUrls": [
+        "https://www.particanadienquebec.ca/fr/communiques/sept25followup"
+      ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_platform",
-      "lastVerified": "2026-10-06",
+      "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": null
+      "notes": "Sources officielles revérifiées le 7 octobre 2026. La politique du 25 septembre distingue explicitement les débats politiques légitimes et manifestations pacifiques, qui doivent être protégés, des menaces, violences, harcèlement criminel et intimidation ciblée. Elle est utilisée prudemment pour q31 sans extrapoler à tous les propos offensants licites."
     },
     {
       "id": "party-09",
