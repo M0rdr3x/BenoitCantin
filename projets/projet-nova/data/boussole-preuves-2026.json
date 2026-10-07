@@ -1,5 +1,5 @@
 {
-  "version": "1.25.0",
+  "version": "1.26.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -3821,6 +3821,56 @@
         "q62": 0,
         "q63": 1,
         "q64": 2
+      }
+    },
+    {
+      "batchId": "liberties-q29-q32-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q29",
+        "q30",
+        "q31",
+        "q32"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q29": 0,
+        "q30": 0,
+        "q31": 0,
+        "q32": 0
+      },
+      "note": "Aucune source officielle suffisamment exacte n’a été retenue pour q29 à q32. Les engagements généraux sur les droits fondamentaux, la liberté d’expression, la sécurité publique ou les moyens policiers ne sont pas convertis en positions sur les mandats judiciaires, la surveillance d’urgence, les propos offensants ou les restrictions gouvernementales d’urgence sans vote préalable.",
+      "evidenceRecordIds": [],
+      "finalizedCountByQuestion": {
+        "q29": 0,
+        "q30": 0,
+        "q31": 0,
+        "q32": 0
       }
     }
   ]
