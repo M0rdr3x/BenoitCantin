@@ -1,5 +1,5 @@
 {
-  "version": "1.66.0",
+  "version": "1.67.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1294,7 +1294,7 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "documented_support",
-        "party-06": "unknown",
+        "party-06": "documented_support",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -1322,7 +1322,7 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "documented_opposition",
-        "party-06": "unknown",
+        "party-06": "documented_opposition",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -4708,6 +4708,60 @@
         "reviewNote": "La seconde lecture confirme que le service Filon vise à accélérer les étapes d’approbation de projets miniers, que la CAQ chiffre la réduction des délais d’évaluation environnementale à neuf mois et qu’elle maintient explicitement la rigueur de l’encadrement ainsi que des normes environnementales élevées. La correspondance avec q24 est directe."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q45-party-06-20261007-01",
+      "questionId": "q45",
+      "partyId": "party-06",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://osons.quebec/?profil=quebec",
+      "sourceTitle": "Osons Québec — Nouvelle négociation Québec–Canada",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Osons Québec propose d’ouvrir une nouvelle négociation Québec–Canada avec un mandat précis sur l’autonomie et les compétences. Le programme demande notamment les pleins pouvoirs québécois en immigration et le transfert des pouvoirs législatifs, administratifs, budgétaires et de données nécessaires.",
+      "rationale": "q45 demande si le Québec devrait chercher à obtenir de nouveaux champs de compétence exclusifs du gouvernement fédéral. La proposition d’Osons Québec vise explicitement à transférer vers le Québec des pouvoirs actuellement exercés ou partagés avec le fédéral et à obtenir des pleins pouvoirs dans certains domaines. La direction d’appui à q45 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_new_exclusive_powers_from_federal"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (programme officiel 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un avis formel de renégociation, une demande de transfert de pouvoirs législatifs, administratifs et budgétaires et des pleins pouvoirs québécois en immigration. Le programme cherche donc explicitement à accroître les compétences propres du Québec au-delà du partage actuel."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q46-party-06-20261007-01",
+      "questionId": "q46",
+      "partyId": "party-06",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://osons.quebec/?profil=quebec",
+      "sourceTitle": "Osons Québec — Nouvelle négociation Québec–Canada",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Osons Québec propose qu’un avis formel de renégociation soit transmis à Ottawa dans les 100 premiers jours, puis qu’un projet d’accord demande le transfert au Québec de nouveaux pouvoirs législatifs, administratifs, budgétaires et de données dans plusieurs domaines.",
+      "rationale": "q46 propose que le partage actuel des compétences demeure le cadre de référence du Québec. Une démarche officielle visant à renégocier ce partage et à transférer de nouveaux pouvoirs au Québec rejette directement le maintien du cadre actuel comme référence inchangée. La direction est donc une opposition directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_inverse_direction_renegotiate_current_division"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (programme officiel 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le parti veut ouvrir une renégociation constitutionnelle et transférer des pouvoirs actuellement détenus ou partagés avec Ottawa. Cela s’oppose directement au maintien du partage actuel des compétences comme cadre de référence."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5051,7 +5105,7 @@
     },
     {
       "batchId": "quebec-q45-q48-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q45",
         "q46",
@@ -5085,12 +5139,12 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q45": 1,
-        "q46": 1,
+        "q45": 2,
+        "q46": 2,
         "q47": 2,
         "q48": 3
       },
-      "note": "Après seconde révision indépendante : q45 compte un appui direct; q46 une opposition directe; q47 deux appuis directs; q48 un appui et deux oppositions directes. L’indépendance n’est jamais utilisée pour inférer automatiquement q45 ou q46.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q45 compte maintenant deux appuis directs : la CAQ veut obtenir des pouvoirs supplémentaires du fédéral et Osons Québec demande une nouvelle négociation avec transfert de pouvoirs et pleins pouvoirs québécois dans certains domaines. q46 compte les deux oppositions correspondantes au maintien du partage actuel des compétences. q47 conserve deux appuis directs et q48 un appui et deux oppositions directes. L’indépendance n’est jamais utilisée comme raccourci pour coder q45 ou q46.",
       "evidenceRecordIds": [
         "q45-party-05-20261006-01",
         "q46-party-05-20261006-01",
@@ -5098,11 +5152,13 @@
         "q47-party-21-20261006-02",
         "q48-party-05-20261006-01",
         "q48-party-17-20261006-02",
-        "q48-party-21-20261006-03"
+        "q48-party-21-20261006-03",
+        "q45-party-06-20261007-01",
+        "q46-party-06-20261007-01"
       ],
       "finalizedCountByQuestion": {
-        "q45": 1,
-        "q46": 1,
+        "q45": 2,
+        "q46": 2,
         "q47": 2,
         "q48": 3
       }
