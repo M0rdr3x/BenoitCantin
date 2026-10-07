@@ -1,5 +1,5 @@
 {
-  "version": "1.17.0",
+  "version": "1.18.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -2953,6 +2953,30 @@
         "reviewNote": "La source officielle de Québec solidaire prévoit un référendum sur la constitution d’un Québec indépendant dans un premier mandat. L’objectif de souveraineté est donc explicite et incompatible avec q48."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q51-party-17-20261006-01",
+      "questionId": "q51",
+      "partyId": "party-17",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://pq.org/nouvelles/un-milliard-par-annee-pour-les-regions-decide-en-region/",
+      "sourceTitle": "Un milliard par année pour les régions, décidé en région",
+      "sourceDate": "2022-05-16",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti Québécois proposait un PQI régional bonifié de 1 G$ par année, administré avec des instances décisionnelles en région, afin de permettre aux régions de décider elles-mêmes des projets à mettre de l’avant selon leurs priorités.",
+      "rationale": "La source répond directement à q51 en liant une enveloppe de développement régional à des décisions prises avec et par des instances régionales. La source est toutefois antérieure à l’élection 2026 et doit être revalidée lors de la seconde révision contre la position actuelle du parti.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_recency_flag"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
     }
   ],
   "researchCoverage": [
@@ -3338,6 +3362,52 @@
         "q47": 2,
         "q48": 3
       }
+    },
+    {
+      "batchId": "territory-q49-q52-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q49",
+        "q50",
+        "q51",
+        "q52"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q49": 0,
+        "q50": 0,
+        "q51": 1,
+        "q52": 0
+      },
+      "note": "q49, q50 et q52 demeurent entièrement unknown faute de correspondance officielle suffisamment exacte. q51 compte une preuve candidate péquiste directe mais ancienne; elle reste non finalisable tant que sa continuité en 2026 n’est pas confirmée.",
+      "evidenceRecordIds": [
+        "q51-party-17-20261006-01"
+      ]
     }
   ]
 }
