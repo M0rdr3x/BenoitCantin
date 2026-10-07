@@ -1,5 +1,5 @@
 {
-  "version": "1.53.0",
+  "version": "1.54.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1137,7 +1137,7 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "ambiguous",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -4249,6 +4249,33 @@
         "reviewNote": "La seconde lecture confirme deux éléments simultanés : plus de choix d’établissement pour les familles et financement direct des écoles. Elle ne crée toutefois pas explicitement un mécanisme où une part accrue du financement public suit individuellement l’élève vers l’établissement choisi; le statut ambiguous est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q39-party-17-20261007-01",
+      "questionId": "q39",
+      "partyId": "party-17",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://pq.org/independance/plan-immigration/",
+      "sourceTitle": "Notre modèle en immigration",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Le Parti Québécois fixe une cible d’environ 35 000 résidents permanents par année, prévoit un moratoire sur une partie de l’immigration économique permanente provenant de l’extérieur du Québec, veut traiter rapidement la réunification familiale pour les conjoints et les enfants et fixe une cible distincte pour l’accueil des demandeurs d’asile avant l’indépendance.",
+      "rationale": "q39 propose d’augmenter la part de l’immigration permanente attribuée aux catégories humanitaires et au regroupement familial. La source traite directement de la composition de l’immigration permanente, du regroupement familial et de l’asile, et réduit parallèlement une composante économique. Elle ne dit toutefois pas explicitement que la part relative des catégories humanitaires et familiales dans l’immigration permanente devrait augmenter. La direction exacte de q39 reste donc indéterminée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_relative_share_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le plan fixe le volume permanent, modifie une composante économique, accélère la réunification familiale et fixe une cible en matière d’asile. Aucun passage ne formule cependant une hausse explicite de la part relative des catégories humanitaires et familiales au sein de l’immigration permanente; le statut ambiguous est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4509,22 +4536,23 @@
       "candidateCountByQuestion": {
         "q37": 2,
         "q38": 2,
-        "q39": 0,
+        "q39": 1,
         "q40": 2
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q37 conserve une position mixte/conditionnelle et une position ambiguë; q38 conserve deux appuis directs; q40 conserve deux appuis directs. q39 demeure entièrement unknown après revérification : des sources officielles traitent de regroupement familial, d’asile, de catégories humanitaires ou de leur traitement, mais aucune ne propose assez précisément d’augmenter leur part relative dans l’ensemble de l’immigration permanente.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q37 conserve une position mixte/conditionnelle et une position ambiguë; q38 conserve deux appuis directs; q40 conserve deux appuis directs. q39 compte désormais une correspondance ambiguë du Parti Québécois : son plan traite directement du volume permanent, réduit une composante économique, accélère la réunification familiale et fixe une cible pour l’asile, sans proposer explicitement d’augmenter la part relative des catégories humanitaires et familiales.",
       "evidenceRecordIds": [
         "q37-party-21-20261006-01",
         "q37-party-20-20261006-02",
         "q38-party-17-20261006-01",
         "q38-party-05-20261006-02",
         "q40-party-17-20261006-01",
-        "q40-party-05-20261006-02"
+        "q40-party-05-20261006-02",
+        "q39-party-17-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q37": 2,
         "q38": 2,
-        "q39": 0,
+        "q39": 1,
         "q40": 2
       }
     },
