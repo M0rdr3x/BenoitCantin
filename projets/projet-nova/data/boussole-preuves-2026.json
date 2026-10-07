@@ -1,5 +1,5 @@
 {
-  "version": "1.15.0",
+  "version": "1.16.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -2764,6 +2764,174 @@
         "reviewNote": "La seconde lecture confirme que la CAQ a fait adopter une loi définissant officiellement le modèle d’intégration, la culture commune et les fondements de la nation, soit l’inverse de la proposition de q44."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q45-party-05-20261006-01",
+      "questionId": "q45",
+      "partyId": "party-05",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/09/26/lequipe-christine-frechette-continuera-daffirmer-lautonomie-du-quebec/",
+      "sourceTitle": "L’équipe Christine Fréchette continuera d’affirmer l’autonomie du Québec",
+      "sourceDate": "2026-09-26",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_campaign_page",
+      "evidenceSummary": "L’Équipe Christine Fréchette propose d’aller chercher des pouvoirs supplémentaires auprès du gouvernement fédéral afin de renforcer l’autonomie du Québec au sein du Canada.",
+      "rationale": "La source propose explicitement d’obtenir de nouveaux pouvoirs du gouvernement fédéral; elle correspond directement à la direction de q45.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q46-party-05-20261006-01",
+      "questionId": "q46",
+      "partyId": "party-05",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/09/26/lequipe-christine-frechette-continuera-daffirmer-lautonomie-du-quebec/",
+      "sourceTitle": "L’équipe Christine Fréchette continuera d’affirmer l’autonomie du Québec",
+      "sourceDate": "2026-09-26",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_campaign_page",
+      "evidenceSummary": "La CAQ affirme que sa démarche autonomiste ne commande ni un nouveau débat référendaire ni un statu quo institutionnel et propose d’obtenir des pouvoirs supplémentaires pour le Québec.",
+      "rationale": "q46 propose de conserver le partage actuel des compétences comme cadre de référence; la source rejette explicitement le statu quo institutionnel et cherche à modifier ce partage, ce qui constitue une opposition directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q47-party-17-20261006-01",
+      "questionId": "q47",
+      "partyId": "party-17",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://pq.org/nouvelles/livre-bleu-le-parti-quebecois-presente-la-feuille-de-route-en-cinq-etapes-pour-la-constitution-du-futur-pays-du-quebec/",
+      "sourceTitle": "Livre bleu : le Parti Québécois présente la feuille de route en cinq étapes pour la constitution du futur pays du Québec",
+      "sourceDate": "2025-12-05",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti Québécois présente une feuille de route préparatoire suivant l’élection d’un gouvernement péquiste et structurée autour d’une victoire du OUI à un référendum sur l’indépendance.",
+      "rationale": "La source décrit explicitement des travaux gouvernementaux préparatoires avant un référendum sur l’indépendance; la correspondance avec q47 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q47-party-21-20261006-02",
+      "questionId": "q47",
+      "partyId": "party-21",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://quebecsolidaire.net/nouvelle/qs-veut-abaisser-le-droit-de-vote-a-16-ans",
+      "sourceTitle": "QS veut abaisser le droit de vote à 16 ans",
+      "sourceDate": "2025-10-30",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Québec solidaire annonce vouloir permettre aux 16-17 ans de participer à un référendum sur la constitution d’un Québec indépendant dans un premier mandat d’un gouvernement solidaire.",
+      "rationale": "La source prévoit explicitement la tenue d’un référendum lié à l’indépendance dans un premier mandat et une réforme préalable du droit de vote destinée à cette consultation; elle correspond directement à q47.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q48-party-05-20261006-01",
+      "questionId": "q48",
+      "partyId": "party-05",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/09/26/lequipe-christine-frechette-continuera-daffirmer-lautonomie-du-quebec/",
+      "sourceTitle": "L’équipe Christine Fréchette continuera d’affirmer l’autonomie du Québec",
+      "sourceDate": "2026-09-26",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_campaign_page",
+      "evidenceSummary": "La CAQ propose de renforcer l’autonomie du Québec au sein du Canada et précise que cette démarche ne commande pas un nouveau débat référendaire.",
+      "rationale": "La source propose explicitement de poursuivre des réformes constitutionnelles et des gains de pouvoirs sans objectif référendaire de souveraineté; elle correspond directement à q48.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q48-party-17-20261006-02",
+      "questionId": "q48",
+      "partyId": "party-17",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://pq.org/nouvelles/livre-bleu-le-parti-quebecois-presente-la-feuille-de-route-en-cinq-etapes-pour-la-constitution-du-futur-pays-du-quebec/",
+      "sourceTitle": "Livre bleu : le Parti Québécois présente la feuille de route en cinq étapes pour la constitution du futur pays du Québec",
+      "sourceDate": "2025-12-05",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti Québécois structure son projet gouvernemental autour de la préparation d’un Québec indépendant et d’une victoire du OUI à un référendum sur l’indépendance.",
+      "rationale": "q48 propose de poursuivre les réformes sans objectif de souveraineté; la source place au contraire l’indépendance au cœur de la feuille de route gouvernementale, ce qui constitue une opposition directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q48-party-21-20261006-03",
+      "questionId": "q48",
+      "partyId": "party-21",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://quebecsolidaire.net/nouvelle/qs-veut-abaisser-le-droit-de-vote-a-16-ans",
+      "sourceTitle": "QS veut abaisser le droit de vote à 16 ans",
+      "sourceDate": "2025-10-30",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Québec solidaire prévoit dans un premier mandat un référendum sur la constitution d’un Québec indépendant et souhaite préparer la participation des 16-17 ans à cette consultation.",
+      "rationale": "La démarche officielle conserve explicitement l’indépendance comme objectif politique; elle s’oppose donc directement à q48, qui propose de poursuivre les réformes sans objectif de souveraineté.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
     }
   ],
   "researchCoverage": [
@@ -3091,6 +3259,58 @@
         "q43": 3,
         "q44": 1
       }
+    },
+    {
+      "batchId": "quebec-q45-q48-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q45",
+        "q46",
+        "q47",
+        "q48"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q45": 1,
+        "q46": 1,
+        "q47": 2,
+        "q48": 3
+      },
+      "note": "Les positions autonomistes au sein du Canada et les projets souverainistes sont codés uniquement lorsqu’ils répondent directement à la formulation. L’indépendance n’est pas utilisée pour inférer automatiquement q45 ou q46.",
+      "evidenceRecordIds": [
+        "q45-party-05-20261006-01",
+        "q46-party-05-20261006-01",
+        "q47-party-17-20261006-01",
+        "q47-party-21-20261006-02",
+        "q48-party-05-20261006-01",
+        "q48-party-17-20261006-02",
+        "q48-party-21-20261006-03"
+      ]
     }
   ]
 }
