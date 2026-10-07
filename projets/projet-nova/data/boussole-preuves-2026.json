@@ -1,5 +1,5 @@
 {
-  "version": "1.9.0",
+  "version": "1.10.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -2305,6 +2305,116 @@
         "reviewNote": "La source officielle engage le PLQ à ajouter une voie dans chaque direction sur l’autoroute 30 entre Brossard et Boucherville, cite un débit de 50 000 à 85 000 véhicules par jour et juge les infrastructures existantes insuffisantes. La correspondance avec q26 est directe."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q33-party-06-20261006-01",
+      "questionId": "q33",
+      "partyId": "party-06",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://osons.quebec/",
+      "sourceTitle": "Osons Québec — Démocratie directe",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Osons Québec propose une initiative législative en deux étapes : 1 % des électeurs pour obtenir une analyse et une rédaction indépendantes, puis 5 % des électeurs, avec un minimum territorial, pour déclencher un vote national.",
+      "rationale": "La source établit explicitement un seuil légal de signatures citoyennes qui déclenche un vote national; elle correspond directement au mécanisme décrit par q33.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q33-party-03-20261006-02",
+      "questionId": "q33",
+      "partyId": "party-03",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://democratiedirectequebec.com/Prevost.aspx",
+      "sourceTitle": "Prévost — Démocratie Directe Québec",
+      "sourceDate": "2026-08-19",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Démocratie Directe Québec propose un référendum d’initiative citoyenne permettant de proposer, amender ou abroger une loi.",
+      "rationale": "La source soutient clairement le principe d’un référendum déclenché par l’initiative citoyenne, mais la page consultée ne documente pas le seuil de pétition ni le caractère juridiquement obligatoire du déclenchement formulé par q33.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_partial"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q33-party-21-20261006-03",
+      "questionId": "q33",
+      "partyId": "party-21",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://quebecsolidaire.net/theme/independance",
+      "sourceTitle": "Québec solidaire va bâtir un pays pour tout le monde",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Québec solidaire s’engage à créer des mécanismes de référendums d’initiative populaire afin que la démocratie ne s’exerce pas seulement lors des élections.",
+      "rationale": "La source soutient explicitement l’initiative référendaire populaire, mais ne précise pas sur cette page le seuil de pétition ni qu’un seuil atteint déclencherait obligatoirement un référendum provincial.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_partial"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q35-party-06-20261006-01",
+      "questionId": "q35",
+      "partyId": "party-06",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://osons.quebec/",
+      "sourceTitle": "Osons Québec — Démocratie directe",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Osons Québec propose qu’un député puisse être rappelé après 12 mois de mandat et avant les six derniers mois si une pétition atteint 25 % des électeurs de la circonscription en 90 jours, suivie d’une élection partielle.",
+      "rationale": "La proposition établit explicitement une procédure de révocation déclenchée par les électeurs de la circonscription avant la fin du mandat; elle correspond directement à q35.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q35-party-03-20261006-02",
+      "questionId": "q35",
+      "partyId": "party-03",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://democratiedirectequebec.com/Prevost.aspx",
+      "sourceTitle": "Prévost — Démocratie Directe Québec",
+      "sourceDate": "2026-08-19",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Démocratie Directe Québec propose le rappel d’un élu avant la fin de son mandat et affirme qu’un député qui trahit son mandat doit pouvoir être renvoyé par ses électeurs avant la fin des quatre ans.",
+      "rationale": "La source soutient explicitement une procédure de rappel par les électeurs avant la fin du mandat; la direction correspond directement à q35.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
     }
   ],
   "researchCoverage": [
@@ -2462,6 +2572,56 @@
         "q27": 0,
         "q28": 0
       }
+    },
+    {
+      "batchId": "democracy-q33-q36-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q33",
+        "q34",
+        "q35",
+        "q36"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q33": 3,
+        "q34": 0,
+        "q35": 2,
+        "q36": 0
+      },
+      "note": "q33 retient une correspondance exacte et deux correspondances partielles sur l’initiative référendaire; q35 retient deux mécanismes explicites de rappel d’un député. q34 et q36 demeurent unknown faute de formulation officielle exacte.",
+      "evidenceRecordIds": [
+        "q33-party-06-20261006-01",
+        "q33-party-03-20261006-02",
+        "q33-party-21-20261006-03",
+        "q35-party-06-20261006-01",
+        "q35-party-03-20261006-02"
+      ]
     }
   ]
 }

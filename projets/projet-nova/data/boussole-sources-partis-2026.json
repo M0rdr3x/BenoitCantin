@@ -55,13 +55,16 @@
       "entityType": "authorized_provincial_party",
       "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
       "officialSite": "https://democratiedirectequebec.com/",
-      "platformUrls": [],
+      "platformUrls": [
+        "https://democratiedirectequebec.com/",
+        "https://democratiedirectequebec.com/Prevost.aspx"
+      ],
       "pressReleaseUrls": [],
       "legislativeRecordUrls": [],
-      "verificationStatus": "verified_official_site",
+      "verificationStatus": "verified_official_site_and_2026_program",
       "lastVerified": "2026-10-06",
-      "usableForPositionCoding": false,
-      "notes": null
+      "usableForPositionCoding": true,
+      "notes": "Le programme public 2026 présente explicitement le vote de circonscription, le référendum d’initiative citoyenne et le rappel d’un élu avant la fin du mandat; les pages de circonscription reprennent les mêmes engagements et indiquent une mise à jour du 19 août 2026."
     },
     {
       "id": "party-04",
