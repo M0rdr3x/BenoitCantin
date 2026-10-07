@@ -1,5 +1,5 @@
 {
-  "version": "1.44.0",
+  "version": "1.45.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -983,7 +983,7 @@
       "statuses": {
         "party-01": "unknown",
         "party-02": "unknown",
-        "party-03": "unknown",
+        "party-03": "ambiguous",
         "party-04": "unknown",
         "party-05": "unknown",
         "party-06": "unknown",
@@ -1039,10 +1039,10 @@
       "statuses": {
         "party-01": "unknown",
         "party-02": "unknown",
-        "party-03": "unknown",
+        "party-03": "documented_opposition",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "documented_opposition",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -3871,6 +3871,87 @@
         "reviewNote": "La seconde lecture confirme deux éléments concordants : densifier particulièrement autour du transport collectif et soutenir l’action municipale contre l’étalement. Le document ne précise pas que les municipalités devraient recevoir un pouvoir juridique nouveau ou accru pour augmenter cette densité; le statut mixte ou conditionnel est donc conservé."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q34-party-03-20261007-01",
+      "questionId": "q34",
+      "partyId": "party-03",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://democratiedirectequebec.com/Prevost.aspx",
+      "sourceTitle": "Prévost — Démocratie Directe Québec",
+      "sourceDate": "2026-08-19",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Démocratie Directe Québec propose le référendum d’initiative citoyenne pour proposer, amender ou abroger une loi et affirme que lorsque la consultation tranche, le vote de l’élu doit suivre le résultat.",
+      "rationale": "La source confère un rôle décisionnel direct aux citoyens pendant le mandat et limite l’autonomie représentative de l’élu lorsque la consultation tranche. Elle est donc pertinente pour q34, mais ne précise pas que les décisions de politique publique devraient généralement ou fréquemment être soumises à référendum; le terme « normalement » de q34 empêche de conclure à une opposition directe.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_frequency_uncertainty"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme l’existence d’un référendum d’initiative citoyenne et le principe selon lequel le vote de l’élu suit une consultation tranchée. La source ne permet toutefois pas de déterminer ce qui demeurerait la règle normale pour l’ensemble des décisions publiques pendant un mandat; le statut ambiguous est maintenu."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q36-party-03-20261007-01",
+      "questionId": "q36",
+      "partyId": "party-03",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://democratiedirectequebec.com/Prevost.aspx",
+      "sourceTitle": "Prévost — Démocratie Directe Québec",
+      "sourceDate": "2026-08-19",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Démocratie Directe Québec affirme explicitement qu’un député qui trahit son mandat doit pouvoir être renvoyé par ses électeurs avant la fin des quatre ans et inclut le rappel d’un élu dans son référendum d’initiative citoyenne.",
+      "rationale": "q36 propose qu’une durée fixe de mandat empêche normalement la révocation entre deux élections sauf incapacité ou infraction. La source revendique explicitement le rappel politique d’un député par ses électeurs avant la fin du mandat; elle s’oppose directement à q36.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_opposition_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source autorise explicitement le renvoi d’un député par ses électeurs avant la fin des quatre ans pour un motif politique lié au mandat, et non seulement en cas d’incapacité ou d’infraction. L’opposition à q36 est directe."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q36-party-06-20261007-02",
+      "questionId": "q36",
+      "partyId": "party-06",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://osons.quebec/",
+      "sourceTitle": "Osons Québec — Démocratie directe",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Osons Québec prévoit qu’un député puisse être rappelé après 12 mois de mandat et avant les six derniers mois lorsqu’une pétition atteint 25 % des électeurs de la circonscription en 90 jours, avec élection partielle si le seuil est atteint.",
+      "rationale": "Le mécanisme permet explicitement une révocation politique d’un député pendant le mandat, au-delà des exceptions d’incapacité ou d’infraction prévues par q36. Il constitue donc une opposition directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_opposition_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un rappel électoral encadré mais bien disponible avant la fin du mandat, sur pétition de 25 % des électeurs. Cette possibilité contredit directement le principe d’interdiction de révocation politique formulé par q36."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4034,7 +4115,7 @@
     },
     {
       "batchId": "democracy-q33-q36-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q33",
         "q34",
@@ -4069,23 +4150,26 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q33": 3,
-        "q34": 0,
+        "q34": 1,
         "q35": 2,
-        "q36": 0
+        "q36": 2
       },
-      "note": "q33 compte une position d’appui directe et deux positions mixtes/conditionnelles après seconde révision; q35 compte deux appuis directs. q34 et q36 demeurent entièrement unknown faute de formulation officielle exacte.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q33 conserve trois positions finalisées. q34 compte désormais une correspondance ambiguë de Démocratie Directe Québec : la consultation et le référendum d’initiative citoyenne limitent l’autonomie représentative, sans établir ce qui devrait normalement être soumis à référendum. q35 conserve deux appuis directs. q36 compte désormais deux oppositions directes, Démocratie Directe Québec et Osons Québec, puisque les deux formations prévoient explicitement le rappel d’un député avant la fin du mandat.",
       "evidenceRecordIds": [
         "q33-party-06-20261006-01",
         "q33-party-03-20261006-02",
         "q33-party-21-20261006-03",
         "q35-party-06-20261006-01",
-        "q35-party-03-20261006-02"
+        "q35-party-03-20261006-02",
+        "q34-party-03-20261007-01",
+        "q36-party-03-20261007-01",
+        "q36-party-06-20261007-02"
       ],
       "finalizedCountByQuestion": {
         "q33": 3,
-        "q34": 0,
+        "q34": 1,
         "q35": 2,
-        "q36": 0
+        "q36": 2
       }
     },
     {
