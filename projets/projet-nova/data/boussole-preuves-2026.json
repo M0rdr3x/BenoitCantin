@@ -1,5 +1,5 @@
 {
-  "version": "1.28.0",
+  "version": "1.29.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -3304,6 +3304,72 @@
         "reviewNote": "La source officielle oppose une baisse générale de l’impôt des sociétés à la sélection discrétionnaire de bénéficiaires de subventions, sans engagement explicite à remplacer tous les programmes d’aide sectoriels. La correspondance avec q04 demeure partielle."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q05-party-21-20261006-01",
+      "questionId": "q05",
+      "partyId": "party-21",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://quebecsolidaire.net/calculatrice",
+      "sourceTitle": "Calculatrice solidaire — Réforme de la fiscalité",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_tool",
+      "evidenceSummary": "La calculatrice officielle de Québec solidaire indique une réforme de l’impôt sur le revenu avec de nouveaux paliers; l’impact fiscal devient négatif pour les revenus élevés, notamment à partir de 125 000 $, et augmente fortement avec le revenu.",
+      "rationale": "La source démontre clairement une hausse de la charge d’impôt sur le revenu pour les revenus élevés, mais ne relie pas à elle seule cette hausse précisément à une augmentation de la redistribution. La correspondance avec q05 est donc partielle.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q06-party-10-20261006-01",
+      "questionId": "q06",
+      "partyId": "party-10",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/recompenser-le-travail-avec-des-baisses-dimpots-historiques-11-166-par-menage-moyen/",
+      "sourceTitle": "Récompenser le travail avec des baisses d’impôts historiques : 11 166 $ par ménage moyen",
+      "sourceDate": "2026-08-28",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti conservateur du Québec propose une baisse importante de l’impôt sur le revenu des particuliers, notamment par une hausse du montant personnel de base, et indique que des économies de dépenses publiques financeront cette baisse.",
+      "rationale": "La source appuie directement la réduction de l’impôt sur le revenu des particuliers et assume qu’elle s’accompagne d’une réduction des ressources consacrées à certaines dépenses de l’État; la correspondance avec q06 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q07-party-05-20261006-01",
+      "questionId": "q07",
+      "partyId": "party-05",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/08/30/lequipe-christine-frechette-presente-un-cadre-financier-responsable-pour-faire-avancer-le-quebec/",
+      "sourceTitle": "L’Équipe Christine Fréchette présente un cadre financier responsable, pour faire avancer le Québec",
+      "sourceDate": "2026-08-30",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_campaign_page",
+      "evidenceSummary": "Le cadre financier de l’Équipe Christine Fréchette maintient un retour à l’équilibre budgétaire seulement en 2029-2030 tout en augmentant le Plan québécois des infrastructures de 13 G$, à 180 G$ sur la période.",
+      "rationale": "La source montre l’acceptation d’investissements d’infrastructure importants pendant une période qui demeure déficitaire, mais elle ne justifie pas explicitement ces déficits par la longue durée de vie des actifs. La correspondance avec q07 est donc partielle.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
     }
   ],
   "researchCoverage": [
@@ -4007,6 +4073,54 @@
         "q03": 1,
         "q04": 1
       }
+    },
+    {
+      "batchId": "tax-q05-q08-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q05": 1,
+        "q06": 1,
+        "q07": 1,
+        "q08": 0
+      },
+      "note": "q05 compte une correspondance candidate partielle de Québec solidaire; q06 un appui candidat direct du Parti conservateur du Québec; q07 une correspondance candidate partielle de l’Équipe Christine Fréchette/CAQ; q08 demeure entièrement unknown faute de source officielle répondant à la formulation exacte.",
+      "evidenceRecordIds": [
+        "q05-party-21-20261006-01",
+        "q06-party-10-20261006-01",
+        "q07-party-05-20261006-01"
+      ]
     }
   ]
 }
