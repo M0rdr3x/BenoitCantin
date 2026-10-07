@@ -1,5 +1,5 @@
 {
-  "version": "1.26.0",
+  "version": "1.27.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -3223,6 +3223,72 @@
         "reviewNote": "La seconde lecture confirme un engagement explicite à améliorer le partage sécurisé des données entre ministères, mais ni l’automaticité ni la restriction au service déjà demandé par le citoyen ne sont précisées. Le statut ambiguous est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q01-party-05-20261006-01",
+      "questionId": "q01",
+      "partyId": "party-05",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/09/21/lequipe-frechette-mise-sur-les-forces-du-quebec-pour-batir-une-nation-plus-autonome-et-plus-forte/",
+      "sourceTitle": "L’Équipe Fréchette mise sur les forces du Québec pour bâtir une nation plus autonome et plus forte",
+      "sourceDate": "2026-09-21",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_campaign_page",
+      "evidenceSummary": "L’Équipe Christine Fréchette annonce plus de 1,2 G$ d’interventions ciblées et prévoit de recentrer les interventions d’Investissement Québec sur les secteurs stratégiques et les situations où le marché privé ne peut agir seul.",
+      "rationale": "La source lie explicitement des interventions financières ciblées à des secteurs stratégiques désignés par l’État. La correspondance avec q01 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q03-party-05-20261006-01",
+      "questionId": "q03",
+      "partyId": "party-05",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/06/18/investir-dans-le-repreneuriat-pour-batir-lavenir-du-quebec/",
+      "sourceTitle": "Investir dans le repreneuriat pour bâtir l’avenir du Québec",
+      "sourceDate": "2026-06-18",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_government_page",
+      "evidenceSummary": "Le Fonds pour la croissance des entreprises québécoises, géré par Investissement Québec à titre de mandataire du gouvernement, permet des interventions sous forme de capitaux propres dans des entreprises stratégiques ou à fort potentiel de croissance.",
+      "rationale": "La source confirme que l’État peut prendre des participations en capitaux propres dans certaines entreprises stratégiques, mais le critère est plus large et différent de la formulation exacte de q03 fondée sur un secteur considéré essentiel. La correspondance est donc conditionnelle/partielle.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q04-party-10-20261006-01",
+      "questionId": "q04",
+      "partyId": "party-10",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/eric-duhaime-propose-une-baisse-dimpot-de-59-pour-les-entreprises/",
+      "sourceTitle": "Éric Duhaime propose une baisse d’impôt de 59 % pour les entreprises",
+      "sourceDate": "2026-08-27",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Le Parti conservateur du Québec propose une forte baisse générale du taux d’impôt des sociétés et oppose explicitement cette approche aux subventions où le gouvernement choisit des entreprises gagnantes et perdantes.",
+      "rationale": "La source privilégie clairement une règle fiscale générale plutôt que la sélection discrétionnaire de bénéficiaires de subventions, mais ne dit pas que tous les programmes sectoriels seraient remplacés par cette règle. La correspondance avec q04 est donc partielle.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
     }
   ],
   "researchCoverage": [
@@ -3872,6 +3938,54 @@
         "q31": 0,
         "q32": 0
       }
+    },
+    {
+      "batchId": "economy-q01-q04-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q01": 1,
+        "q02": 0,
+        "q03": 1,
+        "q04": 1
+      },
+      "note": "q01 compte un appui candidat direct de l’Équipe Christine Fréchette/CAQ; q03 et q04 comptent des correspondances candidates partielles; q02 demeure entièrement unknown faute de formulation officielle suffisamment exacte sur l’entrée de nouvelles entreprises dans les secteurs actuellement réglementés.",
+      "evidenceRecordIds": [
+        "q01-party-05-20261006-01",
+        "q03-party-05-20261006-01",
+        "q04-party-10-20261006-01"
+      ]
     }
   ]
 }
