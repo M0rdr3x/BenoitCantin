@@ -1,5 +1,5 @@
 {
-  "version": "1.30.0",
+  "version": "1.32.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -313,12 +313,12 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_support",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -341,19 +341,19 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_mixed_or_conditional",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "documented_mixed_or_conditional",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_mixed_or_conditional",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -374,7 +374,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -3385,6 +3385,195 @@
         "reviewNote": "Le cadre officiel maintient le retour à l’équilibre seulement en 2029-2030 tout en augmentant fortement les investissements d’infrastructure dès maintenant. Il démontre l’acceptation d’investir pendant une période déficitaire, mais ne justifie pas explicitement ce choix par la durée de vie pluridécennale des actifs."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q10-party-05-20261006-01",
+      "questionId": "q10",
+      "partyId": "party-05",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/08/31/lequipe-frechette-accelerera-lacces-aux-soins-pour-reduire-les-listes-dattente/",
+      "sourceTitle": "L’Équipe Fréchette accélérera l’accès aux soins pour réduire les listes d’attente",
+      "sourceDate": "2026-08-31",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_campaign_page",
+      "evidenceSummary": "L’Équipe Christine Fréchette propose de financer, à même le budget de Santé Québec, des interventions et examens effectués dans des cliniques privées, sans frais pour les patients, lorsque ces ressources permettent d’accélérer l’accès.",
+      "rationale": "La source appuie directement le financement public de soins fournis au privé. La condition de qualité n’est pas formulée dans les mêmes mots que q10, mais la mesure prévoit une continuité clinique et un référencement par le réseau public; la direction de q10 est clairement soutenue.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la mesure finance explicitement, à même le budget de Santé Québec, des interventions et examens réalisés au privé sans frais pour les patients. La source ne reprend pas mot pour mot le critère de qualité de q10, mais le recours est intégré au parcours clinique public; l’appui à la direction de q10 est suffisamment direct."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q10-party-10-20261006-02",
+      "questionId": "q10",
+      "partyId": "party-10",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/le-pcq-propose-quatre-hopitaux-finances-par-le-prive-et-accessibles-avec-la-carte-dassurance-maladie/",
+      "sourceTitle": "Le PCQ propose quatre hôpitaux financés par le privé et accessibles avec la carte d’assurance maladie",
+      "sourceDate": "2026-10-01",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti conservateur du Québec propose que l’État achète par contrat des soins fournis dans des hôpitaux privés, gratuits pour les patients, avec évaluation de la qualité, de la sécurité et des résultats cliniques.",
+      "rationale": "La source correspond directement à q10 : financement public de soins privés, prestataire qualifié et contrôle explicite de la qualité et de la sécurité.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une correspondance directe : l’État achèterait par contrat des soins fournis dans des établissements privés, gratuits pour les patients, avec évaluation explicite de la qualité, de la sécurité et des résultats cliniques."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q11-party-05-20261006-01",
+      "questionId": "q11",
+      "partyId": "party-05",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/08/29/lequipe-christine-frechette-investira-1-g-en-soutien-a-domicile/",
+      "sourceTitle": "L’Équipe Christine Fréchette investira 1 G$ en soutien à domicile",
+      "sourceDate": "2026-08-29",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_campaign_page",
+      "evidenceSummary": "L’Équipe Christine Fréchette propose 1 G$ additionnel sur quatre ans en soutien à domicile, pour atteindre 400 M$ de plus par année à la fin du mandat.",
+      "rationale": "La source prévoit clairement une hausse des ressources consacrées aux soins et services à domicile, mais ne précise pas explicitement que leur part relative dans l’ensemble du budget de la santé augmentera. La correspondance avec q11 est donc partielle.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une hausse absolue importante du financement des soins et services à domicile, sans preuve que leur part relative du budget total de la santé augmenterait. Le statut partiel est maintenu."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q11-party-10-20261006-02",
+      "questionId": "q11",
+      "partyId": "party-10",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/le-pcq-propose-une-bonification-majeure-des-soins-a-domicile/",
+      "sourceTitle": "Le PCQ propose une bonification majeure des soins à domicile",
+      "sourceDate": "2026-09-24",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti conservateur du Québec propose 625 M$ de nouveaux crédits sur quatre ans et 6,1 millions d’heures annuelles supplémentaires de soins et services à domicile d’ici 2030.",
+      "rationale": "La source augmente explicitement les crédits et volumes de soins à domicile, mais ne formule pas la mesure comme une hausse de la part relative du budget total de la santé. La correspondance avec q11 est donc partielle.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme de nouveaux crédits et un volume annuel accru de soins à domicile, mais pas une hausse explicitement mesurée de leur part dans le budget total de la santé. Le statut partiel est maintenu."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q11-party-12-20261006-03",
+      "questionId": "q11",
+      "partyId": "party-12",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://plq.org/communique/le-parti-liberal-du-quebec-veut-donner-plus-de-services-a-domicile-et-un-meilleur-soutien-pour-les-personnes-proches-aidantes/",
+      "sourceTitle": "Le Parti libéral du Québec veut donner plus de services à domicile et un meilleur soutien pour les personnes proches aidantes",
+      "sourceDate": "2026-09-11",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti libéral du Québec propose de bonifier de 700 M$ le soutien à domicile pour augmenter les services offerts directement chez les personnes.",
+      "rationale": "La hausse du financement à domicile est explicite, mais la source ne précise pas la part relative de ce poste dans le budget total de la santé. La correspondance avec q11 demeure partielle.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme la bonification de 700 M$ du soutien à domicile, sans indication explicite de la part relative de ce poste dans le budget total de la santé. Le statut partiel est maintenu."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q11-party-17-20261006-04",
+      "questionId": "q11",
+      "partyId": "party-17",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://pq.org/nouvelles/le-parti-quebecois-presente-son-plan-pour-le-soutien-a-domicile-des-aines/",
+      "sourceTitle": "Le Parti Québécois présente son Plan pour le soutien à domicile des aînés",
+      "sourceDate": "2026-09-07",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti Québécois propose d’augmenter de 50 % le budget consacré aux soins à domicile.",
+      "rationale": "L’engagement est particulièrement explicite sur une hausse du budget des soins à domicile, mais ne fixe pas directement leur part relative dans l’ensemble du budget de la santé. Par rigueur, q11 reste codée comme correspondance partielle.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un engagement explicite d’augmenter de 50 % le budget des soins à domicile. Comme q11 porte sur la part du budget total de la santé et non seulement sur le montant du poste, le codage reste volontairement partiel."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q12-party-10-20261006-01",
+      "questionId": "q12",
+      "partyId": "party-10",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/le-pcq-propose-quatre-hopitaux-finances-par-le-prive-et-accessibles-avec-la-carte-dassurance-maladie/",
+      "sourceTitle": "Le PCQ propose quatre hôpitaux financés par le privé et accessibles avec la carte d’assurance maladie",
+      "sourceDate": "2026-10-01",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti conservateur du Québec affirme qu’un patient devrait pouvoir consulter un autre prestataire qualifié, notamment privé, avec sa carte d’assurance maladie lorsque le réseau public ne peut le soigner dans un délai raisonnable ou que le privé offre les soins à moindre coût.",
+      "rationale": "La source soutient un choix entre fournisseurs publics et privés pour des soins couverts par l’État, mais ce choix dépend de conditions de délai ou de coût. La correspondance avec q12 est donc conditionnelle.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un choix entre fournisseur public et fournisseur privé pour des soins couverts par l’État, mais seulement lorsque des conditions de délai raisonnable ou de coût sont satisfaites. Le statut conditionnel est donc maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4141,6 +4330,64 @@
         "q06": 1,
         "q07": 1,
         "q08": 0
+      }
+    },
+    {
+      "batchId": "health-q09-q12-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q09",
+        "q10",
+        "q11",
+        "q12"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q09": 0,
+        "q10": 2,
+        "q11": 4,
+        "q12": 1
+      },
+      "note": "q09 demeure entièrement unknown faute de formulation officielle suffisamment exacte; q10 compte deux appuis finalisés au financement public de soins privés; q11 quatre correspondances finalisées prudentes sur une hausse des ressources à domicile sans preuve de hausse de leur part relative du budget total de la santé; q12 une correspondance finalisée conditionnelle sur le choix public/privé.",
+      "evidenceRecordIds": [
+        "q10-party-05-20261006-01",
+        "q10-party-10-20261006-02",
+        "q11-party-05-20261006-01",
+        "q11-party-10-20261006-02",
+        "q11-party-12-20261006-03",
+        "q11-party-17-20261006-04",
+        "q12-party-10-20261006-01"
+      ],
+      "finalizedCountByQuestion": {
+        "q09": 0,
+        "q10": 2,
+        "q11": 4,
+        "q12": 1
       }
     }
   ]
