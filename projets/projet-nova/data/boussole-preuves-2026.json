@@ -1,5 +1,5 @@
 {
-  "version": "1.16.0",
+  "version": "1.17.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1293,7 +1293,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -1321,7 +1321,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_opposition",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -1361,11 +1361,11 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_support",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_support",
         "party-nova": "unknown"
       }
     },
@@ -1377,7 +1377,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -1389,11 +1389,11 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_opposition",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_opposition",
         "party-nova": "unknown"
       }
     },
@@ -2783,11 +2783,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la CAQ veut explicitement obtenir des pouvoirs supplémentaires du gouvernement fédéral afin de renforcer l’autonomie du Québec au sein du Canada. La correspondance avec q45 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q46-party-05-20261006-01",
@@ -2807,11 +2810,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme le rejet explicite du statu quo institutionnel et la volonté de modifier le partage actuel des pouvoirs. Cela s’oppose directement à q46."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q47-party-17-20261006-01",
@@ -2831,11 +2837,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une feuille de route gouvernementale préparant la transition vers l’indépendance autour d’une victoire du OUI à un référendum. La correspondance avec q47 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q47-party-21-20261006-02",
@@ -2855,11 +2864,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que Québec solidaire prévoit explicitement un référendum sur la constitution d’un Québec indépendant dans un premier mandat et une mesure préparatoire sur le droit de vote. La correspondance avec q47 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q48-party-05-20261006-01",
@@ -2879,11 +2891,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une stratégie d’autonomie et de gains de pouvoirs au sein du Canada sans nouveau débat référendaire. La correspondance avec q48 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q48-party-17-20261006-02",
@@ -2903,11 +2918,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la feuille de route du Parti Québécois place l’indépendance et un référendum gagnant au cœur de son projet gouvernemental, soit l’inverse de q48."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q48-party-21-20261006-03",
@@ -2927,11 +2945,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que Québec solidaire maintient explicitement comme objectif un référendum sur la constitution d’un Québec indépendant dans un premier mandat, soit l’inverse de q48."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -3301,7 +3322,7 @@
         "q47": 2,
         "q48": 3
       },
-      "note": "Les positions autonomistes au sein du Canada et les projets souverainistes sont codés uniquement lorsqu’ils répondent directement à la formulation. L’indépendance n’est pas utilisée pour inférer automatiquement q45 ou q46.",
+      "note": "Après seconde révision indépendante : q45 compte un appui direct CAQ; q46 une opposition directe CAQ; q47 deux appuis directs PQ/QS; q48 un appui CAQ et deux oppositions PQ/QS. Aucune position n’est inférée uniquement à partir d’une étiquette autonomiste ou souverainiste.",
       "evidenceRecordIds": [
         "q45-party-05-20261006-01",
         "q46-party-05-20261006-01",
@@ -3310,7 +3331,13 @@
         "q48-party-05-20261006-01",
         "q48-party-17-20261006-02",
         "q48-party-21-20261006-03"
-      ]
+      ],
+      "finalizedCountByQuestion": {
+        "q45": 1,
+        "q46": 1,
+        "q47": 2,
+        "q48": 3
+      }
     }
   ]
 }
