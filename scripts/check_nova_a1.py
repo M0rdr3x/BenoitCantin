@@ -596,6 +596,29 @@ if evidence_matrix.is_file():
     expected_question_ids = {q.get("id") for q in questions}
     if {row.get("questionId") for row in matrix_questions} != expected_question_ids:
         errors.append("boussole électorale: matrice de preuves désalignée avec les 64 questions")
+
+    binding = evidence.get("questionnaireBinding") or {}
+    if binding.get("questionnaireVersion") != compass.get("version"):
+        errors.append("boussole électorale: version du questionnaire non liée au corpus de preuves")
+    binding_rules = binding.get("rules") or {}
+    for key in (
+        "exactQuestionTextBoundToCorpus",
+        "textChangeRequiresQuestionnaireVersionBump",
+        "textChangeRequiresEvidenceRevalidation",
+        "textChangeRequiresSecondIndependentReview",
+    ):
+        if binding_rules.get(key) is not True:
+            errors.append(f"boussole électorale: règle de verrou sémantique absente ou fausse: {key}")
+    bound_question_texts = binding.get("questionTexts") or {}
+    if set(bound_question_texts.keys()) != expected_question_ids:
+        errors.append("boussole électorale: le verrou sémantique doit contenir exactement les 64 questions")
+    for question in questions:
+        question_id = question.get("id")
+        if bound_question_texts.get(question_id) != question.get("text"):
+            errors.append(
+                f"boussole électorale: dérive sémantique détectée pour {question_id}; "
+                "réviser le corpus avant de modifier la formulation"
+            )
     for row in matrix_questions:
         statuses = row.get("statuses") or {}
         if set(statuses.keys()) != set(matrix_party_ids):
