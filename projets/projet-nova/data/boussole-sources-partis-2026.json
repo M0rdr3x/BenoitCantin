@@ -1,5 +1,5 @@
 {
-  "version": "1.19.0",
+  "version": "1.20.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -186,13 +186,14 @@
         "https://conservateur.quebec/blog/ressources/un-nouveau-modele-detat-axe-sur-les-gouvernements-de-proximite-pour-rapprocher-les-decisions-du-citoyen/",
         "https://conservateur.quebec/blog/ressources/eric-duhaime-veut-collaborer-avec-les-nations-autochtones-aux-projets-de-developpement-economique/",
         "https://conservateur.quebec/blog/ressources/le-pcq-veut-redonner-du-pouvoir-aux-travailleurs-syndiques/",
-        "https://conservateur.quebec/blog/ressources/le-pcq-veut-offrir-a-chaque-eleve-un-parcours-qui-lui-ressemble/"
+        "https://conservateur.quebec/blog/ressources/le-pcq-veut-offrir-a-chaque-eleve-un-parcours-qui-lui-ressemble/",
+        "https://conservateur.quebec/blog/ressources/le-pcq-sengage-a-faire-un-grand-menage-dans-les-depenses-publiques-sans-couper-dans-les-services-publics/"
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_platform",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant la plateforme éducation du 12 septembre. Pour q13, plus de liberté aux écoles et plus de pouvoirs sur l’offre de programmes restent insuffisants pour établir une opposition directe à un programme national plus uniforme. Pour q16, le libre choix d’école et le financement direct des établissements ne suffisent pas à établir un financement public portable suivant individuellement l’élève."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les plateformes éducation, travail, autonomie, Autochtones et le plan de contrôle des dépenses. Pour q08, le PCQ vise le déficit zéro tout en permettant un nouveau programme s’il est compensé par une économie équivalente; ce mécanisme est codé comme position mixte/conditionnelle plutôt qu’un appui à la séquence stricte « équilibre d’abord »."
     },
     {
       "id": "party-11",
