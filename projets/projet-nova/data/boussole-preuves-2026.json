@@ -1,5 +1,5 @@
 {
-  "version": "1.55.0",
+  "version": "1.56.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1210,7 +1210,7 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "documented_support",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -4303,6 +4303,33 @@
         "reviewNote": "La seconde lecture confirme deux règles coexistantes : nouveaux programmes permis seulement avec une économie équivalente et contrôle renforcé des dépenses jusqu’au déficit zéro. Le PCQ ne conditionne donc pas tout nouveau programme à l’atteinte préalable de l’équilibre; le statut mixed/conditional est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q42-party-06-20261007-01",
+      "questionId": "q42",
+      "partyId": "party-06",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://osons.quebec/",
+      "sourceTitle": "Osons Québec — Faire rayonner la culture québécoise",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Osons Québec prévoit un soutien public prévisible aux créateurs, institutions, festivals et acteurs culturels locaux et régionaux. Le programme précise que l’aide culturelle est évaluée notamment selon la diversité de l’offre, l’accès du public, le rayonnement et les conditions des créateurs, sans contrôle politique du contenu.",
+      "rationale": "q42 demande si les programmes culturels financés par le Québec devraient pouvoir soutenir des expressions culturelles qui ne se rattachent pas à l’identité historique francophone. En faisant de la diversité de l’offre un critère explicite d’aide culturelle et en excluant le contrôle politique du contenu, la source établit que l’admissibilité au financement n’est pas limitée aux seules expressions rattachées à cette identité. La correspondance avec la direction de q42 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le programme lie explicitement l’aide culturelle à la diversité de l’offre et précise l’absence de contrôle politique du contenu. La politique valorise aussi la culture québécoise et son rayonnement francophone, mais elle ne restreint pas l’admissibilité des expressions culturelles financées à cette seule identité; l’appui à q42 est donc maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4620,22 +4647,23 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q41": 2,
-        "q42": 0,
+        "q42": 1,
         "q43": 3,
         "q44": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q41 conserve deux correspondances partielles; q43 conserve trois appuis documentés; q44 conserve une opposition directe. q42 demeure entièrement unknown après revérification : plusieurs sources officielles financent ou valorisent la culture, l’inclusion ou l’identité québécoise, mais aucune ne formule assez précisément l’admissibilité au financement public d’expressions culturelles ne se rattachant pas à l’identité historique francophone.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q41 conserve deux correspondances partielles; q42 compte désormais un appui documenté d’Osons Québec, dont le programme prévoit une aide culturelle évaluée notamment selon la diversité de l’offre et sans contrôle politique du contenu; q43 conserve trois appuis documentés et q44 une opposition directe.",
       "evidenceRecordIds": [
         "q41-party-21-20261006-01",
         "q41-party-17-20261006-02",
         "q43-party-05-20261006-01",
         "q43-party-17-20261006-02",
         "q43-party-21-20261006-03",
-        "q44-party-05-20261006-01"
+        "q44-party-05-20261006-01",
+        "q42-party-06-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q41": 2,
-        "q42": 0,
+        "q42": 1,
         "q43": 3,
         "q44": 1
       }
