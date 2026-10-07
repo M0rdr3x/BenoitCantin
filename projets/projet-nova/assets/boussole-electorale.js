@@ -395,10 +395,21 @@
     $("#compass-start")?.focus();
   }
 
-  function renderPartyRegistry(corpus){
+  function renderPartyRegistry(corpus,evidenceCorpus){
     const host = $("#compass-parties");
     if(!host) return;
     const parties = Array.isArray(corpus.parties) ? [...corpus.parties] : [];
+    const matrixQuestions = Array.isArray(evidenceCorpus?.questions) ? evidenceCorpus.questions : [];
+    const totalQuestions = matrixQuestions.length || 64;
+    const finalizedByParty = new Map(parties.map(party => [party.id,0]));
+    for(const question of matrixQuestions){
+      const statuses = question.statuses || {};
+      for(const party of parties){
+        if((statuses[party.id] || "unknown") !== "unknown"){
+          finalizedByParty.set(party.id,(finalizedByParty.get(party.id) || 0) + 1);
+        }
+      }
+    }
     parties.sort((a,b) => String(a.name).localeCompare(String(b.name), "fr-CA"));
     host.innerHTML = parties.map(party => {
       const isFuture = party.entityType === "future_party_project";
@@ -414,7 +425,12 @@
         : candidateCount === 0
           ? "0 candidature acceptée au scrutin provincial 2026"
           : `${candidateCount} candidature${candidateCount === 1 ? "" : "s"} acceptée${candidateCount === 1 ? "" : "s"} en 2026`;
-      return `<article class="compass-party-card"><h3>${esc(party.name)}</h3><p>${esc(status)}</p><span class="compass-party-participation">${esc(participation)}</span><span>${party.comparisonEligible ? "Comparaison activée" : "Comparaison non activée — données à sourcer"}</span></article>`;
+      const finalized = finalizedByParty.get(party.id) || 0;
+      const documentary = `${finalized}/${totalQuestions} position${finalized === 1 ? "" : "s"} finalisée${finalized === 1 ? "" : "s"}`;
+      const comparison = party.comparisonEligible
+        ? "Comparaison publique activée"
+        : "Comparaison publique non activée";
+      return `<article class="compass-party-card"><h3>${esc(party.name)}</h3><p>${esc(status)}</p><span class="compass-party-participation">${esc(participation)}</span><span class="compass-party-documentary">${esc(documentary)}</span><span class="compass-party-comparison">${esc(comparison)}</span></article>`;
     }).join("");
   }
 
@@ -625,7 +641,7 @@
       const [partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus] = await Promise.all([
         partyResponse.json(),sourceResponse.json(),evidenceResponse.json(),questionResponse.json()
       ]);
-      renderPartyRegistry(partyCorpus);
+      renderPartyRegistry(partyCorpus,evidenceCorpus);
       renderDocumentaryStatus(partyCorpus,sourceCorpus,evidenceCorpus);
       renderEvidenceExplorer(questionCorpus,partyCorpus,evidenceCorpus);
     }catch(error){

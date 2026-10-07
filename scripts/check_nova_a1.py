@@ -361,8 +361,8 @@ if compass_page.is_file():
         'id="compass-evidence-parties"',
         "Le nombre de documents n’est pas un score politique",
         "Même règle pour tout le monde",
-        "assets/boussole-electorale.js?v=3.4.2",
-        "assets/boussole-electorale.css?v=3.6.2",
+        "assets/boussole-electorale.js?v=3.4.3",
+        "assets/boussole-electorale.css?v=3.6.3",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
