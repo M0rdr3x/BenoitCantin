@@ -1,5 +1,5 @@
 {
-  "version": "1.8.0",
+  "version": "1.9.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -761,14 +761,14 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "documented_support",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
@@ -2270,9 +2270,14 @@
         "method": "exact_question_match_concrete_project"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle décrit un élargissement concret de l’autoroute 20 par ajout d’une troisième voie sur plusieurs kilomètres, motivé par la fluidité, la croissance des besoins de mobilité et l’efficacité du corridor. La correspondance avec q26 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q26-party-12-20261006-02",
@@ -2292,9 +2297,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle engage le PLQ à ajouter une voie dans chaque direction sur l’autoroute 30 entre Brossard et Boucherville, cite un débit de 50 000 à 85 000 véhicules par jour et juge les infrastructures existantes insuffisantes. La correspondance avec q26 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -2441,11 +2451,17 @@
         "q27": 0,
         "q28": 0
       },
-      "note": "q25 exige une majorité explicite des nouveaux investissements, q27 un pouvoir municipal explicite autour des stations et q28 une position explicite sur de nouvelles restrictions à l’automobile; les formulations générales ne sont pas codées. Deux preuves candidates exactes sont retenues pour q26.",
+      "note": "q25, q27 et q28 demeurent entièrement unknown faute de correspondance officielle suffisamment exacte; q26 compte deux positions finalisées après seconde révision indépendante.",
       "evidenceRecordIds": [
         "q26-party-05-20261006-01",
         "q26-party-12-20261006-02"
-      ]
+      ],
+      "finalizedCountByQuestion": {
+        "q25": 0,
+        "q26": 2,
+        "q27": 0,
+        "q28": 0
+      }
     }
   ]
 }
