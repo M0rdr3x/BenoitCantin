@@ -1,5 +1,5 @@
 {
-  "version": "1.4.0",
+  "version": "1.5.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -593,8 +593,8 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
-        "party-06": "unknown",
+        "party-05": "documented_support",
+        "party-06": "documented_mixed_or_conditional",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -605,11 +605,11 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_support",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_support",
         "party-nova": "unknown"
       }
     },
@@ -2108,9 +2108,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle bonifie de 1 400 $ à 7 000 $ le crédit d’impôt remboursable réservé à l’achat d’une première habitation et l’étend aux propriétés neuves et existantes. Il s’agit d’une hausse explicite de l’aide aux premiers acheteurs, directement cohérente avec q20."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q20-party-06-20261006-02",
@@ -2130,9 +2135,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle prévoit un prêt pouvant atteindre 25 000 $ pour compléter la mise de fonds d’une première maison, mais uniquement pour les familles admissibles qui attendent ou viennent d’accueillir leur premier enfant. L’appui à l’aide aux premiers acheteurs est clair mais conditionnel."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q20-party-17-20261006-03",
@@ -2152,9 +2162,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle prévoit à la fois un remboursement de TVQ pouvant atteindre 45 000 $ pour les premiers acheteurs de maisons neuves ou en autoconstruction et une hausse du crédit d’impôt pour première habitation. La hausse de priorité accordée à cette aide est explicite."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q20-party-21-20261006-04",
@@ -2174,9 +2189,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle prévoit un programme public de prêts pour la mise de fonds des premiers acheteurs pouvant atteindre 50 000 $, ce qui constitue une aide publique explicitement dédiée à l’achat d’une première propriété."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -2217,7 +2237,11 @@
         "q19": 0,
         "q20": 4
       },
-      "note": "L’absence de preuve candidate exacte conserve le statut unknown; elle ne constitue ni un appui ni une opposition."
+      "note": "q19 demeure entièrement unknown faute de preuve exacte; q20 compte quatre positions finalisées après seconde révision indépendante. L’absence de preuve ne vaut ni appui ni opposition.",
+      "finalizedCountByQuestion": {
+        "q19": 0,
+        "q20": 4
+      }
     }
   ]
 }
