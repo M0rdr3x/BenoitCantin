@@ -147,6 +147,8 @@ Une première lecture d’une source officielle ne suffit pas à finaliser la po
 
 Une preuve candidate conserve `finalizable: false` tant que cette seconde révision est en attente. Le fait qu’une source semble claire ne permet pas de contourner cette étape.
 
+La seconde révision repart de la formulation exacte de la question et de la source officielle, sans reprendre automatiquement le codage de la première lecture. Elle peut confirmer, abaisser ou modifier le statut proposé et le niveau de confiance. Une position n’est écrite dans la matrice qu’après cette seconde révision; la CI vérifie ensuite que le statut final de la matrice est identique au statut de la fiche de preuve finalisée. En cas de correspondance seulement partielle, le codage reste prudent (`documented_mixed_or_conditional` ou `ambiguous`) plutôt que d’être forcé vers l’appui ou l’opposition.
+
 Pour une question donnée, la recherche doit porter sur **toutes les formations**. Ne pas trouver de source précise pour une formation signifie `unknown`, jamais opposition, neutralité ou désaccord implicite.
 
 ## Comparaison factuelle avec les formations
