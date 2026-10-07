@@ -183,7 +183,7 @@ def run() -> None:
         frame = page.locator("iframe[data-pdf-reader]")
         assert_true(frame.count() == 1, f"{BROWSER_NAME}: iframe du lecteur absente")
         assert_true(DEMO_BASENAME in (frame.get_attribute("src") or ""), f"{BROWSER_NAME}: iframe ne pointe plus vers la démo stable")
-        assert_true("84 pages" in page.locator("main").inner_text(), f"{BROWSER_NAME}: lecteur ne décrit plus la démo 82 pages")
+        assert_true("82 pages" in page.locator("main").inner_text(), f"{BROWSER_NAME}: lecteur ne décrit plus la démo 82 pages")
         assert_no_full_edition_link(page, "lecteur")
 
         mobile = browser.new_context(
