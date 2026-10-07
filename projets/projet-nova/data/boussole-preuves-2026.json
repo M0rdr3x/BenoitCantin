@@ -1,5 +1,5 @@
 {
-  "version": "1.33.0",
+  "version": "1.34.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -426,11 +426,11 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "documented_mixed_or_conditional",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -460,7 +460,7 @@
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "documented_support",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
@@ -3593,9 +3593,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme qu’Osons Québec prévoit une autonomie accrue de l’équipe-école et décrit également une autonomie pédagogique conservée dans certaines mesures. La source ne définit toutefois pas précisément le choix des méthodes pédagogiques à l’intérieur d’un programme national; le statut partiel est maintenu."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q14-party-10-20261006-02",
@@ -3615,9 +3620,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le PCQ veut donner plus de liberté aux écoles et davantage de pouvoirs dans l’offre de programmes. La source ne formule pas cette autonomie exactement en termes de méthodes pédagogiques encadrées par le programme national; le statut partiel est maintenu."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q15-party-12-20261006-01",
@@ -3637,9 +3647,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme l’engagement d’ajouter 1 000 ressources spécialisées supplémentaires dans les écoles publiques, dont des orthopédagogues, psychoéducateurs, psychologues, orthophonistes et techniciens en éducation spécialisée. La direction de q15 est directement soutenue."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4497,12 +4512,18 @@
         "q15": 1,
         "q16": 0
       },
-      "note": "q13 demeure unknown faute de source officielle répondant à une uniformisation accrue du programme éducatif dans son ensemble; q14 compte deux correspondances candidates partielles sur l’autonomie scolaire; q15 un appui candidat direct du PLQ aux ressources spécialisées; q16 demeure unknown car le choix d’école ou le financement direct d’un établissement ne suffit pas à établir que le financement public suit l’élève.",
+      "note": "q13 demeure entirely unknown faute de source officielle répondant à une uniformisation accrue du programme éducatif dans son ensemble; q14 compte deux correspondances finalisées partielles sur l’autonomie scolaire; q15 un appui finalisé direct du PLQ aux ressources spécialisées; q16 demeure unknown car le choix d’école ou le financement direct d’un établissement ne suffit pas à établir que le financement public suit l’élève.",
       "evidenceRecordIds": [
         "q14-party-06-20261006-01",
         "q14-party-10-20261006-02",
         "q15-party-12-20261006-01"
-      ]
+      ],
+      "finalizedCountByQuestion": {
+        "q13": 0,
+        "q14": 2,
+        "q15": 1,
+        "q16": 0
+      }
     }
   ]
 }
