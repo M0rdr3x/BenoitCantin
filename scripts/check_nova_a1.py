@@ -588,6 +588,11 @@ if party_sources.is_file():
             errors.append(f"boussole électorale: platformUrls doit être une liste pour {row.get('name')}")
 
 
+documentary_total_question_count = None
+documentary_researched_question_ids = set()
+documentary_candidate_question_ids = set()
+documentary_no_candidate_question_ids = []
+
 if evidence_matrix.is_file():
     try:
         evidence = json.loads(evidence_matrix.read_text(encoding="utf-8"))
@@ -729,6 +734,7 @@ if evidence_matrix.is_file():
         errors.append("boussole électorale: identifiant de lot de recherche dupliqué")
     referenced_record_ids = set()
     question_batch_membership = {question_id: [] for question_id in expected_question_ids}
+    candidate_question_ids_from_batches = set()
     required_batch_fields = {
         "batchId", "checkedAt", "questionIds", "partyIds", "scope", "sourcePolicy",
         "candidateCountByQuestion", "note", "evidenceRecordIds"
@@ -778,6 +784,8 @@ if evidence_matrix.is_file():
                     f"boussole électorale: compte candidat incohérent dans {batch_id} / {question_id}: "
                     f"{actual_count} preuves liées pour {expected_count} annoncées"
                 )
+            elif expected_count > 0:
+                candidate_question_ids_from_batches.add(question_id)
         finalized_counts = batch.get("finalizedCountByQuestion")
         if finalized_counts is not None:
             if set(finalized_counts.keys()) != set(question_ids):
@@ -810,6 +818,28 @@ if evidence_matrix.is_file():
             "boussole électorale: preuves non rattachées à un lot de recherche: "
             + ", ".join(sorted(unbatched_record_ids))
         )
+
+    candidate_question_ids_from_records = {
+        record.get("questionId")
+        for record in records
+        if record.get("questionId") in expected_question_ids
+    }
+    if candidate_question_ids_from_batches != candidate_question_ids_from_records:
+        errors.append(
+            "boussole électorale: couverture des preuves candidates désalignée entre les lots et les fiches: "
+            f"lots={sorted(candidate_question_ids_from_batches)}; fiches={sorted(candidate_question_ids_from_records)}"
+        )
+
+    documentary_total_question_count = len(expected_question_ids)
+    documentary_researched_question_ids = {
+        question_id
+        for question_id, memberships in question_batch_membership.items()
+        if memberships
+    }
+    documentary_candidate_question_ids = set(candidate_question_ids_from_batches)
+    documentary_no_candidate_question_ids = sorted(
+        expected_question_ids - documentary_candidate_question_ids
+    )
 
     finalized_records = {
         (r.get("questionId"), r.get("partyId")): r
@@ -872,5 +902,16 @@ if errors:
     for e in errors:
         print(f"- {e}")
     sys.exit(1)
+
+if documentary_total_question_count is not None:
+    researched_count = len(documentary_researched_question_ids)
+    candidate_count = len(documentary_candidate_question_ids)
+    unresolved_label = ", ".join(documentary_no_candidate_question_ids) or "aucune"
+    print(
+        "BOUSSOLE DOCUMENTAIRE — "
+        f"recherche {researched_count}/{documentary_total_question_count}; "
+        f"avec preuve candidate {candidate_count}/{documentary_total_question_count}; "
+        f"sans preuve candidate: {unresolved_label}"
+    )
 
 print("PROJET NOVA — PASS")
