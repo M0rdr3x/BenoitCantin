@@ -1,5 +1,5 @@
 {
-  "version": "1.56.0",
+  "version": "1.57.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1494,7 +1494,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -4330,6 +4330,33 @@
         "reviewNote": "La seconde lecture confirme que le programme lie explicitement l’aide culturelle à la diversité de l’offre et précise l’absence de contrôle politique du contenu. La politique valorise aussi la culture québécoise et son rayonnement francophone, mais elle ne restreint pas l’admissibilité des expressions culturelles financées à cette seule identité; l’appui à q42 est donc maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q52-party-10-20261007-01",
+      "questionId": "q52",
+      "partyId": "party-10",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://conservateur.quebec/wp-content/uploads/2026/09/Plate-forme_Regions_V2_corrigee-2-1.pdf",
+      "sourceTitle": "Parti conservateur du Québec — Autonomie des régions — Passer de l’État-providence centralisé à un État des régions",
+      "sourceDate": "2026-09-18",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Le PCQ propose de passer d’un État-providence centralisé à un véritable État des régions. Le document rappelle que l’État central a historiquement structuré notamment les routes, la santé et l’éducation, affirme qu’il faut changer de paradigme, et propose qu’un État des régions conserve les grandes orientations nationales et certains standards communs tout en donnant davantage de pouvoir de décision, de priorisation et d’exécution aux régions et acteurs locaux.",
+      "rationale": "q52 demande que la planification des grands réseaux de santé, d’éducation et de transport demeure centralisée à Québec. La plateforme du PCQ rejette explicitement le maintien d’un modèle largement centralisé et applique la subsidiarité aux décisions régionales, y compris aux priorités de transport, tout en conservant à Québec un rôle de grandes orientations et de standards communs. Comme le partage précis des responsabilités en santé et en éducation n’est pas détaillé réseau par réseau, la position est codée comme mixte/conditionnelle plutôt que comme opposition totale.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_scope_and_governance_split"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le document oppose explicitement l’État-providence centralisé à un État des régions, cite routes, santé et éducation dans le modèle à transformer, et définit la subsidiarité comme principe directeur. Il maintient néanmoins de grandes orientations nationales et certains standards communs, sans détailler le partage opérationnel de chaque grand réseau; le statut mixte/conditionnel est donc conservé."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4765,20 +4792,21 @@
         "q49": 1,
         "q50": 1,
         "q51": 2,
-        "q52": 0
+        "q52": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 avec le même protocole pour les 22 formations. q49 compte désormais une correspondance ambiguë d’Osons Québec : son pacte fiscal municipal distingue les revenus propres des transferts et prévoit des sources récurrentes prévisibles, sans préciser qu’une plus grande part des revenus devrait provenir de sources fiscales contrôlées par les municipalités. q50 conserve la position mixte/conditionnelle du PLQ, q51 les positions du PQ et du PCQ, et q52 reste unknown.",
+      "note": "Recherche reprise le 7 octobre 2026 avec le même protocole pour les 22 formations. q49 conserve la correspondance ambiguë d’Osons Québec, q50 la position mixte/conditionnelle du PLQ et q51 les positions du PQ et du PCQ. q52 compte désormais une position mixte/conditionnelle du Parti conservateur du Québec : sa plateforme d’autonomie régionale veut remplacer un modèle centralisé par un État des régions fondé sur la subsidiarité, tout en conservant à Québec les grandes orientations nationales et certains standards communs.",
       "evidenceRecordIds": [
         "q51-party-17-20261006-01",
         "q51-party-10-20261007-01",
         "q50-party-12-20261007-01",
-        "q49-party-06-20261007-01"
+        "q49-party-06-20261007-01",
+        "q52-party-10-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q49": 1,
         "q50": 1,
         "q51": 2,
-        "q52": 0
+        "q52": 1
       }
     },
     {
