@@ -194,10 +194,13 @@ def run() -> None:
             evidence_question_results.locator('a[target="_blank"][rel*="noopener"]').count() >= 1,
             f"{BROWSER_NAME}: lien vers la source officielle absent de l’explorateur",
         )
-        explorer_text = evidence_question_results.inner_text()
         assert_true(
-            "Justification du codage" in explorer_text and "Confiance" in explorer_text,
-            f"{BROWSER_NAME}: détails méthodologiques absents de l’explorateur",
+            evidence_question_results.locator("dt", has_text="Confiance").count() >= 1,
+            f"{BROWSER_NAME}: niveau de confiance absent de l’explorateur",
+        )
+        assert_true(
+            evidence_question_results.locator("strong", has_text="Justification du codage").count() >= 1,
+            f"{BROWSER_NAME}: justification du codage absente de l’explorateur",
         )
         evidence_alphabetical = page.evaluate("""() => {
             const names = Array.from(document.querySelectorAll('#compass-evidence-parties .compass-evidence-card h3')).map(node => node.textContent.trim());
