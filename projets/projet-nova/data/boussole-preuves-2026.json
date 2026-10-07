@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
+  "version": "1.4.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -2089,6 +2089,135 @@
         "reviewNote": "La source officielle soutient des approbations résidentielles plus rapides près du transport collectif et des pôles d’emploi, mais ne généralise pas la mesure à toutes les demandes complètes de permis municipaux."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q20-party-05-20261006-01",
+      "questionId": "q20",
+      "partyId": "party-05",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/09/07/lequipe-frechette-facilitera-lacces-a-la-propriete-pour-les-premiers-acheteurs/",
+      "sourceTitle": "L’équipe Fréchette facilitera l’accès à la propriété pour les premiers acheteurs",
+      "sourceDate": "2026-09-07",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_campaign_page",
+      "evidenceSummary": "L’Équipe Christine Fréchette propose de bonifier le crédit d’impôt remboursable pour l’achat d’une première habitation afin qu’il puisse atteindre 7 000 $, pour les propriétés neuves comme existantes.",
+      "rationale": "La mesure publique vise explicitement les premiers acheteurs et augmente directement l’aide financière qui leur est accordée; elle correspond à la direction de q20.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q20-party-06-20261006-02",
+      "questionId": "q20",
+      "partyId": "party-06",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://osons.quebec/?profil=housing",
+      "sourceTitle": "Osons Québec — Propositions fondatrices — Locataires et propriétaires",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Osons Québec propose un prêt pouvant atteindre 25 000 $ pour compléter la mise de fonds d’une première maison, réservé aux familles admissibles qui attendent ou viennent d’accueillir leur premier enfant.",
+      "rationale": "La proposition accorde bien une aide publique à l’achat d’une première propriété, mais elle est conditionnelle à une situation familiale précise plutôt qu’ouverte à l’ensemble des premiers acheteurs.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q20-party-17-20261006-03",
+      "questionId": "q20",
+      "partyId": "party-17",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://pq.org/nouvelles/le-parti-quebecois-presente-son-plan-dacces-a-la-propriete/",
+      "sourceTitle": "Rétablir le contrat social pour les jeunes familles : Le Parti Québécois présente son plan d’accès à la propriété",
+      "sourceDate": "2026-09-09",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti Québécois propose un remboursement de TVQ pouvant atteindre 45 000 $ sur une maison neuve ou l’autoconstruction pour les premiers acheteurs et de porter à 3 000 $ le crédit d’impôt pour une première habitation.",
+      "rationale": "Le plan comporte explicitement un volet d’aide financière publique aux premiers acheteurs et augmente les avantages qui leur sont réservés; la correspondance avec q20 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q20-party-21-20261006-04",
+      "questionId": "q20",
+      "partyId": "party-21",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://quebecsolidaire.net/theme/logement",
+      "sourceTitle": "Québec solidaire va régler la crise du logement",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Québec solidaire prévoit un programme de prêts pour la mise de fonds des premiers acheteurs pouvant aller jusqu’à 50 000 $, ainsi que des propriétés remises sur le marché sous le prix courant.",
+      "rationale": "La source officielle prévoit explicitement un programme public d’aide financière destiné aux premiers acheteurs; la correspondance avec q20 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    }
+  ],
+  "researchCoverage": [
+    {
+      "batchId": "housing-q19-q20-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q19",
+        "q20"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q19": 0,
+        "q20": 4
+      },
+      "note": "L’absence de preuve candidate exacte conserve le statut unknown; elle ne constitue ni un appui ni une opposition."
     }
   ]
 }
