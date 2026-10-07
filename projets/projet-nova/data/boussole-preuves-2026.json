@@ -1,5 +1,5 @@
 {
-  "version": "1.10.0",
+  "version": "1.11.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -955,10 +955,10 @@
       "statuses": {
         "party-01": "unknown",
         "party-02": "unknown",
-        "party-03": "unknown",
+        "party-03": "documented_mixed_or_conditional",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "documented_support",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -973,7 +973,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_mixed_or_conditional",
         "party-nova": "unknown"
       }
     },
@@ -1011,10 +1011,10 @@
       "statuses": {
         "party-01": "unknown",
         "party-02": "unknown",
-        "party-03": "unknown",
+        "party-03": "documented_support",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "documented_support",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -2324,9 +2324,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle fixe un mécanisme précis : 5 % des électeurs, avec un minimum de 2 % dans au moins les deux tiers des circonscriptions, déclenchent un vote national après une première étape à 1 %. Cela correspond directement à q33."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q33-party-03-20261006-02",
@@ -2346,9 +2351,14 @@
         "method": "exact_question_match_partial"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle soutient explicitement le référendum d’initiative citoyenne pour proposer, amender ou abroger une loi, mais la page ne précise ni le seuil de pétition ni le caractère automatique du déclenchement provincial décrit par q33. La correspondance reste partielle."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q33-party-21-20261006-03",
@@ -2368,9 +2378,14 @@
         "method": "exact_question_match_partial"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle promet des mécanismes de référendums d’initiative populaire, ce qui soutient la direction de q33, mais elle ne précise pas sur cette page le seuil de pétition ni qu’un seuil atteint déclenche obligatoirement un référendum provincial."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q35-party-06-20261006-01",
@@ -2390,9 +2405,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle prévoit explicitement un rappel d’un député après 12 mois et avant les six derniers mois du mandat, déclenché par une pétition de 25 % des électeurs de la circonscription en 90 jours, suivie d’une élection partielle. La correspondance avec q35 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q35-party-03-20261006-02",
@@ -2412,9 +2432,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La source officielle affirme qu’un député doit pouvoir être rappelé et renvoyé par ses électeurs avant la fin des quatre ans. La direction correspond directement à q35."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -2614,14 +2639,20 @@
         "q35": 2,
         "q36": 0
       },
-      "note": "q33 retient une correspondance exacte et deux correspondances partielles sur l’initiative référendaire; q35 retient deux mécanismes explicites de rappel d’un député. q34 et q36 demeurent unknown faute de formulation officielle exacte.",
+      "note": "q33 compte une position d’appui directe et deux positions mixtes/conditionnelles après seconde révision; q35 compte deux appuis directs. q34 et q36 demeurent entièrement unknown faute de formulation officielle exacte.",
       "evidenceRecordIds": [
         "q33-party-06-20261006-01",
         "q33-party-03-20261006-02",
         "q33-party-21-20261006-03",
         "q35-party-06-20261006-01",
         "q35-party-03-20261006-02"
-      ]
+      ],
+      "finalizedCountByQuestion": {
+        "q33": 3,
+        "q34": 0,
+        "q35": 2,
+        "q36": 0
+      }
     }
   ]
 }
