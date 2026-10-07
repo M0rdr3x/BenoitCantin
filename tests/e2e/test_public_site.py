@@ -105,13 +105,23 @@ def run() -> None:
             f"{BROWSER_NAME}: cible de la porte orbitale Boussole incorrecte",
         )
         assert_true(
-            compass_orbit.locator('img[src="/assets/media/nova-boussole-electorale.webp"]').count() == 1,
+            compass_orbit.locator('img[src="/assets/media/nova-boussole-electorale-v2.webp"]').count() == 1,
             f"{BROWSER_NAME}: visuel officiel absent de la porte Boussole",
         )
         assert_true(
             page.locator('a[href="/projets/projet-nova/boussole-electorale.html"]').count() >= 4,
             f"{BROWSER_NAME}: accès directs à la Boussole insuffisants sur l’accueil principal",
         )
+
+        for selector, min_width in (
+            (".node-registre-home img", 120),
+            (".node-sinjira-home img", 120),
+            (".node-nova-home img", 140),
+            (".node-boussole-home img", 125),
+        ):
+            icon = page.locator(selector)
+            box = icon.bounding_box()
+            assert_true(box is not None and box["width"] >= min_width, f"{BROWSER_NAME}: icône principale trop petite: {selector}")
 
         page.goto(urljoin(BASE_URL, "projets/projet-nova/"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
@@ -122,7 +132,7 @@ def run() -> None:
         assert_true(nova_compass_entry.count() == 1, f"{BROWSER_NAME}: accès prioritaire Boussole absent en haut de Nova")
         assert_true(nova_compass_entry.is_visible(), f"{BROWSER_NAME}: accès prioritaire Boussole non visible")
         assert_true(
-            nova_compass_entry.locator('img[src="../../assets/media/nova-boussole-electorale.webp"]').count() == 1,
+            nova_compass_entry.locator('img[src="../../assets/media/nova-boussole-electorale-v2.webp"]').count() == 1,
             f"{BROWSER_NAME}: visuel officiel absent de l’accès prioritaire Nova",
         )
         assert_true(
@@ -132,12 +142,16 @@ def run() -> None:
 
         page.goto(urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
-            page.locator('.compass-hero-visual img[src="../../assets/media/nova-boussole-electorale.webp"]').count() == 1,
+            page.locator('.compass-hero-visual img[src="../../assets/media/nova-boussole-electorale-v2.webp"]').count() == 1,
             f"{BROWSER_NAME}: visuel officiel absent du héros de la Boussole",
         )
         hero_image = page.locator('.compass-hero-visual img')
+        page.wait_for_function(
+            "() => { const img = document.querySelector('.compass-hero-visual img'); return !!img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0; }",
+            timeout=10_000,
+        )
         assert_true(
-            hero_image.evaluate("(img) => img.naturalWidth === 320 && img.naturalHeight === 320"),
+            hero_image.evaluate("(img) => img.naturalWidth === 360 && img.naturalHeight === 360"),
             f"{BROWSER_NAME}: dimensions du visuel Boussole inattendues",
         )
         assert_true(page.locator(".compass-hero-visual figcaption").count() == 0, f"{BROWSER_NAME}: légende indésirable encore présente")

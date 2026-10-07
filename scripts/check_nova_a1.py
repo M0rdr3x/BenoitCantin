@@ -231,13 +231,13 @@ else:
         errors.append("site.webmanifest Projet Nova: display PWA invalide")
 
 # Boussole électorale multidimensionnelle : structure, neutralité et transparence.
-compass_visual = ROOT / "assets" / "media" / "nova-boussole-electorale.webp"
+compass_visual = ROOT / "assets" / "media" / "nova-boussole-electorale-v2.webp"
 if not compass_visual.is_file():
-    errors.append("boussole électorale: visuel officiel absent: assets/media/nova-boussole-electorale.webp")
+    errors.append("boussole électorale: visuel officiel absent: assets/media/nova-boussole-electorale-v2.webp")
 else:
     compass_visual_bytes = compass_visual.read_bytes()
     git_blob_payload = b"blob " + str(len(compass_visual_bytes)).encode("ascii") + b"\0" + compass_visual_bytes
-    expected_compass_visual_git_sha = "d750b4ee08a99d4446898aaa86f0286376b194e6"
+    expected_compass_visual_git_sha = "b4725fec0cccb1e0ec7df3797929ce105ea30c3a"
     actual_compass_visual_git_sha = hashlib.sha1(git_blob_payload).hexdigest()
     if actual_compass_visual_git_sha != expected_compass_visual_git_sha:
         errors.append("boussole électorale: le visuel officiel ne correspond pas au blob approuvé")
@@ -329,6 +329,10 @@ if compass_page.is_file():
         'id="dimensions"',
         'id="lecture-resultat"',
         'id="faq-boussole"',
+        'id="questionnaire"',
+        'id="compass-results"',
+        'id="partis"',
+        'id="methodologie"',
         'id="etat-documentaire"',
         'id="compass-evidence-summary"',
         'id="compass-evidence-status"',
@@ -336,7 +340,7 @@ if compass_page.is_file():
         "Le nombre de documents n’est pas un score politique",
         "Même règle pour tout le monde",
         "assets/boussole-electorale.js?v=3.1.0",
-        "assets/boussole-electorale.css?v=3.3.0",
+        "assets/boussole-electorale.css?v=3.4.0",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
@@ -359,11 +363,11 @@ if compass_page.is_file():
     if compass_html.count('href="boussole-electorale.html"') < 1:
         errors.append("boussole électorale: lien de retour vers la boussole absent de sa navigation")
     for marker in (
-        '../../assets/media/nova-boussole-electorale.webp',
+        '../../assets/media/nova-boussole-electorale-v2.webp',
         'compass-hero-grid',
         'class="compass-hero-visual"',
         '>Boussole électorale</a>',
-        'https://www.benoitcantin.com/assets/media/nova-boussole-electorale.webp',
+        'https://www.benoitcantin.com/assets/media/nova-boussole-electorale-v2.webp',
         'meta property="og:image"',
         'meta name="twitter:image"',
     ):
@@ -681,7 +685,7 @@ if nova_home.is_file():
         'class="nova-compass-entry-link"',
         'class="nav-link nav-link-boussole"',
         'class="hero-side-link-boussole"',
-        '../../assets/media/nova-boussole-electorale.webp',
+        '../../assets/media/nova-boussole-electorale-v2.webp',
     ):
         if marker not in nova_home_html:
             errors.append(f"boussole électorale: accès accueil incomplet: {marker}")
