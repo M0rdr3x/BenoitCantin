@@ -1,5 +1,5 @@
 {
-  "version": "1.16.0",
+  "version": "1.17.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -293,7 +293,8 @@
       "officialSite": "https://www.pq.org/",
       "platformUrls": [
         "https://www.pq.org/",
-        "https://pq.org/wp-content/uploads/2024/08/cahier-projet-nationalv2-1.pdf"
+        "https://pq.org/wp-content/uploads/2024/08/cahier-projet-nationalv2-1.pdf",
+        "https://pq.org/wp-content/uploads/2026/08/PQ-plateforme-enviro-V_FINALE.pdf"
       ],
       "pressReleaseUrls": [
         "https://pq.org/nouvelles/visite-du-parti-quebecois-en-abitibi-temiscamingue-20-000-logements-sociaux-et-hors-marche/",
@@ -304,7 +305,7 @@
       "verificationStatus": "verified_official_site_and_2026_engagements",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les engagements 2026 en concurrence, santé et transport ainsi que le Projet national. La concurrence alimentaire documente directement q02; la centralité des CLSC soutient q09 sans établir le seuil de majorité."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant le plan environnemental complet 2026-2034. Pour q22, le rejet des interdictions mal adaptées et des coûts automatiquement refilés à la population est pertinent, mais ne suffit pas à établir un abandon automatique d’une norme après analyse d’impact."
     },
     {
       "id": "party-18",

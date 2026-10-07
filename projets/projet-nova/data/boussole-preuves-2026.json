@@ -1,5 +1,5 @@
 {
-  "version": "1.50.0",
+  "version": "1.51.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -661,7 +661,7 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "ambiguous",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -4141,6 +4141,33 @@
         "reviewNote": "La seconde lecture confirme que le pacte fiscal distingue explicitement revenus propres, transferts existants et besoin structurel de financement récurrent. Il ne prévoit cependant pas une hausse explicite de la part des revenus provenant de sources fiscales sous contrôle municipal; le statut ambiguous est donc maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q22-party-17-20261007-01",
+      "questionId": "q22",
+      "partyId": "party-17",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://pq.org/wp-content/uploads/2026/08/PQ-plateforme-enviro-V_FINALE.pdf",
+      "sourceTitle": "Le plan environnement du Parti Québécois 2026-2034 — Prendre ses responsabilités, s’enrichir et améliorer notre qualité de vie",
+      "sourceDate": "2026-08-12",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Le Parti Québécois affirme rejeter une écologie punitive faite d’interdictions mal adaptées, de contraintes incomprises ou de coûts refilés automatiquement à la population. Le plan souligne aussi que les ménages à faible revenu et les PME n’ont pas la même capacité d’absorber de nouveaux coûts ou de nouvelles exigences.",
+      "rationale": "q22 conditionne l’adoption d’une nouvelle norme environnementale à son effet prévu sur le coût de biens essentiels. La source du PQ établit clairement que le coût imposé à la population et la capacité d’absorber de nouvelles exigences doivent compter dans la politique environnementale. Elle ne prévoit toutefois ni un test formel d’analyse d’impact sur des biens essentiels ni l’abandon automatique d’une norme lorsqu’un tel effet est prévu. La direction exacte de q22 demeure donc indéterminée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_cost_threshold_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture du plan complet confirme le rejet explicite des interdictions mal adaptées et des coûts automatiquement refilés à la population, ainsi qu’une attention aux capacités différentes d’absorber de nouvelles exigences. La source ne lie cependant pas ce principe à une analyse d’impact formelle ni à un veto automatique sur une nouvelle norme touchant des biens essentiels; le statut ambiguous est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4230,21 +4257,22 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q21": 1,
-        "q22": 0,
+        "q22": 1,
         "q23": 1,
         "q24": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q21 compte désormais une correspondance ambiguë de la CAQ : le plan 2026-2031 poursuit explicitement la décarbonation industrielle et la réduction des GES, mais ne prévoit pas explicitement de resserrer les plafonds applicables aux grands émetteurs. q22 demeure entièrement unknown : aucune source officielle récente ne lie assez précisément l’abandon d’une nouvelle norme environnementale à une analyse d’impact prévoyant une hausse du coût de biens essentiels. q23 et q24 conservent chacune une position finalisée.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q21 conserve la correspondance ambiguë de la CAQ. q22 compte désormais une correspondance ambiguë du Parti Québécois : son plan environnemental 2026 rejette les interdictions mal adaptées et les coûts automatiquement refilés à la population, mais ne prévoit pas explicitement l’abandon d’une nouvelle norme après une analyse d’impact concluant à une hausse du coût de biens essentiels. q23 et q24 conservent leurs positions finalisées.",
       "finalizedCountByQuestion": {
         "q21": 1,
-        "q22": 0,
+        "q22": 1,
         "q23": 1,
         "q24": 1
       },
       "evidenceRecordIds": [
         "q23-party-02-20261006-01",
         "q24-party-06-20261006-01",
-        "q21-party-05-20261007-01"
+        "q21-party-05-20261007-01",
+        "q22-party-17-20261007-01"
       ]
     },
     {
