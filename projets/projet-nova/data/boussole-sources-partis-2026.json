@@ -1,5 +1,5 @@
 {
-  "version": "1.12.0",
+  "version": "1.13.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -216,13 +216,14 @@
       "pressReleaseUrls": [
         "https://plq.org/communique/plan-habitation-du-parti-liberal-du-quebec-15-g-dinvestissements-pour-40-000-logements-sociaux-et-abordables-supplementaires/",
         "https://plq.org/communique/objectif-ambitieux-100-000-logements-par-annee/",
-        "https://plq.org/communique/un-changement-majeur-dans-la-gestion-de-la-transformation-numerique/"
+        "https://plq.org/communique/un-changement-majeur-dans-la-gestion-de-la-transformation-numerique/",
+        "https://plq.org/communique/la-telesante-au-coeur-dune-premiere-ligne-plus-accessible/"
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_engagements",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant l’engagement numérique du 18 septembre sur une loi-cadre pour le développement et le déploiement de l’IA. Cette source est pertinente pour q61 et q62, mais n’est pas extrapolée au-delà de ce qu’elle précise."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les engagements numériques, logement, éducation et santé. La porte d’entrée publique de télésanté et l’ancrage en CLSC soutiennent q09 sans établir que la majorité de toute la première ligne serait fournie par des établissements publics."
     },
     {
       "id": "party-13",
@@ -291,13 +292,15 @@
         "https://pq.org/wp-content/uploads/2024/08/cahier-projet-nationalv2-1.pdf"
       ],
       "pressReleaseUrls": [
-        "https://pq.org/nouvelles/visite-du-parti-quebecois-en-abitibi-temiscamingue-20-000-logements-sociaux-et-hors-marche/"
+        "https://pq.org/nouvelles/visite-du-parti-quebecois-en-abitibi-temiscamingue-20-000-logements-sociaux-et-hors-marche/",
+        "https://pq.org/nouvelles/declaration-du-chef-du-parti-quebecois-le-panier-depicerie-coutera-t-il-encore-plus-cher-dans-quelques-mois/",
+        "https://pq.org/nouvelles/sante-et-service-sociaux-investir-en-prevention-et-faire-des-clsc-la-veritable-porte-dentree-du-reseau/"
       ],
       "legislativeRecordUrls": [],
-      "verificationStatus": "verified_official_site_and_policy_document",
+      "verificationStatus": "verified_official_site_and_2026_engagements",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026. Le Projet national soutient notamment la densification autour du transport collectif et l’action municipale contre l’étalement; il est utilisé prudemment pour q27 sans lui attribuer un pouvoir municipal précis qu’il ne formule pas."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les engagements 2026 en concurrence, santé et transport ainsi que le Projet national. La concurrence alimentaire documente directement q02; la centralité des CLSC soutient q09 sans établir le seuil de majorité."
     },
     {
       "id": "party-18",
@@ -357,13 +360,14 @@
         "https://quebecsolidaire.net/theme/environnement"
       ],
       "pressReleaseUrls": [
-        "https://quebecsolidaire.net/nouvelle/elections-2026-quebec-solidaire-presente-un-cadre-financier-qui-nous-donne-les-moyens-de-nos-ambitions"
+        "https://quebecsolidaire.net/nouvelle/elections-2026-quebec-solidaire-presente-un-cadre-financier-qui-nous-donne-les-moyens-de-nos-ambitions",
+        "https://quebecsolidaire.net/nouvelle/quebec-solidaire-va-refaire-des-clsc-la-porte-dentree-du-systeme-de-sante"
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_platform",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles 2026 revérifiées le 7 octobre. Le programme transport prévoit 23 G$ sur dix ans pour réparer et développer le transport collectif et en fait une priorité, mais ne fournit pas la part de l’ensemble des nouveaux investissements provinciaux requise pour trancher q25."
+      "notes": "Sources officielles 2026 revérifiées le 7 octobre, incluant transport, finances publiques et première ligne. Le réseau de 400 points d’accès sur le modèle des CLSC soutient la direction de q09 sans chiffrer la part totale de prestation publique."
     },
     {
       "id": "party-nova",
