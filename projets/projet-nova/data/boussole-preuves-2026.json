@@ -1,5 +1,5 @@
 {
-  "version": "1.37.0",
+  "version": "1.38.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1466,7 +1466,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -3682,6 +3682,33 @@
         "reviewNote": "La seconde lecture confirme que la proposition officielle lie la poursuite de l’état d’urgence sanitaire au-delà de 30 jours à un vote de 80 % de l’Assemblée nationale. Elle ne suffit pas à affirmer un appui général à des restrictions sans vote préalable; le statut mixte/conditionnel et la confiance moyenne sont maintenus."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q51-party-10-20261007-01",
+      "questionId": "q51",
+      "partyId": "party-10",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/un-nouveau-modele-detat-axe-sur-les-gouvernements-de-proximite-pour-rapprocher-les-decisions-du-citoyen/",
+      "sourceTitle": "Un nouveau modèle d’État axé sur les gouvernements de proximité pour rapprocher les décisions du citoyen",
+      "sourceDate": "2026-09-18",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti conservateur du Québec propose 17 tables régionales décisionnelles dotées d’un réel pouvoir de décision et prévoit de leur déléguer plusieurs pouvoirs provinciaux, notamment en développement économique, en ressources naturelles, en aménagement du territoire et en immigration.",
+      "rationale": "La source appuie clairement un transfert de pouvoir décisionnel vers des instances régionales dans des matières comprenant le développement économique. Elle ne précise toutefois pas qu’une plus grande part des budgets de développement régional serait formellement décidée par ces instances. La correspondance avec q51 est donc directionnellement claire mais partielle.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_partial_scope"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme l’engagement 2026 de créer 17 tables régionales avec un réel pouvoir de décision et de leur déléguer notamment le développement économique. Comme la source ne traite pas explicitement de la part des budgets de développement régional décidée en région, le statut partiel/conditionnel et la confiance moyenne sont maintenus."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4070,7 +4097,7 @@
     },
     {
       "batchId": "territory-q49-q52-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q49",
         "q50",
@@ -4106,17 +4133,18 @@
       "candidateCountByQuestion": {
         "q49": 0,
         "q50": 0,
-        "q51": 1,
+        "q51": 2,
         "q52": 0
       },
-      "note": "Après seconde révision indépendante : q49, q50 et q52 demeurent entirely unknown; q51 compte une position ambiguë du Parti Québécois. La proposition de 2022 est directe, mais les sources officielles 2026 ne réaffirment pas assez précisément le même mécanisme budgétaire pour conserver un appui direct.",
+      "note": "Recherche reprise le 7 octobre 2026 avec le même protocole pour les 22 formations. q49, q50 et q52 restent sans source officielle suffisamment exacte. q51 comprend désormais la position ambiguë du Parti Québécois (proposition budgétaire directe de 2022 non réaffirmée avec la même précision en 2026) et une position mixte/conditionnelle du Parti conservateur du Québec fondée sur sa plateforme 2026 de tables régionales dotées de pouvoirs décisionnels, notamment en développement économique, sans formulation explicite sur la part des budgets.",
       "evidenceRecordIds": [
-        "q51-party-17-20261006-01"
+        "q51-party-17-20261006-01",
+        "q51-party-10-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q49": 0,
         "q50": 0,
-        "q51": 1,
+        "q51": 2,
         "q52": 0
       }
     },
