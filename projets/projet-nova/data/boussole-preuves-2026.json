@@ -1,5 +1,5 @@
 {
-  "version": "1.11.0",
+  "version": "1.12.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -2440,6 +2440,150 @@
         "reviewNote": "La source officielle affirme qu’un député doit pouvoir être rappelé et renvoyé par ses électeurs avant la fin des quatre ans. La direction correspond directement à q35."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q37-party-21-20261006-01",
+      "questionId": "q37",
+      "partyId": "party-21",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://quebecsolidaire.net/nouvelle/quebec-solidaire-veut-une-immigration-permanente-plus-humaine-et-mieux-regionalisee",
+      "sourceTitle": "Québec solidaire veut une immigration permanente, plus humaine et mieux régionalisée",
+      "sourceDate": "2026-09-01",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Québec solidaire propose un seuil d’immigration permanente de 70 000 personnes par année, accompagné d’une planification et d’une régionalisation renforcées.",
+      "rationale": "La source soutient clairement une hausse du seuil permanent par rapport au niveau 2026, mais ne conditionne pas explicitement cette hausse à des indicateurs publics de capacité suffisante en logement et en services; la correspondance avec q37 est donc partielle.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q37-party-20-20261006-02",
+      "questionId": "q37",
+      "partyId": "party-20",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://www.quebecinnovant.org/chantiers/",
+      "sourceTitle": "Chantiers prioritaires | Québec Innovant",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Québec innovant propose d’aligner les seuils d’immigration sur les besoins du marché du travail et sur une estimation de la capacité d’accueil réelle, incluant le logement, les services publics et la francisation.",
+      "rationale": "La source reprend directement la logique d’indicateurs de capacité de q37, mais ne précise pas qu’une capacité suffisante devrait entraîner une hausse des seuils; elle ne permet donc pas de trancher la direction exacte.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q38-party-17-20261006-01",
+      "questionId": "q38",
+      "partyId": "party-17",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://pq.org/nouvelles/le-parti-quebecois-promet-une-baisse-significative-des-seuils-dimmigration/",
+      "sourceTitle": "Le Parti Québécois promet une baisse significative des seuils d’immigration",
+      "sourceDate": "2026-08-29",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti Québécois propose de réduire significativement les seuils d’immigration afin qu’ils respectent la capacité d’accueil réelle du Québec en matière de logement, de langue française et de pression sur les services publics.",
+      "rationale": "La source relie explicitement une réduction des seuils à la capacité d’accueil, au logement et aux services publics; elle correspond directement à q38.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q38-party-05-20261006-02",
+      "questionId": "q38",
+      "partyId": "party-05",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/category/non-classifiee/page/42/",
+      "sourceTitle": "Québec baisse ses seuils d’immigration",
+      "sourceDate": "2025-11-06",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_government_record",
+      "evidenceSummary": "La CAQ présente une réduction du seuil d’immigration permanente à environ 45 000 admissions annuelles et indique que cette décision vise à respecter la capacité d’accueil du Québec et à réduire la pression sur les services publics, le logement, le français et les services d’intégration.",
+      "rationale": "La source relie directement une baisse des seuils permanents à une pression jugée excessive sur le logement et les services; la correspondance avec q38 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q40-party-17-20261006-01",
+      "questionId": "q40",
+      "partyId": "party-17",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://pq.org/independance/plan-immigration/",
+      "sourceTitle": "Notre modèle en immigration",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Le Parti Québécois propose d’exiger un niveau de compétence du français plus élevé et de prioriser les personnes affichant un niveau de français intermédiaire à avancé.",
+      "rationale": "La source propose explicitement d’accroître le poids du français dans la sélection des personnes immigrantes; elle correspond directement à la direction de q40.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q40-party-05-20261006-02",
+      "questionId": "q40",
+      "partyId": "party-05",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/editionspeciale/le-gouvernement-de-la-caq-a-t-il-un-bon-plan-en-immigration/",
+      "sourceTitle": "Le gouvernement de la CAQ a-t-il un bon plan en immigration ?",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "La CAQ présente la connaissance minimale du français comme condition d’admission pour l’immigration économique et vise explicitement à augmenter la proportion d’immigrants économiques connaissant le français.",
+      "rationale": "Rendre la connaissance du français obligatoire et accroître sa présence parmi les immigrants économiques donne clairement davantage de poids au français dans la sélection; la correspondance avec q40 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
     }
   ],
   "researchCoverage": [
@@ -2653,6 +2797,57 @@
         "q35": 2,
         "q36": 0
       }
+    },
+    {
+      "batchId": "immigration-q37-q40-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q37",
+        "q38",
+        "q39",
+        "q40"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q37": 2,
+        "q38": 2,
+        "q39": 0,
+        "q40": 2
+      },
+      "note": "Les sources seulement pertinentes mais non directionnelles sont codées ambiguous; les correspondances partielles restent mixed_or_conditional. q39 demeure entièrement unknown. Les candidats dépendant de PDF officiels non vérifiables de bout en bout ont été exclus plutôt que surcodés.",
+      "evidenceRecordIds": [
+        "q37-party-21-20261006-01",
+        "q37-party-20-20261006-02",
+        "q38-party-17-20261006-01",
+        "q38-party-05-20261006-02",
+        "q40-party-17-20261006-01",
+        "q40-party-05-20261006-02"
+      ]
     }
   ]
 }
