@@ -1,5 +1,5 @@
 {
-  "version": "1.70.0",
+  "version": "1.71.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -264,7 +264,7 @@
         "party-09": "unknown",
         "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "documented_mixed_or_conditional",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
@@ -4843,6 +4843,33 @@
         "reviewNote": "La seconde lecture confirme simultanément le rejet des règles mur à mur, le principe de subsidiarité et la possibilité d’adapter les moyens aux réalités régionales, mais aussi le maintien explicite de certains standards communs. Le statut mixte/conditionnel est donc le plus fidèle."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q08-party-12-20261007-01",
+      "questionId": "q08",
+      "partyId": "party-12",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://plq.org/communique/un-cadre-financier-realiste-pour-reparer-les-finances-publiques-et-batir-lavenir-economique-du-quebec/",
+      "sourceTitle": "Un cadre financier réaliste pour réparer les finances publiques et bâtir l’avenir économique du Québec",
+      "sourceDate": "2026-09-13",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_financial_framework_release",
+      "evidenceSummary": "Le cadre financier 2026 du Parti libéral du Québec prévoit un retour à l’équilibre budgétaire en 2029-2030, tout en inscrivant avant ce retour près de 12 milliards de dollars de nouveaux engagements dans le logement, l’éducation, la santé, les familles et les entreprises. Il précise que ces engagements sont compatibles avec une trajectoire progressive de retour à l’équilibre.",
+      "rationale": "q08 exige que l’équilibre budgétaire soit visé avant la création de nouveaux programmes permanents. Le PLQ accepte explicitement de nouveaux engagements importants pendant une période où l’équilibre n’est prévu qu’en 2029-2030, ce qui contredit la séquence stricte de q08. Cependant, le communiqué ne qualifie pas chacun de ces engagements de programme permanent; le statut reste donc mixte/conditionnel plutôt qu’une opposition absolue.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_sequence_match_new_commitments_before_budget_balance_with_permanence_caveat"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (cadre financier officiel 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_sequence_and_scope",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le PLQ planifie près de 12 G$ de nouveaux engagements avant le retour à l’équilibre prévu en 2029-2030. Comme la source ne classe pas explicitement chaque engagement parmi les programmes permanents, elle établit une divergence claire avec la séquence de q08 mais justifie un statut mixte/conditionnel."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5623,20 +5650,21 @@
         "q05": 1,
         "q06": 1,
         "q07": 1,
-        "q08": 1
+        "q08": 2
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q05 conserve une correspondance finalisée partielle de Québec solidaire; q06 un appui direct du Parti conservateur du Québec; q07 une correspondance partielle de l’Équipe Christine Fréchette/CAQ. q08 compte désormais une position mixte/conditionnelle du PCQ : son plan vise le déficit zéro mais permet l’adoption d’un nouveau programme avant l’équilibre si une économie équivalente est identifiée.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q05 conserve la correspondance partielle de Québec solidaire; q06 l’appui direct du PCQ; q07 la correspondance partielle de la CAQ. q08 compte désormais deux positions mixtes/conditionnelles : le PCQ permet un nouveau programme avant le déficit zéro seulement avec une économie équivalente, tandis que le PLQ prévoit près de 12 G$ de nouveaux engagements avant un retour à l’équilibre en 2029-2030, sans qualifier explicitement chaque engagement de programme permanent.",
       "evidenceRecordIds": [
         "q05-party-21-20261006-01",
         "q06-party-10-20261006-01",
         "q07-party-05-20261006-01",
-        "q08-party-10-20261007-01"
+        "q08-party-10-20261007-01",
+        "q08-party-12-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q05": 1,
         "q06": 1,
         "q07": 1,
-        "q08": 1
+        "q08": 2
       }
     },
     {
