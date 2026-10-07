@@ -96,10 +96,10 @@
         "https://coalitionavenirquebec.org/fr/blog/2026/06/11/plan-de-mise-en-oeuvre-2026-2031-du-plan-pour-une-economie-verte-2030-quebec-renforce-son-soutien-direct-aux-citoyens/"
       ],
       "legislativeRecordUrls": [],
-      "verificationStatus": "verified_official_site",
+      "verificationStatus": "verified_official_site_and_2026_engagements",
       "lastVerified": "2026-10-07",
-      "usableForPositionCoding": false,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant le plan 2026-2031 pour une économie verte. Celui-ci confirme la poursuite de la décarbonation industrielle et de la réduction des GES, mais ne suffit pas à conclure à un resserrement explicite des plafonds des grands émetteurs; q21 reste donc ambiguë. Les autres sources sont utilisées sans extrapolation pour les questions logement et travail."
+      "usableForPositionCoding": true,
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant plusieurs engagements 2026 déjà utilisés dans le corpus et le plan 2026-2031 pour une économie verte. Le corpus comporte désormais des preuves finalisées provenant de ces sources; le drapeau usableForPositionCoding est donc aligné sur l’usage réel. Pour q21, la décarbonation industrielle est documentée sans engagement explicite à resserrer les plafonds des grands émetteurs, donc le statut demeure ambiguous."
     },
     {
       "id": "party-06",
