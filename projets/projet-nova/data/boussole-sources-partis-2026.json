@@ -1,5 +1,5 @@
 {
-  "version": "1.17.0",
+  "version": "1.18.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -185,13 +185,14 @@
       "pressReleaseUrls": [
         "https://conservateur.quebec/blog/ressources/un-nouveau-modele-detat-axe-sur-les-gouvernements-de-proximite-pour-rapprocher-les-decisions-du-citoyen/",
         "https://conservateur.quebec/blog/ressources/eric-duhaime-veut-collaborer-avec-les-nations-autochtones-aux-projets-de-developpement-economique/",
-        "https://conservateur.quebec/blog/ressources/le-pcq-veut-redonner-du-pouvoir-aux-travailleurs-syndiques/"
+        "https://conservateur.quebec/blog/ressources/le-pcq-veut-redonner-du-pouvoir-aux-travailleurs-syndiques/",
+        "https://conservateur.quebec/blog/ressources/le-pcq-veut-offrir-a-chaque-eleve-un-parcours-qui-lui-ressemble/"
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_platform",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026 : documents officiels, propositions adoptées, autonomie régionale, plateforme autochtone et plateforme travail/démocratie syndicale. Les sources sont codées uniquement lorsqu’elles correspondent suffisamment à la formulation exacte d’une question; la plateforme travail ne suffit pas à trancher q58 ou q60."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant la plateforme éducation du 12 septembre. Pour q13, plus de liberté aux écoles et plus de pouvoirs sur l’offre de programmes restent insuffisants pour établir une opposition directe à un programme national plus uniforme. Pour q16, le libre choix d’école et le financement direct des établissements ne suffisent pas à établir un financement public portable suivant individuellement l’élève."
     },
     {
       "id": "party-11",
