@@ -116,7 +116,7 @@ def run() -> None:
         for selector, min_width in (
             (".node-registre-home img", 120),
             (".node-sinjira-home img", 120),
-            (".node-nova-home img", 140),
+            (".node-nova-home img", 120),
             (".node-boussole-home img", 125),
         ):
             icon = page.locator(selector)
