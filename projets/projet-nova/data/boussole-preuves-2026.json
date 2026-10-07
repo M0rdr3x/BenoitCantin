@@ -1,5 +1,5 @@
 {
-  "version": "1.7.0",
+  "version": "1.8.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -2251,6 +2251,50 @@
         "reviewNote": "Le programme officiel veut accélérer les grands projets de ressources avec un guichet unique, un calendrier réglementaire complet et une décision dans le délai légal, tout en précisant que l’accélération n’abolit pas les contrôles publics. Le chapitre vise explicitement les minéraux critiques et les technologies énergétiques; la correspondance avec q24 est directe."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q26-party-05-20261006-01",
+      "questionId": "q26",
+      "partyId": "party-05",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/05/22/promesse-tenue-le-gouvernement-frechette-ajoute-une-voie-sur-lautoroute-20-a-levis/",
+      "sourceTitle": "Promesse tenue : le gouvernement Fréchette ajoute une voie sur l'autoroute 20, à Lévis",
+      "sourceDate": "2026-05-22",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_government_announcement",
+      "evidenceSummary": "Le gouvernement Fréchette lance l’ajout d’une troisième voie sur l’autoroute 20 à Lévis, sur plusieurs kilomètres dans les deux directions, afin d’améliorer la fluidité des déplacements dans un secteur névralgique où les besoins de mobilité sont croissants.",
+      "rationale": "La mesure augmente directement la capacité d’un axe routier afin d’améliorer la fluidité dans un corridor soumis à des besoins de mobilité élevés; elle correspond à la direction de q26.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_concrete_project"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q26-party-12-20261006-02",
+      "questionId": "q26",
+      "partyId": "party-12",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://plq.org/communique/le-plq-sengage-a-elargir-lautoroute-30-dans-le-segment-reliant-brossard-et-boucherville/",
+      "sourceTitle": "Le PLQ s’engage à élargir l’autoroute 30 dans le segment reliant Brossard et Boucherville",
+      "sourceDate": "2026-09-22",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le PLQ s’engage à ajouter une voie dans chaque direction de l’autoroute 30 entre Brossard et Boucherville. La source indique un débit de 50 000 à 85 000 véhicules par jour et affirme que les infrastructures existantes ne suffisent plus aux besoins du secteur.",
+      "rationale": "L’engagement augmente explicitement la capacité routière d’un corridor très achalandé afin de répondre aux problèmes de mobilité et de fluidité; la correspondance avec q26 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
     }
   ],
   "researchCoverage": [
@@ -2295,7 +2339,13 @@
       "finalizedCountByQuestion": {
         "q19": 0,
         "q20": 4
-      }
+      },
+      "evidenceRecordIds": [
+        "q20-party-05-20261006-01",
+        "q20-party-06-20261006-02",
+        "q20-party-17-20261006-03",
+        "q20-party-21-20261006-04"
+      ]
     },
     {
       "batchId": "environment-q21-q24-20261006",
@@ -2344,7 +2394,58 @@
         "q22": 0,
         "q23": 1,
         "q24": 1
-      }
+      },
+      "evidenceRecordIds": [
+        "q23-party-02-20261006-01",
+        "q24-party-06-20261006-01"
+      ]
+    },
+    {
+      "batchId": "transport-q25-q28-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q25",
+        "q26",
+        "q27",
+        "q28"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q25": 0,
+        "q26": 2,
+        "q27": 0,
+        "q28": 0
+      },
+      "note": "q25 exige une majorité explicite des nouveaux investissements, q27 un pouvoir municipal explicite autour des stations et q28 une position explicite sur de nouvelles restrictions à l’automobile; les formulations générales ne sont pas codées. Deux preuves candidates exactes sont retenues pour q26.",
+      "evidenceRecordIds": [
+        "q26-party-05-20261006-01",
+        "q26-party-12-20261006-02"
+      ]
     }
   ]
 }

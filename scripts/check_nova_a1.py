@@ -654,6 +654,78 @@ if evidence_matrix.is_file():
                 errors.append(f"boussole électorale: seconde révision complétée sans identité/date: {record.get('recordId')}")
         else:
             errors.append(f"boussole électorale: statut de seconde révision invalide: {record.get('recordId')}")
+
+    record_by_id = {r.get("recordId"): r for r in records}
+    research_batches = evidence.get("researchCoverage") or []
+    batch_ids = [batch.get("batchId") for batch in research_batches]
+    if len(batch_ids) != len(set(batch_ids)):
+        errors.append("boussole électorale: identifiant de lot de recherche dupliqué")
+    referenced_record_ids = set()
+    required_batch_fields = {
+        "batchId", "checkedAt", "questionIds", "partyIds", "scope", "sourcePolicy",
+        "candidateCountByQuestion", "note", "evidenceRecordIds"
+    }
+    allowed_optional_batch_fields = {"finalizedCountByQuestion"}
+    for batch in research_batches:
+        batch_id = batch.get("batchId")
+        keys = set(batch.keys())
+        if not required_batch_fields.issubset(keys) or not keys.issubset(required_batch_fields | allowed_optional_batch_fields):
+            errors.append(f"boussole électorale: schéma de lot de recherche invalide pour {batch_id}")
+        question_ids = batch.get("questionIds") or []
+        party_ids = batch.get("partyIds") or []
+        evidence_record_ids = batch.get("evidenceRecordIds") or []
+        counts = batch.get("candidateCountByQuestion") or {}
+        if batch.get("checkedAt") != "2026-10-06":
+            errors.append(f"boussole électorale: date de lot de recherche inattendue pour {batch_id}")
+        if not question_ids or len(question_ids) != len(set(question_ids)) or not set(question_ids).issubset(expected_question_ids):
+            errors.append(f"boussole électorale: questions invalides dans le lot {batch_id}")
+        if set(party_ids) != set(matrix_party_ids) or len(party_ids) != len(matrix_party_ids):
+            errors.append(f"boussole électorale: le lot {batch_id} ne couvre pas exactement les 22 formations")
+        if set(counts.keys()) != set(question_ids):
+            errors.append(f"boussole électorale: comptes candidats désalignés dans le lot {batch_id}")
+        if len(evidence_record_ids) != len(set(evidence_record_ids)):
+            errors.append(f"boussole électorale: preuve répétée dans le lot {batch_id}")
+        for record_id in evidence_record_ids:
+            if record_id in referenced_record_ids:
+                errors.append(f"boussole électorale: preuve liée à plusieurs lots de recherche: {record_id}")
+            referenced_record_ids.add(record_id)
+            record = record_by_id.get(record_id)
+            if record is None:
+                errors.append(f"boussole électorale: preuve de lot introuvable: {record_id}")
+                continue
+            if record.get("questionId") not in set(question_ids):
+                errors.append(f"boussole électorale: preuve hors questions du lot {batch_id}: {record_id}")
+            if record.get("partyId") not in set(party_ids):
+                errors.append(f"boussole électorale: preuve hors formations du lot {batch_id}: {record_id}")
+        for question_id in question_ids:
+            expected_count = counts.get(question_id)
+            actual_count = sum(
+                1 for record_id in evidence_record_ids
+                if (record_by_id.get(record_id) or {}).get("questionId") == question_id
+            )
+            if not isinstance(expected_count, int) or expected_count < 0 or actual_count != expected_count:
+                errors.append(
+                    f"boussole électorale: compte candidat incohérent dans {batch_id} / {question_id}: "
+                    f"{actual_count} preuves liées pour {expected_count} annoncées"
+                )
+        finalized_counts = batch.get("finalizedCountByQuestion")
+        if finalized_counts is not None:
+            if set(finalized_counts.keys()) != set(question_ids):
+                errors.append(f"boussole électorale: comptes finalisés désalignés dans le lot {batch_id}")
+            for question_id in question_ids:
+                expected_finalized = finalized_counts.get(question_id)
+                actual_finalized = sum(
+                    1 for record_id in evidence_record_ids
+                    if (record_by_id.get(record_id) or {}).get("questionId") == question_id
+                    and (record_by_id.get(record_id) or {}).get("finalizable") is True
+                    and ((record_by_id.get(record_id) or {}).get("secondIndependentReview") or {}).get("status") == "completed"
+                )
+                if not isinstance(expected_finalized, int) or expected_finalized < 0 or actual_finalized != expected_finalized:
+                    errors.append(
+                        f"boussole électorale: compte finalisé incohérent dans {batch_id} / {question_id}: "
+                        f"{actual_finalized} preuves finalisées pour {expected_finalized} annoncées"
+                    )
+
     finalized_records = {
         (r.get("questionId"), r.get("partyId")): r
         for r in records
