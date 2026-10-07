@@ -167,7 +167,7 @@ def run() -> None:
         assert_true(evidence_cards.count() == 22, f"{BROWSER_NAME}: 22 formations attendues dans l’état documentaire")
         summary_cards = page.locator("#compass-evidence-summary article")
         assert_true(summary_cards.count() == 5, f"{BROWSER_NAME}: résumé documentaire incomplet")
-        summary_text = summary_cards.inner_text()
+        summary_text = page.locator("#compass-evidence-summary").inner_text()
         assert_true("Questions recherchées" in summary_text and "64/64" in summary_text, f"{BROWSER_NAME}: couverture 64/64 absente du résumé documentaire")
         evidence_status = page.locator("#compass-evidence-status").inner_text()
         assert_true(
