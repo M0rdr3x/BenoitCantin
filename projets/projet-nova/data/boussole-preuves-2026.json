@@ -2339,7 +2339,13 @@
       "finalizedCountByQuestion": {
         "q19": 0,
         "q20": 4
-      }
+      },
+      "evidenceRecordIds": [
+        "q20-party-05-20261006-01",
+        "q20-party-06-20261006-02",
+        "q20-party-17-20261006-03",
+        "q20-party-21-20261006-04"
+      ]
     },
     {
       "batchId": "environment-q21-q24-20261006",
@@ -2388,7 +2394,11 @@
         "q22": 0,
         "q23": 1,
         "q24": 1
-      }
+      },
+      "evidenceRecordIds": [
+        "q23-party-02-20261006-01",
+        "q24-party-06-20261006-01"
+      ]
     },
     {
       "batchId": "transport-q25-q28-20261006",
@@ -2431,7 +2441,11 @@
         "q27": 0,
         "q28": 0
       },
-      "note": "q25 exige une majorité explicite des nouveaux investissements, q27 un pouvoir municipal explicite autour des stations et q28 une position explicite sur de nouvelles restrictions à l’automobile; les formulations générales ne sont pas codées. Deux preuves candidates exactes sont retenues pour q26."
+      "note": "q25 exige une majorité explicite des nouveaux investissements, q27 un pouvoir municipal explicite autour des stations et q28 une position explicite sur de nouvelles restrictions à l’automobile; les formulations générales ne sont pas codées. Deux preuves candidates exactes sont retenues pour q26.",
+      "evidenceRecordIds": [
+        "q26-party-05-20261006-01",
+        "q26-party-12-20261006-02"
+      ]
     }
   ]
 }
