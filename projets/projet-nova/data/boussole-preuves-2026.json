@@ -1,5 +1,5 @@
 {
-  "version": "1.49.0",
+  "version": "1.50.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1406,7 +1406,7 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "ambiguous",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -4114,6 +4114,33 @@
         "reviewNote": "La seconde lecture confirme les deux éléments simultanément : un noyau stable et prévisible de services de proximité dans toutes les régions, et une asymétrie réglementaire permettant à chaque MRC d’adapter trois règlements à sa réalité. Cette combinaison justifie un statut mixed/conditional pour q50."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q49-party-06-20261007-01",
+      "questionId": "q49",
+      "partyId": "party-06",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://osons.quebec/?profil=regions",
+      "sourceTitle": "Osons Québec — Pacte fiscal municipal — financer la vraie charge",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Osons Québec propose de mesurer, avec les municipalités et les MRC, les responsabilités locales, les revenus propres raisonnables et les transferts existants afin d’identifier l’écart structurel, puis de financer les charges récurrentes par des sources récurrentes prévisibles.",
+      "rationale": "La source traite directement de la structure des revenus municipaux et distingue les revenus propres des transferts, ce qui est pertinent pour q49. Elle ne précise toutefois ni que la part des revenus propres devrait augmenter, ni que les nouvelles sources seraient fiscalement contrôlées par les municipalités elles-mêmes. La direction exacte de q49 reste donc indéterminée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_revenue_share_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le pacte fiscal distingue explicitement revenus propres, transferts existants et besoin structurel de financement récurrent. Il ne prévoit cependant pas une hausse explicite de la part des revenus provenant de sources fiscales sous contrôle municipal; le statut ambiguous est donc maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4542,19 +4569,20 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q49": 0,
+        "q49": 1,
         "q50": 1,
         "q51": 2,
         "q52": 0
       },
-      "note": "Recherche reprise le 7 octobre 2026 avec le même protocole pour les 22 formations. q49 et q52 restent sans source officielle suffisamment exacte. q50 compte désormais une position mixte/conditionnelle du Parti libéral du Québec : son programme 2026 garantit un noyau stable de services de proximité dans l’ensemble des régions tout en permettant une asymétrie réglementaire régionale négociée par les MRC. q51 conserve les positions du Parti Québécois et du Parti conservateur du Québec.",
+      "note": "Recherche reprise le 7 octobre 2026 avec le même protocole pour les 22 formations. q49 compte désormais une correspondance ambiguë d’Osons Québec : son pacte fiscal municipal distingue les revenus propres des transferts et prévoit des sources récurrentes prévisibles, sans préciser qu’une plus grande part des revenus devrait provenir de sources fiscales contrôlées par les municipalités. q50 conserve la position mixte/conditionnelle du PLQ, q51 les positions du PQ et du PCQ, et q52 reste unknown.",
       "evidenceRecordIds": [
         "q51-party-17-20261006-01",
         "q51-party-10-20261007-01",
-        "q50-party-12-20261007-01"
+        "q50-party-12-20261007-01",
+        "q49-party-06-20261007-01"
       ],
       "finalizedCountByQuestion": {
-        "q49": 0,
+        "q49": 1,
         "q50": 1,
         "q51": 2,
         "q52": 0
