@@ -1,5 +1,5 @@
 {
-  "version": "1.34.0",
+  "version": "1.35.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -4523,6 +4523,60 @@
         "q14": 2,
         "q15": 1,
         "q16": 0
+      }
+    },
+    {
+      "batchId": "housing-q17-q18-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q17",
+        "q18"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q17": 5,
+        "q18": 4
+      },
+      "note": "Lot historique normalisé après finalisation initiale : q17 compte cinq preuves finalisées et q18 quatre preuves finalisées. L’ajout de ce lot ne change aucune position; il complète uniquement la traçabilité de recherche pour les 22 formations.",
+      "evidenceRecordIds": [
+        "q17-party-12-20261006-01",
+        "q17-party-21-20261006-01",
+        "q17-party-05-20261006-01",
+        "q17-party-17-20261006-01",
+        "q17-party-20-20261006-01",
+        "q18-party-05-20261006-01",
+        "q18-party-12-20261006-02",
+        "q18-party-06-20261006-03",
+        "q18-party-08-20261006-04"
+      ],
+      "finalizedCountByQuestion": {
+        "q17": 5,
+        "q18": 4
       }
     }
   ]
