@@ -1,5 +1,5 @@
 {
-  "version": "1.47.0",
+  "version": "1.48.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -904,7 +904,7 @@
         "party-05": "unknown",
         "party-06": "unknown",
         "party-07": "unknown",
-        "party-08": "unknown",
+        "party-08": "ambiguous",
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
@@ -4060,6 +4060,33 @@
         "reviewNote": "La seconde lecture confirme le caractère explicitement public de la télésanté de première ligne et le rôle d’ancrage confié aux CLSC. Elle ne fournit aucune répartition public/privé de l’ensemble des soins de première ligne; le statut mixte/conditionnel est donc conservé."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q31-party-08-20261007-01",
+      "questionId": "q31",
+      "partyId": "party-08",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://www.particanadienquebec.ca/fr/communiques/sept25followup",
+      "sourceTitle": "Le PaCQ dévoile sa politique pour lutter contre l'antisémitisme",
+      "sourceDate": "2026-09-25",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti canadien du Québec affirme que les manifestations pacifiques et les débats politiques légitimes sont des droits essentiels qui doivent être protégés, tout en distinguant explicitement les menaces, la violence, le vandalisme, le harcèlement criminel et l’intimidation ciblée, qu’il juge inadmissibles.",
+      "rationale": "q31 distingue les propos offensants demeurant licites des menaces, du harcèlement et des autres infractions. La source du PaCQ reprend une frontière voisine entre expression politique légitime protégée et comportements menaçants ou harcelants sanctionnables, mais elle ne vise pas explicitement l’ensemble des propos offensants non criminels. La direction exacte de q31 reste donc indéterminée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_scope_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le PaCQ protège explicitement les débats politiques légitimes et les manifestations pacifiques tout en excluant menaces, violence, harcèlement et intimidation ciblée. Cette distinction est très proche de q31, mais la source ne formule pas un principe général protégeant tous les propos offensants non infractionnels; le statut ambiguous est donc maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4708,17 +4735,18 @@
       "candidateCountByQuestion": {
         "q29": 0,
         "q30": 0,
-        "q31": 0,
+        "q31": 1,
         "q32": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 avec le même standard pour les 22 formations. q29 à q31 demeurent sans source officielle suffisamment exacte. Pour q32, une résolution officielle du Parti conservateur du Québec sur la prolongation de l’état d’urgence sanitaire au-delà de 30 jours établit un contrôle parlementaire renforcé; elle est codée prudemment comme correspondance mixte/conditionnelle, sans extrapoler un appui général aux restrictions sans vote préalable.",
+      "note": "Recherche reprise le 7 octobre 2026 avec le même standard pour les 22 formations. q29 et q30 demeurent sans source officielle suffisamment exacte. q31 compte désormais une correspondance ambiguë du Parti canadien du Québec : le parti protège explicitement les débats politiques légitimes et manifestations pacifiques tout en excluant les menaces, la violence, le harcèlement criminel et l’intimidation ciblée, sans formuler un principe général sur tous les propos offensants licites. q32 conserve sa correspondance mixte/conditionnelle du Parti conservateur du Québec.",
       "evidenceRecordIds": [
-        "q32-party-10-20261007-01"
+        "q32-party-10-20261007-01",
+        "q31-party-08-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q29": 0,
         "q30": 0,
-        "q31": 0,
+        "q31": 1,
         "q32": 1
       }
     },
