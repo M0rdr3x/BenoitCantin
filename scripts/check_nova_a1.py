@@ -337,12 +337,13 @@ if compass_page.is_file():
         'id="compass-evidence-summary"',
         'id="compass-evidence-status"',
         'id="compass-evidence-question"',
+        'id="compass-evidence-only-documented"',
         'id="compass-evidence-question-results"',
         'id="compass-evidence-parties"',
         "Le nombre de documents n’est pas un score politique",
         "Même règle pour tout le monde",
-        "assets/boussole-electorale.js?v=3.2.0",
-        "assets/boussole-electorale.css?v=3.5.0",
+        "assets/boussole-electorale.js?v=3.3.0",
+        "assets/boussole-electorale.css?v=3.6.0",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
@@ -524,6 +525,8 @@ if party_corpus.is_file():
         "Questions recherchées",
         "Justification du codage",
         "Consulter la source officielle",
+        "Non documentée",
+        "Cela ne signifie ni appui, ni opposition, ni neutralité",
         "researchCoverage",
         "secondIndependentReview",
         "Aucun de ces nombres ne modifie le poids d’un parti",
