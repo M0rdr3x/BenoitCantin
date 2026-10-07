@@ -1,5 +1,5 @@
 {
-  "version": "1.12.0",
+  "version": "1.13.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1084,8 +1084,8 @@
         "party-17": "unknown",
         "party-18": "unknown",
         "party-19": "unknown",
-        "party-20": "unknown",
-        "party-21": "unknown",
+        "party-20": "ambiguous",
+        "party-21": "documented_mixed_or_conditional",
         "party-nova": "unknown"
       }
     },
@@ -1097,7 +1097,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -1109,7 +1109,7 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_support",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -1153,7 +1153,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -1165,7 +1165,7 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_support",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -2459,11 +2459,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que Québec solidaire propose bien un seuil permanent de 70 000, soit une hausse par rapport au niveau 2026, mais sans déclencheur explicitement fondé sur des indicateurs publics de capacité suffisante en logement et en services."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q37-party-20-20261006-02",
@@ -2483,11 +2486,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que Québec innovant lie explicitement les seuils aux besoins et à la capacité d’accueil, mais ne fixe pas la direction à prendre lorsque cette capacité est suffisante; q37 ne peut donc pas être tranchée."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q38-party-17-20261006-01",
@@ -2507,11 +2513,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une réduction explicite des seuils afin de respecter la capacité réelle en logement et la pression sur les services publics. La correspondance avec q38 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q38-party-05-20261006-02",
@@ -2531,11 +2540,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la CAQ a présenté la baisse à environ 45 000 admissions permanentes comme une mesure visant à respecter la capacité d’accueil et à réduire la pression sur le logement et les services."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q40-party-17-20261006-01",
@@ -2555,11 +2567,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le plan du Parti Québécois exige un niveau de français plus élevé et priorise les profils ayant une compétence intermédiaire à avancée, ce qui augmente directement le poids du français dans la sélection."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q40-party-05-20261006-02",
@@ -2579,11 +2594,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la CAQ rend la connaissance du français obligatoire dans l’immigration économique et vise explicitement une proportion accrue d’immigrants économiques connaissant le français."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -2839,7 +2857,7 @@
         "q39": 0,
         "q40": 2
       },
-      "note": "Les sources seulement pertinentes mais non directionnelles sont codées ambiguous; les correspondances partielles restent mixed_or_conditional. q39 demeure entièrement unknown. Les candidats dépendant de PDF officiels non vérifiables de bout en bout ont été exclus plutôt que surcodés.",
+      "note": "Après seconde révision indépendante : q37 compte une position mixte/conditionnelle et une position ambiguë; q38 compte deux appuis directs; q39 demeure entièrement unknown; q40 compte deux appuis directs. Les PDF non vérifiables restent exclus.",
       "evidenceRecordIds": [
         "q37-party-21-20261006-01",
         "q37-party-20-20261006-02",
@@ -2847,7 +2865,13 @@
         "q38-party-05-20261006-02",
         "q40-party-17-20261006-01",
         "q40-party-05-20261006-02"
-      ]
+      ],
+      "finalizedCountByQuestion": {
+        "q37": 2,
+        "q38": 2,
+        "q39": 0,
+        "q40": 2
+      }
     }
   ]
 }
