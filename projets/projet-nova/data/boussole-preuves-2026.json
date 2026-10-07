@@ -1,5 +1,5 @@
 {
-  "version": "1.43.0",
+  "version": "1.44.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -749,7 +749,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "ambiguous",
         "party-nova": "unknown"
       }
     },
@@ -801,7 +801,7 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_mixed_or_conditional",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -3817,6 +3817,60 @@
         "reviewNote": "La seconde lecture confirme un objectif 2026-2031 de décarbonation industrielle et de réduction des GES, mais aucun engagement explicite à resserrer les plafonds d’émissions des grands émetteurs. La source reste donc pertinente sans permettre de coder un appui direct."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q25-party-21-20261007-01",
+      "questionId": "q25",
+      "partyId": "party-21",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://quebecsolidaire.net/theme/environnement",
+      "sourceTitle": "Québec solidaire — Réussir la transition écologique — Développer notre transport collectif",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Québec solidaire présente le transport collectif comme une priorité de sa transition, prévoit 23 milliards de dollars sur dix ans pour réparer et bonifier les réseaux et affirme vouloir remettre les priorités en transport à la bonne place.",
+      "rationale": "La source établit une priorité politique et budgétaire forte en faveur du transport collectif, ce qui est directement pertinent pour q25. Elle ne démontre toutefois pas que la majorité de l’ensemble des nouveaux investissements provinciaux en transport dans les grandes régions urbaines irait au transport collectif; le seuil comparatif exact de q25 reste donc indéterminé.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_share_threshold_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un investissement de 23 G$ sur dix ans et une priorité explicite au développement du transport collectif. Aucune ventilation de l’ensemble des nouveaux investissements provinciaux ne permet cependant d’établir le critère de majorité prévu par q25; le statut ambiguous est maintenu."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q27-party-17-20261007-01",
+      "questionId": "q27",
+      "partyId": "party-17",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://pq.org/wp-content/uploads/2024/08/cahier-projet-nationalv2-1.pdf",
+      "sourceTitle": "Projet national — Rendre accessible notre territoire",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Le Projet national du Parti Québécois propose de favoriser la densification douce des centres urbains, particulièrement autour du transport collectif, et de soutenir les municipalités dans leurs efforts de lutte contre l’étalement urbain.",
+      "rationale": "La source correspond directement à la densification résidentielle autour du transport collectif et rattache explicitement les municipalités à la lutte contre l’étalement. Elle ne formule toutefois pas précisément l’octroi ou l’élargissement d’un pouvoir municipal de densification autour des stations; la correspondance est donc substantielle mais incomplète.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_actor_power_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme deux éléments concordants : densifier particulièrement autour du transport collectif et soutenir l’action municipale contre l’étalement. Le document ne précise pas que les municipalités devraient recevoir un pouvoir juridique nouveau ou accru pour augmenter cette densité; le statut mixte ou conditionnel est donc conservé."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -3925,7 +3979,7 @@
     },
     {
       "batchId": "transport-q25-q28-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q25",
         "q26",
@@ -3959,20 +4013,22 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q25": 0,
+        "q25": 1,
         "q26": 2,
-        "q27": 0,
+        "q27": 1,
         "q28": 0
       },
-      "note": "q25, q27 et q28 demeurent entièrement unknown faute de correspondance officielle suffisamment exacte; q26 compte deux positions finalisées après seconde révision indépendante.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q25 compte désormais une correspondance ambiguë de Québec solidaire : la priorité au transport collectif et 23 G$ d’investissements sont explicites, mais le critère d’une majorité de tous les nouveaux investissements provinciaux n’est pas démontré. q26 conserve deux appuis documentés (CAQ et PLQ). q27 compte une position mixte ou conditionnelle du Parti Québécois : densification autour du transport collectif et soutien aux municipalités sont explicites, sans formulation précise d’un pouvoir municipal accru. q28 demeure entièrement unknown après revérification faute de position officielle assez exacte sur de nouvelles restrictions à l’usage de l’automobile.",
       "evidenceRecordIds": [
         "q26-party-05-20261006-01",
-        "q26-party-12-20261006-02"
+        "q26-party-12-20261006-02",
+        "q25-party-21-20261007-01",
+        "q27-party-17-20261007-01"
       ],
       "finalizedCountByQuestion": {
-        "q25": 0,
+        "q25": 1,
         "q26": 2,
-        "q27": 0,
+        "q27": 1,
         "q28": 0
       }
     },
