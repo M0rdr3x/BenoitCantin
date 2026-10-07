@@ -1,5 +1,5 @@
 {
-  "version": "1.10.0",
+  "version": "1.11.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -287,16 +287,17 @@
       "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
       "officialSite": "https://www.pq.org/",
       "platformUrls": [
-        "https://www.pq.org/"
+        "https://www.pq.org/",
+        "https://pq.org/wp-content/uploads/2024/08/cahier-projet-nationalv2-1.pdf"
       ],
       "pressReleaseUrls": [
         "https://pq.org/nouvelles/visite-du-parti-quebecois-en-abitibi-temiscamingue-20-000-logements-sociaux-et-hors-marche/"
       ],
       "legislativeRecordUrls": [],
-      "verificationStatus": "verified_official_site",
-      "lastVerified": "2026-10-06",
+      "verificationStatus": "verified_official_site_and_policy_document",
+      "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": null
+      "notes": "Sources officielles revérifiées le 7 octobre 2026. Le Projet national soutient notamment la densification autour du transport collectif et l’action municipale contre l’étalement; il est utilisé prudemment pour q27 sans lui attribuer un pouvoir municipal précis qu’il ne formule pas."
     },
     {
       "id": "party-18",
@@ -352,16 +353,17 @@
       "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
       "officialSite": "https://site.quebecsolidaire.net/",
       "platformUrls": [
-        "https://quebecsolidaire.net/"
+        "https://quebecsolidaire.net/",
+        "https://quebecsolidaire.net/theme/environnement"
       ],
       "pressReleaseUrls": [
         "https://quebecsolidaire.net/nouvelle/elections-2026-quebec-solidaire-presente-un-cadre-financier-qui-nous-donne-les-moyens-de-nos-ambitions"
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_platform",
-      "lastVerified": "2026-10-06",
+      "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": null
+      "notes": "Sources officielles 2026 revérifiées le 7 octobre. Le programme transport prévoit 23 G$ sur dix ans pour réparer et développer le transport collectif et en fait une priorité, mais ne fournit pas la part de l’ensemble des nouveaux investissements provinciaux requise pour trancher q25."
     },
     {
       "id": "party-nova",
