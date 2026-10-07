@@ -1,5 +1,5 @@
 {
-  "version": "1.54.0",
+  "version": "1.55.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -262,7 +262,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -4276,6 +4276,33 @@
         "reviewNote": "La seconde lecture confirme que le plan fixe le volume permanent, modifie une composante économique, accélère la réunification familiale et fixe une cible en matière d’asile. Aucun passage ne formule cependant une hausse explicite de la part relative des catégories humanitaires et familiales au sein de l’immigration permanente; le statut ambiguous est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q08-party-10-20261007-01",
+      "questionId": "q08",
+      "partyId": "party-10",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/le-pcq-sengage-a-faire-un-grand-menage-dans-les-depenses-publiques-sans-couper-dans-les-services-publics/",
+      "sourceTitle": "Le PCQ s’engage à faire un grand ménage dans les dépenses publiques, sans couper dans les services publics",
+      "sourceDate": "2026-08-13",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti conservateur du Québec prévoit qu’aucun nouveau programme ne pourra être adopté sans qu’une mesure d’économie équivalente soit identifiée. Il propose parallèlement une loi limitant la croissance des dépenses et un effort supplémentaire sur les dépenses non salariales jusqu’à l’atteinte de l’objectif de déficit zéro.",
+      "rationale": "q08 exige que l’équilibre budgétaire soit visé avant la création de nouveaux programmes permanents. La source du PCQ donne une forte priorité au déficit zéro, mais autorise explicitement l’adoption de nouveaux programmes avant son atteinte lorsqu’une économie équivalente est identifiée. La position correspond donc à une discipline budgétaire conditionnelle plutôt qu’à la séquence stricte de q08.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_alternative_fiscal_guardrail"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme deux règles coexistantes : nouveaux programmes permis seulement avec une économie équivalente et contrôle renforcé des dépenses jusqu’au déficit zéro. Le PCQ ne conditionne donc pas tout nouveau programme à l’atteinte préalable de l’équilibre; le statut mixed/conditional est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5038,19 +5065,20 @@
         "q05": 1,
         "q06": 1,
         "q07": 1,
-        "q08": 0
+        "q08": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q05 conserve une correspondance finalisée partielle de Québec solidaire; q06 un appui direct du Parti conservateur du Québec; q07 une correspondance partielle de l’Équipe Christine Fréchette/CAQ. q08 demeure entièrement unknown : plusieurs formations publient une trajectoire de retour à l’équilibre budgétaire, mais aucune source officielle vérifiée ne formule assez précisément que l’équilibre devrait être visé avant la création de nouveaux programmes permanents.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q05 conserve une correspondance finalisée partielle de Québec solidaire; q06 un appui direct du Parti conservateur du Québec; q07 une correspondance partielle de l’Équipe Christine Fréchette/CAQ. q08 compte désormais une position mixte/conditionnelle du PCQ : son plan vise le déficit zéro mais permet l’adoption d’un nouveau programme avant l’équilibre si une économie équivalente est identifiée.",
       "evidenceRecordIds": [
         "q05-party-21-20261006-01",
         "q06-party-10-20261006-01",
-        "q07-party-05-20261006-01"
+        "q07-party-05-20261006-01",
+        "q08-party-10-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q05": 1,
         "q06": 1,
         "q07": 1,
-        "q08": 0
+        "q08": 1
       }
     },
     {
