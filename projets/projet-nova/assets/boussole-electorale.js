@@ -420,6 +420,7 @@
     const parties = Array.isArray(partyCorpus.parties) ? [...partyCorpus.parties] : [];
     const sources = Array.isArray(sourceCorpus.parties) ? sourceCorpus.parties : [];
     const records = Array.isArray(evidenceCorpus.evidenceRecords) ? evidenceCorpus.evidenceRecords : [];
+    const researchCoverage = Array.isArray(evidenceCorpus.researchCoverage) ? evidenceCorpus.researchCoverage : [];
     const sourceByParty = new Map(sources.map(row => [row.id,row]));
     const recordsByParty = new Map();
 
@@ -429,6 +430,11 @@
     }
 
     const matrixQuestions = Array.isArray(evidenceCorpus.questions) ? evidenceCorpus.questions : [];
+    const researchedQuestionIds = new Set(
+      researchCoverage.flatMap(batch => Array.isArray(batch.questionIds) ? batch.questionIds : [])
+    );
+    const coveredQuestionCount = researchedQuestionIds.size;
+    const totalQuestionCount = matrixQuestions.length;
     const secondReviewed = records.filter(record => record.secondIndependentReview?.status === "completed").length;
     const pendingSecond = records.filter(record => record.secondIndependentReview?.status === "pending").length;
     const finalizedByParty = new Map(parties.map(party => [party.id,0]));
@@ -445,10 +451,11 @@
 
     summary.innerHTML = [
       ["Formations suivies",parties.length],
+      ["Questions recherchées",`${coveredQuestionCount}/${totalQuestionCount}`],
       ["Preuves candidates",records.length],
       ["Deuxième révision terminée",secondReviewed],
       ["Positions finalisées",finalizedCount]
-    ].map(([label,value]) => `<article><strong>${value}</strong><span>${esc(label)}</span></article>`).join("");
+    ].map(([label,value]) => `<article><strong>${esc(value)}</strong><span>${esc(label)}</span></article>`).join("");
 
     parties.sort((a,b) => String(a.name).localeCompare(String(b.name),"fr-CA"));
     host.innerHTML = parties.map(party => {
@@ -476,7 +483,7 @@
 
     const status = $("#compass-evidence-status");
     if(status){
-      status.textContent = `${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une deuxième révision indépendante; ${finalizedCount} position${finalizedCount > 1 ? "s" : ""} finalisée${finalizedCount > 1 ? "s" : ""}. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
+      status.textContent = `${coveredQuestionCount}/${totalQuestionCount} questions couvertes par la recherche documentaire; ${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une deuxième révision indépendante; ${finalizedCount} position${finalizedCount > 1 ? "s" : ""} finalisée${finalizedCount > 1 ? "s" : ""}. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
     }
   }
 
