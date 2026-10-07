@@ -1,5 +1,5 @@
 {
-  "version": "1.19.0",
+  "version": "1.20.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -2980,6 +2980,30 @@
         "reviewNote": "La proposition de 2022 est un appui direct, mais la seconde révision exige une position suffisamment actuelle pour l’élection 2026. Les sources officielles 2026 du PQ confirment la décentralisation et le transfert de pouvoir vers les régions sans réaffirmer précisément l’enveloppe budgétaire décidée régionalement. Le statut est donc abaissé de documented_support à ambiguous."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q55-party-06-20261006-01",
+      "questionId": "q55",
+      "partyId": "party-06",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://osons.quebec/?profil=regions",
+      "sourceTitle": "Osons Québec — Relations de nation à nation avec les Premières Nations et les Inuit",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Osons Québec propose que les grands projets soient planifiés avec les nations concernées et favorise explicitement la participation économique, la participation au capital et le partage des revenus lorsque la nation concernée souhaite cette formule.",
+      "rationale": "La source relie directement les grands projets concernant les nations autochtones à des mécanismes de participation économique et de partage des revenus avec les nations concernées; elle correspond à la direction de q55.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAt": null
+      },
+      "finalizable": false
     }
   ],
   "researchCoverage": [
@@ -3417,6 +3441,52 @@
         "q51": 1,
         "q52": 0
       }
+    },
+    {
+      "batchId": "indigenous-q53-q56-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q53",
+        "q54",
+        "q55",
+        "q56"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q53": 0,
+        "q54": 0,
+        "q55": 1,
+        "q56": 0
+      },
+      "note": "q53, q54 et q56 demeurent entièrement unknown faute de formulation officielle suffisamment exacte. q55 compte une preuve candidate Osons Québec sur le partage des revenus et la participation économique avec les nations concernées; elle reste non finalisable avant une seconde révision indépendante.",
+      "evidenceRecordIds": [
+        "q55-party-06-20261006-01"
+      ]
     }
   ]
 }
