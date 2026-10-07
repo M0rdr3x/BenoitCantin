@@ -540,6 +540,16 @@
     );
     const coveredQuestionCount = researchedQuestionIds.size;
     const totalQuestionCount = matrixQuestions.length;
+    const candidateQuestionIds = new Set();
+    for(const batch of researchCoverage){
+      const batchQuestionIds = Array.isArray(batch.questionIds) ? batch.questionIds : [];
+      const candidateCounts = batch?.candidateCountByQuestion || {};
+      for(const questionId of batchQuestionIds){
+        if(Number(candidateCounts[questionId]) > 0) candidateQuestionIds.add(questionId);
+      }
+    }
+    const candidateQuestionCount = candidateQuestionIds.size;
+    const noCandidateQuestionCount = Math.max(0,coveredQuestionCount - candidateQuestionCount);
     const secondReviewed = records.filter(record => record.secondIndependentReview?.status === "completed").length;
     const pendingSecond = records.filter(record => record.secondIndependentReview?.status === "pending").length;
     const finalizedByParty = new Map(parties.map(party => [party.id,0]));
@@ -557,6 +567,7 @@
     summary.innerHTML = [
       ["Formations suivies",parties.length],
       ["Questions recherchées",`${coveredQuestionCount}/${totalQuestionCount}`],
+      ["Questions avec preuve",`${candidateQuestionCount}/${totalQuestionCount}`],
       ["Preuves candidates",records.length],
       ["Deuxième révision terminée",secondReviewed],
       ["Positions finalisées",finalizedCount]
@@ -588,7 +599,7 @@
 
     const status = $("#compass-evidence-status");
     if(status){
-      status.textContent = `${coveredQuestionCount}/${totalQuestionCount} questions couvertes par la recherche documentaire; ${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une deuxième révision indépendante; ${finalizedCount} position${finalizedCount > 1 ? "s" : ""} finalisée${finalizedCount > 1 ? "s" : ""}. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
+      status.textContent = `${coveredQuestionCount}/${totalQuestionCount} questions recherchées; ${candidateQuestionCount}/${totalQuestionCount} avec au moins une preuve candidate; ${noCandidateQuestionCount} encore sans preuve candidate suffisamment exacte. L’absence de preuve candidate ne signifie pas absence de position réelle. ${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une deuxième révision indépendante; ${finalizedCount} position${finalizedCount > 1 ? "s" : ""} finalisée${finalizedCount > 1 ? "s" : ""}. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
     }
   }
 

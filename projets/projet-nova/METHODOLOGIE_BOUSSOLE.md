@@ -164,6 +164,16 @@ Le registre `researchCoverage` sert à prouver que la recherche documentaire a r
 - la CI refuse une question sans lot, une question présente dans plusieurs lots ou une preuve orpheline;
 - le compteur public de couverture est calculé à partir des lots réellement présents dans les données, et non saisi manuellement.
 
+### Couverture de recherche et couverture de preuve candidate
+
+Ces deux mesures ne doivent jamais être confondues :
+
+- **couverture de recherche** : nombre de questions rattachées à un lot de recherche couvrant les 22 formations;
+- **couverture de preuve candidate** : nombre de questions pour lesquelles `candidateCountByQuestion` est supérieur à zéro dans le lot correspondant;
+- une question peut donc être entièrement recherchée tout en demeurant sans preuve candidate suffisamment exacte;
+- **l’absence de preuve candidate ne signifie pas absence de position réelle** : elle signifie seulement qu’aucune source admissible n’a encore permis de coder la formulation exacte selon le protocole;
+- l’interface calcule ces deux couvertures directement depuis `researchCoverage`; aucun total public n’est saisi manuellement.
+
 Cette règle distingue explicitement **absence de position documentée** et **absence de recherche**.
 
 ## Comparaison factuelle avec les formations

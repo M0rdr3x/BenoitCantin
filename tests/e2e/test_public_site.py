@@ -166,13 +166,23 @@ def run() -> None:
         evidence_cards.first.wait_for(state="visible", timeout=10_000)
         assert_true(evidence_cards.count() == 22, f"{BROWSER_NAME}: 22 formations attendues dans l’état documentaire")
         summary_cards = page.locator("#compass-evidence-summary article")
-        assert_true(summary_cards.count() == 5, f"{BROWSER_NAME}: résumé documentaire incomplet")
+        assert_true(summary_cards.count() == 6, f"{BROWSER_NAME}: résumé documentaire incomplet")
         summary_text = page.locator("#compass-evidence-summary").inner_text()
         assert_true("Questions recherchées" in summary_text and "64/64" in summary_text, f"{BROWSER_NAME}: couverture 64/64 absente du résumé documentaire")
+        assert_true("Questions avec preuve" in summary_text, f"{BROWSER_NAME}: couverture de preuve candidate absente du résumé documentaire")
         evidence_status = page.locator("#compass-evidence-status").inner_text()
         assert_true(
-            "64/64 questions couvertes par la recherche documentaire" in evidence_status,
+            "64/64 questions recherchées" in evidence_status,
             f"{BROWSER_NAME}: couverture de recherche exhaustive absente du statut documentaire",
+        )
+        assert_true(
+            "avec au moins une preuve candidate" in evidence_status
+            and "sans preuve candidate suffisamment exacte" in evidence_status,
+            f"{BROWSER_NAME}: distinction recherche/preuve candidate absente du statut documentaire",
+        )
+        assert_true(
+            "L’absence de preuve candidate ne signifie pas absence de position réelle" in evidence_status,
+            f"{BROWSER_NAME}: prudence sur l’absence de preuve candidate absente",
         )
         assert_true(
             "Aucun de ces nombres ne modifie le poids d’un parti" in evidence_status,

@@ -343,8 +343,8 @@ if compass_page.is_file():
         'id="compass-evidence-parties"',
         "Le nombre de documents n’est pas un score politique",
         "Même règle pour tout le monde",
-        "assets/boussole-electorale.js?v=3.4.0",
-        "assets/boussole-electorale.css?v=3.6.0",
+        "assets/boussole-electorale.js?v=3.4.1",
+        "assets/boussole-electorale.css?v=3.6.1",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
@@ -524,6 +524,10 @@ if party_corpus.is_file():
         "Deuxième révision terminée",
         "Positions finalisées",
         "Questions recherchées",
+        "Questions avec preuve",
+        "candidateCountByQuestion",
+        "sans preuve candidate suffisamment exacte",
+        "L’absence de preuve candidate ne signifie pas absence de position réelle",
         "Justification du codage",
         "Vérifiée le",
         "Deuxième révision",
@@ -831,7 +835,7 @@ if evidence_matrix.is_file():
 
 if compass_methodology.is_file():
     method_text = compass_methodology.read_text(encoding="utf-8", errors="replace")
-    for marker in ("Vote Compass", "Smartvote", "Élections Québec", "deux codages indépendants", "Rédaction non ambiguë", "Couverture des partis", "Parti Nova", "Matrice factuelle de preuves", "aucun classement automatique"):
+    for marker in ("Vote Compass", "Smartvote", "Élections Québec", "deux codages indépendants", "Rédaction non ambiguë", "Couverture des partis", "Parti Nova", "Matrice factuelle de preuves", "Couverture de recherche et couverture de preuve candidate", "l’absence de preuve candidate ne signifie pas absence de position réelle", "aucun classement automatique"):
         if marker.lower() not in method_text.lower():
             errors.append(f"boussole électorale: méthodologie incomplète: {marker}")
 
