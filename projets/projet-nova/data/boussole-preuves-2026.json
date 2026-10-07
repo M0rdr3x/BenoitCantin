@@ -1,5 +1,5 @@
 {
-  "version": "1.38.0",
+  "version": "1.39.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1522,7 +1522,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_support",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -3709,6 +3709,33 @@
         "reviewNote": "La seconde lecture confirme l’engagement 2026 de créer 17 tables régionales avec un réel pouvoir de décision et de leur déléguer notamment le développement économique. Comme la source ne traite pas explicitement de la part des budgets de développement régional décidée en région, le statut partiel/conditionnel et la confiance moyenne sont maintenus."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q53-party-10-20261007-01",
+      "questionId": "q53",
+      "partyId": "party-10",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/eric-duhaime-veut-collaborer-avec-les-nations-autochtones-aux-projets-de-developpement-economique/",
+      "sourceTitle": "Éric Duhaime veut collaborer avec les nations autochtones aux projets de développement économique",
+      "sourceDate": "2026-09-30",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti conservateur du Québec affirme vouloir reconnaître davantage l’autonomie gouvernementale des nations autochtones dans plusieurs champs de compétence et se dit ouvert à la signature d’ententes d’autonomie gouvernementale et de reconnaissance de droits.",
+      "rationale": "La source relie explicitement la reconnaissance de pouvoirs propres des nations autochtones à la signature d’ententes d’autonomie gouvernementale et de reconnaissance de droits. Cette formulation correspond directement à la direction de q53.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme à la fois l’objectif d’une autonomie gouvernementale accrue dans plusieurs champs de compétence et l’ouverture explicite à signer des ententes d’autonomie gouvernementale et de reconnaissance de droits. La correspondance avec q53 est directe."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4150,7 +4177,7 @@
     },
     {
       "batchId": "indigenous-q53-q56-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q53",
         "q54",
@@ -4184,17 +4211,18 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q53": 0,
+        "q53": 1,
         "q54": 0,
         "q55": 1,
         "q56": 0
       },
-      "note": "Après seconde révision indépendante : q55 compte un appui direct d’Osons Québec sur le partage des revenus et la participation économique avec les nations concernées; q53, q54 et q56 demeurent entièrement unknown faute de formulation officielle suffisamment exacte.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q53 compte désormais un appui direct du Parti conservateur du Québec, dont la plateforme officielle 2026 prévoit une autonomie gouvernementale accrue et se dit ouverte à des ententes d’autonomie gouvernementale et de reconnaissance de droits. q55 conserve l’appui documenté d’Osons Québec sur le partage des revenus. q54 et q56 demeurent unknown faute de formulation officielle suffisamment exacte.",
       "evidenceRecordIds": [
-        "q55-party-06-20261006-01"
+        "q55-party-06-20261006-01",
+        "q53-party-10-20261007-01"
       ],
       "finalizedCountByQuestion": {
-        "q53": 0,
+        "q53": 1,
         "q54": 0,
         "q55": 1,
         "q56": 0
