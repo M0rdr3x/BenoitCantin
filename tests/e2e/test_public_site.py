@@ -165,8 +165,15 @@ def run() -> None:
         evidence_cards = page.locator("#compass-evidence-parties .compass-evidence-card")
         evidence_cards.first.wait_for(state="visible", timeout=10_000)
         assert_true(evidence_cards.count() == 22, f"{BROWSER_NAME}: 22 formations attendues dans l’état documentaire")
-        assert_true(page.locator("#compass-evidence-summary article").count() == 4, f"{BROWSER_NAME}: résumé documentaire incomplet")
+        summary_cards = page.locator("#compass-evidence-summary article")
+        assert_true(summary_cards.count() == 5, f"{BROWSER_NAME}: résumé documentaire incomplet")
+        summary_text = summary_cards.inner_text()
+        assert_true("Questions recherchées" in summary_text and "64/64" in summary_text, f"{BROWSER_NAME}: couverture 64/64 absente du résumé documentaire")
         evidence_status = page.locator("#compass-evidence-status").inner_text()
+        assert_true(
+            "64/64 questions couvertes par la recherche documentaire" in evidence_status,
+            f"{BROWSER_NAME}: couverture de recherche exhaustive absente du statut documentaire",
+        )
         assert_true(
             "Aucun de ces nombres ne modifie le poids d’un parti" in evidence_status,
             f"{BROWSER_NAME}: avertissement anti-biais documentaire absent",
