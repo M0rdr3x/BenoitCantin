@@ -1,5 +1,5 @@
 {
-  "version": "1.14.0",
+  "version": "1.15.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1193,11 +1193,11 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_mixed_or_conditional",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_mixed_or_conditional",
         "party-nova": "unknown"
       }
     },
@@ -1237,7 +1237,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -1249,11 +1249,11 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_support",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_support",
         "party-nova": "unknown"
       }
     },
@@ -1265,7 +1265,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_opposition",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -2621,11 +2621,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un renforcement explicite des obligations de francisation en entreprise, mais pas une exigence générale de connaissance du français comme condition d’emploi dans les grandes entreprises; le codage reste partiel."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q41-party-17-20261006-02",
@@ -2645,11 +2648,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un rehaussement des critères de français liés aux permis de travail, mais la mesure n’est pas spécifique aux grandes entreprises ni à leurs règles internes d’embauche; le statut mixte/conditionnel est maintenu."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q43-party-05-20261006-01",
@@ -2669,11 +2675,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la CAQ revendique explicitement l’interdiction du port de signes religieux pour le personnel en position d’autorité; la correspondance avec q43 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q43-party-17-20261006-02",
@@ -2693,11 +2702,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme l’engagement du Parti Québécois à maintenir les acquis de la Loi sur la laïcité de l’État, ce qui conserve les restrictions visant les fonctions d’autorité. La page ne réénumère toutefois pas chacune de ces fonctions."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q43-party-21-20261006-03",
@@ -2717,11 +2729,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme l’appui de Québec solidaire à une interdiction visant magistrats, procureurs de la Couronne, policiers et gardiens de prison, soit des fonctions directement couvertes par la logique de q43."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q44-party-05-20261006-01",
@@ -2741,11 +2756,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles vérifiables)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la CAQ a fait adopter une loi définissant officiellement le modèle d’intégration, la culture commune et les fondements de la nation, soit l’inverse de la proposition de q44."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -3058,7 +3076,7 @@
         "q43": 3,
         "q44": 1
       },
-      "note": "q42 demeure entièrement unknown faute de source officielle suffisamment exacte. q41 ne comporte que des correspondances partielles. q43 compte trois appuis documentaires candidats et q44 une opposition directe candidate.",
+      "note": "Après seconde révision indépendante : q41 conserve deux correspondances partielles; q42 demeure entièrement unknown; q43 compte trois appuis documentés; q44 compte une opposition directe documentée.",
       "evidenceRecordIds": [
         "q41-party-21-20261006-01",
         "q41-party-17-20261006-02",
@@ -3066,7 +3084,13 @@
         "q43-party-17-20261006-02",
         "q43-party-21-20261006-03",
         "q44-party-05-20261006-01"
-      ]
+      ],
+      "finalizedCountByQuestion": {
+        "q41": 2,
+        "q42": 0,
+        "q43": 3,
+        "q44": 1
+      }
     }
   ]
 }
