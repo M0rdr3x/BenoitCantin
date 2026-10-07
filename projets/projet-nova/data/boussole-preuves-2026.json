@@ -1,5 +1,5 @@
 {
-  "version": "1.59.0",
+  "version": "1.60.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -878,7 +878,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -4411,6 +4411,33 @@
         "reviewNote": "La seconde lecture confirme l’interdiction d’un identifiant obligatoire permettant de suivre toute la vie d’une personne, le consentement par finalité, l’évaluation des impacts sur la vie privée, l’audit indépendant et la réversibilité. Aucun passage n’impose cependant une autorisation judiciaire préalable à tout élargissement de la surveillance numérique; le statut ambiguous est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q30-party-10-20261007-01",
+      "questionId": "q30",
+      "partyId": "party-10",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/le-pcq-veut-renforcer-la-protection-des-femmes-et-les-droits-des-victimes/",
+      "sourceTitle": "Le PCQ veut renforcer la protection des femmes et les droits des victimes",
+      "sourceDate": "2026-09-29",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti conservateur du Québec propose de rendre obligatoire le bracelet électronique pour les personnes accusées de violence conjugale en attente de procès ainsi que pour certaines personnes libérées d’un pénitencier fédéral qui présentent un niveau de dangerosité inacceptable pour leur victime. Le parti présente cette surveillance comme un moyen ciblé de protéger les victimes pendant une période de risque élevé.",
+      "rationale": "q30 porte sur l’usage temporaire de pouvoirs de surveillance élargis lorsque survient une menace grave et immédiate. La proposition du PCQ appuie clairement une surveillance électronique renforcée, limitée à des personnes et contextes où un risque important pour une victime est identifié. Elle ne crée toutefois pas un pouvoir policier général déclenché par tout constat de menace grave et immédiate; la correspondance est donc substantielle mais conditionnelle.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_targeted_scope"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une surveillance électronique obligatoire et ciblée pour des personnes accusées de violence conjugale ou libérées présentant un niveau de dangerosité élevé, afin de protéger une victime. Comme la mesure dépend de catégories juridiques précises et ne constitue pas une habilitation policière générale en cas de menace grave et immédiate, le statut mixed/conditional est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5066,19 +5093,20 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q29": 1,
-        "q30": 0,
+        "q30": 1,
         "q31": 1,
         "q32": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 avec le même standard pour les 22 formations. q29 compte désormais une correspondance ambiguë d’Osons Québec : le programme interdit un identifiant numérique obligatoire permettant le suivi généralisé et impose consentement, évaluation préalable de la vie privée, audit indépendant et réversibilité, sans exiger explicitement une autorisation judiciaire préalable à tout élargissement de la surveillance numérique. q30 demeure sans source officielle suffisamment exacte. q31 conserve la correspondance ambiguë du Parti canadien du Québec et q32 la correspondance mixte/conditionnelle du Parti conservateur du Québec.",
+      "note": "Recherche reprise le 7 octobre 2026 avec le même standard pour les 22 formations. q29 conserve la correspondance ambiguë d’Osons Québec. q30 compte désormais une position mixte/conditionnelle du Parti conservateur du Québec : sa plateforme justice/sécurité 2026 prévoit une surveillance électronique obligatoire et ciblée de certaines personnes présentant un risque élevé pour leur victime, sans créer un pouvoir policier général de surveillance élargie pour toute menace grave et immédiate. q31 conserve la correspondance ambiguë du Parti canadien du Québec et q32 la correspondance mixte/conditionnelle du PCQ.",
       "evidenceRecordIds": [
         "q32-party-10-20261007-01",
         "q31-party-08-20261007-01",
-        "q29-party-06-20261007-01"
+        "q29-party-06-20261007-01",
+        "q30-party-10-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q29": 1,
-        "q30": 0,
+        "q30": 1,
         "q31": 1,
         "q32": 1
       }

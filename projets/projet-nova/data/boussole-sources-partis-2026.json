@@ -1,5 +1,5 @@
 {
-  "version": "1.22.0",
+  "version": "1.23.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -189,13 +189,14 @@
         "https://conservateur.quebec/blog/ressources/eric-duhaime-veut-collaborer-avec-les-nations-autochtones-aux-projets-de-developpement-economique/",
         "https://conservateur.quebec/blog/ressources/le-pcq-veut-redonner-du-pouvoir-aux-travailleurs-syndiques/",
         "https://conservateur.quebec/blog/ressources/le-pcq-veut-offrir-a-chaque-eleve-un-parcours-qui-lui-ressemble/",
-        "https://conservateur.quebec/blog/ressources/le-pcq-sengage-a-faire-un-grand-menage-dans-les-depenses-publiques-sans-couper-dans-les-services-publics/"
+        "https://conservateur.quebec/blog/ressources/le-pcq-sengage-a-faire-un-grand-menage-dans-les-depenses-publiques-sans-couper-dans-les-services-publics/",
+        "https://conservateur.quebec/blog/ressources/le-pcq-veut-renforcer-la-protection-des-femmes-et-les-droits-des-victimes/"
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_platform",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les plateformes éducation, travail, autonomie régionale, Autochtones et contrôle des dépenses. Pour q54, la plateforme Autochtones prévoit explicitement que l’autonomie puisse passer par des traités, des modifications législatives ou d’autres mécanismes, ce qui dépasse la limite « traité ou Constitution » de la question."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les plateformes éducation, travail, autonomie régionale, Autochtones, contrôle des dépenses et justice/sécurité. Pour q30, la plateforme du 29 septembre prévoit une surveillance électronique obligatoire et ciblée de personnes jugées dangereuses pour leur victime; elle est codée comme position mixte/conditionnelle, sans extrapoler à un pouvoir général de surveillance policière."
     },
     {
       "id": "party-11",
