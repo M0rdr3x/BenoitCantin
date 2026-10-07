@@ -408,7 +408,13 @@
         : isWithdrawn
           ? "Autorisation retirée en 2026"
           : "Parti provincial actuellement autorisé";
-      return `<article class="compass-party-card"><h3>${esc(party.name)}</h3><p>${esc(status)}</p><span>${party.comparisonEligible ? "Comparaison activée" : "Comparaison non activée — données à sourcer"}</span></article>`;
+      const candidateCount = Number.isInteger(party.candidateCount2026) ? party.candidateCount2026 : null;
+      const participation = isFuture
+        ? "Non inscrit à la liste officielle des candidatures 2026"
+        : candidateCount === 0
+          ? "0 candidature acceptée au scrutin provincial 2026"
+          : `${candidateCount} candidature${candidateCount === 1 ? "" : "s"} acceptée${candidateCount === 1 ? "" : "s"} en 2026`;
+      return `<article class="compass-party-card"><h3>${esc(party.name)}</h3><p>${esc(status)}</p><span class="compass-party-participation">${esc(participation)}</span><span>${party.comparisonEligible ? "Comparaison activée" : "Comparaison non activée — données à sourcer"}</span></article>`;
     }).join("");
   }
 
