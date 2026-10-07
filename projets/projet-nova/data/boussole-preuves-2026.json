@@ -1,5 +1,5 @@
 {
-  "version": "1.51.0",
+  "version": "1.52.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -829,7 +829,7 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "ambiguous",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -4168,6 +4168,33 @@
         "reviewNote": "La seconde lecture du plan complet confirme le rejet explicite des interdictions mal adaptées et des coûts automatiquement refilés à la population, ainsi qu’une attention aux capacités différentes d’absorber de nouvelles exigences. La source ne lie cependant pas ce principe à une analyse d’impact formelle ni à un veto automatique sur une nouvelle norme touchant des biens essentiels; le statut ambiguous est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q28-party-17-20261007-01",
+      "questionId": "q28",
+      "partyId": "party-17",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://pq.org/wp-content/uploads/2026/08/PQ-plateforme-enviro-V_FINALE.pdf",
+      "sourceTitle": "Le plan environnement du Parti Québécois 2026-2034 — Mieux se déplacer tout en économisant",
+      "sourceDate": "2026-08-12",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Le Parti Québécois décrit explicitement la congestion routière comme un problème à réduire et propose pour y répondre davantage de transport collectif, de transport actif et de nouvelles formes de mobilité. Le plan affirme aussi qu’il ne souhaite en aucun cas moraliser les citoyens qui se déplacent en automobile, souvent faute d’alternative efficace.",
+      "rationale": "q28 propose que la réduction de la congestion ne passe pas par de nouvelles restrictions à l’usage de l’automobile. La source du PQ privilégie explicitement l’ajout de choix de mobilité pour réduire la congestion et refuse une approche culpabilisante envers les automobilistes. Elle ne formule toutefois pas une interdiction générale de toute nouvelle restriction automobile; la direction exacte de q28 demeure donc indéterminée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_restriction_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le plan traite directement de congestion, propose de la réduire par une offre accrue de mobilité et affirme ne pas vouloir moraliser les automobilistes. Comme il ne rejette pas explicitement toute nouvelle restriction à l’usage de l’automobile, le statut ambiguous est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4314,20 +4341,21 @@
         "q25": 1,
         "q26": 2,
         "q27": 1,
-        "q28": 0
+        "q28": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q25 compte désormais une correspondance ambiguë de Québec solidaire : la priorité au transport collectif et 23 G$ d’investissements sont explicites, mais le critère d’une majorité de tous les nouveaux investissements provinciaux n’est pas démontré. q26 conserve deux appuis documentés (CAQ et PLQ). q27 compte une position mixte ou conditionnelle du Parti Québécois : densification autour du transport collectif et soutien aux municipalités sont explicites, sans formulation précise d’un pouvoir municipal accru. q28 demeure entièrement unknown après revérification faute de position officielle assez exacte sur de nouvelles restrictions à l’usage de l’automobile.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q25 conserve la correspondance ambiguë de Québec solidaire, q26 deux appuis documentés (CAQ et PLQ) et q27 une position mixte/conditionnelle du Parti Québécois. q28 compte désormais une correspondance ambiguë du Parti Québécois : son plan 2026 identifie la congestion routière, veut la réduire en ajoutant des choix de mobilité et refuse de moraliser les automobilistes, sans rejeter explicitement toute nouvelle restriction à l’usage de l’automobile.",
       "evidenceRecordIds": [
         "q26-party-05-20261006-01",
         "q26-party-12-20261006-02",
         "q25-party-21-20261007-01",
-        "q27-party-17-20261007-01"
+        "q27-party-17-20261007-01",
+        "q28-party-17-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q25": 1,
         "q26": 2,
         "q27": 1,
-        "q28": 0
+        "q28": 1
       }
     },
     {
