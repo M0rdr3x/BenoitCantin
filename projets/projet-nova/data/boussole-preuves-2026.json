@@ -1,5 +1,5 @@
 {
-  "version": "1.65.0",
+  "version": "1.66.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -705,7 +705,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "documented_support",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -4681,6 +4681,33 @@
         "reviewNote": "La seconde lecture confirme que Québec solidaire lie explicitement de nouveaux revenus publics à des investissements majeurs dans l’école publique, incluant davantage d’orthopédagogues. Cette augmentation de ressources spécialisées soutient directement q15."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q24-party-05-20261007-01",
+      "questionId": "q24",
+      "partyId": "party-05",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/06/02/la-ministre-champagne-jourdain-lance-un-service-daccompagnement-pour-accelerer-les-projets-miniers-au-quebec/",
+      "sourceTitle": "La ministre Champagne Jourdain lance un service d’accompagnement pour accélérer les projets miniers au Québec",
+      "sourceDate": "2026-06-02",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_government_announcement",
+      "evidenceSummary": "La CAQ annonce un service d’accompagnement destiné à accélérer les projets miniers en simplifiant les démarches, en identifiant les nœuds administratifs et en réduisant les délais des étapes d’approbation. Le gouvernement précise que cette accélération se fait sans compromettre la rigueur de l’encadrement minier, que les normes environnementales demeurent aussi élevées et que la procédure d’évaluation environnementale a été ramenée de 13 à 18 mois à 9 mois.",
+      "rationale": "q24 propose de raccourcir les délais d’autorisation des projets miniers et énergétiques lorsqu’ils respectent les normes environnementales en vigueur. La source vise explicitement l’accélération des projets miniers, la réduction des délais administratifs et le maintien de normes environnementales élevées. La correspondance avec la direction et la condition environnementale de q24 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_mining_delay_reduction_with_environmental_standards_retained"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles 2025-2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le service Filon vise à accélérer les étapes d’approbation de projets miniers, que la CAQ chiffre la réduction des délais d’évaluation environnementale à neuf mois et qu’elle maintient explicitement la rigueur de l’encadrement ainsi que des normes environnementales élevées. La correspondance avec q24 est directe."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4773,21 +4800,22 @@
         "q21": 2,
         "q22": 1,
         "q23": 1,
-        "q24": 1
+        "q24": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q21 compte maintenant deux positions finalisées : la CAQ demeure ambiguë sur le mécanisme précis de resserrement des plafonds, tandis que le PCQ s’y oppose directement en proposant le retrait puis l’abolition du SPEDE, système de plafonnement qui vise notamment les grands émetteurs. q22 demeure ambiguë pour le Parti Québécois; q23 et q24 conservent leurs positions finalisées.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q21 conserve deux positions finalisées; q22 demeure ambiguë pour le Parti Québécois; q23 conserve une position mixte/conditionnelle de Climat Québec. q24 compte désormais deux appuis directs : Osons Québec propose un guichet réglementaire à délai connu pour les grands projets de ressources sans abolir les contrôles publics, et la CAQ accélère explicitement les projets miniers et réduit les délais d’évaluation tout en maintenant la rigueur de l’encadrement et des normes environnementales élevées.",
       "finalizedCountByQuestion": {
         "q21": 2,
         "q22": 1,
         "q23": 1,
-        "q24": 1
+        "q24": 2
       },
       "evidenceRecordIds": [
         "q23-party-02-20261006-01",
         "q24-party-06-20261006-01",
         "q21-party-05-20261007-01",
         "q22-party-17-20261007-01",
-        "q21-party-10-20261007-01"
+        "q21-party-10-20261007-01",
+        "q24-party-05-20261007-01"
       ]
     },
     {
