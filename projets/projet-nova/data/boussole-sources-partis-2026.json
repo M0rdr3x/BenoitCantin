@@ -1,5 +1,5 @@
 {
-  "version": "1.33.0",
+  "version": "1.34.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -233,13 +233,14 @@
         "https://plq.org/communique/plan-habitation-du-parti-liberal-du-quebec-15-g-dinvestissements-pour-40-000-logements-sociaux-et-abordables-supplementaires/",
         "https://plq.org/communique/objectif-ambitieux-100-000-logements-par-annee/",
         "https://plq.org/communique/un-changement-majeur-dans-la-gestion-de-la-transformation-numerique/",
-        "https://plq.org/communique/la-telesante-au-coeur-dune-premiere-ligne-plus-accessible/"
+        "https://plq.org/communique/la-telesante-au-coeur-dune-premiere-ligne-plus-accessible/",
+        "https://plq.org/communique/un-cadre-financier-realiste-pour-reparer-les-finances-publiques-et-batir-lavenir-economique-du-quebec/"
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_engagements",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant la page complète des engagements électoraux. Pour q50, le PLQ combine un noyau de services de proximité stable dans toutes les régions avec une asymétrie réglementaire permettant des adaptations régionales; cette combinaison est codée comme position mixte/conditionnelle."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les engagements électoraux et le cadre financier 2026. q08 utilise le cadre financier qui prévoit un retour à l’équilibre en 2029-2030 tout en engageant près de 12 G$ de nouvelles mesures avant cette date; le statut demeure mixte/conditionnel parce que le communiqué ne qualifie pas chaque engagement de programme permanent. q50 conserve le noyau commun de services avec asymétrie réglementaire régionale."
     },
     {
       "id": "party-13",
