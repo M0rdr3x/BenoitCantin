@@ -1,5 +1,5 @@
 {
-  "version": "1.41.0",
+  "version": "1.42.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1776,7 +1776,7 @@
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "ambiguous",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
@@ -3763,6 +3763,33 @@
         "reviewNote": "La seconde lecture confirme une formulation explicite et non conditionnelle : le Parti communiste du Québec revendique un droit de veto sur tout projet d’exploitation sur le territoire des nations autochtones. Cette position est directement incompatible avec q56, qui propose l’absence d’un veto supplémentaire."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q62-party-12-20261007-01",
+      "questionId": "q62",
+      "partyId": "party-12",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://plq.org/communique/un-changement-majeur-dans-la-gestion-de-la-transformation-numerique/",
+      "sourceTitle": "Un changement majeur dans la gestion de la transformation numérique",
+      "sourceDate": "2026-09-18",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti libéral du Québec annonce qu’il déposerait à court terme une loi-cadre sur le développement et le déploiement de l’intelligence artificielle, puis élargirait l’encadrement de l’IA et confierait au ministre responsable son encadrement dans l’appareil public.",
+      "rationale": "La source traite directement de l’existence d’un cadre spécifique pour le développement et le déploiement de l’IA, ce qui est pertinent pour q62. Elle ne précise toutefois pas si de nouveaux systèmes d’IA pourraient ou non être utilisés dans les services publics avant l’adoption de cette loi-cadre; la direction exacte de q62 ne peut donc pas être tranchée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_timing_uncertainty"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le PLQ prévoit à court terme une loi-cadre portant explicitement sur le développement et le déploiement de l’IA et un encadrement dans l’appareil public. La source ne fixe cependant pas l’ordre juridique entre l’adoption de ce cadre et l’autorisation de nouveaux systèmes d’IA; elle ne permet donc ni un appui ni une opposition à q62."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4312,7 +4339,7 @@
     },
     {
       "batchId": "digital-q61-q64-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q61",
         "q62",
@@ -4347,21 +4374,22 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q61": 2,
-        "q62": 0,
+        "q62": 1,
         "q63": 1,
         "q64": 2
       },
-      "note": "Après seconde révision indépendante, les cinq correspondances demeurent ambiguës : aucune source ne satisfait entièrement les formulations exactes de q61, q63 ou q64. q62 demeure entièrement unknown.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q61 conserve deux correspondances ambiguës (Osons Québec et PLQ), q63 une correspondance ambiguë (Osons Québec), et q64 deux correspondances ambiguës (Osons Québec et Parti conservateur du Québec). q62 compte désormais une correspondance ambiguë du PLQ : sa proposition de loi-cadre porte explicitement sur le développement et le déploiement de l’IA et sur son encadrement dans l’appareil public, mais ne précise pas si de nouveaux systèmes pourraient être utilisés avant l’adoption de ce cadre.",
       "evidenceRecordIds": [
         "q61-party-06-20261006-01",
         "q61-party-12-20261006-02",
         "q63-party-06-20261006-01",
         "q64-party-06-20261006-01",
-        "q64-party-10-20261006-02"
+        "q64-party-10-20261006-02",
+        "q62-party-12-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q61": 2,
-        "q62": 0,
+        "q62": 1,
         "q63": 1,
         "q64": 2
       }
