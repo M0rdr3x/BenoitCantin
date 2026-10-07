@@ -1,5 +1,5 @@
 {
-  "version": "1.8.0",
+  "version": "1.9.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -214,13 +214,14 @@
       ],
       "pressReleaseUrls": [
         "https://plq.org/communique/plan-habitation-du-parti-liberal-du-quebec-15-g-dinvestissements-pour-40-000-logements-sociaux-et-abordables-supplementaires/",
-        "https://plq.org/communique/objectif-ambitieux-100-000-logements-par-annee/"
+        "https://plq.org/communique/objectif-ambitieux-100-000-logements-par-annee/",
+        "https://plq.org/communique/un-changement-majeur-dans-la-gestion-de-la-transformation-numerique/"
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_engagements",
-      "lastVerified": "2026-10-06",
+      "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": null
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant l’engagement numérique du 18 septembre sur une loi-cadre pour le développement et le déploiement de l’IA. Cette source est pertinente pour q61 et q62, mais n’est pas extrapolée au-delà de ce qu’elle précise."
     },
     {
       "id": "party-13",
