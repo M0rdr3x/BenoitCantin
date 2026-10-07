@@ -203,6 +203,14 @@ def run() -> None:
             f"{BROWSER_NAME}: niveau de confiance absent de l’explorateur",
         )
         assert_true(
+            evidence_question_results.locator("dt", has_text="Vérifiée le").count() >= 1,
+            f"{BROWSER_NAME}: date de vérification absente de l’explorateur",
+        )
+        assert_true(
+            evidence_question_results.locator("dt", has_text="Deuxième révision").count() >= 1,
+            f"{BROWSER_NAME}: date de seconde révision absente de l’explorateur",
+        )
+        assert_true(
             evidence_question_results.locator("strong", has_text="Justification du codage").count() >= 1,
             f"{BROWSER_NAME}: justification du codage absente de l’explorateur",
         )
