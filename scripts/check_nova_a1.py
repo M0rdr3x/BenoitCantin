@@ -542,6 +542,7 @@ if party_corpus.is_file():
         errors.append("boussole électorale: tri alphabétique neutre des partis absent")
 
 
+source_rows = []
 if party_sources.is_file():
     try:
         source_inventory = json.loads(party_sources.read_text(encoding="utf-8"))
@@ -705,6 +706,17 @@ if evidence_matrix.is_file():
                 errors.append(f"boussole électorale: seconde révision complétée sans identité/date: {record.get('recordId')}")
         else:
             errors.append(f"boussole électorale: statut de seconde révision invalide: {record.get('recordId')}")
+
+    source_usable_by_id = {
+        row.get("id"): row.get("usableForPositionCoding")
+        for row in source_rows
+    }
+    evidence_party_ids = {r.get("partyId") for r in records if r.get("partyId")}
+    for party_id in sorted(evidence_party_ids):
+        if source_usable_by_id.get(party_id) is not True:
+            errors.append(
+                f"boussole électorale: formation avec preuve mais non admissible au codage dans l’inventaire: {party_id}"
+            )
 
     record_by_id = {r.get("recordId"): r for r in records}
     research_batches = evidence.get("researchCoverage") or []
