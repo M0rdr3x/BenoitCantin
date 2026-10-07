@@ -1,5 +1,5 @@
 {
-  "version": "1.5.0",
+  "version": "1.6.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -2197,6 +2197,50 @@
         "reviewNote": "La source officielle prévoit un programme public de prêts pour la mise de fonds des premiers acheteurs pouvant atteindre 50 000 $, ce qui constitue une aide publique explicitement dédiée à l’achat d’une première propriété."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q23-party-02-20261006-01",
+      "questionId": "q23",
+      "partyId": "party-02",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://climat.quebec/2026/06/12/communique-stablex-une-nouvelle-campagne-dechantillonnage-independante-confirme-une-contamination/",
+      "sourceTitle": "Stablex : une nouvelle campagne d’échantillonnage indépendante confirme une contamination",
+      "sourceDate": "2026-06-12",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Climat Québec s’appuie sur une campagne d’échantillonnage supervisée par une firme indépendante qui documente des dépassements de normes et des risques réels pour les écosystèmes aquatiques, puis demande la suspension de toute expansion de Stablex tant qu’une étude exhaustive indépendante n’a pas été réalisée et que la contamination n’est pas contrôlée.",
+      "rationale": "Il s’agit d’un cas concret où la formation demande qu’un projet industriel ne puisse pas aller de l’avant en raison d’impacts environnementaux documentés par une expertise indépendante. La correspondance avec q23 est forte, mais la source porte sur un cas précis plutôt que sur une règle générale.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_concrete_case"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q24-party-06-20261006-01",
+      "questionId": "q24",
+      "partyId": "party-06",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://osons.quebec/?profil=regions",
+      "sourceTitle": "Osons Québec — Guichet unique pour les grands projets",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Osons Québec veut accélérer les investissements dans les ressources et les grands projets avec un guichet stratégique unique, un calendrier réglementaire complet, des demandes d’information regroupées et une décision dans le délai légal, sans abolir les contrôles publics. Le même chapitre vise explicitement les minéraux critiques et les technologies énergétiques.",
+      "rationale": "La proposition vise explicitement à raccourcir et rendre prévisibles les délais d’autorisation de grands projets liés aux ressources, aux minéraux critiques et à l’énergie tout en maintenant les contrôles et normes applicables; elle correspond directement à la direction de q24.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
     }
   ],
   "researchCoverage": [
@@ -2242,6 +2286,49 @@
         "q19": 0,
         "q20": 4
       }
+    },
+    {
+      "batchId": "environment-q21-q24-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q21",
+        "q22",
+        "q23",
+        "q24"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q21": 0,
+        "q22": 0,
+        "q23": 1,
+        "q24": 1
+      },
+      "note": "q21 et q22 demeurent entièrement unknown faute de correspondance officielle suffisamment exacte; q23 et q24 reçoivent seulement des preuves candidates soumises à une seconde révision indépendante."
     }
   ]
 }
