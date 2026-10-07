@@ -1,5 +1,5 @@
 {
-  "version": "1.23.0",
+  "version": "1.24.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -161,7 +161,8 @@
       "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
       "officialSite": "https://particommunisteduquebec.ca/",
       "platformUrls": [
-        "https://particommunisteduquebec.ca/plateforme-2026/"
+        "https://particommunisteduquebec.ca/plateforme-2026/",
+        "https://particommunisteduquebec.ca/programme-ch5/"
       ],
       "pressReleaseUrls": [
         "https://particommunisteduquebec.ca/une-campagne-electorale-silencieuse-sur-les-droits-des-peuples-autochtones/"
@@ -170,7 +171,7 @@
       "verificationStatus": "verified_official_site_and_2026_platform",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026. L’article du 1er octobre 2026 revendique explicitement un droit de veto autochtone sur tout projet d’exploitation sur leur territoire; cette formulation est utilisée uniquement pour q56, sans extrapolation à q54."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026 : plateforme électorale 2026, programme général et déclaration autochtone. Le chapitre 5 demande explicitement l’extension des domaines couverts par la convention collective et davantage de contrôle syndical sur les changements touchant le travail; il est utilisé pour q60. La plateforme 2026 corrobore l’expansion des droits syndicaux."
     },
     {
       "id": "party-10",
