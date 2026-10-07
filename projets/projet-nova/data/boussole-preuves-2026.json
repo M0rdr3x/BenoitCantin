@@ -1,5 +1,5 @@
 {
-  "version": "1.42.0",
+  "version": "1.43.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -621,7 +621,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "ambiguous",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -3790,12 +3790,39 @@
         "reviewNote": "La seconde lecture confirme que le PLQ prévoit à court terme une loi-cadre portant explicitement sur le développement et le déploiement de l’IA et un encadrement dans l’appareil public. La source ne fixe cependant pas l’ordre juridique entre l’adoption de ce cadre et l’autorisation de nouveaux systèmes d’IA; elle ne permet donc ni un appui ni une opposition à q62."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q21-party-05-20261007-01",
+      "questionId": "q21",
+      "partyId": "party-05",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/06/11/plan-de-mise-en-oeuvre-2026-2031-du-plan-pour-une-economie-verte-2030-quebec-renforce-son-soutien-direct-aux-citoyens/",
+      "sourceTitle": "Plan de mise en œuvre 2026-2031 du Plan pour une économie verte 2030 — Québec renforce son soutien direct aux citoyens",
+      "sourceDate": "2026-06-11",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_government_announcement",
+      "evidenceSummary": "La CAQ présente un plan 2026-2031 qui poursuit la décarbonation de l’économie et du secteur industriel et prévoit des actions devant réduire les émissions québécoises de GES, notamment par des mesures d’efficacité énergétique, d’électrification et d’aide à l’industrie.",
+      "rationale": "La source confirme une volonté actuelle de réduire les émissions du secteur industriel, ce qui est pertinent pour q21. Elle ne dit toutefois pas que les plafonds d’émissions applicables aux grands émetteurs devraient être resserrés. Le mécanisme précis demandé par q21 n’est donc pas établi.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_mechanism_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un objectif 2026-2031 de décarbonation industrielle et de réduction des GES, mais aucun engagement explicite à resserrer les plafonds d’émissions des grands émetteurs. La source reste donc pertinente sans permettre de coder un appui direct."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
     {
       "batchId": "housing-q19-q20-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q19",
         "q20"
@@ -3830,7 +3857,7 @@
         "q19": 0,
         "q20": 4
       },
-      "note": "q19 demeure entièrement unknown faute de preuve exacte; q20 compte quatre positions finalisées après seconde révision indépendante. L’absence de preuve ne vaut ni appui ni opposition.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q19 demeure entièrement unknown : les sources officielles récentes consultées soutiennent la construction ou le financement de logements abordables, mais aucune ne formule assez précisément le pouvoir municipal d’exiger une proportion minimale de logements abordables dans les grands projets résidentiels. q20 conserve ses quatre positions finalisées.",
       "finalizedCountByQuestion": {
         "q19": 0,
         "q20": 4
@@ -3844,7 +3871,7 @@
     },
     {
       "batchId": "environment-q21-q24-20261006",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "questionIds": [
         "q21",
         "q22",
@@ -3878,21 +3905,22 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q21": 0,
+        "q21": 1,
         "q22": 0,
         "q23": 1,
         "q24": 1
       },
-      "note": "q21 et q22 demeurent entièrement unknown faute de correspondance officielle suffisamment exacte; q23 et q24 comptent chacune une position finalisée après seconde révision indépendante.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q21 compte désormais une correspondance ambiguë de la CAQ : le plan 2026-2031 poursuit explicitement la décarbonation industrielle et la réduction des GES, mais ne prévoit pas explicitement de resserrer les plafonds applicables aux grands émetteurs. q22 demeure entièrement unknown : aucune source officielle récente ne lie assez précisément l’abandon d’une nouvelle norme environnementale à une analyse d’impact prévoyant une hausse du coût de biens essentiels. q23 et q24 conservent chacune une position finalisée.",
       "finalizedCountByQuestion": {
-        "q21": 0,
+        "q21": 1,
         "q22": 0,
         "q23": 1,
         "q24": 1
       },
       "evidenceRecordIds": [
         "q23-party-02-20261006-01",
-        "q24-party-06-20261006-01"
+        "q24-party-06-20261006-01",
+        "q21-party-05-20261007-01"
       ]
     },
     {
