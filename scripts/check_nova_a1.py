@@ -13,6 +13,24 @@ ROOT = Path(__file__).resolve().parents[1]
 NOVA = ROOT / "projets" / "projet-nova"
 errors: list[str] = []
 
+# Portail principal : Projet Nova doit utiliser l'asset propre du site Nova.
+portal_home = ROOT / "index.html"
+portal_home_css = ROOT / "assets" / "css" / "home-v24-4-12.css"
+if portal_home.is_file():
+    portal_home_text = portal_home.read_text(encoding="utf-8", errors="replace")
+    if "/assets/media/nova-logo.webp" in portal_home_text:
+        errors.append("accueil: ancien asset Nova mal cadré encore référencé")
+    if portal_home_text.count("/projets/projet-nova/assets/logo-nova.webp") < 3:
+        errors.append("accueil: le logo Nova propre doit être utilisé dans la porte, l’aperçu central et la carte Projet Nova")
+else:
+    errors.append("accueil: index.html absent")
+if portal_home_css.is_file():
+    portal_home_css_text = portal_home_css.read_text(encoding="utf-8", errors="replace")
+    if ".node-nova-home img" not in portal_home_css_text or "transform:scale(1.42)" not in portal_home_css_text:
+        errors.append("accueil: recalibrage visuel Projet Nova absent")
+else:
+    errors.append("accueil: CSS spécifique de la composition principale absent")
+
 if not NOVA.is_dir():
     errors.append("dossier projets/projet-nova absent")
 
@@ -343,8 +361,8 @@ if compass_page.is_file():
         'id="compass-evidence-parties"',
         "Le nombre de documents n’est pas un score politique",
         "Même règle pour tout le monde",
-        "assets/boussole-electorale.js?v=3.4.1",
-        "assets/boussole-electorale.css?v=3.6.1",
+        "assets/boussole-electorale.js?v=3.4.2",
+        "assets/boussole-electorale.css?v=3.6.2",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
@@ -457,6 +475,81 @@ if party_corpus.is_file():
         errors.append("boussole électorale: le Parti populaire du Québec doit être conservé avec statut autorisation retirée en 2026")
     if len(future) != 1 or future[0].get("name") != "Parti Nova":
         errors.append("boussole électorale: Parti Nova doit être l’unique futur parti")
+
+    registry_evidence = parties.get("registryEvidence") or {}
+    nomination_source = "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/"
+    authorized_parties_source = "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/"
+    results_source = "https://www.electionsquebec.qc.ca/resultats-et-statistiques/resultats-elections-generales-provinciales-en-direct/"
+    if registry_evidence.get("nominationSummaryUrl") != nomination_source:
+        errors.append("boussole électorale: source officielle des candidatures 2026 absente ou différente")
+    if registry_evidence.get("authorizedPartiesUrl") != authorized_parties_source:
+        errors.append("boussole électorale: source officielle des partis autorisés absente ou différente")
+    if registry_evidence.get("resultsUrl") != results_source:
+        errors.append("boussole électorale: lien officiel des résultats provinciaux 2026 absent ou différent")
+    if registry_evidence.get("totalAcceptedCandidates2026") != 908:
+        errors.append("boussole électorale: total officiel de 908 candidatures acceptées requis")
+    if registry_evidence.get("acceptedPartyCandidates2026") != 889:
+        errors.append("boussole électorale: total officiel de 889 candidatures partisanes requis")
+    if registry_evidence.get("acceptedIndependentCandidates2026") != 19:
+        errors.append("boussole électorale: total officiel de 19 candidatures indépendantes requis")
+    if registry_evidence.get("officialElectionPartyEntries") != 21:
+        errors.append("boussole électorale: 21 entrées partisanes du scrutin 2026 requises")
+
+    expected_2026_candidates = {
+        "party-01": 5, "party-02": 52, "party-03": 28, "party-04": 8, "party-05": 127,
+        "party-06": 2, "party-07": 6, "party-08": 29, "party-09": 10, "party-10": 127,
+        "party-11": 4, "party-12": 127, "party-13": 3, "party-14": 12, "party-15": 38,
+        "party-16": 0, "party-17": 127, "party-18": 37, "party-19": 18, "party-20": 2,
+        "party-21": 127,
+    }
+    expected_2026_names = {
+        "party-01": "Bloc pot",
+        "party-02": "Climat Québec",
+        "party-03": "Démocratie directe",
+        "party-04": "Équipe autonomiste",
+        "party-05": "Équipe Christine Fréchette – Coalition avenir Québec",
+        "party-06": "Osons Québec",
+        "party-07": "Parti accès propriété et équité – Équipe Québec debout",
+        "party-08": "Parti canadien du Québec/Canadian Party of Québec",
+        "party-09": "Parti communiste du Québec",
+        "party-10": "Parti conservateur du Québec",
+        "party-11": "Parti culinaire du Québec",
+        "party-12": "Parti libéral du Québec/Quebec Liberal Party",
+        "party-13": "Parti libertarien du Québec",
+        "party-14": "Parti marxiste-léniniste du Québec",
+        "party-15": "Parti nul",
+        "party-16": "Parti populaire du Québec",
+        "party-17": "Parti québécois",
+        "party-18": "Parti vert du Québec/Green Party of Québec",
+        "party-19": "Présence Québec",
+        "party-20": "Québec innovant",
+        "party-21": "Québec solidaire",
+    }
+    election_rows = [row for row in party_rows if row.get("id") != "party-nova"]
+    if {row.get("id") for row in election_rows} != set(expected_2026_candidates):
+        errors.append("boussole électorale: liste des 21 formations électorales 2026 incomplète ou différente")
+    for row in election_rows:
+        party_id = row.get("id")
+        if row.get("election2026Listed") is not True:
+            errors.append(f"boussole électorale: entrée 2026 non marquée comme officielle pour {party_id}")
+        if row.get("candidateCount2026") != expected_2026_candidates.get(party_id):
+            errors.append(f"boussole électorale: nombre de candidatures 2026 incorrect pour {party_id}")
+        if row.get("officialElectionName2026") != expected_2026_names.get(party_id):
+            errors.append(f"boussole électorale: nom électoral officiel 2026 incorrect pour {party_id}")
+        if row.get("election2026Source") != nomination_source:
+            errors.append(f"boussole électorale: source de candidatures 2026 absente pour {party_id}")
+        expected_authorized = party_id != "party-16"
+        if row.get("authorizedCurrent") is not expected_authorized:
+            errors.append(f"boussole électorale: statut d’autorisation actuel incorrect pour {party_id}")
+    if sum(row.get("candidateCount2026") or 0 for row in election_rows) != 889:
+        errors.append("boussole électorale: somme des candidatures partisanes 2026 différente de 889")
+    if future:
+        nova_row = future[0]
+        if nova_row.get("election2026Listed") is not False or nova_row.get("candidateCount2026") is not None:
+            errors.append("boussole électorale: Parti Nova ne doit pas être présenté comme participant au scrutin 2026")
+        if nova_row.get("officialElectionName2026") is not None:
+            errors.append("boussole électorale: Parti Nova ne doit pas recevoir de nom électoral officiel 2026")
+
     if any(row.get("comparisonEligible") is not False for row in party_rows):
         errors.append("boussole électorale: aucune comparaison de parti ne doit être activée avant codage sourcé")
     neutrality = parties.get("neutralityRules") or {}
@@ -537,6 +630,9 @@ if party_corpus.is_file():
         "researchCoverage",
         "secondIndependentReview",
         "Aucun de ces nombres ne modifie le poids d’un parti",
+        "candidateCount2026",
+        "Non inscrit à la liste officielle des candidatures 2026",
+        "candidature acceptée",
     ):
         if marker not in compass_runtime:
             errors.append(f"boussole électorale: transparence documentaire runtime absente: {marker}")
