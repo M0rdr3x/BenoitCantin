@@ -1,5 +1,5 @@
 {
-  "version": "1.18.0",
+  "version": "1.19.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1473,7 +1473,7 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "ambiguous",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -2958,25 +2958,28 @@
       "recordId": "q51-party-17-20261006-01",
       "questionId": "q51",
       "partyId": "party-17",
-      "proposedStatus": "documented_support",
+      "proposedStatus": "ambiguous",
       "sourceUrl": "https://pq.org/nouvelles/un-milliard-par-annee-pour-les-regions-decide-en-region/",
       "sourceTitle": "Un milliard par année pour les régions, décidé en région",
       "sourceDate": "2022-05-16",
       "checkedAt": "2026-10-06",
       "sourceType": "official_party_press_release",
       "evidenceSummary": "Le Parti Québécois proposait un PQI régional bonifié de 1 G$ par année, administré avec des instances décisionnelles en région, afin de permettre aux régions de décider elles-mêmes des projets à mettre de l’avant selon leurs priorités.",
-      "rationale": "La source répond directement à q51 en liant une enveloppe de développement régional à des décisions prises avec et par des instances régionales. La source est toutefois antérieure à l’élection 2026 et doit être revalidée lors de la seconde révision contre la position actuelle du parti.",
+      "rationale": "La source de 2022 répond directement à q51 en liant une enveloppe régionale à des décisions prises en région. Les sources officielles du Parti Québécois en 2026 confirment une volonté générale de décentralisation et de redonner du pouvoir aux régions, mais ne réaffirment pas assez précisément le même mécanisme budgétaire. La position actuelle exacte sur q51 reste donc ambiguë.",
       "confidence": "medium",
       "firstReview": {
         "status": "completed",
         "method": "exact_question_match_with_recency_flag"
       },
       "secondIndependentReview": {
-        "status": "pending",
-        "reviewer": null,
-        "reviewedAt": null
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_with_recency_validation",
+        "result": "adjusted",
+        "reviewNote": "La proposition de 2022 est un appui direct, mais la seconde révision exige une position suffisamment actuelle pour l’élection 2026. Les sources officielles 2026 du PQ confirment la décentralisation et le transfert de pouvoir vers les régions sans réaffirmer précisément l’enveloppe budgétaire décidée régionalement. Le statut est donc abaissé de documented_support à ambiguous."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -3404,10 +3407,16 @@
         "q51": 1,
         "q52": 0
       },
-      "note": "q49, q50 et q52 demeurent entièrement unknown faute de correspondance officielle suffisamment exacte. q51 compte une preuve candidate péquiste directe mais ancienne; elle reste non finalisable tant que sa continuité en 2026 n’est pas confirmée.",
+      "note": "Après seconde révision indépendante : q49, q50 et q52 demeurent entirely unknown; q51 compte une position ambiguë du Parti Québécois. La proposition de 2022 est directe, mais les sources officielles 2026 ne réaffirment pas assez précisément le même mécanisme budgétaire pour conserver un appui direct.",
       "evidenceRecordIds": [
         "q51-party-17-20261006-01"
-      ]
+      ],
+      "finalizedCountByQuestion": {
+        "q49": 0,
+        "q50": 0,
+        "q51": 1,
+        "q52": 0
+      }
     }
   ]
 }
