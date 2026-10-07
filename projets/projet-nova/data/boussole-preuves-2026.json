@@ -1,5 +1,5 @@
 {
-  "version": "1.22.0",
+  "version": "1.23.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1641,11 +1641,11 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "ambiguous",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_support",
         "party-nova": "unknown"
       }
     },
@@ -1701,7 +1701,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "ambiguous",
         "party-nova": "unknown"
       }
     },
@@ -3012,7 +3012,7 @@
       "recordId": "q57-party-17-20261006-01",
       "questionId": "q57",
       "partyId": "party-17",
-      "proposedStatus": "documented_support",
+      "proposedStatus": "ambiguous",
       "sourceUrl": "https://pq.org/wp-content/uploads/2024/08/cahier-projet-nationalv2-1.pdf",
       "sourceTitle": "Projet national — S’adapter aux nouvelles réalités du monde du travail",
       "sourceDate": null,
@@ -3026,9 +3026,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "adjusted",
+        "reviewNote": "Le Projet national du Parti Québécois affirme vouloir faciliter la syndicalisation de l’ensemble des travailleurs, mais il ne précise pas que les règles d’accréditation syndicale elles-mêmes doivent être modifiées dans ce but. La source est pertinente mais ne correspond pas assez précisément à q57 pour conserver un appui direct."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q57-party-21-20261006-02",
@@ -3048,9 +3053,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "Le programme officiel de Québec solidaire prévoit explicitement l’accréditation multi-patronale afin de faciliter la syndicalisation dans le secteur des services. La source relie donc directement une modification des règles d’accréditation à l’objectif visé par q57."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q59-party-21-20261006-01",
@@ -3070,9 +3080,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "Le manifeste fixe clairement une cible de salaire minimum à 20 $/h, mais ne précise pas une trajectoire pluriannuelle explicitement supérieure au taux d’inflation. La preuve reste donc ambiguë pour la formulation exacte de q59."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -3604,12 +3619,18 @@
         "q59": 1,
         "q60": 0
       },
-      "note": "q57 compte deux preuves candidates officielles directes; q59 compte une preuve candidate ambiguë car la cible de 20 $/h ne décrit pas explicitement une trajectoire supérieure à l’inflation; q58 et q60 demeurent entièrement unknown faute de formulation officielle suffisamment exacte.",
+      "note": "Après seconde révision indépendante : q57 compte un appui direct de Québec solidaire et une position ambiguë du Parti Québécois faute de référence explicite aux règles d’accréditation; q59 demeure ambiguë pour Québec solidaire car la cible de 20 $/h ne décrit pas une trajectoire pluriannuelle explicitement supérieure à l’inflation; q58 et q60 demeurent entièrement unknown.",
       "evidenceRecordIds": [
         "q57-party-17-20261006-01",
         "q57-party-21-20261006-02",
         "q59-party-21-20261006-01"
-      ]
+      ],
+      "finalizedCountByQuestion": {
+        "q57": 2,
+        "q58": 0,
+        "q59": 1,
+        "q60": 0
+      }
     }
   ]
 }
