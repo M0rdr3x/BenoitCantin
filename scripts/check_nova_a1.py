@@ -5,6 +5,7 @@ import hashlib
 import json
 import re
 import sys
+from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -653,6 +654,22 @@ if evidence_matrix.is_file():
             for nested in value:
                 walk_keys(nested)
     walk_keys(evidence)
+    corpus_updated_raw = evidence.get("updated")
+    try:
+        corpus_updated = date.fromisoformat(str(corpus_updated_raw))
+    except (TypeError, ValueError):
+        corpus_updated = None
+        errors.append("boussole électorale: date updated invalide; format ISO YYYY-MM-DD requis")
+
+    def validate_corpus_date(raw_value, label):
+        try:
+            parsed = date.fromisoformat(str(raw_value))
+        except (TypeError, ValueError):
+            errors.append(f"boussole électorale: {label} invalide; format ISO YYYY-MM-DD requis")
+            return
+        if corpus_updated is not None and parsed > corpus_updated:
+            errors.append(f"boussole électorale: {label} postérieure à la mise à jour du corpus")
+
     records = evidence.get("evidenceRecords") or []
     record_ids = [r.get("recordId") for r in records]
     if len(record_ids) != len(set(record_ids)):
@@ -676,8 +693,7 @@ if evidence_matrix.is_file():
             errors.append(f"boussole électorale: confiance candidate invalide: {record.get('recordId')}")
         if not str(record.get("sourceUrl") or "").startswith("https://"):
             errors.append(f"boussole électorale: URL HTTPS de preuve requise: {record.get('recordId')}")
-        if record.get("checkedAt") != "2026-10-06":
-            errors.append(f"boussole électorale: date de vérification inattendue: {record.get('recordId')}")
+        validate_corpus_date(record.get("checkedAt"), f"date de vérification pour {record.get('recordId')}")
         if (record.get("firstReview") or {}).get("status") != "completed":
             errors.append(f"boussole électorale: première révision absente: {record.get('recordId')}")
         second = record.get("secondIndependentReview") or {}
@@ -711,8 +727,7 @@ if evidence_matrix.is_file():
         party_ids = batch.get("partyIds") or []
         evidence_record_ids = batch.get("evidenceRecordIds") or []
         counts = batch.get("candidateCountByQuestion") or {}
-        if batch.get("checkedAt") != "2026-10-06":
-            errors.append(f"boussole électorale: date de lot de recherche inattendue pour {batch_id}")
+        validate_corpus_date(batch.get("checkedAt"), f"date de lot de recherche pour {batch_id}")
         if not question_ids or len(question_ids) != len(set(question_ids)) or not set(question_ids).issubset(expected_question_ids):
             errors.append(f"boussole électorale: questions invalides dans le lot {batch_id}")
         for question_id in question_ids:
