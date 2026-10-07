@@ -1,5 +1,5 @@
 {
-  "version": "1.63.0",
+  "version": "1.64.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -66,7 +66,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_opposition",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -145,7 +145,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_opposition",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -626,7 +626,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_opposition",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -4546,6 +4546,87 @@
         "reviewNote": "La seconde lecture confirme la revendication d’un contrôle syndical accru sur plusieurs changements technologiques et organisationnels. Le texte ne dit toutefois pas que toute modification de l’organisation du travail doit nécessairement faire l’objet d’une négociation préalable; le statut ambiguous est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q01-party-10-20261007-01",
+      "questionId": "q01",
+      "partyId": "party-10",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/eric-duhaime-propose-une-baisse-dimpot-de-59-pour-les-entreprises/",
+      "sourceTitle": "Éric Duhaime propose une baisse d’impôt de 59 % pour les entreprises",
+      "sourceDate": "2026-08-27",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_page",
+      "evidenceSummary": "Le Parti conservateur du Québec propose une baisse générale du taux d’impôt des sociétés et distingue explicitement cette approche des subventions aux entreprises, en affirmant que l’objectif n’est plus que le gouvernement choisisse des gagnants et des perdants ni qu’il distribue des subventions.",
+      "rationale": "q01 propose que le gouvernement utilise des aides financières ciblées pour développer des secteurs qu’il désigne comme stratégiques. La source du PCQ rejette explicitement la logique de sélection gouvernementale des bénéficiaires de subventions et privilégie une baisse fiscale générale laissant les entreprises décider elles-mêmes de leurs investissements. La direction est directement opposée à q01.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_inverse_direction_targeted_aid_vs_general_taxation"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le PCQ oppose explicitement sa baisse générale de l’impôt des sociétés au modèle où le gouvernement choisit les entreprises gagnantes et perdantes et distribue des subventions. Cela contredit directement l’usage d’aides ciblées à des secteurs stratégiques proposé par q01."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q04-party-05-20261007-01",
+      "questionId": "q04",
+      "partyId": "party-05",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/09/21/lequipe-frechette-mise-sur-les-forces-du-quebec-pour-batir-une-nation-plus-autonome-et-plus-forte/",
+      "sourceTitle": "L’Équipe Fréchette mise sur les forces du Québec pour bâtir une nation plus autonome et plus forte",
+      "sourceDate": "2026-09-21",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_campaign_page",
+      "evidenceSummary": "L’Équipe Christine Fréchette annonce plus de 1,2 G$ d’interventions ciblées et prévoit de recentrer les interventions d’Investissement Québec sur les secteurs stratégiques et sur les situations où le marché privé ne peut agir seul.",
+      "rationale": "q04 propose de remplacer les programmes d’aide réservés à certains secteurs par des règles fiscales générales applicables à toutes les entreprises. La source CAQ maintient au contraire des interventions financières explicitement ciblées sur des secteurs stratégiques. Cette conservation assumée d’aides sectorielles est directement opposée au remplacement général proposé par q04.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_inverse_direction_targeted_sector_support_retained"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la CAQ chiffre des interventions ciblées et recentre Investissement Québec sur des secteurs stratégiques. Une politique qui conserve explicitement ces aides ciblées s’oppose au principe de les remplacer par des règles fiscales générales pour toutes les entreprises."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q21-party-10-20261007-01",
+      "questionId": "q21",
+      "partyId": "party-10",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://conservateur.quebec/wp-content/uploads/2026/09/Sortie_2B_SPEDE_mise_en_page_PCQ.pdf",
+      "sourceTitle": "Parti conservateur du Québec — Abolir la taxe carbone et suspendre la taxe sur l’essence",
+      "sourceDate": "2026-08-29",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_policy_document",
+      "evidenceSummary": "Le document officiel du PCQ décrit le SPEDE comme le système de plafonnement et d’échange de droits d’émission qui s’applique notamment aux grands émetteurs de GES. Il s’engage à donner l’avis de retrait dès l’élection d’un gouvernement PCQ et calcule explicitement les effets de l’abolition du SPEDE à compter du 1er novembre 2027.",
+      "rationale": "q21 propose de resserrer les plafonds d’émissions applicables aux grands émetteurs. Le PCQ propose au contraire de retirer le Québec puis d’abolir le système de plafonnement qui impose ces contraintes aux grands émetteurs. La direction d’opposition à un resserrement des plafonds est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_inverse_direction_abolish_cap_and_trade"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026 et vérification visuelle du PDF)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match_and_pdf_visual_check",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture et la vérification visuelle de la page consacrée à la taxe carbone confirment que le document identifie le SPEDE comme système de plafonnement visant notamment les grands émetteurs, prévoit un avis de retrait dès l’élection et traite explicitement de son abolition. Cela s’oppose directement au resserrement des plafonds de q21."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4635,14 +4716,14 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q21": 1,
+        "q21": 2,
         "q22": 1,
         "q23": 1,
         "q24": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q21 conserve la correspondance ambiguë de la CAQ. q22 compte désormais une correspondance ambiguë du Parti Québécois : son plan environnemental 2026 rejette les interdictions mal adaptées et les coûts automatiquement refilés à la population, mais ne prévoit pas explicitement l’abandon d’une nouvelle norme après une analyse d’impact concluant à une hausse du coût de biens essentiels. q23 et q24 conservent leurs positions finalisées.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q21 compte maintenant deux positions finalisées : la CAQ demeure ambiguë sur le mécanisme précis de resserrement des plafonds, tandis que le PCQ s’y oppose directement en proposant le retrait puis l’abolition du SPEDE, système de plafonnement qui vise notamment les grands émetteurs. q22 demeure ambiguë pour le Parti Québécois; q23 et q24 conservent leurs positions finalisées.",
       "finalizedCountByQuestion": {
-        "q21": 1,
+        "q21": 2,
         "q22": 1,
         "q23": 1,
         "q24": 1
@@ -4651,7 +4732,8 @@
         "q23-party-02-20261006-01",
         "q24-party-06-20261006-01",
         "q21-party-05-20261007-01",
-        "q22-party-17-20261007-01"
+        "q22-party-17-20261007-01",
+        "q21-party-10-20261007-01"
       ]
     },
     {
@@ -5259,23 +5341,25 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q01": 1,
+        "q01": 2,
         "q02": 1,
         "q03": 1,
-        "q04": 1
+        "q04": 2
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q01 conserve un appui finalisé de l’Équipe Christine Fréchette/CAQ; q02 compte désormais un appui direct du Parti Québécois, qui identifie explicitement la réglementation comme obstacle à l’émergence de nouveaux joueurs dans le commerce alimentaire et s’engage à retirer les règles qui limitent la concurrence; q03 et q04 conservent leurs correspondances finalisées partielles.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q01 oppose désormais deux directions documentées : la CAQ appuie des interventions ciblées dans des secteurs stratégiques, tandis que le PCQ rejette explicitement la sélection gouvernementale de bénéficiaires de subventions au profit d’une baisse fiscale générale. q04 présente le miroir documentaire de ce contraste : le PCQ privilégie la règle fiscale générale de façon partielle, alors que la CAQ conserve explicitement des interventions financières sectorielles ciblées. q02 et q03 conservent leurs positions finalisées.",
       "evidenceRecordIds": [
         "q01-party-05-20261006-01",
         "q03-party-05-20261006-01",
         "q04-party-10-20261006-01",
-        "q02-party-17-20261007-01"
+        "q02-party-17-20261007-01",
+        "q01-party-10-20261007-01",
+        "q04-party-05-20261007-01"
       ],
       "finalizedCountByQuestion": {
-        "q01": 1,
+        "q01": 2,
         "q02": 1,
         "q03": 1,
-        "q04": 1
+        "q04": 2
       }
     },
     {
