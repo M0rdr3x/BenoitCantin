@@ -336,11 +336,13 @@ if compass_page.is_file():
         'id="etat-documentaire"',
         'id="compass-evidence-summary"',
         'id="compass-evidence-status"',
+        'id="compass-evidence-question"',
+        'id="compass-evidence-question-results"',
         'id="compass-evidence-parties"',
         "Le nombre de documents n’est pas un score politique",
         "Même règle pour tout le monde",
-        "assets/boussole-electorale.js?v=3.1.0",
-        "assets/boussole-electorale.css?v=3.4.0",
+        "assets/boussole-electorale.js?v=3.2.0",
+        "assets/boussole-electorale.css?v=3.5.0",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
@@ -514,11 +516,14 @@ if party_corpus.is_file():
             errors.append(f"boussole électorale: mécanisme de favoritisme interdit dans le moteur: {token}")
     for marker in (
         "renderDocumentaryStatus",
+        "renderEvidenceExplorer",
         "loadPoliticalRegistryAndEvidence",
         "Preuves candidates",
         "Deuxième révision terminée",
         "Positions finalisées",
         "Questions recherchées",
+        "Justification du codage",
+        "Consulter la source officielle",
         "researchCoverage",
         "secondIndependentReview",
         "Aucun de ces nombres ne modifie le poids d’un parti",

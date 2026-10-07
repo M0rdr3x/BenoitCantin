@@ -178,6 +178,30 @@ def run() -> None:
             "Aucun de ces nombres ne modifie le poids d’un parti" in evidence_status,
             f"{BROWSER_NAME}: avertissement anti-biais documentaire absent",
         )
+        evidence_question_select = page.locator("#compass-evidence-question")
+        evidence_question_select.wait_for(state="visible", timeout=10_000)
+        assert_true(
+            evidence_question_select.locator("option").count() == 64,
+            f"{BROWSER_NAME}: l’explorateur documentaire doit proposer 64 questions",
+        )
+        evidence_question_results = page.locator("#compass-evidence-question-results")
+        evidence_question_results.locator(".compass-evidence-record").first.wait_for(state="visible", timeout=10_000)
+        assert_true(
+            evidence_question_results.locator(".compass-evidence-record").count() >= 1,
+            f"{BROWSER_NAME}: aucune position finalisée visible dans l’explorateur",
+        )
+        assert_true(
+            evidence_question_results.locator('a[target="_blank"][rel*="noopener"]').count() >= 1,
+            f"{BROWSER_NAME}: lien vers la source officielle absent de l’explorateur",
+        )
+        assert_true(
+            evidence_question_results.locator("dt", has_text="Confiance").count() >= 1,
+            f"{BROWSER_NAME}: niveau de confiance absent de l’explorateur",
+        )
+        assert_true(
+            evidence_question_results.locator("strong", has_text="Justification du codage").count() >= 1,
+            f"{BROWSER_NAME}: justification du codage absente de l’explorateur",
+        )
         evidence_alphabetical = page.evaluate("""() => {
             const names = Array.from(document.querySelectorAll('#compass-evidence-parties .compass-evidence-card h3')).map(node => node.textContent.trim());
             const collator = new Intl.Collator('fr-CA');

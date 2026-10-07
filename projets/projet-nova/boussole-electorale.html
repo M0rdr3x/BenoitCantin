@@ -10,8 +10,8 @@
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Boussole électorale multidimensionnelle | Projet Nova"><meta name="twitter:description" content="Boussole électorale multidimensionnelle de Projet Nova : 64 questions présentées une à la fois, 16 dimensions, calcul local, résultats partageables et méthodologie transparente."><meta name="twitter:image" content="https://www.benoitcantin.com/assets/media/nova-boussole-electorale-v2.webp"><meta name="twitter:image:alt" content="Visuel officiel de la Boussole électorale Nova">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Boussole électorale multidimensionnelle | Projet Nova","description":"Boussole électorale multidimensionnelle de Projet Nova : 64 questions présentées une à la fois, 16 dimensions, calcul local, résultats partageables et méthodologie transparente.","url":"https://www.benoitcantin.com/projets/projet-nova/boussole-electorale.html","inLanguage":"fr-CA","isPartOf":{"@type":"WebSite","name":"Projet Nova","url":"https://www.benoitcantin.com/projets/projet-nova/"}}</script>
 <link rel="icon" href="assets/favicon.png"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png"><link rel="manifest" href="site.webmanifest">
-<link rel="stylesheet" href="styles.css?v=26"><link rel="stylesheet" href="assets/portal-return.css?v=5.0"><link rel="stylesheet" href="assets/boussole-electorale.css?v=3.4.0">
-<script defer src="script.js?v=25"></script><script defer src="assets/boussole-electorale.js?v=3.1.0"></script>
+<link rel="stylesheet" href="styles.css?v=26"><link rel="stylesheet" href="assets/portal-return.css?v=5.0"><link rel="stylesheet" href="assets/boussole-electorale.css?v=3.5.0">
+<script defer src="script.js?v=25"></script><script defer src="assets/boussole-electorale.js?v=3.2.0"></script>
 </head>
 <body data-page="boussole-electorale.html">
 <a class="skip-link" href="#contenu">Aller au contenu</a>
@@ -132,6 +132,18 @@
 <div class="notice-box"><strong>Même règle pour tout le monde.</strong> Une source manquante reste manquante; une position ambiguë reste ambiguë; une deuxième révision indépendante est exigée avant finalisation. Parti Nova suit exactement ce même parcours.</div>
 <div id="compass-evidence-summary" class="compass-evidence-summary" aria-label="Résumé de l’état documentaire"><p>Chargement de l’état documentaire…</p></div>
 <p id="compass-evidence-status" class="compass-evidence-status" role="status" aria-live="polite">Chargement des preuves et révisions…</p>
+
+<div class="compass-evidence-browser" aria-labelledby="compass-evidence-browser-title">
+<div class="compass-evidence-browser-head">
+<div><span class="eyebrow">Explorateur des preuves</span><h3 id="compass-evidence-browser-title">Consulter les positions finalisées, question par question.</h3><p>Choisissez une proposition pour voir uniquement les positions qui ont passé les deux révisions documentaires. Une absence signifie « non documentée », jamais opposition implicite.</p></div>
+<label for="compass-evidence-question">Proposition à consulter
+<select id="compass-evidence-question"><option value="">Chargement des 64 propositions…</option></select>
+</label>
+</div>
+<p id="compass-evidence-question-status" class="compass-evidence-question-status" role="status" aria-live="polite"></p>
+<div id="compass-evidence-question-results" class="compass-evidence-question-results" aria-live="polite"><p>Sélectionnez une proposition pour consulter ses preuves finalisées.</p></div>
+</div>
+
 <div id="compass-evidence-parties" class="compass-evidence-grid" aria-live="polite"><p>Chargement du détail par formation…</p></div>
 </div></section>
 

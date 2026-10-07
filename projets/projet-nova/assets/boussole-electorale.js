@@ -412,6 +412,80 @@
     }).join("");
   }
 
+  const DOCUMENTARY_STATUS_LABELS = {
+    documented_support:"Appui documenté",
+    documented_opposition:"Opposition documentée",
+    documented_mixed_or_conditional:"Position mixte ou conditionnelle",
+    ambiguous:"Position ambiguë",
+    contradictory:"Sources contradictoires"
+  };
+
+  const CONFIDENCE_LABELS = {low:"Faible",medium:"Moyenne",high:"Élevée"};
+
+  function renderEvidenceExplorer(questionCorpus, partyCorpus, evidenceCorpus){
+    const select = $("#compass-evidence-question");
+    const host = $("#compass-evidence-question-results");
+    const status = $("#compass-evidence-question-status");
+    if(!select || !host || !status) return;
+
+    const questions = Array.isArray(questionCorpus.questions) ? questionCorpus.questions : [];
+    const parties = Array.isArray(partyCorpus.parties) ? partyCorpus.parties : [];
+    const partyById = new Map(parties.map(party => [party.id,party]));
+    const records = Array.isArray(evidenceCorpus.evidenceRecords)
+      ? evidenceCorpus.evidenceRecords.filter(record => record.finalizable === true && record.secondIndependentReview?.status === "completed")
+      : [];
+    const recordsByQuestion = new Map();
+    for(const record of records){
+      if(!recordsByQuestion.has(record.questionId)) recordsByQuestion.set(record.questionId,[]);
+      recordsByQuestion.get(record.questionId).push(record);
+    }
+
+    select.innerHTML = questions.map((question,index) => {
+      const count = (recordsByQuestion.get(question.id) || []).length;
+      return `<option value="${esc(question.id)}">Q${String(index + 1).padStart(2,"0")} · ${esc(question.text)} · ${count} position${count > 1 ? "s" : ""}</option>`;
+    }).join("");
+
+    function renderSelected(){
+      const question = questions.find(item => item.id === select.value) || questions[0];
+      if(!question){
+        status.textContent = "Aucune proposition disponible.";
+        host.innerHTML = '<p class="compass-evidence-empty">Aucune proposition disponible.</p>';
+        return;
+      }
+      const rows = [...(recordsByQuestion.get(question.id) || [])];
+      rows.sort((a,b) => String(partyById.get(a.partyId)?.name || a.partyId).localeCompare(String(partyById.get(b.partyId)?.name || b.partyId),"fr-CA"));
+      status.textContent = `${rows.length} position${rows.length > 1 ? "s" : ""} finalisée${rows.length > 1 ? "s" : ""} pour cette proposition. Les formations absentes restent non documentées pour cette question.`;
+      if(!rows.length){
+        host.innerHTML = '<p class="compass-evidence-empty">Aucune position finalisée pour cette proposition. Cela ne signifie ni appui ni opposition.</p>';
+        return;
+      }
+      host.innerHTML = rows.map(record => {
+        const party = partyById.get(record.partyId);
+        const sourceDate = record.sourceDate || "Date non indiquée dans la source";
+        const label = DOCUMENTARY_STATUS_LABELS[record.proposedStatus] || record.proposedStatus;
+        const confidence = CONFIDENCE_LABELS[record.confidence] || record.confidence;
+        return `
+          <article class="compass-evidence-record">
+            <h4>${esc(party?.name || record.partyId)}</h4>
+            <dl>
+              <div><dt>Position</dt><dd>${esc(label)}</dd></div>
+              <div><dt>Confiance</dt><dd>${esc(confidence)}</dd></div>
+              <div><dt>Date source</dt><dd>${esc(sourceDate)}</dd></div>
+            </dl>
+            <p><strong>Éléments retenus :</strong> ${esc(record.evidenceSummary)}</p>
+            <p><strong>Justification du codage :</strong> ${esc(record.rationale)}</p>
+            <p><a href="${esc(record.sourceUrl)}" target="_blank" rel="noopener noreferrer">Consulter la source officielle ↗</a></p>
+          </article>
+        `;
+      }).join("");
+    }
+
+    select.addEventListener("change",renderSelected);
+    const firstWithEvidence = questions.find(question => (recordsByQuestion.get(question.id) || []).length > 0);
+    if(firstWithEvidence) select.value = firstWithEvidence.id;
+    renderSelected();
+  }
+
   function renderDocumentaryStatus(partyCorpus, sourceCorpus, evidenceCorpus){
     const summary = $("#compass-evidence-summary");
     const host = $("#compass-evidence-parties");
@@ -491,22 +565,26 @@
     const partyHost = $("#compass-parties");
     const evidenceHost = $("#compass-evidence-parties");
     try{
-      const [partyResponse,sourceResponse,evidenceResponse] = await Promise.all([
+      const [partyResponse,sourceResponse,evidenceResponse,questionResponse] = await Promise.all([
         fetch(PARTY_DATA_URL,{cache:"no-store"}),
         fetch(PARTY_SOURCE_DATA_URL,{cache:"no-store"}),
-        fetch(EVIDENCE_DATA_URL,{cache:"no-store"})
+        fetch(EVIDENCE_DATA_URL,{cache:"no-store"}),
+        fetch(DATA_URL,{cache:"no-store"})
       ]);
-      for(const response of [partyResponse,sourceResponse,evidenceResponse]){
+      for(const response of [partyResponse,sourceResponse,evidenceResponse,questionResponse]){
         if(!response.ok) throw new Error("HTTP " + response.status);
       }
-      const [partyCorpus,sourceCorpus,evidenceCorpus] = await Promise.all([
-        partyResponse.json(),sourceResponse.json(),evidenceResponse.json()
+      const [partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus] = await Promise.all([
+        partyResponse.json(),sourceResponse.json(),evidenceResponse.json(),questionResponse.json()
       ]);
       renderPartyRegistry(partyCorpus);
       renderDocumentaryStatus(partyCorpus,sourceCorpus,evidenceCorpus);
+      renderEvidenceExplorer(questionCorpus,partyCorpus,evidenceCorpus);
     }catch(error){
       if(partyHost) partyHost.innerHTML = "<p>Impossible de charger le registre des formations pour le moment.</p>";
       if(evidenceHost) evidenceHost.innerHTML = "<p>Impossible de charger l’état documentaire pour le moment.</p>";
+      const explorerHost = $("#compass-evidence-question-results");
+      if(explorerHost) explorerHost.innerHTML = '<p class="compass-evidence-empty">Impossible de charger l’explorateur des preuves pour le moment.</p>';
       console.error("Boussole électorale Nova — registre documentaire:",error);
     }
   }
