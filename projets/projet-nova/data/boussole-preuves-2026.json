@@ -1,5 +1,5 @@
 {
-  "version": "1.52.0",
+  "version": "1.53.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -402,7 +402,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "ambiguous",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -486,7 +486,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "ambiguous",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -4195,6 +4195,60 @@
         "reviewNote": "La seconde lecture confirme que le plan traite directement de congestion, propose de la réduire par une offre accrue de mobilité et affirme ne pas vouloir moraliser les automobilistes. Comme il ne rejette pas explicitement toute nouvelle restriction à l’usage de l’automobile, le statut ambiguous est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q13-party-10-20261007-01",
+      "questionId": "q13",
+      "partyId": "party-10",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/le-pcq-veut-offrir-a-chaque-eleve-un-parcours-qui-lui-ressemble/",
+      "sourceTitle": "Le PCQ veut offrir à chaque élève un parcours qui lui ressemble",
+      "sourceDate": "2026-09-12",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti conservateur du Québec propose de donner plus de liberté aux écoles, de permettre davantage de parcours adaptés aux forces et intérêts des élèves et d’accorder aux écoles davantage de pouvoirs dans l’offre de programmes.",
+      "rationale": "q13 propose un programme éducatif plus uniforme dans les écoles publiques. La source du PCQ va dans le sens d’une plus grande différenciation entre écoles et programmes, mais elle ne dit pas explicitement que le programme national commun devrait être moins uniforme. La direction exacte de q13 ne peut donc pas être tranchée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_core_curriculum_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le PCQ veut davantage de parcours différenciés, plus de liberté aux écoles et plus de pouvoirs sur l’offre de programmes. La source ne précise toutefois pas si le contenu du programme national commun serait moins uniforme; le statut ambiguous est donc maintenu."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q16-party-10-20261007-01",
+      "questionId": "q16",
+      "partyId": "party-10",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/le-pcq-veut-offrir-a-chaque-eleve-un-parcours-qui-lui-ressemble/",
+      "sourceTitle": "Le PCQ veut offrir à chaque élève un parcours qui lui ressemble",
+      "sourceDate": "2026-09-12",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti conservateur du Québec propose davantage de choix d’école pour les familles, y compris hors du quartier ou de la municipalité de résidence, et prévoit de financer directement les écoles plutôt que de concentrer les décisions dans les centres de services scolaires.",
+      "rationale": "q16 propose qu’une plus grande part du financement public suive l’élève lorsqu’une famille choisit un établissement reconnu. La source associe explicitement libre choix d’école et financement direct des établissements, mais ne précise pas que le financement est portable avec chaque élève ni qu’une plus grande part du financement serait calculée selon ce choix. La correspondance reste donc pertinente mais indéterminée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_portability_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme deux éléments simultanés : plus de choix d’établissement pour les familles et financement direct des écoles. Elle ne crée toutefois pas explicitement un mécanisme où une part accrue du financement public suit individuellement l’élève vers l’établissement choisi; le statut ambiguous est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5068,22 +5122,24 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q13": 0,
+        "q13": 1,
         "q14": 2,
         "q15": 1,
-        "q16": 0
+        "q16": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q13 demeure entièrement unknown : des sources imposent ou poursuivent des programmes communs dans certaines matières, notamment le français, sans proposer une uniformisation accrue du programme éducatif dans son ensemble. q14 conserve deux correspondances partielles et q15 un appui direct. q16 demeure unknown : les propositions de choix d’école et de financement direct des établissements ne disent toujours pas qu’une plus grande part du financement public devrait suivre individuellement l’élève.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q13 compte désormais une correspondance ambiguë du Parti conservateur du Québec : le parti veut plus de liberté pour les écoles et davantage de pouvoirs dans l’offre de programmes, sans préciser si le programme national commun serait moins uniforme. q14 conserve deux correspondances partielles et q15 un appui direct. q16 compte désormais une correspondance ambiguë du PCQ : le parti combine libre choix d’école et financement direct des établissements, sans mécanisme explicite où une part accrue du financement public suit individuellement l’élève.",
       "evidenceRecordIds": [
         "q14-party-06-20261006-01",
         "q14-party-10-20261006-02",
-        "q15-party-12-20261006-01"
+        "q15-party-12-20261006-01",
+        "q13-party-10-20261007-01",
+        "q16-party-10-20261007-01"
       ],
       "finalizedCountByQuestion": {
-        "q13": 0,
+        "q13": 1,
         "q14": 2,
         "q15": 1,
-        "q16": 0
+        "q16": 1
       }
     },
     {
