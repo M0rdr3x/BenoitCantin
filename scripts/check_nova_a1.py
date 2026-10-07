@@ -13,21 +13,21 @@ ROOT = Path(__file__).resolve().parents[1]
 NOVA = ROOT / "projets" / "projet-nova"
 errors: list[str] = []
 
-# Portail principal : Projet Nova doit utiliser l'asset propre du site Nova.
+# Portail principal : Projet Nova doit utiliser l'asset optimisé pour le portail.
 portal_home = ROOT / "index.html"
 portal_home_css = ROOT / "assets" / "css" / "home-v24-4-12.css"
 if portal_home.is_file():
     portal_home_text = portal_home.read_text(encoding="utf-8", errors="replace")
-    if "/assets/media/nova-logo.webp" in portal_home_text:
-        errors.append("accueil: ancien asset Nova mal cadré encore référencé")
-    if portal_home_text.count("/projets/projet-nova/assets/logo-nova.webp") < 3:
-        errors.append("accueil: le logo Nova propre doit être utilisé dans la porte, l’aperçu central et la carte Projet Nova")
+    if portal_home_text.count("/assets/media/nova-logo.webp") < 3:
+        errors.append("accueil: le logo Nova optimisé doit être utilisé dans la porte, l’aperçu central et la carte Projet Nova")
+    if "/projets/projet-nova/assets/logo-nova.webp" in portal_home_text:
+        errors.append("accueil: le logo Nova interne ne doit plus être utilisé dans les cartes du portail")
 else:
     errors.append("accueil: index.html absent")
 if portal_home_css.is_file():
     portal_home_css_text = portal_home_css.read_text(encoding="utf-8", errors="replace")
-    if ".node-nova-home img" not in portal_home_css_text or "transform:scale(1.42)" not in portal_home_css_text:
-        errors.append("accueil: recalibrage visuel Projet Nova absent")
+    if ".node-nova-home img" not in portal_home_css_text or "transform:none" not in portal_home_css_text:
+        errors.append("accueil: cadrage stable sans zoom artificiel pour Projet Nova absent")
 else:
     errors.append("accueil: CSS spécifique de la composition principale absent")
 
