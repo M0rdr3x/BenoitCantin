@@ -488,6 +488,8 @@
           `;
         }
         const sourceDate = record.sourceDate || "Date non indiquée dans la source";
+        const checkedAt = record.checkedAt || "Date de vérification non indiquée";
+        const secondReviewDate = record.secondIndependentReview?.reviewedAt || "Date de révision non indiquée";
         const label = DOCUMENTARY_STATUS_LABELS[record.proposedStatus] || record.proposedStatus;
         const confidence = CONFIDENCE_LABELS[record.confidence] || record.confidence;
         return `
@@ -497,6 +499,8 @@
               <div><dt>Position</dt><dd>${esc(label)}</dd></div>
               <div><dt>Confiance</dt><dd>${esc(confidence)}</dd></div>
               <div><dt>Date source</dt><dd>${esc(sourceDate)}</dd></div>
+              <div><dt>Vérifiée le</dt><dd>${esc(checkedAt)}</dd></div>
+              <div><dt>Deuxième révision</dt><dd>${esc(secondReviewDate)}</dd></div>
             </dl>
             <p><strong>Éléments retenus :</strong> ${esc(record.evidenceSummary)}</p>
             <p><strong>Justification du codage :</strong> ${esc(record.rationale)}</p>
