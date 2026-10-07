@@ -1,5 +1,5 @@
 {
-  "version": "1.62.0",
+  "version": "1.63.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -581,7 +581,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_support",
         "party-nova": "unknown"
       }
     },
@@ -1661,7 +1661,7 @@
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
-        "party-09": "unknown",
+        "party-09": "ambiguous",
         "party-10": "unknown",
         "party-11": "unknown",
         "party-12": "unknown",
@@ -4492,6 +4492,60 @@
         "reviewNote": "La seconde lecture confirme que l’organisation du travail est explicitement traitée comme un enjeu de négociation, tout en visant plus d’agilité et des adaptations locales. Cela ne correspond pas à un droit unilatéral de modifier l’organisation sans négociation; le statut mixte/conditionnel est donc maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q19-party-21-20261007-01",
+      "questionId": "q19",
+      "partyId": "party-21",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/02/programmeqs-2019.pdf",
+      "sourceTitle": "Québec solidaire — Programme, section 3.3 Politique de logement",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_program_document",
+      "evidenceSummary": "Le programme officiel de Québec solidaire prévoit que le secteur privé consacre un pourcentage minimal des nouvelles habitations au logement social. Il prévoit aussi d’obliger les municipalités à adopter des politiques d’inclusion obligatoire du logement social dans les grands projets immobiliers privés de plus de 100 logements projetés.",
+      "rationale": "q19 demande si les municipalités devraient pouvoir exiger une proportion minimale de logements abordables dans les grands projets résidentiels. La source soutient directement les deux éléments structurants de la proposition : un pourcentage minimal de logements sociaux, qui sont une forme de logement abordable, et une inclusion obligatoire mise en œuvre par les municipalités dans les grands projets privés. Le seuil de plus de 100 logements correspond explicitement à la notion de grand projet.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_municipal_mandatory_inclusion_and_minimum_percentage"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme deux formulations complémentaires dans le programme officiel : le secteur privé doit consacrer un pourcentage minimal des nouvelles habitations au logement social et les municipalités doivent adopter des politiques d’inclusion obligatoire dans les grands projets privés de plus de 100 logements. La direction d’appui à q19 est donc explicite."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q58-party-09-20261007-01",
+      "questionId": "q58",
+      "partyId": "party-09",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://particommunisteduquebec.ca/programme-ch5/",
+      "sourceTitle": "Parti communiste du Québec — Programme, chapitre 5 : La lutte de la classe ouvrière et du peuple",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_program_page",
+      "evidenceSummary": "Le programme officiel du Parti communiste du Québec demande que les syndicats exercent un plus grand contrôle sur l’introduction de changements technologiques, la durée du travail, les politiques d’investissement, la formation, la santé-sécurité et d’autres décisions touchant directement le milieu de travail.",
+      "rationale": "q58 porte sur la possibilité pour les employeurs de modifier plus facilement l’organisation du travail sans négociation préalable avec un syndicat. La source va clairement dans le sens d’un contrôle syndical accru sur plusieurs changements importants, mais elle ne formule pas une obligation générale de négociation préalable avant toute modification de l’organisation du travail. La correspondance est donc pertinente sans permettre de coder une opposition directe.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_prior_negotiation_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme la revendication d’un contrôle syndical accru sur plusieurs changements technologiques et organisationnels. Le texte ne dit toutefois pas que toute modification de l’organisation du travail doit nécessairement faire l’objet d’une négociation préalable; le statut ambiguous est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -4529,19 +4583,20 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q19": 0,
+        "q19": 1,
         "q20": 4
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q19 demeure entièrement unknown : les sources officielles récentes consultées soutiennent la construction ou le financement de logements abordables, mais aucune ne formule assez précisément le pouvoir municipal d’exiger une proportion minimale de logements abordables dans les grands projets résidentiels. q20 conserve ses quatre positions finalisées.",
+      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q19 n’est plus sans preuve candidate : le programme officiel de Québec solidaire prévoit un pourcentage minimal de nouvelles habitations consacré au logement social et oblige les municipalités à adopter des politiques d’inclusion obligatoire dans les grands projets immobiliers privés de plus de 100 logements. q20 conserve ses quatre positions finalisées.",
       "finalizedCountByQuestion": {
-        "q19": 0,
+        "q19": 1,
         "q20": 4
       },
       "evidenceRecordIds": [
         "q20-party-05-20261006-01",
         "q20-party-06-20261006-02",
         "q20-party-17-20261006-03",
-        "q20-party-21-20261006-04"
+        "q20-party-21-20261006-04",
+        "q19-party-21-20261007-01"
       ]
     },
     {
@@ -5036,21 +5091,22 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q57": 2,
-        "q58": 1,
+        "q58": 2,
         "q59": 1,
         "q60": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 sur des sources officielles, selon le même standard pour les 22 formations. q57 conserve un appui direct de Québec solidaire et une position ambiguë du Parti Québécois; q59 demeure ambiguë pour Québec solidaire; q60 conserve l’opposition documentée du Parti communiste du Québec. q58 compte désormais une position mixte/conditionnelle de la CAQ : sa réforme veut plus d’agilité dans l’organisation du travail, mais maintient explicitement cet enjeu dans la négociation collective plutôt que de prévoir un pouvoir patronal unilatéral.",
+      "note": "Recherche reprise le 7 octobre 2026 sur des sources officielles, selon le même standard pour les 22 formations. q57 conserve un appui direct de Québec solidaire et une position ambiguë du Parti Québécois; q59 demeure ambiguë pour Québec solidaire; q60 conserve l’opposition documentée du Parti communiste du Québec. q58 compte maintenant deux preuves finalisées : une position mixte/conditionnelle de la CAQ, qui maintient l’organisation du travail dans la négociation collective tout en recherchant plus d’agilité, et une correspondance ambiguë du Parti communiste, qui réclame davantage de contrôle syndical sur plusieurs changements sans formuler une obligation générale de négociation préalable.",
       "evidenceRecordIds": [
         "q57-party-17-20261006-01",
         "q57-party-21-20261006-02",
         "q59-party-21-20261006-01",
         "q60-party-09-20261007-01",
-        "q58-party-05-20261007-01"
+        "q58-party-05-20261007-01",
+        "q58-party-09-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q57": 2,
-        "q58": 1,
+        "q58": 2,
         "q59": 1,
         "q60": 1
       }
