@@ -1,5 +1,5 @@
 {
-  "version": "1.21.0",
+  "version": "1.22.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -3007,6 +3007,72 @@
         "reviewNote": "La page politique officielle 2026 d’Osons Québec traite explicitement les grands projets avec les nations concernées et prévoit participation économique, participation au capital et partage des revenus lorsque la nation concernée souhaite cette formule. La correspondance avec q55 est directe."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q57-party-17-20261006-01",
+      "questionId": "q57",
+      "partyId": "party-17",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://pq.org/wp-content/uploads/2024/08/cahier-projet-nationalv2-1.pdf",
+      "sourceTitle": "Projet national — S’adapter aux nouvelles réalités du monde du travail",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Le Projet national du Parti Québécois affirme vouloir faciliter la syndicalisation de l’ensemble des travailleurs et modifier le Code du travail afin de mieux protéger les travailleurs autonomes.",
+      "rationale": "La source officielle formule explicitement l’objectif de faciliter la syndicalisation et de modifier le Code du travail. La correspondance avec la direction de q57 est directe, même si le mécanisme précis d’accréditation n’est pas détaillé.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q57-party-21-20261006-02",
+      "questionId": "q57",
+      "partyId": "party-21",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/02/programmeqs-2019.pdf",
+      "sourceTitle": "Programme de Québec solidaire — Droits syndicaux",
+      "sourceDate": null,
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_program",
+      "evidenceSummary": "Le programme officiel de Québec solidaire prévoit l’accréditation multi-patronale afin de faciliter la syndicalisation dans le secteur des services.",
+      "rationale": "La source relie explicitement une modification des règles d’accréditation à l’objectif de faciliter la syndicalisation, ce qui correspond directement à q57.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
+    },
+    {
+      "recordId": "q59-party-21-20261006-01",
+      "questionId": "q59",
+      "partyId": "party-21",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://api-wp.quebecsolidaire.net/wp-content/uploads/2025/04/manifeste2025-compressed.pdf",
+      "sourceTitle": "Manifeste pour un Québec solidaire de ses travailleuses et travailleurs",
+      "sourceDate": "2025-04-30",
+      "checkedAt": "2026-10-06",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Le manifeste de Québec solidaire prévoit de rehausser le salaire minimum à 20 $ l’heure pour améliorer le pouvoir d’achat.",
+      "rationale": "La source établit clairement une hausse substantielle du salaire minimum, mais ne précise pas une trajectoire pluriannuelle explicitement supérieure au taux d’inflation. Elle est pertinente pour q59 sans permettre encore un appui direct.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match"
+      },
+      "secondIndependentReview": {
+        "status": "pending"
+      },
+      "finalizable": false
     }
   ],
   "researchCoverage": [
@@ -3496,6 +3562,54 @@
         "q55": 1,
         "q56": 0
       }
+    },
+    {
+      "batchId": "labour-q57-q60-20261006",
+      "checkedAt": "2026-10-06",
+      "questionIds": [
+        "q57",
+        "q58",
+        "q59",
+        "q60"
+      ],
+      "partyIds": [
+        "party-01",
+        "party-02",
+        "party-03",
+        "party-04",
+        "party-05",
+        "party-06",
+        "party-07",
+        "party-08",
+        "party-09",
+        "party-10",
+        "party-11",
+        "party-12",
+        "party-13",
+        "party-14",
+        "party-15",
+        "party-16",
+        "party-17",
+        "party-18",
+        "party-19",
+        "party-20",
+        "party-21",
+        "party-nova"
+      ],
+      "scope": "all_registered_formations_plus_future_nova_same_rules",
+      "sourcePolicy": "official_sources_first_exact_question_match_only",
+      "candidateCountByQuestion": {
+        "q57": 2,
+        "q58": 0,
+        "q59": 1,
+        "q60": 0
+      },
+      "note": "q57 compte deux preuves candidates officielles directes; q59 compte une preuve candidate ambiguë car la cible de 20 $/h ne décrit pas explicitement une trajectoire supérieure à l’inflation; q58 et q60 demeurent entièrement unknown faute de formulation officielle suffisamment exacte.",
+      "evidenceRecordIds": [
+        "q57-party-17-20261006-01",
+        "q57-party-21-20261006-02",
+        "q59-party-21-20261006-01"
+      ]
     }
   ]
 }
