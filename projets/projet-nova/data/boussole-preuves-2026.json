@@ -1,5 +1,5 @@
 {
-  "version": "1.67.0",
+  "version": "1.68.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -133,7 +133,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_support",
         "party-nova": "unknown"
       }
     },
@@ -4762,6 +4762,33 @@
         "reviewNote": "La seconde lecture confirme que le parti veut ouvrir une renégociation constitutionnelle et transférer des pouvoirs actuellement détenus ou partagés avec Ottawa. Cela s’oppose directement au maintien du partage actuel des compétences comme cadre de référence."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q03-party-21-20261007-01",
+      "questionId": "q03",
+      "partyId": "party-21",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/02/programmeqs-2019.pdf",
+      "sourceTitle": "Québec solidaire — Programme, contrôle public du secteur de l’énergie",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_program_document",
+      "evidenceSummary": "Le programme officiel de Québec solidaire affirme que la souveraineté énergétique doit être prise en charge par le secteur public et préconise de placer les entreprises du domaine de l’énergie sous contrôle public par une participation majoritaire de l’État, avec possibilité de nationalisation complète au besoin.",
+      "rationale": "q03 demande si le gouvernement du Québec devrait pouvoir détenir des participations dans des entreprises lorsqu’il considère qu’un secteur est essentiel. Le programme de Québec solidaire demande explicitement une participation majoritaire de l’État dans les entreprises d’un secteur jugé stratégique et essentiel, l’énergie. Le mécanisme de participation publique au capital correspond directement à q03.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_majority_state_equity_in_essential_sector"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (programme officiel)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le programme ne se limite pas à une aide, un prêt ou une réglementation : il demande explicitement une participation majoritaire de l’État dans les entreprises énergétiques et envisage la nationalisation complète. La correspondance avec q03 est directe."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5481,22 +5508,23 @@
       "candidateCountByQuestion": {
         "q01": 2,
         "q02": 1,
-        "q03": 1,
+        "q03": 2,
         "q04": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q01 oppose désormais deux directions documentées : la CAQ appuie des interventions ciblées dans des secteurs stratégiques, tandis que le PCQ rejette explicitement la sélection gouvernementale de bénéficiaires de subventions au profit d’une baisse fiscale générale. q04 présente le miroir documentaire de ce contraste : le PCQ privilégie la règle fiscale générale de façon partielle, alors que la CAQ conserve explicitement des interventions financières sectorielles ciblées. q02 et q03 conservent leurs positions finalisées.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q01 et q04 conservent deux directions documentées entre CAQ et PCQ; q02 conserve un appui direct du Parti Québécois. q03 compte désormais deux positions finalisées : la CAQ demeure mixte/conditionnelle selon ses interventions de capital ciblées, tandis que Québec solidaire appuie directement une participation majoritaire de l’État dans les entreprises du secteur de l’énergie, jusqu’à la nationalisation au besoin.",
       "evidenceRecordIds": [
         "q01-party-05-20261006-01",
         "q03-party-05-20261006-01",
         "q04-party-10-20261006-01",
         "q02-party-17-20261007-01",
         "q01-party-10-20261007-01",
-        "q04-party-05-20261007-01"
+        "q04-party-05-20261007-01",
+        "q03-party-21-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q01": 2,
         "q02": 1,
-        "q03": 1,
+        "q03": 2,
         "q04": 2
       }
     },
