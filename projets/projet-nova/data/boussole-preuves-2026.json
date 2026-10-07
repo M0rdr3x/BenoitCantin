@@ -1,5 +1,5 @@
 {
-  "version": "1.24.0",
+  "version": "1.25.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1742,13 +1742,13 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "ambiguous",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "ambiguous",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
@@ -1798,7 +1798,7 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "ambiguous",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -1826,11 +1826,11 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "ambiguous",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "ambiguous",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -3107,9 +3107,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la révision humaine proposée par Osons Québec protège le citoyen contre une décision automatisée sans recours humain, mais ne crée pas explicitement un droit à une explication de la décision. Le statut ambiguous est maintenu."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q61-party-12-20261006-02",
@@ -3129,9 +3134,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le PLQ exige transparence autour de l’utilisation de l’IA et responsabilité humaine pour les décisions gouvernementales touchant un citoyen, mais ne formule pas explicitement un droit individuel à une explication. Le statut ambiguous est maintenu."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q63-party-06-20261006-01",
@@ -3151,9 +3161,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme des exigences de consentement explicite, de limitation par finalité et de souveraineté des données, mais la source ne vise pas exactement la combinaison de données provenant de plusieurs services publics. Le statut ambiguous est maintenu."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q64-party-06-20261006-01",
@@ -3173,9 +3188,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme l’objectif d’éviter de redemander les mêmes renseignements, mais aucun mécanisme explicite de partage automatique interorganismes, limité aux renseignements nécessaires à un service déjà demandé, n’est formulé. Le statut ambiguous est maintenu."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q64-party-10-20261006-02",
@@ -3195,9 +3215,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un engagement explicite à améliorer le partage sécurisé des données entre ministères, mais ni l’automaticité ni la restriction au service déjà demandé par le citoyen ne sont précisées. Le statut ambiguous est maintenu."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -3783,14 +3808,20 @@
         "q63": 1,
         "q64": 2
       },
-      "note": "q61, q63 et q64 comptent uniquement des correspondances partielles conservées comme ambiguës; q62 demeure entièrement unknown faute de position officielle suffisamment exacte sur l’utilisation de nouveaux systèmes d’IA avant l’adoption d’un cadre réglementaire spécifique.",
+      "note": "Après seconde révision indépendante, les cinq correspondances demeurent ambiguës : aucune source ne satisfait entièrement les formulations exactes de q61, q63 ou q64. q62 demeure entièrement unknown.",
       "evidenceRecordIds": [
         "q61-party-06-20261006-01",
         "q61-party-12-20261006-02",
         "q63-party-06-20261006-01",
         "q64-party-06-20261006-01",
         "q64-party-10-20261006-02"
-      ]
+      ],
+      "finalizedCountByQuestion": {
+        "q61": 2,
+        "q62": 0,
+        "q63": 1,
+        "q64": 2
+      }
     }
   ]
 }
