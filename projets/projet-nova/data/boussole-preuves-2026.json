@@ -1,5 +1,5 @@
 {
-  "version": "1.69.0",
+  "version": "1.70.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1438,7 +1438,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
         "party-12": "documented_mixed_or_conditional",
         "party-13": "unknown",
@@ -4816,6 +4816,33 @@
         "reviewNote": "La seconde lecture confirme trois éléments convergents : reconnaissance par des ententes formelles, relations d’égal à égal de nation à nation et gestion partagée du territoire et des ressources. Ce mécanisme correspond directement à des ententes gouvernementales reconnaissant des pouvoirs décisionnels propres."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q50-party-10-20261007-01",
+      "questionId": "q50",
+      "partyId": "party-10",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://conservateur.quebec/wp-content/uploads/2026/09/Plate-forme_Regions_V2_corrigee-2-1.pdf",
+      "sourceTitle": "Parti conservateur du Québec — Autonomie des régions — Passer de l’État-providence centralisé à un État des régions",
+      "sourceDate": "2026-09-18",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "La plateforme régionale du PCQ critique les règles provinciales « mur à mur » appliquées à des réalités différentes d’une région à l’autre. Elle propose que Québec fixe les grandes orientations nationales et protège certains standards communs, mais que les régions, MRC, municipalités et acteurs locaux puissent décider, prioriser et adapter les moyens à leur réalité.",
+      "rationale": "q50 propose des normes provinciales de services publics uniformes d’une région à l’autre. Le PCQ rejette explicitement une gestion uniforme « mur à mur » et veut permettre des adaptations régionales, tout en conservant certains standards communs. La position est donc mixte/conditionnelle plutôt qu’une opposition absolue à toute norme commune.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_uniformity_vs_regional_adaptation_with_common_standards"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (plateforme officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme simultanément le rejet des règles mur à mur, le principe de subsidiarité et la possibilité d’adapter les moyens aux réalités régionales, mais aussi le maintien explicite de certains standards communs. Le statut mixte/conditionnel est donc le plus fidèle."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5254,21 +5281,22 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q49": 1,
-        "q50": 1,
+        "q50": 2,
         "q51": 2,
         "q52": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 avec le même protocole pour les 22 formations. q49 conserve la correspondance ambiguë d’Osons Québec, q50 la position mixte/conditionnelle du PLQ et q51 les positions du PQ et du PCQ. q52 compte désormais une position mixte/conditionnelle du Parti conservateur du Québec : sa plateforme d’autonomie régionale veut remplacer un modèle centralisé par un État des régions fondé sur la subsidiarité, tout en conservant à Québec les grandes orientations nationales et certains standards communs.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même protocole pour les 22 formations. q49 conserve la correspondance ambiguë d’Osons Québec. q50 compte désormais deux positions mixtes/conditionnelles : le PLQ maintient un noyau commun de services avec asymétrie réglementaire régionale, tandis que le PCQ rejette les règles mur à mur et veut permettre aux régions d’adapter les moyens tout en conservant certains standards communs. q51 conserve les positions du PQ et du PCQ; q52 conserve la position mixte/conditionnelle du PCQ sur la décentralisation des grands réseaux.",
       "evidenceRecordIds": [
         "q51-party-17-20261006-01",
         "q51-party-10-20261007-01",
         "q50-party-12-20261007-01",
         "q49-party-06-20261007-01",
-        "q52-party-10-20261007-01"
+        "q52-party-10-20261007-01",
+        "q50-party-10-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q49": 1,
-        "q50": 1,
+        "q50": 2,
         "q51": 2,
         "q52": 1
       }
