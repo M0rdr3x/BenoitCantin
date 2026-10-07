@@ -410,8 +410,20 @@
         }
       }
     }
-    parties.sort((a,b) => String(a.name).localeCompare(String(b.name), "fr-CA"));
-    host.innerHTML = parties.map(party => {
+
+    const sortByName = list => list.sort((a,b) => String(a.name).localeCompare(String(b.name), "fr-CA"));
+    const currentParties = sortByName(parties.filter(party => party.entityType === "authorized_provincial_party"));
+    const traceabilityParties = sortByName(parties.filter(party => party.entityType !== "authorized_provincial_party"));
+    const expectedCurrent = Number.isInteger(corpus.registryEvidence?.currentlyAuthorizedProvincialPartyCount)
+      ? corpus.registryEvidence.currentlyAuthorizedProvincialPartyCount
+      : currentParties.length;
+    const expectedElectionEntries = Number.isInteger(corpus.registryEvidence?.officialElectionPartyEntries)
+      ? corpus.registryEvidence.officialElectionPartyEntries
+      : parties.filter(party => party.election2026Listed === true && party.entityType !== "future_party_project").length;
+    const listedElectionEntries = parties.filter(party => party.election2026Listed === true && party.entityType !== "future_party_project").length;
+    const listComplete = currentParties.length === expectedCurrent && listedElectionEntries === expectedElectionEntries;
+
+    const renderCard = party => {
       const isFuture = party.entityType === "future_party_project";
       const isWithdrawn = party.entityType === "authorization_withdrawn_2026";
       const status = isFuture
@@ -431,7 +443,17 @@
         ? "Comparaison publique activée"
         : "Comparaison publique non activée";
       return `<article class="compass-party-card"><h3>${esc(party.name)}</h3><p>${esc(status)}</p><span class="compass-party-participation">${esc(participation)}</span><span class="compass-party-documentary">${esc(documentary)}</span><span class="compass-party-comparison">${esc(comparison)}</span></article>`;
-    }).join("");
+    };
+
+    host.innerHTML = `
+      <div class="compass-party-completeness" role="status" aria-live="polite">
+        <strong>${listComplete ? "Liste officielle 2026 complète." : "Vérification de la liste officielle requise."}</strong>
+        <span>${currentParties.length}/${expectedCurrent} partis actuellement autorisés affichés · ${listedElectionEntries}/${expectedElectionEntries} entrées de partis du scrutin 2026 suivies.</span>
+      </div>
+      <div class="compass-party-group-title"><strong>Partis actuellement autorisés</strong><span>${currentParties.length} formation${currentParties.length === 1 ? "" : "s"}</span></div>
+      ${currentParties.map(renderCard).join("")}
+      ${traceabilityParties.length ? `<div class="compass-party-group-title compass-party-group-title-secondary"><strong>Traçabilité et projet futur</strong><span>Ces entrées sont séparées des partis actuellement autorisés.</span></div>${traceabilityParties.map(renderCard).join("")}` : ""}
+    `;
   }
 
   const DOCUMENTARY_STATUS_LABELS = {

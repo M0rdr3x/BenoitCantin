@@ -11,6 +11,13 @@
 .compass-question-axis{display:inline-flex;margin:0 0 10px;padding:6px 10px;border-radius:999px;background:#edf7fb;border:1px solid #cce8f0;color:#0f5e72;font-size:.78rem;font-weight:900}
 
 .compass-party-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}
+.compass-party-completeness{grid-column:1/-1;display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:16px 18px;border:1px solid #bfe4ec;border-radius:18px;background:#f1fbfd;color:#163a4a}
+.compass-party-completeness strong{font-size:1rem;color:#0f5e72}
+.compass-party-completeness span{max-width:720px;text-align:right;color:#496578;font-size:.9rem;font-weight:750}
+.compass-party-group-title{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-top:8px;padding:14px 2px 5px;border-bottom:1px solid #d8e5ee;color:#102a40}
+.compass-party-group-title strong{font-size:1.08rem}
+.compass-party-group-title span{color:#657b8e;font-size:.86rem;font-weight:700}
+.compass-party-group-title-secondary{margin-top:18px}
 .compass-party-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}
 .compass-party-card h3{margin:0 0 6px;font-size:1rem}
 .compass-party-card p{margin:0 0 8px;color:#334b63;font-weight:800}
@@ -21,7 +28,7 @@
 .compass-registry-source{margin:14px 0 0;color:var(--muted);font-size:.92rem;line-height:1.6}
 .compass-registry-source a{font-weight:800}
 @media(max-width:900px){.compass-party-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:620px){.compass-party-grid{grid-template-columns:1fr}}
+@media(max-width:620px){.compass-party-grid{grid-template-columns:1fr}.compass-party-completeness,.compass-party-group-title{flex-direction:column;align-items:flex-start}.compass-party-completeness span{text-align:left}}
 
 
 /* Parcours guidé V3 */
