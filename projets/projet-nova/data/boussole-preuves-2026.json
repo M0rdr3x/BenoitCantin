@@ -1,5 +1,5 @@
 {
-  "version": "1.61.0",
+  "version": "1.62.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1661,7 +1661,7 @@
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
-        "party-09": "unknown",
+        "party-09": "ambiguous",
         "party-10": "unknown",
         "party-11": "unknown",
         "party-12": "unknown",
@@ -4465,6 +4465,33 @@
         "reviewNote": "La seconde lecture confirme que le programme demande explicitement l’extension des domaines couverts par la convention collective et davantage de contrôle syndical sur des changements touchant les conditions de travail. La plateforme électorale 2026 du parti corrobore cette orientation en revendiquant l’expansion des droits syndicaux. Cela s’oppose directement au transfert de davantage de conditions d’emploi vers la négociation individuelle."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q58-party-09-20261007-01",
+      "questionId": "q58",
+      "partyId": "party-09",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://particommunisteduquebec.ca/programme-ch5/",
+      "sourceTitle": "Parti communiste du Québec — Programme, chapitre 5 : La lutte de la classe ouvrière et du peuple",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_program_page",
+      "evidenceSummary": "Le programme officiel du Parti communiste du Québec demande que le mouvement syndical exige un plus grand contrôle sur l’introduction de changements technologiques, le déménagement ou la fermeture d’usines, la durée du temps de travail, les politiques d’investissement, la formation, la santé-sécurité et l’équité salariale.",
+      "rationale": "q58 demande si les employeurs devraient pouvoir modifier plus facilement l’organisation du travail sans négociation préalable avec un syndicat. La source va clairement dans le sens d’un contrôle syndical accru sur plusieurs changements importants touchant l’organisation et les conditions du travail, mais elle ne formule pas explicitement une exigence générale de négociation préalable ni le traitement de toute modification organisationnelle. La direction exacte de q58 reste donc indéterminée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_prior_negotiation_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une demande de contrôle syndical accru sur des changements technologiques, la durée du travail et plusieurs décisions touchant directement le milieu de travail. Comme le texte ne dit pas que toute modification de l’organisation du travail doit faire l’objet d’une négociation préalable, la source ne suffit pas à coder une opposition directe; le statut ambiguous est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5009,20 +5036,21 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q57": 2,
-        "q58": 0,
+        "q58": 1,
         "q59": 1,
         "q60": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 sur des sources officielles, selon le même standard pour les 22 formations. q57 conserve un appui direct de Québec solidaire et une position ambiguë du Parti Québécois; q59 demeure ambiguë pour Québec solidaire. q60 compte désormais une opposition documentée du Parti communiste du Québec : son programme demande l’extension des domaines couverts par la convention collective et davantage de contrôle syndical sur les conditions de travail, orientation corroborée par sa plateforme électorale 2026. q58 reste entièrement unknown faute de formulation suffisamment exacte sur un droit patronal de modifier l’organisation du travail sans négociation préalable.",
+      "note": "Recherche reprise le 7 octobre 2026 sur des sources officielles, selon le même standard pour les 22 formations. q57 conserve un appui direct de Québec solidaire et une position ambiguë du Parti Québécois; q59 demeure ambiguë pour Québec solidaire. q60 compte une opposition documentée du Parti communiste du Québec fondée sur l’extension des domaines couverts par la convention collective. q58 compte désormais une correspondance ambiguë du même parti : son programme demande davantage de contrôle syndical sur plusieurs changements touchant l’organisation et les conditions du travail, sans formuler explicitement une obligation générale de négociation préalable.",
       "evidenceRecordIds": [
         "q57-party-17-20261006-01",
         "q57-party-21-20261006-02",
         "q59-party-21-20261006-01",
-        "q60-party-09-20261007-01"
+        "q60-party-09-20261007-01",
+        "q58-party-09-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q57": 2,
-        "q58": 0,
+        "q58": 1,
         "q59": 1,
         "q60": 1
       }
