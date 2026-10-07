@@ -1,5 +1,5 @@
 {
-  "version": "1.58.0",
+  "version": "1.59.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -846,7 +846,7 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "ambiguous",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -4384,6 +4384,33 @@
         "reviewNote": "La seconde lecture confirme que la plateforme énumère explicitement, en plus des ententes ou traités, les modifications législatives et d’autres modalités comme voies possibles d’autonomie différenciée, et prévoit une approche pouvant varier selon les cas. Comme q54 limite précisément les exceptions aux traités ou à la Constitution, l’opposition est directe."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q29-party-06-20261007-01",
+      "questionId": "q29",
+      "partyId": "party-06",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://osons.quebec/",
+      "sourceTitle": "Osons Québec — Une identité numérique libre, et non un permis d'exister",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Osons Québec prévoit qu’une identité numérique demeure strictement facultative et ne devienne jamais un identifiant obligatoire permettant de suivre toute la vie d’une personne. Le programme impose aussi un consentement explicite limité à une finalité, une évaluation préalable des impacts sur les droits et la vie privée avant tout grand déploiement, des audits indépendants et une clause de réversibilité.",
+      "rationale": "q29 interdit l’élargissement de la surveillance numérique par les organismes publics sans autorisation judiciaire préalable, sauf urgence prévue par la loi. La source d’Osons Québec établit des limites explicites au traçage étatique et exige des garde-fous préalables de vie privée et de contrôle indépendant, ce qui est directement pertinent. Elle ne prévoit toutefois pas l’autorisation judiciaire préalable comme condition générale d’un élargissement de la surveillance numérique; la direction exacte de q29 demeure donc indéterminée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_judicial_authorization_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme l’interdiction d’un identifiant obligatoire permettant de suivre toute la vie d’une personne, le consentement par finalité, l’évaluation des impacts sur la vie privée, l’audit indépendant et la réversibilité. Aucun passage n’impose cependant une autorisation judiciaire préalable à tout élargissement de la surveillance numérique; le statut ambiguous est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5038,18 +5065,19 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q29": 0,
+        "q29": 1,
         "q30": 0,
         "q31": 1,
         "q32": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 avec le même standard pour les 22 formations. q29 et q30 demeurent sans source officielle suffisamment exacte. q31 compte désormais une correspondance ambiguë du Parti canadien du Québec : le parti protège explicitement les débats politiques légitimes et manifestations pacifiques tout en excluant les menaces, la violence, le harcèlement criminel et l’intimidation ciblée, sans formuler un principe général sur tous les propos offensants licites. q32 conserve sa correspondance mixte/conditionnelle du Parti conservateur du Québec.",
+      "note": "Recherche reprise le 7 octobre 2026 avec le même standard pour les 22 formations. q29 compte désormais une correspondance ambiguë d’Osons Québec : le programme interdit un identifiant numérique obligatoire permettant le suivi généralisé et impose consentement, évaluation préalable de la vie privée, audit indépendant et réversibilité, sans exiger explicitement une autorisation judiciaire préalable à tout élargissement de la surveillance numérique. q30 demeure sans source officielle suffisamment exacte. q31 conserve la correspondance ambiguë du Parti canadien du Québec et q32 la correspondance mixte/conditionnelle du Parti conservateur du Québec.",
       "evidenceRecordIds": [
         "q32-party-10-20261007-01",
-        "q31-party-08-20261007-01"
+        "q31-party-08-20261007-01",
+        "q29-party-06-20261007-01"
       ],
       "finalizedCountByQuestion": {
-        "q29": 0,
+        "q29": 1,
         "q30": 0,
         "q31": 1,
         "q32": 1
