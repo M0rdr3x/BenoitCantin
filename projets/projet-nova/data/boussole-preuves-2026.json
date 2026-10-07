@@ -1,5 +1,5 @@
 {
-  "version": "1.68.0",
+  "version": "1.69.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1617,7 +1617,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_opposition",
         "party-nova": "unknown"
       }
     },
@@ -4789,6 +4789,33 @@
         "reviewNote": "La seconde lecture confirme que le programme ne se limite pas à une aide, un prêt ou une réglementation : il demande explicitement une participation majoritaire de l’État dans les entreprises énergétiques et envisage la nationalisation complète. La correspondance avec q03 est directe."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q56-party-21-20261007-01",
+      "questionId": "q56",
+      "partyId": "party-21",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://api-wp.quebecsolidaire.net/wp-content/uploads/2018/09/maintenant_ou_jamais.pdf",
+      "sourceTitle": "Québec solidaire — Plan de transition économique, réforme du BAPE et consentement autochtone",
+      "sourceDate": "2018",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Le plan officiel de transition économique de Québec solidaire exige le consentement libre et éclairé des communautés autochtones pour tout projet d’exploitation ou de développement sur leurs territoires. Le programme officiel reconnaît en outre l’autodétermination des peuples autochtones, et la campagne 2026 réitère une relation de Nation à Nations et leur participation aux décisions qui les concernent.",
+      "rationale": "q56 propose qu’un projet autorisé par les règles provinciales puisse aller de l’avant sans pouvoir de blocage supplémentaire des gouvernements autochtones. L’exigence explicite de consentement des communautés pour tout projet d’exploitation ou de développement sur leurs territoires rend au contraire leur accord nécessaire au-delà de la seule autorisation provinciale. La direction est donc une opposition directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_indigenous_consent_required_for_projects"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "exact_policy_recheck_plus_current_2026_position_corroboration",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une exigence explicite de consentement libre et éclairé pour tout projet d’exploitation ou de développement sur les territoires autochtones. La campagne 2026 maintient une posture de Nation à Nations et de participation des Premiers Peuples aux décisions; aucun renversement de cette exigence n’a été relevé dans les sources officielles consultées."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5285,20 +5312,21 @@
         "q53": 1,
         "q54": 1,
         "q55": 1,
-        "q56": 1
+        "q56": 2
       },
-      "note": "Recherche approfondie reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q53 conserve l’appui direct du Parti conservateur du Québec sur les ententes d’autonomie gouvernementale; q54 compte désormais une opposition directe du PCQ, dont la plateforme autochtone prévoit que des régimes d’autonomie différenciés puissent découler de traités, de modifications législatives ou d’autres mécanismes; q55 conserve l’appui documenté d’Osons Québec sur le partage des revenus et q56 l’opposition directe du Parti communiste du Québec.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q53 conserve l’appui direct du Parti conservateur du Québec; q54 conserve son opposition directe du PCQ; q55 conserve l’appui documenté d’Osons Québec. q56 compte maintenant deux oppositions directes : le Parti communiste revendique explicitement un droit de veto sur tout projet d’exploitation sur les territoires autochtones, tandis que Québec solidaire exige le consentement libre et éclairé des communautés pour tout projet d’exploitation ou de développement sur leurs territoires, position cohérente avec sa relation Nation à Nations réitérée en 2026.",
       "evidenceRecordIds": [
         "q55-party-06-20261006-01",
         "q53-party-10-20261007-01",
         "q56-party-09-20261007-01",
-        "q54-party-10-20261007-01"
+        "q54-party-10-20261007-01",
+        "q56-party-21-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q53": 1,
         "q54": 1,
         "q55": 1,
-        "q56": 1
+        "q56": 2
       }
     },
     {
