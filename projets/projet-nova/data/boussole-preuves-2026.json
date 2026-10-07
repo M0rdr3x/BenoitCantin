@@ -1,5 +1,5 @@
 {
-  "version": "1.6.0",
+  "version": "1.7.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-06",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -674,7 +674,7 @@
       "axis": "environment",
       "statuses": {
         "party-01": "unknown",
-        "party-02": "unknown",
+        "party-02": "documented_mixed_or_conditional",
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "unknown",
@@ -706,7 +706,7 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "documented_support",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -2202,23 +2202,28 @@
       "recordId": "q23-party-02-20261006-01",
       "questionId": "q23",
       "partyId": "party-02",
-      "proposedStatus": "documented_support",
+      "proposedStatus": "documented_mixed_or_conditional",
       "sourceUrl": "https://climat.quebec/2026/06/12/communique-stablex-une-nouvelle-campagne-dechantillonnage-independante-confirme-une-contamination/",
       "sourceTitle": "Stablex : une nouvelle campagne d’échantillonnage indépendante confirme une contamination",
       "sourceDate": "2026-06-12",
       "checkedAt": "2026-10-06",
       "sourceType": "official_party_press_release",
       "evidenceSummary": "Climat Québec s’appuie sur une campagne d’échantillonnage supervisée par une firme indépendante qui documente des dépassements de normes et des risques réels pour les écosystèmes aquatiques, puis demande la suspension de toute expansion de Stablex tant qu’une étude exhaustive indépendante n’a pas été réalisée et que la contamination n’est pas contrôlée.",
-      "rationale": "Il s’agit d’un cas concret où la formation demande qu’un projet industriel ne puisse pas aller de l’avant en raison d’impacts environnementaux documentés par une expertise indépendante. La correspondance avec q23 est forte, mais la source porte sur un cas précis plutôt que sur une règle générale.",
+      "rationale": "La formation demande qu’une expansion industrielle soit suspendue en raison de risques écologiques documentés par une expertise indépendante, mais cette suspension demeure conditionnelle à une étude exhaustive supplémentaire et au contrôle des sources de contamination.",
       "confidence": "medium",
       "firstReview": {
         "status": "completed",
         "method": "exact_question_match_concrete_case"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "adjusted",
+        "reviewNote": "La source officielle s’appuie bien sur une expertise indépendante documentant des risques réels pour les écosystèmes aquatiques et demande de suspendre toute expansion de Stablex. Toutefois, cette suspension est explicitement conditionnelle à une étude exhaustive supplémentaire et à l’identification/contrôle des sources de contamination; le statut est donc abaissé d’un appui plein à une position mixte ou conditionnelle."
       },
-      "finalizable": false
+      "finalizable": true
     },
     {
       "recordId": "q24-party-06-20261006-01",
@@ -2238,9 +2243,14 @@
         "method": "exact_question_match"
       },
       "secondIndependentReview": {
-        "status": "pending"
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-06",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "Le programme officiel veut accélérer les grands projets de ressources avec un guichet unique, un calendrier réglementaire complet et une décision dans le délai légal, tout en précisant que l’accélération n’abolit pas les contrôles publics. Le chapitre vise explicitement les minéraux critiques et les technologies énergétiques; la correspondance avec q24 est directe."
       },
-      "finalizable": false
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -2328,7 +2338,13 @@
         "q23": 1,
         "q24": 1
       },
-      "note": "q21 et q22 demeurent entièrement unknown faute de correspondance officielle suffisamment exacte; q23 et q24 reçoivent seulement des preuves candidates soumises à une seconde révision indépendante."
+      "note": "q21 et q22 demeurent entièrement unknown faute de correspondance officielle suffisamment exacte; q23 et q24 comptent chacune une position finalisée après seconde révision indépendante.",
+      "finalizedCountByQuestion": {
+        "q21": 0,
+        "q22": 0,
+        "q23": 1,
+        "q24": 1
+      }
     }
   ]
 }
