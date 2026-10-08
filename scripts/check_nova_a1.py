@@ -364,7 +364,7 @@ if compass_page.is_file():
         'id="compass-evidence-priorities"',
         'id="compass-evidence-priority-links"',
         "Tous les partis officiels, avec les mêmes règles.",
-        "assets/boussole-electorale.js?v=3.4.6",
+        "assets/boussole-electorale.js?v=3.4.7",
         "assets/boussole-electorale.css?v=3.6.5",
     ):
         if marker.lower() not in compass_html.lower():
@@ -620,7 +620,10 @@ if party_corpus.is_file():
         "loadPoliticalRegistryAndEvidence",
         "Preuves candidates",
         "Deuxième révision terminée",
-        "Positions finalisées",
+        "Fiches finalisées",
+        "Sans direction certaine",
+        "Appuis et oppositions documentés",
+        "Une fiche finalisée peut conclure à une position indéterminée.",
         "Questions recherchées",
         "Questions avec preuve",
         "candidateCountByQuestion",
