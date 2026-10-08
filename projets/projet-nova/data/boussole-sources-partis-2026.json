@@ -1,5 +1,5 @@
 {
-  "version": "1.58.0",
+  "version": "1.59.0",
   "updated": "2026-10-08",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -337,11 +337,13 @@
         "https://pq.org/nouvelles/un-projet-structurant-pour-lest-et-lentretien-du-metro-le-parti-quebecois-presente-ses-priorites-en-transport-collectif-pour-montreal/",
         "https://pq.org/nouvelles/le-parti-quebecois-presente-ses-engagements-pour-la-capitale-nationale/"
       ],
-      "legislativeRecordUrls": [],
+      "legislativeRecordUrls": [
+        "https://www.assnat.qc.ca/fr/travaux-parlementaires/assemblee-nationale/43-1/journal-debats/20250527/408891.html"
+      ],
       "verificationStatus": "verified_official_site_and_2026_engagements",
       "lastVerified": "2026-10-08",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 8 octobre 2026, incluant le Projet national, le plan immigration et le plan environnemental 2026-2034. q31 utilise la section du Projet national qui définit la liberté d’expression comme couvrant les idées qui dérangent ou peuvent choquer et attribue à l’État québécois un rôle de préservation de cette liberté. Pour q39, le plan immigration demeure ambigu sur l’augmentation de la part relative des catégories humanitaires et familiales. q25 : deux communiqués urbains de septembre 2026 documentent des projets de transport collectif à Montréal et Québec, mais aucune part majoritaire des nouveaux investissements provinciaux n’est établie."
+      "notes": "Sources officielles revérifiées le 8 octobre 2026, incluant le Projet national, le plan immigration et le plan environnemental 2026-2034. q31 utilise la section du Projet national qui définit la liberté d’expression comme couvrant les idées qui dérangent ou peuvent choquer et attribue à l’État québécois un rôle de préservation de cette liberté. Pour q39, le plan immigration demeure ambigu sur l’augmentation de la part relative des catégories humanitaires et familiales. q25 : deux communiqués urbains de septembre 2026 documentent des projets de transport collectif à Montréal et Québec, mais aucune part majoritaire des nouveaux investissements provinciaux n’est établie. q44 : le journal de l’Assemblée nationale du 27 mai 2025 contient l’appui explicite du PQ au PL84 sur l’intégration nationale; codage mixte/conditionnel, la définition légale de culture commune ne constituant pas une définition exhaustive de l’identité québécoise."
     },
     {
       "id": "party-18",

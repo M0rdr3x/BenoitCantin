@@ -1,5 +1,5 @@
 {
-  "version": "1.95.0",
+  "version": "1.96.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1277,7 +1277,7 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_mixed_or_conditional",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -5599,6 +5599,33 @@
         "reviewNote": "Le communiqué de Montréal contient un projet structurant et une modernisation du métro; les engagements de Québec ajoutent tramway, bus et entretien routier. Les montants nécessaires pour établir que la majorité de tous les nouveaux investissements provinciaux urbains irait au collectif sont absents; ambiguous reste le seul statut prudent."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q44-party-17-20261008-01",
+      "questionId": "q44",
+      "partyId": "party-17",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://www.assnat.qc.ca/fr/travaux-parlementaires/assemblee-nationale/43-1/journal-debats/20250527/408891.html",
+      "sourceTitle": "Assemblée nationale du Québec — Journal des débats du 27 mai 2025, adoption du projet de loi 84 et intervention de Pascal Bérubé",
+      "sourceDate": "2025-05-27",
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_legislative_debate_party_statement",
+      "evidenceSummary": "Lors du débat parlementaire final sur le projet de loi no 84, le député péquiste Pascal Bérubé affirme explicitement que le Parti Québécois est en faveur du texte et souligne la langue, la culture, les institutions et l’identité propre du Québec. La Loi sur l’intégration à la nation québécoise, adoptée le 28 mai 2025, définit dans ses articles 2 et 3 un modèle d’intégration nationale et certains traits de la culture commune.",
+      "rationale": "q44 préconise que les lois provinciales évitent d’imposer une définition officielle de l’identité québécoise. En soutenant une loi qui décrit légalement certains éléments de la culture commune et du modèle d’intégration, le PQ s’écarte de ce principe pour ce cadre précis. Toutefois le texte est centré sur l’intégration à la nation et ne prétend pas arrêter une définition exhaustive de l’identité personnelle de chaque Québécois. L’appui au cadre législatif est documenté, mais la portée de la correspondance est conditionnelle et ne justifie pas une opposition générale à toute formulation de q44.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "direct_party_statement_in_official_assembly_debate_plus_statutory_scope_comparison"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — relecture documentaire distincte du journal parlementaire et des articles 2-3 de la loi",
+        "reviewedAt": "2026-10-08",
+        "method": "crosscheck_explicit_party_endorsement_against_primary_statutory_wording",
+        "result": "confirmed",
+        "reviewNote": "Le député Pascal Bérubé indique sans réserve l’appui du Parti Québécois au PL84 lors de l’adoption; les articles 2 et 3 de la loi codifient le modèle d’intégration et des traits de la culture commune. Cela documente une acceptation d’une définition partielle par la loi, mais pas une thèse sur toute identité québécoise : statut mixte ou conditionnel retenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5892,7 +5919,7 @@
     },
     {
       "batchId": "identity-q41-q44-20261006",
-      "checkedAt": "2026-10-07",
+      "checkedAt": "2026-10-08",
       "questionIds": [
         "q41",
         "q42",
@@ -5929,9 +5956,9 @@
         "q41": 2,
         "q42": 2,
         "q43": 3,
-        "q44": 1
+        "q44": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q41 conserve deux correspondances partielles. q42 compte désormais deux appuis documentés : Osons Québec lie l’aide culturelle à la diversité de l’offre sans contrôle politique du contenu, tandis que Québec solidaire combine un financement public accru de la création avec une conception explicitement plurielle et multilingue de la culture québécoise. q43 conserve trois appuis documentés et q44 une opposition directe.",
+      "note": "Recherche renforcée le 8 octobre 2026 selon le même standard pour les 22 formations. q41 et q42 conservent deux correspondances; q43 trois. q44 dispose de deux preuves : la CAQ est codée en opposition directe à la proposition, sa loi définissant un modèle d’intégration et des éléments de culture commune; le Parti Québécois est codé mixte/conditionnel parce que son député a soutenu expressément ce texte à l’Assemblée nationale, sans se prononcer pour autant sur une définition légale exhaustive de l’identité personnelle.",
       "evidenceRecordIds": [
         "q41-party-21-20261006-01",
         "q41-party-17-20261006-02",
@@ -5940,13 +5967,14 @@
         "q43-party-21-20261006-03",
         "q44-party-05-20261006-01",
         "q42-party-06-20261007-01",
-        "q42-party-21-20261007-01"
+        "q42-party-21-20261007-01",
+        "q44-party-17-20261008-01"
       ],
       "finalizedCountByQuestion": {
         "q41": 2,
         "q42": 2,
         "q43": 3,
-        "q44": 1
+        "q44": 2
       }
     },
     {
