@@ -1,5 +1,5 @@
 {
-  "version": "1.39.0",
+  "version": "1.40.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -391,7 +391,7 @@
       "verificationStatus": "verified_official_site_and_2026_platform",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant la plateforme électorale 2026, le programme officiel et le plan de transition. q03 documente la participation majoritaire de l’État dans les entreprises énergétiques; q15 davantage d’orthopédagogues; q19 l’inclusion obligatoire de logement social; q42 la plateforme culturelle qui combine 510 M$ annuels de soutien à la production avec une conception plurielle et multilingue de la culture québécoise; q53 les ententes formelles et relations de nation à nation; q56 l’exigence de consentement libre et éclairé des communautés autochtones pour les projets d’exploitation ou de développement sur leurs territoires, orientation cohérente avec le droit au consentement inscrit au programme et la posture Nation à Nations réitérée en 2026."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant la plateforme électorale 2026, le programme officiel et le plan de transition. q03 documente la participation majoritaire de l’État dans les entreprises énergétiques; q15 davantage d’orthopédagogues; q16 l’opposition à une portabilité accrue du financement public vers le privé par la séparation explicite entre écoles publiques financées par l’État et écoles privées autonomes quant à leur financement; q19 l’inclusion obligatoire de logement social; q42 la plateforme culturelle; q53 les ententes formelles et relations de nation à nation; q56 l’exigence de consentement libre et éclairé des communautés autochtones."
     },
     {
       "id": "party-nova",

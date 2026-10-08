@@ -1,5 +1,5 @@
 {
-  "version": "1.76.0",
+  "version": "1.77.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -497,7 +497,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_opposition",
         "party-nova": "unknown"
       }
     },
@@ -5032,6 +5032,33 @@
         "reviewNote": "La seconde lecture confirme une densification accrue par zonage dans les secteurs déjà desservis et une mise en œuvre municipale, avec le transport parmi les infrastructures de desserte. Le texte ne restreint cependant pas ce pouvoir aux secteurs autour des stations de transport collectif; le statut mixte/conditionnel demeure le plus fidèle."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q16-party-21-20261007-01",
+      "questionId": "q16",
+      "partyId": "party-21",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/02/programmeqs-2019.pdf",
+      "sourceTitle": "Québec solidaire — Programme, organisation du réseau scolaire",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_program_document",
+      "evidenceSummary": "Le programme officiel de Québec solidaire privilégie un réseau scolaire public mixte où les écoles publiques sont totalement financées par l’État tandis que les écoles privées sont totalement autonomes quant à leur financement. Il prévoit aussi que toutes les écoles publiques offrent le programme officiel du ministère, avec possibilité de projets particuliers.",
+      "rationale": "q16 propose qu’une plus grande part du financement public de l’éducation suive l’élève lorsqu’une famille choisit un établissement reconnu. Le modèle de Québec solidaire maintient explicitement le financement public intégral dans le réseau public et sépare le financement des écoles privées, qui doivent être autonomes quant à leur financement. Cette architecture s’oppose directement à l’augmentation de la portabilité du financement public vers l’établissement choisi lorsqu’il s’agit d’un établissement privé reconnu.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_inverse_direction_public_funding_portability"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (programme officiel)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le programme distingue explicitement les écoles publiques, totalement financées par l’État, des écoles privées, autonomes quant à leur financement. Cette séparation est incompatible avec une augmentation de la part du financement public qui suivrait le choix familial vers un établissement privé reconnu; l’opposition à q16 est donc documentée."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5936,22 +5963,23 @@
         "q13": 1,
         "q14": 2,
         "q15": 2,
-        "q16": 1
+        "q16": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q15 compte désormais deux appuis directs : le PLQ propose 1 000 ressources spécialisées supplémentaires dans les écoles publiques et Québec solidaire prévoit davantage d’orthopédagogues financés dans le cadre d’investissements majeurs en école publique. q13 et q16 conservent leurs correspondances ambiguës du PCQ; q14 conserve deux correspondances partielles.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q15 conserve deux appuis directs. q16 compte maintenant deux positions finalisées : le PCQ demeure ambigu parce qu’il associe choix d’école et financement direct sans mécanisme explicite où l’argent suit individuellement l’élève, tandis que Québec solidaire s’oppose directement à une plus grande portabilité du financement public vers le privé en séparant financement public intégral des écoles publiques et financement autonome des écoles privées. q13 conserve sa correspondance ambiguë du PCQ; q14 conserve deux correspondances partielles.",
       "evidenceRecordIds": [
         "q14-party-06-20261006-01",
         "q14-party-10-20261006-02",
         "q15-party-12-20261006-01",
         "q13-party-10-20261007-01",
         "q16-party-10-20261007-01",
-        "q15-party-21-20261007-01"
+        "q15-party-21-20261007-01",
+        "q16-party-21-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q13": 1,
         "q14": 2,
         "q15": 2,
-        "q16": 1
+        "q16": 2
       }
     },
     {
