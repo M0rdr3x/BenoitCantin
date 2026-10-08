@@ -358,6 +358,7 @@ if compass_page.is_file():
         'id="compass-evidence-question"',
         'id="compass-evidence-only-documented"',
         'id="compass-evidence-question-results"',
+        'id="compass-evidence-selected-question"',
         'id="compass-evidence-retry"',
         'id="compass-questionnaire-retry"',
         'id="compass-evidence-parties"',
@@ -366,8 +367,8 @@ if compass_page.is_file():
         'id="compass-evidence-priorities"',
         'id="compass-evidence-priority-links"',
         "Tous les partis officiels, avec les mêmes règles.",
-        "assets/boussole-electorale.js?v=3.4.10",
-        "assets/boussole-electorale.css?v=3.6.9",
+        "assets/boussole-electorale.js?v=3.4.11",
+        "assets/boussole-electorale.css?v=3.6.10",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
