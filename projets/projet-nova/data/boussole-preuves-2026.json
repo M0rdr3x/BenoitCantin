@@ -1,5 +1,5 @@
 {
-  "version": "1.87.0",
+  "version": "1.88.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1421,7 +1421,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_mixed_or_conditional",
         "party-nova": "unknown"
       }
     },
@@ -5329,6 +5329,33 @@
         "reviewNote": "La seconde lecture confirme que le document protège explicitement les idées qui dérangent ou choquent et demande à l’État québécois de préserver la liberté d’expression de manière générale. La question q31 excluant déjà les conduites illégales, la correspondance avec les propos offensants mais licites est directe."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q49-party-21-20261008-01",
+      "questionId": "q49",
+      "partyId": "party-21",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/02/programmeqs-2019.pdf",
+      "sourceTitle": "Québec solidaire — Programme, section 2.4.3 Fiscalité municipale",
+      "sourceDate": null,
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_program_document",
+      "evidenceSummary": "Le programme officiel de Québec solidaire veut briser la dépendance des municipalités à la taxe foncière en leur allouant des points d’impôt sur le revenu. Il inscrit cette réforme sous le principe de l’autonomie municipale. La hauteur des points d’impôt et leur répartition seraient toutefois déterminées selon une entente avec le gouvernement du Québec et une décision conjointe des municipalités et du gouvernement.",
+      "rationale": "q49 propose d’augmenter la part des revenus municipaux provenant de sources fiscales que les municipalités contrôlent elles-mêmes. L’attribution de points d’impôt sur le revenu élargirait la structure fiscale disponible aux municipalités. Cependant, le contrôle n’est pas entièrement municipal puisque la hauteur et la répartition seraient négociées et décidées conjointement avec Québec. La direction est donc favorable mais conditionnelle.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_shared_control_constraint"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (programme officiel)",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme l’attribution de points d’impôt sur le revenu aux municipalités et l’objectif explicite d’autonomie municipale. Elle confirme aussi que la hauteur et la répartition seraient convenues avec Québec et décidées conjointement, ce qui empêche de coder un appui absolu à des sources fiscales entièrement contrôlées par les municipalités."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5772,12 +5799,12 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q49": 1,
+        "q49": 2,
         "q50": 2,
         "q51": 2,
         "q52": 2
       },
-      "note": "Recherche renforcée le 8 octobre 2026 selon le même protocole pour les 22 formations. q49 conserve la correspondance ambiguë d’Osons Québec. q50 conserve deux positions mixtes/conditionnelles du PLQ et du PCQ; q51 conserve les positions du PQ et du PCQ. q52 compte désormais deux positions mixtes/conditionnelles : le PCQ rejette le modèle largement centralisé au profit d’un État des régions, et Québec solidaire propose une décentralisation décisionnelle et une dévolution régionale tout en maintenant à l’État québécois la responsabilité des grands équipements collectifs.",
+      "note": "Recherche renforcée le 8 octobre 2026 selon le même protocole pour les 22 formations. q49 compte désormais deux correspondances : Osons Québec demeure ambigu faute d’une hausse explicite de revenus fiscalement contrôlés localement, tandis que Québec solidaire propose d’attribuer aux municipalités des points d’impôt sur le revenu sous le principe de l’autonomie municipale, mais avec une hauteur et une répartition décidées conjointement avec Québec; cette seconde position est donc mixte/conditionnelle. q50 conserve deux positions mixtes/conditionnelles du PLQ et du PCQ; q51 conserve les positions du PQ et du PCQ; q52 conserve deux positions mixtes/conditionnelles du PCQ et de Québec solidaire.",
       "evidenceRecordIds": [
         "q51-party-17-20261006-01",
         "q51-party-10-20261007-01",
@@ -5785,10 +5812,11 @@
         "q49-party-06-20261007-01",
         "q52-party-10-20261007-01",
         "q50-party-10-20261007-01",
-        "q52-party-21-20261008-01"
+        "q52-party-21-20261008-01",
+        "q49-party-21-20261008-01"
       ],
       "finalizedCountByQuestion": {
-        "q49": 1,
+        "q49": 2,
         "q50": 2,
         "q51": 2,
         "q52": 2
