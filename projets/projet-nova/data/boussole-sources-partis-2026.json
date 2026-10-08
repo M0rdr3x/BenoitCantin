@@ -1,5 +1,5 @@
 {
-  "version": "1.49.0",
+  "version": "1.50.0",
   "updated": "2026-10-08",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -330,9 +330,9 @@
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_engagements",
-      "lastVerified": "2026-10-07",
+      "lastVerified": "2026-10-08",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant le plan immigration actuellement publié et le plan environnemental 2026-2034. Pour q39, le plan traite du volume permanent, du regroupement familial, de l’asile et d’une réduction d’une composante économique sans établir explicitement une hausse de la part relative des catégories humanitaires et familiales."
+      "notes": "Sources officielles revérifiées le 8 octobre 2026, incluant le Projet national, le plan immigration et le plan environnemental 2026-2034. q31 utilise la section du Projet national qui définit la liberté d’expression comme couvrant les idées qui dérangent ou peuvent choquer et attribue à l’État québécois un rôle de préservation de cette liberté. Pour q39, le plan immigration demeure ambigu sur l’augmentation de la part relative des catégories humanitaires et familiales."
     },
     {
       "id": "party-18",
