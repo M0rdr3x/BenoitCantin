@@ -225,6 +225,35 @@ def run() -> None:
             evidence_question_select.locator("option").count() == 64,
             f"{BROWSER_NAME}: l’explorateur documentaire doit proposer 64 questions",
         )
+        # Les intitulés courts évitent le débordement Safari; le texte exact
+        # doit rester intégralement consultable et changer avec la sélection.
+        evidence_option_labels = evidence_question_select.evaluate("""select =>
+            Array.from(select.options).map(option => option.textContent.trim())
+        """)
+        assert_true(
+            len(evidence_option_labels) == 64 and max(map(len, evidence_option_labels)) < 65,
+            f"{BROWSER_NAME}: menu documentaire contient des intitulés trop longs",
+        )
+        document_question_sync = page.evaluate("""async () => {
+            const response = await fetch("data/boussole-electorale-v2.json", {cache:"no-store"});
+            if(!response.ok) return false;
+            const corpus = await response.json();
+            const select = document.querySelector("#compass-evidence-question");
+            const text = document.querySelector("#compass-evidence-selected-question");
+            const first = corpus.questions.find(q => q.id === "q01");
+            const second = corpus.questions.find(q => q.id === "q29");
+            if(!first || !second || text?.textContent !== first.text) return false;
+            select.value = "q29";
+            select.dispatchEvent(new Event("change",{bubbles:true}));
+            const matched = text.textContent === second.text;
+            select.value = "q01";
+            select.dispatchEvent(new Event("change",{bubbles:true}));
+            return matched && text.textContent === first.text;
+        }""")
+        assert_true(
+            document_question_sync,
+            f"{BROWSER_NAME}: texte officiel de la proposition non synchronisé avec le menu court",
+        )
         # Les liens d'accès direct et le compteur doivent suivre le corpus,
         # sans jamais supposer que q29, q30 ou une autre question restera limitée.
         mono_proof_question_ids = evidence_question_select.evaluate("""select =>
