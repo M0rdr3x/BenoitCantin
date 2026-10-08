@@ -462,8 +462,8 @@ def run() -> None:
         assert_true(form.get_attribute("method") is None, f"{BROWSER_NAME}: POST personnel actif avant configuration")
         assert_true(form.get_attribute("data-personal-formspree-state") == "pending-separate-endpoint", f"{BROWSER_NAME}: état fail-closed Formspree absent")
         assert_true(
-            "form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'"
-            in page.locator("script:not([src])").all_text_contents()[0],
+            any("form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'" in js
+                for js in page.locator("script:not([src])").all_text_contents()),
             f"{BROWSER_NAME}: double verrou du formulaire personnel absent",
         )
         assert_true(submit.is_disabled(), f"{BROWSER_NAME}: bouton personnel actif avant endpoint distinct")
