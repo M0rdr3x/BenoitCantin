@@ -1,5 +1,5 @@
 {
-  "version": "1.81.0",
+  "version": "1.82.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -693,7 +693,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_mixed_or_conditional",
         "party-nova": "unknown"
       }
     },
@@ -5167,6 +5167,33 @@
         "reviewNote": "La seconde vérification confirme que l’état d’urgence sanitaire a été déclaré par le gouvernement, que le Conseil des ministres a ensuite imposé par décret des restrictions générales de rassemblement et que François Legault a plus tard expliqué à l’Assemblée que l’urgence sanitaire demeurait nécessaire pour maintenir plusieurs mesures, dont le masque, le passeport vaccinal et des limites de capacité. L’usage effectif du pouvoir exécutif d’urgence correspond directement à q32."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q23-party-21-20261007-01",
+      "questionId": "q23",
+      "partyId": "party-21",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/05/declarationsaguenay-v1.pdf",
+      "sourceTitle": "Québec solidaire — Déclaration du Saguenay sur la filière batterie et l’environnement",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Dans une déclaration officielle sur le développement de la filière batterie, Québec solidaire s’engage à renforcer le rôle du Bureau d’audiences publiques sur l’environnement (BAPE), à respecter les conditions qu’il émet et à annuler les projets pour lesquels le BAPE rend un avis défavorable.",
+      "rationale": "q23 demande qu’un projet économique puisse être refusé afin de protéger un écosystème qu’une évaluation scientifique indépendante classe comme vulnérable. La source confirme explicitement qu’un projet économique peut être annulé à la suite d’une évaluation environnementale indépendante défavorable du BAPE. Elle ne précise toutefois pas que le déclencheur doit être le classement scientifique d’un écosystème comme vulnérable; la correspondance est donc forte mais conditionnelle plutôt qu’un appui exact.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "independent_environmental_review_project_rejection_with_ecosystem_classification_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (document officiel Québec solidaire)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme l’engagement explicite d’annuler les projets recevant un avis défavorable du BAPE, ce qui établit le principe d’un refus de projet à la suite d’une évaluation environnementale indépendante. Le document ne lie cependant pas ce refus à un critère précis de vulnérabilité scientifique d’un écosystème; le statut mixte/conditionnel est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5259,14 +5286,14 @@
       "candidateCountByQuestion": {
         "q21": 2,
         "q22": 1,
-        "q23": 1,
+        "q23": 2,
         "q24": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q21 conserve deux positions finalisées; q22 demeure ambiguë pour le Parti Québécois; q23 conserve une position mixte/conditionnelle de Climat Québec. q24 compte désormais deux appuis directs : Osons Québec propose un guichet réglementaire à délai connu pour les grands projets de ressources sans abolir les contrôles publics, et la CAQ accélère explicitement les projets miniers et réduit les délais d’évaluation tout en maintenant la rigueur de l’encadrement et des normes environnementales élevées.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q21 conserve deux positions finalisées et q22 demeure ambiguë pour le Parti Québécois. q23 compte désormais deux positions mixtes/conditionnelles : Climat Québec demande la suspension d’une expansion industrielle en présence de risques écologiques documentés par expertise indépendante, sous réserve d’une étude supplémentaire, tandis que Québec solidaire s’engage à annuler les projets recevant un avis défavorable du BAPE sans préciser le critère exact de classement scientifique d’un écosystème vulnérable. q24 conserve deux appuis directs.",
       "finalizedCountByQuestion": {
         "q21": 2,
         "q22": 1,
-        "q23": 1,
+        "q23": 2,
         "q24": 2
       },
       "evidenceRecordIds": [
@@ -5275,7 +5302,8 @@
         "q21-party-05-20261007-01",
         "q22-party-17-20261007-01",
         "q21-party-10-20261007-01",
-        "q24-party-05-20261007-01"
+        "q24-party-05-20261007-01",
+        "q23-party-21-20261007-01"
       ]
     },
     {
