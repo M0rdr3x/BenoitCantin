@@ -1,5 +1,5 @@
 {
-  "version": "1.85.0",
+  "version": "1.86.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1770,7 +1770,7 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "ambiguous",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -5275,6 +5275,33 @@
         "reviewNote": "La seconde lecture confirme un programme de français ministériel commun avec contenus et progression harmonisés, destiné à être déployé dans toutes les écoles. Comme la mesure porte sur une matière et non sur l’ensemble du curriculum, le statut mixed/conditional est conservé."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q62-party-06-20261008-01",
+      "questionId": "q62",
+      "partyId": "party-06",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://osons.quebec/",
+      "sourceTitle": "Osons Québec — Identité numérique libre et IA responsable",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Osons Québec propose un Conseil québécois du numérique et de l’intelligence artificielle indépendant chargé d’auditer les systèmes d’IA de l’État, une évaluation des impacts sur les droits, la vie privée et la cybersécurité avant tout grand déploiement, ainsi que des projets pilotes limités, des tests de sécurité indépendants, des résultats publics et une clause de réversibilité avant la généralisation d’une infrastructure critique.",
+      "rationale": "q62 porte sur l’autorisation de nouveaux systèmes d’IA dans les services publics avant l’adoption d’un cadre réglementaire spécifique. La source d’Osons Québec traite directement de l’ordre de déploiement et impose plusieurs garde-fous avant les grands déploiements et avant la généralisation. Elle ne dit toutefois pas qu’une loi ou un cadre réglementaire spécifique doit impérativement être adopté avant toute utilisation de nouveaux systèmes d’IA, ni qu’une utilisation préalable sous les lois existantes serait permise. La direction exacte de q62 demeure donc indéterminée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_regulatory_framework_timing_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (programme officiel 2026)",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que les évaluations d’impact, projets pilotes, tests indépendants et mécanismes de réversibilité doivent précéder les grands déploiements ou la généralisation. Elle ne fixe cependant pas l’adoption d’un cadre réglementaire spécifique comme condition juridique préalable à toute utilisation d’un système d’IA de l’État; le statut ambiguous est donc maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5857,7 +5884,7 @@
     },
     {
       "batchId": "digital-q61-q64-20261006",
-      "checkedAt": "2026-10-07",
+      "checkedAt": "2026-10-08",
       "questionIds": [
         "q61",
         "q62",
@@ -5892,22 +5919,23 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q61": 2,
-        "q62": 1,
+        "q62": 2,
         "q63": 1,
         "q64": 2
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q61 conserve deux correspondances ambiguës (Osons Québec et PLQ), q63 une correspondance ambiguë (Osons Québec), et q64 deux correspondances ambiguës (Osons Québec et Parti conservateur du Québec). q62 compte désormais une correspondance ambiguë du PLQ : sa proposition de loi-cadre porte explicitement sur le développement et le déploiement de l’IA et sur son encadrement dans l’appareil public, mais ne précise pas si de nouveaux systèmes pourraient être utilisés avant l’adoption de ce cadre.",
+      "note": "Recherche renforcée le 8 octobre 2026 selon le même standard pour les 22 formations. q61 conserve deux correspondances ambiguës. q62 compte maintenant deux correspondances ambiguës : le PLQ prévoit une loi-cadre sur le développement et le déploiement de l’IA sans préciser si l’usage peut précéder son adoption; Osons Québec impose des évaluations d’impact, projets pilotes, tests indépendants et réversibilité avant les grands déploiements ou la généralisation, sans faire de l’adoption préalable d’un cadre réglementaire spécifique une condition explicite. q63 conserve une correspondance ambiguë et q64 deux.",
       "evidenceRecordIds": [
         "q61-party-06-20261006-01",
         "q61-party-12-20261006-02",
         "q63-party-06-20261006-01",
         "q64-party-06-20261006-01",
         "q64-party-10-20261006-02",
-        "q62-party-12-20261007-01"
+        "q62-party-12-20261007-01",
+        "q62-party-06-20261008-01"
       ],
       "finalizedCountByQuestion": {
         "q61": 2,
-        "q62": 1,
+        "q62": 2,
         "q63": 1,
         "q64": 2
       }
