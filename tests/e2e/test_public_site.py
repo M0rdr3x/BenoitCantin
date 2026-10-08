@@ -695,9 +695,38 @@ def run() -> None:
             mobile_page.set_viewport_size({"width": viewport_width, "height": 844})
             mobile_overflow = mobile_page.evaluate("""() => {
                 const width = window.innerWidth;
+                const skip = document.querySelector(".skip-link");
+                const skipCss = skip ? {
+                    left: getComputedStyle(skip).left,
+                    clip: getComputedStyle(skip).clipPath,
+                    display: getComputedStyle(skip).display
+                } : null;
+                let widthWithoutSkip = null;
+                if(skip){
+                    skip.style.display = "none";
+                    void document.body.offsetWidth;
+                    widthWithoutSkip = document.documentElement.scrollWidth;
+                    skip.style.removeProperty("display");
+                }
+                const containers = Array.from(document.querySelectorAll("body *")).map(element => {
+                    const rect = element.getBoundingClientRect();
+                    return {
+                        name: element.tagName.toLowerCase(), id: element.id || "",
+                        className: typeof element.className === "string" ? element.className.slice(0,65) : "",
+                        scrollWidth: element.scrollWidth, clientWidth: element.clientWidth,
+                        right: Math.round(rect.right),
+                        overflowX: getComputedStyle(element).overflowX
+                    };
+                }).filter(x => x.scrollWidth > x.clientWidth + 5)
+                  .sort((a,b) => (b.scrollWidth-b.clientWidth) - (a.scrollWidth-a.clientWidth))
+                  .slice(0,12);
                 return {
                     width,
                     scrollWidth: document.documentElement.scrollWidth,
+                    bodyScrollWidth: document.body.scrollWidth,
+                    widthWithoutSkip,
+                    skipCss,
+                    containers,
                     offenders: Array.from(document.querySelectorAll("body *")).map(element => {
                         const rect = element.getBoundingClientRect();
                         return {
