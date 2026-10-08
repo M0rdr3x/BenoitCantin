@@ -802,12 +802,14 @@ def run() -> None:
             assert_true(assistant_overflow, f"{BROWSER_NAME}: assistant crée un débordement horizontal en 390 px")
             mobile_page.keyboard.press("Escape")
 
+        # Le Centre Vie privée SINJIRA est volontairement exclu des essais
+        # anonymes : sa route peut renvoyer vers la connexion; son script
+        # est quand même contrôlé par le validateur statique du dépôt.
         # Navigation de continuité : les pages secondaires et les pages 404
         # doivent utiliser les mêmes correctifs clavier que les accueils.
         for route, script_version in (
             ("404.html", "site.js?v=24.4.100"),
             ("univers.html", "site.js?v=24.4.100"),
-            ("compte/vie-privee.html", "site.js?v=24.4.100"),
             ("transparence-ia.html", "site.js?v=24.4.100"),
             ("confidentialite.html", "site.js?v=24.4.100"),
             ("gouvernance-vie-privee.html", "site.js?v=24.4.100"),
