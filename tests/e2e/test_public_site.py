@@ -693,11 +693,29 @@ def run() -> None:
         )
         for viewport_width in (390, 320):
             mobile_page.set_viewport_size({"width": viewport_width, "height": 844})
+            mobile_overflow = mobile_page.evaluate("""() => {
+                const width = window.innerWidth;
+                return {
+                    width,
+                    scrollWidth: document.documentElement.scrollWidth,
+                    offenders: Array.from(document.querySelectorAll("body *")).map(element => {
+                        const rect = element.getBoundingClientRect();
+                        return {
+                            name: element.tagName.toLowerCase(),
+                            className: typeof element.className === "string" ? element.className.slice(0, 100) : "",
+                            id: element.id || "",
+                            right: Math.round(rect.right),
+                            left: Math.round(rect.left),
+                            scrollWidth: element.scrollWidth,
+                            clientWidth: element.clientWidth
+                        };
+                    }).filter(x => x.right > width + 2 || x.left < -2)
+                      .sort((a,b) => b.right - a.right).slice(0, 12)
+                };
+            }""")
             assert_true(
-                mobile_page.evaluate(
-                    "document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2"
-                ),
-                f"{BROWSER_NAME}: Boussole déborde horizontalement en {viewport_width}px",
+                mobile_overflow["scrollWidth"] <= viewport_width + 2,
+                f"{BROWSER_NAME}: Boussole déborde horizontalement en {viewport_width}px: {mobile_overflow}",
             )
             assert_true(
                 mobile_page.locator("#compass-evidence-question").is_visible(),
