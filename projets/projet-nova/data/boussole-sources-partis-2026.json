@@ -1,5 +1,5 @@
 {
-  "version": "1.34.0",
+  "version": "1.35.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -240,7 +240,7 @@
       "verificationStatus": "verified_official_site_and_2026_engagements",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les engagements électoraux et le cadre financier 2026. q08 utilise le cadre financier qui prévoit un retour à l’équilibre en 2029-2030 tout en engageant près de 12 G$ de nouvelles mesures avant cette date; le statut demeure mixte/conditionnel parce que le communiqué ne qualifie pas chaque engagement de programme permanent. q50 conserve le noyau commun de services avec asymétrie réglementaire régionale."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les engagements électoraux et le cadre financier 2026. Le cadre financier sert à q07 pour documenter une hausse du PQI pendant une période déficitaire, avec réserve sur la justification par la durée de vie des actifs, et à q08 pour les nouveaux engagements avant le retour à l’équilibre. q50 conserve le noyau commun de services avec asymétrie réglementaire régionale."
     },
     {
       "id": "party-13",
