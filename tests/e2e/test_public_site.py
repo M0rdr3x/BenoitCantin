@@ -13,6 +13,7 @@ PUBLIC_ROUTES = [
     "",
     "a-propos.html",
     "contact.html",
+    "projets/projet-nova/contact.html",
     "projets/sinjira/",
     "projets/sinjira/registre/",
     "projets/sinjira/communaute/",
@@ -429,10 +430,42 @@ def run() -> None:
         route = page.locator("#contact-route")
         submit = page.locator("#contact-submit")
         assert_true(project.locator('option[value="Projet Nova"]').count() == 0, f"{BROWSER_NAME}: Projet Nova encore routé par le formulaire personnel")
-        project.select_option("SINJIRA")
+        personal_fields = page.locator("#contact-personal-fields")
+        assert_true(
+            personal_fields.count() == 1 and personal_fields.get_attribute("disabled") is not None,
+            f"{BROWSER_NAME}: champs de contact personnel non verrouillés",
+        )
+        for selector in ("#contact-name", "#contact-email", "#contact-project", "#contact-message", 'input[name="consentement_contact"]'):
+            assert_true(page.locator(selector).is_disabled(), f"{BROWSER_NAME}: saisie personnelle encore active: {selector}")
+        assert_true(
+            page.locator('a[href="/projets/projet-nova/contact.html"]').count() >= 1
+            and page.locator('a[href="/compte/vie-privee.html"]').count() >= 1,
+            f"{BROWSER_NAME}: un des deux parcours de contact disponibles est absent",
+        )
+        # Ne dépend pas d'un submit visible : forcer un événement submit dans
+        # le navigateur confirme que le script l'annule aussi au clavier/API.
+        personal_submit_blocked = page.evaluate("""() => {
+            const form = document.querySelector("#contact-general");
+            const event = new Event("submit", {bubbles:true, cancelable:true});
+            return form.dispatchEvent(event) === false && event.defaultPrevented;
+        }""")
+        assert_true(personal_submit_blocked, f"{BROWSER_NAME}: soumission personnelle non bloquée par le script")
+        assert_true(
+            page.evaluate('new FormData(document.querySelector("#contact-general")).entries().next().done'),
+            f"{BROWSER_NAME}: des données de formulaire personnel restent sérialisables malgré le verrouillage",
+        )
+        assert_true(
+            "?" not in urlparse(page.url).path and not urlparse(page.url).query,
+            f"{BROWSER_NAME}: le formulaire personnel a produit une URL avec paramètres",
+        )
         assert_true(form.get_attribute("action") is None, f"{BROWSER_NAME}: endpoint personnel actif avant configuration")
         assert_true(form.get_attribute("method") is None, f"{BROWSER_NAME}: POST personnel actif avant configuration")
         assert_true(form.get_attribute("data-personal-formspree-state") == "pending-separate-endpoint", f"{BROWSER_NAME}: état fail-closed Formspree absent")
+        assert_true(
+            any("form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'" in js
+                for js in page.locator("script:not([src])").all_text_contents()),
+            f"{BROWSER_NAME}: double verrou du formulaire personnel absent",
+        )
         assert_true(submit.is_disabled(), f"{BROWSER_NAME}: bouton personnel actif avant endpoint distinct")
         assert_true("désactivé" in route.inner_text().lower(), f"{BROWSER_NAME}: message fail-closed absent")
         assert_true(page.locator('a[href="/projets/projet-nova/contact.html"]').count() >= 1, f"{BROWSER_NAME}: lien contact officiel Nova absent")
@@ -440,6 +473,21 @@ def run() -> None:
         assert_true("formspree.io/f/xdenkzrv" not in contact_html, f"{BROWSER_NAME}: ancien endpoint personnel encore exposé")
         assert_true("formspree.io/f/xkolwjdg" not in contact_html, f"{BROWSER_NAME}: endpoint Nova encore exposé dans le contact personnel")
         assert_true("kingtyrano@gmail.com" not in contact_html, "Adresse privée embarquée dans le formulaire de contact")
+        page.goto(urljoin(BASE_URL, "projets/projet-nova/contact.html"), wait_until="domcontentloaded", timeout=30_000)
+        assert_true(
+            page.locator('a[href="mailto:officiellenovaparti@gmail.com"]').count() >= 1,
+            f"{BROWSER_NAME}: courriel officiel Nova non accessible",
+        )
+        assert_true(
+            page.locator('a[href="../../contact.html"]').count() == 1
+            and page.locator('a[href="../../compte/vie-privee.html"]').count() == 1,
+            f"{BROWSER_NAME}: liens vers le portail personnel et le Centre Vie privée absents de Nova",
+        )
+        assert_true(
+            page.locator("main form").count() == 0
+            and page.locator('form[action*="formspree.io"]').count() == 0,
+            f"{BROWSER_NAME}: un formulaire de collecte ou un endpoint Formspree apparaît dans le contact Nova",
+        )
 
         if IS_LOCAL:
             for auth_route in AUTH_ROUTES:
