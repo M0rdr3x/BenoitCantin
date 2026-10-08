@@ -1,5 +1,5 @@
 {
-  "version": "1.92.0",
+  "version": "1.93.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1770,11 +1770,11 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "ambiguous",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "ambiguous",
         "party-11": "unknown",
         "party-12": "ambiguous",
         "party-13": "unknown",
@@ -5464,6 +5464,60 @@
         "reviewNote": "La seconde lecture confirme que la progression cumulée depuis 2018 a dépassé l’inflation et que la hausse 2026 vise le pouvoir d’achat et le ratio avec le salaire horaire moyen. La source ne promet toutefois pas une hausse systématiquement supérieure à l’inflation sur les prochaines années; le statut ambiguous est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q62-party-06-20261008-01",
+      "questionId": "q62",
+      "partyId": "party-06",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://osons.quebec/",
+      "sourceTitle": "Osons Québec — Identité numérique libre et IA responsable",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Osons Québec propose un Conseil québécois du numérique et de l’intelligence artificielle indépendant chargé d’auditer les systèmes d’IA de l’État, une évaluation des impacts sur les droits, la vie privée et la cybersécurité avant tout grand déploiement, ainsi que des projets pilotes limités, des tests de sécurité indépendants, des résultats publics et une clause de réversibilité avant la généralisation d’une infrastructure critique.",
+      "rationale": "q62 porte sur l’autorisation de nouveaux systèmes d’IA dans les services publics avant l’adoption d’un cadre réglementaire spécifique. La source traite directement de l’ordre de déploiement et impose plusieurs garde-fous avant les grands déploiements et avant la généralisation. Elle ne dit toutefois pas qu’un cadre réglementaire spécifique doit être adopté avant toute utilisation, ni qu’une utilisation préalable sous les lois existantes serait permise. La direction exacte demeure indéterminée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_regulatory_framework_timing_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (programme officiel 2026)",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que les évaluations d’impact, projets pilotes, tests indépendants et mécanismes de réversibilité doivent précéder les grands déploiements ou la généralisation. Elle ne fixe cependant pas l’adoption d’un cadre réglementaire spécifique comme condition juridique préalable à toute utilisation d’un système d’IA de l’État; le statut ambiguous est donc maintenu."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q62-party-10-20261008-01",
+      "questionId": "q62",
+      "partyId": "party-10",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://conservateur.quebec/wp-content/uploads/2026/09/Plateforme_numerique_mise_en_page_PCQ.pdf",
+      "sourceTitle": "Parti conservateur du Québec — Document technique, plateforme numérique 2026",
+      "sourceDate": "2026-09",
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_2026_policy_document",
+      "evidenceSummary": "La plateforme numérique 2026 du PCQ prévoit de lancer un projet pilote d’assistant IA dans l’appareil gouvernemental, exige une gouvernance éthique stricte, la protection des données et une supervision humaine pour les décisions à fort impact. Son calendrier 2026-2027 place dans la même année de préparation le lancement des premiers projets pilotes à petite échelle et la définition du cadre de gouvernance de l’IA; les déploiements plus larges suivent à partir de 2027-2028.",
+      "rationale": "q62 demande si de nouveaux systèmes d’IA devraient pouvoir être utilisés avant l’adoption d’un cadre réglementaire spécifique. Le PCQ prévoit des pilotes et la définition d’un cadre de gouvernance durant la même phase, puis des déploiements plus larges ultérieurement. Le document ne précise pas si les pilotes doivent juridiquement précéder, suivre ou attendre l’adoption formelle du cadre. La source est directement pertinente au calendrier d’utilisation, mais ne tranche pas la direction exacte de q62.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_same_phase_ordering_uncertainty"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (plateforme officielle 2026)",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le calendrier met les premiers pilotes à petite échelle et la définition du cadre de gouvernance de l’IA dans la même année de préparation, tandis que la mise en production à plus grande échelle vient ensuite. Aucun ordre juridique explicite n’est donné entre pilotes et adoption du cadre; le statut ambiguous est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -6085,11 +6139,11 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q61": 2,
-        "q62": 1,
+        "q62": 3,
         "q63": 2,
         "q64": 2
       },
-      "note": "Recherche renforcée le 8 octobre 2026 selon le même standard pour les 22 formations. q61 conserve deux correspondances ambiguës (Osons Québec et PLQ). q62 conserve une correspondance ambiguë du PLQ. q63 compte désormais deux positions : Osons Québec demeure ambigu faute d’une formulation exacte sur la combinaison interservices, tandis que la CAQ est codée mixte/conditionnelle à partir du cadre légal modernisé sous son gouvernement, qui limite l’usage secondaire par finalité, consentement ou exceptions prévues par la loi et encadre certains échanges inter-organismes. q64 conserve deux correspondances ambiguës (Osons Québec et PCQ).",
+      "note": "Recherche renforcée le 8 octobre 2026 selon le même standard pour les 22 formations. q61 conserve deux correspondances ambiguës. q62 compte désormais trois correspondances ambiguës : le PLQ prévoit une loi-cadre sur le développement et le déploiement de l’IA sans préciser si l’usage peut précéder son adoption; Osons Québec impose des évaluations d’impact, projets pilotes, tests indépendants et réversibilité avant les grands déploiements sans faire de l’adoption préalable d’un cadre réglementaire spécifique une condition explicite; le PCQ place les premiers pilotes et la définition du cadre de gouvernance de l’IA dans la même année de préparation sans préciser leur ordre juridique. q63 conserve deux positions et q64 deux correspondances ambiguës.",
       "evidenceRecordIds": [
         "q61-party-06-20261006-01",
         "q61-party-12-20261006-02",
@@ -6097,11 +6151,13 @@
         "q64-party-06-20261006-01",
         "q64-party-10-20261006-02",
         "q62-party-12-20261007-01",
-        "q63-party-05-20261008-01"
+        "q63-party-05-20261008-01",
+        "q62-party-06-20261008-01",
+        "q62-party-10-20261008-01"
       ],
       "finalizedCountByQuestion": {
         "q61": 2,
-        "q62": 1,
+        "q62": 3,
         "q63": 2,
         "q64": 2
       }

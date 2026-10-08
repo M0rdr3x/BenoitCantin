@@ -1,5 +1,5 @@
 {
-  "version": "1.55.0",
+  "version": "1.56.0",
   "updated": "2026-10-08",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -129,9 +129,9 @@
       "pressReleaseUrls": [],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_program",
-      "lastVerified": "2026-10-07",
+      "lastVerified": "2026-10-08",
       "usableForPositionCoding": true,
-      "notes": "Programme électoral final 2026 revérifié le 7 octobre. Le profil Québec documente q45/q46; le profil régions est utilisé prudemment pour q49; le profil logement documente q27 de façon mixte/conditionnelle en proposant du zonage municipal permettant davantage de logements dans les secteurs déjà desservis, avec le transport parmi les infrastructures de desserte, sans cibler spécifiquement les stations de transport collectif."
+      "notes": "Programme électoral final 2026 revérifié le 8 octobre. Le profil Québec documente q45/q46; le profil régions est utilisé prudemment pour q49; le profil logement documente q27 de façon mixte/conditionnelle. La proposition « Identité numérique libre et IA responsable » documente q62 de façon ambiguë : elle impose des évaluations d’impact, projets pilotes, tests indépendants et réversibilité avant les grands déploiements, sans exiger explicitement qu’un cadre réglementaire spécifique soit adopté avant toute utilisation."
     },
     {
       "id": "party-07",
@@ -201,7 +201,8 @@
         "https://conservateur.quebec/wp-content/uploads/2026/09/Autochtones_Plateforme.pdf",
         "https://conservateur.quebec/wp-content/uploads/2026/09/Sortie_2B_SPEDE_mise_en_page_PCQ.pdf",
         "https://www.conservateur.quebec/wp-content/uploads/2024/11/Cahier-des-resolutions-final.pdf",
-        "https://conservateur.quebec/wp-content/uploads/2026/09/Plateforme_ImmigrationV4pdf-1.pdf"
+        "https://conservateur.quebec/wp-content/uploads/2026/09/Plateforme_ImmigrationV4pdf-1.pdf",
+        "https://conservateur.quebec/wp-content/uploads/2026/09/Plateforme_numerique_mise_en_page_PCQ.pdf"
       ],
       "pressReleaseUrls": [
         "https://conservateur.quebec/blog/ressources/un-nouveau-modele-detat-axe-sur-les-gouvernements-de-proximite-pour-rapprocher-les-decisions-du-citoyen/",
@@ -216,7 +217,7 @@
       "verificationStatus": "verified_official_site_and_2026_platform",
       "lastVerified": "2026-10-08",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 8 octobre 2026, incluant les plateformes 2026, les propositions adoptées et le cahier officiel de résolutions. q02 utilise le plan anti-tarifs; q01/q04 la baisse générale de l’impôt des sociétés; q21 le SPEDE; q28 le principe de libre choix du mode de transport; q30 la surveillance électronique ciblée; q39 le plan immigration 2026 qui propose explicitement de réduire la part des réfugiés et du regroupement familial dans la sélection permanente; q50/q52 la plateforme régionale; q55 les redevances territoriales."
+      "notes": "Sources officielles revérifiées le 8 octobre 2026, incluant les plateformes 2026, les propositions adoptées et le cahier officiel de résolutions. q02 utilise le plan anti-tarifs; q01/q04 la baisse générale de l’impôt des sociétés; q21 le SPEDE; q28 le libre choix du mode de transport; q30 la surveillance électronique ciblée; q39 le plan immigration 2026; q50/q52 la plateforme régionale; q55 les redevances territoriales. q62 utilise la plateforme numérique 2026 de façon ambiguë : elle prévoit des projets pilotes IA et la définition d’un cadre de gouvernance dans la même année de préparation, sans ordre juridique explicite entre les deux."
     },
     {
       "id": "party-11",
