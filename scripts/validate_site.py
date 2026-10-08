@@ -232,11 +232,11 @@ def main() -> int:
             errors.append(f'Parcours public manquant: {rel}')
             continue
         html = page.read_text('utf-8', errors='replace')
-        script_ref = re.compile(
-            r'<script\\b[^>]*\\bsrc=["\\']([^"\\']*' + re.escape(script_path) +
-            r'\\?v=([^"\\']+))["\\']', re.I,
-        )
-        versions = [m.group(2) for m in script_ref.finditer(html)]
+        script_sources = re.findall(r"""<script\\b[^>]*\\bsrc=["']([^"']+)["']""", html, re.I)
+        versions = [
+            src.split('?v=', 1)[1] if '?v=' in src else '(sans version)'
+            for src in script_sources if src.split('?', 1)[0].endswith(script_path)
+        ]
         if versions != [version]:
             errors.append(f'Navigation incohérente dans {rel}: version {version} attendue, trouvée {versions}')
         if 'data-menu-toggle' not in html or 'data-main-nav' not in html:
