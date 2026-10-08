@@ -448,6 +448,7 @@ if compass_js.is_file():
         "currentIndex",
         "renderCurrentQuestion",
         'id="compass-question-title"',
+        'data-compass-question-focus',
         'aria-labelledby="compass-question-title"',
         'progress.setAttribute("aria-valuenow"',
         'compass-results-title")?.focus',
