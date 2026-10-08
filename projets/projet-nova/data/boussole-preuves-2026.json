@@ -1,5 +1,5 @@
 {
-  "version": "1.78.0",
+  "version": "1.79.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -572,7 +572,7 @@
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "documented_support",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
@@ -5086,6 +5086,33 @@
         "reviewNote": "La seconde lecture confirme un droit d’initiative populaire permettant une prise de décision entre les élections, jusqu’à l’adoption d’une mesure législative ou au blocage d’une loi. Elle ne permet toutefois pas d’établir que les référendums deviendraient le mode normal de décision pour l’ensemble des politiques publiques. Le codage mixte/conditionnel est donc maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q19-party-12-20261007-01",
+      "questionId": "q19",
+      "partyId": "party-12",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://www.assnat.qc.ca/Media/Process.aspx?MediaId=ANQ.Vigie.Bll.DocumentGenerique_141939&process=Original&token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe%2FvG7%2FYWzz",
+      "sourceTitle": "Assemblée nationale — Projet de loi 122, amendement sur le logement abordable ou familial",
+      "sourceDate": "2017-05-31",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_legislative_record",
+      "evidenceSummary": "En commission parlementaire, le ministre libéral Martin Coiteux a proposé l’ajout des articles 145.30.1 à 145.30.3 permettant à toute municipalité d’assujettir un permis de construction résidentielle à une entente visant le logement abordable ou familial. Le règlement municipal fixe les règles déterminant le nombre et le type d’unités pouvant être exigées. Le guide gouvernemental d’application actuel confirme que ces exigences peuvent être formulées en pourcentage, par exemple 10 % de logements abordables.",
+      "rationale": "q19 demande si les municipalités devraient pouvoir exiger une proportion minimale de logements abordables dans les grands projets résidentiels. Le dispositif introduit par le gouvernement libéral confère précisément ce pouvoir réglementaire : la municipalité peut cibler certaines catégories de projets, conditionner le permis à une contribution obligatoire et déterminer la quantité de logements abordables exigée. L’application actuelle confirme qu’un pourcentage minimal peut être fixé. La correspondance avec q19 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_legislative_municipal_mandatory_inclusion_power"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (Assemblée nationale + guide gouvernemental actuel)",
+        "reviewedAt": "2026-10-07",
+        "method": "legislative_provenance_and_current_implementation_recheck",
+        "result": "confirmed",
+        "reviewNote": "La seconde vérification confirme que Martin Coiteux était député libéral et ministre des Affaires municipales lors de l’amendement; la loi permet aux municipalités d’exiger des logements abordables comme condition au permis et le guide d’application actuel illustre explicitement une exigence de 10 % de logements abordables. Le mécanisme demandé par q19 est donc bien couvert."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5123,12 +5150,12 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q19": 1,
+        "q19": 2,
         "q20": 4
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q19 n’est plus sans preuve candidate : le programme officiel de Québec solidaire prévoit un pourcentage minimal de nouvelles habitations consacré au logement social et oblige les municipalités à adopter des politiques d’inclusion obligatoire dans les grands projets immobiliers privés de plus de 100 logements. q20 conserve ses quatre positions finalisées.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q19 compte désormais deux appuis directs et indépendants : Québec solidaire prévoit une inclusion obligatoire avec pourcentage minimal dans les grands projets privés, tandis que le bilan législatif du gouvernement libéral montre que le ministre Martin Coiteux a introduit le pouvoir municipal d’exiger des logements abordables comme condition au permis, avec quantité fixée par règlement; le guide gouvernemental actuel confirme qu’une exigence peut être exprimée en pourcentage. q20 conserve ses quatre positions finalisées.",
       "finalizedCountByQuestion": {
-        "q19": 1,
+        "q19": 2,
         "q20": 4
       },
       "evidenceRecordIds": [
@@ -5136,7 +5163,8 @@
         "q20-party-06-20261006-02",
         "q20-party-17-20261006-03",
         "q20-party-21-20261006-04",
-        "q19-party-21-20261007-01"
+        "q19-party-21-20261007-01",
+        "q19-party-12-20261007-01"
       ]
     },
     {
