@@ -687,8 +687,88 @@
     }
   }
 
+  // Bloquer une publication partielle (CDN ou cache) avant tout affichage
+  // de positions politiques. Le questionnaire, le registre et les preuves
+  // doivent correspondre, sans attribuer un statut absent à un parti.
+  function sameIds(actual,expected){
+    return actual.length === expected.size &&
+      new Set(actual).size === expected.size &&
+      actual.every(id => expected.has(id));
+  }
+
+  function matchesQuestionnaireBinding(questionCorpus,binding){
+    if(!questionCorpus || !binding ||
+       binding.questionnaireVersion !== questionCorpus.version ||
+       !Array.isArray(questionCorpus.questions) ||
+       typeof binding.questionTexts !== "object" || !binding.questionTexts) return false;
+    const questionIds = new Set(questionCorpus.questions.map(question => question.id));
+    return questionIds.size === 64 &&
+      sameIds(Object.keys(binding.questionTexts),questionIds) &&
+      questionCorpus.questions.every(question =>
+        binding.questionTexts[question.id] === question.text
+      );
+  }
+
+  function validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus){
+    const questions = questionCorpus?.questions;
+    const parties = partyCorpus?.parties;
+    const sources = sourceCorpus?.parties;
+    const matrix = evidenceCorpus?.questions;
+    const records = evidenceCorpus?.evidenceRecords;
+    const partyIds = evidenceCorpus?.partyIds;
+    if(!Array.isArray(questions) || questions.length !== 64 ||
+       !Array.isArray(parties) || parties.length !== 22 ||
+       !Array.isArray(sources) || !Array.isArray(matrix) ||
+       !Array.isArray(records) || !Array.isArray(partyIds)){
+      throw new Error("Corpus électoral incomplet");
+    }
+    const questionIds = new Set(questions.map(question => question.id));
+    const expectedPartyIds = new Set(parties.map(party => party.id));
+    if(questionIds.size !== 64 || expectedPartyIds.size !== 22 ||
+       !sameIds(partyIds,expectedPartyIds) ||
+       !sameIds(sources.map(party => party.id),expectedPartyIds) ||
+       !sameIds(matrix.map(question => question.questionId),questionIds) ||
+       !matchesQuestionnaireBinding(questionCorpus,evidenceCorpus.questionnaireBinding) ||
+       (state.data && !matchesQuestionnaireBinding(state.data,evidenceCorpus.questionnaireBinding))){
+      throw new Error("Versions du questionnaire et du corpus documentaire incompatibles");
+    }
+    const allowedStatuses = new Set([
+      "unknown","documented_support","documented_opposition",
+      "documented_mixed_or_conditional","ambiguous","contradictory"
+    ]);
+    const matrixByKey = new Map();
+    for(const question of matrix){
+      const statuses = question.statuses;
+      if(!statuses || !sameIds(Object.keys(statuses),expectedPartyIds)){
+        throw new Error("Matrice des formations incomplète");
+      }
+      for(const [partyId,status] of Object.entries(statuses)){
+        if(!allowedStatuses.has(status)) throw new Error("Statut documentaire inconnu");
+        matrixByKey.set(question.questionId+"::"+partyId,status);
+      }
+    }
+    const validatedRecords = new Map();
+    for(const record of records){
+      if(record.finalizable !== true ||
+         record.secondIndependentReview?.status !== "completed") continue;
+      const key = record.questionId+"::"+record.partyId;
+      if(!matrixByKey.has(key) || validatedRecords.has(key) ||
+         record.proposedStatus === "unknown" ||
+         matrixByKey.get(key) !== record.proposedStatus){
+        throw new Error("Fiche de preuve non synchronisée avec la matrice");
+      }
+      validatedRecords.set(key,record);
+    }
+    for(const [key,status] of matrixByKey){
+      if(status !== "unknown" && !validatedRecords.has(key)){
+        throw new Error("Position documentée sans preuve finalisée");
+      }
+    }
+  }
+
   let documentaryLoading = false;
   let questionnaireLoading = false;
+  let documentaryBinding = null;
 
   async function loadPoliticalRegistryAndEvidence(){
     if(documentaryLoading) return;
@@ -715,9 +795,11 @@
       const [partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus] = await Promise.all([
         partyResponse.json(),sourceResponse.json(),evidenceResponse.json(),questionResponse.json()
       ]);
+      validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus);
       renderPartyRegistry(partyCorpus,evidenceCorpus);
       renderDocumentaryStatus(partyCorpus,sourceCorpus,evidenceCorpus);
       renderEvidenceExplorer(questionCorpus,partyCorpus,evidenceCorpus);
+      documentaryBinding = evidenceCorpus.questionnaireBinding;
     }catch(error){
       if(partyHost) partyHost.innerHTML = "<p>Impossible de charger le registre des formations pour le moment.</p>";
       if(evidenceHost) evidenceHost.innerHTML = "<p>Impossible de charger l’état documentaire pour le moment.</p>";
@@ -755,6 +837,9 @@
       if(!Array.isArray(corpus.axes) || corpus.axes.length !== 16 ||
          !Array.isArray(corpus.questions) || corpus.questions.length !== 64){
         throw new Error("Questionnaire incomplet");
+      }
+      if(documentaryBinding && !matchesQuestionnaireBinding(corpus,documentaryBinding)){
+        throw new Error("Questionnaire incompatible avec les preuves déjà chargées");
       }
       state.data = corpus;
       $("#compass-axis-count").textContent = state.data.axes.length;

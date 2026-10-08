@@ -366,7 +366,7 @@ if compass_page.is_file():
         'id="compass-evidence-priorities"',
         'id="compass-evidence-priority-links"',
         "Tous les partis officiels, avec les mêmes règles.",
-        "assets/boussole-electorale.js?v=3.4.8",
+        "assets/boussole-electorale.js?v=3.4.9",
         "assets/boussole-electorale.css?v=3.6.6",
     ):
         if marker.lower() not in compass_html.lower():
@@ -617,6 +617,10 @@ if party_corpus.is_file():
         if token in compass_runtime:
             errors.append(f"boussole électorale: mécanisme de favoritisme interdit dans le moteur: {token}")
     for marker in (
+        "validateDocumentaryCorpora",
+        "matchesQuestionnaireBinding",
+        "Fiche de preuve non synchronisée avec la matrice",
+        "Versions du questionnaire et du corpus documentaire incompatibles",
         "renderDocumentaryStatus",
         "renderEvidenceExplorer",
         "loadPoliticalRegistryAndEvidence",

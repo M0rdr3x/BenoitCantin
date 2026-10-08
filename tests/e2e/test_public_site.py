@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import os
 from urllib.parse import urljoin, urlparse
 
@@ -517,6 +518,66 @@ def run() -> None:
                 f"{BROWSER_NAME}: exception après reprise du chargement: " + " | ".join(retry_page_errors[:3]),
             )
             retry_context.close()
+
+            # Une mise en ligne partielle ne doit jamais associer des preuves
+            # révisées à la mauvaise formulation des 64 propositions.
+            mismatch_context = browser.new_context(
+                locale="fr-CA",
+                viewport={"width": 1440, "height": 1000},
+                service_workers="block",
+            )
+            mismatch_page = mismatch_context.new_page()
+            mismatch_errors = []
+            register_error_capture(mismatch_page, mismatch_errors)
+            mismatch_pattern = "**/boussole-preuves-2026.json"
+            altered_requests = []
+
+            def corrupt_evidence_binding(route):
+                upstream = route.fetch()
+                payload = json.loads(upstream.body())
+                payload["questionnaireBinding"]["questionTexts"]["q29"] += " VERSION DÉCALÉE"
+                altered_requests.append(route.request.url)
+                route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=json.dumps(payload, ensure_ascii=False),
+                )
+
+            mismatch_page.route(mismatch_pattern, corrupt_evidence_binding)
+            mismatch_page.goto(
+                urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"),
+                wait_until="domcontentloaded",
+                timeout=30_000,
+            )
+            mismatch_retry = mismatch_page.locator("#compass-evidence-retry")
+            mismatch_retry.wait_for(state="visible", timeout=10_000)
+            assert_true(altered_requests, f"{BROWSER_NAME}: version documentaire simulée non interceptée")
+            assert_true(
+                mismatch_page.locator("#compass-evidence-parties .compass-evidence-card").count() == 0,
+                f"{BROWSER_NAME}: des positions ont été affichées malgré un décalage sémantique",
+            )
+            assert_true(
+                mismatch_page.locator("#compass-start").is_enabled(),
+                f"{BROWSER_NAME}: la panne documentaire bloque incorrectement le questionnaire local valide",
+            )
+            assert_true(
+                mismatch_page.locator("#compass-evidence-status").inner_text().startswith(
+                    "Échec du chargement documentaire"
+                ),
+                f"{BROWSER_NAME}: incompatibilité documentaire non annoncée",
+            )
+            mismatch_page.unroute(mismatch_pattern, corrupt_evidence_binding)
+            mismatch_retry.click()
+            mismatch_page.locator("#compass-evidence-parties .compass-evidence-card").first.wait_for(
+                state="visible", timeout=10_000
+            )
+            assert_true(
+                mismatch_page.locator("#compass-evidence-parties .compass-evidence-card").count() == 22,
+                f"{BROWSER_NAME}: récupération des preuves synchronisées impossible",
+            )
+            assert_true(mismatch_retry.is_hidden(), f"{BROWSER_NAME}: reprise documentaire encore visible")
+            assert_true(not mismatch_errors, f"{BROWSER_NAME}: erreur JS lors du contrôle d'intégrité")
+            mismatch_context.close()
 
         mobile = browser.new_context(
             locale="fr-CA",
