@@ -1,5 +1,5 @@
 {
-  "version": "1.84.0",
+  "version": "1.85.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -397,7 +397,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_mixed_or_conditional",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -5248,6 +5248,33 @@
         "reviewNote": "La seconde lecture confirme trois éléments explicites : reconnaissance des droits par des ententes formelles, relations de nation à nation et gestion partagée du territoire et des ressources. Comme q54 n’admet que les exceptions prévues par traité ou par la Constitution, l’existence revendiquée d’ententes formelles comme voie autonome de reconnaissance rend l’opposition directe."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q13-party-05-20261008-01",
+      "questionId": "q13",
+      "partyId": "party-05",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2025/09/02/mise-a-lessai-du-nouveau-programme-de-francais-un-programme-modernise-enracine-dans-la-culture-quebecoise-pour-faire-aimer-notre-langue/",
+      "sourceTitle": "Mise à l’essai du nouveau programme de français — Un programme modernisé, enraciné dans la culture québécoise",
+      "sourceDate": "2025-09-02",
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_government_page",
+      "evidenceSummary": "La CAQ a dévoilé une nouvelle version du programme de français du primaire et du secondaire, mise à l’essai en 2025 puis prévue pour un déploiement officiel dans l’ensemble des écoles à la rentrée 2026. La mesure fixe des contenus communs et une progression commune, notamment en grammaire et vocabulaire, à l’échelle du réseau.",
+      "rationale": "q13 demande un programme éducatif plus uniforme dans les écoles publiques. La source établit une uniformisation réelle d’une matière centrale, avec un programme ministériel commun destiné à l’ensemble du réseau. Elle ne démontre toutefois pas une volonté d’uniformiser davantage l’ensemble du programme éducatif ou de réduire les marges de différenciation dans toutes les matières. La correspondance est donc substantielle mais limitée.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_subject_scope_limit"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle)",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un programme de français ministériel commun avec contenus et progression harmonisés, destiné à être déployé dans toutes les écoles. Comme la mesure porte sur une matière et non sur l’ensemble du curriculum, le statut mixed/conditional est conservé."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -6122,7 +6149,7 @@
     },
     {
       "batchId": "education-q13-q16-20261006",
-      "checkedAt": "2026-10-07",
+      "checkedAt": "2026-10-08",
       "questionIds": [
         "q13",
         "q14",
@@ -6156,12 +6183,12 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q13": 1,
+        "q13": 2,
         "q14": 2,
         "q15": 2,
         "q16": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q15 conserve deux appuis directs. q16 compte maintenant deux positions finalisées : le PCQ demeure ambigu parce qu’il associe choix d’école et financement direct sans mécanisme explicite où l’argent suit individuellement l’élève, tandis que Québec solidaire s’oppose directement à une plus grande portabilité du financement public vers le privé en séparant financement public intégral des écoles publiques et financement autonome des écoles privées. q13 conserve sa correspondance ambiguë du PCQ; q14 conserve deux correspondances partielles.",
+      "note": "Recherche renforcée le 8 octobre 2026 selon le même standard pour les 22 formations. q13 compte maintenant deux positions finalisées : le PCQ demeure ambigu parce qu’il propose davantage de différenciation et de liberté aux écoles sans remettre explicitement en cause le programme national commun; la CAQ est mixte/conditionnelle parce qu’elle déploie un programme de français commun avec contenus harmonisés dans toutes les écoles, sans démontrer une uniformisation générale de tout le curriculum. q14, q15 et q16 conservent deux positions finalisées chacun.",
       "evidenceRecordIds": [
         "q14-party-06-20261006-01",
         "q14-party-10-20261006-02",
@@ -6169,10 +6196,11 @@
         "q13-party-10-20261007-01",
         "q16-party-10-20261007-01",
         "q15-party-21-20261007-01",
-        "q16-party-21-20261007-01"
+        "q16-party-21-20261007-01",
+        "q13-party-05-20261008-01"
       ],
       "finalizedCountByQuestion": {
-        "q13": 1,
+        "q13": 2,
         "q14": 2,
         "q15": 2,
         "q16": 2
