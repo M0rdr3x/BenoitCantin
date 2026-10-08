@@ -47,7 +47,7 @@
     // HTML sémantique : legend doit être le premier enfant de fieldset.
     // Les boutons radio portent la formulation exacte de la question.
     fieldset.innerHTML = `
-      <legend id="compass-question-title">${esc(question.text)}</legend>
+      <legend id="compass-question-title"><span tabindex="-1" data-compass-question-focus>${esc(question.text)}</span></legend>
       <div class="compass-question-meta">
         <span class="compass-question-axis">${esc(axis?.title || question.axis)}</span>
         <span class="compass-question-counter">Question ${index + 1} sur ${state.data.questions.length}</span>
@@ -97,11 +97,9 @@
     stage.replaceChildren(renderQuestion(question, state.currentIndex));
     updateProgress();
     updateStepControls();
-    const legend = stage.querySelector("legend");
-    if(legend){
-      legend.setAttribute("tabindex","-1");
-      legend.focus({preventScroll:true});
-    }
+    // Firefox ne garantit pas focus() sur legend. Le span interne est
+    // focalisable sans retirer la sémantique native du fieldset/legend.
+    stage.querySelector("[data-compass-question-focus]")?.focus({preventScroll:true});
   }
 
   function updateProgress(){
