@@ -112,7 +112,7 @@
       "verificationStatus": "verified_official_site_and_2026_engagements",
       "lastVerified": "2026-10-08",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 8 octobre 2026. q01/q04 utilisent le plan économique 2026; q06 le bilan de la baisse d’impôt des particuliers; q12 le plan santé; q13 le nouveau programme de français commun; q24 l’annonce Filon; q32 le bilan de l’urgence sanitaire; q58 le régime de négociation et l’organisation du travail; q59 l’annonce officielle du salaire minimum 2026, qui documente une progression cumulative supérieure à l’inflation depuis 2018 sans promettre explicitement la même cadence pour toutes les prochaines années; q63 s’appuie sur la Loi 25 et le cadre public actuel de protection des renseignements personnels."
+      "notes": "Sources officielles revérifiées le 8 octobre 2026. q01/q04 utilisent le plan économique 2026; q06 le bilan de la baisse d’impôt des particuliers; q12 le plan santé; q13 le nouveau programme de français commun; q24 l’annonce Filon; q32 le bilan de l’urgence sanitaire; q58 le régime de négociation et l’organisation du travail; q59 l’annonce officielle du salaire minimum 2026, qui documente une progression cumulative supérieure à l’inflation depuis 2018 sans promettre explicitement la même cadence pour toutes les prochaines années; q63 s’appuie sur la Loi 25 et le cadre public actuel de protection des renseignements personnels. q60 : réforme 2026 des décrets de convention collective; la source concerne la négociation collective, pas directement la négociation individuelle."
     },
     {
       "id": "party-06",
@@ -211,13 +211,14 @@
         "https://conservateur.quebec/blog/ressources/le-pcq-veut-offrir-a-chaque-eleve-un-parcours-qui-lui-ressemble/",
         "https://conservateur.quebec/blog/ressources/le-pcq-sengage-a-faire-un-grand-menage-dans-les-depenses-publiques-sans-couper-dans-les-services-publics/",
         "https://conservateur.quebec/blog/ressources/le-pcq-veut-renforcer-la-protection-des-femmes-et-les-droits-des-victimes/",
-        "https://conservateur.quebec/blog/ressources/plan-pcq-anti-tarifs-le-quebec-doit-cesser-detre-le-champion-des-exceptions-au-commerce-interprovincial/"
+        "https://conservateur.quebec/blog/ressources/plan-pcq-anti-tarifs-le-quebec-doit-cesser-detre-le-champion-des-exceptions-au-commerce-interprovincial/",
+        "https://conservateur.quebec/blog/ressources/les-conservateurs-proposent-deux-mesures-pour-faire-baisser-le-prix-de-lessence/"
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_platform",
       "lastVerified": "2026-10-08",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 8 octobre 2026, incluant les plateformes 2026, les propositions adoptées et le cahier officiel de résolutions. q02 utilise le plan anti-tarifs; q01/q04 la baisse générale de l’impôt des sociétés; q21 le SPEDE; q28 le libre choix du mode de transport; q30 la surveillance électronique ciblée; q39 le plan immigration 2026; q50/q52 la plateforme régionale; q55 les redevances territoriales. q62 utilise la plateforme numérique 2026 de façon ambiguë : elle prévoit des projets pilotes IA et la définition d’un cadre de gouvernance dans la même année de préparation, sans ordre juridique explicite entre les deux."
+      "notes": "Sources officielles revérifiées le 8 octobre 2026, incluant les plateformes 2026, les propositions adoptées et le cahier officiel de résolutions. q02 utilise le plan anti-tarifs; q01/q04 la baisse générale de l’impôt des sociétés; q21 le SPEDE; q28 le libre choix du mode de transport; q30 la surveillance électronique ciblée; q39 le plan immigration 2026; q50/q52 la plateforme régionale; q55 les redevances territoriales. q62 utilise la plateforme numérique 2026 de façon ambiguë : elle prévoit des projets pilotes IA et la définition d’un cadre de gouvernance dans la même année de préparation, sans ordre juridique explicite entre les deux. q22 : pétition officielle de mai 2026 sur la taxe carbone et le coût des biens essentiels; la source ne traite ni de l’adoption d’une nouvelle norme ni du critère d’analyse d’impact."
     },
     {
       "id": "party-11",
