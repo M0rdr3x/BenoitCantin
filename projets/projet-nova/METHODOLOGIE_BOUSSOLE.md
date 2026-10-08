@@ -176,6 +176,14 @@ Ces deux mesures ne doivent jamais être confondues :
 
 Cette règle distingue explicitement **absence de position documentée** et **absence de recherche**.
 
+## Densité des positions documentées
+
+La couverture complète des 64 questions par des lots de recherche ne mesure pas le nombre de formations dont la position est suffisamment documentée pour chaque proposition. Une question avec une seule formation étudiée avec succès peut être « couverte » tout en ne permettant aucune comparaison entre partis.
+
+La validation GitHub affiche donc, à partir des preuves **finalisées** et en dédupliquant les formations politiques, le nombre de questions ayant au moins deux formations documentées, les identifiants de celles qui n’en ont qu’une, les questions sans formation finalisée ainsi que celles dont toutes les positions finalisées demeurent `ambiguous`. Ces chiffres sont **des indicateurs de qualité documentaire, pas des scores électoraux**.
+
+L’objectif est de prioriser la recherche exacte de sources supplémentaires. Aucun seuil de densité ne doit inciter à transformer une position `unknown` ou `ambiguous` en appui/opposition sans preuve officielle et seconde révision indépendante. Une source qui ne répond pas au mécanisme précis de la question ne doit pas être forcée dans la matrice.
+
 ## Comparaison factuelle avec les formations
 
 Le profil personnel peut être calculé sur les 16 dimensions. Pour les formations politiques, le site doit privilégier une lecture factuelle : sélectionner une ou plusieurs formations et consulter, pour chaque proposition, les positions documentées, leurs sources, leur date et leur niveau de confiance.
