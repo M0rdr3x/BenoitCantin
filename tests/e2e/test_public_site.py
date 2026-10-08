@@ -448,12 +448,20 @@ def run() -> None:
             # Simuler une indisponibilité réelle du questionnaire JSON.
             # Le registre utilise le même fichier : les deux reprises doivent
             # rester indépendantes, sans recharger la page ni lever l'erreur.
-            retry_page = context.new_page()
+            retry_context = browser.new_context(
+                locale="fr-CA",
+                viewport={"width": 1440, "height": 1000},
+                reduced_motion="reduce",
+                service_workers="block",
+            )
+            retry_page = retry_context.new_page()
             retry_page_errors = []
             register_error_capture(retry_page, retry_page_errors)
-            corpus_pattern = "**/projets/projet-nova/data/boussole-electorale-v2.json"
+            corpus_pattern = "**/boussole-electorale-v2.json"
+            rejected_requests = []
 
             def reject_compass_corpus(route):
+                rejected_requests.append(route.request.url)
                 route.fulfill(status=503, content_type="application/json", body="{}")
 
             retry_page.route(corpus_pattern, reject_compass_corpus)
@@ -465,6 +473,10 @@ def run() -> None:
             retry_questionnaire = retry_page.locator("#compass-questionnaire-retry")
             retry_documentary = retry_page.locator("#compass-evidence-retry")
             retry_questionnaire.wait_for(state="visible", timeout=10_000)
+            assert_true(
+                len(rejected_requests) >= 2,
+                f"{BROWSER_NAME}: la panne simulée n’intercepte pas les deux chargements JSON",
+            )
             retry_documentary.wait_for(state="visible", timeout=10_000)
             assert_true(
                 retry_page.locator("#compass-start").is_disabled(),
@@ -504,7 +516,7 @@ def run() -> None:
                 not retry_page_errors,
                 f"{BROWSER_NAME}: exception après reprise du chargement: " + " | ".join(retry_page_errors[:3]),
             )
-            retry_page.close()
+            retry_context.close()
 
         mobile = browser.new_context(
             locale="fr-CA",
