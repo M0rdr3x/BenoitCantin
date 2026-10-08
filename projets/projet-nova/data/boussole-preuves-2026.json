@@ -1,5 +1,5 @@
 {
-  "version": "1.91.0",
+  "version": "1.92.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1685,7 +1685,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "ambiguous",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -5437,6 +5437,33 @@
         "reviewNote": "La seconde lecture confirme que la plateforme réduit explicitement les quatre taux provinciaux d’impôt sur le revenu et abaisse donc le taux applicable au palier supérieur. Cette orientation est l’inverse direct de la hausse demandée par q05."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q59-party-05-20261008-01",
+      "questionId": "q59",
+      "partyId": "party-05",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/01/22/le-taux-general-du-salaire-minimum-passera-a-1660-lheure-le-1er-mai-2026/",
+      "sourceTitle": "Équipe Christine Fréchette – CAQ — Le taux général du salaire minimum passera à 16,60 $ l’heure le 1er mai 2026",
+      "sourceDate": "2026-01-22",
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_government_announcement",
+      "evidenceSummary": "L’annonce officielle porte le salaire minimum à 16,60 $ en mai 2026, soit une hausse de 3,11 %. Elle indique qu’entre 2018 et 2026 le salaire minimum a augmenté de 38,33 %, davantage que l’inflation de 27,17 %, et précise que la hausse 2026 est alignée sur la croissance prévue du salaire horaire moyen afin de maintenir un ratio proche de 50 %.",
+      "rationale": "q59 demande que le salaire minimum augmente plus rapidement que l’inflation pendant les prochaines années. La source confirme une trajectoire passée cumulativement supérieure à l’inflation et une politique actuelle de maintien du ratio avec le salaire moyen, mais elle ne formule pas un engagement prospectif explicite de conserver une croissance supérieure à l’inflation pendant les prochaines années. La direction exacte demeure donc ambiguë.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_future_trajectory_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la progression cumulée depuis 2018 a dépassé l’inflation et que la hausse 2026 vise le pouvoir d’achat et le ratio avec le salaire horaire moyen. La source ne promet toutefois pas une hausse systématiquement supérieure à l’inflation sur les prochaines années; le statut ambiguous est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5965,7 +5992,7 @@
     },
     {
       "batchId": "labour-q57-q60-20261006",
-      "checkedAt": "2026-10-07",
+      "checkedAt": "2026-10-08",
       "questionIds": [
         "q57",
         "q58",
@@ -6001,22 +6028,23 @@
       "candidateCountByQuestion": {
         "q57": 2,
         "q58": 2,
-        "q59": 1,
+        "q59": 2,
         "q60": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 sur des sources officielles, selon le même standard pour les 22 formations. q57 conserve un appui direct de Québec solidaire et une position ambiguë du Parti Québécois; q59 demeure ambiguë pour Québec solidaire; q60 conserve l’opposition documentée du Parti communiste du Québec. q58 compte maintenant deux preuves finalisées : une position mixte/conditionnelle de la CAQ, qui maintient l’organisation du travail dans la négociation collective tout en recherchant plus d’agilité, et une correspondance ambiguë du Parti communiste, qui réclame davantage de contrôle syndical sur plusieurs changements sans formuler une obligation générale de négociation préalable.",
+      "note": "Recherche renforcée le 8 octobre 2026 selon le même standard pour les 22 formations. q57 conserve un appui direct de Québec solidaire et une position ambiguë du Parti Québécois; q58 conserve deux preuves finalisées; q59 compte désormais deux correspondances ambiguës : Québec solidaire fixe une cible de 20 $/h sans trajectoire pluriannuelle explicitement comparée à l’inflation, tandis que la CAQ documente une progression cumulative du salaire minimum supérieure à l’inflation depuis 2018 sans engagement prospectif explicite de maintenir cet écart. q60 conserve l’opposition documentée du Parti communiste du Québec.",
       "evidenceRecordIds": [
         "q57-party-17-20261006-01",
         "q57-party-21-20261006-02",
         "q59-party-21-20261006-01",
         "q60-party-09-20261007-01",
         "q58-party-05-20261007-01",
-        "q58-party-09-20261007-01"
+        "q58-party-09-20261007-01",
+        "q59-party-05-20261008-01"
       ],
       "finalizedCountByQuestion": {
         "q57": 2,
         "q58": 2,
-        "q59": 1,
+        "q59": 2,
         "q60": 1
       }
     },
