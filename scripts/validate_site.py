@@ -27,6 +27,40 @@ NATIVE_MOBILE_PREFIX = 'mobile-native/'
 LEGACY_ADMIN_COMPAT_FILES = {'sw.js', 'assets/js/v24-3-3-runtime.js'}
 
 
+def srcset_urls(raw: str) -> list[str]:
+    """Extraire les URL de srcset sans casser une URL data: contenant une virgule.
+
+    Un candidat s'arrête à l'espace précédant son descripteur (480w, 2x),
+    ou à la virgule finale pour les candidats sans descripteur.
+    """
+    urls: list[str] = []
+    index = 0
+    while index < len(raw):
+        while index < len(raw) and (raw[index].isspace() or raw[index] == ','):
+            index += 1
+        start = index
+        while index < len(raw) and not raw[index].isspace():
+            index += 1
+        token = raw[start:index]
+        if not token:
+            break
+        urls.append(token.rstrip(','))
+        if token.endswith(','):
+            continue
+        parentheses = 0
+        while index < len(raw):
+            char = raw[index]
+            if char == '(':
+                parentheses += 1
+            elif char == ')' and parentheses:
+                parentheses -= 1
+            elif char == ',' and not parentheses:
+                index += 1
+                break
+            index += 1
+    return [url for url in urls if url]
+
+
 class Parser(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -65,6 +99,15 @@ class Parser(HTMLParser):
             parsed = urlparse(raw)
             if tag == 'a' and parsed.fragment and not parsed.path and not parsed.scheme:
                 self.fragment_refs.append(unquote(parsed.fragment))
+
+        # Une image responsive peut disposer d'un src valide mais d'un srcset
+        # brisé pour mobile / haute densité. Chaque URL est une dépendance
+        # vérifiée au même titre que src, y compris sous <picture>/<source>.
+        candidates = ('srcset',) if tag in {'img', 'source'} else ('imagesrcset',) if tag == 'link' else ()
+        for candidate_attr in candidates:
+            if d.get(candidate_attr):
+                for candidate_url in srcset_urls(str(d[candidate_attr])):
+                    self.refs.append((tag, candidate_url))
 
         if tag == 'img' and 'alt' not in d:
             self.missing_alt.append(str(d.get('src') or '(source inconnue)'))
@@ -241,8 +284,42 @@ def test_official_link_resolution_contract() -> list[str]:
     return errors
 
 
+def test_srcset_contract() -> list[str]:
+    """Cas mobile/densité, data URI, virgule encodée et preload d'image."""
+    errors: list[str] = []
+    cases = {
+        'a-480.webp 480w, a-960.webp 960w': ['a-480.webp', 'a-960.webp'],
+        '/assets/a.webp 1x, /assets/b.webp 2x': ['/assets/a.webp', '/assets/b.webp'],
+        'a.webp, b.webp': ['a.webp', 'b.webp'],
+        'data:image/svg+xml,%3Csvg%3E 1x, photo.webp 2x': [
+            'data:image/svg+xml,%3Csvg%3E', 'photo.webp'
+        ],
+        'photo%2Cretina.webp 2x': ['photo%2Cretina.webp'],
+    }
+    for raw, expected in cases.items():
+        if srcset_urls(raw) != expected:
+            errors.append(f'Auto-test srcset défaillant pour: {raw}')
+
+    parser = Parser()
+    parser.feed(
+        '<picture><source srcset="tablet.webp 768w, desktop.webp 1200w">'
+        '<img src="fallback.webp" srcset="mobile.webp 1x, mobile@2x.webp 2x" alt="Image">'
+        '</picture>'
+        '<link rel="preload" as="image" imagesrcset="preload.webp 2x">'
+    )
+    actual = [raw for tag, raw in parser.refs if raw != 'fallback.webp']
+    expected = ['tablet.webp', 'desktop.webp', 'mobile.webp', 'mobile@2x.webp', 'preload.webp']
+    if actual != expected:
+        errors.append(f'Auto-test extraction des références HTML srcset: {actual}')
+    return errors
+
+
 def main() -> int:
-    errors: list[str] = test_cross_page_fragment_contract() + test_official_link_resolution_contract()
+    errors: list[str] = (
+        test_cross_page_fragment_contract()
+        + test_official_link_resolution_contract()
+        + test_srcset_contract()
+    )
     files = all_files()
     htmls = [p for p in files if p.suffix.lower() == '.html']
     js = [p for p in files if p.suffix.lower() == '.js']
