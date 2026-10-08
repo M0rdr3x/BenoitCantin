@@ -361,9 +361,11 @@ if compass_page.is_file():
         'id="compass-evidence-parties"',
         "Le nombre de documents n’est pas un score politique",
         "Même règle pour tout le monde",
+        'id="compass-evidence-priorities"',
+        'id="compass-evidence-priority-links"',
         "Tous les partis officiels, avec les mêmes règles.",
-        "assets/boussole-electorale.js?v=3.4.5",
-        "assets/boussole-electorale.css?v=3.6.4",
+        "assets/boussole-electorale.js?v=3.4.6",
+        "assets/boussole-electorale.css?v=3.6.5",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
@@ -451,6 +453,8 @@ if compass_js.is_file():
     ):
         if marker not in compass_runtime:
             errors.append(f"boussole électorale: moteur guidé incomplet: {marker}")
+    if "data-compass-priority" not in compass_runtime or "limitedQuestions" not in compass_runtime:
+        errors.append("boussole électorale: raccourcis des propositions mono-preuve absents du moteur documentaire")
     if "mount.appendChild(fieldset)" in compass_runtime:
         errors.append("boussole électorale: toutes les questions ne doivent plus être rendues simultanément")
 
