@@ -1,5 +1,5 @@
 {
-  "version": "1.79.0",
+  "version": "1.80.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -201,7 +201,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_mixed_or_conditional",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -5113,6 +5113,33 @@
         "reviewNote": "La seconde vérification confirme que Martin Coiteux était député libéral et ministre des Affaires municipales lors de l’amendement; la loi permet aux municipalités d’exiger des logements abordables comme condition au permis et le guide d’application actuel illustre explicitement une exigence de 10 % de logements abordables. Le mécanisme demandé par q19 est donc bien couvert."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q06-party-05-20261007-01",
+      "questionId": "q06",
+      "partyId": "party-05",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2023/08/08/cout-de-la-vie-le-gouvernement-de-la-caq-est-il-celui-qui-en-fait-le-plus/",
+      "sourceTitle": "Coût de la vie : le gouvernement de la CAQ est-il celui qui en fait le plus?",
+      "sourceDate": "2023-08-08",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_government_record",
+      "evidenceSummary": "La CAQ documente la baisse de l’impôt provincial des particuliers mise en œuvre par son gouvernement, entrée en vigueur en 2023. Elle chiffre l’allègement à 1,7 milliard de dollars par année pour 4,6 millions de contribuables et à environ 9 milliards de dollars sur six ans.",
+      "rationale": "q06 propose de réduire l’impôt sur le revenu des particuliers même si cela réduit les revenus disponibles pour de nouvelles dépenses. Le bilan gouvernemental de la CAQ démontre une décision effective de réduire l’impôt des particuliers avec un coût fiscal chiffré important. Cela soutient clairement la direction de baisse d’impôt, mais la source ne formule pas explicitement le choix contrefactuel de renoncer à de nouvelles dépenses; le statut mixte/conditionnel est donc plus précis qu’un appui absolu.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_tax_cut_action_with_new_spending_tradeoff_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle CAQ)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_tax_cut_and_fiscal_cost",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une baisse effective de l’impôt des particuliers et un allègement fiscal chiffré à 1,7 G$ par année. Elle ne dit toutefois pas explicitement que cette baisse doit primer sur de nouvelles dépenses; le codage mixte/conditionnel est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5898,22 +5925,23 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q05": 1,
-        "q06": 1,
+        "q06": 2,
         "q07": 2,
         "q08": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q05 conserve la correspondance partielle de Québec solidaire; q06 l’appui direct du PCQ. q07 compte désormais deux correspondances mixtes/conditionnelles : la CAQ et le PLQ augmentent fortement leurs investissements d’infrastructure pendant une trajectoire encore déficitaire, sans relier explicitement le déficit à la durée de vie pluridécennale des actifs. q08 compte deux positions mixtes/conditionnelles du PCQ et du PLQ.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q05 conserve la correspondance partielle de Québec solidaire. q06 compte désormais deux positions finalisées : le PCQ appuie directement une forte baisse de l’impôt sur le revenu financée par des économies de dépenses, tandis que la CAQ est codée mixte/conditionnelle sur la base de sa baisse effective de l’impôt des particuliers, chiffrée à 1,7 G$ par année, sans preuve explicite que la réduction de nouvelles dépenses constitue le compromis recherché. q07 et q08 conservent deux positions chacune.",
       "evidenceRecordIds": [
         "q05-party-21-20261006-01",
         "q06-party-10-20261006-01",
         "q07-party-05-20261006-01",
         "q08-party-10-20261007-01",
         "q08-party-12-20261007-01",
-        "q07-party-12-20261007-01"
+        "q07-party-12-20261007-01",
+        "q06-party-05-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q05": 1,
-        "q06": 1,
+        "q06": 2,
         "q07": 2,
         "q08": 2
       }
