@@ -165,3 +165,20 @@
 /* La règle explicite préserve hidden face aux styles .btn du portail. */
 .compass-load-retry[hidden]{display:none!important}
 .compass-load-retry:not([hidden]){margin:8px 0 18px;max-width:100%;white-space:normal;text-align:center}
+
+
+/* Confort tactile et repères de focus — Boussole mobile et clavier. */
+.compass-question legend [data-compass-question-focus]:focus{
+  outline:3px solid #0f6f86;
+  outline-offset:5px;
+  border-radius:4px;
+}
+.compass-response-grid label:has(input:focus-visible){
+  outline:3px solid #0f6f86;
+  outline-offset:3px;
+}
+.compass-importance select{min-height:44px;max-width:100%}
+.compass-step-actions .btn,.compass-secondary-actions .btn{min-height:48px}
+@media(prefers-reduced-motion:reduce){
+  .compass-progress-track span{transition:none}
+}
