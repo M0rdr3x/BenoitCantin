@@ -42,6 +42,10 @@ class Parser(HTMLParser):
         d = dict(attrs)
         if d.get('id'):
             self.ids.append(str(d['id']))
+        # Les ancres HTML historiques <a name="..."> sont également
+        # des destinations valides pour les liens interpages.
+        if tag == 'a' and d.get('name'):
+            self.ids.append(str(d['name']))
 
         attr = {
             'a': 'href',
@@ -142,8 +146,69 @@ def active_sinjira(rel: str) -> bool:
     return normalized.startswith(ACTIVE_SINJIRA_PREFIXES)
 
 
-def main() -> int:
+def cross_page_fragment_errors(pages: dict[Path, Parser]) -> list[str]:
+    """Détecte les sections supprimées sur une autre page publique.
+
+    Les URL externes restent hors périmètre; les deux domaines officiels
+    sont traités comme des liens locaux lorsqu'une page du dépôt existe.
+    Les ancres construites uniquement en JavaScript ne peuvent pas être
+    déduites du HTML statique : ce contrôle vise les ancres documentaires.
+    """
     errors: list[str] = []
+    official_hosts = {'www.benoitcantin.com', 'benoitcantin.com'}
+    for page, parsed_page in pages.items():
+        for tag, raw in parsed_page.refs:
+            if tag != 'a':
+                continue
+            url = urlparse(raw)
+            if not url.fragment or not url.path:
+                continue
+            if url.scheme or url.netloc:
+                if url.scheme.lower() not in {'https', 'http'} or (url.hostname or '').lower() not in official_hosts:
+                    continue
+                # Ne suivre que le chemin, jamais les paramètres de requête.
+                target = resolve(page, url.path)
+            else:
+                target = resolve(page, raw)
+            if target is None or target not in pages:
+                continue
+            fragment = unquote(url.fragment)
+            if fragment not in pages[target].ids:
+                source_rel = page.relative_to(ROOT).as_posix()
+                target_rel = target.relative_to(ROOT).as_posix()
+                errors.append(
+                    f'Ancre interpage introuvable dans {source_rel}: '
+                    f'{raw} (cible {target_rel}#{fragment})'
+                )
+    return errors
+
+
+def test_cross_page_fragment_contract() -> list[str]:
+    """Cas positifs/négatifs, vérifiés par la CI sans accès réseau."""
+    base = ROOT / '__ci_fragment_fixture__'
+    origin, destination = base / 'origin.html', base / 'destination.html'
+    page = Parser()
+    page.feed(
+        '<a href="destination.html#valide">Lien correct</a>'
+        '<a href="destination.html#absente">Lien cassé</a>'
+        '<a href="destination.html#ancien">Lien legacy</a>'
+        '<a href="destination.html#caf%C3%A9">Lien encodé</a>'
+        '<a href="https://www.benoitcantin.com/__ci_fragment_fixture__/destination.html#valide">URL officielle valide</a>'
+        '<a href="https://www.benoitcantin.com/__ci_fragment_fixture__/destination.html#absente-officielle">URL officielle invalide</a>'
+        '<a href="https://exemple.invalid/docs#autre">URL externe</a>'
+        '<a href="#intra">Ancre locale vérifiée ailleurs</a>'
+    )
+    target = Parser()
+    target.feed('<section id="valide"></section><a name="ancien"></a><h2 id="café"></h2>')
+    errors = cross_page_fragment_errors({origin: page, destination: target})
+    if (len(errors) != 2 or not any('destination.html#absente' in error for error in errors)
+            or not any('absente-officielle' in error for error in errors)):
+        return ['Auto-test des liens interpages défaillant : cas valide, absent, legacy ou encodé']
+    return []
+
+
+def main() -> int:
+    errors: list[str] = test_cross_page_fragment_contract()
     files = all_files()
     htmls = [p for p in files if p.suffix.lower() == '.html']
     js = [p for p in files if p.suffix.lower() == '.js']
@@ -170,6 +235,7 @@ def main() -> int:
             if rel not in LEGACY_ADMIN_COMPAT_FILES and not rel.startswith('Admin/') and re.search(r"[\'\"]\/Admin\/", text):
                 errors.append(f'Lien interne legacy /Admin/ dans {rel}')
 
+    page_parsers: dict[Path, Parser] = {}
     for page in htmls:
         rel = page.relative_to(ROOT).as_posix()
         text = page.read_text('utf-8', errors='ignore')
@@ -177,6 +243,7 @@ def main() -> int:
         try:
             parser.feed(text)
             parser.close()
+            page_parsers[page.resolve()] = parser
         except Exception as exc:
             errors.append(f'HTML impossible à analyser dans {rel}: {exc}')
             continue
@@ -207,6 +274,10 @@ def main() -> int:
         for tag, raw in parser.refs:
             if raw.lower().startswith('http://') and tag in {'script', 'img', 'iframe', 'link', 'source', 'video', 'audio'}:
                 errors.append(f'Ressource HTTP non sécurisée dans {rel} ({tag}): {raw}')
+
+    # Les liens page.html#section doivent aussi rejoindre une ancre
+    # existante sur leur page de destination.
+    errors.extend(cross_page_fragment_errors(page_parsers))
 
     # Contrat de continuité des navigations : les pages de secours et de
     # référence doivent servir le même script que l'accueil, sous peine de
@@ -307,7 +378,7 @@ def main() -> int:
         for e in errors:
             print('- ' + e)
         return 1
-    print('OK: routes, ancres, dépendances, sécurité statique et JavaScript cohérents.')
+    print('OK: routes, ancres locales et interpages, dépendances, sécurité statique et JavaScript cohérents.')
     return 0
 
 
