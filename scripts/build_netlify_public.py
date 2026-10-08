@@ -674,6 +674,89 @@ def validate_netlify_config() -> list[str]:
     return errors
 
 
+
+def public_symlink_errors(root: Path = ROOT) -> list[str]:
+    """Fail-closed: aucun lien symbolique ne doit traverser le périmètre public.
+
+    copy2() suit les liens de fichiers par défaut, même si le chemin
+    semble autorisé par l'allowlist. Les liens de répertoires sont également
+    refusés, y compris lorsqu'un rglob ne les parcourt pas.
+    """
+    errors: list[str] = []
+    for dirname in PUBLIC_DIRS:
+        directory = root / dirname
+        if directory.is_symlink():
+            errors.append(f"Lien symbolique interdit à la racine publique: {dirname}")
+            continue
+        if not directory.is_dir():
+            continue
+        for current, subdirs, filenames in os.walk(directory, followlinks=False):
+            for name in (*subdirs, *filenames):
+                source = Path(current) / name
+                if source.is_symlink():
+                    errors.append(
+                        f"Lien symbolique interdit dans le périmètre public: "
+                        f"{source.relative_to(root).as_posix()}"
+                    )
+
+    for source in root.iterdir():
+        if not source.is_symlink() or source.name in PUBLIC_DIRS:
+            continue
+        if source.name in PUBLIC_ROOT_DENY:
+            continue
+        if source.name in PUBLIC_ROOT_EXACT or source.suffix.lower() in PUBLIC_ROOT_SUFFIXES:
+            errors.append(
+                f"Lien symbolique interdit à la racine publique: {source.name}"
+            )
+    return sorted(set(errors))
+
+
+def output_location_error(output: Path) -> str | None:
+    """N'effacer aucun fichier source de Git à travers --output."""
+    original = Path(os.path.abspath(output))
+    if original.is_symlink():
+        return f"Sortie symbolique refusée: {original}"
+    resolved = original.resolve()
+    if resolved == ROOT or (ROOT in resolved.parents and resolved != DEFAULT_OUTPUT):
+        return (
+            f"Sortie située dans les sources Git interdite: {resolved}; "
+            f"seul {DEFAULT_OUTPUT} est admis dans le dépôt."
+        )
+    return None
+
+
+def self_test_public_filesystem_boundary() -> list[str]:
+    """Fixtures autonomes : fuite symlink + suppression de source refusées."""
+    errors: list[str] = []
+    with tempfile.TemporaryDirectory(prefix="sinjira-public-boundary-") as tmp:
+        base = Path(tmp)
+        root = base / "source"
+        (root / "assets").mkdir(parents=True)
+        (root / "compte").mkdir(parents=True)
+        (root / "index.html").write_text("public", encoding="utf-8")
+        private = base / "private.env"
+        private.write_text("never publish", encoding="utf-8")
+        (root / "assets" / "leak.js").symlink_to(private)
+        (root / "compte" / "escape").symlink_to(base, target_is_directory=True)
+        (root / "cover.png").symlink_to(private)
+        (root / "docs").symlink_to(base, target_is_directory=True)
+        observed = public_symlink_errors(root)
+        for path in ("assets/leak.js", "compte/escape", "cover.png"):
+            if not any(path in error for error in observed):
+                errors.append(f"Auto-test sécurité publication: lien non détecté: {path}")
+        if any("docs" in error for error in observed):
+            errors.append("Auto-test sécurité publication: exclusion privée incorrecte")
+        if output_location_error(base / "public") is not None:
+            errors.append("Auto-test sécurité publication: sortie externe légitime refusée")
+
+    for path in (ROOT, ROOT / "assets", ROOT / "assets" / "danger", ROOT / "scripts"):
+        if output_location_error(path) is None:
+            errors.append(f"Auto-test sécurité publication: destruction non refusée: {path}")
+    if output_location_error(DEFAULT_OUTPUT) is not None:
+        errors.append("Auto-test sécurité publication: _site légitime refusé")
+    return errors
+
+
 def validate_plan() -> list[str]:
     errors: list[str] = []
     release_sha = configured_release_sha()
@@ -682,6 +765,7 @@ def validate_plan() -> list[str]:
     errors.extend(validate_netlify_config())
     errors.extend(validate_vercel_config())
     errors.extend(validate_netlify_staging_workflow())
+    errors.extend(public_symlink_errors())
 
     robots_path = ROOT / "robots.txt"
     if not robots_path.is_file():
@@ -892,9 +976,10 @@ def build(
     if errors:
         raise SystemExit("\n".join(errors))
 
+    location_error = output_location_error(output)
+    if location_error is not None:
+        raise SystemExit(location_error)
     output = output.resolve()
-    if output == ROOT or ROOT in output.parents and output.name in FORBIDDEN_DIRS:
-        raise SystemExit(f"Répertoire de sortie invalide: {output}")
 
     if output.exists():
         shutil.rmtree(output)
@@ -998,6 +1083,8 @@ def validate_output(
     elif redirects_path.exists():
         errors.append("Fichier _redirects inattendu hors artefact Netlify autonome.")
 
+    errors.extend(public_symlink_errors(output))
+
     for forbidden in FORBIDDEN_DIRS:
         if (output / forbidden).exists():
             errors.append(f"Répertoire technique présent dans le publish: {forbidden}/")
@@ -1048,6 +1135,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Construire le publish directory public Netlify.")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--check", action="store_true", help="Valider l'allowlist sans conserver de fichiers.")
+    parser.add_argument("--self-test-security", action="store_true", help="Auto-tester les frontières symlink/sortie sans publier.")
     parser.add_argument(
         "--standalone-netlify",
         action="store_true",
@@ -1062,6 +1150,15 @@ def main() -> int:
         ),
     )
     args = parser.parse_args()
+
+    if args.self_test_security:
+        errors = self_test_public_filesystem_boundary()
+        for error in errors:
+            print("ECHEC: " + error)
+        if errors:
+            return 1
+        print("OK: auto-tests symlinks publics et répertoires de sortie destructifs.")
+        return 0
 
     if args.security_containment and args.standalone_netlify:
         print("ECHEC: --security-containment est interdit avec --standalone-netlify.")
