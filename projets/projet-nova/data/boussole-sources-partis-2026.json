@@ -1,5 +1,5 @@
 {
-  "version": "1.48.0",
+  "version": "1.49.0",
   "updated": "2026-10-08",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -126,9 +126,9 @@
       "pressReleaseUrls": [],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_program",
-      "lastVerified": "2026-10-07",
+      "lastVerified": "2026-10-08",
       "usableForPositionCoding": true,
-      "notes": "Programme électoral final 2026 revérifié le 7 octobre. Le profil Québec documente q45/q46; le profil régions est utilisé prudemment pour q49; le profil logement documente q27 de façon mixte/conditionnelle en proposant du zonage municipal permettant davantage de logements dans les secteurs déjà desservis, avec le transport parmi les infrastructures de desserte, sans cibler spécifiquement les stations de transport collectif."
+      "notes": "Programme électoral final 2026 revérifié le 8 octobre. Le profil Québec documente q45/q46; le profil régions est utilisé prudemment pour q49; le profil logement documente q27 de façon mixte/conditionnelle. La proposition « Identité numérique libre et IA responsable » documente q62 de façon ambiguë : elle impose des évaluations d’impact, projets pilotes, tests indépendants et réversibilité avant les grands déploiements, sans exiger explicitement qu’un cadre réglementaire spécifique soit adopté avant toute utilisation."
     },
     {
       "id": "party-07",
