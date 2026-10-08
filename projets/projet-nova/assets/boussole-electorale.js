@@ -502,9 +502,15 @@
       recordsByQuestion.get(record.questionId).push(record);
     }
 
+    // Éviter les options longues (jusqu'à 160 caractères) : WebKit leur
+    // attribue une largeur intrinsèque qui déborde sur les petits écrans.
+    // Le texte officiel intégral est affiché séparément sous le sélecteur.
+    const axisById = new Map((questionCorpus.axes || []).map(axis => [axis.id,axis.title]));
     select.innerHTML = questions.map((question,index) => {
       const count = (recordsByQuestion.get(question.id) || []).length;
-      return `<option value="${esc(question.id)}">Q${String(index + 1).padStart(2,"0")} · ${esc(question.text)} · ${count} preuve${count > 1 ? "s" : ""}</option>`;
+      const axisTitle = String(axisById.get(question.axis) || "Thème").split(",")[0];
+      const shortAxis = axisTitle.length > 18 ? axisTitle.slice(0,17) + "…" : axisTitle;
+      return `<option value="${esc(question.id)}">Q${String(index + 1).padStart(2,"0")} · ${esc(shortAxis)} · ${count} preuve${count > 1 ? "s" : ""}</option>`;
     }).join("");
 
     // Les raccourcis sont dérivés du corpus finalisé : aucune question figée.
@@ -537,6 +543,9 @@
         host.innerHTML = '<p class="compass-evidence-empty">Aucune proposition disponible.</p>';
         return;
       }
+
+      const selectedText = $("#compass-evidence-selected-question");
+      if(selectedText) selectedText.textContent = question.text;
 
       const matrixStatuses = matrixByQuestion.get(question.id) || {};
       const documentedCount = parties.filter(party => (matrixStatuses[party.id] || "unknown") !== "unknown").length;

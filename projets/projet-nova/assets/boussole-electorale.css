@@ -165,3 +165,51 @@
 /* La règle explicite préserve hidden face aux styles .btn du portail. */
 .compass-load-retry[hidden]{display:none!important}
 .compass-load-retry:not([hidden]){margin:8px 0 18px;max-width:100%;white-space:normal;text-align:center}
+
+
+/* Confort tactile et repères de focus — Boussole mobile et clavier. */
+.compass-question legend [data-compass-question-focus]:focus{
+  outline:3px solid #0f6f86;
+  outline-offset:5px;
+  border-radius:4px;
+}
+.compass-response-grid label:has(input:focus-visible){
+  outline:3px solid #0f6f86;
+  outline-offset:3px;
+}
+.compass-importance select{min-height:44px;max-width:100%}
+.compass-step-actions .btn,.compass-secondary-actions .btn{min-height:48px}
+@media(prefers-reduced-motion:reduce){
+  .compass-progress-track span{transition:none}
+}
+
+
+/* Safari/WebKit : les options longues d'un select ne doivent jamais imposer
+   leur largeur intrinsèque à la grille de l'explorateur documentaire. */
+.compass-evidence-browser-head,
+.compass-evidence-controls,
+.compass-evidence-controls label{min-width:0}
+.compass-evidence-browser-head select{
+  display:block;
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+  text-overflow:ellipsis;
+}
+@media(max-width:760px){
+  .compass-evidence-browser-head{grid-template-columns:minmax(0,1fr)}
+}
+
+
+/* La formulation intégrale demeure lisible hors du menu déroulant compact. */
+.compass-evidence-selected-question{
+  margin:16px 0 8px;
+  padding:14px 16px;
+  border-left:4px solid var(--cyan);
+  border-radius:10px;
+  background:rgba(255,255,255,.065);
+  color:#fff;
+  font-weight:750;
+  line-height:1.6;
+  overflow-wrap:anywhere;
+}
