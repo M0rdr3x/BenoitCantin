@@ -184,16 +184,18 @@
 }
 
 
-/* WebKit: un lien d'évitement positionné à left:-999px agrandit la
-   largeur défilable de la page. Le masquer par découpe préserve le clavier. */
-.skip-link:not(:focus){
-  left:0;
-  top:0;
-  clip-path:inset(50%);
-  white-space:nowrap;
+/* Safari/WebKit : les options longues d'un select ne doivent jamais imposer
+   leur largeur intrinsèque à la grille de l'explorateur documentaire. */
+.compass-evidence-browser-head,
+.compass-evidence-controls,
+.compass-evidence-controls label{min-width:0}
+.compass-evidence-browser-head select{
+  display:block;
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+  text-overflow:ellipsis;
 }
-.skip-link:focus{
-  clip-path:none;
-  white-space:normal;
-  overflow:visible;
+@media(max-width:760px){
+  .compass-evidence-browser-head{grid-template-columns:minmax(0,1fr)}
 }
