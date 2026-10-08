@@ -1,5 +1,5 @@
 {
-  "version": "1.44.0",
+  "version": "1.45.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -390,7 +390,8 @@
         "https://quebecsolidaire.net/theme/environnement",
         "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/02/programmeqs-2019.pdf",
         "https://api-wp.quebecsolidaire.net/wp-content/uploads/2018/09/maintenant_ou_jamais.pdf",
-        "https://quebecsolidaire.net/theme/independance"
+        "https://quebecsolidaire.net/theme/independance",
+        "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/05/declarationsaguenay-v1.pdf"
       ],
       "pressReleaseUrls": [
         "https://quebecsolidaire.net/nouvelle/elections-2026-quebec-solidaire-presente-un-cadre-financier-qui-nous-donne-les-moyens-de-nos-ambitions",
@@ -402,7 +403,7 @@
       "verificationStatus": "verified_official_site_and_2026_platform",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant la plateforme électorale 2026, le programme officiel et le plan de transition. q03 documente la participation majoritaire de l’État dans les entreprises énergétiques; q15 davantage d’orthopédagogues; q16 le modèle de financement scolaire; q19 l’inclusion obligatoire de logement social; q34 le droit d’initiative populaire permettant d’adopter une mesure ou de bloquer une loi entre les élections, codé prudemment mixte/conditionnel faute de fréquence normale précisée; q42 la plateforme culturelle; q53 les relations de nation à nation; q56 le consentement autochtone."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant la plateforme électorale 2026, le programme officiel, le plan de transition et la Déclaration du Saguenay. q03 documente la participation majoritaire de l’État dans les entreprises énergétiques; q15 davantage d’orthopédagogues; q16 le modèle de financement scolaire; q19 l’inclusion obligatoire de logement social; q23 l’engagement d’annuler les projets recevant un avis défavorable du BAPE, codé mixte/conditionnel faute du critère exact de vulnérabilité scientifique; q34 le droit d’initiative populaire; q42 la plateforme culturelle; q53 les relations de nation à nation; q56 le consentement autochtone."
     },
     {
       "id": "party-nova",
