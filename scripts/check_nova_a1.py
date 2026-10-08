@@ -366,7 +366,7 @@ if compass_page.is_file():
         'id="compass-evidence-priorities"',
         'id="compass-evidence-priority-links"',
         "Tous les partis officiels, avec les mêmes règles.",
-        "assets/boussole-electorale.js?v=3.4.9",
+        "assets/boussole-electorale.js?v=3.4.10",
         "assets/boussole-electorale.css?v=3.6.6",
     ):
         if marker.lower() not in compass_html.lower():
@@ -375,6 +375,8 @@ if compass_page.is_file():
     for marker in (
         'id="compass-start-panel"',
         'id="compass-stepper"',
+        'id="compass-progress-track"',
+        'id="compass-results-title"',
         'id="compass-prev"',
         'id="compass-next"',
         'id="compass-share-native"',
@@ -445,6 +447,12 @@ if compass_js.is_file():
     for marker in (
         "currentIndex",
         "renderCurrentQuestion",
+        'id="compass-question-title"',
+        'data-compass-question-focus',
+        'aria-labelledby="compass-question-title"',
+        'progress.setAttribute("aria-valuenow"',
+        'compass-results-title")?.focus',
+        "prefers-reduced-motion",
         "replaceChildren(renderQuestion",
         "Consulter mes résultats",
         "navigator.share",

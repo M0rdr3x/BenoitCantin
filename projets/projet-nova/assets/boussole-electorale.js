@@ -44,13 +44,15 @@
     const saved = state.answers.get(question.id);
     const savedImportance = state.importance.get(question.id) || saved?.importance || "normal";
 
+    // HTML sémantique : legend doit être le premier enfant de fieldset.
+    // Les boutons radio portent la formulation exacte de la question.
     fieldset.innerHTML = `
+      <legend id="compass-question-title"><span tabindex="-1" data-compass-question-focus>${esc(question.text)}</span></legend>
       <div class="compass-question-meta">
         <span class="compass-question-axis">${esc(axis?.title || question.axis)}</span>
         <span class="compass-question-counter">Question ${index + 1} sur ${state.data.questions.length}</span>
       </div>
-      <legend>${esc(question.text)}</legend>
-      <div class="compass-response-grid compass-response-stack" role="radiogroup" aria-label="Réponse à la proposition ${index + 1}">
+      <div class="compass-response-grid compass-response-stack" role="radiogroup" aria-labelledby="compass-question-title">
         ${RESPONSES.map(r => `<label><input type="radio" name="${question.id}" value="${r.value}"${saved?.value === r.value ? " checked" : ""}><span>${esc(r.label)}</span></label>`).join("")}
         <label class="compass-skip"><input type="radio" name="${question.id}" value="skip"${saved && saved.value === null ? " checked" : ""}><span>Sans opinion / passer</span></label>
       </div>
@@ -95,11 +97,9 @@
     stage.replaceChildren(renderQuestion(question, state.currentIndex));
     updateProgress();
     updateStepControls();
-    const legend = stage.querySelector("legend");
-    if(legend){
-      legend.setAttribute("tabindex","-1");
-      legend.focus({preventScroll:true});
-    }
+    // Firefox ne garantit pas focus() sur legend. Le span interne est
+    // focalisable sans retirer la sémantique native du fieldset/legend.
+    stage.querySelector("[data-compass-question-focus]")?.focus({preventScroll:true});
   }
 
   function updateProgress(){
@@ -110,6 +110,12 @@
     const pct = total ? Math.round(step / total * 100) : 0;
     const bar = $("#compass-progress-bar");
     if(bar) bar.style.width = pct + "%";
+    const progress = $("#compass-progress-track");
+    if(progress){
+      progress.setAttribute("aria-valuemax",String(total));
+      progress.setAttribute("aria-valuenow",String(step));
+      progress.setAttribute("aria-valuetext",`Question ${step} sur ${total}`);
+    }
     const text = $("#compass-progress-text");
     if(text) text.textContent = `Question ${step} sur ${total} — ${decided} réponse${decided > 1 ? "s" : ""} enregistrée${decided > 1 ? "s" : ""}`;
   }
@@ -128,6 +134,12 @@
     }
   }
 
+  function scrollToSection(element){
+    if(!element) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    element.scrollIntoView({behavior:reducedMotion ? "auto" : "smooth",block:"start"});
+  }
+
   function startQuestionnaire(){
     if(!state.data) return;
     state.started = true;
@@ -137,7 +149,7 @@
     $("#compass-results").hidden = true;
     $("#compass-status").textContent = "Questionnaire commencé. Choisissez une réponse pour continuer.";
     renderCurrentQuestion();
-    $("#compass-stepper").scrollIntoView({behavior:"smooth",block:"start"});
+    scrollToSection($("#compass-stepper"));
   }
 
   function goPrevious(){
@@ -378,7 +390,9 @@
     $("#compass-results").hidden = false;
     configureSharing(results);
     $("#compass-status").textContent = "Votre résultat a été calculé localement dans votre navigateur.";
-    $("#compass-results").scrollIntoView({behavior:"smooth",block:"start"});
+    // L'étape finale doit aussi être annoncée au clavier et au lecteur d'écran.
+    $("#compass-results-title")?.focus({preventScroll:true});
+    scrollToSection($("#compass-results"));
   }
 
   function reset(){
