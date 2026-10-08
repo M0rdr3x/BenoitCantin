@@ -232,7 +232,7 @@ def main() -> int:
             errors.append(f'Parcours public manquant: {rel}')
             continue
         html = page.read_text('utf-8', errors='replace')
-        script_sources = re.findall(r"""<script\\b[^>]*\\bsrc=["']([^"']+)["']""", html, re.I)
+        script_sources = re.findall(r"""<script[^>]*src=["']([^"']+)["']""", html, re.I)
         versions = [
             src.split('?v=', 1)[1] if '?v=' in src else '(sans version)'
             for src in script_sources if src.split('?', 1)[0].endswith(script_path)
