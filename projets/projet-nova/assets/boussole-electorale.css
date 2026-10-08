@@ -150,3 +150,14 @@
 .compass-evidence-record-unknown{border-style:dashed;background:rgba(255,255,255,.018)}
 .compass-evidence-record-unknown h4{color:#e7e9f3}
 .compass-evidence-record-unknown .compass-evidence-unknown-label{display:inline-block;margin:.25rem 0 .45rem;padding:5px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.14);font-size:.78rem;font-weight:800;color:var(--muted)}
+
+/* Accès direct aux propositions dont la couverture reste limitée. */
+.compass-evidence-priorities{margin:20px 0 12px;padding:20px;border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(255,255,255,.025)}
+.compass-evidence-priorities[hidden]{display:none}
+.compass-evidence-priorities h3{margin:0 0 8px;font-size:1.08rem;color:#fff}
+.compass-evidence-priorities p{margin:0 0 14px;color:var(--muted);line-height:1.6}
+.compass-evidence-priority-links{display:flex;flex-wrap:wrap;gap:10px}
+.compass-evidence-priority-links button{max-width:100%;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:rgba(255,255,255,.07);color:#fff;font:inherit;font-weight:700;font-size:.92rem;text-align:left;padding:10px 14px;cursor:pointer}
+.compass-evidence-priority-links button:hover{border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.12)}
+.compass-evidence-priority-links button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@media(max-width:540px){.compass-evidence-priorities{padding:16px}.compass-evidence-priority-links{display:grid;grid-template-columns:minmax(0,1fr)}.compass-evidence-priority-links button{width:100%}}
