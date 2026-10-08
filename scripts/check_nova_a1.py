@@ -422,11 +422,26 @@ if nova_runtime.is_file():
     for marker in (
         "['boussole-electorale.html','Boussole électorale']",
         "nav-link-boussole",
+        "toggle.focus()",
+        "aria-controls",
+        "aria-label",
+        "window.addEventListener('resize'",
     ):
         if marker not in nova_runtime_text:
             errors.append(f"boussole électorale: menu runtime Nova incomplet: {marker}")
 else:
     errors.append("boussole électorale: runtime Projet Nova absent: script.js")
+
+# Les pages Nova doivent toutes charger la même version du menu accessible
+# pour éviter que leur cache conserve des comportements différents.
+for public_page in ("index.html", "boussole-electorale.html", "contact.html", "comprendre-nova.html", "programme.html", "constitution.html", "documents.html", "transparence.html", "recrutement.html", "equipe.html", "actualites.html", "presse.html", "faq.html", "confidentialite.html", "avis-legal.html", "accessibilite.html", "comptabilite.html", "registre-conformite.html", "404.html", "merci.html", "participer.html"):
+    public_file = NOVA / public_page
+    if not public_file.is_file():
+        errors.append(f"navigation Nova: page publique absente: {public_page}")
+        continue
+    public_html = public_file.read_text(encoding="utf-8", errors="replace")
+    if public_html.count('script.js?v=26.1.0') != 1:
+        errors.append(f"navigation Nova: script mobile absent ou version divergente: {public_page}")
 
 if compass_js.is_file():
     compass_runtime = compass_js.read_text(encoding="utf-8", errors="replace")

@@ -52,12 +52,33 @@
 
     const toggle=document.querySelector('[data-menu-toggle]');
     if(toggle&&nav){
-      const setMenuState=open=>{nav.classList.toggle('open',open);toggle.setAttribute('aria-expanded',open?'true':'false');};
+      // Un même contrat d'accessibilité pour les pages Nova et le portail.
+      // Conserver le menu utilisable sans souris, y compris après un resize.
+      if(!nav.id)nav.id='navigation-principale';
+      toggle.setAttribute('aria-controls',nav.id);
+      const setMenuState=open=>{
+        nav.classList.toggle('open',open);
+        toggle.setAttribute('aria-expanded',open?'true':'false');
+        toggle.setAttribute('aria-label',open?'Fermer le menu':'Ouvrir le menu');
+      };
+      setMenuState(false);
       toggle.addEventListener('click',()=>setMenuState(!nav.classList.contains('open')));
-      document.addEventListener('keydown',event=>{if(event.key==='Escape'&&nav.classList.contains('open'))setMenuState(false);});
-      document.addEventListener('click',event=>{
-        if(window.innerWidth>1100)return;
-        if(!nav.contains(event.target)&&!toggle.contains(event.target)&&nav.classList.contains('open'))setMenuState(false);
+      document.addEventListener('keydown',event=>{
+        if(event.key!=='Escape'||!nav.classList.contains('open'))return;
+        setMenuState(false);
+        toggle.focus();
+      });
+      // Sur Safari tactile, le click synthétique peut arriver tard.
+      // pointerdown ferme immédiatement; click couvre aussi les activations
+      // au clavier et les environnements sans Pointer Events.
+      const closeOnOutside=event=>{
+        if(window.innerWidth>1100||!nav.classList.contains('open'))return;
+        if(!nav.contains(event.target)&&!toggle.contains(event.target))setMenuState(false);
+      };
+      document.addEventListener('pointerdown',closeOnOutside);
+      document.addEventListener('click',closeOnOutside);
+      window.addEventListener('resize',()=>{
+        if(window.innerWidth>1100&&nav.classList.contains('open'))setMenuState(false);
       });
       nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>setMenuState(false)));
     }
