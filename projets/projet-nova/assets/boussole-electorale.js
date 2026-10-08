@@ -493,6 +493,29 @@
       return `<option value="${esc(question.id)}">Q${String(index + 1).padStart(2,"0")} · ${esc(question.text)} · ${count} position${count > 1 ? "s" : ""}</option>`;
     }).join("");
 
+    // Les raccourcis sont dérivés du corpus finalisé : aucune question figée.
+    // Une preuve unique ne doit jamais être interprétée comme une comparaison.
+    const priorities = $("#compass-evidence-priorities");
+    const priorityLinks = $("#compass-evidence-priority-links");
+    if(priorities && priorityLinks){
+      const limitedQuestions = questions
+        .map((question,index) => ({question,index,count:(recordsByQuestion.get(question.id) || []).length}))
+        .filter(item => item.count === 1);
+      priorities.hidden = limitedQuestions.length === 0;
+      priorityLinks.innerHTML = limitedQuestions.map(({question,index}) =>
+        `<button type="button" data-compass-priority="${esc(question.id)}" aria-controls="compass-evidence-question-results">Q${String(index + 1).padStart(2,"0")} — ${esc(question.text)}</button>`
+      ).join("");
+      priorityLinks.addEventListener("click",event => {
+        const button = event.target.closest("button[data-compass-priority]");
+        if(!button || !priorityLinks.contains(button)) return;
+        const questionId = button.dataset.compassPriority;
+        if(!limitedQuestions.some(item => item.question.id === questionId)) return;
+        select.value = questionId;
+        renderSelected();
+        select.focus();
+      });
+    }
+
     function renderSelected(){
       const question = questions.find(item => item.id === select.value) || questions[0];
       if(!question){

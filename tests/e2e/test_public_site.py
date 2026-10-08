@@ -195,20 +195,38 @@ def run() -> None:
             evidence_question_select.locator("option").count() == 64,
             f"{BROWSER_NAME}: l’explorateur documentaire doit proposer 64 questions",
         )
-        # La couverture évolue avec les nouvelles preuves : ne jamais figer un
-        # identifiant de question dont la densité documentaire peut changer.
-        mono_proof_question_id = evidence_question_select.evaluate("""select => {
-            const option = Array.from(select.options).find(item =>
-                item.textContent.trim().endsWith(" · 1 position")
-            );
-            return option ? option.value : null;
-        }""")
-        if mono_proof_question_id:
-            evidence_question_select.select_option(mono_proof_question_id)
+        # Les liens d'accès direct et le compteur doivent suivre le corpus,
+        # sans jamais supposer que q29, q30 ou une autre question restera limitée.
+        mono_proof_question_ids = evidence_question_select.evaluate("""select =>
+            Array.from(select.options)
+                .filter(option => option.textContent.trim().endsWith(" · 1 position"))
+                .map(option => option.value)
+        """)
+        priority_panel = page.locator("#compass-evidence-priorities")
+        priority_buttons = page.locator("#compass-evidence-priority-links button[data-compass-priority]")
+        assert_true(
+            priority_buttons.count() == len(mono_proof_question_ids),
+            f"{BROWSER_NAME}: raccourcis des questions à preuve unique désalignés de l'explorateur",
+        )
+        if mono_proof_question_ids:
+            assert_true(priority_panel.is_visible(), f"{BROWSER_NAME}: questions limitées non signalées")
+            assert_true(
+                priority_buttons.evaluate_all(
+                    "(buttons) => buttons.map(button => button.dataset.compassPriority)"
+                ) == mono_proof_question_ids,
+                f"{BROWSER_NAME}: raccourcis documentaires dans un ordre incorrect",
+            )
+            priority_buttons.first.click()
+            assert_true(
+                evidence_question_select.input_value() == mono_proof_question_ids[0],
+                f"{BROWSER_NAME}: le raccourci ne sélectionne pas la bonne proposition",
+            )
             assert_true(
                 "Couverture documentaire limitée : une seule formation dispose d’une position finalisée" in page.locator("#compass-evidence-question-status").inner_text(),
                 f"{BROWSER_NAME}: avertissement de question mono-preuve absent",
             )
+        else:
+            assert_true(priority_panel.is_hidden(), f"{BROWSER_NAME}: raccourcis affichés sans questions limitées")
         evidence_question_select.select_option("q01")
         evidence_question_results = page.locator("#compass-evidence-question-results")
         evidence_question_results.locator(".compass-evidence-record").first.wait_for(state="visible", timeout=10_000)
