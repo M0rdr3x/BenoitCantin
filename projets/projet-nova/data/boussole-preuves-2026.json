@@ -1,5 +1,5 @@
 {
-  "version": "1.71.0",
+  "version": "1.72.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -236,7 +236,7 @@
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
-        "party-12": "unknown",
+        "party-12": "documented_mixed_or_conditional",
         "party-13": "unknown",
         "party-14": "unknown",
         "party-15": "unknown",
@@ -4870,6 +4870,33 @@
         "reviewNote": "La seconde lecture confirme que le PLQ planifie près de 12 G$ de nouveaux engagements avant le retour à l’équilibre prévu en 2029-2030. Comme la source ne classe pas explicitement chaque engagement parmi les programmes permanents, elle établit une divergence claire avec la séquence de q08 mais justifie un statut mixte/conditionnel."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q07-party-12-20261007-01",
+      "questionId": "q07",
+      "partyId": "party-12",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://plq.org/communique/un-cadre-financier-realiste-pour-reparer-les-finances-publiques-et-batir-lavenir-economique-du-quebec/",
+      "sourceTitle": "Un cadre financier réaliste pour réparer les finances publiques et bâtir l’avenir économique du Québec",
+      "sourceDate": "2026-09-13",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_financial_framework_release",
+      "evidenceSummary": "Le cadre financier 2026 du PLQ prévoit un retour à l’équilibre budgétaire en 2029-2030 tout en augmentant les investissements en infrastructures : le Plan québécois des infrastructures passerait à 195 G$ sur 10 ans, soit 28 G$ de plus que prévu et plus de 8 G$ additionnels sur la durée du cadre financier.",
+      "rationale": "q07 porte sur l’acceptation de déficits pour financer des infrastructures dont la durée de vie s’étend sur plusieurs décennies. La source montre clairement que le PLQ accepte une hausse importante des investissements d’infrastructure pendant des exercices encore déficitaires. Elle ne dit toutefois pas explicitement que le déficit est justifié par la durée de vie des actifs; la correspondance demeure donc mixte/conditionnelle.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_deficit_period_plus_long_horizon_infrastructure_with_causality_caveat"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (cadre financier officiel 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_budget_timeline_and_infrastructure_horizon",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme simultanément un retour à l’équilibre seulement en 2029-2030 et une hausse du PQI à 195 G$ sur dix ans. Cela documente l’investissement en infrastructures pendant la période déficitaire, mais la source ne formule pas explicitement la durée de vie des actifs comme justification du déficit; le statut mixte/conditionnel est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5649,21 +5676,22 @@
       "candidateCountByQuestion": {
         "q05": 1,
         "q06": 1,
-        "q07": 1,
+        "q07": 2,
         "q08": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q05 conserve la correspondance partielle de Québec solidaire; q06 l’appui direct du PCQ; q07 la correspondance partielle de la CAQ. q08 compte désormais deux positions mixtes/conditionnelles : le PCQ permet un nouveau programme avant le déficit zéro seulement avec une économie équivalente, tandis que le PLQ prévoit près de 12 G$ de nouveaux engagements avant un retour à l’équilibre en 2029-2030, sans qualifier explicitement chaque engagement de programme permanent.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q05 conserve la correspondance partielle de Québec solidaire; q06 l’appui direct du PCQ. q07 compte désormais deux correspondances mixtes/conditionnelles : la CAQ et le PLQ augmentent fortement leurs investissements d’infrastructure pendant une trajectoire encore déficitaire, sans relier explicitement le déficit à la durée de vie pluridécennale des actifs. q08 compte deux positions mixtes/conditionnelles du PCQ et du PLQ.",
       "evidenceRecordIds": [
         "q05-party-21-20261006-01",
         "q06-party-10-20261006-01",
         "q07-party-05-20261006-01",
         "q08-party-10-20261007-01",
-        "q08-party-12-20261007-01"
+        "q08-party-12-20261007-01",
+        "q07-party-12-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q05": 1,
         "q06": 1,
-        "q07": 1,
+        "q07": 2,
         "q08": 2
       }
     },
