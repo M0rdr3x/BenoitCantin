@@ -723,6 +723,10 @@ def run() -> None:
         # L'état du menu ne doit pas rester ouvert si on passe au bureau.
         toggle.tap()
         mobile_page.set_viewport_size({"width": 1000, "height": 844})
+        mobile_page.wait_for_function(
+            "document.querySelector('[data-menu-toggle]').getAttribute('aria-expanded') === 'false'",
+            timeout=5_000,
+        )
         assert_true(
             toggle.get_attribute("aria-expanded") == "false",
             f"{BROWSER_NAME}: menu mobile conserve son état ouvert au bureau",
@@ -791,6 +795,10 @@ def run() -> None:
         )
         nova_toggle.tap()
         mobile_page.set_viewport_size({"width": 1200, "height": 844})
+        mobile_page.wait_for_function(
+            "document.querySelector('[data-menu-toggle]').getAttribute('aria-expanded') === 'false'",
+            timeout=5_000,
+        )
         assert_true(
             nova_toggle.get_attribute("aria-expanded") == "false"
             and nova_toggle.get_attribute("aria-label") == "Ouvrir le menu",
