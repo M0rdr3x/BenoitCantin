@@ -324,7 +324,7 @@ def run() -> None:
                 const legend = fieldset?.querySelector("legend");
                 const group = fieldset?.querySelector('[role="radiogroup"]');
                 return fieldset?.firstElementChild === legend &&
-                    document.activeElement === legend &&
+                    document.activeElement === legend?.querySelector("[data-compass-question-focus]") &&
                     group?.getAttribute("aria-labelledby") === legend.id;
             }"""),
             f"{BROWSER_NAME}: titre de question non associé aux réponses ou focus absent",
@@ -344,7 +344,7 @@ def run() -> None:
         assert_true(
             page.evaluate("""() => {
                 const legend = document.querySelector("#compass-question-stage legend");
-                return document.activeElement === legend &&
+                return document.activeElement === legend?.querySelector("[data-compass-question-focus]") &&
                     legend?.parentElement?.firstElementChild === legend;
             }"""),
             f"{BROWSER_NAME}: focus clavier ou structure sémantique perdus à la question 2",
@@ -360,7 +360,7 @@ def run() -> None:
                 const legend = document.querySelector("#compass-question-stage legend");
                 const fieldset = document.querySelector("#compass-question-stage fieldset");
                 if(!legend || fieldset?.firstElementChild !== legend ||
-                   document.activeElement !== legend){
+                   document.activeElement !== legend.querySelector("[data-compass-question-focus]")){
                     return {valid:false,step:i,reason:"focus ou légende perdu"};
                 }
                 const radio = fieldset.querySelector('input[type="radio"]');
