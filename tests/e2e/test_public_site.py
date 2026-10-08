@@ -444,6 +444,68 @@ def run() -> None:
             assert_true(page.locator(".sinjira-assistant-toggle").count() == 1, f"{BROWSER_NAME}: assistant absent de Projet Nova")
             assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Projet Nova", f"{BROWSER_NAME}: contexte Projet Nova invalide")
 
+        if IS_LOCAL:
+            # Simuler une indisponibilité réelle du questionnaire JSON.
+            # Le registre utilise le même fichier : les deux reprises doivent
+            # rester indépendantes, sans recharger la page ni lever l'erreur.
+            retry_page = context.new_page()
+            retry_page_errors = []
+            register_error_capture(retry_page, retry_page_errors)
+            corpus_pattern = "**/projets/projet-nova/data/boussole-electorale-v2.json"
+
+            def reject_compass_corpus(route):
+                route.fulfill(status=503, content_type="application/json", body="{}")
+
+            retry_page.route(corpus_pattern, reject_compass_corpus)
+            retry_page.goto(
+                urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"),
+                wait_until="domcontentloaded",
+                timeout=30_000,
+            )
+            retry_questionnaire = retry_page.locator("#compass-questionnaire-retry")
+            retry_documentary = retry_page.locator("#compass-evidence-retry")
+            retry_questionnaire.wait_for(state="visible", timeout=10_000)
+            retry_documentary.wait_for(state="visible", timeout=10_000)
+            assert_true(
+                retry_page.locator("#compass-start").is_disabled(),
+                f"{BROWSER_NAME}: questionnaire démarrable malgré son corpus indisponible",
+            )
+            assert_true(
+                "Échec du chargement documentaire" in retry_page.locator("#compass-evidence-status").inner_text(),
+                f"{BROWSER_NAME}: erreur documentaire non annoncée",
+            )
+            retry_page.unroute(corpus_pattern, reject_compass_corpus)
+            retry_questionnaire.click()
+            retry_page.wait_for_function(
+                "() => !document.querySelector('#compass-start').disabled",
+                timeout=10_000,
+            )
+            assert_true(
+                retry_questionnaire.is_hidden(),
+                f"{BROWSER_NAME}: bouton de reprise questionnaire toujours visible après succès",
+            )
+            retry_documentary.click()
+            retry_page.locator("#compass-evidence-parties .compass-evidence-card").first.wait_for(
+                state="visible", timeout=10_000
+            )
+            assert_true(
+                retry_page.locator("#compass-evidence-parties .compass-evidence-card").count() == 22,
+                f"{BROWSER_NAME}: registre non restauré après une panne temporaire",
+            )
+            assert_true(
+                retry_page.locator("#compass-evidence-summary article").count() == 9,
+                f"{BROWSER_NAME}: métriques documentaires non restaurées",
+            )
+            assert_true(
+                retry_documentary.is_hidden(),
+                f"{BROWSER_NAME}: bouton de reprise documentaire toujours visible après succès",
+            )
+            assert_true(
+                not retry_page_errors,
+                f"{BROWSER_NAME}: exception après reprise du chargement: " + " | ".join(retry_page_errors[:3]),
+            )
+            retry_page.close()
+
         mobile = browser.new_context(
             locale="fr-CA",
             viewport={"width": 390, "height": 844},
