@@ -1,5 +1,5 @@
 {
-  "version": "1.76.0",
+  "version": "1.77.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -822,7 +822,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -5032,6 +5032,33 @@
         "reviewNote": "La seconde lecture confirme une densification accrue par zonage dans les secteurs déjà desservis et une mise en œuvre municipale, avec le transport parmi les infrastructures de desserte. Le texte ne restreint cependant pas ce pouvoir aux secteurs autour des stations de transport collectif; le statut mixte/conditionnel demeure le plus fidèle."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q28-party-10-20261007-01",
+      "questionId": "q28",
+      "partyId": "party-10",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://www.conservateur.quebec/wp-content/uploads/2024/11/Cahier-des-resolutions-final.pdf",
+      "sourceTitle": "Parti conservateur du Québec — Résolution-cadre : Le Parti du contribuable",
+      "sourceDate": "2024-11",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_adopted_resolution",
+      "evidenceSummary": "La résolution-cadre officielle du PCQ réaffirme le principe « Mon char, mon choix » et le droit des citoyens de choisir leur mode de transport sans subir des coûts additionnels imposés par l’État. La campagne 2026 maintient cette orientation en proposant notamment l’abolition de la taxe carbone, la suspension de la taxe provinciale sur l’essence et un nouveau lien autoroutier.",
+      "rationale": "q28 propose que la réduction de la congestion ne passe pas par de nouvelles restrictions à l’usage de l’automobile. La source du PCQ soutient explicitement la liberté de choisir l’automobile sans pénalité financière publique supplémentaire et la campagne 2026 conserve une orientation favorable à la capacité routière. Elle ne rejette toutefois pas explicitement toute forme possible de restriction automobile adoptée pour réduire la congestion; la correspondance est donc substantielle mais conditionnelle.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_congestion_and_nonfinancial_restriction_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (résolution officielle et corroboration campagne 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "official_resolution_recheck_plus_current_campaign_corroboration",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un principe explicite de libre choix du mode de transport sans coûts additionnels imposés par l’État, corroboré en 2026 par des mesures réduisant les taxes automobiles et augmentant la capacité routière. Comme aucune source ne formule une interdiction générale de toute restriction non financière à l’automobile pour gérer la congestion, le statut mixte/conditionnel est maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5181,22 +5208,23 @@
         "q25": 1,
         "q26": 2,
         "q27": 2,
-        "q28": 1
+        "q28": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q25 conserve la correspondance ambiguë de Québec solidaire; q26 conserve deux appuis documentés (CAQ et PLQ); q27 compte désormais deux positions mixtes/conditionnelles : le Parti Québécois favorise la densification autour du transport collectif sans préciser un nouveau pouvoir municipal, tandis qu’Osons Québec prévoit du zonage municipal permettant davantage de logements dans les secteurs déjà desservis sans cibler exclusivement les stations. q28 conserve la correspondance ambiguë du Parti Québécois.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q25 conserve la correspondance ambiguë de Québec solidaire; q26 deux appuis documentés; q27 deux positions mixtes/conditionnelles; q28 compte désormais deux preuves : le Parti Québécois demeure ambigu faute de rejet explicite de toute restriction automobile, tandis que le PCQ est codé mixte/conditionnel sur la base du principe « Mon char, mon choix », de l’opposition aux coûts additionnels imposés aux automobilistes et d’engagements 2026 favorables à la capacité routière, sans interdiction générale de toute restriction non financière.",
       "evidenceRecordIds": [
         "q26-party-05-20261006-01",
         "q26-party-12-20261006-02",
         "q25-party-21-20261007-01",
         "q27-party-17-20261007-01",
         "q28-party-17-20261007-01",
-        "q27-party-06-20261007-01"
+        "q27-party-06-20261007-01",
+        "q28-party-10-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q25": 1,
         "q26": 2,
         "q27": 2,
-        "q28": 1
+        "q28": 2
       }
     },
     {
