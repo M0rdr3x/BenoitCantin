@@ -1,5 +1,5 @@
 {
-  "version": "1.90.0",
+  "version": "1.91.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -176,7 +176,7 @@
         "party-05": "unknown",
         "party-06": "unknown",
         "party-07": "unknown",
-        "party-08": "unknown",
+        "party-08": "documented_opposition",
         "party-09": "unknown",
         "party-10": "unknown",
         "party-11": "unknown",
@@ -5410,6 +5410,33 @@
         "reviewNote": "La seconde lecture confirme que le document utilise explicitement l’expression « réduire la part des réfugiés et du regroupement familial dans la sélection permanente » et chiffre cette réduction d’environ 20 000 à 10 000 par année. Il s’agit de l’inverse exact de q39."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q05-party-08-20261008-01",
+      "questionId": "q05",
+      "partyId": "party-08",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://www.canadianpartyquebec.ca/fr/politiques/fully-costed-platform",
+      "sourceTitle": "Parti canadien du Québec — Plateforme entièrement chiffrée 2026",
+      "sourceDate": "2026-09-30",
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_2026_platform_page",
+      "evidenceSummary": "La plateforme 2026 du Parti canadien du Québec propose de réduire les quatre taux provinciaux d’impôt sur le revenu. Le taux supérieur est lui aussi abaissé, la plateforme indiquant une structure cible dont le taux le plus élevé est de 23,5 %.",
+      "rationale": "q05 propose d’augmenter le taux d’imposition provincial des revenus les plus élevés. La plateforme du Parti canadien du Québec propose explicitement l’inverse en réduisant tous les taux, y compris le taux supérieur. Il s’agit donc d’une opposition directe à la décision fiscale posée par q05, indépendamment du motif de redistribution mentionné dans la question.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_inverse_direction_top_income_tax_rate"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (plateforme officielle 2026)",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que la plateforme réduit explicitement les quatre taux provinciaux d’impôt sur le revenu et abaisse donc le taux applicable au palier supérieur. Cette orientation est l’inverse direct de la hausse demandée par q05."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -6169,7 +6196,7 @@
     },
     {
       "batchId": "tax-q05-q08-20261006",
-      "checkedAt": "2026-10-07",
+      "checkedAt": "2026-10-08",
       "questionIds": [
         "q05",
         "q06",
@@ -6203,12 +6230,12 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q05": 1,
+        "q05": 2,
         "q06": 2,
         "q07": 2,
         "q08": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q05 conserve la correspondance partielle de Québec solidaire. q06 compte désormais deux positions finalisées : le PCQ appuie directement une forte baisse de l’impôt sur le revenu financée par des économies de dépenses, tandis que la CAQ est codée mixte/conditionnelle sur la base de sa baisse effective de l’impôt des particuliers, chiffrée à 1,7 G$ par année, sans preuve explicite que la réduction de nouvelles dépenses constitue le compromis recherché. q07 et q08 conservent deux positions chacune.",
+      "note": "Recherche renforcée le 8 octobre 2026 selon le même standard pour les 22 formations. q05 compte désormais deux positions : Québec solidaire demeure mixte/conditionnelle parce que sa hausse effective pour les revenus élevés n’est pas reliée explicitement, dans la source utilisée, à davantage de redistribution; le Parti canadien du Québec s’oppose directement à q05 en proposant de réduire les quatre taux d’impôt sur le revenu, y compris le taux supérieur. q06, q07 et q08 conservent deux positions finalisées chacune.",
       "evidenceRecordIds": [
         "q05-party-21-20261006-01",
         "q06-party-10-20261006-01",
@@ -6216,10 +6243,11 @@
         "q08-party-10-20261007-01",
         "q08-party-12-20261007-01",
         "q07-party-12-20261007-01",
-        "q06-party-05-20261007-01"
+        "q06-party-05-20261007-01",
+        "q05-party-08-20261008-01"
       ],
       "finalizedCountByQuestion": {
-        "q05": 1,
+        "q05": 2,
         "q06": 2,
         "q07": 2,
         "q08": 2
