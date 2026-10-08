@@ -1,5 +1,5 @@
 {
-  "version": "1.93.0",
+  "version": "1.94.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -654,7 +654,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "ambiguous",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -1713,7 +1713,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "ambiguous",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -5518,6 +5518,60 @@
         "reviewNote": "La seconde lecture confirme que le calendrier met les premiers pilotes à petite échelle et la définition du cadre de gouvernance de l’IA dans la même année de préparation, tandis que la mise en production à plus grande échelle vient ensuite. Aucun ordre juridique explicite n’est donné entre pilotes et adoption du cadre; le statut ambiguous est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q22-party-10-20261008-01",
+      "questionId": "q22",
+      "partyId": "party-10",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/citizenship-and-immigration-3/",
+      "sourceTitle": "Parti conservateur du Québec — Pétition officielle pour abolir la taxe carbone",
+      "sourceDate": "2026-05-21",
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_2026_public_policy_petition",
+      "evidenceSummary": "Dans sa pétition de mai 2026, le PCQ réclame l’abolition de la taxe carbone existante et fait explicitement valoir que le prix des carburants se répercute sur celui de l’épicerie, du transport et d’autres biens essentiels. Un communiqué officiel du 29 août 2026 confirme la promesse d’abolir la taxe carbone et de suspendre temporairement la taxe provinciale sur l’essence.",
+      "rationale": "q22 concerne la renonciation à une nouvelle norme environnementale lorsque son analyse d’impact prévoit une hausse du coût de biens essentiels. Le PCQ lie explicitement une mesure environnementale ou fiscale existante au prix des biens essentiels et demande son retrait. Cette mesure concerne toutefois une taxe déjà en vigueur, non une norme nouvelle examinée avant adoption; la pétition n’établit ni l’exigence d’une analyse d’impact préalable ni une règle générale de renonciation à toute nouvelle norme. Impossible d’attribuer un appui ou une opposition à la proposition exacte.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "explicit_essential_goods_cost_match_with_new_norm_and_impact_test_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — seconde lecture documentaire distincte des pages officielles du PCQ",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_petition_and_2026_press_release_crosscheck",
+        "result": "confirmed",
+        "reviewNote": "La pétition officielle invoque explicitement une répercussion des coûts des carburants sur l’épicerie et les biens essentiels; le communiqué du 29 août confirme l’abolition proposée de la taxe carbone. Aucun des deux documents ne crée un veto automatique contre une norme future après analyse d’impact; ambiguous demeure le seul codage prudent."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q60-party-05-20261008-01",
+      "questionId": "q60",
+      "partyId": "party-05",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://coalitionavenirquebec.org/fr/blog/2026/04/01/le-gouvernement-souhaite-moderniser-les-decrets-de-convention-collective-et-adapte-les-regles-de-lindustrie-de-la-construction-aux-realites-actuelles/",
+      "sourceTitle": "Coalition avenir Québec — Modernisation des décrets de convention collective et de l’industrie de la construction",
+      "sourceDate": "2026-04-01",
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_government_labour_bill_announcement",
+      "evidenceSummary": "L’annonce officielle du 1er avril 2026 présente le projet de loi 27 visant à simplifier la procédure des décrets de convention collective, à accélérer l’entrée en vigueur de conditions convenues par les parties patronales et syndicales, à permettre la révision ou l’abrogation d’un décret lorsque ses conditions ne sont plus satisfaites et à confier davantage de maîtrise du renouvellement aux parties contractantes, tout en maintenant des protections des salariés.",
+      "rationale": "q60 demande de laisser davantage de conditions d’emploi à la négociation individuelle entre employeur et salarié plutôt qu’aux normes du travail. La CAQ propose une adaptation législative de la portée de certains décrets et un contrôle accru des parties contractantes; cela est lié à l’articulation entre réglementation et négociation des conditions d’emploi. Mais ces parties sont patronales et syndicales, non des salariés négociant individuellement. La mesure ne précise aucune extension du champ de la négociation individuelle, ni un rejet de celle-ci. Direction indéterminée.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "labour_decree_scope_vs_individual_bargaining_actor_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — seconde lecture documentaire distincte de l’annonce officielle 2026",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_legal_scope_and_negotiating_parties_recheck",
+        "result": "confirmed",
+        "reviewNote": "La source vise expressément les décrets applicables aux conventions collectives et leurs parties patronales et syndicales. Elle ne permet pas de conclure que la CAQ soutient, ou rejette, un transfert supplémentaire de conditions d’emploi vers les négociations individuelles employeur-salarié. Le statut ambiguous évite la confusion entre négociation collective et individuelle."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5574,7 +5628,7 @@
     },
     {
       "batchId": "environment-q21-q24-20261006",
-      "checkedAt": "2026-10-07",
+      "checkedAt": "2026-10-08",
       "questionIds": [
         "q21",
         "q22",
@@ -5609,14 +5663,14 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q21": 2,
-        "q22": 1,
+        "q22": 2,
         "q23": 2,
         "q24": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q21 conserve deux positions finalisées et q22 demeure ambiguë pour le Parti Québécois. q23 compte désormais deux positions mixtes/conditionnelles : Climat Québec demande la suspension d’une expansion industrielle en présence de risques écologiques documentés par expertise indépendante, sous réserve d’une étude supplémentaire, tandis que Québec solidaire s’engage à annuler les projets recevant un avis défavorable du BAPE sans préciser le critère exact de classement scientifique d’un écosystème vulnérable. q24 conserve deux appuis directs.",
+      "note": "Recherche renforcée le 8 octobre 2026 avec le même standard pour 22 formations. q21 conserve deux positions; q22 comporte désormais deux correspondances ambiguës : le PQ met en garde contre des coûts environnementaux injustes sans annoncer un veto fondé sur une analyse d’impact; le PCQ demande l’abolition d’une taxe existante en invoquant explicitement les prix de biens essentiels, sans se prononcer sur le rejet automatique d’une norme future. q23 et q24 conservent deux positions chacune.",
       "finalizedCountByQuestion": {
         "q21": 2,
-        "q22": 1,
+        "q22": 2,
         "q23": 2,
         "q24": 2
       },
@@ -5627,7 +5681,8 @@
         "q22-party-17-20261007-01",
         "q21-party-10-20261007-01",
         "q24-party-05-20261007-01",
-        "q23-party-21-20261007-01"
+        "q23-party-21-20261007-01",
+        "q22-party-10-20261008-01"
       ]
     },
     {
@@ -6083,9 +6138,9 @@
         "q57": 2,
         "q58": 2,
         "q59": 2,
-        "q60": 1
+        "q60": 2
       },
-      "note": "Recherche renforcée le 8 octobre 2026 selon le même standard pour les 22 formations. q57 conserve un appui direct de Québec solidaire et une position ambiguë du Parti Québécois; q58 conserve deux preuves finalisées; q59 compte désormais deux correspondances ambiguës : Québec solidaire fixe une cible de 20 $/h sans trajectoire pluriannuelle explicitement comparée à l’inflation, tandis que la CAQ documente une progression cumulative du salaire minimum supérieure à l’inflation depuis 2018 sans engagement prospectif explicite de maintenir cet écart. q60 conserve l’opposition documentée du Parti communiste du Québec.",
+      "note": "Recherche renforcée le 8 octobre 2026 avec le même standard pour 22 formations. q57, q58 et q59 conservent chacune deux preuves. q60 compte maintenant deux correspondances : le Parti communiste du Québec s’oppose directement au transfert de conditions de travail vers la négociation individuelle au profit de la négociation collective; la CAQ est classée ambiguë, car sa réforme des décrets de convention collective ajuste la négociation patronale et syndicale sans se prononcer sur la négociation individuelle employeur-salarié.",
       "evidenceRecordIds": [
         "q57-party-17-20261006-01",
         "q57-party-21-20261006-02",
@@ -6093,13 +6148,14 @@
         "q60-party-09-20261007-01",
         "q58-party-05-20261007-01",
         "q58-party-09-20261007-01",
-        "q59-party-05-20261008-01"
+        "q59-party-05-20261008-01",
+        "q60-party-05-20261008-01"
       ],
       "finalizedCountByQuestion": {
         "q57": 2,
         "q58": 2,
         "q59": 2,
-        "q60": 1
+        "q60": 2
       }
     },
     {
