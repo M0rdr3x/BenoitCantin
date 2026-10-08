@@ -1,5 +1,5 @@
 {
-  "version": "1.39.0",
+  "version": "1.40.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -189,7 +189,8 @@
         "https://conservateur.quebec/wp-content/uploads/2024/11/PROPOSITIONS-ADOPTEES-Revise-28-oct-2024.pdf",
         "https://conservateur.quebec/wp-content/uploads/2026/09/Plate-forme_Regions_V2_corrigee-2-1.pdf",
         "https://conservateur.quebec/wp-content/uploads/2026/09/Autochtones_Plateforme.pdf",
-        "https://conservateur.quebec/wp-content/uploads/2026/09/Sortie_2B_SPEDE_mise_en_page_PCQ.pdf"
+        "https://conservateur.quebec/wp-content/uploads/2026/09/Sortie_2B_SPEDE_mise_en_page_PCQ.pdf",
+        "https://www.conservateur.quebec/wp-content/uploads/2024/11/Cahier-des-resolutions-final.pdf"
       ],
       "pressReleaseUrls": [
         "https://conservateur.quebec/blog/ressources/un-nouveau-modele-detat-axe-sur-les-gouvernements-de-proximite-pour-rapprocher-les-decisions-du-citoyen/",
@@ -198,13 +199,15 @@
         "https://conservateur.quebec/blog/ressources/le-pcq-veut-offrir-a-chaque-eleve-un-parcours-qui-lui-ressemble/",
         "https://conservateur.quebec/blog/ressources/le-pcq-sengage-a-faire-un-grand-menage-dans-les-depenses-publiques-sans-couper-dans-les-services-publics/",
         "https://conservateur.quebec/blog/ressources/le-pcq-veut-renforcer-la-protection-des-femmes-et-les-droits-des-victimes/",
-        "https://conservateur.quebec/blog/ressources/plan-pcq-anti-tarifs-le-quebec-doit-cesser-detre-le-champion-des-exceptions-au-commerce-interprovincial/"
+        "https://conservateur.quebec/blog/ressources/plan-pcq-anti-tarifs-le-quebec-doit-cesser-detre-le-champion-des-exceptions-au-commerce-interprovincial/",
+        "https://conservateur.quebec/blog/ressources/les-conservateurs-proposent-deux-mesures-pour-faire-baisser-le-prix-de-lessence/",
+        "https://conservateur.quebec/blog/ressources/le-pcq-presente-un-projet-concret-de-3e-lien-autoroutier/"
       ],
       "legislativeRecordUrls": [],
       "verificationStatus": "verified_official_site_and_2026_platform",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les plateformes éducation, travail, autonomie régionale, Autochtones, contrôle des dépenses, justice/sécurité, le document SPEDE, le plan anti-tarifs 2026 et les propositions adoptées sur les redevances territoriales. q02 utilise le plan anti-tarifs; q01/q04 la baisse générale de l’impôt des sociétés; q21 le SPEDE; q50/q52 la plateforme régionale; q55 la disposition prévoyant que les Premières Nations puissent tirer des redevances de l’exploitation des ressources naturelles sur leurs territoires; q30 demeure mixte/conditionnelle sur la surveillance électronique ciblée."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les plateformes 2026 et les résolutions adoptées. q28 utilise prudemment le principe « Mon char, mon choix » et son orientation 2026 favorable aux automobilistes et à la capacité routière; le statut demeure mixte/conditionnel faute d’un rejet explicite de toute restriction non financière visant la congestion. Les autres usages documentaires existants sont conservés."
     },
     {
       "id": "party-11",
