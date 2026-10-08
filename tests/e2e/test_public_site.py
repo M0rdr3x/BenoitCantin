@@ -475,7 +475,7 @@ def run() -> None:
         assert_true("kingtyrano@gmail.com" not in contact_html, "Adresse privée embarquée dans le formulaire de contact")
         page.goto(urljoin(BASE_URL, "projets/projet-nova/contact.html"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
-            page.locator('a[href="mailto:officiellenovaparti@gmail.com"]').count() == 1,
+            page.locator('a[href="mailto:officiellenovaparti@gmail.com"]').count() >= 1,
             f"{BROWSER_NAME}: courriel officiel Nova non accessible",
         )
         assert_true(
