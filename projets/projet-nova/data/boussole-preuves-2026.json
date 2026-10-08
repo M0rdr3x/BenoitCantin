@@ -1,5 +1,5 @@
 {
-  "version": "1.75.0",
+  "version": "1.76.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -790,7 +790,7 @@
         "party-03": "unknown",
         "party-04": "unknown",
         "party-05": "unknown",
-        "party-06": "unknown",
+        "party-06": "documented_mixed_or_conditional",
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
@@ -5005,6 +5005,33 @@
         "reviewNote": "La seconde lecture confirme sur la même plateforme un financement public accru de la production culturelle via le CALQ et la SODEC ainsi qu’une représentation explicite de la culture québécoise comme plurielle, vivante et issue de langues multiples. Rien ne réserve le soutien aux seules expressions rattachées à l’identité historique francophone; l’appui à q42 est confirmé."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q27-party-06-20261007-01",
+      "questionId": "q27",
+      "partyId": "party-06",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://osons.quebec/?profil=housing",
+      "sourceTitle": "Osons Québec — Droit de bâtir avec décision en 60 jours",
+      "sourceDate": "2026-09-03",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_program_page",
+      "evidenceSummary": "Osons Québec propose de densifier davantage les secteurs déjà desservis et prévoit un zonage permettant davantage de logements de plein droit près des services. La mise en œuvre repose sur des décisions municipales, des normes préapprouvées et des ententes de desserte avec les MRC et municipalités couvrant notamment le transport.",
+      "rationale": "q27 demande que les municipalités puissent augmenter la densité résidentielle autour des stations de transport collectif. La source donne explicitement aux outils municipaux de zonage et d’autorisation un rôle pour permettre davantage de logements dans les secteurs déjà desservis, avec le transport inclus dans la desserte. Elle ne cible toutefois pas spécifiquement les stations de transport collectif; la correspondance est donc substantielle mais incomplète.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_transit_station_specificity_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (programme officiel 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une densification accrue par zonage dans les secteurs déjà desservis et une mise en œuvre municipale, avec le transport parmi les infrastructures de desserte. Le texte ne restreint cependant pas ce pouvoir aux secteurs autour des stations de transport collectif; le statut mixte/conditionnel demeure le plus fidèle."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5153,21 +5180,22 @@
       "candidateCountByQuestion": {
         "q25": 1,
         "q26": 2,
-        "q27": 1,
+        "q27": 2,
         "q28": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q25 conserve la correspondance ambiguë de Québec solidaire, q26 deux appuis documentés (CAQ et PLQ) et q27 une position mixte/conditionnelle du Parti Québécois. q28 compte désormais une correspondance ambiguë du Parti Québécois : son plan 2026 identifie la congestion routière, veut la réduire en ajoutant des choix de mobilité et refuse de moraliser les automobilistes, sans rejeter explicitement toute nouvelle restriction à l’usage de l’automobile.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q25 conserve la correspondance ambiguë de Québec solidaire; q26 conserve deux appuis documentés (CAQ et PLQ); q27 compte désormais deux positions mixtes/conditionnelles : le Parti Québécois favorise la densification autour du transport collectif sans préciser un nouveau pouvoir municipal, tandis qu’Osons Québec prévoit du zonage municipal permettant davantage de logements dans les secteurs déjà desservis sans cibler exclusivement les stations. q28 conserve la correspondance ambiguë du Parti Québécois.",
       "evidenceRecordIds": [
         "q26-party-05-20261006-01",
         "q26-party-12-20261006-02",
         "q25-party-21-20261007-01",
         "q27-party-17-20261007-01",
-        "q28-party-17-20261007-01"
+        "q28-party-17-20261007-01",
+        "q27-party-06-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q25": 1,
         "q26": 2,
-        "q27": 1,
+        "q27": 2,
         "q28": 1
       }
     },
