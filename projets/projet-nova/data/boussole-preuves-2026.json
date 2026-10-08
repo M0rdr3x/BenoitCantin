@@ -1,5 +1,5 @@
 {
-  "version": "1.72.0",
+  "version": "1.73.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -94,7 +94,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_support",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -4897,6 +4897,33 @@
         "reviewNote": "La seconde lecture confirme simultanément un retour à l’équilibre seulement en 2029-2030 et une hausse du PQI à 195 G$ sur dix ans. Cela documente l’investissement en infrastructures pendant la période déficitaire, mais la source ne formule pas explicitement la durée de vie des actifs comme justification du déficit; le statut mixte/conditionnel est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q02-party-10-20261007-01",
+      "questionId": "q02",
+      "partyId": "party-10",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://conservateur.quebec/blog/ressources/plan-pcq-anti-tarifs-le-quebec-doit-cesser-detre-le-champion-des-exceptions-au-commerce-interprovincial/",
+      "sourceTitle": "Plan PCQ anti-tarifs : « Le Québec doit cesser d’être le champion des exceptions au commerce interprovincial »",
+      "sourceDate": "2026-09-02",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Le Parti conservateur du Québec propose de négocier la reconnaissance mutuelle des biens, des services et des titres professionnels, de s’attaquer aux permis et examens équivalents non reconnus ainsi qu’aux exigences d’établissement au Québec, et d’ouvrir des secteurs encore exclus des ententes actuelles, notamment certains aliments et la vente directe d’alcool, tout en maintenant les exigences essentielles de santé et de sécurité.",
+      "rationale": "q02 propose de réduire les restrictions à l’entrée de nouvelles entreprises dans des secteurs actuellement réglementés. La source cible explicitement des exigences d’établissement, des permis et titres non reconnus et des secteurs encore exclus, puis propose de supprimer ou harmoniser ces obstacles afin d’ouvrir davantage les marchés. La direction d’appui à q02 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_regulated_market_entry_barriers_and_sector_opening"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le PCQ ne se limite pas à réclamer davantage de concurrence en général : il identifie et veut retirer ou harmoniser des obstacles concrets à l’entrée — exigences d’établissement, reconnaissance des permis, examens et titres — et veut ouvrir des secteurs encore exclus. Le maintien des exigences essentielles de santé et de sécurité ne change pas la direction d’appui à q02."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5617,11 +5644,11 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q01": 2,
-        "q02": 1,
+        "q02": 2,
         "q03": 2,
         "q04": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q01 et q04 conservent deux directions documentées entre CAQ et PCQ; q02 conserve un appui direct du Parti Québécois. q03 compte désormais deux positions finalisées : la CAQ demeure mixte/conditionnelle selon ses interventions de capital ciblées, tandis que Québec solidaire appuie directement une participation majoritaire de l’État dans les entreprises du secteur de l’énergie, jusqu’à la nationalisation au besoin.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q01 et q04 conservent deux directions documentées entre CAQ et PCQ. q02 compte désormais deux appuis directs : le Parti Québécois veut retirer des règles désuètes qui freinent l’entrée de nouveaux joueurs dans le secteur alimentaire, tandis que le PCQ veut supprimer ou harmoniser des obstacles d’entrée comme les exigences d’établissement, la non-reconnaissance de permis et titres et certaines exclusions sectorielles. q03 conserve deux positions finalisées, CAQ mixte/conditionnelle et Québec solidaire en appui direct.",
       "evidenceRecordIds": [
         "q01-party-05-20261006-01",
         "q03-party-05-20261006-01",
@@ -5629,11 +5656,12 @@
         "q02-party-17-20261007-01",
         "q01-party-10-20261007-01",
         "q04-party-05-20261007-01",
-        "q03-party-21-20261007-01"
+        "q03-party-21-20261007-01",
+        "q02-party-10-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q01": 2,
-        "q02": 1,
+        "q02": 2,
         "q03": 2,
         "q04": 2
       }
