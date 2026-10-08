@@ -1,5 +1,5 @@
 {
-  "version": "1.74.0",
+  "version": "1.75.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1225,7 +1225,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_support",
         "party-nova": "unknown"
       }
     },
@@ -4978,6 +4978,33 @@
         "reviewNote": "La seconde lecture confirme l’exigence explicite de consentement libre et éclairé pour tout projet d’exploitation ou de développement sur les territoires autochtones. Le programme officiel reconnaît aussi un droit au consentement pour toute utilisation du territoire ancestral, tandis que la campagne 2026 maintient une relation de Nation à Nations et la participation des Premiers Peuples aux décisions les concernant."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q42-party-21-20261007-01",
+      "questionId": "q42",
+      "partyId": "party-21",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://quebecsolidaire.net/theme/independance",
+      "sourceTitle": "Québec solidaire — Bâtir un pays pour tout le monde — culture et création",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_2026_platform_page",
+      "evidenceSummary": "La plateforme 2026 de Québec solidaire prévoit 510 M$ par année pour la production culturelle au Québec, dont 380 M$ supplémentaires pour doubler le soutien à la création offert par le CALQ et la SODEC. Sur la même plateforme, Québec solidaire présente la culture québécoise comme une culture vivante et plurielle, née des rencontres entre les personnes qui habitent le territoire et des langues qui s’y côtoient, et valorise un pays aux langues multiples.",
+      "rationale": "q42 demande si les programmes culturels financés par le Québec devraient pouvoir soutenir des expressions culturelles qui ne se rattachent pas à l’identité historique francophone. La plateforme combine un financement public accru et général de la création avec une définition explicitement plurielle et multilingue de la culture québécoise. L’admissibilité au soutien culturel n’y est donc pas limitée aux expressions rattachées à une identité francophone historique unique; la direction d’appui est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_public_cultural_funding_plus_explicit_plural_multilingual_culture"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (plateforme officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_funding_scope_and_cultural_definition",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme sur la même plateforme un financement public accru de la production culturelle via le CALQ et la SODEC ainsi qu’une représentation explicite de la culture québécoise comme plurielle, vivante et issue de langues multiples. Rien ne réserve le soutien aux seules expressions rattachées à l’identité historique francophone; l’appui à q42 est confirmé."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5298,11 +5325,11 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q41": 2,
-        "q42": 1,
+        "q42": 2,
         "q43": 3,
         "q44": 1
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q41 conserve deux correspondances partielles; q42 compte désormais un appui documenté d’Osons Québec, dont le programme prévoit une aide culturelle évaluée notamment selon la diversité de l’offre et sans contrôle politique du contenu; q43 conserve trois appuis documentés et q44 une opposition directe.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q41 conserve deux correspondances partielles. q42 compte désormais deux appuis documentés : Osons Québec lie l’aide culturelle à la diversité de l’offre sans contrôle politique du contenu, tandis que Québec solidaire combine un financement public accru de la création avec une conception explicitement plurielle et multilingue de la culture québécoise. q43 conserve trois appuis documentés et q44 une opposition directe.",
       "evidenceRecordIds": [
         "q41-party-21-20261006-01",
         "q41-party-17-20261006-02",
@@ -5310,11 +5337,12 @@
         "q43-party-17-20261006-02",
         "q43-party-21-20261006-03",
         "q44-party-05-20261006-01",
-        "q42-party-06-20261007-01"
+        "q42-party-06-20261007-01",
+        "q42-party-21-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q41": 2,
-        "q42": 1,
+        "q42": 2,
         "q43": 3,
         "q44": 1
       }
