@@ -1,5 +1,5 @@
 {
-  "version": "1.86.0",
+  "version": "1.87.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -913,7 +913,7 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "documented_support",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -5302,6 +5302,33 @@
         "reviewNote": "La seconde lecture confirme une décentralisation explicite du pouvoir décisionnel vers les régions en santé et une dévolution plus générale de responsabilités et ressources, tout en maintenant la responsabilité provinciale des grands équipements collectifs. Cette architecture hybride justifie le statut mixte/conditionnel."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q31-party-17-20261008-01",
+      "questionId": "q31",
+      "partyId": "party-17",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://pq.org/wp-content/uploads/2024/08/cahier-projet-nationalv2-1.pdf",
+      "sourceTitle": "Parti Québécois — Projet national — Protéger la liberté d’expression au Québec",
+      "sourceDate": null,
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Le document officiel du Parti Québécois affirme que la liberté d’expression comprend le droit d’exprimer des idées qui dérangent, sortent de la norme et peuvent même choquer. Il soutient que l’État du Québec a un rôle fondamental à jouer dans la préservation de la liberté d’expression de manière générale et doit agir pour la protéger.",
+      "rationale": "q31 demande que les propos offensants demeurant licites soient protégés. La source du PQ définit explicitement la liberté d’expression comme couvrant des idées pouvant choquer et confie à l’État un rôle de protection de cette liberté. Comme q31 exclut déjà les menaces, le harcèlement et les autres infractions, la direction d’appui à la protection des propos offensants non illégaux est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_shocking_expression_state_protection"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (document officiel du parti)",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le document protège explicitement les idées qui dérangent ou choquent et demande à l’État québécois de préserver la liberté d’expression de manière générale. La question q31 excluant déjà les conduites illégales, la correspondance avec les propos offensants mais licites est directe."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5942,7 +5969,7 @@
     },
     {
       "batchId": "liberties-q29-q32-20261006",
-      "checkedAt": "2026-10-07",
+      "checkedAt": "2026-10-08",
       "questionIds": [
         "q29",
         "q30",
@@ -5978,21 +6005,22 @@
       "candidateCountByQuestion": {
         "q29": 1,
         "q30": 1,
-        "q31": 1,
+        "q31": 2,
         "q32": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 avec le même standard pour les 22 formations. q29 conserve la correspondance ambiguë d’Osons Québec; q30 la position mixte/conditionnelle du PCQ; q31 la correspondance ambiguë du Parti canadien du Québec. q32 compte maintenant deux positions finalisées : le PCQ demeure mixte/conditionnel puisqu’il exige un vote renforcé après 30 jours sans préciser entièrement la période initiale, tandis que la CAQ appuie directement le mécanisme par son bilan gouvernemental d’urgence sanitaire, où des restrictions générales ont été imposées par décret du Conseil des ministres sans vote préalable de l’Assemblée pour chaque mesure.",
+      "note": "Recherche renforcée le 8 octobre 2026 avec le même standard pour les 22 formations. q29 conserve la correspondance ambiguë d’Osons Québec faute d’une source imposant réellement une autorisation judiciaire préalable; q30 conserve la position mixte/conditionnelle du PCQ. q31 compte maintenant deux preuves : le Parti canadien du Québec demeure ambigu sur la portée générale, tandis que le Parti Québécois appuie directement la protection par l’État d’idées qui dérangent ou peuvent choquer. q32 conserve les positions du PCQ et de la CAQ.",
       "evidenceRecordIds": [
         "q32-party-10-20261007-01",
         "q31-party-08-20261007-01",
         "q29-party-06-20261007-01",
         "q30-party-10-20261007-01",
-        "q32-party-05-20261007-01"
+        "q32-party-05-20261007-01",
+        "q31-party-17-20261008-01"
       ],
       "finalizedCountByQuestion": {
         "q29": 1,
         "q30": 1,
-        "q31": 1,
+        "q31": 2,
         "q32": 2
       }
     },
