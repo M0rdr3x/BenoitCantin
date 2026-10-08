@@ -1,5 +1,5 @@
 {
-  "version": "1.88.0",
+  "version": "1.89.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1797,7 +1797,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_mixed_or_conditional",
         "party-06": "ambiguous",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -5356,6 +5356,33 @@
         "reviewNote": "La seconde lecture confirme l’attribution de points d’impôt sur le revenu aux municipalités et l’objectif explicite d’autonomie municipale. Elle confirme aussi que la hauteur et la répartition seraient convenues avec Québec et décidées conjointement, ce qui empêche de coder un appui absolu à des sources fiscales entièrement contrôlées par les municipalités."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q63-party-05-20261008-01",
+      "questionId": "q63",
+      "partyId": "party-05",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://www.quebec.ca/gouvernement/travailler-gouvernement/normes-gouvernance-pratiques-internes/protection-des-renseignements-personnels/utilisation-autre-fin/consentement-personne",
+      "sourceTitle": "Gouvernement du Québec — Utilisation d’un renseignement personnel à une autre fin avec ou sans le consentement",
+      "sourceDate": null,
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_government_legal_guidance",
+      "evidenceSummary": "Le cadre québécois de protection des renseignements personnels applicable aux organismes publics limite l’utilisation d’un renseignement à la fin pour laquelle il a été recueilli. Une utilisation à une autre fin requiert normalement le consentement de la personne, sauf dans les cas prévus par la loi. Le régime encadre aussi certains échanges ou collectes entre organismes publics par des conditions légales, une évaluation des facteurs relatifs à la vie privée et une entente écrite.",
+      "rationale": "q63 interdit la combinaison de données personnelles provenant de plusieurs services sans consentement ou autorisation légale précise. Le cadre instauré et modernisé sous le gouvernement de la CAQ suit directement cette logique de limitation par finalité, consentement et base légale. La correspondance demeure toutefois conditionnelle parce que la loi prévoit plusieurs exceptions légales et ne formule pas une interdiction générale avec les mêmes mots que q63.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_statutory_exceptions"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources législatives et gouvernementales officielles)",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme la limitation de l’utilisation à la finalité de collecte, le consentement comme règle pour une autre fin et l’existence d’exceptions prévues par la loi, ainsi que des garanties pour certains échanges inter-organismes. L’orientation de q63 est donc soutenue, mais le statut reste mixte/conditionnel en raison des exceptions et de la formulation juridique plus large."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5940,7 +5967,7 @@
     },
     {
       "batchId": "digital-q61-q64-20261006",
-      "checkedAt": "2026-10-07",
+      "checkedAt": "2026-10-08",
       "questionIds": [
         "q61",
         "q62",
@@ -5976,22 +6003,23 @@
       "candidateCountByQuestion": {
         "q61": 2,
         "q62": 1,
-        "q63": 1,
+        "q63": 2,
         "q64": 2
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q61 conserve deux correspondances ambiguës (Osons Québec et PLQ), q63 une correspondance ambiguë (Osons Québec), et q64 deux correspondances ambiguës (Osons Québec et Parti conservateur du Québec). q62 compte désormais une correspondance ambiguë du PLQ : sa proposition de loi-cadre porte explicitement sur le développement et le déploiement de l’IA et sur son encadrement dans l’appareil public, mais ne précise pas si de nouveaux systèmes pourraient être utilisés avant l’adoption de ce cadre.",
+      "note": "Recherche renforcée le 8 octobre 2026 selon le même standard pour les 22 formations. q61 conserve deux correspondances ambiguës (Osons Québec et PLQ). q62 conserve une correspondance ambiguë du PLQ. q63 compte désormais deux positions : Osons Québec demeure ambigu faute d’une formulation exacte sur la combinaison interservices, tandis que la CAQ est codée mixte/conditionnelle à partir du cadre légal modernisé sous son gouvernement, qui limite l’usage secondaire par finalité, consentement ou exceptions prévues par la loi et encadre certains échanges inter-organismes. q64 conserve deux correspondances ambiguës (Osons Québec et PCQ).",
       "evidenceRecordIds": [
         "q61-party-06-20261006-01",
         "q61-party-12-20261006-02",
         "q63-party-06-20261006-01",
         "q64-party-06-20261006-01",
         "q64-party-10-20261006-02",
-        "q62-party-12-20261007-01"
+        "q62-party-12-20261007-01",
+        "q63-party-05-20261008-01"
       ],
       "finalizedCountByQuestion": {
         "q61": 2,
         "q62": 1,
-        "q63": 1,
+        "q63": 2,
         "q64": 2
       }
     },
