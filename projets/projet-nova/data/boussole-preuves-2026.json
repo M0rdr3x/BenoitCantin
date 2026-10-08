@@ -1,5 +1,5 @@
 {
-  "version": "1.73.0",
+  "version": "1.74.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1578,7 +1578,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_support",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -1617,7 +1617,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_opposition",
         "party-nova": "unknown"
       }
     },
@@ -4924,6 +4924,60 @@
         "reviewNote": "La seconde lecture confirme que le PCQ ne se limite pas à réclamer davantage de concurrence en général : il identifie et veut retirer ou harmoniser des obstacles concrets à l’entrée — exigences d’établissement, reconnaissance des permis, examens et titres — et veut ouvrir des secteurs encore exclus. Le maintien des exigences essentielles de santé et de sécurité ne change pas la direction d’appui à q02."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q55-party-10-20261007-01",
+      "questionId": "q55",
+      "partyId": "party-10",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://conservateur.quebec/wp-content/uploads/2024/11/PROPOSITIONS-ADOPTEES-Revise-28-oct-2024.pdf",
+      "sourceTitle": "Parti conservateur du Québec — Propositions adoptées, redevances sur les ressources naturelles",
+      "sourceDate": "2024-10-28",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Les propositions officielles du Parti conservateur du Québec prévoient que les occupants des territoires où des projets d’exploitation des ressources naturelles sont développés — explicitement les municipalités, MRC et Premières Nations — puissent en tirer des redevances pour enrichir leurs communautés. Le document demande aussi d’adapter la fiscalité afin que les communautés autochtones concernées profitent de redevances liées à l’exploitation des ressources naturelles sur leurs territoires.",
+      "rationale": "q55 propose qu’une part des revenus publics provenant d’un projet sur un territoire traditionnel autochtone soit partagée avec les nations concernées. La source prévoit explicitement des redevances issues de l’exploitation des ressources naturelles au bénéfice des Premières Nations et communautés autochtones sur leurs territoires. Le mécanisme de partage de revenus provenant de l’exploitation correspond directement à la direction de q55.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_resource_royalties_to_first_nations_on_their_territories"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (document officiel du parti)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le texte nomme explicitement les Premières Nations parmi les bénéficiaires possibles des redevances et vise des redevances en lien avec l’exploitation des ressources naturelles sur leurs territoires. La correspondance avec le partage de revenus de q55 est directe."
+      },
+      "finalizable": true
+    },
+    {
+      "recordId": "q56-party-21-20261007-01",
+      "questionId": "q56",
+      "partyId": "party-21",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://api-wp.quebecsolidaire.net/wp-content/uploads/2018/09/maintenant_ou_jamais.pdf",
+      "sourceTitle": "Québec solidaire — Plan de transition économique, réforme du BAPE et consentement autochtone",
+      "sourceDate": "2018",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "Le plan officiel de transition économique de Québec solidaire exige le consentement libre et éclairé des communautés autochtones pour tout projet d’exploitation ou de développement sur leurs territoires. Le programme officiel reconnaît également un droit au consentement pour toute utilisation du territoire ancestral, et la campagne 2026 réitère une relation de Nation à Nations et la participation des Premières Nations et des Inuit aux décisions qui les concernent.",
+      "rationale": "q56 propose qu’un projet autorisé par les règles provinciales puisse aller de l’avant sans droit de veto supplémentaire des gouvernements autochtones. Une exigence explicite de consentement des communautés pour tout projet d’exploitation ou de développement sur leurs territoires signifie au contraire que l’autorisation provinciale seule ne suffit pas. La direction est donc une opposition directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_indigenous_consent_required_for_projects"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (sources officielles)",
+        "reviewedAt": "2026-10-07",
+        "method": "exact_policy_recheck_plus_current_2026_position_corroboration",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme l’exigence explicite de consentement libre et éclairé pour tout projet d’exploitation ou de développement sur les territoires autochtones. Le programme officiel reconnaît aussi un droit au consentement pour toute utilisation du territoire ancestral, tandis que la campagne 2026 maintient une relation de Nation à Nations et la participation des Premiers Peuples aux décisions les concernant."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5420,22 +5474,24 @@
       "candidateCountByQuestion": {
         "q53": 2,
         "q54": 1,
-        "q55": 1,
-        "q56": 1
+        "q55": 2,
+        "q56": 2
       },
-      "note": "Recherche approfondie renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q53 compte désormais deux appuis directs : le Parti conservateur du Québec propose des ententes d’autonomie gouvernementale et Québec solidaire demande des ententes formelles, des relations de nation à nation et une gestion partagée du territoire et des ressources. q54 conserve l’opposition directe du PCQ à une application provinciale uniforme; q55 conserve l’appui d’Osons Québec sur le partage des revenus; q56 conserve l’opposition directe du Parti communiste du Québec.",
+      "note": "Recherche approfondie renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q53 compte deux appuis directs (PCQ et Québec solidaire). q54 conserve l’opposition directe du PCQ. q55 compte désormais deux appuis directs : Osons Québec prévoit la participation économique et le partage des revenus avec les nations concernées, tandis que le PCQ prévoit des redevances tirées de l’exploitation des ressources naturelles au bénéfice des Premières Nations et communautés autochtones sur leurs territoires. q56 compte désormais deux oppositions directes : le Parti communiste du Québec revendique un droit de veto sur les projets d’exploitation et Québec solidaire exige le consentement libre et éclairé des communautés autochtones pour tout projet d’exploitation ou de développement sur leurs territoires.",
       "evidenceRecordIds": [
         "q55-party-06-20261006-01",
         "q53-party-10-20261007-01",
         "q56-party-09-20261007-01",
         "q54-party-10-20261007-01",
-        "q53-party-21-20261007-01"
+        "q53-party-21-20261007-01",
+        "q55-party-10-20261007-01",
+        "q56-party-21-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q53": 2,
         "q54": 1,
-        "q55": 1,
-        "q56": 1
+        "q55": 2,
+        "q56": 2
       }
     },
     {
