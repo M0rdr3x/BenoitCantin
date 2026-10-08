@@ -1,5 +1,5 @@
 {
-  "version": "1.82.0",
+  "version": "1.83.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -822,7 +822,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_mixed_or_conditional",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -5194,6 +5194,33 @@
         "reviewNote": "La seconde lecture confirme l’engagement explicite d’annuler les projets recevant un avis défavorable du BAPE, ce qui établit le principe d’un refus de projet à la suite d’une évaluation environnementale indépendante. Le document ne lie cependant pas ce refus à un critère précis de vulnérabilité scientifique d’un écosystème; le statut mixte/conditionnel est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q28-party-10-20261007-01",
+      "questionId": "q28",
+      "partyId": "party-10",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://www.conservateur.quebec/wp-content/uploads/2024/11/Cahier-des-resolutions-final.pdf",
+      "sourceTitle": "Parti conservateur du Québec — Cahier des résolutions, résolution-cadre « Le Parti du contribuable »",
+      "sourceDate": null,
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_resolution_document",
+      "evidenceSummary": "Dans un cahier officiel de résolutions, le Parti conservateur du Québec affirme vouloir défendre le droit des citoyens à choisir librement leur mode de transport et réaffirme le principe « Mon char, mon choix », en précisant que les Québécois devraient pouvoir choisir leur mode de transport sans subir de coûts additionnels imposés par l’État.",
+      "rationale": "q28 affirme que la réduction de la congestion ne devrait pas passer par de nouvelles restrictions à l’usage de l’automobile. Le document du PCQ soutient directement le libre choix du mode de transport et s’oppose à l’imposition de coûts étatiques additionnels liés à ce choix, ce qui est cohérent avec une limitation des nouvelles contraintes automobiles. Il ne relie toutefois pas explicitement cette position à une politique de réduction de la congestion et ne rejette pas toutes les formes possibles de restriction; la correspondance demeure mixte/conditionnelle.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "transport_choice_and_state_cost_restriction_with_congestion_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (document officiel du parti)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme le principe explicite de libre choix du mode de transport et l’opposition aux coûts additionnels imposés par l’État. Elle ne démontre pas que le PCQ exclurait toute nouvelle restriction automobile dans le but précis de réduire la congestion; le statut mixte/conditionnel est donc maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5345,22 +5372,23 @@
         "q25": 1,
         "q26": 2,
         "q27": 2,
-        "q28": 1
+        "q28": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q25 conserve la correspondance ambiguë de Québec solidaire; q26 conserve deux appuis documentés (CAQ et PLQ); q27 compte désormais deux positions mixtes/conditionnelles : le Parti Québécois favorise la densification autour du transport collectif sans préciser un nouveau pouvoir municipal, tandis qu’Osons Québec prévoit du zonage municipal permettant davantage de logements dans les secteurs déjà desservis sans cibler exclusivement les stations. q28 conserve la correspondance ambiguë du Parti Québécois.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q25 conserve la correspondance ambiguë de Québec solidaire; q26 conserve deux appuis documentés; q27 conserve deux positions mixtes/conditionnelles. q28 compte maintenant deux positions finalisées : le Parti Québécois demeure ambigu puisqu’il veut réduire la congestion en ajoutant des choix de mobilité sans rejeter explicitement toute restriction automobile, tandis que le PCQ est mixte/conditionnel car il défend explicitement le libre choix du mode de transport et le principe « Mon char, mon choix » sans rattacher cette position au mécanisme précis de réduction de la congestion.",
       "evidenceRecordIds": [
         "q26-party-05-20261006-01",
         "q26-party-12-20261006-02",
         "q25-party-21-20261007-01",
         "q27-party-17-20261007-01",
         "q28-party-17-20261007-01",
-        "q27-party-06-20261007-01"
+        "q27-party-06-20261007-01",
+        "q28-party-10-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q25": 1,
         "q26": 2,
         "q27": 2,
-        "q28": 1
+        "q28": 2
       }
     },
     {
