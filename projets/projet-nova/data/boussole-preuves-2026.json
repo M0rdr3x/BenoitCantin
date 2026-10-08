@@ -1,5 +1,5 @@
 {
-  "version": "1.85.0",
+  "version": "1.86.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1505,7 +1505,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_mixed_or_conditional",
         "party-nova": "unknown"
       }
     },
@@ -5275,6 +5275,33 @@
         "reviewNote": "La seconde lecture confirme un programme de français ministériel commun avec contenus et progression harmonisés, destiné à être déployé dans toutes les écoles. Comme la mesure porte sur une matière et non sur l’ensemble du curriculum, le statut mixed/conditional est conservé."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q52-party-21-20261008-01",
+      "questionId": "q52",
+      "partyId": "party-21",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/05/declarationsaguenay-v1.pdf",
+      "sourceTitle": "Québec solidaire — Déclaration du Saguenay — Décentralisation",
+      "sourceDate": null,
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_policy_document",
+      "evidenceSummary": "La Déclaration du Saguenay de Québec solidaire dénonce la centralisation des services et propose, en santé et services sociaux, de décentraliser le pouvoir décisionnel vers les régions avec les ressources nécessaires. Elle maintient en parallèle un principe d’équité territoriale et l’accès universel aux services publics. Le programme officiel précise aussi que l’État québécois demeure responsable des grands équipements collectifs, notamment hospitaliers, scolaires et routiers, tout en dévoluant des pouvoirs, responsabilités et ressources aux régions.",
+      "rationale": "q52 demande que la planification des grands réseaux de santé, d’éducation et de transport demeure centralisée au gouvernement du Québec. Québec solidaire propose explicitement une décentralisation décisionnelle et une dévolution régionale pour les services publics, ce qui s’écarte d’une centralisation complète. Toutefois, le parti conserve à l’État québécois un rôle de leader, de gardien de l’équité et de responsable des grands équipements hospitaliers, scolaires et routiers. La position est donc mixte/conditionnelle plutôt qu’une opposition absolue.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_with_central_state_and_regional_devolution_split"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (Déclaration du Saguenay et programme officiel)",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme une décentralisation explicite du pouvoir décisionnel vers les régions en santé et une dévolution plus générale de responsabilités et ressources, tout en maintenant la responsabilité provinciale des grands équipements collectifs. Cette architecture hybride justifie le statut mixte/conditionnel."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5684,7 +5711,7 @@
     },
     {
       "batchId": "territory-q49-q52-20261006",
-      "checkedAt": "2026-10-07",
+      "checkedAt": "2026-10-08",
       "questionIds": [
         "q49",
         "q50",
@@ -5721,22 +5748,23 @@
         "q49": 1,
         "q50": 2,
         "q51": 2,
-        "q52": 1
+        "q52": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même protocole pour les 22 formations. q49 conserve la correspondance ambiguë d’Osons Québec. q50 compte désormais deux positions mixtes/conditionnelles : le PLQ maintient un noyau commun de services avec asymétrie réglementaire régionale, tandis que le PCQ rejette les règles mur à mur et veut permettre aux régions d’adapter les moyens tout en conservant certains standards communs. q51 conserve les positions du PQ et du PCQ; q52 conserve la position mixte/conditionnelle du PCQ sur la décentralisation des grands réseaux.",
+      "note": "Recherche renforcée le 8 octobre 2026 selon le même protocole pour les 22 formations. q49 conserve la correspondance ambiguë d’Osons Québec. q50 conserve deux positions mixtes/conditionnelles du PLQ et du PCQ; q51 conserve les positions du PQ et du PCQ. q52 compte désormais deux positions mixtes/conditionnelles : le PCQ rejette le modèle largement centralisé au profit d’un État des régions, et Québec solidaire propose une décentralisation décisionnelle et une dévolution régionale tout en maintenant à l’État québécois la responsabilité des grands équipements collectifs.",
       "evidenceRecordIds": [
         "q51-party-17-20261006-01",
         "q51-party-10-20261007-01",
         "q50-party-12-20261007-01",
         "q49-party-06-20261007-01",
         "q52-party-10-20261007-01",
-        "q50-party-10-20261007-01"
+        "q50-party-10-20261007-01",
+        "q52-party-21-20261008-01"
       ],
       "finalizedCountByQuestion": {
         "q49": 1,
         "q50": 2,
         "q51": 2,
-        "q52": 1
+        "q52": 2
       }
     },
     {

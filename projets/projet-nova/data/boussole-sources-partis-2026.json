@@ -1,5 +1,5 @@
 {
-  "version": "1.48.0",
+  "version": "1.49.0",
   "updated": "2026-10-08",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -405,7 +405,7 @@
       "verificationStatus": "verified_official_site_and_2026_platform",
       "lastVerified": "2026-10-08",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 8 octobre 2026, incluant la plateforme électorale 2026, le programme officiel, le plan de transition et la Déclaration du Saguenay. q03 documente la participation majoritaire de l’État dans les entreprises énergétiques; q15 davantage d’orthopédagogues; q16 le modèle de financement scolaire; q19 l’inclusion obligatoire de logement social; q23 l’engagement BAPE; q34 le droit d’initiative populaire; q42 la plateforme culturelle; q53 les relations de nation à nation; q54 les ententes formelles comme mécanisme de reconnaissance de droits; q56 le consentement autochtone."
+      "notes": "Sources officielles revérifiées le 8 octobre 2026, incluant la plateforme électorale 2026, le programme officiel, le plan de transition et la Déclaration du Saguenay. q03 documente la participation majoritaire de l’État dans les entreprises énergétiques; q15 davantage d’orthopédagogues; q16 le modèle de financement scolaire; q19 l’inclusion obligatoire de logement social; q23 l’engagement BAPE; q34 le droit d’initiative populaire; q42 la plateforme culturelle; q52 la décentralisation décisionnelle et la dévolution régionale avec maintien de la responsabilité provinciale des grands équipements; q53 les relations de nation à nation; q54 les ententes formelles comme mécanisme de reconnaissance de droits; q56 le consentement autochtone."
     },
     {
       "id": "party-nova",
