@@ -438,7 +438,7 @@
           ? "0 candidature acceptée au scrutin provincial 2026"
           : `${candidateCount} candidature${candidateCount === 1 ? "" : "s"} acceptée${candidateCount === 1 ? "" : "s"} en 2026`;
       const finalized = finalizedByParty.get(party.id) || 0;
-      const documentary = `${finalized}/${totalQuestions} position${finalized === 1 ? "" : "s"} finalisée${finalized === 1 ? "" : "s"}`;
+      const documentary = `${finalized}/${totalQuestions} fiche${finalized === 1 ? "" : "s"} documentaire${finalized === 1 ? "" : "s"} finalisée${finalized === 1 ? "" : "s"}`;
       const comparison = party.comparisonEligible
         ? "Comparaison publique activée"
         : "Comparaison publique non activée";
@@ -460,7 +460,7 @@
     documented_support:"Appui documenté",
     documented_opposition:"Opposition documentée",
     documented_mixed_or_conditional:"Position mixte ou conditionnelle",
-    ambiguous:"Position ambiguë",
+    ambiguous:"Position indéterminée — source ambiguë",
     contradictory:"Sources contradictoires"
   };
 
@@ -490,7 +490,7 @@
 
     select.innerHTML = questions.map((question,index) => {
       const count = (recordsByQuestion.get(question.id) || []).length;
-      return `<option value="${esc(question.id)}">Q${String(index + 1).padStart(2,"0")} · ${esc(question.text)} · ${count} position${count > 1 ? "s" : ""}</option>`;
+      return `<option value="${esc(question.id)}">Q${String(index + 1).padStart(2,"0")} · ${esc(question.text)} · ${count} preuve${count > 1 ? "s" : ""}</option>`;
     }).join("");
 
     // Les raccourcis sont dérivés du corpus finalisé : aucune question figée.
@@ -527,11 +527,12 @@
       const matrixStatuses = matrixByQuestion.get(question.id) || {};
       const documentedCount = parties.filter(party => (matrixStatuses[party.id] || "unknown") !== "unknown").length;
       const unknownCount = parties.length - documentedCount;
+      const indeterminateCount = parties.filter(party => ["ambiguous","contradictory"].includes(matrixStatuses[party.id])).length;
       const visibleParties = filter.checked
         ? parties.filter(party => (matrixStatuses[party.id] || "unknown") !== "unknown")
         : parties;
 
-      status.textContent = `${documentedCount} position${documentedCount > 1 ? "s" : ""} finalisée${documentedCount > 1 ? "s" : ""}; ${unknownCount} formation${unknownCount > 1 ? "s" : ""} non documentée${unknownCount > 1 ? "s" : ""} pour cette proposition; ${visibleParties.length}/${parties.length} formations affichées.${documentedCount === 1 ? " Couverture documentaire limitée : une seule formation dispose d’une position finalisée. Cela ne suffit pas pour comparer les formations." : ""}`;
+      status.textContent = `${documentedCount} fiche${documentedCount > 1 ? "s" : ""} documentaire${documentedCount > 1 ? "s" : ""} finalisée${documentedCount > 1 ? "s" : ""}, dont ${indeterminateCount} sans direction certaine; ${unknownCount} formation${unknownCount > 1 ? "s" : ""} non documentée${unknownCount > 1 ? "s" : ""} pour cette proposition; ${visibleParties.length}/${parties.length} formations affichées.${documentedCount === 1 ? " Couverture documentaire limitée : une seule formation dispose d’une preuve finalisée. Cela ne suffit pas pour comparer les formations." : ""} Une fiche finalisée peut conclure à une position indéterminée.`;
 
       host.innerHTML = visibleParties.map(party => {
         const matrixStatus = matrixStatuses[party.id] || "unknown";
@@ -563,7 +564,7 @@
           <article class="compass-evidence-record">
             <h4>${esc(party.name)}</h4>
             <dl>
-              <div><dt>Position</dt><dd>${esc(label)}</dd></div>
+              <div><dt>Conclusion documentaire</dt><dd>${esc(label)}</dd></div>
               <div><dt>Confiance</dt><dd>${esc(confidence)}</dd></div>
               <div><dt>Date source</dt><dd>${esc(sourceDate)}</dd></div>
               <div><dt>Vérifiée le</dt><dd>${esc(checkedAt)}</dd></div>
@@ -623,7 +624,10 @@
     const secondReviewed = records.filter(record => record.secondIndependentReview?.status === "completed").length;
     const pendingSecond = records.filter(record => record.secondIndependentReview?.status === "pending").length;
     const finalizedByParty = new Map(parties.map(party => [party.id,0]));
+    const indeterminateByParty = new Map(parties.map(party => [party.id,0]));
     let finalizedCount = 0;
+    let indeterminateCount = 0;
+    let directPositionCount = 0;
 
     for(const question of matrixQuestions){
       const statuses = question?.statuses || {};
@@ -631,6 +635,11 @@
         if(statusValue === "unknown") continue;
         finalizedCount += 1;
         finalizedByParty.set(partyId,(finalizedByParty.get(partyId) || 0) + 1);
+        if(statusValue === "ambiguous" || statusValue === "contradictory"){
+          indeterminateCount += 1;
+          indeterminateByParty.set(partyId,(indeterminateByParty.get(partyId) || 0) + 1);
+        }
+        if(statusValue === "documented_support" || statusValue === "documented_opposition") directPositionCount += 1;
       }
     }
 
@@ -641,7 +650,9 @@
       ["Questions à preuve unique",singleProofQuestionCount],
       ["Preuves candidates",records.length],
       ["Deuxième révision terminée",secondReviewed],
-      ["Positions finalisées",finalizedCount]
+      ["Fiches finalisées",finalizedCount],
+      ["Sans direction certaine",indeterminateCount],
+      ["Appuis et oppositions documentés",directPositionCount]
     ].map(([label,value]) => `<article><strong>${esc(value)}</strong><span>${esc(label)}</span></article>`).join("");
 
     parties.sort((a,b) => String(a.name).localeCompare(String(b.name),"fr-CA"));
@@ -650,6 +661,7 @@
       const partyRecords = recordsByParty.get(party.id) || [];
       const reviewed = partyRecords.filter(record => record.secondIndependentReview?.status === "completed").length;
       const finalized = finalizedByParty.get(party.id) || 0;
+      const indeterminate = indeterminateByParty.get(party.id) || 0;
       const sourceLabel = source.usableForPositionCoding
         ? "Source politique vérifiée pour le codage"
         : source.officialSite
@@ -662,7 +674,8 @@
           <dl>
             <div><dt>Preuves candidates</dt><dd>${partyRecords.length}</dd></div>
             <div><dt>2e révision terminée</dt><dd>${reviewed}</dd></div>
-            <div><dt>Positions finalisées</dt><dd>${finalized}</dd></div>
+            <div><dt>Fiches finalisées</dt><dd>${finalized}</dd></div>
+            <div><dt>Sans direction certaine</dt><dd>${indeterminate}</dd></div>
           </dl>
         </article>
       `;
@@ -670,7 +683,7 @@
 
     const status = $("#compass-evidence-status");
     if(status){
-      status.textContent = `${coveredQuestionCount}/${totalQuestionCount} questions recherchées; ${candidateQuestionCount}/${totalQuestionCount} avec au moins une preuve candidate; ${noCandidateQuestionCount} encore sans preuve candidate suffisamment exacte; ${singleProofQuestionCount} avec une seule position finalisée. L’absence de preuve candidate ne signifie pas absence de position réelle. ${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une deuxième révision indépendante; ${finalizedCount} position${finalizedCount > 1 ? "s" : ""} finalisée${finalizedCount > 1 ? "s" : ""}. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
+      status.textContent = `${coveredQuestionCount}/${totalQuestionCount} questions recherchées; ${candidateQuestionCount}/${totalQuestionCount} avec au moins une preuve candidate; ${noCandidateQuestionCount} encore sans preuve candidate suffisamment exacte; ${singleProofQuestionCount} avec une seule fiche finalisée. L’absence de preuve candidate ne signifie pas absence de position réelle. ${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une deuxième révision indépendante; ${finalizedCount} fiche${finalizedCount > 1 ? "s" : ""} finalisée${finalizedCount > 1 ? "s" : ""}, dont ${indeterminateCount} sans direction certaine et ${directPositionCount} appuis ou oppositions documentés. Les positions mixtes ou conditionnelles sont distinctes des appuis et oppositions explicites. Une preuve révisée ne permet pas toujours de conclure à la position exacte d’un parti. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
     }
   }
 

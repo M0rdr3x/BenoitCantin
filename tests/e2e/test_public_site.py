@@ -166,11 +166,36 @@ def run() -> None:
         evidence_cards.first.wait_for(state="visible", timeout=10_000)
         assert_true(evidence_cards.count() == 22, f"{BROWSER_NAME}: 22 formations attendues dans l’état documentaire")
         summary_cards = page.locator("#compass-evidence-summary article")
-        assert_true(summary_cards.count() == 7, f"{BROWSER_NAME}: résumé documentaire incomplet")
+        assert_true(summary_cards.count() == 9, f"{BROWSER_NAME}: résumé documentaire incomplet")
         summary_text = page.locator("#compass-evidence-summary").inner_text()
         assert_true("Questions recherchées" in summary_text and "64/64" in summary_text, f"{BROWSER_NAME}: couverture 64/64 absente du résumé documentaire")
         assert_true("Questions avec preuve" in summary_text, f"{BROWSER_NAME}: couverture de preuve candidate absente du résumé documentaire")
         assert_true("Questions à preuve unique" in summary_text, f"{BROWSER_NAME}: compteur de couverture documentaire limitée absent")
+        # Vérifier les chiffres affichés à partir de la matrice, sans total figé
+        # (les sources et statuts peuvent évoluer d'une PR à l'autre).
+        documentary_metrics = page.evaluate("""async () => {
+            const response = await fetch("data/boussole-preuves-2026.json", {cache:"no-store"});
+            if(!response.ok) throw new Error("Corpus de preuves indisponible");
+            const corpus = await response.json();
+            const statuses = corpus.questions.flatMap(q => Object.values(q.statuses || {}));
+            const expected = {
+                "Fiches finalisées": statuses.filter(v => v !== "unknown").length,
+                "Sans direction certaine": statuses.filter(v => v === "ambiguous" || v === "contradictory").length,
+                "Appuis et oppositions documentés": statuses.filter(v => v === "documented_support" || v === "documented_opposition").length
+            };
+            const actual = Object.fromEntries(
+                Array.from(document.querySelectorAll("#compass-evidence-summary article")).map(card => [
+                    card.querySelector("span").textContent.trim(),
+                    Number(card.querySelector("strong").textContent.trim())
+                ])
+            );
+            return {expected, actual};
+        }""")
+        for label, expected_value in documentary_metrics["expected"].items():
+            assert_true(
+                documentary_metrics["actual"].get(label) == expected_value,
+                f"{BROWSER_NAME}: métrique documentaire incohérente pour {label}",
+            )
         evidence_status = page.locator("#compass-evidence-status").inner_text()
         assert_true(
             "64/64 questions recherchées" in evidence_status,
@@ -180,6 +205,10 @@ def run() -> None:
             "avec au moins une preuve candidate" in evidence_status
             and "sans preuve candidate suffisamment exacte" in evidence_status,
             f"{BROWSER_NAME}: distinction recherche/preuve candidate absente du statut documentaire",
+        )
+        assert_true(
+            "Une preuve révisée ne permet pas toujours de conclure à la position exacte" in evidence_status,
+            f"{BROWSER_NAME}: prudence sur la conclusion politique d’une preuve absente",
         )
         assert_true(
             "L’absence de preuve candidate ne signifie pas absence de position réelle" in evidence_status,
@@ -199,7 +228,7 @@ def run() -> None:
         # sans jamais supposer que q29, q30 ou une autre question restera limitée.
         mono_proof_question_ids = evidence_question_select.evaluate("""select =>
             Array.from(select.options)
-                .filter(option => option.textContent.trim().endsWith(" · 1 position"))
+                .filter(option => option.textContent.trim().endsWith(" · 1 preuve"))
                 .map(option => option.value)
         """)
         priority_panel = page.locator("#compass-evidence-priorities")
@@ -222,7 +251,7 @@ def run() -> None:
                 f"{BROWSER_NAME}: le raccourci ne sélectionne pas la bonne proposition",
             )
             assert_true(
-                "Couverture documentaire limitée : une seule formation dispose d’une position finalisée" in page.locator("#compass-evidence-question-status").inner_text(),
+                "Couverture documentaire limitée : une seule formation dispose d’une preuve finalisée" in page.locator("#compass-evidence-question-status").inner_text(),
                 f"{BROWSER_NAME}: avertissement de question mono-preuve absent",
             )
         else:
