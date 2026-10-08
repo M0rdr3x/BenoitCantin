@@ -451,6 +451,10 @@ def run() -> None:
         }""")
         assert_true(personal_submit_blocked, f"{BROWSER_NAME}: soumission personnelle non bloquée par le script")
         assert_true(
+            page.evaluate('new FormData(document.querySelector("#contact-general")).entries().next().done'),
+            f"{BROWSER_NAME}: des données de formulaire personnel restent sérialisables malgré le verrouillage",
+        )
+        assert_true(
             "?" not in urlparse(page.url).path and not urlparse(page.url).query,
             f"{BROWSER_NAME}: le formulaire personnel a produit une URL avec paramètres",
         )
