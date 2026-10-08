@@ -362,7 +362,7 @@ if compass_page.is_file():
         "Le nombre de documents n’est pas un score politique",
         "Même règle pour tout le monde",
         "Tous les partis officiels, avec les mêmes règles.",
-        "assets/boussole-electorale.js?v=3.4.4",
+        "assets/boussole-electorale.js?v=3.4.5",
         "assets/boussole-electorale.css?v=3.6.4",
     ):
         if marker.lower() not in compass_html.lower():
