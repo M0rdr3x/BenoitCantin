@@ -1,5 +1,5 @@
 {
-  "version": "1.41.0",
+  "version": "1.42.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -237,11 +237,16 @@
         "https://plq.org/communique/la-telesante-au-coeur-dune-premiere-ligne-plus-accessible/",
         "https://plq.org/communique/un-cadre-financier-realiste-pour-reparer-les-finances-publiques-et-batir-lavenir-economique-du-quebec/"
       ],
-      "legislativeRecordUrls": [],
+      "legislativeRecordUrls": [
+        "https://www.assnat.qc.ca/Media/Process.aspx?MediaId=ANQ.Vigie.Bll.DocumentGenerique_141939&process=Original&token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe%2FvG7%2FYWzz",
+        "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/muni_express/PL_122_version_administrative.pdf",
+        "https://www.quebec.ca/habitation-territoire/amenagement-developpement-territoires/amenagement-territoire/guide-prise-decision-urbanisme/reglementation/reglement-logement-abordable-social-familial",
+        "https://www.assnat.qc.ca/fr/deputes/coiteux-martin-15443/biographie.html"
+      ],
       "verificationStatus": "verified_official_site_and_2026_engagements",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les engagements électoraux et le cadre financier 2026. Le cadre financier sert à q07 pour documenter une hausse du PQI pendant une période déficitaire, avec réserve sur la justification par la durée de vie des actifs, et à q08 pour les nouveaux engagements avant le retour à l’équilibre. q50 conserve le noyau commun de services avec asymétrie réglementaire régionale."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les engagements électoraux 2026 et des dossiers législatifs historiques directement attribuables au gouvernement libéral. q19 utilise le projet de loi 122 : Martin Coiteux, député libéral et ministre des Affaires municipales, a introduit le pouvoir municipal d’exiger une contribution en logement abordable ou familial comme condition au permis; le guide gouvernemental actuel confirme que l’exigence peut être formulée en pourcentage. q07 et q08 utilisent le cadre financier 2026; q50 conserve le noyau commun de services avec asymétrie réglementaire régionale."
     },
     {
       "id": "party-13",
