@@ -1011,4 +1011,40 @@ if documentary_total_question_count is not None:
         f"sans preuve candidate: {unresolved_label}"
     )
 
+    # La présence d'une preuve ne signifie pas que plusieurs partis sont documentés.
+    # Mesurer les formations distinctes, sans attribuer de points ou de classement.
+    finalized_records = [row for row in records if row.get("finalizable") is True]
+    documented_parties = {
+        row.get("questionId"): set() for row in matrix_questions
+        if isinstance(row, dict) and isinstance(row.get("questionId"), str)
+    }
+    for row in finalized_records:
+        qid = row.get("questionId")
+        party_id = row.get("partyId")
+        if qid in documented_parties and isinstance(party_id, str):
+            documented_parties[qid].add(party_id)
+
+    single_party_questions = sorted(
+        qid for qid, parties in documented_parties.items() if len(parties) == 1
+    )
+    no_party_questions = sorted(
+        qid for qid, parties in documented_parties.items() if not parties
+    )
+    ambiguous_only_questions = sorted(
+        qid for qid, parties in documented_parties.items()
+        if parties and all(
+            row.get("proposedStatus") == "ambiguous"
+            for row in finalized_records if row.get("questionId") == qid
+        )
+    )
+    print(
+        "BOUSSOLE DENSITÉ — "
+        f"{len(finalized_records)} preuves finalisées; "
+        f"{len(documented_parties) - len(single_party_questions) - len(no_party_questions)}/"
+        f"{len(documented_parties)} questions avec au moins 2 formations; "
+        f"une seule formation: {', '.join(single_party_questions) or 'aucune'}; "
+        f"aucune formation: {', '.join(no_party_questions) or 'aucune'}; "
+        f"ambiguës uniquement: {', '.join(ambiguous_only_questions) or 'aucune'}"
+    )
+
 print("PROJET NOVA — PASS")
