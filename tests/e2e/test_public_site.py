@@ -166,10 +166,11 @@ def run() -> None:
         evidence_cards.first.wait_for(state="visible", timeout=10_000)
         assert_true(evidence_cards.count() == 22, f"{BROWSER_NAME}: 22 formations attendues dans l’état documentaire")
         summary_cards = page.locator("#compass-evidence-summary article")
-        assert_true(summary_cards.count() == 6, f"{BROWSER_NAME}: résumé documentaire incomplet")
+        assert_true(summary_cards.count() == 7, f"{BROWSER_NAME}: résumé documentaire incomplet")
         summary_text = page.locator("#compass-evidence-summary").inner_text()
         assert_true("Questions recherchées" in summary_text and "64/64" in summary_text, f"{BROWSER_NAME}: couverture 64/64 absente du résumé documentaire")
         assert_true("Questions avec preuve" in summary_text, f"{BROWSER_NAME}: couverture de preuve candidate absente du résumé documentaire")
+        assert_true("Questions à preuve unique" in summary_text, f"{BROWSER_NAME}: compteur de couverture documentaire limitée absent")
         evidence_status = page.locator("#compass-evidence-status").inner_text()
         assert_true(
             "64/64 questions recherchées" in evidence_status,
@@ -194,6 +195,12 @@ def run() -> None:
             evidence_question_select.locator("option").count() == 64,
             f"{BROWSER_NAME}: l’explorateur documentaire doit proposer 64 questions",
         )
+        evidence_question_select.select_option("q22")
+        assert_true(
+            "Couverture documentaire limitée : une seule formation dispose d’une position finalisée" in page.locator("#compass-evidence-question-status").inner_text(),
+            f"{BROWSER_NAME}: avertissement de question mono-preuve absent",
+        )
+        evidence_question_select.select_option("q01")
         evidence_question_results = page.locator("#compass-evidence-question-results")
         evidence_question_results.locator(".compass-evidence-record").first.wait_for(state="visible", timeout=10_000)
         assert_true(
