@@ -461,6 +461,11 @@ def run() -> None:
         assert_true(form.get_attribute("action") is None, f"{BROWSER_NAME}: endpoint personnel actif avant configuration")
         assert_true(form.get_attribute("method") is None, f"{BROWSER_NAME}: POST personnel actif avant configuration")
         assert_true(form.get_attribute("data-personal-formspree-state") == "pending-separate-endpoint", f"{BROWSER_NAME}: état fail-closed Formspree absent")
+        assert_true(
+            "form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'"
+            in page.locator("script:not([src])").all_text_contents()[0],
+            f"{BROWSER_NAME}: double verrou du formulaire personnel absent",
+        )
         assert_true(submit.is_disabled(), f"{BROWSER_NAME}: bouton personnel actif avant endpoint distinct")
         assert_true("désactivé" in route.inner_text().lower(), f"{BROWSER_NAME}: message fail-closed absent")
         assert_true(page.locator('a[href="/projets/projet-nova/contact.html"]').count() >= 1, f"{BROWSER_NAME}: lien contact officiel Nova absent")
