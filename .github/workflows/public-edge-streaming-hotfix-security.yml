@@ -1,0 +1,75 @@
+name: Sécurité — déploiement hotfix Edge public
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/deploy-public-edge-streaming-hotfix.yml'
+      - '.github/workflows/public-edge-streaming-hotfix-security.yml'
+      - 'scripts/validate_public_edge_streaming_hotfix_deploy.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_get_document_url_security.py'
+      - 'scripts/validate_send_game_report_security.py'
+      - 'scripts/validate_life_story_delivery_v24_5_50.py'
+      - 'supabase/functions/get-document-url/**'
+      - 'supabase/functions/send-game-report/**'
+      - 'supabase/functions/life-story-delivery/**'
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/deploy-public-edge-streaming-hotfix.yml'
+      - '.github/workflows/public-edge-streaming-hotfix-security.yml'
+      - 'scripts/validate_public_edge_streaming_hotfix_deploy.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_get_document_url_security.py'
+      - 'scripts/validate_send_game_report_security.py'
+      - 'scripts/validate_life_story_delivery_v24_5_50.py'
+      - 'supabase/functions/get-document-url/**'
+      - 'supabase/functions/send-game-report/**'
+      - 'supabase/functions/life-story-delivery/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    name: Contrat sécurité déploiement Edge public
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Auto-tester le gate de déploiement
+        run: python3 scripts/validate_public_edge_streaming_hotfix_deploy.py --self-test
+
+      - name: Vérifier le gate de déploiement
+        run: python3 scripts/validate_public_edge_streaming_hotfix_deploy.py
+
+      - name: Auto-tester les frontières publiques
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_get_document_url_security.py --self-test
+          python3 scripts/validate_send_game_report_security.py --self-test
+
+      - name: Vérifier les frontières publiques
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_get_document_url_security.py
+          python3 scripts/validate_send_game_report_security.py
+          python3 scripts/validate_life_story_delivery_v24_5_50.py
+          python3 scripts/validate_edge_function_inventory.py

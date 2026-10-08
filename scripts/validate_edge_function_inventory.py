@@ -26,11 +26,14 @@ CUSTOM_AUTH = {
     "get-document-url": (
         "optionalUser", "project_access_rank", "doc.status!=='approved'",
         "doc.projects?.status!=='active'", "createSignedUrl", "MAX_REQUEST_BYTES", "UUID_RE",
-        "externalUrlAllowed", "TextEncoder", "Cache-Control", "no-store", "Referrer-Policy",
+        "externalUrlAllowed", "readLimitedJson", "req.body?.getReader()", "reader.cancel",
+        "new TextDecoder('utf-8',{fatal:true})", "contentType!=='application/json'",
+        "Cache-Control", "no-store", "Referrer-Policy",
     ),
     "send-game-report": (
-        "optionalUser", "!user?.email", "to: [user.email]", "MAX_REQUEST_BYTES", "TextEncoder",
-        "PAID_EXTERNAL_SERVICES_ENABLED=false", "MAX_TEMPLATE_BYTES=15*1024*1024",
+        "optionalUser", "!user?.email", "to: [user.email]", "MAX_REQUEST_BYTES", "readLimitedJson",
+        "req.body?.getReader()", "reader.cancel", "new TextDecoder('utf-8',{fatal:true})",
+        "contentType!=='application/json'", "PAID_EXTERNAL_SERVICES_ENABLED=false", "MAX_TEMPLATE_BYTES=15*1024*1024",
         "TEMPLATE_ORIGIN='https://www.benoitcantin.com'",
         "TEMPLATE_PATH_PREFIX='/projets/sinjira/jeux/fracture-du-reseau-mere/documents/'",
         "redirect:'error'", "REPORT_TEMPLATE_TOO_LARGE", "%PDF-", "Cache-Control", "no-store",
@@ -171,6 +174,12 @@ def main() -> int:
         for marker in markers:
             if marker not in source:
                 errors.append(f"{slug}: garde-fou custom auth/access manquant: {marker}.")
+
+    for slug in ("get-document-url", "send-game-report"):
+        source = read_tree_text(FUNCTIONS / slug)
+        for forbidden in ("await req.text()", "await req.json()", "startsWith('application/json')"):
+            if forbidden in source:
+                errors.append(f"{slug}: frontière HTTP non bornée ou MIME par préfixe interdite: {forbidden}.")
 
     for slug, markers in JWT_SENSITIVE_GUARDS.items():
         source = read_tree_text(FUNCTIONS / slug)
