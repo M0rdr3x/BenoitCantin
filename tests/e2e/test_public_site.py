@@ -686,10 +686,53 @@ def run() -> None:
         assert_true(toggle.count() == 1, f"{BROWSER_NAME}: bouton de menu mobile absent")
         toggle.click()
         assert_true(toggle.get_attribute("aria-expanded") == "true", f"{BROWSER_NAME}: menu mobile n’annonce pas son état ouvert")
-        nav_class = mobile_page.locator("[data-main-nav]").get_attribute("class") or ""
+        assert_true(
+            toggle.get_attribute("aria-label") == "Fermer le menu",
+            f"{BROWSER_NAME}: titre accessible incorrect quand le menu est ouvert",
+        )
+        mobile_nav = mobile_page.locator("[data-main-nav]")
+        nav_class = mobile_nav.get_attribute("class") or ""
         assert_true("open" in nav_class.split(), f"{BROWSER_NAME}: menu mobile ne s’ouvre pas")
         toggle.click()
         assert_true(toggle.get_attribute("aria-expanded") == "false", f"{BROWSER_NAME}: menu mobile ne se referme pas")
+        assert_true(
+            toggle.get_attribute("aria-label") == "Ouvrir le menu",
+            f"{BROWSER_NAME}: titre accessible incorrect quand le menu est fermé",
+        )
+
+        # Fermeture clavier : Échap depuis un lien du menu restaure le focus.
+        toggle.click()
+        mobile_nav.locator("a").first.focus()
+        mobile_page.keyboard.press("Escape")
+        assert_true(
+            toggle.get_attribute("aria-expanded") == "false"
+            and mobile_page.evaluate("document.activeElement === document.querySelector('[data-menu-toggle]')")
+            and "open" not in (mobile_nav.get_attribute("class") or "").split(),
+            f"{BROWSER_NAME}: Échap ne ferme pas le menu ou ne rend pas le focus au bouton",
+        )
+
+        # Fermer au toucher hors du panneau, sans attendre un nouveau clic
+        # sur le bouton. Le bas de page est hors du menu en surimpression.
+        toggle.tap()
+        mobile_page.locator("footer").tap()
+        assert_true(
+            toggle.get_attribute("aria-expanded") == "false",
+            f"{BROWSER_NAME}: toucher hors du menu ne le ferme pas",
+        )
+
+        # L'état du menu ne doit pas rester ouvert si on passe au bureau.
+        toggle.tap()
+        mobile_page.set_viewport_size({"width": 1000, "height": 844})
+        assert_true(
+            toggle.get_attribute("aria-expanded") == "false",
+            f"{BROWSER_NAME}: menu mobile conserve son état ouvert au bureau",
+        )
+        mobile_page.set_viewport_size({"width": 390, "height": 844})
+        assert_true(
+            toggle.get_attribute("aria-label") == "Ouvrir le menu"
+            and mobile_nav.locator("a").first.is_visible() is False,
+            f"{BROWSER_NAME}: menu mobile ne retrouve pas son état fermé",
+        )
 
         if IS_LOCAL:
             mobile_page.wait_for_timeout(500)
