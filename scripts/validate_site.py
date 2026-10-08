@@ -193,13 +193,16 @@ def test_cross_page_fragment_contract() -> list[str]:
         '<a href="destination.html#absente">Lien cassé</a>'
         '<a href="destination.html#ancien">Lien legacy</a>'
         '<a href="destination.html#caf%C3%A9">Lien encodé</a>'
+        '<a href="https://www.benoitcantin.com/__ci_fragment_fixture__/destination.html#valide">URL officielle valide</a>'
+        '<a href="https://www.benoitcantin.com/__ci_fragment_fixture__/destination.html#absente-officielle">URL officielle invalide</a>'
         '<a href="https://exemple.invalid/docs#autre">URL externe</a>'
         '<a href="#intra">Ancre locale vérifiée ailleurs</a>'
     )
     target = Parser()
     target.feed('<section id="valide"></section><a name="ancien"></a><h2 id="café"></h2>')
     errors = cross_page_fragment_errors({origin: page, destination: target})
-    if len(errors) != 1 or 'destination.html#absente' not in errors[0]:
+    if (len(errors) != 2 or not any('destination.html#absente' in error for error in errors)
+            or not any('absente-officielle' in error for error in errors)):
         return ['Auto-test des liens interpages défaillant : cas valide, absent, legacy ou encodé']
     return []
 
