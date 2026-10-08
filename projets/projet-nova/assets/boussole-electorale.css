@@ -199,3 +199,17 @@
 @media(max-width:760px){
   .compass-evidence-browser-head{grid-template-columns:minmax(0,1fr)}
 }
+
+
+/* La formulation intégrale demeure lisible hors du menu déroulant compact. */
+.compass-evidence-selected-question{
+  margin:16px 0 8px;
+  padding:14px 16px;
+  border-left:4px solid var(--cyan);
+  border-radius:10px;
+  background:rgba(255,255,255,.065);
+  color:#fff;
+  font-weight:750;
+  line-height:1.6;
+  overflow-wrap:anywhere;
+}
