@@ -1,5 +1,5 @@
 {
-  "version": "1.47.0",
+  "version": "1.48.0",
   "updated": "2026-10-08",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -98,7 +98,8 @@
         "https://coalitionavenirquebec.org/fr/blog/2026/09/21/lequipe-frechette-mise-sur-les-forces-du-quebec-pour-batir-une-nation-plus-autonome-et-plus-forte/",
         "https://coalitionavenirquebec.org/fr/blog/2026/08/31/lequipe-frechette-accelerera-lacces-aux-soins-pour-reduire-les-listes-dattente/",
         "https://coalitionavenirquebec.org/fr/blog/2026/06/02/la-ministre-champagne-jourdain-lance-un-service-daccompagnement-pour-accelerer-les-projets-miniers-au-quebec/",
-        "https://coalitionavenirquebec.org/fr/blog/2023/08/08/cout-de-la-vie-le-gouvernement-de-la-caq-est-il-celui-qui-en-fait-le-plus/"
+        "https://coalitionavenirquebec.org/fr/blog/2023/08/08/cout-de-la-vie-le-gouvernement-de-la-caq-est-il-celui-qui-en-fait-le-plus/",
+        "https://coalitionavenirquebec.org/fr/blog/2025/09/02/mise-a-lessai-du-nouveau-programme-de-francais-un-programme-modernise-enracine-dans-la-culture-quebecoise-pour-faire-aimer-notre-langue/"
       ],
       "legislativeRecordUrls": [
         "https://www.quebec.ca/premiere-ministre/actualites/detail/le-gouvernement-du-quebec-interdit-tout-rassemblement-interieur-ou-exterieur",
@@ -106,9 +107,9 @@
         "https://www.assnat.qc.ca/Media/Process.aspx?MediaId=ANQ.Vigie.Bll.DocumentGenerique_184557&process=Original&token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe%2FvG7%2FYWzz"
       ],
       "verificationStatus": "verified_official_site_and_2026_engagements",
-      "lastVerified": "2026-10-07",
+      "lastVerified": "2026-10-08",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026. q01/q04 utilisent le plan économique 2026; q06 le bilan de la baisse d’impôt des particuliers; q12 le plan santé; q24 l’annonce Filon; q32 le bilan gouvernemental de l’urgence sanitaire, où le Conseil des ministres a imposé temporairement des restrictions générales par décret; q58 le régime de négociation et l’organisation du travail."
+      "notes": "Sources officielles revérifiées le 8 octobre 2026. q01/q04 utilisent le plan économique 2026; q06 le bilan de la baisse d’impôt des particuliers; q12 le plan santé; q13 le nouveau programme de français commun destiné à toutes les écoles, codé mixte/conditionnel en raison de sa portée limitée à une matière; q24 l’annonce Filon; q32 le bilan de l’urgence sanitaire; q58 le régime de négociation et l’organisation du travail."
     },
     {
       "id": "party-06",
