@@ -161,3 +161,7 @@
 .compass-evidence-priority-links button:hover{border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.12)}
 .compass-evidence-priority-links button:focus-visible{outline:3px solid #fff;outline-offset:3px}
 @media(max-width:540px){.compass-evidence-priorities{padding:16px}.compass-evidence-priority-links{display:grid;grid-template-columns:minmax(0,1fr)}.compass-evidence-priority-links button{width:100%}}
+
+/* La règle explicite préserve hidden face aux styles .btn du portail. */
+.compass-load-retry[hidden]{display:none!important}
+.compass-load-retry:not([hidden]){margin:8px 0 18px;max-width:100%;white-space:normal;text-align:center}

@@ -687,9 +687,21 @@
     }
   }
 
+  let documentaryLoading = false;
+  let questionnaireLoading = false;
+
   async function loadPoliticalRegistryAndEvidence(){
+    if(documentaryLoading) return;
+    documentaryLoading = true;
     const partyHost = $("#compass-parties");
     const evidenceHost = $("#compass-evidence-parties");
+    const status = $("#compass-evidence-status");
+    const retry = $("#compass-evidence-retry");
+    if(retry){
+      retry.hidden = true;
+      retry.disabled = true;
+    }
+    if(status) status.textContent = "Chargement des données documentaires…";
     try{
       const [partyResponse,sourceResponse,evidenceResponse,questionResponse] = await Promise.all([
         fetch(PARTY_DATA_URL,{cache:"no-store"}),
@@ -709,33 +721,63 @@
     }catch(error){
       if(partyHost) partyHost.innerHTML = "<p>Impossible de charger le registre des formations pour le moment.</p>";
       if(evidenceHost) evidenceHost.innerHTML = "<p>Impossible de charger l’état documentaire pour le moment.</p>";
+      const summary = $("#compass-evidence-summary");
+      if(summary) summary.innerHTML = "<p>Les compteurs documentaires sont temporairement indisponibles.</p>";
+      if(status) status.textContent = "Échec du chargement documentaire. Vous pouvez réessayer sans recharger la page.";
       const explorerHost = $("#compass-evidence-question-results");
       if(explorerHost) explorerHost.innerHTML = '<p class="compass-evidence-empty">Impossible de charger l’explorateur des preuves pour le moment.</p>';
+      const priorities = $("#compass-evidence-priorities");
+      if(priorities) priorities.hidden = true;
+      if(retry) retry.hidden = false;
       console.error("Boussole électorale Nova — registre documentaire:",error);
+    }finally{
+      documentaryLoading = false;
+      if(retry) retry.disabled = false;
     }
   }
 
   async function init(){
+    if(questionnaireLoading || state.data) return;
+    questionnaireLoading = true;
+    const retry = $("#compass-questionnaire-retry");
+    const status = $("#compass-status");
+    const start = $("#compass-start");
+    if(retry){
+      retry.hidden = true;
+      retry.disabled = true;
+    }
+    if(start) start.disabled = true;
+    if(status) status.textContent = "Chargement du questionnaire local…";
     try{
       const response = await fetch(DATA_URL,{cache:"no-store"});
       if(!response.ok) throw new Error("HTTP " + response.status);
-      state.data = await response.json();
+      const corpus = await response.json();
+      if(!Array.isArray(corpus.axes) || corpus.axes.length !== 16 ||
+         !Array.isArray(corpus.questions) || corpus.questions.length !== 64){
+        throw new Error("Questionnaire incomplet");
+      }
+      state.data = corpus;
       $("#compass-axis-count").textContent = state.data.axes.length;
       $("#compass-question-count").textContent = state.data.questions.length;
-      $("#compass-start").disabled = false;
-      $("#compass-status").textContent = "La boussole est prête. Vos réponses resteront dans ce navigateur.";
+      if(start) start.disabled = false;
+      if(status) status.textContent = "La boussole est prête. Vos réponses resteront dans ce navigateur.";
     }catch(error){
-      $("#compass-status").textContent = "Impossible de charger la boussole. Rechargez la page ou réessayez plus tard.";
+      if(status) status.textContent = "Impossible de charger la boussole. Réessayez ici sans perdre la page.";
+      if(retry) retry.hidden = false;
       console.error("Boussole électorale Nova:",error);
+    }finally{
+      questionnaireLoading = false;
+      if(retry) retry.disabled = false;
     }
+  }
 
+  document.addEventListener("DOMContentLoaded",() => {
     $("#compass-start")?.addEventListener("click",startQuestionnaire);
     $("#compass-prev")?.addEventListener("click",goPrevious);
     $("#compass-next")?.addEventListener("click",goNext);
     $("#compass-reset")?.addEventListener("click",reset);
-  }
-
-  document.addEventListener("DOMContentLoaded",() => {
+    $("#compass-questionnaire-retry")?.addEventListener("click",init);
+    $("#compass-evidence-retry")?.addEventListener("click",loadPoliticalRegistryAndEvidence);
     init();
     loadPoliticalRegistryAndEvidence();
   });
