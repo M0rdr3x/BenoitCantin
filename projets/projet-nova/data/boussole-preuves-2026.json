@@ -1,5 +1,5 @@
 {
-  "version": "1.80.0",
+  "version": "1.81.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -929,7 +929,7 @@
         "party-02": "unknown",
         "party-03": "unknown",
         "party-04": "unknown",
-        "party-05": "unknown",
+        "party-05": "documented_support",
         "party-06": "unknown",
         "party-07": "unknown",
         "party-08": "unknown",
@@ -5140,6 +5140,33 @@
         "reviewNote": "La seconde lecture confirme une baisse effective de l’impôt des particuliers et un allègement fiscal chiffré à 1,7 G$ par année. Elle ne dit toutefois pas explicitement que cette baisse doit primer sur de nouvelles dépenses; le codage mixte/conditionnel est maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q32-party-05-20261007-01",
+      "questionId": "q32",
+      "partyId": "party-05",
+      "proposedStatus": "documented_support",
+      "sourceUrl": "https://www.quebec.ca/premiere-ministre/actualites/detail/le-gouvernement-du-quebec-interdit-tout-rassemblement-interieur-ou-exterieur",
+      "sourceTitle": "Le gouvernement du Québec interdit tout rassemblement intérieur ou extérieur",
+      "sourceDate": "2020-03-21",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_government_emergency_record",
+      "evidenceSummary": "Sous le gouvernement de la Coalition avenir Québec, le Conseil des ministres a renouvelé l’état d’urgence sanitaire par décret et a étendu, par ce mécanisme exécutif, l’interdiction à tout rassemblement intérieur ou extérieur. Les archives gouvernementales montrent que l’état d’urgence avait été déclaré sous la Loi sur la santé publique et permettait au gouvernement de prendre des mesures exceptionnelles; les débats parlementaires ultérieurs confirment l’usage de ces pouvoirs pour plusieurs restrictions sanitaires.",
+      "rationale": "q32 demande si, en situation d’urgence de santé ou de sécurité, le gouvernement devrait pouvoir imposer temporairement des restrictions sans vote préalable de l’Assemblée nationale. Le bilan gouvernemental de la CAQ fournit une preuve comportementale directe : des restrictions générales ont été imposées par décret du Conseil des ministres pendant l’urgence sanitaire, sans adoption préalable d’une loi par l’Assemblée pour chaque mesure. La correspondance avec le mécanisme de q32 est directe.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_executive_emergency_decree_without_prior_assembly_vote"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (archives gouvernementales et parlementaires)",
+        "reviewedAt": "2026-10-07",
+        "method": "government_archive_and_assembly_record_recheck",
+        "result": "confirmed",
+        "reviewNote": "La seconde vérification confirme que l’état d’urgence sanitaire a été déclaré par le gouvernement, que le Conseil des ministres a ensuite imposé par décret des restrictions générales de rassemblement et que François Legault a plus tard expliqué à l’Assemblée que l’urgence sanitaire demeurait nécessaire pour maintenir plusieurs mesures, dont le masque, le passeport vaccinal et des limites de capacité. L’usage effectif du pouvoir exécutif d’urgence correspond directement à q32."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5813,20 +5840,21 @@
         "q29": 1,
         "q30": 1,
         "q31": 1,
-        "q32": 1
+        "q32": 2
       },
-      "note": "Recherche reprise le 7 octobre 2026 avec le même standard pour les 22 formations. q29 conserve la correspondance ambiguë d’Osons Québec. q30 compte désormais une position mixte/conditionnelle du Parti conservateur du Québec : sa plateforme justice/sécurité 2026 prévoit une surveillance électronique obligatoire et ciblée de certaines personnes présentant un risque élevé pour leur victime, sans créer un pouvoir policier général de surveillance élargie pour toute menace grave et immédiate. q31 conserve la correspondance ambiguë du Parti canadien du Québec et q32 la correspondance mixte/conditionnelle du PCQ.",
+      "note": "Recherche renforcée le 7 octobre 2026 avec le même standard pour les 22 formations. q29 conserve la correspondance ambiguë d’Osons Québec; q30 la position mixte/conditionnelle du PCQ; q31 la correspondance ambiguë du Parti canadien du Québec. q32 compte maintenant deux positions finalisées : le PCQ demeure mixte/conditionnel puisqu’il exige un vote renforcé après 30 jours sans préciser entièrement la période initiale, tandis que la CAQ appuie directement le mécanisme par son bilan gouvernemental d’urgence sanitaire, où des restrictions générales ont été imposées par décret du Conseil des ministres sans vote préalable de l’Assemblée pour chaque mesure.",
       "evidenceRecordIds": [
         "q32-party-10-20261007-01",
         "q31-party-08-20261007-01",
         "q29-party-06-20261007-01",
-        "q30-party-10-20261007-01"
+        "q30-party-10-20261007-01",
+        "q32-party-05-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q29": 1,
         "q30": 1,
         "q31": 1,
-        "q32": 1
+        "q32": 2
       }
     },
     {

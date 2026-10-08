@@ -1,5 +1,5 @@
 {
-  "version": "1.43.0",
+  "version": "1.44.0",
   "updated": "2026-10-07",
   "jurisdiction": "Québec",
   "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
@@ -100,11 +100,15 @@
         "https://coalitionavenirquebec.org/fr/blog/2026/06/02/la-ministre-champagne-jourdain-lance-un-service-daccompagnement-pour-accelerer-les-projets-miniers-au-quebec/",
         "https://coalitionavenirquebec.org/fr/blog/2023/08/08/cout-de-la-vie-le-gouvernement-de-la-caq-est-il-celui-qui-en-fait-le-plus/"
       ],
-      "legislativeRecordUrls": [],
+      "legislativeRecordUrls": [
+        "https://www.quebec.ca/premiere-ministre/actualites/detail/le-gouvernement-du-quebec-interdit-tout-rassemblement-interieur-ou-exterieur",
+        "https://www.quebec.ca/nouvelles/actualites/details/le-gouvernement-du-quebec-declare-l-etat-d-urgence-sanitaire-interdit-les-visites-dans-les-centres-hospitaliers-et-les-chsld-et-prend-des-mesures-speciales-pour-offrir-des-services-de-sante-a-distance",
+        "https://www.assnat.qc.ca/Media/Process.aspx?MediaId=ANQ.Vigie.Bll.DocumentGenerique_184557&process=Original&token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe%2FvG7%2FYWzz"
+      ],
       "verificationStatus": "verified_official_site_and_2026_engagements",
       "lastVerified": "2026-10-07",
       "usableForPositionCoding": true,
-      "notes": "Sources officielles revérifiées le 7 octobre 2026. q01/q04 utilisent le plan économique 2026; q06 utilise le bilan officiel de la baisse de l’impôt des particuliers mise en œuvre en 2023, codée mixte/conditionnelle faute de compromis explicite avec de nouvelles dépenses; q12 utilise le plan santé; q24 l’annonce Filon; q58 le régime de négociation et l’organisation du travail."
+      "notes": "Sources officielles revérifiées le 7 octobre 2026. q01/q04 utilisent le plan économique 2026; q06 le bilan de la baisse d’impôt des particuliers; q12 le plan santé; q24 l’annonce Filon; q32 le bilan gouvernemental de l’urgence sanitaire, où le Conseil des ministres a imposé temporairement des restrictions générales par décret; q58 le régime de négociation et l’organisation du travail."
     },
     {
       "id": "party-06",
