@@ -318,6 +318,21 @@ def run() -> None:
             f"{BROWSER_NAME}: une seule question doit être visible à la fois",
         )
         assert_true(page.locator("#compass-prev").is_disabled(), f"{BROWSER_NAME}: Précédent doit être désactivé à la question 1")
+        assert_true(
+            page.evaluate("""() => {
+                const fieldset = document.querySelector("#compass-question-stage fieldset");
+                const legend = fieldset?.querySelector("legend");
+                const group = fieldset?.querySelector('[role="radiogroup"]');
+                return fieldset?.firstElementChild === legend &&
+                    document.activeElement === legend &&
+                    group?.getAttribute("aria-labelledby") === legend.id;
+            }"""),
+            f"{BROWSER_NAME}: titre de question non associé aux réponses ou focus absent",
+        )
+        assert_true(
+            page.locator("#compass-progress-track").get_attribute("aria-valuenow") == "1",
+            f"{BROWSER_NAME}: progression ARIA initiale incorrecte",
+        )
         assert_true(page.locator("#compass-next").is_disabled(), f"{BROWSER_NAME}: Suivant doit attendre une réponse")
         page.locator('#compass-question-stage input[type="radio"]').first.check()
         assert_true(not page.locator("#compass-next").is_disabled(), f"{BROWSER_NAME}: Suivant doit s’activer après une réponse")
@@ -325,6 +340,50 @@ def run() -> None:
         assert_true(
             "Question 2 sur 64" in page.locator("#compass-progress-text").inner_text(),
             f"{BROWSER_NAME}: progression guidée vers la question 2 absente",
+        )
+        assert_true(
+            page.evaluate("""() => {
+                const legend = document.querySelector("#compass-question-stage legend");
+                return document.activeElement === legend &&
+                    legend?.parentElement?.firstElementChild === legend;
+            }"""),
+            f"{BROWSER_NAME}: focus clavier ou structure sémantique perdus à la question 2",
+        )
+        assert_true(
+            page.locator("#compass-progress-track").get_attribute("aria-valuenow") == "2",
+            f"{BROWSER_NAME}: progression ARIA non actualisée",
+        )
+        # Parcours des 64 questions en déclenchant les vrais événements de
+        # réponse/changement. L'écran final doit reprendre le focus clavier.
+        parcours_64_questions = page.evaluate("""() => {
+            for(let i = 2; i <= 64; i++){
+                const legend = document.querySelector("#compass-question-stage legend");
+                const fieldset = document.querySelector("#compass-question-stage fieldset");
+                if(!legend || fieldset?.firstElementChild !== legend ||
+                   document.activeElement !== legend){
+                    return {valid:false,step:i,reason:"focus ou légende perdu"};
+                }
+                const radio = fieldset.querySelector('input[type="radio"]');
+                if(!radio) return {valid:false,step:i,reason:"réponse absente"};
+                radio.click();
+                document.querySelector("#compass-next").click();
+            }
+            const heading = document.querySelector("#compass-results-title");
+            const progress = document.querySelector("#compass-progress-track");
+            return {
+                valid:!document.querySelector("#compass-results").hidden &&
+                    document.activeElement === heading &&
+                    heading.getAttribute("tabindex") === "-1" &&
+                    document.querySelectorAll("#compass-results-grid .compass-result-card").length === 16 &&
+                    progress.getAttribute("aria-valuenow") === "64" &&
+                    progress.getAttribute("aria-valuemax") === "64",
+                step:64,
+                reason:"état final du questionnaire"
+            };
+        }""")
+        assert_true(
+            parcours_64_questions["valid"],
+            f"{BROWSER_NAME}: parcours guidé ou focus des résultats incorrect: {parcours_64_questions}",
         )
         home_text = page.locator("main").inner_text().lower()
         for retired_name in ("lumina", "futurax", "chroniques de l’ombre", "chroniques de l'ombre"):
