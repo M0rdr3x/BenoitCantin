@@ -1,5 +1,5 @@
 {
-  "version": "1.94.0",
+  "version": "1.95.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -745,7 +745,7 @@
         "party-14": "unknown",
         "party-15": "unknown",
         "party-16": "unknown",
-        "party-17": "unknown",
+        "party-17": "ambiguous",
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
@@ -5572,6 +5572,33 @@
         "reviewNote": "La source vise expressément les décrets applicables aux conventions collectives et leurs parties patronales et syndicales. Elle ne permet pas de conclure que la CAQ soutient, ou rejette, un transfert supplémentaire de conditions d’emploi vers les négociations individuelles employeur-salarié. Le statut ambiguous évite la confusion entre négociation collective et individuelle."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q25-party-17-20261008-01",
+      "questionId": "q25",
+      "partyId": "party-17",
+      "proposedStatus": "ambiguous",
+      "sourceUrl": "https://pq.org/nouvelles/un-projet-structurant-pour-lest-et-lentretien-du-metro-le-parti-quebecois-presente-ses-priorites-en-transport-collectif-pour-montreal/",
+      "sourceTitle": "Parti Québécois — Priorités en transport collectif pour Montréal et l’Est de la métropole",
+      "sourceDate": "2026-09-21",
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_2026_urban_transport_commitments",
+      "evidenceSummary": "Le 21 septembre 2026, le Parti Québécois s’engage à confier à CDPQ Infra un transport collectif structurant dans l’Est de Montréal, à prolonger une deuxième phase jusqu’à Repentigny et à accroître l’entretien et le remplacement des trains du métro. Ses engagements du 25 septembre pour la Capitale-Nationale prévoient également de réaliser en priorité un tramway, d’augmenter l’offre d’autobus et d’assurer un financement stable du transport collectif, tout en maintenant des interventions sur la voirie.",
+      "rationale": "q25 exige que, dans les grandes régions urbaines, plus de la moitié des nouveaux investissements provinciaux en transport soient destinés au transport collectif. Ces annonces démontrent l’intention de financer plusieurs projets de transport collectif majeurs dans les deux grandes régions urbaines du Québec. Elles ne présentent cependant ni le montant global de tous les nouveaux investissements urbains, ni une ventilation collective/route prouvant que le collectif en reçoit la majorité. Aucune direction définitive ne peut être attribuée au seuil exact de q25.",
+      "confidence": "medium",
+      "firstReview": {
+        "status": "completed",
+        "method": "urban_transit_projects_with_majority_budget_share_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — seconde relecture documentaire des deux communiqués officiels de septembre 2026",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_party_urban_transport_announcements_and_budget_threshold_crosscheck",
+        "result": "confirmed",
+        "reviewNote": "Le communiqué de Montréal contient un projet structurant et une modernisation du métro; les engagements de Québec ajoutent tramway, bus et entretien routier. Les montants nécessaires pour établir que la majorité de tous les nouveaux investissements provinciaux urbains irait au collectif sont absents; ambiguous reste le seul statut prudent."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5687,7 +5714,7 @@
     },
     {
       "batchId": "transport-q25-q28-20261006",
-      "checkedAt": "2026-10-07",
+      "checkedAt": "2026-10-08",
       "questionIds": [
         "q25",
         "q26",
@@ -5721,12 +5748,12 @@
       "scope": "all_registered_formations_plus_future_nova_same_rules",
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
-        "q25": 1,
+        "q25": 2,
         "q26": 2,
         "q27": 2,
         "q28": 2
       },
-      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q25 conserve la correspondance ambiguë de Québec solidaire; q26 conserve deux appuis documentés; q27 conserve deux positions mixtes/conditionnelles. q28 compte maintenant deux positions finalisées : le Parti Québécois demeure ambigu puisqu’il veut réduire la congestion en ajoutant des choix de mobilité sans rejeter explicitement toute restriction automobile, tandis que le PCQ est mixte/conditionnel car il défend explicitement le libre choix du mode de transport et le principe « Mon char, mon choix » sans rattacher cette position au mécanisme précis de réduction de la congestion.",
+      "note": "Recherche renforcée le 8 octobre 2026 selon le même standard pour les 22 formations. q25 comprend deux sources ambiguës : Québec solidaire propose d’importantes sommes pour le collectif mais aucune proportion majoritaire de tous les nouveaux investissements urbains; le Parti Québécois annonce des projets structurants à Montréal et Québec sans ventilation démontrant une majorité du collectif sur le total des nouveaux investissements urbains. q26, q27 et q28 conservent chacune deux preuves déjà documentées.",
       "evidenceRecordIds": [
         "q26-party-05-20261006-01",
         "q26-party-12-20261006-02",
@@ -5734,10 +5761,11 @@
         "q27-party-17-20261007-01",
         "q28-party-17-20261007-01",
         "q27-party-06-20261007-01",
-        "q28-party-10-20261007-01"
+        "q28-party-10-20261007-01",
+        "q25-party-17-20261008-01"
       ],
       "finalizedCountByQuestion": {
-        "q25": 1,
+        "q25": 2,
         "q26": 2,
         "q27": 2,
         "q28": 2
