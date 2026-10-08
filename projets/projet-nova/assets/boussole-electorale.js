@@ -508,7 +508,7 @@
         ? parties.filter(party => (matrixStatuses[party.id] || "unknown") !== "unknown")
         : parties;
 
-      status.textContent = `${documentedCount} position${documentedCount > 1 ? "s" : ""} finalisée${documentedCount > 1 ? "s" : ""}; ${unknownCount} formation${unknownCount > 1 ? "s" : ""} non documentée${unknownCount > 1 ? "s" : ""} pour cette proposition; ${visibleParties.length}/${parties.length} formations affichées.`;
+      status.textContent = `${documentedCount} position${documentedCount > 1 ? "s" : ""} finalisée${documentedCount > 1 ? "s" : ""}; ${unknownCount} formation${unknownCount > 1 ? "s" : ""} non documentée${unknownCount > 1 ? "s" : ""} pour cette proposition; ${visibleParties.length}/${parties.length} formations affichées.${documentedCount === 1 ? " Couverture documentaire limitée : une seule formation dispose d’une position finalisée. Cela ne suffit pas pour comparer les formations." : ""}`;
 
       host.innerHTML = visibleParties.map(party => {
         const matrixStatus = matrixStatuses[party.id] || "unknown";
@@ -594,6 +594,9 @@
     }
     const candidateQuestionCount = candidateQuestionIds.size;
     const noCandidateQuestionCount = Math.max(0,coveredQuestionCount - candidateQuestionCount);
+    const singleProofQuestionCount = matrixQuestions.filter(question =>
+      Object.values(question?.statuses || {}).filter(value => value !== "unknown").length === 1
+    ).length;
     const secondReviewed = records.filter(record => record.secondIndependentReview?.status === "completed").length;
     const pendingSecond = records.filter(record => record.secondIndependentReview?.status === "pending").length;
     const finalizedByParty = new Map(parties.map(party => [party.id,0]));
@@ -612,6 +615,7 @@
       ["Formations suivies",parties.length],
       ["Questions recherchées",`${coveredQuestionCount}/${totalQuestionCount}`],
       ["Questions avec preuve",`${candidateQuestionCount}/${totalQuestionCount}`],
+      ["Questions à preuve unique",singleProofQuestionCount],
       ["Preuves candidates",records.length],
       ["Deuxième révision terminée",secondReviewed],
       ["Positions finalisées",finalizedCount]
@@ -643,7 +647,7 @@
 
     const status = $("#compass-evidence-status");
     if(status){
-      status.textContent = `${coveredQuestionCount}/${totalQuestionCount} questions recherchées; ${candidateQuestionCount}/${totalQuestionCount} avec au moins une preuve candidate; ${noCandidateQuestionCount} encore sans preuve candidate suffisamment exacte. L’absence de preuve candidate ne signifie pas absence de position réelle. ${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une deuxième révision indépendante; ${finalizedCount} position${finalizedCount > 1 ? "s" : ""} finalisée${finalizedCount > 1 ? "s" : ""}. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
+      status.textContent = `${coveredQuestionCount}/${totalQuestionCount} questions recherchées; ${candidateQuestionCount}/${totalQuestionCount} avec au moins une preuve candidate; ${noCandidateQuestionCount} encore sans preuve candidate suffisamment exacte; ${singleProofQuestionCount} avec une seule position finalisée. L’absence de preuve candidate ne signifie pas absence de position réelle. ${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une deuxième révision indépendante; ${finalizedCount} position${finalizedCount > 1 ? "s" : ""} finalisée${finalizedCount > 1 ? "s" : ""}. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
     }
   }
 
