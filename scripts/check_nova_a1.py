@@ -367,7 +367,7 @@ if compass_page.is_file():
         'id="compass-evidence-priority-links"',
         "Tous les partis officiels, avec les mêmes règles.",
         "assets/boussole-electorale.js?v=3.4.10",
-        "assets/boussole-electorale.css?v=3.6.7",
+        "assets/boussole-electorale.css?v=3.6.8",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
