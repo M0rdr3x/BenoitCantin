@@ -678,6 +678,95 @@ def run() -> None:
             assert_true(assistant_overflow, f"{BROWSER_NAME}: assistant crée un débordement horizontal en 390 px")
             mobile_page.keyboard.press("Escape")
 
+        # Vérification tactile réelle de la Boussole sur téléphones étroits.
+        # Aucune interaction simulée par evaluate() : les contrôles reçoivent
+        # des tap() comme sur un appareil tactile.
+        mobile_page.goto(
+            urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"),
+            wait_until="domcontentloaded",
+            timeout=30_000,
+        )
+        mobile_page.locator("#compass-start").wait_for(state="visible", timeout=10_000)
+        assert_true(
+            not mobile_page.locator("#compass-start").is_disabled(),
+            f"{BROWSER_NAME}: Boussole mobile indisponible",
+        )
+        for viewport_width in (390, 320):
+            mobile_page.set_viewport_size({"width": viewport_width, "height": 844})
+            assert_true(
+                mobile_page.evaluate(
+                    "document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2"
+                ),
+                f"{BROWSER_NAME}: Boussole déborde horizontalement en {viewport_width}px",
+            )
+            assert_true(
+                mobile_page.locator("#compass-evidence-question").is_visible(),
+                f"{BROWSER_NAME}: explorateur des preuves non accessible en {viewport_width}px",
+            )
+        mobile_page.set_viewport_size({"width": 390, "height": 844})
+        mobile_page.locator("#compass-start").tap()
+        mobile_page.locator("#compass-question-stage fieldset").wait_for(state="visible", timeout=10_000)
+        assert_true(
+            mobile_page.locator("#compass-question-stage fieldset").count() == 1,
+            f"{BROWSER_NAME}: plusieurs questions visibles sur téléphone",
+        )
+        mobile_tap_labels = mobile_page.locator("#compass-question-stage .compass-response-stack label")
+        assert_true(
+            mobile_tap_labels.count() == 8,
+            f"{BROWSER_NAME}: choix de réponse tactile incomplet",
+        )
+        for selector in (
+            "#compass-question-stage .compass-response-stack label",
+            "#compass-question-stage [data-importance]",
+            "#compass-next",
+            "#compass-reset",
+        ):
+            box = mobile_page.locator(selector).first.bounding_box()
+            assert_true(
+                box is not None and box["height"] >= 44,
+                f"{BROWSER_NAME}: cible tactile inférieure à 44px: {selector}",
+            )
+        assert_true(
+            mobile_page.evaluate("""() => {
+                const target = document.querySelector("[data-compass-question-focus]");
+                return document.activeElement === target &&
+                    getComputedStyle(target).outlineStyle === "solid";
+            }"""),
+            f"{BROWSER_NAME}: titre de question sans repère visuel de focus",
+        )
+        mobile_tap_labels.first.tap()
+        assert_true(
+            mobile_page.locator("#compass-next").is_enabled(),
+            f"{BROWSER_NAME}: Suivant ne s'active pas au toucher",
+        )
+        mobile_page.locator("#compass-next").tap()
+        assert_true(
+            mobile_page.locator("#compass-progress-track").get_attribute("aria-valuenow") == "2",
+            f"{BROWSER_NAME}: progression mobile non mise à jour",
+        )
+        mobile_page.locator("#compass-prev").tap()
+        assert_true(
+            mobile_page.locator("#compass-progress-track").get_attribute("aria-valuenow") == "1",
+            f"{BROWSER_NAME}: retour tactile à la première question indisponible",
+        )
+        assert_true(
+            mobile_page.locator("#compass-question-stage input[type='radio']").first.is_checked(),
+            f"{BROWSER_NAME}: réponse perdue après retour tactile",
+        )
+        mobile_page.set_viewport_size({"width": 320, "height": 844})
+        assert_true(
+            mobile_page.evaluate(
+                "document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2"
+            ),
+            f"{BROWSER_NAME}: débordement sur Boussole active en 320px",
+        )
+        mobile_page.locator("#compass-reset").tap()
+        assert_true(
+            mobile_page.locator("#compass-start-panel").is_visible() and
+            mobile_page.locator("#compass-stepper").is_hidden(),
+            f"{BROWSER_NAME}: réinitialisation mobile ne restaure pas l'écran d'accueil",
+        )
+
         mobile.close()
 
         account_url = urljoin(BASE_URL, "compte/")
