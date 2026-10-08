@@ -182,3 +182,18 @@
 @media(prefers-reduced-motion:reduce){
   .compass-progress-track span{transition:none}
 }
+
+
+/* WebKit: un lien d'évitement positionné à left:-999px agrandit la
+   largeur défilable de la page. Le masquer par découpe préserve le clavier. */
+.skip-link:not(:focus){
+  left:0;
+  top:0;
+  clip-path:inset(50%);
+  white-space:nowrap;
+}
+.skip-link:focus{
+  clip-path:none;
+  white-space:normal;
+  overflow:visible;
+}
