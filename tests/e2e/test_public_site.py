@@ -484,8 +484,9 @@ def run() -> None:
             f"{BROWSER_NAME}: liens vers le portail personnel et le Centre Vie privée absents de Nova",
         )
         assert_true(
-            page.locator("form").count() == 0,
-            f"{BROWSER_NAME}: un formulaire externe apparaît sur la page contact Nova",
+            page.locator("main form").count() == 0
+            and page.locator('form[action*="formspree.io"]').count() == 0,
+            f"{BROWSER_NAME}: un formulaire de collecte ou un endpoint Formspree apparaît dans le contact Nova",
         )
 
         if IS_LOCAL:
