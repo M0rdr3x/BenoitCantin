@@ -16,6 +16,7 @@ SECRET_PATTERNS = [
     re.compile(r'\bsb_secret_[A-Za-z0-9._-]{20,}\b'),
 ]
 SKIP_SCHEMES = {'http', 'https', 'mailto', 'tel', 'javascript', 'data', 'blob'}
+OFFICIAL_HOSTS = {'www.benoitcantin.com', 'benoitcantin.com'}
 ACTIVE_SINJIRA_PREFIXES = ('projets/sinjira/', 'compte/', 'admin/')
 # L'application React Native possède sa propre validation TypeScript/Expo.
 # Le validateur du site statique ne doit donc pas interpréter ses imports npm
@@ -113,16 +114,24 @@ def is_external_or_special(raw: str) -> bool:
 
 
 def resolve(page: Path, raw: str) -> Path | None:
-    if not raw or raw.startswith(('#', 'mailto:', 'tel:', 'javascript:', 'data:', 'blob:', '//')):
+    """Résout aussi les URL absolues des domaines officiels vers le dépôt.
+
+    Les liens externes restent hors périmètre. Une URL qui cible un dossier
+    doit mener à son index.html : un dossier sans index n'est pas une page.
+    """
+    if not raw or raw.startswith('#'):
         return None
     u = urlparse(raw)
-    if u.scheme in {'http', 'https'}:
-        return None
+    if u.scheme or u.netloc:
+        if u.scheme.lower() not in {'', 'http', 'https'} or (u.hostname or '').lower() not in OFFICIAL_HOSTS:
+            return None
     path = unquote(u.path)
+    if not path and u.netloc:
+        path = '/'
     if not path:
         return None
     q = (ROOT / path.lstrip('/')) if path.startswith('/') else (page.parent / path)
-    if path.endswith('/'):
+    if path.endswith('/') or q.is_dir():
         q = q / 'index.html'
     if not q.exists() and q.suffix == '' and (q / 'index.html').exists():
         q = q / 'index.html'
@@ -155,7 +164,6 @@ def cross_page_fragment_errors(pages: dict[Path, Parser]) -> list[str]:
     déduites du HTML statique : ce contrôle vise les ancres documentaires.
     """
     errors: list[str] = []
-    official_hosts = {'www.benoitcantin.com', 'benoitcantin.com'}
     for page, parsed_page in pages.items():
         for tag, raw in parsed_page.refs:
             if tag != 'a':
@@ -164,7 +172,7 @@ def cross_page_fragment_errors(pages: dict[Path, Parser]) -> list[str]:
             if not url.fragment or not url.path:
                 continue
             if url.scheme or url.netloc:
-                if url.scheme.lower() not in {'https', 'http'} or (url.hostname or '').lower() not in official_hosts:
+                if url.scheme.lower() not in {'https', 'http'} or (url.hostname or '').lower() not in OFFICIAL_HOSTS:
                     continue
                 # Ne suivre que le chemin, jamais les paramètres de requête.
                 target = resolve(page, url.path)
@@ -207,8 +215,34 @@ def test_cross_page_fragment_contract() -> list[str]:
     return []
 
 
+def test_official_link_resolution_contract() -> list[str]:
+    """Protège les liens publics absolus et les chemins de dossiers."""
+    origin = ROOT / 'index.html'
+    cases = {
+        'https://www.benoitcantin.com/': ROOT / 'index.html',
+        'https://benoitcantin.com/compte/': ROOT / 'compte/index.html',
+        '//www.benoitcantin.com/compte/': ROOT / 'compte/index.html',
+        '/assets/': ROOT / 'assets/index.html',
+        '/assets': ROOT / 'assets/index.html',
+        'https://www.benoitcantin.com/__ci_lien_absent__.html': ROOT / '__ci_lien_absent__.html',
+    }
+    errors: list[str] = []
+    for href, expected in cases.items():
+        actual = resolve(origin, href)
+        if actual != expected.resolve():
+            errors.append(f'Auto-test résolution des liens publics défaillant: {href} -> {actual}')
+    for href in ('https://exemple.invalid/compte/', '//exemple.invalid/compte/', 'mailto:contact@example.org', '#contenu'):
+        if resolve(origin, href) is not None:
+            errors.append(f'Auto-test liens externes/spéciaux défaillant: {href}')
+    # La cible fabriquée est absente; cela vérifie le cas que le
+    # validateur de références doit désormais signaler.
+    if (ROOT / '__ci_lien_absent__.html').exists():
+        errors.append('Fixture inattendue présente: __ci_lien_absent__.html')
+    return errors
+
+
 def main() -> int:
-    errors: list[str] = test_cross_page_fragment_contract()
+    errors: list[str] = test_cross_page_fragment_contract() + test_official_link_resolution_contract()
     files = all_files()
     htmls = [p for p in files if p.suffix.lower() == '.html']
     js = [p for p in files if p.suffix.lower() == '.js']
