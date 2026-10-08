@@ -1,7 +1,7 @@
 {
-  "version": "1.83.0",
+  "version": "1.84.0",
   "jurisdiction": "Québec",
-  "updated": "2026-10-07",
+  "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
   "statusValues": [
     "unknown",
@@ -1561,7 +1561,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_opposition",
         "party-nova": "unknown"
       }
     },
@@ -5221,6 +5221,33 @@
         "reviewNote": "La seconde lecture confirme le principe explicite de libre choix du mode de transport et l’opposition aux coûts additionnels imposés par l’État. Elle ne démontre pas que le PCQ exclurait toute nouvelle restriction automobile dans le but précis de réduire la congestion; le statut mixte/conditionnel est donc maintenu."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q54-party-21-20261008-01",
+      "questionId": "q54",
+      "partyId": "party-21",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/02/programmeqs-2019.pdf",
+      "sourceTitle": "Québec solidaire — Programme, Québec pluriel et droits autochtones",
+      "sourceDate": null,
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_program_document",
+      "evidenceSummary": "Le programme officiel de Québec solidaire considère les Autochtones comme des peuples à part entière, veut reconnaître leurs droits ancestraux et territoriaux notamment par des ententes formelles et prône des relations d’égal à égal, de nation à nation, menant à une gestion partagée du territoire et des ressources.",
+      "rationale": "q54 limite les exceptions à l’application uniforme des lois provinciales aux seules exceptions prévues par traité ou par la Constitution. La source de Québec solidaire prévoit explicitement que la reconnaissance de droits et des arrangements de gestion partagée puisse aussi passer par des ententes formelles de nation à nation. Comme ces ententes constituent un mécanisme distinct de la seule exception constitutionnelle et ne sont pas limitées aux traités, la position est directement opposée à la limite posée par q54.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_formal_agreements_beyond_treaty_or_constitution_limit"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (programme officiel)",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme trois éléments explicites : reconnaissance des droits par des ententes formelles, relations de nation à nation et gestion partagée du territoire et des ressources. Comme q54 n’admet que les exceptions prévues par traité ou par la Constitution, l’existence revendiquée d’ententes formelles comme voie autonome de reconnaissance rend l’opposition directe."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5687,7 +5714,7 @@
     },
     {
       "batchId": "indigenous-q53-q56-20261006",
-      "checkedAt": "2026-10-07",
+      "checkedAt": "2026-10-08",
       "questionIds": [
         "q53",
         "q54",
@@ -5722,11 +5749,11 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q53": 2,
-        "q54": 1,
+        "q54": 2,
         "q55": 2,
         "q56": 2
       },
-      "note": "Recherche approfondie renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q53 compte deux appuis directs (PCQ et Québec solidaire). q54 conserve l’opposition directe du PCQ. q55 compte désormais deux appuis directs : Osons Québec prévoit la participation économique et le partage des revenus avec les nations concernées, tandis que le PCQ prévoit des redevances tirées de l’exploitation des ressources naturelles au bénéfice des Premières Nations et communautés autochtones sur leurs territoires. q56 compte désormais deux oppositions directes : le Parti communiste du Québec revendique un droit de veto sur les projets d’exploitation et Québec solidaire exige le consentement libre et éclairé des communautés autochtones pour tout projet d’exploitation ou de développement sur leurs territoires.",
+      "note": "Recherche approfondie renforcée le 8 octobre 2026 selon le même standard pour les 22 formations. q53 conserve deux appuis directs (PCQ et Québec solidaire). q54 compte désormais deux oppositions directes : le PCQ prévoit des régimes différenciés pouvant découler de modifications législatives ou d’autres mécanismes, et Québec solidaire prévoit la reconnaissance de droits par des ententes formelles de nation à nation menant à une gestion partagée du territoire et des ressources, au-delà de la seule catégorie des traités ou exceptions constitutionnelles. q55 conserve deux appuis directs et q56 deux oppositions directes.",
       "evidenceRecordIds": [
         "q55-party-06-20261006-01",
         "q53-party-10-20261007-01",
@@ -5734,11 +5761,12 @@
         "q54-party-10-20261007-01",
         "q53-party-21-20261007-01",
         "q55-party-10-20261007-01",
-        "q56-party-21-20261007-01"
+        "q56-party-21-20261007-01",
+        "q54-party-21-20261008-01"
       ],
       "finalizedCountByQuestion": {
         "q53": 2,
-        "q54": 1,
+        "q54": 2,
         "q55": 2,
         "q56": 2
       }
