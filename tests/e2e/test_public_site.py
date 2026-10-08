@@ -750,6 +750,55 @@ def run() -> None:
             assert_true(assistant_overflow, f"{BROWSER_NAME}: assistant crée un débordement horizontal en 390 px")
             mobile_page.keyboard.press("Escape")
 
+        # Le portail Nova dispose d'un autre moteur de navigation :
+        # vérifier le même contrat accessible sur son accueil mobile.
+        mobile_page.goto(
+            urljoin(BASE_URL, "projets/projet-nova/"),
+            wait_until="domcontentloaded",
+            timeout=30_000,
+        )
+        nova_toggle = mobile_page.locator("[data-menu-toggle]")
+        nova_menu = mobile_page.locator("[data-main-nav]")
+        assert_true(
+            nova_toggle.count() == 1
+            and nova_toggle.get_attribute("aria-expanded") == "false"
+            and nova_toggle.get_attribute("aria-label") == "Ouvrir le menu"
+            and nova_toggle.get_attribute("aria-controls") == nova_menu.get_attribute("id")
+            and nova_menu.get_attribute("id") == "navigation-principale",
+            f"{BROWSER_NAME}: menu Nova initial non conforme ou navigation non associée",
+        )
+        nova_toggle.tap()
+        assert_true(
+            nova_toggle.get_attribute("aria-expanded") == "true"
+            and nova_toggle.get_attribute("aria-label") == "Fermer le menu"
+            and "open" in (nova_menu.get_attribute("class") or "").split(),
+            f"{BROWSER_NAME}: ouverture tactile ou libellé Nova incorrect",
+        )
+        nova_menu.locator("a").first.focus()
+        mobile_page.keyboard.press("Escape")
+        assert_true(
+            nova_toggle.get_attribute("aria-expanded") == "false"
+            and mobile_page.evaluate(
+                "document.activeElement === document.querySelector('[data-menu-toggle]')"
+            ),
+            f"{BROWSER_NAME}: Échap Nova ne rend pas le focus au bouton",
+        )
+        nova_toggle.tap()
+        mobile_page.locator(".header-project-pro").first.tap()
+        assert_true(
+            nova_toggle.get_attribute("aria-expanded") == "false",
+            f"{BROWSER_NAME}: clic extérieur Nova ne ferme pas le menu",
+        )
+        nova_toggle.tap()
+        mobile_page.set_viewport_size({"width": 1200, "height": 844})
+        assert_true(
+            nova_toggle.get_attribute("aria-expanded") == "false"
+            and nova_toggle.get_attribute("aria-label") == "Ouvrir le menu",
+            f"{BROWSER_NAME}: retour bureau Nova conserve un menu déclaré ouvert",
+        )
+        mobile_page.set_viewport_size({"width": 390, "height": 844})
+
+        # Vérifier aussi le menu Nova sur la page du questionnaire.
         # Vérification tactile réelle de la Boussole sur téléphones étroits.
         # Aucune interaction simulée par evaluate() : les contrôles reçoivent
         # des tap() comme sur un appareil tactile.
@@ -759,6 +808,19 @@ def run() -> None:
             timeout=30_000,
         )
         mobile_page.locator("#compass-start").wait_for(state="visible", timeout=10_000)
+        assert_true(
+            mobile_page.locator("[data-menu-toggle]").get_attribute("aria-controls")
+            == mobile_page.locator("[data-main-nav]").get_attribute("id")
+            == "navigation-principale",
+            f"{BROWSER_NAME}: menu Boussole Nova non associé à la navigation",
+        )
+        mobile_page.locator("[data-menu-toggle]").tap()
+        mobile_page.keyboard.press("Escape")
+        assert_true(
+            mobile_page.locator("[data-menu-toggle]").get_attribute("aria-expanded") == "false"
+            and mobile_page.locator("[data-menu-toggle]").get_attribute("aria-label") == "Ouvrir le menu",
+            f"{BROWSER_NAME}: fermeture clavier du menu Boussole Nova incorrecte",
+        )
         assert_true(
             not mobile_page.locator("#compass-start").is_disabled(),
             f"{BROWSER_NAME}: Boussole mobile indisponible",
