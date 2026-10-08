@@ -3,7 +3,7 @@ import json
 import os
 from urllib.parse import urljoin, urlparse
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
@@ -925,6 +925,30 @@ def run() -> None:
             and mobile_page.locator("[data-menu-toggle]").get_attribute("aria-label") == "Ouvrir le menu",
             f"{BROWSER_NAME}: fermeture clavier du menu Boussole Nova incorrecte",
         )
+        # Le bouton est visible pendant le chargement asynchrone du JSON.
+        # Attendre la readiness réelle, sur le domaine officiel comme en
+        # local : une simple vérification immédiate est une course réseau.
+        # Ne pas forcer l'activation : une vraie erreur HTTP/JSON doit rester
+        # un échec du test, accompagné du statut affiché à l'utilisateur.
+        try:
+            mobile_page.wait_for_function(
+                """() => {
+                    const start = document.querySelector('#compass-start');
+                    const status = document.querySelector('#compass-status');
+                    return Boolean(
+                        start && !start.disabled &&
+                        status && status.textContent.includes('boussole est prête')
+                    );
+                }""",
+                timeout=20_000,
+            )
+        except PlaywrightTimeoutError as exc:
+            status = mobile_page.locator("#compass-status")
+            detail = status.inner_text() if status.count() else "(statut absent)"
+            raise AssertionError(
+                f"{BROWSER_NAME}: Boussole mobile indisponible après chargement "
+                f"(URL={mobile_page.url}; statut={detail})"
+            ) from exc
         assert_true(
             not mobile_page.locator("#compass-start").is_disabled(),
             f"{BROWSER_NAME}: Boussole mobile indisponible",
