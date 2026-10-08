@@ -802,6 +802,54 @@ def run() -> None:
             assert_true(assistant_overflow, f"{BROWSER_NAME}: assistant crée un débordement horizontal en 390 px")
             mobile_page.keyboard.press("Escape")
 
+        # Le Centre Vie privée SINJIRA est volontairement exclu des essais
+        # anonymes : sa route peut renvoyer vers la connexion; son script
+        # est quand même contrôlé par le validateur statique du dépôt.
+        # Navigation de continuité : les pages secondaires et les pages 404
+        # doivent utiliser les mêmes correctifs clavier que les accueils.
+        for route, script_version in (
+            ("404.html", "site.js?v=24.4.100"),
+            ("univers.html", "site.js?v=24.4.100"),
+            ("transparence-ia.html", "site.js?v=24.4.100"),
+            ("confidentialite.html", "site.js?v=24.4.100"),
+            ("gouvernance-vie-privee.html", "site.js?v=24.4.100"),
+            ("avis-legal.html", "site.js?v=24.4.100"),
+            ("projets/projet-nova/registre-rencontres.html", "script.js?v=26.1.0"),
+            ("projets/projet-nova/visionneuse.html?doc=resume", "script.js?v=26.1.0"),
+            ("projets/projet-nova/document.html?doc=corpus", "script.js?v=26.1.0"),
+            ("projets/projet-nova/code-conduite.html", "script.js?v=26.1.0"),
+            ("projets/projet-nova/finances.html", "script.js?v=26.1.0"),
+        ):
+            response = mobile_page.goto(
+                urljoin(BASE_URL, route), wait_until="domcontentloaded", timeout=30_000
+            )
+            assert_true(
+                response is not None and response.status < 400,
+                f"{BROWSER_NAME}: parcours secondaire inaccessible: {route}",
+            )
+            assert_true(
+                mobile_page.locator("main").count() >= 1
+                and mobile_page.locator(f'script[src*="{script_version}"]').count() == 1,
+                f"{BROWSER_NAME}: script de navigation divergent: {route}",
+            )
+            menu = mobile_page.locator("[data-menu-toggle]")
+            assert_true(menu.count() == 1, f"{BROWSER_NAME}: commande menu absente: {route}")
+            menu.tap()
+            assert_true(
+                menu.get_attribute("aria-expanded") == "true"
+                and menu.get_attribute("aria-label") == "Fermer le menu",
+                f"{BROWSER_NAME}: menu secondaire ne s'ouvre pas: {route}",
+            )
+            mobile_page.keyboard.press("Escape")
+            assert_true(
+                menu.get_attribute("aria-expanded") == "false"
+                and menu.get_attribute("aria-label") == "Ouvrir le menu"
+                and mobile_page.evaluate(
+                    "document.activeElement === document.querySelector('[data-menu-toggle]')"
+                ),
+                f"{BROWSER_NAME}: Échap ne ferme pas le menu secondaire: {route}",
+            )
+
         # Le portail Nova dispose d'un autre moteur de navigation :
         # vérifier le même contrat accessible sur son accueil mobile.
         mobile_page.goto(
