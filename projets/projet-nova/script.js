@@ -68,10 +68,15 @@
         setMenuState(false);
         toggle.focus();
       });
-      document.addEventListener('click',event=>{
+      // Sur Safari tactile, le click synthétique peut arriver tard.
+      // pointerdown ferme immédiatement; click couvre aussi les activations
+      // au clavier et les environnements sans Pointer Events.
+      const closeOnOutside=event=>{
         if(window.innerWidth>1100||!nav.classList.contains('open'))return;
         if(!nav.contains(event.target)&&!toggle.contains(event.target))setMenuState(false);
-      });
+      };
+      document.addEventListener('pointerdown',closeOnOutside);
+      document.addEventListener('click',closeOnOutside);
       window.addEventListener('resize',()=>{
         if(window.innerWidth>1100&&nav.classList.contains('open'))setMenuState(false);
       });
