@@ -1,5 +1,5 @@
 {
-  "version": "1.77.0",
+  "version": "1.78.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-07",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1001,7 +1001,7 @@
         "party-18": "unknown",
         "party-19": "unknown",
         "party-20": "unknown",
-        "party-21": "unknown",
+        "party-21": "documented_mixed_or_conditional",
         "party-nova": "unknown"
       }
     },
@@ -5059,6 +5059,33 @@
         "reviewNote": "La seconde lecture confirme que le programme distingue explicitement les écoles publiques, totalement financées par l’État, des écoles privées, autonomes quant à leur financement. Cette séparation est incompatible avec une augmentation de la part du financement public qui suivrait le choix familial vers un établissement privé reconnu; l’opposition à q16 est donc documentée."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q34-party-21-20261007-01",
+      "questionId": "q34",
+      "partyId": "party-21",
+      "proposedStatus": "documented_mixed_or_conditional",
+      "sourceUrl": "https://quebecsolidaire.net/nouvelle/quebec-solidaire-veut-redonner-du-pouvoir-aux-peuples-quebecois",
+      "sourceTitle": "Québec solidaire veut redonner du pouvoir aux peuples québécois",
+      "sourceDate": "2026-09-06",
+      "checkedAt": "2026-10-07",
+      "sourceType": "official_party_press_release",
+      "evidenceSummary": "Québec solidaire annonce l’instauration de référendums d’initiative populaire afin de donner à la population une prise de décision politique entre les élections. Ces référendums permettraient aux citoyens d’exiger l’adoption d’une mesure législative ou de bloquer l’application d’une loi votée par l’Assemblée nationale, avec certaines matières exclues.",
+      "rationale": "q34 affirme que, pendant un mandat, les décisions de politique publique devraient normalement être prises par les élus sans référendum. La proposition de Québec solidaire crée explicitement un mécanisme permettant aux citoyens de provoquer une décision référendaire entre les élections, y compris pour adopter une mesure ou bloquer une loi. Cela s’écarte du modèle strictement représentatif visé par q34, mais la source ne précise pas la fréquence prévue des référendums ni qu’ils remplaceraient normalement la décision des élus. Le statut mixte/conditionnel reflète cette limite.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_citizen_initiated_referendums_with_frequency_gap"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (source officielle 2026)",
+        "reviewedAt": "2026-10-07",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme un droit d’initiative populaire permettant une prise de décision entre les élections, jusqu’à l’adoption d’une mesure législative ou au blocage d’une loi. Elle ne permet toutefois pas d’établir que les référendums deviendraient le mode normal de décision pour l’ensemble des politiques publiques. Le codage mixte/conditionnel est donc maintenu."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5263,11 +5290,11 @@
       "sourcePolicy": "official_sources_first_exact_question_match_only",
       "candidateCountByQuestion": {
         "q33": 3,
-        "q34": 1,
+        "q34": 2,
         "q35": 2,
         "q36": 2
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q33 conserve trois positions finalisées. q34 compte désormais une correspondance ambiguë de Démocratie Directe Québec : la consultation et le référendum d’initiative citoyenne limitent l’autonomie représentative, sans établir ce qui devrait normalement être soumis à référendum. q35 conserve deux appuis directs. q36 compte désormais deux oppositions directes, Démocratie Directe Québec et Osons Québec, puisque les deux formations prévoient explicitement le rappel d’un député avant la fin du mandat.",
+      "note": "Recherche renforcée le 7 octobre 2026 selon le même standard pour les 22 formations. q33 conserve trois positions finalisées. q34 compte maintenant deux positions : Démocratie Directe Québec demeure ambiguë faute d’indication sur la fréquence normale des consultations, tandis que Québec solidaire est codé mixte/conditionnel parce que son droit d’initiative populaire permet explicitement d’adopter une mesure ou de bloquer une loi entre les élections sans établir que le référendum deviendrait le mode normal de décision publique. q35 conserve deux appuis directs et q36 deux oppositions directes.",
       "evidenceRecordIds": [
         "q33-party-06-20261006-01",
         "q33-party-03-20261006-02",
@@ -5276,11 +5303,12 @@
         "q35-party-03-20261006-02",
         "q34-party-03-20261007-01",
         "q36-party-03-20261007-01",
-        "q36-party-06-20261007-02"
+        "q36-party-06-20261007-02",
+        "q34-party-21-20261007-01"
       ],
       "finalizedCountByQuestion": {
         "q33": 3,
-        "q34": 1,
+        "q34": 2,
         "q35": 2,
         "q36": 2
       }
