@@ -195,11 +195,20 @@ def run() -> None:
             evidence_question_select.locator("option").count() == 64,
             f"{BROWSER_NAME}: l’explorateur documentaire doit proposer 64 questions",
         )
-        evidence_question_select.select_option("q22")
-        assert_true(
-            "Couverture documentaire limitée : une seule formation dispose d’une position finalisée" in page.locator("#compass-evidence-question-status").inner_text(),
-            f"{BROWSER_NAME}: avertissement de question mono-preuve absent",
-        )
+        # La couverture évolue avec les nouvelles preuves : ne jamais figer un
+        # identifiant de question dont la densité documentaire peut changer.
+        mono_proof_question_id = evidence_question_select.evaluate("""select => {
+            const option = Array.from(select.options).find(item =>
+                item.textContent.trim().endsWith(" · 1 position")
+            );
+            return option ? option.value : null;
+        }""")
+        if mono_proof_question_id:
+            evidence_question_select.select_option(mono_proof_question_id)
+            assert_true(
+                "Couverture documentaire limitée : une seule formation dispose d’une position finalisée" in page.locator("#compass-evidence-question-status").inner_text(),
+                f"{BROWSER_NAME}: avertissement de question mono-preuve absent",
+            )
         evidence_question_select.select_option("q01")
         evidence_question_results = page.locator("#compass-evidence-question-results")
         evidence_question_results.locator(".compass-evidence-record").first.wait_for(state="visible", timeout=10_000)
