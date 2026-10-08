@@ -1,5 +1,5 @@
 {
-  "version": "1.89.0",
+  "version": "1.90.0",
   "jurisdiction": "Québec",
   "updated": "2026-10-08",
   "purpose": "Matrice factuelle de preuves pour chaque proposition et chaque formation. Aucun classement, gagnant ou recommandation n’est produit par ce fichier.",
@@ -1130,7 +1130,7 @@
         "party-07": "unknown",
         "party-08": "unknown",
         "party-09": "unknown",
-        "party-10": "unknown",
+        "party-10": "documented_opposition",
         "party-11": "unknown",
         "party-12": "unknown",
         "party-13": "unknown",
@@ -5383,6 +5383,33 @@
         "reviewNote": "La seconde lecture confirme la limitation de l’utilisation à la finalité de collecte, le consentement comme règle pour une autre fin et l’existence d’exceptions prévues par la loi, ainsi que des garanties pour certains échanges inter-organismes. L’orientation de q63 est donc soutenue, mais le statut reste mixte/conditionnel en raison des exceptions et de la formulation juridique plus large."
       },
       "finalizable": true
+    },
+    {
+      "recordId": "q39-party-10-20261008-01",
+      "questionId": "q39",
+      "partyId": "party-10",
+      "proposedStatus": "documented_opposition",
+      "sourceUrl": "https://conservateur.quebec/wp-content/uploads/2026/09/Plateforme_ImmigrationV4pdf-1.pdf",
+      "sourceTitle": "Parti conservateur du Québec — Plateforme immigration 2026 : Choisir mieux, intégrer plus",
+      "sourceDate": "2026-09",
+      "checkedAt": "2026-10-08",
+      "sourceType": "official_party_2026_policy_document",
+      "evidenceSummary": "La plateforme immigration 2026 du Parti conservateur du Québec affirme vouloir augmenter la part de l’immigration économique et réduire les programmes non économiques. Elle propose explicitement de réduire la part des réfugiés et du regroupement familial dans la sélection permanente, en faisant passer cette composante d’une moyenne d’environ 20 000 à 10 000 personnes par année.",
+      "rationale": "q39 propose d’augmenter la part de l’immigration permanente attribuée aux catégories humanitaires et au regroupement familial. La plateforme du PCQ demande explicitement l’inverse : réduire cette part et diminuer de moitié environ le volume annuel correspondant. La direction d’opposition est donc directe et sans ambiguïté.",
+      "confidence": "high",
+      "firstReview": {
+        "status": "completed",
+        "method": "exact_question_match_inverse_direction_explicit_share_reduction"
+      },
+      "secondIndependentReview": {
+        "status": "completed",
+        "reviewer": "ChatGPT — revue documentaire indépendante 2 (plateforme officielle 2026)",
+        "reviewedAt": "2026-10-08",
+        "method": "fresh_official_source_recheck_exact_question_match",
+        "result": "confirmed",
+        "reviewNote": "La seconde lecture confirme que le document utilise explicitement l’expression « réduire la part des réfugiés et du regroupement familial dans la sélection permanente » et chiffre cette réduction d’environ 20 000 à 10 000 par année. Il s’agit de l’inverse exact de q39."
+      },
+      "finalizable": true
     }
   ],
   "researchCoverage": [
@@ -5615,7 +5642,7 @@
     },
     {
       "batchId": "immigration-q37-q40-20261006",
-      "checkedAt": "2026-10-07",
+      "checkedAt": "2026-10-08",
       "questionIds": [
         "q37",
         "q38",
@@ -5651,10 +5678,10 @@
       "candidateCountByQuestion": {
         "q37": 2,
         "q38": 2,
-        "q39": 1,
+        "q39": 2,
         "q40": 2
       },
-      "note": "Recherche reprise le 7 octobre 2026 selon le même standard pour les 22 formations. q37 conserve une position mixte/conditionnelle et une position ambiguë; q38 conserve deux appuis directs; q40 conserve deux appuis directs. q39 compte désormais une correspondance ambiguë du Parti Québécois : son plan traite directement du volume permanent, réduit une composante économique, accélère la réunification familiale et fixe une cible pour l’asile, sans proposer explicitement d’augmenter la part relative des catégories humanitaires et familiales.",
+      "note": "Recherche renforcée le 8 octobre 2026 selon le même standard pour les 22 formations. q37 conserve une position mixte/conditionnelle et une position ambiguë; q38 conserve deux appuis directs; q40 conserve deux appuis directs. q39 compte maintenant deux positions : le Parti Québécois demeure ambigu faute d’une hausse explicite de la part relative des catégories humanitaires et familiales, tandis que le Parti conservateur du Québec s’oppose directement à q39 en proposant explicitement de réduire la part des réfugiés et du regroupement familial dans la sélection permanente, d’environ 20 000 à 10 000 par année.",
       "evidenceRecordIds": [
         "q37-party-21-20261006-01",
         "q37-party-20-20261006-02",
@@ -5662,12 +5689,13 @@
         "q38-party-05-20261006-02",
         "q40-party-17-20261006-01",
         "q40-party-05-20261006-02",
-        "q39-party-17-20261007-01"
+        "q39-party-17-20261007-01",
+        "q39-party-10-20261008-01"
       ],
       "finalizedCountByQuestion": {
         "q37": 2,
         "q38": 2,
-        "q39": 1,
+        "q39": 2,
         "q40": 2
       }
     },
