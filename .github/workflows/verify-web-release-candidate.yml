@@ -48,6 +48,13 @@ jobs:
         with:
           python-version: '3.12.14'
 
+      - name: Tester le validateur candidat et ses auto-tests de non-regression
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_site.py
+
       - name: Garantir les règles jeunesse et le formulaire personnel désactivé
         working-directory: candidate
         shell: bash
