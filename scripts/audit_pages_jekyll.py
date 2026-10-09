@@ -29,11 +29,39 @@ BYTE_IDENTICAL_FILES = {
     'assets/js/site.js', 'compte/index.html',
     'projets/sinjira/index.html', 'projets/projet-nova/index.html',
 }
-# Ces documents sont des références institutionnelles déjà destinées au public.
-PUBLIC_REFERENCE_PREFIXES = (
-    'projets/projet-nova/official/reference/',
-    'projets/projet-nova/official/versions/',
-)
+# Gel des 30 documents déjà servis dans official/ : toute addition exige une revue explicite.
+PUBLIC_REFERENCE_FILES = frozenset({
+    "projets/projet-nova/official/reference/architecture-numerique-interoperabilite-reversibilite.md",
+    "projets/projet-nova/official/reference/corpus.md",
+    "projets/projet-nova/official/reference/cybersecurite-resilience-continuite.md",
+    "projets/projet-nova/official/reference/finances.md",
+    "projets/projet-nova/official/reference/identite-numerique-vie-privee.md",
+    "projets/projet-nova/official/reference/programme.md",
+    "projets/projet-nova/official/reference/statuts.md",
+    "projets/projet-nova/official/versions/V316/README.md",
+    "projets/projet-nova/official/versions/V316/V316_FINAL_STATE_SUMMARY.md",
+    "projets/projet-nova/official/versions/V316/V316_IDENTITE_NUMERIQUE_VIE_PRIVEE_ACCES_AUDIT.md",
+    "projets/projet-nova/official/versions/V317/README.md",
+    "projets/projet-nova/official/versions/V317/V317_CYBERSECURITE_RESILIENCE_CONTINUITE.md",
+    "projets/projet-nova/official/versions/V317/V317_FINAL_STATE_SUMMARY.md",
+    "projets/projet-nova/official/versions/V318/README.md",
+    "projets/projet-nova/official/versions/V318/V318_ARCHITECTURE_NUMERIQUE_INTEROPERABILITE_REVERSIBILITE.md",
+    "projets/projet-nova/official/versions/V318/V318_FINAL_STATE_SUMMARY.md",
+    "projets/projet-nova/official/versions/V319/README.md",
+    "projets/projet-nova/official/versions/V319/V319_FINAL_STATE_SUMMARY.md",
+    "projets/projet-nova/official/versions/V319/V319_SOUVERAINETE_DONNEES_ARCHIVES_REPRODUCTIBILITE.md",
+    "projets/projet-nova/official/versions/V320/README.md",
+    "projets/projet-nova/official/versions/V320/V320_FINAL_STATE_SUMMARY.md",
+    "projets/projet-nova/official/versions/V320/V320_SEPARATION_DEPENSES_PUBLIQUES_SECTEUR_PRIVE.md",
+    "projets/projet-nova/official/versions/V320/V320_VALIDATION_REPORT.md",
+    "projets/projet-nova/official/versions/V321/README.md",
+    "projets/projet-nova/official/versions/V321/V321_AUTONOMIE_OPERATIONNELLE_PUBLIQUE_CAPACITES_CRITIQUES_CONTINUITE.md",
+    "projets/projet-nova/official/versions/V321/V321_FINAL_STATE_SUMMARY.md",
+    "projets/projet-nova/official/versions/V321/V321_VALIDATION_REPORT.md",
+    "projets/projet-nova/official/versions/V322/README.md",
+    "projets/projet-nova/official/versions/V322/V322_FINAL_STATE_SUMMARY.md",
+    "projets/projet-nova/official/versions/V322/V322_VALIDATION_REPORT.md",
+})
 
 SAFE_ROOT_TEXT = {'robots.txt', 'humans.txt', 'ads.txt'}
 
@@ -111,7 +139,7 @@ def audit_output(root: Path, destination: Path) -> list[str]:
         if path.is_symlink():
             errors.append(f'Symlink interdit dans le publish: {rel}')
         if path.is_file() and path.suffix.lower() in TECHNICAL_SUFFIXES:
-            if not (path.suffix.lower() == '.md' and rel.startswith(PUBLIC_REFERENCE_PREFIXES)):
+            if not (path.suffix.lower() == '.md' and rel in PUBLIC_REFERENCE_FILES):
                 errors.append(f'Source technique publiee: {rel}')
     if (root / '.well-known/security.txt').is_file() and not (destination / '.well-known/security.txt').is_file():
         errors.append('security.txt source present mais absent du build')
@@ -153,6 +181,11 @@ def self_test() -> None:
         (out / 'index.html').write_text('mutation', 'utf-8')
         assert audit_output(root, out), 'Transformation HTML non detectee'
         (out / 'index.html').write_text('fixture', 'utf-8')
+        extra = out / 'projets/projet-nova/official/versions/non-approuve.md'
+        extra.parent.mkdir(parents=True, exist_ok=True)
+        extra.write_text('nouveau', 'utf-8')
+        assert audit_output(root, out), 'Nouveau document officiel non approuve'
+        extra.unlink()
         (root / '.nojekyll').touch()
         assert audit_source(root), 'Bypass .nojekyll non detecte'
         (root / '.nojekyll').unlink()
