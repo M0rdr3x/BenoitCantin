@@ -708,6 +708,10 @@ def validate_netlify_config() -> list[str]:
         rule = route_map.get(source)
         if rule is None or rule.get("to") != destination or rule.get("status") != 301:
             errors.append(f"Alias historique Netlify absent ou incorrect: {source}")
+        if destination.startswith("/projets/projet-nova/"):
+            destination_rel = Path(destination.lstrip("/"))
+            if not (ROOT / destination_rel).is_file() or not relative_path_allowed(destination_rel):
+                errors.append(f"Destination d'alias Nova absente du perimetre public: {source}")
 
     # Les 404 techniques doivent etre evalues avant toute redirection publique.
     if {str(rule.get("from")) for rule in redirects[:6]} != REQUIRED_TECHNICAL_404S:
