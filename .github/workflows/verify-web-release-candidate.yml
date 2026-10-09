@@ -181,8 +181,8 @@ jobs:
                   assert f"{source} {target} 301" in rules.splitlines(), f"Alias absent: {directory}: {source}"
               for source in REQUIRED_TECHNICAL_404S:
                   assert f"{source} /404.html 404!" in rules.splitlines(), f"404 absent: {directory}: {source}"
-              assert "/administration.html\\n  Cache-Control: no-store" in headers, "Cache admin ancien non protege"
-              assert "/administration.html\\n  Cache-Control: no-store\\n  X-Robots-Tag: noindex, nofollow, noarchive" in headers, "Robots admin ancien non proteges"
+              assert "/administration.html\n  Cache-Control: no-store" in headers, "Cache admin ancien non protege"
+              assert "/administration.html\n  Cache-Control: no-store\n  X-Robots-Tag: noindex, nofollow, noarchive" in headers, "Robots admin ancien non proteges"
               print(f"PASS: {directory}, 30 alias Nova, 2 alias admin, 6 404 et no-store.")
           PY
 
