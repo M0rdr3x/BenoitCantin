@@ -25,13 +25,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      SINJIRA_RELEASE_SHA: 35daef14e1aa99c3fe13074f110873ab3d3fcc6c
+      SINJIRA_RELEASE_SHA: a7ed9458ce3dcd24fbae31876347470fba52757e
     steps:
       - name: Récupérer le candidat exact dans un dossier isolé
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           repository: M0rdr3x/BenoitCantin
-          ref: 35daef14e1aa99c3fe13074f110873ab3d3fcc6c
+          ref: a7ed9458ce3dcd24fbae31876347470fba52757e
           path: candidate
           persist-credentials: false
 
@@ -79,6 +79,15 @@ jobs:
           assert "https://formspree.io/f/xdenkzrv" not in contact
           print("PASS: 13+, 11–12 exclus, formulaire désactivé, security.txt, déclaration BubblaV.")
           PY
+
+      - name: Verifier la syntaxe et les interactions du menu mobile et de l'assistant local
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/js/site.js
+          node --check scripts/test_site_navigation_release.cjs
+          node scripts/test_site_navigation_release.cjs
 
       - name: Auto-tester les sorties de build et les symlinks
         working-directory: candidate
