@@ -36,6 +36,7 @@ REQUIRED_TECHNICAL_404S = {
 }
 PRIVATE_RUNTIME_HEADER_PATHS = {
     "/compte/*",
+    "/administration.html",
     "/admin/*",
     "/Admin/*",
     "/app/*",
@@ -54,6 +55,42 @@ REQUIRED_ROBOTS_DISALLOWS = {
     "/docs/",
     "/scripts/",
 }
+
+# Alias historiques de Projet Nova conserves depuis la branche main.
+# Le builder doit refuser toute release qui omet un ancien lien stable.
+REQUIRED_NOVA_LEGACY_ALIASES = (
+    "accessibilite.html",
+    "actualites.html",
+    "code-conduite.html",
+    "comprendre-nova.html",
+    "comptabilite.html",
+    "constitution.html",
+    "documents.html",
+    "equipe.html",
+    "faq.html",
+    "formulaire-soutien.html",
+    "livre-nova.html",
+    "lois-administratives.html",
+    "lois-ordinaires.html",
+    "lois-organiques.html",
+    "manifeste.html",
+    "merci-formulaire.html",
+    "mises-a-jour.html",
+    "mission.html",
+    "participer.html",
+    "presse.html",
+    "programme.html",
+    "propositions.html",
+    "recrutement.html",
+    "registre-conformite.html",
+    "registre-rencontres.html",
+    "reglements.html",
+    "transition.html",
+    "transparence.html",
+    "vision.html",
+    "visionneuse.html",
+)
+
 
 PUBLIC_DIRS = (
     ".well-known",
@@ -652,6 +689,29 @@ def validate_netlify_config() -> list[str]:
                 errors.append(f"X-Robots-Tag {token} requis: {private_path}")
 
     redirects = data.get("redirects") or []
+    alias_expectations = {
+        f"/{name}": f"/projets/projet-nova/{name}"
+        for name in REQUIRED_NOVA_LEGACY_ALIASES
+    }
+    alias_expectations.update({
+        "/administration": "/admin/sinjira/",
+        "/administration.html": "/admin/sinjira/",
+    })
+    route_map: dict[str, dict] = {}
+    for rule in redirects:
+        source = str(rule.get("from") or "")
+        if source in route_map:
+            errors.append(f"Redirection Netlify dupliquee: {source}")
+        route_map[source] = rule
+
+    for source, destination in sorted(alias_expectations.items()):
+        rule = route_map.get(source)
+        if rule is None or rule.get("to") != destination or rule.get("status") != 301:
+            errors.append(f"Alias historique Netlify absent ou incorrect: {source}")
+
+    # Les 404 techniques doivent etre evalues avant toute redirection publique.
+    if {str(rule.get("from")) for rule in redirects[:6]} != REQUIRED_TECHNICAL_404S:
+        errors.append("Les six 404 techniques doivent preceder les alias publics.")
     for rule in redirects:
         unsupported = sorted(set(rule) & {"query", "conditions", "headers", "signed"})
         if unsupported:
