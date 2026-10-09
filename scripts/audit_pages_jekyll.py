@@ -22,6 +22,12 @@ REQUIRED_PUBLIC = {
     'projets/sinjira/index.html',
 }
 TECHNICAL_SUFFIXES = {'.md', '.py', '.sql', '.ts', '.tsx', '.toml', '.yml', '.yaml'}
+# Ces documents sont des références institutionnelles déjà destinées au public.
+PUBLIC_REFERENCE_PREFIXES = (
+    'projets/projet-nova/official/reference/',
+    'projets/projet-nova/official/versions/',
+)
+
 SAFE_ROOT_TEXT = {'robots.txt', 'humans.txt', 'ads.txt'}
 
 
@@ -63,6 +69,13 @@ def audit_source(root: Path) -> list[str]:
             errors.append(f'Repertoire technique non exclu: {directory}')
     if '.well-known' not in included:
         errors.append('Inclure explicitement .well-known pour les preuves de securite futures')
+    for group in ('assets/icons', 'projets/projet-nova'):
+        directory = root / group
+        if directory.is_dir():
+            for item in directory.iterdir():
+                if item.is_file() and item.suffix.lower() in TECHNICAL_SUFFIXES:
+                    if item.relative_to(root).as_posix() not in excluded:
+                        errors.append(f'Document technique non exclu: {item.relative_to(root).as_posix()}')
     for entry in root.iterdir():
         if entry.is_file() and (entry.suffix.lower() in TECHNICAL_SUFFIXES
                                or entry.suffix.lower() == '.txt' and entry.name not in SAFE_ROOT_TEXT):
@@ -86,7 +99,8 @@ def audit_output(root: Path, destination: Path) -> list[str]:
         if path.is_symlink():
             errors.append(f'Symlink interdit dans le publish: {rel}')
         if path.is_file() and path.suffix.lower() in TECHNICAL_SUFFIXES:
-            errors.append(f'Source technique publiee: {rel}')
+            if not (path.suffix.lower() == '.md' and rel.startswith(PUBLIC_REFERENCE_PREFIXES)):
+                errors.append(f'Source technique publiee: {rel}')
     if (root / '.well-known/security.txt').is_file() and not (destination / '.well-known/security.txt').is_file():
         errors.append('security.txt source present mais absent du build')
     if (destination / '.nojekyll').exists():
