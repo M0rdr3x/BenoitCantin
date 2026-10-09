@@ -711,16 +711,31 @@ def public_symlink_errors(root: Path = ROOT) -> list[str]:
     return sorted(set(errors))
 
 
+# Ces quatre dossiers sont explicitement réservés aux builds éphémères dans
+# les workflows CI, Netlify et Pages. Ne jamais assouplir ce garde-fou en
+# autorisant indistinctement les dossiers commençant par un underscore.
+SAFE_CHECKOUT_OUTPUT_DIRS = frozenset({
+    "_site",
+    "_preview_site",
+    "_pages_site",
+    "_containment_site",
+})
+
+
 def output_location_error(output: Path) -> str | None:
-    """N'effacer aucun fichier source de Git à travers --output."""
+    """Refuser tout effacement de source ; autoriser les seuls builds CI connus."""
     original = Path(os.path.abspath(output))
     if original.is_symlink():
         return f"Sortie symbolique refusée: {original}"
     resolved = original.resolve()
-    if resolved == ROOT or (ROOT in resolved.parents and resolved != DEFAULT_OUTPUT):
+    if resolved == ROOT or (
+        ROOT in resolved.parents
+        and (resolved.parent != ROOT or resolved.name not in SAFE_CHECKOUT_OUTPUT_DIRS)
+    ):
         return (
             f"Sortie située dans les sources Git interdite: {resolved}; "
-            f"seul {DEFAULT_OUTPUT} est admis dans le dépôt."
+            "seuls les quatre dossiers de build publics dédiés sont admis "
+            "directement à la racine du dépôt."
         )
     return None
 
@@ -749,11 +764,34 @@ def self_test_public_filesystem_boundary() -> list[str]:
         if output_location_error(base / "public") is not None:
             errors.append("Auto-test sécurité publication: sortie externe légitime refusée")
 
-    for path in (ROOT, ROOT / "assets", ROOT / "assets" / "danger", ROOT / "scripts"):
+    for dirname in sorted(SAFE_CHECKOUT_OUTPUT_DIRS):
+        path = ROOT / dirname
+        if output_location_error(path) is not None:
+            errors.append(f"Auto-test sécurité publication: build CI légitime refusé: {path}")
+
+    forbidden_outputs = (
+        ROOT,
+        ROOT / "assets",
+        ROOT / "assets" / "danger",
+        ROOT / "scripts",
+        ROOT / "_site" / "nested",
+        ROOT / "_site_old",
+        ROOT / "_preview_site-bak",
+        ROOT / "_containment_site_private",
+        ROOT / "_pages_site" / "nested",
+    )
+    for path in forbidden_outputs:
         if output_location_error(path) is None:
             errors.append(f"Auto-test sécurité publication: destruction non refusée: {path}")
-    if output_location_error(DEFAULT_OUTPUT) is not None:
-        errors.append("Auto-test sécurité publication: _site légitime refusé")
+
+    with tempfile.TemporaryDirectory(prefix="sinjira-output-symlink-") as tmp:
+        alias = ROOT / "_site"
+        # Ne pas manipuler un artefact déjà présent dans le checkout :
+        # tester un symlink temporaire à l'extérieur du dépôt uniquement.
+        outside_alias = Path(tmp) / "output"
+        outside_alias.symlink_to(ROOT / "scripts", target_is_directory=True)
+        if output_location_error(outside_alias) is None:
+            errors.append("Auto-test sécurité publication: alias symbolique non refusé")
     return errors
 
 
