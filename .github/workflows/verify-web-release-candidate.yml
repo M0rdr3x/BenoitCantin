@@ -25,13 +25,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      SINJIRA_RELEASE_SHA: a7ed9458ce3dcd24fbae31876347470fba52757e
+      SINJIRA_RELEASE_SHA: 7dcbafde12c52550ee4fed12abbd36262b2cd41b
     steps:
       - name: Récupérer le candidat exact dans un dossier isolé
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           repository: M0rdr3x/BenoitCantin
-          ref: a7ed9458ce3dcd24fbae31876347470fba52757e
+          ref: 7dcbafde12c52550ee4fed12abbd36262b2cd41b
           path: candidate
           persist-credentials: false
 
@@ -47,6 +47,13 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
+
+      - name: Tester le validateur candidat et ses auto-tests de non-regression
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_site.py
 
       - name: Garantir les règles jeunesse et le formulaire personnel désactivé
         working-directory: candidate
