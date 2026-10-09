@@ -1,0 +1,67 @@
+name: Web release — audit de divergence #449
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.github/workflows/audit-web-release-merge.yml'
+      - 'scripts/audit_web_release_merge.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-web-release-merge.yml'
+      - 'scripts/audit_web_release_merge.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-merge-audit-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  audit:
+    name: Auditer la divergence sans toucher aux branches
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Récupérer le dépôt et l'historique Git complet
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Installer la version Python épinglée
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Tester la logique de comparaison
+        run: python3 scripts/audit_web_release_merge.py --self-test
+
+      - name: Lire uniquement les deux branches de référence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -c fetch.fsckObjects=true fetch --no-tags origin \
+            '+refs/heads/main:refs/remotes/origin/main' \
+            '+refs/heads/a1/web-release-transparency:refs/remotes/origin/a1/web-release-transparency'
+          git rev-parse --verify 'refs/remotes/origin/main^{commit}'
+          git rev-parse --verify 'refs/remotes/origin/a1/web-release-transparency^{commit}'
+
+      - name: Produire la matrice et le diagnostic merge-tree
+        run: python3 scripts/audit_web_release_merge.py --scan
+
+      - name: Indiquer la portée de l'audit
+        shell: bash
+        run: |
+          {
+            echo ""
+            echo "### Interprétation"
+            echo "Le rapport ne synchronise pas les branches."
+            echo "Les différences sur des pages ou des contrôles d'accès ne peuvent pas"
+            echo "être remplacées sans revue puis CI du candidat reconcilié."
+            echo "La migration fournisseur #450 demeure distincte."
+          } >> "$GITHUB_STEP_SUMMARY"
