@@ -785,9 +785,7 @@ def self_test_public_filesystem_boundary() -> list[str]:
             errors.append(f"Auto-test sécurité publication: destruction non refusée: {path}")
 
     with tempfile.TemporaryDirectory(prefix="sinjira-output-symlink-") as tmp:
-        alias = ROOT / "_site"
-        # Ne pas manipuler un artefact déjà présent dans le checkout :
-        # tester un symlink temporaire à l'extérieur du dépôt uniquement.
+        # Tester un alias externe sans manipuler l'artefact _site du dépôt.
         outside_alias = Path(tmp) / "output"
         outside_alias.symlink_to(ROOT / "scripts", target_is_directory=True)
         if output_location_error(outside_alias) is None:
