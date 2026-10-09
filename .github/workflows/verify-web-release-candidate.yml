@@ -1,0 +1,123 @@
+name: Web release — preuve isolée du candidat #449
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.github/workflows/verify-web-release-candidate.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-web-release-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-release-proof-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  candidate-build:
+    name: Valider la construction sans fusion ni publication
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      SINJIRA_RELEASE_SHA: d06cbd0b6a4da32abadd9ce7d010e6f8e97fae4b
+    steps:
+      - name: Récupérer le candidat exact dans un dossier isolé
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: M0rdr3x/BenoitCantin
+          ref: d06cbd0b6a4da32abadd9ce7d010e6f8e97fae4b
+          path: candidate
+          persist-credentials: false
+
+      - name: Vérifier que le checkout est le SHA candidat approuvé
+        shell: bash
+        run: |
+          set -euo pipefail
+          observed="$(git -C candidate rev-parse HEAD)"
+          test "$observed" = "$SINJIRA_RELEASE_SHA"
+          echo "CANDIDATE_SOURCE_SHA=$observed" >> "$GITHUB_ENV"
+
+      - name: Configurer Python pour les vérifications du candidat
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Auto-tester les sorties de build et les symlinks
+        working-directory: candidate
+        run: python3 scripts/build_netlify_public.py --self-test-security
+
+      - name: Construire et auditer les quatre contextes Netlify
+        working-directory: candidate
+        run: python3 scripts/build_netlify_public.py --check
+
+      - name: Construire et auditer le confinement Pages
+        working-directory: candidate
+        run: python3 scripts/build_netlify_public.py --check --security-containment
+
+      - name: Produire le confinement CI
+        working-directory: candidate
+        run: python3 scripts/build_netlify_public.py --output _containment_site --security-containment
+
+      - name: Produire le paquet Netlify production autonome
+        working-directory: candidate
+        run: python3 scripts/build_netlify_public.py --output _site --standalone-netlify
+
+      - name: Produire le paquet Netlify preview autonome
+        working-directory: candidate
+        env:
+          CONTEXT: deploy-preview
+        run: python3 scripts/build_netlify_public.py --output _preview_site --standalone-netlify
+
+      - name: Produire le paquet Pages isolé sans configuration Netlify
+        working-directory: candidate
+        run: python3 scripts/build_netlify_public.py --output _pages_site
+
+      - name: Vérifier les sorties et marqueurs exacts sans déploiement
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          sha = os.environ["SINJIRA_RELEASE_SHA"]
+          expected = {
+              "_site": ("production", True),
+              "_preview_site": ("preview", True),
+              "_pages_site": ("production", False),
+              "_containment_site": ("production", False),
+          }
+          for name, (context, netlify) in expected.items():
+              directory = Path(name)
+              assert directory.is_dir(), f"Artefact absent: {name}"
+              metadata = json.loads((directory / ".well-known/release.json").read_text())
+              assert metadata["source_sha"] == sha, f"SHA divergent: {name}"
+              assert metadata["context"] == context, f"Contexte divergent: {name}"
+              for technical in (".github", "docs", "scripts", "supabase", "tests", "mobile-native"):
+                  assert not (directory / technical).exists(), f"Surface exposée: {name}/{technical}"
+              for config in ("_headers", "_redirects"):
+                  assert (directory / config).exists() == netlify, f"Configuration incorrecte: {name}/{config}"
+              assert (directory / ".well-known/security.txt").is_file(), f"security.txt absent: {name}"
+              count = sum(1 for p in directory.rglob("*") if p.is_file())
+              assert count > 0
+              print(f"VALIDÉ {name}: {count} fichiers, SHA exact, aucun dossier technique")
+          PY
+
+      - name: Tracer explicitement les limites de cette preuve
+        shell: bash
+        run: |
+          {
+            echo "### Candidat web-only #449 — preuve de build isolé"
+            echo "- Source Git candidate exacte : \`$CANDIDATE_SOURCE_SHA\`"
+            echo "- Quatre builds contrôlés + self-tests sécurité + sorties CI vérifiées"
+            echo "- Aucun upload ni déploiement; aucun DNS, Netlify ou Pages modifié"
+            echo "- Cette preuve ne résout pas les conflits de merge ni le verrou #450"
+          } >> "$GITHUB_STEP_SUMMARY"
