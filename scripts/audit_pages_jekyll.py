@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import sys
 import tempfile
@@ -22,6 +23,12 @@ REQUIRED_PUBLIC = {
     'projets/sinjira/index.html',
 }
 TECHNICAL_SUFFIXES = {'.md', '.py', '.sql', '.ts', '.tsx', '.toml', '.yml', '.yaml'}
+# Jekyll ne doit pas transformer silencieusement les pages HTML et assets statiques.
+BYTE_IDENTICAL_FILES = {
+    'index.html', '404.html', 'CNAME', 'robots.txt', 'sitemap.xml',
+    'assets/js/site.js', 'compte/index.html',
+    'projets/sinjira/index.html', 'projets/projet-nova/index.html',
+}
 # Ces documents sont des références institutionnelles déjà destinées au public.
 PUBLIC_REFERENCE_PREFIXES = (
     'projets/projet-nova/official/reference/',
@@ -91,6 +98,11 @@ def audit_output(root: Path, destination: Path) -> list[str]:
     for public_file in sorted(REQUIRED_PUBLIC):
         if not (destination / public_file).is_file():
             errors.append(f'Page ou asset public disparu: {public_file}')
+    for public_file in sorted(BYTE_IDENTICAL_FILES):
+        original, built = root / public_file, destination / public_file
+        if original.is_file() and built.is_file():
+            if hashlib.sha256(original.read_bytes()).digest() != hashlib.sha256(built.read_bytes()).digest():
+                errors.append(f'Page/asset modifie par Jekyll: {public_file}')
     for bad in sorted(FORBIDDEN_DIRS | FORBIDDEN_PATHS):
         if (destination / bad).exists() or (destination / bad).is_symlink():
             errors.append(f'Fichier ou repertoire technique publie: {bad}')
@@ -129,6 +141,7 @@ def self_test() -> None:
             target = out / path
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text('www.example.test\n' if path == 'CNAME' else 'fixture', 'utf-8')
+        (root / 'index.html').write_text('fixture', 'utf-8')
         assert not audit_source(root), audit_source(root)
         assert not audit_output(root, out), audit_output(root, out)
         for bad in FORBIDDEN_PATHS:
@@ -137,6 +150,9 @@ def self_test() -> None:
             target.write_text('private', 'utf-8')
             assert audit_output(root, out), f'Publication interdite non détectée: {bad}'
             target.unlink()
+        (out / 'index.html').write_text('mutation', 'utf-8')
+        assert audit_output(root, out), 'Transformation HTML non detectee'
+        (out / 'index.html').write_text('fixture', 'utf-8')
         (root / '.nojekyll').touch()
         assert audit_source(root), 'Bypass .nojekyll non detecte'
         (root / '.nojekyll').unlink()
