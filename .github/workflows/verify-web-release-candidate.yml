@@ -25,13 +25,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      SINJIRA_RELEASE_SHA: 2196c83aba6265fe19f34acf257d2393313e2855
+      SINJIRA_RELEASE_SHA: 35daef14e1aa99c3fe13074f110873ab3d3fcc6c
     steps:
       - name: Récupérer le candidat exact dans un dossier isolé
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           repository: M0rdr3x/BenoitCantin
-          ref: 2196c83aba6265fe19f34acf257d2393313e2855
+          ref: 35daef14e1aa99c3fe13074f110873ab3d3fcc6c
           path: candidate
           persist-credentials: false
 
@@ -141,6 +141,49 @@ jobs:
               count = sum(1 for p in directory.rglob("*") if p.is_file())
               assert count > 0
               print(f"VALIDÉ {name}: {count} fichiers, SHA exact, aucun dossier technique")
+          PY
+
+      - name: Controler la compatibilite des 32 anciennes URL et 404 techniques
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import tomllib
+          from pathlib import Path
+          from scripts.build_netlify_public import REQUIRED_NOVA_LEGACY_ALIASES, REQUIRED_TECHNICAL_404S
+
+          config = tomllib.loads(Path("netlify.toml").read_text(encoding="utf-8"))
+          assert config["build"]["publish"] == "_site", "Un build Netlify ne doit jamais publier la racine"
+          routes = config["redirects"]
+          assert {r["from"] for r in routes[:6]} == REQUIRED_TECHNICAL_404S, "404 non prioritaires"
+          assert len(REQUIRED_NOVA_LEGACY_ALIASES) == 30, "Inventaire historique Nova incomplet"
+          expected = {
+              f"/{name}": f"/projets/projet-nova/{name}"
+              for name in REQUIRED_NOVA_LEGACY_ALIASES
+          }
+          expected.update({
+              "/administration": "/admin/sinjira/",
+              "/administration.html": "/admin/sinjira/",
+          })
+          actual = {r["from"]: r for r in routes}
+          assert len(actual) == len(routes), "Une redirection est definie plusieurs fois"
+          for source, target in expected.items():
+              entry = actual[source]
+              assert entry["to"] == target and entry["status"] == 301, source
+              if source.endswith(".html") and source != "/administration.html":
+                  assert Path(target.lstrip("/")).is_file(), f"Cible historique manquante: {source}"
+
+          for directory in ("_site", "_preview_site"):
+              rules = (Path(directory) / "_redirects").read_text(encoding="utf-8")
+              headers = (Path(directory) / "_headers").read_text(encoding="utf-8")
+              for source, target in expected.items():
+                  assert f"{source} {target} 301" in rules.splitlines(), f"Alias absent: {directory}: {source}"
+              for source in REQUIRED_TECHNICAL_404S:
+                  assert f"{source} /404.html 404!" in rules.splitlines(), f"404 absent: {directory}: {source}"
+              assert "/administration.html\n  Cache-Control: no-store" in headers, "Cache admin ancien non protege"
+              assert "/administration.html\n  Cache-Control: no-store\n  X-Robots-Tag: noindex, nofollow, noarchive" in headers, "Robots admin ancien non proteges"
+              print(f"PASS: {directory}, 30 alias Nova, 2 alias admin, 6 404 et no-store.")
           PY
 
       - name: Tracer explicitement les limites de cette preuve
