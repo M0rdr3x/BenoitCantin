@@ -119,9 +119,9 @@ def scan() -> int:
     report = [
         "## SINJIRA — audit de divergence du candidat web-only #449",
         "",
-        f"- Base commune : \`{base}\`",
-        f"- main : \`{main_sha}\`",
-        f"- Candidat #449 : \`{release_sha}\`",
+        f"- Base commune : `{base}`",
+        f"- main : `{main_sha}`",
+        f"- Candidat #449 : `{release_sha}`",
         f"- Chemins touchés des deux côtés : **{len(identical) + len(divergent)}**",
         f"- Déjà identiques : **{len(identical)}**",
         f"- Différents et nécessitant une décision : **{len(divergent)}**",
@@ -132,16 +132,16 @@ def scan() -> int:
         "### Chemins concurrents divergents — ne pas remplacer main automatiquement",
         "",
     ]
-    report.extend(f"- \`{path}\`" for path in divergent)
+    report.extend(f"- `{path}`" for path in divergent)
     report.extend(["", "### Déjà identiques sur les deux branches", ""])
-    report.extend(f"- \`{path}\`" for path in identical)
+    report.extend(f"- `{path}`" for path in identical)
     report.extend([
         "",
         "### Diagnostic natif Git (merge-tree --write-tree --name-only)",
         "",
-        "\`\`\`text",
+        "```text",
         excerpt,
-        "\`\`\`",
+        "```",
         "",
         "**Sécurité :** audit en lecture seule. Aucune écriture sur la branche,",
         "aucun déploiement ni remplacement de contenu. Les fichiers en divergence",
