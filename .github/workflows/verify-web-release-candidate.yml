@@ -25,13 +25,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      SINJIRA_RELEASE_SHA: 249442e2aac21c9e1b10ef2d3a4a4d41ed09e587
+      SINJIRA_RELEASE_SHA: 7dcbafde12c52550ee4fed12abbd36262b2cd41b
     steps:
       - name: Récupérer le candidat exact dans un dossier isolé
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           repository: M0rdr3x/BenoitCantin
-          ref: 249442e2aac21c9e1b10ef2d3a4a4d41ed09e587
+          ref: 7dcbafde12c52550ee4fed12abbd36262b2cd41b
           path: candidate
           persist-credentials: false
 
