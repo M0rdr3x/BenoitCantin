@@ -713,6 +713,40 @@ def main() -> int:
     # Verifier les ancres interpages, y compris les domaines officiels.
     errors.extend(cross_page_fragment_errors(page_parsers))
 
+    # Contrat de continuité des navigations : les pages de secours et de
+    # référence doivent servir le même script que l'accueil, sous peine de
+    # conserver les anciens comportements du menu après changement de page.
+    expected_site_script = {
+        '404.html', 'univers.html', 'compte/vie-privee.html',
+        'transparence-ia.html', 'confidentialite.html',
+        'gouvernance-vie-privee.html', 'avis-legal.html',
+    }
+    expected_nova_script = {
+        'projets/projet-nova/registre-rencontres.html',
+        'projets/projet-nova/visionneuse.html',
+        'projets/projet-nova/document.html',
+        'projets/projet-nova/code-conduite.html',
+        'projets/projet-nova/finances.html',
+    }
+    for rel, version, script_path in (
+        *((rel, '24.4.100', 'assets/js/site.js') for rel in sorted(expected_site_script)),
+        *((rel, '26.1.0', 'script.js') for rel in sorted(expected_nova_script)),
+    ):
+        page = ROOT / rel
+        if not page.is_file():
+            errors.append(f'Parcours public manquant: {rel}')
+            continue
+        html = page.read_text('utf-8', errors='replace')
+        script_sources = re.findall(r"""<script[^>]*src=["']([^"']+)["']""", html, re.I)
+        versions = [
+            src.split('?v=', 1)[1] if '?v=' in src else '(sans version)'
+            for src in script_sources if src.split('?', 1)[0].endswith(script_path)
+        ]
+        if versions != [version]:
+            errors.append(f'Navigation incohérente dans {rel}: version {version} attendue, trouvée {versions}')
+        if 'data-menu-toggle' not in html or 'data-main-nav' not in html:
+            errors.append(f'Navigation mobile absente sur le parcours public: {rel}')
+
     # Dépendances locales CSS : url(...)
     css_url_rx = re.compile(r'url\(\s*([\'\"]?)([^\'\")]+)\1\s*\)', re.I)
     for sheet in css:
