@@ -25,13 +25,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      SINJIRA_RELEASE_SHA: d06cbd0b6a4da32abadd9ce7d010e6f8e97fae4b
+      SINJIRA_RELEASE_SHA: 2196c83aba6265fe19f34acf257d2393313e2855
     steps:
       - name: Récupérer le candidat exact dans un dossier isolé
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           repository: M0rdr3x/BenoitCantin
-          ref: d06cbd0b6a4da32abadd9ce7d010e6f8e97fae4b
+          ref: 2196c83aba6265fe19f34acf257d2393313e2855
           path: candidate
           persist-credentials: false
 
@@ -47,6 +47,38 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
+
+      - name: Garantir les règles jeunesse et le formulaire personnel désactivé
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          legal = Path("avis-legal.html").read_text(encoding="utf-8")
+          privacy = Path("confidentialite.html").read_text(encoding="utf-8")
+          contact = Path("contact.html").read_text(encoding="utf-8")
+
+          assert "L’inscription libre-service est 13+" in legal, "Avis légal jeunesse obsolète"
+          assert "13 ans et plus" in privacy, "Politique jeunesse 13+ manquante"
+          for name, page in (("avis légal", legal), ("confidentialité", privacy)):
+              assert "11–12 ans" not in page, f"Ancien parcours 11–12 sur {name}"
+
+          assert '<fieldset id="contact-personal-fields" disabled' in contact, (
+              "La saisie du formulaire personnel doit être désactivée côté HTML"
+          )
+          assert "PERSONAL_ENDPOINT=''" in contact, (
+              "Le formulaire personnel ne doit contenir aucun endpoint actif"
+          )
+          assert 'data-personal-formspree-state="pending-separate-endpoint"' in contact
+          assert 'href="/.well-known/security.txt"' in contact
+          assert "Sécurité / vulnérabilité" in contact
+          assert "BubblaV" in privacy
+          assert "Le widget fournisseur est actuellement désactivé." in privacy
+          assert "https://formspree.io/f/xdenkzrv" not in contact
+          print("PASS: 13+, 11–12 exclus, formulaire désactivé, security.txt, déclaration BubblaV.")
+          PY
 
       - name: Auto-tester les sorties de build et les symlinks
         working-directory: candidate
