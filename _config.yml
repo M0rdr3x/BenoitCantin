@@ -169,3 +169,7 @@ exclude:
 
 # Les surfaces publiques HTML/assets, robots.txt, sitemap.xml, CNAME et manifests restent publiées.
 # La cible finale demeure l’artefact web isolé préparé par #449.
+
+# Les fichiers de securite dans les dossiers masques restent servis par Pages.
+include:
+  - ".well-known"
