@@ -68,6 +68,14 @@ def validate(workflow: str) -> list[str]:
          "Contrôle externe des chemins techniques absent")
     need("needs: deploy" in workflow,
          "Contrôle HTTP non dépendant du déploiement")
+    need("pages: read" in workflow and "GH_PAGES_READ_TOKEN" in workflow,
+         "Lecture de la configuration Pages manquante")
+    need('settings.get("build_type") != "workflow"' in workflow,
+         "Vérification API du mode GitHub Actions absente")
+    need('settings.get("cname") != "www.benoitcantin.com"' in workflow,
+         "Vérification API du domaine manquante")
+    need('settings.get("https_enforced") is not True' in workflow,
+         "Vérification API HTTPS forcé absente")
     need("pages: write" in workflow and "id-token: write" in workflow,
          "Identité Pages requise pour le seul job de publication")
     return errors
@@ -85,6 +93,8 @@ def self_test(workflow: str) -> None:
         "Autorisation deploy perdue": workflow.replace("inputs.mode == 'PUBLISH' && inputs.confirm_actions_source == 'ACTIONS_ONLY'", "inputs.mode == 'PUBLISH'", 1),
         "Vérification live supprimée": workflow.replace("python3 scripts/verify_pages_live.py --check", "echo SKIP", 1),
         "Identifiant non immuable": workflow.replace(f"actions/deploy-pages@{DEPLOY_SHA}", "actions/deploy-pages@v5", 1),
+        "API mode Pages supprimée": workflow.replace('settings.get("build_type") != "workflow"', 'False', 1),
+        "HTTPS forcé non vérifié": workflow.replace('settings.get("https_enforced") is not True', 'False', 1),
     }
     for name, candidate in mutations.items():
         if candidate == workflow or not validate(candidate):
