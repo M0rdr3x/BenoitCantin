@@ -71,6 +71,12 @@ def validate(workflow: str) -> list[str]:
          "Téléversement de la racine du dépôt interdit")
     need("python3 scripts/audit_pages_jekyll.py --source . --built _site" in workflow,
          "Audit réel de l'artefact absent")
+    need("python3 scripts/audit_public_documents.py --self-test" in workflow,
+         "Autotests de documents publics absents")
+    need("python3 scripts/audit_public_documents.py --source ." in workflow,
+         "Contrôle des fichiers sources publics manquant")
+    need("python3 scripts/audit_public_documents.py --source . --built _site" in workflow,
+         "Contrôle PDF final avant publication manquant")
     need("python3 scripts/verify_pages_live.py --check" in workflow,
          "Contrôle externe des chemins techniques absent")
     need("needs: deploy" in workflow,
@@ -140,6 +146,10 @@ def self_test(workflow: str) -> None:
     smoke_summary_bash(workflow)
     mutations = {
         "Publication root": workflow.replace("path: _site", "path: .", 1),
+        "Audit PDF post-build supprimé": workflow.replace(
+            "python3 scripts/audit_public_documents.py --source . --built _site",
+            "echo DOCUMENTS_NON_AUDITES", 1,
+        ),
         "Ouverture sur push": workflow.replace("  workflow_dispatch:\n", "  push:\n    branches: [main]\n  workflow_dispatch:\n", 1),
         "SHA non vérifié": workflow.replace('test "$EXPECTED_SHA" = "$GITHUB_SHA"', "true", 1),
         "Confirmation disparue": workflow.replace('test "$SOURCE" = "ACTIONS_ONLY"', "true", 1),
