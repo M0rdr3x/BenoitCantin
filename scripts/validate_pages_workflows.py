@@ -46,9 +46,9 @@ def validate(workflow: str) -> list[str]:
          "Publication limitée à main")
     need("inputs.mode == 'PUBLISH' && inputs.confirm_actions_source == 'ACTIONS_ONLY'" in workflow,
          "Publication non conditionnée au double consentement")
-    need(workflow.count(f"uses: actions/checkout@{CHECKOUT_SHA}") == 2,
+    need(workflow.count(f"uses: actions/checkout@{CHECKOUT_SHA}") == 3,
          "Checkout non épinglé ou nombre d'étapes modifié")
-    need(workflow.count("persist-credentials: false") == 2,
+    need(workflow.count("persist-credentials: false") == 3,
          "Credentials checkout persistés")
     for tool, sha in {
         "actions/jekyll-build-pages": JEKYLL_SHA,
@@ -58,7 +58,7 @@ def validate(workflow: str) -> list[str]:
         need(workflow.count(f"uses: {tool}@{sha}") == 1,
              f"Action non épinglée ou manquante: {tool}")
     uses = re.findall(r"(?m)^\s*uses:\s+(\S+)\s*$", workflow)
-    need(len(uses) == 7, "Nombre d'actions externes inattendu")
+    need(len(uses) == 8, "Nombre d'actions externes inattendu")
     need(all(re.search(r"@[0-9a-f]{40}$", u) for u in uses),
          "Action non immuable détectée")
     need('      - name: Tracer l\'origine du publish' in workflow,
@@ -77,12 +77,18 @@ def validate(workflow: str) -> list[str]:
          "Contrôle HTTP non dépendant du déploiement")
     need("pages: read" in workflow and "GH_PAGES_READ_TOKEN" in workflow,
          "Lecture de la configuration Pages manquante")
-    need('settings.get("build_type") != "workflow"' in workflow,
-         "Vérification API du mode GitHub Actions absente")
-    need('settings.get("cname") != "www.benoitcantin.com"' in workflow,
-         "Vérification API du domaine manquante")
-    need('settings.get("https_enforced") is not True' in workflow,
-         "Vérification API HTTPS forcé absente")
+    need("python3 scripts/attest_pages_production.py --self-test" in workflow,
+         "Autotests de l'attestation de production manquants")
+    need(workflow.count("python3 scripts/attest_pages_production.py --check") == 2,
+         "L'attestation Pages doit précéder la construction ET le déploiement")
+    need(workflow.count("GH_PAGES_READ_TOKEN: ${{ github.token }}") == 2,
+         "Token Pages read-only requis pour les deux attestations")
+    deploy = workflow.split("\n  deploy:", 1)[-1].split("\n  verify-live:", 1)[0]
+    need(deploy != workflow, "Job de déploiement séparé manquant")
+    need("contents: read" in deploy and "pages: write" in deploy,
+         "Permissions du job de déploiement insuffisantes pour attester main")
+    need("Revérifier Pages et HEAD main immédiatement avant le déploiement" in deploy,
+         "Attestation post-approbation avant déploiement absente")
     need("pages: write" in workflow and "id-token: write" in workflow,
          "Identité Pages requise pour le seul job de publication")
     return errors
@@ -145,8 +151,17 @@ def self_test(workflow: str) -> None:
             'echo "- Répertoire upload-pages-artifact : `_site`"',
             1,
         ),
-        "API mode Pages supprimée": workflow.replace('settings.get("build_type") != "workflow"', 'False', 1),
-        "HTTPS forcé non vérifié": workflow.replace('settings.get("https_enforced") is not True', 'False', 1),
+        "Attestation avant build retirée": workflow.replace(
+            "run: python3 scripts/attest_pages_production.py --check", "run: echo SKIP", 1,
+        ),
+        "Attestation après approbation retirée": workflow.replace(
+            "Revérifier Pages et HEAD main immédiatement avant le déploiement",
+            "Etape de déploiement sans confirmation",
+            1,
+        ),
+        "Token Pages indisponible": workflow.replace(
+            "GH_PAGES_READ_TOKEN: ${{ github.token }}", "GH_PAGES_READ_TOKEN: ''", 1,
+        ),
     }
     for name, candidate in mutations.items():
         if candidate == workflow or not validate(candidate):
