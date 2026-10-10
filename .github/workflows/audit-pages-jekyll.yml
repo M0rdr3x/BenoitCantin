@@ -9,6 +9,9 @@ on:
       - '_config.yml'
       - 'scripts/audit_pages_jekyll.py'
       - '.github/workflows/audit-pages-jekyll.yml'
+      - '.github/workflows/deploy-pages-controlled.yml'
+      - 'scripts/verify_pages_live.py'
+      - 'scripts/validate_pages_workflows.py'
   workflow_dispatch:
 
 permissions:
@@ -40,6 +43,9 @@ jobs:
           set -euo pipefail
           python3 scripts/audit_pages_jekyll.py --self-test
           python3 scripts/audit_pages_jekyll.py --source .
+          python3 scripts/verify_pages_live.py --self-test
+          python3 scripts/validate_pages_workflows.py --self-test
+          python3 scripts/validate_pages_workflows.py
 
       - name: Compilation Jekyll comme GitHub Pages, sans déploiement
         uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697
