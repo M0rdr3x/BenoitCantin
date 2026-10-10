@@ -25,8 +25,20 @@ PRIVATE_ROUTES = (
     "/.github/workflows/validate-site.yml",
     "/docs/README.md",
     "/_config.yml",
+    "/assets/icons/README.md",
+    "/projets/projet-nova/netlify.toml",
+    "/projets/projet-nova/UPLOAD_GITHUB.md",
+    "/projets/projet-nova/SECURITY.md",
 )
 ERROR_CODES = {404, 410}
+# Un HTTP 200 HTML sur un JS, un sitemap ou un robots.txt masque une publication cassée.
+MIME_HINTS = {
+    "/robots.txt": ("text/plain",),
+    "/sitemap.xml": ("application/xml", "text/xml"),
+    "/assets/js/site.js": ("application/javascript", "text/javascript",
+                           "application/x-javascript", "application/ecmascript",
+                           "text/ecmascript"),
+}
 USER_AGENT = "SINJIRA-Pages-Publication-Audit/1.0"
 
 
@@ -91,9 +103,12 @@ def verify(base: str, getter: Callable[[str], Reply]) -> list[str]:
             continue
         if result.status != 200:
             errors.append(f"Parcours public {path}: HTTP {result.status} (200 attendu)")
-        if path.endswith(".html") or path.endswith("/") and path not in {"/assets/js/"}:
-            if result.status == 200 and "text/html" not in result.content_type.lower():
+        if result.status == 200:
+            content_type = result.content_type.split(";", 1)[0].strip().lower()
+            if path.endswith((".html", "/")) and content_type != "text/html":
                 errors.append(f"Parcours public {path}: type MIME HTML inattendu")
+            if path in MIME_HINTS and content_type not in MIME_HINTS[path]:
+                errors.append(f"Parcours public {path}: type MIME non conforme ({content_type or 'absent'})")
     for path in PRIVATE_ROUTES:
         try:
             result = getter(base + path)
@@ -110,7 +125,11 @@ def self_test() -> None:
         path = urlparse(url).path
         if path in PRIVATE_ROUTES:
             return Reply(404, content_type="text/html")
-        return Reply(200, content_type="text/html" if path.endswith("/") or path.endswith(".html") else "text/plain")
+        mime = "text/html" if path.endswith(("/", ".html")) else {
+            "/assets/js/site.js": "text/javascript",
+            "/sitemap.xml": "application/xml",
+        }.get(path, "text/plain")
+        return Reply(200, content_type=mime)
     assert not verify(BASE, fixture), verify(BASE, fixture)
     def leak(url: str) -> Reply:
         if url.endswith(PRIVATE_ROUTES[0]):
@@ -132,9 +151,24 @@ def self_test() -> None:
             return Reply(404, content_type="text/html")
         return fixture(url)
     assert any("projets/sinjira/" in e for e in verify(BASE, missing)), "Parcours public disparu"
+    for asset in MIME_HINTS:
+        def wrong_mime(url: str) -> Reply:
+            if url == BASE + asset:
+                return Reply(200, content_type="text/html")
+            return fixture(url)
+        assert any(asset in e and "MIME" in e for e in verify(BASE, wrong_mime)), (
+            f'Réponse HTML déguisée en ressource non détectée: {asset}'
+        )
+    def missing_mime(url: str) -> Reply:
+        if url == BASE + "/assets/js/site.js":
+            return Reply(200, content_type="")
+        return fixture(url)
+    assert any("site.js" in e and "MIME" in e for e in verify(BASE, missing_mime)), (
+        "Header Content-Type manquant non détecté"
+    )
     assert verify("http://www.benoitcantin.com", fixture), "HTTP en clair"
     assert verify("https://example.com", fixture), "Hôte tiers"
-    print("OK autotests HTTP : fuites, redirections, pertes de routes et origin imposée")
+    print("OK autotests HTTP : fuites, MIME, redirections, pertes de routes et origine imposée")
 
 
 def main() -> int:
