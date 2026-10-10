@@ -1,0 +1,152 @@
+name: Pages — déploiement isolé explicitement approuvé
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "DRY_RUN construit seulement; PUBLISH demande un déploiement explicitement confirmé"
+        required: true
+        type: choice
+        options:
+          - DRY_RUN
+          - PUBLISH
+        default: DRY_RUN
+      confirm_actions_source:
+        description: "Avant PUBLISH, Pages Settings doit utiliser GitHub Actions (pas Deploy from a branch)"
+        required: true
+        type: choice
+        options:
+          - NOT_CONFIRMED
+          - ACTIONS_ONLY
+        default: NOT_CONFIRMED
+      expected_sha:
+        description: "SHA complet (40 caractères) du commit main approuvé"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-production-controlled
+  cancel-in-progress: false
+
+jobs:
+  artifact:
+    name: Construire, auditer et téléverser uniquement _site
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout sans persistance des credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Vérifier SHA, source Pages et consentement explicite
+        shell: bash
+        env:
+          MODE: ${{ inputs.mode }}
+          SOURCE: ${{ inputs.confirm_actions_source }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::expected_sha invalide"; exit 1; }
+          test "$EXPECTED_SHA" = "$GITHUB_SHA" || { echo "::error::HEAD main a changé"; exit 1; }
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA" || exit 1
+          if [[ "$MODE" == "PUBLISH" ]]; then
+            test "$SOURCE" = "ACTIONS_ONLY" || { echo "::error::Configurer Settings > Pages > GitHub Actions avant publication"; exit 1; }
+          fi
+          test "$MODE" = "DRY_RUN" || test "$MODE" = "PUBLISH"
+          test ! -e .nojekyll
+          test -f _config.yml
+          test -f scripts/audit_pages_jekyll.py
+
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Vérifier le contrat Pages et ses auto-tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_pages_jekyll.py --self-test
+          python3 scripts/audit_pages_jekyll.py --source .
+          python3 scripts/verify_pages_live.py --self-test
+
+      - name: Construire Jekyll — pas la racine technique du dépôt
+        uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Refuser toute fuite de code et toute perte de route
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_pages_jekyll.py --source . --built _site
+          test -f _site/CNAME
+          test ! -e _site/.nojekyll
+          test ! -e _site/supabase
+          test ! -e _site/mobile-native
+          test ! -e _site/tests
+          test ! -e _site/scripts
+          test ! -e _site/docs
+          test ! -e _site/.github
+
+      - name: Télécharger uniquement l’artefact vérifié vers GitHub Actions
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        with:
+          path: _site
+
+      - name: Tracer l'origine du publish
+        shell: bash
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          {
+            echo "## Pages — préparation sans accès à la racine technique"
+            echo "- Source commit : `$GITHUB_SHA`"
+            echo "- Mode : `$MODE`"
+            echo "- Répertoire upload-pages-artifact : `_site` (jamais `.`)"
+            echo "- Une publication exige PUBLISH + ACTIONS_ONLY + SHA exact"
+            echo "- Aucun changement DNS et aucune activation de service externe"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Publier uniquement après consentement explicite
+    needs: artifact
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.mode == 'PUBLISH' && inputs.confirm_actions_source == 'ACTIONS_ONLY' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - name: Déployer l'artefact contrôlé
+        id: publish
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346
+
+  verify-live:
+    name: Refuser les fichiers techniques après la publication
+    needs: deploy
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'PUBLISH' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout pour le validateur HTTP (sans credentials)
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Vérifier la production HTTPS, les routes et les refus techniques
+        run: python3 scripts/verify_pages_live.py --check
