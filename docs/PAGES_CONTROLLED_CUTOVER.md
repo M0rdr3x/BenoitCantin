@@ -88,7 +88,7 @@ preuve automatique.
 Le job `deploy`, protégé par son environnement `github-pages`, appelle
 `actions/deploy-pages`. Il publie seulement l'artefact testé de `_site`.
 Le job final exécute **`python3 scripts/verify_pages_live.py --check`** :
-HTTPS, 8 chemins publics en 200 et 8 chemins techniques en **404/410 strict**.
+HTTPS, 8 chemins publics en 200 (types MIME HTML/JS/XML/TXT compris) et 12 chemins techniques en **404/410 strict**.
 
 Les probes contrôlent notamment :
 `/supabase/config.toml`, `/tests/e2e/test_public_site.py`,
