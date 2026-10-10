@@ -13,6 +13,7 @@ on:
       - 'scripts/verify_pages_live.py'
       - 'scripts/validate_pages_workflows.py'
       - 'scripts/attest_pages_production.py'
+      - 'scripts/audit_public_documents.py'
   workflow_dispatch:
 
 permissions:
@@ -46,6 +47,8 @@ jobs:
           python3 scripts/audit_pages_jekyll.py --source .
           python3 scripts/verify_pages_live.py --self-test
           python3 scripts/attest_pages_production.py --self-test
+          python3 scripts/audit_public_documents.py --self-test
+          python3 scripts/audit_public_documents.py --source .
           python3 scripts/validate_pages_workflows.py --self-test
           python3 scripts/validate_pages_workflows.py
 
@@ -60,4 +63,5 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/audit_pages_jekyll.py --source . --built _site
+          python3 scripts/audit_public_documents.py --source . --built _site
           echo "PASS: build Pages contrôlé, aucun artefact téléversé ou publié" >> "$GITHUB_STEP_SUMMARY"
