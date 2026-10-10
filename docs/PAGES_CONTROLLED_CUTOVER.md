@@ -144,7 +144,30 @@ avec vérification indépendante. L'ajout légitime d'un nouveau document
 gratuit exige une modification délibérée de l'allowlist et une revue CI.
 Cet inventaire ne révèle aucune information confidentielle de l'utilisateur.
 
-## 8. Frontière avec la refonte #449
+## 8. Registre des données JSON publiques
+
+L'inventaire réalisé sur le `main` exact du 10 octobre 2026 dénombre **78
+fichiers JSON** : 50 documents actuellement destinés à l'artefact statique
+(données de la Boussole électorale, publications/versions Nova, manifestes
+publics) et 28 fichiers de développement exclus (rapports techniques racine,
+configuration mobile native et contrat privé SINJIRA).
+
+Le registre `scripts/audit_public_json.py` verrouille ces deux ensembles :
+un JSON public doit exister dans le dépôt et dans `_site`, identique octet pour
+octet après compilation (SHA-256). Les 28 JSON techniques doivent être présents
+dans les exclusions Jekyll et absents de `_site`. Un JSON inconnu, y compris
+un document ajouté sous `projets/projet-nova/data/`, bloque la publication
+tant que son niveau d'accès n'est pas examiné. Les JSON futurs de
+`.well-known/` nécessaires à une publication atomique devront être ajoutés
+**expressément** au registre avec un contrôle du format de provenance.
+
+Ce verrou est conservateur : il ne change pas les données électorales ni leur
+contenu politique, ne modifie pas les interfaces, et ne fusionne pas #449.
+Il ne garantit pas que les 50 JSON sont exempts de toute donnée à caractère
+personnel : leur contenu nécessite une revue documentaire séparée avant la
+bascule de l'hébergement.
+
+## 9. Frontière avec la refonte #449
 
 Ce confinement est un **correctif transitoire**. Il n'apporte pas les entêtes
 `_headers` ni les redirections `_redirects` de Netlify, et ne valide pas les
