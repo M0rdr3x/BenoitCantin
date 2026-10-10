@@ -48,7 +48,9 @@ def paths_by_suffix(root: Path, suffixes: set[str] | frozenset[str]) -> set[str]
     return {
         path.relative_to(root).as_posix()
         for path in root.rglob("*")
-        if path.is_file() and path.suffix.lower() in suffixes
+        if (path.is_file()
+            and path.suffix.lower() in suffixes
+            and not any(part in {".git", "_site"} for part in path.relative_to(root).parts[:-1]))
     }
 
 
