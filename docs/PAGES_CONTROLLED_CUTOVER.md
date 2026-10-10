@@ -78,6 +78,13 @@ résultats dry-run, lancer **manuellement** :
 - `confirm_actions_source=ACTIONS_ONLY`;
 - `expected_sha` = SHA complet exact, inchangé, de `main`.
 
+**Garde automatique supplémentaire :** avant tout mode `PUBLISH`, le job lit
+l’API GitHub Pages avec `pages: read`, sans modifier la configuration.
+La publication est interdite si `build_type` n’est pas `workflow`, si le
+`CNAME` diffère de `www.benoitcantin.com`, si `https_enforced` n’est pas vrai
+ou si l’API est inaccessible. Le consentement manuel ne remplace pas cette
+preuve automatique.
+
 Le job `deploy`, protégé par son environnement `github-pages`, appelle
 `actions/deploy-pages`. Il publie seulement l'artefact testé de `_site`.
 Le job final exécute **`python3 scripts/verify_pages_live.py --check`** :
