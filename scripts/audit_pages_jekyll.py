@@ -180,11 +180,29 @@ def audit_output(root: Path, destination: Path) -> list[str]:
             errors.append(f'Fichier ou repertoire technique publie: {bad}')
     for path in destination.rglob('*'):
         rel = path.relative_to(destination).as_posix()
+        parts = path.relative_to(destination).parts
+        # Toute racine cachée est interdite sauf le répertoire standard de sécurité.
+        # Les fichiers cachés dans .well-known le sont aussi.
+        if any(part.startswith('.') for part in parts) and not (
+                parts[0] == '.well-known'
+                and all(not part.startswith('.') for part in parts[1:])):
+            errors.append(f'Fichier ou répertoire caché inattendu dans le build: {rel}')
         if path.is_symlink():
             errors.append(f'Symlink interdit dans le publish: {rel}')
         if path.is_file() and forbidden_file(path.name):
             if not (path.suffix.lower() == '.md' and rel in PUBLIC_REFERENCE_FILES):
                 errors.append(f'Source technique publiee: {rel}')
+    # Le contrat autorise ces 30 références publiques préexistantes : aucune
+    # suppression ni altération ne peut être acceptée à l'insu du propriétaire.
+    for official_rel in sorted(PUBLIC_REFERENCE_FILES):
+        original = root / official_rel
+        built = destination / official_rel
+        if not original.is_file():
+            errors.append(f'Référence publique approuvée absente du dépôt: {official_rel}')
+        elif not built.is_file():
+            errors.append(f'Référence publique approuvée absente du build: {official_rel}')
+        elif hashlib.sha256(original.read_bytes()).digest() != hashlib.sha256(built.read_bytes()).digest():
+            errors.append(f'Référence publique approuvée altérée: {official_rel}')
     if (root / '.well-known/security.txt').is_file() and not (destination / '.well-known/security.txt').is_file():
         errors.append('security.txt source present mais absent du build')
     if (destination / '.nojekyll').exists():
@@ -214,6 +232,11 @@ def self_test() -> None:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text('www.example.test\n' if path == 'CNAME' else 'fixture', 'utf-8')
         (root / 'index.html').write_text('fixture', 'utf-8')
+        for rel in PUBLIC_REFERENCE_FILES:
+            for base in (root, out):
+                reference = base / rel
+                reference.parent.mkdir(parents=True, exist_ok=True)
+                reference.write_text('document vérifié', 'utf-8')
         assert not audit_source(root), audit_source(root)
         assert not audit_output(root, out), audit_output(root, out)
         for bad in FORBIDDEN_PATHS:
@@ -229,6 +252,32 @@ def self_test() -> None:
                 except OSError:
                     break
                 parent = parent.parent
+        for internal in ('.git/config', 'assets/.private/index.html',
+                         'assets/.DS_Store', '.well-known/.private'):
+            hidden = out / internal
+            hidden.parent.mkdir(parents=True, exist_ok=True)
+            hidden.write_text('interdit', 'utf-8')
+            assert any(internal in msg for msg in audit_output(root, out)), (
+                f'Répertoire ou fichier caché non détecté: {internal}'
+            )
+            hidden.unlink()
+            current = hidden.parent
+            while current != out:
+                try:
+                    current.rmdir()
+                except OSError:
+                    break
+                current = current.parent
+        reference_rel = sorted(PUBLIC_REFERENCE_FILES)[0]
+        approved = out / reference_rel
+        approved.unlink()
+        assert any(reference_rel in error and 'absente du build' in error
+                   for error in audit_output(root, out)), 'Document officiel disparu non détecté'
+        approved.write_text('version altérée', 'utf-8')
+        assert any(reference_rel in error and 'altérée' in error
+                   for error in audit_output(root, out)), 'Document officiel altéré non détecté'
+        approved.write_text('document vérifié', 'utf-8')
+        assert not audit_output(root, out), audit_output(root, out)
         (out / 'index.html').write_text('mutation', 'utf-8')
         assert audit_output(root, out), 'Transformation HTML non detectee'
         (out / 'index.html').write_text('fixture', 'utf-8')
