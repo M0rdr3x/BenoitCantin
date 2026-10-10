@@ -10,6 +10,7 @@ exclude:
   - "projets/projet-nova/ADMINISTRATION_FORMULAIRES.md"
   - "projets/projet-nova/PROPOSITIONS_PUBLIQUES.md"
   - "projets/projet-nova/SECURITY.md"
+  - "projets/sinjira/codex/livre-i-delivery-contract.json"
   - "projets/projet-nova/netlify.toml"
   - "projets/projet-nova/DOCUMENT_CONTROL.md"
   - "projets/projet-nova/METHODOLOGIE_BOUSSOLE.md"
