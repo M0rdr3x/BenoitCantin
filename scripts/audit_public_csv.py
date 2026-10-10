@@ -77,8 +77,8 @@ APPROVED_PUBLIC_CSV = frozenset({
 def files(root: Path) -> set[str]:
     return {
         p.relative_to(root).as_posix()
-        for p in root.rglob("*.csv")
-        if p.is_file() and not p.is_symlink()
+        for p in root.rglob("*")
+        if p.is_file() and p.suffix.lower() == ".csv" and not p.is_symlink()
         and not any(part in {".git", "_site"} for part in p.relative_to(root).parts[:-1])
     }
 
@@ -151,6 +151,12 @@ def self_test() -> None:
         leaked.write_text("identifiant,nom\n1,EXEMPLE\n", "utf-8")
         assert any(new_path in e for e in audit(source, built)), "CSV inédit publié non détecté"
         leaked.unlink()
+        uppercase = source / "projets/projet-nova/data/EXPORT-CITOYENS.CSV"
+        uppercase.write_text("identifiant,nom\n1,EXEMPLE\n", "utf-8")
+        assert any("EXPORT-CITOYENS.CSV" in issue for issue in audit(source, None)), (
+            "Extension CSV majuscule ignorée"
+        )
+        uppercase.unlink()
         settings = source / "_config.yml"
         settings.write_text('exclude:\n  - "projets/projet-nova/official"\n', "utf-8")
         assert any("approuvé exclu" in e for e in audit(source, None)), (
