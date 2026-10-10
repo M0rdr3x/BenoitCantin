@@ -77,6 +77,12 @@ def validate(workflow: str) -> list[str]:
          "Contrôle des fichiers sources publics manquant")
     need("python3 scripts/audit_public_documents.py --source . --built _site" in workflow,
          "Contrôle PDF final avant publication manquant")
+    need("python3 scripts/audit_public_json.py --self-test" in workflow,
+         "Autotests JSON publics manquants")
+    need("python3 scripts/audit_public_json.py --source ." in workflow,
+         "Contrôle des sources JSON publics manquant")
+    need("python3 scripts/audit_public_json.py --source . --built _site" in workflow,
+         "Audit des données JSON publiées manquant")
     need("python3 scripts/verify_pages_live.py --check" in workflow,
          "Contrôle externe des chemins techniques absent")
     need("needs: deploy" in workflow,
@@ -149,6 +155,10 @@ def self_test(workflow: str) -> None:
         "Audit PDF post-build supprimé": workflow.replace(
             "python3 scripts/audit_public_documents.py --source . --built _site",
             "echo DOCUMENTS_NON_AUDITES", 1,
+        ),
+        "Audit JSON post-build supprimé": workflow.replace(
+            "python3 scripts/audit_public_json.py --source . --built _site",
+            "echo JSON_NON_AUDITES", 1,
         ),
         "Ouverture sur push": workflow.replace("  workflow_dispatch:\n", "  push:\n    branches: [main]\n  workflow_dispatch:\n", 1),
         "SHA non vérifié": workflow.replace('test "$EXPECTED_SHA" = "$GITHUB_SHA"', "true", 1),
