@@ -78,12 +78,18 @@ résultats dry-run, lancer **manuellement** :
 - `confirm_actions_source=ACTIONS_ONLY`;
 - `expected_sha` = SHA complet exact, inchangé, de `main`.
 
-**Garde automatique supplémentaire :** avant tout mode `PUBLISH`, le job lit
-l’API GitHub Pages avec `pages: read`, sans modifier la configuration.
-La publication est interdite si `build_type` n’est pas `workflow`, si le
-`CNAME` diffère de `www.benoitcantin.com`, si `https_enforced` n’est pas vrai
-ou si l’API est inaccessible. Le consentement manuel ne remplace pas cette
-preuve automatique.
+**Double attestation automatique du commit approuvé :** avant de construire
+en mode `PUBLISH`, puis **juste avant `actions/deploy-pages`, après l'approbation
+de l'environnement `github-pages`**, le script
+`scripts/attest_pages_production.py` lit deux endpoints GitHub en lecture
+seule : paramètres Pages et référence `refs/heads/main`. Il exige
+`build_type=workflow`, `cname=www.benoitcantin.com`,
+`https_enforced=true` et surtout que le **SHA actuel de `main` soit
+strictement le SHA approuvé**. Une modification de la branche entre
+l'approbation et le déploiement annule l'exécution. Les erreurs API et
+réponses malformées sont bloquantes. Les attestations possèdent des autotests
+sans accès réseau. Le consentement manuel ne remplace jamais la preuve
+automatique.
 
 Le job `deploy`, protégé par son environnement `github-pages`, appelle
 `actions/deploy-pages`. Il publie seulement l'artefact testé de `_site`.
