@@ -22,7 +22,25 @@ REQUIRED_PUBLIC = {
     'assets/js/site.js', 'compte/index.html', 'projets/projet-nova/index.html',
     'projets/sinjira/index.html',
 }
-TECHNICAL_SUFFIXES = {'.md', '.py', '.sql', '.ts', '.tsx', '.toml', '.yml', '.yaml'}
+TECHNICAL_SUFFIXES = {
+    '.md', '.py', '.sql', '.ts', '.tsx', '.toml', '.yml', '.yaml',
+    '.sh', '.ps1', '.bat', '.pem', '.key', '.p12', '.pfx',
+    '.sqlite', '.sqlite3', '.db', '.log', '.bak', '.old', '.orig',
+    '.lock', '.ipynb', '.pyc', '.map',
+}
+# Certains secrets ont une extension JSON ou un nom spécial.
+SENSITIVE_FILE_NAMES = {
+    '.env', '.npmrc', '.netrc', '.htpasswd', 'id_rsa', 'id_ed25519',
+    'credentials.json', 'service-account.json', 'service_account.json',
+    'package.json', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml',
+}
+SENSITIVE_FILE_PREFIXES = ('.env.', '.htpasswd.')
+def forbidden_file(name: str) -> bool:
+    lower = name.lower()
+    return (Path(lower).suffix in TECHNICAL_SUFFIXES
+            or lower in SENSITIVE_FILE_NAMES
+            or lower.startswith(SENSITIVE_FILE_PREFIXES))
+
 # Jekyll ne doit pas transformer silencieusement les pages HTML et assets statiques.
 BYTE_IDENTICAL_FILES = {
     'index.html', '404.html', 'CNAME', 'robots.txt', 'sitemap.xml',
@@ -112,7 +130,7 @@ def audit_source(root: Path) -> list[str]:
                     if item.relative_to(root).as_posix() not in excluded:
                         errors.append(f'Document technique non exclu: {item.relative_to(root).as_posix()}')
     for entry in root.iterdir():
-        if entry.is_file() and (entry.suffix.lower() in TECHNICAL_SUFFIXES
+        if entry.is_file() and (forbidden_file(entry.name)
                                or entry.suffix.lower() == '.txt' and entry.name not in SAFE_ROOT_TEXT):
             if entry.name not in excluded and entry.name != '_config.yml':
                 errors.append(f'Source technique racine non exclue: {entry.name}')
@@ -138,7 +156,7 @@ def audit_output(root: Path, destination: Path) -> list[str]:
         rel = path.relative_to(destination).as_posix()
         if path.is_symlink():
             errors.append(f'Symlink interdit dans le publish: {rel}')
-        if path.is_file() and path.suffix.lower() in TECHNICAL_SUFFIXES:
+        if path.is_file() and forbidden_file(path.name):
             if not (path.suffix.lower() == '.md' and rel in PUBLIC_REFERENCE_FILES):
                 errors.append(f'Source technique publiee: {rel}')
     if (root / '.well-known/security.txt').is_file() and not (destination / '.well-known/security.txt').is_file():
@@ -186,6 +204,16 @@ def self_test() -> None:
         extra.write_text('nouveau', 'utf-8')
         assert audit_output(root, out), 'Nouveau document officiel non approuve'
         extra.unlink()
+        for technical in ('assets/.env.production', 'assets/credentials.json',
+                          'assets/public.pem', 'assets/data.sqlite',
+                          'assets/application.js.map'):
+            generated = out / technical
+            generated.parent.mkdir(parents=True, exist_ok=True)
+            generated.write_text('confidential', 'utf-8')
+            assert any(technical in msg for msg in audit_output(root, out)), (
+                f'Extension technique non detectee: {technical}'
+            )
+            generated.unlink()
         (root / '.nojekyll').touch()
         assert audit_source(root), 'Bypass .nojekyll non detecte'
         (root / '.nojekyll').unlink()
