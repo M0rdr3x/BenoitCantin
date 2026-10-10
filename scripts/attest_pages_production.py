@@ -11,7 +11,7 @@ import os
 import re
 import sys
 from typing import Callable
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 REPOSITORY = "M0rdr3x/BenoitCantin"
 PAGES_URL = "https://api.github.com/repos/M0rdr3x/BenoitCantin/pages"
@@ -57,6 +57,12 @@ def attest(repo: str, ref: str, dispatched: str, expected: str,
     return errors
 
 
+class RefuseRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Never forward a Pages token to a new host, even on a 302 response.
+        return None
+
+
 def github_get_json(url: str, token: str) -> object:
     if url not in {PAGES_URL, MAIN_REF_URL}:
         raise ValueError("Requête hors de l'API GitHub autorisée")
@@ -68,10 +74,11 @@ def github_get_json(url: str, token: str) -> object:
         "Authorization": "Bearer " + token,
         "User-Agent": "SINJIRA-Pages-ReadOnly-Attestation/1.0",
     })
-    # urlopen ne suit aucune redirection en situation normale pour ces endpoints.
-    # La connexion impose HTTPS et un host constant.
+    # Réponse GitHub non redirigée uniquement, aucun transfert du token à un tiers.
     import json
-    with urlopen(req, timeout=12) as response:
+    with build_opener(RefuseRedirect()).open(req, timeout=12) as response:
+        if response.geturl() != url:
+            raise ValueError("Redirection API interdite")
         if response.status != 200:
             raise ValueError("GitHub API HTTP non 200")
         return json.load(response)
