@@ -109,8 +109,8 @@ REQUIRED_INTERNAL_COUNT = 28
 def json_paths(root: Path) -> set[str]:
     return {
         path.relative_to(root).as_posix()
-        for path in root.rglob("*.json")
-        if path.is_file() and not path.is_symlink()
+        for path in root.rglob("*")
+        if path.is_file() and path.suffix.lower() == ".json" and not path.is_symlink()
         and not any(part in {".git", "_site"} for part in path.relative_to(root).parts[:-1])
     }
 
@@ -204,6 +204,12 @@ def self_test() -> None:
         target.write_text('{"not-approved":true}', "utf-8")
         assert any(unknown in msg for msg in audit(source, built))
         target.unlink()
+        uppercase = source / "projets/projet-nova/data/EXPORT-CITOYENS.JSON"
+        uppercase.write_text('{"inconnu":true}', "utf-8")
+        assert any("EXPORT-CITOYENS.JSON" in issue for issue in audit(source, None)), (
+            "Extension JSON majuscule ignorée"
+        )
+        uppercase.unlink()
 
         private = sorted(INTERNAL_JSON)[-1]
         target = built / private
