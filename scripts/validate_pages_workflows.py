@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
+import subprocess
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,6 +61,10 @@ def validate(workflow: str) -> list[str]:
     need(len(uses) == 7, "Nombre d'actions externes inattendu")
     need(all(re.search(r"@[0-9a-f]{40}$", u) for u in uses),
          "Action non immuable détectée")
+    need('      - name: Tracer l\'origine du publish' in workflow,
+         "Etape de traçabilité du publish manquante")
+    need("printf '%s\\n' '- Répertoire upload-pages-artifact : _site" in workflow,
+         "Résumé de publication doit utiliser printf et non des backticks")
     need(workflow.count("path: _site") == 1,
          "L'artefact Pages doit être téléversé depuis _site exactement")
     need(re.search(r"(?m)^\s+path:\s*\.\s*$", workflow) is None,
@@ -81,10 +88,50 @@ def validate(workflow: str) -> list[str]:
     return errors
 
 
+def smoke_summary_bash(workflow: str) -> None:
+    """Exécuter le vrai résumé du workflow en local avec un SHA fictif, sans GitHub."""
+    anchor = "      - name: Tracer l'origine du publish\\n"
+    if workflow.count(anchor) != 1:
+        raise RuntimeError("Etape de résumé absente ou dupliquée")
+    tail = workflow.split(anchor, 1)[1].split("\\n  deploy:", 1)[0]
+    start = "        run: |\\n"
+    if tail.count(start) != 1:
+        raise RuntimeError("Bloc Bash de résumé invalide")
+    raw_lines = tail.split(start, 1)[1].splitlines()
+    if not raw_lines or any(not ln.startswith("          ") for ln in raw_lines if ln.strip()):
+        raise RuntimeError("Indentation Bash incorrecte")
+    script = "\\n".join(ln[10:] if ln.startswith("          ") else "" for ln in raw_lines)
+    if "`" in script:
+        raise RuntimeError("Backticks interdits dans le résumé Bash")
+    env = os.environ.copy()
+    with tempfile.TemporaryDirectory() as directory:
+        out = Path(directory) / "summary.md"
+        env.update({
+            "GITHUB_SHA": "a" * 40,
+            "MODE": "DRY_RUN",
+            "GITHUB_STEP_SUMMARY": str(out),
+        })
+        run = subprocess.run(
+            ["bash"], input=script, text=True, capture_output=True,
+            env=env, timeout=8, check=False,
+        )
+        if run.returncode != 0 or run.stderr:
+            raise RuntimeError(
+                "Résumé Bash invalide: " + (run.stderr.strip() or str(run.returncode))
+            )
+        rendered = out.read_text("utf-8")
+        for expected in ("Source commit : " + "a" * 40,
+                         "Mode : DRY_RUN",
+                         "upload-pages-artifact : _site"):
+            if expected not in rendered:
+                raise RuntimeError("Résumé Bash incomplet: " + expected)
+
+
 def self_test(workflow: str) -> None:
     errors = validate(workflow)
     if errors:
         raise SystemExit("Workflow sain rejeté: " + "; ".join(errors))
+    smoke_summary_bash(workflow)
     mutations = {
         "Publication root": workflow.replace("path: _site", "path: .", 1),
         "Ouverture sur push": workflow.replace("  workflow_dispatch:\n", "  push:\n    branches: [main]\n  workflow_dispatch:\n", 1),
@@ -93,13 +140,18 @@ def self_test(workflow: str) -> None:
         "Autorisation deploy perdue": workflow.replace("inputs.mode == 'PUBLISH' && inputs.confirm_actions_source == 'ACTIONS_ONLY'", "inputs.mode == 'PUBLISH'", 1),
         "Vérification live supprimée": workflow.replace("python3 scripts/verify_pages_live.py --check", "echo SKIP", 1),
         "Identifiant non immuable": workflow.replace(f"actions/deploy-pages@{DEPLOY_SHA}", "actions/deploy-pages@v5", 1),
+        "Résumé Bash avec substitution": workflow.replace(
+            "printf '%s\\n' '- Répertoire upload-pages-artifact : _site (jamais la racine)'",
+            'echo "- Répertoire upload-pages-artifact : `_site`"',
+            1,
+        ),
         "API mode Pages supprimée": workflow.replace('settings.get("build_type") != "workflow"', 'False', 1),
         "HTTPS forcé non vérifié": workflow.replace('settings.get("https_enforced") is not True', 'False', 1),
     }
     for name, candidate in mutations.items():
         if candidate == workflow or not validate(candidate):
             raise SystemExit(f"Mutation interdite non détectée: {name}")
-    print(f"OK workflow Pages : {len(mutations)} régressions dangereuses détectées")
+    print(f"OK workflow Pages : {len(mutations)} régressions dangereuses détectées, résumé Bash exécuté")
 
 
 def main() -> int:
