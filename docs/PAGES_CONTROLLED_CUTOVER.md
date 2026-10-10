@@ -132,6 +132,11 @@ le dépôt ou dans le build. Les formats de livre électronique et archives
 (`.epub`, `.mobi`, `.azw3`, `.zip`, `.docx`, etc.) sont interdits tant
 qu'ils n'ont pas fait l'objet d'une politique de publication distincte.
 
+Le contrat technique `projets/sinjira/codex/livre-i-delivery-contract.json`
+reste dans le dépôt source de développement, mais est **explicitement exclu**
+de l'artefact Jekyll et refusé par l'auditeur. Le manifeste public
+`projets/sinjira/romans/livre-1-release.json` n'est pas modifié.
+
 **Aucune édition intégrale SINJIRA ne peut être hébergée statiquement** sur
 GitHub Pages. Les ventes et les accès authentifiés devront reposer sur
 un stockage privé, des droits serveur et un lien de livraison temporaire,
