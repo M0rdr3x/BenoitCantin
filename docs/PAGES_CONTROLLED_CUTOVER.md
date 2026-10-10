@@ -167,7 +167,21 @@ Il ne garantit pas que les 50 JSON sont exempts de toute donnée à caractère
 personnel : leur contenu nécessite une revue documentaire séparée avant la
 bascule de l'hébergement.
 
-## 9. Frontière avec la refonte #449
+## 9. Modèles CSV publics de Projet Nova
+
+Le dépôt `main` recensé le 10 octobre 2026 contient **57 CSV** : deux
+modèles de données Nova et 55 modèles de registres des versions officielles
+V316 à V322. Ils sont des modèles de publication, et non des exports de
+membres du site. `scripts/audit_public_csv.py` fixe leur liste exacte et
+compare les octets SHA-256 entre source et `_site`.
+
+Tout ajout de CSV sous `projets/projet-nova/data/`, `official/` ou dans
+une autre zone publiable est bloqué sans revue explicite. Un export réel
+d'utilisateurs ou de participants ne doit jamais être versé dans le dépôt
+public ni servi par un hébergeur statique. Des tests négatifs détectent la
+disparition, la transformation et l'inclusion d'un fichier non approuvé.
+
+## 10. Frontière avec la refonte #449
 
 Ce confinement est un **correctif transitoire**. Il n'apporte pas les entêtes
 `_headers` ni les redirections `_redirects` de Netlify, et ne valide pas les
