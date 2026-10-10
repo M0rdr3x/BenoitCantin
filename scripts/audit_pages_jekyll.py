@@ -16,6 +16,7 @@ FORBIDDEN_PATHS = {
     'mobile-native/App.tsx',
     'scripts/validate_site.py',
     '.github/workflows/validate-site.yml',
+    'projets/sinjira/codex/livre-i-delivery-contract.json',
 }
 REQUIRED_PUBLIC = {
     'index.html', '404.html', 'CNAME', 'robots.txt', 'sitemap.xml',
@@ -124,6 +125,9 @@ def audit_source(root: Path) -> list[str]:
             errors.append(f'Repertoire technique non exclu: {directory}')
     if '.well-known' not in included:
         errors.append('Inclure explicitement .well-known pour les preuves de securite futures')
+    private_contract = 'projets/sinjira/codex/livre-i-delivery-contract.json'
+    if private_contract not in excluded:
+        errors.append(f'Contrat de livraison privée non exclu: {private_contract}')
     for group in ('assets/icons', 'projets/projet-nova'):
         directory = root / group
         if directory.is_dir():
@@ -225,6 +229,7 @@ def self_test() -> None:
         out.mkdir()
         (root / '_config.yml').write_text(
             'exclude:\n' + ''.join(f'  - "{value}"\n' for value in sorted(FORBIDDEN_DIRS))
+            + '  - "projets/sinjira/codex/livre-i-delivery-contract.json"\n'
             + 'include:\n  - ".well-known"\n', 'utf-8')
         (root / 'CNAME').write_text('www.example.test\n', 'utf-8')
         for path in REQUIRED_PUBLIC:
