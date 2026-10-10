@@ -118,7 +118,28 @@ parcours authentifiés, la PWA/cache, les navigations et les redirections.
   URL, codes HTTP, horodatages, SHA, runs et mesures correctrices sans partager
   de secrets ni données personnelles.
 
-## 7. Frontière avec la refonte #449
+## 7. Documents publics approuvés et éditions intégrales
+
+Le dépôt `main` du 10 octobre 2026 contient **20 PDF** relevant de trois
+ensembles : documents citoyens de Projet Nova, documents gratuits SINJIRA
+(démo et questionnaires), et feuilles publiques du jeu Fracture du Réseau
+Mère. Leur liste **exacte** est gelée dans
+`scripts/audit_public_documents.py` ; chaque fichier doit être présent
+dans l'inventaire de source **et dans l'artefact de publication**, avec des
+octets identiques (SHA-256). Un nouveau PDF ou une édition payante non
+approuvée provoque un échec avant le déploiement, qu'il soit présent dans
+le dépôt ou dans le build. Les formats de livre électronique et archives
+(`.epub`, `.mobi`, `.azw3`, `.zip`, `.docx`, etc.) sont interdits tant
+qu'ils n'ont pas fait l'objet d'une politique de publication distincte.
+
+**Aucune édition intégrale SINJIRA ne peut être hébergée statiquement** sur
+GitHub Pages. Les ventes et les accès authentifiés devront reposer sur
+un stockage privé, des droits serveur et un lien de livraison temporaire,
+avec vérification indépendante. L'ajout légitime d'un nouveau document
+gratuit exige une modification délibérée de l'allowlist et une revue CI.
+Cet inventaire ne révèle aucune information confidentielle de l'utilisateur.
+
+## 8. Frontière avec la refonte #449
 
 Ce confinement est un **correctif transitoire**. Il n'apporte pas les entêtes
 `_headers` ni les redirections `_redirects` de Netlify, et ne valide pas les
