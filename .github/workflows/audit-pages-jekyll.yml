@@ -1,0 +1,75 @@
+name: Sécurité GitHub Pages — preuve Jekyll sans publication
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.nojekyll'
+      - '_config.yml'
+      - 'scripts/audit_pages_jekyll.py'
+      - '.github/workflows/audit-pages-jekyll.yml'
+      - '.github/workflows/deploy-pages-controlled.yml'
+      - 'scripts/verify_pages_live.py'
+      - 'scripts/validate_pages_workflows.py'
+      - 'scripts/attest_pages_production.py'
+      - 'scripts/audit_public_documents.py'
+      - 'scripts/audit_public_json.py'
+      - 'scripts/audit_public_csv.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-jekyll-audit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  jekyll-proof:
+    name: Construire puis auditer Pages sans déployer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout candidat pour preuve sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Python 3.12.14 pour les audits
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Autotests négatifs et vérification des exclusions sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_pages_jekyll.py --self-test
+          python3 scripts/audit_pages_jekyll.py --source .
+          python3 scripts/verify_pages_live.py --self-test
+          python3 scripts/attest_pages_production.py --self-test
+          python3 scripts/audit_public_documents.py --self-test
+          python3 scripts/audit_public_documents.py --source .
+          python3 scripts/audit_public_json.py --self-test
+          python3 scripts/audit_public_json.py --source .
+          python3 scripts/audit_public_csv.py --self-test
+          python3 scripts/audit_public_csv.py --source .
+          python3 scripts/validate_pages_workflows.py --self-test
+          python3 scripts/validate_pages_workflows.py
+
+      - name: Compilation Jekyll comme GitHub Pages, sans déploiement
+        uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Refuser l'exposition de sources techniques et la perte de routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_pages_jekyll.py --source . --built _site
+          python3 scripts/audit_public_documents.py --source . --built _site
+          python3 scripts/audit_public_json.py --source . --built _site
+          python3 scripts/audit_public_csv.py --source . --built _site
+          echo "PASS: build Pages contrôlé, aucun artefact téléversé ou publié" >> "$GITHUB_STEP_SUMMARY"
