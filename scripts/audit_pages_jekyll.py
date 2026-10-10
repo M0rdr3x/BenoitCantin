@@ -47,6 +47,8 @@ BYTE_IDENTICAL_FILES = {
     'assets/js/site.js', 'compte/index.html',
     'projets/sinjira/index.html', 'projets/projet-nova/index.html',
 }
+# Ces pages et ressources doivent traverser Jekyll sans disparition ni transformation.
+PUBLIC_BYTE_IDENTICAL_SUFFIXES = {'.html', '.js', '.css', '.svg', '.webmanifest'}
 # Gel des 30 documents déjà servis dans official/ : toute addition exige une revue explicite.
 PUBLIC_REFERENCE_FILES = frozenset({
     "projets/projet-nova/official/reference/architecture-numerique-interoperabilite-reversibilite.md",
@@ -144,11 +146,35 @@ def audit_output(root: Path, destination: Path) -> list[str]:
     for public_file in sorted(REQUIRED_PUBLIC):
         if not (destination / public_file).is_file():
             errors.append(f'Page ou asset public disparu: {public_file}')
-    for public_file in sorted(BYTE_IDENTICAL_FILES):
+    try:
+        excluded = config_values((root / '_config.yml').read_text('utf-8'), 'exclude')
+    except (OSError, ValueError) as exc:
+        return errors + [f'Configuration Jekyll illisible: {type(exc).__name__}']
+    expected_files = set(BYTE_IDENTICAL_FILES)
+    for source in root.rglob('*'):
+        if not source.is_file():
+            continue
+        relative = source.relative_to(root)
+        parts = relative.parts
+        if (any(part.startswith(('.', '_')) for part in parts)
+                or any(part in FORBIDDEN_DIRS for part in parts)
+                or relative.suffix.lower() not in PUBLIC_BYTE_IDENTICAL_SUFFIXES):
+            continue
+        rel = relative.as_posix()
+        if rel in excluded or any(rel.startswith(prefix.rstrip('/') + '/') for prefix in excluded):
+            continue
+        expected_files.add(rel)
+
+    # L'audit de la sortie ne doit pas valider un build amputé des pages secondaires.
+    for public_file in sorted(expected_files):
         original, built = root / public_file, destination / public_file
-        if original.is_file() and built.is_file():
-            if hashlib.sha256(original.read_bytes()).digest() != hashlib.sha256(built.read_bytes()).digest():
-                errors.append(f'Page/asset modifie par Jekyll: {public_file}')
+        if not original.is_file():
+            continue
+        if not built.is_file():
+            errors.append(f'Page/asset public manquant après Jekyll: {public_file}')
+            continue
+        if hashlib.sha256(original.read_bytes()).digest() != hashlib.sha256(built.read_bytes()).digest():
+            errors.append(f'Page/asset modifié par Jekyll: {public_file}')
     for bad in sorted(FORBIDDEN_DIRS | FORBIDDEN_PATHS):
         if (destination / bad).exists() or (destination / bad).is_symlink():
             errors.append(f'Fichier ou repertoire technique publie: {bad}')
@@ -199,6 +225,24 @@ def self_test() -> None:
         (out / 'index.html').write_text('mutation', 'utf-8')
         assert audit_output(root, out), 'Transformation HTML non detectee'
         (out / 'index.html').write_text('fixture', 'utf-8')
+        for target_name in ('projets/sinjira/secondaire.html', 'assets/js/secondaire.js',
+                            'assets/css/secondaire.css', 'assets/icons/secondaire.svg'):
+            source = root / target_name
+            built = out / target_name
+            source.parent.mkdir(parents=True, exist_ok=True)
+            built.parent.mkdir(parents=True, exist_ok=True)
+            source.write_text('ressource-source', 'utf-8')
+            assert any(target_name in msg for msg in audit_output(root, out)), (
+                f'Perte de ressource publique non détectée: {target_name}'
+            )
+            built.write_text('alteree', 'utf-8')
+            assert any(target_name in msg for msg in audit_output(root, out)), (
+                f'Modification de ressource publique non détectée: {target_name}'
+            )
+            built.write_text('ressource-source', 'utf-8')
+            assert not audit_output(root, out), audit_output(root, out)
+            source.unlink()
+            built.unlink()
         extra = out / 'projets/projet-nova/official/versions/non-approuve.md'
         extra.parent.mkdir(parents=True, exist_ok=True)
         extra.write_text('nouveau', 'utf-8')
