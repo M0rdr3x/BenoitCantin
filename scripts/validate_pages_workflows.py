@@ -90,17 +90,17 @@ def validate(workflow: str) -> list[str]:
 
 def smoke_summary_bash(workflow: str) -> None:
     """Exécuter le vrai résumé du workflow en local avec un SHA fictif, sans GitHub."""
-    anchor = "      - name: Tracer l'origine du publish\\n"
+    anchor = "      - name: Tracer l'origine du publish\n"
     if workflow.count(anchor) != 1:
         raise RuntimeError("Etape de résumé absente ou dupliquée")
-    tail = workflow.split(anchor, 1)[1].split("\\n  deploy:", 1)[0]
-    start = "        run: |\\n"
+    tail = workflow.split(anchor, 1)[1].split("\n  deploy:", 1)[0]
+    start = "        run: |\n"
     if tail.count(start) != 1:
         raise RuntimeError("Bloc Bash de résumé invalide")
     raw_lines = tail.split(start, 1)[1].splitlines()
     if not raw_lines or any(not ln.startswith("          ") for ln in raw_lines if ln.strip()):
         raise RuntimeError("Indentation Bash incorrecte")
-    script = "\\n".join(ln[10:] if ln.startswith("          ") else "" for ln in raw_lines)
+    script = "\n".join(ln[10:] if ln.startswith("          ") else "" for ln in raw_lines)
     if "`" in script:
         raise RuntimeError("Backticks interdits dans le résumé Bash")
     env = os.environ.copy()
