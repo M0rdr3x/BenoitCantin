@@ -222,6 +222,13 @@ def self_test() -> None:
             target.write_text('private', 'utf-8')
             assert audit_output(root, out), f'Publication interdite non détectée: {bad}'
             target.unlink()
+            parent = target.parent
+            while parent != out:
+                try:
+                    parent.rmdir()
+                except OSError:
+                    break
+                parent = parent.parent
         (out / 'index.html').write_text('mutation', 'utf-8')
         assert audit_output(root, out), 'Transformation HTML non detectee'
         (out / 'index.html').write_text('fixture', 'utf-8')
