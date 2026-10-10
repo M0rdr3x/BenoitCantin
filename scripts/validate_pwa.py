@@ -12,6 +12,13 @@ DOMAIN = 'www.benoitcantin.com'
 BASE_URL = f'https://{DOMAIN}'
 MANIFESTS = [ROOT / 'manifest.webmanifest', ROOT / 'site.webmanifest']
 REQUIRED_PUBLIC_ROUTES = {
+    f'{BASE_URL}/a-propos.html',
+    f'{BASE_URL}/transparence-ia.html',
+    f'{BASE_URL}/contact.html',
+    f'{BASE_URL}/univers.html',
+    f'{BASE_URL}/confidentialite.html',
+    f'{BASE_URL}/gouvernance-vie-privee.html',
+    f'{BASE_URL}/avis-legal.html',
     f'{BASE_URL}/projets/sinjira/communaute/',
     f'{BASE_URL}/projets/sinjira/monde-parallele/',
 }

@@ -16,6 +16,7 @@ SECRET_PATTERNS = [
     re.compile(r'\bsb_secret_[A-Za-z0-9._-]{20,}\b'),
 ]
 SKIP_SCHEMES = {'http', 'https', 'mailto', 'tel', 'javascript', 'data', 'blob'}
+OFFICIAL_HOSTS = {'www.benoitcantin.com', 'benoitcantin.com'}
 ACTIVE_SINJIRA_PREFIXES = ('projets/sinjira/', 'compte/', 'admin/')
 # L'application React Native possède sa propre validation TypeScript/Expo.
 # Le validateur du site statique ne doit donc pas interpréter ses imports npm
@@ -24,6 +25,40 @@ NATIVE_MOBILE_PREFIX = 'mobile-native/'
 # Ces deux fichiers gardent volontairement la casse legacy /Admin/ uniquement pour
 # protéger/réécrire d'anciens favoris et caches. Ils ne constituent pas des liens actifs.
 LEGACY_ADMIN_COMPAT_FILES = {'sw.js', 'assets/js/v24-3-3-runtime.js'}
+
+
+def srcset_urls(raw: str) -> list[str]:
+    """Extraire les URL de srcset sans casser une URL data: contenant une virgule.
+
+    Un candidat s'arrête à l'espace précédant son descripteur (480w, 2x),
+    ou à la virgule finale pour les candidats sans descripteur.
+    """
+    urls: list[str] = []
+    index = 0
+    while index < len(raw):
+        while index < len(raw) and (raw[index].isspace() or raw[index] == ','):
+            index += 1
+        start = index
+        while index < len(raw) and not raw[index].isspace():
+            index += 1
+        token = raw[start:index]
+        if not token:
+            break
+        urls.append(token.rstrip(','))
+        if token.endswith(','):
+            continue
+        parentheses = 0
+        while index < len(raw):
+            char = raw[index]
+            if char == '(':
+                parentheses += 1
+            elif char == ')' and parentheses:
+                parentheses -= 1
+            elif char == ',' and not parentheses:
+                index += 1
+                break
+            index += 1
+    return [url for url in urls if url]
 
 
 class Parser(HTMLParser):
@@ -42,6 +77,10 @@ class Parser(HTMLParser):
         d = dict(attrs)
         if d.get('id'):
             self.ids.append(str(d['id']))
+        # Les ancres HTML historiques <a name="..."> sont également
+        # des destinations valides pour les liens interpages.
+        if tag == 'a' and d.get('name'):
+            self.ids.append(str(d['name']))
 
         attr = {
             'a': 'href',
@@ -60,6 +99,15 @@ class Parser(HTMLParser):
             parsed = urlparse(raw)
             if tag == 'a' and parsed.fragment and not parsed.path and not parsed.scheme:
                 self.fragment_refs.append(unquote(parsed.fragment))
+
+        # Une image responsive peut disposer d'un src valide mais d'un srcset
+        # brisé pour mobile / haute densité. Chaque URL est une dépendance
+        # vérifiée au même titre que src, y compris sous <picture>/<source>.
+        candidates = ('srcset',) if tag in {'img', 'source'} else ('imagesrcset',) if tag == 'link' else ()
+        for candidate_attr in candidates:
+            if d.get(candidate_attr):
+                for candidate_url in srcset_urls(str(d[candidate_attr])):
+                    self.refs.append((tag, candidate_url))
 
         if tag == 'img' and 'alt' not in d:
             self.missing_alt.append(str(d.get('src') or '(source inconnue)'))
@@ -109,16 +157,24 @@ def is_external_or_special(raw: str) -> bool:
 
 
 def resolve(page: Path, raw: str) -> Path | None:
-    if not raw or raw.startswith(('#', 'mailto:', 'tel:', 'javascript:', 'data:', 'blob:', '//')):
+    """Résout aussi les URL absolues des domaines officiels vers le dépôt.
+
+    Les liens externes restent hors périmètre. Une URL qui cible un dossier
+    doit mener à son index.html : un dossier sans index n'est pas une page.
+    """
+    if not raw or raw.startswith('#'):
         return None
     u = urlparse(raw)
-    if u.scheme in {'http', 'https'}:
-        return None
+    if u.scheme or u.netloc:
+        if u.scheme.lower() not in {'', 'http', 'https'} or (u.hostname or '').lower() not in OFFICIAL_HOSTS:
+            return None
     path = unquote(u.path)
+    if not path and u.netloc:
+        path = '/'
     if not path:
         return None
     q = (ROOT / path.lstrip('/')) if path.startswith('/') else (page.parent / path)
-    if path.endswith('/'):
+    if path.endswith('/') or q.is_dir():
         q = q / 'index.html'
     if not q.exists() and q.suffix == '' and (q / 'index.html').exists():
         q = q / 'index.html'
@@ -142,8 +198,128 @@ def active_sinjira(rel: str) -> bool:
     return normalized.startswith(ACTIVE_SINJIRA_PREFIXES)
 
 
-def main() -> int:
+def cross_page_fragment_errors(pages: dict[Path, Parser]) -> list[str]:
+    """Détecte les sections supprimées sur une autre page publique.
+
+    Les URL externes restent hors périmètre; les deux domaines officiels
+    sont traités comme des liens locaux lorsqu'une page du dépôt existe.
+    Les ancres construites uniquement en JavaScript ne peuvent pas être
+    déduites du HTML statique : ce contrôle vise les ancres documentaires.
+    """
     errors: list[str] = []
+    for page, parsed_page in pages.items():
+        for tag, raw in parsed_page.refs:
+            if tag != 'a':
+                continue
+            url = urlparse(raw)
+            if not url.fragment or not url.path:
+                continue
+            if url.scheme or url.netloc:
+                if url.scheme.lower() not in {'https', 'http'} or (url.hostname or '').lower() not in OFFICIAL_HOSTS:
+                    continue
+                # Ne suivre que le chemin, jamais les paramètres de requête.
+                target = resolve(page, url.path)
+            else:
+                target = resolve(page, raw)
+            if target is None or target not in pages:
+                continue
+            fragment = unquote(url.fragment)
+            if fragment not in pages[target].ids:
+                source_rel = page.relative_to(ROOT).as_posix()
+                target_rel = target.relative_to(ROOT).as_posix()
+                errors.append(
+                    f'Ancre interpage introuvable dans {source_rel}: '
+                    f'{raw} (cible {target_rel}#{fragment})'
+                )
+    return errors
+
+
+def test_cross_page_fragment_contract() -> list[str]:
+    """Cas positifs/négatifs, vérifiés par la CI sans accès réseau."""
+    base = ROOT / '__ci_fragment_fixture__'
+    origin, destination = base / 'origin.html', base / 'destination.html'
+    page = Parser()
+    page.feed(
+        '<a href="destination.html#valide">Lien correct</a>'
+        '<a href="destination.html#absente">Lien cassé</a>'
+        '<a href="destination.html#ancien">Lien legacy</a>'
+        '<a href="destination.html#caf%C3%A9">Lien encodé</a>'
+        '<a href="https://www.benoitcantin.com/__ci_fragment_fixture__/destination.html#valide">URL officielle valide</a>'
+        '<a href="https://www.benoitcantin.com/__ci_fragment_fixture__/destination.html#absente-officielle">URL officielle invalide</a>'
+        '<a href="https://exemple.invalid/docs#autre">URL externe</a>'
+        '<a href="#intra">Ancre locale vérifiée ailleurs</a>'
+    )
+    target = Parser()
+    target.feed('<section id="valide"></section><a name="ancien"></a><h2 id="café"></h2>')
+    errors = cross_page_fragment_errors({origin: page, destination: target})
+    if (len(errors) != 2 or not any('destination.html#absente' in error for error in errors)
+            or not any('absente-officielle' in error for error in errors)):
+        return ['Auto-test des liens interpages défaillant : cas valide, absent, legacy ou encodé']
+    return []
+
+
+def test_official_link_resolution_contract() -> list[str]:
+    """Protège les liens publics absolus et les chemins de dossiers."""
+    origin = ROOT / 'index.html'
+    cases = {
+        'https://www.benoitcantin.com/': ROOT / 'index.html',
+        'https://benoitcantin.com/compte/': ROOT / 'compte/index.html',
+        '//www.benoitcantin.com/compte/': ROOT / 'compte/index.html',
+        '/assets/': ROOT / 'assets/index.html',
+        '/assets': ROOT / 'assets/index.html',
+        'https://www.benoitcantin.com/__ci_lien_absent__.html': ROOT / '__ci_lien_absent__.html',
+    }
+    errors: list[str] = []
+    for href, expected in cases.items():
+        actual = resolve(origin, href)
+        if actual != expected.resolve():
+            errors.append(f'Auto-test résolution des liens publics défaillant: {href} -> {actual}')
+    for href in ('https://exemple.invalid/compte/', '//exemple.invalid/compte/', 'mailto:contact@example.org', '#contenu'):
+        if resolve(origin, href) is not None:
+            errors.append(f'Auto-test liens externes/spéciaux défaillant: {href}')
+    # La cible fabriquée est absente; cela vérifie le cas que le
+    # validateur de références doit désormais signaler.
+    if (ROOT / '__ci_lien_absent__.html').exists():
+        errors.append('Fixture inattendue présente: __ci_lien_absent__.html')
+    return errors
+
+
+def test_srcset_contract() -> list[str]:
+    """Cas mobile/densité, data URI, virgule encodée et preload d'image."""
+    errors: list[str] = []
+    cases = {
+        'a-480.webp 480w, a-960.webp 960w': ['a-480.webp', 'a-960.webp'],
+        '/assets/a.webp 1x, /assets/b.webp 2x': ['/assets/a.webp', '/assets/b.webp'],
+        'a.webp, b.webp': ['a.webp', 'b.webp'],
+        'data:image/svg+xml,%3Csvg%3E 1x, photo.webp 2x': [
+            'data:image/svg+xml,%3Csvg%3E', 'photo.webp'
+        ],
+        'photo%2Cretina.webp 2x': ['photo%2Cretina.webp'],
+    }
+    for raw, expected in cases.items():
+        if srcset_urls(raw) != expected:
+            errors.append(f'Auto-test srcset défaillant pour: {raw}')
+
+    parser = Parser()
+    parser.feed(
+        '<picture><source srcset="tablet.webp 768w, desktop.webp 1200w">'
+        '<img src="fallback.webp" srcset="mobile.webp 1x, mobile@2x.webp 2x" alt="Image">'
+        '</picture>'
+        '<link rel="preload" as="image" imagesrcset="preload.webp 2x">'
+    )
+    actual = [raw for tag, raw in parser.refs if raw != 'fallback.webp']
+    expected = ['tablet.webp', 'desktop.webp', 'mobile.webp', 'mobile@2x.webp', 'preload.webp']
+    if actual != expected:
+        errors.append(f'Auto-test extraction des références HTML srcset: {actual}')
+    return errors
+
+
+def main() -> int:
+    errors: list[str] = (
+        test_cross_page_fragment_contract()
+        + test_official_link_resolution_contract()
+        + test_srcset_contract()
+    )
     files = all_files()
     htmls = [p for p in files if p.suffix.lower() == '.html']
     js = [p for p in files if p.suffix.lower() == '.js']
@@ -170,6 +346,7 @@ def main() -> int:
             if rel not in LEGACY_ADMIN_COMPAT_FILES and not rel.startswith('Admin/') and re.search(r"[\'\"]\/Admin\/", text):
                 errors.append(f'Lien interne legacy /Admin/ dans {rel}')
 
+    page_parsers: dict[Path, Parser] = {}
     for page in htmls:
         rel = page.relative_to(ROOT).as_posix()
         text = page.read_text('utf-8', errors='ignore')
@@ -177,6 +354,7 @@ def main() -> int:
         try:
             parser.feed(text)
             parser.close()
+            page_parsers[page.resolve()] = parser
         except Exception as exc:
             errors.append(f'HTML impossible à analyser dans {rel}: {exc}')
             continue
@@ -207,6 +385,44 @@ def main() -> int:
         for tag, raw in parser.refs:
             if raw.lower().startswith('http://') and tag in {'script', 'img', 'iframe', 'link', 'source', 'video', 'audio'}:
                 errors.append(f'Ressource HTTP non sécurisée dans {rel} ({tag}): {raw}')
+
+    # Les liens page.html#section doivent aussi rejoindre une ancre
+    # existante sur leur page de destination.
+    errors.extend(cross_page_fragment_errors(page_parsers))
+
+    # Contrat de continuité des navigations : les pages de secours et de
+    # référence doivent servir le même script que l'accueil, sous peine de
+    # conserver les anciens comportements du menu après changement de page.
+    expected_site_script = {
+        '404.html', 'univers.html', 'compte/vie-privee.html',
+        'transparence-ia.html', 'confidentialite.html',
+        'gouvernance-vie-privee.html', 'avis-legal.html',
+    }
+    expected_nova_script = {
+        'projets/projet-nova/registre-rencontres.html',
+        'projets/projet-nova/visionneuse.html',
+        'projets/projet-nova/document.html',
+        'projets/projet-nova/code-conduite.html',
+        'projets/projet-nova/finances.html',
+    }
+    for rel, version, script_path in (
+        *((rel, '24.4.100', 'assets/js/site.js') for rel in sorted(expected_site_script)),
+        *((rel, '26.1.0', 'script.js') for rel in sorted(expected_nova_script)),
+    ):
+        page = ROOT / rel
+        if not page.is_file():
+            errors.append(f'Parcours public manquant: {rel}')
+            continue
+        html = page.read_text('utf-8', errors='replace')
+        script_sources = re.findall(r"""<script[^>]*src=["']([^"']+)["']""", html, re.I)
+        versions = [
+            src.split('?v=', 1)[1] if '?v=' in src else '(sans version)'
+            for src in script_sources if src.split('?', 1)[0].endswith(script_path)
+        ]
+        if versions != [version]:
+            errors.append(f'Navigation incohérente dans {rel}: version {version} attendue, trouvée {versions}')
+        if 'data-menu-toggle' not in html or 'data-main-nav' not in html:
+            errors.append(f'Navigation mobile absente sur le parcours public: {rel}')
 
     # Dépendances locales CSS : url(...)
     css_url_rx = re.compile(r'url\(\s*([\'\"]?)([^\'\")]+)\1\s*\)', re.I)
@@ -273,7 +489,7 @@ def main() -> int:
         for e in errors:
             print('- ' + e)
         return 1
-    print('OK: routes, ancres, dépendances, sécurité statique et JavaScript cohérents.')
+    print('OK: routes, ancres locales et interpages, dépendances, sécurité statique et JavaScript cohérents.')
     return 0
 
 

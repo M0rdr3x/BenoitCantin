@@ -14,9 +14,9 @@ PRIVATE_BOOK_EDGE_PATH = ROOT / "supabase/functions/get-private-book-url/index.t
 CONFIG_PATH = ROOT / "supabase/config.toml"
 
 FULL_BASENAME = "SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf"
-FULL_SHA256 = "9862a11000fe46a2010e7fb902b9bba3dfea70724855a6fb682e0a6192df88e3"
+FULL_SHA256 = "537dbe86dad08c288d5f559707b888257c40ea6aadb89b5abfbbf9789e1825a6"
 DEMO_BASENAME = "SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
-DEMO_SHA256 = "aad491ce8861928c561caa035fe5ee8cb16d42a8e307c93828758346cc93f26f"
+DEMO_SHA256 = "0851852f586ea619ee7435a1b70c38087a7997ab6809bb10fdad0ed4bd0c352b"
 PRODUCT_SLUG = "sinjira-livre-01-la-cendre-du-jugement"
 STATIC_EXTENSIONS = {".html", ".js", ".mjs", ".css", ".json", ".xml", ".webmanifest", ".txt"}
 SKIP_PARTS = {"codex", ".git", "node_modules"}
@@ -79,9 +79,9 @@ def validate(
         ("schema",): "sinjira.livre-i.delivery.v1",
         ("publication_state",): "not_activated",
         ("human_gate_required",): True,
-        ("demo", "pages"): 83,
+        ("demo", "pages"): 82,
         ("demo", "sha256"): DEMO_SHA256,
-        ("full_edition", "pages"): 1066,
+        ("full_edition", "pages"): 520,
         ("full_edition", "sha256"): FULL_SHA256,
         ("full_edition", "public_repository_allowed"): False,
         ("full_edition", "public_static_url_allowed"): False,
@@ -219,12 +219,12 @@ def self_test() -> None:
             "publication_state": "not_activated",
             "human_gate_required": True,
             "demo": {
-                "pages": 83,
+                "pages": 82,
                 "sha256": DEMO_SHA256,
                 "public_url": "https://www.benoitcantin.com/projets/sinjira/documents/" + DEMO_BASENAME,
             },
             "full_edition": {
-                "pages": 1066,
+                "pages": 520,
                 "sha256": FULL_SHA256,
                 "public_repository_allowed": False,
                 "public_static_url_allowed": False,

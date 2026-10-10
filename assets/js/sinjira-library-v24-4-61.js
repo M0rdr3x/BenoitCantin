@@ -70,13 +70,38 @@ function renderReads(libraryRows){
   }).join('')||'<div class="notice"><strong>Aucun roman suivi.</strong><p>Les romans ajoutés à votre bibliothèque apparaîtront ici avec leur progression.</p></div>';
 }
 
+async function openFullNovel(button){
+  if(button)button.disabled=true;
+  setStatus(status,'Préparation de l’édition intégrale sécurisée…','info');
+  try{
+    const {data,error}=await getSupabase().functions.invoke('get-novel-file-url',{body:{slug:'la-cendre-du-jugement'}});
+    if(error||!data?.ok||!data?.url){
+      const message=data?.error||error?.message||'Accès au roman impossible.';
+      setStatus(status,message,data?.code==='FILE_NOT_READY'?'info':'error');
+      return;
+    }
+    window.open(data.url,'_blank','noopener');
+    setStatus(status,'Édition intégrale ouverte avec un lien privé temporaire de 10 minutes.','success');
+  }finally{
+    if(button)button.disabled=false;
+  }
+}
+
+function bindFullNovelButtons(root=document){
+  root.querySelectorAll('[data-open-full-novel]').forEach(button=>{
+    if(button.dataset.bound==='1')return;
+    button.dataset.bound='1';
+    button.addEventListener('click',()=>openFullNovel(button).catch(()=>setStatus(status,'Accès au roman impossible.','error')));
+  });
+}
+
 function entitlementCard(row){
   const product=row.products;
   if(!product)return '';
   const name=escapeHtml(product.name||product.slug||'Produit SINJIRA™');
   const source=escapeHtml(row.source||'compte');
   if(product.slug===BOOK_ONE_SLUG){
-    return `<article class="account-card"><span class="eyebrow">Droit numérique reconnu</span><h2>${name}</h2><p>${escapeHtml(product.product_type||'Accès')} · source ${source}</p><p>Ce droit est réellement associé au compte. Il ne publie pas le PDF intégral : la disponibilité du fichier complet est contrôlée séparément par la diffusion privée du Livre I.</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Voir mes licences</a><a class="btn btn-secondary" href="/projets/sinjira/romans/">Page du roman</a></div></article>`;
+    return `<article class="account-card"><span class="eyebrow">Droit numérique reconnu</span><h2>${name}</h2><p>${escapeHtml(product.product_type||'Accès')} · source ${source}</p><p>Ce droit est réellement associé au compte. Il ne publie pas le PDF intégral : la disponibilité du fichier complet est contrôlée séparément par la diffusion privée du Livre I.</p><div class="hero-actions"><button class="btn btn-primary" type="button" data-open-full-novel>Ouvrir l’édition intégrale</button><a class="btn btn-secondary" href="licences.html">Voir mes licences</a><a class="btn btn-secondary" href="/projets/sinjira/romans/">Page du roman</a></div></article>`;
   }
   return `<article class="account-card"><span class="eyebrow">Droit numérique</span><h2>${name}</h2><p>${escapeHtml(product.product_type||'Accès')} · source ${source}</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Voir mes licences</a></div></article>`;
 }
@@ -85,7 +110,9 @@ function renderEntitlements(entitlements,isOwner){
   const box=document.querySelector('[data-library-entitlements]');
   if(!box)return;
   const cards=entitlements.map(entitlementCard).join('');
-  box.innerHTML=cards||`<article class="account-card"><span class="eyebrow">Droits numériques</span><h2>${isOwner?'Rôle propriétaire actif · aucun droit produit explicite':'Aucune licence numérique explicite'}</h2><p>${isOwner?'Le rôle propriétaire reste distinct des droits numériques. Aucun produit n’est marqué comme possédé sans entitlement réellement attribué au compte.':'Les produits activés ou attribués à votre compte apparaîtront ici.'}</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Gérer mes licences</a></div></article>`;
+  const ownerBook=isOwner?`<article class="account-card"><span class="eyebrow">Accès propriétaire</span><h2>SINJIRA™ — Livre I : La Cendre du Jugement</h2><p>Le rôle propriétaire donne accès à l’édition intégrale privée sans créer artificiellement une licence d’achat. Le fichier est délivré uniquement par un lien temporaire signé.</p><div class="hero-actions"><button class="btn btn-primary" type="button" data-open-full-novel>Ouvrir l’édition intégrale</button><a class="btn btn-secondary" href="/projets/sinjira/romans/">Page du roman</a></div></article>`:'';
+  box.innerHTML=(ownerBook+cards)||`<article class="account-card"><span class="eyebrow">Droits numériques</span><h2>Aucune licence numérique explicite</h2><p>Les produits activés ou attribués à votre compte apparaîtront ici.</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Gérer mes licences</a></div></article>`;
+  bindFullNovelButtons(box);
 }
 
 async function init(){

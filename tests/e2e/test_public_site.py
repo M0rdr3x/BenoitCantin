@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
+import json
 import os
 from urllib.parse import urljoin, urlparse
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
@@ -12,11 +13,13 @@ PUBLIC_ROUTES = [
     "",
     "a-propos.html",
     "contact.html",
+    "projets/projet-nova/contact.html",
     "projets/sinjira/",
     "projets/sinjira/registre/",
     "projets/sinjira/communaute/",
     "projets/sinjira/monde-parallele/",
     "projets/projet-nova/",
+    "projets/projet-nova/boussole-electorale.html",
     "projets/sinjira/jeux/",
     "projets/sinjira/jeux/fracture-du-reseau-mere/",
 ]
@@ -30,6 +33,7 @@ EXPECTED_DOORS = {
     "/projets/sinjira/",
     "/projets/sinjira/registre/",
     "/projets/projet-nova/",
+    "/projets/projet-nova/boussole-electorale.html",
 }
 IS_LOCAL = (urlparse(BASE_URL).hostname or "").lower() in {"127.0.0.1", "localhost"}
 
@@ -44,6 +48,9 @@ def register_error_capture(page, target):
 
 
 def wait_for_assistant(page):
+    if page.locator('html[data-disable-sinjira-assistant="true"]').count():
+        page.wait_for_load_state("load")
+        page.evaluate("window.dispatchEvent(new Event('pointerdown'))")
     page.wait_for_function(
         "([version]) => window.__SINJIRA_ASSISTANT__ && window.__SINJIRA_ASSISTANT__.version === version",
         arg=[ASSISTANT_VERSION],
@@ -88,9 +95,326 @@ def run() -> None:
         assert_true(runtime_version == "24.4.22", f"Runtime public inattendu: {runtime_version!r}")
 
         cards = page.locator("a.home-project")
-        assert_true(cards.count() == 3, f"Accueil: 3 portes attendues, trouvé {cards.count()}")
+        assert_true(cards.count() == 4, f"Accueil: 4 accès attendus, trouvé {cards.count()}")
         hrefs = {cards.nth(i).get_attribute("href") for i in range(cards.count())}
         assert_true(hrefs == EXPECTED_DOORS, f"Accueil: portes inattendues: {hrefs}")
+        orbit_nodes = page.locator(".home-cosmos a.orbit-node")
+        assert_true(orbit_nodes.count() == 4, f"Accueil: 4 portes orbitales attendues, trouvé {orbit_nodes.count()}")
+        compass_orbit = page.locator(".home-cosmos .node-boussole-home")
+        assert_true(compass_orbit.count() == 1, f"{BROWSER_NAME}: porte orbitale Boussole absente")
+        assert_true(
+            compass_orbit.get_attribute("href") == "/projets/projet-nova/boussole-electorale.html",
+            f"{BROWSER_NAME}: cible de la porte orbitale Boussole incorrecte",
+        )
+        assert_true(
+            compass_orbit.locator('img[src="/assets/media/nova-boussole-electorale-v2.webp"]').count() == 1,
+            f"{BROWSER_NAME}: visuel officiel absent de la porte Boussole",
+        )
+        assert_true(
+            page.locator('a[href="/projets/projet-nova/boussole-electorale.html"]').count() >= 4,
+            f"{BROWSER_NAME}: accès directs à la Boussole insuffisants sur l’accueil principal",
+        )
+
+        for selector, min_width in (
+            (".node-registre-home img", 120),
+            (".node-sinjira-home img", 120),
+            (".node-nova-home img", 120),
+            (".node-boussole-home img", 125),
+        ):
+            icon = page.locator(selector)
+            box = icon.bounding_box()
+            assert_true(box is not None and box["width"] >= min_width, f"{BROWSER_NAME}: icône principale trop petite: {selector}")
+
+        page.goto(urljoin(BASE_URL, "projets/projet-nova/"), wait_until="domcontentloaded", timeout=30_000)
+        assert_true(
+            page.locator('a[href="boussole-electorale.html"]').count() >= 3,
+            f"{BROWSER_NAME}: la Boussole doit avoir au moins trois accès depuis l’accueil Nova",
+        )
+        nova_compass_entry = page.locator(".nova-compass-entry .nova-compass-entry-link")
+        assert_true(nova_compass_entry.count() == 1, f"{BROWSER_NAME}: accès prioritaire Boussole absent en haut de Nova")
+        assert_true(nova_compass_entry.is_visible(), f"{BROWSER_NAME}: accès prioritaire Boussole non visible")
+        assert_true(
+            nova_compass_entry.locator('img[src="../../assets/media/nova-boussole-electorale-v2.webp"]').count() == 1,
+            f"{BROWSER_NAME}: visuel officiel absent de l’accès prioritaire Nova",
+        )
+        assert_true(
+            page.locator('nav .nav-link-boussole').inner_text().strip() == "Boussole électorale",
+            f"{BROWSER_NAME}: libellé complet Boussole électorale absent de la navigation Nova",
+        )
+
+        page.goto(urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"), wait_until="domcontentloaded", timeout=30_000)
+        assert_true(
+            page.locator('.compass-hero-visual img[src="../../assets/media/nova-boussole-electorale-v2.webp"]').count() == 1,
+            f"{BROWSER_NAME}: visuel officiel absent du héros de la Boussole",
+        )
+        hero_image = page.locator('.compass-hero-visual img')
+        page.wait_for_function(
+            "() => { const img = document.querySelector('.compass-hero-visual img'); return !!img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0; }",
+            timeout=10_000,
+        )
+        assert_true(
+            hero_image.evaluate("(img) => img.naturalWidth === 360 && img.naturalHeight === 360"),
+            f"{BROWSER_NAME}: dimensions du visuel Boussole inattendues",
+        )
+        assert_true(page.locator(".compass-hero-visual figcaption").count() == 0, f"{BROWSER_NAME}: légende indésirable encore présente")
+        assert_true(
+            "Votre profil, plusieurs dimensions, aucune consigne de vote" not in page.content(),
+            f"{BROWSER_NAME}: texte indésirable encore présent sur la Boussole",
+        )
+        assert_true(page.locator("#dimensions .compass-dimension-card").count() == 16, f"{BROWSER_NAME}: 16 dimensions publiques attendues")
+        assert_true(page.locator("#lecture-resultat .compass-reading-card").count() == 4, f"{BROWSER_NAME}: explication du résultat incomplète")
+        assert_true(page.locator("#faq-boussole article").count() == 4, f"{BROWSER_NAME}: FAQ Boussole incomplète")
+        evidence_cards = page.locator("#compass-evidence-parties .compass-evidence-card")
+        evidence_cards.first.wait_for(state="visible", timeout=10_000)
+        assert_true(evidence_cards.count() == 22, f"{BROWSER_NAME}: 22 formations attendues dans l’état documentaire")
+        summary_cards = page.locator("#compass-evidence-summary article")
+        assert_true(summary_cards.count() == 9, f"{BROWSER_NAME}: résumé documentaire incomplet")
+        summary_text = page.locator("#compass-evidence-summary").inner_text()
+        assert_true("Questions recherchées" in summary_text and "64/64" in summary_text, f"{BROWSER_NAME}: couverture 64/64 absente du résumé documentaire")
+        assert_true("Questions avec preuve" in summary_text, f"{BROWSER_NAME}: couverture de preuve candidate absente du résumé documentaire")
+        assert_true("Questions à preuve unique" in summary_text, f"{BROWSER_NAME}: compteur de couverture documentaire limitée absent")
+        # Vérifier les chiffres affichés à partir de la matrice, sans total figé
+        # (les sources et statuts peuvent évoluer d'une PR à l'autre).
+        documentary_metrics = page.evaluate("""async () => {
+            const response = await fetch("data/boussole-preuves-2026.json", {cache:"no-store"});
+            if(!response.ok) throw new Error("Corpus de preuves indisponible");
+            const corpus = await response.json();
+            const statuses = corpus.questions.flatMap(q => Object.values(q.statuses || {}));
+            const expected = {
+                "Fiches finalisées": statuses.filter(v => v !== "unknown").length,
+                "Sans direction certaine": statuses.filter(v => v === "ambiguous" || v === "contradictory").length,
+                "Appuis et oppositions documentés": statuses.filter(v => v === "documented_support" || v === "documented_opposition").length
+            };
+            const actual = Object.fromEntries(
+                Array.from(document.querySelectorAll("#compass-evidence-summary article")).map(card => [
+                    card.querySelector("span").textContent.trim(),
+                    Number(card.querySelector("strong").textContent.trim())
+                ])
+            );
+            return {expected, actual};
+        }""")
+        for label, expected_value in documentary_metrics["expected"].items():
+            assert_true(
+                documentary_metrics["actual"].get(label) == expected_value,
+                f"{BROWSER_NAME}: métrique documentaire incohérente pour {label}",
+            )
+        evidence_status = page.locator("#compass-evidence-status").inner_text()
+        assert_true(
+            "64/64 questions recherchées" in evidence_status,
+            f"{BROWSER_NAME}: couverture de recherche exhaustive absente du statut documentaire",
+        )
+        assert_true(
+            "avec au moins une preuve candidate" in evidence_status
+            and "sans preuve candidate suffisamment exacte" in evidence_status,
+            f"{BROWSER_NAME}: distinction recherche/preuve candidate absente du statut documentaire",
+        )
+        assert_true(
+            "Une preuve révisée ne permet pas toujours de conclure à la position exacte" in evidence_status,
+            f"{BROWSER_NAME}: prudence sur la conclusion politique d’une preuve absente",
+        )
+        assert_true(
+            "L’absence de preuve candidate ne signifie pas absence de position réelle" in evidence_status,
+            f"{BROWSER_NAME}: prudence sur l’absence de preuve candidate absente",
+        )
+        assert_true(
+            "Aucun de ces nombres ne modifie le poids d’un parti" in evidence_status,
+            f"{BROWSER_NAME}: avertissement anti-biais documentaire absent",
+        )
+        evidence_question_select = page.locator("#compass-evidence-question")
+        evidence_question_select.wait_for(state="visible", timeout=10_000)
+        assert_true(
+            evidence_question_select.locator("option").count() == 64,
+            f"{BROWSER_NAME}: l’explorateur documentaire doit proposer 64 questions",
+        )
+        # Les intitulés courts évitent le débordement Safari; le texte exact
+        # doit rester intégralement consultable et changer avec la sélection.
+        evidence_option_labels = evidence_question_select.evaluate("""select =>
+            Array.from(select.options).map(option => option.textContent.trim())
+        """)
+        assert_true(
+            len(evidence_option_labels) == 64 and max(map(len, evidence_option_labels)) < 65,
+            f"{BROWSER_NAME}: menu documentaire contient des intitulés trop longs",
+        )
+        document_question_sync = page.evaluate("""async () => {
+            const response = await fetch("data/boussole-electorale-v2.json", {cache:"no-store"});
+            if(!response.ok) return false;
+            const corpus = await response.json();
+            const select = document.querySelector("#compass-evidence-question");
+            const text = document.querySelector("#compass-evidence-selected-question");
+            const first = corpus.questions.find(q => q.id === "q01");
+            const second = corpus.questions.find(q => q.id === "q29");
+            if(!first || !second || text?.textContent !== first.text) return false;
+            select.value = "q29";
+            select.dispatchEvent(new Event("change",{bubbles:true}));
+            const matched = text.textContent === second.text;
+            select.value = "q01";
+            select.dispatchEvent(new Event("change",{bubbles:true}));
+            return matched && text.textContent === first.text;
+        }""")
+        assert_true(
+            document_question_sync,
+            f"{BROWSER_NAME}: texte officiel de la proposition non synchronisé avec le menu court",
+        )
+        # Les liens d'accès direct et le compteur doivent suivre le corpus,
+        # sans jamais supposer que q29, q30 ou une autre question restera limitée.
+        mono_proof_question_ids = evidence_question_select.evaluate("""select =>
+            Array.from(select.options)
+                .filter(option => option.textContent.trim().endsWith(" · 1 preuve"))
+                .map(option => option.value)
+        """)
+        priority_panel = page.locator("#compass-evidence-priorities")
+        priority_buttons = page.locator("#compass-evidence-priority-links button[data-compass-priority]")
+        assert_true(
+            priority_buttons.count() == len(mono_proof_question_ids),
+            f"{BROWSER_NAME}: raccourcis des questions à preuve unique désalignés de l'explorateur",
+        )
+        if mono_proof_question_ids:
+            assert_true(priority_panel.is_visible(), f"{BROWSER_NAME}: questions limitées non signalées")
+            assert_true(
+                priority_buttons.evaluate_all(
+                    "(buttons) => buttons.map(button => button.dataset.compassPriority)"
+                ) == mono_proof_question_ids,
+                f"{BROWSER_NAME}: raccourcis documentaires dans un ordre incorrect",
+            )
+            priority_buttons.first.click()
+            assert_true(
+                evidence_question_select.input_value() == mono_proof_question_ids[0],
+                f"{BROWSER_NAME}: le raccourci ne sélectionne pas la bonne proposition",
+            )
+            assert_true(
+                "Couverture documentaire limitée : une seule formation dispose d’une preuve finalisée" in page.locator("#compass-evidence-question-status").inner_text(),
+                f"{BROWSER_NAME}: avertissement de question mono-preuve absent",
+            )
+        else:
+            assert_true(priority_panel.is_hidden(), f"{BROWSER_NAME}: raccourcis affichés sans questions limitées")
+        evidence_question_select.select_option("q01")
+        evidence_question_results = page.locator("#compass-evidence-question-results")
+        evidence_question_results.locator(".compass-evidence-record").first.wait_for(state="visible", timeout=10_000)
+        assert_true(
+            evidence_question_results.locator(".compass-evidence-record").count() == 22,
+            f"{BROWSER_NAME}: les 22 formations doivent être visibles par défaut dans l’explorateur",
+        )
+        assert_true(
+            evidence_question_results.locator(".compass-evidence-record-unknown").count() >= 1,
+            f"{BROWSER_NAME}: les positions non documentées doivent rester visibles",
+        )
+        assert_true(
+            evidence_question_results.locator('a[target="_blank"][rel*="noopener"]').count() >= 1,
+            f"{BROWSER_NAME}: lien vers la source officielle absent de l’explorateur",
+        )
+        assert_true(
+            evidence_question_results.locator("dt", has_text="Confiance").count() >= 1,
+            f"{BROWSER_NAME}: niveau de confiance absent de l’explorateur",
+        )
+        assert_true(
+            evidence_question_results.locator("dt", has_text="Vérifiée le").count() >= 1,
+            f"{BROWSER_NAME}: date de vérification absente de l’explorateur",
+        )
+        assert_true(
+            evidence_question_results.locator("dt", has_text="Deuxième révision").count() >= 1,
+            f"{BROWSER_NAME}: date de seconde révision absente de l’explorateur",
+        )
+        assert_true(
+            evidence_question_results.locator("strong", has_text="Justification du codage").count() >= 1,
+            f"{BROWSER_NAME}: justification du codage absente de l’explorateur",
+        )
+        evidence_filter = page.locator("#compass-evidence-only-documented")
+        evidence_filter.check()
+        assert_true(
+            evidence_question_results.locator(".compass-evidence-record-unknown").count() == 0,
+            f"{BROWSER_NAME}: filtre des positions finalisées laisse des positions inconnues",
+        )
+        assert_true(
+            1 <= evidence_question_results.locator(".compass-evidence-record").count() < 22,
+            f"{BROWSER_NAME}: filtre documentaire n’a pas réduit les 22 formations",
+        )
+        evidence_filter.uncheck()
+        assert_true(
+            evidence_question_results.locator(".compass-evidence-record").count() == 22,
+            f"{BROWSER_NAME}: restauration des 22 formations après filtrage impossible",
+        )
+        evidence_alphabetical = page.evaluate("""() => {
+            const names = Array.from(document.querySelectorAll('#compass-evidence-parties .compass-evidence-card h3')).map(node => node.textContent.trim());
+            const collator = new Intl.Collator('fr-CA');
+            return names.every((name,index) => index === 0 || collator.compare(names[index - 1], name) <= 0);
+        }""")
+        assert_true(evidence_alphabetical, f"{BROWSER_NAME}: état documentaire non alphabétique")
+        page.locator("#compass-start").wait_for(state="visible", timeout=10_000)
+        assert_true(not page.locator("#compass-start").is_disabled(), f"{BROWSER_NAME}: démarrage Boussole indisponible")
+        page.locator("#compass-start").click()
+        page.locator("#compass-question-stage .compass-question").wait_for(state="visible", timeout=10_000)
+        assert_true(
+            page.locator("#compass-question-stage .compass-question").count() == 1,
+            f"{BROWSER_NAME}: une seule question doit être visible à la fois",
+        )
+        assert_true(page.locator("#compass-prev").is_disabled(), f"{BROWSER_NAME}: Précédent doit être désactivé à la question 1")
+        assert_true(
+            page.evaluate("""() => {
+                const fieldset = document.querySelector("#compass-question-stage fieldset");
+                const legend = fieldset?.querySelector("legend");
+                const group = fieldset?.querySelector('[role="radiogroup"]');
+                return fieldset?.firstElementChild === legend &&
+                    document.activeElement === legend?.querySelector("[data-compass-question-focus]") &&
+                    group?.getAttribute("aria-labelledby") === legend.id;
+            }"""),
+            f"{BROWSER_NAME}: titre de question non associé aux réponses ou focus absent",
+        )
+        assert_true(
+            page.locator("#compass-progress-track").get_attribute("aria-valuenow") == "1",
+            f"{BROWSER_NAME}: progression ARIA initiale incorrecte",
+        )
+        assert_true(page.locator("#compass-next").is_disabled(), f"{BROWSER_NAME}: Suivant doit attendre une réponse")
+        page.locator('#compass-question-stage input[type="radio"]').first.check()
+        assert_true(not page.locator("#compass-next").is_disabled(), f"{BROWSER_NAME}: Suivant doit s’activer après une réponse")
+        page.locator("#compass-next").click()
+        assert_true(
+            "Question 2 sur 64" in page.locator("#compass-progress-text").inner_text(),
+            f"{BROWSER_NAME}: progression guidée vers la question 2 absente",
+        )
+        assert_true(
+            page.evaluate("""() => {
+                const legend = document.querySelector("#compass-question-stage legend");
+                return document.activeElement === legend?.querySelector("[data-compass-question-focus]") &&
+                    legend?.parentElement?.firstElementChild === legend;
+            }"""),
+            f"{BROWSER_NAME}: focus clavier ou structure sémantique perdus à la question 2",
+        )
+        assert_true(
+            page.locator("#compass-progress-track").get_attribute("aria-valuenow") == "2",
+            f"{BROWSER_NAME}: progression ARIA non actualisée",
+        )
+        # Parcours des 64 questions en déclenchant les vrais événements de
+        # réponse/changement. L'écran final doit reprendre le focus clavier.
+        parcours_64_questions = page.evaluate("""() => {
+            for(let i = 2; i <= 64; i++){
+                const legend = document.querySelector("#compass-question-stage legend");
+                const fieldset = document.querySelector("#compass-question-stage fieldset");
+                if(!legend || fieldset?.firstElementChild !== legend ||
+                   document.activeElement !== legend.querySelector("[data-compass-question-focus]")){
+                    return {valid:false,step:i,reason:"focus ou légende perdu"};
+                }
+                const radio = fieldset.querySelector('input[type="radio"]');
+                if(!radio) return {valid:false,step:i,reason:"réponse absente"};
+                radio.click();
+                document.querySelector("#compass-next").click();
+            }
+            const heading = document.querySelector("#compass-results-title");
+            const progress = document.querySelector("#compass-progress-track");
+            return {
+                valid:!document.querySelector("#compass-results").hidden &&
+                    document.activeElement === heading &&
+                    heading.getAttribute("tabindex") === "-1" &&
+                    document.querySelectorAll("#compass-results-grid .compass-result-card").length === 16 &&
+                    progress.getAttribute("aria-valuenow") === "64" &&
+                    progress.getAttribute("aria-valuemax") === "64",
+                step:64,
+                reason:"état final du questionnaire"
+            };
+        }""")
+        assert_true(
+            parcours_64_questions["valid"],
+            f"{BROWSER_NAME}: parcours guidé ou focus des résultats incorrect: {parcours_64_questions}",
+        )
         home_text = page.locator("main").inner_text().lower()
         for retired_name in ("lumina", "futurax", "chroniques de l’ombre", "chroniques de l'ombre"):
             assert_true(retired_name not in home_text, f"Accueil: univers secondaire remis au premier plan: {retired_name}")
@@ -106,10 +430,42 @@ def run() -> None:
         route = page.locator("#contact-route")
         submit = page.locator("#contact-submit")
         assert_true(project.locator('option[value="Projet Nova"]').count() == 0, f"{BROWSER_NAME}: Projet Nova encore routé par le formulaire personnel")
-        project.select_option("SINJIRA")
+        personal_fields = page.locator("#contact-personal-fields")
+        assert_true(
+            personal_fields.count() == 1 and personal_fields.get_attribute("disabled") is not None,
+            f"{BROWSER_NAME}: champs de contact personnel non verrouillés",
+        )
+        for selector in ("#contact-name", "#contact-email", "#contact-project", "#contact-message", 'input[name="consentement_contact"]'):
+            assert_true(page.locator(selector).is_disabled(), f"{BROWSER_NAME}: saisie personnelle encore active: {selector}")
+        assert_true(
+            page.locator('a[href="/projets/projet-nova/contact.html"]').count() >= 1
+            and page.locator('a[href="/compte/vie-privee.html"]').count() >= 1,
+            f"{BROWSER_NAME}: un des deux parcours de contact disponibles est absent",
+        )
+        # Ne dépend pas d'un submit visible : forcer un événement submit dans
+        # le navigateur confirme que le script l'annule aussi au clavier/API.
+        personal_submit_blocked = page.evaluate("""() => {
+            const form = document.querySelector("#contact-general");
+            const event = new Event("submit", {bubbles:true, cancelable:true});
+            return form.dispatchEvent(event) === false && event.defaultPrevented;
+        }""")
+        assert_true(personal_submit_blocked, f"{BROWSER_NAME}: soumission personnelle non bloquée par le script")
+        assert_true(
+            page.evaluate('new FormData(document.querySelector("#contact-general")).entries().next().done'),
+            f"{BROWSER_NAME}: des données de formulaire personnel restent sérialisables malgré le verrouillage",
+        )
+        assert_true(
+            "?" not in urlparse(page.url).path and not urlparse(page.url).query,
+            f"{BROWSER_NAME}: le formulaire personnel a produit une URL avec paramètres",
+        )
         assert_true(form.get_attribute("action") is None, f"{BROWSER_NAME}: endpoint personnel actif avant configuration")
         assert_true(form.get_attribute("method") is None, f"{BROWSER_NAME}: POST personnel actif avant configuration")
         assert_true(form.get_attribute("data-personal-formspree-state") == "pending-separate-endpoint", f"{BROWSER_NAME}: état fail-closed Formspree absent")
+        assert_true(
+            any("form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'" in js
+                for js in page.locator("script:not([src])").all_text_contents()),
+            f"{BROWSER_NAME}: double verrou du formulaire personnel absent",
+        )
         assert_true(submit.is_disabled(), f"{BROWSER_NAME}: bouton personnel actif avant endpoint distinct")
         assert_true("désactivé" in route.inner_text().lower(), f"{BROWSER_NAME}: message fail-closed absent")
         assert_true(page.locator('a[href="/projets/projet-nova/contact.html"]').count() >= 1, f"{BROWSER_NAME}: lien contact officiel Nova absent")
@@ -117,6 +473,21 @@ def run() -> None:
         assert_true("formspree.io/f/xdenkzrv" not in contact_html, f"{BROWSER_NAME}: ancien endpoint personnel encore exposé")
         assert_true("formspree.io/f/xkolwjdg" not in contact_html, f"{BROWSER_NAME}: endpoint Nova encore exposé dans le contact personnel")
         assert_true("kingtyrano@gmail.com" not in contact_html, "Adresse privée embarquée dans le formulaire de contact")
+        page.goto(urljoin(BASE_URL, "projets/projet-nova/contact.html"), wait_until="domcontentloaded", timeout=30_000)
+        assert_true(
+            page.locator('a[href="mailto:officiellenovaparti@gmail.com"]').count() >= 1,
+            f"{BROWSER_NAME}: courriel officiel Nova non accessible",
+        )
+        assert_true(
+            page.locator('a[href="../../contact.html"]').count() == 1
+            and page.locator('a[href="../../compte/vie-privee.html"]').count() == 1,
+            f"{BROWSER_NAME}: liens vers le portail personnel et le Centre Vie privée absents de Nova",
+        )
+        assert_true(
+            page.locator("main form").count() == 0
+            and page.locator('form[action*="formspree.io"]').count() == 0,
+            f"{BROWSER_NAME}: un formulaire de collecte ou un endpoint Formspree apparaît dans le contact Nova",
+        )
 
         if IS_LOCAL:
             for auth_route in AUTH_ROUTES:
@@ -137,12 +508,23 @@ def run() -> None:
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à la réinitialisation")
 
             page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
+            page.wait_for_timeout(500)
+            assert_true(
+                page.evaluate("typeof window.__SINJIRA_ASSISTANT__ === 'undefined'"),
+                f"{BROWSER_NAME}: assistant chargé malgré sa désactivation sur l’accueil",
+            )
+            assert_true(
+                page.locator(".sinjira-assistant-toggle").count() == 0,
+                f"{BROWSER_NAME}: bouton assistant présent sur l’accueil désactivé",
+            )
+
+            page.goto(urljoin(BASE_URL, "projets/sinjira/"), wait_until="domcontentloaded", timeout=30_000)
             wait_for_assistant(page)
             assistant = page.evaluate("window.__SINJIRA_ASSISTANT__")
             assert_true(assistant.get("providerMode") == "local", f"{BROWSER_NAME}: assistant non local")
             assert_true(assistant.get("externalProviderEnabled") is False, f"{BROWSER_NAME}: fournisseur externe activé")
             assert_true(assistant.get("privacy") == "ephemeral-memory-only", f"{BROWSER_NAME}: contrat de confidentialité assistant invalide")
-            assert_true(assistant.get("contextLabel") == "Accueil Benoit Cantin", f"{BROWSER_NAME}: contexte accueil assistant invalide")
+            assert_true(assistant.get("contextLabel") == "Portail SINJIRA™", f"{BROWSER_NAME}: contexte SINJIRA assistant invalide")
             assert_true(int(assistant.get("intentCount") or 0) >= 20, f"{BROWSER_NAME}: base d’aide assistant trop limitée")
 
             assistant_toggle = page.locator(".sinjira-assistant-toggle")
@@ -199,6 +581,140 @@ def run() -> None:
             assert_true(page.locator(".sinjira-assistant-toggle").count() == 1, f"{BROWSER_NAME}: assistant absent de Projet Nova")
             assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Projet Nova", f"{BROWSER_NAME}: contexte Projet Nova invalide")
 
+        if IS_LOCAL:
+            # Simuler une indisponibilité réelle du questionnaire JSON.
+            # Le registre utilise le même fichier : les deux reprises doivent
+            # rester indépendantes, sans recharger la page ni lever l'erreur.
+            retry_context = browser.new_context(
+                locale="fr-CA",
+                viewport={"width": 1440, "height": 1000},
+                reduced_motion="reduce",
+                service_workers="block",
+            )
+            retry_page = retry_context.new_page()
+            retry_page_errors = []
+            register_error_capture(retry_page, retry_page_errors)
+            corpus_pattern = "**/boussole-electorale-v2.json"
+            rejected_requests = []
+
+            def reject_compass_corpus(route):
+                rejected_requests.append(route.request.url)
+                route.fulfill(status=503, content_type="application/json", body="{}")
+
+            retry_page.route(corpus_pattern, reject_compass_corpus)
+            retry_page.goto(
+                urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"),
+                wait_until="domcontentloaded",
+                timeout=30_000,
+            )
+            retry_questionnaire = retry_page.locator("#compass-questionnaire-retry")
+            retry_documentary = retry_page.locator("#compass-evidence-retry")
+            retry_questionnaire.wait_for(state="visible", timeout=10_000)
+            assert_true(
+                len(rejected_requests) >= 2,
+                f"{BROWSER_NAME}: la panne simulée n’intercepte pas les deux chargements JSON",
+            )
+            retry_documentary.wait_for(state="visible", timeout=10_000)
+            assert_true(
+                retry_page.locator("#compass-start").is_disabled(),
+                f"{BROWSER_NAME}: questionnaire démarrable malgré son corpus indisponible",
+            )
+            assert_true(
+                "Échec du chargement documentaire" in retry_page.locator("#compass-evidence-status").inner_text(),
+                f"{BROWSER_NAME}: erreur documentaire non annoncée",
+            )
+            retry_page.unroute(corpus_pattern, reject_compass_corpus)
+            retry_questionnaire.click()
+            retry_page.wait_for_function(
+                "() => !document.querySelector('#compass-start').disabled",
+                timeout=10_000,
+            )
+            assert_true(
+                retry_questionnaire.is_hidden(),
+                f"{BROWSER_NAME}: bouton de reprise questionnaire toujours visible après succès",
+            )
+            retry_documentary.click()
+            retry_page.locator("#compass-evidence-parties .compass-evidence-card").first.wait_for(
+                state="visible", timeout=10_000
+            )
+            assert_true(
+                retry_page.locator("#compass-evidence-parties .compass-evidence-card").count() == 22,
+                f"{BROWSER_NAME}: registre non restauré après une panne temporaire",
+            )
+            assert_true(
+                retry_page.locator("#compass-evidence-summary article").count() == 9,
+                f"{BROWSER_NAME}: métriques documentaires non restaurées",
+            )
+            assert_true(
+                retry_documentary.is_hidden(),
+                f"{BROWSER_NAME}: bouton de reprise documentaire toujours visible après succès",
+            )
+            assert_true(
+                not retry_page_errors,
+                f"{BROWSER_NAME}: exception après reprise du chargement: " + " | ".join(retry_page_errors[:3]),
+            )
+            retry_context.close()
+
+            # Une mise en ligne partielle ne doit jamais associer des preuves
+            # révisées à la mauvaise formulation des 64 propositions.
+            mismatch_context = browser.new_context(
+                locale="fr-CA",
+                viewport={"width": 1440, "height": 1000},
+                service_workers="block",
+            )
+            mismatch_page = mismatch_context.new_page()
+            mismatch_errors = []
+            register_error_capture(mismatch_page, mismatch_errors)
+            mismatch_pattern = "**/boussole-preuves-2026.json"
+            altered_requests = []
+
+            def corrupt_evidence_binding(route):
+                upstream = route.fetch()
+                payload = json.loads(upstream.body())
+                payload["questionnaireBinding"]["questionTexts"]["q29"] += " VERSION DÉCALÉE"
+                altered_requests.append(route.request.url)
+                route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=json.dumps(payload, ensure_ascii=False),
+                )
+
+            mismatch_page.route(mismatch_pattern, corrupt_evidence_binding)
+            mismatch_page.goto(
+                urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"),
+                wait_until="domcontentloaded",
+                timeout=30_000,
+            )
+            mismatch_retry = mismatch_page.locator("#compass-evidence-retry")
+            mismatch_retry.wait_for(state="visible", timeout=10_000)
+            assert_true(altered_requests, f"{BROWSER_NAME}: version documentaire simulée non interceptée")
+            assert_true(
+                mismatch_page.locator("#compass-evidence-parties .compass-evidence-card").count() == 0,
+                f"{BROWSER_NAME}: des positions ont été affichées malgré un décalage sémantique",
+            )
+            assert_true(
+                mismatch_page.locator("#compass-start").is_enabled(),
+                f"{BROWSER_NAME}: la panne documentaire bloque incorrectement le questionnaire local valide",
+            )
+            assert_true(
+                mismatch_page.locator("#compass-evidence-status").inner_text().startswith(
+                    "Échec du chargement documentaire"
+                ),
+                f"{BROWSER_NAME}: incompatibilité documentaire non annoncée",
+            )
+            mismatch_page.unroute(mismatch_pattern, corrupt_evidence_binding)
+            mismatch_retry.click()
+            mismatch_page.locator("#compass-evidence-parties .compass-evidence-card").first.wait_for(
+                state="visible", timeout=10_000
+            )
+            assert_true(
+                mismatch_page.locator("#compass-evidence-parties .compass-evidence-card").count() == 22,
+                f"{BROWSER_NAME}: récupération des preuves synchronisées impossible",
+            )
+            assert_true(mismatch_retry.is_hidden(), f"{BROWSER_NAME}: reprise documentaire encore visible")
+            assert_true(not mismatch_errors, f"{BROWSER_NAME}: erreur JS lors du contrôle d'intégrité")
+            mismatch_context.close()
+
         mobile = browser.new_context(
             locale="fr-CA",
             viewport={"width": 390, "height": 844},
@@ -218,20 +734,347 @@ def run() -> None:
         assert_true(toggle.count() == 1, f"{BROWSER_NAME}: bouton de menu mobile absent")
         toggle.click()
         assert_true(toggle.get_attribute("aria-expanded") == "true", f"{BROWSER_NAME}: menu mobile n’annonce pas son état ouvert")
-        nav_class = mobile_page.locator("[data-main-nav]").get_attribute("class") or ""
+        assert_true(
+            toggle.get_attribute("aria-label") == "Fermer le menu",
+            f"{BROWSER_NAME}: titre accessible incorrect quand le menu est ouvert",
+        )
+        mobile_nav = mobile_page.locator("[data-main-nav]")
+        nav_class = mobile_nav.get_attribute("class") or ""
         assert_true("open" in nav_class.split(), f"{BROWSER_NAME}: menu mobile ne s’ouvre pas")
         toggle.click()
         assert_true(toggle.get_attribute("aria-expanded") == "false", f"{BROWSER_NAME}: menu mobile ne se referme pas")
+        assert_true(
+            toggle.get_attribute("aria-label") == "Ouvrir le menu",
+            f"{BROWSER_NAME}: titre accessible incorrect quand le menu est fermé",
+        )
+
+        # Fermeture clavier : Échap depuis un lien du menu restaure le focus.
+        toggle.click()
+        mobile_nav.locator("a").first.focus()
+        mobile_page.keyboard.press("Escape")
+        assert_true(
+            toggle.get_attribute("aria-expanded") == "false"
+            and mobile_page.evaluate("document.activeElement === document.querySelector('[data-menu-toggle]')")
+            and "open" not in (mobile_nav.get_attribute("class") or "").split(),
+            f"{BROWSER_NAME}: Échap ne ferme pas le menu ou ne rend pas le focus au bouton",
+        )
+
+        # Fermer au toucher hors du panneau, sans attendre un nouveau clic
+        # sur le bouton. Le bas de page est hors du menu en surimpression.
+        toggle.tap()
+        mobile_page.locator("footer").tap()
+        assert_true(
+            toggle.get_attribute("aria-expanded") == "false",
+            f"{BROWSER_NAME}: toucher hors du menu ne le ferme pas",
+        )
+
+        # L'état du menu ne doit pas rester ouvert si on passe au bureau.
+        toggle.tap()
+        mobile_page.set_viewport_size({"width": 1000, "height": 844})
+        mobile_page.wait_for_function(
+            "document.querySelector('[data-menu-toggle]').getAttribute('aria-expanded') === 'false'",
+            timeout=5_000,
+        )
+        assert_true(
+            toggle.get_attribute("aria-expanded") == "false",
+            f"{BROWSER_NAME}: menu mobile conserve son état ouvert au bureau",
+        )
+        mobile_page.set_viewport_size({"width": 390, "height": 844})
+        assert_true(
+            toggle.get_attribute("aria-label") == "Ouvrir le menu"
+            and mobile_nav.locator("a").first.is_visible() is False,
+            f"{BROWSER_NAME}: menu mobile ne retrouve pas son état fermé",
+        )
 
         if IS_LOCAL:
+            mobile_page.wait_for_timeout(500)
+            assert_true(
+                mobile_page.locator(".sinjira-assistant-toggle").count() == 0,
+                f"{BROWSER_NAME}: assistant mobile présent sur l’accueil désactivé",
+            )
+            mobile_page.goto(urljoin(BASE_URL, "projets/sinjira/"), wait_until="domcontentloaded", timeout=30_000)
             wait_for_assistant(mobile_page)
             mobile_assistant = mobile_page.locator(".sinjira-assistant-toggle")
             mobile_assistant.click()
             mobile_panel = mobile_page.locator("#sinjira-assistant-panel")
-            assert_true(mobile_panel.is_visible(), f"{BROWSER_NAME}: assistant mobile ne s’ouvre pas")
+            assert_true(mobile_panel.is_visible(), f"{BROWSER_NAME}: assistant mobile SINJIRA ne s’ouvre pas")
             assistant_overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
             assert_true(assistant_overflow, f"{BROWSER_NAME}: assistant crée un débordement horizontal en 390 px")
             mobile_page.keyboard.press("Escape")
+
+        # Le Centre Vie privée SINJIRA est volontairement exclu des essais
+        # anonymes : sa route peut renvoyer vers la connexion; son script
+        # est quand même contrôlé par le validateur statique du dépôt.
+        # Navigation de continuité : les pages secondaires et les pages 404
+        # doivent utiliser les mêmes correctifs clavier que les accueils.
+        for route, script_version in (
+            ("404.html", "site.js?v=24.4.100"),
+            ("univers.html", "site.js?v=24.4.100"),
+            ("transparence-ia.html", "site.js?v=24.4.100"),
+            ("confidentialite.html", "site.js?v=24.4.100"),
+            ("gouvernance-vie-privee.html", "site.js?v=24.4.100"),
+            ("avis-legal.html", "site.js?v=24.4.100"),
+            ("projets/projet-nova/registre-rencontres.html", "script.js?v=26.1.0"),
+            ("projets/projet-nova/visionneuse.html?doc=resume", "script.js?v=26.1.0"),
+            ("projets/projet-nova/document.html?doc=corpus", "script.js?v=26.1.0"),
+            ("projets/projet-nova/code-conduite.html", "script.js?v=26.1.0"),
+            ("projets/projet-nova/finances.html", "script.js?v=26.1.0"),
+        ):
+            response = mobile_page.goto(
+                urljoin(BASE_URL, route), wait_until="domcontentloaded", timeout=30_000
+            )
+            assert_true(
+                response is not None and response.status < 400,
+                f"{BROWSER_NAME}: parcours secondaire inaccessible: {route}",
+            )
+            assert_true(
+                mobile_page.locator("main").count() >= 1
+                and mobile_page.locator(f'script[src*="{script_version}"]').count() == 1,
+                f"{BROWSER_NAME}: script de navigation divergent: {route}",
+            )
+            menu = mobile_page.locator("[data-menu-toggle]")
+            assert_true(menu.count() == 1, f"{BROWSER_NAME}: commande menu absente: {route}")
+            menu.tap()
+            assert_true(
+                menu.get_attribute("aria-expanded") == "true"
+                and menu.get_attribute("aria-label") == "Fermer le menu",
+                f"{BROWSER_NAME}: menu secondaire ne s'ouvre pas: {route}",
+            )
+            mobile_page.keyboard.press("Escape")
+            assert_true(
+                menu.get_attribute("aria-expanded") == "false"
+                and menu.get_attribute("aria-label") == "Ouvrir le menu"
+                and mobile_page.evaluate(
+                    "document.activeElement === document.querySelector('[data-menu-toggle]')"
+                ),
+                f"{BROWSER_NAME}: Échap ne ferme pas le menu secondaire: {route}",
+            )
+
+        # Le portail Nova dispose d'un autre moteur de navigation :
+        # vérifier le même contrat accessible sur son accueil mobile.
+        mobile_page.goto(
+            urljoin(BASE_URL, "projets/projet-nova/"),
+            wait_until="domcontentloaded",
+            timeout=30_000,
+        )
+        nova_toggle = mobile_page.locator("[data-menu-toggle]")
+        nova_menu = mobile_page.locator("[data-main-nav]")
+        assert_true(
+            nova_toggle.count() == 1
+            and nova_toggle.get_attribute("aria-expanded") == "false"
+            and nova_toggle.get_attribute("aria-label") == "Ouvrir le menu"
+            and nova_toggle.get_attribute("aria-controls") == nova_menu.get_attribute("id")
+            and nova_menu.get_attribute("id") == "navigation-principale",
+            f"{BROWSER_NAME}: menu Nova initial non conforme ou navigation non associée",
+        )
+        nova_toggle.tap()
+        assert_true(
+            nova_toggle.get_attribute("aria-expanded") == "true"
+            and nova_toggle.get_attribute("aria-label") == "Fermer le menu"
+            and "open" in (nova_menu.get_attribute("class") or "").split(),
+            f"{BROWSER_NAME}: ouverture tactile ou libellé Nova incorrect",
+        )
+        nova_menu.locator("a").first.focus()
+        mobile_page.keyboard.press("Escape")
+        assert_true(
+            nova_toggle.get_attribute("aria-expanded") == "false"
+            and mobile_page.evaluate(
+                "document.activeElement === document.querySelector('[data-menu-toggle]')"
+            ),
+            f"{BROWSER_NAME}: Échap Nova ne rend pas le focus au bouton",
+        )
+        nova_toggle.tap()
+        mobile_page.locator(".header-project-pro").first.tap()
+        assert_true(
+            nova_toggle.get_attribute("aria-expanded") == "false",
+            f"{BROWSER_NAME}: clic extérieur Nova ne ferme pas le menu",
+        )
+        nova_toggle.tap()
+        mobile_page.set_viewport_size({"width": 1200, "height": 844})
+        mobile_page.wait_for_function(
+            "document.querySelector('[data-menu-toggle]').getAttribute('aria-expanded') === 'false'",
+            timeout=5_000,
+        )
+        assert_true(
+            nova_toggle.get_attribute("aria-expanded") == "false"
+            and nova_toggle.get_attribute("aria-label") == "Ouvrir le menu",
+            f"{BROWSER_NAME}: retour bureau Nova conserve un menu déclaré ouvert",
+        )
+        mobile_page.set_viewport_size({"width": 390, "height": 844})
+
+        # Vérifier aussi le menu Nova sur la page du questionnaire.
+        # Vérification tactile réelle de la Boussole sur téléphones étroits.
+        # Aucune interaction simulée par evaluate() : les contrôles reçoivent
+        # des tap() comme sur un appareil tactile.
+        mobile_page.goto(
+            urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"),
+            wait_until="domcontentloaded",
+            timeout=30_000,
+        )
+        mobile_page.locator("#compass-start").wait_for(state="visible", timeout=10_000)
+        assert_true(
+            mobile_page.locator("[data-menu-toggle]").get_attribute("aria-controls")
+            == mobile_page.locator("[data-main-nav]").get_attribute("id")
+            == "navigation-principale",
+            f"{BROWSER_NAME}: menu Boussole Nova non associé à la navigation",
+        )
+        mobile_page.locator("[data-menu-toggle]").tap()
+        mobile_page.keyboard.press("Escape")
+        assert_true(
+            mobile_page.locator("[data-menu-toggle]").get_attribute("aria-expanded") == "false"
+            and mobile_page.locator("[data-menu-toggle]").get_attribute("aria-label") == "Ouvrir le menu",
+            f"{BROWSER_NAME}: fermeture clavier du menu Boussole Nova incorrecte",
+        )
+        # Le bouton est visible pendant le chargement asynchrone du JSON.
+        # Attendre la readiness réelle, sur le domaine officiel comme en
+        # local : une simple vérification immédiate est une course réseau.
+        # Ne pas forcer l'activation : une vraie erreur HTTP/JSON doit rester
+        # un échec du test, accompagné du statut affiché à l'utilisateur.
+        try:
+            mobile_page.wait_for_function(
+                """() => {
+                    const start = document.querySelector('#compass-start');
+                    const status = document.querySelector('#compass-status');
+                    return Boolean(
+                        start && !start.disabled &&
+                        status && status.textContent.includes('boussole est prête')
+                    );
+                }""",
+                timeout=20_000,
+            )
+        except PlaywrightTimeoutError as exc:
+            status = mobile_page.locator("#compass-status")
+            detail = status.inner_text() if status.count() else "(statut absent)"
+            raise AssertionError(
+                f"{BROWSER_NAME}: Boussole mobile indisponible après chargement "
+                f"(URL={mobile_page.url}; statut={detail})"
+            ) from exc
+        assert_true(
+            not mobile_page.locator("#compass-start").is_disabled(),
+            f"{BROWSER_NAME}: Boussole mobile indisponible",
+        )
+        for viewport_width in (390, 320):
+            mobile_page.set_viewport_size({"width": viewport_width, "height": 844})
+            mobile_overflow = mobile_page.evaluate("""() => {
+                const width = window.innerWidth;
+                const skip = document.querySelector(".skip-link");
+                const skipCss = skip ? {
+                    left: getComputedStyle(skip).left,
+                    clip: getComputedStyle(skip).clipPath,
+                    display: getComputedStyle(skip).display
+                } : null;
+                let widthWithoutSkip = null;
+                if(skip){
+                    skip.style.display = "none";
+                    void document.body.offsetWidth;
+                    widthWithoutSkip = document.documentElement.scrollWidth;
+                    skip.style.removeProperty("display");
+                }
+                const containers = Array.from(document.querySelectorAll("body *")).map(element => {
+                    const rect = element.getBoundingClientRect();
+                    return {
+                        name: element.tagName.toLowerCase(), id: element.id || "",
+                        className: typeof element.className === "string" ? element.className.slice(0,65) : "",
+                        scrollWidth: element.scrollWidth, clientWidth: element.clientWidth,
+                        right: Math.round(rect.right),
+                        overflowX: getComputedStyle(element).overflowX
+                    };
+                }).filter(x => x.scrollWidth > x.clientWidth + 5)
+                  .sort((a,b) => (b.scrollWidth-b.clientWidth) - (a.scrollWidth-a.clientWidth))
+                  .slice(0,12);
+                return {
+                    width,
+                    scrollWidth: document.documentElement.scrollWidth,
+                    bodyScrollWidth: document.body.scrollWidth,
+                    widthWithoutSkip,
+                    skipCss,
+                    containers,
+                    offenders: Array.from(document.querySelectorAll("body *")).map(element => {
+                        const rect = element.getBoundingClientRect();
+                        return {
+                            name: element.tagName.toLowerCase(),
+                            className: typeof element.className === "string" ? element.className.slice(0, 100) : "",
+                            id: element.id || "",
+                            right: Math.round(rect.right),
+                            left: Math.round(rect.left),
+                            scrollWidth: element.scrollWidth,
+                            clientWidth: element.clientWidth
+                        };
+                    }).filter(x => x.right > width + 2 || x.left < -2)
+                      .sort((a,b) => b.right - a.right).slice(0, 12)
+                };
+            }""")
+            assert_true(
+                mobile_overflow["scrollWidth"] <= viewport_width + 2,
+                f"{BROWSER_NAME}: Boussole déborde horizontalement en {viewport_width}px: {mobile_overflow}",
+            )
+            assert_true(
+                mobile_page.locator("#compass-evidence-question").is_visible(),
+                f"{BROWSER_NAME}: explorateur des preuves non accessible en {viewport_width}px",
+            )
+        mobile_page.set_viewport_size({"width": 390, "height": 844})
+        mobile_page.locator("#compass-start").tap()
+        mobile_page.locator("#compass-question-stage fieldset").wait_for(state="visible", timeout=10_000)
+        assert_true(
+            mobile_page.locator("#compass-question-stage fieldset").count() == 1,
+            f"{BROWSER_NAME}: plusieurs questions visibles sur téléphone",
+        )
+        mobile_tap_labels = mobile_page.locator("#compass-question-stage .compass-response-stack label")
+        assert_true(
+            mobile_tap_labels.count() == 8,
+            f"{BROWSER_NAME}: choix de réponse tactile incomplet",
+        )
+        for selector in (
+            "#compass-question-stage .compass-response-stack label",
+            "#compass-question-stage [data-importance]",
+            "#compass-next",
+            "#compass-reset",
+        ):
+            box = mobile_page.locator(selector).first.bounding_box()
+            assert_true(
+                box is not None and box["height"] >= 44,
+                f"{BROWSER_NAME}: cible tactile inférieure à 44px: {selector}",
+            )
+        assert_true(
+            mobile_page.evaluate("""() => {
+                const target = document.querySelector("[data-compass-question-focus]");
+                return document.activeElement === target &&
+                    getComputedStyle(target).outlineStyle === "solid";
+            }"""),
+            f"{BROWSER_NAME}: titre de question sans repère visuel de focus",
+        )
+        mobile_tap_labels.first.tap()
+        assert_true(
+            mobile_page.locator("#compass-next").is_enabled(),
+            f"{BROWSER_NAME}: Suivant ne s'active pas au toucher",
+        )
+        mobile_page.locator("#compass-next").tap()
+        assert_true(
+            mobile_page.locator("#compass-progress-track").get_attribute("aria-valuenow") == "2",
+            f"{BROWSER_NAME}: progression mobile non mise à jour",
+        )
+        mobile_page.locator("#compass-prev").tap()
+        assert_true(
+            mobile_page.locator("#compass-progress-track").get_attribute("aria-valuenow") == "1",
+            f"{BROWSER_NAME}: retour tactile à la première question indisponible",
+        )
+        assert_true(
+            mobile_page.locator("#compass-question-stage input[type='radio']").first.is_checked(),
+            f"{BROWSER_NAME}: réponse perdue après retour tactile",
+        )
+        mobile_page.set_viewport_size({"width": 320, "height": 844})
+        assert_true(
+            mobile_page.evaluate(
+                "document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2"
+            ),
+            f"{BROWSER_NAME}: débordement sur Boussole active en 320px",
+        )
+        mobile_page.locator("#compass-reset").tap()
+        assert_true(
+            mobile_page.locator("#compass-start-panel").is_visible() and
+            mobile_page.locator("#compass-stepper").is_hidden(),
+            f"{BROWSER_NAME}: réinitialisation mobile ne restaure pas l'écran d'accueil",
+        )
 
         mobile.close()
 

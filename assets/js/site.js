@@ -71,18 +71,42 @@
   var toggle = doc.querySelector('[data-menu-toggle]');
   var nav = doc.querySelector('[data-main-nav]');
   if (toggle && nav) {
+    // Un seul point de synchronisation entre l'état, la présentation et
+    // l'intitulé accessible du bouton (sur toutes les pages du portail).
+    function setNavOpen(open) {
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      toggle.setAttribute('aria-label', open ? 'Fermer le menu' : 'Ouvrir le menu');
+      if (open) addClass(nav, 'open');
+      else removeClass(nav, 'open');
+    }
+
+    setNavOpen(false);
     toggle.addEventListener('click', function () {
-      var open = toggle.getAttribute('aria-expanded') === 'true';
-      toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
-      if (open) removeClass(nav, 'open');
-      else addClass(nav, 'open');
+      setNavOpen(toggle.getAttribute('aria-expanded') !== 'true');
     });
 
     nav.addEventListener('click', function (event) {
-      if (closestAnchor(event.target, nav)) {
-        toggle.setAttribute('aria-expanded', 'false');
-        removeClass(nav, 'open');
-      }
+      if (closestAnchor(event.target, nav)) setNavOpen(false);
+    });
+
+    // Échap ferme le menu et ramène le focus sur sa commande.
+    doc.addEventListener('keydown', function (event) {
+      if (event.key !== 'Escape' || toggle.getAttribute('aria-expanded') !== 'true') return;
+      setNavOpen(false);
+      toggle.focus();
+    });
+
+    // Un toucher hors du menu ne doit pas le laisser recouvrir le contenu.
+    doc.addEventListener('pointerdown', function (event) {
+      if (toggle.getAttribute('aria-expanded') !== 'true') return;
+      if (toggle.contains(event.target) || nav.contains(event.target)) return;
+      setNavOpen(false);
+    });
+
+    // Ne pas conserver une ouverture mobile lors du retour au bureau.
+    window.addEventListener('resize', function () {
+      if (window.matchMedia('(min-width: 821px)').matches &&
+          toggle.getAttribute('aria-expanded') === 'true') setNavOpen(false);
     });
   }
 

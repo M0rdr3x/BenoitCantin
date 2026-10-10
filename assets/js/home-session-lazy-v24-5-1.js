@@ -12,7 +12,7 @@
     ['pointerdown','touchstart','keydown'].forEach(function(type){
       window.addEventListener(type,loadSession,{once:true,passive:type!=='keydown'});
     });
-    timer=window.setTimeout(loadSession,8000);
+    timer=window.setTimeout(loadSession,60000);
   }
   if(document.readyState==='complete')arm();
   else window.addEventListener('load',arm,{once:true});

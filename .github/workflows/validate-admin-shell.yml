@@ -1,0 +1,45 @@
+name: Admin SINJIRA — shell privé et redirections
+
+on:
+  pull_request:
+    paths:
+      - 'admin/**/*.html'
+      - 'Admin/**/*.html'
+      - 'scripts/validate_admin_shell.py'
+      - '.github/workflows/validate-admin-shell.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'admin/**/*.html'
+      - 'Admin/**/*.html'
+      - 'scripts/validate_admin_shell.py'
+      - '.github/workflows/validate-admin-shell.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Vérifier le shell et les redirections Admin
+        run: python scripts/validate_admin_shell.py
+      - name: Vérifier la console Admin existante
+        run: python scripts/validate_admin_console.py
+      - name: Vérifier les licences Admin
+        run: python scripts/validate_admin_license_codes_security.py
+      - name: Vérifier les précommandes Admin
+        run: python scripts/validate_preorder_admin_v24_5_4.py
+      - name: Vérifier la préparation vente
+        run: python scripts/validate_preorder_sale_readiness_v24_5_41.py
+      - name: Vérifier l’héritage numérique
+        run: python scripts/validate_life_story_legacy_v24_5_2.py

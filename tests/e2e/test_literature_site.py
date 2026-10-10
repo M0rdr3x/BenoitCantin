@@ -105,7 +105,7 @@ def run() -> None:
             f"{BROWSER_NAME}: Twitter Card Littérature absente",
         )
         assert_true(page.locator('nav[aria-label="Navigation principale"]').count() == 1, f"{BROWSER_NAME}: navigation Littérature non nommée")
-        assert_true("84 pages" in page.locator("main").inner_text(), f"{BROWSER_NAME}: pagination de la démo absente de la fiche")
+        assert_true("82 pages" in page.locator("main").inner_text(), f"{BROWSER_NAME}: pagination de la démo absente de la fiche")
 
         graph = json_ld_graph(page)
         books = [node for node in graph if node.get("@type") == "Book"]
@@ -113,6 +113,8 @@ def run() -> None:
         book = books[0]
         assert_true(book.get("name") == BOOK_NAME, f"{BROWSER_NAME}: nom JSON-LD du Livre I incorrect")
         assert_true(book.get("inLanguage") == "fr-CA", f"{BROWSER_NAME}: langue JSON-LD du Livre I incorrecte")
+        assert_true(book.get("numberOfPages") == 520, f"{BROWSER_NAME}: édition intégrale JSON-LD différente de 520 pages")
+        assert_true(book.get("isbn") == ["978-2-9825371-0-1", "978-2-9825371-1-8"], f"{BROWSER_NAME}: ISBN du Livre I incorrects")
         demo_part = book.get("hasPart") or {}
         assert_true(demo_part.get("isAccessibleForFree") is True, f"{BROWSER_NAME}: gratuité de la démo non déclarée")
         assert_true(demo_part.get("url") == READER_CANONICAL, f"{BROWSER_NAME}: URL JSON-LD de la démo incorrecte")
@@ -122,6 +124,7 @@ def run() -> None:
         download_link = page.locator(f'a[download="{DEMO_BASENAME}"]')
         assert_true(download_link.count() == 1, f"{BROWSER_NAME}: téléchargement PDF nommé absent ou dupliqué")
         assert_true(download_link.get_attribute("type") == "application/pdf", f"{BROWSER_NAME}: type PDF du téléchargement absent")
+        assert_true(page.locator('a[href="/compte/bibliotheque.html#livre-i"]').count() == 1, f"{BROWSER_NAME}: accès privé Livre I absent de la fiche")
         assert_no_full_edition_link(page, "Littérature")
 
         pdf_head = context.request.head(urljoin(BASE_URL, DEMO_ROUTE), timeout=30_000)
@@ -172,13 +175,15 @@ def run() -> None:
         assert_true(parent_book.get("url") == CANONICAL, f"{BROWSER_NAME}: URL du Livre I parent incorrecte")
         assert_true(FULL_BASENAME not in page.content(), f"{BROWSER_NAME}: nom du fichier intégral exposé dans le lecteur")
 
+        assert_true(page.locator('body[data-reader-total-pages="82"]').count() == 1, f"{BROWSER_NAME}: pagination canonique 82 pages absente du lecteur")
+        assert_true(page.locator('a[href="/compte/bibliotheque.html#livre-i"]').count() == 1, f"{BROWSER_NAME}: accès privé Livre I absent du lecteur")
         assert_true(page.locator('input[data-reader-page-number][aria-label="Numéro de page"]').count() == 1, f"{BROWSER_NAME}: champ de page lecteur non nommé")
-        assert_true(page.locator("input[data-reader-page-number]").get_attribute("max") == "84", f"{BROWSER_NAME}: maximum du lecteur différent de 84")
+        assert_true(page.locator("input[data-reader-page-number]").get_attribute("max") == "82", f"{BROWSER_NAME}: maximum du lecteur différent de 82")
         assert_true(page.locator('[data-reader-resume][aria-live="polite"]').count() == 1, f"{BROWSER_NAME}: reprise lecteur non annoncée aux aides techniques")
         frame = page.locator("iframe[data-pdf-reader]")
         assert_true(frame.count() == 1, f"{BROWSER_NAME}: iframe du lecteur absente")
         assert_true(DEMO_BASENAME in (frame.get_attribute("src") or ""), f"{BROWSER_NAME}: iframe ne pointe plus vers la démo stable")
-        assert_true("84 pages" in page.locator("main").inner_text(), f"{BROWSER_NAME}: lecteur ne décrit plus la démo 84 pages")
+        assert_true("82 pages" in page.locator("main").inner_text(), f"{BROWSER_NAME}: lecteur ne décrit plus la démo 82 pages")
         assert_no_full_edition_link(page, "lecteur")
 
         mobile = browser.new_context(
@@ -206,7 +211,7 @@ def run() -> None:
         mobile.close()
         context.close()
         browser.close()
-        print(f"OK littérature {BROWSER_NAME}: fiche, SEO, sitemap, lecteur 84 pages, frontière intégrale et mobile vérifiés.")
+        print(f"OK littérature {BROWSER_NAME}: fiche, SEO, sitemap, lecteur 82 pages, frontière intégrale et mobile vérifiés.")
 
 
 if __name__ == "__main__":

@@ -31,6 +31,11 @@ verify_jwt = false
 [functions.get-private-book-url]
 verify_jwt = true
 
+# Livraison privée canonique de l’édition intégrale du Livre I.
+# L’Edge Function vérifie propriétaire/admin ou entitlement produit avant de signer l’URL.
+[functions.get-novel-file-url]
+verify_jwt = true
+
 [functions.submit-game-contribution]
 verify_jwt = true
 

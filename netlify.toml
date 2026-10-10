@@ -15,6 +15,52 @@
   [headers.values]
     Cache-Control = "public, max-age=3600"
 
+# Les surfaces privées/authentifiées ne doivent jamais être mises en cache
+# par le navigateur, le CDN ou un intermédiaire partagé.
+[[headers]]
+  for = "/compte/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
+
+[[headers]]
+  for = "/administration.html"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/Admin/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/app/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/supabase/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
+
 [[redirects]]
   from = "/nova"
   to = "/projets/projet-nova/index.html"
@@ -38,4 +84,169 @@
 [[redirects]]
   from = "/sinjira"
   to = "/projets/sinjira/index.html"
+  status = 301
+
+# Compatibilité des anciennes routes racine de Projet Nova.
+
+[[redirects]]
+  from = "/participer.html"
+  to = "/projets/projet-nova/participer.html"
+  status = 301
+
+[[redirects]]
+  from = "/presse.html"
+  to = "/projets/projet-nova/presse.html"
+  status = 301
+
+[[redirects]]
+  from = "/programme.html"
+  to = "/projets/projet-nova/programme.html"
+  status = 301
+
+[[redirects]]
+  from = "/propositions.html"
+  to = "/projets/projet-nova/propositions.html"
+  status = 301
+
+[[redirects]]
+  from = "/recrutement.html"
+  to = "/projets/projet-nova/recrutement.html"
+  status = 301
+
+[[redirects]]
+  from = "/registre-conformite.html"
+  to = "/projets/projet-nova/registre-conformite.html"
+  status = 301
+
+[[redirects]]
+  from = "/registre-rencontres.html"
+  to = "/projets/projet-nova/registre-rencontres.html"
+  status = 301
+
+[[redirects]]
+  from = "/reglements.html"
+  to = "/projets/projet-nova/reglements.html"
+  status = 301
+
+[[redirects]]
+  from = "/transparence.html"
+  to = "/projets/projet-nova/transparence.html"
+  status = 301
+
+[[redirects]]
+  from = "/transition.html"
+  to = "/projets/projet-nova/transition.html"
+  status = 301
+
+[[redirects]]
+  from = "/vision.html"
+  to = "/projets/projet-nova/vision.html"
+  status = 301
+
+[[redirects]]
+  from = "/visionneuse.html"
+  to = "/projets/projet-nova/visionneuse.html"
+  status = 301
+
+# Deuxième lot d'anciennes routes racine de Projet Nova.
+
+[[redirects]]
+  from = "/accessibilite.html"
+  to = "/projets/projet-nova/accessibilite.html"
+  status = 301
+
+[[redirects]]
+  from = "/actualites.html"
+  to = "/projets/projet-nova/actualites.html"
+  status = 301
+
+[[redirects]]
+  from = "/code-conduite.html"
+  to = "/projets/projet-nova/code-conduite.html"
+  status = 301
+
+[[redirects]]
+  from = "/comprendre-nova.html"
+  to = "/projets/projet-nova/comprendre-nova.html"
+  status = 301
+
+[[redirects]]
+  from = "/comptabilite.html"
+  to = "/projets/projet-nova/comptabilite.html"
+  status = 301
+
+[[redirects]]
+  from = "/constitution.html"
+  to = "/projets/projet-nova/constitution.html"
+  status = 301
+
+[[redirects]]
+  from = "/documents.html"
+  to = "/projets/projet-nova/documents.html"
+  status = 301
+
+[[redirects]]
+  from = "/equipe.html"
+  to = "/projets/projet-nova/equipe.html"
+  status = 301
+
+[[redirects]]
+  from = "/faq.html"
+  to = "/projets/projet-nova/faq.html"
+  status = 301
+
+[[redirects]]
+  from = "/formulaire-soutien.html"
+  to = "/projets/projet-nova/formulaire-soutien.html"
+  status = 301
+
+[[redirects]]
+  from = "/livre-nova.html"
+  to = "/projets/projet-nova/livre-nova.html"
+  status = 301
+
+[[redirects]]
+  from = "/lois-administratives.html"
+  to = "/projets/projet-nova/lois-administratives.html"
+  status = 301
+
+[[redirects]]
+  from = "/lois-ordinaires.html"
+  to = "/projets/projet-nova/lois-ordinaires.html"
+  status = 301
+
+[[redirects]]
+  from = "/lois-organiques.html"
+  to = "/projets/projet-nova/lois-organiques.html"
+  status = 301
+
+[[redirects]]
+  from = "/manifeste.html"
+  to = "/projets/projet-nova/manifeste.html"
+  status = 301
+
+[[redirects]]
+  from = "/merci-formulaire.html"
+  to = "/projets/projet-nova/merci-formulaire.html"
+  status = 301
+
+[[redirects]]
+  from = "/mises-a-jour.html"
+  to = "/projets/projet-nova/mises-a-jour.html"
+  status = 301
+
+[[redirects]]
+  from = "/mission.html"
+  to = "/projets/projet-nova/mission.html"
+  status = 301
+
+# Alias historique de l’administration privée.
+[[redirects]]
+  from = "/administration"
+  to = "/admin/sinjira/"
+  status = 301
+
+[[redirects]]
+  from = "/administration.html"
+  to = "/admin/sinjira/"
   status = 301

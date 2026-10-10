@@ -63,6 +63,21 @@ def main() -> int:
             )
 
     home = (ROOT / "index.html").read_text("utf-8", errors="ignore")
+    if 'data-disable-sinjira-assistant="true"' not in home:
+        errors.append("index.html: l’assistant doit être explicitement désactivé sur l’accueil.")
+    if '/assets/js/home-assistant-lazy-v24-5-2.js' in home or '/assets/js/sinjira-assistant.js' in home:
+        errors.append("index.html: aucun runtime assistant ne doit être chargé sur l’accueil désactivé.")
+    session_loader = ROOT / "assets" / "js" / "home-session-lazy-v24-5-1.js"
+    if '/assets/js/home-session-lazy-v24-5-1.js?v=24.5.1' not in home:
+        errors.append("index.html: loader session différé absent.")
+    if not session_loader.exists():
+        errors.append("Loader session accueil V24.5.1 absent.")
+    else:
+        session_text = session_loader.read_text("utf-8", errors="ignore")
+        for marker in ("pointerdown", "touchstart", "keydown", "setTimeout(loadSession,60000)"):
+            if marker not in session_text:
+                errors.append(f"Loader session accueil insuffisamment différé: {marker}")
+
     script_count = len(re.findall(r"<script\b", home, flags=re.I))
     stylesheet_count = len(re.findall(r"<link\b[^>]*rel=[\"']stylesheet[\"']", home, flags=re.I))
     if script_count > 6:
@@ -71,8 +86,8 @@ def main() -> int:
         errors.append(f"index.html: {stylesheet_count} feuilles de style; budget maximal 8.")
 
     cards = re.findall(r'<a class="home-project".*?</a>', home, flags=re.I | re.S)
-    if len(cards) != 3:
-        errors.append(f"index.html: 3 cartes principales attendues, trouvé {len(cards)}.")
+    if len(cards) != 4:
+        errors.append(f"index.html: 4 cartes principales attendues, trouvé {len(cards)}.")
     else:
         for idx, card in enumerate(cards, start=1):
             image = re.search(r"<img\b[^>]*>", card, flags=re.I)
