@@ -12,6 +12,7 @@ on:
       - '.github/workflows/deploy-pages-controlled.yml'
       - 'scripts/verify_pages_live.py'
       - 'scripts/validate_pages_workflows.py'
+      - 'scripts/attest_pages_production.py'
   workflow_dispatch:
 
 permissions:
@@ -44,6 +45,7 @@ jobs:
           python3 scripts/audit_pages_jekyll.py --self-test
           python3 scripts/audit_pages_jekyll.py --source .
           python3 scripts/verify_pages_live.py --self-test
+          python3 scripts/attest_pages_production.py --self-test
           python3 scripts/validate_pages_workflows.py --self-test
           python3 scripts/validate_pages_workflows.py
 
