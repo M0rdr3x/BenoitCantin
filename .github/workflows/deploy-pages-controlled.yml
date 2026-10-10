@@ -150,13 +150,14 @@ jobs:
         env:
           MODE: ${{ inputs.mode }}
         run: |
+          set -euo pipefail
           {
-            echo "## Pages — préparation sans accès à la racine technique"
-            echo "- Source commit : `$GITHUB_SHA`"
-            echo "- Mode : `$MODE`"
-            echo "- Répertoire upload-pages-artifact : `_site` (jamais `.`)"
-            echo "- Une publication exige PUBLISH + ACTIONS_ONLY + SHA exact"
-            echo "- Aucun changement DNS et aucune activation de service externe"
+            printf '%s\n' '## Pages — préparation sans accès à la racine technique'
+            printf '%s\n' "- Source commit : $GITHUB_SHA"
+            printf '%s\n' "- Mode : $MODE"
+            printf '%s\n' '- Répertoire upload-pages-artifact : _site (jamais la racine)'
+            printf '%s\n' '- Une publication exige PUBLISH + ACTIONS_ONLY + SHA exact'
+            printf '%s\n' '- Aucun changement DNS et aucune activation de service externe'
           } >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
