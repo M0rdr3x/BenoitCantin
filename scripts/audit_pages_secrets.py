@@ -66,7 +66,7 @@ def self_test() -> None:
         # une chaîne ressemblant à une véritable clé dans le dépôt source.
         for secret in ('ghp_' + 'A' * 40, 'sb_secret_' + 'B' * 28,
                        'sk_live_' + 'C' * 30,
-                       '-----BEGIN PRIVATE KEY-----'):
+                       '-----BEGIN ' + 'PRIVATE KEY-----'):
             public.write_text('<!-- ' + secret + ' -->', 'utf-8')
             issues = audit(root)
             assert any('index.html' in issue and 'Secret' in issue
