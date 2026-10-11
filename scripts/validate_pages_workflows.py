@@ -67,6 +67,8 @@ def validate(workflow: str) -> list[str]:
          "Résumé de publication doit utiliser printf et non des backticks")
     need(workflow.count("path: _site") == 1,
          "L'artefact Pages doit être téléversé depuis _site exactement")
+    need(workflow.count("include-hidden-files: 'true'") == 1,
+         "Les fichiers approuvés .well-known doivent être inclus dans l'artefact Pages")
     need(re.search(r"(?m)^\s+path:\s*\.\s*$", workflow) is None,
          "Téléversement de la racine du dépôt interdit")
     need("python3 scripts/audit_pages_jekyll.py --source . --built _site" in workflow,
@@ -164,6 +166,9 @@ def self_test(workflow: str) -> None:
     smoke_summary_bash(workflow)
     mutations = {
         "Publication root": workflow.replace("path: _site", "path: .", 1),
+        "Dossier .well-known exclu de l'upload": workflow.replace(
+            "include-hidden-files: 'true'", "include-hidden-files: 'false'", 1
+        ),
         "Audit PDF post-build supprimé": workflow.replace(
             "python3 scripts/audit_public_documents.py --source . --built _site",
             "echo DOCUMENTS_NON_AUDITES", 1,
