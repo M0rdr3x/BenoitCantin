@@ -93,6 +93,7 @@ jobs:
           python3 scripts/audit_public_csv.py --source .
           python3 scripts/audit_public_surface.py --self-test
           python3 scripts/audit_pages_secrets.py --self-test
+          python3 scripts/pages_release_proof.py --self-test
           python3 scripts/audit_public_surface.py --source .
 
       - name: Construire Jekyll — pas la racine technique du dépôt
@@ -101,15 +102,20 @@ jobs:
           source: ./
           destination: ./_site
 
+      - name: Marquer le build avec le SHA et l'identifiant du workflow
+        shell: bash
+        run: python3 scripts/pages_release_proof.py --write _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
+
       - name: Refuser toute fuite de code et toute perte de route
         shell: bash
         run: |
           set -euo pipefail
           python3 scripts/audit_pages_jekyll.py --source . --built _site
           python3 scripts/audit_public_documents.py --source . --built _site
-          python3 scripts/audit_public_json.py --source . --built _site
+          python3 scripts/audit_public_json.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"
           python3 scripts/audit_public_csv.py --source . --built _site
-          python3 scripts/audit_public_surface.py --source . --built _site
+          python3 scripts/audit_public_surface.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"
+          python3 scripts/pages_release_proof.py --verify _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
           python3 scripts/audit_pages_secrets.py --built _site
           test -f _site/CNAME
           test ! -e _site/.nojekyll
@@ -186,5 +192,5 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
-      - name: Vérifier la production HTTPS, les routes et les refus techniques
-        run: python3 scripts/verify_pages_live.py --check
+      - name: Vérifier la production HTTPS, les routes, les refus et le SHA exact
+        run: python3 scripts/verify_pages_live.py --check --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"
