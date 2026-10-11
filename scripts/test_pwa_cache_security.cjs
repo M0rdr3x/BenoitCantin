@@ -1,0 +1,143 @@
+#!/usr/bin/env node
+'use strict';
+// Exercices du vrai sw.js via vm, sans navigateur, npm ni service externe.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const SW_PATH = path.resolve(__dirname, '../sw.js');
+const source = fs.readFileSync(SW_PATH, 'utf8');
+const listeners = new Map();
+const origin = 'https://www.benoitcantin.com';
+const requests = [];
+const writes = [];
+const deletes = [];
+const matches = [];
+const responseHeaders = new Map();
+let networkFails = false;
+let currentCache;
+
+const cache = {
+  async addAll(paths) { for (const p of paths) assert.ok(p.startsWith('/')); },
+  async put(r, response) {
+    assert.ok(response.ok, 'Only successful responses are cached');
+    writes.push(new URL(r.url).pathname);
+  },
+};
+const storage = {
+  async open(key) { currentCache = key; return cache; },
+  async match(request) {
+    matches.push(typeof request === 'string' ? request : new URL(request.url).pathname);
+    return undefined;
+  },
+  async keys() { return ['benoitcantin-v24-4-95-public-3', 'other-product-cache', currentCache]; },
+  async delete(key) { deletes.push(key); return true; },
+};
+const environment = {
+  URL, Request, Response, Set, Promise, console,
+  location: { origin },
+  caches: storage,
+  self: {
+    addEventListener(type, fn) { listeners.set(type, fn); },
+    skipWaiting: async () => {},
+    clients: { claim: async () => {} },
+  },
+  async fetch(r) {
+    requests.push({ path: new URL(r.url).pathname, cache: r.cache });
+    if (networkFails) throw new Error('network offline');
+    const uri = new URL(r.url);
+    const headers = responseHeaders.get(uri.pathname) || {};
+    return new Response('public test', { status: 200, headers });
+  },
+};
+vm.runInNewContext(source, environment, { filename: SW_PATH, timeout: 2500 });
+assert.deepEqual([...listeners.keys()].sort(), ['activate', 'fetch', 'install']);
+
+async function event(type) {
+  let waited;
+  listeners.get(type)({ waitUntil(p) { waited = p; } });
+  await waited;
+}
+async function request(uri, options = {}) {
+  const url = uri.startsWith('http') ? uri : origin + uri;
+  const req = new Request(url, options);
+  let responded;
+  const background = [];
+  listeners.get('fetch')({
+    request: req,
+    respondWith(p) { responded = p; },
+    waitUntil(p) { background.push(p); },
+  });
+  assert.ok(responded, 'Same-origin GET must be handled by SW');
+  const response = await responded;
+  await Promise.all(background);
+  return response;
+}
+async function test() {
+  await event('install');
+  await event('activate');
+  assert.ok(deletes.includes('benoitcantin-v24-4-95-public-3'));
+  assert.ok(!deletes.includes('other-product-cache'), 'Foreign caches must survive');
+
+  const forbidden = [
+    '/.well-known/sinjira-pages-release.json',
+    '/.well-known/release.json', '/api/v1/account', '/auth/v1/user',
+    '/functions/v1/profile', '/storage/v1/private', '/supabase/config.toml',
+    '/compte/index.html', '/Admin/sinjira/', '/admin/', '/app/',
+    '/projets/sinjira/codex/livre-i-delivery-contract.json',
+    '/projets/projet-nova/data/boussole-preuves-2026.json',
+  ];
+  for (const pathname of forbidden) {
+    const before = writes.length, lookedUp = matches.length;
+    const result = await request(pathname);
+    assert.equal(result.status, 200);
+    assert.equal(writes.length, before, pathname + ' was cached');
+    assert.equal(matches.length, lookedUp, pathname + ' read a cache');
+    assert.equal(requests.at(-1).cache, 'no-store', pathname + ' not forced network-only');
+  }
+
+  // Proof must never be served from the old cache, even when offline.
+  networkFails = true;
+  await assert.rejects(request('/.well-known/sinjira-pages-release.json'));
+  networkFails = false;
+
+  // Assets from the pinned public set are cached, but not credentials or tokens.
+  await request('/assets/js/site.js');
+  assert.ok(writes.includes('/assets/js/site.js'));
+  const n1 = writes.length;
+  await request('/assets/js/site.js?token=private');
+  assert.equal(writes.length, n1, 'URLs carrying tokens must not be cached');
+  await request('/assets/js/site.js', { headers: { Authorization: 'Bearer fake' } });
+  assert.equal(writes.length, n1, 'Authorized responses must not be cached');
+  await request('/assets/js/site.js', { headers: { Cookie: 'session=dummy' } });
+  assert.equal(writes.length, n1, 'Cookie-bearing requests must not be cached');
+
+  responseHeaders.set('/assets/js/site.js', { 'Cache-Control': 'private, max-age=60' });
+  await request('/assets/js/site.js');
+  assert.equal(writes.length, n1, 'Cache-Control private must be honored');
+  responseHeaders.set('/assets/js/site.js', { 'Vary': 'Cookie, Accept-Encoding' });
+  await request('/assets/js/site.js');
+  assert.equal(writes.length, n1, 'Vary: Cookie must block cache');
+  responseHeaders.set('/assets/js/site.js', { 'Set-Cookie': 's=foo' });
+  await request('/assets/js/site.js');
+  assert.equal(writes.length, n1, 'Set-Cookie must block cache');
+  responseHeaders.delete('/assets/js/site.js');
+
+  // No non-GET or third-party request should be intercepted.
+  let handled = false;
+  listeners.get('fetch')({
+    request: new Request(origin + '/assets/js/site.js', { method: 'POST' }),
+    respondWith() { handled = true; },
+  });
+  assert.equal(handled, false);
+  listeners.get('fetch')({
+    request: new Request('https://other.example/assets/js/site.js'),
+    respondWith() { handled = true; },
+  });
+  assert.equal(handled, false);
+
+  assert.ok(/-public-4/.test(currentCache), 'Cache version must rotate');
+  console.log('OK PWA: réseaux privés et release non cachés, allowlist statique, protections Cookie/Auth/Vary et isolation des caches.');
+}
+test().catch(error => { console.error(error); process.exitCode = 1; });
