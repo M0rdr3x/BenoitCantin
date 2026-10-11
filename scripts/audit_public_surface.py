@@ -16,10 +16,12 @@ from pathlib import Path
 from audit_pages_jekyll import config_values
 
 MANIFEST = Path(__file__).with_name("pages_public_inventory.txt")
+GENERATED_MANIFEST = Path(__file__).with_name("pages_generated_inventory.txt")
 EXPECTED_COUNT = 614
+GENERATED_COUNT = 31
 
 
-def inventory(text: str) -> tuple[set[str], list[str]]:
+def inventory(text: str, count: int = EXPECTED_COUNT) -> tuple[set[str], list[str]]:
     lines = [line.strip() for line in text.splitlines()
              if line.strip() and not line.startswith("#")]
     errors: list[str] = []
@@ -35,8 +37,8 @@ def inventory(text: str) -> tuple[set[str], list[str]]:
         errors.append("Manifeste non trié")
     if len(lines) != len(set(lines)):
         errors.append("Doublon dans le manifeste")
-    if len(lines) != EXPECTED_COUNT:
-        errors.append(f"Inventaire modifié : {len(lines)} au lieu de {EXPECTED_COUNT} fichiers")
+    if len(lines) != count:
+        errors.append(f"Inventaire modifié : {len(lines)} au lieu de {count} fichiers")
     return set(lines), errors
 
 
@@ -65,6 +67,15 @@ def eligible(path: str, excluded: set[str]) -> bool:
 
 def audit(root: Path, built: Path | None, manifest_text: str) -> list[str]:
     expected, errors = inventory(manifest_text)
+    try:
+        generated, generated_errors = inventory(
+            GENERATED_MANIFEST.read_text("utf-8"), GENERATED_COUNT
+        )
+    except OSError as exc:
+        return errors + [f"Inventaire Jekyll généré introuvable: {type(exc).__name__}"]
+    errors.extend(generated_errors)
+    if expected & generated:
+        errors.append("Chemins source et Jekyll générés en conflit")
     if not root.is_dir():
         return errors + ["Répertoire source introuvable"]
     cfg = root / "_config.yml"
@@ -85,9 +96,10 @@ def audit(root: Path, built: Path | None, manifest_text: str) -> list[str]:
     if not built.is_dir():
         return errors + ["Artefact Jekyll absent"]
     actual = scan(built)
-    for path in sorted(actual - expected):
+    approved_output = expected | generated
+    for path in sorted(actual - approved_output):
         errors.append(f"Fichier non autorisé dans l'artefact public: {path}")
-    for path in sorted(expected - actual):
+    for path in sorted(approved_output - actual):
         errors.append(f"Fichier approuvé absent de l'artefact: {path}")
     for path in sorted(expected & src_files & actual):
         a = hashlib.sha256((root / path).read_bytes()).digest()
@@ -101,6 +113,8 @@ def self_test() -> None:
     source_manifest = MANIFEST.read_text("utf-8")
     expected, errors = inventory(source_manifest)
     assert not errors, errors
+    generated, errors = inventory(GENERATED_MANIFEST.read_text("utf-8"), GENERATED_COUNT)
+    assert not errors and not expected & generated, errors
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary) / "repo"
         built = Path(temporary) / "site"
@@ -112,7 +126,18 @@ def self_test() -> None:
                 target = base / rel
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(("public:" + rel).encode("utf-8"))
+        for rel in generated:
+            target = built / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(("generated:" + rel).encode("utf-8"))
         assert not audit(root, built, source_manifest), audit(root, built, source_manifest)
+        derived = sorted(generated)[0]
+        (built / derived).unlink()
+        assert any(derived in e and "absent de l'artefact" in e
+                   for e in audit(root, built, source_manifest)), (
+            "Page Jekyll générée disparue non détectée"
+        )
+        (built / derived).write_bytes(("generated:" + derived).encode("utf-8"))
         example = sorted(expected)[-1]
         (built / example).unlink()
         assert any(example in e and "absent de l'artefact" in e
@@ -144,8 +169,8 @@ def self_test() -> None:
         bad_manifest = source_manifest + "assets/image-nouvelle.webp\n"
         assert any("Inventaire modifié" in e for e in audit(root, None, bad_manifest))
         assert not audit(root, built, source_manifest), audit(root, built, source_manifest)
-    print("OK inventaire public global: 614 ressources exactes, nouvelles sources, "
-          "pertes et altérations refusées")
+    print("OK inventaire public global: 614 fichiers source + 31 pages générées, "
+          "ajouts, pertes et altérations non approuvés refusés")
 
 
 def main() -> int:
@@ -170,8 +195,8 @@ def main() -> int:
         print("ERREUR: " + issue, file=sys.stderr)
     if issues:
         return 1
-    print(f"OK : {EXPECTED_COUNT} ressources publiques exactes, "
-          "aucune addition ou perte non revue")
+    print(f"OK : {EXPECTED_COUNT} fichiers source + {GENERATED_COUNT} générés "
+          "présents et contrôlés, aucune addition ou perte non revue")
     return 0
 
 
