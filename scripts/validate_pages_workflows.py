@@ -69,6 +69,19 @@ def validate(workflow: str) -> list[str]:
          "L'artefact Pages doit être téléversé depuis _site exactement")
     need(workflow.count("include-hidden-files: 'true'") == 1,
          "Les fichiers approuvés .well-known doivent être inclus dans l'artefact Pages")
+    upload_start = "      - name: Téléverser uniquement l’artefact vérifié, et seulement en mode PUBLISH\n"
+    upload_end = "      - name: Tracer l'origine du publish\n"
+    upload_block = (workflow.split(upload_start, 1)[1].split(upload_end, 1)[0]
+                    if workflow.count(upload_start) == 1 and workflow.count(upload_end) == 1
+                    else "")
+    need(bool(upload_block), "Étape d'upload Pages introuvable ou dupliquée")
+    need("        if: ${{ inputs.mode == 'PUBLISH' && inputs.confirm_actions_source == 'ACTIONS_ONLY' }}" in upload_block,
+         "DRY_RUN ne doit jamais téléverser d'artefact Pages")
+    need("uses: actions/upload-pages-artifact@" in upload_block,
+         "Action de téléversement non associée à la condition PUBLISH")
+    need("include-hidden-files: 'true'" in upload_block and "path: _site" in upload_block,
+         "L'upload conditionnel doit conserver _site et .well-known")
+
     need(re.search(r"(?m)^\s+path:\s*\.\s*$", workflow) is None,
          "Téléversement de la racine du dépôt interdit")
     need("python3 scripts/audit_pages_jekyll.py --source . --built _site" in workflow,
@@ -185,6 +198,12 @@ def self_test(workflow: str) -> None:
         "Dossier .well-known exclu de l'upload": workflow.replace(
             "include-hidden-files: 'true'", "include-hidden-files: 'false'", 1
         ),
+        "DRY_RUN téléverse l'artefact": workflow.replace(
+            "        if: ${{ inputs.mode == 'PUBLISH' && inputs.confirm_actions_source == 'ACTIONS_ONLY' }}\n"
+            "        uses: actions/upload-pages-artifact@",
+            "        uses: actions/upload-pages-artifact@", 1,
+        ),
+
         "Audit PDF post-build supprimé": workflow.replace(
             "python3 scripts/audit_public_documents.py --source . --built _site",
             "echo DOCUMENTS_NON_AUDITES", 1,
