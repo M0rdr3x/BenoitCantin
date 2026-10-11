@@ -66,18 +66,18 @@ self.addEventListener('fetch',e=>{
     return;
   }
   if(r.destination==='document'||r.mode==='navigate'){
-    e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{
-      if(cacheableResponse(resp)){
-        const store=caches.open(CACHE).then(c=>c.put(r,resp.clone()));
-        e.waitUntil(store);
-      }
-      return resp;
-    }).catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));
+    // Une navigation peut être personnalisée par cookie, même sur une URL publique :
+    // ne jamais conserver sa réponse. Le fallback ne contient que la précharge anonyme.
+    e.respondWith(fetch(new Request(r,{cache:'no-store'}))
+      .catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));
     return;
   }
+  // Les ressources statiques destinées au cache sont toujours demandées sans
+  // cookies de session, comme à l'installation du service worker.
+  const anonymous=new Request(r,{cache:'no-store',credentials:'omit'});
   const liveAsset=/^\/assets\/(?:js|css)\//.test(u.pathname);
   if(liveAsset){
-    e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{
+    e.respondWith(fetch(anonymous).then(resp=>{
       if(cacheableResponse(resp)){
         const store=caches.open(CACHE).then(c=>c.put(r,resp.clone()));
         e.waitUntil(store);
@@ -86,7 +86,7 @@ self.addEventListener('fetch',e=>{
     }).catch(()=>caches.match(r)));
     return;
   }
-  e.respondWith(caches.match(r).then(cached=>cached||fetch(r).then(resp=>{
+  e.respondWith(caches.match(r).then(cached=>cached||fetch(anonymous).then(resp=>{
     if(cacheableResponse(resp)){
       const store=caches.open(CACHE).then(c=>c.put(r,resp.clone()));
       e.waitUntil(store);
