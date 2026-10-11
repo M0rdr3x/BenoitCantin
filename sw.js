@@ -1,5 +1,5 @@
 const CACHE='benoitcantin-v24-4-95-public-4';
-const CACHE_PREFIX='benoitcantin-';
+const CACHE_PREFIX='benoitcantin-v24-4-95-public-';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/transparence-ia.html',
   '/assets/css/site.css','/assets/css/browser-compat-v24-4-22.css','/assets/css/ai-transparency.css','/assets/css/home-v24-4-12.css','/assets/css/v19-pro.css','/assets/css/v24-platform.css','/assets/css/v24-3-2-fixes.css','/assets/css/v24-3-3-fixes.css','/assets/css/fracture-engine.css','/assets/css/sinjira-assistant.css','/assets/css/sinjira-mobile-app-v24-4-94.css','/assets/css/sinjira-mobile-account-shell-v24-4-95.css',
@@ -33,9 +33,26 @@ function cacheableResponse(resp){
   return resp.ok&&!resp.redirected&&!/(?:^|[,\s])(?:no-store|private)(?:$|[,\s=])/.test(cc)&&
     !resp.headers.has('Set-Cookie')&&!/(?:^|,\s*)(?:cookie|authorization)(?:,|$)/.test(vary);
 }
-self.addEventListener('install',e=>e.waitUntil(
-  caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())
-));
+// La précharge est anonyme et soumise aux MÊMES protections que les accès réseau.
+// Ne jamais précharger une réponse personnalisée, un token ni un reçu de release.
+function safePrecache(path){
+  const u=new URL(path,location.origin);
+  return path.startsWith('/')&&u.origin===location.origin&&u.pathname===path&&
+    !u.search&&!u.hash&&!privatePath(u.pathname);
+}
+self.addEventListener('install',e=>e.waitUntil((async()=>{
+  if(!CORE.every(safePrecache))throw Error('Chemin privé interdit dans le precache PWA');
+  const store=await caches.open(CACHE);
+  await Promise.all(CORE.map(async path=>{
+    const request=new Request(new URL(path,location.origin).href,
+      {cache:'no-store',credentials:'omit'});
+    const response=await fetch(request);
+    if(!cacheableResponse(response))throw Error('Réponse non publique interdite dans le precache');
+    await store.put(request,response);
+  }));
+  await self.skipWaiting();
+})()));
+
 self.addEventListener('activate',e=>e.waitUntil(
   caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith(CACHE_PREFIX)&&k!==CACHE)
     .map(k=>caches.delete(k)))).then(()=>self.clients.claim())
