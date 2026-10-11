@@ -14,6 +14,8 @@ const requests = [];
 const writes = [];
 const deletes = [];
 const matches = [];
+const publicEntries = new Map();
+let globalLookups = 0;
 const responseHeaders = new Map();
 let networkFails = false;
 let currentCache;
@@ -22,14 +24,23 @@ const cache = {
   async addAll(paths) { for (const p of paths) assert.ok(p.startsWith('/')); },
   async put(r, response) {
     assert.ok(response.ok, 'Only successful responses are cached');
-    writes.push(new URL(r.url).pathname);
+    const pathname = new URL(r.url).pathname;
+    writes.push(pathname);
+    publicEntries.set(pathname, response.clone());
+  },
+  async match(r) {
+    const pathname = typeof r === 'string' ? r : new URL(r.url).pathname;
+    matches.push(pathname);
+    return publicEntries.get(pathname);
   },
 };
 const storage = {
   async open(key) { currentCache = key; return cache; },
   async match(request) {
-    matches.push(typeof request === 'string' ? request : new URL(request.url).pathname);
-    return undefined;
+    // CacheStorage.match() peut retourner des données venant d'une AUTRE PWA.
+    // Le code de production ne doit jamais appeler cette méthode globale.
+    globalLookups += 1;
+    return new Response('DONNEE PRIVEE CACHE TIERS', { status: 200 });
   },
   async keys() { return ['benoitcantin-v24-4-95-public-3', 'other-product-cache', currentCache]; },
   async delete(key) { deletes.push(key); return true; },
@@ -140,6 +151,23 @@ async function test() {
   assert.equal(writes.length, navigationWrites, 'Personalized navigation was cached');
   assert.equal(requests.at(-1).credentials, 'same-origin',
     'Navigation should still preserve session to render the current page');
+
+  // Même si le domaine possède un cache tiers contenant une copie sensible,
+  // le fallback offline lit uniquement le cache PUBLIC contrôlé.
+  networkFails = true;
+  const offlineNavigation = await request('/projets/sinjira/', {}, 'document');
+  assert.equal(await offlineNavigation.text(), 'public test',
+    'Offline navigation must come from this PWA public cache, never another app');
+  const ownPublicAsset = await request('/assets/js/site.js');
+  assert.equal(await ownPublicAsset.text(), 'public test',
+    'Offline JS must come exclusively from the active cache');
+  publicEntries.delete('/assets/js/site.js');
+  const missingOwnAsset = await request('/assets/js/site.js');
+  assert.equal(missingOwnAsset, undefined,
+    'A missing own-cache asset must not be served from a foreign cache');
+  assert.equal(globalLookups, 0, 'Global caches.match must never read third-party caches');
+  networkFails = false;
+
   const n1 = writes.length;
   await request('/assets/js/site.js?token=private');
   assert.equal(writes.length, n1, 'URLs carrying tokens must not be cached');
@@ -172,6 +200,7 @@ async function test() {
   });
   assert.equal(handled, false);
 
+  assert.equal(globalLookups, 0, 'No cross-application cache lookup is allowed');
   assert.ok(/-public-4/.test(currentCache), 'Cache version must rotate');
   console.log('OK PWA: réseaux privés et release non cachés, allowlist statique, protections Cookie/Auth/Vary et isolation des caches.');
 }
