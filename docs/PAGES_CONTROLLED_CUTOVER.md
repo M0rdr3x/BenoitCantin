@@ -269,6 +269,15 @@ réussi sur le domaine.
 
 Le service worker `sw.js` est audité avec le **vrai code JavaScript exécuté**
 dans Node 22 par `scripts/test_pwa_cache_security.cjs` dans la CI de la PR.
+Un contrôle statique indépendant, `scripts/audit_pwa_precache.py`,
+lit la liste `CORE` du véritable service worker et exige que ses **46
+routes de préchargement** existent comme fichiers concrets dans la source
+et après compilation Jekyll (les chemins terminés par `/` doivent
+fournir leur `index.html`). Il interdit également les doublons, chemins
+privés, URL non canoniques et ajouts non explicitement révisés. Ce contrôle
+s'exécute dans la CI PR et dans le workflow de publication manuelle avant
+l'upload : un seul fichier manquant empêche le déploiement et évite un
+service worker impossible à installer malgré un build Jekyll réussi.
 La version du cache a été augmentée pour que les caches obsolètes soient
 éliminés à l'activation du nouveau service worker, sans supprimer ceux
 d'autres applications du même domaine.
