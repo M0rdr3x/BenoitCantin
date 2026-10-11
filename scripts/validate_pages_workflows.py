@@ -89,6 +89,12 @@ def validate(workflow: str) -> list[str]:
          "Contrôle des sources CSV publics manquant")
     need("python3 scripts/audit_public_csv.py --source . --built _site" in workflow,
          "Audit des données CSV publiées manquant")
+    need("python3 scripts/audit_public_surface.py --self-test" in workflow,
+         "Autotests de l'inventaire global manquants")
+    need("python3 scripts/audit_public_surface.py --source ." in workflow,
+         "Vérification source de l'inventaire global manquante")
+    need("python3 scripts/audit_public_surface.py --source . --built _site" in workflow,
+         "Audit complet de l'artefact avant upload manquant")
     need("python3 scripts/verify_pages_live.py --check" in workflow,
          "Contrôle externe des chemins techniques absent")
     need("needs: deploy" in workflow,
@@ -169,6 +175,10 @@ def self_test(workflow: str) -> None:
         "Audit CSV post-build supprimé": workflow.replace(
             "python3 scripts/audit_public_csv.py --source . --built _site",
             "echo CSV_NON_AUDITES", 1,
+        ),
+        "Audit global post-build supprimé": workflow.replace(
+            "python3 scripts/audit_public_surface.py --source . --built _site",
+            "echo MANIFEST_NON_AUDITE", 1,
         ),
         "Ouverture sur push": workflow.replace("  workflow_dispatch:\n", "  push:\n    branches: [main]\n  workflow_dispatch:\n", 1),
         "SHA non vérifié": workflow.replace('test "$EXPECTED_SHA" = "$GITHUB_SHA"', "true", 1),
