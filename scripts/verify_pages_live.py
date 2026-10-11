@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from dataclasses import dataclass
 from typing import Callable, Mapping
 from urllib.error import HTTPError, URLError
@@ -50,6 +51,8 @@ MIME_HINTS = {
     "/assets/media/nova-logo.webp": ("image/webp",),
 }
 USER_AGENT = "SINJIRA-Pages-Publication-Audit/1.0"
+RELEASE_ATTEMPTS = 13
+RELEASE_PAUSE_SECONDS = 10
 
 
 @dataclass(frozen=True)
@@ -82,6 +85,50 @@ def fetch(url: str) -> Reply:
         body = response.read(2049) if urlparse(url).path == "/" + MARKER else b""
         return Reply(response.status, response.headers.get("Location", ""),
                      response.headers.get("Content-Type", ""), body)
+
+
+
+def wait_for_release(base: str, getter: Callable[[str], Reply],
+                     release: tuple[str, str], attempts: int = RELEASE_ATTEMPTS,
+                     pause: Callable[[int], None] = time.sleep) -> list[str]:
+    """Attendre une propagation CDN bornée, jamais approuver une ancienne version.
+
+    Seule l'identité du reçu est sondée. Tous les parcours publics et
+    interdictions techniques sont ensuite réévalués par verify().
+    """
+    if base != BASE:
+        return ["Domaine officiel interdit pour l'attente de publication"]
+    if not 1 <= attempts <= RELEASE_ATTEMPTS:
+        return ["Nombre de tentatives du reçu non autorisé"]
+    try:
+        expected = render(*release)
+    except ValueError:
+        return ["Identité de publication malformée"]
+    url = base + "/" + MARKER
+    last = "aucune réponse"
+    for index in range(attempts):
+        try:
+            response = getter(url)
+        except (URLError, OSError, TimeoutError, ValueError) as exc:
+            last = "erreur réseau " + type(exc).__name__
+        else:
+            if response.location or response.status in {301, 302, 307, 308}:
+                return ["Reçu de publication : redirection interdite"]
+            if response.status == 200:
+                mime = response.content_type.split(";", 1)[0].strip().lower()
+                if mime != "application/json":
+                    return ["Reçu de publication : MIME non JSON"]
+                if response.body == expected:
+                    return []
+                last = "révision SHA/run différente de celle approuvée"
+            else:
+                last = "HTTP " + str(response.status)
+        if index + 1 < attempts:
+            pause(RELEASE_PAUSE_SECONDS)
+    return [
+        "Reçu de publication non propagé après "
+        + str(attempts) + " tentatives (" + last + ")"
+    ]
 
 
 def verify(base: str, getter: Callable[[str], Reply],
@@ -221,6 +268,33 @@ def self_test() -> None:
     assert any("Reçu de publication" in e for e in verify(BASE, receipt_redirect, (sha, run))), (
         "Redirection d'identité non détectée"
     )
+    # Propagation : deux reçus obsolètes, puis le reçu strictement attendu.
+    fetches: list[str] = []
+    pauses: list[int] = []
+    def eventual(url: str) -> Reply:
+        fetches.append(url)
+        return Reply(200, content_type="application/json",
+                     body=render(sha if len(fetches) >= 3 else "b" * 40, run))
+    assert not wait_for_release(BASE, eventual, (sha, run), attempts=3,
+                                pause=pauses.append), "Révision attendue non reconnue"
+    assert len(fetches) == 3 and pauses == [RELEASE_PAUSE_SECONDS] * 2, (
+        "Attente bornée mal calculée"
+    )
+    no_match = wait_for_release(BASE, lambda url: Reply(
+        200, content_type="application/json", body=render("b" * 40, run)),
+        (sha, run), attempts=2, pause=lambda _: None)
+    assert any("non propagé" in x for x in no_match), (
+        "Une ancienne version a été acceptée après le délai"
+    )
+    assert wait_for_release(BASE, lambda _: Reply(
+        302, location="https://other.example/"), (sha, run),
+        attempts=3, pause=lambda _: None), "Redirection du reçu autorisée"
+    assert wait_for_release(BASE, lambda _: Reply(
+        200, content_type="text/html", body=render(sha, run)), (sha, run),
+        attempts=3, pause=lambda _: None), "MIME incorrect approuvé"
+    assert wait_for_release(BASE, eventual, ("INVALID", run), pause=lambda _: None), (
+        "Identité illégale acceptée"
+    )
     assert verify("http://www.benoitcantin.com", fixture), "HTTP en clair"
     assert verify("https://example.com", fixture), "Hôte tiers"
     print("OK autotests HTTP : fuites, MIME, redirections et identité SHA/run prouvées")
@@ -233,6 +307,8 @@ def main() -> int:
                         help="Envoie exclusivement des requêtes GET HTTPS en lecture seule au site officiel")
     parser.add_argument("--release-sha")
     parser.add_argument("--release-run-id")
+    parser.add_argument("--await-release", action="store_true",
+                        help="Attendre jusqu'à deux minutes le SHA/run exact sur le domaine")
     args = parser.parse_args()
     if args.self_test:
         self_test()
@@ -242,6 +318,15 @@ def main() -> int:
     if bool(args.release_sha) != bool(args.release_run_id):
         parser.error("--release-sha et --release-run-id requis ensemble")
     identity = (args.release_sha, args.release_run_id) if args.release_sha else None
+    if args.await_release and identity is None:
+        parser.error("--await-release exige --release-sha et --release-run-id")
+    if args.await_release:
+        wait_errors = wait_for_release(BASE, fetch, identity)
+        if wait_errors:
+            for error in wait_errors:
+                print("ECHEC identité CDN: " + error, file=sys.stderr)
+            return 1
+        print("OK : réception CDN du SHA et du run exacts")
     errors = verify(BASE, fetch, identity)
     if errors:
         print(f"ECHEC preuve live : {len(errors)} problème(s) détecté(s)", file=sys.stderr)
