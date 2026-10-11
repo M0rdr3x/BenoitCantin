@@ -132,6 +132,12 @@ def validate(workflow: str) -> list[str]:
          "Reçu Pages non inclus dans l'inventaire intégral")
     need("python3 scripts/verify_pages_live.py --check --release-sha" in workflow,
          "Vérification HTTP ne prouve pas le SHA exact de la publication")
+    verify_job = workflow.split("\n  verify-live:", 1)[-1]
+    need(verify_job != workflow and
+         'python3 scripts/verify_pages_live.py --check --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID" --await-release' in verify_job,
+         "Attente bornée du reçu CDN exact avant les vérifications live absente")
+    need("timeout-minutes: 12" in verify_job,
+         "Délai du job HTTP insuffisant pour une propagation CDN bornée")
     need("python3 scripts/verify_pages_live.py --check" in workflow,
          "Contrôle externe des chemins techniques absent")
     need("needs: deploy" in workflow,
@@ -241,6 +247,10 @@ def self_test(workflow: str) -> None:
         "Identité sur le domaine absente": workflow.replace(
             "python3 scripts/verify_pages_live.py --check --release-sha",
             "python3 scripts/verify_pages_live.py --check #", 1,
+        ),
+        "Attente propagation CDN désactivée": workflow.replace(
+            ' --release-run-id "$GITHUB_RUN_ID" --await-release',
+            ' --release-run-id "$GITHUB_RUN_ID"', 1,
         ),
         "Ouverture sur push": workflow.replace("  workflow_dispatch:\n", "  push:\n    branches: [main]\n  workflow_dispatch:\n", 1),
         "SHA non vérifié": workflow.replace('test "$EXPECTED_SHA" = "$GITHUB_SHA"', "true", 1),
