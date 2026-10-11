@@ -92,6 +92,7 @@ jobs:
           python3 scripts/audit_public_csv.py --self-test
           python3 scripts/audit_public_csv.py --source .
           python3 scripts/audit_public_surface.py --self-test
+          python3 scripts/audit_pages_secrets.py --self-test
           python3 scripts/audit_public_surface.py --source .
 
       - name: Construire Jekyll — pas la racine technique du dépôt
@@ -109,6 +110,7 @@ jobs:
           python3 scripts/audit_public_json.py --source . --built _site
           python3 scripts/audit_public_csv.py --source . --built _site
           python3 scripts/audit_public_surface.py --source . --built _site
+          python3 scripts/audit_pages_secrets.py --built _site
           test -f _site/CNAME
           test ! -e _site/.nojekyll
           test ! -e _site/supabase
