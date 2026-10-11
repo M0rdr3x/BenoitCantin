@@ -63,9 +63,12 @@ Dans `Actions > Pages — déploiement isolé explicitement approuvé > Run work
 - `expected_sha` = SHA **complet** du `main` revu juste avant le run.
 
 Le workflow doit : checkout du SHA, tests, compilation Jekyll, audit sans
-fichiers techniques, puis **upload uniquement de `_site` dans les
-artefacts Actions**. Le job `deploy` doit être marqué *skipped*.
-Un dry-run n'est ni un déploiement ni une preuve de réponses HTTP.
+fichiers techniques, création et validation du reçu SHA/run de test.
+**Aucun artefact Pages n'est téléversé en mode DRY_RUN** : l'étape
+`actions/upload-pages-artifact` et le job `deploy` doivent être marqués
+*skipped*. Un dry-run n'est ni un déploiement ni une preuve de réponses HTTP.
+Le téléversement de `_site` est réservé à `mode=PUBLISH` lorsque
+`confirm_actions_source=ACTIONS_ONLY` et les audits ont réussi.
 
 Si les checks échouent, réparer sur PR et recommencer; ne jamais remplacer
 `path: _site` par `path: .`.
