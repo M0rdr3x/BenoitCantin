@@ -83,6 +83,15 @@ jobs:
           python3 scripts/audit_public_csv.py --source . --built _site
           python3 scripts/audit_public_surface.py --source . --built _site
           python3 scripts/audit_pages_secrets.py --built _site
+          # Jekyll produit _site depuis un conteneur : transférer seulement les
+          # dossiers nécessaires au runner, pas les fichiers de contenu.
+          test -d _site
+          test ! -L _site
+          sudo chown "$(id -u):$(id -g)" _site
+          if test -d _site/.well-known; then
+            test ! -L _site/.well-known
+            sudo chown "$(id -u):$(id -g)" _site/.well-known
+          fi
           # Prouver aussi la variante manuelle: reçu injecté seulement APRÈS le build.
           python3 scripts/pages_release_proof.py --write _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
           python3 scripts/audit_pages_jekyll.py --source . --built _site
