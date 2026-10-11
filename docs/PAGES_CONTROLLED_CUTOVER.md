@@ -282,9 +282,18 @@ d'authentification ou paramètres d'URL ne sont pas mémorisées.
 Les navigations vers les pages publiques restent accessibles au serveur avec
 leur session normale, mais **leurs réponses ne sont jamais ajoutées au
 cache**, puisqu'une page pourrait être personnalisée. Le mode hors ligne
-réutilise exclusivement la version anonyme préchargée. Les scripts,
+réutilise exclusivement la version anonyme préchargée, **strictement à
+partir du cache public de cette version du service worker**. Aucun
+`caches.match()` global n'est utilisé : l'API globale pourrait sinon
+retrouver des réponses de caches appartenant à d'autres applications,
+ou d'anciennes versions du site sur la même origine. Les scripts,
 styles et images figurant dans la liste approuvée sont récupérés avec
 `credentials: omit` avant toute mise en cache.
+
+Les tests Node simulent expressément une réponse privée dans un cache
+tiers : même hors ligne, le service worker ne doit jamais la lire ou
+la servir. Une ressource absente du cache public courant reste absente,
+plutôt que d'être remplacée par une ancienne copie de source inconnue.
 
 Les chemins `/app`, `/compte`, `/admin`, `/Admin`,
 `/histoire-de-vie`, `/supabase`, `/api`, `/auth`, `/rest`,
