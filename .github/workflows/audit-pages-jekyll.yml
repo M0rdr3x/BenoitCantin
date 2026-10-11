@@ -18,6 +18,7 @@ on:
       - 'scripts/audit_public_csv.py'
       - 'scripts/audit_public_surface.py'
       - 'scripts/audit_pages_secrets.py'
+      - 'scripts/pages_release_proof.py'
       - 'scripts/pages_public_inventory.txt'
       - 'scripts/pages_generated_inventory.txt'
   workflow_dispatch:
@@ -61,6 +62,7 @@ jobs:
           python3 scripts/audit_public_csv.py --source .
           python3 scripts/audit_public_surface.py --self-test
           python3 scripts/audit_pages_secrets.py --self-test
+          python3 scripts/pages_release_proof.py --self-test
           python3 scripts/audit_public_surface.py --source .
           python3 scripts/validate_pages_workflows.py --self-test
           python3 scripts/validate_pages_workflows.py
@@ -81,4 +83,11 @@ jobs:
           python3 scripts/audit_public_csv.py --source . --built _site
           python3 scripts/audit_public_surface.py --source . --built _site
           python3 scripts/audit_pages_secrets.py --built _site
-          echo "PASS: build Pages contrôlé, aucun artefact téléversé ou publié" >> "$GITHUB_STEP_SUMMARY"
+          # Prouver aussi la variante manuelle: reçu injecté seulement APRÈS le build.
+          python3 scripts/pages_release_proof.py --write _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
+          python3 scripts/audit_pages_jekyll.py --source . --built _site
+          python3 scripts/audit_public_json.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"
+          python3 scripts/audit_public_surface.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"
+          python3 scripts/pages_release_proof.py --verify _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
+          python3 scripts/audit_pages_secrets.py --built _site
+          echo "PASS: build Pages + reçu SHA/run contrôlés, aucun artefact téléversé ou publié" >> "$GITHUB_STEP_SUMMARY"
