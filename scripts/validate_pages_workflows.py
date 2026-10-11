@@ -101,6 +101,18 @@ def validate(workflow: str) -> list[str]:
          "Autotests des secrets du build manquants")
     need("python3 scripts/audit_pages_secrets.py --built _site" in workflow,
          "Analyse des secrets du build avant upload manquante")
+    need("python3 scripts/pages_release_proof.py --self-test" in workflow,
+         "Autotests du reçu SHA/run manquants")
+    need("python3 scripts/pages_release_proof.py --write _site --sha" in workflow,
+         "Reçu Pages non ajouté à l'artefact")
+    need("python3 scripts/pages_release_proof.py --verify _site --sha" in workflow,
+         "Reçu Pages non contrôlé avant upload")
+    need("python3 scripts/audit_public_json.py --source . --built _site --release-sha" in workflow,
+         "Reçu Pages non inclus dans le contrôle JSON")
+    need("python3 scripts/audit_public_surface.py --source . --built _site --release-sha" in workflow,
+         "Reçu Pages non inclus dans l'inventaire intégral")
+    need("python3 scripts/verify_pages_live.py --check --release-sha" in workflow,
+         "Vérification HTTP ne prouve pas le SHA exact de la publication")
     need("python3 scripts/verify_pages_live.py --check" in workflow,
          "Contrôle externe des chemins techniques absent")
     need("needs: deploy" in workflow,
@@ -192,6 +204,14 @@ def self_test(workflow: str) -> None:
         "Audit secrets post-build supprimé": workflow.replace(
             "python3 scripts/audit_pages_secrets.py --built _site",
             "echo SECRETS_NON_AUDITES", 1,
+        ),
+        "Reçu de publication supprimé": workflow.replace(
+            "python3 scripts/pages_release_proof.py --write _site --sha",
+            "python3 scripts/pages_release_proof.py --self-test # ", 1,
+        ),
+        "Identité sur le domaine absente": workflow.replace(
+            "python3 scripts/verify_pages_live.py --check --release-sha",
+            "python3 scripts/verify_pages_live.py --check #", 1,
         ),
         "Ouverture sur push": workflow.replace("  workflow_dispatch:\n", "  push:\n    branches: [main]\n  workflow_dispatch:\n", 1),
         "SHA non vérifié": workflow.replace('test "$EXPECTED_SHA" = "$GITHUB_SHA"', "true", 1),
