@@ -59,9 +59,10 @@ async function event(type) {
   listeners.get(type)({ waitUntil(p) { waited = p; } });
   await waited;
 }
-async function request(uri, options = {}) {
+async function request(uri, options = {}, destination = '') {
   const url = uri.startsWith('http') ? uri : origin + uri;
   const req = new Request(url, options);
+  if (destination) Object.defineProperty(req, 'destination', { value: destination });
   let responded;
   const background = [];
   listeners.get('fetch')({
@@ -130,6 +131,15 @@ async function test() {
   // Assets from the pinned public set are cached, but not credentials or tokens.
   await request('/assets/js/site.js');
   assert.deepEqual(writes, ['/assets/js/site.js']);
+  assert.equal(requests.at(-1).credentials, 'omit',
+    'Public static resources must be fetched without cookies');
+  // Les documents de navigation restent fonctionnels, mais leurs réponses
+  // peuvent être personnalisées : aucune écriture dans le cache.
+  const navigationWrites = writes.length;
+  await request('/projets/sinjira/', {}, 'document');
+  assert.equal(writes.length, navigationWrites, 'Personalized navigation was cached');
+  assert.equal(requests.at(-1).credentials, 'same-origin',
+    'Navigation should still preserve session to render the current page');
   const n1 = writes.length;
   await request('/assets/js/site.js?token=private');
   assert.equal(writes.length, n1, 'URLs carrying tokens must not be cached');
