@@ -102,6 +102,18 @@ jobs:
           source: ./
           destination: ./_site
 
+      - name: Permettre au runner de créer le reçu dans le build Jekyll
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d _site
+          test ! -L _site
+          sudo chown "$(id -u):$(id -g)" _site
+          if test -d _site/.well-known; then
+            test ! -L _site/.well-known
+            sudo chown "$(id -u):$(id -g)" _site/.well-known
+          fi
+
       - name: Marquer le build avec le SHA et l'identifiant du workflow
         shell: bash
         run: python3 scripts/pages_release_proof.py --write _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
