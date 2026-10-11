@@ -21,6 +21,8 @@ on:
       - 'scripts/pages_release_proof.py'
       - 'scripts/pages_public_inventory.txt'
       - 'scripts/pages_generated_inventory.txt'
+      - 'scripts/test_pwa_cache_security.cjs'
+      - 'sw.js'
   workflow_dispatch:
 
 permissions:
@@ -46,6 +48,12 @@ jobs:
         with:
           python-version: '3.12.14'
 
+      - name: Configurer Node pour le test réel du service worker
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+
       - name: Autotests négatifs et vérification des exclusions sources
         shell: bash
         run: |
@@ -66,6 +74,7 @@ jobs:
           python3 scripts/audit_public_surface.py --source .
           python3 scripts/validate_pages_workflows.py --self-test
           python3 scripts/validate_pages_workflows.py
+          node scripts/test_pwa_cache_security.cjs
 
       - name: Compilation Jekyll comme GitHub Pages, sans déploiement
         uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697
