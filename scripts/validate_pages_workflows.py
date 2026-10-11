@@ -110,6 +110,12 @@ def validate(workflow: str) -> list[str]:
          "Vérification source de l'inventaire global manquante")
     need("python3 scripts/audit_public_surface.py --source . --built _site" in workflow,
          "Audit complet de l'artefact avant upload manquant")
+    need("python3 scripts/audit_pwa_precache.py --self-test" in workflow,
+         "Autotests des ressources PWA absents")
+    need("python3 scripts/audit_pwa_precache.py --source ." in workflow,
+         "Contrôle des ressources PWA sources manquant")
+    need("python3 scripts/audit_pwa_precache.py --source . --built _site" in workflow,
+         "Contrôle des 46 ressources PWA compilées manquant")
     need("python3 scripts/audit_pages_secrets.py --self-test" in workflow,
          "Autotests des secrets du build manquants")
     need("python3 scripts/audit_pages_secrets.py --built _site" in workflow,
@@ -223,6 +229,10 @@ def self_test(workflow: str) -> None:
         "Audit secrets post-build supprimé": workflow.replace(
             "python3 scripts/audit_pages_secrets.py --built _site",
             "echo SECRETS_NON_AUDITES", 1,
+        ),
+        "Audit PWA post-build supprimé": workflow.replace(
+            "python3 scripts/audit_pwa_precache.py --source . --built _site",
+            "echo CORE_PWA_NON_AUDITE", 1,
         ),
         "Reçu de publication supprimé": workflow.replace(
             "python3 scripts/pages_release_proof.py --write _site --sha",
