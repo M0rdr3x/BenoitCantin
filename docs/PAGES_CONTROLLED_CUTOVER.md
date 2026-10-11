@@ -213,7 +213,30 @@ confidentialité, les preuves HTTPS ni l'absence de fichiers sensibles sur
 l'hébergement réellement en service. Le vrai déploiement reste bloqué
 tant que le mode administrateur GitHub Pages n'est pas corrigé.
 
-## 11. Frontière avec la refonte #449
+## 11. Contrôle des secrets à la sortie et préservation de .well-known
+
+Le contrôle `scripts/audit_pages_secrets.py` examine **les ressources textuelles
+réelles du build `_site`**, y compris les pages HTML générées par Jekyll,
+avant l'étape `upload-pages-artifact`. Il réutilise les motifs de clés
+critiques déjà vérifiés par `scripts/validate_no_committed_secrets.py`
+(Supabase secret, jetons GitHub, clés privées, Stripe live et mots de passe
+configurés). Un fichier texte illisible ou trop volumineux fait échouer la
+publication au lieu d'être silencieusement ignoré. Les journaux indiquent
+seulement le chemin, la ligne et le **type** de secret, jamais la valeur.
+
+Le workflow autorise désormais explicitement
+`include-hidden-files: 'true'` dans l'upload Pages afin de ne pas
+perdre les fichiers de preuve approuvés du dossier `.well-known` lorsque
+celui-ci sera utilisé. Cette permission est sûre **uniquement** parce que
+l'audit Jekyll, le registre exact des 645 chemins publics et le rejet des
+fichiers cachés imprévus s'exécutent **avant** l'envoi. Toute introduction
+future d'un nouveau chemin sous `.well-known` exige une revue du registre.
+
+Le contrôle des secrets reconnaît les motifs connus : il ne constitue ni
+une garantie générale d'absence de données personnelles, ni une analyse
+juridique des documents et des PDF. Ces revues demeurent distinctes.
+
+## 12. Frontière avec la refonte #449
 
 Ce confinement est un **correctif transitoire**. Il n'apporte pas les entêtes
 `_headers` ni les redirections `_redirects` de Netlify, et ne valide pas les
