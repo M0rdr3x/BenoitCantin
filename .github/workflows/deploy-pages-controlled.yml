@@ -138,7 +138,8 @@ jobs:
           test ! -e _site/docs
           test ! -e _site/.github
 
-      - name: Télécharger uniquement l’artefact vérifié vers GitHub Actions
+      - name: Téléverser uniquement l’artefact vérifié, et seulement en mode PUBLISH
+        if: ${{ inputs.mode == 'PUBLISH' && inputs.confirm_actions_source == 'ACTIONS_ONLY' }}
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: _site
@@ -156,6 +157,8 @@ jobs:
             printf '%s\n' "- Source commit : $GITHUB_SHA"
             printf '%s\n' "- Mode : $MODE"
             printf '%s\n' '- Répertoire upload-pages-artifact : _site (jamais la racine)'
+            printf '%s\n' '- DRY_RUN : build et audits uniquement, aucun artefact Pages téléversé'
+            printf '%s\n' '- PUBLISH : artefact téléversé seulement après contrôles, puis déploiement'
             printf '%s\n' '- Une publication exige PUBLISH + ACTIONS_ONLY + SHA exact'
             printf '%s\n' '- Aucun changement DNS et aucune activation de service externe'
           } >> "$GITHUB_STEP_SUMMARY"
