@@ -16,6 +16,10 @@ PUBLIC_ROUTES = (
     "/", "/404.html", "/compte/", "/projets/sinjira/",
     "/projets/projet-nova/", "/robots.txt", "/sitemap.xml",
     "/assets/js/site.js",
+    "/projets/projet-nova/data/boussole-partis-2026.json",
+    "/projets/projet-nova/data/boussole-preuves-2026.json",
+    "/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
+    "/assets/media/nova-logo.webp",
 )
 PRIVATE_ROUTES = (
     "/supabase/config.toml",
@@ -30,6 +34,7 @@ PRIVATE_ROUTES = (
     "/projets/projet-nova/netlify.toml",
     "/projets/projet-nova/UPLOAD_GITHUB.md",
     "/projets/projet-nova/SECURITY.md",
+    "/projets/sinjira/codex/livre-i-delivery-contract.json",
 )
 ERROR_CODES = {404, 410}
 # Un HTTP 200 HTML sur un JS, un sitemap ou un robots.txt masque une publication cassée.
@@ -39,6 +44,10 @@ MIME_HINTS = {
     "/assets/js/site.js": ("application/javascript", "text/javascript",
                            "application/x-javascript", "application/ecmascript",
                            "text/ecmascript"),
+    "/projets/projet-nova/data/boussole-partis-2026.json": ("application/json",),
+    "/projets/projet-nova/data/boussole-preuves-2026.json": ("application/json",),
+    "/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf": ("application/pdf",),
+    "/assets/media/nova-logo.webp": ("image/webp",),
 }
 USER_AGENT = "SINJIRA-Pages-Publication-Audit/1.0"
 
@@ -149,6 +158,10 @@ def self_test() -> None:
         mime = "text/html" if path.endswith(("/", ".html")) else {
             "/assets/js/site.js": "text/javascript",
             "/sitemap.xml": "application/xml",
+            "/projets/projet-nova/data/boussole-partis-2026.json": "application/json",
+            "/projets/projet-nova/data/boussole-preuves-2026.json": "application/json",
+            "/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf": "application/pdf",
+            "/assets/media/nova-logo.webp": "image/webp",
         }.get(path, "text/plain")
         return Reply(200, content_type=mime)
     assert not verify(BASE, fixture), verify(BASE, fixture)
