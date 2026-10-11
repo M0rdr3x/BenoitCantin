@@ -57,6 +57,11 @@ self.addEventListener('activate',e=>e.waitUntil(
   caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith(CACHE_PREFIX)&&k!==CACHE)
     .map(k=>caches.delete(k)))).then(()=>self.clients.claim())
 ));
+// Cache Storage.match() global fouille TOUS les caches de ce domaine.
+// L'accès hors ligne doit rester strictement dans notre cache PUBLIC courant.
+function matchPublicCache(request){
+  return caches.open(CACHE).then(store=>store.match(request));
+}
 self.addEventListener('fetch',e=>{
   const r=e.request,u=new URL(r.url);
   if(r.method!=='GET'||u.origin!==location.origin)return;
@@ -69,7 +74,7 @@ self.addEventListener('fetch',e=>{
     // Une navigation peut être personnalisée par cookie, même sur une URL publique :
     // ne jamais conserver sa réponse. Le fallback ne contient que la précharge anonyme.
     e.respondWith(fetch(new Request(r,{cache:'no-store'}))
-      .catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));
+      .catch(()=>matchPublicCache(r).then(x=>x||matchPublicCache('/offline.html'))));
     return;
   }
   // Les ressources statiques destinées au cache sont toujours demandées sans
@@ -83,10 +88,10 @@ self.addEventListener('fetch',e=>{
         e.waitUntil(store);
       }
       return resp;
-    }).catch(()=>caches.match(r)));
+    }).catch(()=>matchPublicCache(r)));
     return;
   }
-  e.respondWith(caches.match(r).then(cached=>cached||fetch(anonymous).then(resp=>{
+  e.respondWith(matchPublicCache(r).then(cached=>cached||fetch(anonymous).then(resp=>{
     if(cacheableResponse(resp)){
       const store=caches.open(CACHE).then(c=>c.put(r,resp.clone()));
       e.waitUntil(store);
