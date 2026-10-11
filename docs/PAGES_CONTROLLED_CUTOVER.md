@@ -181,7 +181,34 @@ d'utilisateurs ou de participants ne doit jamais être versé dans le dépôt
 public ni servi par un hébergeur statique. Des tests négatifs détectent la
 disparition, la transformation et l'inclusion d'un fichier non approuvé.
 
-## 10. Frontière avec la refonte #449
+## 10. Contrat intégral de la surface publique (614 chemins)
+
+La photographie prise sur le `main` du 10 octobre 2026, après application
+des exclusions Jekyll explicites, compte **614 fichiers publiables** :
+pages HTML, styles, modules JS, images, icônes, manifestes, documents et
+données publiques. Le registre `scripts/pages_public_inventory.txt`
+donne chaque chemin exact, dans l'ordre, et le vérificateur
+`scripts/audit_public_surface.py` fait une comparaison exhaustive entre
+l'inventaire approuvé, les fichiers sources destinés au site et les fichiers
+réellement présents dans `_site` ; il exige des octets identiques SHA-256
+pour chacun.
+
+Cette vérification globale couvre aussi les formats non inclus dans les
+audits spécialisés (par exemple nouvelles images, fichiers sans extension,
+modules `.mjs`, XML ou CSV avec une extension inhabituelle). L'ajout d'un
+fichier public légitime demande la mise à jour *explicite* de son chemin
+dans l'inventaire et la revue de la PR. Les fichiers techniques dans
+`scripts/`, `supabase/`, `tests/` ou `.github/` ne font pas partie de
+cette surface. Ce contrat est une **garde de publication**, pas une
+affirmation que tous les documents existants ont été audités
+sémantiquement pour la confidentialité.
+
+L'inventaire global ne remplace pas les contrôles indépendants de
+confidentialité, les preuves HTTPS ni l'absence de fichiers sensibles sur
+l'hébergement réellement en service. Le vrai déploiement reste bloqué
+tant que le mode administrateur GitHub Pages n'est pas corrigé.
+
+## 11. Frontière avec la refonte #449
 
 Ce confinement est un **correctif transitoire**. Il n'apporte pas les entêtes
 `_headers` ni les redirections `_redirects` de Netlify, et ne valide pas les
