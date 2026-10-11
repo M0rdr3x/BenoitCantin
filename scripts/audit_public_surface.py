@@ -14,6 +14,7 @@ import tempfile
 from pathlib import Path
 
 from audit_pages_jekyll import config_values
+from pages_release_proof import MARKER, render
 
 MANIFEST = Path(__file__).with_name("pages_public_inventory.txt")
 GENERATED_MANIFEST = Path(__file__).with_name("pages_generated_inventory.txt")
@@ -65,7 +66,8 @@ def eligible(path: str, excluded: set[str]) -> bool:
     return True
 
 
-def audit(root: Path, built: Path | None, manifest_text: str) -> list[str]:
+def audit(root: Path, built: Path | None, manifest_text: str,
+          release: tuple[str, str] | None = None) -> list[str]:
     expected, errors = inventory(manifest_text)
     try:
         generated, generated_errors = inventory(
@@ -97,10 +99,19 @@ def audit(root: Path, built: Path | None, manifest_text: str) -> list[str]:
         return errors + ["Artefact Jekyll absent"]
     actual = scan(built)
     approved_output = expected | generated
+    if release is not None:
+        approved_output.add(MARKER)
     for path in sorted(actual - approved_output):
         errors.append(f"Fichier non autorisé dans l'artefact public: {path}")
     for path in sorted(approved_output - actual):
         errors.append(f"Fichier approuvé absent de l'artefact: {path}")
+    if release is not None and MARKER in actual:
+        try:
+            proof = render(*release)
+            if (built / MARKER).read_bytes() != proof:
+                errors.append("Reçu Pages SHA/run incorrect ou altéré")
+        except (OSError, ValueError):
+            errors.append("Reçu Pages non vérifiable")
     for path in sorted(expected & src_files & actual):
         a = hashlib.sha256((root / path).read_bytes()).digest()
         b = hashlib.sha256((built / path).read_bytes()).digest()
@@ -130,6 +141,25 @@ def self_test() -> None:
             target = built / rel
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(("generated:" + rel).encode("utf-8"))
+        assert not audit(root, built, source_manifest), audit(root, built, source_manifest)
+        receipt_id = ("a" * 40, "12345")
+        assert any(MARKER in error for error in audit(
+            root, built, source_manifest, receipt_id
+        )), "Reçu absent non détecté"
+        receipt = built / MARKER
+        receipt.parent.mkdir(parents=True, exist_ok=True)
+        receipt.write_bytes(render(*receipt_id))
+        assert not audit(root, built, source_manifest, receipt_id), (
+            audit(root, built, source_manifest, receipt_id)
+        )
+        assert any(MARKER in error for error in audit(root, built, source_manifest)), (
+            "Reçu absent de l'inventaire de build normal non détecté"
+        )
+        receipt.write_bytes(b'{}')
+        assert any("Reçu Pages" in error for error in audit(
+            root, built, source_manifest, receipt_id
+        )), "Reçu falsifié non détecté"
+        receipt.unlink()
         assert not audit(root, built, source_manifest), audit(root, built, source_manifest)
         derived = sorted(generated)[0]
         (built / derived).unlink()
@@ -178,6 +208,8 @@ def main() -> int:
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--source")
     parser.add_argument("--built")
+    parser.add_argument("--release-sha", help="SHA attendu du marqueur Pages")
+    parser.add_argument("--release-run-id", help="Run GitHub attendu du marqueur Pages")
     args = parser.parse_args()
     if args.self_test:
         self_test()
@@ -189,14 +221,21 @@ def main() -> int:
     except OSError as exc:
         print(f"ERREUR manifeste: {type(exc).__name__}", file=sys.stderr)
         return 1
+    if bool(args.release_sha) != bool(args.release_run_id):
+        parser.error("--release-sha et --release-run-id doivent être fournis ensemble")
+    if args.release_sha and not args.built:
+        parser.error("--built requis pour la preuve d'identité Pages")
+    identity = (args.release_sha, args.release_run_id) if args.release_sha else None
     issues = audit(Path(args.source).resolve(),
-                   Path(args.built).resolve() if args.built else None, manifest)
+                   Path(args.built).resolve() if args.built else None,
+                   manifest, identity)
     for issue in issues:
         print("ERREUR: " + issue, file=sys.stderr)
     if issues:
         return 1
-    print(f"OK : {EXPECTED_COUNT} fichiers source + {GENERATED_COUNT} générés "
-          "présents et contrôlés, aucune addition ou perte non revue")
+    print(f"OK : {EXPECTED_COUNT} fichiers source + {GENERATED_COUNT} générés"
+          + (" + 1 reçu Pages" if identity else "")
+          + " présents et contrôlés, aucune addition ou perte non revue")
     return 0
 
 
