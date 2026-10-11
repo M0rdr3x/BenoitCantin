@@ -261,9 +261,20 @@ SHA et le run attendus, télécharge en GET HTTPS le reçu depuis
 (sans suivre de redirection), puis compare **les octets exacts**, le statut
 HTTP 200 et le type MIME JSON. Le test échoue si le domaine sert une ancienne
 version ou un hébergeur différent, même si les autres routes répondent 200.
-La CI de la PR simule intégralement la création/validation de ce reçu **sans
-déploiement**. Une preuve HTTP réelle n'existe qu'après PUBLISH et contrôle
-réussi sur le domaine.
+
+**Propagation CDN bornée :** après un PUBLISH approuvé, le validateur
+peut interroger uniquement ce reçu jusqu'à **13 fois à 10 secondes
+d'intervalle** (soit au maximum 120 secondes de pause, hors durées
+des requêtes). Il ne suit aucune redirection, rejette immédiatement un
+MIME non JSON et n'accepte que les octets exacts du SHA/run. Si le reçu
+n'est jamais présent et correct, le job échoue, sans déclarer le
+déploiement réussi. Dès sa réception, **les 12 routes publiques et les
+13 routes techniques sont retestées** en HTTP strict; un succès du reçu
+ne contourne donc jamais les vérifications de non-divulgation.
+
+La CI de la PR simule l'arrivée tardive du reçu, un SHA obsolète,
+un MIME incorrect et une redirection **sans déploiement**. Une preuve HTTP
+réelle n'existe qu'après PUBLISH et contrôle réussi sur le domaine.
 
 ## 13. Isolation du cache PWA et des données privées
 
