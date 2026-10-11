@@ -194,11 +194,11 @@ jobs:
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346
 
   verify-live:
-    name: Refuser les fichiers techniques après la publication
+    name: Attendre la propagation CDN et refuser toute fuite technique
     needs: deploy
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'PUBLISH' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 12
     permissions:
       contents: read
     steps:
@@ -210,5 +210,5 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
-      - name: Vérifier la production HTTPS, les routes, les refus et le SHA exact
-        run: python3 scripts/verify_pages_live.py --check --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"
+      - name: Attendre le reçu SHA/run réel puis vérifier les routes et refus techniques
+        run: python3 scripts/verify_pages_live.py --check --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID" --await-release
