@@ -22,6 +22,7 @@ on:
       - 'scripts/pages_public_inventory.txt'
       - 'scripts/pages_generated_inventory.txt'
       - 'scripts/test_pwa_cache_security.cjs'
+      - 'scripts/audit_pwa_precache.py'
       - 'sw.js'
   workflow_dispatch:
 
@@ -75,6 +76,8 @@ jobs:
           python3 scripts/validate_pages_workflows.py --self-test
           python3 scripts/validate_pages_workflows.py
           node scripts/test_pwa_cache_security.cjs
+          python3 scripts/audit_pwa_precache.py --self-test
+          python3 scripts/audit_pwa_precache.py --source .
 
       - name: Compilation Jekyll comme GitHub Pages, sans déploiement
         uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697
@@ -91,6 +94,7 @@ jobs:
           python3 scripts/audit_public_json.py --source . --built _site
           python3 scripts/audit_public_csv.py --source . --built _site
           python3 scripts/audit_public_surface.py --source . --built _site
+          python3 scripts/audit_pwa_precache.py --source . --built _site
           python3 scripts/audit_pages_secrets.py --built _site
           # Jekyll produit _site depuis un conteneur : transférer seulement les
           # dossiers nécessaires au runner, pas les fichiers de contenu.
