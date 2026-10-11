@@ -236,7 +236,33 @@ Le contrôle des secrets reconnaît les motifs connus : il ne constitue ni
 une garantie générale d'absence de données personnelles, ni une analyse
 juridique des documents et des PDF. Ces revues demeurent distinctes.
 
-## 12. Frontière avec la refonte #449
+## 12. Reçu de publication vérifié sur le domaine réel
+
+La vérification HTTP des routes, du HTTPS et des refus techniques ne suffit
+pas à prouver qu'un site sous un autre CDN sert **le même artefact** que le
+déploiement GitHub Pages nouvellement approuvé. Désormais, après le build
+et **avant** les audits finaux, `scripts/pages_release_proof.py` crée
+`_site/.well-known/sinjira-pages-release.json` avec uniquement :
+`repository`, `revision` (SHA du commit approuvé), `run_id` et une
+version de contrat. Ce marqueur ne contient aucun identifiant de membre,
+secret, droit d'accès ou donnée personnelle.
+
+Le workflow manuel exige que ce **646e fichier dynamique** corresponde
+exactement au SHA et au run courants. Les contrôles JSON, inventaire intégral
+et anti-secrets permettent **seulement** ce chemin supplémentaire lorsque
+le marqueur validé est présent; les 645 chemins historiques restent figés.
+
+Après le déploiement, `scripts/verify_pages_live.py --check` reçoit le
+SHA et le run attendus, télécharge en GET HTTPS le reçu depuis
+`https://www.benoitcantin.com/.well-known/sinjira-pages-release.json`
+(sans suivre de redirection), puis compare **les octets exacts**, le statut
+HTTP 200 et le type MIME JSON. Le test échoue si le domaine sert une ancienne
+version ou un hébergeur différent, même si les autres routes répondent 200.
+La CI de la PR simule intégralement la création/validation de ce reçu **sans
+déploiement**. Une preuve HTTP réelle n'existe qu'après PUBLISH et contrôle
+réussi sur le domaine.
+
+## 13. Frontière avec la refonte #449
 
 Ce confinement est un **correctif transitoire**. Il n'apporte pas les entêtes
 `_headers` ni les redirections `_redirects` de Netlify, et ne valide pas les
