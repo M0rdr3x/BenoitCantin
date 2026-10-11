@@ -265,7 +265,36 @@ La CI de la PR simule intégralement la création/validation de ce reçu **sans
 déploiement**. Une preuve HTTP réelle n'existe qu'après PUBLISH et contrôle
 réussi sur le domaine.
 
-## 13. Frontière avec la refonte #449
+## 13. Isolation du cache PWA et des données privées
+
+Le service worker `sw.js` est audité avec le **vrai code JavaScript exécuté**
+dans Node 22 par `scripts/test_pwa_cache_security.cjs` dans la CI de la PR.
+La version du cache a été augmentée pour que les caches obsolètes soient
+éliminés à l'activation du nouveau service worker, sans supprimer ceux
+d'autres applications du même domaine.
+
+Seuls les chemins explicitement préapprouvés dans `CORE` peuvent être
+enregistrés dans le cache PWA. La précharge utilise `credentials: omit`,
+refuse les chemins privés, les redirections ainsi que les réponses comportant
+`Cache-Control: no-store/private`, `Set-Cookie` ou
+`Vary: Cookie/Authorization`. Les requêtes avec identifiants, en-têtes
+d'authentification ou paramètres d'URL ne sont pas mémorisées.
+
+Les chemins `/app`, `/compte`, `/admin`, `/Admin`,
+`/histoire-de-vie`, `/supabase`, `/api`, `/auth`, `/rest`,
+`/storage`, `/functions`, `/edge`, le contrat technique du Livre I,
+et surtout les preuves `/.well-known` utilisent uniquement le réseau,
+avec `cache: no-store` et **sans fallback de cache**. Une preuve de version
+obsolète ne peut donc pas être renvoyée par l'ancien cache PWA.
+
+**Compromis assumé :** certaines ressources non essentielles à la liste
+`CORE` ne seront plus accessibles hors ligne. Les contenus publics ne sont
+pas retirés du site en ligne; le cache n'est pas un mécanisme de
+contrôle d'accès serveur. Les droits SINJIRA doivent toujours être appliqués
+côté serveur. Vérifier manuellement en navigateur la PWA après le
+déploiement approuvé, y compris une mise à jour depuis une ancienne version.
+
+## 14. Frontière avec la refonte #449
 
 Ce confinement est un **correctif transitoire**. Il n'apporte pas les entêtes
 `_headers` ni les redirections `_redirects` de Netlify, et ne valide pas les
