@@ -187,11 +187,16 @@ La photographie prise sur le `main` du 10 octobre 2026, après application
 des exclusions Jekyll explicites, compte **614 fichiers publiables** :
 pages HTML, styles, modules JS, images, icônes, manifestes, documents et
 données publiques. Le registre `scripts/pages_public_inventory.txt`
-donne chaque chemin exact, dans l'ordre, et le vérificateur
-`scripts/audit_public_surface.py` fait une comparaison exhaustive entre
-l'inventaire approuvé, les fichiers sources destinés au site et les fichiers
-réellement présents dans `_site` ; il exige des octets identiques SHA-256
-pour chacun.
+donne chaque chemin source exact et
+`scripts/pages_generated_inventory.txt` autorise séparément les **31
+fichiers produits exclusivement par Jekyll** (notamment les pages HTML
+issues des références Markdown officielles et `assets/css/style.css`).
+Le vérificateur `scripts/audit_public_surface.py` compare les **614
+sources attendues et les 31 sorties générées** avec le contenu exact de
+`_site`. Pour les 614 fichiers provenant directement des sources, il
+exige des octets identiques SHA-256 ; les 31 sorties générées sont limitées
+à une liste exacte de chemins et ne peuvent ni disparaître ni s'étendre
+sans mise à jour approuvée de l'inventaire.
 
 Cette vérification globale couvre aussi les formats non inclus dans les
 audits spécialisés (par exemple nouvelles images, fichiers sans extension,
