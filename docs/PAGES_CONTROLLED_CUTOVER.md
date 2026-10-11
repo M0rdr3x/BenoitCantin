@@ -279,6 +279,12 @@ refuse les chemins privés, les redirections ainsi que les réponses comportant
 `Cache-Control: no-store/private`, `Set-Cookie` ou
 `Vary: Cookie/Authorization`. Les requêtes avec identifiants, en-têtes
 d'authentification ou paramètres d'URL ne sont pas mémorisées.
+Les navigations vers les pages publiques restent accessibles au serveur avec
+leur session normale, mais **leurs réponses ne sont jamais ajoutées au
+cache**, puisqu'une page pourrait être personnalisée. Le mode hors ligne
+réutilise exclusivement la version anonyme préchargée. Les scripts,
+styles et images figurant dans la liste approuvée sont récupérés avec
+`credentials: omit` avant toute mise en cache.
 
 Les chemins `/app`, `/compte`, `/admin`, `/Admin`,
 `/histoire-de-vie`, `/supabase`, `/api`, `/auth`, `/rest`,
