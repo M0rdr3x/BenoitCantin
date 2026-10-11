@@ -14,6 +14,7 @@ import tempfile
 from pathlib import Path
 
 from audit_pages_jekyll import config_values
+from pages_release_proof import MARKER, render
 
 # Fichiers d'interface, données électorales, pièces publiques de Nova
 # et manifeste public Livre I. Leur contenu est conservé au bit près.
@@ -120,7 +121,8 @@ def covered(path: str, exclusions: set[str]) -> bool:
                for exclusion in exclusions)
 
 
-def audit(source: Path, built: Path | None) -> list[str]:
+def audit(source: Path, built: Path | None,
+          release: tuple[str, str] | None = None) -> list[str]:
     errors: list[str] = []
     if len(PUBLIC_JSON) != REQUIRED_PUBLIC_COUNT or len(INTERNAL_JSON) != REQUIRED_INTERNAL_COUNT:
         errors.append("Inventaire JSON approuvé modifié sans migration documentée")
@@ -154,10 +156,20 @@ def audit(source: Path, built: Path | None) -> list[str]:
     if not built.is_dir():
         return errors + ["Artefact Jekyll inexistant"]
     published = json_paths(built)
-    for path in sorted(published - PUBLIC_JSON):
+    allowed = PUBLIC_JSON | ({MARKER} if release is not None else set())
+    for path in sorted(published - allowed):
         errors.append(f"JSON technique ou inconnu publié: {path}")
     for path in sorted(PUBLIC_JSON - published):
         errors.append(f"JSON public absent de l'artefact: {path}")
+    if release is not None:
+        if MARKER not in published:
+            errors.append(f"Reçu Pages absent de l'artefact: {MARKER}")
+        else:
+            try:
+                if (built / MARKER).read_bytes() != render(*release):
+                    errors.append("Reçu Pages incohérent avec le SHA/run")
+            except (OSError, ValueError):
+                errors.append("Reçu Pages non vérifiable")
     for path in sorted(PUBLIC_JSON & source_all & published):
         a = hashlib.sha256((source / path).read_bytes()).digest()
         b = hashlib.sha256((built / path).read_bytes()).digest()
@@ -185,6 +197,23 @@ def self_test() -> None:
             target = source / path
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text('{"internal":true}', "utf-8")
+        assert not audit(source, built), audit(source, built)
+        identity = ("a" * 40, "123")
+        assert any(MARKER in error for error in audit(source, built, identity)), (
+            "Reçu Pages absent non détecté"
+        )
+        marker = built / MARKER
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_bytes(render(*identity))
+        assert not audit(source, built, identity), audit(source, built, identity)
+        assert any(MARKER in error for error in audit(source, built)), (
+            "Reçu non attendu dans un build normal non détecté"
+        )
+        marker.write_text("{}", "utf-8")
+        assert any("Reçu Pages" in error for error in audit(source, built, identity)), (
+            "Reçu falsifié accepté"
+        )
+        marker.unlink()
         assert not audit(source, built), audit(source, built)
 
         path = sorted(PUBLIC_JSON)[0]
@@ -233,14 +262,22 @@ def main() -> int:
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--source")
     parser.add_argument("--built")
+    parser.add_argument("--release-sha")
+    parser.add_argument("--release-run-id")
     args = parser.parse_args()
     if args.self_test:
         self_test()
         return 0
     if not args.source:
         parser.error("--source requis sans --self-test")
+    if bool(args.release_sha) != bool(args.release_run_id):
+        parser.error("--release-sha et --release-run-id requis ensemble")
+    if args.release_sha and not args.built:
+        parser.error("--built requis avec la preuve Pages")
+    identity = (args.release_sha, args.release_run_id) if args.release_sha else None
     errors = audit(Path(args.source).resolve(),
-                   Path(args.built).resolve() if args.built else None)
+                   Path(args.built).resolve() if args.built else None,
+                   identity)
     if errors:
         for error in errors:
             print("ERREUR: " + error, file=sys.stderr)
