@@ -18,6 +18,7 @@ on:
       - 'scripts/audit_public_csv.py'
       - 'scripts/audit_public_surface.py'
       - 'scripts/pages_public_inventory.txt'
+      - 'scripts/pages_generated_inventory.txt'
   workflow_dispatch:
 
 permissions:
