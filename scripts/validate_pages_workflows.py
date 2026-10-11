@@ -97,6 +97,10 @@ def validate(workflow: str) -> list[str]:
          "Vérification source de l'inventaire global manquante")
     need("python3 scripts/audit_public_surface.py --source . --built _site" in workflow,
          "Audit complet de l'artefact avant upload manquant")
+    need("python3 scripts/audit_pages_secrets.py --self-test" in workflow,
+         "Autotests des secrets du build manquants")
+    need("python3 scripts/audit_pages_secrets.py --built _site" in workflow,
+         "Analyse des secrets du build avant upload manquante")
     need("python3 scripts/verify_pages_live.py --check" in workflow,
          "Contrôle externe des chemins techniques absent")
     need("needs: deploy" in workflow,
@@ -184,6 +188,10 @@ def self_test(workflow: str) -> None:
         "Audit global post-build supprimé": workflow.replace(
             "python3 scripts/audit_public_surface.py --source . --built _site",
             "echo MANIFEST_NON_AUDITE", 1,
+        ),
+        "Audit secrets post-build supprimé": workflow.replace(
+            "python3 scripts/audit_pages_secrets.py --built _site",
+            "echo SECRETS_NON_AUDITES", 1,
         ),
         "Ouverture sur push": workflow.replace("  workflow_dispatch:\n", "  push:\n    branches: [main]\n  workflow_dispatch:\n", 1),
         "SHA non vérifié": workflow.replace('test "$EXPECTED_SHA" = "$GITHUB_SHA"', "true", 1),
