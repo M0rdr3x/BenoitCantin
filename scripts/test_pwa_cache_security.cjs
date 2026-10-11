@@ -44,7 +44,7 @@ const environment = {
     clients: { claim: async () => {} },
   },
   async fetch(r) {
-    requests.push({ path: new URL(r.url).pathname, cache: r.cache });
+    requests.push({ path: new URL(r.url).pathname, cache: r.cache, credentials: r.credentials });
     if (networkFails) throw new Error('network offline');
     const uri = new URL(r.url);
     const headers = responseHeaders.get(uri.pathname) || {};
@@ -76,9 +76,34 @@ async function request(uri, options = {}) {
 }
 async function test() {
   await event('install');
+  assert.ok(requests.length >= 35, 'Expected the real public CORE resources to be prefetched');
+  assert.ok(requests.every(r => r.credentials === 'omit' && r.cache === 'no-store'),
+    'Prefetch must never carry cookies or reuse a personalized browser cache');
+  assert.equal(writes.length, requests.length, 'Only vetted public responses were precached');
+  // Une seule réponse privée doit invalider l'installation au lieu d'être cachée.
+  responseHeaders.set('/', { 'Cache-Control': 'private, no-store' });
+  await assert.rejects(event('install'), /non publique interdite/);
+  responseHeaders.delete('/');
+  writes.length = 0;
+  requests.length = 0;
   await event('activate');
   assert.ok(deletes.includes('benoitcantin-v24-4-95-public-3'));
   assert.ok(!deletes.includes('other-product-cache'), 'Foreign caches must survive');
+
+  // Refus de précacher une nouvelle route privée même si quelqu'un l'ajoute à CORE.
+  const mutated = source.replace('const CORE=[', "const CORE=['/api/v1/private',");
+  assert.notEqual(mutated, source);
+  const malformedListeners = new Map();
+  vm.runInNewContext(mutated, {
+    ...environment,
+    self: {
+      ...environment.self,
+      addEventListener(type, fn) { malformedListeners.set(type, fn); },
+    },
+  }, { filename: 'sw-with-forbidden-precache.js', timeout: 2500 });
+  let rejectedInstall;
+  malformedListeners.get('install')({ waitUntil(p) { rejectedInstall = p; } });
+  await assert.rejects(rejectedInstall, /Chemin privé interdit/);
 
   const forbidden = [
     '/.well-known/sinjira-pages-release.json',
@@ -104,7 +129,7 @@ async function test() {
 
   // Assets from the pinned public set are cached, but not credentials or tokens.
   await request('/assets/js/site.js');
-  assert.ok(writes.includes('/assets/js/site.js'));
+  assert.deepEqual(writes, ['/assets/js/site.js']);
   const n1 = writes.length;
   await request('/assets/js/site.js?token=private');
   assert.equal(writes.length, n1, 'URLs carrying tokens must not be cached');
