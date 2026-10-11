@@ -122,6 +122,8 @@ jobs:
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: _site
+          # Autoriser .well-known seulement après les audits Jekyll et inventaire.
+          include-hidden-files: 'true'
 
       - name: Tracer l'origine du publish
         shell: bash
