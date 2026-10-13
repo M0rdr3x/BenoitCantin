@@ -20,8 +20,11 @@ reçu dynamique SHA/run porte le total à **650**.
 
 Le garde de sécurité impose désormais la présence des quatre ressources.
 Les audits de navigation couvrent les trois portails et leurs images,
-et les tests CDN comparent les octets des trois images et de la page
-Logiciels à ceux des blobs Git du SHA de publication.
+et les tests CDN comparent **18 ressources critiques** aux blobs Git du
+SHA de publication. Cette preuve couvre désormais aussi l'accueil SINJIRA,
+les pages Romans et Jeux, la feuille de style, la bibliothèque et le
+sitemap. Des autotests refusent explicitement les anciennes versions
+de chacune de ces pages et ressources.
 
 ## Conditions bloquantes
 

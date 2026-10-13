@@ -316,45 +316,42 @@ réelle n'existe qu'après PUBLISH et contrôle réussi sur le domaine.
 ## 13. Intégrité CDN réelle des fichiers statiques critiques
 
 Le reçu de publication `.well-known/sinjira-pages-release.json` prouve
-le SHA/run **annoncé** par l'hébergement. Il ne prouve pas à lui seul qu'un
-CDN sert déjà chaque fichier de cette version. Pour éviter un faux succès
-avec un reçu neuf mais un `sw.js` ou une Boussole obsolète, le dernier job
-`verify-live` exécute désormais
-`scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"`
-**après** la vérification du reçu et des routes.
+l'identité SHA/run annoncée par l'hébergement, mais pas la fraîcheur de
+toutes les ressources servies par un cache CDN. Le job `verify-live`
+exécute donc `scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"`
+**après** l'attestation du reçu et des routes.
 
-Ce contrôle lit les douze fichiers sources au **checkout exact** de la
-révision approuvée, mais vérifie d'abord chacun de ces fichiers contre
-le blob stocké dans l'objet Git de ce commit (`git show SHA:chemin`).
-Un `git rev-parse HEAD` correct n'est pas suffisant si le répertoire de
-travail a été modifié après le checkout. Toute différence source/blob,
-absence ou substitution fait échouer la preuve **avant la première requête
-réseau**. Les autotests créent un dépôt Git éphémère, commettent les huit
-ressources, puis vérifient qu'une modification et une suppression
-postérieures au commit sont rejetées.
+Ce contrôle couvre **18 ressources critiques** dans quatre familles :
 
-Le contrôle calcule ensuite leurs empreintes SHA-256 et effectue des
-requêtes HTTPS GET en lecture seule sur leur chemin réel. Il exige :
-HTTP 200 sans redirection, MIME conforme, absence de compression inattendue,
-réponse limitée à 4 Mio et SHA-256 des **octets servis** identique aux sources.
+- Infrastructures : `sw.js`, `manifest.webmanifest`,
+  `assets/css/site.css`, `assets/js/site.js`.
+- Projet Nova : les deux JSON de la Boussole électorale et
+  `assets/media/nova-logo.webp`.
+- SINJIRA : démo PDF du Livre I, trois bannières WebP, les pages
+  `projets/sinjira/index.html`, `romans/index.html`,
+  `jeux/index.html`, `logiciels/index.html`, la feuille de style
+  `projets/sinjira/sinjira.css` et `compte/bibliotheque.html`.
+- Découverte du site : `sitemap.xml`.
 
-Les douze fichiers vérifiés sont : le service worker `sw.js`, le manifeste
-`manifest.webmanifest`, les styles `assets/css/site.css`, le script
-`assets/js/site.js`, les deux JSON de la Boussole électorale,
-la démo PDF du Livre I et le logo Nova WebP.
+Chaque source du checkout approuvé est préalablement comparée à son
+**blob dans l'objet Git** (`git show SHA:chemin`) pour refuser une
+altération du répertoire de travail, y compris lorsque `HEAD` reste
+identique. Ensuite, pour chaque chemin exact sur le domaine officiel,
+la preuve exige HTTP 200 sans redirection, MIME conforme, absence de
+compression imprévue, réponse limitée à 4 Mio et SHA-256 identique.
 
-Chaque ressource peut être contrôlée jusqu'à quatre fois à huit secondes
-d'intervalle pour une propagation CDN bornée. Une version persistante
-obsolète est rejetée, un changement de MIME, une redirection et une
-réponse trop volumineuse sont refusés immédiatement. Les autotests
-simulent notamment un service worker périmé malgré un reçu valide,
-un JSON politique ancien, des ressources actualisées tardivement et
-une discordance du SHA du checkout. Le contrôle ne modifie jamais le site.
+Au plus quatre GET par chemin sont tentés, avec trois intervalles de
+huit secondes en cas de propagation tardive du CDN. Les autotests
+refusent un service worker obsolète, des JSON politiques périmés,
+chacune des pages SINJIRA obsolètes, un sitemap ou CSS ancien, des
+redirections, des réponses trompeuses et la divergence entre worktree
+et commit. Aucun de ces tests n'émet de requête d'écriture.
 
-Cette preuve protège ces douze ressources critiques sans prétendre auditer
-les octets des autres routes HTML générées, les réponses dynamiques
-des comptes ou le fonctionnement réel du cache sur un appareil. La
-revue navigateur et les contrôles de droits restent obligatoires.
+Cette preuve porte sur les **18 ressources énumérées seulement**.
+L'exactitude des autres routes, les réponses dynamiques des comptes
+et le cache réel sur appareil exigent toujours la revue fonctionnelle
+et les tests de permissions. Le passage Pages vers GitHub Actions
+et l'approbation explicite du propriétaire restent obligatoires.
 
 ## 14. Isolation du cache PWA et des données privées
 

@@ -3,7 +3,7 @@
 
 Exécution après le reçu SHA/run (verify_pages_live.py). Le reçu peut être à
 jour alors qu'un CDN conserve des fichiers statiques périmés. Ce contrôle
-compare 12 ressources réelles au checkout exact du commit approuvé.
+compare 18 ressources réelles au checkout exact du commit approuvé.
 Aucun PUT/POST, aucune donnée privée, aucun fichier de session.
 """
 from __future__ import annotations
@@ -42,6 +42,12 @@ CRITICAL_RESOURCES = {
     "assets/media/sinjira-jeux-banniere-2026.webp": ("image/webp",),
     "assets/media/sinjira-logiciels-banniere-2026.webp": ("image/webp",),
     "projets/sinjira/logiciels/index.html": ("text/html",),
+    "projets/sinjira/index.html": ("text/html",),
+    "projets/sinjira/romans/index.html": ("text/html",),
+    "projets/sinjira/jeux/index.html": ("text/html",),
+    "projets/sinjira/sinjira.css": ("text/css",),
+    "compte/bibliotheque.html": ("text/html",),
+    "sitemap.xml": ("application/xml", "text/xml"),
 }
 
 
@@ -226,6 +232,26 @@ def self_test() -> None:
                 "Données politiques obsolètes acceptées"
         )
 
+        # Même avec un reçu SHA/run actuel, une page, un style ou un sitemap
+        # issu d'un ancien commit ne doit jamais être certifié conforme.
+        for protected in (
+            "projets/sinjira/index.html",
+            "projets/sinjira/romans/index.html",
+            "projets/sinjira/jeux/index.html",
+            "projets/sinjira/logiciels/index.html",
+            "projets/sinjira/sinjira.css",
+            "compte/bibliotheque.html",
+            "sitemap.xml",
+        ):
+            def outdated(url: str, protected_path: str = protected) -> Reply:
+                if url == BASE + "/" + protected_path:
+                    return Reply(200, CRITICAL_RESOURCES[protected_path][0],
+                                 body=b"ancienne version CDN")
+                return good(url)
+            assert any(protected in error for error in audit(
+                root, sha, sha, outdated, attempts=2, pause=lambda _: None
+            )), f"Fichier SINJIRA obsolète accepté: {protected}"
+
         calls: dict[str, int] = {}
         delays: list[int] = []
         def eventually(url: str) -> Reply:
@@ -303,7 +329,7 @@ def main() -> int:
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--self-test", action="store_true")
     mode.add_argument("--check", action="store_true",
-                      help="8 GET HTTPS read-only, après la preuve de reçu SHA/run")
+                      help="18 GET HTTPS read-only, après la preuve de reçu SHA/run")
     parser.add_argument("--expected-sha")
     args = parser.parse_args()
     if args.self_test:
