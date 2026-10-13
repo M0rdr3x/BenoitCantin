@@ -100,14 +100,14 @@
 
 /* Les trois bannières officielles sont affichées intégralement : aucun texte
    inclus dans les illustrations ne doit être coupé, y compris sur mobile. */
-.sinjira-category-hero-grid--banner,
-.games-hero-grid.sinjira-category-hero-grid--banner,
-.v24-hero-grid.sinjira-category-hero-grid--banner {
+.container.sinjira-category-hero-grid.sinjira-category-hero-grid--banner,
+.container.games-hero-grid.sinjira-category-hero-grid--banner,
+.v24-shell.v24-hero-grid.sinjira-category-hero-grid--banner {
   display:grid;
   grid-template-columns:minmax(0,1fr);
   gap:clamp(20px,3vw,36px);
 }
-.sinjira-category-poster--banner {
+.sinjira-category-poster.sinjira-category-poster--banner {
   display:block;
   margin:0;
   width:100%;
@@ -118,7 +118,7 @@
   background:#060913;
   box-shadow:0 24px 70px rgba(0,0,0,.30);
 }
-.sinjira-category-poster--banner img {
+.sinjira-category-poster.sinjira-category-poster--banner img {
   display:block;
   width:100%;
   height:auto;
