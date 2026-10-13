@@ -1,5 +1,5 @@
 # SINJIRA / Projet Nova — inventaire exact de l'artefact Pages
-# Provenance : main 790b1424b20e98ef31ec6597e98c5c8f6b4aa23d ; Jekyll _config.yml de la PR #458
+# Provenance : main 790b1424b20e98ef31ec6597e98c5c8f6b4aa23d ; intégration PR #637/#458 13-10-2026 ; Jekyll _config.yml de la PR #458
 # Chaque nouveau fichier public exige une mise à jour explicite de cet inventaire et une revue.
 404.html
 Admin/sinjira-analytics.html
@@ -213,17 +213,20 @@ assets/media/sinjira-fracture-deduction-simplifiee-couverture.webp
 assets/media/sinjira-fracture-deduction-simplifiee-dos.webp
 assets/media/sinjira-fracture-du-reseau-mere-officiel.png
 assets/media/sinjira-fracture-du-reseau-mere-officiel.webp
+assets/media/sinjira-jeux-banniere-2026.webp
 assets/media/sinjira-jeux.webp
 assets/media/sinjira-litterature.webp
 assets/media/sinjira-livre-1-cover-480.webp
 assets/media/sinjira-livre-1-cover-768.webp
 assets/media/sinjira-livre-1-cover.webp
+assets/media/sinjira-logiciels-banniere-2026.webp
 assets/media/sinjira-poster.webp
 assets/media/sinjira-registre.webp
 assets/media/sinjira-reseau-mere-resistance-officiel.png
 assets/media/sinjira-reseau-mere-resistance-officiel.webp
 assets/media/sinjira-reseau-mere-resistance.webp
 assets/media/sinjira-reseau-personnage.webp
+assets/media/sinjira-romans-banniere-2026.webp
 avis-legal.html
 banniere-nova.jpg
 code-conduite.html
@@ -587,6 +590,7 @@ projets/sinjira/jeux/index.html
 projets/sinjira/jeux/jeux.css
 projets/sinjira/jeux/le-premier-refuge/index.html
 projets/sinjira/jeux/reseau-mere-resistance/index.html
+projets/sinjira/logiciels/index.html
 projets/sinjira/marche/index.html
 projets/sinjira/monde-parallele/index.html
 projets/sinjira/personnages/index.html

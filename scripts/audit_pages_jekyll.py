@@ -22,6 +22,12 @@ REQUIRED_PUBLIC = {
     'index.html', '404.html', 'CNAME', 'robots.txt', 'sitemap.xml',
     'assets/js/site.js', 'compte/index.html', 'projets/projet-nova/index.html',
     'projets/sinjira/index.html',
+    'projets/sinjira/romans/index.html',
+    'projets/sinjira/jeux/index.html',
+    'projets/sinjira/logiciels/index.html',
+    'assets/media/sinjira-romans-banniere-2026.webp',
+    'assets/media/sinjira-jeux-banniere-2026.webp',
+    'assets/media/sinjira-logiciels-banniere-2026.webp',
 }
 TECHNICAL_SUFFIXES = {
     '.md', '.py', '.sql', '.ts', '.tsx', '.toml', '.yml', '.yaml',

@@ -184,19 +184,19 @@ d'utilisateurs ou de participants ne doit jamais être versé dans le dépôt
 public ni servi par un hébergeur statique. Des tests négatifs détectent la
 disparition, la transformation et l'inclusion d'un fichier non approuvé.
 
-## 10. Contrat intégral de la surface publique (614 chemins)
+## 10. Contrat intégral de la surface publique (618 chemins)
 
 La photographie prise sur le `main` du 10 octobre 2026, après application
-des exclusions Jekyll explicites, compte **614 fichiers publiables** :
+des exclusions Jekyll explicites, compte **618 fichiers publiables** :
 pages HTML, styles, modules JS, images, icônes, manifestes, documents et
 données publiques. Le registre `scripts/pages_public_inventory.txt`
 donne chaque chemin source exact et
 `scripts/pages_generated_inventory.txt` autorise séparément les **31
 fichiers produits exclusivement par Jekyll** (notamment les pages HTML
 issues des références Markdown officielles et `assets/css/style.css`).
-Le vérificateur `scripts/audit_public_surface.py` compare les **614
+Le vérificateur `scripts/audit_public_surface.py` compare les **618
 sources attendues et les 31 sorties générées** avec le contenu exact de
-`_site`. Pour les 614 fichiers provenant directement des sources, il
+`_site`. Pour les 618 fichiers provenant directement des sources, il
 exige des octets identiques SHA-256 ; les 31 sorties générées sont limitées
 à une liste exacte de chemins et ne peuvent ni disparaître ni s'étendre
 sans mise à jour approuvée de l'inventaire.
@@ -268,7 +268,7 @@ Cette vérification vérifie la forme attendue de l'archive avant upload;
 elle ne prétend pas avoir observé le TAR effectivement téléversé par
 GitHub Pages. La preuve de tar effectivement déployé demeure à faire
 lors du PUBLISH réel, puis par le reçu HTTPS et les contrôles du CDN. Cette permission est sûre **uniquement** parce que
-l'audit Jekyll, le registre exact des 645 chemins publics et le rejet des
+l'audit Jekyll, le registre exact des 649 chemins publics et le rejet des
 fichiers cachés imprévus s'exécutent **avant** l'envoi. Toute introduction
 future d'un nouveau chemin sous `.well-known` exige une revue du registre.
 
@@ -290,7 +290,7 @@ secret, droit d'accès ou donnée personnelle.
 Le workflow manuel exige que ce **646e fichier dynamique** corresponde
 exactement au SHA et au run courants. Les contrôles JSON, inventaire intégral
 et anti-secrets permettent **seulement** ce chemin supplémentaire lorsque
-le marqueur validé est présent; les 645 chemins historiques restent figés.
+le marqueur validé est présent; les 649 chemins historiques restent figés.
 
 Après le déploiement, `scripts/verify_pages_live.py --check` reçoit le
 SHA et le run attendus, télécharge en GET HTTPS le reçu depuis
@@ -323,7 +323,7 @@ avec un reçu neuf mais un `sw.js` ou une Boussole obsolète, le dernier job
 `scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"`
 **après** la vérification du reçu et des routes.
 
-Ce contrôle lit les huit fichiers sources au **checkout exact** de la
+Ce contrôle lit les douze fichiers sources au **checkout exact** de la
 révision approuvée, mais vérifie d'abord chacun de ces fichiers contre
 le blob stocké dans l'objet Git de ce commit (`git show SHA:chemin`).
 Un `git rev-parse HEAD` correct n'est pas suffisant si le répertoire de
@@ -338,7 +338,7 @@ requêtes HTTPS GET en lecture seule sur leur chemin réel. Il exige :
 HTTP 200 sans redirection, MIME conforme, absence de compression inattendue,
 réponse limitée à 4 Mio et SHA-256 des **octets servis** identique aux sources.
 
-Les huit fichiers vérifiés sont : le service worker `sw.js`, le manifeste
+Les douze fichiers vérifiés sont : le service worker `sw.js`, le manifeste
 `manifest.webmanifest`, les styles `assets/css/site.css`, le script
 `assets/js/site.js`, les deux JSON de la Boussole électorale,
 la démo PDF du Livre I et le logo Nova WebP.
@@ -351,7 +351,7 @@ simulent notamment un service worker périmé malgré un reçu valide,
 un JSON politique ancien, des ressources actualisées tardivement et
 une discordance du SHA du checkout. Le contrôle ne modifie jamais le site.
 
-Cette preuve protège ces huit ressources critiques sans prétendre auditer
+Cette preuve protège ces douze ressources critiques sans prétendre auditer
 les octets des autres routes HTML générées, les réponses dynamiques
 des comptes ou le fonctionnement réel du cache sur un appareil. La
 revue navigateur et les contrôles de droits restent obligatoires.
@@ -440,3 +440,11 @@ l'hébergement réellement publié, les accès privés, les tests de domaines,
 les garanties HTTP et les validations finales soient prouvés.
 
 **Aucune étape de ce document n'a été exécutée en production automatiquement.**
+
+
+## Convergence SINJIRA — catalogues du 13 octobre 2026
+
+Cette intégration fermée reprend la page Logiciels et les trois visuels WebP de la PR #637.
+Inventaire explicite : 618 sources + 31 sorties Jekyll = 649 statiques ; reçu SHA/run dynamique lors d'une publication approuvée = 650 sorties.
+Contrôles supplémentaires : pages Romans, Jeux, Logiciels, trois images WebP et comparaison CDN du contenu au SHA approuvé.
+Ces nombres ne prouvent pas une publication ; voir la CI du commit combiné. Aucune publication avant bascule GitHub Actions et approbation explicite.

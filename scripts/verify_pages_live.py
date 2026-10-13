@@ -15,12 +15,17 @@ from pages_release_proof import MARKER, render
 BASE = "https://www.benoitcantin.com"
 PUBLIC_ROUTES = (
     "/", "/404.html", "/compte/", "/projets/sinjira/",
+    "/projets/sinjira/romans/", "/projets/sinjira/jeux/",
+    "/projets/sinjira/logiciels/",
     "/projets/projet-nova/", "/robots.txt", "/sitemap.xml",
     "/assets/js/site.js",
     "/projets/projet-nova/data/boussole-partis-2026.json",
     "/projets/projet-nova/data/boussole-preuves-2026.json",
     "/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
     "/assets/media/nova-logo.webp",
+    "/assets/media/sinjira-romans-banniere-2026.webp",
+    "/assets/media/sinjira-jeux-banniere-2026.webp",
+    "/assets/media/sinjira-logiciels-banniere-2026.webp",
 )
 PRIVATE_ROUTES = (
     "/supabase/config.toml",
@@ -49,6 +54,9 @@ MIME_HINTS = {
     "/projets/projet-nova/data/boussole-preuves-2026.json": ("application/json",),
     "/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf": ("application/pdf",),
     "/assets/media/nova-logo.webp": ("image/webp",),
+    "/assets/media/sinjira-romans-banniere-2026.webp": ("image/webp",),
+    "/assets/media/sinjira-jeux-banniere-2026.webp": ("image/webp",),
+    "/assets/media/sinjira-logiciels-banniere-2026.webp": ("image/webp",),
 }
 USER_AGENT = "SINJIRA-Pages-Publication-Audit/1.0"
 RELEASE_ATTEMPTS = 13
@@ -209,6 +217,9 @@ def self_test() -> None:
             "/projets/projet-nova/data/boussole-preuves-2026.json": "application/json",
             "/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf": "application/pdf",
             "/assets/media/nova-logo.webp": "image/webp",
+            "/assets/media/sinjira-romans-banniere-2026.webp": "image/webp",
+            "/assets/media/sinjira-jeux-banniere-2026.webp": "image/webp",
+            "/assets/media/sinjira-logiciels-banniere-2026.webp": "image/webp",
         }.get(path, "text/plain")
         return Reply(200, content_type=mime)
     assert not verify(BASE, fixture), verify(BASE, fixture)
