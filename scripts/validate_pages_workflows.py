@@ -20,6 +20,112 @@ LEGACY_UPLOAD_SHA = "56afc609e74202658d3ffba0e8f6dda462b719fa"
 DEPLOY_SHA = "368f82528645a54fb793d4d04e342629a3f51346"
 
 
+def job_steps(workflow: str, name: str) -> list[tuple[str, str]]:
+    """Extraire des étapes YAML du job, sans installer de parseur externe.
+
+    Contrat volontairement strict : toute modification d'indentation ou
+    de structure du workflow doit être revue avant la publication.
+    """
+    jobs = list(re.finditer(r"(?m)^  ([a-z][a-z0-9-]*):\s*$", workflow))
+    match = next((i for i, m in enumerate(jobs) if m.group(1) == name), None)
+    if match is None:
+        return []
+    start = jobs[match].end()
+    end = jobs[match + 1].start() if match + 1 < len(jobs) else len(workflow)
+    body = workflow[start:end]
+    headers = list(re.finditer(r"(?m)^      - name: ([^\n]+)$", body))
+    return [
+        (m.group(1).strip(), body[m.end():headers[i + 1].start()
+                                  if i + 1 < len(headers) else len(body)])
+        for i, m in enumerate(headers)
+    ]
+
+
+def active_python_commands(step: str) -> set[str]:
+    """Ne compter que les lignes de shell actives, jamais echo ou commentaires.
+
+    Une mention textuelle d'un audit dans une annotation YAML, un echo ou
+    une commande commentée ne doit jamais satisfaire le garde.
+    """
+    results: set[str] = set()
+    lines = step.splitlines()
+    for i, line in enumerate(lines):
+        match = re.fullmatch(r"        run: (.+)", line)
+        if not match:
+            continue
+        value = match.group(1).strip()
+        if value.startswith("python3 "):
+            results.add(value)
+        elif value in {"|", "|-"}:
+            for candidate in lines[i + 1:]:
+                if candidate.strip() and not candidate.startswith("          "):
+                    break
+                if candidate.startswith("          "):
+                    command = candidate[10:].strip()
+                    if command.startswith("python3 "):
+                        results.add(command)
+    return results
+
+
+def executable_guards(workflow: str) -> list[str]:
+    """Lier les contrôles au vrai job et à l'étape précédant l'upload."""
+    issues: list[str] = []
+    artifact = job_steps(workflow, "artifact")
+    deploy = job_steps(workflow, "deploy")
+    verify = job_steps(workflow, "verify-live")
+    names = [name for name, _ in artifact]
+    before = "Marquer le build avec le SHA et l'identifiant du workflow"
+    audit_name = "Refuser toute fuite de code et toute perte de route"
+    after = "Téléverser uniquement l’artefact vérifié, et seulement en mode PUBLISH"
+    if not (names.count(before) == names.count(audit_name) == names.count(after) == 1
+            and names.index(before) < names.index(audit_name) < names.index(after)):
+        return ["Ordre reçu -> audits finaux -> upload non prouvé"]
+    build_step = next(body for name, body in artifact if name == audit_name)
+    live_step = next((body for name, body in verify
+                      if name.startswith("Attendre le reçu SHA/run réel")), "")
+    integrity_step = next((body for name, body in verify
+                           if name.startswith("Confirmer les octets CDN")), "")
+    build_commands = active_python_commands(build_step)
+    live_commands = active_python_commands(live_step)
+    integrity_commands = active_python_commands(integrity_step)
+    required_build = (
+        "python3 scripts/audit_pages_jekyll.py --source . --built _site",
+        "python3 scripts/audit_public_documents.py --source . --built _site",
+        'python3 scripts/audit_public_json.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"',
+        "python3 scripts/audit_public_csv.py --source . --built _site",
+        'python3 scripts/audit_public_surface.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"',
+        "python3 scripts/audit_pwa_precache.py --source . --built _site",
+        'python3 scripts/pages_release_proof.py --verify _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"',
+        'python3 scripts/verify_pages_tar_archive.py --built _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"',
+        "python3 scripts/audit_pages_secrets.py --built _site",
+    )
+    for command in required_build:
+        if command not in build_commands:
+            issues.append("Audit final absent ou non exécutable : " + command.split()[1])
+    required_live = (
+        'python3 scripts/verify_pages_live.py --check --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID" --await-release',
+    )
+    required_integrity = (
+        'python3 scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"',
+    )
+    for command in required_live:
+        if command not in live_commands:
+            issues.append("Vérification HTTP non exécutable dans le job live")
+    for command in required_integrity:
+        if command not in integrity_commands:
+            issues.append("Contrôle CDN non exécutable dans le job live")
+    for job_name, steps, prefix in (
+        ("artifact", artifact, "Attester Pages ET la fraîcheur"),
+        ("deploy", deploy, "Revérifier Pages et HEAD main"),
+    ):
+        match = [body for name, body in steps if name.startswith(prefix)]
+        if (len(match) != 1 or
+                "python3 scripts/attest_pages_production.py --check"
+                not in active_python_commands(match[0])):
+            issues.append("Attestation Pages non exécutable dans le job " + job_name)
+    return issues
+
+
 def validate(workflow: str) -> list[str]:
     errors: list[str] = []
     def need(ok: bool, name: str) -> None:
@@ -174,6 +280,7 @@ def validate(workflow: str) -> list[str]:
          "Attestation post-approbation avant déploiement absente")
     need("pages: write" in workflow and "id-token: write" in workflow,
          "Identité Pages requise pour le seul job de publication")
+    errors.extend(executable_guards(workflow))
     return errors
 
 
@@ -251,6 +358,22 @@ def self_test(workflow: str) -> None:
         "Audit global post-build supprimé": workflow.replace(
             "python3 scripts/audit_public_surface.py --source . --built _site",
             "echo MANIFEST_NON_AUDITE", 1,
+        ),
+        "Audit global commenté": workflow.replace(
+            '          python3 scripts/audit_public_surface.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"',
+            '          # python3 scripts/audit_public_surface.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"', 1,
+        ),
+        "Audit secrets seulement imprimé": workflow.replace(
+            '          python3 scripts/audit_pages_secrets.py --built _site',
+            '          echo python3 scripts/audit_pages_secrets.py --built _site', 1,
+        ),
+        "Contrôle HTTP commenté": workflow.replace(
+            '        run: python3 scripts/verify_pages_live.py --check --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID" --await-release',
+            '        run: echo python3 scripts/verify_pages_live.py --check --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID" --await-release', 1,
+        ),
+        "Attestation post approbation commentée": workflow.replace(
+            '        run: python3 scripts/attest_pages_production.py --check',
+            '        run: echo python3 scripts/attest_pages_production.py --check', 1,
         ),
         "Audit secrets post-build supprimé": workflow.replace(
             "python3 scripts/audit_pages_secrets.py --built _site",
