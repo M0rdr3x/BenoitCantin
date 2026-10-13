@@ -35,7 +35,7 @@ jobs:
         run: python3 scripts/validate_publication_live_boundary.py --self-test
 
   live:
-    name: Vérifier l'hébergement et les six chemins techniques
+    name: Vérifier les quatorze chemins techniques et l'identité d'hébergement
     needs: contract
     # Pas de trafic de surveillance vers la production sur les PR ou pushes.
     # L'exécution quotidienne et le lancement manuel prouvent l'état live.

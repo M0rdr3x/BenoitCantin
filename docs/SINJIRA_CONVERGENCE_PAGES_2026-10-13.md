@@ -33,3 +33,24 @@ l'administrateur ; absence de publication racine concurrente ; DRY_RUN
 sans upload ; approbation humaine du PUBLISH sur le main exact ; contrôle
 HTTPS, 404/410 privés, reçu SHA/run et intégrité des ressources.
 Cette branche ne déclenche aucune publication.
+
+## Surveillance quotidienne compatible avec la bascule
+
+Le workflow `publication-boundary-watch.yml` est maintenu en lecture
+seule. Son exigence historique `Netlify` devient une alternative
+fermée : Netlify avec sa signature d'origine **ou** GitHub Pages avec
+le reçu `.well-known/sinjira-pages-release.json` au SHA exact de
+`main` exécutant la surveillance. Un simple en-tête `Server:
+GitHub.com` ne suffit jamais à faire passer le contrôle.
+
+Les 13 routes privées de l'audit Pages et l'ancien chemin de build
+Netlify (14 chemins techniques uniques au total) doivent répondre
+en HTTP 404/410, sans redirection trompeuse. Les autotests refusent
+les statuts 200, 301, 302, 403, 500, la disparition de preuve,
+l'en-tête de fournisseur ambigu, le reçu obsolète, falsifié ou hors MIME.
+Le contenu des routes techniques n'est jamais lu par le surveillant.
+
+La surveillance GitHub Pages n'est réputée conforme qu'après la
+bascule administrative, la fusion autorisée et un PUBLISH réussi.
+Tant que le site sert la racine technique, le monitoring doit
+continuer à signaler le risque et ne doit pas être neutralisé.
