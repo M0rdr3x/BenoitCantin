@@ -403,7 +403,10 @@ def self_test(workflow: str) -> None:
             "python3 scripts/pages_release_proof.py --self-test # ", 1,
         ),
         "Budget d'exécution CDN réduit": workflow.replace(
-            "timeout-minutes: 20", "timeout-minutes: 2", 1,
+            "    timeout-minutes: 20\n    permissions:\n      contents: read\n    steps:\n"
+            "      - name: Checkout pour le validateur HTTP",
+            "    timeout-minutes: 2\n    permissions:\n      contents: read\n    steps:\n"
+            "      - name: Checkout pour le validateur HTTP", 1,
         ),
         "Dénomination critique CDN obsolète": workflow.replace(
             "Confirmer les octets CDN des 18 ressources critiques dans le budget borné",
