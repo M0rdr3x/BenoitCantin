@@ -1,5 +1,7 @@
 # Projet Nova — site public sur benoitcantin.com
 
+**Identité unique :** Projet Nova est la seule dénomination active. « Parti Nova » est réservé à une évolution future sous réserve des autorisations nécessaires. Voir [IDENTITE_UNIQUE_PROJET_NOVA.md](IDENTITE_UNIQUE_PROJET_NOVA.md).
+
 **URL publique :** https://www.benoitcantin.com/projets/projet-nova/
 
 **Statut :** projet politique et institutionnel en développement — références publiques candidates, non adoptées.
@@ -8,7 +10,7 @@ Projet Nova est une démarche politique citoyenne québécoise en construction. 
 
 ## Sources publiques prioritaires
 - `official/reference/corpus.md` : architecture institutionnelle et corpus maître public;
-- `official/reference/statuts.md` : statuts et gouvernance candidats du Parti Nova;
+- `official/reference/statuts.md` : projets de statuts d'un éventuel Parti Nova (non adopté / non autorisé);
 - `official/reference/programme.md` : programme public actuel;
 - `data/sources.json` : manifeste des références et empreintes SHA-256;
 - `document.html` : lecteur public permanent de ces références.
