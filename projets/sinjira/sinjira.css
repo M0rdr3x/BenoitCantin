@@ -97,3 +97,48 @@
 .sinjira-software-roadmap{max-width:980px}
 .sinjira-software-page .universe-subnav a:focus-visible,.sinjira-software-card a:focus-visible{outline:3px solid #ffaf8f;outline-offset:4px}
 @media(max-width:700px){.sinjira-software-grid{grid-template-columns:1fr}.sinjira-software-visual{min-height:210px}}
+
+/* Les trois bannières officielles sont affichées intégralement : aucun texte
+   inclus dans les illustrations ne doit être coupé, y compris sur mobile. */
+.sinjira-category-hero-grid--banner,
+.games-hero-grid.sinjira-category-hero-grid--banner,
+.v24-hero-grid.sinjira-category-hero-grid--banner {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:clamp(20px,3vw,36px);
+}
+.sinjira-category-poster--banner {
+  display:block;
+  margin:0;
+  width:100%;
+  max-width:none;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:clamp(14px,2.5vw,28px);
+  background:#060913;
+  box-shadow:0 24px 70px rgba(0,0,0,.30);
+}
+.sinjira-category-poster--banner img {
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:none;
+  aspect-ratio:auto;
+  object-fit:contain;
+  object-position:center;
+}
+.sinjira-portal-art {
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:none;
+  margin:14px 0 18px;
+  border-radius:14px;
+  object-fit:contain;
+  background:#060913;
+}
+@media (max-width:640px) {
+  .sinjira-category-poster--banner {border-radius:12px}
+  .sinjira-category-hero-grid--banner {gap:18px}
+  .sinjira-portal-art {margin:12px 0}
+}
