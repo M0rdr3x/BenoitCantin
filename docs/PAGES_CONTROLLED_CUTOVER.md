@@ -276,7 +276,41 @@ La CI de la PR simule l'arrivée tardive du reçu, un SHA obsolète,
 un MIME incorrect et une redirection **sans déploiement**. Une preuve HTTP
 réelle n'existe qu'après PUBLISH et contrôle réussi sur le domaine.
 
-## 13. Isolation du cache PWA et des données privées
+## 13. Intégrité CDN réelle des fichiers statiques critiques
+
+Le reçu de publication `.well-known/sinjira-pages-release.json` prouve
+le SHA/run **annoncé** par l'hébergement. Il ne prouve pas à lui seul qu'un
+CDN sert déjà chaque fichier de cette version. Pour éviter un faux succès
+avec un reçu neuf mais un `sw.js` ou une Boussole obsolète, le dernier job
+`verify-live` exécute désormais
+`scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"`
+**après** la vérification du reçu et des routes.
+
+Ce contrôle lit les huit fichiers sources au **checkout exact** de la
+révision approuvée, calcule leurs empreintes SHA-256 et effectue des
+requêtes HTTPS GET en lecture seule sur leur chemin réel. Il exige :
+HTTP 200 sans redirection, MIME conforme, absence de compression inattendue,
+réponse limitée à 4 Mio et SHA-256 des **octets servis** identique aux sources.
+
+Les huit fichiers vérifiés sont : le service worker `sw.js`, le manifeste
+`manifest.webmanifest`, les styles `assets/css/site.css`, le script
+`assets/js/site.js`, les deux JSON de la Boussole électorale,
+la démo PDF du Livre I et le logo Nova WebP.
+
+Chaque ressource peut être contrôlée jusqu'à quatre fois à huit secondes
+d'intervalle pour une propagation CDN bornée. Une version persistante
+obsolète est rejetée, un changement de MIME, une redirection et une
+réponse trop volumineuse sont refusés immédiatement. Les autotests
+simulent notamment un service worker périmé malgré un reçu valide,
+un JSON politique ancien, des ressources actualisées tardivement et
+une discordance du SHA du checkout. Le contrôle ne modifie jamais le site.
+
+Cette preuve protège ces huit ressources critiques sans prétendre auditer
+les octets des autres routes HTML générées, les réponses dynamiques
+des comptes ou le fonctionnement réel du cache sur un appareil. La
+revue navigateur et les contrôles de droits restent obligatoires.
+
+## 14. Isolation du cache PWA et des données privées
 
 Le service worker `sw.js` est audité avec le **vrai code JavaScript exécuté**
 dans Node 22 par `scripts/test_pwa_cache_security.cjs` dans la CI de la PR.
@@ -329,7 +363,7 @@ contrôle d'accès serveur. Les droits SINJIRA doivent toujours être appliqués
 côté serveur. Vérifier manuellement en navigateur la PWA après le
 déploiement approuvé, y compris une mise à jour depuis une ancienne version.
 
-## 14. Frontière avec la refonte #449
+## 15. Frontière avec la refonte #449
 
 Ce confinement est un **correctif transitoire**. Il n'apporte pas les entêtes
 `_headers` ni les redirections `_redirects` de Netlify, et ne valide pas les
