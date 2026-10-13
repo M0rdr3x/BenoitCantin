@@ -84,6 +84,7 @@ jobs:
           python3 scripts/audit_pages_jekyll.py --self-test
           python3 scripts/audit_pages_jekyll.py --source .
           python3 scripts/verify_pages_live.py --self-test
+          python3 scripts/verify_pages_integrity.py --self-test
           python3 scripts/attest_pages_production.py --self-test
           python3 scripts/audit_public_documents.py --self-test
           python3 scripts/audit_public_documents.py --source .
@@ -212,3 +213,5 @@ jobs:
           python-version: '3.12.14'
       - name: Attendre le reçu SHA/run réel puis vérifier les routes et refus techniques
         run: python3 scripts/verify_pages_live.py --check --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID" --await-release
+      - name: Confirmer les octets CDN des 8 ressources critiques contre le commit approuvé
+        run: python3 scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"
