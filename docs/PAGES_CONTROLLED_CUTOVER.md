@@ -241,9 +241,20 @@ désormais épinglée au commit GitHub
 explicitement l'exclusion des chemins cachés à sa valeur. Le garde
 `scripts/validate_pages_workflows.py` interdit le retour à la version
 2024, détecte la perte du paramètre et protège le SHA complet épinglé.
-Cette vérification documentaire porte sur le code de l'action upstream;
-la preuve de tar effectivement déployé demeure à faire lors du PUBLISH
-réel, puis par le reçu HTTPS. Cette permission est sûre **uniquement** parce que
+La CI et le futur workflow de PUBLISH exécutent également
+`scripts/verify_pages_tar_archive.py` **après l'ajout du reçu et après
+tous les audits, mais avant l'upload**. Ce contrôle crée une archive TAR
+locale avec les options Linux de l'action épinglée, sans envoyer aucun
+artefact, puis compare tous ses fichiers octet pour octet avec `_site`
+et exige explicitement le reçu caché `.well-known`. Il refuse une
+archive privée de ce répertoire, une ancienne copie du site ou un octet
+modifié. Ses autotests simulent les anciennes exclusions des fichiers
+cachés et des altérations postérieures à la création du TAR.
+
+Cette vérification vérifie la forme attendue de l'archive avant upload;
+elle ne prétend pas avoir observé le TAR effectivement téléversé par
+GitHub Pages. La preuve de tar effectivement déployé demeure à faire
+lors du PUBLISH réel, puis par le reçu HTTPS et les contrôles du CDN. Cette permission est sûre **uniquement** parce que
 l'audit Jekyll, le registre exact des 645 chemins publics et le rejet des
 fichiers cachés imprévus s'exécutent **avant** l'envoi. Toute introduction
 future d'un nouveau chemin sous `.well-known` exige une revue du registre.
