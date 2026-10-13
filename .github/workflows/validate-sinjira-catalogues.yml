@@ -1,0 +1,55 @@
+name: SINJIRA — catalogues Romans Jeux Logiciels
+
+on:
+  pull_request:
+    paths:
+      - 'projets/sinjira/index.html'
+      - 'projets/sinjira/romans/**'
+      - 'projets/sinjira/jeux/**'
+      - 'projets/sinjira/logiciels/**'
+      - 'projets/sinjira/sinjira.css'
+      - 'compte/bibliotheque.html'
+      - 'sitemap.xml'
+      - 'scripts/validate_sinjira_catalogues.py'
+      - '.github/workflows/validate-sinjira-catalogues.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'projets/sinjira/index.html'
+      - 'projets/sinjira/romans/**'
+      - 'projets/sinjira/jeux/**'
+      - 'projets/sinjira/logiciels/**'
+      - 'projets/sinjira/sinjira.css'
+      - 'compte/bibliotheque.html'
+      - 'sitemap.xml'
+      - 'scripts/validate_sinjira_catalogues.py'
+      - '.github/workflows/validate-sinjira-catalogues.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-catalogues-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Contrôler les trois catalogues et les routes publiques
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout sans persister les permissions GitHub
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Vérifier les scénarios négatifs
+        run: python3 scripts/validate_sinjira_catalogues.py --self-test
+      - name: Vérifier les liens, les pages et les permissions publiques
+        run: python3 scripts/validate_sinjira_catalogues.py
+      - name: Vérifier les liens du site et les ressources statiques
+        run: python3 scripts/validate_site.py
