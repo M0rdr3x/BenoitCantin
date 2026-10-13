@@ -66,3 +66,20 @@ tout comme un fichier non vérifié en fin de budget. L'étape GitHub
 Actions possède une enveloppe de **20 minutes** couvrant également
 l'attente du reçu SHA/run et la vérification des routes publiques et
 techniques. Des autotests simulent la limite dépassée.
+
+
+## Navigation de catalogue — destinations réellement publiables
+
+Les quatre portails publics SINJIRA (accueil, Romans, Jeux, Logiciels) font
+désormais l'objet d'un test de **graphe de liens et médias** indépendant.
+Chaque destination locale de lien, CSS, JavaScript, image, `srcset`,
+`poster` et image sociale doit être présente dans le manifeste public Pages,
+ou dans les fichiers explicitement générés par Jekyll. La présence dans
+GitHub seul ne suffit pas : les sources `scripts/`, `supabase/` et les
+fichiers non approuvés doivent rester inaccessibles depuis ces portails.
+
+Autotests négatifs : lien technique existant mais exclu, route absente,
+traversée hors racine, protocole JavaScript, lien interne HTTP,
+chemin ambigu, `srcset` invalide et détournement de base HTML.
+Ce test s'exécute aussi lorsque l'inventaire Pages est modifié.
+Il ne remplace pas la preuve HTTP du site publié.

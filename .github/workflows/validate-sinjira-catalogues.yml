@@ -11,6 +11,9 @@ on:
       - 'compte/bibliotheque.html'
       - 'sitemap.xml'
       - 'scripts/validate_sinjira_catalogues.py'
+      - 'scripts/validate_sinjira_public_links.py'
+      - 'scripts/pages_public_inventory.txt'
+      - 'scripts/pages_generated_inventory.txt'
       - '.github/workflows/validate-sinjira-catalogues.yml'
   push:
     branches: [main]
@@ -23,6 +26,9 @@ on:
       - 'compte/bibliotheque.html'
       - 'sitemap.xml'
       - 'scripts/validate_sinjira_catalogues.py'
+      - 'scripts/validate_sinjira_public_links.py'
+      - 'scripts/pages_public_inventory.txt'
+      - 'scripts/pages_generated_inventory.txt'
       - '.github/workflows/validate-sinjira-catalogues.yml'
   workflow_dispatch:
 
@@ -51,5 +57,9 @@ jobs:
         run: python3 scripts/validate_sinjira_catalogues.py --self-test
       - name: Vérifier les liens, les pages et les permissions publiques
         run: python3 scripts/validate_sinjira_catalogues.py
+      - name: Refuser les liens des catalogues vers des fichiers exclus de Pages
+        run: |
+          python3 scripts/validate_sinjira_public_links.py --self-test
+          python3 scripts/validate_sinjira_public_links.py --check
       - name: Vérifier les liens du site et les ressources statiques
         run: python3 scripts/validate_site.py
