@@ -287,7 +287,16 @@ avec un reçu neuf mais un `sw.js` ou une Boussole obsolète, le dernier job
 **après** la vérification du reçu et des routes.
 
 Ce contrôle lit les huit fichiers sources au **checkout exact** de la
-révision approuvée, calcule leurs empreintes SHA-256 et effectue des
+révision approuvée, mais vérifie d'abord chacun de ces fichiers contre
+le blob stocké dans l'objet Git de ce commit (`git show SHA:chemin`).
+Un `git rev-parse HEAD` correct n'est pas suffisant si le répertoire de
+travail a été modifié après le checkout. Toute différence source/blob,
+absence ou substitution fait échouer la preuve **avant la première requête
+réseau**. Les autotests créent un dépôt Git éphémère, commettent les huit
+ressources, puis vérifient qu'une modification et une suppression
+postérieures au commit sont rejetées.
+
+Le contrôle calcule ensuite leurs empreintes SHA-256 et effectue des
 requêtes HTTPS GET en lecture seule sur leur chemin réel. Il exige :
 HTTP 200 sans redirection, MIME conforme, absence de compression inattendue,
 réponse limitée à 4 Mio et SHA-256 des **octets servis** identique aux sources.
