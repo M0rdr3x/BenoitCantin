@@ -202,7 +202,7 @@ jobs:
     needs: deploy
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'PUBLISH' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -216,5 +216,5 @@ jobs:
           python-version: '3.12.14'
       - name: Attendre le reçu SHA/run réel puis vérifier les routes et refus techniques
         run: python3 scripts/verify_pages_live.py --check --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID" --await-release
-      - name: Confirmer les octets CDN des 8 ressources critiques contre le commit approuvé
+      - name: Confirmer les octets CDN des 18 ressources critiques dans le budget borné
         run: python3 scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"

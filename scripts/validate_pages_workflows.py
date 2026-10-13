@@ -262,8 +262,10 @@ def validate(workflow: str) -> list[str]:
     need(verify_job != workflow and
          'python3 scripts/verify_pages_live.py --check --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID" --await-release' in verify_job,
          "Attente bornée du reçu CDN exact avant les vérifications live absente")
-    need("timeout-minutes: 12" in verify_job,
-         "Délai du job HTTP insuffisant pour une propagation CDN bornée")
+    need("timeout-minutes: 20" in verify_job,
+         "Délai du job HTTP insuffisant pour 18 fichiers CDN et la propagation bornée")
+    need("Confirmer les octets CDN des 18 ressources critiques dans le budget borné" in verify_job,
+         "Intégrité des 18 ressources non annoncée dans le job")
     need('python3 scripts/verify_pages_integrity.py --self-test' in workflow,
          "Autotests de l'intégrité des octets publics absents")
     need('python3 scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"' in verify_job,
@@ -399,6 +401,13 @@ def self_test(workflow: str) -> None:
         "Reçu de publication supprimé": workflow.replace(
             "python3 scripts/pages_release_proof.py --write _site --sha",
             "python3 scripts/pages_release_proof.py --self-test # ", 1,
+        ),
+        "Budget d'exécution CDN réduit": workflow.replace(
+            "timeout-minutes: 20", "timeout-minutes: 2", 1,
+        ),
+        "Dénomination critique CDN obsolète": workflow.replace(
+            "Confirmer les octets CDN des 18 ressources critiques dans le budget borné",
+            "Confirmer les octets CDN des 8 ressources critiques", 1,
         ),
         "Contrôle TAR .well-known supprimé": workflow.replace(
             'python3 scripts/verify_pages_tar_archive.py --built _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"',

@@ -25,6 +25,7 @@ SHA_PATTERN = re.compile(r"[0-9a-f]{40}\Z")
 MAX_BYTES = 4 * 1024 * 1024
 MAX_ATTEMPTS = 4
 PAUSE_SECONDS = 8
+MAX_AUDIT_SECONDS = 420  # 7 minutes pour les 18 ressources, fail-closed.
 # Source repository-relative path -> MIME acceptable on the real domain.
 CRITICAL_RESOURCES = {
     "sw.js": ("application/javascript", "text/javascript", "application/x-javascript"),
@@ -131,11 +132,16 @@ def attest_committed_bytes(root: Path, sha: str) -> list[str]:
 
 def audit(root: Path, expected_sha: str, actual_sha: str,
           getter: Callable[[str], Reply], attempts: int = MAX_ATTEMPTS,
-          pause: Callable[[int], None] = time.sleep) -> list[str]:
+          pause: Callable[[float], None] = time.sleep,
+          clock: Callable[[], float] = time.monotonic,
+          budget_seconds: float = MAX_AUDIT_SECONDS) -> list[str]:
     if not SHA_PATTERN.fullmatch(expected_sha) or actual_sha != expected_sha:
         return ["Checkout Git différent du SHA approuvé ou SHA malformé"]
     if not 1 <= attempts <= MAX_ATTEMPTS:
         return ["Nombre de tentatives non approuvé"]
+    if not 0 < budget_seconds <= MAX_AUDIT_SECONDS:
+        return ["Budget global CDN invalide"]
+    deadline = clock() + budget_seconds
     if not root.is_dir() or root.is_symlink():
         return ["Checkout des sources invalide"]
     errors: list[str] = []
@@ -157,15 +163,28 @@ def audit(root: Path, expected_sha: str, actual_sha: str,
     if errors:
         return errors
 
+    def expired(relative: str) -> list[str]:
+        # Ne jamais prétendre que les chemins restants ont été contrôlés.
+        return errors + [
+            f"Budget global CDN épuisé: {relative} non prouvé "
+            f"({budget_seconds:g} secondes maximales)"
+        ]
+
     for relative, expected_digest in expected.items():
+        if clock() >= deadline:
+            return expired(relative)
         url = BASE + "/" + relative
         last = "aucune réponse"
         for n in range(attempts):
+            if clock() >= deadline:
+                return expired(relative)
             try:
                 reply = getter(url)
             except (URLError, OSError, TimeoutError, ValueError) as exc:
                 last = "erreur réseau " + type(exc).__name__
             else:
+                if clock() >= deadline:
+                    return expired(relative)
                 if reply.location or reply.status in {301, 302, 303, 307, 308}:
                     errors.append(f"Ressource critique redirigée: {relative}")
                     break
@@ -191,7 +210,12 @@ def audit(root: Path, expected_sha: str, actual_sha: str,
                     f"{relative} ({last})"
                 )
             else:
-                pause(PAUSE_SECONDS)
+                remaining = deadline - clock()
+                if remaining <= 0:
+                    return expired(relative)
+                pause(min(PAUSE_SECONDS, remaining))
+    if clock() >= deadline:
+        return expired("fin des vérifications CDN")
     return errors
 
 
@@ -263,6 +287,34 @@ def self_test() -> None:
                          pause=delays.append), "Fichier actualisé tardivement refusé"
         assert delays == [PAUSE_SECONDS] * 2, "Attente bornée non respectée"
 
+        # Le budget est global, non 18 budgets indépendants. Refuser aussi
+        # une réponse valide reçue APRÈS la date limite.
+        tick = [0.0]
+        def too_late(url: str) -> Reply:
+            tick[0] += 3.0
+            return good(url)
+        assert any("Budget global CDN" in e for e in audit(
+            root, sha, sha, too_late, clock=lambda: tick[0],
+            budget_seconds=2.0)), "Réponse tardive après deadline acceptée"
+
+        tick = [0.0]
+        def stuck(_url: str) -> Reply:
+            return Reply(503, "text/html")
+        def advance(seconds: float) -> None:
+            tick[0] += seconds
+        assert any("Budget global CDN" in e for e in audit(
+            root, sha, sha, stuck, attempts=4, pause=advance,
+            clock=lambda: tick[0], budget_seconds=9.0)), (
+                "Propagation bloquée au-delà du budget acceptée"
+            )
+        assert audit(root, sha, sha, good, budget_seconds=-1.0), (
+            "Budget négatif accepté"
+        )
+        assert audit(root, sha, sha, good,
+                     budget_seconds=MAX_AUDIT_SECONDS + 1), (
+            "Budget sans limite accepté"
+        )
+
         for name, bad in (
             ("MIME", Reply(200, "text/html", body=content["sw.js"])),
             ("redirection", Reply(302, location="https://other.example/")),
@@ -329,7 +381,7 @@ def main() -> int:
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--self-test", action="store_true")
     mode.add_argument("--check", action="store_true",
-                      help="18 GET HTTPS read-only, après la preuve de reçu SHA/run")
+                      help="18 ressources HTTPS avec budget global de 7 minutes, après reçu SHA/run")
     parser.add_argument("--expected-sha")
     args = parser.parse_args()
     if args.self_test:

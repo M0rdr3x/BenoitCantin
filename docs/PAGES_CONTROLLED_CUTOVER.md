@@ -341,7 +341,13 @@ la preuve exige HTTP 200 sans redirection, MIME conforme, absence de
 compression imprévue, réponse limitée à 4 Mio et SHA-256 identique.
 
 Au plus quatre GET par chemin sont tentés, avec trois intervalles de
-huit secondes en cas de propagation tardive du CDN. Les autotests
+huit secondes en cas de propagation tardive du CDN. Les **18 chemins
+partagent un budget monotone unique de sept minutes** : si le budget
+expire, la vérification échoue explicitement, sans assimiler les
+ressources restantes à des succès. Le job complet `verify-live` dispose
+de **20 minutes**, couvrant également la confirmation du reçu et les
+routes privées. Les appels réseau ont leur propre timeout de 12 secondes.
+Les autotests
 refusent un service worker obsolète, des JSON politiques périmés,
 chacune des pages SINJIRA obsolètes, un sitemap ou CSS ancien, des
 redirections, des réponses trompeuses et la divergence entre worktree

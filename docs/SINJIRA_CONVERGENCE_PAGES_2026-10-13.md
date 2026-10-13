@@ -54,3 +54,15 @@ La surveillance GitHub Pages n'est réputée conforme qu'après la
 bascule administrative, la fusion autorisée et un PUBLISH réussi.
 Tant que le site sert la racine technique, le monitoring doit
 continuer à signaler le risque et ne doit pas être neutralisé.
+
+
+## Budget global de preuve après PUBLISH
+
+Le contrôle de propagation HTTPS a été borné pour la nouvelle liste de
+18 ressources critiques. Il ne peut pas multiplier indéfiniment quatre
+tentatives par fichier : les vérifications CDN partagent un budget de
+**420 secondes**. Une réponse tardive après la limite est refusée,
+tout comme un fichier non vérifié en fin de budget. L'étape GitHub
+Actions possède une enveloppe de **20 minutes** couvrant également
+l'attente du reçu SHA/run et la vérification des routes publiques et
+techniques. Des autotests simulent la limite dépassée.
