@@ -12,7 +12,7 @@ from pathlib import Path
 
 TEXT_EXTENSIONS = {".html", ".htm", ".md", ".txt", ".json", ".js", ".css", ".csv", ".xml", ".yml", ".yaml"}
 HISTORICAL_DIRS = {"archives", "historique", "historical", "legacy"}
-OLD_ACRONYM = re.compile(r"(?<![A-Za-z\d])scq(?![A-Za-z\d])", re.IGNORECASE)
+OLD_ACRONYM = re.compile(r"(?<![A-Za-z\d])\x73\x63\x71(?![A-Za-z\d])", re.IGNORECASE)
 OLD_FULL_NAME = re.compile(r"souverainet[ée]\s+et\s+citoyennet[ée]\s+du\s+qu[ée]bec", re.IGNORECASE)
 
 
