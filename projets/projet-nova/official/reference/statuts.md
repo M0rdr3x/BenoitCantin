@@ -2,7 +2,7 @@
 
 > Statut public : document de travail du Projet Nova, non adopté et non autorisant.
 > Objet : organisation candidate pour un éventuel Parti Nova, sans entité ou fonctions officiellement constituées.
-> Dernière consolidation publique : 26 août 2026.
+> Révision documentaire proposée : 13 octobre 2026 (texte initial consolidé le 26 août 2026; non adopté).
 
 Ces statuts ne deviennent obligatoires qu’après une adoption formelle par l’instance fondatrice compétente et une vérification finale de conformité au droit électoral applicable.
 
