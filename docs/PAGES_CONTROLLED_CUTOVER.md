@@ -409,7 +409,29 @@ contrôle d'accès serveur. Les droits SINJIRA doivent toujours être appliqués
 côté serveur. Vérifier manuellement en navigateur la PWA après le
 déploiement approuvé, y compris une mise à jour depuis une ancienne version.
 
-## 15. Frontière avec la refonte #449
+## 15. Validation des commandes réellement exécutables
+
+Le contrôle `scripts/validate_pages_workflows.py` ne vérifie plus
+uniquement la **présence textuelle** de noms d'audits dans le workflow.
+Un commentaire YAML ou shell, ou une ligne `echo python3 ...`, pouvait
+autrefois conserver la chaîne attendue alors que l'audit ne s'exécutait
+plus. Le validateur extrait désormais les **commandes Python exécutables**
+des étapes `run`, exige les neuf contrôles finaux dans le job
+`artifact` et leur ordre **compilation Jekyll → reçu SHA/run →
+audits → upload conditionnel**. Il exige aussi les attestations Pages
+réellement exécutées dans les deux jobs appropriés, puis les contrôles
+HTTP et CDN effectivement exécutés dans `verify-live`.
+
+Le même validateur limite explicitement les jobs à
+`artifact`, `deploy` et `verify-live`, dans cet ordre, et rejette
+une deuxième définition YAML de `deploy` ou un job supplémentaire de
+publication. Les autotests mutent volontairement les commandes en
+commentaires, en simples affichages et dupliquent des jobs; **toute
+mutation doit faire échouer la validation**. Cette protection ne remplace
+pas la revue manuelle du code Bash ou la mise en production contrôlée,
+mais rend les garde-fous moins faciles à désactiver accidentellement.
+
+## 16. Frontière avec la refonte #449
 
 Ce confinement est un **correctif transitoire**. Il n'apporte pas les entêtes
 `_headers` ni les redirections `_redirects` de Netlify, et ne valide pas les
