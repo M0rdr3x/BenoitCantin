@@ -39,7 +39,7 @@ CRITICAL_RESOURCES = {
     "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf":
         ("application/pdf",),
     "assets/media/nova-logo.webp": ("image/webp",),
-    "assets/media/nova-boussole-electorale-v2.webp": ("image/webp",),
+    "assets/media/nova-boussole-electorale.webp": ("image/webp",),
     "assets/media/sinjira-romans-banniere-2026.webp": ("image/webp",),
     "assets/media/sinjira-jeux-banniere-2026.webp": ("image/webp",),
     "assets/media/sinjira-logiciels-banniere-2026.webp": ("image/webp",),

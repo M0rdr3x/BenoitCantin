@@ -327,7 +327,7 @@ Ce contrôle couvre **19 ressources critiques** dans quatre familles :
   `assets/css/site.css`, `assets/js/site.js`.
 - Projet Nova : les deux JSON de la Boussole électorale,
   `assets/media/nova-logo.webp` et
-  `assets/media/nova-boussole-electorale-v2.webp` (visuel de l'accueil).
+  `assets/media/nova-boussole-electorale.webp` (pictogramme de l'accueil).
 - SINJIRA : démo PDF du Livre I, trois bannières WebP, les pages
   `projets/sinjira/index.html`, `romans/index.html`,
   `jeux/index.html`, `logiciels/index.html`, la feuille de style

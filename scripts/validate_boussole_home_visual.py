@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Contrat anti-image-cassée pour la Boussole électorale de l'accueil.
 
-Lecture seule et sans dépendance : vérifie les deux WebP publiables, leur
+Lecture seule et sans dépendance : vérifie le WebP spécifique à l'accueil, sa
 signature VP8/RIFF, dimensions, octets et les références HTML cache-bustées.
 """
 from __future__ import annotations
@@ -14,11 +14,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-IMAGES = (
-    "assets/media/nova-boussole-electorale-v2.webp",
-    "assets/media/nova-boussole-electorale.webp",
-)
-URL = "/assets/media/nova-boussole-electorale-v2.webp?v=20261013-fix"
+IMAGES = ("assets/media/nova-boussole-electorale.webp",)
+URL = "/assets/media/nova-boussole-electorale.webp?v=20261013-fix"
 SHA = "f4f2f5bafe5413d2fde82892e147e5f200d5658934a88d6ded8a182b24ef8121"
 
 

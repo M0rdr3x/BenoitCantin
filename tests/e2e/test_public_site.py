@@ -106,7 +106,7 @@ def run() -> None:
             compass_orbit.get_attribute("href") == "/projets/projet-nova/boussole-electorale.html",
             f"{BROWSER_NAME}: cible de la porte orbitale Boussole incorrecte",
         )
-        compass_image = compass_orbit.locator('img[src^="/assets/media/nova-boussole-electorale-v2.webp"]')
+        compass_image = compass_orbit.locator('img[src^="/assets/media/nova-boussole-electorale.webp"]')
         assert_true(
             compass_image.count() == 1,
             f"{BROWSER_NAME}: visuel officiel absent de la porte Boussole",

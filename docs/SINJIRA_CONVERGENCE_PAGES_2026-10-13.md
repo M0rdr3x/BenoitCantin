@@ -88,22 +88,24 @@ Il ne remplace pas la preuve HTTP du site publié.
 ## Réparation de l'icône Boussole électorale (13 octobre 2026)
 
 La capture du portail montrait une image cassée dans la quatrième carte.
-Les deux anciens chemins WebP du site (`nova-boussole-electorale-v2.webp`
-et `nova-boussole-electorale.webp`) ont été remplacés par un visuel
-carré, décodable et léger. Les trois références de l'accueil (image
-de l'orbite, carte du projet, image d'aperçu survol) portent une nouvelle
-version d'URL pour éviter le cache de l'ancien fichier. L'image de
-l'orbite se charge prioritairement.
+La correction distingue désormais deux usages : l'alias public
+`assets/media/nova-boussole-electorale.webp` est un pictogramme
+**160 × 160, léger et décodable** pour l'accueil, tandis que
+`assets/media/nova-boussole-electorale-v2.webp` conserve son
+illustration originale **360 × 360** pour l'accueil de Projet Nova
+et le héros de la Boussole électorale. Cette séparation évite
+une régression de qualité sur la page de l'outil civique.
 
-`scripts/validate_boussole_home_visual.py` vérifie par autotests le
-conteneur VP8/RIFF, les dimensions 160 × 160, le SHA-256, les deux
-fichiers publics, les trois références et le build Jekyll. Ce garde
-s'exécute en CI et comme audit final du workflow Pages, avant
-le téléversement. Le contrôle HTTP post-publication vérifie le
-statut et le type MIME du WebP corrigé. L'intégrité CDN compare
-ce fichier aux octets du commit Git approuvé (19 ressources critiques
-au total).
+Les trois références de l'accueil (image orbitale, carte et aperçu
+central) utilisent l'alias avec une nouvelle version d'URL pour
+supprimer le cache problématique. L'orbite charge son image
+prioritairement. Les tests `scripts/validate_boussole_home_visual.py`
+vérifient les octets du nouvel alias, RIFF/VP8, SHA-256,
+dimensions et intégrité du build Jekyll. Les tests navigateur
+Chromium/Firefox/WebKit vérifient le décodage effectif de l'alias
+et celui de l'image originale 360 × 360 sur Projet Nova.
 
-Attention : ce correctif est enregistré dans la PR #639, mais ne
-prouve pas que la version réparée soit déjà servie par le domaine ;
-la bascule Pages et la publication contrôlée restent bloquées.
+Le contrôle HTTP post-PUBLISH vérifie MIME/présence de l'alias ;
+l'intégrité CDN compare ses octets au commit exact Git approuvé.
+Le total est porté à 19 ressources critiques. L'issue #450 reste
+bloquante pour la publication de l'ensemble de la PR #639.
