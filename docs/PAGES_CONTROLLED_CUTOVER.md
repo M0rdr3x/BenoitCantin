@@ -451,3 +451,21 @@ Cette intégration fermée reprend la page Logiciels et les trois visuels WebP d
 Inventaire explicite : 618 sources + 31 sorties Jekyll = 649 statiques ; reçu SHA/run dynamique lors d'une publication approuvée = 650 sorties.
 Contrôles supplémentaires : pages Romans, Jeux, Logiciels, trois images WebP et comparaison CDN du contenu au SHA approuvé.
 Ces nombres ne prouvent pas une publication ; voir la CI du commit combiné. Aucune publication avant bascule GitHub Actions et approbation explicite.
+
+
+## 17. Contrôle final du graphe de navigation des catalogues
+
+Le contrôle `scripts/validate_sinjira_public_links.py` fait désormais partie
+des **audit(s) exécutables avant upload** dans
+`.github/workflows/deploy-pages-controlled.yml`. Ses autotests refusent
+notamment des liens vers `scripts/`, `supabase/`, des ressources absentes
+du manifeste public et un détournement HTML `<base>`.
+
+La CI Jekyll sans publication l'exécute également avant de compiler.
+Le garde indépendant `scripts/validate_pages_workflows.py` impose que
+`--check` soit une vraie commande **dans le job artifact, au sein des audits
+finaux entre la compilation et l'upload conditionnel** ; un `echo` ou
+une omission fait échouer les tests négatifs. Ce mécanisme empêche qu'une
+PR réussie soit considérée comme une autorisation implicite de publier.
+Le réglage administratif GitHub Pages, la preuve HTTPS et l'approbation
+humaine du SHA final restent indispensables.

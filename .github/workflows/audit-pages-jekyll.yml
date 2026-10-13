@@ -8,6 +8,7 @@ on:
       - '.nojekyll'
       - '_config.yml'
       - 'scripts/audit_pages_jekyll.py'
+      - 'scripts/validate_sinjira_public_links.py'
       - '.github/workflows/audit-pages-jekyll.yml'
       - '.github/workflows/deploy-pages-controlled.yml'
       - 'scripts/verify_pages_live.py'
@@ -77,6 +78,8 @@ jobs:
           python3 scripts/pages_release_proof.py --self-test
           python3 scripts/verify_pages_tar_archive.py --self-test
           python3 scripts/audit_public_surface.py --source .
+          python3 scripts/validate_sinjira_public_links.py --self-test
+          python3 scripts/validate_sinjira_public_links.py --check
           python3 scripts/validate_pages_workflows.py --self-test
           python3 scripts/validate_pages_workflows.py
           node scripts/test_pwa_cache_security.cjs
