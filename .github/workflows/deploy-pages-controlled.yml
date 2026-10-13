@@ -99,6 +99,7 @@ jobs:
           python3 scripts/audit_pwa_precache.py --self-test
           python3 scripts/audit_pwa_precache.py --source .
           python3 scripts/validate_sinjira_public_links.py --self-test
+          python3 scripts/validate_boussole_home_visual.py --self-test
           python3 scripts/audit_public_surface.py --source .
 
       - name: Construire Jekyll — pas la racine technique du dépôt
@@ -129,6 +130,7 @@ jobs:
           set -euo pipefail
           python3 scripts/audit_pages_jekyll.py --source . --built _site
           python3 scripts/validate_sinjira_public_links.py --check
+          python3 scripts/validate_boussole_home_visual.py --built _site
           python3 scripts/audit_public_documents.py --source . --built _site
           python3 scripts/audit_public_json.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"
           python3 scripts/audit_public_csv.py --source . --built _site

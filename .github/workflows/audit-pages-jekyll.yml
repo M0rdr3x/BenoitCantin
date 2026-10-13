@@ -9,6 +9,10 @@ on:
       - '_config.yml'
       - 'scripts/audit_pages_jekyll.py'
       - 'scripts/validate_sinjira_public_links.py'
+      - 'scripts/validate_boussole_home_visual.py'
+      - 'assets/media/nova-boussole-electorale-v2.webp'
+      - 'assets/media/nova-boussole-electorale.webp'
+      - 'index.html'
       - '.github/workflows/audit-pages-jekyll.yml'
       - '.github/workflows/deploy-pages-controlled.yml'
       - 'scripts/verify_pages_live.py'
@@ -80,6 +84,7 @@ jobs:
           python3 scripts/audit_public_surface.py --source .
           python3 scripts/validate_sinjira_public_links.py --self-test
           python3 scripts/validate_sinjira_public_links.py --check
+          python3 scripts/validate_boussole_home_visual.py --self-test
           python3 scripts/validate_pages_workflows.py --self-test
           python3 scripts/validate_pages_workflows.py
           node scripts/test_pwa_cache_security.cjs
@@ -97,6 +102,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/audit_pages_jekyll.py --source . --built _site
+          python3 scripts/validate_boussole_home_visual.py --built _site
           python3 scripts/audit_public_documents.py --source . --built _site
           python3 scripts/audit_public_json.py --source . --built _site
           python3 scripts/audit_public_csv.py --source . --built _site
