@@ -269,8 +269,8 @@ def validate(workflow: str) -> list[str]:
          'python3 scripts/verify_pages_live.py --check --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID" --await-release' in verify_job,
          "Attente bornée du reçu CDN exact avant les vérifications live absente")
     need("timeout-minutes: 20" in verify_job,
-         "Délai du job HTTP insuffisant pour 18 fichiers CDN et la propagation bornée")
-    need("Confirmer les octets CDN des 18 ressources critiques dans le budget borné" in verify_job,
+         "Délai du job HTTP insuffisant pour 19 fichiers CDN et la propagation bornée")
+    need("Confirmer les octets CDN des 19 ressources critiques dans le budget borné" in verify_job,
          "Intégrité des 18 ressources non annoncée dans le job")
     need('python3 scripts/verify_pages_integrity.py --self-test' in workflow,
          "Autotests de l'intégrité des octets publics absents")
@@ -423,7 +423,7 @@ def self_test(workflow: str) -> None:
             "      - name: Checkout pour le validateur HTTP", 1,
         ),
         "Dénomination critique CDN obsolète": workflow.replace(
-            "Confirmer les octets CDN des 18 ressources critiques dans le budget borné",
+            "Confirmer les octets CDN des 19 ressources critiques dans le budget borné",
             "Confirmer les octets CDN des 8 ressources critiques", 1,
         ),
         "Contrôle TAR .well-known supprimé": workflow.replace(

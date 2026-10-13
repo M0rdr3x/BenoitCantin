@@ -184,7 +184,7 @@ d'utilisateurs ou de participants ne doit jamais être versé dans le dépôt
 public ni servi par un hébergeur statique. Des tests négatifs détectent la
 disparition, la transformation et l'inclusion d'un fichier non approuvé.
 
-## 10. Contrat intégral de la surface publique (618 chemins)
+## 10. Contrat intégral de la surface publique (619 chemins)
 
 La photographie prise sur le `main` du 10 octobre 2026, après application
 des exclusions Jekyll explicites, compte **618 fichiers publiables** :
@@ -321,12 +321,13 @@ toutes les ressources servies par un cache CDN. Le job `verify-live`
 exécute donc `scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"`
 **après** l'attestation du reçu et des routes.
 
-Ce contrôle couvre **18 ressources critiques** dans quatre familles :
+Ce contrôle couvre **19 ressources critiques** dans quatre familles :
 
 - Infrastructures : `sw.js`, `manifest.webmanifest`,
   `assets/css/site.css`, `assets/js/site.js`.
-- Projet Nova : les deux JSON de la Boussole électorale et
-  `assets/media/nova-logo.webp`.
+- Projet Nova : les deux JSON de la Boussole électorale,
+  `assets/media/nova-logo.webp` et
+  `assets/media/nova-boussole-electorale-v2.webp` (visuel de l'accueil).
 - SINJIRA : démo PDF du Livre I, trois bannières WebP, les pages
   `projets/sinjira/index.html`, `romans/index.html`,
   `jeux/index.html`, `logiciels/index.html`, la feuille de style
@@ -341,7 +342,7 @@ la preuve exige HTTP 200 sans redirection, MIME conforme, absence de
 compression imprévue, réponse limitée à 4 Mio et SHA-256 identique.
 
 Au plus quatre GET par chemin sont tentés, avec trois intervalles de
-huit secondes en cas de propagation tardive du CDN. Les **18 chemins
+huit secondes en cas de propagation tardive du CDN. Les **19 chemins
 partagent un budget monotone unique de sept minutes** : si le budget
 expire, la vérification échoue explicitement, sans assimiler les
 ressources restantes à des succès. Le job complet `verify-live` dispose
@@ -353,7 +354,7 @@ chacune des pages SINJIRA obsolètes, un sitemap ou CSS ancien, des
 redirections, des réponses trompeuses et la divergence entre worktree
 et commit. Aucun de ces tests n'émet de requête d'écriture.
 
-Cette preuve porte sur les **18 ressources énumérées seulement**.
+Cette preuve porte sur les **19 ressources énumérées seulement**.
 L'exactitude des autres routes, les réponses dynamiques des comptes
 et le cache réel sur appareil exigent toujours la revue fonctionnelle
 et les tests de permissions. Le passage Pages vers GitHub Actions

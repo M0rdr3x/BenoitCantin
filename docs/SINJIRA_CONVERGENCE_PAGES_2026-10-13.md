@@ -20,7 +20,7 @@ reçu dynamique SHA/run porte le total à **650**.
 
 Le garde de sécurité impose désormais la présence des quatre ressources.
 Les audits de navigation couvrent les trois portails et leurs images,
-et les tests CDN comparent **18 ressources critiques** aux blobs Git du
+et les tests CDN comparent **19 ressources critiques** aux blobs Git du
 SHA de publication. Cette preuve couvre désormais aussi l'accueil SINJIRA,
 les pages Romans et Jeux, la feuille de style, la bibliothèque et le
 sitemap. Des autotests refusent explicitement les anciennes versions
@@ -59,7 +59,7 @@ continuer à signaler le risque et ne doit pas être neutralisé.
 ## Budget global de preuve après PUBLISH
 
 Le contrôle de propagation HTTPS a été borné pour la nouvelle liste de
-18 ressources critiques. Il ne peut pas multiplier indéfiniment quatre
+19 ressources critiques. Il ne peut pas multiplier indéfiniment quatre
 tentatives par fichier : les vérifications CDN partagent un budget de
 **420 secondes**. Une réponse tardive après la limite est refusée,
 tout comme un fichier non vérifié en fin de budget. L'étape GitHub
@@ -83,3 +83,27 @@ traversée hors racine, protocole JavaScript, lien interne HTTP,
 chemin ambigu, `srcset` invalide et détournement de base HTML.
 Ce test s'exécute aussi lorsque l'inventaire Pages est modifié.
 Il ne remplace pas la preuve HTTP du site publié.
+
+
+## Réparation de l'icône Boussole électorale (13 octobre 2026)
+
+La capture du portail montrait une image cassée dans la quatrième carte.
+Les deux anciens chemins WebP du site (`nova-boussole-electorale-v2.webp`
+et `nova-boussole-electorale.webp`) ont été remplacés par un visuel
+carré, décodable et léger. Les trois références de l'accueil (image
+de l'orbite, carte du projet, image d'aperçu survol) portent une nouvelle
+version d'URL pour éviter le cache de l'ancien fichier. L'image de
+l'orbite se charge prioritairement.
+
+`scripts/validate_boussole_home_visual.py` vérifie par autotests le
+conteneur VP8/RIFF, les dimensions 160 × 160, le SHA-256, les deux
+fichiers publics, les trois références et le build Jekyll. Ce garde
+s'exécute en CI et comme audit final du workflow Pages, avant
+le téléversement. Le contrôle HTTP post-publication vérifie le
+statut et le type MIME du WebP corrigé. L'intégrité CDN compare
+ce fichier aux octets du commit Git approuvé (19 ressources critiques
+au total).
+
+Attention : ce correctif est enregistré dans la PR #639, mais ne
+prouve pas que la version réparée soit déjà servie par le domaine ;
+la bascule Pages et la publication contrôlée restent bloquées.

@@ -28,6 +28,7 @@ REQUIRED_PUBLIC = {
     'assets/media/sinjira-romans-banniere-2026.webp',
     'assets/media/sinjira-jeux-banniere-2026.webp',
     'assets/media/sinjira-logiciels-banniere-2026.webp',
+    'assets/media/nova-boussole-electorale-v2.webp',
 }
 TECHNICAL_SUFFIXES = {
     '.md', '.py', '.sql', '.ts', '.tsx', '.toml', '.yml', '.yaml',
