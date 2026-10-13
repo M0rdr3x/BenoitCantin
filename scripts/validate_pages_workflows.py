@@ -74,12 +74,15 @@ def executable_guards(workflow: str) -> list[str]:
     deploy = job_steps(workflow, "deploy")
     verify = job_steps(workflow, "verify-live")
     names = [name for name, _ in artifact]
+    compile_step = "Construire Jekyll — pas la racine technique du dépôt"
     before = "Marquer le build avec le SHA et l'identifiant du workflow"
     audit_name = "Refuser toute fuite de code et toute perte de route"
     after = "Téléverser uniquement l’artefact vérifié, et seulement en mode PUBLISH"
-    if not (names.count(before) == names.count(audit_name) == names.count(after) == 1
-            and names.index(before) < names.index(audit_name) < names.index(after)):
-        return ["Ordre reçu -> audits finaux -> upload non prouvé"]
+    if not (names.count(compile_step) == names.count(before) ==
+            names.count(audit_name) == names.count(after) == 1
+            and names.index(compile_step) < names.index(before)
+            < names.index(audit_name) < names.index(after)):
+        return ["Ordre compilation -> reçu -> audits finaux -> upload non prouvé"]
     build_step = next(body for name, body in artifact if name == audit_name)
     live_step = next((body for name, body in verify
                       if name.startswith("Attendre le reçu SHA/run réel")), "")
@@ -133,6 +136,14 @@ def validate(workflow: str) -> list[str]:
             errors.append(name)
     need(workflow.startswith("name: Pages — déploiement isolé explicitement approuvé\n"),
          "Identité du workflow modifiée")
+    # YAML autorise parfois des clés dupliquées selon le parseur. Une deuxième
+    # définition de job ne doit pas pouvoir remplacer silencieusement la bonne.
+    jobs_marker = "\njobs:\n"
+    need(workflow.count(jobs_marker) == 1, "Bloc jobs YAML absent ou dupliqué")
+    jobs = workflow.split(jobs_marker, 1)[-1]
+    names_in_yaml = re.findall(r"(?m)^  ([a-z][a-z0-9-]*):\s*$", jobs)
+    need(names_in_yaml == ["artifact", "deploy", "verify-live"],
+         "Jobs Pages inattendus, dupliqués ou dans un ordre non autorisé")
     need("on:\n  workflow_dispatch:\n" in workflow,
          "Déclenchement exclusivement manuel absent")
     need(not re.search(r"(?m)^  (?:push|pull_request|schedule|repository_dispatch|workflow_run):", workflow),
@@ -330,6 +341,8 @@ def self_test(workflow: str) -> None:
     smoke_summary_bash(workflow)
     mutations = {
         "Publication root": workflow.replace("path: _site", "path: .", 1),
+        "Job deploy dupliqué": workflow + "\n  deploy:\n    runs-on: ubuntu-latest\n",
+        "Job de publication supplémentaire": workflow + "\n  publish-root:\n    runs-on: ubuntu-latest\n",
         "Dossier .well-known exclu de l'upload": workflow.replace(
             "include-hidden-files: 'true'", "include-hidden-files: 'false'", 1
         ),
