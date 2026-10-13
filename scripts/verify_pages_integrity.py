@@ -81,6 +81,44 @@ def get(url: str) -> Reply:
                      resp.read(MAX_BYTES + 1))
 
 
+def attest_committed_bytes(root: Path, sha: str) -> list[str]:
+    """Empêcher qu'un fichier modifié après checkout usurpe le SHA approuvé.
+
+    La référence HEAD seule ne garantit pas que le worktree est intact.
+    Git cat-file lit les blobs directement depuis l'objet du commit.
+    """
+    if not SHA_PATTERN.fullmatch(sha):
+        return ["SHA Git approuvé malformé"]
+    errors: list[str] = []
+    for relative in CRITICAL_RESOURCES:
+        file = root / relative
+        if not file.is_file() or file.is_symlink():
+            errors.append(f"Source Git critique absente ou symbolique: {relative}")
+            continue
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(root), "show", f"{sha}:{relative}"],
+                capture_output=True, timeout=12, check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            errors.append(f"Objet Git critique non vérifiable: {relative}")
+            continue
+        if result.returncode != 0:
+            errors.append(f"Fichier critique absent du commit approuvé: {relative}")
+            continue
+        if len(result.stdout) > MAX_BYTES:
+            errors.append(f"Fichier critique Git trop volumineux: {relative}")
+            continue
+        try:
+            actual = file.read_bytes()
+        except OSError:
+            errors.append(f"Source critique Git illisible: {relative}")
+            continue
+        if hashlib.sha256(actual).digest() != hashlib.sha256(result.stdout).digest():
+            errors.append(f"Worktree différent du blob Git approuvé: {relative}")
+    return errors
+
+
 def audit(root: Path, expected_sha: str, actual_sha: str,
           getter: Callable[[str], Reply], attempts: int = MAX_ATTEMPTS,
           pause: Callable[[int], None] = time.sleep) -> list[str]:
@@ -217,6 +255,41 @@ def self_test() -> None:
         assert any("site.css" in e for e in audit(root, sha, sha, good)), (
             "Fichier source symbolique accepté"
         )
+
+    # Comparaison explicite des blobs COMMIT versus worktree : SHA HEAD seul
+    # ne détecterait pas une modification locale introduite après checkout.
+    with __import__("tempfile").TemporaryDirectory() as directory:
+        root = Path(directory)
+        for rel in CRITICAL_RESOURCES:
+            file = root / rel
+            file.parent.mkdir(parents=True, exist_ok=True)
+            file.write_bytes(("tracked:" + rel).encode("utf-8"))
+        def git(*args: str) -> str:
+            run = subprocess.run(
+                ["git", "-C", str(root), *args],
+                capture_output=True, text=True, timeout=12, check=True
+            )
+            return run.stdout.strip()
+        git("init", "-q")
+        git("add", ".")
+        git("-c", "user.name=SINJIRA Test",
+            "-c", "user.email=ci@example.invalid",
+            "commit", "-qm", "fixture snapshot")
+        committed = git("rev-parse", "HEAD")
+        assert not attest_committed_bytes(root, committed), (
+            attest_committed_bytes(root, committed)
+        )
+        tampered = root / "sw.js"
+        tampered.write_text("worktree changed after commit", "utf-8")
+        assert any("sw.js" in error and "Worktree" in error
+                   for error in attest_committed_bytes(root, committed)), (
+            "Modification du worktree après checkout non détectée"
+        )
+        tampered.write_bytes(b"tracked:sw.js")
+        missing = root / "assets/js/site.js"
+        missing.unlink()
+        assert any("site.js" in error for error in attest_committed_bytes(
+            root, committed)), "Source Git supprimée après checkout acceptée"
     print(f"OK intégrité HTTP : {len(CRITICAL_RESOURCES)} ressources, SHA Git, "
           "MIME, encodage, octets et propagation bornée")
 
@@ -241,8 +314,15 @@ def main() -> int:
     except (OSError, subprocess.SubprocessError):
         print("ERREUR : commit local non vérifiable", file=sys.stderr)
         return 1
-    issues = audit(Path(__file__).resolve().parents[1],
-                   args.expected_sha, actual, get)
+    repository = Path(__file__).resolve().parents[1]
+    # Compare les octets de chaque source au blob de l'objet Git approuvé,
+    # avant tout accès réseau au CDN : le SHA HEAD seul est insuffisant.
+    errors = attest_committed_bytes(repository, args.expected_sha)
+    if errors:
+        for error in errors:
+            print("ECHEC checkout Git : " + error, file=sys.stderr)
+        return 1
+    issues = audit(repository, args.expected_sha, actual, get)
     if issues:
         for issue in issues:
             print("ECHEC HTTP intégrité : " + issue, file=sys.stderr)
