@@ -138,6 +138,13 @@ def validate(workflow: str) -> list[str]:
          "Attente bornée du reçu CDN exact avant les vérifications live absente")
     need("timeout-minutes: 12" in verify_job,
          "Délai du job HTTP insuffisant pour une propagation CDN bornée")
+    need('python3 scripts/verify_pages_integrity.py --self-test' in workflow,
+         "Autotests de l'intégrité des octets publics absents")
+    need('python3 scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"' in verify_job,
+         "Contrôle des 8 fichiers CDN contre le commit approuvé manquant")
+    need(verify_job.find("verify_pages_integrity.py --check") >
+         verify_job.find("verify_pages_live.py --check"),
+         "Intégrité statique lancée avant la validation du reçu SHA/run")
     need("python3 scripts/verify_pages_live.py --check" in workflow,
          "Contrôle externe des chemins techniques absent")
     need("needs: deploy" in workflow,
@@ -251,6 +258,10 @@ def self_test(workflow: str) -> None:
         "Attente propagation CDN désactivée": workflow.replace(
             ' --release-run-id "$GITHUB_RUN_ID" --await-release',
             ' --release-run-id "$GITHUB_RUN_ID"', 1,
+        ),
+        "Intégrité CDN supprimée": workflow.replace(
+            'python3 scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"',
+            'echo CDN_INTEGRITE_NON_VERIFIEE', 1,
         ),
         "Ouverture sur push": workflow.replace("  workflow_dispatch:\n", "  push:\n    branches: [main]\n  workflow_dispatch:\n", 1),
         "SHA non vérifié": workflow.replace('test "$EXPECTED_SHA" = "$GITHUB_SHA"', "true", 1),
