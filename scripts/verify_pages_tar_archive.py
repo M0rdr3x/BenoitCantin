@@ -63,6 +63,9 @@ def audit(built: Path, archive: Path, sha: str, run_id: str) -> list[str]:
     try:
         with tarfile.open(archive, mode="r:") as tar:
             for member in tar.getmembers():
+                # GNU tar représente la racine du paquet par "." ou "./".
+                if member.name in {".", "./"} and member.isdir():
+                    continue
                 name = member.name.removeprefix("./").removesuffix("/")
                 if not name:
                     continue
