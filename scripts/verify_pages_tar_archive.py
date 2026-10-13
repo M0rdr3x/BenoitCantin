@@ -53,7 +53,7 @@ def audit(built: Path, archive: Path, sha: str, run_id: str) -> list[str]:
             except OSError:
                 errors.append(f"Source TAR illisible: {relative}")
     if MARKER not in approved:
-        errors.append("Reçu caché .well-known absent du build")
+        errors.append(f"Reçu caché absent du build: {MARKER}")
     elif approved[MARKER] != hashlib.sha256(receipt).digest():
         errors.append("Reçu caché incorrect avant empaquetage")
     if errors:
