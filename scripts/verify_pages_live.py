@@ -243,6 +243,20 @@ def self_test() -> None:
             return Reply(404, content_type="text/html")
         return fixture(url)
     assert any("projets/sinjira/" in e for e in verify(BASE, missing)), "Parcours public disparu"
+    for new_route in (
+        "/projets/sinjira/romans/", "/projets/sinjira/jeux/",
+        "/projets/sinjira/logiciels/",
+        "/assets/media/sinjira-romans-banniere-2026.webp",
+        "/assets/media/sinjira-jeux-banniere-2026.webp",
+        "/assets/media/sinjira-logiciels-banniere-2026.webp",
+    ):
+        def new_route_missing(url: str) -> Reply:
+            if url == BASE + new_route:
+                return Reply(404, content_type="text/html")
+            return fixture(url)
+        assert any(new_route in error for error in verify(BASE, new_route_missing)), (
+            f"Nouvelle route SINJIRA non protégée: {new_route}"
+        )
     for asset in MIME_HINTS:
         def wrong_mime(url: str) -> Reply:
             if url == BASE + asset:

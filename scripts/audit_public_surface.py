@@ -192,6 +192,29 @@ def self_test() -> None:
         assert any(example in e and "modifié" in e
                    for e in audit(root, built, source_manifest)), "Mutation binaire non détectée"
         (built / example).write_bytes(("public:" + example).encode("utf-8"))
+        # Les quatre ajouts SINJIRA ne peuvent pas disparaître ni être remplacés.
+        for new_public in (
+            "projets/sinjira/logiciels/index.html",
+            "assets/media/sinjira-romans-banniere-2026.webp",
+            "assets/media/sinjira-jeux-banniere-2026.webp",
+            "assets/media/sinjira-logiciels-banniere-2026.webp",
+        ):
+            new_target = built / new_public
+            original = new_target.read_bytes()
+            new_target.unlink()
+            assert any(new_public in error and "absent de l'artefact" in error
+                       for error in audit(root, built, source_manifest)), (
+                f"Ressource officielle disparue sans détection: {new_public}"
+            )
+            new_target.write_bytes(b"modification non approuvee")
+            assert any(new_public in error and "modifié" in error
+                       for error in audit(root, built, source_manifest)), (
+                f"Ressource officielle altérée sans détection: {new_public}"
+            )
+            new_target.write_bytes(original)
+        assert not audit(root, built, source_manifest), (
+            "Intégrité non restaurée après les tests ciblés des bannières"
+        )
         for rel in ("assets/media/document-confidentiel.webp",
                     "projets/projet-nova/data/registre.export",
                     "projets/sinjira/extra.mjs"):
