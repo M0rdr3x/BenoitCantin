@@ -106,9 +106,23 @@ def run() -> None:
             compass_orbit.get_attribute("href") == "/projets/projet-nova/boussole-electorale.html",
             f"{BROWSER_NAME}: cible de la porte orbitale Boussole incorrecte",
         )
+        compass_image = compass_orbit.locator('img[src^="/assets/media/nova-boussole-electorale.webp"]')
         assert_true(
-            compass_orbit.locator('img[src="/assets/media/nova-boussole-electorale-v2.webp"]').count() == 1,
+            compass_image.count() == 1,
             f"{BROWSER_NAME}: visuel officiel absent de la porte Boussole",
+        )
+        assert_true(
+            "?v=20261013-fix" in (compass_image.get_attribute("src") or ""),
+            f"{BROWSER_NAME}: ancienne image Boussole encore en cache",
+        )
+        compass_image.scroll_into_view_if_needed()
+        page.wait_for_function(
+            """() => {
+                const image = document.querySelector('.node-boussole-home img');
+                return image && image.complete &&
+                       image.naturalWidth >= 128 && image.naturalHeight >= 128;
+            }""",
+            timeout=15_000,
         )
         assert_true(
             page.locator('a[href="/projets/projet-nova/boussole-electorale.html"]').count() >= 4,
