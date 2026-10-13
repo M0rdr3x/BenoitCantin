@@ -13,7 +13,10 @@ ROOT = Path(__file__).resolve().parents[1]
 PATH = ROOT / ".github/workflows/deploy-pages-controlled.yml"
 CHECKOUT_SHA = "d23441a48e516b6c34aea4fa41551a30e30af803"
 JEKYLL_SHA = "44a6e6beabd48582f863aeeb6cb2151cc1716697"
-UPLOAD_SHA = "56afc609e74202658d3ffba0e8f6dda462b719fa"
+UPLOAD_SHA = "98ef48e41587a300b82de4cf298aa98b57b2faae"
+# Action officiellement inspectée au SHA : inputs.include-hidden-files déclaré
+# et archive tar conditionnelle. Ancien SHA de 2024 IGNORAIT ce paramètre.
+LEGACY_UPLOAD_SHA = "56afc609e74202658d3ffba0e8f6dda462b719fa"
 DEPLOY_SHA = "368f82528645a54fb793d4d04e342629a3f51346"
 
 
@@ -46,6 +49,8 @@ def validate(workflow: str) -> list[str]:
          "Publication limitée à main")
     need("inputs.mode == 'PUBLISH' && inputs.confirm_actions_source == 'ACTIONS_ONLY'" in workflow,
          "Publication non conditionnée au double consentement")
+    need(f"uses: actions/upload-pages-artifact@{LEGACY_UPLOAD_SHA}" not in workflow,
+         "Action Pages 2024 incompatible avec include-hidden-files interdite")
     need(workflow.count(f"uses: actions/checkout@{CHECKOUT_SHA}") == 3,
          "Checkout non épinglé ou nombre d'étapes modifié")
     need(workflow.count("persist-credentials: false") == 3,
@@ -216,6 +221,10 @@ def self_test(workflow: str) -> None:
         "Publication root": workflow.replace("path: _site", "path: .", 1),
         "Dossier .well-known exclu de l'upload": workflow.replace(
             "include-hidden-files: 'true'", "include-hidden-files: 'false'", 1
+        ),
+        "Retour au pin upload Pages 2024 incompatible": workflow.replace(
+            f"actions/upload-pages-artifact@{UPLOAD_SHA}",
+            f"actions/upload-pages-artifact@{LEGACY_UPLOAD_SHA}", 1,
         ),
         "DRY_RUN téléverse l'artefact": workflow.replace(
             "        if: ${{ inputs.mode == 'PUBLISH' && inputs.confirm_actions_source == 'ACTIONS_ONLY' }}\n"
