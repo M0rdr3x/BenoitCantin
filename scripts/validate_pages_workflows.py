@@ -131,6 +131,10 @@ def validate(workflow: str) -> list[str]:
          "Reçu Pages non ajouté à l'artefact")
     need("python3 scripts/pages_release_proof.py --verify _site --sha" in workflow,
          "Reçu Pages non contrôlé avant upload")
+    need("python3 scripts/verify_pages_tar_archive.py --self-test" in workflow,
+         "Autotests du TAR avec reçu caché manquants")
+    need('python3 scripts/verify_pages_tar_archive.py --built _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"' in workflow,
+         "Preuve TAR hors ligne des fichiers cachés et contenus absente")
     need("python3 scripts/audit_public_json.py --source . --built _site --release-sha" in workflow,
          "Reçu Pages non inclus dans le contrôle JSON")
     need("python3 scripts/audit_public_surface.py --source . --built _site --release-sha" in workflow,
@@ -259,6 +263,10 @@ def self_test(workflow: str) -> None:
         "Reçu de publication supprimé": workflow.replace(
             "python3 scripts/pages_release_proof.py --write _site --sha",
             "python3 scripts/pages_release_proof.py --self-test # ", 1,
+        ),
+        "Contrôle TAR .well-known supprimé": workflow.replace(
+            'python3 scripts/verify_pages_tar_archive.py --built _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"',
+            'echo ARCHIVE_TAR_NON_VERIFIEE', 1,
         ),
         "Identité sur le domaine absente": workflow.replace(
             "python3 scripts/verify_pages_live.py --check --release-sha",
