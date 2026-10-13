@@ -144,10 +144,11 @@ jobs:
 
       - name: Téléverser uniquement l’artefact vérifié, et seulement en mode PUBLISH
         if: ${{ inputs.mode == 'PUBLISH' && inputs.confirm_actions_source == 'ACTIONS_ONLY' }}
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        uses: actions/upload-pages-artifact@98ef48e41587a300b82de4cf298aa98b57b2faae
         with:
           path: _site
-          # Autoriser .well-known seulement après les audits Jekyll et inventaire.
+          # L'action epinglee 98ef48e (2026) accepte reellement ce parametre.
+          # Audits de l'artefact + symlinks executes avant inclusion de .well-known.
           include-hidden-files: 'true'
 
       - name: Tracer l'origine du publish
