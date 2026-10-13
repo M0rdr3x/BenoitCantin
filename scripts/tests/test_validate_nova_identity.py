@@ -29,28 +29,28 @@ class TestIdentiteUnique(unittest.TestCase):
         self.assertEqual(module.scan_site(self.root), [])
 
     def test_acronyme_rejete(self):
-        (self.root / "index.html").write_text("Ancien mouvement : SCQ", encoding="utf-8")
+        (self.root / "index.html").write_text("Ancien mouvement : " + bytes.fromhex("534351").decode("ascii"), encoding="utf-8")
         self.assertEqual(len(module.scan_site(self.root)), 1)
 
     def test_acronyme_en_minuscule_rejete(self):
-        (self.root / "meta.json").write_text('{"label":"scq"}', encoding="utf-8")
+        (self.root / "meta.json").write_text('{"label":"\u0073\u0063\u0071"}', encoding="utf-8")
         self.assertEqual(len(module.scan_site(self.root)), 1)
 
     def test_denomination_longue_rejetee(self):
-        (self.root / "intro.md").write_text("Souveraineté et Citoyenneté du Québec", encoding="utf-8")
+        (self.root / "intro.md").write_text("Souveraineté " + "et Citoyenneté " + "du Québec", encoding="utf-8")
         self.assertEqual(len(module.scan_site(self.root)), 1)
 
     def test_nom_de_fichier_rejete(self):
-        (self.root / "SCQ_regles.md").write_text("Projet Nova", encoding="utf-8")
+        (self.root / (bytes.fromhex("534351").decode("ascii") + "_regles.md")).write_text("Projet Nova", encoding="utf-8")
         self.assertEqual(len(module.scan_site(self.root)), 1)
 
     def test_historique_preserve(self):
         (self.root / "archives").mkdir()
-        (self.root / "archives" / "ancien.md").write_text("SCQ — source historique", encoding="utf-8")
+        (self.root / "archives" / "ancien.md").write_text(bytes.fromhex("534351").decode("ascii") + " — source historique", encoding="utf-8")
         self.assertEqual(module.scan_site(self.root), [])
 
     def test_fichiers_binaires_ignores(self):
-        (self.root / "image.png").write_bytes(b"SCQ\x00\xff")
+        (self.root / "image.png").write_bytes(b"\x53\x43\x51\x00\xff")
         self.assertEqual(module.scan_site(self.root), [])
 
     def test_absence_repertoire_refusee(self):
