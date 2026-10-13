@@ -230,7 +230,20 @@ seulement le chemin, la ligne et le **type** de secret, jamais la valeur.
 Le workflow autorise désormais explicitement
 `include-hidden-files: 'true'` dans l'upload Pages afin de ne pas
 perdre les fichiers de preuve approuvés du dossier `.well-known` lorsque
-celui-ci sera utilisé. Cette permission est sûre **uniquement** parce que
+celui-ci sera utilisé.
+
+**Compatibilité vérifiée du fournisseur :** l'ancien commit épinglé
+`actions/upload-pages-artifact@56afc609` (février 2024) ne déclarait
+**pas** cet input ; il l'aurait ignoré silencieusement. L'action est
+désormais épinglée au commit GitHub
+[`98ef48e41587a300b82de4cf298aa98b57b2faae`](https://github.com/actions/upload-pages-artifact/commit/98ef48e41587a300b82de4cf298aa98b57b2faae)
+(juin 2026), dont `action.yml` déclare ce paramètre et conditionne
+explicitement l'exclusion des chemins cachés à sa valeur. Le garde
+`scripts/validate_pages_workflows.py` interdit le retour à la version
+2024, détecte la perte du paramètre et protège le SHA complet épinglé.
+Cette vérification documentaire porte sur le code de l'action upstream;
+la preuve de tar effectivement déployé demeure à faire lors du PUBLISH
+réel, puis par le reçu HTTPS. Cette permission est sûre **uniquement** parce que
 l'audit Jekyll, le registre exact des 645 chemins publics et le rejet des
 fichiers cachés imprévus s'exécutent **avant** l'envoi. Toute introduction
 future d'un nouveau chemin sous `.well-known` exige une revue du registre.
