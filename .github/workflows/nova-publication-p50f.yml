@@ -1,0 +1,46 @@
+name: Nova — Recette publique apres publication
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/verify_nova_live_p50f.py'
+      - 'scripts/tests/test_verify_nova_live_p50f.py'
+      - '.github/workflows/nova-publication-p50f.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifier-le-code:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Extraire le depot
+        uses: actions/checkout@v6
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Tester le validateur sans requete reseau
+        run: python -m unittest discover -s scripts/tests -p test_verify_nova_live_p50f.py -v
+
+  recette-publique:
+    if: github.event_name == 'workflow_dispatch'
+    needs: verifier-le-code
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Extraire le depot
+        uses: actions/checkout@v6
+      - name: Verifier la version publique en lecture seule
+        run: python scripts/verify_nova_live_p50f.py --json-output rapport-publication-nova.json
+      - name: Conserver le rapport du controle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recette-publique-projet-nova
+          path: rapport-publication-nova.json
+          if-no-files-found: warn
+          retention-days: 30
