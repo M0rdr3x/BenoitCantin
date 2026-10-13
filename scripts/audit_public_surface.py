@@ -44,11 +44,23 @@ def inventory(text: str, count: int = EXPECTED_COUNT) -> tuple[set[str], list[st
 
 
 def scan(root: Path) -> set[str]:
+    # Path.is_file() suit les liens symboliques par défaut : un tel lien ne
+    # peut jamais compter comme ressource approuvée du manifeste.
     return {
         path.relative_to(root).as_posix()
         for path in root.rglob("*")
-        if path.is_file()
+        if path.is_file() and not path.is_symlink()
     }
+
+
+def scan_symlinks(root: Path) -> list[str]:
+    # rglob voit les entrées symlink de répertoires sans les parcourir.
+    # Refus indépendamment des exclusions Jekyll : tar utilise --dereference.
+    return sorted(
+        path.relative_to(root).as_posix()
+        for path in root.rglob("*")
+        if path.is_symlink()
+    )
 
 
 def eligible(path: str, excluded: set[str]) -> bool:
@@ -87,6 +99,8 @@ def audit(root: Path, built: Path | None, manifest_text: str,
         return errors + [f"Configuration Jekyll non vérifiable: {type(exc).__name__}"]
     if not (root / "index.html").is_file():
         errors.append("Page d'accueil source disparue")
+    for link in scan_symlinks(root):
+        errors.append(f"Lien symbolique interdit dans la source: {link}")
     src_files = scan(root)
     eligible_files = {path for path in src_files if eligible(path, excluded)}
     for path in sorted(eligible_files - expected):
@@ -97,6 +111,8 @@ def audit(root: Path, built: Path | None, manifest_text: str,
         return errors
     if not built.is_dir():
         return errors + ["Artefact Jekyll absent"]
+    for link in scan_symlinks(built):
+        errors.append(f"Lien symbolique interdit dans l'artefact: {link}")
     actual = scan(built)
     approved_output = expected | generated
     if release is not None:
@@ -196,11 +212,47 @@ def self_test() -> None:
         private.parent.mkdir(parents=True, exist_ok=True)
         private.write_text("interne", "utf-8")
         assert not audit(root, built, source_manifest), "Exclusions techniques non respectées"
+
+        # Symlink de fichier : pourrait faire publier un secret avec --dereference,
+        # y compris si la source cible est exclue de Jekyll.
+        source_leak = root / "assets/public-secret.txt"
+        source_leak.parent.mkdir(parents=True, exist_ok=True)
+        source_leak.symlink_to(private)
+        assert any("Lien symbolique interdit dans la source" in e and
+                   "public-secret.txt" in e for e in audit(
+                       root, built, source_manifest
+                   )), "Symlink source vers un fichier privé accepté"
+        source_leak.unlink()
+
+        # Symlink de répertoire : Path.rglob ne doit pas le rendre invisible.
+        source_directory = root / "assets/private-directory"
+        source_directory.symlink_to(private.parent, target_is_directory=True)
+        assert any("Lien symbolique interdit dans la source" in e and
+                   "private-directory" in e for e in audit(
+                       root, built, source_manifest
+                   )), "Symlink source de dossier privé accepté"
+        source_directory.unlink()
+
+        for relative, target_path, directory in (
+            ("assets/public-secret.txt", private, False),
+            ("assets/private-directory", private.parent, True),
+            ("assets/broken-secret.txt", root / "scripts/not-found.txt", False),
+        ):
+            leak = built / relative
+            leak.symlink_to(target_path, target_is_directory=directory)
+            assert any("Lien symbolique interdit dans l'artefact" in e and
+                       relative in e for e in audit(
+                           root, built, source_manifest
+                       )), f"Lien symbolique artefact non détecté: {relative}"
+            leak.unlink()
+        assert not audit(root, built, source_manifest), (
+            "L'audit sain échoue après les cas symlink"
+        )
         bad_manifest = source_manifest + "assets/image-nouvelle.webp\n"
         assert any("Inventaire modifié" in e for e in audit(root, None, bad_manifest))
         assert not audit(root, built, source_manifest), audit(root, built, source_manifest)
     print("OK inventaire public global: 614 fichiers source + 31 pages générées, "
-          "ajouts, pertes et altérations non approuvés refusés")
+          "ajouts, pertes, altérations et liens symboliques refusés")
 
 
 def main() -> int:
