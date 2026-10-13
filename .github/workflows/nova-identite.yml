@@ -1,0 +1,35 @@
+name: Controle identite Projet Nova
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projets/projet-nova/**'
+      - 'scripts/validate_nova_identity.py'
+      - 'scripts/tests/test_validate_nova_identity.py'
+      - '.github/workflows/nova-identite.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'projets/projet-nova/**'
+      - 'scripts/validate_nova_identity.py'
+      - 'scripts/tests/test_validate_nova_identity.py'
+
+permissions:
+  contents: read
+
+jobs:
+  identite-nova:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Lire les fichiers du depot
+        uses: actions/checkout@v6
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Essais du controle de denomination
+        run: python -m unittest discover -s scripts/tests -p test_validate_nova_identity.py -v
+      - name: Verifier le contenu actif du site
+        run: python scripts/validate_nova_identity.py
