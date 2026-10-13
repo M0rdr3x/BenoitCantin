@@ -243,7 +243,20 @@ explicitement l'exclusion des chemins cachés à sa valeur. Le garde
 2024, détecte la perte du paramètre et protège le SHA complet épinglé.
 La CI et le futur workflow de PUBLISH exécutent également
 `scripts/verify_pages_tar_archive.py` **après l'ajout du reçu et après
-tous les audits, mais avant l'upload**. Ce contrôle crée une archive TAR
+tous les audits, mais avant l'upload**.
+**Liens symboliques (contrôle fail-closed)** : GNU tar utilise
+`--dereference` et pourrait donc copier dans un artefact public le contenu
+d'un fichier privé ciblé par un lien portant un nom public. L'audit
+`scripts/audit_public_surface.py` refuse désormais explicitement tous
+les liens symboliques de **fichiers ou de répertoires**, dans les sources
+et le résultat `_site` (même si un chemin source est autrement exclu de
+Jekyll). Les fichiers cibles des liens ne comptent jamais comme ressources
+approuvées. Les autotests créent des liens vers `scripts/internal.py`,
+un répertoire privé ainsi qu'un lien brisé, et exigent leur rejet. L'état
+Git au moment de l'introduction du contrôle était sans liens symboliques
+suivis; le changement renforce la sécurité sans supprimer une ressource
+existante.
+ Ce contrôle crée une archive TAR
 locale avec les options Linux de l'action épinglée, sans envoyer aucun
 artefact, puis compare tous ses fichiers octet pour octet avec `_site`
 et exige explicitement le reçu caché `.well-known`. Il refuse une
