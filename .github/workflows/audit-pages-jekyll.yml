@@ -11,6 +11,7 @@ on:
       - '.github/workflows/audit-pages-jekyll.yml'
       - '.github/workflows/deploy-pages-controlled.yml'
       - 'scripts/verify_pages_live.py'
+      - 'scripts/verify_pages_integrity.py'
       - 'scripts/validate_pages_workflows.py'
       - 'scripts/attest_pages_production.py'
       - 'scripts/audit_public_documents.py'
@@ -62,6 +63,7 @@ jobs:
           python3 scripts/audit_pages_jekyll.py --self-test
           python3 scripts/audit_pages_jekyll.py --source .
           python3 scripts/verify_pages_live.py --self-test
+          python3 scripts/verify_pages_integrity.py --self-test
           python3 scripts/attest_pages_production.py --self-test
           python3 scripts/audit_public_documents.py --self-test
           python3 scripts/audit_public_documents.py --source .
