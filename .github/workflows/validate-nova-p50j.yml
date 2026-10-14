@@ -1,0 +1,30 @@
+name: Projet Nova P50J - preuves fictives et NO_GO
+on:
+  pull_request:
+    paths:
+      - "projets/projet-nova/controles/P50J_*"
+      - "scripts/validate_nova_preuves_p50j.py"
+      - "scripts/tests/test_validate_nova_preuves_p50j.py"
+      - ".github/workflows/validate-nova-p50j.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controles-statiques:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Vérifier le validateur Python
+        run: python -m py_compile scripts/validate_nova_preuves_p50j.py
+      - name: Tests sur modèle public et états fictifs seulement
+        run: python -m unittest discover -s scripts/tests -p "test_validate_nova_preuves_p50j.py" -v
+      - name: Registre public vide et résultat NO_GO
+        run: python scripts/validate_nova_preuves_p50j.py
