@@ -94,7 +94,7 @@ def executable_guards(workflow: str) -> list[str]:
     required_build = (
         "python3 scripts/audit_pages_jekyll.py --source . --built _site",
         "python3 scripts/validate_sinjira_public_links.py --check",
-        "python3 scripts/validate_sinjira_catalogues_metadata.py",
+        "python3 scripts/validate_sinjira_catalogues_metadata.py --built _site",
         "python3 scripts/validate_boussole_home_visual.py --built _site",
         "python3 scripts/audit_public_documents.py --source . --built _site",
         'python3 scripts/audit_public_json.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"',
@@ -370,8 +370,12 @@ def self_test(workflow: str) -> None:
             "          echo VISUEL_BOUSSOLE_NON_VERIFIE", 1,
         ),
         "Contrôle SEO des catalogues neutralisé": workflow.replace(
-            "          python3 scripts/validate_sinjira_catalogues_metadata.py",
+            "          python3 scripts/validate_sinjira_catalogues_metadata.py --built _site",
             "          echo SEO_CATALOGUES_NON_VERIFIE", 1,
+        ),
+        "Contrôle SEO ne vérifiant que les sources": workflow.replace(
+            "          python3 scripts/validate_sinjira_catalogues_metadata.py --built _site",
+            "          python3 scripts/validate_sinjira_catalogues_metadata.py", 1,
         ),
         "Validation de navigation publique neutralisée": workflow.replace(
             "          python3 scripts/validate_sinjira_public_links.py --check",

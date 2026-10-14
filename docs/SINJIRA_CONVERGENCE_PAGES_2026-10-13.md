@@ -157,3 +157,22 @@ et les schémas JSON-LD non alignés. Il s'exécute sur les PR DRAFT, dans la
 compilation Jekyll sans publication et avant un éventuel upload Pages contrôlé.
 Aucun changement de vente, de disponibilité logicielle, de droit privé ou de
 contenu des romans n'est associé à ce correctif.
+
+
+## Preuve des métadonnées réellement livrées dans l'artefact Jekyll
+
+L'audit `validate_sinjira_catalogues_metadata.py --built _site` ne se
+contente plus de lire les trois fichiers HTML du dépôt. Il compare
+**octet pour octet** le HTML de Romans, Jeux et Logiciels dans `_site`
+aux originaux, réanalyse leurs métadonnées SEO/partage, et vérifie les
+**trois WebP officiels** présents dans `_site` contre leurs empreintes
+SHA-256 approuvées et les fichiers sources.
+
+Les autotests négatifs simulent une page manquante, des métadonnées
+modifiées après compilation, une affiche absente ou modifiée et un
+répertoire de sortie invalide. Cette vérification intervient dans la
+CI Jekyll sans publication **et comme audit exécutable obligatoire
+avant tout upload Pages**; le garde du workflow rejette un contrôle
+remplacé par une commande factice ou privé de `--built _site`.
+Cette preuve de prépublication ne remplace pas le contrôle HTTP/CDN
+sur le domaine réel après un PUBLISH explicitement approuvé.
