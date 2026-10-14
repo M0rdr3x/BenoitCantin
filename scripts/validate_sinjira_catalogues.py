@@ -277,11 +277,22 @@ def self_test() -> None:
         ), "utf-8")
         # Le parseur détecte cette incohérence même sans disposer des
         # médias et autres pages nécessaires à un test intégral.
-        parsed = PageLinks()
-        parsed.feed(destination.read_text("utf-8"))
-        assert parsed.main_nav_links and (
-            "/projets/sinjira/", "page"
-        ) in parsed.main_nav_links, "Mutation du menu non appliquée"
+        violations = validate(test_root)
+        assert any(
+            "Menu principal SINJIRA : position courante incorrecte (romans)"
+            in violation for violation in violations
+        ), "Erreur aria-current de l'onglet Romans non détectée"
+        # Un deuxième aria-current=page dans la sous-navigation doit aussi
+        # être rejeté indépendamment de l'inventaire public des pages.
+        destination.write_text(text.replace(
+            'href="../jeux/index.html"',
+            'aria-current="page" href="../jeux/index.html"', 1
+        ), "utf-8")
+        violations = validate(test_root)
+        assert any(
+            "Sous-menu SINJIRA : une seule page courante attendue (romans)"
+            in violation for violation in violations
+        ), "Double page active non détectée"
 
     # Le véritable projet est la fixture positive afin de contrôler les liens réels.
     problems = validate(ROOT)
