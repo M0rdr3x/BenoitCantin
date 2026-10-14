@@ -119,3 +119,14 @@ de l'accueil et le WebP original v2 du héros Nova. Tests négatifs
 sur contenu ancien pour chacun de ces fichiers. Les changements
 préservent l'intervalle monotone global de 420 secondes et
 n'impliquent aucune publication réelle.
+
+
+## Mesure pré-bascule sans lecture de documents techniques
+
+Le diagnostic PR inclut maintenant `report_pages_live_exposure.py`.
+Il collecte seulement les **codes HEAD** sur 14 chemins techniques
+fixés, classe `EXPOSÉ / NON_CONFORME / INCONNU / REFUS_HEAD_OBSERVÉ`
+et conserve le verdict dans le résumé Actions. Aucune récupération
+du corps des fichiers ni changement de Pages. La mesure HEAD n'est
+pas une certification GET; le reçu SHA/run et les vérifications
+post-PUBLISH restent indispensables.

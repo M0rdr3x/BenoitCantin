@@ -518,3 +518,28 @@ Les autotests simulent une ancienne version de chaque ressource
 ajoutée et exigent le rejet avant conclusion. La fenêtre globale de
 sept minutes est conservée, avec réponse explicite `budget épuisé`
 si tous les fichiers n'ont pas été réellement contrôlés.
+
+
+## Constat HTTP anonymisé avant changement administratif
+
+Le même workflow `pages-cutover-preflight.yml` exécute désormais un
+diagnostic réseau en lecture seule, limité à des **requêtes HEAD sur
+14 chemins techniques exacts** de `www.benoitcantin.com`. Aucun GET
+du corps d'un fichier technique n'est effectué, aucun jeton public
+n'est envoyé au site et les redirections sont refusées.
+
+Le rapport distingue : **EXPOSÉ** (HTTP 200/206 sur une source
+technique), **NON_CONFORME** (HTTP différent de 404/410 et sans
+signification de refus valide, par exemple 301/403/500),
+**INCONNU** (réseau indisponible, HEAD 405/501 ou inventaire
+incomplet) et **REFUS_HEAD_OBSERVÉ** (14 réponses HEAD 404/410).
+Une réponse HEAD 404 **ne prouve pas** une réponse GET 404, l'absence
+de divulgation antérieure ni la publication au SHA approuvé.
+
+Ce rapport est **non bloquant pour la CI PR**, pour rendre les risques
+visibles même avant la bascule administrateur. Le résultat vert
+de ce workflow signifie seulement que la mesure est enregistrée.
+Un déploiement réel reste soumis à `attest_pages_production.py`
+(contrôle bloquant de `build_type=workflow`, CNAME, HTTPS et SHA
+de `main`), puis aux vérifications GET strictes, à la preuve SHA/run
+et aux octets CDN après PUBLISH approuvé.

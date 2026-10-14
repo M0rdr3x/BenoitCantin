@@ -8,6 +8,9 @@ on:
       - '.github/workflows/pages-cutover-preflight.yml'
       - '.github/workflows/deploy-pages-controlled.yml'
       - 'scripts/report_pages_cutover_status.py'
+      - 'scripts/report_pages_live_exposure.py'
+      - 'scripts/validate_publication_live_boundary.py'
+      - 'scripts/verify_pages_live.py'
       - 'scripts/attest_pages_production.py'
       - 'docs/PAGES_CONTROLLED_CUTOVER.md'
   workflow_dispatch:
@@ -37,3 +40,7 @@ jobs:
         env:
           GH_PAGES_READ_TOKEN: ${{ github.token }}
         run: python3 scripts/report_pages_cutover_status.py --report
+      - name: Tester les refus HTTP sans réseau
+        run: python3 scripts/report_pages_live_exposure.py --self-test
+      - name: Observer uniquement les codes HEAD des sources techniques
+        run: python3 scripts/report_pages_live_exposure.py --report
