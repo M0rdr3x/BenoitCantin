@@ -470,3 +470,32 @@ une omission fait échouer les tests négatifs. Ce mécanisme empêche qu'une
 PR réussie soit considérée comme une autorisation implicite de publier.
 Le réglage administratif GitHub Pages, la preuve HTTPS et l'approbation
 humaine du SHA final restent indispensables.
+
+
+## Diagnostic automatique du réglage administrateur (sans déploiement)
+
+La CI dédiée `.github/workflows/pages-cutover-preflight.yml`
+interroge **en lecture seule** l'API de configuration Pages depuis
+la PR, avec la permission minimale `pages: read`. Le script
+`scripts/report_pages_cutover_status.py` vérifie `build_type`,
+le `cname` et `https_enforced` sans jamais afficher de jeton ni
+modifier la configuration. Il consigne une synthèse explicite dans
+le résumé du job :
+
+- **BLOQUÉ** : source `legacy` (branche), CNAME divergent ou HTTPS
+  non attesté; corriger `Settings > Pages`.
+- **INCONNU** : Pages inaccessible au jeton de la PR, API malformée,
+  ou source non reconnue; faire vérifier les paramètres par le propriétaire.
+- **SOURCE_CONFORME** : les seuls prérequis administratifs de source,
+  domaine et HTTPS sont observés comme conformes. Cela ne prouve pas
+  le confinement HTTP en ligne ni la fin de l'incident #450.
+
+**Attention :** le workflow de diagnostic est informatif et retourne
+`success` même si le diagnostic est BLOQUÉ ou INCONNU. Ce statut
+vert prouve uniquement que le rapport a été produit; le workflow
+`deploy-pages-controlled.yml` reste **strictement bloquant** et
+vérifie de nouveau `build_type=workflow` au SHA exact avant PUBLISH
+et juste avant le déploiement. Aucun lancement de l'outil de publication,
+aucune fusion et aucun changement de paramètre n'est fait par ce
+diagnostic. Un workflow de diagnostic ajouté sur une branche ne
+constitue pas une preuve de publication réelle.
