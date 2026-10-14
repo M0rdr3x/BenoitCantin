@@ -372,8 +372,10 @@ def self_test(workflow: str) -> None:
             "          echo VISUEL_BOUSSOLE_NON_VERIFIE", 1,
         ),
         "Test de signature des documents neutralisé": workflow.replace(
+            "          python3 scripts/validate_sinjira_catalogues_metadata.py --built _site\n"
             "          node --test tests/test_sinjira_library_access.cjs\n"
             "          node --test tests/test_document_url_authorization.cjs",
+            "          python3 scripts/validate_sinjira_catalogues_metadata.py --built _site\n"
             "          node --test tests/test_sinjira_library_access.cjs\n"
             "          echo TEST_SIGNATURE_DOCUMENTS_NEUTRALISE", 1,
         ),
