@@ -130,3 +130,15 @@ et conserve le verdict dans le résumé Actions. Aucune récupération
 du corps des fichiers ni changement de Pages. La mesure HEAD n'est
 pas une certification GET; le reçu SHA/run et les vérifications
 post-PUBLISH restent indispensables.
+
+
+## Accessibilité des quatre portails — navigation courante explicite
+
+Le menu principal des catégories Romans, Jeux et Logiciels indique désormais
+SINJIRA™ comme **section parente** (`aria-current="location"`), et non comme
+page active. Le sous-menu identifie quant à lui **une seule page réellement
+courante** (`aria-current="page"`). Sur l'accueil SINJIRA, le menu principal
+peut correctement signaler la page elle-même. Le validateur catalogue
+contrôle indépendamment ces deux rôles et refuse une sélection ambiguë.
+Cela améliore le retour des lecteurs d'écran et la cohérence des chemins
+de navigation, sans modifier le contenu ou les droits des membres.

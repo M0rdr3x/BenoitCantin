@@ -53,7 +53,9 @@ class PageLinks(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.nav_depth = 0
+        self.main_nav_depth = 0
         self.nav_links: list[tuple[str, str | None]] = []
+        self.main_nav_links: list[tuple[str, str | None]] = []
         self.links: list[tuple[str, dict[str, str]]] = []
         self.images: list[dict[str, str]] = []
         self.canonicals: list[str] = []
@@ -67,11 +69,15 @@ class PageLinks(HTMLParser):
             self.lang = data.get("lang")
         if tag == "nav" and "universe-subnav" in (data.get("class") or ""):
             self.nav_depth += 1
+        if tag == "nav" and "main-nav" in (data.get("class") or ""):
+            self.main_nav_depth += 1
         if tag == "a" and data.get("href"):
             url = data["href"]
             self.links.append((url, {k: v or "" for k, v in attrs}))
             if self.nav_depth:
                 self.nav_links.append((url, data.get("aria-current")))
+            if self.main_nav_depth:
+                self.main_nav_links.append((url, data.get("aria-current")))
         if tag == "img":
             self.images.append({k: v or "" for k, v in attrs})
         if tag == "link" and data.get("rel") == "canonical":
@@ -81,6 +87,8 @@ class PageLinks(HTMLParser):
     def handle_endtag(self, tag: str) -> None:
         if tag == "nav" and self.nav_depth:
             self.nav_depth -= 1
+        if tag == "nav" and self.main_nav_depth:
+            self.main_nav_depth -= 1
 
 def resolve_local(page: Path, href: str, root: Path) -> Path | None:
     parts = urlsplit(href)
@@ -156,7 +164,29 @@ def validate(root: Path) -> list[str]:
             errors.append(f"Canonique incorrect ou dupliqué : {category}")
         if parser.lang != "fr-CA" or parser.main_count != 1:
             errors.append(f"Structure accessible ou langue incorrecte : {category}")
+        # Les deux menus ont un rôle différent : le sous-menu désigne
+        # une seule page courante; le menu principal indique uniquement
+        # le parent SINJIRA sur une fiche de catégorie.
         links = [(url, state) for url, state in parser.nav_links]
+        selected_subnav = [(url, state) for url, state in links
+                           if state == "page"]
+        selected_main = [(url, state) for url, state in parser.main_nav_links
+                         if state in {"page", "location"}]
+        expected_main = ("page" if category == "accueil" else "location")
+        if selected_main != [("/projets/sinjira/", expected_main)]:
+            errors.append(
+                f"Menu principal SINJIRA : position courante incorrecte ({category})"
+            )
+        if len(selected_subnav) != 1:
+            errors.append(
+                f"Sous-menu SINJIRA : une seule page courante attendue ({category})"
+            )
+        expected_subnav = ((root / PAGES[category]).resolve())
+        for url, state in selected_subnav:
+            if resolve_local(file, url, root) != expected_subnav:
+                errors.append(
+                    f"Sous-menu SINJIRA : mauvaise page sélectionnée ({category})"
+                )
         for kind, route in ROUTES.items():
             variants = {route, route + "index.html", kind + "/", "../" + kind + "/index.html"}
             matching = [(url, state) for url, state in links
@@ -232,6 +262,27 @@ def self_test() -> None:
                    for e in inspect_banners(root)), (
             "Affiche placée dans la mauvaise catégorie non détectée"
         )
+    # Cas négatifs de sémantique aria-current : une page de catalogue
+    # ne doit jamais prétendre être l'accueil du site ni désigner deux
+    # catégories simultanément.
+    with TemporaryDirectory() as folder:
+        test_root = Path(folder)
+        rel = PAGES["romans"]
+        destination = test_root / rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        text = (ROOT / rel).read_text("utf-8")
+        destination.write_text(text.replace(
+            'aria-current="location" href="/projets/sinjira/"',
+            'aria-current="page" href="/projets/sinjira/"', 1
+        ), "utf-8")
+        # Le parseur détecte cette incohérence même sans disposer des
+        # médias et autres pages nécessaires à un test intégral.
+        parsed = PageLinks()
+        parsed.feed(destination.read_text("utf-8"))
+        assert parsed.main_nav_links and (
+            "/projets/sinjira/", "page"
+        ) in parsed.main_nav_links, "Mutation du menu non appliquée"
+
     # Le véritable projet est la fixture positive afin de contrôler les liens réels.
     problems = validate(ROOT)
     if problems:
