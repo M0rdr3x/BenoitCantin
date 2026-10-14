@@ -1,30 +1,35 @@
 # GitHub Pages — bascule contrôlée et procédure de repli
 
 **Statut : préparation uniquement. NE PAS PUBLIER depuis cette PR.**  
-Référence de sécurité : issue [#450](https://github.com/M0rdr3x/BenoitCantin/issues/450), correctif [#458](https://github.com/M0rdr3x/BenoitCantin/pull/458).
+Référence de sécurité : issue [#450](https://github.com/M0rdr3x/BenoitCantin/issues/450), intégration actuelle [#639](https://github.com/M0rdr3x/BenoitCantin/pull/639) (DRAFT), réunissant les travaux de [#458](https://github.com/M0rdr3x/BenoitCantin/pull/458) et [#637](https://github.com/M0rdr3x/BenoitCantin/pull/637).
 
 ## 1. État réel, prouvé
 
-Le dernier build automatique observé sur le code public courant est le run
-[37978201065](https://github.com/M0rdr3x/BenoitCantin/actions/runs/37978201065),
-pour `main` à `790b1424b20e98ef31ec6597e98c5c8f6b4aa23d`.
+**Mesure la plus récente : 14 octobre 2026.** Les contrôles de la PR
+#639 ont observé sur l'API GitHub Pages `build_type=legacy`,
+`cname=www.benoitcantin.com` et HTTPS activé :
+[preuve #38565937766](https://github.com/M0rdr3x/BenoitCantin/actions/runs/38565937766).
+Le rapport HTTP HEAD du même run relève **9 chemins techniques sur 14
+répondant HTTP 200** (les autres 5 en 404), sans consulter leur corps.
+Ces statuts HEAD ne certifient pas la réponse GET sur tous les fichiers.
 
-Son job `build` exécute **`actions/upload-pages-artifact@v3` avec `path: .`** :
-la racine technique du dépôt est donc empaquetée. La présence d'exclusions
-`_config.yml` ne suffit pas tant que cette source de publication reste active.
-La preuve que Jekyll sait construire un artefact sûr (run
-[37983554606](https://github.com/M0rdr3x/BenoitCantin/actions/runs/37983554606))
-concerne **un autre pipeline sans déploiement**.
+La preuve historique de la publication de la racine est le
+[run #37978201065](https://github.com/M0rdr3x/BenoitCantin/actions/runs/37978201065),
+où `actions/upload-pages-artifact@v3` recevait **`path: .`**.
+Les exclusions Jekyll ne corrigent pas ce flux en mode `legacy`.
 
-L'intégration GitHub de ce projet n'offre pas la lecture/modification des
-paramètres administratifs `Settings > Pages`. L'opérateur du dépôt doit
-certifier la source réelle avant de déclencher la mise en ligne.
+L'actuel `main` est `9ed5f70cbe7022f25a679346a1288701f3b09067`
+(hotfix visuel Boussole #642). La CI PR peut **lire** la source Pages
+en lecture seule, mais l'intégration GitHub de cette conversation ne
+peut **pas modifier** son réglage administrateur. Le propriétaire doit
+le faire explicitement avant toute promotion.
 
 ## 2. Portes préalables (aucune fusion / publication tant qu'elles ne sont pas vertes)
 
-- Revoir les diff de #458, en particulier la suppression de `.nojekyll`,
-  `_config.yml`, l'auditeur `scripts/audit_pages_jekyll.py`, la
-  liste bornée des documents Nova déjà publics et le workflow manuel
+- Revoir l'intégration finale **#639** (incluant les changements #458
+  et #637), en particulier la suppression de `.nojekyll`,
+  `_config.yml`, le garde `scripts/audit_pages_jekyll.py`, le
+  manifeste des 618 sources autorisées et le workflow manuel
   `.github/workflows/deploy-pages-controlled.yml`.
 - Examiner toutes les validations PR, dont la compilation Jekyll réelle,
   les autotests et la vérification de la sortie `_site`.
@@ -48,8 +53,10 @@ certifier la source réelle avant de déclencher la mise en ligne.
 4. Confirmer le domaine personnalisé, le HTTPS, le `CNAME` et le rôle
    `github-pages` dans les environnements GitHub. Utiliser une approbation
    d'environnement lorsque possible.
-5. **Seulement après ces vérifications**, fusionner #458 dans `main`
-   par une PR contrôlée, sans fusionner #449.
+5. **Seulement après ces vérifications**, faire approuver la PR **#639**
+   (qui intègre déjà #458 et #637), puis fusionner **#639 seulement**
+   sur `main`. Ne pas fusionner séparément #458, #637 ou #449.
+   Relever le SHA exact du nouveau `main` pour le DRY_RUN.
 
 Si GitHub Pages continue d'exécuter un workflow dynamique qui téléverse `path: .`,
 **arrêter**. Corriger la source d'abord.
@@ -97,7 +104,11 @@ automatique.
 Le job `deploy`, protégé par son environnement `github-pages`, appelle
 `actions/deploy-pages`. Il publie seulement l'artefact testé de `_site`.
 Le job final exécute **`python3 scripts/verify_pages_live.py --check`** :
-HTTPS, **12 chemins publics en 200** (HTML, JS, XML, TXT, JSON Boussole, PDF démo et image WebP avec MIME attendus) et **13 chemins techniques en 404/410 strict**, dont le contrat de livraison privée du Livre I.
+HTTPS, **21 chemins publics en 200** (accueil, catalogues SINJIRA,
+pages Nova, JS, XML, TXT, JSON Boussole, PDF démo et bannières WebP
+avec MIME attendus) et **13 chemins techniques en 404/410 strict**,
+dont le contrat de livraison privée du Livre I. La surveillance
+quotidienne inclut un quatorzième chemin historique Netlify.
 
 Les probes contrôlent notamment :
 `/supabase/config.toml`, `/tests/e2e/test_public_site.py`,
@@ -287,10 +298,11 @@ et **avant** les audits finaux, `scripts/pages_release_proof.py` crée
 version de contrat. Ce marqueur ne contient aucun identifiant de membre,
 secret, droit d'accès ou donnée personnelle.
 
-Le workflow manuel exige que ce **646e fichier dynamique** corresponde
+Le workflow manuel exige que ce **650e fichier (dynamique)** corresponde
 exactement au SHA et au run courants. Les contrôles JSON, inventaire intégral
 et anti-secrets permettent **seulement** ce chemin supplémentaire lorsque
-le marqueur validé est présent; les 649 chemins historiques restent figés.
+le marqueur validé est présent; les **649 fichiers statiques approuvés**
+(618 sources + 31 générés) restent figés.
 
 Après le déploiement, `scripts/verify_pages_live.py --check` reçoit le
 SHA et le run attendus, télécharge en GET HTTPS le reçu depuis
