@@ -1,0 +1,301 @@
+{
+  "schema_version": "P50K-1.0",
+  "nature": "MODELE_PUBLIC_NON_EFVP",
+  "date_observation": "2026-10-14",
+  "identite": "Projet Nova",
+  "parti_futur": "Parti Nova",
+  "qualification_juridique": "INDETERMINEE",
+  "evaluation_efvp": "NON_REALISEE",
+  "revision_juridique": "NON_ATTESTEE",
+  "revision_confidentialite": "NON_ATTESTEE",
+  "responsable_habilite": "NON_DESIGNE",
+  "coffre": "NON_DEPLOYE",
+  "courriel_existant": "CANAL_PUBLIC_AUDIT_NON_ATTESTE",
+  "flux": [
+    {
+      "id": "F01",
+      "nom": "Contact par courriel existant",
+      "statut": "A_AUDITER",
+      "traitements_reels_verifies": false
+    },
+    {
+      "id": "F02",
+      "nom": "Coffre de justificatifs futur",
+      "statut": "NON_DEPLOYE",
+      "traitements_reels_verifies": false
+    },
+    {
+      "id": "F03",
+      "nom": "Depôt GitHub public",
+      "statut": "DOCUMENTATION_SEULEMENT",
+      "traitements_reels_verifies": false
+    },
+    {
+      "id": "F04",
+      "nom": "Logs CI et infrastructure future",
+      "statut": "A_CARTOGRAPHIER",
+      "traitements_reels_verifies": false
+    }
+  ],
+  "risques": [
+    {
+      "id": "R01",
+      "intitule": "Courriel volontaire contenant des renseignements politiques sensibles",
+      "flux": "F01",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R02",
+      "intitule": "Transfert, stockage ou accès hors Québec non cartographié",
+      "flux": "F01",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R03",
+      "intitule": "Transmission à un mauvais destinataire",
+      "flux": "F01",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R04",
+      "intitule": "Compromission du compte de messagerie ou usurpation de session",
+      "flux": "F01",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R05",
+      "intitule": "Accès excessif ou délégation non révoquée",
+      "flux": "F01",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R06",
+      "intitule": "Sous-traitants ou clauses de fournisseur non vérifiés",
+      "flux": "F02",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R07",
+      "intitule": "Mandat contrefait ou autorité émettrice usurpée",
+      "flux": "F02",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R08",
+      "intitule": "Validité échue, mandat révoqué ou périmètre erroné",
+      "flux": "F02",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R09",
+      "intitule": "Conservation excessive et destruction non démontrable",
+      "flux": "F01",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R10",
+      "intitule": "Données privées exposées par logs, Git ou CI",
+      "flux": "F03",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R11",
+      "intitule": "Perte de données, panne ou restauration non vérifiée",
+      "flux": "F02",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R12",
+      "intitule": "Incident de confidentialité non enregistré ou mal géré",
+      "flux": "F01",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R13",
+      "intitule": "Réutilisation, changement de finalité ou profilage sans validation",
+      "flux": "F02",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    },
+    {
+      "id": "R14",
+      "intitule": "Confusion entre test CI, preuve et habilitation légale",
+      "flux": "F03",
+      "probabilite": "INCONNU",
+      "gravite": "INCONNU",
+      "risque_residuel": "INCONNU",
+      "controle_effectif_atteste": false,
+      "preuve_publique": "",
+      "avis_externe_atteste": false
+    }
+  ],
+  "prestataires": {
+    "selection_effectuee": false,
+    "nom_prestataire": "",
+    "contrat_signe": false,
+    "comparaison_commerciale_autorisee": false,
+    "criteres": [
+      {
+        "id": "V01",
+        "objet": "Contrat de traitement, confidentialité et restitution",
+        "etat": "NON_EVALUE",
+        "justificatif_externe_atteste": false
+      },
+      {
+        "id": "V02",
+        "objet": "Localisation des données et sous-traitants",
+        "etat": "NON_EVALUE",
+        "justificatif_externe_atteste": false
+      },
+      {
+        "id": "V03",
+        "objet": "Protection adéquate / EFVP si hors Québec",
+        "etat": "NON_EVALUE",
+        "justificatif_externe_atteste": false
+      },
+      {
+        "id": "V04",
+        "objet": "Accès par rôles, MFA et révocation",
+        "etat": "NON_EVALUE",
+        "justificatif_externe_atteste": false
+      },
+      {
+        "id": "V05",
+        "objet": "Chiffrement repos/transit et gestion des clés",
+        "etat": "NON_EVALUE",
+        "justificatif_externe_atteste": false
+      },
+      {
+        "id": "V06",
+        "objet": "Journaux protégés, minimisés et revus",
+        "etat": "NON_EVALUE",
+        "justificatif_externe_atteste": false
+      },
+      {
+        "id": "V07",
+        "objet": "Quarantaine et contrôle des fichiers",
+        "etat": "NON_EVALUE",
+        "justificatif_externe_atteste": false
+      },
+      {
+        "id": "V08",
+        "objet": "Sauvegardes et restauration démontrées",
+        "etat": "NON_EVALUE",
+        "justificatif_externe_atteste": false
+      },
+      {
+        "id": "V09",
+        "objet": "Export et destruction vérifiable",
+        "etat": "NON_EVALUE",
+        "justificatif_externe_atteste": false
+      },
+      {
+        "id": "V10",
+        "objet": "Gestion d'incident et notification contractuelle",
+        "etat": "NON_EVALUE",
+        "justificatif_externe_atteste": false
+      },
+      {
+        "id": "V11",
+        "objet": "Audit de sécurité et correction des vulnérabilités",
+        "etat": "NON_EVALUE",
+        "justificatif_externe_atteste": false
+      },
+      {
+        "id": "V12",
+        "objet": "Sortie, portabilité et réversibilité contractuelle",
+        "etat": "NON_EVALUE",
+        "justificatif_externe_atteste": false
+      }
+    ]
+  },
+  "domaines_preuves": {
+    "habilitation": "NON_FOURNIE",
+    "regime_applicable": "NON_ETABLI",
+    "cartographie_flux": "NON_VERIFIEE",
+    "transferts_hors_quebec": "INCONNUS",
+    "politique_conservation": "NON_VALIDEE",
+    "plan_incident": "NON_VALIDE",
+    "audit_courriel": "NON_REALISE"
+  },
+  "blocs": [
+    "NO_GO_NON_LEVE_PAR_CI",
+    "NE_PAS_FUSIONNER_PR_640",
+    "AUCUNE_COLLECTE_POLITIQUE_NOUVELLE",
+    "AUCUN_COFFRE_DEPLOYE",
+    "AUCUNE_PREUVE_PRIVEE_GITHUB",
+    "NON_CONFORMITE_NON_PRESUMEE_ET_CONFORMITE_NON_ATTESTEE"
+  ],
+  "decision": {
+    "statut": "NO_GO",
+    "efvp_signee": false,
+    "prestataire_approuve": false,
+    "publication_autorisee": false,
+    "collecte_autorisee": false
+  },
+  "note": "Simulation et inventaire de risques uniquement, sans donnees personnelles ni scoring reel."
+}
