@@ -124,7 +124,9 @@ def run() -> None:
                 main_nav.count() == 1
                 and main_nav.get_attribute("aria-current") == "location"
                 and subnav.count() == 1
-                and category in (subnav.get_attribute("href") or ""),
+                and urljoin(
+                    catalogue_url, subnav.get_attribute("href") or ""
+                ).rstrip("/").removesuffix("/index.html") == catalogue_url.rstrip("/"),
                 f"{BROWSER_NAME}: état de navigation accessible incohérent ({category})",
             )
             for width in (1440, 390):
