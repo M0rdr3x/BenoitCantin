@@ -23,22 +23,47 @@ function externalUrlAllowed(value:string){
 }
 
 async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  // Lecture bornée pendant le flux, jamais en mémoire via req.text().
+  const contentType=(req.headers.get('content-type')||'').toLowerCase().split(';',1)[0].trim();
+  if(contentType!=='application/json'){
     return {response:privateJson({ok:false,error:'Type de contenu non autorisé.'},415)};
   }
   const rawLength=req.headers.get('content-length');
-  if(rawLength){
+  if(rawLength!==null){
     const declared=Number(rawLength);
-    if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES){
+    if(!Number.isSafeInteger(declared)||declared<0||declared>MAX_REQUEST_BYTES){
       return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
     }
   }
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
-    return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
+  if(!req.body)return {body:{}};
+  const reader=req.body.getReader();
+  const chunks:Uint8Array[]=[];
+  let total=0;
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(value){
+        total+=value.byteLength;
+        if(total>MAX_REQUEST_BYTES){
+          await reader.cancel().catch(()=>{});
+          return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
+        }
+        chunks.push(value);
+      }
+    }
+  }finally{
+    reader.releaseLock();
   }
-  try{return {body:JSON.parse(raw||'{}')}}catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  try{
+    const raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
+    return {body:JSON.parse(raw||'{}')};
+  }catch{
+    return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
+  }
 }
 
 Deno.serve(async(req)=>{

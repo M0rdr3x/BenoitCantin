@@ -275,3 +275,17 @@ confirmé, fichier non approuvé et requête anonyme. Ils attestent
 qu'aucun lien signé n'est créé pour un scénario refusé. Ces cas sont
 appelés depuis la CI PR et le dernier garde pré-upload Pages; ils
 ne remplacent pas une recette Supabase/RLS en environnement sécurisé.
+
+
+## Lecture HTTP bornée de la fonction de documents
+
+La fonction `get-document-url` limite maintenant le JSON à 512 octets
+**au cours du flux**, sans attendre une lecture entière avec `req.text()`.
+Lors d'un dépassement, elle annule le lecteur; le type MIME JSON est
+comparé strictement et l'UTF-8 invalide est refusé.
+
+Le validateur statique rejette le retour aux lectures non bornées et
+teste les mutations négatives. Quatre essais supplémentaires exécutent
+la fonction Edge simulée avec dépassement de taille sans longueur
+déclarée, longueur explicitement excessive, JSON ou UTF-8 invalide et
+MIME incorrect. Aucun accès réseau ou secret n'est nécessaire.

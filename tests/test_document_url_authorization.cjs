@@ -12,6 +12,7 @@ const source=fs.readFileSync(path.join(__dirname,
 function buildHandler(mock){
   let transformed=source.replace(/^import[^\n]*\n/gm,'')
     .replace('const ranks:Record<string,number>','const ranks')
+    .replace('const chunks:Uint8Array[]=[];','const chunks=[];')
     .replace('function privateJson(data:unknown,status=200)','function privateJson(data,status=200)')
     .replace('function externalUrlAllowed(value:string)','function externalUrlAllowed(value)')
     .replace('async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>',
@@ -19,7 +20,7 @@ function buildHandler(mock){
   assert.doesNotMatch(transformed,/\bimport\s+.*from/);
   let handler;
   const context={
-    Response,Request,TextEncoder,URL,console,
+    Response,Request,TextEncoder,TextDecoder,URL,console,
     corsHeaders:{'Access-Control-Allow-Origin':'*'},
     optionalUser:async(req)=>req.headers.get('Authorization')==='Bearer anonymous'
       ?null:{id:'test-member'},
@@ -116,4 +117,43 @@ test('anonyme sans rang : document privé refusé',async()=>{
   const x=await attempt({owner:false},'anonymous');
   assert.equal(x.status,403);assert.equal(x.stats.signed,0);
   assert.deepEqual(x.calls,[]);
+});
+
+test('requête volumineuse sans Content-Length: refuse avant signature',async()=>{
+  const f=fixture(),handler=buildHandler(f.service);
+  const response=await handler(new Request('https://functions.local/functions/v1/get-document-url',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({document_id:DOCUMENT_ID,padding:'x'.repeat(900)})
+  }));
+  assert.equal(response.status,413);assert.equal(f.stats.signed,0);
+  assert.deepEqual(f.calls,[]);
+  assert.equal(response.headers.get('cache-control'),'private, no-store, max-age=0');
+});
+test('Content-Length trop grand: refuse avant lecture et accès aux données',async()=>{
+  const f=fixture(),handler=buildHandler(f.service);
+  const response=await handler(new Request('https://functions.local/functions/v1/get-document-url',{
+    method:'POST',headers:{'Content-Type':'application/json','Content-Length':'2048'},
+    body:JSON.stringify({document_id:DOCUMENT_ID})
+  }));
+  assert.equal(response.status,413);assert.equal(f.stats.signed,0);
+});
+test('JSON ou UTF-8 invalide: 400 sans lien privé',async()=>{
+  for(const body of ['{"document_id":',new Uint8Array([0xc3,0x28])]){
+    const f=fixture(),handler=buildHandler(f.service);
+    const response=await handler(new Request('https://functions.local/functions/v1/get-document-url',{
+      method:'POST',headers:{'Content-Type':'application/json'},body
+    }));
+    assert.equal(response.status,400);assert.equal(f.stats.signed,0);
+    assert.deepEqual(f.calls,[]);
+  }
+});
+test('Content-Type trompeur: 415 avant toute requête SQL',async()=>{
+  for(const type of ['text/plain','application/json-invalid']){
+    const f=fixture(),handler=buildHandler(f.service);
+    const response=await handler(new Request('https://functions.local/functions/v1/get-document-url',{
+      method:'POST',headers:{'Content-Type':type},
+      body:JSON.stringify({document_id:DOCUMENT_ID})
+    }));
+    assert.equal(response.status,415);assert.equal(f.stats.signed,0);
+  }
 });
