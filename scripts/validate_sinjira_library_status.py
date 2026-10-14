@@ -70,6 +70,8 @@ def audit(html: str, js: str) -> list[str]:
         "const isAdmin=!adminResult.error&&adminResult.data===true;",
         "const rolesVerified=!ownerResult.error&&!adminResult.error;",
         "function activeProjectAccess(accessRows,now=Date.now())",
+        "['player','tester'].includes(row.access_level)",
+        "s.rpc('is_sinjira_owner',{p_user_id:user.id})",
         "function canOpenProject(project,activeAccess,isOwner,isAdmin)",
         "function safeProjectPlayPath(value)",
         "projectsResult.error||accessResult.error||!rolesVerified?'—':availableProjects.length",

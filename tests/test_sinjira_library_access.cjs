@@ -49,7 +49,9 @@ test('droits actifs admis; expirations et dates malformées refusées',()=>{
     const rights=api.activeProjectAccess([{project_id:'priv',access_level:'tester',expires_at}],fixedNow);
     assert.equal(api.canOpenProject(privateProject,rights,false,false),false);
   }
-  assert.equal(api.canOpenProject(privateProject,api.activeProjectAccess([{project_id:'priv',access_level:''}],fixedNow),false,false),false);
+  for(const invalid of ['', 'revoked', 'admin', 'viewer']){
+    assert.equal(api.canOpenProject(privateProject,api.activeProjectAccess([{project_id:'priv',access_level:invalid}],fixedNow),false,false),false);
+  }
 });
 
 test('URL jouer: liens internes uniquement, pas javascript ou protocole relatif',()=>{

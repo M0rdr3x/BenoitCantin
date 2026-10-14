@@ -236,3 +236,22 @@ compteur. Il fait partie des validations PR et du workflow Pages
 contrôlé. Ces restrictions de boutons sont une **présentation
 prudente**, pas une autorisation côté client : les règles RLS et les
 fonctions privées conservent la décision finale.
+
+
+## Convergence du détail des projets avec les droits des membres
+
+Le module de la page historique `/compte/projet.html`, distinct de
+la nouvelle bibliothèque, est aligné sur les rôles réellement
+confirmés par RPC et les accès `player`/`tester` non expirés.
+La comparaison d'adresse courriel dans le navigateur a été retirée
+pour les rôles privilégiés de cette page. Un compte sans droit ne
+reçoit plus de bouton « Jouer » ni de liste de documents ou playtests
+privés sur un projet restreint. Les erreurs d'API sont annoncées
+comme indisponibilités, et non comme absence réelle de documents.
+Les URL de lancement doivent être internes. Le schéma SQL n'autorise
+que les niveaux `player` et `tester`; les deux interfaces refusent
+désormais toute autre chaîne.
+
+Il s'agit d'une mesure de présentation conservatrice; le contrôle
+RLS et la signature du document restent la frontière de sécurité
+réelle, à tester distinctement lors de la recette authentifiée.

@@ -24,7 +24,7 @@ function setCount(selector,value){
 // reste validée indépendamment par les règles du serveur Supabase.
 function activeProjectAccess(accessRows,now=Date.now()){
   const verified=rows(accessRows).filter(row=>{
-    if(!row?.project_id||!row.access_level)return false;
+    if(!row?.project_id||!['player','tester'].includes(row.access_level))return false;
     if(!row.expires_at)return true;
     const deadline=Date.parse(row.expires_at);
     return Number.isFinite(deadline)&&deadline>now;
