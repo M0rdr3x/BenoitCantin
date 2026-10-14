@@ -37,36 +37,6 @@
     "pr_646_revues": 0,
     "source": "Consultation en lecture seule; à réactualiser avant décision"
   },
-  "habitations": {
-    "reviseur_editorial": {
-      "atteste": false,
-      "reference_preuve": ""
-    },
-    "reviseur_technique_independant": {
-      "atteste": false,
-      "reference_preuve": ""
-    },
-    "responsable_confidentialite": {
-      "atteste": false,
-      "reference_preuve": ""
-    },
-    "conseil_juridique": {
-      "atteste": false,
-      "reference_preuve": ""
-    },
-    "autorite_de_publication": {
-      "atteste": false,
-      "reference_preuve": ""
-    },
-    "operateur_deploiement": {
-      "atteste": false,
-      "reference_preuve": ""
-    },
-    "responsable_recette": {
-      "atteste": false,
-      "reference_preuve": ""
-    }
-  },
   "portes": [
     {
       "id": "B01",
@@ -194,5 +164,35 @@
     "Aucun versement ou adhesion politique non autorise",
     "Ne pas publier de noms, signatures, courriels ni documents sensibles dans Git",
     "La CI ne signe aucune decision humaine"
-  ]
+  ],
+  "habilitations": {
+    "reviseur_editorial": {
+      "atteste": false,
+      "reference_preuve": ""
+    },
+    "reviseur_technique_independant": {
+      "atteste": false,
+      "reference_preuve": ""
+    },
+    "responsable_confidentialite": {
+      "atteste": false,
+      "reference_preuve": ""
+    },
+    "conseil_juridique": {
+      "atteste": false,
+      "reference_preuve": ""
+    },
+    "autorite_de_publication": {
+      "atteste": false,
+      "reference_preuve": ""
+    },
+    "operateur_deploiement": {
+      "atteste": false,
+      "reference_preuve": ""
+    },
+    "responsable_recette": {
+      "atteste": false,
+      "reference_preuve": ""
+    }
+  }
 }
