@@ -75,7 +75,7 @@ def audit(html: str, js: str) -> list[str]:
         "projectsResult.error||accessResult.error||!rolesVerified?'—':availableProjects.length",
         "if(value==='—')node.setAttribute('aria-label','Information momentanément indisponible');",
         "else node.removeAttribute('aria-label');",
-        "isAvailable?\`<a class=",
+        "isAvailable?`<a class=",
         "const entitlementsVerified=!entitlementsResult.error;",
         "entitlementsVerified?entitlements.length:'—'",
         "if(!entitlementsVerified){",
