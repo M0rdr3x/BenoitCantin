@@ -1,0 +1,46 @@
+name: Projet Nova - Controle public postpublication
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/verify_nova_live_p50f.py'
+      - 'scripts/tests/test_verify_nova_live_p50f.py'
+      - '.github/workflows/nova-postpublication-p50f.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests-hors-ligne:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Onze essais unitaires sans acces au site
+        run: python -m unittest discover -s scripts/tests -p test_verify_nova_live_p50f.py -v
+
+  recette-http-manuelle:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: [tests-hors-ligne]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Verifier le site public en lecture seule
+        run: python scripts/verify_nova_live_p50f.py --json-output rapport-publication-nova-p50f.json
+      - name: Conserver le rapport de verification meme en cas d'ecart
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-publication-nova-p50f
+          path: rapport-publication-nova-p50f.json
+          if-no-files-found: warn
+          retention-days: 30
