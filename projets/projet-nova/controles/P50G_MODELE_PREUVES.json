@@ -1,0 +1,60 @@
+{
+  "schema_version": "P50G-1",
+  "description": "Modèle d'état non probant; justificatifs réels à conserver hors Git public",
+  "preuves": {
+    "revue_pr_636": {
+      "statut": "NON_FOURNI",
+      "reference": "",
+      "date_iso": "",
+      "role": ""
+    },
+    "revue_pr_638": {
+      "statut": "NON_FOURNI",
+      "reference": "",
+      "date_iso": "",
+      "role": ""
+    },
+    "revue_confidentialite": {
+      "statut": "NON_FOURNI",
+      "reference": "",
+      "date_iso": "",
+      "role": ""
+    },
+    "revue_juridique": {
+      "statut": "NON_FOURNI",
+      "reference": "",
+      "date_iso": "",
+      "role": ""
+    },
+    "revue_securite": {
+      "statut": "NON_FOURNI",
+      "reference": "",
+      "date_iso": "",
+      "role": ""
+    },
+    "mandat_publication": {
+      "statut": "NON_FOURNI",
+      "reference": "",
+      "date_iso": "",
+      "role": ""
+    },
+    "plan_retour_arriere": {
+      "statut": "NON_FOURNI",
+      "reference": "",
+      "date_iso": "",
+      "role": ""
+    },
+    "exercice_retour_arriere": {
+      "statut": "NON_FOURNI",
+      "reference": "",
+      "date_iso": "",
+      "role": ""
+    },
+    "decision_humaine": {
+      "statut": "NON_FOURNI",
+      "reference": "",
+      "date_iso": "",
+      "role": ""
+    }
+  }
+}
