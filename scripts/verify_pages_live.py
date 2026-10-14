@@ -272,10 +272,12 @@ def self_test() -> None:
     for asset in MIME_HINTS:
         def wrong_mime(url: str) -> Reply:
             if url == BASE + asset:
-                return Reply(200, content_type="text/html")
+                # MIME impossible pour une page HTML comme pour une image.
+                # Retourner text/html ici rendrait la fixture HTML valide.
+                return Reply(200, content_type="application/octet-stream")
             return fixture(url)
         assert any(asset in e and "MIME" in e for e in verify(BASE, wrong_mime)), (
-            f'Réponse HTML déguisée en ressource non détectée: {asset}'
+            f'Réponse de type interdit non détectée: {asset}'
         )
     def missing_mime(url: str) -> Reply:
         if url == BASE + "/assets/js/site.js":
