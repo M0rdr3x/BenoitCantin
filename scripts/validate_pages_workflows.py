@@ -41,8 +41,8 @@ def job_steps(workflow: str, name: str) -> list[tuple[str, str]]:
     ]
 
 
-def active_python_commands(step: str) -> set[str]:
-    """Ne compter que les lignes de shell actives, jamais echo ou commentaires.
+def active_audit_commands(step: str) -> set[str]:
+    """Ne compter que les commandes Python/Node actives, jamais echo ou commentaires.
 
     Une mention textuelle d'un audit dans une annotation YAML, un echo ou
     une commande commentée ne doit jamais satisfaire le garde.
@@ -54,7 +54,7 @@ def active_python_commands(step: str) -> set[str]:
         if not match:
             continue
         value = match.group(1).strip()
-        if value.startswith("python3 "):
+        if value.startswith(("python3 ", "node --test ")):
             results.add(value)
         elif value in {"|", "|-"}:
             for candidate in lines[i + 1:]:
@@ -62,7 +62,7 @@ def active_python_commands(step: str) -> set[str]:
                     break
                 if candidate.startswith("          "):
                     command = candidate[10:].strip()
-                    if command.startswith("python3 "):
+                    if command.startswith(("python3 ", "node --test ")):
                         results.add(command)
     return results
 
@@ -88,9 +88,9 @@ def executable_guards(workflow: str) -> list[str]:
                       if name.startswith("Attendre le reçu SHA/run réel")), "")
     integrity_step = next((body for name, body in verify
                            if name.startswith("Confirmer les octets CDN")), "")
-    build_commands = active_python_commands(build_step)
-    live_commands = active_python_commands(live_step)
-    integrity_commands = active_python_commands(integrity_step)
+    build_commands = active_audit_commands(build_step)
+    live_commands = active_audit_commands(live_step)
+    integrity_commands = active_audit_commands(integrity_step)
     required_build = (
         "python3 scripts/audit_pages_jekyll.py --source . --built _site",
         "python3 scripts/validate_sinjira_public_links.py --check",
@@ -128,7 +128,7 @@ def executable_guards(workflow: str) -> list[str]:
         match = [body for name, body in steps if name.startswith(prefix)]
         if (len(match) != 1 or
                 "python3 scripts/attest_pages_production.py --check"
-                not in active_python_commands(match[0])):
+                not in active_audit_commands(match[0])):
             issues.append("Attestation Pages non exécutable dans le job " + job_name)
     return issues
 
