@@ -142,3 +142,18 @@ peut correctement signaler la page elle-même. Le validateur catalogue
 contrôle indépendamment ces deux rôles et refuse une sélection ambiguë.
 Cela améliore le retour des lecteurs d'écran et la cohérence des chemins
 de navigation, sans modifier le contenu ou les droits des membres.
+
+
+## Complétude des aperçus sociaux et SEO des catalogues
+
+Les pages Romans, Jeux et Logiciels publient désormais chacune une URL canonique,
+les liens hreflang fr-CA et x-default, le même titre sous HTML/Open Graph/Twitter,
+une image sociale officielle avec texte alternatif, une description et un
+JSON-LD `CollectionPage` cohérent avec la route affichée.
+
+Le validateur `scripts/validate_sinjira_catalogues_metadata.py` rejette les
+métadonnées manquantes/dupliquées, les bannières substituées, les URL erronées
+et les schémas JSON-LD non alignés. Il s'exécute sur les PR DRAFT, dans la
+compilation Jekyll sans publication et avant un éventuel upload Pages contrôlé.
+Aucun changement de vente, de disponibilité logicielle, de droit privé ou de
+contenu des romans n'est associé à ce correctif.

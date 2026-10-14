@@ -9,6 +9,7 @@ on:
       - '_config.yml'
       - 'scripts/audit_pages_jekyll.py'
       - 'scripts/validate_sinjira_public_links.py'
+      - 'scripts/validate_sinjira_catalogues_metadata.py'
       - 'scripts/validate_boussole_home_visual.py'
       - 'assets/media/nova-boussole-electorale-v2.webp'
       - 'assets/media/nova-boussole-electorale.webp'
@@ -84,6 +85,7 @@ jobs:
           python3 scripts/audit_public_surface.py --source .
           python3 scripts/validate_sinjira_public_links.py --self-test
           python3 scripts/validate_sinjira_public_links.py --check
+          python3 scripts/validate_sinjira_catalogues_metadata.py --self-test
           python3 scripts/validate_boussole_home_visual.py --self-test
           python3 scripts/validate_pages_workflows.py --self-test
           python3 scripts/validate_pages_workflows.py

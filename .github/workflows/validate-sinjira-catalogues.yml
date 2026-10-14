@@ -11,6 +11,7 @@ on:
       - 'compte/bibliotheque.html'
       - 'sitemap.xml'
       - 'scripts/validate_sinjira_catalogues.py'
+      - 'scripts/validate_sinjira_catalogues_metadata.py'
       - 'scripts/validate_sinjira_public_links.py'
       - 'tests/e2e/test_sinjira_catalogues_visual.py'
       - 'scripts/pages_public_inventory.txt'
@@ -27,6 +28,7 @@ on:
       - 'compte/bibliotheque.html'
       - 'sitemap.xml'
       - 'scripts/validate_sinjira_catalogues.py'
+      - 'scripts/validate_sinjira_catalogues_metadata.py'
       - 'scripts/validate_sinjira_public_links.py'
       - 'tests/e2e/test_sinjira_catalogues_visual.py'
       - 'scripts/pages_public_inventory.txt'
@@ -65,6 +67,10 @@ jobs:
           python3 scripts/validate_sinjira_public_links.py --check
       - name: Vérifier les liens du site et les ressources statiques
         run: python3 scripts/validate_site.py
+      - name: Vérifier les liens canoniques, données structurées et aperçus sociaux
+        run: |
+          python3 scripts/validate_sinjira_catalogues_metadata.py --self-test
+          python3 scripts/validate_sinjira_catalogues_metadata.py
 
   visual-browser:
     name: Affiches réelles ${{ matrix.browser }} (PR sans secrets)
