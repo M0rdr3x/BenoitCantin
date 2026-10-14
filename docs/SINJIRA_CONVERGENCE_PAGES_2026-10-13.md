@@ -176,3 +176,21 @@ avant tout upload Pages**; le garde du workflow rejette un contrôle
 remplacé par une commande factice ou privé de `--built _site`.
 Cette preuve de prépublication ne remplace pas le contrôle HTTP/CDN
 sur le domaine réel après un PUBLISH explicitement approuvé.
+
+
+## Bibliothèque : vérité des achats et droits réellement vérifiés
+
+La bibliothèque ne prétend plus « aucun achat » avant le chargement du
+compte. Les quatre indicateurs commencent à « — » et le statut précise
+que les droits sont en cours de vérification. Le rôle propriétaire et les
+licences ne sont annoncés qu'en présence de réponses valides de l'API;
+une erreur ne devient jamais un faux « aucun droit ». En cas d'échec,
+les sections privées affichent leur indisponibilité sans inventer de
+licences ni exposer de PDF intégral. Le propriétaire reste distinct
+des licences explicites, et les signatures de documents restent émises
+par les fonctions serveur privées selon leurs contrôles d'autorisation.
+
+Le contrat `scripts/validate_sinjira_library_status.py` valide
+ces libellés et le comportement prudent prévu en cas d'erreur, sans
+jeton ni accès aux comptes. La CI des catalogues et l'audit Jekyll
+exécutent ses autotests négatifs avant publication.
