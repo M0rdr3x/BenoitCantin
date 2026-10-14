@@ -87,10 +87,40 @@ def audit(html: str, js: str) -> list[str]:
     return errors
 
 
+def audit_commerce(purchases: str, licenses: str) -> list[str]:
+    problems: list[str] = []
+    if "Aucun achat payant associé pour le moment" in purchases:
+        problems.append("Achats : fausse absence de paiement affirmée avant vérification")
+    if "Cette section ne consulte pas actuellement d'historique de paiements" not in purchases:
+        problems.append("Achats : limite du suivi des paiements non expliquée")
+    if 'href="/compte/bibliotheque.html"' not in purchases:
+        problems.append("Achats : lien vers les droits numériques vérifiés absent")
+    if "Licences SINJIRA™ — mode gratuit" in licenses:
+        problems.append("Licences : statut gratuit généralisé sans base")
+    if "codes et droits numériques du compte" not in licenses:
+        problems.append("Licences : distinction code et droits absente")
+    return problems
+
+
 def self_test() -> None:
     html = (ROOT / "compte/bibliotheque.html").read_text("utf-8")
     js = (ROOT / "assets/js/sinjira-library-v24-4-61.js").read_text("utf-8")
     assert not audit(html, js), audit(html, js)
+    purchases = (ROOT / "compte/mes-achats.html").read_text("utf-8")
+    licenses = (ROOT / "compte/licences.html").read_text("utf-8")
+    assert not audit_commerce(purchases, licenses), audit_commerce(purchases, licenses)
+    for broken in (
+        purchases.replace(
+            "Historique des paiements en ligne",
+            "Aucun achat payant associé pour le moment"
+        ),
+        purchases.replace('href="/compte/bibliotheque.html"',
+                          'href="/compte/page-inexistante.html"'),
+    ):
+        assert audit_commerce(broken, licenses), "Régression Achats acceptée"
+    assert audit_commerce(purchases, licenses.replace(
+        "codes et droits numériques du compte", "mode gratuit"
+    )), "Régression Licences acceptée"
     for broken in (
         html.replace("Vérification de vos accès et droits numériques en cours…",
                      "Aucun achat ou service payant n’est activé actuellement."),
@@ -119,6 +149,10 @@ def main() -> int:
     html = (ROOT / "compte/bibliotheque.html").read_text("utf-8")
     js = (ROOT / "assets/js/sinjira-library-v24-4-61.js").read_text("utf-8")
     errors = audit(html, js)
+    errors.extend(audit_commerce(
+        (ROOT / "compte/mes-achats.html").read_text("utf-8"),
+        (ROOT / "compte/licences.html").read_text("utf-8")
+    ))
     for error in errors:
         print("ERREUR : " + error)
     if errors:

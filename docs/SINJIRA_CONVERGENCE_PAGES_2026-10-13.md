@@ -194,3 +194,20 @@ Le contrat `scripts/validate_sinjira_library_status.py` valide
 ces libellés et le comportement prudent prévu en cas d'erreur, sans
 jeton ni accès aux comptes. La CI des catalogues et l'audit Jekyll
 exécutent ses autotests négatifs avant publication.
+
+
+## Historique des paiements vs droits réellement attribués
+
+La page `compte/mes-achats.html` ne déduit plus qu'un compte n'a
+**aucun achat payant** simplement parce que la boutique en ligne est
+encore désactivée. Elle distingue explicitement l'absence d'un
+historique transactionnel interrogé sur cette page des droits
+numériques réellement attribués, et propose un lien vers la
+bibliothèque du compte. La page Licences ne qualifie plus
+tous les comptes de « mode gratuit » lorsqu'un code physique
+ou une licence accordée pourrait exister.
+
+Les cas négatifs du contrat `validate_sinjira_library_status.py`
+couvrent ces deux pages et le workflow catalogue se redéclenche
+lorsqu'elles sont modifiées. Aucune logique de paiement
+n'est activée et aucune vente n'est déduite ou simulée.
