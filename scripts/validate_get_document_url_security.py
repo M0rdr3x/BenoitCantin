@@ -136,7 +136,7 @@ Deno.serve(async(req)=>{
 
         mutations = {
             'limite augmentée': safe.replace('MAX_REQUEST_BYTES=512;', 'MAX_REQUEST_BYTES=8192;'),
-            'type JSON retiré': safe.replace("if(!contentType.startsWith('application/json')) return {response:privateJson({},415)};", ''),
+            'type JSON retiré': safe.replace("if(contentType!=='application/json')return {response:privateJson({},415)};", ''),
             'req.json direct': safe.replace('const reader=req.body.getReader();', 'const body=await req.json();'),
             'req.text direct': safe.replace('const reader=req.body.getReader();', 'const body=await req.text();'),
             'contrôle de taille retiré': safe.replace('if(total>MAX_REQUEST_BYTES){', 'if(false){'),
