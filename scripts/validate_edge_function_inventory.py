@@ -26,7 +26,7 @@ CUSTOM_AUTH = {
     "get-document-url": (
         "optionalUser", "project_access_rank", "doc.status!=='approved'",
         "doc.projects?.status!=='active'", "createSignedUrl", "MAX_REQUEST_BYTES", "UUID_RE",
-        "externalUrlAllowed", "TextEncoder", "Cache-Control", "no-store", "Referrer-Policy",
+        "externalUrlAllowed", "req.body.getReader()", "reader.cancel()", "TextDecoder", "Cache-Control", "no-store", "Referrer-Policy",
     ),
     "send-game-report": (
         "optionalUser", "!user?.email", "to: [user.email]", "MAX_REQUEST_BYTES", "TextEncoder",
