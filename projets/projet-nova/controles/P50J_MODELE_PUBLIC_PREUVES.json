@@ -1,0 +1,116 @@
+{
+  "schema_version": "P50J-1.0",
+  "type": "MODELE_PUBLIC_VIDE",
+  "date_revision": "2026-10-14",
+  "identite_active": "Projet Nova",
+  "identite_future_conditionnelle": "Parti Nova",
+  "porteur_juridique_atteste": false,
+  "autorisation_electorale_attestee": false,
+  "eipd_ou_efvp_realisee_attestee": false,
+  "coffre_prive_deploye": false,
+  "formulaires_externes_actifs": false,
+  "collecte_de_signatures_active": false,
+  "collecte_de_contributions_active": false,
+  "publication_autorisee": false,
+  "pieces_recues": 0,
+  "pieces_verifiees": 0,
+  "identifiants_de_pieces_publiques": [],
+  "preuves": [
+    {
+      "code": "Q01",
+      "objet": "Porteur et forme juridique",
+      "statut": "NON_RECU",
+      "reference_privee": "",
+      "piece_presente": false,
+      "validite_attestee": false
+    },
+    {
+      "code": "Q02",
+      "objet": "Régime électoral applicable",
+      "statut": "NON_RECU",
+      "reference_privee": "",
+      "piece_presente": false,
+      "validite_attestee": false
+    },
+    {
+      "code": "Q03",
+      "objet": "Nom et éventuelle réservation",
+      "statut": "NON_RECU",
+      "reference_privee": "",
+      "piece_presente": false,
+      "validite_attestee": false
+    },
+    {
+      "code": "Q04",
+      "objet": "Mandats et désignations",
+      "statut": "NON_RECU",
+      "reference_privee": "",
+      "piece_presente": false,
+      "validite_attestee": false
+    },
+    {
+      "code": "Q05",
+      "objet": "Financement et dépenses",
+      "statut": "NON_RECU",
+      "reference_privee": "",
+      "piece_presente": false,
+      "validite_attestee": false
+    },
+    {
+      "code": "Q06",
+      "objet": "Renseignements personnels",
+      "statut": "NON_RECU",
+      "reference_privee": "",
+      "piece_presente": false,
+      "validite_attestee": false
+    },
+    {
+      "code": "Q07",
+      "objet": "Sous-traitants et transferts",
+      "statut": "NON_RECU",
+      "reference_privee": "",
+      "piece_presente": false,
+      "validite_attestee": false
+    },
+    {
+      "code": "Q08",
+      "objet": "Sécurité, conservation et incidents",
+      "statut": "NON_RECU",
+      "reference_privee": "",
+      "piece_presente": false,
+      "validite_attestee": false
+    },
+    {
+      "code": "Q09",
+      "objet": "Mandat d'autorisation de publication",
+      "statut": "NON_RECU",
+      "reference_privee": "",
+      "piece_presente": false,
+      "validite_attestee": false
+    }
+  ],
+  "verrous": [
+    "AUCUNE_DONNEE_PERSONNELLE_DANS_GIT",
+    "PR_640_NE_PAS_FUSIONNER",
+    "AUCUN_GO_AUTOMATIQUE",
+    "AUCUN_CANAL_DEPOT_REEL",
+    "AUCUNE_COLLECTE_POLITIQUE"
+  ],
+  "processus": {
+    "etats": [
+      "NON_RECU",
+      "RECU_ISOLE",
+      "EN_VERIFICATION",
+      "VERIFIE_HORS_DEPOT",
+      "REJETE",
+      "SUSPENDU",
+      "EXPIRE",
+      "REVOQUE"
+    ],
+    "attestations_reelles": "HORS_DEPOT",
+    "verification_double": "OBLIGATOIRE_AVANT_VALIDATION",
+    "revalidation_apres_expiration": "NOUVELLE_REFERENCE"
+  },
+  "decision": "NO_GO",
+  "observation": "Statut preparatoire. Les preuves Q01–Q09 n'ont pas ete transmises a ce jalon."
+}
