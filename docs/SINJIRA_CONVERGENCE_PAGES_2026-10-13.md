@@ -255,3 +255,23 @@ désormais toute autre chaîne.
 Il s'agit d'une mesure de présentation conservatrice; le contrôle
 RLS et la signature du document restent la frontière de sécurité
 réelle, à tester distinctement lors de la recette authentifiée.
+
+
+## Autorisations de signature des documents — contrat RPC propriétaire
+
+L'Edge Function privée `get-document-url` vérifie désormais explicitement
+`is_sinjira_owner` **et** `is_sinjira_admin` auprès de Supabase
+pour le membre authentifié. Le propriétaire confirmé reçoit le rang
+privilégié comme l'administrateur confirmé, sans devoir posséder une
+licence d'achat ou une attribution `project_access` fictive. Les autres
+membres restent soumis au calcul serveur `project_access_rank` et
+aux documents réellement approuvés; une erreur RPC de rang refuse
+la signature (503), jamais un droit implicite.
+
+Huit tests Node locaux exécutent **la fonction Edge elle-même** avec
+une base simulée sans accès réseau : propriétaire, administrateur,
+membre autorisé, membre refusé, RPC en échec, rôle propriétaire non
+confirmé, fichier non approuvé et requête anonyme. Ils attestent
+qu'aucun lien signé n'est créé pour un scénario refusé. Ces cas sont
+appelés depuis la CI PR et le dernier garde pré-upload Pages; ils
+ne remplacent pas une recette Supabase/RLS en environnement sécurisé.

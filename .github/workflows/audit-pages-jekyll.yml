@@ -12,6 +12,8 @@ on:
       - 'scripts/validate_sinjira_catalogues_metadata.py'
       - 'scripts/validate_sinjira_library_status.py'
       - 'tests/test_sinjira_library_access.cjs'
+      - 'tests/test_document_url_authorization.cjs'
+      - 'supabase/functions/get-document-url/index.ts'
       - 'assets/js/sinjira-library-v24-4-61.js'
       - 'assets/js/sinjira-library.js'
       - 'compte/bibliotheque.html'
@@ -93,6 +95,7 @@ jobs:
           python3 scripts/validate_sinjira_catalogues_metadata.py --self-test
           python3 scripts/validate_sinjira_library_status.py --self-test
           node --test tests/test_sinjira_library_access.cjs
+          node --test tests/test_document_url_authorization.cjs
           python3 scripts/validate_boussole_home_visual.py --self-test
           python3 scripts/validate_pages_workflows.py --self-test
           python3 scripts/validate_pages_workflows.py

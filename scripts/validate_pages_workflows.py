@@ -96,6 +96,7 @@ def executable_guards(workflow: str) -> list[str]:
         "python3 scripts/validate_sinjira_public_links.py --check",
         "python3 scripts/validate_sinjira_catalogues_metadata.py --built _site",
         "node --test tests/test_sinjira_library_access.cjs",
+        "node --test tests/test_document_url_authorization.cjs",
         "python3 scripts/validate_boussole_home_visual.py --built _site",
         "python3 scripts/audit_public_documents.py --source . --built _site",
         'python3 scripts/audit_public_json.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"',
@@ -369,6 +370,12 @@ def self_test(workflow: str) -> None:
         "Preuve de Boussole neutralisée": workflow.replace(
             "          python3 scripts/validate_boussole_home_visual.py --built _site",
             "          echo VISUEL_BOUSSOLE_NON_VERIFIE", 1,
+        ),
+        "Test de signature des documents neutralisé": workflow.replace(
+            "          node --test tests/test_sinjira_library_access.cjs\n"
+            "          node --test tests/test_document_url_authorization.cjs",
+            "          node --test tests/test_sinjira_library_access.cjs\n"
+            "          echo TEST_SIGNATURE_DOCUMENTS_NEUTRALISE", 1,
         ),
         "Tests droits bibliothèque neutralisés": workflow.replace(
             "          python3 scripts/validate_sinjira_catalogues_metadata.py --built _site\n"

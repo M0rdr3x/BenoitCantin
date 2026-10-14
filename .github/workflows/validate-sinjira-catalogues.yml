@@ -6,6 +6,8 @@ on:
       - 'assets/js/sinjira-library-v24-4-61.js'
       - 'assets/js/sinjira-library.js'
       - 'scripts/validate_sinjira_library_status.py'
+      - 'supabase/functions/get-document-url/index.ts'
+      - 'tests/test_document_url_authorization.cjs'
       - 'tests/test_sinjira_library_access.cjs'
       - 'projets/sinjira/index.html'
       - 'projets/sinjira/romans/**'
@@ -29,6 +31,8 @@ on:
       - 'assets/js/sinjira-library-v24-4-61.js'
       - 'assets/js/sinjira-library.js'
       - 'scripts/validate_sinjira_library_status.py'
+      - 'supabase/functions/get-document-url/index.ts'
+      - 'tests/test_document_url_authorization.cjs'
       - 'tests/test_sinjira_library_access.cjs'
       - 'projets/sinjira/index.html'
       - 'projets/sinjira/romans/**'
@@ -81,6 +85,8 @@ jobs:
         run: python3 scripts/validate_sinjira_library_status.py --self-test
       - name: Tester les rôles, les expirations et les liens de jeux sans compte réel
         run: node --test tests/test_sinjira_library_access.cjs
+      - name: Tester l'autorisation de signature documentaire sans secrets
+        run: node --test tests/test_document_url_authorization.cjs
       - name: Vérifier les liens du site et les ressources statiques
         run: python3 scripts/validate_site.py
       - name: Vérifier les liens canoniques, données structurées et aperçus sociaux

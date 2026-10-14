@@ -62,11 +62,17 @@ Deno.serve(async(req)=>{
 
     let userRank=0;
     if(user){
-      const {data:isAdmin}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
-      if(isAdmin)userRank=100;
+      // Le propriétaire SINJIRA et les administrateurs constituent deux
+      // rôles distincts. Ne jamais déduire le rôle propriétaire du courriel.
+      const [{data:isOwner,error:ownerError},{data:isAdmin,error:adminError}]=await Promise.all([
+        service.rpc('is_sinjira_owner',{p_user_id:user.id}),
+        service.rpc('is_sinjira_admin',{p_user_id:user.id})
+      ]);
+      if((!ownerError&&isOwner===true)||(!adminError&&isAdmin===true))userRank=100;
       else{
-        const {data:accessRank}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
-        userRank=Number(accessRank||0);
+        const {data:accessRank,error:rankError}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
+        if(rankError)return privateJson({ok:false,error:'Droits du compte temporairement indisponibles.'},503);
+        userRank=Number.isFinite(Number(accessRank))?Number(accessRank):0;
       }
     }else if(doc.projects?.visibility==='public')userRank=1;
 
