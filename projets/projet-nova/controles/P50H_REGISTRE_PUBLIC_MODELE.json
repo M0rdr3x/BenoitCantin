@@ -1,0 +1,198 @@
+{
+  "schema_version": "P50H-1",
+  "nature": "MODELE_PUBLIC_SANS_PREUVE_PRIVEE",
+  "date_observation": "2026-10-14",
+  "repository": "M0rdr3x/BenoitCantin",
+  "snapshot_source": {
+    "main": "9ed5f70cbe7022f25a679346a1288701f3b09067",
+    "pr_636": "6cd38faf1124a9bcbb2be1beaa12bcd14a85f9fb",
+    "pr_638": "e027b0ca130fe91b00e52d9e9fe2f1b301f4b47e",
+    "pr_640": "332afe7d9d73390feb41b0deb588692f3c73d48d",
+    "pr_645": "83db3e0f198bf448294d387da8f52c79222adfa3",
+    "pr_646": "2cc0347ec5cca78db821ba2a8bdc18616b42465b"
+  },
+  "horizon": {
+    "pre_deploiement": [
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "B05",
+      "B06",
+      "B07",
+      "B08",
+      "B09",
+      "B10",
+      "B11",
+      "B13"
+    ],
+    "post_deploiement": [
+      "B12",
+      "B14"
+    ]
+  },
+  "constat_github": {
+    "pr_636_revues": 0,
+    "pr_638_revues": 0,
+    "pr_646_revues": 0,
+    "source": "Consultation en lecture seule; à réactualiser avant décision"
+  },
+  "habitations": {
+    "reviseur_editorial": {
+      "atteste": false,
+      "reference_preuve": ""
+    },
+    "reviseur_technique_independant": {
+      "atteste": false,
+      "reference_preuve": ""
+    },
+    "responsable_confidentialite": {
+      "atteste": false,
+      "reference_preuve": ""
+    },
+    "conseil_juridique": {
+      "atteste": false,
+      "reference_preuve": ""
+    },
+    "autorite_de_publication": {
+      "atteste": false,
+      "reference_preuve": ""
+    },
+    "operateur_deploiement": {
+      "atteste": false,
+      "reference_preuve": ""
+    },
+    "responsable_recette": {
+      "atteste": false,
+      "reference_preuve": ""
+    }
+  },
+  "portes": [
+    {
+      "id": "B01",
+      "phase": "PRE",
+      "role_requis": "revision_editoriale",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B02",
+      "phase": "PRE",
+      "role_requis": "conseil_juridique",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B03",
+      "phase": "PRE",
+      "role_requis": "confidentialite",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B04",
+      "phase": "PRE",
+      "role_requis": "securite",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B05",
+      "phase": "PRE",
+      "role_requis": "confidentialite",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B06",
+      "phase": "PRE",
+      "role_requis": "revision_independante",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B07",
+      "phase": "PRE",
+      "role_requis": "revision_independante",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B08",
+      "phase": "PRE",
+      "role_requis": "mainteneur",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B09",
+      "phase": "PRE",
+      "role_requis": "autorite_de_decision",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B10",
+      "phase": "PRE",
+      "role_requis": "exploitation",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B11",
+      "phase": "PRE",
+      "role_requis": "autorite_de_decision",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B12",
+      "phase": "POST",
+      "role_requis": "recette_independante",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B13",
+      "phase": "PRE",
+      "role_requis": "exploitation",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    },
+    {
+      "id": "B14",
+      "phase": "POST",
+      "role_requis": "autorite_de_decision",
+      "statut": "NON_DOCUMENTE",
+      "reference_preuve": "",
+      "date_verification": ""
+    }
+  ],
+  "decision": {
+    "statut": "NO_GO",
+    "motif": "Revues, habilitations et preuves externes non documentées",
+    "mandat_signe_externe": false,
+    "publication_realisee": false
+  },
+  "garde_fous": [
+    "Projet Nova unique identite active",
+    "Ne pas fusionner PR 640",
+    "Ne pas activer de formulaire",
+    "Aucun versement ou adhesion politique non autorise",
+    "Ne pas publier de noms, signatures, courriels ni documents sensibles dans Git",
+    "La CI ne signe aucune decision humaine"
+  ]
+}
