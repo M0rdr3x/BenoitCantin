@@ -111,10 +111,36 @@ def audit_commerce(purchases: str, licenses: str) -> list[str]:
     return problems
 
 
+def audit_legacy(js: str) -> list[str]:
+    problems: list[str] = []
+    required = (
+        "verifiedProjectAccess(grants,now=Date.now())",
+        "['player','tester'].includes(g.access_level)",
+        "function projectIsOpen(project,access,isOwner=owner,isAdmin=admin)",
+        "const accessMap=verifiedProjectAccess(accessError?[]:access);",
+        "if(!allowed){",
+        "Documents sur autorisation. Aucun accès privé confirmé.",
+        "Playtests non accessibles sans droit confirmé.",
+        "s.rpc('is_sinjira_owner',{p_user_id:user.id})",
+        "s.rpc('is_sinjira_admin',{p_user_id:user.id})",
+        "owner=!ow.error&&ow.data===true;",
+        "admin=!ad.error&&ad.data===true;",
+        "const playPath=allowed?internalProjectPath(p.play_path):'';",
+    )
+    for marker in required:
+        if marker not in js:
+            problems.append("Détail projet historique : garde absent " + marker[:55])
+    if "owner=isSinjiraOwner(user)" in js:
+        problems.append("Ancienne déduction propriétaire depuis e-mail interdite")
+    return problems
+
+
 def self_test() -> None:
     html = (ROOT / "compte/bibliotheque.html").read_text("utf-8")
     js = (ROOT / "assets/js/sinjira-library-v24-4-61.js").read_text("utf-8")
     assert not audit(html, js), audit(html, js)
+    legacy = (ROOT / "assets/js/sinjira-library.js").read_text("utf-8")
+    assert not audit_legacy(legacy), audit_legacy(legacy)
     purchases = (ROOT / "compte/mes-achats.html").read_text("utf-8")
     licenses = (ROOT / "compte/licences.html").read_text("utf-8")
     assert not audit_commerce(purchases, licenses), audit_commerce(purchases, licenses)
@@ -139,6 +165,11 @@ def self_test() -> None:
     ):
         assert audit(broken, js), "Texte ou raccourci trompeur accepté"
     for broken in (
+        legacy.replace("owner=!ow.error&&ow.data===true;", "owner=true;"),
+        legacy.replace("if(!allowed){", "if(false){"),
+    ):
+        assert audit_legacy(broken), "Contournement droits du détail de projet accepté"
+    for broken in (
         js.replace("const entitlementsVerified=!entitlementsResult.error;",
                    "const entitlementsVerified=true;"),
         js.replace("const isOwner=!ownerResult.error&&ownerResult.data===true;",
@@ -158,6 +189,7 @@ def main() -> int:
     html = (ROOT / "compte/bibliotheque.html").read_text("utf-8")
     js = (ROOT / "assets/js/sinjira-library-v24-4-61.js").read_text("utf-8")
     errors = audit(html, js)
+    errors.extend(audit_legacy((ROOT / "assets/js/sinjira-library.js").read_text("utf-8")))
     errors.extend(audit_commerce(
         (ROOT / "compte/mes-achats.html").read_text("utf-8"),
         (ROOT / "compte/licences.html").read_text("utf-8")

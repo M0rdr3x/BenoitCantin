@@ -96,3 +96,134 @@ test('compteur accessible: le libellé chargement disparaît après API',()=>{
   api.setCount('[data-library-entitlement-count]','—');
   assert.equal(attributes.get('aria-label'),'Information momentanément indisponible');
 });
+
+
+// Vérifier également la page historique /compte/projet.html. Elle est
+// chargée par un module différent de la bibliothèque v24.4.61.
+const legacySource=fs.readFileSync(
+  path.join(__dirname,'../assets/js/sinjira-library.js'),'utf8'
+);
+assert.match(legacySource,/rpc\('is_sinjira_owner'/);
+assert.match(legacySource,/rpc\('is_sinjira_admin'/);
+assert.doesNotMatch(legacySource,/isSinjiraOwner\(user\)/);
+const autoInit=legacySource.lastIndexOf('\n(async()=>{');
+assert.ok(autoInit>0,'Bootstrap legacy introuvable');
+const legacyCode=legacySource.slice(0,autoInit)
+  .replace(/^import[^\n]*\n/,'');
+function legacyHarness(grants=[],roles={},extra={}){
+  const docNodes=new Map();
+  const getNode=(selector)=>{
+    if(!docNodes.has(selector))docNodes.set(selector,{
+      innerHTML:'',textContent:'',src:'',alt:'',
+      querySelectorAll(){return [];}
+    });
+    return docNodes.get(selector);
+  };
+  const counters={documents:0,playtests:0};
+  const project={
+    id:'priv',slug:'test-prive',name:'Projet privé',
+    status:'active',visibility:'restricted',
+    description:'Aperçu du projet',
+    public_path:'/projets/sinjira/jeux/',
+    play_path:'/projets/sinjira/jeux/test/',
+    allow_tester_requests:true
+  };
+  const response={data:project,error:null};
+  const s={
+    from(table){
+      if(table==='projects')return {
+        select(){return {eq(){return {maybeSingle:async()=>response}}}}
+      };
+      if(table==='project_access')return {
+        select(){return {eq(){return Promise.resolve({
+          data:grants,error:extra.accessError||null
+        })}}}
+      };
+      if(table==='documents'){
+        counters.documents++;
+        return {select(){return {eq(){return {eq(){return {order:async()=>({data:[],error:null})}}}}}}};
+      }
+      if(table==='playtests'){
+        counters.playtests++;
+        return {select(){return {eq(){return {in(){return {order:async()=>({data:[],error:null})}}}}}}};
+      }
+      throw Error('Unexpected query '+table);
+    }
+  };
+  const fakeDocument={
+    body:{dataset:{libraryPage:'project'}},
+    querySelector:getNode,
+    querySelectorAll(){return []}
+  };
+  const env={
+    document:fakeDocument,
+    location:{search:'?slug=test-prive',href:''},
+    getSupabase:()=>s,
+    requireUser:async()=>({id:'mock-user'}),
+    escapeHtml:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),
+    projectStatusLabel:v=>v,
+    roleLabel:v=>v,
+    setStatus:()=>{},
+    URLSearchParams,Date,console,
+    prompt:()=>null,
+    window:{open(){}}
+  };
+  vm.runInNewContext(legacyCode+
+    '\nglobalThis.legacyAPI={verifiedProjectAccess,projectIsOpen,internalProjectPath,project};'+
+    '\nglobalThis.legacySet=(r)=>{user={id:"mock-user"};owner=!!r.owner;admin=!!r.admin};',
+    env,{filename:'sinjira-library.js'});
+  env.legacySet(roles);
+  return {api:env.legacyAPI,project,counters,node:getNode};
+}
+
+test('legacy: seuls player et tester non expirés débloquent un projet',()=>{
+  const ctx=legacyHarness();
+  const clock=Date.parse('2026-10-14T12:00:00Z');
+  for(const level of ['revoked','admin','owner','']){
+    const map=ctx.api.verifiedProjectAccess([{project_id:'priv',access_level:level}],clock);
+    assert.equal(ctx.api.projectIsOpen(ctx.project,map,false,false),false,level);
+  }
+  for(const expires_at of ['invalid','2026-10-14T11:59:59Z']){
+    const map=ctx.api.verifiedProjectAccess([{project_id:'priv',access_level:'tester',expires_at}],clock);
+    assert.equal(ctx.api.projectIsOpen(ctx.project,map,false,false),false);
+  }
+  const map=ctx.api.verifiedProjectAccess([{project_id:'priv',access_level:'player',expires_at:null}],clock);
+  assert.equal(ctx.api.projectIsOpen(ctx.project,map,false,false),true);
+  assert.equal(ctx.api.projectIsOpen(ctx.project,new Map(),true,false),true);
+  assert.equal(ctx.api.projectIsOpen(ctx.project,new Map(),false,true),true);
+});
+
+test('legacy: sans droit, page projet ne demande ni documents ni playtests privés',async()=>{
+  const ctx=legacyHarness();
+  await ctx.api.project();
+  assert.equal(ctx.counters.documents,0);
+  assert.equal(ctx.counters.playtests,0);
+  assert.match(ctx.node('[data-project-role]').textContent,/Accès restreint/);
+  assert.doesNotMatch(ctx.node('[data-project-actions]').innerHTML,/>Jouer</);
+  assert.match(ctx.node('[data-project-documents]').innerHTML,/autorisation/);
+  assert.match(ctx.node('[data-project-playtests]').innerHTML,/sans droit confirmé/);
+});
+
+test('legacy: droit valide ou rôle confirmé rend la page accessible',async()=>{
+  for(const [grants,roles] of [
+    [[{project_id:'priv',access_level:'player',expires_at:null}],{}],
+    [[],{owner:true}],
+    [[],{admin:true}]
+  ]){
+    const ctx=legacyHarness(grants,roles);
+    await ctx.api.project();
+    assert.equal(ctx.counters.documents,1);
+    assert.equal(ctx.counters.playtests,1);
+    assert.match(ctx.node('[data-project-actions]').innerHTML,/>Jouer</);
+  }
+});
+
+test('legacy: API droits indisponible et chemins externes ne donnent aucun accès',async()=>{
+  const ctx=legacyHarness([],{},{accessError:{message:'backend unavailable'}});
+  await ctx.api.project();
+  assert.equal(ctx.counters.documents,0);
+  assert.doesNotMatch(ctx.node('[data-project-actions]').innerHTML,/>Jouer</);
+  for(const bad of ['//evil.test','https://evil.test/','javascript:alert(1)','/\\evil.test']){
+    assert.equal(ctx.api.internalProjectPath(bad),'',bad);
+  }
+});

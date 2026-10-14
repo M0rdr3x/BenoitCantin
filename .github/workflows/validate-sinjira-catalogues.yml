@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/sinjira-library.js'
       - 'scripts/validate_sinjira_library_status.py'
       - 'tests/test_sinjira_library_access.cjs'
       - 'projets/sinjira/index.html'
@@ -26,6 +27,7 @@ on:
     branches: [main]
     paths:
       - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/sinjira-library.js'
       - 'scripts/validate_sinjira_library_status.py'
       - 'tests/test_sinjira_library_access.cjs'
       - 'projets/sinjira/index.html'
