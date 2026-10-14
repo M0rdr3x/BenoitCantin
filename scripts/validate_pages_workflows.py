@@ -371,7 +371,9 @@ def self_test(workflow: str) -> None:
             "          echo VISUEL_BOUSSOLE_NON_VERIFIE", 1,
         ),
         "Tests droits bibliothèque neutralisés": workflow.replace(
+            "          python3 scripts/validate_sinjira_catalogues_metadata.py --built _site\n"
             "          node --test tests/test_sinjira_library_access.cjs",
+            "          python3 scripts/validate_sinjira_catalogues_metadata.py --built _site\n"
             "          echo TEST_ACCES_NON_EXECUTE", 1,
         ),
         "Contrôle SEO des catalogues neutralisé": workflow.replace(
