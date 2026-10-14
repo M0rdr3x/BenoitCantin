@@ -1,14 +1,14 @@
-# Statuts et gouvernance du Parti Nova
+# Projet Nova — projet de statuts du futur Parti Nova
 
-> Statut public : projet de statuts, non adopté.
-> Objet : organisation interne candidate du Parti Nova.
-> Dernière consolidation publique : 26 août 2026.
+> Statut public : document de travail du Projet Nova, non adopté et non autorisant.
+> Objet : organisation candidate pour un éventuel Parti Nova, sans entité ou fonctions officiellement constituées.
+> Révision documentaire proposée : 13 octobre 2026 (texte initial consolidé le 26 août 2026; non adopté).
 
 Ces statuts ne deviennent obligatoires qu’après une adoption formelle par l’instance fondatrice compétente et une vérification finale de conformité au droit électoral applicable.
 
 ## PRÉAMBULE
 
-Le Parti Nova est une organisation politique projetée. Il sollicite des mandats démocratiques et n’exerce aucune souveraineté propre.
+Projet Nova prépare une organisation politique qui pourrait ultérieurement porter le nom « Parti Nova », sous réserve des formalités et autorisations nécessaires. Le futur parti viserait à solliciter des mandats démocratiques et ne détiendrait aucune souveraineté propre. Les règles ci-dessous sont des propositions qui ne créent aujourd'hui ni adhésion officielle, ni fonction, ni pouvoir de signature.
 
 Son fonctionnement doit être démocratique, traçable, financièrement contrôlé et respectueux des droits des membres.
 
