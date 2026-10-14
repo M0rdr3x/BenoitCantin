@@ -5,6 +5,7 @@ on:
     paths:
       - 'assets/js/sinjira-library-v24-4-61.js'
       - 'scripts/validate_sinjira_library_status.py'
+      - 'tests/test_sinjira_library_access.cjs'
       - 'projets/sinjira/index.html'
       - 'projets/sinjira/romans/**'
       - 'projets/sinjira/jeux/**'
@@ -26,6 +27,7 @@ on:
     paths:
       - 'assets/js/sinjira-library-v24-4-61.js'
       - 'scripts/validate_sinjira_library_status.py'
+      - 'tests/test_sinjira_library_access.cjs'
       - 'projets/sinjira/index.html'
       - 'projets/sinjira/romans/**'
       - 'projets/sinjira/jeux/**'
@@ -75,6 +77,8 @@ jobs:
           python3 scripts/validate_sinjira_public_links.py --check
       - name: Vérifier que la bibliothèque ne présume pas des achats
         run: python3 scripts/validate_sinjira_library_status.py --self-test
+      - name: Tester les rôles, les expirations et les liens de jeux sans compte réel
+        run: node --test tests/test_sinjira_library_access.cjs
       - name: Vérifier les liens du site et les ressources statiques
         run: python3 scripts/validate_site.py
       - name: Vérifier les liens canoniques, données structurées et aperçus sociaux

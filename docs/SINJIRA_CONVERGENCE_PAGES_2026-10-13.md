@@ -211,3 +211,28 @@ Les cas négatifs du contrat `validate_sinjira_library_status.py`
 couvrent ces deux pages et le workflow catalogue se redéclenche
 lorsqu'elles sont modifiées. Aucune logique de paiement
 n'est activée et aucune vente n'est déduite ou simulée.
+
+
+## Bibliothèque : séparation des projets visibles et des accès autorisés
+
+Le contrat utilisateur distingue les aperçus des projets restreints et
+les espaces ouvrables depuis la bibliothèque. Un compte sans droit
+explicite ne voit plus les boutons « Ouvrir l'espace » et « Jouer » sur
+un projet `restricted`, même si la fiche du projet est présente à titre
+informatif. Les accès périmés ou mal datés sont traités comme absents;
+les espaces publics ou inclus avec un compte restent accessibles, de
+même que les espaces du propriétaire ou administrateur confirmés par
+RPC. Les URL de lancement de jeux issues du catalogue doivent être
+des chemins internes. Le compteur « Espaces accessibles » mesure
+uniquement les cartes effectivement ouvrables et cesse d'annoncer
+un nombre si la vérification des rôles ou des accès a échoué.
+
+Les compteurs retirent leur étiquette accessible « en cours » une fois
+la réponse validée, et distinguent un service momentanément
+indisponible d'une vraie valeur numérique. Un test Node isolé,
+sans compte réel ni service distant, exerce les états membre,
+propriétaire, droits expirés, liens malveillants et accessibilité du
+compteur. Il fait partie des validations PR et du workflow Pages
+contrôlé. Ces restrictions de boutons sont une **présentation
+prudente**, pas une autorisation côté client : les règles RLS et les
+fonctions privées conservent la décision finale.

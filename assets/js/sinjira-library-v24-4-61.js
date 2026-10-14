@@ -13,7 +13,35 @@ function cover(project){
 
 function setCount(selector,value){
   const node=document.querySelector(selector);
-  if(node)node.textContent=String(value);
+  if(!node)return;
+  node.textContent=String(value);
+  if(value==='—')node.setAttribute('aria-label','Information momentanément indisponible');
+  else node.removeAttribute('aria-label');
+}
+
+// Un accès expiré, mal daté ou absent n'ouvre jamais un projet restreint.
+// Cette distinction guide seulement l'interface : chaque action sensible
+// reste validée indépendamment par les règles du serveur Supabase.
+function activeProjectAccess(accessRows,now=Date.now()){
+  const verified=rows(accessRows).filter(row=>{
+    if(!row?.project_id||!row.access_level)return false;
+    if(!row.expires_at)return true;
+    const deadline=Date.parse(row.expires_at);
+    return Number.isFinite(deadline)&&deadline>now;
+  });
+  return new Map(verified.map(row=>[row.project_id,row]));
+}
+
+function canOpenProject(project,activeAccess,isOwner,isAdmin){
+  if(isOwner||isAdmin)return true;
+  if(project?.visibility==='public'||project?.visibility==='account')return true;
+  return Boolean(activeAccess.get(project?.id)?.access_level);
+}
+
+function safeProjectPlayPath(value){
+  const path=String(value||'').trim();
+  return path.startsWith('/')&&!path.startsWith('//')&&!path.includes('\\')
+    && !/[\u0000-\u001f\u007f]/.test(path) ? path : '';
 }
 
 function accessLabel(project,access,isOwner,isAdmin){
@@ -28,25 +56,25 @@ function accessLabel(project,access,isOwner,isAdmin){
 function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmin){
   const box=document.querySelector('[data-project-library]');
   if(!box)return;
-  const access=new Map(accessRows.map(row=>[row.project_id,row]));
   const pending=new Map(pendingRows.map(row=>[row.project_id,row]));
-  const now=Date.now();
-  const activeAccess=new Map([...access.entries()].filter(([,row])=>!row.expires_at||new Date(row.expires_at).getTime()>now));
+  const activeAccess=activeProjectAccess(accessRows);
 
   box.innerHTML=projects.map(project=>{
     const right=activeAccess.get(project.id);
-    const docCount=documents.filter(document=>document.project_id===project.id).length;
+    const isAvailable=canOpenProject(project,activeAccess,isOwner,isAdmin);
+    const docCount=isAvailable?documents.filter(document=>document.project_id===project.id).length:0;
+    const playPath=isAvailable?safeProjectPlayPath(project.play_path):'';
     const waiting=pending.has(project.id);
     const tester=isOwner||isAdmin||right?.access_level==='tester';
     const canRequest=!isOwner&&!isAdmin&&!tester&&project.allow_tester_requests;
     return `<article class="library-project-card">
       <div class="library-project-art"><img src="${escapeHtml(cover(project))}" alt=""></div>
       <div class="library-project-body">
-        <div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(project.status))}</span><span class="role-chip">${escapeHtml(accessLabel(project,right,isOwner,isAdmin))}</span></div>
+        <div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(project.status))}</span><span class="role-chip">${escapeHtml(isAvailable?accessLabel(project,right,isOwner,isAdmin):'Accès restreint · non attribué')}</span></div>
         <h2>${escapeHtml(project.name)}</h2>
         <p>${escapeHtml(project.description||'')}</p>
-        <div class="library-project-stats"><span>${docCount} document${docCount===1?'':'s'} accessible${docCount===1?'':'s'}</span><span>${escapeHtml(project.visibility==='restricted'?'Accès restreint':project.visibility==='account'?'Compte requis':'Page publique')}</span></div>
-        <div class="hero-actions"><a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(project.slug)}">Ouvrir l’espace</a>${project.play_path?`<a class="btn btn-secondary" href="${escapeHtml(project.play_path)}">Jouer</a>`:''}${canRequest?`<button class="btn btn-secondary" type="button" data-v2461-request-tester="${project.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div>
+        <div class="library-project-stats"><span>${isAvailable?`${docCount} document${docCount===1?'':'s'} accessible${docCount===1?'':'s'}`:'Documents sur autorisation'}</span><span>${escapeHtml(project.visibility==='restricted'?'Accès restreint':project.visibility==='account'?'Compte requis':'Page publique')}</span></div>
+        <div class="hero-actions">${isAvailable?`<a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(project.slug)}">Ouvrir l’espace</a>`:'<span class="role-chip">Autorisation nécessaire pour ouvrir le projet</span>'}${playPath?`<a class="btn btn-secondary" href="${escapeHtml(playPath)}">Jouer</a>`:''}${canRequest?`<button class="btn btn-secondary" type="button" data-v2461-request-tester="${project.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div>
       </div>
     </article>`;
   }).join('')||'<div class="notice"><strong>Aucun espace disponible pour ce compte.</strong></div>';
@@ -145,7 +173,10 @@ async function init(){
 
   const rolesVerified=!ownerResult.error&&!adminResult.error;
   const entitlementsVerified=!entitlementsResult.error;
-  setCount('[data-library-project-count]',projectsResult.error?'—':projects.length);
+  const activeAccess=activeProjectAccess(accessRows);
+  const availableProjects=projects.filter(project=>canOpenProject(project,activeAccess,isOwner,isAdmin));
+  setCount('[data-library-project-count]',
+    projectsResult.error||accessResult.error||!rolesVerified?'—':availableProjects.length);
   setCount('[data-library-read-count]',readsResult.error?'—':libraryRows.length);
   setCount('[data-library-entitlement-count]',entitlementsVerified?entitlements.length:'—');
   setCount('[data-library-request-count]',pendingResult.error?'—':pendingRows.length);

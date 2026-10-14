@@ -11,6 +11,7 @@ on:
       - 'scripts/validate_sinjira_public_links.py'
       - 'scripts/validate_sinjira_catalogues_metadata.py'
       - 'scripts/validate_sinjira_library_status.py'
+      - 'tests/test_sinjira_library_access.cjs'
       - 'assets/js/sinjira-library-v24-4-61.js'
       - 'compte/bibliotheque.html'
       - 'scripts/validate_boussole_home_visual.py'
@@ -90,6 +91,7 @@ jobs:
           python3 scripts/validate_sinjira_public_links.py --check
           python3 scripts/validate_sinjira_catalogues_metadata.py --self-test
           python3 scripts/validate_sinjira_library_status.py --self-test
+          node --test tests/test_sinjira_library_access.cjs
           python3 scripts/validate_boussole_home_visual.py --self-test
           python3 scripts/validate_pages_workflows.py --self-test
           python3 scripts/validate_pages_workflows.py
