@@ -220,5 +220,5 @@ jobs:
           python-version: '3.12.14'
       - name: Attendre le reçu SHA/run réel puis vérifier les routes et refus techniques
         run: python3 scripts/verify_pages_live.py --check --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID" --await-release
-      - name: Confirmer les octets CDN des 19 ressources critiques dans le budget borné
+      - name: Confirmer les octets CDN des 22 ressources critiques dans le budget borné
         run: python3 scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"

@@ -184,7 +184,7 @@ d'utilisateurs ou de participants ne doit jamais être versé dans le dépôt
 public ni servi par un hébergeur statique. Des tests négatifs détectent la
 disparition, la transformation et l'inclusion d'un fichier non approuvé.
 
-## 10. Contrat intégral de la surface publique (619 chemins)
+## 10. Contrat intégral de la surface publique (622 chemins)
 
 La photographie prise sur le `main` du 10 octobre 2026, après application
 des exclusions Jekyll explicites, compte **618 fichiers publiables** :
@@ -321,13 +321,16 @@ toutes les ressources servies par un cache CDN. Le job `verify-live`
 exécute donc `scripts/verify_pages_integrity.py --check --expected-sha "$GITHUB_SHA"`
 **après** l'attestation du reçu et des routes.
 
-Ce contrôle couvre **19 ressources critiques** dans quatre familles :
+Ce contrôle couvre **22 ressources critiques** dans quatre familles :
 
-- Infrastructures : `sw.js`, `manifest.webmanifest`,
+- Infrastructures : `index.html` (accueil réellement publié),
+  `sw.js`, `manifest.webmanifest`,
   `assets/css/site.css`, `assets/js/site.js`.
 - Projet Nova : les deux JSON de la Boussole électorale,
-  `assets/media/nova-logo.webp` et
-  `assets/media/nova-boussole-electorale.webp` (pictogramme de l'accueil).
+  `assets/media/nova-logo.webp`, l'icône compacte de l'accueil
+  `assets/media/nova-boussole-electorale.webp`, l'illustration
+  haute résolution `assets/media/nova-boussole-electorale-v2.webp`
+  et la page `projets/projet-nova/boussole-electorale.html`.
 - SINJIRA : démo PDF du Livre I, trois bannières WebP, les pages
   `projets/sinjira/index.html`, `romans/index.html`,
   `jeux/index.html`, `logiciels/index.html`, la feuille de style
@@ -342,7 +345,7 @@ la preuve exige HTTP 200 sans redirection, MIME conforme, absence de
 compression imprévue, réponse limitée à 4 Mio et SHA-256 identique.
 
 Au plus quatre GET par chemin sont tentés, avec trois intervalles de
-huit secondes en cas de propagation tardive du CDN. Les **19 chemins
+huit secondes en cas de propagation tardive du CDN. Les **22 chemins
 partagent un budget monotone unique de sept minutes** : si le budget
 expire, la vérification échoue explicitement, sans assimiler les
 ressources restantes à des succès. Le job complet `verify-live` dispose
@@ -354,7 +357,7 @@ chacune des pages SINJIRA obsolètes, un sitemap ou CSS ancien, des
 redirections, des réponses trompeuses et la divergence entre worktree
 et commit. Aucun de ces tests n'émet de requête d'écriture.
 
-Cette preuve porte sur les **19 ressources énumérées seulement**.
+Cette preuve porte sur les **22 ressources énumérées seulement**.
 L'exactitude des autres routes, les réponses dynamiques des comptes
 et le cache réel sur appareil exigent toujours la revue fonctionnelle
 et les tests de permissions. Le passage Pages vers GitHub Actions
@@ -499,3 +502,19 @@ et juste avant le déploiement. Aucun lancement de l'outil de publication,
 aucune fusion et aucun changement de paramètre n'est fait par ce
 diagnostic. Un workflow de diagnostic ajouté sur une branche ne
 constitue pas une preuve de publication réelle.
+
+
+## Contrôle de cohérence entre accueil et page Boussole
+
+Depuis la correction visuelle #642, l'accueil et la page de la Boussole
+utilisent **deux fichiers distincts** : un WebP compact pour le portail,
+et la version originale 360 × 360 pour l'outil civique. Le contrôle CDN
+après PUBLISH vérifie désormais **22 ressources** au SHA exact approuvé,
+incluant `index.html`, la page `boussole-electorale.html`, ainsi que
+les deux WebP. Un résultat CDN portant sur l'icône seule ne suffit pas
+à certifier la fraîcheur du parcours complet.
+
+Les autotests simulent une ancienne version de chaque ressource
+ajoutée et exigent le rejet avant conclusion. La fenêtre globale de
+sept minutes est conservée, avec réponse explicite `budget épuisé`
+si tous les fichiers n'ont pas été réellement contrôlés.

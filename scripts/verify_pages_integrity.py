@@ -3,7 +3,7 @@
 
 Exécution après le reçu SHA/run (verify_pages_live.py). Le reçu peut être à
 jour alors qu'un CDN conserve des fichiers statiques périmés. Ce contrôle
-compare 19 ressources réelles au checkout exact du commit approuvé.
+compare 22 ressources réelles au checkout exact du commit approuvé.
 Aucun PUT/POST, aucune donnée privée, aucun fichier de session.
 """
 from __future__ import annotations
@@ -25,7 +25,7 @@ SHA_PATTERN = re.compile(r"[0-9a-f]{40}\Z")
 MAX_BYTES = 4 * 1024 * 1024
 MAX_ATTEMPTS = 4
 PAUSE_SECONDS = 8
-MAX_AUDIT_SECONDS = 420  # 7 minutes pour les 19 ressources, fail-closed.
+MAX_AUDIT_SECONDS = 420  # 7 minutes pour les 22 ressources, fail-closed.
 # Source repository-relative path -> MIME acceptable on the real domain.
 CRITICAL_RESOURCES = {
     "sw.js": ("application/javascript", "text/javascript", "application/x-javascript"),
@@ -40,9 +40,12 @@ CRITICAL_RESOURCES = {
         ("application/pdf",),
     "assets/media/nova-logo.webp": ("image/webp",),
     "assets/media/nova-boussole-electorale.webp": ("image/webp",),
+    "assets/media/nova-boussole-electorale-v2.webp": ("image/webp",),
     "assets/media/sinjira-romans-banniere-2026.webp": ("image/webp",),
     "assets/media/sinjira-jeux-banniere-2026.webp": ("image/webp",),
     "assets/media/sinjira-logiciels-banniere-2026.webp": ("image/webp",),
+    "index.html": ("text/html",),
+    "projets/projet-nova/boussole-electorale.html": ("text/html",),
     "projets/sinjira/logiciels/index.html": ("text/html",),
     "projets/sinjira/index.html": ("text/html",),
     "projets/sinjira/romans/index.html": ("text/html",),
@@ -260,6 +263,10 @@ def self_test() -> None:
         # Même avec un reçu SHA/run actuel, une page, un style ou un sitemap
         # issu d'un ancien commit ne doit jamais être certifié conforme.
         for protected in (
+            "index.html",
+            "projets/projet-nova/boussole-electorale.html",
+            "assets/media/nova-boussole-electorale-v2.webp",
+            "assets/media/nova-boussole-electorale.webp",
             "projets/sinjira/index.html",
             "projets/sinjira/romans/index.html",
             "projets/sinjira/jeux/index.html",
@@ -382,7 +389,7 @@ def main() -> int:
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--self-test", action="store_true")
     mode.add_argument("--check", action="store_true",
-                      help="19 ressources HTTPS avec budget global de 7 minutes, après reçu SHA/run")
+                      help="22 ressources HTTPS avec budget global de 7 minutes, après reçu SHA/run")
     parser.add_argument("--expected-sha")
     args = parser.parse_args()
     if args.self_test:

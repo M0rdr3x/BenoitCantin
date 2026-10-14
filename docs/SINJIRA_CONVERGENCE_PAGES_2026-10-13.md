@@ -20,7 +20,7 @@ reçu dynamique SHA/run porte le total à **650**.
 
 Le garde de sécurité impose désormais la présence des quatre ressources.
 Les audits de navigation couvrent les trois portails et leurs images,
-et les tests CDN comparent **19 ressources critiques** aux blobs Git du
+et les tests CDN comparent **22 ressources critiques** aux blobs Git du
 SHA de publication. Cette preuve couvre désormais aussi l'accueil SINJIRA,
 les pages Romans et Jeux, la feuille de style, la bibliothèque et le
 sitemap. Des autotests refusent explicitement les anciennes versions
@@ -59,7 +59,7 @@ continuer à signaler le risque et ne doit pas être neutralisé.
 ## Budget global de preuve après PUBLISH
 
 Le contrôle de propagation HTTPS a été borné pour la nouvelle liste de
-19 ressources critiques. Il ne peut pas multiplier indéfiniment quatre
+22 ressources critiques. Il ne peut pas multiplier indéfiniment quatre
 tentatives par fichier : les vérifications CDN partagent un budget de
 **420 secondes**. Une réponse tardive après la limite est refusée,
 tout comme un fichier non vérifié en fin de budget. L'étape GitHub
@@ -107,5 +107,15 @@ et celui de l'image originale 360 × 360 sur Projet Nova.
 
 Le contrôle HTTP post-PUBLISH vérifie MIME/présence de l'alias ;
 l'intégrité CDN compare ses octets au commit exact Git approuvé.
-Le total est porté à 19 ressources critiques. L'issue #450 reste
+Le total est porté à 22 ressources critiques. L'issue #450 reste
 bloquante pour la publication de l'ensemble de la PR #639.
+
+
+## Preuve CDN de l'ensemble du parcours Boussole
+
+L'attestation CDN couvre désormais **22 ressources**, dont la racine
+`index.html`, la page Boussole de Projet Nova, le WebP compact
+de l'accueil et le WebP original v2 du héros Nova. Tests négatifs
+sur contenu ancien pour chacun de ces fichiers. Les changements
+préservent l'intervalle monotone global de 420 secondes et
+n'impliquent aucune publication réelle.
