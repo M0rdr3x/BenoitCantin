@@ -1,0 +1,109 @@
+name: Projet Nova P50P - tests reels du correctif 655 (sans deploiement)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p50p.yml"
+      - "projets/projet-nova/controles/P50P_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validation-figee-et-source-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Lire la revue P50P en lecture seule
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Lire la PR636 originale a son SHA immuable
+        uses: actions/checkout@v4
+        with:
+          ref: 6cd38faf1124a9bcbb2be1beaa12bcd14a85f9fb
+          path: original_pr636
+          sparse-checkout: |
+            scripts/validate_nova_publication_p50b.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Lire le correctif PR655 a son SHA immuable
+        uses: actions/checkout@v4
+        with:
+          ref: 8541f761be8dbabda0c3f024f8969562ab816bc7
+          path: candidate_pr655
+          sparse-checkout: |
+            scripts/validate_nova_publication_p50b.py
+            scripts/tests/test_validate_nova_publication_p50b.py
+            projets/projet-nova/participer.html
+            projets/projet-nova/avis-legal.html
+            projets/projet-nova/recrutement.html
+            projets/projet-nova/confidentialite.html
+            projets/projet-nova/contact.html
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Lire le diagnostic P50O a son SHA immuable
+        uses: actions/checkout@v4
+        with:
+          ref: baf7674b5b81ceb5dd074bcf4c1dd732c1ea15ad
+          path: diagnostic_p50o
+          sparse-checkout: |
+            scripts/diagnostic_nova_pr636_p50o.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Configurer Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compiler et executer les 26 tests sur le vrai code PR655
+        run: |
+          python -m py_compile candidate_pr655/scripts/validate_nova_publication_p50b.py
+          python -m unittest discover -s candidate_pr655/scripts/tests -p 'test_validate_nova_publication_p50b.py' -v
+
+      - name: Rejouer le validateur corrige sur les cinq pages candidates
+        run: |
+          python candidate_pr655/scripts/validate_nova_publication_p50b.py
+
+      - name: Diagnostic originel - huit angles morts attendus
+        run: |
+          python diagnostic_p50o/scripts/diagnostic_nova_pr636_p50o.py --candidate original_pr636/scripts/validate_nova_publication_p50b.py --report resultat_original.json
+
+      - name: Diagnostic corrige - aucune des onze sondes manquee
+        run: |
+          python diagnostic_p50o/scripts/diagnostic_nova_pr636_p50o.py --candidate candidate_pr655/scripts/validate_nova_publication_p50b.py --report resultat_corrige.json
+
+      - name: Porte strictement technique - aucune autorisation
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          before = json.loads(Path("resultat_original.json").read_text("utf-8"))
+          after = json.loads(Path("resultat_corrige.json").read_text("utf-8"))
+          assert before["audit"] == after["audit"] == "DIAGNOSTIC_TERMINE"
+          assert before["angles_morts_reproduits"] == 8
+          assert after["angles_morts_reproduits"] == 0
+          assert before["decision"] == after["decision"] == "NO_GO_AUTOMATIQUE"
+
+          known = {
+              "participer.html":"ef037f1ef6257c676573a80afae060b4e965bb25",
+              "avis-legal.html":"602dc790de1416a3bc3806f6a0d328a489925752",
+              "recrutement.html":"c2d1ad33fbf1938cd5680c7dcefe5ef11cc86c3c",
+              "confidentialite.html":"92ecc95c6d2ee0348f1cd0ec4b8ed4e98b08c17d",
+              "contact.html":"4f85cc33bc7d7e33ab26a4d4f8e64b9bd78857d7",
+          }
+          root=Path("candidate_pr655/projets/projet-nova")
+          for name, expected in known.items():
+              data=(root/name).read_bytes()
+              sha=hashlib.sha1(b"blob "+str(len(data)).encode()+b"\x00"+data).hexdigest()
+              assert sha==expected, f"Git blob changed: {name}"
+          print("P50P: 26 tests du code corrige executes; cinq pages controlees; 8 -> 0 angles morts sur 11 sondes.")
+          print("P50P: NO_GO — aucun examen legal, deploiement, revue humaine ou verification de messagerie.")
+          PY
