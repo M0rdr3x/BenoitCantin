@@ -359,3 +359,21 @@ déployé ni l'intégrité CDN. Le verrou de publication Pages Actions
 et les contrôles post-déploiement demeurent inchangés.
 
 **Preuve réelle du 15 octobre 2026 UTC :** [prévol GitHub #38664343729](https://github.com/M0rdr3x/BenoitCantin/actions/runs/38664343729) a terminé les tests du nouveau diagnostic et a relevé **9 réponses GET 200 et 5 GET 404**, identiques aux statuts HEAD. Source Pages toujours `legacy`. Aucun corps technique n'a été lu par le script; aucun secret n'a été vérifié. [Issue #450](https://github.com/M0rdr3x/BenoitCantin/issues/450) demeure ouverte et bloque toute publication.
+
+
+## Garde de promotion sur les PR hors brouillon
+
+Un rapport GitHub Actions peut être « réussi » tout en affichant
+`build_type=legacy`, car il atteste seulement la fin du diagnostic.
+Pour éliminer cette ambiguïté au moment de la revue, le workflow
+`pages-cutover-preflight.yml` ajoute une **porte bloquante** quand une
+PR est déclarée prête : Source GitHub Actions, domaine CNAME et HTTPS
+sont exigés via l'API GitHub. Un retour incomplet ou une erreur de
+permissions bloque également la porte. Les PR en brouillon continuent
+d'obtenir un rapport sans risque de déploiement.
+
+Cette porte vérifie la configuration **seulement**; elle ne remplace
+pas la vérification du dernier SHA, les GET 404/410, le reçu SHA/run
+ni la comparaison des hachages CDN. Pour devenir une garantie contre
+une fusion non autorisée, le job doit être marqué **required** dans
+les règles de protection `main` par le propriétaire du dépôt.

@@ -90,6 +90,17 @@ def self_test() -> None:
     assert check(denied)[0] == "INCONNU"
     assert check(lambda: ready)[0] == "SOURCE_CONFORME"
     assert "ne déploie rien" in markdown("BLOQUÉ", ("Simulation",))
+    # Une erreur de configuration/API interdit la promotion, même si
+    # le diagnostic d'une PR brouillon reste informatif.
+    def release_allowed(value: str) -> bool:
+        return value == "SOURCE_CONFORME"
+    assert release_allowed(verdict(ready)[0])
+    for payload in ({"build_type": "legacy", "cname": DOMAIN,
+                     "https_enforced": True}, {},
+                    {"build_type": "workflow", "cname": DOMAIN,
+                     "https_enforced": False}):
+        assert not release_allowed(verdict(payload)[0])
+    assert not release_allowed(check(denied)[0])
     assert "SOURCE_CONFORME ne signifie" in markdown(
         "SOURCE_CONFORME", ("Simulation",)
     )
@@ -101,6 +112,8 @@ def main() -> int:
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--self-test", action="store_true")
     mode.add_argument("--report", action="store_true")
+    mode.add_argument("--require-source", action="store_true",
+                      help="Bloquer la promotion d'une PR si Pages n'est pas sur GitHub Actions")
     args = parser.parse_args()
     if args.self_test:
         self_test()
@@ -116,12 +129,19 @@ def main() -> int:
     if summary:
         with Path(summary).open("a", encoding="utf-8") as stream:
             stream.write(report)
+    if args.require_source:
+        if status != "SOURCE_CONFORME":
+            print("::error title=Promotion GitHub Pages interdite::"
+                  + (status + ": " + "; ".join(details))[:340])
+            return 2
+        print("Garde de promotion : Source GitHub Actions, CNAME et HTTPS confirmés.")
+        print("Ce PASS n'atteste pas le GET privé, le reçu SHA/run ni les octets du CDN.")
+        return 0
     if status != "SOURCE_CONFORME":
-        # Une PR ne peut pas réparer le réglage administratif par des commits.
-        # Avertissement visible; PUBLISH reste bloqué par attest_pages_production.
+        # Le rapport courant reste informatif; seule la promotion exige une conformité.
         print("::warning title=GitHub Pages non prêt::"
               + ("; ".join(details))[:300])
-    # Exit 0 prouve seulement que la vérification s'est terminée.
+    # Exit 0 en mode rapport prouve seulement que la vérification est terminée.
     return 0
 
 

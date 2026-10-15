@@ -49,3 +49,32 @@ jobs:
         run: python3 scripts/report_pages_live_get_status.py --self-test
       - name: Observer uniquement les codes GET, sans lecture des corps techniques
         run: python3 scripts/report_pages_live_get_status.py --report
+
+  pages-source-promotion-gate:
+    name: Garde de promotion — Source Pages conforme exigée
+    # Brouillon = construction et diagnostics; prêt pour revue = blocage
+    # dur si Source/CNAME/HTTPS ne sont pas attestés par l'API Pages.
+    if: >-
+      github.repository == 'M0rdr3x/BenoitCantin' &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - name: Checkout sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Vérifier le contrat du diagnostic administratif
+        run: python3 scripts/report_pages_cutover_status.py --self-test
+      - name: Interdire la promotion avant Source GitHub Actions
+        env:
+          GH_PAGES_READ_TOKEN: ${{ github.token }}
+        run: python3 scripts/report_pages_cutover_status.py --require-source
