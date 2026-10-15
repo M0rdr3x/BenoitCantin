@@ -70,6 +70,7 @@ function fixture(options={}){
   };
   const stripped=source.replace(/^import[^\n]*\n/gm,'')
     .replace('function json(data:unknown,status=200)','function json(data,status=200)')
+    .replace('async function readBoundedJson(req:Request)','async function readBoundedJson(req)')
     .replace('const chunks:Uint8Array[]=[];','const chunks=[];');
   let handler;
   const environment={
