@@ -94,7 +94,8 @@ Deno.serve(async(req)=>{
       product_slug:PRODUCT_SLUG
     });
   }catch(error){
-    const message=error instanceof Error?error.message:'';
+    const message=error!==null&&typeof error==='object'&&'message' in error
+      &&typeof error.message==='string'?error.message:'';
     if(message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.'},401);
     if(message==='PRIVATE_STORAGE_NOT_CONFIGURED'){
       console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_STORAGE_NOT_CONFIGURED'});
