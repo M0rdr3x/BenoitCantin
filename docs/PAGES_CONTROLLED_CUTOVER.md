@@ -47,9 +47,11 @@ informatif sur les PR en brouillon, mais active un second job
 `pages-source-promotion-gate` lorsqu'une PR est marquée prête pour revue.
 Cette porte exige `build_type=workflow`, le CNAME officiel et HTTPS
 activé; API inaccessible ou mode `legacy` entraînent une erreur
-bloquante du job. **Cette porte ne peut pas empêcher à elle seule
-une fusion si les vérifications obligatoires de branche ne sont pas
-configurées.** L'administrateur doit inclure ce job dans les règles
+bloquante du job. La CI de diagnostic s'exécute sur **toutes les PR** (aucun filtre
+`paths`) afin que son résultat ne reste pas indéfiniment en attente
+lorsqu'il devient obligatoire. **Cette porte ne peut pas empêcher à
+elle seule une fusion si les vérifications obligatoires de branche
+ne sont pas configurées.** L'administrateur doit inclure ce job dans les règles
 de protection de `main` et conserver l'approbation manuelle de PUBLISH.
 
 ## 2. Portes préalables (aucune fusion / publication tant qu'elles ne sont pas vertes)

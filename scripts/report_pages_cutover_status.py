@@ -71,6 +71,11 @@ def markdown(status: str, details: tuple[str, ...]) -> str:
     return "\n".join(text)
 
 
+def promotion_exit_code(status: str) -> int:
+    """Le diagnostic est informatif; la promotion échoue fermé."""
+    return 0 if status == "SOURCE_CONFORME" else 2
+
+
 def self_test() -> None:
     ready = {"build_type": "workflow", "cname": DOMAIN,
              "https_enforced": True}
@@ -92,15 +97,13 @@ def self_test() -> None:
     assert "ne déploie rien" in markdown("BLOQUÉ", ("Simulation",))
     # Une erreur de configuration/API interdit la promotion, même si
     # le diagnostic d'une PR brouillon reste informatif.
-    def release_allowed(value: str) -> bool:
-        return value == "SOURCE_CONFORME"
-    assert release_allowed(verdict(ready)[0])
+    assert promotion_exit_code(verdict(ready)[0]) == 0
     for payload in ({"build_type": "legacy", "cname": DOMAIN,
                      "https_enforced": True}, {},
                     {"build_type": "workflow", "cname": DOMAIN,
                      "https_enforced": False}):
-        assert not release_allowed(verdict(payload)[0])
-    assert not release_allowed(check(denied)[0])
+        assert promotion_exit_code(verdict(payload)[0]) == 2
+    assert promotion_exit_code(check(denied)[0]) == 2
     assert "SOURCE_CONFORME ne signifie" in markdown(
         "SOURCE_CONFORME", ("Simulation",)
     )
@@ -130,10 +133,11 @@ def main() -> int:
         with Path(summary).open("a", encoding="utf-8") as stream:
             stream.write(report)
     if args.require_source:
-        if status != "SOURCE_CONFORME":
+        code = promotion_exit_code(status)
+        if code:
             print("::error title=Promotion GitHub Pages interdite::"
                   + (status + ": " + "; ".join(details))[:340])
-            return 2
+            return code
         print("Garde de promotion : Source GitHub Actions, CNAME et HTTPS confirmés.")
         print("Ce PASS n'atteste pas le GET privé, le reçu SHA/run ni les octets du CDN.")
         return 0

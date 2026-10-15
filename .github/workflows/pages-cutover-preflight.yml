@@ -4,16 +4,8 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - '.github/workflows/pages-cutover-preflight.yml'
-      - '.github/workflows/deploy-pages-controlled.yml'
-      - 'scripts/report_pages_cutover_status.py'
-      - 'scripts/report_pages_live_exposure.py'
-      - 'scripts/report_pages_live_get_status.py'
-      - 'scripts/validate_publication_live_boundary.py'
-      - 'scripts/verify_pages_live.py'
-      - 'scripts/attest_pages_production.py'
-      - 'docs/PAGES_CONTROLLED_CUTOVER.md'
+    # SANS paths: un check exigé par la protection de main doit s'exécuter
+    # sur toutes les PR, y compris les modifications hors Pages.
   workflow_dispatch:
 
 permissions:
