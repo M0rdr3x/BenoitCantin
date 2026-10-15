@@ -1,4 +1,4 @@
-name: Projet Nova P50O - contre-exemples candidat PR636
+name: Projet Nova P50O - preuve des lacunes et validation du correctif
 on:
   pull_request:
     paths:
@@ -12,15 +12,15 @@ permissions:
   contents: read
 
 jobs:
-  revue-technique-non-approbative:
+  contre-preuve-sans-fusion:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 8
     steps:
       - name: Lire le dossier P50O
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Lire exclusivement le validateur PR636, au SHA figé
+      - name: Lire exclusivement le validateur ORIGINAL PR636 au SHA figé
         uses: actions/checkout@v4
         with:
           ref: 6cd38faf1124a9bcbb2be1beaa12bcd14a85f9fb
@@ -29,18 +29,33 @@ jobs:
             scripts/validate_nova_publication_p50b.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
+      - name: Lire exclusivement le correctif PR655 au SHA figé
+        uses: actions/checkout@v4
+        with:
+          ref: 8541f761be8dbabda0c3f024f8969562ab816bc7
+          path: correction_pr655
+          sparse-checkout: |
+            scripts/validate_nova_publication_p50b.py
+            scripts/tests/test_validate_nova_publication_p50b.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - name: Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Tester le diagnostiqueur sur des données fictives
+      - name: Tester le diagnostiqueur P50O
         run: |
           python -m py_compile scripts/diagnostic_nova_pr636_p50o.py
           python -m unittest discover -s scripts/tests -p 'test_diagnostic_nova_pr636_p50o.py' -v
-      - name: Démontrer les contre-exemples sur le candidat figé
+      - name: Verifier les 26 tests du correctif PR655
         run: |
-          python scripts/diagnostic_nova_pr636_p50o.py --candidate candidate_pr636/scripts/validate_nova_publication_p50b.py --report diagnostic_p50o.json
-          python -c "import json; r=json.load(open('diagnostic_p50o.json',encoding='utf8')); assert r['candidate_commit']=='6cd38faf1124a9bcbb2be1beaa12bcd14a85f9fb'; assert r['decision']=='NO_GO_AUTOMATIQUE'; print('Contre-exemples detectes:', r['angles_morts_reproduits']); print('ATTENTION: controle de diagnostic seul, aucune PR approuvee.')"
-      - name: Annoter les limites du candidat sans faire echouer l'instrument de mesure
+          python -m py_compile correction_pr655/scripts/validate_nova_publication_p50b.py
+          python -m unittest discover -s correction_pr655/scripts/tests -p 'test_validate_nova_publication_p50b.py' -v
+      - name: Comparer les onze sondes, original contre correctif
         run: |
-          python -c "import json; r=json.load(open('diagnostic_p50o.json',encoding='utf8')); print('::warning::P50O: '+str(r['angles_morts_reproduits'])+' angles morts de detection dans PR636; leurs correctifs sont requis avant approbation humaine.') if r['angles_morts_reproduits'] else print('Les 11 probes sont detectees. Revue humaine toujours requise.')"
+          python scripts/diagnostic_nova_pr636_p50o.py --candidate candidate_pr636/scripts/validate_nova_publication_p50b.py --report diagnostic_original.json
+          python scripts/diagnostic_nova_pr636_p50o.py --candidate correction_pr655/scripts/validate_nova_publication_p50b.py --report diagnostic_corrige.json
+          python -c "import json; a=json.load(open('diagnostic_original.json')); b=json.load(open('diagnostic_corrige.json')); assert a['angles_morts_reproduits']==8; assert b['angles_morts_reproduits']==0; assert a['decision']==b['decision']=='NO_GO_AUTOMATIQUE'; print('ORIGINAL : 8 angles morts; CORRECTIF : 0 sur les 11 sondes. Aucun GO automatique.')"
+      - name: Avis permanent : correction technique != approbation
+        run: |
+          echo "::warning::P50O: 8 lacunes detectees dans PR636 originale; 0 sur 11 sondes apres correctif PR655. La revue humaine reste requise; PR640 ne doit pas etre fusionnee."
