@@ -18,6 +18,8 @@ function fixture(options={}){
   const state={signed:0,entitlementLookups:0,productLookups:0,queries:[],roles:[],errors:[]};
   const service={
     from(table){
+      if(table==='sinjira_novels'&&options.throwUnexpected)
+        throw new Error('sensitive SQL detail');
       const filters=[];
       const chain={
         select(){return chain;},
@@ -195,9 +197,30 @@ test('mauvais Content-Type : refus 415 sans requête privée',async()=>{
   }
 });
 
-test('erreur serveur inattendue : code fixe, sans journaliser les secrets',async()=>{
-  const x=await invoke({novelError:{message:'sensitive SQL detail'}});
-  // L'erreur applicative de lookup est volontairement regroupée en 404.
-  assert.equal(x.status,404);assert.equal(x.state.signed,0);
-  assert.doesNotMatch(JSON.stringify(x.state.errors),/sensitive/);
+test('erreur inattendue : HTTP 500 et journal à code fixe sans détail privé',async()=>{
+  const x=await invoke({throwUnexpected:true});
+  assert.equal(x.status,500);assert.equal(x.state.signed,0);
+  assert.equal(x.state.errors.length,1);
+  assert.equal(x.state.errors[0][0],'[get-novel-file-url]');
+  assert.equal(x.state.errors[0][1].code,'NOVEL_FILE_URL_FAILED');
+  assert.doesNotMatch(JSON.stringify(x.state.errors),/sensitive SQL detail/);
+});
+
+test('Content-Length excessif : HTTP 413 avant accès aux données',async()=>{
+  const f=fixture(),request=new Request('https://functions.local/functions/v1/get-novel-file-url',{
+    method:'POST',headers:{Authorization:'Bearer member',
+      'Content-Type':'application/json','Content-Length':'3000'},
+    body:JSON.stringify({slug:SLUG})
+  });
+  const response=await f.handler(request);
+  assert.equal(response.status,413);
+  assert.equal(f.state.queries.length,0);
+  assert.equal(f.state.signed,0);
+});
+
+test('Content-Type JSON avec charset légitime : autorisation normale',async()=>{
+  const x=await invoke({entitlement:true},
+    {mime:'application/json; charset=utf-8'});
+  assert.equal(x.status,200);
+  assert.equal(x.state.signed,1);
 });
