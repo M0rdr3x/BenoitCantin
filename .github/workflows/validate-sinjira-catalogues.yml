@@ -8,6 +8,8 @@ on:
       - 'scripts/validate_sinjira_library_status.py'
       - 'supabase/functions/get-document-url/index.ts'
       - 'tests/test_document_url_authorization.cjs'
+      - 'tests/test_novel_file_authorization.cjs'
+      - 'supabase/functions/get-novel-file-url/index.ts'
       - 'tests/test_sinjira_library_access.cjs'
       - 'projets/sinjira/index.html'
       - 'projets/sinjira/romans/**'
@@ -33,6 +35,8 @@ on:
       - 'scripts/validate_sinjira_library_status.py'
       - 'supabase/functions/get-document-url/index.ts'
       - 'tests/test_document_url_authorization.cjs'
+      - 'tests/test_novel_file_authorization.cjs'
+      - 'supabase/functions/get-novel-file-url/index.ts'
       - 'tests/test_sinjira_library_access.cjs'
       - 'projets/sinjira/index.html'
       - 'projets/sinjira/romans/**'
@@ -87,6 +91,8 @@ jobs:
         run: node --test tests/test_sinjira_library_access.cjs
       - name: Tester l'autorisation de signature documentaire sans secrets
         run: node --test tests/test_document_url_authorization.cjs
+      - name: Tester les droits de lecture intégrale des romans sans secrets
+        run: node --test tests/test_novel_file_authorization.cjs
       - name: Vérifier les liens du site et les ressources statiques
         run: python3 scripts/validate_site.py
       - name: Vérifier les liens canoniques, données structurées et aperçus sociaux

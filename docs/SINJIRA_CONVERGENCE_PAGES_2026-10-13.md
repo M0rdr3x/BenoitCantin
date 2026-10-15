@@ -289,3 +289,28 @@ teste les mutations négatives. Quatre essais supplémentaires exécutent
 la fonction Edge simulée avec dépassement de taille sans longueur
 déclarée, longueur explicitement excessive, JSON ou UTF-8 invalide et
 MIME incorrect. Aucun accès réseau ou secret n'est nécessaire.
+
+
+## Contrôle serveur du téléchargement intégral des romans — 14 octobre 2026
+
+Le téléchargement `get-novel-file-url` utilise maintenant une validation
+stricte du type de requête `application/json`, du plafond de corps HTTP à
+2 048 octets et de l'UTF-8. Le slug doit être une chaîne valide, sans
+chemin ni coercition implicite d'objet.
+
+Le rôle créateur et le rôle administrateur sont chacun confirmés
+par réponse RPC `true` sans erreur. Si aucun rôle privilégié n'est
+confirmé, le serveur vérifie l'attribution `user_entitlements` et
+l'état actif du produit : une erreur de l'API de droits renvoie HTTP
+503 et jamais un faux « pas d'achat » (403). Une licence explicitement
+vérifiée reste valable même si la vérification du rôle privilégié
+est temporairement indisponible. Les exceptions inattendues sont
+journalisées sous un code fixe sans reproduire de détails privés.
+
+`tests/test_novel_file_authorization.cjs` exerce la véritable fonction
+Edge sans clés ni base réelle : propriétaire, administrateur, achat,
+refus, panne RPC/licence, statut inédit, fichier non prêt, anonyme,
+requête excessive, MIME et encodage malformés. La CI SINJIRA,
+la compilation Jekyll isolée et le garde final pré-upload Pages
+refusent les régressions. Cette fonction corrigée reste dans la
+PR non fusionnée, sans déploiement Supabase.
