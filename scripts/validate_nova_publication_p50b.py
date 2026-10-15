@@ -1,62 +1,187 @@
 #!/usr/bin/env python3
-"""Contrôle statique des pages de participation Projet Nova.
+"""Contrôle statique des cinq pages de participation du Projet Nova.
 
-Ce contrôle ne vérifie ni les pratiques réelles de traitement, ni les droits
-électoraux, ni l'absence de copies anciennes hors des pages désignées.
+Bloque les formulaires, iframes, liens vers des services connus de collecte et
+paiement et les déclarations éditoriales obsolètes. Le scanner HTML n'exécute
+pas le JavaScript, n'inventorie pas le serveur et ne certifie pas la production.
 """
+from __future__ import annotations
+from html.parser import HTMLParser
 from pathlib import Path
 import re
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1] / "projets" / "projet-nova"
-PAGES = ("participer.html", "avis-legal.html", "recrutement.html", "confidentialite.html", "contact.html")
+PAGES = (
+    "participer.html", "avis-legal.html", "recrutement.html",
+    "confidentialite.html", "contact.html"
+)
+PUBLIC_EMAIL = "officiellenovaparti@gmail.com"
 OLD_CLAIMS = (
     "qui contient le formulaire intégré de soutien et de préadhésion",
     "Soutenir Projet Nova et accéder au formulaire de recrutement.",
     "Les formulaires servent uniquement à communiquer avec le Projet Nova",
 )
+URL_PATTERN = re.compile(r"https?://[^\s\"'<>)}\]]+", re.I)
+SKIP_TEXT_TAGS = {"script", "style", "template"}
+
+
+def _domain_is(host: str, suffix: str) -> bool:
+    return host == suffix or host.endswith("." + suffix)
+
+
+def suspicious_destination(value: str) -> str | None:
+    """Règle ciblée pour les fournisseurs explicitement bloqués à ce stade.
+
+    Aucun tableau de noms de fournisseurs ne peut garantir la détection de
+    toutes les intégrations possibles. Il faut aussi revue de code et recette.
+    """
+    if not isinstance(value, str):
+        return None
+    candidates = [value]
+    candidates.extend(URL_PATTERN.findall(value))
+    for candidate in candidates:
+        try:
+            url = urlsplit(candidate.strip().strip(";,"))
+        except ValueError:
+            continue
+        if url.scheme not in ("http", "https"):
+            continue
+        host = (url.hostname or "").casefold().rstrip(".")
+        path = (url.path or "").casefold()
+        if (host == "forms.gle" or
+            (host == "docs.google.com" and path.startswith("/forms")) or
+            _domain_is(host, "formspree.io") or
+            _domain_is(host, "formsubmit.co") or
+            _domain_is(host, "typeform.com") or
+            _domain_is(host, "jotform.com")):
+            return "fournisseur de formulaire externe"
+        if (host in ("checkout.stripe.com", "buy.stripe.com", "paypal.me") or
+            (_domain_is(host, "paypal.com") and path.startswith("/donate"))):
+            return "service de paiement ou de don"
+    return None
+
+
+class SiteHTML(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.forms = 0
+        self.iframes = 0
+        self.links: set[str] = set()
+        self.mailto_valid = False
+        self.external: list[str] = []
+        self.visible: list[str] = []
+        self.ignore: list[str] = []
+
+    def handle_starttag(self, tag, attributes):
+        attrs = dict(attributes)
+        if tag in SKIP_TEXT_TAGS:
+            self.ignore.append(tag)
+        if tag == "form":
+            self.forms += 1
+        if tag == "iframe":
+            # No iframe is needed on the five participation/privacy pages.
+            self.iframes += 1
+        for key, value in attrs.items():
+            if not isinstance(value, str):
+                continue
+            reason = suspicious_destination(value)
+            if reason:
+                self.external.append(reason)
+        if tag == "a":
+            href = attrs.get("href", "")
+            if isinstance(href, str):
+                self.links.add(href)
+                if href.lower().startswith("mailto:"):
+                    try:
+                        address = urlsplit(href).path
+                    except ValueError:
+                        address = ""
+                    if address.casefold() == PUBLIC_EMAIL:
+                        self.mailto_valid = True
+
+    def handle_startendtag(self, tag, attributes):
+        self.handle_starttag(tag, attributes)
+        if tag in SKIP_TEXT_TAGS:
+            self.handle_endtag(tag)
+
+    def handle_endtag(self, tag):
+        if tag in SKIP_TEXT_TAGS and tag in self.ignore:
+            self.ignore.remove(tag)
+
+    def handle_data(self, data):
+        # Search script strings separately even though they are not visible.
+        if "script" in self.ignore:
+            reason = suspicious_destination(data)
+            if reason:
+                self.external.append(reason)
+        elif not self.ignore:
+            self.visible.append(data)
 
 
 def validate(site_root: Path) -> list[str]:
     problems = []
-    texts = {}
+    pages: dict[str, tuple[str, SiteHTML]] = {}
     for name in PAGES:
         path = site_root / name
         if not path.is_file():
             problems.append(f"Page absente : {name}")
             continue
-        text = path.read_text("utf-8")
-        texts[name] = text
-        if re.search(r"<form\b", text, flags=re.IGNORECASE):
-            problems.append(f"{name} : élément form actif à vérifier")
-        if "formspree.io/f/" in text.lower() or "formsubmit.co/" in text.lower():
-            problems.append(f"{name} : URL de collecte externe détectée")
-        for phrase in OLD_CLAIMS:
-            if phrase in text:
-                problems.append(f"{name} : ancienne déclaration de formulaire actif")
+        try:
+            content = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            problems.append(f"{name} : source illisible ou non UTF-8")
+            continue
+        page = SiteHTML()
+        page.feed(content)
+        page.close()
+        pages[name] = (content, page)
+        if page.forms:
+            problems.append(f"{name} : élément form interdit")
+        if page.iframes:
+            problems.append(f"{name} : iframe interdit dans le périmètre")
+        if page.external:
+            problems.append(f"{name} : destination externe de collecte ou paiement ({', '.join(sorted(set(page.external)))})")
+        if any(phrase.casefold() in content.casefold() for phrase in OLD_CLAIMS):
+            problems.append(f"{name} : ancienne déclaration de formulaire actif")
 
-    if "participer.html" in texts:
-        text = texts["participer.html"]
-        for phrase in ("contact volontaire", "formulaires externes", "suspendus", 'href="recrutement.html"', 'href="confidentialite.html"'):
-            if phrase not in text:
-                problems.append(f"participer.html : mention manquante — {phrase}")
-        if "visionneuse.html?doc=formulaire-soutien" in text:
+    if "participer.html" in pages:
+        content, page = pages["participer.html"]
+        visible = " ".join(page.visible).casefold()
+        for phrase in ("contact volontaire", "formulaires externes", "suspendus"):
+            if phrase not in visible:
+                problems.append(f"participer.html : mention visible manquante — {phrase}")
+        for href in ("recrutement.html", "confidentialite.html"):
+            if href not in page.links:
+                problems.append(f"participer.html : lien actif manquant vers {href}")
+        if "visionneuse.html?doc=formulaire-soutien" in content:
             problems.append("participer.html : ancien lien de soutien encore actif")
 
-    if "avis-legal.html" in texts and "n’exploite actuellement pas de formulaire externe" not in texts["avis-legal.html"]:
-        problems.append("avis-legal.html : suspension du formulaire non décrite")
+    if "avis-legal.html" in pages:
+        _, page = pages["avis-legal.html"]
+        visible = " ".join(page.visible).casefold()
+        if "n’exploite actuellement pas de formulaire externe" not in visible:
+            problems.append("avis-legal.html : suspension du formulaire non décrite de manière visible")
 
-    if "recrutement.html" in texts:
-        text = texts["recrutement.html"]
-        if "Aucun paiement" not in text:
+    if "recrutement.html" in pages:
+        _, page = pages["recrutement.html"]
+        visible = " ".join(page.visible).casefold()
+        if "aucun paiement" not in visible:
             problems.append("recrutement.html : interdiction de paiement non indiquée")
-        if "contact volontaire direct" not in text:
+        if "contact volontaire direct" not in visible:
             problems.append("recrutement.html : contact volontaire non confirmé")
 
-    if "confidentialite.html" in texts and "formulaires publics externes" not in texts["confidentialite.html"]:
-        problems.append("confidentialite.html : suspension des formulaires absente")
+    if "confidentialite.html" in pages:
+        _, page = pages["confidentialite.html"]
+        visible = " ".join(page.visible).casefold()
+        if "formulaires publics externes" not in visible:
+            problems.append("confidentialite.html : suspension des formulaires absente")
 
-    if "contact.html" in texts and "mailto:officiellenovaparti@gmail.com" not in texts["contact.html"]:
-        problems.append("contact.html : canal public de contact manquant")
+    if "contact.html" in pages:
+        _, page = pages["contact.html"]
+        if not page.mailto_valid:
+            problems.append("contact.html : lien actif du courriel public manquant")
+
     return problems
 
 
@@ -67,7 +192,8 @@ def main() -> int:
             print("ÉCHEC:", problem)
         return 1
     print("OK : cohérence statique de cinq pages publiques de Projet Nova.")
-    print("Ce contrôle ne constitue ni homologation PRP, ni autorisation électorale.")
+    print("Limites : pas de contrôle des scripts externes dynamiques, des courriels,")
+    print("de la production, des habilitations ou de la légalité électorale.")
     return 0
 
 
