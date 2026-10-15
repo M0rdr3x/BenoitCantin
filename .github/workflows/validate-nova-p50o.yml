@@ -1,0 +1,46 @@
+name: Projet Nova P50O - contre-exemples candidat PR636
+on:
+  pull_request:
+    paths:
+      - "scripts/diagnostic_nova_pr636_p50o.py"
+      - "scripts/tests/test_diagnostic_nova_pr636_p50o.py"
+      - "projets/projet-nova/controles/P50O_*"
+      - ".github/workflows/validate-nova-p50o.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  revue-technique-non-approbative:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Lire le dossier P50O
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Lire exclusivement le validateur PR636, au SHA figé
+        uses: actions/checkout@v4
+        with:
+          ref: 6cd38faf1124a9bcbb2be1beaa12bcd14a85f9fb
+          path: candidate_pr636
+          sparse-checkout: |
+            scripts/validate_nova_publication_p50b.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Tester le diagnostiqueur sur des données fictives
+        run: |
+          python -m py_compile scripts/diagnostic_nova_pr636_p50o.py
+          python -m unittest discover -s scripts/tests -p 'test_diagnostic_nova_pr636_p50o.py' -v
+      - name: Démontrer les contre-exemples sur le candidat figé
+        run: |
+          python scripts/diagnostic_nova_pr636_p50o.py --candidate candidate_pr636/scripts/validate_nova_publication_p50b.py --report diagnostic_p50o.json
+          python -c "import json; r=json.load(open('diagnostic_p50o.json',encoding='utf8')); assert r['candidate_commit']=='6cd38faf1124a9bcbb2be1beaa12bcd14a85f9fb'; assert r['decision']=='NO_GO_AUTOMATIQUE'; print('Contre-exemples detectes:', r['angles_morts_reproduits']); print('ATTENTION: controle de diagnostic seul, aucune PR approuvee.')"
+      - name: Annoter les limites du candidat sans faire echouer l'instrument de mesure
+        run: |
+          python -c "import json; r=json.load(open('diagnostic_p50o.json',encoding='utf8')); print('::warning::P50O: '+str(r['angles_morts_reproduits'])+' angles morts de detection dans PR636; leurs correctifs sont requis avant approbation humaine.') if r['angles_morts_reproduits'] else print('Les 11 probes sont detectees. Revue humaine toujours requise.')"
