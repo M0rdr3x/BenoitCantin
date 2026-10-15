@@ -1,0 +1,86 @@
+name: Projet Nova P50N - compatibilite PR candidates (NO GO)
+on:
+  pull_request:
+    paths:
+      - "projets/projet-nova/controles/P50N_*"
+      - "scripts/verify_nova_cross_pr_p50n.py"
+      - "scripts/tests/test_verify_nova_cross_pr_p50n.py"
+      - ".github/workflows/validate-nova-p50n.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recette-quatre-sources-sans-fusion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Lire la PR P50N, sans droits de publication
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Tester le vérificateur avec des données fictives
+        run: |
+          python -m py_compile scripts/verify_nova_cross_pr_p50n.py
+          python -m unittest discover -s scripts/tests -p "test_verify_nova_cross_pr_p50n.py" -v
+      - name: Lire l'instantane main (SHA fige, sans execution)
+        uses: actions/checkout@v4
+        with:
+          ref: 9ed5f70cbe7022f25a679346a1288701f3b09067
+          path: p50n_sources/main
+          sparse-checkout: |
+            projets/projet-nova/participer.html
+            projets/projet-nova/avis-legal.html
+            projets/projet-nova/code-conduite.html
+            projets/projet-nova/data/sources.json
+            projets/projet-nova/official/reference/statuts.md
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Lire l'instantane pr636 (SHA fige, sans execution)
+        uses: actions/checkout@v4
+        with:
+          ref: 6cd38faf1124a9bcbb2be1beaa12bcd14a85f9fb
+          path: p50n_sources/pr636
+          sparse-checkout: |
+            projets/projet-nova/participer.html
+            projets/projet-nova/avis-legal.html
+            projets/projet-nova/code-conduite.html
+            projets/projet-nova/data/sources.json
+            projets/projet-nova/official/reference/statuts.md
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Lire l'instantane pr638 (SHA fige, sans execution)
+        uses: actions/checkout@v4
+        with:
+          ref: e027b0ca130fe91b00e52d9e9fe2f1b301f4b47e
+          path: p50n_sources/pr638
+          sparse-checkout: |
+            projets/projet-nova/participer.html
+            projets/projet-nova/avis-legal.html
+            projets/projet-nova/code-conduite.html
+            projets/projet-nova/data/sources.json
+            projets/projet-nova/official/reference/statuts.md
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Lire l'instantane pr640 (SHA fige, sans execution)
+        uses: actions/checkout@v4
+        with:
+          ref: 332afe7d9d73390feb41b0deb588692f3c73d48d
+          path: p50n_sources/pr640
+          sparse-checkout: |
+            projets/projet-nova/participer.html
+            projets/projet-nova/avis-legal.html
+            projets/projet-nova/code-conduite.html
+            projets/projet-nova/data/sources.json
+            projets/projet-nova/official/reference/statuts.md
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Comparer les blobs exacts de 4 commits sans exécuter leurs scripts
+        run: |
+          python scripts/verify_nova_cross_pr_p50n.py --trees-root p50n_sources --report p50n_rapport.json
+          python -c "import json; r=json.load(open('p50n_rapport.json')); assert r['resultat_technique']=='COHERENCE_SNAPSHOT_VERIFIEE'; assert r['decision']=='NO_GO_AUTOMATIQUE'; print('COMPATIBILITE_TECHNIQUE', r['resultat_technique'], 'DECISION', r['decision'])"
