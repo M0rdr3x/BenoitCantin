@@ -67,7 +67,8 @@ JWT_SENSITIVE_GUARDS = {
         "Referrer-Policy", "no-referrer",
     ),
     "get-private-book-url": (
-        "req.method!=='POST'", "requiredUser(req)", "user_entitlements",
+        "req.method!=='POST'", "requiredUser(req)", "is_sinjira_owner", "is_sinjira_admin",
+        "ownerResult.data===true", "adminResult.data===true", "user_entitlements",
         ".eq('user_id',user.id)", ".eq('product_id',product.id)",
         "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED", "SINJIRA_LIVRE_I_PRIVATE_BUCKET",
         "SINJIRA_LIVRE_I_PRIVATE_PATH", "SIGNED_URL_SECONDS=300", "createSignedUrl",

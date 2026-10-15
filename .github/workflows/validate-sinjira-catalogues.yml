@@ -9,6 +9,9 @@ on:
       - 'supabase/functions/get-document-url/index.ts'
       - 'tests/test_document_url_authorization.cjs'
       - 'tests/test_novel_file_authorization.cjs'
+      - 'tests/test_private_book_authorization.cjs'
+      - 'supabase/functions/get-private-book-url/index.ts'
+      - 'scripts/validate_get_private_book_url_security.py'
       - 'supabase/functions/get-novel-file-url/index.ts'
       - 'tests/test_sinjira_library_access.cjs'
       - 'projets/sinjira/index.html'
@@ -36,6 +39,9 @@ on:
       - 'supabase/functions/get-document-url/index.ts'
       - 'tests/test_document_url_authorization.cjs'
       - 'tests/test_novel_file_authorization.cjs'
+      - 'tests/test_private_book_authorization.cjs'
+      - 'supabase/functions/get-private-book-url/index.ts'
+      - 'scripts/validate_get_private_book_url_security.py'
       - 'supabase/functions/get-novel-file-url/index.ts'
       - 'tests/test_sinjira_library_access.cjs'
       - 'projets/sinjira/index.html'
@@ -93,6 +99,11 @@ jobs:
         run: node --test tests/test_document_url_authorization.cjs
       - name: Tester les droits de lecture intégrale des romans sans secrets
         run: node --test tests/test_novel_file_authorization.cjs
+      - name: Vérifier la porte privée du Livre I et les droits propriétaire/membres
+        run: |
+          python3 scripts/validate_get_private_book_url_security.py --self-test
+          python3 scripts/validate_get_private_book_url_security.py
+          node --test tests/test_private_book_authorization.cjs
       - name: Vérifier les liens du site et les ressources statiques
         run: python3 scripts/validate_site.py
       - name: Vérifier les liens canoniques, données structurées et aperçus sociaux

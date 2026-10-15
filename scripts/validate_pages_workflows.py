@@ -98,6 +98,8 @@ def executable_guards(workflow: str) -> list[str]:
         "node --test tests/test_sinjira_library_access.cjs",
         "node --test tests/test_document_url_authorization.cjs",
         "node --test tests/test_novel_file_authorization.cjs",
+        "python3 scripts/validate_get_private_book_url_security.py",
+        "node --test tests/test_private_book_authorization.cjs",
         "python3 scripts/validate_boussole_home_visual.py --built _site",
         "python3 scripts/audit_public_documents.py --source . --built _site",
         'python3 scripts/audit_public_json.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"',
@@ -371,6 +373,20 @@ def self_test(workflow: str) -> None:
         "Preuve de Boussole neutralisée": workflow.replace(
             "          python3 scripts/validate_boussole_home_visual.py --built _site",
             "          echo VISUEL_BOUSSOLE_NON_VERIFIE", 1,
+        ),
+        "Test de la porte privée Livre I neutralisé": workflow.replace(
+            "          python3 scripts/validate_get_private_book_url_security.py\n"
+            "          node --test tests/test_private_book_authorization.cjs",
+            "          python3 scripts/validate_get_private_book_url_security.py\n"
+            "          echo TEST_LIVRE_I_NON_EXECUTE", 1,
+        ),
+        "Contrat de la porte privée Livre I neutralisé": workflow.replace(
+            "          node --test tests/test_novel_file_authorization.cjs\n"
+            "          python3 scripts/validate_get_private_book_url_security.py\n"
+            "          node --test tests/test_private_book_authorization.cjs",
+            "          node --test tests/test_novel_file_authorization.cjs\n"
+            "          echo CONTRAT_LIVRE_I_NON_EXECUTE\n"
+            "          node --test tests/test_private_book_authorization.cjs", 1,
         ),
         "Test de droits romans neutralisé": workflow.replace(
             "          python3 scripts/validate_sinjira_catalogues_metadata.py --built _site\n"

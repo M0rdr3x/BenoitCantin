@@ -314,3 +314,26 @@ requête excessive, MIME et encodage malformés. La CI SINJIRA,
 la compilation Jekyll isolée et le garde final pré-upload Pages
 refusent les régressions. Cette fonction corrigée reste dans la
 PR non fusionnée, sans déploiement Supabase.
+
+
+## Livre I — seconde porte privée harmonisée avec les droits du créateur
+
+La fonction `get-private-book-url` utilisait seulement la licence
+`user_entitlements` et le produit actif, même pour un propriétaire
+confirmé. La fonction `get-novel-file-url` possédait déjà une voie
+distincte pour le créateur. La correction unifie les deux politiques :
+les RPC serveur `is_sinjira_owner` et `is_sinjira_admin` doivent
+confirmer explicitement `true` pour ignorer le contrôle d'achat.
+Les membres ordinaires doivent toujours disposer d'un produit actif
+et d'une attribution propre à leur UID. Une erreur de vérification
+donne un état indisponible (HTTP 503), jamais un achat imaginaire.
+
+Le stockage privé continue d'être activé uniquement par le drapeau
+d'environnement côté Supabase, avec bucket et chemin serveur,
+signature limitée à 300 secondes et `verify_jwt=true`. Des tests
+Node isolés exécutent la véritable Edge Function avec faux RPC,
+fausses licences et faux stockage; le validateur de contrat comporte
+des mutations négatives (rôle truthy, RPC supprimée, bypass, filtre
+produit manquant). Les contrôles sont exécutés en CI, Jekyll et
+avant tout upload Pages. Aucune fonction Supabase ni Pages n'est
+déployée par ces changements en PR.

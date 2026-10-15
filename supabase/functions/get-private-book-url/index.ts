@@ -42,28 +42,40 @@ Deno.serve(async(req)=>{
 
     const service=serviceClient();
 
-    const {data:product,error:productError}=await service
-      .from('products')
-      .select('id,slug,active')
-      .eq('slug',PRODUCT_SLUG)
-      .eq('active',true)
-      .maybeSingle();
-    if(productError||!product){
-      return privateJson({ok:false,error:'Livre indisponible.'},503);
-    }
+    // Les licences achetées ne représentent pas les privilèges du créateur.
+    // Le rôle privilégié doit être confirmé sur l'UID authentifié par RPC.
+    const [ownerResult,adminResult]=await Promise.all([
+      service.rpc('is_sinjira_owner',{p_user_id:user.id}),
+      service.rpc('is_sinjira_admin',{p_user_id:user.id})
+    ]);
+    const privileged=(!ownerResult.error&&ownerResult.data===true)
+      ||(!adminResult.error&&adminResult.data===true);
+    if(!privileged){
+      const {data:product,error:productError}=await service
+        .from('products')
+        .select('id,slug,active')
+        .eq('slug',PRODUCT_SLUG)
+        .eq('active',true)
+        .maybeSingle();
+      if(productError||!product){
+        return privateJson({ok:false,error:'Impossible de vérifier la disponibilité du livre.'},503);
+      }
 
-    const {data:entitlement,error:entitlementError}=await service
-      .from('user_entitlements')
-      .select('product_id')
-      .eq('user_id',user.id)
-      .eq('product_id',product.id)
-      .maybeSingle();
-    if(entitlementError){
-      console.error('[get-private-book-url]',{code:'BOOK_ENTITLEMENT_CHECK_FAILED'});
-      return privateJson({ok:false,error:'Impossible de vérifier votre droit d’accès.'},500);
-    }
-    if(!entitlement){
-      return privateJson({ok:false,error:'Votre compte ne possède pas ce livre.'},403);
+      const {data:entitlement,error:entitlementError}=await service
+        .from('user_entitlements')
+        .select('product_id')
+        .eq('user_id',user.id)
+        .eq('product_id',product.id)
+        .maybeSingle();
+      if(entitlementError){
+        console.error('[get-private-book-url]',{code:'BOOK_ENTITLEMENT_CHECK_FAILED'});
+        return privateJson({ok:false,error:'Impossible de vérifier votre droit d’accès.'},503);
+      }
+      if(!entitlement){
+        if(ownerResult.error||adminResult.error)
+          return privateJson({ok:false,error:'Vérification du rôle momentanément indisponible.'},503);
+        return privateJson({ok:false,error:'Votre compte ne possède pas ce livre.'},403);
+      }
     }
 
     const {data:signed,error:signedError}=await service.storage
