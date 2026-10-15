@@ -1,0 +1,322 @@
+{
+  "schema_version": "P50M-1.0",
+  "nature": "MODELE_PUBLIC_DE_CONTROLE_NON_PROBANT",
+  "source_snapshot_date": "2026-10-14",
+  "source": "GITHUB_CONNECTOR_READ_ONLY_NON_CONTINU",
+  "main_sha": "9ed5f70cbe7022f25a679346a1288701f3b09067",
+  "project_identity": "Projet Nova",
+  "future_conditional_identity": "Parti Nova",
+  "pull_requests": [
+    {
+      "number": 636,
+      "head_sha": "6cd38faf1124a9bcbb2be1beaa12bcd14a85f9fb",
+      "open": true,
+      "draft": true,
+      "merged": false,
+      "formal_reviews_observed": 0,
+      "review_count_verification": "INTERROGE_SUR_GITHUB_LE_2026_10_14",
+      "eligible_for_automatic_merge": false
+    },
+    {
+      "number": 638,
+      "head_sha": "e027b0ca130fe91b00e52d9e9fe2f1b301f4b47e",
+      "open": true,
+      "draft": true,
+      "merged": false,
+      "formal_reviews_observed": 0,
+      "review_count_verification": "INTERROGE_SUR_GITHUB_LE_2026_10_14",
+      "eligible_for_automatic_merge": false
+    },
+    {
+      "number": 640,
+      "head_sha": "332afe7d9d73390feb41b0deb588692f3c73d48d",
+      "open": true,
+      "draft": true,
+      "merged": false,
+      "formal_reviews_observed": null,
+      "review_count_verification": "NON_VERIFIE_PAR_CE_RELEVE",
+      "eligible_for_automatic_merge": false
+    },
+    {
+      "number": 645,
+      "head_sha": "83db3e0f198bf448294d387da8f52c79222adfa3",
+      "open": true,
+      "draft": true,
+      "merged": false,
+      "formal_reviews_observed": null,
+      "review_count_verification": "NON_VERIFIE_PAR_CE_RELEVE",
+      "eligible_for_automatic_merge": false
+    },
+    {
+      "number": 646,
+      "head_sha": "2cc0347ec5cca78db821ba2a8bdc18616b42465b",
+      "open": true,
+      "draft": true,
+      "merged": false,
+      "formal_reviews_observed": null,
+      "review_count_verification": "NON_VERIFIE_PAR_CE_RELEVE",
+      "eligible_for_automatic_merge": false
+    },
+    {
+      "number": 647,
+      "head_sha": "5ead55b2d07c1850d027ae434500f32c71491ec5",
+      "open": true,
+      "draft": true,
+      "merged": false,
+      "formal_reviews_observed": null,
+      "review_count_verification": "NON_VERIFIE_PAR_CE_RELEVE",
+      "eligible_for_automatic_merge": false
+    },
+    {
+      "number": 648,
+      "head_sha": "55678a5e7470ee3136431f8c7afd97c688c705ca",
+      "open": true,
+      "draft": true,
+      "merged": false,
+      "formal_reviews_observed": null,
+      "review_count_verification": "NON_VERIFIE_PAR_CE_RELEVE",
+      "eligible_for_automatic_merge": false
+    },
+    {
+      "number": 649,
+      "head_sha": "560cd8b6238e853abbf589c1fb9885942bde7df1",
+      "open": true,
+      "draft": true,
+      "merged": false,
+      "formal_reviews_observed": null,
+      "review_count_verification": "NON_VERIFIE_PAR_CE_RELEVE",
+      "eligible_for_automatic_merge": false
+    },
+    {
+      "number": 650,
+      "head_sha": "9fdbfdd267e9f8f3f9a0abfc62a725a75d20c9eb",
+      "open": true,
+      "draft": true,
+      "merged": false,
+      "formal_reviews_observed": 0,
+      "review_count_verification": "INTERROGE_SUR_GITHUB_LE_2026_10_14",
+      "eligible_for_automatic_merge": false
+    },
+    {
+      "number": 651,
+      "head_sha": "27e6e3bc32b6667711dd51091f4e98aec040b86b",
+      "open": true,
+      "draft": true,
+      "merged": false,
+      "formal_reviews_observed": 0,
+      "review_count_verification": "INTERROGE_SUR_GITHUB_LE_2026_10_14",
+      "eligible_for_automatic_merge": false
+    }
+  ],
+  "human_checks": [
+    {
+      "id": "C01",
+      "object": "Porteur et régime juridique",
+      "status": "NON_ATTESTE"
+    },
+    {
+      "id": "C02",
+      "object": "Traitements réels de la messagerie",
+      "status": "NON_ATTESTE"
+    },
+    {
+      "id": "C03",
+      "object": "Revue indépendante des PR et sécurité",
+      "status": "NON_ATTESTE"
+    },
+    {
+      "id": "C04",
+      "object": "Hébergement, exploitation et restauration",
+      "status": "NON_ATTESTE"
+    },
+    {
+      "id": "C05",
+      "object": "Décision humaine et recette après publication",
+      "status": "NON_ATTESTE"
+    }
+  ],
+  "legal_evidence": [
+    {
+      "id": "Q01",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "Q02",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "Q03",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "Q04",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "Q05",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "Q06",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "Q07",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "Q08",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "Q09",
+      "status": "NON_RECU"
+    }
+  ],
+  "mail_evidence": [
+    {
+      "id": "M01",
+      "status": "NON_DOCUMENTE"
+    },
+    {
+      "id": "M02",
+      "status": "NON_DOCUMENTE"
+    },
+    {
+      "id": "M03",
+      "status": "NON_DOCUMENTE"
+    },
+    {
+      "id": "M04",
+      "status": "NON_DOCUMENTE"
+    },
+    {
+      "id": "M05",
+      "status": "NON_DOCUMENTE"
+    },
+    {
+      "id": "M06",
+      "status": "NON_DOCUMENTE"
+    },
+    {
+      "id": "M07",
+      "status": "NON_DOCUMENTE"
+    },
+    {
+      "id": "M08",
+      "status": "NON_DOCUMENTE"
+    },
+    {
+      "id": "M09",
+      "status": "NON_DOCUMENTE"
+    },
+    {
+      "id": "M10",
+      "status": "NON_DOCUMENTE"
+    },
+    {
+      "id": "M11",
+      "status": "NON_DOCUMENTE"
+    },
+    {
+      "id": "M12",
+      "status": "NON_DOCUMENTE"
+    }
+  ],
+  "publication_gates": [
+    {
+      "id": "B01",
+      "phase": "PRE",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B02",
+      "phase": "PRE",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B03",
+      "phase": "PRE",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B04",
+      "phase": "PRE",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B05",
+      "phase": "PRE",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B06",
+      "phase": "PRE",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B07",
+      "phase": "PRE",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B08",
+      "phase": "PRE",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B09",
+      "phase": "PRE",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B10",
+      "phase": "PRE",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B11",
+      "phase": "PRE",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B12",
+      "phase": "POST",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B13",
+      "phase": "PRE",
+      "status": "NON_VALIDE"
+    },
+    {
+      "id": "B14",
+      "phase": "POST",
+      "status": "NON_VALIDE"
+    }
+  ],
+  "known_editorial_gaps": [
+    "participer.html",
+    "avis-legal.html"
+  ],
+  "mailbox_technical_audit_performed": false,
+  "personal_data_read_or_exported": false,
+  "formal_legal_advice_authenticated": false,
+  "privacy_review_authenticated": false,
+  "deployment_operator_mandate_authenticated": false,
+  "rollback_on_host_authenticated": false,
+  "real_http_publication_validated": false,
+  "official_electoral_authorization_authenticated": false,
+  "real_human_decision_signed": false,
+  "runtime_status": "NO_GO",
+  "public_actions_authorized": [],
+  "guards": [
+    "PR_640_NE_JAMAIS_FUSIONNER",
+    "FORMULAIRES_EXTERNES_NON_REACTIVES",
+    "AUCUNE_COLLECTE_ELECTORALE",
+    "V3_40_NON_MODIFIEE",
+    "AUCUNE_PREUVE_PRIVEE_DANS_GITHUB",
+    "AUCUN_GO_PAR_TEST_AUTOMATIQUE"
+  ],
+  "note": "Instantané, non synchronisé après ce constat; le validateur refuse toute promotion de statut."
+}
