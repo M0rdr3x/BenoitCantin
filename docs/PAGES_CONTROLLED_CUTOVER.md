@@ -12,6 +12,12 @@ Référence de sécurité : issue [#450](https://github.com/M0rdr3x/BenoitCantin
 Le rapport HTTP HEAD du même run relève **9 chemins techniques sur 14
 répondant HTTP 200** (les autres 5 en 404), sans consulter leur corps.
 Ces statuts HEAD ne certifient pas la réponse GET sur tous les fichiers.
+Un second diagnostic de **statuts GET uniquement** est désormais prévu
+dans le même prévol PR : les corps des réponses techniques ne sont
+jamais lus par le script. Il permettra de confirmer si un HEAD 200
+correspond aussi à un GET accessible, sans télécharger ni publier de
+contenu. Même des GET 404/410 restent insuffisants pour prouver le
+SHA ou le bon réglage de Source Pages.
 
 La preuve historique de la publication de la racine est le
 [run #37978201065](https://github.com/M0rdr3x/BenoitCantin/actions/runs/37978201065),
@@ -33,6 +39,10 @@ le faire explicitement avant toute promotion.
   `.github/workflows/deploy-pages-controlled.yml`.
 - Examiner toutes les validations PR, dont la compilation Jekyll réelle,
   les autotests et la vérification de la sortie `_site`.
+- Examiner ensemble les deux relevés **HEAD / GET statut uniquement** de
+  `.github/workflows/pages-cutover-preflight.yml` : le GET ne lit pas
+  de corps technique et complète, sans remplacer, le contrôle HTTP
+  strict post-publication, l'attestation du SHA et les hachages CDN.
 - Conserver une référence immuable du **dernier état PUBLIC sûr**, une copie du
   `CNAME` et un journal des contrôles; le `main` actuel publiant la racine
   ne doit **jamais** être considéré comme image de rollback sûre.

@@ -337,3 +337,23 @@ des mutations négatives (rôle truthy, RPC supprimée, bypass, filtre
 produit manquant). Les contrôles sont exécutés en CI, Jekyll et
 avant tout upload Pages. Aucune fonction Supabase ni Pages n'est
 déployée par ces changements en PR.
+
+
+## Pré-bascule Pages : double diagnostic HTTP HEAD / GET sans corps
+
+Le diagnostic de la PR distinguait jusqu'ici la réponse HTTP HEAD de
+celle d'une requête GET. Le nouveau
+`scripts/report_pages_live_get_status.py` vérifie les **statuts GET**
+des mêmes 14 chemins techniques fixes sur le domaine officiel.
+Le programme ne lit, n'imprime ni n'enregistre le corps de la réponse;
+les redirections, erreurs et cas inconnus sont explicitement classés.
+Un test local de réponse fictive échoue si une lecture du corps est
+tentée. La CI prévol exécute ses autotests négatifs et publie un
+rapport lisible dans GitHub Actions, sans fichier téléchargé dans
+les artefacts et sans déploiement.
+
+Une réponse GET 200/206 confirme que l'URL est accessible, mais ne
+prouve pas quels octets ou secrets sont servis. Les résultats GET
+404/410 ne certifient pas à eux seuls la provenance du site, le SHA
+déployé ni l'intégrité CDN. Le verrou de publication Pages Actions
+et les contrôles post-déploiement demeurent inchangés.

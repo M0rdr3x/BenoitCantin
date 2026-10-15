@@ -9,6 +9,7 @@ on:
       - '.github/workflows/deploy-pages-controlled.yml'
       - 'scripts/report_pages_cutover_status.py'
       - 'scripts/report_pages_live_exposure.py'
+      - 'scripts/report_pages_live_get_status.py'
       - 'scripts/validate_publication_live_boundary.py'
       - 'scripts/verify_pages_live.py'
       - 'scripts/attest_pages_production.py'
@@ -44,3 +45,7 @@ jobs:
         run: python3 scripts/report_pages_live_exposure.py --self-test
       - name: Observer uniquement les codes HEAD des sources techniques
         run: python3 scripts/report_pages_live_exposure.py --report
+      - name: Prouver les contrats GET sans accès à la production
+        run: python3 scripts/report_pages_live_get_status.py --self-test
+      - name: Observer uniquement les codes GET, sans lecture des corps techniques
+        run: python3 scripts/report_pages_live_get_status.py --report
