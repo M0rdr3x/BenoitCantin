@@ -357,3 +357,5 @@ prouve pas quels octets ou secrets sont servis. Les résultats GET
 404/410 ne certifient pas à eux seuls la provenance du site, le SHA
 déployé ni l'intégrité CDN. Le verrou de publication Pages Actions
 et les contrôles post-déploiement demeurent inchangés.
+
+**Preuve réelle du 15 octobre 2026 UTC :** [prévol GitHub #38664343729](https://github.com/M0rdr3x/BenoitCantin/actions/runs/38664343729) a terminé les tests du nouveau diagnostic et a relevé **9 réponses GET 200 et 5 GET 404**, identiques aux statuts HEAD. Source Pages toujours `legacy`. Aucun corps technique n'a été lu par le script; aucun secret n'a été vérifié. [Issue #450](https://github.com/M0rdr3x/BenoitCantin/issues/450) demeure ouverte et bloque toute publication.

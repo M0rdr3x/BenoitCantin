@@ -5,19 +5,30 @@ Référence de sécurité : issue [#450](https://github.com/M0rdr3x/BenoitCantin
 
 ## 1. État réel, prouvé
 
-**Mesure la plus récente : 14 octobre 2026.** Les contrôles de la PR
-#639 ont observé sur l'API GitHub Pages `build_type=legacy`,
-`cname=www.benoitcantin.com` et HTTPS activé :
-[preuve #38565937766](https://github.com/M0rdr3x/BenoitCantin/actions/runs/38565937766).
-Le rapport HTTP HEAD du même run relève **9 chemins techniques sur 14
-répondant HTTP 200** (les autres 5 en 404), sans consulter leur corps.
-Ces statuts HEAD ne certifient pas la réponse GET sur tous les fichiers.
-Un second diagnostic de **statuts GET uniquement** est désormais prévu
-dans le même prévol PR : les corps des réponses techniques ne sont
-jamais lus par le script. Il permettra de confirmer si un HEAD 200
-correspond aussi à un GET accessible, sans télécharger ni publier de
-contenu. Même des GET 404/410 restent insuffisants pour prouver le
-SHA ou le bon réglage de Source Pages.
+**Dernier diagnostic validé : 15 octobre 2026 UTC** (soir du 14 octobre
+au Québec), [workflow de pré-bascule #38664343729](https://github.com/M0rdr3x/BenoitCantin/actions/runs/38664343729).
+La source GitHub Pages demeure **`build_type=legacy`** alors que le
+domaine `www.benoitcantin.com` et HTTPS sont configurés.
+
+Le rapport HEAD **et**, pour la première fois, un diagnostic indépendant
+de **statuts GET sans lecture des corps** montrent les mêmes résultats :
+**9 routes techniques en HTTP 200 sur 14**, les **5 autres en HTTP 404**.
+Les neuf URL concernées sont `/supabase/config.toml`,
+`/tests/e2e/test_public_site.py`, `/mobile-native/App.tsx`,
+`/scripts/validate_site.py`, `/assets/icons/README.md`,
+`/projets/projet-nova/netlify.toml`,
+`/projets/projet-nova/UPLOAD_GITHUB.md`,
+`/projets/projet-nova/SECURITY.md` et
+`/projets/sinjira/codex/livre-i-delivery-contract.json`.
+
+**Qualification de sécurité :** ces codes GET 200 prouvent que les chemins
+répondent sur le site public, **pas le contenu exact des réponses ni la
+présence de secrets**. Le script ferme chaque réponse sans lire son
+corps, ne suit pas les redirections, n'enregistre pas de fichiers et
+n'utilise aucun jeton d'utilisateur. La source `legacy` doit être
+corrigée par l'administrateur avant toute fusion ou publication. Les
+preuves GET 404/410, le reçu SHA/run et les hachages CDN après la
+bascule demeurent indispensables.
 
 La preuve historique de la publication de la racine est le
 [run #37978201065](https://github.com/M0rdr3x/BenoitCantin/actions/runs/37978201065),
