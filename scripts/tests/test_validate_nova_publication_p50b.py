@@ -150,5 +150,70 @@ class ValidationPublication(unittest.TestCase):
         self.assertEqual(module.validate(self.root), [])
 
 
+    def test_url_scheme_relative_google_forms_rejected(self):
+        self.add("participer.html", '<a href="//forms.gle/exemple">Form</a>')
+        self.assertTrue(module.validate(self.root))
+
+    def test_url_scheme_relative_stripe_rejected(self):
+        self.add("participer.html", '<a href="//checkout.stripe.com/pay/example">Don</a>')
+        self.assertTrue(module.validate(self.root))
+
+    def test_encoded_external_url_in_redirect_query_rejected(self):
+        self.add("contact.html",
+                 '<a href="/redirect?next=https%3A%2F%2Fforms.gle%2Fexample">Form</a>')
+        self.assertTrue(module.validate(self.root))
+
+    def test_double_percent_encoded_url_rejected(self):
+        self.add("participer.html",
+                 '<a href="/redirect?next=https%253A%252F%252Fforms.gle%252Fexample">Lien</a>')
+        self.assertTrue(module.validate(self.root))
+
+    def test_js_escaped_slashes_rejected(self):
+        self.add("contact.html", r'<script>const u="https:\/\/forms.gle\/example";</script>')
+        self.assertTrue(module.validate(self.root))
+
+    def test_paypal_legacy_donation_rejected(self):
+        self.add("recrutement.html",
+                 '<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations">Don</a>')
+        self.assertTrue(module.validate(self.root))
+
+    def test_paypalme_path_rejected(self):
+        self.add("recrutement.html", '<a href="https://www.paypal.com/paypalme/exemple">Don</a>')
+        self.assertTrue(module.validate(self.root))
+
+    def test_hidden_mailto_inside_template_not_sufficient(self):
+        self.modify("contact.html",
+                    '<template><a href="mailto:officiellenovaparti@gmail.com">Écrire</a></template>')
+        self.assertTrue(module.validate(self.root))
+
+    def test_hidden_mailto_attribute_not_sufficient(self):
+        self.modify("contact.html",
+                    '<a hidden href="mailto:officiellenovaparti@gmail.com">Écrire</a>')
+        self.assertTrue(module.validate(self.root))
+
+    def test_aria_hidden_mailto_not_sufficient(self):
+        self.modify("contact.html",
+                    '<a aria-hidden="true" href="mailto:officiellenovaparti@gmail.com">Écrire</a>')
+        self.assertTrue(module.validate(self.root))
+
+    def test_display_none_mailto_not_sufficient(self):
+        self.modify("contact.html",
+                    '<a style="display: none" href="mailto:officiellenovaparti@gmail.com">Écrire</a>')
+        self.assertTrue(module.validate(self.root))
+
+    def test_safe_lookalike_forms_domain_not_blocked(self):
+        self.add("contact.html", '<a href="https://forms.gle.example.net/article">Lecture</a>')
+        self.assertEqual(module.validate(self.root), [])
+
+    def test_neutral_scheme_relative_url_not_blocked(self):
+        self.add("contact.html", '<a href="//www.electionsquebec.qc.ca/article">Source</a>')
+        self.assertEqual(module.validate(self.root), [])
+
+    def test_unrelated_paypal_legacy_url_not_blocked(self):
+        self.add("contact.html",
+                 '<a href="https://www.paypal.com/cgi-bin/webscr?cmd=help">Aide</a>')
+        self.assertEqual(module.validate(self.root), [])
+
+
 if __name__=="__main__":
     unittest.main(verbosity=2)
