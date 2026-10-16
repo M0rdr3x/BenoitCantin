@@ -68,8 +68,10 @@ def self_test() -> None:
             "github.event.pull_request.draft == true", 1
         ),
         "source non testée": source.replace(
-            "run: python3 scripts/report_pages_cutover_status.py --self-test",
-            "run: echo PRET", 1
+            "      - name: Vérifier le contrat du diagnostic administratif\n"
+            "        run: python3 scripts/report_pages_cutover_status.py --self-test",
+            "      - name: Vérifier le contrat du diagnostic administratif\n"
+            "        run: echo PRET", 1
         ),
         "écriture": source.replace(
             "  pages-source-promotion-gate:\n", "  pages-source-promotion-gate:\n    permissions:\n      pages: write\n", 1
