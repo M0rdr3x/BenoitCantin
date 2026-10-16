@@ -1,0 +1,102 @@
+name: Projet Nova P50R - integration ephemere sans fusion publique
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p50r.yml"
+      - "scripts/validate_nova_staged_integration_p50r.py"
+      - "scripts/tests/test_validate_nova_staged_integration_p50r.py"
+      - "projets/projet-nova/controles/P50R_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulation-sans-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Lire la PR P50R, sans permission d'ecriture
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verifier les 10 tests de l'inspecteur
+        run: |
+          python -m py_compile scripts/validate_nova_staged_integration_p50r.py
+          python -m unittest discover -s scripts/tests -p "test_validate_nova_staged_integration_p50r.py" -v
+
+      - name: Copier main a un SHA fige dans un repertoire temporaire distinct
+        uses: actions/checkout@v4
+        with:
+          ref: 9ed5f70cbe7022f25a679346a1288701f3b09067
+          path: integration_ephemere
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Garantir la base et l'absence de droit de push
+        run: |
+          test "$(git -C integration_ephemere rev-parse HEAD)" = "9ed5f70cbe7022f25a679346a1288701f3b09067"
+          git -C integration_ephemere config user.name "Nova CI (integration jetable)"
+          git -C integration_ephemere config user.email "nova-ci@example.invalid"
+          git -C integration_ephemere config commit.gpgsign false
+          test -z "$(git -C integration_ephemere status --porcelain)"
+
+      - name: Simuler PR636 sur main, sans push
+        run: |
+          git -C integration_ephemere merge --no-ff --no-edit -m "P50R TEST LOCAL - PR636" 6cd38faf1124a9bcbb2be1beaa12bcd14a85f9fb
+
+      - name: Simuler PR655 sur le resultat precedent, sans push
+        run: |
+          git -C integration_ephemere merge --no-ff --no-edit -m "P50R TEST LOCAL - PR655" 8541f761be8dbabda0c3f024f8969562ab816bc7
+
+      - name: Simuler PR657 sur le resultat precedent, sans push
+        run: |
+          git -C integration_ephemere merge --no-ff --no-edit -m "P50R TEST LOCAL - PR657" f67abe43b7223d0f59ee1efb6cf883d558eddfb5
+
+      - name: Simuler PR638, revue d'identite separee, sans push
+        run: |
+          git -C integration_ephemere merge --no-ff --no-edit -m "P50R TEST LOCAL - PR638" e027b0ca130fe91b00e52d9e9fe2f1b301f4b47e
+
+      - name: Verifier les 14 chemins attendus, trois blobs et statuts SHA256
+        run: |
+          python scripts/validate_nova_staged_integration_p50r.py --tree integration_ephemere --report p50r_integration.json
+          python - <<'PY'
+          import json
+          p=json.load(open("p50r_integration.json",encoding="utf-8"))
+          assert p["statut_technique"] == "COHERENCE_SIMULEE",p
+          assert p["nb_fichiers_modifies"] == 14,p
+          assert p["decision"] == "NO_GO_AUTOMATIQUE",p
+          print("P50R : chemins exacts:",p["nb_fichiers_modifies"],"-",p["statut_technique"])
+          print("P50R : PR640 hors chaine, aucun GO ni deploiement")
+          PY
+
+      - name: Executer les 40 tests et la verification des cinq pages fusionnees localement
+        working-directory: integration_ephemere
+        run: |
+          python -m py_compile scripts/validate_nova_publication_p50b.py
+          python -m unittest discover -s scripts/tests -p "test_validate_nova_publication_p50b.py" -v
+          python scripts/validate_nova_publication_p50b.py
+
+      - name: Executer la revue d'identite et ses tests sur le meme arbre
+        working-directory: integration_ephemere
+        run: |
+          python -m py_compile scripts/validate_nova_identity.py
+          python -m unittest discover -s scripts/tests -p "test_validate_nova_identity.py" -v
+          python scripts/validate_nova_identity.py
+
+      - name: Confirmer que la simulation n'a pas produit de changement non engage
+        run: |
+          test -z "$(git -C integration_ephemere status --porcelain)"
+          echo "::notice::P50R: integration technique seulement. NO_GO juridique, institutionnel, deploiement et approbation."
+          echo "::notice::PR640 NE PAS FUSIONNER. Tous les commits de fusion sont uniquement dans le runner jetable."
+
+      - name: Conserver uniquement le compte rendu sans donnees personnelles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p50r-staging-no-go
+          path: p50r_integration.json
+          if-no-files-found: ignore
+          retention-days: 7
