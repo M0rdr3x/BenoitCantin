@@ -162,7 +162,8 @@ def self_test() -> None:
             "        run: echo IGNORE",
         ),
         "étapes dupliquées": (
-            "    steps:\n", "    steps:\n    steps:\n"
+            "    permissions:\n      contents: read\n      pages: read\n    steps:\n",
+            "    permissions:\n      contents: read\n      pages: read\n    steps:\n    steps:\n",
         ),
         "double garde": (
             "  pages-source-promotion-gate:\n",
