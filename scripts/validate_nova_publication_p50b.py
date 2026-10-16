@@ -9,7 +9,7 @@ from __future__ import annotations
 from html.parser import HTMLParser
 from pathlib import Path
 import re
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1] / "projets" / "projet-nova"
 PAGES = (
@@ -33,16 +33,29 @@ def _domain_is(host: str, suffix: str) -> bool:
 def suspicious_destination(value: str) -> str | None:
     """Règle ciblée pour les fournisseurs explicitement bloqués à ce stade.
 
-    Aucun tableau de noms de fournisseurs ne peut garantir la détection de
-    toutes les intégrations possibles. Il faut aussi revue de code et recette.
+    Détecte aussi les URL protocol-relative et quelques encodages statiques.
+    Il faut revue de code et recette: les scripts externes ne sont pas exécutés
+    ni inspectés au-delà de leurs références HTML.
     """
     if not isinstance(value, str):
         return None
-    candidates = [value]
-    candidates.extend(URL_PATTERN.findall(value))
+    # Decode percent-encoding and JS escaped slashes in static links/strings.
+    # Bounded decoding avoids relying on untrusted deeply nested encodings.
+    normalized = value
+    for _ in range(3):
+        updated = unquote(normalized).replace(r"\/", "/")
+        if updated == normalized:
+            break
+        normalized = updated
+    candidates = [normalized]
+    candidates.extend(URL_PATTERN.findall(normalized))
     for candidate in candidates:
         try:
-            url = urlsplit(candidate.strip().strip(";,"))
+            candidate = candidate.strip().strip(";,")
+            # Browser-normal protocol-relative links must be inspected too.
+            if candidate.startswith("//"):
+                candidate = "https:" + candidate
+            url = urlsplit(candidate)
         except ValueError:
             continue
         if url.scheme not in ("http", "https"):
@@ -57,7 +70,13 @@ def suspicious_destination(value: str) -> str | None:
             _domain_is(host, "jotform.com")):
             return "fournisseur de formulaire externe"
         if (host in ("checkout.stripe.com", "buy.stripe.com", "paypal.me") or
-            (_domain_is(host, "paypal.com") and path.startswith("/donate"))):
+            (_domain_is(host, "paypal.com") and (
+                path.startswith("/donate") or
+                path.startswith("/paypalme") or
+                (path == "/cgi-bin/webscr" and
+                 any(token in url.query.casefold() for token in
+                     ("cmd=_donations", "cmd=_xclick", "cmd=_s-xclick")))
+            )):
             return "service de paiement ou de don"
     return None
 
@@ -92,7 +111,11 @@ class SiteHTML(HTMLParser):
             href = attrs.get("href", "")
             if isinstance(href, str):
                 self.links.add(href)
-                if href.lower().startswith("mailto:"):
+                if (href.lower().startswith("mailto:") and
+                    "template" not in self.ignore and
+                    "hidden" not in attrs and
+                    attrs.get("aria-hidden", "").casefold() != "true" and
+                    "display:none" not in attrs.get("style", "").replace(" ", "").casefold()):
                     try:
                         address = urlsplit(href).path
                     except ValueError:
