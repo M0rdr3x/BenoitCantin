@@ -29,6 +29,10 @@ jobs:
           python-version: '3.12.14'
       - name: Vérifier les diagnostics et leurs cas négatifs
         run: python3 scripts/report_pages_cutover_status.py --self-test
+      - name: Protéger le required check de promotion contre les régressions
+        run: |
+          python3 scripts/validate_pages_promotion_gate.py --self-test
+          python3 scripts/validate_pages_promotion_gate.py --check
       - name: Publier uniquement un rapport de configuration Pages en lecture seule
         env:
           GH_PAGES_READ_TOKEN: ${{ github.token }}

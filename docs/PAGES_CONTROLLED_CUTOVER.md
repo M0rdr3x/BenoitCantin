@@ -539,10 +539,18 @@ le résumé du job :
   domaine et HTTPS sont observés comme conformes. Cela ne prouve pas
   le confinement HTTP en ligne ni la fin de l'incident #450.
 
-**Attention :** le workflow de diagnostic est informatif et retourne
-`success` même si le diagnostic est BLOQUÉ ou INCONNU. Ce statut
-vert prouve uniquement que le rapport a été produit; le workflow
-`deploy-pages-controlled.yml` reste **strictement bloquant** et
+**Attention :** le job `pages-preflight` reste **informatif** et
+retourne `success` même si le diagnostic est BLOQUÉ ou INCONNU.
+En revanche, le job `pages-source-promotion-gate` de ce même workflow
+s'exécute lorsqu'une PR est **prête pour revue** et échoue fermé si
+`build_type` n'est pas `workflow`, si CNAME/HTTPS sont incorrects
+ou si l'API ne peut être vérifiée. Pour empêcher la fusion malgré cet
+échec, l'administrateur doit aussi rendre ce job **required** dans
+la protection de la branche `main`. Le nouveau contrat
+`scripts/validate_pages_promotion_gate.py` teste les régressions de
+filtrage des PR, de neutralisation d'erreur, de suppression du job
+et de permissions en écriture.
+Le workflow `deploy-pages-controlled.yml` reste **strictement bloquant** et
 vérifie de nouveau `build_type=workflow` au SHA exact avant PUBLISH
 et juste avant le déploiement. Aucun lancement de l'outil de publication,
 aucune fusion et aucun changement de paramètre n'est fait par ce
@@ -568,11 +576,14 @@ si tous les fichiers n'ont pas été réellement contrôlés.
 
 ## Constat HTTP anonymisé avant changement administratif
 
-Le même workflow `pages-cutover-preflight.yml` exécute désormais un
-diagnostic réseau en lecture seule, limité à des **requêtes HEAD sur
-14 chemins techniques exacts** de `www.benoitcantin.com`. Aucun GET
-du corps d'un fichier technique n'est effectué, aucun jeton public
-n'est envoyé au site et les redirections sont refusées.
+Le même workflow `pages-cutover-preflight.yml` exécute les
+diagnostics **HEAD et GET (statuts uniquement)** sur les **14 chemins
+techniques exacts** de `www.benoitcantin.com`. Le diagnostic GET
+n'effectue aucune lecture du corps des fichiers, n'enregistre
+aucun contenu technique, n'envoie aucun jeton privé et refuse les
+redirections. Les deux méthodes ont confirmé 9 réponses HTTP 200
+sur 14 chemins (5 réponses HTTP 404), sans prouver la présence de
+secrets. Preuve : [prévol #38664569897](https://github.com/M0rdr3x/BenoitCantin/actions/runs/38664569897).
 
 Le rapport distingue : **EXPOSÉ** (HTTP 200/206 sur une source
 technique), **NON_CONFORME** (HTTP différent de 404/410 et sans
