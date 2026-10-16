@@ -10,7 +10,7 @@
 - PR 640 : validation d'intégration uniquement. **NE PAS FUSIONNER**. SHA `332afe7d9d73390feb41b0deb588692f3c73d48d`.
 - PR 655 : premier correctif du validateur PR636 — **26 tests réellement réussis** en P50P; SHA `8541f761be8dbabda0c3f024f8969562ab816bc7`.
 - PR 656 : preuve d'exécution P50P en CI au [run 38811861854](https://github.com/M0rdr3x/BenoitCantin/actions/runs/38811861854), démontrant sur 11 sondes anciennes **8 → 0** défauts de détection, cinq pages candidates conformes dans la copie source. Cette réussite ne donne pas de GO.
-- PR 657 : **seconde correction P50Q**, base **branche PR655** et non `main`; SHA `0db5589f2129723eb3f046cc2e147179675ac7bd`, deux fichiers modifiés (validateur et tests).
+- PR 657 : **seconde correction P50Q**, base **branche PR655** et non `main`; SHA `f67abe43b7223d0f59ee1efb6cf883d558eddfb5`, deux fichiers modifiés (validateur et tests).
 
 La suite P50Q doit exécuter les 26 tests originaux et les **40 tests du code révisé**, puis comparer les mêmes 14 sondes sur les deux versions. Les résultats techniques et leur horodatage doivent être recueillis dans les logs de la CI de la PR de contrôle. **Ne jamais décrire comme réussi un test non exécuté.**
 
@@ -71,3 +71,7 @@ La reconnaissance de certains liens dissimulés et du `mailto:` masqué diminue 
 **V3.40, P2-C0-49, W0/W1/W2–W4, E26, pouvoirs, preuves financières et quatorze portes financières bloquantes : inchangés.** Aucune contribution politique, collecte de signatures, demande d'adhésion, paiement ou nouveau formulaire n'est activé.
 
 *Document de vérification technique préparatoire, non avis juridique et non autorisation.*
+
+## 6. Historique de vérification P50Q
+
+La première exécution CI de P50Q a correctement **échoué** avant les 40 tests : parenthèse non fermée à la ligne 72 du validateur de la PR 657. Les 26 tests P50P ont réussi lors de cette exécution, mais les 40 tests du correctif P50Q n'ont pas démarré. Un nouveau commit (`f67abe43b7223d0f59ee1efb6cf883d558eddfb5`) corrige la syntaxe et traite les attributs HTML sans valeur. Les tests et comparaisons sont repris sur ce nouveau SHA; l'ancien échec n'est pas effacé.
