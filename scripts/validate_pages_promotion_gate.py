@@ -117,7 +117,9 @@ def self_test() -> None:
             "github.event.pull_request.draft == true",
         ),
         "autotest neutralisé": (
+            "      - name: Vérifier le contrat du diagnostic administratif\n"
             "        run: python3 scripts/report_pages_cutover_status.py --self-test",
+            "      - name: Vérifier le contrat du diagnostic administratif\n"
             "        run: echo PRET",
         ),
         "écriture": (
