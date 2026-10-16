@@ -1,0 +1,103 @@
+name: Projet Nova P50Q - validation 40 tests et comparaison 14 cas
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p50q.yml"
+      - "scripts/compare_nova_scanners_p50q.py"
+      - "scripts/tests/test_compare_nova_scanners_p50q.py"
+      - "projets/projet-nova/controles/P50Q_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preuve-comparee:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Lire la PR de contrôle P50Q
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Lire la version P50P / PR655 au commit exact
+        uses: actions/checkout@v4
+        with:
+          ref: 8541f761be8dbabda0c3f024f8969562ab816bc7
+          path: original_pr655
+          sparse-checkout: |
+            scripts/validate_nova_publication_p50b.py
+            scripts/tests/test_validate_nova_publication_p50b.py
+            projets/projet-nova/participer.html
+            projets/projet-nova/avis-legal.html
+            projets/projet-nova/recrutement.html
+            projets/projet-nova/confidentialite.html
+            projets/projet-nova/contact.html
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Lire la correction P50Q / PR657 au commit exact
+        uses: actions/checkout@v4
+        with:
+          ref: 0db5589f2129723eb3f046cc2e147179675ac7bd
+          path: candidate_pr657
+          sparse-checkout: |
+            scripts/validate_nova_publication_p50b.py
+            scripts/tests/test_validate_nova_publication_p50b.py
+            projets/projet-nova/participer.html
+            projets/projet-nova/avis-legal.html
+            projets/projet-nova/recrutement.html
+            projets/projet-nova/confidentialite.html
+            projets/projet-nova/contact.html
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Tester le comparateur P50Q (cinq tests fictifs)
+        run: |
+          python -m py_compile scripts/compare_nova_scanners_p50q.py
+          python -m unittest discover -s scripts/tests -p "test_compare_nova_scanners_p50q.py" -v
+
+      - name: Tester le code du correctif P50P (26 tests)
+        run: |
+          python -m unittest discover -s original_pr655/scripts/tests -p "test_validate_nova_publication_p50b.py" -v
+
+      - name: Tester le code du correctif P50Q (40 tests)
+        run: |
+          python -m py_compile candidate_pr657/scripts/validate_nova_publication_p50b.py
+          python -m unittest discover -s candidate_pr657/scripts/tests -p "test_validate_nova_publication_p50b.py" -v
+
+      - name: Valider les cinq vraies pages de PR657 sans aucune publication
+        run: python candidate_pr657/scripts/validate_nova_publication_p50b.py
+
+      - name: Comparer les quatorze sondes sur deux validateurs figes
+        run: |
+          python scripts/compare_nova_scanners_p50q.py \
+            --original original_pr655/scripts/validate_nova_publication_p50b.py \
+            --candidate candidate_pr657/scripts/validate_nova_publication_p50b.py \
+            --report comparaison_p50q.json
+          python - <<'PY'
+          import json
+          r=json.load(open("comparaison_p50q.json", encoding="utf-8"))
+          assert r["statut"]=="COMPARAISON_EXECUTEE", r
+          assert r["scenarios"]==14, r
+          assert r["scenarios_blocage"]==11, r
+          assert r["scenarios_negatifs"]==3, r
+          assert r["ecarts_avant"]==11, r
+          assert r["ecarts_apres"]==0, r
+          assert r["decision"]=="NO_GO_AUTOMATIQUE", r
+          print("P50Q: nouveaux scenarios en echec avant correction:",r["ecarts_avant"])
+          print("P50Q: nouveaux scenarios en echec apres correction:",r["ecarts_apres"])
+          print("P50Q: 40 tests du candidat, cinq pages reelles, AUCUN GO juridique ou technique de publication")
+          PY
+
+      - name: Preuve de non autorisation
+        run: |
+          echo "::notice::P50Q: les tests ne sont pas des approbations independantes et ne controlent pas les scripts externes ni la production."
+          echo "::notice::PR640: NE PAS FUSIONNER. Aucune collecte, aucun deploy et aucune modification de main."
