@@ -149,7 +149,11 @@ def self_test() -> None:
             "        run: python3 scripts/report_pages_cutover_status.py --require-source",
         ),
         "jeton Pages supprimé": (
+            "      - name: Interdire la promotion avant Source GitHub Actions\n"
+            "        env:\n"
             "          GH_PAGES_READ_TOKEN: " + "$" + "{{ github.token }}",
+            "      - name: Interdire la promotion avant Source GitHub Actions\n"
+            "        env:\n"
             "          GH_PAGES_READ_TOKEN: ''",
         ),
         "permission cachée": (
