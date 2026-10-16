@@ -41,7 +41,7 @@ jobs:
       - name: Lire la correction P50Q / PR657 au commit exact
         uses: actions/checkout@v4
         with:
-          ref: 0db5589f2129723eb3f046cc2e147179675ac7bd
+          ref: f67abe43b7223d0f59ee1efb6cf883d558eddfb5
           path: candidate_pr657
           sparse-checkout: |
             scripts/validate_nova_publication_p50b.py
