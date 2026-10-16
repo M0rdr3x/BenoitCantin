@@ -76,7 +76,7 @@ def suspicious_destination(value: str) -> str | None:
                 (path == "/cgi-bin/webscr" and
                  any(token in url.query.casefold() for token in
                      ("cmd=_donations", "cmd=_xclick", "cmd=_s-xclick")))
-            )):
+            ))):
             return "service de paiement ou de don"
     return None
 
@@ -114,8 +114,8 @@ class SiteHTML(HTMLParser):
                 if (href.lower().startswith("mailto:") and
                     "template" not in self.ignore and
                     "hidden" not in attrs and
-                    attrs.get("aria-hidden", "").casefold() != "true" and
-                    "display:none" not in attrs.get("style", "").replace(" ", "").casefold()):
+                    str(attrs.get("aria-hidden") or "").casefold() != "true" and
+                    "display:none" not in str(attrs.get("style") or "").replace(" ", "").casefold()):
                     try:
                         address = urlsplit(href).path
                     except ValueError:
