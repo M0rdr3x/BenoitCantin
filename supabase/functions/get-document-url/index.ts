@@ -106,7 +106,10 @@ Deno.serve(async(req)=>{
     // Le droit public appartient aussi aux membres connectés :
     // une connexion ne doit jamais réduire l'accès à un document public
     // d'un projet public approuvé. Aucun RPC privilégié n'est requis ici.
-    const requiredRank=ranks[doc.access_level]||999;
+    // Interdire les propriétés héritées du prototype Object (constructor,
+    // toString, __proto__, ...). Un niveau inconnu doit rester interdit,
+    // y compris pour un propriétaire ou administrateur authentifié.
+    const requiredRank=typeof doc.access_level==='string'&&Object.hasOwn(ranks,doc.access_level)?ranks[doc.access_level]:999;
     let userRank=doc.projects?.visibility==='public'?ranks.public:0;
     if(user&&userRank<requiredRank){
       // Le propriétaire SINJIRA et les administrateurs constituent deux
