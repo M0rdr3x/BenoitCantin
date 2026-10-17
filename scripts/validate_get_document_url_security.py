@@ -25,6 +25,11 @@ REQUIRED = {
     'auth optionnelle': 'optionalUser(req)',
     'document approuvé': "doc.status!=='approved'",
     'projet actif': "doc.projects?.status!=='active'",
+    'rang public conditionné à la visibilité': "let userRank=doc.projects?.visibility==='public'?ranks.public:0;",
+    'rang exigé stable': "const requiredRank=ranks[doc.access_level]||999;",
+    'RPC uniquement si rang insuffisant': "if(user&&userRank<requiredRank){",
+    'rang membre ne retire pas le rang public': "userRank=Math.max(userRank,memberRank);",
+    'refus sur rang final': "if(userRank<requiredRank){"
     'rang projet serveur': "service.rpc('project_access_rank'",
     'validation URL externe': 'externalUrlAllowed(url)',
     'lien signé 600 secondes': 'createSignedUrl(doc.storage_path,600)',
@@ -117,7 +122,14 @@ Deno.serve(async(req)=>{
   const service=serviceClient(),user=await optionalUser(req);
   const {data:doc}=await service.from('documents').select('status,projects(status)').eq('id',document_id).maybeSingle();
   if(doc.status!=='approved'||doc.projects?.status!=='active')return privateJson({},404);
-  await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user?.id});
+  const requiredRank=ranks[doc.access_level]||999;
+  let userRank=doc.projects?.visibility==='public'?ranks.public:0;
+  if(user&&userRank<requiredRank){
+    await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user?.id});
+    const memberRank=10;
+    userRank=Math.max(userRank,memberRank);
+  }
+  if(userRank<requiredRank)return privateJson({},403);
   const url='https://example.test'; if(!externalUrlAllowed(url))return privateJson({},500);
   const signed=await service.storage.from('x').createSignedUrl(doc.storage_path,600);
   return privateJson({ok:true,url:signed.signedUrl,expires_in:600});
@@ -146,6 +158,13 @@ Deno.serve(async(req)=>{
             'no-store retiré': safe.replace(" 'Cache-Control':'private, no-store, max-age=0',\n", ''),
             'TTL signé augmenté': safe.replace('createSignedUrl(doc.storage_path,600)', 'createSignedUrl(doc.storage_path,3600)'),
             'log brut': safe.replace("}catch{\n  console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});", "}catch(error){\n  console.error(error);"),
+            'rang public retiré': safe.replace(
+                "let userRank=doc.projects?.visibility==='public'?ranks.public:0;",
+                "let userRank=0;"),
+            'RPC exigé même pour public': safe.replace(
+                "if(user&&userRank<requiredRank){", "if(user){"),
+            'rang public écrasé par projet': safe.replace(
+                "userRank=Math.max(userRank,memberRank);", "userRank=memberRank;"),
         }
         for label, mutated in mutations.items():
             if mutated == safe:
