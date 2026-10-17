@@ -11,12 +11,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from dataclasses import dataclass
 from typing import Mapping
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from pages_release_proof import MARKER, SHA_PATTERN, render
-from verify_pages_live import PRIVATE_ROUTES
+from verify_pages_live import PRIVATE_ROUTES, PUBLIC_ROUTES, MIME_HINTS
 
 BASE_URL = "https://www.benoitcantin.com"
 # Source de vérité commune aux sondes pré/post-PUBLISH : tout chemin
@@ -25,6 +26,38 @@ TECHNICAL_ROUTES = PRIVATE_ROUTES
 TIMEOUT_SECONDS = 12
 MAX_RECEIPT_BYTES = 4096
 PRIVATE_DENIAL = {404, 410}
+
+
+@dataclass(frozen=True)
+class StatusObservation:
+    status: int
+    content_type: str = ""
+    location: str = ""
+    netlify: bool = False
+    github_pages: bool = False
+
+
+def validate_public_routes(observed: Mapping[str, StatusObservation]) -> list[str]:
+    """Même 21 routes et mêmes MIME que le post-PUBLISH, sans lire de corps."""
+    errors: list[str] = []
+    if set(observed) != set(PUBLIC_ROUTES):
+        errors.append("Inventaire quotidien incomplet des 21 routes publiques.")
+    for route in PUBLIC_ROUTES:
+        result = observed.get(route)
+        if result is None:
+            errors.append(f"Route publique non contrôlée: {route}")
+            continue
+        if result.location or result.status in {301, 302, 303, 307, 308}:
+            errors.append(f"Route publique redirigée: {route} (HTTP {result.status})")
+            continue
+        if result.status != 200:
+            errors.append(f"Route publique indisponible: {route} (HTTP {result.status})")
+            continue
+        expected = ("text/html",) if route == "/" or route.endswith(("/", ".html")) else MIME_HINTS.get(route, ())
+        mime = result.content_type.split(";", 1)[0].strip().lower()
+        if not expected or mime not in expected:
+            errors.append(f"Type MIME de la route publique non conforme: {route} ({mime or 'absent'})")
+    return errors
 
 
 class RefuseRedirect(HTTPRedirectHandler):
@@ -140,11 +173,14 @@ def provider(headers) -> tuple[bool, bool]:
     return netlify, pages
 
 
-def read_status(opener, route: str) -> tuple[int, bool, bool]:
+def read_status(opener, route: str) -> StatusObservation:
+    if route not in PUBLIC_ROUTES and route not in TECHNICAL_ROUTES:
+        raise ValueError("Route hors de l'inventaire de surveillance approuvé")
+    url = BASE_URL + route
     request = Request(
-        BASE_URL + route,
+        url,
         headers={
-            "User-Agent": "SINJIRA-publication-boundary/2.0",
+            "User-Agent": "SINJIRA-publication-boundary/2.1",
             "Cache-Control": "no-cache, no-store",
             "Pragma": "no-cache",
             "Accept-Encoding": "identity",
@@ -152,12 +188,21 @@ def read_status(opener, route: str) -> tuple[int, bool, bool]:
         },
         method="GET",
     )
+    def observation(code: int, headers, actual_url: str) -> StatusObservation:
+        netlify, pages = provider(headers)
+        # Les en-têtes sont suffisants : ne jamais lire le corps technique.
+        location = headers.get("Location", "") or (
+            actual_url if actual_url != url else ""
+        )
+        return StatusObservation(
+            int(code), headers.get("Content-Type", ""), location, netlify, pages
+        )
     try:
         with opener.open(request, timeout=TIMEOUT_SECONDS) as response:
-            return int(response.status), *provider(response.headers)
+            return observation(response.status, response.headers, response.geturl())
     except HTTPError as error:
         try:
-            return int(error.code), *provider(error.headers)
+            return observation(error.code, error.headers, error.geturl())
         finally:
             error.close()
 
@@ -196,17 +241,23 @@ def read_pages_receipt(opener, expected_sha: str) -> bool:
 def live() -> int:
     opener = build_opener(RefuseRedirect())
     observations: dict[str, int] = {}
+    public: dict[str, StatusObservation] = {}
     is_netlify = is_pages = False
-    for route in ("/", *TECHNICAL_ROUTES):
+    # 21 routes publiques + 14 chemins interdits : une seule visite par URL.
+    # Les corps publics/techniques restent tous fermés sans lecture.
+    for route in (*PUBLIC_ROUTES, *TECHNICAL_ROUTES):
         try:
-            status, netlify, pages = read_status(opener, route)
-        except (URLError, OSError, TimeoutError) as error:
+            result = read_status(opener, route)
+        except (URLError, OSError, TimeoutError, ValueError) as error:
             print(f"ECHEC réseau sur {route}: {type(error).__name__}")
             return 1
-        observations[route] = status
+        if route in PUBLIC_ROUTES:
+            public[route] = result
+        if route in TECHNICAL_ROUTES or route == "/":
+            observations[route] = result.status
         if route == "/":
-            is_netlify, is_pages = netlify, pages
-        print(f"{route}: HTTP {status}")
+            is_netlify, is_pages = result.netlify, result.github_pages
+        print(f"{route}: HTTP {result.status}")
     receipt_valid = (
         is_pages and not is_netlify and
         os.environ.get("GITHUB_REF") == "refs/heads/main" and
@@ -216,6 +267,7 @@ def live() -> int:
         observations, netlify=is_netlify, github_pages=is_pages,
         pages_receipt_valid=receipt_valid
     )
+    errors.extend(validate_public_routes(public))
     if errors:
         print(
             f"ECHEC: {len(errors)} écart(s) de publication; "
@@ -226,8 +278,8 @@ def live() -> int:
         return 1
     origin = "Netlify" if is_netlify else "Pages Actions (reçu/main prouvé)"
     print(
-        f"PASS: {len(TECHNICAL_ROUTES)} routes techniques en HTTP 404/410 "
-        f"et origine {origin}."
+        f"PASS: {len(PUBLIC_ROUTES)} routes publiques en HTTP 200 / MIME conforme; "
+        f"{len(TECHNICAL_ROUTES)} routes techniques en HTTP 404/410 et origine {origin}."
     )
     return 0
 
