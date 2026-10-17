@@ -75,7 +75,8 @@ def analyze(document, observations=None):
         items = []
         problems.append("CAS_NON_LISIBLES")
     ids = [i.get("id") for i in items if isinstance(i, dict)]
-    if len(items) != len(CASES) or sorted(ids) != sorted(CASES):
+    if len(items) != len(CASES) or len(ids) != len(CASES) or any(
+            not isinstance(x,str) for x in ids) or sorted(ids) != sorted(CASES):
         problems.append("TROIS_CAS_UNIQUES_REQUIS")
     for caseid in CASES:
         matches = [v for v in items if isinstance(v, dict) and v.get("id") == caseid]
