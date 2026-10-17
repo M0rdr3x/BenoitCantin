@@ -1,0 +1,95 @@
+name: Projet Nova P50T - revue formelle requise (NO GO)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p50t.yml"
+      - "scripts/grade_nova_review_gate_p50t.py"
+      - "scripts/tests/test_grade_nova_review_gate_p50t.py"
+      - "projets/projet-nova/controles/P50T_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+jobs:
+  releve-documentaire-sans-mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Lire la PR P50T en lecture seule
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Lire la source P50S sur SHA vérifié
+        uses: actions/checkout@v4
+        with:
+          ref: 9cb89281ee1d2f38b788dd06bec8efe25a2c0732
+          path: source_p50s
+          sparse-checkout: |
+            scripts/inspect_nova_review_readiness_p50s.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compiler et tester 20 règles de revue
+        run: |
+          python -m py_compile scripts/grade_nova_review_gate_p50t.py
+          python -m unittest discover -s scripts/tests -p test_grade_nova_review_gate_p50t.py -v
+      - name: Interroger les reviews GitHub en lecture seule (P50S)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python source_p50s/scripts/inspect_nova_review_readiness_p50s.py --rapport p50s_releve_live.json
+      - name: Calculer sans fiction les deux portes P50T
+        run: |
+          python scripts/grade_nova_review_gate_p50t.py --rapport-p50s p50s_releve_live.json --phase prioritaire --resultat p50t_prioritaire.json
+          python scripts/grade_nova_review_gate_p50t.py --rapport-p50s p50s_releve_live.json --phase complete --resultat p50t_complete.json
+          python - <<'PY'
+          import json
+          for stage in ("prioritaire","complete"):
+              r=json.load(open("p50t_"+stage+".json",encoding="utf-8"))
+              assert r["decision"]=="NO_GO_AUTOMATIQUE"
+              assert not r["autorisation_fusion"] and not r["autorisation_publication"]
+              print("P50T",stage,"--",r["etat_porte_revues"],"-- obstacles",r["obstacles_revues"])
+          PY
+      - name: Archiver uniquement des informations de décision non nominatives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p50t-etat-revues-no-go
+          path: |
+            p50s_releve_live.json
+            p50t_prioritaire.json
+            p50t_complete.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  porte-des-revues-bloquante:
+    name: P50T - approbations indépendantes requises
+    needs: releve-documentaire-sans-mutation
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Lire l'instrument P50T
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Récupérer le relevé sans accès aux API ou secrets
+        uses: actions/download-artifact@v4
+        with:
+          name: nova-p50t-etat-revues-no-go
+      - name: Appliquer la porte de revues prioritaires - ECHEC attendu sans revues
+        run: |
+          python scripts/grade_nova_review_gate_p50t.py --rapport-p50s p50s_releve_live.json --phase prioritaire --exiger-revues
+      - name: Vérifier le second seuil après approbations prioritaires
+        run: |
+          python scripts/grade_nova_review_gate_p50t.py --rapport-p50s p50s_releve_live.json --phase complete --exiger-revues
+      - name: Rappeler les limites même si les deux seuils passent
+        run: |
+          echo "::notice::P50T: approbations GitHub ne prouvent pas les mandats, la conformité, ou l'autorisation de fusion."
+          echo "::notice::PR640 ne doit pas être fusionnée, et aucune publication n'est autorisée."
