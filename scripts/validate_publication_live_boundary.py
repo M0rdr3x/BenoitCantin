@@ -19,10 +19,9 @@ from pages_release_proof import MARKER, SHA_PATTERN, render
 from verify_pages_live import PRIVATE_ROUTES
 
 BASE_URL = "https://www.benoitcantin.com"
-# Inclure le chemin historique du build Netlify (absent des tests Pages).
-TECHNICAL_ROUTES = tuple(dict.fromkeys(
-    (*PRIVATE_ROUTES, "/scripts/build_netlify_public.py")
-))
+# Source de vérité commune aux sondes pré/post-PUBLISH : tout chemin
+# technique interdit est désormais contrôlé dans les deux modes.
+TECHNICAL_ROUTES = PRIVATE_ROUTES
 TIMEOUT_SECONDS = 12
 MAX_RECEIPT_BYTES = 4096
 PRIVATE_DENIAL = {404, 410}
@@ -78,6 +77,12 @@ def validate_receipt_payload(
 
 
 def self_test() -> None:
+    assert len(TECHNICAL_ROUTES) == len(set(TECHNICAL_ROUTES)) == 14, (
+        "Les diagnostics et la publication doivent tester exactement 14 routes"
+    )
+    assert TECHNICAL_ROUTES is PRIVATE_ROUTES, (
+        "La liste des chemins ne doit plus diverger des tests post-PUBLISH"
+    )
     good: dict[str, int] = {"/": 200}
     good.update({route: 404 for route in TECHNICAL_ROUTES})
     sha, run = "a" * 40, "38433761170"
