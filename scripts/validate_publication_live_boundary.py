@@ -118,6 +118,82 @@ def self_test() -> None:
     )
     good: dict[str, int] = {"/": 200}
     good.update({route: 404 for route in TECHNICAL_ROUTES})
+    assert len(PUBLIC_ROUTES) == len(set(PUBLIC_ROUTES)) == 21
+    assert not set(PUBLIC_ROUTES) & set(TECHNICAL_ROUTES)
+    public = {
+        route: StatusObservation(
+            200, "text/html; charset=utf-8"
+            if route == "/" or route.endswith(("/", ".html"))
+            else MIME_HINTS[route][0] + "; charset=utf-8"
+        )
+        for route in PUBLIC_ROUTES
+    }
+    assert not validate_public_routes(public)
+    assert validate_public_routes({})
+    assert validate_public_routes({**public, "/unexpected/": StatusObservation(200, "text/html")})
+    for route in PUBLIC_ROUTES:
+        missing = dict(public)
+        del missing[route]
+        assert any(route in error for error in validate_public_routes(missing)), (
+            "Route canonique ignorée : " + route
+        )
+        for status in (301, 302, 303, 307, 308, 403, 404, 500):
+            invalid = {**public, route: StatusObservation(status, public[route].content_type)}
+            assert any(route in error for error in validate_public_routes(invalid)), (
+                "Indisponibilité/redirection non détectée : " + route
+            )
+        for location in ("/", "https://www.benoitcantin.com/"):
+            invalid = {**public, route: StatusObservation(
+                200, public[route].content_type, location
+            )}
+            assert any(route in error for error in validate_public_routes(invalid)), (
+                "HTTP 200 avec Location trompeur accepté : " + route
+            )
+        for mime in ("", "text/plain" if public[route].content_type.startswith(
+            "text/html") else "text/html"):
+            invalid = {**public, route: StatusObservation(200, mime)}
+            assert any(route in error for error in validate_public_routes(invalid)), (
+                "MIME non conforme accepté : " + route
+            )
+
+    # Lire seulement les en-têtes et le statut ; une tentative de lecture
+    # du corps public ou technique provoquerait un échec déterministe.
+    class FakeResponse:
+        def __init__(self, url, headers):
+            self.status = 200
+            self.url = url
+            self.headers = headers
+        def geturl(self): return self.url
+        def __enter__(self): return self
+        def __exit__(self, *_args): return False
+        def read(self, *_args): raise AssertionError("Lecture de corps interdite")
+    class FakeOpener:
+        def __init__(self):
+            self.requests = []
+        def open(self, request, timeout):
+            self.requests.append((request, timeout))
+            return FakeResponse(request.full_url, {
+                "Content-Type": "text/html", "Server": "netlify"
+            })
+    opener = FakeOpener()
+    probe = read_status(opener, PUBLIC_ROUTES[0])
+    assert (probe.status, probe.content_type, probe.netlify, probe.github_pages) == (
+        200, "text/html", True, False
+    )
+    assert not probe.location
+    probe_private = read_status(opener, TECHNICAL_ROUTES[0])
+    assert probe_private.status == 200  # Diagnostic : jamais une approbation.
+    assert len(opener.requests) == 2
+    assert all(request.get_method() == "GET" and timeout == TIMEOUT_SECONDS
+               for request, timeout in opener.requests)
+    try:
+        read_status(opener, "/another/private/path.txt")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Sonde hors inventaire autorisée")
+    assert len(opener.requests) == 2
+
     sha, run = "a" * 40, "38433761170"
     proof = render(sha, run)
     assert validate_receipt_payload(proof, "application/json; charset=utf-8", sha)
@@ -161,8 +237,9 @@ def self_test() -> None:
         )), f"Absence de preuve non détectée: {route}"
     assert validate_observations({**good, "/": 503}, netlify=True)
     print(
-        f"OK: {len(TECHNICAL_ROUTES)} routes techniques, origine "
-        "Netlify ou reçu Pages/main, tests négatifs sans trafic privé."
+        f"OK: {len(PUBLIC_ROUTES)} routes publiques (MIME, erreurs, redirections) "
+        f"et {len(TECHNICAL_ROUTES)} techniques, "
+        "origine Netlify ou reçu Pages/main, aucun corps technique lu."
     )
 
 
