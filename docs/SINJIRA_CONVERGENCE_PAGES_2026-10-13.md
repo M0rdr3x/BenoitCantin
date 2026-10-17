@@ -399,3 +399,28 @@ Il s'agit de protections de code dans la **PR non déployée**, sans accès à
 Supabase réel ni changement des droits RLS en production. Les décisions
 de publication Pages et d'activation des fonctions privées restent
 indépendantes et soumises aux procédures approuvées.
+
+## Validation stricte des niveaux d'accès documentaires (17 octobre 2026)
+
+La fonction publique `get-document-url` autorise uniquement les cinq
+niveaux explicites du registre : `public`, `account`, `player`,
+`tester`, `admin`. L'ancienne consultation
+`ranks[doc.access_level]||999` n'était pas une liste blanche :
+avec un objet JavaScript ordinaire, des valeurs telles que
+`constructor`, `toString` ou `__proto__` récupéraient une propriété
+héritée non numérique. La comparaison au rang du membre pouvait alors
+évaluer `NaN` et laisser passer une signature de lien non autorisée.
+
+La décision repose maintenant sur un niveau textuel **et**
+`Object.hasOwn(ranks,doc.access_level)`. Toute valeur hors inventaire
+obtient le seuil inaccessible `999`, même pour un propriétaire ou un
+administrateur. Le refus a lieu **avant** la création d'une URL signée
+ou l'envoi d'une URL externe. Des tests Node vérifient les valeurs
+malformées, les propriétés héritées, les seuils de chaque niveau
+autorisé et le refus des liens. Les contrats Python Edge et Livre I
+incluent des mutations négatives interdisant la suppression de la liste
+blanche.
+
+Cette protection concerne le code de la PR #639 **non fusionnée** :
+elle ne constitue ni un déploiement Supabase, ni une attestation des
+permissions RLS réelles. Aucun roman ou fichier commercial n'est modifié.
