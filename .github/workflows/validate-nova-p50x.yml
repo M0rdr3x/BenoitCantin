@@ -1,0 +1,102 @@
+name: Projet Nova P50X - preuve des regles effectives sur main
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p50x.yml"
+      - "scripts/audit_nova_effective_rules_p50x.py"
+      - "scripts/tests/test_audit_nova_effective_rules_p50x.py"
+      - "projets/projet-nova/controles/P50X_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  releve-des-regles-en-lecture-seule:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Lire le code sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Lire le candidat P50V a son commit immuable
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: d8acb58c2829cf990d7c77614b3f640369fdbdca
+          path: candidat_p50v
+          sparse-checkout: |
+            projets/projet-nova/controles/P50V_CANDIDAT_RULESET_MAIN_DESACTIVE.json
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Configurer Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Executer 20 tests de refus des faux GO
+        run: |
+          python -m py_compile scripts/audit_nova_effective_rules_p50x.py
+          python -m unittest discover -s scripts/tests -p "test_audit_nova_effective_rules_p50x.py" -v
+      - name: Consulter branche, rulesets et regles effectives de main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/audit_nova_effective_rules_p50x.py \
+            --candidate candidat_p50v/projets/projet-nova/controles/P50V_CANDIDAT_RULESET_MAIN_DESACTIVE.json \
+            --result p50x_observation.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p50x_observation.json").read_text(encoding="utf-8"))
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          assert r["fusion_autorisee"] is False
+          assert r["publication_autorisee"] is False
+          assert r["activation_effective_certifiee"] is False
+          print("P50X : main protected =",r["main_protected_observe"])
+          print("P50X : rulesets actifs =",r["rulesets_actifs"])
+          print("P50X : regles effectives lisibles =",r["regles_effectives_lisibles"])
+          print("P50X : bypass =",r["exceptions_bypass"])
+          print("P50X : obstacles =",r["obstacles"])
+          PY
+      - name: Conserver un rapport non nominatif
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p50x-regles-effectives-no-go
+          path: p50x_observation.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  porte-administrateur-bloquante:
+    name: P50X - regles serveur a faire verifier
+    needs: releve-des-regles-en-lecture-seule
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Lire le rapport technique du job precedent
+        uses: actions/download-artifact@v4
+        with:
+          name: nova-p50x-regles-effectives-no-go
+      - name: Exiger le ruleset actif et une preuve non ambigue de bypass
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p50x_observation.json").read_text(encoding="utf-8"))
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          conditions=[
+              r["main_protected_observe"] is True,
+              r["ruleset_candidat_actif_et_parametres_compatibles"] is True,
+              r["exceptions_bypass"]=="AUCUN_BYPASS_DECLARÉ_DANS_LA_REPONSE",
+              r["regles_effectives_lisibles"] is True,
+              not any(x in r["obstacles"] for x in
+                ["REGLES_EFFECTIVES_MAIN_INCOMPLETES",
+                 "MAIN_A_CHANGE_RELANCER_VALIDATIONS"]),
+          ]
+          if not all(conditions):
+              print("P50X_REGLES_SERVEUR_NON_ATTESTEES:",r["obstacles"])
+              raise SystemExit(3)
+          print("P50X : regles techniques observees; recette humaine du refus de fusion toujours requise.")
+          print("P50X : aucune autorisation de publier ou fusionner.")
+          PY
