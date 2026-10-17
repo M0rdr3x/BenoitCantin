@@ -17,9 +17,27 @@ function privateJson(data:unknown,status=200){
   return new Response(JSON.stringify(data),{status,headers:PRIVATE_JSON_HEADERS});
 }
 
+const OFFICIAL_ORIGIN='https://www.benoitcantin.com';
 function externalUrlAllowed(value:string){
-  if(value.startsWith('/')&&!value.startsWith('//'))return true;
-  try{return new URL(value).protocol==='https:'}catch{return false}
+  // Les URL de documents proviennent du registre approuvé, mais doivent
+  // rester non ambiguës au moment de leur ouverture par le navigateur.
+  // Une URL commençant par /\\ peut sinon changer d'hôte silencieusement.
+  if(!value||value.trim()!==value||/[\\\u0000-\u001f\u007f]/.test(value))return false;
+  if(value.startsWith('/')&&!value.startsWith('//')){
+    // Refuser aussi les séparateurs et caractères de contrôle encodés.
+    if(/%(?:2f|5c|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value))return false;
+    try{
+      const url=new URL(value,OFFICIAL_ORIGIN);
+      return url.origin===OFFICIAL_ORIGIN&&!url.username&&!url.password;
+    }catch{return false}
+  }
+  // Les fournisseurs HTTPS externes restent permis, mais sans
+  // identifiants intégrés ni URL dont le schéma est écrit ambiguëment.
+  if(!/^https:\/\/[^/]/i.test(value))return false;
+  try{
+    const url=new URL(value);
+    return url.protocol==='https:'&&!!url.hostname&&!url.username&&!url.password;
+  }catch{return false}
 }
 
 async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
