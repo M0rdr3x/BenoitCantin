@@ -57,7 +57,9 @@ def evaluate(branch, rulesets, codeowners):
         problems.append("LISTE_CHECKS_NON_LISIBLE")
         checks=[]
         contexts=[]
-    required_count=len({str(x.get("context")) for x in checks if isinstance(x,dict) and x.get("context")}) + len(set(contexts))
+    required_names={str(x.get("context")) for x in checks if isinstance(x,dict) and x.get("context")}
+    required_names.update(x for x in contexts if isinstance(x,str))
+    required_count=len(required_names)
     if required_count==0:
         problems.append("AUCUN_CHECK_OBLIGATOIRE")
     enforcement=requirements.get("enforcement_level")
@@ -83,14 +85,16 @@ def evaluate(branch, rulesets, codeowners):
         "regles_actives_observees":active_rulesets,
         "codeowners_noms_non_publies":True,
         "codeowners_comptes":owner_count if owner_count is not None else "INCONNU",
-        "etat_porte_technique":"PROTECTION_CONFIRME_E_SUR_SURFACE_LUE" if not problems else "BLOQUANT",
+        "etat_porte_technique":"CONTROLES_TECHNIQUES_VISIBLES" if not problems else "BLOQUANT",
+        "approbation_pre_fusion_exigee_par_serveur":"NON_ATTESTEE",
+        "independance_revue_pre_fusion_attestee":False,
         "obstacles":sorted(set(problems)),
         "revue_humaine_qualifiee_attestee":False,
         "mandat_institutionnel_atteste":False,
         "autorisation_fusion":False,
         "autorisation_publication":False,
         "decision":"NO_GO_AUTOMATIQUE",
-        "limite":"Les champs GitHub accessibles ne prouvent pas l'independance ni l'habilitation d'un reviewer.",
+        "limite":"protected:true et checks non vides ne prouvent pas une revue independante obligatoire; verification administrateur requise.",
     }
 
 def read_api(path,token):
