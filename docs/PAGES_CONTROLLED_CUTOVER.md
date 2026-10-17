@@ -158,6 +158,12 @@ Les probes contrôlent notamment :
 `/mobile-native/App.tsx`, `/scripts/validate_site.py`,
 `/.github/workflows/validate-site.yml` et `/_config.yml`.
 
+Chaque route publique canonique doit répondre **directement** HTTP 200 et
+avec son type MIME prévu. Une redirection HTTP 301/302/303/307/308, même
+vers l'accueil officiel ou vers une autre URL du même domaine, est refusée :
+elle ne prouve pas que la route demandée fonctionne. Les **21 routes
+publiques** sont protégées par des autotests de redirection trompeuse.
+
 Le succès du déploiement GitHub n'est **pas** le succès du contrôle HTTP :
 inscrire les deux états dans l'issue #450 et tester aussi manuellement les
 parcours authentifiés, la PWA/cache, les navigations et les redirections.
