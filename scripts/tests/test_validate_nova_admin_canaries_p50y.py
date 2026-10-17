@@ -43,7 +43,14 @@ def observations(f):
         "head_repo":m.REPO,
         "head_ref":"test/p50y-"+row["id"]+"-non-fusion",
         "title":"[P50Y-CANARI:"+row["id"]+"] Essai non fusionne",
-        "changed_paths":["projets/projet-nova/controles/canaris/"+row["id"]+".txt"]}
+        "changed_paths":["projets/projet-nova/controles/canaris/"+row["id"]+".txt"],
+        "review_stats":{
+            "submitted_substantive":0 if row["id"]=="sans_revue" else 1,
+            "fresh_independent_approvals":1 if row["id"]=="check_non_satisfait" else 0,
+            "prior_independent_approval_observed":row["id"]=="approbation_perimee"},
+        "check_stats":{
+            "checks_success":2 if row["id"]=="check_non_satisfait" else 3,
+            "checks_non_satisfaits":1 if row["id"]=="check_non_satisfait" else 0}}
         for row in f["cas"]}
 
 class P50Y(unittest.TestCase):
@@ -162,6 +169,7 @@ class P50Y(unittest.TestCase):
         number=801
         github_pr={
             "title":"[P50Y-CANARI:sans_revue] Test",
+            "user":{"id":90,"type":"User"},
             "changed_files":1,"state":"open","draft":False,"merged":False,
             "mergeable":True,"mergeable_state":"blocked",
             "head":{"sha":"a"*40,"ref":"test/p50y-sans_revue-1",
@@ -169,9 +177,15 @@ class P50Y(unittest.TestCase):
             "base":{"ref":"main","repo":{"full_name":m.REPO}},
         }
         files=[{"filename":"projets/projet-nova/controles/canaris/notice.txt"}]
-        with patch.object(m,"github",side_effect=[github_pr,files]) as mocked:
+        with patch.object(m,"github",side_effect=[
+            github_pr, files, [],
+            {"total_count":3,"check_runs":[
+                {"name":name,"head_sha":"a"*40,"app":{"id":m.ACTIONS_APP_ID},
+                 "status":"completed","conclusion":"success"}
+                for name in m.REQUIRED_CHECKS]},
+        ]) as mocked:
             result=m.actual_canary(number,"")
-        self.assertEqual(mocked.call_count,2)
+        self.assertEqual(mocked.call_count,4)
         self.assertEqual(result["base_ref"],"main")
         self.assertEqual(result["changed_paths"],[files[0]["filename"]])
     def test_actual_canary_refuses_partial_file_inventory(self):
@@ -179,6 +193,74 @@ class P50Y(unittest.TestCase):
         with patch.object(m,"github",side_effect=[github_pr,[{"filename":"one"}]]):
             with self.assertRaises(ValueError):
                 m.actual_canary(801,"")
+    def test_absence_revue_but_ci_failed_is_not_valid_test(self):
+        f=filled();o=observations(f)
+        o["800"]["check_stats"]={"checks_success":2,"checks_non_satisfaits":1}
+        self.assertIn("OBSERVATIONS_NE_SOUTIENNENT_PAS_LE_SCENARIO:sans_revue",m.analyze(f,o)["obstacles"])
+    def test_stale_approval_must_exist(self):
+        f=filled();o=observations(f)
+        o["801"]["review_stats"]["prior_independent_approval_observed"]=False
+        self.assertIn("OBSERVATIONS_NE_SOUTIENNENT_PAS_LE_SCENARIO:approbation_perimee",m.analyze(f,o)["obstacles"])
+    def test_stale_approval_with_fresh_approval_rejected(self):
+        f=filled();o=observations(f)
+        o["801"]["review_stats"]["fresh_independent_approvals"]=1
+        self.assertIn("OBSERVATIONS_NE_SOUTIENNENT_PAS_LE_SCENARIO:approbation_perimee",m.analyze(f,o)["obstacles"])
+    def test_check_failure_requires_independent_approval(self):
+        f=filled();o=observations(f)
+        o["802"]["review_stats"]["fresh_independent_approvals"]=0
+        self.assertIn("OBSERVATIONS_NE_SOUTIENNENT_PAS_LE_SCENARIO:check_non_satisfait",m.analyze(f,o)["obstacles"])
+    def test_check_failure_with_three_green_rejected(self):
+        f=filled();o=observations(f)
+        o["802"]["check_stats"]={"checks_success":3,"checks_non_satisfaits":0}
+        self.assertIn("OBSERVATIONS_NE_SOUTIENNENT_PAS_LE_SCENARIO:check_non_satisfait",m.analyze(f,o)["obstacles"])
+    def test_missing_review_summary_rejected(self):
+        f=filled();o=observations(f)
+        del o["800"]["review_stats"]
+        self.assertIn("REVUES_OU_CHECKS_NON_ATTESTES:sans_revue",m.analyze(f,o)["obstacles"])
+    def test_review_evidence_fresh_valid(self):
+        rows=[{"state":"APPROVED","commit_id":"a"*40,
+               "user":{"id":42,"type":"User"},"submitted_at":"2026-10-17T00:00:00Z"}]
+        result=m.review_evidence(rows,"a"*40,author_id=99)
+        self.assertEqual(result["fresh_independent_approvals"],1)
+        self.assertFalse(result["prior_independent_approval_observed"])
+    def test_review_evidence_stale_approval(self):
+        rows=[{"state":"DISMISSED","commit_id":"a"*40,
+               "user":{"id":42,"type":"User"},"submitted_at":"2026-10-17T00:00:00Z"}]
+        result=m.review_evidence(rows,"b"*40,author_id=99)
+        self.assertEqual(result["fresh_independent_approvals"],0)
+        self.assertTrue(result["prior_independent_approval_observed"])
+    def test_review_evidence_author_excluded(self):
+        rows=[{"state":"APPROVED","commit_id":"a"*40,
+               "user":{"id":99,"type":"User"},"submitted_at":"2026-10-17T00:00:00Z"}]
+        self.assertEqual(m.review_evidence(rows,"a"*40,99)["fresh_independent_approvals"],0)
+    def test_review_pagination_rejected(self):
+        with self.assertRaises(ValueError):
+            m.review_evidence([{}]*100,"a"*40,99)
+    def test_checks_successes_and_failure(self):
+        checks={"total_count":3,"check_runs":[
+            {"name":name,"head_sha":"a"*40,"app":{"id":m.ACTIONS_APP_ID},
+             "status":"completed","conclusion":"failure" if i==1 else "success"}
+            for i,name in enumerate(m.REQUIRED_CHECKS)]}
+        evidence=m.checks_evidence(checks,"a"*40)
+        self.assertEqual(evidence,{"checks_success":2,"checks_non_satisfaits":1})
+    def test_duplicate_required_check_rejected(self):
+        row={"name":m.REQUIRED_CHECKS[0],"head_sha":"a"*40,
+             "app":{"id":m.ACTIONS_APP_ID},"status":"completed","conclusion":"success"}
+        checks={"total_count":2,"check_runs":[row,row.copy()]}
+        with self.assertRaises(ValueError):
+            m.checks_evidence(checks,"a"*40)
+    def test_check_from_wrong_app_rejected(self):
+        checks={"total_count":1,"check_runs":[
+            {"name":m.REQUIRED_CHECKS[0],"head_sha":"a"*40,
+             "app":{"id":999},"status":"completed","conclusion":"success"}]}
+        with self.assertRaises(ValueError):
+            m.checks_evidence(checks,"a"*40)
+    def test_missing_checks_not_considered_all_green(self):
+        x=m.checks_evidence({"total_count":0,"check_runs":[]},"a"*40)
+        self.assertEqual(x,{"checks_success":0,"checks_non_satisfaits":3})
+    def test_checks_pagination_rejected(self):
+        with self.assertRaises(ValueError):
+            m.checks_evidence({"total_count":100,"check_runs":[]},"a"*40)
     def test_identified_blocked_canary_still_no_go(self):
         f=filled()
         x=m.analyze(f,observations(f))
