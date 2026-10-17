@@ -1,0 +1,81 @@
+name: Projet Nova P50U - protection main et revue reelle requise
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p50u.yml"
+      - "scripts/audit_nova_protection_main_p50u.py"
+      - "scripts/tests/test_audit_nova_protection_main_p50u.py"
+      - "projets/projet-nova/controles/P50U_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  constat-main-en-lecture-seule:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Lire P50U et CODEOWNERS sans permissions de mutation
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verifier le scanner et ses seize scenarios fictifs
+        run: |
+          python -m py_compile scripts/audit_nova_protection_main_p50u.py
+          python -m unittest discover -s scripts/tests -p 'test_audit_nova_protection_main_p50u.py' -v
+      - name: Verifier main et les rulesets via les API publiques du depot
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/audit_nova_protection_main_p50u.py --codeowners .github/CODEOWNERS --rapport p50u_main_protection.json
+          python - <<'PY'
+          import json
+          r=json.load(open("p50u_main_protection.json",encoding="utf-8"))
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          assert r["autorisation_publication"] is False
+          print("P50U | Main protegee:",r["main_protegee"])
+          print("P50U | Nombre de checks requis:",r["checks_requis_observes"])
+          print("P50U | Rulesets actifs:",r["regles_actives_observees"])
+          print("P50U | Codeowners comptabilises:",r["codeowners_comptes"])
+          print("P50U | Obstacles:",r["obstacles"])
+          PY
+      - name: Conserver le rapport non nominatif
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p50u-protection-main-no-go
+          path: p50u_main_protection.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  verrou-serveur-bloquant:
+    name: P50U - protection preventive de main requise
+    needs: constat-main-en-lecture-seule
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Lire seulement le code P50U
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Lire le rapport reel deja collecte
+        uses: actions/download-artifact@v4
+        with:
+          name: nova-p50u-protection-main-no-go
+      - name: Bloquer sur main non protegee - echec attendu actuellement
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open("p50u_main_protection.json",encoding="utf-8"))
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          if r["etat_porte_technique"]!="CONTROLES_TECHNIQUES_VISIBLES":
+              print("P50U_GARDE_SERVEUR_MANQUANTE:",r["obstacles"])
+              raise SystemExit(3)
+          print("Protections techniques visibles; aucun GO institutionnel.")
+          PY
