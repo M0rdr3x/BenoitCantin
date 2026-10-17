@@ -74,7 +74,7 @@ jobs:
           import json
           r=json.load(open("p50u_main_protection.json",encoding="utf-8"))
           assert r["decision"]=="NO_GO_AUTOMATIQUE"
-          if r["etat_porte_technique"]!="PROTECTION_CONFIRME_E_SUR_SURFACE_LUE":
+          if r["etat_porte_technique"]!="CONTROLES_TECHNIQUES_VISIBLES":
               print("P50U_GARDE_SERVEUR_MANQUANTE:",r["obstacles"])
               raise SystemExit(3)
           print("Protections techniques visibles; aucun GO institutionnel.")
