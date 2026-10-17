@@ -1,0 +1,84 @@
+name: Projet Nova P51A - preuve avant apres des causes de blocage
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p51a.yml"
+      - "scripts/compare_nova_refusal_causes_p51a.py"
+      - "projets/projet-nova/controles/P51A_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  comparer-les-motifs-sans-ecriture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Lire la preuve P51A sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Charger P50Z avant au SHA PR668
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: 9e8d08b2a4d097e9609320cef5e9167ab3fe64bf
+          path: ancienne_version
+          sparse-checkout: |
+            scripts/validate_nova_admin_canaries_p50y.py
+            scripts/tests/test_validate_nova_admin_canaries_p50y.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Charger P51A apres au SHA PR670
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: a39056723f21d7b50416e57b616558ecc0f3f585
+          path: version_corrigee
+          sparse-checkout: |
+            scripts/validate_nova_admin_canaries_p50y.py
+            scripts/tests/test_validate_nova_admin_canaries_p50y.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Configurer Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Compiler les versions et le comparateur
+        run: |
+          python -m py_compile scripts/compare_nova_refusal_causes_p51a.py
+          python -m py_compile ancienne_version/scripts/validate_nova_admin_canaries_p50y.py
+          python -m py_compile version_corrigee/scripts/validate_nova_admin_canaries_p50y.py
+      - name: Verifier 37 tests anciens
+        run: |
+          python -m unittest discover -s ancienne_version/scripts/tests -p 'test_validate_nova_admin_canaries_p50y.py' -v
+      - name: Verifier 52 tests apres correction
+        run: |
+          python -m unittest discover -s version_corrigee/scripts/tests -p 'test_validate_nova_admin_canaries_p50y.py' -v
+      - name: Reproduire six faux motifs avant apres correction
+        run: |
+          python scripts/compare_nova_refusal_causes_p51a.py \
+            --avant ancienne_version/scripts/validate_nova_admin_canaries_p50y.py \
+            --apres version_corrigee/scripts/validate_nova_admin_canaries_p50y.py \
+            --rapport p51a_comparaison.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p51a_comparaison.json").read_text("utf-8"))
+          assert r["nombre_sondes"]==6,r
+          assert r["motifs_trompeurs_acceptes_avant"]==6,r
+          assert r["motifs_trompeurs_acceptes_apres"]==0,r
+          assert r["scenario_valide_toujours_reconnu"] is True,r
+          assert r["decision"]=="NO_GO_AUTOMATIQUE",r
+          assert r["essai_GitHub_reel"] is False,r
+          print("P51A: 6/6 motifs non corrobores refutes seulement apres correctif.")
+          print("P51A: 37 anciens tests + 52 corriges; AUCUN GO ou essai serveur reel.")
+          PY
+      - name: Archiver la preuve non nominative
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p51a-motifs-blocage-no-go
+          path: p51a_comparaison.json
+          if-no-files-found: ignore
+          retention-days: 7
