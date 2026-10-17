@@ -26,7 +26,7 @@ REQUIRED = {
     'document approuvé': "doc.status!=='approved'",
     'projet actif': "doc.projects?.status!=='active'",
     'rang public conditionné à la visibilité': "let userRank=doc.projects?.visibility==='public'?ranks.public:0;",
-    'rang exigé stable': "const requiredRank=ranks[doc.access_level]||999;",
+    'rang exigé stable et sans propriétés héritées': "const requiredRank=typeof doc.access_level==='string'&&Object.hasOwn(ranks,doc.access_level)?ranks[doc.access_level]:999;",
     'RPC uniquement si rang insuffisant': "if(user&&userRank<requiredRank){",
     'rang membre ne retire pas le rang public': "userRank=Math.max(userRank,memberRank);",
     'refus sur rang final': "if(userRank<requiredRank){",
@@ -138,7 +138,7 @@ Deno.serve(async(req)=>{
   const service=serviceClient(),user=await optionalUser(req);
   const {data:doc}=await service.from('documents').select('status,projects(status)').eq('id',document_id).maybeSingle();
   if(doc.status!=='approved'||doc.projects?.status!=='active')return privateJson({},404);
-  const requiredRank=ranks[doc.access_level]||999;
+  const requiredRank=typeof doc.access_level==='string'&&Object.hasOwn(ranks,doc.access_level)?ranks[doc.access_level]:999;
   let userRank=doc.projects?.visibility==='public'?ranks.public:0;
   if(user&&userRank<requiredRank){
     await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user?.id});
@@ -185,6 +185,12 @@ Deno.serve(async(req)=>{
             'URL nettoyée avant validation': safe.replace(
                 'const url=String(doc.external_url);',
                 'const url=String(doc.external_url).trim();'),
+            'niveaux du prototype acceptés': safe.replace(
+                'Object.hasOwn(ranks,doc.access_level)', 'true'),
+            'type du niveau non vérifié': safe.replace(
+                "typeof doc.access_level==='string'&&", ''),
+            'niveau inconnu autorisé': safe.replace(
+                '?ranks[doc.access_level]:999;', '?ranks[doc.access_level]:0;'),
             'rang public retiré': safe.replace(
                 "let userRank=doc.projects?.visibility==='public'?ranks.public:0;",
                 "let userRank=0;"),
