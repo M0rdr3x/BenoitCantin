@@ -129,7 +129,7 @@ Deno.serve(async(req)=>{
     const memberRank=10;
     userRank=Math.max(userRank,memberRank);
   }
-  if(userRank<requiredRank)return privateJson({},403);
+  if(userRank<requiredRank){return privateJson({},403);}
   const url='https://example.test'; if(!externalUrlAllowed(url))return privateJson({},500);
   const signed=await service.storage.from('x').createSignedUrl(doc.storage_path,600);
   return privateJson({ok:true,url:signed.signedUrl,expires_in:600});
