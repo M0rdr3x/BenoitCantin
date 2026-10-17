@@ -47,7 +47,14 @@ informatif sur les PR en brouillon, mais active un second job
 `pages-source-promotion-gate` lorsqu'une PR est marquée prête pour revue.
 Cette porte exige `build_type=workflow`, le CNAME officiel et HTTPS
 activé; API inaccessible ou mode `legacy` entraînent une erreur
-bloquante du job. La CI de diagnostic s'exécute sur **toutes les PR** (aucun filtre
+bloquante du job.
+Le job de promotion déclare aussi `needs: pages-preflight` : il attend
+la fin réussie des autotests et des rapports Source, HEAD et GET
+(lecture seule). Si le diagnostic échoue ou n'est pas exécuté, la
+garde de promotion ne peut pas réussir. Cela ne signifie **pas** que
+les 14 chemins techniques sont déjà confinés : leurs statuts restent
+un signal informatif jusqu'à la publication contrôlée, puis les
+contrôles HTTP et CDN stricts deviennent bloquants. La CI de diagnostic s'exécute sur **toutes les PR** (aucun filtre
 `paths`) afin que son résultat ne reste pas indéfiniment en attente
 lorsqu'il devient obligatoire. **Cette porte ne peut pas empêcher à
 elle seule une fusion si les vérifications obligatoires de branche
@@ -548,8 +555,12 @@ ou si l'API ne peut être vérifiée. Pour empêcher la fusion malgré cet
 échec, l'administrateur doit aussi rendre ce job **required** dans
 la protection de la branche `main`. Le nouveau contrat
 `scripts/validate_pages_promotion_gate.py` teste les régressions de
-filtrage des PR, de neutralisation d'erreur, de suppression du job
-et de permissions en écriture.
+filtrage des PR, de neutralisation d'erreur, de suppression du job,
+de permissions en écriture et de **détachement/contournement du job de
+diagnostic**. Il rejette les étapes HEAD/GET supprimées ou sautées,
+ainsi que les erreurs de diagnostic masquées. Même avec ce garde, seul
+un changement administratif réel de Source et les preuves post-PUBLISH
+peuvent clôturer l'incident #450.
 Le workflow `deploy-pages-controlled.yml` reste **strictement bloquant** et
 vérifie de nouveau `build_type=workflow` au SHA exact avant PUBLISH
 et juste avant le déploiement. Aucun lancement de l'outil de publication,
