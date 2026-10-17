@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 SRC=Path(__file__).resolve().parents[1]/"validate_nova_admin_canaries_p50y.py"
 spec=importlib.util.spec_from_file_location("nova_p50y",SRC)
@@ -37,7 +38,12 @@ def filled():
 def observations(f):
     return {str(row["pr_number"]):{
         "head_sha":row["head_sha"],"open":True,"draft":False,
-        "merged":False,"mergeable":True,"mergeable_state":"blocked"}
+        "merged":False,"mergeable":True,"mergeable_state":"blocked",
+        "base_ref":"main","base_repo":m.REPO,
+        "head_repo":m.REPO,
+        "head_ref":"test/p50y-"+row["id"]+"-non-fusion",
+        "title":"[P50Y-CANARI:"+row["id"]+"] Essai non fusionne",
+        "changed_paths":["projets/projet-nova/controles/canaris/"+row["id"]+".txt"]}
         for row in f["cas"]}
 
 class P50Y(unittest.TestCase):
@@ -112,6 +118,72 @@ class P50Y(unittest.TestCase):
     def test_missing_live_state_blocks(self):
         f=filled();o=observations(f);del o["800"]
         self.assertIn("ETAT_GITHUB_NON_LISIBLE:sans_revue",m.analyze(f,o)["obstacles"])
+    def test_existing_real_pr_cannot_be_canary(self):
+        f=filled();o=observations(f)
+        o["800"]["title"]="P50Y — Vraie PR du projet"
+        self.assertIn("CANARI_IDENTITE_OU_CIBLE_INVALIDE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_wrong_base_branch_rejected(self):
+        f=filled();o=observations(f);o["800"]["base_ref"]="other-branch"
+        self.assertIn("CANARI_IDENTITE_OU_CIBLE_INVALIDE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_wrong_target_repository_rejected(self):
+        f=filled();o=observations(f);o["800"]["base_repo"]="another/repo"
+        self.assertIn("CANARI_IDENTITE_OU_CIBLE_INVALIDE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_fork_not_implicitly_trusted(self):
+        f=filled();o=observations(f);o["800"]["head_repo"]="another/repo"
+        self.assertIn("CANARI_IDENTITE_OU_CIBLE_INVALIDE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_wrong_test_branch_rejected(self):
+        f=filled();o=observations(f);o["800"]["head_ref"]="review/real-project"
+        self.assertIn("CANARI_IDENTITE_OU_CIBLE_INVALIDE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_wrong_scenario_marker_rejected(self):
+        f=filled();o=observations(f)
+        o["800"]["title"]="[P50Y-CANARI:check_non_satisfait] Other"
+        self.assertIn("CANARI_IDENTITE_OU_CIBLE_INVALIDE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_real_site_file_change_rejected(self):
+        f=filled();o=observations(f)
+        o["800"]["changed_paths"]=["projets/projet-nova/participer.html"]
+        self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_empty_change_list_rejected(self):
+        f=filled();o=observations(f);o["800"]["changed_paths"]=[]
+        self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_excessive_change_list_rejected(self):
+        f=filled();o=observations(f)
+        o["800"]["changed_paths"]=["projets/projet-nova/controles/canaris/"+str(i)+".txt" for i in range(4)]
+        self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_actual_canary_checks_file_count_and_scope(self):
+        number=801
+        github_pr={
+            "title":"[P50Y-CANARI:sans_revue] Test",
+            "changed_files":1,"state":"open","draft":False,"merged":False,
+            "mergeable":True,"mergeable_state":"blocked",
+            "head":{"sha":"a"*40,"ref":"test/p50y-sans_revue-1",
+                    "repo":{"full_name":m.REPO}},
+            "base":{"ref":"main","repo":{"full_name":m.REPO}},
+        }
+        files=[{"filename":"projets/projet-nova/controles/canaris/notice.txt"}]
+        with patch.object(m,"github",side_effect=[github_pr,files]) as mocked:
+            result=m.actual_canary(number,"")
+        self.assertEqual(mocked.call_count,2)
+        self.assertEqual(result["base_ref"],"main")
+        self.assertEqual(result["changed_paths"],[files[0]["filename"]])
+    def test_actual_canary_refuses_partial_file_inventory(self):
+        github_pr={"changed_files":2,"head":{},"base":{}}
+        with patch.object(m,"github",side_effect=[github_pr,[{"filename":"one"}]]):
+            with self.assertRaises(ValueError):
+                m.actual_canary(801,"")
+    def test_identified_blocked_canary_still_no_go(self):
+        f=filled()
+        x=m.analyze(f,observations(f))
+        self.assertEqual(x["decision"],"NO_GO_AUTOMATIQUE")
+        self.assertEqual(x["statut_dossier"],"DECLARATIONS_COMPLETEES_A_VALIDER_EXTERNEMENT")
     def test_missing_file_cli_fails_closed(self):
         with tempfile.TemporaryDirectory() as temp:
             inp=Path(temp)/"missing.json";out=Path(temp)/"out.json"
