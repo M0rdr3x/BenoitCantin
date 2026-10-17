@@ -377,3 +377,25 @@ pas la vérification du dernier SHA, les GET 404/410, le reçu SHA/run
 ni la comparaison des hachages CDN. Pour devenir une garantie contre
 une fusion non autorisée, le job doit être marqué **required** dans
 les règles de protection `main` par le propriétaire du dépôt.
+
+## Documents publics — contrôle renforcé des URL de destination
+
+Le parcours `get-document-url` préserve l'accès aux documents approuvés
+`public` des projets `public` actifs, même quand le visiteur est connecté.
+Les documents `account`, `player`, `tester` ou `admin` conservent
+la décision d'autorisation côté serveur et le refus avant tout lien signé.
+
+La validation des `external_url` empêche désormais qu'un chemin apparemment
+local contenant une barre oblique inversée soit interprété comme un autre
+hôte par le navigateur. Elle refuse également les séparateurs encodés,
+les caractères de contrôle, les identifiants intégrés dans l'URL et les
+schémas HTTPS malformés. Les destinations HTTPS externes explicites et les
+chemins locaux réellement rattachés à `www.benoitcantin.com` restent
+acceptés. Les tests Node exécutent la véritable fonction Edge avec des
+simulations isolées, et le contrat statique rejette quatre mutations
+réintroduisant cette ambiguïté.
+
+Il s'agit de protections de code dans la **PR non déployée**, sans accès à
+Supabase réel ni changement des droits RLS en production. Les décisions
+de publication Pages et d'activation des fonctions privées restent
+indépendantes et soumises aux procédures approuvées.
