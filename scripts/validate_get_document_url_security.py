@@ -178,7 +178,7 @@ Deno.serve(async(req)=>{
                 'if(/%(?:2f|5c|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value))return false;',
                 'if(false)return false;'),
             'identifiants intégrés acceptés': safe.replace(
-                '!url.username&&!url.password', 'true', 1),
+                '!url.username&&!url.password', 'true'),
             'HTTPS externe relâché': safe.replace(
                 "url.protocol==='https:'&&!!url.hostname", '!!url.hostname'),
             'rang public retiré': safe.replace(
