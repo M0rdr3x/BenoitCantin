@@ -156,7 +156,7 @@ def validate(
         {
             "authentification/résolution utilisateur": "optionalUser(req)",
             "client serveur pour décision d'accès": "serviceClient()",
-            "rang requis calculé côté serveur": "const requiredRank=ranks[doc.access_level]||999;",
+            "rang requis calculé côté serveur sans héritage": "const requiredRank=typeof doc.access_level==='string'&&Object.hasOwn(ranks,doc.access_level)?ranks[doc.access_level]:999;",
             "base publique limitée aux projets publics": "let userRank=doc.projects?.visibility==='public'?ranks.public:0;",
             "contrôle du rang d'accès": "if(userRank<requiredRank){",
             "URL signée de courte durée": "createSignedUrl(doc.storage_path,600)",
@@ -244,7 +244,7 @@ def self_test() -> None:
         contract_path.write_text(json.dumps(contract), encoding="utf-8")
 
         edge = """optionalUser(req); serviceClient();
-const requiredRank=ranks[doc.access_level]||999;
+ const requiredRank=typeof doc.access_level==='string'&&Object.hasOwn(ranks,doc.access_level)?ranks[doc.access_level]:999;
 let userRank=doc.projects?.visibility==='public'?ranks.public:0;
 if(userRank<requiredRank){}
 service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
@@ -280,6 +280,19 @@ const h={{'Cache-Control':'private, no-store, max-age=0'}};
         bypass_errors = validate(root, edge_path, private_edge_path, config_path, contract_path)
         if not any("contrôle du rang d'accès" in item for item in bypass_errors):
             raise AssertionError("Suppression du contrôle du rang acceptée.")
+        edge_path.write_text(edge, encoding="utf-8")
+
+        # Une fausse propriété Object.prototype dans access_level ne doit
+        # jamais se substituer à l'énumération de niveaux du registre.
+        inherited = edge.replace(
+            "Object.hasOwn(ranks,doc.access_level)", "true"
+        )
+        edge_path.write_text(inherited, encoding="utf-8")
+        inherited_errors = validate(
+            root, edge_path, private_edge_path, config_path, contract_path
+        )
+        if not any("rang requis calculé" in item for item in inherited_errors):
+            raise AssertionError("Niveau hérité du prototype accepté.")
         edge_path.write_text(edge, encoding="utf-8")
 
         leaked = root / "projets/sinjira/documents" / FULL_BASENAME
