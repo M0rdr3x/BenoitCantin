@@ -9,6 +9,8 @@ technique, secret, réponse personnalisée ou jeton n'est téléchargé.
 from __future__ import annotations
 
 import argparse
+from contextlib import redirect_stdout
+from io import StringIO
 import json
 import os
 from dataclasses import dataclass
@@ -236,6 +238,44 @@ def self_test() -> None:
             bad, netlify=True
         )), f"Absence de preuve non détectée: {route}"
     assert validate_observations({**good, "/": 503}, netlify=True)
+
+    # Vérification d'intégration SANS RÉSEAU du véritable chemin live().
+    # Un développeur ne doit pas pouvoir laisser les 21 vérifications
+    # dans une fonction morte tout en conservant des autotests verts.
+    original_opener = globals()["build_opener"]
+    original_probe = globals()["read_status"]
+    calls: list[str] = []
+    def fake_probe(_opener, route: str) -> StatusObservation:
+        calls.append(route)
+        if route in PUBLIC_ROUTES:
+            healthy = public[route]
+            return StatusObservation(
+                healthy.status, healthy.content_type, healthy.location,
+                netlify=(route == "/")
+            )
+        return StatusObservation(404)
+    try:
+        globals()["build_opener"] = lambda *_args: object()
+        globals()["read_status"] = fake_probe
+        with redirect_stdout(StringIO()):
+            assert live() == 0
+        assert calls == list((*PUBLIC_ROUTES, *TECHNICAL_ROUTES))
+        assert len(calls) == 35 and len(set(calls)) == 35
+
+        for broken in ("/projets/sinjira/romans/", "/projets/projet-nova/boussole-electorale.html"):
+            calls.clear()
+            def broken_probe(opener, route, target=broken):
+                result = fake_probe(opener, route)
+                return StatusObservation(404, result.content_type) if route == target else result
+            globals()["read_status"] = broken_probe
+            with redirect_stdout(StringIO()):
+                assert live() == 1, "Page publique cassée non détectée par live()"
+            assert calls == list((*PUBLIC_ROUTES, *TECHNICAL_ROUTES))
+            globals()["read_status"] = fake_probe
+    finally:
+        globals()["build_opener"] = original_opener
+        globals()["read_status"] = original_probe
+
     print(
         f"OK: {len(PUBLIC_ROUTES)} routes publiques (MIME, erreurs, redirections) "
         f"et {len(TECHNICAL_ROUTES)} techniques, "
