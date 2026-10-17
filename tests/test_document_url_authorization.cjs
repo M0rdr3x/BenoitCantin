@@ -119,6 +119,72 @@ test('anonyme sans rang : document privé refusé',async()=>{
   assert.deepEqual(x.calls,[]);
 });
 
+// La connexion ne doit jamais supprimer le niveau d'accès public d'un
+// projet public actif; les documents restreints restent protégés.
+const publicDoc={
+  ...doc,access_level:'public',
+  projects:{...doc.projects,visibility:'public'}
+};
+
+test('document public approuvé: même accès pour visiteur anonyme et membre connecté',async()=>{
+  for(const bearer of ['anonymous','member']){
+    const x=await attempt({document:publicDoc,rank:0},bearer);
+    assert.equal(x.status,200);
+    assert.equal(x.body.protected,true);
+    assert.equal(x.stats.signed,1);
+    assert.equal(x.stats.rank,0);
+    assert.deepEqual(x.calls,[]);
+  }
+});
+test('document public: aucune panne RPC ne doit pénaliser un membre connecté',async()=>{
+  const x=await attempt({document:publicDoc,rankError:{message:'offline'},
+    ownerError:{message:'offline'},adminError:{message:'offline'}});
+  assert.equal(x.status,200);
+  assert.equal(x.stats.signed,1);
+  assert.deepEqual(x.calls,[]);
+});
+test('document public dans projet restreint: aucun accès anonyme',async()=>{
+  const restricted={...doc,access_level:'public'};
+  const x=await attempt({document:restricted},'anonymous');
+  assert.equal(x.status,403);
+  assert.equal(x.stats.signed,0);
+  assert.deepEqual(x.calls,[]);
+});
+test('document public dans projet restreint: accès seulement avec rang serveur',async()=>{
+  const restricted={...doc,access_level:'public'};
+  const denied=await attempt({document:restricted,rank:0});
+  assert.equal(denied.status,403);
+  assert.equal(denied.stats.signed,0);
+  const allowed=await attempt({document:restricted,rank:1});
+  assert.equal(allowed.status,200);
+  assert.equal(allowed.stats.signed,1);
+  assert.equal(allowed.stats.rank,1);
+});
+test('document privé dans projet public: accès réservé au rang exigé',async()=>{
+  const privateDoc={...publicDoc,access_level:'tester'};
+  const visitor=await attempt({document:privateDoc},'anonymous');
+  assert.equal(visitor.status,403);
+  assert.equal(visitor.stats.signed,0);
+  const denied=await attempt({document:privateDoc,rank:0});
+  assert.equal(denied.status,403);
+  assert.equal(denied.stats.signed,0);
+  const allowed=await attempt({document:privateDoc,rank:30});
+  assert.equal(allowed.status,200);
+  assert.equal(allowed.stats.signed,1);
+});
+test('document public non approuvé ou projet inactif: refus à tous',async()=>{
+  for(const document of [
+    {...publicDoc,status:'draft'},
+    {...publicDoc,projects:{...publicDoc.projects,status:'inactive'}}
+  ]){
+    for(const bearer of ['anonymous','member']){
+      const x=await attempt({document},bearer);
+      assert.equal(x.status,404);
+      assert.equal(x.stats.signed,0);
+    }
+  }
+});
+
 test('requête volumineuse sans Content-Length: refuse avant signature',async()=>{
   const f=fixture(),handler=buildHandler(f.service);
   const response=await handler(new Request('https://functions.local/functions/v1/get-document-url',{
