@@ -44,6 +44,8 @@ class P50UGates(unittest.TestCase):
         self.assertEqual(r["etat_porte_technique"],"CONTROLES_TECHNIQUES_VISIBLES")
         self.assertFalse(r["autorisation_publication"])
         self.assertFalse(r["revue_humaine_qualifiee_attestee"])
+        self.assertEqual(r["approbation_pre_fusion_exigee_par_serveur"],"NON_ATTESTEE")
+        self.assertFalse(r["independance_revue_pre_fusion_attestee"])
     def test_bot_or_owner_identity_never_in_report(self):
         report=json.dumps(m.evaluate(unprotected(),[],"* @publicOwner\n"))
         self.assertNotIn("publicOwner",report)
