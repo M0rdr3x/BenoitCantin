@@ -41,10 +41,26 @@ def github(path: str, token: str):
 def actual_canary(number: int, token: str):
     base = "/repos/" + REPO
     pr = github(base + "/pulls/" + str(number), token)
+    files = github(base + "/pulls/" + str(number) + "/files?per_page=100", token)
+    # Refuse un résultat paginé ou incomplet : des changements hors du dossier
+    # d'essai pourraient autrement passer inaperçus.
+    if (not isinstance(files, list) or len(files) >= 100 or
+            type(pr.get("changed_files")) is not int or
+            pr["changed_files"] != len(files) or
+            any(not isinstance(item, dict) for item in files)):
+        raise ValueError("FICHIERS_CANARI_NON_EXHAUSTIFS")
+    head = pr.get("head") or {}
+    target = pr.get("base") or {}
     # True / False are not review decisions. A draft cannot demonstrate a
     # review or check gate because drafts are inherently not mergeable.
     result = {
-        "head_sha": (pr.get("head") or {}).get("sha"),
+        "head_sha": head.get("sha"),
+        "head_ref": head.get("ref"),
+        "head_repo": (head.get("repo") or {}).get("full_name"),
+        "base_ref": target.get("ref"),
+        "base_repo": (target.get("repo") or {}).get("full_name"),
+        "title": pr.get("title"),
+        "changed_paths": [item.get("filename") for item in files],
         "open": pr.get("state") == "open",
         "draft": pr.get("draft"),
         "merged": pr.get("merged"),
@@ -114,6 +130,24 @@ def analyze(document, observations=None):
                     live.get("draft") is not False or live.get("merged") is not False):
                     stages[caseid] = "PR_TEMOIN_NON_VALIDE"
                     problems.append("CANARI_PAS_OUVERT_PRET_OU_SHA_DIVERGENT:" + caseid)
+                elif (live.get("base_ref") != "main" or
+                      live.get("base_repo") != REPO or
+                      live.get("head_repo") != REPO or
+                      not isinstance(live.get("head_ref"),str) or
+                      not live["head_ref"].startswith("test/p50y-" + caseid + "-") or
+                      not isinstance(live.get("title"),str) or
+                      not live["title"].startswith("[P50Y-CANARI:" + caseid + "]")):
+                    # Une PR réelle du Projet Nova ou une PR vers une autre
+                    # branche ne peut JAMAIS servir de preuve de recette.
+                    stages[caseid] = "CANARI_HORS_PERIMETRE"
+                    problems.append("CANARI_IDENTITE_OU_CIBLE_INVALIDE:" + caseid)
+                elif (not isinstance(live.get("changed_paths"),list) or
+                      not 1 <= len(live["changed_paths"]) <= 3 or
+                      any(not isinstance(path,str) or
+                          not path.startswith("projets/projet-nova/controles/canaris/")
+                          for path in live["changed_paths"])):
+                    stages[caseid] = "CHANGEMENT_CANARI_DANGEREUX"
+                    problems.append("CANARI_FICHIERS_HORS_REPERTOIRE:" + caseid)
                 elif live.get("mergeable_state") != "blocked" or live.get("mergeable") is not True:
                     stages[caseid] = "REFUS_FUSION_NON_PROUVE"
                     problems.append("GITHUB_N_ATTESTE_PAS_LE_BLOCAGE:" + caseid)
