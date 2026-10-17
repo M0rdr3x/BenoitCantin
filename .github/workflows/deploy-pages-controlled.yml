@@ -86,6 +86,8 @@ jobs:
           python3 scripts/verify_pages_live.py --self-test
           python3 scripts/verify_pages_integrity.py --self-test
           python3 scripts/attest_pages_production.py --self-test
+          python3 scripts/validate_publication_watch_workflow.py --self-test
+          python3 scripts/validate_publication_watch_workflow.py --check
           python3 scripts/audit_public_documents.py --self-test
           python3 scripts/audit_public_documents.py --source .
           python3 scripts/audit_public_json.py --self-test
