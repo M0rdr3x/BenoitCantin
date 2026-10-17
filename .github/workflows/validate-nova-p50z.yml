@@ -1,0 +1,84 @@
+name: Projet Nova P50Z - comparaison independante faux canaris
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p50z.yml"
+      - "scripts/compare_nova_canary_safety_p50z.py"
+      - "projets/projet-nova/controles/P50Z_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preuve-avant-apres-sans-ecriture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Lire la preuve P50Z en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Charger le validateur ancien P50Y au SHA PR667 fige
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: 0945b7c76941bbde35bab926b4bfdda0442ae62b
+          path: avant_p50y
+          sparse-checkout: |
+            scripts/validate_nova_admin_canaries_p50y.py
+            scripts/tests/test_validate_nova_admin_canaries_p50y.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Charger le validateur corrige P50Z au SHA PR668 fige
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: 9e8d08b2a4d097e9609320cef5e9167ab3fe64bf
+          path: apres_p50z
+          sparse-checkout: |
+            scripts/validate_nova_admin_canaries_p50y.py
+            scripts/tests/test_validate_nova_admin_canaries_p50y.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Configurer Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Compiler les deux versions et la comparaison
+        run: |
+          python -m py_compile scripts/compare_nova_canary_safety_p50z.py
+          python -m py_compile avant_p50y/scripts/validate_nova_admin_canaries_p50y.py
+          python -m py_compile apres_p50z/scripts/validate_nova_admin_canaries_p50y.py
+      - name: Executer les 25 tests de la PR667 initiale
+        run: |
+          python -m unittest discover -s avant_p50y/scripts/tests -p 'test_validate_nova_admin_canaries_p50y.py' -v
+      - name: Executer les 37 tests du correctif PR668
+        run: |
+          python -m unittest discover -s apres_p50z/scripts/tests -p 'test_validate_nova_admin_canaries_p50y.py' -v
+      - name: Prouver les neuf faux canaris rejetes apres correction
+        run: |
+          python scripts/compare_nova_canary_safety_p50z.py \
+            --avant avant_p50y/scripts/validate_nova_admin_canaries_p50y.py \
+            --apres apres_p50z/scripts/validate_nova_admin_canaries_p50y.py \
+            --rapport p50z_comparaison.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          v=json.loads(Path("p50z_comparaison.json").read_text(encoding="utf-8"))
+          assert v["tests_adversariaux"]==9, v
+          assert v["faux_canaris_rejetes_avant"]==0, v
+          assert v["faux_canaris_rejetes_apres"]==9, v
+          assert v["controle_negatif_valide"] is True, v
+          assert v["decision"]=="NO_GO_AUTOMATIQUE", v
+          assert not v["recette_admin_executee"], v
+          print("P50Z - 9/9 faux canaris auparavant acceptes et maintenant rejetes.")
+          print("P50Z - 25 tests avant; 37 tests apres; NO_GO permanent.")
+          PY
+      - name: Conserver un rapport non nominatif
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p50z-preuve-adversariale-no-go
+          path: p50z_comparaison.json
+          if-no-files-found: ignore
+          retention-days: 7
