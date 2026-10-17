@@ -32,6 +32,11 @@ REQUIRED = {
     'refus sur rang final': "if(userRank<requiredRank){",
     'rang projet serveur': "service.rpc('project_access_rank'",
     'validation URL externe': 'externalUrlAllowed(url)',
+    'origine canonique des chemins locaux': "const OFFICIAL_ORIGIN='https://www.benoitcantin.com';",
+    'origine locale non négociable': 'url.origin===OFFICIAL_ORIGIN',
+    'refus des séparateurs encodés': '(?:2f|5c|0[0-9a-f]|1[0-9a-f]|7f)',
+    'refus des identifiants intégrés': '!url.username&&!url.password',
+    'protocole HTTPS externe explicite': "url.protocol==='https:'&&!!url.hostname",
     'lien signé 600 secondes': 'createSignedUrl(doc.storage_path,600)',
     'TTL réponse 600 secondes': 'expires_in:600',
     'log à code fixe': "console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});",
@@ -94,7 +99,17 @@ const PRIVATE_JSON_HEADERS={
  'Referrer-Policy':'no-referrer'
 };
 function privateJson(data,status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_JSON_HEADERS});}
-function externalUrlAllowed(url){return true;}
+const OFFICIAL_ORIGIN='https://www.benoitcantin.com';
+function externalUrlAllowed(value){
+  if(!value||value.trim()!==value)return false;
+  if(value.startsWith('/')&&!value.startsWith('//')){
+    if(/%(?:2f|5c|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value))return false;
+    const url=new URL(value,OFFICIAL_ORIGIN);
+    return url.origin===OFFICIAL_ORIGIN&&!url.username&&!url.password;
+  }
+  const url=new URL(value);
+  return url.protocol==='https:'&&!!url.hostname&&!url.username&&!url.password;
+}
 async function readLimitedJson(req){
   const contentType=(req.headers.get('content-type')||'').toLowerCase();
   if(contentType!=='application/json')return {response:privateJson({},415)};
@@ -158,6 +173,14 @@ Deno.serve(async(req)=>{
             'no-store retiré': safe.replace(" 'Cache-Control':'private, no-store, max-age=0',\n", ''),
             'TTL signé augmenté': safe.replace('createSignedUrl(doc.storage_path,600)', 'createSignedUrl(doc.storage_path,3600)'),
             'log brut': safe.replace("}catch{\n  console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});", "}catch(error){\n  console.error(error);"),
+            'origine locale retirée': safe.replace('url.origin===OFFICIAL_ORIGIN', 'true'),
+            'séparateurs encodés acceptés': safe.replace(
+                'if(/%(?:2f|5c|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value))return false;',
+                'if(false)return false;'),
+            'identifiants intégrés acceptés': safe.replace(
+                '!url.username&&!url.password', 'true', 1),
+            'HTTPS externe relâché': safe.replace(
+                "url.protocol==='https:'&&!!url.hostname", '!!url.hostname'),
             'rang public retiré': safe.replace(
                 "let userRank=doc.projects?.visibility==='public'?ranks.public:0;",
                 "let userRank=0;"),
