@@ -1,0 +1,151 @@
+name: Sécurité GitHub Pages — preuve Jekyll sans publication
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.nojekyll'
+      - '_config.yml'
+      - 'scripts/audit_pages_jekyll.py'
+      - 'scripts/validate_sinjira_public_links.py'
+      - 'scripts/validate_sinjira_catalogues_metadata.py'
+      - 'scripts/validate_sinjira_library_status.py'
+      - 'tests/test_sinjira_library_access.cjs'
+      - 'tests/test_document_url_authorization.cjs'
+      - 'tests/test_novel_file_authorization.cjs'
+      - 'tests/test_private_book_authorization.cjs'
+      - 'supabase/functions/get-private-book-url/index.ts'
+      - 'scripts/validate_get_private_book_url_security.py'
+      - 'supabase/functions/get-novel-file-url/index.ts'
+      - 'supabase/functions/get-document-url/index.ts'
+      - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/sinjira-library.js'
+      - 'compte/bibliotheque.html'
+      - 'scripts/validate_boussole_home_visual.py'
+      - 'assets/media/nova-boussole-electorale-v2.webp'
+      - 'assets/media/nova-boussole-electorale.webp'
+      - 'index.html'
+      - '.github/workflows/audit-pages-jekyll.yml'
+      - '.github/workflows/deploy-pages-controlled.yml'
+      - 'scripts/verify_pages_live.py'
+      - 'scripts/verify_pages_integrity.py'
+      - 'scripts/validate_pages_workflows.py'
+      - 'scripts/attest_pages_production.py'
+      - 'scripts/audit_public_documents.py'
+      - 'scripts/audit_public_json.py'
+      - 'scripts/audit_public_csv.py'
+      - 'scripts/audit_public_surface.py'
+      - 'scripts/audit_pages_secrets.py'
+      - 'scripts/pages_release_proof.py'
+      - 'scripts/verify_pages_tar_archive.py'
+      - 'scripts/pages_public_inventory.txt'
+      - 'scripts/pages_generated_inventory.txt'
+      - 'scripts/test_pwa_cache_security.cjs'
+      - 'scripts/audit_pwa_precache.py'
+      - 'sw.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-jekyll-audit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  jekyll-proof:
+    name: Construire puis auditer Pages sans déployer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout candidat pour preuve sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Python 3.12.14 pour les audits
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Configurer Node pour le test réel du service worker
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+
+      - name: Autotests négatifs et vérification des exclusions sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_pages_jekyll.py --self-test
+          python3 scripts/audit_pages_jekyll.py --source .
+          python3 scripts/verify_pages_live.py --self-test
+          python3 scripts/verify_pages_integrity.py --self-test
+          python3 scripts/attest_pages_production.py --self-test
+          python3 scripts/audit_public_documents.py --self-test
+          python3 scripts/audit_public_documents.py --source .
+          python3 scripts/audit_public_json.py --self-test
+          python3 scripts/audit_public_json.py --source .
+          python3 scripts/audit_public_csv.py --self-test
+          python3 scripts/audit_public_csv.py --source .
+          python3 scripts/audit_public_surface.py --self-test
+          python3 scripts/audit_pages_secrets.py --self-test
+          python3 scripts/pages_release_proof.py --self-test
+          python3 scripts/verify_pages_tar_archive.py --self-test
+          python3 scripts/audit_public_surface.py --source .
+          python3 scripts/validate_sinjira_public_links.py --self-test
+          python3 scripts/validate_sinjira_public_links.py --check
+          python3 scripts/validate_sinjira_catalogues_metadata.py --self-test
+          python3 scripts/validate_sinjira_library_status.py --self-test
+          node --test tests/test_sinjira_library_access.cjs
+          node --test tests/test_document_url_authorization.cjs
+          node --test tests/test_novel_file_authorization.cjs
+          python3 scripts/validate_get_private_book_url_security.py --self-test
+          python3 scripts/validate_get_private_book_url_security.py
+          node --test tests/test_private_book_authorization.cjs
+          python3 scripts/validate_boussole_home_visual.py --self-test
+          python3 scripts/validate_pages_workflows.py --self-test
+          python3 scripts/validate_pages_workflows.py
+          node scripts/test_pwa_cache_security.cjs
+          python3 scripts/audit_pwa_precache.py --self-test
+          python3 scripts/audit_pwa_precache.py --source .
+
+      - name: Compilation Jekyll comme GitHub Pages, sans déploiement
+        uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Refuser l'exposition de sources techniques et la perte de routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_pages_jekyll.py --source . --built _site
+          python3 scripts/validate_sinjira_catalogues_metadata.py --built _site
+          python3 scripts/validate_boussole_home_visual.py --built _site
+          python3 scripts/audit_public_documents.py --source . --built _site
+          python3 scripts/audit_public_json.py --source . --built _site
+          python3 scripts/audit_public_csv.py --source . --built _site
+          python3 scripts/audit_public_surface.py --source . --built _site
+          python3 scripts/audit_pwa_precache.py --source . --built _site
+          python3 scripts/audit_pages_secrets.py --built _site
+          # Jekyll produit _site depuis un conteneur : transférer seulement les
+          # dossiers nécessaires au runner, pas les fichiers de contenu.
+          test -d _site
+          test ! -L _site
+          sudo chown "$(id -u):$(id -g)" _site
+          if test -d _site/.well-known; then
+            test ! -L _site/.well-known
+            sudo chown "$(id -u):$(id -g)" _site/.well-known
+          fi
+          # Prouver aussi la variante manuelle: reçu injecté seulement APRÈS le build.
+          python3 scripts/pages_release_proof.py --write _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
+          python3 scripts/audit_pages_jekyll.py --source . --built _site
+          python3 scripts/audit_public_json.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"
+          python3 scripts/audit_public_surface.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"
+          python3 scripts/pages_release_proof.py --verify _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
+          python3 scripts/verify_pages_tar_archive.py --built _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
+          python3 scripts/audit_pages_secrets.py --built _site
+          echo "PASS: build Pages + reçu SHA/run contrôlés, aucun artefact téléversé ou publié" >> "$GITHUB_STEP_SUMMARY"

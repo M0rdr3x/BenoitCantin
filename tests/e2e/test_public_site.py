@@ -83,6 +83,85 @@ def run() -> None:
             assert_true(page.locator("h1").count() >= 1, f"H1 absent: {url}")
             assert_true(bool(page.title().strip()), f"Titre absent: {url}")
 
+        # Trois catalogues = trois bannières originales vérifiées dans
+        # chaque moteur navigateur, sur desktop puis sur petit écran.
+        # Une simple URL valide ne suffit pas : le fichier doit décoder,
+        # être visible et rester affiché sans coupure de l'image source.
+        for category in ("romans", "jeux", "logiciels"):
+            catalogue_url = urljoin(BASE_URL, f"projets/sinjira/{category}/")
+            response = page.goto(
+                catalogue_url, wait_until="domcontentloaded", timeout=30_000
+            )
+            assert_true(
+                response is not None and response.status == 200,
+                f"{BROWSER_NAME}: catalogue {category} inaccessible",
+            )
+            banner = page.locator(
+                ".sinjira-category-poster--banner img"
+                "[src='/assets/media/sinjira-" + category + "-banniere-2026.webp']"
+            )
+            assert_true(
+                banner.count() == 1,
+                f"{BROWSER_NAME}: bannière officielle absente dans {category}",
+            )
+            banner.scroll_into_view_if_needed()
+            page.wait_for_function(
+                """selector => {
+                    const img = document.querySelector(selector);
+                    return img && img.complete && img.naturalWidth > 1000
+                        && img.naturalHeight > 700;
+                }""",
+                arg=".sinjira-category-poster--banner img",
+                timeout=15_000,
+            )
+            main_nav = page.locator(
+                'nav.main-nav a[href="/projets/sinjira/"]'
+            )
+            subnav = page.locator(
+                "nav.universe-subnav a[aria-current='page']"
+            )
+            assert_true(
+                main_nav.count() == 1
+                and main_nav.get_attribute("aria-current") == "location"
+                and subnav.count() == 1
+                and urljoin(
+                    catalogue_url, subnav.get_attribute("href") or ""
+                ).rstrip("/").removesuffix("/index.html") == catalogue_url.rstrip("/"),
+                f"{BROWSER_NAME}: état de navigation accessible incohérent ({category})",
+            )
+            for width in (1440, 390):
+                page.set_viewport_size({"width": width, "height": 844})
+                geometry = banner.evaluate("""img => {
+                    const bounds = img.getBoundingClientRect();
+                    return {
+                        naturalWidth: img.naturalWidth,
+                        naturalHeight: img.naturalHeight,
+                        width: bounds.width,
+                        height: bounds.height,
+                        objectFit: getComputedStyle(img).objectFit,
+                        overflow: document.documentElement.scrollWidth - innerWidth
+                    };
+                }""")
+                assert_true(
+                    geometry["width"] > 250
+                    and geometry["height"] > 0
+                    and geometry["naturalWidth"] > 1000
+                    and geometry["objectFit"] == "contain"
+                    and abs(
+                        geometry["height"]
+                        - geometry["width"] * geometry["naturalHeight"]
+                          / geometry["naturalWidth"]
+                    ) < 3,
+                    f"{BROWSER_NAME}: affiche {category} déformée ou rognée "
+                    f"en {width}px: {geometry}",
+                )
+                assert_true(
+                    geometry["overflow"] <= 2,
+                    f"{BROWSER_NAME}: débordement horizontal {category} "
+                    f"en {width}px: {geometry['overflow']}px",
+                )
+            page.set_viewport_size({"width": 1440, "height": 1000})
+
         page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         page.wait_for_function(
             "document.querySelector('link[data-sinjira-browser-compat]') !== null",

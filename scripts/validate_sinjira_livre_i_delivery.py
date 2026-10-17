@@ -156,7 +156,10 @@ def validate(
         {
             "authentification/résolution utilisateur": "optionalUser(req)",
             "client serveur pour décision d'accès": "serviceClient()",
-            "contrôle du rang d'accès": "userRank<(ranks[doc.access_level]||999)",
+            "niveau inconnu refusé avant tout rôle": "if(typeof doc.access_level!=='string'||!Object.hasOwn(ranks,doc.access_level)){",
+            "rang connu calculé côté serveur": "const requiredRank=ranks[doc.access_level];",
+            "base publique limitée aux projets publics": "let userRank=doc.projects?.visibility==='public'?ranks.public:0;",
+            "contrôle du rang d'accès": "if(userRank<requiredRank){",
             "URL signée de courte durée": "createSignedUrl(doc.storage_path,600)",
             "réponse privée non mise en cache": "'Cache-Control':'private, no-store, max-age=0'",
             "protection MIME": "'X-Content-Type-Options':'nosniff'",
@@ -242,7 +245,12 @@ def self_test() -> None:
         contract_path.write_text(json.dumps(contract), encoding="utf-8")
 
         edge = """optionalUser(req); serviceClient();
-if(userRank<(ranks[doc.access_level]||999)){}
+if(typeof doc.access_level!=='string'||!Object.hasOwn(ranks,doc.access_level)){
+  return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
+}
+const requiredRank=ranks[doc.access_level];
+let userRank=doc.projects?.visibility==='public'?ranks.public:0;
+if(userRank<requiredRank){}
 service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
 const h={'Cache-Control':'private, no-store, max-age=0','X-Content-Type-Options':'nosniff'};
 """
@@ -268,6 +276,42 @@ const h={{'Cache-Control':'private, no-store, max-age=0'}};
         clean = validate(root, edge_path, private_edge_path, config_path, contract_path)
         if clean:
             raise AssertionError("Le cas sain doit passer: " + " | ".join(clean))
+
+        # Régression : la garde de l'édition intégrale ne doit jamais être
+        # réduite à une simple mention du rang sans refus exécutable.
+        unguarded = edge.replace("if(userRank<requiredRank){}", "if(false){}")
+        edge_path.write_text(unguarded, encoding="utf-8")
+        bypass_errors = validate(root, edge_path, private_edge_path, config_path, contract_path)
+        if not any("contrôle du rang d'accès" in item for item in bypass_errors):
+            raise AssertionError("Suppression du contrôle du rang acceptée.")
+        edge_path.write_text(edge, encoding="utf-8")
+
+        # Une fausse propriété Object.prototype dans access_level ne doit
+        # jamais se substituer à l'énumération de niveaux du registre.
+        inherited = edge.replace(
+            "Object.hasOwn(ranks,doc.access_level)", "true"
+        )
+        edge_path.write_text(inherited, encoding="utf-8")
+        inherited_errors = validate(
+            root, edge_path, private_edge_path, config_path, contract_path
+        )
+        if not any("niveau inconnu refusé" in item for item in inherited_errors):
+            raise AssertionError("Niveau hérité du prototype accepté.")
+        edge_path.write_text(edge, encoding="utf-8")
+
+        # Le seuil 999 ne doit pas remplacer un retour 403 immédiat.
+        # Un projet autorisant par erreur un rang >=999 le contournerait.
+        fallback = edge.replace(
+            "if(typeof doc.access_level!=='string'||!Object.hasOwn(ranks,doc.access_level)){",
+            "if(false){"
+        )
+        edge_path.write_text(fallback, encoding="utf-8")
+        fallback_errors = validate(
+            root, edge_path, private_edge_path, config_path, contract_path
+        )
+        if not any("niveau inconnu refusé" in item for item in fallback_errors):
+            raise AssertionError("Niveau inconnu sans rejet explicite accepté.")
+        edge_path.write_text(edge, encoding="utf-8")
 
         leaked = root / "projets/sinjira/documents" / FULL_BASENAME
         leaked.write_bytes(b"not-the-real-pdf")
