@@ -24,10 +24,6 @@ EVIDENCE_URL = re.compile(
     r"^https://github\.com/M0rdr3x/BenoitCantin/"
     r"(?:pull/[1-9][0-9]*|actions/runs/[1-9][0-9]*)$"
 )
-PR_URL = re.compile(
-    r"^https://github\.com/M0rdr3x/BenoitCantin/pull/[1-9][0-9]*$"
-)
-
 def github(path: str, token: str):
     if not path.startswith("/repos/" + REPO + "/"):
         raise ValueError("CHEMIN_GITHUB_INTERDIT")
@@ -70,7 +66,7 @@ def analyze(document, observations=None):
     if document.get("decision") != "NO_GO":
         problems.append("DOCUMENT_NE_DOIT_PAS_DECLARER_GO")
     for k in ("protection_serveur_confirmee_par_admin",
-              "bypass_et_permissions_examiness",
+              "bypass_et_permissions_examines",
               "relecteur_independant_disponible"):
         if type(document.get(k)) is not bool:
             problems.append("ATTESTATION_NON_BOOLEENNE:" + k)
@@ -130,7 +126,7 @@ def analyze(document, observations=None):
         all(x == "DECLARATION_A_CONTROLER" for x in stages.values()) and
         all(document.get(k) is True for k in (
             "protection_serveur_confirmee_par_admin",
-            "bypass_et_permissions_examiness",
+            "bypass_et_permissions_examines",
             "relecteur_independant_disponible"))
     )
     if not complete:
