@@ -29,7 +29,7 @@ def valid_ruleset():
             "required_review_thread_resolution":True}},
         {"type":"required_status_checks","parameters":{
             "strict_required_status_checks_policy":True,
-            "required_status_checks":[{"context":x} for x in m.SOURCES]}}
+            "required_status_checks":[{"context":x,"integration_id":15368} for x in m.SOURCES]}}
       ]
     }
 
@@ -90,6 +90,9 @@ class P50VCandidate(unittest.TestCase):
     def test_three_exact_checks_required(self):
         self.spec["rules"][3]["parameters"]["required_status_checks"].pop()
         self.assertTrue(self.has("TROIS_CHECKS_UNIVERSELS_EXACTS_MANQUANTS"))
+    def test_only_github_actions_app_may_post_required_checks(self):
+        self.spec["rules"][3]["parameters"]["required_status_checks"][0]["integration_id"]=999
+        self.assertTrue(self.has("APP_GITHUB_ACTIONS_REQUISE"))
     def test_strict_ci_required(self):
         self.spec["rules"][3]["parameters"]["strict_required_status_checks_policy"]=False
         self.assertTrue(self.has("CHECKS_STRICT_NON_ACTIFS"))
