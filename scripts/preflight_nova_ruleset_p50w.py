@@ -46,9 +46,6 @@ def api(path, token):
 def collect(token):
     prefix="/repos/"+REPO
     branch=api(prefix+"/branches/main",token)
-    repo=api(prefix,token) if False else None
-    # The repository root endpoint is /repos/OWNER/REPO (no trailing slash)
-    # and is queried separately as a special read-only resource below.
     rulesets=api(prefix+"/rulesets?includes_parents=true",token)
     pulls={}
     for number in sorted(set(SAMPLES)|set(PRIORITY)):
