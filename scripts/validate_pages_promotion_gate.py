@@ -39,11 +39,38 @@ def failures(workflow: str) -> list[str]:
         issues.append("Un filtre de chemins rendrait le required check absent")
     if "    types: [opened, synchronize, reopened, ready_for_review]\n" not in header:
         issues.append("L'événement ready_for_review ou synchronize n'est plus couvert")
+    if source.count("  pages-preflight:\n") != 1:
+        issues.append("Un seul job de diagnostic préalable est requis")
+        return issues
     if source.count("  pages-source-promotion-gate:\n") != 1:
         issues.append("Le job de promotion doit être présent une seule fois")
         return issues
+    preflight = source.split("\n  pages-preflight:\n", 1)[1].split(
+        "\n  pages-source-promotion-gate:\n", 1
+    )[0]
     gate = source.split("\n  pages-source-promotion-gate:\n", 1)[1]
     gate = re.split(r"\n  [a-zA-Z][a-zA-Z0-9_-]*:\n", gate, maxsplit=1)[0]
+    if gate.splitlines().count("    needs: pages-preflight") != 1:
+        issues.append("La promotion doit dépendre du succès du diagnostic Pages")
+    if preflight.splitlines().count(
+        "    if: github.repository == 'M0rdr3x/BenoitCantin'"
+    ) != 1:
+        issues.append("Le diagnostic doit viser le dépôt officiel")
+    if re.search(r"(?m)^        if:", preflight):
+        issues.append("Une étape du diagnostic pourrait être sautée")
+    if re.search(r"(?m)^\s+continue-on-error:", preflight):
+        issues.append("Un échec du diagnostic ne doit pas être ignoré")
+    for command in (
+        "        run: python3 scripts/report_pages_cutover_status.py --report",
+        "        run: python3 scripts/report_pages_live_exposure.py --report",
+        "        run: python3 scripts/report_pages_live_get_status.py --report",
+    ):
+        if preflight.splitlines().count(command) != 1:
+            issues.append("Sonde de diagnostic absente ou neutralisée : " + command.strip())
+    if preflight.splitlines().count(
+        "          GH_PAGES_READ_TOKEN: " + "$" + "{{ github.token }}"
+    ) != 1:
+        issues.append("Le diagnostic Source Pages doit posséder son jeton en lecture")
     if source.count("\njobs:\n") != 1 or source.count("\non:\n") > 1:
         issues.append("Structure YAML des événements/jobs ambiguë")
     if gate.count("    steps:\n") != 1:
@@ -174,6 +201,38 @@ def self_test() -> None:
         "double garde": (
             "  pages-source-promotion-gate:\n",
             "  pages-source-promotion-gate:\n  pages-source-promotion-gate:\n",
+        ),
+        "dépendance promotion supprimée": (
+            "    needs: pages-preflight\n",
+            "    # diagnostic exclu du graphe\n",
+        ),
+        "dépendance détournée": (
+            "    needs: pages-preflight\n",
+            "    needs: unverified-job\n",
+        ),
+        "diagnostic Source neutralisé": (
+            "        run: python3 scripts/report_pages_cutover_status.py --report",
+            "        run: echo SOURCE_NON_TESTEE",
+        ),
+        "diagnostic GET neutralisé": (
+            "        run: python3 scripts/report_pages_live_get_status.py --report",
+            "        run: echo GET_NON_TESTE",
+        ),
+        "diagnostic ignoré malgré erreur": (
+            "  pages-preflight:\n    name: Lire Source Pages sans déploiement (rapport non bloquant)\n",
+            "  pages-preflight:\n    name: Lire Source Pages sans déploiement (rapport non bloquant)\n"
+            "    continue-on-error: true\n",
+        ),
+        "diagnostic GET contourné": (
+            "      - name: Observer uniquement les codes GET, sans lecture des corps techniques\n"
+            "        run: python3 scripts/report_pages_live_get_status.py --report",
+            "      - name: Observer uniquement les codes GET, sans lecture des corps techniques\n"
+            "        if: false\n"
+            "        run: python3 scripts/report_pages_live_get_status.py --report",
+        ),
+        "job de diagnostic supprimé": (
+            "  pages-preflight:\n",
+            "  pages-diagnostic-suppressed:\n",
         ),
     }
     for label, (before, after) in replacements.items():
