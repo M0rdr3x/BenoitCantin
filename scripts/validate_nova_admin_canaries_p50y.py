@@ -66,7 +66,10 @@ def review_evidence(reviews, head_sha, author_id):
             identity == author_id or actor.get("type") == "Bot"):
             continue
         commit = item.get("commit_id")
-        if state in ("APPROVED","DISMISSED") and commit != head_sha:
+        # DISMISSED ne prouve pas, à lui seul, qu'un avis antérieur
+        # était APPROVED : un refus CHANGES_REQUESTED peut aussi être
+        # dismiss. Exiger une vraie trace APPROVED au vieux commit.
+        if state == "APPROVED" and commit != head_sha:
             previous = True
         stamp = str(item.get("submitted_at") or "")
         key = (stamp,index)
