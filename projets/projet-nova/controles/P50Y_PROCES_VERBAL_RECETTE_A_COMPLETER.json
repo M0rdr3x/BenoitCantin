@@ -1,0 +1,37 @@
+{
+  "schema_version": "P50Y-1",
+  "main_sha_avant_essai": "9ed5f70cbe7022f25a679346a1288701f3b09067",
+  "protection_serveur_confirmee_par_admin": false,
+  "bypass_et_permissions_examines": false,
+  "relecteur_independant_disponible": false,
+  "cas": [
+    {
+      "id": "sans_revue",
+      "pr_number": null,
+      "head_sha": null,
+      "pr_url": null,
+      "blocage_constate": false,
+      "verification_humaine": false,
+      "preuve_url": null
+    },
+    {
+      "id": "approbation_perimee",
+      "pr_number": null,
+      "head_sha": null,
+      "pr_url": null,
+      "blocage_constate": false,
+      "verification_humaine": false,
+      "preuve_url": null
+    },
+    {
+      "id": "check_non_satisfait",
+      "pr_number": null,
+      "head_sha": null,
+      "pr_url": null,
+      "blocage_constate": false,
+      "verification_humaine": false,
+      "preuve_url": null
+    }
+  ],
+  "decision": "NO_GO"
+}
