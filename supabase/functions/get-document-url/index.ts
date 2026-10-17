@@ -85,8 +85,12 @@ Deno.serve(async(req)=>{
       return privateJson({ok:false,error:'Document introuvable ou non approuvé.'},404);
     }
 
-    let userRank=0;
-    if(user){
+    // Le droit public appartient aussi aux membres connectés :
+    // une connexion ne doit jamais réduire l'accès à un document public
+    // d'un projet public approuvé. Aucun RPC privilégié n'est requis ici.
+    const requiredRank=ranks[doc.access_level]||999;
+    let userRank=doc.projects?.visibility==='public'?ranks.public:0;
+    if(user&&userRank<requiredRank){
       // Le propriétaire SINJIRA et les administrateurs constituent deux
       // rôles distincts. Ne jamais déduire le rôle propriétaire du courriel.
       const [{data:isOwner,error:ownerError},{data:isAdmin,error:adminError}]=await Promise.all([
@@ -97,11 +101,12 @@ Deno.serve(async(req)=>{
       else{
         const {data:accessRank,error:rankError}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
         if(rankError)return privateJson({ok:false,error:'Droits du compte temporairement indisponibles.'},503);
-        userRank=Number.isFinite(Number(accessRank))?Number(accessRank):0;
+        const memberRank=Number.isFinite(Number(accessRank))?Number(accessRank):0;
+        userRank=Math.max(userRank,memberRank);
       }
-    }else if(doc.projects?.visibility==='public')userRank=1;
+    }
 
-    if(userRank<(ranks[doc.access_level]||999)){
+    if(userRank<requiredRank){
       return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
     }
 
