@@ -38,13 +38,16 @@
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
           {
-            "context": "no-committed-secrets"
+            "context": "no-committed-secrets",
+            "integration_id": 15368
           },
           {
-            "context": "Contrat sécurité validation site"
+            "context": "Contrat sécurité validation site",
+            "integration_id": 15368
           },
           {
-            "context": "Contrat sécurité CI navigateur"
+            "context": "Contrat sécurité CI navigateur",
+            "integration_id": 15368
           }
         ]
       }
