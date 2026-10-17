@@ -224,11 +224,31 @@ class P50Y(unittest.TestCase):
         self.assertEqual(result["fresh_independent_approvals"],1)
         self.assertFalse(result["prior_independent_approval_observed"])
     def test_review_evidence_stale_approval(self):
-        rows=[{"state":"DISMISSED","commit_id":"a"*40,
+        rows=[{"state":"APPROVED","commit_id":"a"*40,
                "user":{"id":42,"type":"User"},"submitted_at":"2026-10-17T00:00:00Z"}]
         result=m.review_evidence(rows,"b"*40,author_id=99)
         self.assertEqual(result["fresh_independent_approvals"],0)
         self.assertTrue(result["prior_independent_approval_observed"])
+    def test_dismissed_review_alone_not_historical_approval(self):
+        rows=[{"state":"DISMISSED","commit_id":"a"*40,
+               "user":{"id":42,"type":"User"},"submitted_at":"2026-10-17T00:00:00Z"}]
+        result=m.review_evidence(rows,"b"*40,author_id=99)
+        self.assertFalse(result["prior_independent_approval_observed"])
+        self.assertEqual(result["fresh_independent_approvals"],0)
+    def test_dismissed_review_does_not_prove_perimee_case(self):
+        f=filled();o=observations(f)
+        o["801"]["review_stats"]["prior_independent_approval_observed"]=False
+        self.assertIn("OBSERVATIONS_NE_SOUTIENNENT_PAS_LE_SCENARIO:approbation_perimee",
+                      m.analyze(f,o)["obstacles"])
+    def test_latest_review_requested_changes_replaces_approval(self):
+        rows=[
+            {"state":"APPROVED","commit_id":"a"*40,"user":{"id":42,"type":"User"},
+             "submitted_at":"2026-10-17T00:00:00Z"},
+            {"state":"CHANGES_REQUESTED","commit_id":"a"*40,"user":{"id":42,"type":"User"},
+             "submitted_at":"2026-10-17T00:30:00Z"},
+        ]
+        self.assertEqual(m.review_evidence(rows,"a"*40,author_id=99)
+                         ["fresh_independent_approvals"],0)
     def test_review_evidence_author_excluded(self):
         rows=[{"state":"APPROVED","commit_id":"a"*40,
                "user":{"id":99,"type":"User"},"submitted_at":"2026-10-17T00:00:00Z"}]
