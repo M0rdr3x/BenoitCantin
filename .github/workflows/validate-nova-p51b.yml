@@ -1,0 +1,67 @@
+name: Projet Nova P51B - integration canaris sans fusion
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p51b.yml"
+      - "scripts/validate_nova_admin_canaries_p50y.py"
+      - "scripts/tests/test_validate_nova_admin_canaries_p50y.py"
+      - "projets/projet-nova/controles/P50Y_*"
+      - "projets/projet-nova/controles/P51B_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integration-controlee-sans-mutation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Lire la version integree sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Executer et compter exactement 55 tests des trois couches
+        run: |
+          python -m py_compile scripts/validate_nova_admin_canaries_p50y.py
+          python - <<'PY'
+          import unittest
+          loader=unittest.TestLoader()
+          suite=loader.discover("scripts/tests",pattern="test_validate_nova_admin_canaries_p50y.py")
+          assert suite.countTestCases()==55, f"Suite attendue 55, obtenue {suite.countTestCases()}"
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          if not result.wasSuccessful():
+              raise SystemExit(1)
+          print("P51B: 55 tests des protections P50Y/P50Z/P51A + correction DISMISSED réussis")
+          PY
+      - name: Confirmer absence de preuve administrative et de GO
+        run: |
+          python scripts/validate_nova_admin_canaries_p50y.py \
+            --dossier projets/projet-nova/controles/P50Y_PROCES_VERBAL_RECETTE_A_COMPLETER.json \
+            --rapport p51b_constat_non_execution.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p51b_constat_non_execution.json").read_text(encoding="utf-8"))
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          assert r["statut_dossier"]=="RECETTE_REQUISE"
+          assert set(r["cases"])=={"sans_revue","approbation_perimee","check_non_satisfait"}
+          assert all(stage=="A_EXECUTER" for stage in r["cases"].values())
+          assert r["preuve_serveur_certifiee_automatiquement"] is False
+          assert r["protection_main_installee_par_ce_programme"] is False
+          assert r["fusion_autorisee"] is False and r["publication_autorisee"] is False
+          print("P51B: les 3 essais administratifs restent NON EXECUTES, statut NO_GO")
+          PY
+      - name: Rapport non nominatif, duree limitee
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p51b-candidat-integre-no-go
+          path: p51b_constat_non_execution.json
+          if-no-files-found: ignore
+          retention-days: 7
