@@ -129,7 +129,7 @@ Deno.serve(async(req)=>{
     }
 
     if(doc.external_url){
-      const url=String(doc.external_url).trim();
+      const url=String(doc.external_url);
       if(!externalUrlAllowed(url))return privateJson({ok:false,error:'URL de document non autorisée.'},500);
       return privateJson({ok:true,url,protected:false,expires_in:null});
     }
