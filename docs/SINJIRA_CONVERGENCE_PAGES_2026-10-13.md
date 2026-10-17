@@ -412,10 +412,11 @@ héritée non numérique. La comparaison au rang du membre pouvait alors
 évaluer `NaN` et laisser passer une signature de lien non autorisée.
 
 La décision repose maintenant sur un niveau textuel **et**
-`Object.hasOwn(ranks,doc.access_level)`. Toute valeur hors inventaire
-obtient le seuil inaccessible `999`, même pour un propriétaire ou un
-administrateur. Le refus a lieu **avant** la création d'une URL signée
-ou l'envoi d'une URL externe. Des tests Node vérifient les valeurs
+`Object.hasOwn(ranks,doc.access_level)`. Toute valeur hors inventaire est immédiatement refusée par une
+réponse HTTP **403**, avant toute requête de rôle, tout calcul de rang
+et toute génération de lien. Cette garantie ne repose plus sur la
+sentinelle `999`, qui était susceptible d'être dépassée par un rang
+serveur erroné ou exceptionnellement élevé. Des tests Node vérifient les valeurs
 malformées, les propriétés héritées, les seuils de chaque niveau
 autorisé et le refus des liens. Les contrats Python Edge et Livre I
 incluent des mutations négatives interdisant la suppression de la liste
