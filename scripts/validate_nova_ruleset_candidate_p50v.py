@@ -106,8 +106,9 @@ def validate(spec:object,workflows:dict)->dict:
     if (not isinstance(items,list) or len(items)!=len(expected_names) or
         {x.get("context") for x in items if isinstance(x,dict)}!=expected_names):
         problems.append("TROIS_CHECKS_UNIVERSELS_EXACTS_MANQUANTS")
-    elif any(set(x)!={"context"} for x in items if isinstance(x,dict)):
-        problems.append("SOURCE_APP_CHECK_A_CONFIRMER_MANUELLEMENT")
+    elif any(set(x)!={"context","integration_id"} or
+             x.get("integration_id")!=15368 for x in items if isinstance(x,dict)):
+        problems.append("APP_GITHUB_ACTIONS_REQUISE")
     for label,(path,sha,job_name) in SOURCES.items():
         data=workflows.get(path)
         if data is None:
