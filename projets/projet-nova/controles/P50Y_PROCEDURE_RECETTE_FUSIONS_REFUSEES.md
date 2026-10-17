@@ -66,6 +66,14 @@ GITHUB_TOKEN=*** python scripts/validate_nova_admin_canaries_p50y.py \
 
 Ne pas inscrire un jeton réel dans un fichier, une issue ou une ligne de commande partagée. Le token `GITHUB_TOKEN` doit être fourni par l'environnement et disposer uniquement d'un accès **lecture** aux PR publiques. Si le dépôt change de SHA ou si une PR témoin change, reprendre le contrôle à zéro.
 
+**Durcissement P51A — corroboration indépendante du motif de refus** : le mode `--live` relève également les revues GitHub par `GET /pulls/{n}/reviews` et les checks du HEAD par `GET /commits/{sha}/check-runs`. Les données du rapport ne contiennent **que des agrégats**, jamais les noms des réviseurs.
+
+- **`sans_revue`** : aucune revue substantielle soumise et **trois checks universels réussis** sur le HEAD. Une CI échouée invalide cet essai, car le refus pourrait provenir de la CI.
+- **`approbation_perimee`** : une approbation antérieure d'une autre personne est observée sur un ancien SHA, **aucune approbation en cours** sur le HEAD et les **trois checks réussis**. L'administrateur doit confirmer dans l'interface l'ordre des commits et la véritable expiration de la revue.
+- **`check_non_satisfait`** : une approbation indépendante valide sur le HEAD et **au moins un des trois checks requis non réussi ou manquant**. Une approbation d'auteur ou de bot ne suffit pas; un check émis par une autre application n'est pas accepté.
+
+Le contrôle **refuse les listes paginées/incomplètes**, les checks homonymes multiples, les mauvais SHA et les checks hors de GitHub Actions `15368`. La présence d'un check manquant n'atteste pas, à elle seule, qu'une règle serveur l'exige : **la preuve administrateur reste obligatoire**.
+
 **Important :** le mode `--live` refuse désormais les PR qui ne ciblent pas `main`, n'ont pas l'identifiant de scénario dans le titre et la branche, ou modifient des fichiers hors du répertoire de recette. Même un dossier rempli et un `mergeable_state:"blocked"` confirmé par API ne certifient **pas** la cause du refus. Une observation indépendante dans l'interface d'administration est obligatoire. Le programme renvoie toujours `NO_GO_AUTOMATIQUE` et n'émet jamais un GO institutionnel.
 
 ## 5. Interprétation de la CI P50Y
