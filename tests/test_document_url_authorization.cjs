@@ -254,6 +254,7 @@ test('niveaux d’accès inconnus ou hérités: refus même au propriétaire',as
         'Niveau non autorisé: '+String(level)+' / '+bearer);
       assert.equal(x.stats.signed,0);
       assert.equal(x.body.ok,false);
+      assert.deepEqual(x.calls,[],'Aucune RPC pour un niveau inconnu');
     }
   }
 });
@@ -266,6 +267,30 @@ test('URL externe d’un document au niveau hérité: aucun lien divulgué',asyn
     assert.equal(x.body.url,undefined);
     assert.equal(x.stats.signed,0);
   }
+});
+test('niveau inconnu: rang serveur 999 ou supérieur ne doit jamais autoriser',async()=>{
+  for(const level of ['unknown','constructor','__proto__']){
+    for(const rank of [999,1000,999999,Number.MAX_SAFE_INTEGER]){
+      const document={...publicDoc,access_level:level};
+      const x=await attempt({document,rank,owner:false,admin:false});
+      assert.equal(x.status,403,'Niveau '+level+', rang '+rank);
+      assert.equal(x.body.ok,false);
+      assert.equal(x.body.url,undefined);
+      assert.equal(x.stats.signed,0);
+      assert.deepEqual(x.calls,[],'Refus avant toute consultation de rôle ou rang');
+    }
+  }
+});
+test('niveau inconnu: ni erreur RPC ni URL externe ne changent le refus strict',async()=>{
+  const x=await attempt({
+    document:{...publicDoc,access_level:'invalid',
+      external_url:'https://example.org/protected.pdf'},
+    rank:1000,owner:true,admin:true,rankError:{message:'offline'}
+  });
+  assert.equal(x.status,403);
+  assert.equal(x.body.url,undefined);
+  assert.equal(x.stats.signed,0);
+  assert.deepEqual(x.calls,[]);
 });
 test('niveaux explicites du registre: seuil de rang serveur respecté',async()=>{
   for(const [level,required] of [
