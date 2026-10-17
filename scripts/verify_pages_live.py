@@ -8,7 +8,7 @@ import time
 from dataclasses import dataclass
 from typing import Callable, Mapping
 from urllib.error import HTTPError, URLError
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 from pages_release_proof import MARKER, render
 
@@ -155,37 +155,26 @@ def verify(base: str, getter: Callable[[str], Reply],
             or target.path or target.query or target.fragment):
         return ["Base de contrôle interdite : le domaine officiel HTTPS est requis."]
     errors: list[str] = []
+    # Chaque URL canonique contrôlée doit répondre directement en 200.
+    # Suivre une redirection vers l'accueil peut masquer une page absente.
+    # Cette règle ne concerne pas les liens sortants ni les chemins non sondés.
     for path in PUBLIC_ROUTES:
-        current = base + path
-        result = None
-        for hop in range(4):
-            try:
-                result = getter(current)
-            except (URLError, OSError, TimeoutError, ValueError) as exc:
-                errors.append(f"Parcours public {path}: erreur réseau ({type(exc).__name__})")
-                result = None
-                break
-            if result.status not in {301, 302, 307, 308}:
-                break
-            if not result.location or hop == 3:
-                errors.append(f"Parcours public {path}: trop de redirections")
-                break
-            new = urljoin(current, result.location)
-            u = urlparse(new)
-            if u.scheme != "https" or u.netloc != "www.benoitcantin.com":
-                errors.append(f"Parcours public {path}: redirection hors domaine officiel")
-                break
-            current = new
-        if result is None:
+        try:
+            result = getter(base + path)
+        except (URLError, OSError, TimeoutError, ValueError) as exc:
+            errors.append(f"Parcours public {path}: erreur réseau ({type(exc).__name__})")
+            continue
+        if result.status in {301, 302, 303, 307, 308} or result.location:
+            errors.append(f"Parcours public {path}: redirection interdite sur URL canonique")
             continue
         if result.status != 200:
             errors.append(f"Parcours public {path}: HTTP {result.status} (200 attendu)")
-        if result.status == 200:
-            content_type = result.content_type.split(";", 1)[0].strip().lower()
-            if path.endswith((".html", "/")) and content_type != "text/html":
-                errors.append(f"Parcours public {path}: type MIME HTML inattendu")
-            if path in MIME_HINTS and content_type not in MIME_HINTS[path]:
-                errors.append(f"Parcours public {path}: type MIME non conforme ({content_type or 'absent'})")
+            continue
+        content_type = result.content_type.split(";", 1)[0].strip().lower()
+        if path.endswith((".html", "/")) and content_type != "text/html":
+            errors.append(f"Parcours public {path}: type MIME HTML inattendu")
+        if path in MIME_HINTS and content_type not in MIME_HINTS[path]:
+            errors.append(f"Parcours public {path}: type MIME non conforme ({content_type or 'absent'})")
     if release is not None:
         marker_url = base + "/" + MARKER
         try:
@@ -263,7 +252,29 @@ def self_test() -> None:
         if url == BASE + "/":
             return Reply(302, location="https://other.example/")
         return fixture(url)
-    assert any("hors domaine" in e for e in verify(BASE, external)), "Redirection externe"
+    assert any("redirection interdite" in e for e in verify(BASE, external)), (
+        "Redirection externe"
+    )
+    # Une redirection interne ne doit pas faire passer une route cassée
+    # en utilisant le HTTP 200 de l'accueil (ni remplacer une image).
+    for route in PUBLIC_ROUTES:
+        def masked_by_home(url: str, target=route) -> Reply:
+            if url == BASE + target:
+                return Reply(302, location="/", content_type="text/html")
+            return fixture(url)
+        issues = verify(BASE, masked_by_home)
+        assert any(route in issue and "redirection interdite" in issue
+                   for issue in issues), (
+            f"Redirection canonique masquée : {route}"
+        )
+    # Même une Location sur un HTTP 200 ne constitue pas une preuve
+    # suffisamment univoque pour la route exacte attendue.
+    def ambiguous_location(url: str) -> Reply:
+        if url == BASE + "/projets/sinjira/romans/":
+            return Reply(200, location="/", content_type="text/html")
+        return fixture(url)
+    assert any("romans/" in issue and "redirection interdite" in issue
+               for issue in verify(BASE, ambiguous_location))
     def missing(url: str) -> Reply:
         if url == BASE + "/projets/sinjira/":
             return Reply(404, content_type="text/html")
