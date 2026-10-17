@@ -22,6 +22,15 @@ Aucune des mesures ci-dessus n'a été effectuée automatiquement dans P50Y. Le 
 
 Créer **trois PR témoins distinctes** sur une branche sans donnée personnelle ni secret, sous l'autorité de l'administrateur. Elles devront être **ouvertes et prêtes pour revue** (`draft:false`), sans fusion. Les garder séparées des véritables PR du Projet Nova et de SINJIRA. Ne jamais cliquer sur « Merge ».
 
+**Identification contrôlée du périmètre des PR témoins (durcissement P50Z)** :
+- branche source **dans le même dépôt** : `test/p50y-<identifiant>-<suffixe>`, avec exactement l'identifiant du scénario (`sans_revue`, `approbation_perimee`, `check_non_satisfait`) ;
+- titre commençant par `[P50Y-CANARI:<identifiant>]` et branche cible `main` **du même dépôt** ;
+- seules **1 à 3 modifications** de fichiers sous `projets/projet-nova/controles/canaris/`; aucun HTML public, workflow, configuration, manifeste ou fichier de données réels modifiés par les essais ;
+- le validateur lit la **liste exhaustive des fichiers via l'API GitHub** : un inventaire paginé, incomplet ou de taille inattendue provoque un refus ;
+- les PR historiques (notamment **#640**, #636, #638, #657) ne sont **jamais des PR témoins**, même si elles sont bloquées par GitHub.
+
+Ces contraintes empêchent qu'un blocage accidentel d'une véritable PR du Projet Nova soit présenté comme la réussite d'un essai de protection. Elles n'autorisent ni la création de PR témoins par le pipeline ni une fusion.
+
 | Essai | Conditions à établir | Refus attendu |
 | --- | --- | --- |
 | `sans_revue` | Les trois checks requis passent; aucun avis `APPROVED` valide sur le HEAD | La fusion reste bloquée **par manque d'approbation**, et non simplement parce que la PR est en brouillon ou en conflit |
@@ -57,7 +66,7 @@ GITHUB_TOKEN=*** python scripts/validate_nova_admin_canaries_p50y.py \
 
 Ne pas inscrire un jeton réel dans un fichier, une issue ou une ligne de commande partagée. Le token `GITHUB_TOKEN` doit être fourni par l'environnement et disposer uniquement d'un accès **lecture** aux PR publiques. Si le dépôt change de SHA ou si une PR témoin change, reprendre le contrôle à zéro.
 
-**Important :** même un dossier rempli et un `mergeable_state:"blocked"` confirmé par API ne certifient **pas** la cause du refus. Une observation indépendante dans l'interface d'administration est obligatoire. Le programme renvoie toujours `NO_GO_AUTOMATIQUE` et n'émet jamais un GO institutionnel.
+**Important :** le mode `--live` refuse désormais les PR qui ne ciblent pas `main`, n'ont pas l'identifiant de scénario dans le titre et la branche, ou modifient des fichiers hors du répertoire de recette. Même un dossier rempli et un `mergeable_state:"blocked"` confirmé par API ne certifient **pas** la cause du refus. Une observation indépendante dans l'interface d'administration est obligatoire. Le programme renvoie toujours `NO_GO_AUTOMATIQUE` et n'émet jamais un GO institutionnel.
 
 ## 5. Interprétation de la CI P50Y
 
