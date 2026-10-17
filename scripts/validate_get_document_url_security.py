@@ -29,7 +29,7 @@ REQUIRED = {
     'rang exigé stable': "const requiredRank=ranks[doc.access_level]||999;",
     'RPC uniquement si rang insuffisant': "if(user&&userRank<requiredRank){",
     'rang membre ne retire pas le rang public': "userRank=Math.max(userRank,memberRank);",
-    'refus sur rang final': "if(userRank<requiredRank){"
+    'refus sur rang final': "if(userRank<requiredRank){",
     'rang projet serveur': "service.rpc('project_access_rank'",
     'validation URL externe': 'externalUrlAllowed(url)',
     'lien signé 600 secondes': 'createSignedUrl(doc.storage_path,600)',
