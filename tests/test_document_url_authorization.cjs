@@ -238,6 +238,49 @@ test('une URL ambiguë ne contourne jamais les droits d’un document restreint'
   assert.equal(x.stats.signed,0);
 });
 
+// Un niveau de document issu du registre ne doit jamais bénéficier des
+// propriétés héritées d'un objet JavaScript (Object.prototype).
+test('niveaux d’accès inconnus ou hérités: refus même au propriétaire',async()=>{
+  const invalid=[
+    'constructor','toString','__proto__','hasOwnProperty',
+    'valueOf','isPrototypeOf','propertyIsEnumerable',
+    'unknown','','PUBLIC',null,undefined,0,{},['public'],
+  ];
+  for(const level of invalid){
+    const document={...publicDoc,access_level:level};
+    for(const bearer of ['anonymous','member']){
+      const x=await attempt({document,owner:true,admin:true,rank:100},bearer);
+      assert.equal(x.status,403,
+        'Niveau non autorisé: '+String(level)+' / '+bearer);
+      assert.equal(x.stats.signed,0);
+      assert.equal(x.body.ok,false);
+    }
+  }
+});
+test('URL externe d’un document au niveau hérité: aucun lien divulgué',async()=>{
+  for(const level of ['constructor','toString','__proto__']){
+    const document={...publicDoc,access_level:level,
+      external_url:'https://example.org/restricted.pdf'};
+    const x=await attempt({document,owner:true,rank:100});
+    assert.equal(x.status,403);
+    assert.equal(x.body.url,undefined);
+    assert.equal(x.stats.signed,0);
+  }
+});
+test('niveaux explicites du registre: seuil de rang serveur respecté',async()=>{
+  for(const [level,required] of [
+    ['public',1],['account',10],['player',20],['tester',30],['admin',100]
+  ]){
+    const document={...doc,access_level:level};
+    const denied=await attempt({document,rank:required-1});
+    assert.equal(denied.status,403,'Refus attendu: '+level);
+    assert.equal(denied.stats.signed,0);
+    const granted=await attempt({document,rank:required});
+    assert.equal(granted.status,200,'Accès confirmé: '+level);
+    assert.equal(granted.stats.signed,1);
+  }
+});
+
 test('requête volumineuse sans Content-Length: refuse avant signature',async()=>{
   const f=fixture(),handler=buildHandler(f.service);
   const response=await handler(new Request('https://functions.local/functions/v1/get-document-url',{
