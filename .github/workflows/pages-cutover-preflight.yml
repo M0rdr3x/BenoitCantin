@@ -48,6 +48,8 @@ jobs:
 
   pages-source-promotion-gate:
     name: Garde de promotion — Source Pages conforme exigée
+    # Ne jamais accepter la conformité Source si les diagnostics amont ont échoué.
+    needs: pages-preflight
     # Brouillon = construction et diagnostics; prêt pour revue = blocage
     # dur si Source/CNAME/HTTPS ne sont pas attestés par l'API Pages.
     if: >-
