@@ -41,7 +41,7 @@ class P50UGates(unittest.TestCase):
     def test_two_codeowners_counted_but_no_human_claim(self):
         r=m.evaluate(protected(),[{"enforcement":"active"}],
                      "* @reviewerOne @reviewerTwo\n")
-        self.assertEqual(r["etat_porte_technique"],"PROTECTION_CONFIRME_E_SUR_SURFACE_LUE")
+        self.assertEqual(r["etat_porte_technique"],"CONTROLES_TECHNIQUES_VISIBLES")
         self.assertFalse(r["autorisation_publication"])
         self.assertFalse(r["revue_humaine_qualifiee_attestee"])
     def test_bot_or_owner_identity_never_in_report(self):
