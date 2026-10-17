@@ -161,6 +161,22 @@ un HTTP 200 muni d'un en-tête `Location`, sont rejetées sur les routes
 publiques. Les vérifications sont faites **sans lire aucun corps technique
 ni aucun document public**, uniquement par les statuts et en-têtes.
 
+**Protection contre la neutralisation du workflow :** le contrat
+`scripts/validate_publication_watch_workflow.py` vérifie les événements
+`push` et `pull_request` sur `main`, la planification quotidienne
+`17 11 * * *` (UTC), la possibilité de déclencher manuellement,
+la dépendance du job `live` aux autotests et les seules permissions
+`contents: read`. Les sondes live doivent être réellement exécutées
+avec `--live` uniquement sur `schedule` ou `workflow_dispatch`,
+sans erreur ignorée, publication d'artefact, jeton persistant ou étape
+facultative. Son autotest injecte **20 mutations dangereuses** et
+vérifie qu'elles échouent. Ce contrat est lancé dans la CI de
+surveillance, l'audit Jekyll de la PR et le DRY_RUN/PUBLISH contrôlé.
+
+Le garde-fou protège le **code du futur workflow**, pas la configuration
+GitHub Pages : un résultat CI vert ne garantit pas qu'une cadence ait
+déjà été exécutée sur `main`, ni que la production soit confinée.
+
 Cette surveillance reste distincte de la **preuve post-PUBLISH** :
 elle n'effectue ni déploiement ni comparaison d'octets des 22 ressources
 critiques, ne remplace pas l'approbation du SHA et ne teste pas les parcours
