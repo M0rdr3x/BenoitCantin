@@ -147,9 +147,11 @@ Le job `deploy`, protégé par son environnement `github-pages`, appelle
 Le job final exécute **`python3 scripts/verify_pages_live.py --check`** :
 HTTPS, **21 chemins publics en 200** (accueil, catalogues SINJIRA,
 pages Nova, JS, XML, TXT, JSON Boussole, PDF démo et bannières WebP
-avec MIME attendus) et **13 chemins techniques en 404/410 strict**,
-dont le contrat de livraison privée du Livre I. La surveillance
-quotidienne inclut un quatorzième chemin historique Netlify.
+avec MIME attendus) et **14 chemins techniques en 404/410 strict**,
+dont le contrat de livraison privée du Livre I et le script historique
+Netlify `/scripts/build_netlify_public.py`. Le contrôle bloquant
+post-PUBLISH et la surveillance quotidienne partagent désormais
+**la même liste exacte des 14 chemins**, afin de prévenir tout écart.
 
 Les probes contrôlent notamment :
 `/supabase/config.toml`, `/tests/e2e/test_public_site.py`,
@@ -358,8 +360,8 @@ d'intervalle** (soit au maximum 120 secondes de pause, hors durées
 des requêtes). Il ne suit aucune redirection, rejette immédiatement un
 MIME non JSON et n'accepte que les octets exacts du SHA/run. Si le reçu
 n'est jamais présent et correct, le job échoue, sans déclarer le
-déploiement réussi. Dès sa réception, **les 12 routes publiques et les
-13 routes techniques sont retestées** en HTTP strict; un succès du reçu
+déploiement réussi. Dès sa réception, **les 21 routes publiques et les
+14 routes techniques sont retestées** en HTTP strict; un succès du reçu
 ne contourne donc jamais les vérifications de non-divulgation.
 
 La CI de la PR simule l'arrivée tardive du reçu, un SHA obsolète,
