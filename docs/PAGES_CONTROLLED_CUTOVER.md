@@ -151,7 +151,20 @@ avec MIME attendus) et **14 chemins techniques en 404/410 strict**,
 dont le contrat de livraison privée du Livre I et le script historique
 Netlify `/scripts/build_netlify_public.py`. Le contrôle bloquant
 post-PUBLISH et la surveillance quotidienne partagent désormais
-**la même liste exacte des 14 chemins**, afin de prévenir tout écart.
+**les deux mêmes inventaires : 21 routes publiques et 14 chemins
+techniques interdits**, afin de prévenir tout écart. La surveillance
+quotidienne (workflow `.github/workflows/publication-boundary-watch.yml`)
+vérifie les **35 URL canoniques** par des requêtes GET en lecture seule :
+HTTP 200 direct et type MIME correct pour les 21 pages/ressources publiques,
+404/410 strict pour les 14 chemins techniques. Les redirections, y compris
+un HTTP 200 muni d'un en-tête `Location`, sont rejetées sur les routes
+publiques. Les vérifications sont faites **sans lire aucun corps technique
+ni aucun document public**, uniquement par les statuts et en-têtes.
+
+Cette surveillance reste distincte de la **preuve post-PUBLISH** :
+elle n'effectue ni déploiement ni comparaison d'octets des 22 ressources
+critiques, ne remplace pas l'approbation du SHA et ne teste pas les parcours
+authentifiés. Une réussite des tests en PR n'atteste jamais la production.
 
 Les probes contrôlent notamment :
 `/supabase/config.toml`, `/tests/e2e/test_public_site.py`,
