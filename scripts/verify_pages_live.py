@@ -45,6 +45,8 @@ PRIVATE_ROUTES = (
     "/projets/projet-nova/UPLOAD_GITHUB.md",
     "/projets/projet-nova/SECURITY.md",
     "/projets/sinjira/codex/livre-i-delivery-contract.json",
+    # Ancien chemin technique Netlify : même refus strict après PUBLISH.
+    "/scripts/build_netlify_public.py",
 )
 ERROR_CODES = {404, 410}
 # Un HTTP 200 HTML sur un JS, un sitemap ou un robots.txt masque une publication cassée.
@@ -213,6 +215,10 @@ def verify(base: str, getter: Callable[[str], Reply],
 
 
 def self_test() -> None:
+    # La frontière post-PUBLISH doit couvrir tous les 14 chemins techniques,
+    # y compris le script historique Netlify, sans en oublier un.
+    assert len(PRIVATE_ROUTES) == len(set(PRIVATE_ROUTES)) == 14
+    assert "/scripts/build_netlify_public.py" in PRIVATE_ROUTES
     def fixture(url: str) -> Reply:
         path = urlparse(url).path
         if path in PRIVATE_ROUTES:
@@ -242,6 +248,17 @@ def self_test() -> None:
             return Reply(302, location="/compte/")
         return fixture(url)
     assert any("test_public_site.py" in e for e in verify(BASE, redirect_leak)), "Redirect trompeur"
+    # Toute route technique, nouvelle ou historique, doit être refusée.
+    # Le GET d'un seul chemin en 200, 206, 301, 302, 403 ou 500 échoue.
+    for private in PRIVATE_ROUTES:
+        for exposed_status in (200, 206, 301, 302, 403, 500):
+            def unsafe_route(url: str, route=private, status=exposed_status) -> Reply:
+                if url == BASE + route:
+                    return Reply(status, content_type="text/plain")
+                return fixture(url)
+            assert any(private in error for error in verify(BASE, unsafe_route)), (
+                f"Chemin technique non vérifié : {private} / HTTP {exposed_status}"
+            )
     def external(url: str) -> Reply:
         if url == BASE + "/":
             return Reply(302, location="https://other.example/")
