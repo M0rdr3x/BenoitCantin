@@ -26,7 +26,8 @@ REQUIRED = {
     'document approuvé': "doc.status!=='approved'",
     'projet actif': "doc.projects?.status!=='active'",
     'rang public conditionné à la visibilité': "let userRank=doc.projects?.visibility==='public'?ranks.public:0;",
-    'rang exigé stable et sans propriétés héritées': "const requiredRank=typeof doc.access_level==='string'&&Object.hasOwn(ranks,doc.access_level)?ranks[doc.access_level]:999;",
+    'niveau inconnu explicitement bloqué': "if(typeof doc.access_level!=='string'||!Object.hasOwn(ranks,doc.access_level)){",
+    'rang calculé uniquement après la liste blanche': "const requiredRank=ranks[doc.access_level];",
     'RPC uniquement si rang insuffisant': "if(user&&userRank<requiredRank){",
     'rang membre ne retire pas le rang public': "userRank=Math.max(userRank,memberRank);",
     'refus sur rang final': "if(userRank<requiredRank){",
@@ -82,7 +83,22 @@ def validate(path: Path) -> list[str]:
     if read_pos < 0 or lookup_pos < 0 or read_pos > lookup_pos:
         errors.append('La requête doit être validée avant toute lecture de documents via service role.')
 
-    signed_pos = source.find('createSignedUrl(doc.storage_path,600)')
+    # Une liste blanche sans retour HTTP 403 immédiat laisserait des rangs
+    # serveur très élevés (>= 999) autoriser les niveaux inconnus.
+    guard_pos = source.find("if(typeof doc.access_level!=='string'||!Object.hasOwn(ranks,doc.access_level)){")
+    refuse_pos = source.find(
+        "return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);",
+        guard_pos
+    )
+    rank_pos = source.find('const requiredRank=ranks[doc.access_level];')
+    rpc_pos = source.find("service.rpc('project_access_rank'")
+    if not (lookup_pos >= 0 and guard_pos > lookup_pos and
+            refuse_pos > guard_pos and rank_pos > refuse_pos and
+            rpc_pos > rank_pos):
+        errors.append(
+            'Le niveau inconnu doit renvoyer HTTP 403 avant calcul du rang et toute RPC.'
+        )
+    signed_pos = source.find('createSignedUrl(doc.storage_path,600)' )
     response_ttl_pos = source.find('expires_in:600', signed_pos)
     if signed_pos < 0 or response_ttl_pos < signed_pos:
         errors.append('Le lien privé doit rester signé 600 secondes et annoncer le même TTL.')
@@ -138,7 +154,10 @@ Deno.serve(async(req)=>{
   const service=serviceClient(),user=await optionalUser(req);
   const {data:doc}=await service.from('documents').select('status,projects(status)').eq('id',document_id).maybeSingle();
   if(doc.status!=='approved'||doc.projects?.status!=='active')return privateJson({},404);
-  const requiredRank=typeof doc.access_level==='string'&&Object.hasOwn(ranks,doc.access_level)?ranks[doc.access_level]:999;
+  if(typeof doc.access_level!=='string'||!Object.hasOwn(ranks,doc.access_level)){
+    return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
+  }
+  const requiredRank=ranks[doc.access_level];
   let userRank=doc.projects?.visibility==='public'?ranks.public:0;
   if(user&&userRank<requiredRank){
     await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user?.id});
@@ -185,12 +204,24 @@ Deno.serve(async(req)=>{
             'URL nettoyée avant validation': safe.replace(
                 'const url=String(doc.external_url);',
                 'const url=String(doc.external_url).trim();'),
-            'niveaux du prototype acceptés': safe.replace(
-                'Object.hasOwn(ranks,doc.access_level)', 'true'),
+            'niveau hérité autorisé': safe.replace(
+                "!Object.hasOwn(ranks,doc.access_level)", 'false'),
             'type du niveau non vérifié': safe.replace(
-                "typeof doc.access_level==='string'&&", ''),
-            'niveau inconnu autorisé': safe.replace(
-                '?ranks[doc.access_level]:999;', '?ranks[doc.access_level]:0;'),
+                "typeof doc.access_level!=='string'||", ''),
+            'garde niveau désactivée': safe.replace(
+                "if(typeof doc.access_level!=='string'||!Object.hasOwn(ranks,doc.access_level)){",
+                "if(false){"),
+            'refus strict déplacé après RPC': safe.replace(
+                "  if(typeof doc.access_level!=='string'||!Object.hasOwn(ranks,doc.access_level)){\n"
+                "    return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);\n"
+                "  }\n  const requiredRank=ranks[doc.access_level];",
+                "  const requiredRank=ranks[doc.access_level];\n"
+                "  if(typeof doc.access_level!=='string'||!Object.hasOwn(ranks,doc.access_level)){\n"
+                "    return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);\n"
+                "  }"),
+            'refus explicite 403 neutralisé': safe.replace(
+                "    return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);",
+                "    return privateJson({ok:true},200);"),
             'rang public retiré': safe.replace(
                 "let userRank=doc.projects?.visibility==='public'?ranks.public:0;",
                 "let userRank=0;"),
