@@ -31,6 +31,8 @@ on:
       - 'scripts/verify_pages_live.py'
       - 'scripts/verify_pages_integrity.py'
       - 'scripts/validate_pages_workflows.py'
+      - 'scripts/validate_publication_watch_workflow.py'
+      - '.github/workflows/publication-boundary-watch.yml'
       - 'scripts/attest_pages_production.py'
       - 'scripts/audit_public_documents.py'
       - 'scripts/audit_public_json.py'
@@ -108,6 +110,8 @@ jobs:
           python3 scripts/validate_boussole_home_visual.py --self-test
           python3 scripts/validate_pages_workflows.py --self-test
           python3 scripts/validate_pages_workflows.py
+          python3 scripts/validate_publication_watch_workflow.py --self-test
+          python3 scripts/validate_publication_watch_workflow.py --check
           node scripts/test_pwa_cache_security.cjs
           python3 scripts/audit_pwa_precache.py --self-test
           python3 scripts/audit_pwa_precache.py --source .
