@@ -32,6 +32,7 @@ REQUIRED = {
     'refus sur rang final': "if(userRank<requiredRank){",
     'rang projet serveur': "service.rpc('project_access_rank'",
     'validation URL externe': 'externalUrlAllowed(url)',
+    'URL de registre non normalisée avant validation': 'const url=String(doc.external_url);',
     'origine canonique des chemins locaux': "const OFFICIAL_ORIGIN='https://www.benoitcantin.com';",
     'origine locale non négociable': 'url.origin===OFFICIAL_ORIGIN',
     'refus des séparateurs encodés': '(?:2f|5c|0[0-9a-f]|1[0-9a-f]|7f)',
@@ -145,7 +146,7 @@ Deno.serve(async(req)=>{
     userRank=Math.max(userRank,memberRank);
   }
   if(userRank<requiredRank){return privateJson({},403);}
-  const url='https://example.test'; if(!externalUrlAllowed(url))return privateJson({},500);
+  const url=String(doc.external_url); if(!externalUrlAllowed(url))return privateJson({},500);
   const signed=await service.storage.from('x').createSignedUrl(doc.storage_path,600);
   return privateJson({ok:true,url:signed.signedUrl,expires_in:600});
  }catch{
@@ -181,6 +182,9 @@ Deno.serve(async(req)=>{
                 '!url.username&&!url.password', 'true'),
             'HTTPS externe relâché': safe.replace(
                 "url.protocol==='https:'&&!!url.hostname", '!!url.hostname'),
+            'URL nettoyée avant validation': safe.replace(
+                'const url=String(doc.external_url);',
+                'const url=String(doc.external_url).trim();'),
             'rang public retiré': safe.replace(
                 "let userRank=doc.projects?.visibility==='public'?ranks.public:0;",
                 "let userRank=0;"),
