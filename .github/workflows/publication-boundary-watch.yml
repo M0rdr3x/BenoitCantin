@@ -35,13 +35,13 @@ jobs:
         run: python3 scripts/validate_publication_live_boundary.py --self-test
 
   live:
-    name: Vérifier les quatorze chemins techniques et l'identité d'hébergement
+    name: Vérifier 21 routes publiques, 14 chemins interdits et le reçu Pages
     needs: contract
     # Pas de trafic de surveillance vers la production sur les PR ou pushes.
-    # L'exécution quotidienne et le lancement manuel prouvent l'état live.
+    # L'exécution quotidienne et le lancement manuel contrôlent les 35 routes.
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Récupérer le dépôt sans credentials persistés
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
