@@ -20,6 +20,12 @@ REPO = "M0rdr3x/BenoitCantin"
 MAIN_SHA = "9ed5f70cbe7022f25a679346a1288701f3b09067"
 CASES = ("sans_revue", "approbation_perimee", "check_non_satisfait")
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
+REQUIRED_CHECKS = (
+    "no-committed-secrets",
+    "Contrat sécurité validation site",
+    "Contrat sécurité CI navigateur",
+)
+ACTIONS_APP_ID = 15368
 EVIDENCE_URL = re.compile(
     r"^https://github\.com/M0rdr3x/BenoitCantin/"
     r"(?:pull/[1-9][0-9]*|actions/runs/[1-9][0-9]*)$"
@@ -38,6 +44,71 @@ def github(path: str, token: str):
                  timeout=25) as response:
         return json.load(response)
 
+def review_evidence(reviews, head_sha, author_id):
+    """Count only, never disclose review authors. Refuse incomplete API pages."""
+    if not isinstance(reviews,list) or len(reviews) >= 100:
+        raise ValueError("REVUES_NON_EXHAUSTIVES")
+    latest = {}
+    previous = False
+    substantive = 0
+    for index, item in enumerate(reviews):
+        if not isinstance(item,dict):
+            raise ValueError("REVUE_NON_FIABLE")
+        state = item.get("state")
+        actor = item.get("user") or {}
+        if not isinstance(actor,dict):
+            raise ValueError("REVUE_ACTEUR_INCONNU")
+        if state not in ("APPROVED","DISMISSED","CHANGES_REQUESTED"):
+            continue
+        substantive += 1
+        identity = actor.get("id")
+        if (type(identity) is not int or identity<=0 or
+            identity == author_id or actor.get("type") == "Bot"):
+            continue
+        commit = item.get("commit_id")
+        if state in ("APPROVED","DISMISSED") and commit != head_sha:
+            previous = True
+        stamp = str(item.get("submitted_at") or "")
+        key = (stamp,index)
+        if identity not in latest or key > latest[identity][0]:
+            latest[identity] = (key,state,commit)
+    current = sum(1 for _,state,commit in latest.values()
+                  if state=="APPROVED" and commit==head_sha)
+    return {
+        "submitted_substantive":substantive,
+        "fresh_independent_approvals":current,
+        "prior_independent_approval_observed":previous,
+    }
+
+
+def checks_evidence(checks, head_sha):
+    """Required global contexts: unique, successful only when at current SHA."""
+    if (not isinstance(checks,dict) or type(checks.get("total_count")) is not int or
+        checks["total_count"]>=100 or
+        not isinstance(checks.get("check_runs"),list)):
+        raise ValueError("CHECKS_NON_EXHAUSTIFS")
+    rows=checks["check_runs"]
+    if checks["total_count"] != len(rows):
+        raise ValueError("CHECKS_PAGINATION_INCOMPLETE")
+    successes=0
+    unsatisfied=0
+    for name in REQUIRED_CHECKS:
+        candidates=[r for r in rows if isinstance(r,dict) and r.get("name")==name]
+        if len(candidates)>1:
+            raise ValueError("CHECKS_AMBIGUS_"+name)
+        if candidates:
+            r=candidates[0]
+            if ((r.get("app") or {}).get("id")!=ACTIONS_APP_ID or
+                r.get("head_sha")!=head_sha):
+                raise ValueError("ORIGINE_CHECK_INVALIDE_"+name)
+            success=(r.get("status")=="completed" and r.get("conclusion")=="success")
+        else:
+            success=False
+        successes+=int(success)
+        unsatisfied+=int(not success)
+    return {"checks_success":successes,"checks_non_satisfaits":unsatisfied}
+
+
 def actual_canary(number: int, token: str):
     base = "/repos/" + REPO
     pr = github(base + "/pulls/" + str(number), token)
@@ -50,6 +121,14 @@ def actual_canary(number: int, token: str):
             any(not isinstance(item, dict) for item in files)):
         raise ValueError("FICHIERS_CANARI_NON_EXHAUSTIFS")
     head = pr.get("head") or {}
+    author=(pr.get("user") or {}).get("id")
+    if type(author) is not int or author<=0:
+        raise ValueError("AUTEUR_PR_INCONNU")
+    reviews=github(base + "/pulls/" + str(number) + "/reviews?per_page=100",token)
+    runs=github(base + "/commits/" + str(head.get("sha")) +
+                "/check-runs?per_page=100",token)
+    review_stats=review_evidence(reviews,head.get("sha"),author)
+    check_stats=checks_evidence(runs,head.get("sha"))
     target = pr.get("base") or {}
     # True / False are not review decisions. A draft cannot demonstrate a
     # review or check gate because drafts are inherently not mergeable.
@@ -61,6 +140,8 @@ def actual_canary(number: int, token: str):
         "base_repo": (target.get("repo") or {}).get("full_name"),
         "title": pr.get("title"),
         "changed_paths": [item.get("filename") for item in files],
+        "review_stats": review_stats,
+        "check_stats": check_stats,
         "open": pr.get("state") == "open",
         "draft": pr.get("draft"),
         "merged": pr.get("merged"),
@@ -148,6 +229,28 @@ def analyze(document, observations=None):
                           for path in live["changed_paths"])):
                     stages[caseid] = "CHANGEMENT_CANARI_DANGEREUX"
                     problems.append("CANARI_FICHIERS_HORS_REPERTOIRE:" + caseid)
+                elif (not isinstance(live.get("review_stats"),dict) or
+                      not isinstance(live.get("check_stats"),dict) or
+                      type(live["review_stats"].get("submitted_substantive")) is not int or
+                      type(live["review_stats"].get("fresh_independent_approvals")) is not int or
+                      type(live["review_stats"].get("prior_independent_approval_observed")) is not bool or
+                      type(live["check_stats"].get("checks_success")) is not int or
+                      type(live["check_stats"].get("checks_non_satisfaits")) is not int or
+                      live["check_stats"]["checks_success"] + live["check_stats"]["checks_non_satisfaits"] != len(REQUIRED_CHECKS)):
+                    stages[caseid] = "PREUVES_API_INCOMPLETES"
+                    problems.append("REVUES_OU_CHECKS_NON_ATTESTES:" + caseid)
+                elif ((caseid=="sans_revue" and not (
+                          live["review_stats"]["submitted_substantive"]==0 and
+                          live["check_stats"]["checks_success"]==len(REQUIRED_CHECKS))) or
+                      (caseid=="approbation_perimee" and not (
+                          live["review_stats"]["prior_independent_approval_observed"] is True and
+                          live["review_stats"]["fresh_independent_approvals"]==0 and
+                          live["check_stats"]["checks_success"]==len(REQUIRED_CHECKS))) or
+                      (caseid=="check_non_satisfait" and not (
+                          live["review_stats"]["fresh_independent_approvals"]>=1 and
+                          live["check_stats"]["checks_non_satisfaits"]>=1))):
+                    stages[caseid] = "MOTIF_NON_CORROBORE"
+                    problems.append("OBSERVATIONS_NE_SOUTIENNENT_PAS_LE_SCENARIO:" + caseid)
                 elif live.get("mergeable_state") != "blocked" or live.get("mergeable") is not True:
                     stages[caseid] = "REFUS_FUSION_NON_PROUVE"
                     problems.append("GITHUB_N_ATTESTE_PAS_LE_BLOCAGE:" + caseid)
