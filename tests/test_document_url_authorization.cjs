@@ -185,6 +185,59 @@ test('document public non approuvé ou projet inactif: refus à tous',async()=>{
   }
 });
 
+// Le registre peut référencer des documents publics externes HTTPS ou
+// des chemins locaux. Un chemin avec une barre inverse peut changer l'hôte
+// à l'ouverture : il ne doit jamais être renvoyé comme URL autorisée.
+test('URL documentaire locale légitime: reste accessible au visiteur et membre',async()=>{
+  const url='/projets/sinjira/documents/demo.pdf?lecture=1#debut';
+  for(const bearer of ['anonymous','member']){
+    const x=await attempt({document:{...publicDoc,external_url:url}},bearer);
+    assert.equal(x.status,200);
+    assert.equal(x.body.url,url);
+    assert.equal(x.body.protected,false);
+    assert.equal(x.stats.signed,0);
+    assert.deepEqual(x.calls,[]);
+  }
+});
+test('document externe HTTPS explicite: reste autorisé sans lien signé',async()=>{
+  const url='https://example.org/documents/guide.pdf';
+  const x=await attempt({document:{...publicDoc,external_url:url}},'anonymous');
+  assert.equal(x.status,200);
+  assert.equal(x.body.url,url);
+  assert.equal(x.body.protected,false);
+  assert.equal(x.stats.signed,0);
+});
+test('URL ambiguë ou contenant un identifiant: aucune URL publiée',async()=>{
+  const invalid=[
+    '/\\\\evil.example/private.pdf',
+    '/\\\\/evil.example/private.pdf',
+    '/docs/%5cevil.example/private.pdf',
+    '/docs/%2fhidden.pdf',
+    '//evil.example/private.pdf',
+    'https://user:secret@example.org/private.pdf',
+    'https:/example.org/private.pdf',
+    'https:\\\\example.org/private.pdf',
+    'http://example.org/private.pdf',
+    'javascript:alert(1)',
+    ' /docs/guide.pdf',
+    '/docs/guide.pdf\\n',
+  ];
+  for(const url of invalid){
+    const x=await attempt({document:{...publicDoc,external_url:url}},'member');
+    assert.equal(x.status,500,'URL non refusée: '+JSON.stringify(url));
+    assert.equal(x.body.ok,false);
+    assert.equal(x.stats.signed,0);
+    assert.deepEqual(x.calls,[]);
+    assert.doesNotMatch(JSON.stringify(x.body),/secret|evil.example/i);
+  }
+});
+test('une URL ambiguë ne contourne jamais les droits d’un document restreint',async()=>{
+  const restricted={...doc,external_url:'/\\\\evil.example/private.pdf'};
+  const x=await attempt({document:restricted,rank:0});
+  assert.equal(x.status,403);
+  assert.equal(x.stats.signed,0);
+});
+
 test('requête volumineuse sans Content-Length: refuse avant signature',async()=>{
   const f=fixture(),handler=buildHandler(f.service);
   const response=await handler(new Request('https://functions.local/functions/v1/get-document-url',{
