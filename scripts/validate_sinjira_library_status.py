@@ -76,6 +76,7 @@ def audit(html: str, js: str) -> list[str]:
         "function safeProjectPlayPath(value)",
         "return safeLibraryRoute(value);",
         "const demoPath=safeLibraryRoute(novel.demo_path);",
+        'data-v2461-request-tester="${escapeHtml(project.id)}"',
         "return safeLibraryCover(project.cover_url,fallback);",
         "Number.isFinite(rawProgress)",
         "Math.round(Math.max(0,Math.min(100,rawProgress)))",
@@ -135,10 +136,16 @@ def audit_legacy(js: str) -> list[str]:
         "const playPath=allowed?internalProjectPath(p.play_path):'';",
         "return safeLibraryRoute(raw);",
         "return safeLibraryCover(p.cover_url,fallback);",
+        'data-request-tester="${escapeHtml(p.id)}"',
+        'data-open-document="${escapeHtml(d.id)}"',
+        'id="${escapeHtml(x.id)}"',
+        'data-apply-playtest="${escapeHtml(x.id)}"',
     )
     for marker in required:
         if marker not in js:
             problems.append("Détail projet historique : garde absent " + marker[:55])
+    if js.count('data-open-document="${escapeHtml(d.id)}"') != 2:
+        problems.append("Boutons des documents : les deux attributs id doivent être échappés")
     if "owner=isSinjiraOwner(user)" in js:
         problems.append("Ancienne déduction propriétaire depuis e-mail interdite")
     return problems
@@ -221,6 +228,14 @@ def self_test() -> None:
         legacy.replace("return safeLibraryRoute(raw);", "return String(raw||'');"),
         legacy.replace("return safeLibraryCover(p.cover_url,fallback);",
                        "return p.cover_url||fallback;"),
+        legacy.replace('data-request-tester="${escapeHtml(p.id)}"',
+                       'data-request-tester="${p.id}"'),
+        legacy.replace('data-open-document="${escapeHtml(d.id)}"',
+                       'data-open-document="${d.id}"', 1),
+        legacy.replace('id="${escapeHtml(x.id)}"',
+                       'id="${x.id}"'),
+        legacy.replace('data-apply-playtest="${escapeHtml(x.id)}"',
+                       'data-apply-playtest="${x.id}"'),
     ):
         assert audit_legacy(broken), "Contournement droits du détail de projet accepté"
     for broken in (
@@ -233,6 +248,8 @@ def self_test() -> None:
                    "const demoPath=novel.demo_path;"),
         js.replace("return safeLibraryCover(project.cover_url,fallback);",
                    "return project.cover_url||fallback;"),
+        js.replace('data-v2461-request-tester="${escapeHtml(project.id)}"',
+                   'data-v2461-request-tester="${project.id}"'),
         js.replace("Number.isFinite(rawProgress)", "true"),
         js.replace("Number.isSafeInteger(rawPage)&&rawPage>0", "true"),
     ):
