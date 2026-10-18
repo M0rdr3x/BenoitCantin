@@ -84,7 +84,13 @@ function renderReads(libraryRows){
   box.innerHTML=libraryRows.map(row=>{
     const novel=row.sinjira_novels;
     if(!novel)return '';
-    const progress=Math.max(0,Math.min(100,Number(row.progress_percent||0)));
+    // Ne jamais afficher NaN%, Infinity%, des pages négatives ou des
+    // nombres imprécis si le registre retourne une lecture malformée.
+    const rawProgress=Number(row.progress_percent);
+    const progress=Number.isFinite(rawProgress)
+      ?Math.round(Math.max(0,Math.min(100,rawProgress))):0;
+    const rawPage=Number(row.last_page);
+    const lastPage=Number.isSafeInteger(rawPage)&&rawPage>0?rawPage:null;
     const demoPath=safeLibraryRoute(novel.demo_path);
     const publicPath=safeLibraryRoute(novel.public_path)||'/projets/sinjira/romans/';
     return `<article class="reader-book-card">
@@ -92,7 +98,7 @@ function renderReads(libraryRows){
       <h2>${escapeHtml(novel.title||'Roman SINJIRA™')}</h2>
       <p>${escapeHtml(novel.description||'')}</p>
       <div class="v19-progress-track"><span style="width:${progress}%"></span></div>
-      <p>Progression : ${progress}%${row.last_page?` · page ${Number(row.last_page)}`:''}</p>
+      <p>Progression : ${progress}%${lastPage?` · page ${lastPage}`:''}</p>
       <div class="hero-actions">${demoPath?`<a class="btn btn-primary" href="${escapeHtml(demoPath)}">${progress>0?'Continuer la lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(publicPath)}">Page du roman</a></div>
     </article>`;
   }).join('')||'<div class="notice"><strong>Aucun roman suivi.</strong><p>Les romans ajoutés à votre bibliothèque apparaîtront ici avec leur progression.</p></div>';
