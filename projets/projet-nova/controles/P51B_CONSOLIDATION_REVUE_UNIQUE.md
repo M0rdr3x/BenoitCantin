@@ -26,10 +26,10 @@ Trois tests de régression supplémentaires vérifient qu'une revue `DISMISSED` 
 
 Le candidat P51B contient :
 - validateur P50Y à jour : contrôle du protocole, identité et périmètre des canaris, revues GitHub et checks effectivement émis;
-- **55 tests unitaires** (25 P50Y + 12 P50Z + 15 P51A + 3 P51B), sur l'intégration des trois couches;
+- **69 tests unitaires** (25 P50Y + 12 P50Z + 15 P51A + 3 P51B + 14 P51C), sur l'intégration des trois couches;
 - le procès-verbal JSON volontairement vide et marqué `NO_GO`;
 - le protocole opératoire P50Y actualisé;
-- un workflow de validation P51B read-only avec tests comptés et contrôle `NO_GO_AUTOMATIQUE`.
+- un workflow de validation P51B read-only avec tests comptés et contrôle `NO_GO_AUTOMATIQUE`. P51C ajoute une vérification stricte des fichiers **ajoutés** (statut `added`, extension `.txt`, chemin direct sous le dossier de canaris, aucun renommage ou ancien chemin), et exige que l'URL `preuve_url` désigne **la PR témoin correspondante**, pas une autre PR ni une exécution Actions arbitraire. Ces règles ne prouvent toujours pas la cause du blocage sans la recette de l'administrateur.
 
 Les précédentes validations historiques restent consultables :
 - [P50Y — 25 tests](https://github.com/M0rdr3x/BenoitCantin/actions/runs/39003702906);
