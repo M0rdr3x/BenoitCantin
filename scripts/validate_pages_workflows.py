@@ -94,6 +94,14 @@ def validate_jekyll_ci(source: str) -> list[str]:
             errors.append(
                 "Audits Jekyll de source et secrets requis avant et après le reçu : " + command
             )
+    for command in (
+        "          python3 scripts/validate_pages_workflows.py --self-test\n",
+        "          python3 scripts/validate_pages_workflows.py\n",
+    ):
+        if jobs.count(command) != 1:
+            errors.append(
+                "Autotest et garde de publication Pages exécutables requis : " + command.strip()
+            )
     if jobs.count("uses: actions/jekyll-build-pages@") != 1:
         errors.append("La compilation Jekyll doit être exécutée une seule fois")
     if jobs.count("persist-credentials: false") != 1:
@@ -162,6 +170,10 @@ def self_test_jekyll_ci() -> None:
         "contrat Pages retiré": (
             "          python3 scripts/validate_pages_workflows.py\n",
             "          echo GARDE_PAGES_IGNOREE\n",
+        ),
+        "autotests de publication Pages retirés": (
+            "          python3 scripts/validate_pages_workflows.py --self-test\n",
+            "          echo AUTOTESTS_PAGES_IGNORES\n",
         ),
     }
     for label, (old, replacement) in mutations.items():
