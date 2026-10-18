@@ -53,7 +53,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F02",
@@ -66,7 +67,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F03",
@@ -79,7 +81,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F04",
@@ -92,7 +95,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F05",
@@ -105,7 +109,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F06",
@@ -118,7 +123,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F07",
@@ -131,7 +137,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F08",
@@ -144,7 +151,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F09",
@@ -157,7 +165,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F10",
@@ -170,7 +179,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F11",
@@ -183,7 +193,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F12",
@@ -196,7 +207,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F13",
@@ -209,7 +221,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F14",
@@ -222,7 +235,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F15",
@@ -235,7 +249,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F16",
@@ -248,7 +263,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F17",
@@ -261,7 +277,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F18",
@@ -274,7 +291,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F19",
@@ -287,7 +305,8 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     },
     {
       "id": "F20",
@@ -300,8 +319,9 @@
       "preuve_independante_obtenue": false,
       "montant_certifie": null,
       "taux_propose": null,
-      "decision_autorisee": false
+      "decision_autorisee": false,
+      "justificatif_validation": null
     }
   ],
-  "note": "Les champs taux_propose/montant_certifie sont null volontairement : absence de preuve, pas zero mesure; seule hypothese anti-evasion prudente = 0. Rien ne s'active par la presence de ce fichier."
+  "note": "Les champs taux_propose/montant_certifie sont null volontairement : absence de preuve, pas zero mesure; seule hypothese anti-evasion prudente = 0. Rien ne s'active par la presence de ce fichier. Un statut VALIDE futur exige preuve_independante_obtenue=true ET justificatif_validation public; le simple champ statut ne suffit pas."
 }
