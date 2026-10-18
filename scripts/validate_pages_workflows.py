@@ -59,6 +59,8 @@ def validate_jekyll_ci(source: str) -> list[str]:
     if job_names != ["jekyll-proof"]:
         errors.append("Un seul job jekyll-proof est autorisé, sans publication")
         return errors
+    if jobs.count("    name: Construire puis auditer Pages sans déployer\n") != 1:
+        errors.append("Nom stable du required check Jekyll modifié")
     if "    runs-on: ubuntu-24.04\n" not in jobs:
         errors.append("Le runner Jekyll doit rester figé")
     if "    timeout-minutes: 20\n" not in jobs:
@@ -129,6 +131,10 @@ def self_test_jekyll_ci() -> None:
         "run manuel retiré": ("  workflow_dispatch:\n", ""),
         "job Jekyll désactivé": ("  jekyll-proof:\n",
                                 "  jekyll-proof:\n    if: false\n"),
+        "required check renommé": (
+            "    name: Construire puis auditer Pages sans déployer\n",
+            "    name: Construire un aperçu facultatif\n",
+        ),
         "erreurs ignorées": ("    timeout-minutes: 20\n",
                              "    timeout-minutes: 20\n    continue-on-error: true\n"),
         "publication ajoutée": ("  jekyll-proof:\n",
