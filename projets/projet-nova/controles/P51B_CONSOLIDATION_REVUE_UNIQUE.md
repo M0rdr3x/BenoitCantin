@@ -26,7 +26,7 @@ Trois tests de régression supplémentaires vérifient qu'une revue `DISMISSED` 
 
 Le candidat P51B contient :
 - validateur P50Y à jour : contrôle du protocole, identité et périmètre des canaris, revues GitHub et checks effectivement émis;
-- **84 tests unitaires** (25 P50Y + 12 P50Z + 15 P51A + 3 P51B + 14 P51C + 15 P51D), sur l'intégration des trois couches;
+- **99 tests unitaires** (25 P50Y + 12 P50Z + 15 P51A + 3 P51B + 14 P51C + 15 P51D + 15 P51E), sur l'intégration des trois couches;
 - le procès-verbal JSON volontairement vide et marqué `NO_GO`;
 - le protocole opératoire P50Y actualisé;
 - un workflow de validation P51B read-only avec tests comptés et contrôle `NO_GO_AUTOMATIQUE`. P51C ajoute une vérification stricte des fichiers **ajoutés** (statut `added`, extension `.txt`, chemin direct sous le dossier de canaris, aucun renommage ou ancien chemin), et exige que l'URL `preuve_url` désigne **la PR témoin correspondante**, pas une autre PR ni une exécution Actions arbitraire. Ces règles ne prouvent toujours pas la cause du blocage sans la recette de l'administrateur.
@@ -52,6 +52,18 @@ Le correctif P51D ajoute `--observer-serveur` et impose aussi l'observation des 
 L'outil ne déclare les *préconditions techniques visibles* que si ces éléments sont cohérents et si les trois contrôles universels sont réellement exigés de GitHub Actions (app `15368`). Cela ne prouve toujours **pas** que GitHub refuse la fusion pour la bonne cause : l'administrateur doit inspecter les trois essais réels de P50Y et ses permissions effectives.
 
 Le workflow consolidé exécute désormais **84 tests** et joint un relevé serveur non nominatif au procès-verbal des trois essais encore non exécutés. Une erreur 403, une liste tronquée, une règle inactive ou un changement de SHA mène à un état bloquant. **`NO_GO_AUTOMATIQUE`, aucune permission d'écriture, aucune publication.**
+
+## 3 ter. P51E — provenance réelle des règles et cohérence de la lecture
+
+Le contrôle P51D vérifiait la présence de quatre catégories de règles effectives, sans s'assurer que leur **`ruleset_id`** correspondait au ruleset actif considéré conforme. Une combinaison de règles provenant de sources différentes pouvait donner un relevé artificiellement favorable. L'API GitHub fournit pourtant un `ruleset_id` associé aux règles effectivement appliquées à une branche.
+
+P51E corrige ce point : identifiants uniques et concordants entre **la liste des rulesets actifs et leurs détails**, rattachement des quatre règles effectives **au même identifiant**, et contrôle des paramètres réellement applicables aux approbations et aux trois checks universels. Une exception de contournement masquée ou présente sur **un autre ruleset actif** constitue également un obstacle, et non une absence présumée d'exception.
+
+Le mode `--live` vérifie maintenant, avant de conclure, que la PR témoin n'a pas changé de SHA, de base ou de nombre de fichiers **entre la première et la dernière lecture GitHub**. Les mesures recueillies pendant un changement de commit sont rejetées plutôt que mélangées.
+
+Les **15 tests supplémentaires** portent la suite à **99**. L'état `PRECONDITIONS_TECHNIQUES_VISIBLES` reste uniquement un constat de configuration partielle : il ne peut jamais certifier une véritable recette, l'indépendance du responsable, une fusion ou une publication.
+
+Référence API : [GitHub — règles effectives d'une branche](https://docs.github.com/en/rest/repos/rules#get-rules-for-a-branch). **Aucune action administrative n'est exécutée.**
 
 ## 4. Critères de réception et prérequis non automatisables
 
