@@ -46,6 +46,7 @@ def observations(f):
         "changed_paths":["projets/projet-nova/controles/canaris/"+row["id"]+".txt"],
         "changed_statuses":["added"],
         "changed_previous_paths":[None],
+        "canary_files_safe":True,
         "review_stats":{
             "submitted_substantive":0 if row["id"]=="sans_revue" else 1,
             "fresh_independent_approvals":1 if row["id"]=="check_non_satisfait" else 0,
@@ -289,7 +290,8 @@ class P50Y(unittest.TestCase):
             "base":{"ref":"main","repo":{"full_name":m.REPO}},
         }
         files=[{"filename":"projets/projet-nova/controles/canaris/notice.txt",
-                "status":"added"}]
+                "status":"added","additions":1,"deletions":0,"changes":1,
+                "patch":"@@ -0,0 +1 @@\n+P50Y-CANARI:sans_revue"}]
         with patch.object(m,"github",side_effect=[
             github_pr, files, [],
             {"total_count":3,"check_runs":[
@@ -302,6 +304,7 @@ class P50Y(unittest.TestCase):
         self.assertEqual(mocked.call_count,5)
         self.assertEqual(result["base_ref"],"main")
         self.assertEqual(result["changed_paths"],[files[0]["filename"]])
+        self.assertTrue(result["canary_files_safe"])
     def test_actual_canary_refuses_push_during_collection(self):
         original={
             "title":"[P50Y-CANARI:sans_revue] Test","user":{"id":90},
@@ -629,6 +632,78 @@ class P50Y(unittest.TestCase):
         self.assertEqual(r["etat"],"PRECONDITIONS_TECHNIQUES_VISIBLES")
         self.assertEqual(r["obstacles"],[])
         self.assertEqual(r["rulesets_actifs"],1)
+    def test_patch_safe_one_line_exact_marker(self):
+        row={"filename":"projets/projet-nova/controles/canaris/sans_revue.txt",
+             "status":"added","additions":1,"deletions":0,"changes":1,
+             "patch":"@@ -0,0 +1 @@\n+P50Y-CANARI:sans_revue"}
+        self.assertTrue(m.safe_canary_patch(row,"sans_revue"))
+    def test_patch_safe_two_lines_and_nonce(self):
+        row={"filename":"projets/projet-nova/controles/canaris/a.txt",
+             "status":"added","additions":2,"deletions":0,"changes":2,
+             "patch":"@@ -0,0 +1,2 @@\n+P50Y-CANARI:approbation_perimee\n+NONCE:001122aa"}
+        self.assertTrue(m.safe_canary_patch(row,"approbation_perimee"))
+    def test_patch_wrong_scenario_rejected(self):
+        row={"filename":"projets/projet-nova/controles/canaris/a.txt",
+             "status":"added","additions":1,"deletions":0,"changes":1,
+             "patch":"@@ -0,0 +1 @@\n+P50Y-CANARI:sans_revue"}
+        self.assertFalse(m.safe_canary_patch(row,"check_non_satisfait"))
+    def test_patch_missing_unverifiable_rejected(self):
+        row={"filename":"projets/projet-nova/controles/canaris/a.txt",
+             "status":"added","additions":1,"deletions":0,"changes":1}
+        self.assertFalse(m.safe_canary_patch(row,"sans_revue"))
+    def test_patch_additional_payload_rejected(self):
+        row={"filename":"projets/projet-nova/controles/canaris/a.txt",
+             "status":"added","additions":2,"deletions":0,"changes":2,
+             "patch":"@@ -0,0 +1,2 @@\n+P50Y-CANARI:sans_revue\n+PAYMENT_URL=bogus"}
+        self.assertFalse(m.safe_canary_patch(row,"sans_revue"))
+    def test_patch_unexpected_nonce_rejected(self):
+        row={"filename":"projets/projet-nova/controles/canaris/a.txt",
+             "status":"added","additions":2,"deletions":0,"changes":2,
+             "patch":"@@ -0,0 +1,2 @@\n+P50Y-CANARI:sans_revue\n+NONCE:insecure"}
+        self.assertFalse(m.safe_canary_patch(row,"sans_revue"))
+    def test_patch_additions_disagree_with_diff_rejected(self):
+        row={"filename":"projets/projet-nova/controles/canaris/a.txt",
+             "status":"added","additions":5,"deletions":0,"changes":5,
+             "patch":"@@ -0,0 +1 @@\n+P50Y-CANARI:sans_revue"}
+        self.assertFalse(m.safe_canary_patch(row,"sans_revue"))
+    def test_patch_binary_or_large_without_diff_rejected(self):
+        row={"filename":"projets/projet-nova/controles/canaris/a.txt",
+             "status":"added","additions":0,"deletions":0,"changes":0,
+             "patch":None}
+        self.assertFalse(m.safe_canary_patch(row,"sans_revue"))
+    def test_patch_rename_disallowed_even_with_marker(self):
+        row={"filename":"projets/projet-nova/controles/canaris/a.txt",
+             "status":"renamed","previous_filename":"projets/projet-nova/participer.html",
+             "additions":1,"deletions":0,"changes":1,
+             "patch":"@@ -0,0 +1 @@\n+P50Y-CANARI:sans_revue"}
+        self.assertFalse(m.safe_canary_patch(row,"sans_revue"))
+    def test_patch_wrong_hunk_rejected(self):
+        row={"filename":"projets/projet-nova/controles/canaris/a.txt",
+             "status":"added","additions":1,"deletions":0,"changes":1,
+             "patch":"@@ -1,1 +1 @@\n+P50Y-CANARI:sans_revue"}
+        self.assertFalse(m.safe_canary_patch(row,"sans_revue"))
+    def test_patch_secret_extra_line_rejected(self):
+        row={"filename":"projets/projet-nova/controles/canaris/a.txt",
+             "status":"added","additions":3,"deletions":0,"changes":3,
+             "patch":"@@ -0,0 +1,3 @@\n+P50Y-CANARI:sans_revue\n+NONCE:abcdef12\n+MYSECRET=example"}
+        self.assertFalse(m.safe_canary_patch(row,"sans_revue"))
+    def test_patch_missing_count_metadata_rejected(self):
+        row={"filename":"projets/projet-nova/controles/canaris/a.txt",
+             "status":"added","additions":1,"deletions":0,
+             "patch":"@@ -0,0 +1 @@\n+P50Y-CANARI:sans_revue"}
+        self.assertFalse(m.safe_canary_patch(row,"sans_revue"))
+    def test_analysis_rejects_unverified_file_content(self):
+        f=filled();obs=observations(f)
+        obs["800"]["canary_files_safe"]=False
+        result=m.analyze(f,obs)
+        self.assertIn("CANARI_MARQUEUR_SURETE_NON_CONFIRME:sans_revue",
+                      result["obstacles"])
+        self.assertEqual(result["statut_dossier"],"RECETTE_REQUISE")
+    def test_analysis_missing_file_content_proof_rejected(self):
+        f=filled();obs=observations(f)
+        del obs["800"]["canary_files_safe"]
+        self.assertIn("CANARI_MARQUEUR_SURETE_NON_CONFIRME:sans_revue",
+                      m.analyze(f,obs)["obstacles"])
     def test_no_reviewer_name_in_summary(self):
         f=filled()
         r=json.dumps(m.analyze(f))
