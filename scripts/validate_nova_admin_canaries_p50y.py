@@ -317,6 +317,21 @@ def actual_canary(number: int, token: str):
                 "/check-runs?per_page=100",token)
     review_stats=review_evidence(reviews,head.get("sha"),author)
     check_stats=checks_evidence(runs,head.get("sha"))
+    # A HEAD push or a change of target during the multi-GET observation
+    # invalidates the evidence. Do not combine data from two different PR
+    # states into one allegedly consistent snapshot.
+    current=github(base + "/pulls/" + str(number),token)
+    def stable_fields(value):
+        h=value.get("head") or {}
+        t=value.get("base") or {}
+        return (
+            h.get("sha"),h.get("ref"),(h.get("repo") or {}).get("full_name"),
+            t.get("ref"),(t.get("repo") or {}).get("full_name"),
+            value.get("state"),value.get("draft"),value.get("merged"),
+            value.get("changed_files"),(value.get("user") or {}).get("id"),
+        )
+    if not isinstance(current,dict) or stable_fields(current)!=stable_fields(pr):
+        raise ValueError("CANARI_MODIFIE_PENDANT_LE_RELEVE")
     target = pr.get("base") or {}
     # True / False are not review decisions. A draft cannot demonstrate a
     # review or check gate because drafts are inherently not mergeable.
