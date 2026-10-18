@@ -557,3 +557,32 @@ prévol Pages**, des variantes sensibles et le rendu des boutons
 la suppression de ces contrôles. Cette mesure de défense en
 profondeur **ne remplace pas** la correction réelle de GitHub Pages :
 l'issue de publication #450 reste bloquante.
+
+### Chemins URL encodés et progression de lecture normalisée
+
+Le rejet des dossiers techniques sur les liens issus du registre doit aussi
+résister à **l'encodage d'une lettre** : `/%73upabase/private.html`,
+`/scrip%74s/report.html` et
+`/projets/sinjira/%63odex/private.html` peuvent désigner côté serveur
+des chemins techniques bien que le nom de dossier ne corresponde plus
+littéralement à la liste d'exclusion du navigateur. Désormais,
+`safeLibraryRoute` refuse **toute séquence `%` dans le chemin de
+destination**, tout en permettant les valeurs encodées dans la requête
+ou l'ancre (ex. `?recherche=La%20Cendre`). Les routes de catalogue
+existantes utilisent des chemins littéraux; aucune route de contenu
+déjà validée ne nécessite un segment encodé.
+
+La carte de lecture du compte contrôle en outre les données de
+progression renvoyées par le registre : une progression non finie
+(`NaN`, `Infinity`) devient 0 %, une progression finie est bornée
+entre 0 et 100 % et arrondie à l'entier, et le numéro de page n'est
+affiché que s'il est un entier positif représentable sans perte.
+L'interface ne rend plus `width:NaN%`, un pourcentage négatif ni
+une page absurde. Les tests Node exécutent la vraie fonction de
+navigation et le rendu de `renderReads`, tandis que le contrat Python
+détecte la suppression des gardes.
+
+Ce contrôle concerne uniquement les **données affichées** : il ne
+modifie ni la progression stockée, ni les droits de lecture, ni les
+fichiers privés. La source GitHub Pages reste en mode `legacy` en
+production jusqu'à la résolution de l'incident #450.
