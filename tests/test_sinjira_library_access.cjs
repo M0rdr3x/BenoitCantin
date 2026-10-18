@@ -304,6 +304,89 @@ test('rendu projets: aucun bouton Jouer ou Ouvrir sur un projet restreint',()=>{
   assert.doesNotMatch(box.innerHTML,/href="\/supabase\//);
 });
 
+test('bouton testeur v24 : identifiant malformé échappé dans le HTML rendu',()=>{
+  const node={innerHTML:''};
+  elements.set('[data-project-library]',node);
+  const hostile='project" tabindex="0" onclick="alert(1)<img src=x onerror=alert(2)>';
+  api.renderProjects([{
+    ...publicProject,id:hostile,allow_tester_requests:true
+  }],[],[],[],false,false);
+  assert.match(node.innerHTML,/data-v2461-request-tester="project&quot; tabindex=&quot;/);
+  assert.doesNotMatch(node.innerHTML,/\s(?:onclick|onerror|tabindex)="[^"]+"/i);
+  assert.doesNotMatch(node.innerHTML,/<img src=x/i);
+  assert.match(node.innerHTML,/Demander accès testeur/);
+});
+
+test('bibliothèque historique : identifiants des projets, documents et playtests échappés',async()=>{
+  const hostile='record" autofocus="true" onclick="alert(1)<svg onload=alert(2)>';
+  const htmlEscape=value=>String(value??'')
+    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+    .replaceAll('"','&quot;').replaceAll("'",'&#039;');
+  const nodes=new Map();
+  const getNode=key=>{
+    if(!nodes.has(key))nodes.set(key,{
+      innerHTML:'',value:'',textContent:'',
+      addEventListener(){},querySelectorAll(){return []}
+    });
+    return nodes.get(key);
+  };
+  const project={...publicProject,id:hostile,allow_tester_requests:true};
+  const doc={id:hostile,title:'Démonstration',description:'Test',
+    version:'1',access_level:'public',document_type:'pdf',
+    project_id:hostile,projects:{name:'SINJIRA'}};
+  const playtest={id:hostile,title:'Essai',description:'Test',
+    required_access:'tester',status:'open',projects:{name:'SINJIRA'}};
+  const respond=data=>Promise.resolve({data,error:null});
+  const client={from(table){
+    if(table==='projects')return {select(){return {
+      order(){return respond([project])}
+    }}};
+    if(table==='documents')return {select(){return {
+      eq(){return {order(){return respond([doc])}}}
+    }}};
+    if(table==='access_requests')return {select(){return {
+      eq(){return {eq(){return respond([])}}}
+    }}};
+    if(table==='project_access')return {select(){return {
+      eq(){return respond([])}
+    }}};
+    if(table==='playtests')return {select(){return {
+      in(){return {order(){return respond([playtest])}}}
+    }}};
+    if(table==='playtest_participants')return {select(){return {
+      eq(){return respond([])}
+    }}};
+    throw Error('Table inattendue : '+table);
+  }};
+  const context={
+    document:{body:{dataset:{libraryPage:'test'}},querySelector:getNode,
+      querySelectorAll(){return []}},
+    getSupabase:()=>client,
+    safeLibraryRoute,safeLibraryCover,
+    escapeHtml:htmlEscape,projectStatusLabel:x=>String(x),roleLabel:x=>String(x),
+    Date,URLSearchParams,console,setStatus:()=>{},prompt:()=>null
+  };
+  vm.runInNewContext(legacyCode+
+    '\nglobalThis.exercise={library,documents,playtests};'+
+    '\nuser={id:"mock-user"};owner=false;admin=false;',context,
+    {filename:'sinjira-library.js/attribute-security'});
+  await context.exercise.library();
+  await context.exercise.documents();
+  await context.exercise.playtests();
+  const surfaces=[
+    ['[data-project-library]','data-request-tester'],
+    ['[data-documents-list]','data-open-document'],
+    ['[data-playtests-list]','data-apply-playtest']
+  ];
+  for(const [selector,attribute] of surfaces){
+    const html=getNode(selector).innerHTML;
+    assert.ok(html.includes(attribute+'="record&quot;'),selector+' doit encoder l’identifiant');
+    assert.doesNotMatch(html,/\s(?:onclick|onload|autofocus)="[^"]+"/i);
+    assert.doesNotMatch(html,/<svg onload=/i);
+  }
+  assert.ok(getNode('[data-playtests-list]').innerHTML.includes('id="record&quot;'));
+});
+
 test('compteur accessible: le libellé chargement disparaît après API',()=>{
   const attributes=new Map([['aria-label','En cours de vérification']]);
   const counter={
