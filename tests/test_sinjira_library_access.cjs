@@ -99,6 +99,45 @@ test('routes du registre: seules les destinations locales canoniques restent cli
   }
 });
 
+test('routes du registre: 14 destinations techniques de la barrière Pages ne deviennent jamais des liens',()=>{
+  const exposed=[
+    '/supabase/config.toml',
+    '/tests/e2e/test_public_site.py',
+    '/mobile-native/App.tsx',
+    '/scripts/validate_site.py',
+    '/scripts/audit_pages_jekyll.py',
+    '/.github/workflows/validate-site.yml',
+    '/docs/README.md',
+    '/_config.yml',
+    '/assets/icons/README.md',
+    '/projets/projet-nova/netlify.toml',
+    '/projets/projet-nova/UPLOAD_GITHUB.md',
+    '/projets/projet-nova/SECURITY.md',
+    '/projets/sinjira/codex/livre-i-delivery-contract.json',
+    '/scripts/build_netlify_public.py'
+  ];
+  assert.equal(exposed.length,14);
+  const technical=[
+    ...exposed,
+    '/supabase/index.html','/scripts/guide.html','/tests/assets/index.html',
+    '/docs/faq.html','/.github/workflows/index.html','/mobile-native/index.html',
+    '/projets/sinjira/codex/index.html','/projets/sinjira/CODEX/draft.html',
+    '/compte/private.sql','/projets/sinjira/romans/config.yml',
+    '/projets/sinjira/jeux/app.tsx','/projets/sinjira/logiciels/source.py',
+    '/assets/icons/README.md?raw=true#source'
+  ];
+  for(const candidate of technical){
+    assert.equal(safeLibraryRoute(candidate),'','Fichier technique accessible : '+candidate);
+    assert.equal(api.safeProjectPlayPath(candidate),'','Jouer ne doit jamais viser : '+candidate);
+  }
+  for(const ok of [
+    '/projets/sinjira/romans/','/projets/sinjira/jeux/',
+    '/projets/sinjira/logiciels/','/compte/projet.html?slug=jeu#contenu',
+    '/projets/projet-nova/boussole-electorale.html',
+    '/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf'
+  ]) assert.equal(safeLibraryRoute(ok),ok,'Route utilisateur légitime : '+ok);
+});
+
 test('lectures suivies: chemins démo/roman issus du registre ne peuvent pas rediriger hors SINJIRA',()=>{
   const box={innerHTML:''};
   elements.set('[data-library-reads]',box);
@@ -113,6 +152,8 @@ test('lectures suivies: chemins démo/roman issus du registre ne peuvent pas red
     'javascript:alert(1)','https://evil.example/sinjira',
     '//evil.example/reader','/%2f%2fevil.example/a',
     '/projets/%2e%2e/admin/', '/\\evil.example/a',
+    '/supabase/config.toml','/scripts/audit_pages_jekyll.py',
+    '/docs/README.md','/projets/sinjira/codex/secret.html',
   ]){
     api.renderReads([{sinjira_novels:{...novel,demo_path:malicious,public_path:malicious},
       progress_percent:12}]);
@@ -142,6 +183,10 @@ test('rendu projets: aucun bouton Jouer ou Ouvrir sur un projet restreint',()=>{
   api.renderProjects([hostile],[],[],[],false,false);
   assert.doesNotMatch(box.innerHTML,/href="javascript:/);
   assert.doesNotMatch(box.innerHTML,/>Jouer</);
+  const technical={...publicProject,play_path:'/supabase/config.toml'};
+  api.renderProjects([technical],[],[],[],false,false);
+  assert.doesNotMatch(box.innerHTML,/>Jouer</);
+  assert.doesNotMatch(box.innerHTML,/href="\/supabase\//);
 });
 
 test('compteur accessible: le libellé chargement disparaît après API',()=>{
