@@ -1,4 +1,4 @@
-import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabel} from './sinjira-supabase.js';
+import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow} from './sinjira-supabase.js';
 
 const page=document.body.dataset.libraryPage||'',status=document.querySelector('[data-library-status]');
 let user=null,owner=false,admin=false;
@@ -22,13 +22,33 @@ function internalProjectPath(raw){
     && !/[\u0000-\u001f\u007f]/.test(value)?value:'';
 }
 function cover(p){if(p.cover_url)return p.cover_url;if(p.slug==='fracture-du-reseau-mere')return '/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp';if(p.slug==='reseau-mere-resistance')return '/assets/media/sinjira-reseau-mere-resistance-officiel.webp';return '/assets/media/sinjira-emblem.webp'}
-async function openDoc(id){
-  setStatus(status,'Préparation du document sécurisé…','info');
-  const {data,error}=await getSupabase().functions.invoke('get-document-url',{body:{document_id:id}});
-  if(error||!data?.ok||!data?.url){setStatus(status,data?.error||error?.message||'Accès impossible.','error');return}
-  window.open(data.url,'_blank','noopener');setStatus(status,data.protected?'Document ouvert avec un lien temporaire sécurisé.':'Document ouvert.','success');
+async function openDoc(id,button){
+  if(button?.disabled)return;
+  if(button)button.disabled=true;
+  // Réserver l'onglet synchroniquement lors du clic : après await, les
+  // bloqueurs de fenêtres peuvent empêcher l'ouverture du document.
+  const tab=prepareDocumentWindow();
+  setStatus(status,'Vérification de vos droits et préparation du document…','info');
+  try{
+    const {data,error}=await getSupabase().functions.invoke('get-document-url',{body:{document_id:id}});
+    if(error||!data?.ok||!data?.url){
+      closeDocumentWindow(tab);
+      setStatus(status,data?.error||error?.message||'Accès impossible.','error');
+      return;
+    }
+    if(!navigateDocumentWindow(tab,data.url)){
+      setStatus(status,'Le serveur a fourni un lien de document invalide.','error');
+      return;
+    }
+    setStatus(status,data.protected?'Document ouvert avec un lien temporaire sécurisé.':'Document ouvert.','success');
+  }catch{
+    closeDocumentWindow(tab);
+    setStatus(status,'Le document ne peut pas être ouvert pour le moment.','error');
+  }finally{
+    if(button)button.disabled=false;
+  }
 }
-function bindDocs(root=document){root.querySelectorAll('[data-open-document]').forEach(b=>b.addEventListener('click',()=>openDoc(b.dataset.openDocument)))}
+function bindDocs(root=document){root.querySelectorAll('[data-open-document]').forEach(b=>b.addEventListener('click',()=>openDoc(b.dataset.openDocument,b)))}
 async function accessMap(){
   const {data,error}=await getSupabase().from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id);
   if(error)throw new Error('Les droits du compte sont temporairement indisponibles.');
