@@ -75,7 +75,7 @@ function bindLegacyPlaytestApplications(list,s){
     ()=>prompt('Message de candidature (facultatif).'),
     message=>s.from('playtest_participants').insert({playtest_id:b.dataset.applyPlaytest,user_id:user.id,status:'applied',application_message:message}),
     duplicate=>{
-      b.outerHTML='<span class="role-chip">Participation enregistrée</span>';
+      b.outerHTML=duplicate?'<span class="role-chip">Participation enregistrée</span>':'<span class="role-chip">Candidature envoyée</span>';
       setStatus(status,duplicate?'Une participation existe déjà pour ce playtest. Consultez son statut.':'Candidature transmise.',duplicate?'info':'success');
     },
     ()=>setStatus(status,'La candidature n’a pas pu être transmise. Veuillez réessayer.','error'),
