@@ -115,6 +115,136 @@ def checks_evidence(checks, head_sha):
     return {"checks_success":successes,"checks_non_satisfaits":unsatisfied}
 
 
+
+
+def observe_server(token: str):
+    """Read branch, installed rulesets, their details and effective branch rules."""
+    base = "/repos/" + REPO
+    branch = github(base + "/branches/main",token)
+    summaries = github(base + "/rulesets?includes_parents=true&per_page=100",token)
+    if not isinstance(summaries,list) or len(summaries)>=100:
+        raise ValueError("RULESETS_NON_EXHAUSTIFS")
+    details = []
+    for item in summaries:
+        if not isinstance(item,dict):
+            raise ValueError("RULESET_INVALIDE")
+        if item.get("enforcement") == "active":
+            rid = item.get("id")
+            if type(rid) is not int or rid<=0:
+                raise ValueError("RULESET_ID_INVALIDE")
+            details.append(github(base + "/rulesets/" + str(rid),token))
+    effective=github(base + "/rules/branches/main?per_page=100",token)
+    if not isinstance(effective,list) or len(effective)>=100:
+        raise ValueError("REGLES_EFFECTIVES_NON_EXHAUSTIVES")
+    return {"branch":branch,"summaries":summaries,
+            "details":details,"effective":effective}
+
+
+def server_preflight(snapshot):
+    """Fail closed when the *actual* main protections cannot be established.
+
+    A positive result is only a configuration observation, not a tested merge
+    refusal, independent human review, or authorization to publish.
+    """
+    issues=[]
+    if not isinstance(snapshot,dict):
+        return {"etat":"NON_ATTESTE","obstacles":["SERVEUR_GITHUB_NON_LISIBLE"],
+                "sha_main_observe":None,"rulesets_actifs":0}
+    branch=snapshot.get("branch")
+    if not isinstance(branch,dict):
+        branch={}
+        issues.append("BRANCHE_MAIN_NON_LISIBLE")
+    sha=(branch.get("commit") or {}).get("sha")
+    if sha!=MAIN_SHA:
+        issues.append("MAIN_SHA_CHANGE_DEPUIS_LE_DOSSIER")
+    if branch.get("protected") is not True:
+        issues.append("MAIN_NON_PROTEGEE")
+    summaries=snapshot.get("summaries")
+    if not isinstance(summaries,list) or len(summaries)>=100:
+        summaries=[]
+        issues.append("RULESETS_NON_LISIBLES")
+    active=[item for item in summaries if isinstance(item,dict)
+            and item.get("enforcement")=="active"]
+    if not active:
+        issues.append("RULESET_ACTIF_ABSENT")
+    details=snapshot.get("details")
+    if not isinstance(details,list) or len(details)!=len(active):
+        details=[]
+        issues.append("DETAILS_RULESET_MANQUANTS")
+    effective=snapshot.get("effective")
+    if not isinstance(effective,list) or len(effective)>=100:
+        effective=[]
+        issues.append("REGLES_EFFECTIVES_NON_LISIBLES")
+    required_types={"deletion","non_fast_forward","pull_request","required_status_checks"}
+    if not required_types.issubset({x.get("type") for x in effective if isinstance(x,dict)}):
+        issues.append("REGLES_EFFECTIVES_INCOMPLETES")
+    suitable=0
+    bypass_unknown=False
+    for item in details:
+        if not isinstance(item,dict) or item.get("enforcement")!="active":
+            continue
+        if item.get("target")!="branch":
+            continue
+        condition=item.get("conditions")
+        if condition!={"ref_name":{"include":["refs/heads/main"],"exclude":[]}}:
+            continue
+        if "bypass_actors" not in item:
+            bypass_unknown=True
+            continue
+        if item["bypass_actors"]!=[]:
+            issues.append("BYPASS_SERVEUR_DECLARE")
+            continue
+        rules=item.get("rules")
+        if not isinstance(rules,list):
+            continue
+        bytype={v.get("type"):v for v in rules if isinstance(v,dict)}
+        if not required_types.issubset(bytype):
+            continue
+        pr=(bytype["pull_request"].get("parameters") or {})
+        checks=(bytype["required_status_checks"].get("parameters") or {})
+        if (type(pr.get("required_approving_review_count")) is not int or
+            pr["required_approving_review_count"]<1 or
+            pr.get("dismiss_stale_reviews_on_push") is not True or
+            pr.get("require_last_push_approval") is not True or
+            pr.get("required_review_thread_resolution") is not True or
+            checks.get("strict_required_status_checks_policy") is not True):
+            continue
+        rows=checks.get("required_status_checks")
+        if not isinstance(rows,list):
+            continue
+        if not {(name,ACTIONS_APP_ID) for name in REQUIRED_CHECKS}.issubset({
+                (v.get("context"),v.get("integration_id"))
+                for v in rows if isinstance(v,dict)}):
+            continue
+        suitable+=1
+    if suitable!=1:
+        issues.append("RULESET_CONFORME_SANS_BYPASS_NON_DEMONTRE")
+    if bypass_unknown:
+        issues.append("EXCEPTIONS_BYPASS_NON_VISIBLES")
+    return {"etat":"PRECONDITIONS_TECHNIQUES_VISIBLES" if not issues else "BLOQUANT",
+            "obstacles":sorted(set(issues)),
+            "sha_main_observe":sha,
+            "rulesets_actifs":len(active)}
+
+
+def attach_server_evidence(report,server):
+    """Server status can only lower readiness; never manufacture a GO."""
+    report=dict(report)
+    report["etat_serveur_github"]=server["etat"]
+    report["sha_main_live"]=server["sha_main_observe"]
+    report["nombre_rulesets_actifs"]=server["rulesets_actifs"]
+    report["obstacles"]=sorted(set(report["obstacles"]+server["obstacles"]))
+    if server["etat"]!="PRECONDITIONS_TECHNIQUES_VISIBLES":
+        report["statut_dossier"]="RECETTE_REQUISE"
+        if "RECETTE_ADMIN_NON_CLOTUREE" not in report["obstacles"]:
+            report["obstacles"].append("RECETTE_ADMIN_NON_CLOTUREE")
+            report["obstacles"].sort()
+    report["preuve_serveur_certifiee_automatiquement"]=False
+    report["decision"]="NO_GO_AUTOMATIQUE"
+    report["fusion_autorisee"]=False
+    report["publication_autorisee"]=False
+    return report
+
 def actual_canary(number: int, token: str):
     base = "/repos/" + REPO
     pr = github(base + "/pulls/" + str(number), token)
@@ -310,6 +440,8 @@ def main(argv=None):
     p.add_argument("--rapport", type=Path)
     p.add_argument("--live", action="store_true",
                    help="Lire les trois PR temoins via API GitHub, sans mutation")
+    p.add_argument("--observer-serveur", action="store_true",
+                   help="Verifier main et les rulesets actifs via GET, sans PR temoin")
     args = p.parse_args(argv)
     try:
         source = json.loads(args.dossier.read_text(encoding="utf-8"))
@@ -324,6 +456,16 @@ def main(argv=None):
                 if type(n) is int and n > 0:
                     obs[str(n)] = actual_canary(n, os.environ.get("GITHUB_TOKEN",""))
         result = analyze(source,obs)
+        if args.live or args.observer_serveur:
+            # Si les API échouent, une preuve documentaire déclarée complète
+            # ne peut PAS survivre à un serveur impossible à lire.
+            try:
+                server = server_preflight(observe_server(
+                    os.environ.get("GITHUB_TOKEN","")))
+            except (OSError,UnicodeError,ValueError,TypeError,AttributeError,
+                    KeyError,HTTPError,URLError,TimeoutError):
+                server = server_preflight(None)
+            result = attach_server_evidence(result,server)
     except (OSError,UnicodeError,ValueError,TypeError,AttributeError,
             HTTPError,URLError,TimeoutError) as e:
         result = analyze(None)
