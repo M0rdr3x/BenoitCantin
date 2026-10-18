@@ -26,18 +26,18 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
-      - name: Executer et compter exactement 113 tests des quatre couches
+      - name: Executer et compter exactement 125 tests des quatre couches
         run: |
           python -m py_compile scripts/validate_nova_admin_canaries_p50y.py
           python - <<'PY'
           import unittest
           loader=unittest.TestLoader()
           suite=loader.discover("scripts/tests",pattern="test_validate_nova_admin_canaries_p50y.py")
-          assert suite.countTestCases()==113, f"Suite attendue 113, obtenue {suite.countTestCases()}"
+          assert suite.countTestCases()==125, f"Suite attendue 125, obtenue {suite.countTestCases()}"
           result=unittest.TextTestRunner(verbosity=2).run(suite)
           if not result.wasSuccessful():
               raise SystemExit(1)
-          print("P51F: 113 tests, diff canari inoffensif, secrets et contenu arbitraire refuses")
+          print("P51H: 125 tests, controle bloquant distinct du rapport read-only")
           PY
       - name: Confirmer absence de preuve administrative et de GO
         run: |
@@ -56,6 +56,27 @@ jobs:
           assert r["protection_main_installee_par_ce_programme"] is False
           assert r["fusion_autorisee"] is False and r["publication_autorisee"] is False
           print("P51B: les 3 essais administratifs restent NON EXECUTES, statut NO_GO")
+          PY
+      - name: P51H - la porte technique STRICTE doit refuser la recette non effectuee
+        run: |
+          set +e
+          python scripts/validate_nova_admin_canaries_p50y.py \
+            --dossier projets/projet-nova/controles/P50Y_PROCES_VERBAL_RECETTE_A_COMPLETER.json \
+            --exiger-preuves-techniques --rapport p51h_porte_refus.json
+          statut=$?
+          set -e
+          if [ "$statut" -ne 3 ]; then
+            echo "P51H_ERREUR: porte stricte attendue code 3; observe: $statut" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p51h_porte_refus.json").read_text(encoding="utf-8"))
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          assert r["statut_dossier"]=="RECETTE_REQUISE"
+          assert not r["fusion_autorisee"] and not r["publication_autorisee"]
+          print("P51H : porte stricte BLOQUEE (code 3), rapport conservé, aucun GO")
           PY
       - name: P51D - verifier main et les rulesets reels sans aucune mutation
         env:
@@ -86,5 +107,6 @@ jobs:
           path: |
             p51b_constat_non_execution.json
             p51d_etat_serveur.json
+            p51h_porte_refus.json
           if-no-files-found: ignore
           retention-days: 7
