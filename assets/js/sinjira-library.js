@@ -64,8 +64,9 @@ function bindLegacyTesterRequests(box,s){
     b,
     ()=>prompt('Court message pour votre demande (facultatif).'),
     message=>s.from('access_requests').insert({user_id:user.id,project_id:b.dataset.requestTester,requested_level:'tester',message}),
-    ()=>{b.textContent='Demande testeur en attente';setStatus(status,'Demande transmise à SINJIRA.','success')},
-    ()=>setStatus(status,'La demande testeur n’a pas pu être transmise. Veuillez réessayer.','error')
+    duplicate=>{b.textContent='Demande testeur en attente';setStatus(status,duplicate?'Une demande testeur est déjà en attente.':'Demande transmise à SINJIRA.',duplicate?'info':'success')},
+    ()=>setStatus(status,'La demande testeur n’a pas pu être transmise. Veuillez réessayer.','error'),
+    'access_requests_one_pending_idx'
   )));
 }
 function bindLegacyPlaytestApplications(list,s){
@@ -73,8 +74,12 @@ function bindLegacyPlaytestApplications(list,s){
     b,
     ()=>prompt('Message de candidature (facultatif).'),
     message=>s.from('playtest_participants').insert({playtest_id:b.dataset.applyPlaytest,user_id:user.id,status:'applied',application_message:message}),
-    ()=>{b.outerHTML='<span class="role-chip">Candidature envoyée</span>';setStatus(status,'Candidature transmise.','success')},
-    ()=>setStatus(status,'La candidature n’a pas pu être transmise. Veuillez réessayer.','error')
+    duplicate=>{
+      b.outerHTML='<span class="role-chip">Participation enregistrée</span>';
+      setStatus(status,duplicate?'Une participation existe déjà pour ce playtest. Consultez son statut.':'Candidature transmise.',duplicate?'info':'success');
+    },
+    ()=>setStatus(status,'La candidature n’a pas pu être transmise. Veuillez réessayer.','error'),
+    'playtest_participants_pkey'
   )));
 }
 async function library(){
