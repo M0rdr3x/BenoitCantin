@@ -1,4 +1,4 @@
-import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow} from './sinjira-supabase.js';
+import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow,safeLibraryRoute} from './sinjira-supabase.js';
 
 const page=document.body.dataset.libraryPage||'',status=document.querySelector('[data-library-status]');
 let user=null,owner=false,admin=false;
@@ -17,9 +17,7 @@ function projectIsOpen(project,access,isOwner=owner,isAdmin=admin){
     ||project?.visibility==='account'||access.get(project?.id));
 }
 function internalProjectPath(raw){
-  const value=String(raw||'').trim();
-  return value.startsWith('/')&&!value.startsWith('//')&&!value.includes('\\')
-    && !/[\u0000-\u001f\u007f]/.test(value)?value:'';
+  return safeLibraryRoute(raw);
 }
 function cover(p){if(p.cover_url)return p.cover_url;if(p.slug==='fracture-du-reseau-mere')return '/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp';if(p.slug==='reseau-mere-resistance')return '/assets/media/sinjira-reseau-mere-resistance-officiel.webp';return '/assets/media/sinjira-emblem.webp'}
 async function openDoc(id,button){
