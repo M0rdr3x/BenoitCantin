@@ -105,6 +105,21 @@ export function safeLibraryRoute(value){
 }
 // END SINJIRA_LIBRARY_ROUTE
 
+// BEGIN SINJIRA_LIBRARY_COVER
+// Les images du registre ne sont pas des URLs arbitraires. Charger des
+// origines distantes divulguerait l'accès à la bibliothèque à un tiers.
+// Le dépôt publie les couvertures approuvées sous /assets/media/.
+export function safeLibraryCover(value,fallback='/assets/media/sinjira-emblem.webp'){
+  const safe=safeLibraryRoute(value);
+  return safe.startsWith('/assets/media/')
+    && !/[?#]/.test(safe)
+    && /\.(?:webp|png|jpe?g|avif)$/i.test(safe)
+    ?safe:fallback;
+}
+// END SINJIRA_LIBRARY_COVER
+
+
+
 export function safeInternalDestination(value,fallback='/compte/index.html'){
   const raw=String(value||'').trim();
   if(!raw.startsWith('/')||raw.startsWith('//')||raw.includes('\\')||/[\u0000-\u001f\u007f]/.test(raw))return fallback;
