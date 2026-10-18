@@ -1,0 +1,93 @@
+name: Projet Nova P52E - Alerte appauvrissement, sans generalisation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52e.yml"
+      - "scripts/evaluer_garde_fous_revenu_nova_p52e.py"
+      - "scripts/tests/test_evaluer_garde_fous_revenu_nova_p52e.py"
+      - "scripts/comparer_incidence_fiscale_nova_p52d.py"
+      - "projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json"
+      - "projets/projet-nova/etudes/P52E_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  auditer-pertes-non-representatives:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Lire sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11 et Decimal
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Executer exactement 23 tests adversariaux P52E
+        run: |
+          python -m py_compile scripts/evaluer_garde_fous_revenu_nova_p52e.py
+          python -m py_compile scripts/comparer_incidence_fiscale_nova_p52d.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_evaluer_garde_fous_revenu_nova_p52e.py")
+          assert suite.countTestCases()==23,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          if not result.wasSuccessful():
+              raise SystemExit(1)
+          print("P52E : 23 tests anti-faux-gains et NO_GO réussis")
+          PY
+      - name: Recalculer les 42 cas et l'etat non documente
+        run: |
+          python scripts/evaluer_garde_fous_revenu_nova_p52e.py \
+            --gabarit projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json \
+            --rapport p52e_etat_incomplet.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p52e_etat_incomplet.json").read_text(encoding="utf-8"))
+          assert r["nombre_cas"]==42,r
+          assert (r["nombre_cas_menages"],r["nombre_cas_entreprises"])==(30,12),r
+          assert r["montants_manquants"]==720,r
+          assert r["cas_conditionnellement_calculables"]==0,r
+          assert r["cas_a_risque_de_perte_dans_leur_propre_scenario"]==0,r
+          assert r["repartition_des_statuts"]=={"DONNEES_MANQUANTES":42},r
+          assert not r["preuves_representativite_obtenues"],r
+          assert not r["repercussion_prix_salaires_emplois_mesuree"],r
+          assert not r["loi_entree_en_vigueur"] and not r["publication_autorisee"],r
+          assert r["decision"]=="NO_GO_AUTOMATIQUE",r
+          print("P52E : 42/42 données manquantes, aucune conclusion de gain/perte pour le Québec")
+          PY
+      - name: Le test strict de non-appauvrissement doit refuser les fausses preuves
+        run: |
+          set +e
+          python scripts/evaluer_garde_fous_revenu_nova_p52e.py \
+            --gabarit projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json \
+            --exiger-non-appauvrissement-demontre --rapport p52e_porte_stricte.json
+          status=$?
+          set -e
+          if [ "$status" -ne 3 ]; then
+            echo "P52E: attendu refus de preuve code 3, observe: $status" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p52e_porte_stricte.json").read_text(encoding="utf-8"))
+          assert r["decision"]=="NO_GO_AUTOMATIQUE" and not r["norme_de_non_appauvrissement_adoptee"],r
+          print("P52E : refus strict code 3 attendu; aucune adoption ou collecte")
+          PY
+      - name: Archiver rapports de structure sans microdonnees
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52e-gardefous-revenus-no-go
+          path: |
+            p52e_etat_incomplet.json
+            p52e_porte_stricte.json
+          if-no-files-found: ignore
+          retention-days: 7
