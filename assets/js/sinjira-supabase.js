@@ -9,6 +9,36 @@ export function getSupabase() {
 }
 export async function getCurrentUser() {if (!isSinjiraBackendConfigured()) return null;const {data,error}=await getSupabase().auth.getUser();return error ? null : (data.user || null)}
 
+// BEGIN SINJIRA_LIBRARY_SUBMISSION
+// La fermeture de l'invite signifie Annuler, jamais « envoyer un message vide ».
+// Verrouiller AVANT la requête empêche un double clic de créer deux demandes.
+export async function submitLibraryRequest(button,askMessage,write,accept,reject){
+  if(!button||button.disabled)return false;
+  let message;
+  try{message=askMessage()}catch{return false}
+  if(typeof message!=='string')return false;
+  button.disabled=true;
+  let accepted=false;
+  try{
+    const result=await write(message.slice(0,1500));
+    if(!result||result.error){
+      reject(result?.error);
+      return false;
+    }
+    accept();
+    accepted=true;
+    return true;
+  }catch(error){
+    reject(error);
+    return false;
+  }finally{
+    // Laisser le bouton verrouillé après succès ; permettre un nouvel
+    // essai après un échec réseau ou une réponse serveur négative.
+    if(!accepted)button.disabled=false;
+  }
+}
+// END SINJIRA_LIBRARY_SUBMISSION
+
 // BEGIN SINJIRA_DOCUMENT_WINDOW
 // Ouvrir la fenêtre pendant le geste utilisateur, AVANT tout await Supabase.
 // Une nouvelle fenêtre créée après une réponse réseau est souvent bloquée
