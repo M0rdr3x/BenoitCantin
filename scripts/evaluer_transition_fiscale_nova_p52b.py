@@ -100,6 +100,14 @@ def validate_header(template):
     for key in ("revenus_consolides", "depenses_consolidees",
                 "service_dette_indicatif", "dette_nette_initiale"):
         decimal_gcad(base[key])
+    # These are quotations of the current Nova working model, not a
+    # free-form input or an independently certified Quebec budget.
+    expected = {
+        "revenus_consolides":"166.492", "depenses_consolidees":"170.757",
+        "service_dette_indicatif":"10.268", "dette_nette_initiale":"245.335"
+    }
+    enforce(base == {"statut":"MODELE_NON_CERTIFIE", **expected},
+            "REFERENCE_NOVA_INATTENDUE")
     enforce(set(template.get("regimes", {})) == set(REGIMES),
             "REGIMES_INCOMPLETS")
     return base
@@ -154,6 +162,8 @@ def verify_row(row, year):
     financial_gate = bool(prev is not None and debt is not None and
                           prev >= 0 and debt <= Decimal(45))
     complete = missing == 0
+    residual_raw = row["recettes"]["autres_prelevements_provinciaux_nets"]
+    residual_zero = residual_raw is not None and decimal_gcad(residual_raw) == 0
     # Technical calculation is allowed for FULL inputs only. Never imply a
     # fully financed or authorized political reform from financial gate alone.
     solde = (totals["recettes"] - totals["depenses"]) if complete else None
@@ -163,6 +173,7 @@ def verify_row(row, year):
         "champs_manquants": missing,
         "solde_simule_gcad": str(solde) if solde is not None else None,
         "conditions_financieres_preliminaires_remplies": financial_gate,
+        "absence_autres_prelevements_provinciaux_attestee": residual_zero,
         "integrite_de_la_couverture_declaree": all(row[k] is True for k in (
             "perimetre_reconcilie", "incidence_menages_validee",
             "emplois_et_services_valides", "inventaire_prelevements_valide")),
@@ -197,7 +208,10 @@ def evaluate(template, registry):
             missing = sum(x["champs_manquants"] for x in checked)
             total_missing += missing
             valid = (missing == 0 and pending_evidence == 0 and
-                     all(x["integrite_de_la_couverture_declaree"] for x in checked))
+                     all(x["integrite_de_la_couverture_declaree"] and
+                         x["conditions_financieres_preliminaires_remplies"] and
+                         x["absence_autres_prelevements_provinciaux_attestee"]
+                         for x in checked))
             summaries.append({
                 "regime": regime,
                 "trajectoire": scenario,
