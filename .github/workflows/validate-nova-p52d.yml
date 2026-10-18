@@ -1,0 +1,87 @@
+name: Projet Nova P52D - Incidence menages et entreprises sans hypotheses
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52d.yml"
+      - "scripts/comparer_incidence_fiscale_nova_p52d.py"
+      - "scripts/tests/test_comparer_incidence_fiscale_nova_p52d.py"
+      - "projets/projet-nova/etudes/P52D_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  incidence-fiscale-conditionnelle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Lire le candidat sans droit ecriture
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Compiler et executer exactement 31 tests
+        run: |
+          python -m py_compile scripts/comparer_incidence_fiscale_nova_p52d.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_comparer_incidence_fiscale_nova_p52d.py")
+          assert suite.countTestCases()==31,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          if not result.wasSuccessful():
+              raise SystemExit(1)
+          print("P52D : 31/31 tests de l'incidence conditionnelle sans extrapolation")
+          PY
+      - name: Verifier toutes les inconnues et les deux regimes
+        run: |
+          python scripts/comparer_incidence_fiscale_nova_p52d.py \
+            --gabarit projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json \
+            --rapport p52d_rapport_incomplet.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p52d_rapport_incomplet.json").read_text(encoding="utf-8"))
+          assert (r["nombre_regimes"],r["nombre_scenarios"],r["cas_menages"],
+                  r["cas_entreprises"],r["nombre_cas"])==(2,6,30,12,42),r
+          assert r["montants_manquants"]==720,r
+          assert r["cas_calculables_conditionnellement"]==0,r
+          assert r["aucune_projection_population"] is True,r
+          assert r["decision"]=="NO_GO_AUTOMATIQUE" and not r["publication_autorisee"],r
+          assert all(c["variation_cad"] is None for c in r["resultats"]),r
+          print("P52D : 42 cas, 720 montants inconnus, aucun gagnant/perdant invente.")
+          PY
+      - name: Refuser explicitement la completude economique non justifiee
+        run: |
+          set +e
+          python scripts/comparer_incidence_fiscale_nova_p52d.py \
+            --gabarit projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json \
+            --exiger-completude --rapport p52d_porte_stricte.json
+          status=$?
+          set -e
+          if [ "$status" -ne 3 ]; then
+            echo "ERREUR_P52D : code strict attendu 3, observe $status" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p52d_porte_stricte.json").read_text(encoding="utf-8"))
+          assert r["decision"]=="NO_GO_AUTOMATIQUE" and r["montants_manquants"]==720,r
+          print("P52D : PORTE STRICTE REFUSEE, code 3 attendu, aucun GO.")
+          PY
+      - name: Conserver uniquement des rapports aggrégés et fictifs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52d-incidence-incomplete-no-go
+          path: |
+            p52d_rapport_incomplet.json
+            p52d_porte_stricte.json
+          if-no-files-found: ignore
+          retention-days: 7
