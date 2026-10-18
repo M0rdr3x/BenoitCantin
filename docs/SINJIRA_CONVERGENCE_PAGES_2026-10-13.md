@@ -425,3 +425,25 @@ blanche.
 Cette protection concerne le code de la PR #639 **non fusionnée** :
 elle ne constitue ni un déploiement Supabase, ni une attestation des
 permissions RLS réelles. Aucun roman ou fichier commercial n'est modifié.
+
+## Liens des catalogues : autorité canonique et inventaire public
+
+Les quatre pages d'entrée SINJIRA (accueil de l'univers, Romans, Jeux,
+Logiciels) sont contrôlées par `scripts/validate_sinjira_public_links.py`
+contre l'inventaire des fichiers autorisés dans l'artefact Pages isolé.
+Une ancienne comparaison de `netloc` pouvait traiter des variantes du
+domaine officiel (`www.benoitcantin.com.`, `:443`, présence de
+`userinfo@`) comme des sites externes et **omettre** la vérification
+d'un chemin technique ou non publié.
+
+Le validateur refuse à présent les autorités locales non canoniques,
+les identifiants intégrés, les ports sur les liens du domaine officiel,
+les séparateurs inverses, les contrôles ASCII et les autorités encodées.
+Les liens officiels HTTPS explicites sont vérifiés contre l'inventaire;
+les liens externes classiques, notamment les réseaux sociaux, restent
+possibles. Les autotests couvrent les variantes d'hôte et les destinations
+techniques exclues, sans requêtes réseau et sans lire de fichiers privés.
+
+Cette modification renforce **le code de contrôle de la PR**, mais
+n'assainit pas le domaine en production tant que la publication de la
+racine GitHub Pages reste active (incident #450).
