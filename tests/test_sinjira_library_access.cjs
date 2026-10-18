@@ -19,6 +19,16 @@ const routeEnvironment={URL,location:{origin:'https://www.benoitcantin.com'}};
 vm.runInNewContext(routeCode+'\nglobalThis.validateRoute=safeLibraryRoute;',
   routeEnvironment,{filename:'sinjira-supabase.js/library-route'});
 const safeLibraryRoute=routeEnvironment.validateRoute;
+const coverStart='// BEGIN SINJIRA_LIBRARY_COVER';
+const coverEnd='// END SINJIRA_LIBRARY_COVER';
+assert.equal(sharedFileContent.split(coverStart).length,2);
+assert.equal(sharedFileContent.split(coverEnd).length,2);
+const coverCode=sharedFileContent.split(coverStart)[1].split(coverEnd)[0]
+  .replaceAll('export function ','function ');
+const coverEnvironment={safeLibraryRoute};
+vm.runInNewContext(coverCode+'\nglobalThis.validateCover=safeLibraryCover;',
+  coverEnvironment,{filename:'sinjira-supabase.js/library-cover'});
+const safeLibraryCover=coverEnvironment.validateCover;
 assert.match(original,/^import\s+\{getSupabase/);
 assert.match(original,/\ninit\(\)\.catch\(/);
 const code=original.replace(/^import[^\n]*\n/,'')
@@ -34,6 +44,7 @@ const sandbox={
   projectStatusLabel(value){return String(value||'');},
   Date,URL,location:{origin:'https://www.benoitcantin.com'},
   safeLibraryRoute,
+  safeLibraryCover,
   console,
 };
 vm.runInNewContext(code+'\nglobalThis.testAPI={activeProjectAccess,canOpenProject,safeProjectPlayPath,setCount,renderProjects,renderReads};',sandbox,{filename:file});
@@ -71,6 +82,57 @@ test('URL jouer: liens internes uniquement, pas javascript ou protocole relatif'
   for(const bad of ['javascript:alert(1)','https://evil.test','//evil.test/path','/\\evil.test','/foo\nbar']){
     assert.equal(api.safeProjectPlayPath(bad),'',bad);
   }
+});
+
+test('couvertures: aucune image distante, technique ou exécutable dans le registre',()=>{
+  const allowed=[
+    '/assets/media/sinjira-emblem.webp',
+    '/assets/media/sinjira-livre-1-cover-480.webp',
+    '/assets/media/sinjira-fracture-du-reseau-mere-officiel.png',
+    '/assets/media/sinjira-jeux-banniere-2026.webp'
+  ];
+  for(const value of allowed){
+    assert.equal(safeLibraryCover(value),value);
+  }
+  const forbidden=[
+    'https://tracker.example/visitor.jpg',
+    '//tracker.example/image.webp',
+    'http://www.benoitcantin.com/assets/media/sinjira-emblem.webp',
+    'data:image/svg+xml,<svg/onload=alert(1)>',
+    'javascript:alert(1)',
+    '/assets/media/spy.svg',
+    '/assets/media/README.md',
+    '/supabase/config.toml',
+    '/scripts/validate_site.py',
+    '/assets/icons/icon.png',
+    '/assets/media/../technical/image.webp',
+    '/assets/media/%73injira-cover.webp',
+    '/assets/media/sinjira-emblem.webp?visitor=123',
+    '/assets/media/sinjira-emblem.webp#fragment',
+    '/assets/media/cover.webp ',
+    null,undefined,{},[],42
+  ];
+  for(const value of forbidden){
+    assert.equal(safeLibraryCover(value),'/assets/media/sinjira-emblem.webp',
+      'Image de registre non approuvée : '+String(value));
+  }
+
+  const box={innerHTML:''};
+  elements.set('[data-project-library]',box);
+  for(const candidate of forbidden){
+    api.renderProjects([{...publicProject,cover_url:candidate}],[],[],[],false,false);
+    assert.match(box.innerHTML,/src="\/assets\/media\/sinjira-emblem.webp"/);
+    assert.doesNotMatch(box.innerHTML,/(?:tracker\.example|data:image|javascript:|\/supabase\/config)/);
+  }
+  api.renderProjects([{
+    ...publicProject,slug:'fracture-du-reseau-mere',cover_url:'https://tracker.example/pixel.webp'
+  }],[],[],[],false,false);
+  assert.match(box.innerHTML,/src="\/assets\/media\/sinjira-fracture-du-reseau-mere-officiel.webp"/);
+  api.renderProjects([{
+    ...publicProject,slug:'fracture-du-reseau-mere',
+    cover_url:'/assets/media/sinjira-fracture-du-reseau-mere-officiel.png'
+  }],[],[],[],false,false);
+  assert.match(box.innerHTML,/src="\/assets\/media\/sinjira-fracture-du-reseau-mere-officiel.png"/);
 });
 
 test('routes du registre: seules les destinations locales canoniques restent cliquables',()=>{
@@ -324,18 +386,33 @@ function legacyHarness(grants=[],roles={},extra={}){
     projectStatusLabel:v=>v,
     roleLabel:v=>v,
     safeLibraryRoute,
+    safeLibraryCover,
     setStatus:()=>{},
     URLSearchParams,Date,console,
     prompt:()=>null,
     window:{open(){}}
   };
   vm.runInNewContext(legacyCode+
-    '\nglobalThis.legacyAPI={verifiedProjectAccess,projectIsOpen,internalProjectPath,project};'+
+    '\nglobalThis.legacyAPI={verifiedProjectAccess,projectIsOpen,internalProjectPath,cover,project};'+
     '\nglobalThis.legacySet=(r)=>{user={id:"mock-user"};owner=!!r.owner;admin=!!r.admin};',
     env,{filename:'sinjira-library.js'});
   env.legacySet(roles);
   return {api:env.legacyAPI,project,counters,node:getNode};
 }
+
+test('legacy: couverture du détail projet toujours locale avec repli officiel',()=>{
+  const ctx=legacyHarness();
+  ctx.project.cover_url='https://tracker.example/reader-pixel.webp';
+  assert.equal(ctx.api.cover(ctx.project),'/assets/media/sinjira-emblem.webp');
+  ctx.project.cover_url='javascript:alert(1)';
+  assert.equal(ctx.api.cover(ctx.project),'/assets/media/sinjira-emblem.webp');
+  ctx.project.slug='reseau-mere-resistance';
+  ctx.project.cover_url='/scripts/internal.webp';
+  assert.equal(ctx.api.cover(ctx.project),
+    '/assets/media/sinjira-reseau-mere-resistance-officiel.webp');
+  ctx.project.cover_url='/assets/media/sinjira-reseau-mere-resistance-officiel.webp';
+  assert.equal(ctx.api.cover(ctx.project),ctx.project.cover_url);
+});
 
 test('legacy: seuls player et tester non expirés débloquent un projet',()=>{
   const ctx=legacyHarness();
