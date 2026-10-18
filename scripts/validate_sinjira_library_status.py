@@ -76,6 +76,7 @@ def audit(html: str, js: str) -> list[str]:
         "function safeProjectPlayPath(value)",
         "return safeLibraryRoute(value);",
         "const demoPath=safeLibraryRoute(novel.demo_path);",
+        "return safeLibraryCover(project.cover_url,fallback);",
         "Number.isFinite(rawProgress)",
         "Math.round(Math.max(0,Math.min(100,rawProgress)))",
         "Number.isSafeInteger(rawPage)&&rawPage>0",
@@ -133,6 +134,7 @@ def audit_legacy(js: str) -> list[str]:
         "admin=!ad.error&&ad.data===true;",
         "const playPath=allowed?internalProjectPath(p.play_path):'';",
         "return safeLibraryRoute(raw);",
+        "return safeLibraryCover(p.cover_url,fallback);",
     )
     for marker in required:
         if marker not in js:
@@ -159,6 +161,11 @@ def audit_routes(shared: str) -> list[str]:
         "security",
         "upload_github",
         "tsx?|jsx?|sh|env|lock",
+        "export function safeLibraryCover(value,fallback=",
+        "const safe=safeLibraryRoute(value);",
+        "safe.startsWith('/assets/media/')",
+        "!/[?#]/.test(safe)",
+        "webp|png|jpe?g|avif",
     )
     return ["Navigation locale non canonique : " + key
             for key in required if key not in shared]
@@ -180,6 +187,9 @@ def self_test() -> None:
                        "other-unused-directory"),
         shared.replace("(?:codex|", "(?:not-codex|"),
         shared.replace("tsx?|jsx?|sh|env|lock", "not-source-code"),
+        shared.replace("safe.startsWith('/assets/media/')", "true"),
+        shared.replace("!/[?#]/.test(safe)", "true"),
+        shared.replace("webp|png|jpe?g|avif", "svg|html|js"),
     ):
         assert audit_routes(broken), "URL non canonique non détectée"
     purchases = (ROOT / "compte/mes-achats.html").read_text("utf-8")
@@ -209,6 +219,8 @@ def self_test() -> None:
         legacy.replace("owner=!ow.error&&ow.data===true;", "owner=true;"),
         legacy.replace("if(!allowed){", "if(false){"),
         legacy.replace("return safeLibraryRoute(raw);", "return String(raw||'');"),
+        legacy.replace("return safeLibraryCover(p.cover_url,fallback);",
+                       "return p.cover_url||fallback;"),
     ):
         assert audit_legacy(broken), "Contournement droits du détail de projet accepté"
     for broken in (
@@ -219,6 +231,8 @@ def self_test() -> None:
         js.replace("if(!entitlementsVerified){", "if(false){"),
         js.replace("const demoPath=safeLibraryRoute(novel.demo_path);",
                    "const demoPath=novel.demo_path;"),
+        js.replace("return safeLibraryCover(project.cover_url,fallback);",
+                   "return project.cover_url||fallback;"),
         js.replace("Number.isFinite(rawProgress)", "true"),
         js.replace("Number.isSafeInteger(rawPage)&&rawPage>0", "true"),
     ):
