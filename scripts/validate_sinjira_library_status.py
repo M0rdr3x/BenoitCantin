@@ -74,6 +74,9 @@ def audit(html: str, js: str) -> list[str]:
         "s.rpc('is_sinjira_owner',{p_user_id:user.id})",
         "function canOpenProject(project,activeAccess,isOwner,isAdmin)",
         "function safeProjectPlayPath(value)",
+        "return safeLibraryRoute(value);",
+        "const demoPath=safeLibraryRoute(novel.demo_path);",
+        "const publicPath=safeLibraryRoute(novel.public_path)||'/projets/sinjira/romans/';",
         "projectsResult.error||accessResult.error||!rolesVerified?'—':availableProjects.length",
         "if(value==='—')node.setAttribute('aria-label','Information momentanément indisponible');",
         "else node.removeAttribute('aria-label');",
@@ -126,6 +129,7 @@ def audit_legacy(js: str) -> list[str]:
         "owner=!ow.error&&ow.data===true;",
         "admin=!ad.error&&ad.data===true;",
         "const playPath=allowed?internalProjectPath(p.play_path):'';",
+        "return safeLibraryRoute(raw);",
     )
     for marker in required:
         if marker not in js:
@@ -135,12 +139,34 @@ def audit_legacy(js: str) -> list[str]:
     return problems
 
 
+def audit_routes(shared: str) -> list[str]:
+    """Ne jamais remplacer le contrôle de liens du registre par escapeHtml."""
+    required = (
+        "export function safeLibraryRoute(value){",
+        "typeof value!=='string'||!value||value!==value.trim()",
+        "!value.startsWith('/')||value.startsWith('//')",
+        "/[\\\\\\u0000-\\u001f\\u007f]/.test(value)",
+        "/%(?:2f|5c|2e|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value)",
+        "url.origin!==location.origin",
+        "url.pathname!==pathname",
+    )
+    return ["Navigation locale non canonique : " + key
+            for key in required if key not in shared]
+
+
 def self_test() -> None:
     html = (ROOT / "compte/bibliotheque.html").read_text("utf-8")
     js = (ROOT / "assets/js/sinjira-library-v24-4-61.js").read_text("utf-8")
     assert not audit(html, js), audit(html, js)
     legacy = (ROOT / "assets/js/sinjira-library.js").read_text("utf-8")
     assert not audit_legacy(legacy), audit_legacy(legacy)
+    shared = (ROOT / "assets/js/sinjira-supabase.js").read_text("utf-8")
+    assert not audit_routes(shared), audit_routes(shared)
+    for broken in (
+        shared.replace("url.pathname!==pathname", "false"),
+        shared.replace("!value.startsWith('/')||value.startsWith('//')", "false"),
+    ):
+        assert audit_routes(broken), "URL non canonique non détectée"
     purchases = (ROOT / "compte/mes-achats.html").read_text("utf-8")
     licenses = (ROOT / "compte/licences.html").read_text("utf-8")
     assert not audit_commerce(purchases, licenses), audit_commerce(purchases, licenses)
@@ -167,6 +193,7 @@ def self_test() -> None:
     for broken in (
         legacy.replace("owner=!ow.error&&ow.data===true;", "owner=true;"),
         legacy.replace("if(!allowed){", "if(false){"),
+        legacy.replace("return safeLibraryRoute(raw);", "return String(raw||'');"),
     ):
         assert audit_legacy(broken), "Contournement droits du détail de projet accepté"
     for broken in (
@@ -175,6 +202,8 @@ def self_test() -> None:
         js.replace("const isOwner=!ownerResult.error&&ownerResult.data===true;",
                    "const isOwner=true;"),
         js.replace("if(!entitlementsVerified){", "if(false){"),
+        js.replace("const demoPath=safeLibraryRoute(novel.demo_path);",
+                   "const demoPath=novel.demo_path;"),
     ):
         assert audit(html, broken), "Droits accordés sans vérification acceptés"
     print("OK bibliothèque : chargement neutre et erreurs de droits non assimilées à zéro")
@@ -190,6 +219,9 @@ def main() -> int:
     js = (ROOT / "assets/js/sinjira-library-v24-4-61.js").read_text("utf-8")
     errors = audit(html, js)
     errors.extend(audit_legacy((ROOT / "assets/js/sinjira-library.js").read_text("utf-8")))
+    errors.extend(audit_routes(
+        (ROOT / "assets/js/sinjira-supabase.js").read_text("utf-8")
+    ))
     errors.extend(audit_commerce(
         (ROOT / "compte/mes-achats.html").read_text("utf-8"),
         (ROOT / "compte/licences.html").read_text("utf-8")
