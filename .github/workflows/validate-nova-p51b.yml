@@ -26,18 +26,18 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
-      - name: Executer et compter exactement 69 tests des quatre couches
+      - name: Executer et compter exactement 84 tests des quatre couches
         run: |
           python -m py_compile scripts/validate_nova_admin_canaries_p50y.py
           python - <<'PY'
           import unittest
           loader=unittest.TestLoader()
           suite=loader.discover("scripts/tests",pattern="test_validate_nova_admin_canaries_p50y.py")
-          assert suite.countTestCases()==69, f"Suite attendue 69, obtenue {suite.countTestCases()}"
+          assert suite.countTestCases()==84, f"Suite attendue 84, obtenue {suite.countTestCases()}"
           result=unittest.TextTestRunner(verbosity=2).run(suite)
           if not result.wasSuccessful():
               raise SystemExit(1)
-          print("P51C: 69 tests P50Y/P50Z/P51A/P51B + preuves GitHub et fichiers sûrs réussis")
+          print("P51D: 84 tests, y compris protection serveur et refus des faux GO")
           PY
       - name: Confirmer absence de preuve administrative et de GO
         run: |
@@ -57,11 +57,34 @@ jobs:
           assert r["fusion_autorisee"] is False and r["publication_autorisee"] is False
           print("P51B: les 3 essais administratifs restent NON EXECUTES, statut NO_GO")
           PY
+      - name: P51D - verifier main et les rulesets reels sans aucune mutation
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/validate_nova_admin_canaries_p50y.py \
+            --dossier projets/projet-nova/controles/P50Y_PROCES_VERBAL_RECETTE_A_COMPLETER.json \
+            --observer-serveur --rapport p51d_etat_serveur.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p51d_etat_serveur.json").read_text(encoding="utf-8"))
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          assert r["statut_dossier"]=="RECETTE_REQUISE"
+          assert r["etat_serveur_github"] in (
+              "BLOQUANT","NON_ATTESTE","PRECONDITIONS_TECHNIQUES_VISIBLES")
+          assert r["preuve_serveur_certifiee_automatiquement"] is False
+          assert r["fusion_autorisee"] is False and r["publication_autorisee"] is False
+          print("P51D : etat serveur=",r["etat_serveur_github"])
+          print("P51D : obstacles=",r["obstacles"])
+          print("P51D : aucune recette humaine ni autorisation automatique")
+          PY
       - name: Rapport non nominatif, duree limitee
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nova-p51b-candidat-integre-no-go
-          path: p51b_constat_non_execution.json
+          path: |
+            p51b_constat_non_execution.json
+            p51d_etat_serveur.json
           if-no-files-found: ignore
           retention-days: 7
