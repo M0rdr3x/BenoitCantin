@@ -9,6 +9,72 @@ export function getSupabase() {
 }
 export async function getCurrentUser() {if (!isSinjiraBackendConfigured()) return null;const {data,error}=await getSupabase().auth.getUser();return error ? null : (data.user || null)}
 
+// BEGIN SINJIRA_DOCUMENT_WINDOW
+// Ouvrir la fenêtre pendant le geste utilisateur, AVANT tout await Supabase.
+// Une nouvelle fenêtre créée après une réponse réseau est souvent bloquée
+// par les navigateurs, même pour un lecteur autorisé.
+export function prepareDocumentWindow(){
+  let tab=null;
+  try{
+    tab=window.open('about:blank','_blank');
+    if(!tab)return null;
+    // La fenêtre n'a pas le droit de piloter l'onglet de bibliothèque.
+    tab.opener=null;
+  }catch{
+    try{tab?.close()}catch{}
+    return null;
+  }
+  try{
+    tab.document.title='SINJIRA™ — document sécurisé';
+    tab.document.body.textContent='Vérification des droits de lecture en cours…';
+  }catch{} // Certains navigateurs isolent le contexte après opener=null.
+  return tab;
+}
+export function closeDocumentWindow(tab){
+  try{tab?.close()}catch{}
+}
+export function navigateDocumentWindow(tab,raw){
+  const url=typeof raw==='string'?raw:'';
+  if(!url||url!==url.trim()||/[\\\u0000-\u001f\u007f]/.test(url)){
+    closeDocumentWindow(tab);
+    return false;
+  }
+  const local=url.startsWith('/')&&!url.startsWith('//');
+  if(!local&&!/^https:\/\/[^/]/i.test(url)){
+    closeDocumentWindow(tab);
+    return false;
+  }
+  try{
+    if(local&&/%(?:2f|5c|0[0-9a-f]|1[0-9a-f]|7f)/i.test(url)){
+      closeDocumentWindow(tab);
+      return false;
+    }
+    const destination=new URL(url,location.origin);
+    if(destination.protocol!=='https:'||!destination.hostname
+       ||destination.username||destination.password
+       ||(local&&destination.origin!==location.origin)){
+      closeDocumentWindow(tab);
+      return false;
+    }
+    if(tab&&!tab.closed){
+      try{
+        tab.location.replace(url);
+        return true;
+      }catch{
+        closeDocumentWindow(tab);
+      }
+    }
+    // Popup bloquée : ouvrir dans l'onglet actuel plutôt que perdre
+    // l'accès à un lien signé temporaire après l'authentification.
+    location.assign(url);
+    return true;
+  }catch{
+    closeDocumentWindow(tab);
+    return false;
+  }
+}
+// END SINJIRA_DOCUMENT_WINDOW
+
 export function safeInternalDestination(value,fallback='/compte/index.html'){
   const raw=String(value||'').trim();
   if(!raw.startsWith('/')||raw.startsWith('//')||raw.includes('\\')||/[\u0000-\u001f\u007f]/.test(raw))return fallback;
