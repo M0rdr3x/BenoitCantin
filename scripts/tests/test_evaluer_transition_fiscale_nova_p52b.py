@@ -59,6 +59,12 @@ def complete_all(d):
                 item["inventaire_prelevements_valide"]=True
 
 
+def documented_in_fake_test_only(r):
+    for item in r["required_evidence"]:
+        item["statut"]="VALIDE"
+        item["preuve_independante_obtenue"]=True
+        item["justificatif_validation"]="https://example.org/fixture-non-reelle-P52B"
+
 class FinanceNova(unittest.TestCase):
     def test_01_20_proofs_initially_unvalidated(self):
         d,r=read_data()
@@ -218,8 +224,7 @@ class FinanceNova(unittest.TestCase):
     def test_27_even_if_proofs_marked_valid_no_automatic_go(self):
         d,r=read_data()
         complete_all(d)
-        for row in r["required_evidence"]:
-            row["statut"]="VALIDE"
+        documented_in_fake_test_only(r)
         x=m.evaluate(d,r)
         self.assertEqual(x["resultats"][0]["etat"],"CALCUL_CONDITIONNEL_A_AUDITER")
         self.assertEqual(x["decision"],"NO_GO_AUTOMATIQUE")
@@ -228,8 +233,7 @@ class FinanceNova(unittest.TestCase):
     def test_28_debt_over_45_blocks_qualified_trajectory(self):
         d,r=read_data()
         complete_all(d)
-        for row in r["required_evidence"]:
-            row["statut"]="VALIDE"
+        documented_in_fake_test_only(r)
         year(d)["ratio_dette_nette_pib_pct"]="45.1"
         x=m.evaluate(d,r)
         self.assertEqual(x["resultats"][0]["etat"],"NON_VALIDABLE")
@@ -237,8 +241,7 @@ class FinanceNova(unittest.TestCase):
     def test_29_other_provincial_levies_block_two_tax_target(self):
         d,r=read_data()
         complete_all(d)
-        for row in r["required_evidence"]:
-            row["statut"]="VALIDE"
+        documented_in_fake_test_only(r)
         a=year(d)
         a["recettes"]["autres_prelevements_provinciaux_nets"]="1"
         x=m.evaluate(d,r)
@@ -247,11 +250,23 @@ class FinanceNova(unittest.TestCase):
     def test_30_missing_legal_inventory_blocks_qualification(self):
         d,r=read_data()
         complete_all(d)
-        for row in r["required_evidence"]:
-            row["statut"]="VALIDE"
+        documented_in_fake_test_only(r)
         year(d)["inventaire_prelevements_valide"]=False
         x=m.evaluate(d,r)
         self.assertEqual(x["resultats"][0]["etat"],"NON_VALIDABLE")
+
+    def test_31_word_valide_alone_never_counts_as_independent_evidence(self):
+        d,r=read_data()
+        for item in r["required_evidence"]:
+            item["statut"]="VALIDE"
+        self.assertEqual(m.validate_evidence_register(r),20)
+
+    def test_32_only_independent_attestation_and_https_reference_reduce_gap(self):
+        d,r=read_data()
+        documented_in_fake_test_only(r)
+        self.assertEqual(m.validate_evidence_register(r),0)
+        r["required_evidence"][0]["justificatif_validation"]="http://not-https.test"
+        self.assertEqual(m.validate_evidence_register(r),1)
 
     def test_31_cli_report_can_be_generated_while_incomplete(self):
         with tempfile.TemporaryDirectory() as folder:
