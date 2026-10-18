@@ -82,7 +82,9 @@ def validate_evidence_register(registry):
         documented = (row.get("statut") == "VALIDE" and
                       row.get("preuve_independante_obtenue") is True and
                       isinstance(source, str) and
-                      re.fullmatch(r"https://[^\\s<>]{8,300}",source) is not None)
+                      source.startswith("https://") and
+                      15 <= len(source) <= 308 and
+                      not any(ch.isspace() or ch in "<>" for ch in source))
         if not documented:
             unresolved += 1
     return unresolved
