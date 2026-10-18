@@ -29,6 +29,17 @@ const coverEnvironment={safeLibraryRoute};
 vm.runInNewContext(coverCode+'\nglobalThis.validateCover=safeLibraryCover;',
   coverEnvironment,{filename:'sinjira-supabase.js/library-cover'});
 const safeLibraryCover=coverEnvironment.validateCover;
+const submitStart='// BEGIN SINJIRA_LIBRARY_SUBMISSION';
+const submitEnd='// END SINJIRA_LIBRARY_SUBMISSION';
+assert.equal(sharedFileContent.split(submitStart).length,2);
+assert.equal(sharedFileContent.split(submitEnd).length,2);
+const submitCode=sharedFileContent.split(submitStart)[1].split(submitEnd)[0]
+  .replaceAll('export async function ','async function ');
+const submitEnv={};
+vm.runInNewContext(submitCode+'\nglobalThis.submitRequest=submitLibraryRequest;',
+  submitEnv,{filename:'sinjira-supabase.js/library-submission'});
+const submitLibraryRequest=submitEnv.submitRequest;
+
 assert.match(original,/^import\s+\{getSupabase/);
 assert.match(original,/\ninit\(\)\.catch\(/);
 const code=original.replace(/^import[^\n]*\n/,'')
@@ -45,9 +56,10 @@ const sandbox={
   Date,URL,location:{origin:'https://www.benoitcantin.com'},
   safeLibraryRoute,
   safeLibraryCover,
+  submitLibraryRequest,
   console,
 };
-vm.runInNewContext(code+'\nglobalThis.testAPI={activeProjectAccess,canOpenProject,safeProjectPlayPath,setCount,renderProjects,renderReads};',sandbox,{filename:file});
+vm.runInNewContext(code+'\nglobalThis.testAPI={activeProjectAccess,canOpenProject,safeProjectPlayPath,setCount,renderProjects,renderReads,bindTesterRequestButtons};',sandbox,{filename:file});
 const api=sandbox.testAPI;
 const publicProject={id:'pub',slug:'public',name:'Public',visibility:'public',status:'open',play_path:'/projets/sinjira/jeux/',allow_tester_requests:false};
 const memberProject={id:'member',slug:'compte',name:'Compte',visibility:'account',status:'open'};
@@ -470,17 +482,18 @@ function legacyHarness(grants=[],roles={},extra={}){
     roleLabel:v=>v,
     safeLibraryRoute,
     safeLibraryCover,
+    submitLibraryRequest,
     setStatus:()=>{},
     URLSearchParams,Date,console,
     prompt:()=>null,
     window:{open(){}}
   };
   vm.runInNewContext(legacyCode+
-    '\nglobalThis.legacyAPI={verifiedProjectAccess,projectIsOpen,internalProjectPath,cover,project};'+
+    '\nglobalThis.legacyAPI={verifiedProjectAccess,projectIsOpen,internalProjectPath,cover,project,bindLegacyTesterRequests,bindLegacyPlaytestApplications};'+
     '\nglobalThis.legacySet=(r)=>{user={id:"mock-user"};owner=!!r.owner;admin=!!r.admin};',
     env,{filename:'sinjira-library.js'});
   env.legacySet(roles);
-  return {api:env.legacyAPI,project,counters,node:getNode};
+  return {api:env.legacyAPI,project,counters,node:getNode,env};
 }
 
 test('legacy: couverture du détail projet toujours locale avec repli officiel',()=>{
@@ -582,6 +595,159 @@ function secureTabFixture(blocked=false){
     ctx,{filename:'sinjira-supabase.js/document-window'});
   return {api:ctx.documentsWindowAPI,visited,current,calls,tabs};
 }
+
+
+function fakeActionButton(key,identifier){
+  return {
+    disabled:false,textContent:'',outerHTML:'',dataset:{[key]:identifier},
+    addEventListener(event,callback){
+      assert.equal(event,'click');
+      this.click=callback;
+    }
+  };
+}
+function fakeRequestClient(table,pending,calls){
+  return {from(actual){
+    assert.equal(actual,table);
+    return {insert(payload){calls.push(payload);return pending.promise}};
+  }};
+}
+
+test('soumission compte: Annuler ne crée ni demande ni désactivation',async()=>{
+  const button=fakeActionButton('requestTester','p1');
+  let writes=0,accepted=0,rejected=0;
+  for(const answer of [null,undefined]){
+    const result=await submitLibraryRequest(button,()=>answer,
+      ()=>{writes++;return Promise.resolve({error:null})},
+      ()=>accepted++,()=>rejected++);
+    assert.equal(result,false);
+    assert.equal(button.disabled,false);
+  }
+  assert.equal(writes,0);
+  assert.equal(accepted,0);
+  assert.equal(rejected,0);
+});
+
+test('soumission compte: un double clic pendant la RPC produit une seule écriture',async()=>{
+  const b=fakeActionButton('applyPlaytest','playtest-1');
+  const pending=deferredResult();
+  let asks=0,writes=0,accepted=0;
+  const invoke=()=>submitLibraryRequest(
+    b,()=>{asks++;return 'texte de candidature'},
+    message=>{writes++;assert.equal(message,'texte de candidature');return pending.promise},
+    ()=>accepted++,()=>assert.fail('Une RPC autorisée a été refusée')
+  );
+  const first=invoke();
+  assert.equal(b.disabled,true);
+  const duplicate=await invoke();
+  assert.equal(duplicate,false);
+  assert.equal(writes,1);
+  assert.equal(asks,1);
+  pending.resolve({data:{id:'ack'},error:null});
+  assert.equal(await first,true);
+  assert.equal(accepted,1);
+  assert.equal(b.disabled,true,'Une candidature enregistrée ne doit pas être renvoyée');
+});
+
+test('soumission compte: erreur serveur ou réseau réactive le bouton',async()=>{
+  for(const mode of ['error','reject','empty']){
+    const button=fakeActionButton('requestTester','p2');
+    const failures=[];
+    let accepted=0;
+    const result=await submitLibraryRequest(button,()=>'',()=>{
+      if(mode==='reject')return Promise.reject(new Error('Network'));
+      if(mode==='empty')return Promise.resolve(null);
+      return Promise.resolve({error:{message:'Backend indisponible'}});
+    },()=>accepted++,error=>failures.push(error));
+    assert.equal(result,false,mode);
+    assert.equal(button.disabled,false,mode);
+    assert.equal(failures.length,1,mode);
+    assert.equal(accepted,0,mode);
+  }
+});
+
+test('soumission compte: message vide volontaire accepté et longueur plafonnée',async()=>{
+  const messages=[];
+  for(const answer of ['', 'X'.repeat(2100)]){
+    const button=fakeActionButton('requestTester','p3');
+    const result=await submitLibraryRequest(button,()=>answer,
+      message=>{messages.push(message);return Promise.resolve({error:null})},
+      ()=>{},()=>assert.fail('Erreur inattendue'));
+    assert.equal(result,true);
+    assert.equal(button.disabled,true);
+  }
+  assert.equal(messages[0],'');
+  assert.equal(messages[1].length,1500);
+});
+
+test('bibliothèque actuelle: annulation, clic unique, confirmation testeur',async()=>{
+  const button=fakeActionButton('v2461RequestTester','project-v24');
+  const events=[];
+  const env={
+    document:{querySelector:()=>({}),querySelectorAll:()=>[button]},
+    submitLibraryRequest,
+    prompt:()=>null,
+    setStatus:(_node,message,level)=>events.push({message,level}),
+    Date,console,
+  };
+  vm.runInNewContext(code+'\nglobalThis.bindRequest=bindTesterRequestButtons;',
+    env,{filename:'sinjira-library-v24-4-61.js/requests'});
+  const pending=deferredResult(),calls=[];
+  env.bindRequest(fakeRequestClient('access_requests',pending,calls),{id:'reader-v24'});
+  await button.click();
+  assert.equal(calls.length,0,'Fermer prompt ne crée aucune demande');
+  assert.equal(button.disabled,false);
+  env.prompt=()=> 'À tester';
+  const first=button.click();
+  assert.equal(button.disabled,true);
+  await button.click();
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].user_id,'reader-v24');
+  assert.equal(calls[0].project_id,'project-v24');
+  assert.equal(calls[0].message,'À tester');
+  pending.resolve({error:null});
+  await first;
+  assert.equal(button.textContent,'Demande testeur en attente');
+  assert.equal(button.disabled,true);
+  assert.equal(events.at(-1).level,'success');
+});
+
+test('ancienne bibliothèque: demande testeur et candidature respectent Annuler',async()=>{
+  for(const [name,dataset,table] of [
+    ['tester','requestTester','access_requests'],
+    ['playtest','applyPlaytest','playtest_participants'],
+  ]){
+    const ctx=legacyHarness();
+    const button=fakeActionButton(dataset,'project-id');
+    const fixture={querySelectorAll:()=>[button]};
+    const pending=deferredResult(),calls=[];
+    const client=fakeRequestClient(table,pending,calls);
+    const bind=name==='tester'?ctx.api.bindLegacyTesterRequests:
+      ctx.api.bindLegacyPlaytestApplications;
+    ctx.env.prompt=()=>null;
+    bind(fixture,client);
+    await button.click();
+    assert.equal(calls.length,0,name+' annulation');
+    assert.equal(button.disabled,false);
+    ctx.env.prompt=()=>name==='tester'?'Testeur volontaire':'Je participe';
+    const first=button.click();
+    await button.click();
+    assert.equal(calls.length,1,name+' double clic');
+    assert.equal(calls[0].user_id,'mock-user');
+    if(name==='tester'){
+      assert.equal(calls[0].project_id,'project-id');
+      assert.equal(calls[0].message,'Testeur volontaire');
+    }else{
+      assert.equal(calls[0].playtest_id,'project-id');
+      assert.equal(calls[0].application_message,'Je participe');
+    }
+    pending.resolve({error:null});
+    await first;
+    assert.equal(button.disabled,true);
+    if(name==='tester')assert.equal(button.textContent,'Demande testeur en attente');
+    else assert.match(button.outerHTML,/Candidature envoyée/);
+  }
+});
 
 test('document: onglet réservé immédiatement, sans accès opener, puis lien HTTPS',()=>{
   const f=secureTabFixture();
