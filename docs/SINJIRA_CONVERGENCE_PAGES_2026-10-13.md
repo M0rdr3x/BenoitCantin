@@ -470,3 +470,34 @@ dans la page Logiciels, en passant par la fonction d'audit complète.
 Cette garantie est testée dans la PR non publiée : elle ne remplace
 ni les tests multi-navigateurs, ni la preuve HTTP après bascule du
 site. Le blocage GitHub Pages `legacy` (#450) demeure.
+
+## Ouverture fiable des documents et du Livre I après vérification des droits
+
+Les boutons `Ouvrir le document` du compte historique et
+`Ouvrir l'édition intégrale` de la bibliothèque v24.4.61 attendaient
+jusqu'ici la réponse asynchrone des fonctions Supabase avant d'appeler
+`window.open`. Les navigateurs pouvaient alors considérer la nouvelle
+fenêtre comme une fenêtre publicitaire et la bloquer **malgré le clic de
+l'utilisateur et le droit serveur valide**.
+
+La bibliothèque prépare maintenant un onglet `about:blank` dès le
+geste de clic, avec `opener=null`, un état neutre de vérification et
+les boutons temporairement désactivés contre les doubles demandes.
+Ce n'est qu'après l'autorisation renvoyée par `get-document-url` ou
+`get-novel-file-url` que le client vérifie l'URL reçue (HTTPS, chemin
+local exact ou destination HTTPS distante, sans protocole exécutable,
+identifiants ou séparateurs ambigus) et navigue vers le lien éphémère.
+Un refus d'accès, une erreur réseau ou une URL malformée **ferme
+l'onglet vide**. Si la fenêtre est bloquée, le lien vérifié peut être
+ouvert **dans l'onglet courant** plutôt que devenir inaccessible.
+
+Cette adaptation est un correctif de **parcours utilisateur**, pas une
+autorisation de document : chaque fonction Edge et les contrôles de
+stockage privés continuent à décider séparément des droits. Les tests
+Node simulent réellement l'ordre geste → ouverture → RPC, les
+documents publics/privés, les refus, les fenêtres bloquées, le lien
+malveillant et les erreurs réseau, sans accès à un compte réel.
+
+La PR #639 reste en brouillon et aucune fonction Supabase ou page
+n'est déployée. La publication GitHub Pages legacy est toujours
+bloquée par #450.
