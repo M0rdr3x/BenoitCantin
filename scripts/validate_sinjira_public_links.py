@@ -151,6 +151,8 @@ def self_test(root: Path) -> None:
         "/", "romans/", "/projets/sinjira/logiciels/?nav=1#contenu",
         "/compte/bibliotheque.html",
         "https://www.benoitcantin.com/assets/media/sinjira-jeux-banniere-2026.webp",
+        "https://www.facebook.com/Sinjira.Univers",
+        "mailto:info@example.org",
         "#contenu",
     ):
         assert verify_target(page, ref, root, public, generated) is None, ref
@@ -162,6 +164,21 @@ def self_test(root: Path) -> None:
         "javascript:alert(1)",
         "http://www.benoitcantin.com/projets/sinjira/",
         "/projets/sinjira/%2Fsecret",
+        # L'ancien contrôle netloc.lower() != HOST traitait les variantes
+        # du même hôte comme des sites tiers : contour de l'allowlist.
+        "https://www.benoitcantin.com./supabase/config.toml",
+        "https://www.benoitcantin.com:443/scripts/validate_sinjira_catalogues.py",
+        "https://www.benoitcantin.com.:443/supabase/config.toml",
+        "//www.benoitcantin.com/scripts/validate_sinjira_catalogues.py",
+        "http://www.benoitcantin.com.:80/supabase/config.toml",
+        "https://user@www.benoitcantin.com/supabase/config.toml",
+        "https://www.benoitcantin.com@evil.example/supabase/config.toml",
+        "https://www.benoitcantin.com%2e/supabase/config.toml",
+        "https://www.benoitcantin.com/private.pdf ",
+        " https://www.benoitcantin.com/private.pdf",
+        "https://www.benoitcantin.com/\\\\evil.example/path",
+        "https://www.benoitcantin.com/secret\\x00hidden",
+        "https://www.benoitcantin.com/secret\\tignored",
     ):
         assert verify_target(page, ref, root, public, generated), (
             "Destination interdite acceptée: " + ref
