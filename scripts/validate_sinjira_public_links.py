@@ -12,6 +12,7 @@ import argparse
 from html.parser import HTMLParser
 from pathlib import Path
 from shutil import copyfile
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from urllib.parse import unquote, urlsplit
 
