@@ -74,9 +74,17 @@ def validate_evidence_register(registry):
     ids = [row.get("id") for row in evidence if isinstance(row, dict)]
     enforce(len(ids) == len(evidence) and len(set(ids)) == 20,
             "PREUVES_NON_UNIQUES")
-    # Registered validations must be backed by new, independent, documented
-    # reviews; this model currently allows no implicit promotion whatsoever.
-    unresolved = sum(1 for row in evidence if row.get("statut") != "VALIDE")
+    # An asserted status alone is never evidence. These checks only validate
+    # that a public reference was supplied; they do NOT authenticate it.
+    unresolved = 0
+    for row in evidence:
+        source = row.get("justificatif_validation")
+        documented = (row.get("statut") == "VALIDE" and
+                      row.get("preuve_independante_obtenue") is True and
+                      isinstance(source, str) and
+                      re.fullmatch(r"https://[^\\s<>]{8,300}",source) is not None)
+        if not documented:
+            unresolved += 1
     return unresolved
 
 
