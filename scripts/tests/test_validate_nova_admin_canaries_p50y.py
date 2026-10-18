@@ -55,6 +55,33 @@ def observations(f):
             "checks_non_satisfaits":1 if row["id"]=="check_non_satisfait" else 0}}
         for row in f["cas"]}
 
+def server_snapshot():
+    checks=[{"context":name,"integration_id":m.ACTIONS_APP_ID}
+            for name in m.REQUIRED_CHECKS]
+    return {
+        "branch":{"commit":{"sha":m.MAIN_SHA},"protected":True},
+        "summaries":[{"id":10,"enforcement":"active"}],
+        "details":[{
+            "id":10,"target":"branch","enforcement":"active",
+            "bypass_actors":[],
+            "conditions":{"ref_name":{"include":["refs/heads/main"],"exclude":[]}},
+            "rules":[
+                {"type":"deletion"},{"type":"non_fast_forward"},
+                {"type":"pull_request","parameters":{
+                    "required_approving_review_count":1,
+                    "dismiss_stale_reviews_on_push":True,
+                    "require_last_push_approval":True,
+                    "required_review_thread_resolution":True}},
+                {"type":"required_status_checks","parameters":{
+                    "strict_required_status_checks_policy":True,
+                    "required_status_checks":checks}},
+            ],
+        }],
+        "effective":[{"type":name} for name in (
+            "deletion","non_fast_forward","pull_request","required_status_checks")],
+    }
+
+
 class P50Y(unittest.TestCase):
     def test_three_distinct_cases(self):
         self.assertEqual(len(m.CASES),3)
@@ -386,6 +413,92 @@ class P50Y(unittest.TestCase):
     def test_external_github_endpoint_rejected(self):
         with self.assertRaises(ValueError):
             m.github("/repos/another/repo/pulls/999","")
+    def test_server_not_readable_fails_closed(self):
+        r=m.server_preflight(None)
+        self.assertEqual(r["etat"],"NON_ATTESTE")
+        self.assertIn("SERVEUR_GITHUB_NON_LISIBLE",r["obstacles"])
+    def test_server_disabled_branch_blocks(self):
+        data=server_snapshot();data["branch"]["protected"]=False
+        self.assertIn("MAIN_NON_PROTEGEE",m.server_preflight(data)["obstacles"])
+    def test_server_main_sha_drift_blocks(self):
+        data=server_snapshot();data["branch"]["commit"]["sha"]="f"*40
+        self.assertIn("MAIN_SHA_CHANGE_DEPUIS_LE_DOSSIER",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_no_active_ruleset_blocks(self):
+        data=server_snapshot();data["summaries"]=[];data["details"]=[]
+        self.assertIn("RULESET_ACTIF_ABSENT",m.server_preflight(data)["obstacles"])
+    def test_server_fully_observed_is_only_precondition(self):
+        r=m.server_preflight(server_snapshot())
+        self.assertEqual(r["etat"],"PRECONDITIONS_TECHNIQUES_VISIBLES")
+        result=m.attach_server_evidence(m.analyze(filled(),observations(filled())),r)
+        self.assertEqual(result["decision"],"NO_GO_AUTOMATIQUE")
+        self.assertFalse(result["preuve_serveur_certifiee_automatiquement"])
+        self.assertFalse(result["fusion_autorisee"])
+        self.assertEqual(result["statut_dossier"],"DECLARATIONS_COMPLETEES_A_VALIDER_EXTERNEMENT")
+    def test_server_missing_bypass_disclosure_blocks(self):
+        data=server_snapshot();del data["details"][0]["bypass_actors"]
+        r=m.server_preflight(data)
+        self.assertIn("EXCEPTIONS_BYPASS_NON_VISIBLES",r["obstacles"])
+    def test_server_explicit_bypass_blocks(self):
+        data=server_snapshot();data["details"][0]["bypass_actors"]=[
+            {"actor_id":100,"actor_type":"RepositoryRole","bypass_mode":"always"}]
+        self.assertIn("BYPASS_SERVEUR_DECLARE",m.server_preflight(data)["obstacles"])
+    def test_server_review_requirements_inadequate(self):
+        data=server_snapshot()
+        data["details"][0]["rules"][2]["parameters"]["required_approving_review_count"]=0
+        self.assertIn("RULESET_CONFORME_SANS_BYPASS_NON_DEMONTRE",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_check_source_mismatch_blocks(self):
+        data=server_snapshot()
+        data["details"][0]["rules"][3]["parameters"]["required_status_checks"][0]["integration_id"]=999
+        self.assertIn("RULESET_CONFORME_SANS_BYPASS_NON_DEMONTRE",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_effective_rules_missing_blocks(self):
+        data=server_snapshot()
+        data["effective"]=[{"type":"deletion"}]
+        self.assertIn("REGLES_EFFECTIVES_INCOMPLETES",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_missing_details_blocks(self):
+        data=server_snapshot();data["details"]=[]
+        self.assertIn("DETAILS_RULESET_MANQUANTS",m.server_preflight(data)["obstacles"])
+    def test_server_multiple_matching_rulesets_not_unambiguously_attested(self):
+        data=server_snapshot();data["summaries"].append({"id":11,"enforcement":"active"})
+        other=copy.deepcopy(data["details"][0]);other["id"]=11
+        data["details"].append(other)
+        self.assertIn("RULESET_CONFORME_SANS_BYPASS_NON_DEMONTRE",
+                      m.server_preflight(data)["obstacles"])
+    def test_attaching_live_unprotected_state_downgrades_declared_complete(self):
+        doc=filled()
+        complete=m.analyze(doc,observations(doc))
+        data=server_snapshot();data["branch"]["protected"]=False
+        out=m.attach_server_evidence(complete,m.server_preflight(data))
+        self.assertEqual(out["statut_dossier"],"RECETTE_REQUISE")
+        self.assertEqual(out["decision"],"NO_GO_AUTOMATIQUE")
+        self.assertIn("MAIN_NON_PROTEGEE",out["obstacles"])
+    def test_live_observation_always_queries_server(self):
+        with tempfile.TemporaryDirectory() as temp:
+            inp=Path(temp)/"record.json";out=Path(temp)/"result.json"
+            inp.write_text(json.dumps(basic()),encoding="utf-8")
+            with patch.object(m,"observe_server",return_value=server_snapshot()) as observe:
+                code=m.main(["--dossier",str(inp),"--rapport",str(out),
+                             "--observer-serveur"])
+            self.assertEqual(code,0)
+            observe.assert_called_once()
+            r=json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(r["etat_serveur_github"],"PRECONDITIONS_TECHNIQUES_VISIBLES")
+            self.assertEqual(r["decision"],"NO_GO_AUTOMATIQUE")
+    def test_unavailable_live_server_read_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            inp=Path(temp)/"record.json";out=Path(temp)/"result.json"
+            inp.write_text(json.dumps(filled()),encoding="utf-8")
+            with patch.object(m,"observe_server",side_effect=ValueError("NO_ACCESS")):
+                code=m.main(["--dossier",str(inp),"--rapport",str(out),
+                             "--observer-serveur"])
+            self.assertEqual(code,0)
+            r=json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(r["etat_serveur_github"],"NON_ATTESTE")
+            self.assertEqual(r["statut_dossier"],"RECETTE_REQUISE")
+            self.assertEqual(r["decision"],"NO_GO_AUTOMATIQUE")
     def test_no_reviewer_name_in_summary(self):
         f=filled()
         r=json.dumps(m.analyze(f))
