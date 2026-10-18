@@ -26,18 +26,18 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
-      - name: Executer et compter exactement 84 tests des quatre couches
+      - name: Executer et compter exactement 99 tests des quatre couches
         run: |
           python -m py_compile scripts/validate_nova_admin_canaries_p50y.py
           python - <<'PY'
           import unittest
           loader=unittest.TestLoader()
           suite=loader.discover("scripts/tests",pattern="test_validate_nova_admin_canaries_p50y.py")
-          assert suite.countTestCases()==84, f"Suite attendue 84, obtenue {suite.countTestCases()}"
+          assert suite.countTestCases()==99, f"Suite attendue 99, obtenue {suite.countTestCases()}"
           result=unittest.TextTestRunner(verbosity=2).run(suite)
           if not result.wasSuccessful():
               raise SystemExit(1)
-          print("P51D: 84 tests, y compris protection serveur et refus des faux GO")
+          print("P51E: 99 tests, provenance des rulesets et coherence des lectures API")
           PY
       - name: Confirmer absence de preuve administrative et de GO
         run: |
