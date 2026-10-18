@@ -25,7 +25,7 @@ Créer **trois PR témoins distinctes** sur une branche sans donnée personnelle
 **Identification contrôlée du périmètre des PR témoins (durcissement P50Z)** :
 - branche source **dans le même dépôt** : `test/p50y-<identifiant>-<suffixe>`, avec exactement l'identifiant du scénario (`sans_revue`, `approbation_perimee`, `check_non_satisfait`) ;
 - titre commençant par `[P50Y-CANARI:<identifiant>]` et branche cible `main` **du même dépôt** ;
-- seules **1 à 3 modifications** de fichiers sous `projets/projet-nova/controles/canaris/`; aucun HTML public, workflow, configuration, manifeste ou fichier de données réels modifiés par les essais ;
+- seuls **1 à 3 fichiers texte `.txt` directement dans `projets/projet-nova/controles/canaris/` peuvent être ajoutés** (statut GitHub `added`); aucune modification, suppression, opération `renamed`, ancien chemin `previous_filename`, sous-répertoire ou fichier exécutable n'est admis; aucun HTML public, workflow, configuration, manifeste ou fichier de données réels modifiés par les essais ;
 - le validateur lit la **liste exhaustive des fichiers via l'API GitHub** : un inventaire paginé, incomplet ou de taille inattendue provoque un refus ;
 - les PR historiques (notamment **#640**, #636, #638, #657) ne sont **jamais des PR témoins**, même si elles sont bloquées par GitHub.
 
@@ -41,7 +41,7 @@ L'administrateur doit vérifier la **raison** du blocage dans l'interface GitHub
 
 ### Données à consigner, sans renseignements privés
 
-Le fichier [`P50Y_PROCES_VERBAL_RECETTE_A_COMPLETER.json`](./P50Y_PROCES_VERBAL_RECETTE_A_COMPLETER.json) commence avec les trois expériences **non effectuées**. Il demande, pour chacune : numéro de la PR témoin, SHA testé, URL de la PR, constat booléen du blocage, confirmation booléenne de l'examen par le responsable habilité et URL GitHub de preuve associée (PR ou Actions). Ne pas renseigner un champ par anticipation.
+Le fichier [`P50Y_PROCES_VERBAL_RECETTE_A_COMPLETER.json`](./P50Y_PROCES_VERBAL_RECETTE_A_COMPLETER.json) commence avec les trois expériences **non effectuées**. Il demande, pour chacune : numéro de la PR témoin, SHA testé, URL de la PR, constat booléen du blocage, confirmation booléenne de l'examen par le responsable habilité et **l'URL exacte de cette même PR témoin** comme preuve publique. Les journaux GitHub Actions peuvent être conservés séparément pour l'analyse interne, mais un lien vers une PR différente ou une exécution non rattachée au témoin ne satisfait plus le champ `preuve_url`. Ne pas renseigner un champ par anticipation.
 
 Il comporte également trois déclarations qui nécessitent une réelle décision humaine :
 - `protection_serveur_confirmee_par_admin` : les règles sont réellement installées et actives;
@@ -74,7 +74,7 @@ Ne pas inscrire un jeton réel dans un fichier, une issue ou une ligne de comman
 
 Le contrôle **refuse les listes paginées/incomplètes**, les checks homonymes multiples, les mauvais SHA et les checks hors de GitHub Actions `15368`. La présence d'un check manquant n'atteste pas, à elle seule, qu'une règle serveur l'exige : **la preuve administrateur reste obligatoire**.
 
-**Important :** le mode `--live` refuse désormais les PR qui ne ciblent pas `main`, n'ont pas l'identifiant de scénario dans le titre et la branche, ou modifient des fichiers hors du répertoire de recette. Même un dossier rempli et un `mergeable_state:"blocked"` confirmé par API ne certifient **pas** la cause du refus. Une observation indépendante dans l'interface d'administration est obligatoire. Le programme renvoie toujours `NO_GO_AUTOMATIQUE` et n'émet jamais un GO institutionnel.
+**Important :** le mode `--live` refuse désormais les PR qui ne ciblent pas `main`, n'ont pas l'identifiant de scénario dans le titre et la branche, modifient un fichier existant ou procèdent à un renommage, ou sortent des nouveaux fichiers `.txt` autorisés. Même un dossier rempli et un `mergeable_state:"blocked"` confirmé par API ne certifient **pas** la cause du refus. Une observation indépendante dans l'interface d'administration est obligatoire. Le programme renvoie toujours `NO_GO_AUTOMATIQUE` et n'émet jamais un GO institutionnel.
 
 ## 5. Interprétation de la CI P50Y
 
