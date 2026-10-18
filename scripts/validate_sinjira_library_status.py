@@ -149,6 +149,12 @@ def audit_routes(shared: str) -> list[str]:
         "/%(?:2f|5c|2e|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value)",
         "url.origin!==location.origin",
         "url.pathname!==pathname",
+        "supabase|scripts|tests|docs|mobile-native|node_modules|_site",
+        "(?:codex|",
+        "netlify",
+        "security",
+        "upload_github",
+        "tsx?|jsx?|sh|env|lock",
     )
     return ["Navigation locale non canonique : " + key
             for key in required if key not in shared]
@@ -165,6 +171,10 @@ def self_test() -> None:
     for broken in (
         shared.replace("url.pathname!==pathname", "false"),
         shared.replace("!value.startsWith('/')||value.startsWith('//')", "false"),
+        shared.replace("supabase|scripts|tests|docs|mobile-native|node_modules|_site",
+                       "other-unused-directory"),
+        shared.replace("(?:codex|", "(?:not-codex|"),
+        shared.replace("tsx?|jsx?|sh|env|lock", "not-source-code"),
     ):
         assert audit_routes(broken), "URL non canonique non détectée"
     purchases = (ROOT / "compte/mes-achats.html").read_text("utf-8")
