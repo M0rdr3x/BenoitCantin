@@ -171,11 +171,12 @@ function bindTesterRequestButtons(s,currentUser){
     button,
     ()=>prompt('Court message pour votre demande (facultatif).'),
     message=>s.from('access_requests').insert({user_id:currentUser.id,project_id:button.dataset.v2461RequestTester,requested_level:'tester',message}),
-    ()=>{
+    duplicate=>{
       button.textContent='Demande testeur en attente';
-      setStatus(status,'Demande testeur transmise.','success');
+      setStatus(status,duplicate?'Une demande testeur est déjà en attente.':'Demande testeur transmise.',duplicate?'info':'success');
     },
-    ()=>setStatus(status,'La demande n’a pas pu être transmise. Veuillez réessayer.','error')
+    ()=>setStatus(status,'La demande n’a pas pu être transmise. Veuillez réessayer.','error'),
+    'access_requests_one_pending_idx'
   )));
 }
 
