@@ -679,3 +679,33 @@ Il s'agit d'une protection de l'expérience utilisateur contre les
 base de données** : la RLS et les contraintes SQL restent
 responsables des autorisations et de l'intégrité persistante.
 La PR n'est pas publiée et le blocage GitHub Pages #450 demeure.
+
+### Doublons Postgres déjà protégés : retour utilisateur précis
+
+Deux appareils ou sessions simultanées peuvent produire des écritures
+répétées même après un verrouillage du bouton. Le schéma SQL SINJIRA
+dispose **déjà** des contraintes serveur appropriées :
+
+- `access_requests_one_pending_idx` : index unique partiel sur
+  `(user_id, project_id, requested_level)`, uniquement pour
+  `status='pending'`.
+- `playtest_participants_pkey` : clé primaire sur
+  `(playtest_id, user_id)`.
+- Les politiques RLS restrictives sont maintenues. Aucune nouvelle
+  migration n'est nécessaire.
+
+Les deux bibliothèques reconnaissent une réponse `23505` seulement
+si elle désigne **exactement** la contrainte attendue. La demande
+testeur affiche « déjà en attente » et une participation existante
+renvoie vers son statut, sans deuxième insertion ni nouvel essai
+inutile. Un refus d'autorisation, un problème réseau ou une collision
+sur une autre contrainte reste une **erreur**, jamais un succès.
+
+Trois nouveaux tests Node prouvent les contraintes présentes dans les
+migrations, la distinction entre vraie violation `23505` et fausse
+correspondance, puis le comportement des deux interfaces. Le contrat
+Python protège ces vérifications contre leur suppression accidentelle.
+
+Il s'agit d'un changement du frontend et des tests du candidat
+GitHub, **sans modification de la base de production**. Le blocage
+GitHub Pages #450 reste actif.
