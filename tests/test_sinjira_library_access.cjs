@@ -138,6 +138,58 @@ test('routes du registre: 14 destinations techniques de la barrière Pages ne de
   ]) assert.equal(safeLibraryRoute(ok),ok,'Route utilisateur légitime : '+ok);
 });
 
+test('routes de catalogue: l’encodage des lettres ne masque pas un chemin technique',()=>{
+  const aliases=[
+    '/%73upabase/functions/private.html',
+    '/su%70abase/config.html','/%53UPABASE/index.html',
+    '/%73cripts/audit.html','/scrip%74s/report.html',
+    '/%74ests/reports/index.html','/%64ocs/private.html',
+    '/.%67ithub/workflows/actions.html',
+    '/%6dobile-native/app.html','/%6eode_modules/library.html',
+    '/projets/sinjira/%63odex/private.html',
+    '/projets/sinjira/cod%65x/internal.html',
+    '/assets/media/%52EADME.html',
+    '/projets/sinjira/%25encoded/index.html',
+    '/projets/sinjira/romans/%20test.html'
+  ];
+  for(const route of aliases){
+    assert.equal(safeLibraryRoute(route),'','Route encodée refusée: '+route);
+    assert.equal(api.safeProjectPlayPath(route),'','Jeu ne doit pas afficher: '+route);
+  }
+  // Les requêtes et fragments encodés restent légitimes, seuls les
+  // segments du chemin de destination doivent être canoniques.
+  const useful=[
+    '/projets/sinjira/romans/?recherche=La%20Cendre',
+    '/compte/projet.html?slug=jeu%2Dtest#contenu',
+    '/projets/sinjira/logiciels/#t%C3%A9l%C3%A9chargements'
+  ];
+  for(const route of useful)assert.equal(safeLibraryRoute(route),route);
+});
+
+test('progression des romans: données hors plage et pages incohérentes sont normalisées',()=>{
+  const box={innerHTML:''};
+  elements.set('[data-library-reads]',box);
+  const base={sinjira_novels:{title:'La Cendre du Jugement',
+    demo_path:'/projets/sinjira/romans/',public_path:'/projets/sinjira/romans/'}};
+  const cases=[
+    {progress_percent:'NaN',last_page:'not-a-page',progress:0,page:null},
+    {progress_percent:'Infinity',last_page:-9,progress:0,page:null},
+    {progress_percent:-35,last_page:0,progress:0,page:null},
+    {progress_percent:250,last_page:Number.MAX_SAFE_INTEGER+1,progress:100,page:null},
+    {progress_percent:32.6,last_page:120,progress:33,page:120},
+    {progress_percent:99.9,last_page:'18',progress:100,page:18},
+    {progress_percent:null,last_page:null,progress:0,page:null},
+  ];
+  for(const row of cases){
+    api.renderReads([{...base,progress_percent:row.progress_percent,last_page:row.last_page}]);
+    assert.match(box.innerHTML,new RegExp('Progression : '+row.progress+'%'));
+    assert.match(box.innerHTML,new RegExp('style="width:'+row.progress+'%"'));
+    assert.doesNotMatch(box.innerHTML,/NaN|Infinity|page -|page 0\b|page undefined/);
+    if(row.page===null)assert.doesNotMatch(box.innerHTML,/ · page /);
+    else assert.match(box.innerHTML,new RegExp(' · page '+row.page+'</p>'));
+  }
+});
+
 test('lectures suivies: chemins démo/roman issus du registre ne peuvent pas rediriger hors SINJIRA',()=>{
   const box={innerHTML:''};
   elements.set('[data-library-reads]',box);
@@ -154,6 +206,7 @@ test('lectures suivies: chemins démo/roman issus du registre ne peuvent pas red
     '/projets/%2e%2e/admin/', '/\\evil.example/a',
     '/supabase/config.toml','/scripts/audit_pages_jekyll.py',
     '/docs/README.md','/projets/sinjira/codex/secret.html',
+    '/%73upabase/private.html','/projets/sinjira/%63odex/private.html',
   ]){
     api.renderReads([{sinjira_novels:{...novel,demo_path:malicious,public_path:malicious},
       progress_percent:12}]);
