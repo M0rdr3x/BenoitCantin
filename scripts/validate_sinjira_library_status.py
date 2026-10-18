@@ -76,6 +76,9 @@ def audit(html: str, js: str) -> list[str]:
         "function safeProjectPlayPath(value)",
         "return safeLibraryRoute(value);",
         "const demoPath=safeLibraryRoute(novel.demo_path);",
+        "Number.isFinite(rawProgress)",
+        "Math.round(Math.max(0,Math.min(100,rawProgress)))",
+        "Number.isSafeInteger(rawPage)&&rawPage>0",
         "const publicPath=safeLibraryRoute(novel.public_path)||'/projets/sinjira/romans/';",
         "projectsResult.error||accessResult.error||!rolesVerified?'—':availableProjects.length",
         "if(value==='—')node.setAttribute('aria-label','Information momentanément indisponible');",
@@ -149,6 +152,7 @@ def audit_routes(shared: str) -> list[str]:
         "/%(?:2f|5c|2e|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value)",
         "url.origin!==location.origin",
         "url.pathname!==pathname",
+        "if(pathname.includes('%'))return '';",
         "supabase|scripts|tests|docs|mobile-native|node_modules|_site",
         "(?:codex|",
         "netlify",
@@ -170,6 +174,7 @@ def self_test() -> None:
     assert not audit_routes(shared), audit_routes(shared)
     for broken in (
         shared.replace("url.pathname!==pathname", "false"),
+        shared.replace("if(pathname.includes('%'))return '';", ""),
         shared.replace("!value.startsWith('/')||value.startsWith('//')", "false"),
         shared.replace("supabase|scripts|tests|docs|mobile-native|node_modules|_site",
                        "other-unused-directory"),
@@ -214,6 +219,8 @@ def self_test() -> None:
         js.replace("if(!entitlementsVerified){", "if(false){"),
         js.replace("const demoPath=safeLibraryRoute(novel.demo_path);",
                    "const demoPath=novel.demo_path;"),
+        js.replace("Number.isFinite(rawProgress)", "true"),
+        js.replace("Number.isSafeInteger(rawPage)&&rawPage>0", "true"),
     ):
         assert audit(html, broken), "Droits accordés sans vérification acceptés"
     print("OK bibliothèque : chargement neutre et erreurs de droits non assimilées à zéro")
