@@ -186,7 +186,7 @@ def audit_routes(shared: str) -> list[str]:
         "safe.startsWith('/assets/media/')",
         "!/[?#]/.test(safe)",
         "webp|png|jpe?g|avif",
-        "export async function submitLibraryRequest(button,askMessage,write,accept,reject){",
+        "export async function submitLibraryRequest(button,askMessage,write,accept,reject,duplicateConstraint=''){",
         "if(!button||button.disabled)return false;",
         "if(typeof message!=='string')return false;",
         "button.disabled=true;",
