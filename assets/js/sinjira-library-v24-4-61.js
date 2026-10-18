@@ -1,4 +1,4 @@
-import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel} from './sinjira-supabase.js';
+import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow} from './sinjira-supabase.js';
 
 const status=document.querySelector('[data-library-status]');
 const rows=value=>Array.isArray(value)?value:[];
@@ -99,17 +99,28 @@ function renderReads(libraryRows){
 }
 
 async function openFullNovel(button){
+  if(button?.disabled)return;
   if(button)button.disabled=true;
-  setStatus(status,'Préparation de l’édition intégrale sécurisée…','info');
+  // L'onglet est créé durant le clic, avant toute requête Supabase.
+  // Aucun lien intégral ne sera affiché si le serveur refuse les droits.
+  const tab=prepareDocumentWindow();
+  setStatus(status,'Vérification des droits de lecture du Livre I…','info');
   try{
     const {data,error}=await getSupabase().functions.invoke('get-novel-file-url',{body:{slug:'la-cendre-du-jugement'}});
     if(error||!data?.ok||!data?.url){
+      closeDocumentWindow(tab);
       const message=data?.error||error?.message||'Accès au roman impossible.';
       setStatus(status,message,data?.code==='FILE_NOT_READY'?'info':'error');
       return;
     }
-    window.open(data.url,'_blank','noopener');
+    if(!navigateDocumentWindow(tab,data.url)){
+      setStatus(status,'Le serveur a fourni un lien de roman invalide.','error');
+      return;
+    }
     setStatus(status,'Édition intégrale ouverte avec un lien privé temporaire de 10 minutes.','success');
+  }catch{
+    closeDocumentWindow(tab);
+    setStatus(status,'Accès au roman impossible pour le moment.','error');
   }finally{
     if(button)button.disabled=false;
   }
