@@ -586,3 +586,32 @@ Ce contrôle concerne uniquement les **données affichées** : il ne
 modifie ni la progression stockée, ni les droits de lecture, ni les
 fichiers privés. La source GitHub Pages reste en mode `legacy` en
 production jusqu'à la résolution de l'incident #450.
+
+### Couvertures locales vérifiées pour les projets et les jeux
+
+Les couvertures des projets (`projects.cover_url`) étaient
+auparavant utilisées directement dans les attributs `src` de la
+bibliothèque et du détail de projet. Bien qu'échappée pour le HTML,
+une destination `https://` vers un domaine non approuvé pouvait
+déclencher une requête vers un tiers quand un membre consulte sa
+bibliothèque. Une URL de source technique, une image SVG dynamique
+ou un chemin brisé pouvaient également être affichés.
+
+`safeLibraryCover`, partagé par les deux bibliothèques, vérifie
+désormais que les couvertures issues du registre sont des fichiers
+locaux sous `/assets/media/`, avec une extension d'image explicite
+(`.webp`, `.png`, `.jpg`, `.jpeg` ou `.avif`) et sans requête,
+fragment, antislash, encodage de chemin ni traversée. Les couvertures
+invalides sont remplacées par le visuel public SINJIRA
+`/assets/media/sinjira-emblem.webp`, ou par la couverture
+officielle du jeu lorsqu'une correspondance de projet connue existe.
+Les chemins prévus par la migration initiale des jeux sont donc
+conservés.
+
+Les tests Node exécutent les véritables fonctions de validation et
+le rendu des cartes, notamment avec des URL externes, SVG ou
+techniques; le contrat Python empêche les deux bibliothèques de
+revenir à l'utilisation directe de `cover_url`. Cette défense
+protège le chargement d'images de l'interface, **sans modifier**
+la source des données, les permissions Supabase ni le statut de
+publication GitHub Pages. L'incident `legacy` #450 reste bloquant.
