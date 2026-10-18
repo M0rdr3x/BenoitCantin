@@ -11,6 +11,8 @@ from __future__ import annotations
 import argparse
 from html.parser import HTMLParser
 from pathlib import Path
+from shutil import copyfile
+from unittest.mock import patch
 from urllib.parse import unquote, urlsplit
 
 from validate_sinjira_catalogues import PAGES, ROOT
@@ -281,6 +283,33 @@ def self_test(root: Path) -> None:
         assert "dupliquée" in (verify_fragment(fixture, "#section", fixture.parent, {}) or "")
         fixture.write_text('<main id="section">OK</main>', "utf-8")
         assert verify_fragment(fixture, "#section", fixture.parent, {}) is None
+
+    # Test d'intégration du chemin audit(), pas seulement du helper :
+    # le lien affiché « Voir les outils » doit échouer si sa section
+    # disparaît ou est renommée par inadvertance.
+    with TemporaryDirectory() as directory:
+        temp_root = Path(directory)
+        fixtures = (
+            *PAGES.values(),
+            "compte/bibliotheque.html",
+            "compte/mes-achats.html",
+            INVENTORY, GENERATED,
+        )
+        for name in fixtures:
+            to = temp_root / name
+            to.parent.mkdir(parents=True, exist_ok=True)
+            copyfile(root / name, to)
+        with patch(__name__ + ".verify_target", return_value=None):
+            assert not audit(temp_root), "Ancres initiales des quatre portails incohérentes"
+            software = temp_root / PAGES["logiciels"]
+            original = software.read_text("utf-8")
+            assert 'href="#outils"' in original
+            software.write_text(original.replace(
+                'href="#outils"', 'href="#outils-renommes"', 1
+            ), "utf-8")
+            problems = audit(temp_root)
+            assert any("Ancre HTML absente" in item and "logiciels" in item
+                       for item in problems), "Audit global laisse passer une ancre cassée"
     issues = audit(root)
     assert not issues, "\n".join(issues)
     print("OK liens publics SINJIRA: exclusions Pages, 4 portails, ancres HTML, srcset et liens privés refusés")
