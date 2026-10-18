@@ -88,6 +88,13 @@ export function safeLibraryRoute(value){
     const url=new URL(value,location.origin);
     const pathname=value.split(/[?#]/,1)[0];
     if(url.origin!==location.origin||url.username||url.password||url.pathname!==pathname)return '';
+    // Un chemin de source technique n'est jamais une destination de lecture
+    // ou de jeu, même si GitHub Pages legacy le sert accidentellement en 200.
+    // Ne pas élargir ce filtre aux routes /compte et /projets légitimes.
+    if(/^\/(?:\.github|\.git|supabase|scripts|tests|docs|mobile-native|node_modules|_site)(?:\/|$)/i.test(pathname))return '';
+    if(/\/(?:codex|\.git)(?:\/|$)/i.test(pathname))return '';
+    if(/\/(?:netlify\.toml|_config\.yml|security\.md|upload_github\.md|readme\.md)$/i.test(pathname))return '';
+    if(/\.(?:py|sql|toml|ya?ml|md|tsx?|jsx?|sh|env|lock)$/i.test(pathname))return '';
     return value;
   }catch{return ''}
 }
