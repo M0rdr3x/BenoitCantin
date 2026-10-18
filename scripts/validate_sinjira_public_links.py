@@ -67,7 +67,7 @@ def verify_target(page: Path, ref: str, root: Path,
     # évite qu'un lien ambigu contourne la liste des ressources publiques.
     if ref != ref.strip() or any(ord(char) < 32 or ord(char) == 127 for char in ref):
         return "Espacement ou caractère de contrôle dans le lien"
-    if "\\\\" in ref:
+    if "\\" in ref:
         return "Séparateur de chemin ambigu"
     try:
         parts = urlsplit(ref)
@@ -82,7 +82,7 @@ def verify_target(page: Path, ref: str, root: Path,
     # Un nom DNS avec un point final, un port :443 ou des identifiants
     # désigne toujours l'hôte officiel, même si netloc != HOST. Ne jamais
     # traiter cette variante comme un site tiers hors de l'allowlist.
-    if "%" in parts.netloc or "\\\\" in parts.netloc:
+    if "%" in parts.netloc or "\\" in parts.netloc:
         return "Autorité URL ambiguë"
     if parts.username is not None or parts.password is not None:
         return "Identifiants intégrés dans l'URL interdits"
