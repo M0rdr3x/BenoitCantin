@@ -644,3 +644,38 @@ Ces protections sont une défense supplémentaire du navigateur, et
 ne confèrent jamais d'accès à un document ou à un playtest :
 les décisions d'accès sont toujours prises par Supabase/RLS et les
 fonctions Edge. La publication Pages `legacy` (#450) reste bloquante.
+
+### Demandes testeur et candidatures : Annuler, écriture unique et nouvelle tentative
+
+Les anciennes versions de la bibliothèque interprétaient un clic sur
+**Annuler** dans l'invite de message optionnel comme un message vide, puis
+envoyaient quand même une demande testeur ou une candidature au playtest.
+Elles ne verrouillaient le bouton qu'après la réponse réseau, permettant
+deux soumissions simultanées, et ne réactivaient pas toujours le bouton
+après une exception Supabase.
+
+Le nouveau contrat `submitLibraryRequest` partagé dans
+`assets/js/sinjira-supabase.js` impose :
+
+- **Annuler = aucune écriture et aucun changement de statut**;
+  un message vide explicitement confirmé reste permis.
+- **Verrouillage immédiat** du bouton pendant la requête : un double clic
+  ne peut pas créer de deuxième demande.
+- **Réactivation après erreur** réseau ou refus serveur, afin de
+  permettre une nouvelle tentative ; une soumission réussie reste
+  verrouillée et le libellé ou la carte indique l'état confirmé.
+- **Message limité à 1 500 caractères**, sans exposer les détails
+  techniques de l'échec du backend dans l'interface.
+
+La bibliothèque actuelle v24.4.61 et l'interface historique, y compris
+les candidatures aux playtests, utilisent le même composant. Les tests
+Node exécutent le véritable contrôle et les véritables gestionnaires de
+clic des trois parcours (annulation, message vide validé, double clic,
+réponse différée, rejet serveur/réseau et récupération). Le contrat
+Python empêche la suppression de ces gardes.
+
+Il s'agit d'une protection de l'expérience utilisateur contre les
+écritures répétées, **pas d'une garantie d'unicité des lignes côté
+base de données** : la RLS et les contraintes SQL restent
+responsables des autorisations et de l'intégrité persistante.
+La PR n'est pas publiée et le blocage GitHub Pages #450 demeure.
