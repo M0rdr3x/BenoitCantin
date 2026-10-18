@@ -532,3 +532,28 @@ externes, URL à double slash, traversée `%2e`, encodage de séparateurs
 et chemins malformés. Le contrat Python de bibliothèque impose aussi
 l'appel au validateur par les deux interfaces. Aucune base de données,
 droit d'utilisateur ou fichier de roman n'est modifié.
+
+### Refus des chemins internes techniques dans les liens de bibliothèque
+
+La même origine HTTPS **ne suffit pas** à rendre une destination
+publique : la source Pages actuellement en mode `legacy` expose encore
+des routes de développement, même sous `www.benoitcantin.com`. Les
+champs de destination provenant du registre Supabase ne doivent
+jamais orienter un lecteur vers un tel chemin.
+
+Le validateur commun `safeLibraryRoute` bloque donc aussi les
+espaces techniques racine `/.github/`, `/.git/`, `/supabase/`,
+`/scripts/`, `/tests/`, `/docs/`, `/mobile-native/`,
+`/node_modules/` et `/_site/`, les sous-arborescences
+`/codex/` et les noms / extensions de source technique
+(`netlify.toml`, `README.md`, `.py`, `.tsx`, `.sql`, etc.).
+Les routes publiques utiles comme `/projets/sinjira/romans/`,
+`/projets/sinjira/jeux/`, `/compte/projet.html`, la boussole
+électorale et le PDF **démo public** continuent d'être autorisées.
+
+Les tests Node couvrent explicitement les **14 chemins interdits du
+prévol Pages**, des variantes sensibles et le rendu des boutons
+« Lire », « Page du roman » et « Jouer ». Le contrat Python empêche
+la suppression de ces contrôles. Cette mesure de défense en
+profondeur **ne remplace pas** la correction réelle de GitHub Pages :
+l'issue de publication #450 reste bloquante.
