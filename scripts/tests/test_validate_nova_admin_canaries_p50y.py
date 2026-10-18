@@ -44,6 +44,8 @@ def observations(f):
         "head_ref":"test/p50y-"+row["id"]+"-non-fusion",
         "title":"[P50Y-CANARI:"+row["id"]+"] Essai non fusionne",
         "changed_paths":["projets/projet-nova/controles/canaris/"+row["id"]+".txt"],
+        "changed_statuses":["added"],
+        "changed_previous_paths":[None],
         "review_stats":{
             "submitted_substantive":0 if row["id"]=="sans_revue" else 1,
             "fresh_independent_approvals":1 if row["id"]=="check_non_satisfait" else 0,
@@ -165,6 +167,89 @@ class P50Y(unittest.TestCase):
         o["800"]["changed_paths"]=["projets/projet-nova/controles/canaris/"+str(i)+".txt" for i in range(4)]
         self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
                       m.analyze(f,o)["obstacles"])
+    def test_allowed_new_text_file_is_accepted_documentarily(self):
+        f=filled();o=observations(f)
+        r=m.analyze(f,o)
+        self.assertEqual(r["statut_dossier"],"DECLARATIONS_COMPLETEES_A_VALIDER_EXTERNEMENT")
+        self.assertEqual(r["decision"],"NO_GO_AUTOMATIQUE")
+    def test_rename_from_real_website_is_not_safe(self):
+        f=filled();o=observations(f)
+        o["800"]["changed_statuses"]=["renamed"]
+        o["800"]["changed_previous_paths"]=["projets/projet-nova/participer.html"]
+        self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_replaced_file_in_canary_directory_is_not_safe(self):
+        f=filled();o=observations(f)
+        o["800"]["changed_statuses"]=["modified"]
+        self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_deleted_file_in_canary_directory_is_not_safe(self):
+        f=filled();o=observations(f)
+        o["800"]["changed_statuses"]=["removed"]
+        self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_unexpected_previous_filename_even_on_added_is_blocked(self):
+        f=filled();o=observations(f)
+        o["800"]["changed_previous_paths"]=["projets/projet-nova/participer.html"]
+        self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_active_code_in_canary_path_is_rejected(self):
+        f=filled();o=observations(f)
+        o["800"]["changed_paths"]=["projets/projet-nova/controles/canaris/launch.py"]
+        self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_nested_path_not_allowed(self):
+        f=filled();o=observations(f)
+        o["800"]["changed_paths"]=["projets/projet-nova/controles/canaris/inner/demo.txt"]
+        self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_hidden_filename_not_allowed(self):
+        f=filled();o=observations(f)
+        o["800"]["changed_paths"]=["projets/projet-nova/controles/canaris/.secret.txt"]
+        self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_missing_file_status_is_not_assumed_added(self):
+        f=filled();o=observations(f)
+        del o["800"]["changed_statuses"]
+        self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_file_status_counts_must_match_paths(self):
+        f=filled();o=observations(f)
+        o["800"]["changed_statuses"]=[]
+        self.assertIn("CANARI_FICHIERS_HORS_REPERTOIRE:sans_revue",
+                      m.analyze(f,o)["obstacles"])
+    def test_evidence_for_another_pr_not_accepted(self):
+        f=filled()
+        f["cas"][0]["preuve_url"]=f"https://github.com/{m.REPO}/pull/999"
+        self.assertIn("PREUVE_NON_RATTACHEE_AU_CANARI:sans_revue",
+                      m.analyze(f)["obstacles"])
+    def test_unrelated_actions_run_not_accepted(self):
+        f=filled()
+        f["cas"][0]["preuve_url"]=f"https://github.com/{m.REPO}/actions/runs/99"
+        self.assertIn("PREUVE_NON_RATTACHEE_AU_CANARI:sans_revue",
+                      m.analyze(f)["obstacles"])
+    def test_canary_cannot_use_another_real_pr_as_evidence(self):
+        f=filled()
+        f["cas"][0]["preuve_url"]=f"https://github.com/{m.REPO}/pull/640"
+        self.assertEqual(m.analyze(f)["statut_dossier"],"RECETTE_REQUISE")
+    def test_file_status_metadata_from_github_is_preserved(self):
+        pr={
+            "title":"[P50Y-CANARI:sans_revue] Test","user":{"id":90},
+            "changed_files":1,"state":"open","draft":False,"merged":False,
+            "mergeable":True,"mergeable_state":"blocked",
+            "head":{"sha":"a"*40,"ref":"test/p50y-sans_revue-new",
+                    "repo":{"full_name":m.REPO}},
+            "base":{"ref":"main","repo":{"full_name":m.REPO}},
+        }
+        files=[{"filename":"projets/projet-nova/controles/canaris/a.txt",
+                "status":"renamed","previous_filename":"projets/projet-nova/participer.html"}]
+        check_runs={"total_count":3,"check_runs":[
+            {"name":name,"head_sha":"a"*40,"app":{"id":m.ACTIONS_APP_ID},
+             "status":"completed","conclusion":"success"} for name in m.REQUIRED_CHECKS]}
+        with patch.object(m,"github",side_effect=[pr,files,[],check_runs]):
+            r=m.actual_canary(801,"")
+        self.assertEqual(r["changed_statuses"],["renamed"])
+        self.assertEqual(r["changed_previous_paths"],["projets/projet-nova/participer.html"])
     def test_actual_canary_checks_file_count_and_scope(self):
         number=801
         github_pr={
@@ -176,7 +261,8 @@ class P50Y(unittest.TestCase):
                     "repo":{"full_name":m.REPO}},
             "base":{"ref":"main","repo":{"full_name":m.REPO}},
         }
-        files=[{"filename":"projets/projet-nova/controles/canaris/notice.txt"}]
+        files=[{"filename":"projets/projet-nova/controles/canaris/notice.txt",
+                "status":"added"}]
         with patch.object(m,"github",side_effect=[
             github_pr, files, [],
             {"total_count":3,"check_runs":[
