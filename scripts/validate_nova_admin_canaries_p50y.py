@@ -297,6 +297,44 @@ def attach_server_evidence(report,server):
     report["publication_autorisee"]=False
     return report
 
+def safe_canary_patch(file_info, scenario):
+    """Only permit an unambiguous, very small, harmless NEW text marker.
+
+    Never put diff contents in the JSON report. Reject truncated patches,
+    metadata gaps, binary changes, deletions and any extraneous text.
+    """
+    if (not isinstance(file_info,dict) or scenario not in CASES or
+        file_info.get("status")!="added" or
+        file_info.get("previous_filename") is not None or
+        not isinstance(file_info.get("filename"),str) or
+        not CANARY_FILE_RE.fullmatch(file_info["filename"])):
+        return False
+    patch=file_info.get("patch")
+    if not isinstance(patch,str) or len(patch)>170:
+        return False
+    lines=patch.splitlines()
+    if len(lines) not in (2,3):
+        return False
+    header=re.fullmatch(r"@@ -0,0 \+1(?:,([12]))? @@(?:[^\r\n]*)",lines[0])
+    if not header:
+        return False
+    count=int(header.group(1) or "1")
+    if count!=len(lines)-1:
+        return False
+    if lines[1]!="+P50Y-CANARI:"+scenario:
+        return False
+    if count==2 and not re.fullmatch(r"\+NONCE:[0-9a-f]{8}",lines[2]):
+        return False
+    if (type(file_info.get("additions")) is not int or
+        type(file_info.get("deletions")) is not int or
+        type(file_info.get("changes")) is not int or
+        file_info["additions"]!=count or
+        file_info["deletions"]!=0 or
+        file_info["changes"]!=count):
+        return False
+    return True
+
+
 def actual_canary(number: int, token: str):
     base = "/repos/" + REPO
     pr = github(base + "/pulls/" + str(number), token)
@@ -333,6 +371,11 @@ def actual_canary(number: int, token: str):
     if not isinstance(current,dict) or stable_fields(current)!=stable_fields(pr):
         raise ValueError("CANARI_MODIFIE_PENDANT_LE_RELEVE")
     target = pr.get("base") or {}
+    canary_tag=re.match(
+        r"^\[P50Y-CANARI:(sans_revue|approbation_perimee|check_non_satisfait)\]",
+        pr.get("title") if isinstance(pr.get("title"),str) else "")
+    canary_files_safe=bool(canary_tag and all(
+        safe_canary_patch(file_info,canary_tag.group(1)) for file_info in files))
     # True / False are not review decisions. A draft cannot demonstrate a
     # review or check gate because drafts are inherently not mergeable.
     result = {
@@ -345,6 +388,7 @@ def actual_canary(number: int, token: str):
         "changed_paths": [item.get("filename") for item in files],
         "changed_statuses": [item.get("status") for item in files],
         "changed_previous_paths": [item.get("previous_filename") for item in files],
+        "canary_files_safe": canary_files_safe,
         "review_stats": review_stats,
         "check_stats": check_stats,
         "open": pr.get("state") == "open",
@@ -446,6 +490,9 @@ def analyze(document, observations=None):
                               live["changed_previous_paths"]))):
                     stages[caseid] = "CHANGEMENT_CANARI_DANGEREUX"
                     problems.append("CANARI_FICHIERS_HORS_REPERTOIRE:" + caseid)
+                elif live.get("canary_files_safe") is not True:
+                    stages[caseid] = "CONTENU_CANARI_NON_ATTESTE"
+                    problems.append("CANARI_MARQUEUR_SURETE_NON_CONFIRME:" + caseid)
                 elif (not isinstance(live.get("review_stats"),dict) or
                       not isinstance(live.get("check_stats"),dict) or
                       type(live["review_stats"].get("submitted_substantive")) is not int or
