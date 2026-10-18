@@ -26,7 +26,7 @@ Trois tests de régression supplémentaires vérifient qu'une revue `DISMISSED` 
 
 Le candidat P51B contient :
 - validateur P50Y à jour : contrôle du protocole, identité et périmètre des canaris, revues GitHub et checks effectivement émis;
-- **69 tests unitaires** (25 P50Y + 12 P50Z + 15 P51A + 3 P51B + 14 P51C), sur l'intégration des trois couches;
+- **84 tests unitaires** (25 P50Y + 12 P50Z + 15 P51A + 3 P51B + 14 P51C + 15 P51D), sur l'intégration des trois couches;
 - le procès-verbal JSON volontairement vide et marqué `NO_GO`;
 - le protocole opératoire P50Y actualisé;
 - un workflow de validation P51B read-only avec tests comptés et contrôle `NO_GO_AUTOMATIQUE`. P51C ajoute une vérification stricte des fichiers **ajoutés** (statut `added`, extension `.txt`, chemin direct sous le dossier de canaris, aucun renommage ou ancien chemin), et exige que l'URL `preuve_url` désigne **la PR témoin correspondante**, pas une autre PR ni une exécution Actions arbitraire. Ces règles ne prouvent toujours pas la cause du blocage sans la recette de l'administrateur.
@@ -37,6 +37,21 @@ Les précédentes validations historiques restent consultables :
 - [P51A — 37/52 tests, 6 motifs rejetés sur fixtures](https://github.com/M0rdr3x/BenoitCantin/actions/runs/39007363372).
 
 Une preuve indépendante d'une version antérieure n'est **pas** une approbation de P51B. La CI propre à P51B doit réussir sur **son propre HEAD**, puis un réviseur habilité doit examiner le diff complet.
+
+## 3 bis. Renforcement P51D : la protection serveur doit aussi être observable
+
+L'ancien mode `--live` vérifiait les trois PR témoins déclarées, mais **ne relevait pas la protection effectivement installée sur `main`**. Un procès-verbal apparemment complet aurait donc pu être présenté avec une branche non protégée ou un état devenu obsolète.
+
+Le correctif P51D ajoute `--observer-serveur` et impose aussi l'observation des API GitHub lors de `--live`. Les requêtes sont **exclusivement en lecture seule** :
+
+- `GET /branches/main` pour l'indicateur `protected` et le SHA réel, qui doit correspondre à la référence du dossier;
+- `GET /rulesets?includes_parents=true` et détails des règles **actives** pour confirmer les obligations de PR, approbations et checks, sans faire passer un modèle désactivé pour une configuration réelle;
+- `GET /rules/branches/main` pour vérifier que les quatre familles de règles attendues s'appliquent effectivement;
+- liste des `bypass_actors` : **information absente ou non lisible = obstacle**, et toute exception explicite doit être examinée.
+
+L'outil ne déclare les *préconditions techniques visibles* que si ces éléments sont cohérents et si les trois contrôles universels sont réellement exigés de GitHub Actions (app `15368`). Cela ne prouve toujours **pas** que GitHub refuse la fusion pour la bonne cause : l'administrateur doit inspecter les trois essais réels de P50Y et ses permissions effectives.
+
+Le workflow consolidé exécute désormais **84 tests** et joint un relevé serveur non nominatif au procès-verbal des trois essais encore non exécutés. Une erreur 403, une liste tronquée, une règle inactive ou un changement de SHA mène à un état bloquant. **`NO_GO_AUTOMATIQUE`, aucune permission d'écriture, aucune publication.**
 
 ## 4. Critères de réception et prérequis non automatisables
 
