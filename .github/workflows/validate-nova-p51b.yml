@@ -58,11 +58,13 @@ jobs:
           print("P51B: les 3 essais administratifs restent NON EXECUTES, statut NO_GO")
           PY
       - name: P51H - la porte technique STRICTE doit refuser la recette non effectuee
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set +e
           python scripts/validate_nova_admin_canaries_p50y.py \
             --dossier projets/projet-nova/controles/P50Y_PROCES_VERBAL_RECETTE_A_COMPLETER.json \
-            --exiger-preuves-techniques --rapport p51h_porte_refus.json
+            --live --exiger-preuves-techniques --rapport p51h_porte_refus.json
           statut=$?
           set -e
           if [ "$statut" -ne 3 ]; then
@@ -75,6 +77,8 @@ jobs:
           r=json.loads(Path("p51h_porte_refus.json").read_text(encoding="utf-8"))
           assert r["decision"]=="NO_GO_AUTOMATIQUE"
           assert r["statut_dossier"]=="RECETTE_REQUISE"
+          assert r["etat_serveur_github"] in (
+              "BLOQUANT","NON_ATTESTE","PRECONDITIONS_TECHNIQUES_VISIBLES")
           assert not r["fusion_autorisee"] and not r["publication_autorisee"]
           print("P51H : porte stricte BLOQUEE (code 3), rapport conservé, aucun GO")
           PY
