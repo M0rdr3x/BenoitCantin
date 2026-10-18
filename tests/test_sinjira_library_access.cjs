@@ -227,3 +227,195 @@ test('legacy: API droits indisponible et chemins externes ne donnent aucun accè
     assert.equal(ctx.api.internalProjectPath(bad),'',bad);
   }
 });
+
+// Valider les vraies fonctions de fenêtre exportées par le module Supabase
+// sans importer les dépendances réseau, ni ouvrir de compte de production.
+const sharedSource=fs.readFileSync(path.join(__dirname,'../assets/js/sinjira-supabase.js'),'utf8');
+const sharedStart='// BEGIN SINJIRA_DOCUMENT_WINDOW';
+const sharedEnd='// END SINJIRA_DOCUMENT_WINDOW';
+assert.equal(sharedSource.split(sharedStart).length,2,'Contrat de fenêtre unique requis');
+assert.equal(sharedSource.split(sharedEnd).length,2,'Fin de contrat unique requise');
+const sharedFunctions=sharedSource.split(sharedStart)[1].split(sharedEnd)[0]
+  .replaceAll('export function ','function ');
+
+function secureTabFixture(blocked=false){
+  const visited=[],current=[],calls=[],tabs=[];
+  const fakeLocation={origin:'https://www.benoitcantin.com',
+    assign(value){current.push(value)}};
+  const fakeWindow={open(url,target){
+    calls.push([url,target]);
+    if(blocked)return null;
+    const tab={opener:{},closed:false,
+      document:{title:'',body:{textContent:''}},
+      location:{replace(value){visited.push(value)}},
+      close(){this.closed=true}
+    };
+    tabs.push(tab);
+    return tab;
+  }};
+  const ctx={window:fakeWindow,location:fakeLocation,URL};
+  vm.runInNewContext(sharedFunctions+
+    '\nglobalThis.documentsWindowAPI={prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow};',
+    ctx,{filename:'sinjira-supabase.js/document-window'});
+  return {api:ctx.documentsWindowAPI,visited,current,calls,tabs};
+}
+
+test('document: onglet réservé immédiatement, sans accès opener, puis lien HTTPS',()=>{
+  const f=secureTabFixture();
+  const tab=f.api.prepareDocumentWindow();
+  assert.equal(f.calls.length,1);
+  assert.equal(f.calls[0][0],'about:blank');
+  assert.equal(f.calls[0][1],'_blank');
+  assert.equal(tab.opener,null,'Le PDF ne doit pas piloter la bibliothèque');
+  assert.match(tab.document.body.textContent,/Vérification des droits/);
+  assert.equal(f.api.navigateDocumentWindow(tab,'https://private.example/signed?token=valid'),true);
+  assert.deepEqual(f.visited,['https://private.example/signed?token=valid']);
+  assert.deepEqual(f.current,[]);
+  assert.equal(tab.closed,false);
+});
+
+test('document: pop-up bloquée = même onglet seulement après URL autorisée',()=>{
+  const f=secureTabFixture(true);
+  const tab=f.api.prepareDocumentWindow();
+  assert.equal(tab,null);
+  assert.equal(f.api.navigateDocumentWindow(tab,'/projets/sinjira/documents/demo.pdf'),true);
+  assert.deepEqual(f.current,['/projets/sinjira/documents/demo.pdf']);
+  assert.equal(f.calls.length,1);
+});
+
+test('document: destinations dangereuses interdites même si Edge répond ok',()=>{
+  const forbidden=[
+    'javascript:alert(1)','data:text/html,test','http://evil.example/file.pdf',
+    '//evil.example/file.pdf','/\\evil.example/private.pdf',
+    '/%2f%2fevil.example/private.pdf','/%5cevil.example/file.pdf',
+    'https://user:pass@private.example/file.pdf','https://example.org/file.pdf ',
+    ' https://example.org/file.pdf','https://example.org/\u0000bad'
+  ];
+  for(const url of forbidden){
+    const f=secureTabFixture();
+    const tab=f.api.prepareDocumentWindow();
+    assert.equal(f.api.navigateDocumentWindow(tab,url),false,JSON.stringify(url));
+    assert.equal(tab.closed,true,'Ne jamais garder la fenêtre sans droit');
+    assert.deepEqual(f.current,[]);
+    assert.deepEqual(f.visited,[]);
+  }
+});
+
+test('document: fermeture d’onglet refusé et gestion fermeture idempotente',()=>{
+  const f=secureTabFixture();
+  const tab=f.api.prepareDocumentWindow();
+  f.api.closeDocumentWindow(tab);
+  f.api.closeDocumentWindow(tab);
+  assert.equal(tab.closed,true);
+  assert.deepEqual(f.visited,[]);
+});
+
+function deferredResult(){
+  let resolve, reject;
+  const promise=new Promise((yes,no)=>{resolve=yes;reject=no});
+  return {promise,resolve,reject};
+}
+function securedLibraryFlow(which,blocked=false){
+  const fixtures=secureTabFixture(blocked);
+  const pending=deferredResult();
+  const statusEvents=[];
+  const env={
+    document:{body:{dataset:{libraryPage:'tests'}},
+      querySelector:()=>({}),querySelectorAll:()=>[]},
+    getSupabase:()=>({functions:{invoke:(name,body)=>{
+      statusEvents.push(['invoke',name,body]);
+      return pending.promise;
+    }}}),
+    prepareDocumentWindow:()=>{
+      statusEvents.push(['prepare']);
+      return fixtures.api.prepareDocumentWindow();
+    },
+    closeDocumentWindow:fixtures.api.closeDocumentWindow,
+    navigateDocumentWindow:fixtures.api.navigateDocumentWindow,
+    setStatus:(_node,message,type)=>statusEvents.push(['status',message,type]),
+    Date,URL,console,
+  };
+  if(which==='novel'){
+    const trimmed=original.replace(/^import[^\n]*\n/,'')
+      .replace(/\ninit\(\)\.catch\([\s\S]*$/,'');
+    vm.runInNewContext(trimmed+'\nglobalThis.authorizedOpen=openFullNovel;',env);
+  }else{
+    vm.runInNewContext(legacyCode+'\nglobalThis.authorizedOpen=openDoc;',env);
+  }
+  return {call:env.authorizedOpen,pending,events:statusEvents,fixtures};
+}
+
+test('Livre I: réservation synchronique avant requête, puis lecture après contrôle Edge',async()=>{
+  const ctx=securedLibraryFlow('novel');
+  const button={disabled:false};
+  const operation=ctx.call(button);
+  assert.equal(button.disabled,true);
+  assert.equal(ctx.fixtures.calls.length,1);
+  assert.equal(ctx.events[0][0],'prepare','Pré-ouverture AVANT toute RPC asynchrone');
+  assert.equal(ctx.events[2][1],'get-novel-file-url');
+  assert.deepEqual(ctx.fixtures.visited,[]);
+  ctx.pending.resolve({data:{ok:true,url:'https://private.example/novel.pdf'},error:null});
+  await operation;
+  assert.equal(button.disabled,false);
+  assert.deepEqual(ctx.fixtures.visited,['https://private.example/novel.pdf']);
+  assert.match(ctx.events.at(-1)[1],/10 minutes/);
+});
+
+test('Livre I: sans droit / fichier non prêt, fermer sans divulguer de lien',async()=>{
+  for(const response of [
+    {data:{ok:false,code:'FILE_NOT_READY',error:'En préparation'},error:null},
+    {data:null,error:{message:'Non autorisé'}}
+  ]){
+    const ctx=securedLibraryFlow('novel');
+    const button={disabled:false};
+    const task=ctx.call(button);
+    ctx.pending.resolve(response);
+    await task;
+    assert.equal(button.disabled,false);
+    assert.equal(ctx.fixtures.tabs[0].closed,true);
+    assert.deepEqual(ctx.fixtures.visited,[]);
+    assert.deepEqual(ctx.fixtures.current,[]);
+    assert.equal(ctx.events.at(-1)[0],'status');
+  }
+});
+
+test('Livre I: fenêtre bloquée => lien signé navigue dans le même onglet',async()=>{
+  const ctx=securedLibraryFlow('novel',true);
+  const task=ctx.call({disabled:false});
+  ctx.pending.resolve({data:{ok:true,url:'https://private.example/novel.pdf'},error:null});
+  await task;
+  assert.deepEqual(ctx.fixtures.current,['https://private.example/novel.pdf']);
+});
+
+test('Document de projet: clic ouvre onglet avant réponse puis refuse ou navigue',async()=>{
+  const denied=securedLibraryFlow('document');
+  const button={disabled:false};
+  const task=denied.call('00000000-0000-4000-8000-000000000001',button);
+  assert.equal(denied.fixtures.calls.length,1);
+  assert.equal(button.disabled,true);
+  assert.equal(denied.events[0][0],'prepare');
+  denied.pending.resolve({data:{ok:false,error:'Accès refusé'},error:null});
+  await task;
+  assert.equal(denied.fixtures.tabs[0].closed,true);
+  assert.equal(button.disabled,false);
+  assert.deepEqual(denied.fixtures.visited,[]);
+
+  const allowed=securedLibraryFlow('document');
+  const next=allowed.call('00000000-0000-4000-8000-000000000002',{disabled:false});
+  allowed.pending.resolve({data:{ok:true,url:'https://private.example/document.pdf',protected:true},error:null});
+  await next;
+  assert.deepEqual(allowed.fixtures.visited,['https://private.example/document.pdf']);
+});
+
+test('Échec réseau: ne laisse aucune fenêtre blanche et réactive le bouton',async()=>{
+  for(const which of ['novel','document']){
+    const ctx=securedLibraryFlow(which);
+    const button={disabled:false};
+    const promise=which==='novel'?ctx.call(button):ctx.call('valid-id',button);
+    ctx.pending.reject(new Error('Connection lost'));
+    await promise;
+    assert.equal(button.disabled,false);
+    assert.equal(ctx.fixtures.tabs[0].closed,true);
+    assert.deepEqual(ctx.fixtures.visited,[]);
+  }
+});
