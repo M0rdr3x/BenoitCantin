@@ -1,14 +1,16 @@
-import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow,safeLibraryRoute} from './sinjira-supabase.js';
+import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow,safeLibraryRoute,safeLibraryCover} from './sinjira-supabase.js';
 
 const status=document.querySelector('[data-library-status]');
 const rows=value=>Array.isArray(value)?value:[];
 const BOOK_ONE_SLUG='sinjira-livre-01-la-cendre-du-jugement';
 
 function cover(project){
-  if(project.cover_url)return project.cover_url;
-  if(project.slug==='fracture-du-reseau-mere')return '/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp';
-  if(project.slug==='reseau-mere-resistance')return '/assets/media/sinjira-reseau-mere-resistance-officiel.webp';
-  return '/assets/media/sinjira-emblem.webp';
+  const fallback=project.slug==='fracture-du-reseau-mere'
+    ?'/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp'
+    :project.slug==='reseau-mere-resistance'
+      ?'/assets/media/sinjira-reseau-mere-resistance-officiel.webp'
+      :'/assets/media/sinjira-emblem.webp';
+  return safeLibraryCover(project.cover_url,fallback);
 }
 
 function setCount(selector,value){
