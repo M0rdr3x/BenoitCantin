@@ -26,7 +26,7 @@ Trois tests de régression supplémentaires vérifient qu'une revue `DISMISSED` 
 
 Le candidat P51B contient :
 - validateur P50Y à jour : contrôle du protocole, identité et périmètre des canaris, revues GitHub et checks effectivement émis;
-- **99 tests unitaires** (25 P50Y + 12 P50Z + 15 P51A + 3 P51B + 14 P51C + 15 P51D + 15 P51E), sur l'intégration des trois couches;
+- **113 tests unitaires** (25 P50Y + 12 P50Z + 15 P51A + 3 P51B + 14 P51C + 15 P51D + 15 P51E + 14 P51F), sur l'intégration des trois couches;
 - le procès-verbal JSON volontairement vide et marqué `NO_GO`;
 - le protocole opératoire P50Y actualisé;
 - un workflow de validation P51B read-only avec tests comptés et contrôle `NO_GO_AUTOMATIQUE`. P51C ajoute une vérification stricte des fichiers **ajoutés** (statut `added`, extension `.txt`, chemin direct sous le dossier de canaris, aucun renommage ou ancien chemin), et exige que l'URL `preuve_url` désigne **la PR témoin correspondante**, pas une autre PR ni une exécution Actions arbitraire. Ces règles ne prouvent toujours pas la cause du blocage sans la recette de l'administrateur.
@@ -64,6 +64,12 @@ Le mode `--live` vérifie maintenant, avant de conclure, que la PR témoin n'a p
 Les **15 tests supplémentaires** portent la suite à **99**. L'état `PRECONDITIONS_TECHNIQUES_VISIBLES` reste uniquement un constat de configuration partielle : il ne peut jamais certifier une véritable recette, l'indépendance du responsable, une fusion ou une publication.
 
 Référence API : [GitHub — règles effectives d'une branche](https://docs.github.com/en/rest/repos/rules#get-rules-for-a-branch). **Aucune action administrative n'est exécutée.**
+
+## 3 quater. P51F — diff GitHub du marqueur d'essai vérifié
+
+Le validateur P51E contrôlait uniquement les noms, statuts et chemins des fichiers ajoutés, laissant la possibilité de déposer du contenu arbitraire dans un `.txt` prétendument inoffensif. P51F impose désormais un **patch textuel complet et minimal**, contenant seulement `P50Y-CANARI:<scénario>`, ou cette ligne suivie de `NONCE:<8 caractères hexadécimaux>`. Il vérifie `additions`, `deletions`, `changes`, les lignes du diff, le dossier autorisé et l'absence de renommage. Un patch binaire, tronqué, très long ou comportant du contenu additionnel reste **bloquant**.
+
+Le rapport produit uniquement un booléen `canary_files_safe` ; le contenu du diff n'est **pas conservé dans les artefacts**. Cette mesure limite les risques de dépôt d'informations personnelles ou de scripts dans les PR témoins futures, sans effectuer les trois essais administratifs ni changer leur décision `NO_GO`. **14 tests ajoutés, suite totale : 113.**
 
 ## 4. Critères de réception et prérequis non automatisables
 
