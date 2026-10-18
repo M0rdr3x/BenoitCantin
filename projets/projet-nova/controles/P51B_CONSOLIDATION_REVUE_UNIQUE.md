@@ -26,7 +26,7 @@ Trois tests de régression supplémentaires vérifient qu'une revue `DISMISSED` 
 
 Le candidat P51B contient :
 - validateur P50Y à jour : contrôle du protocole, identité et périmètre des canaris, revues GitHub et checks effectivement émis;
-- **113 tests unitaires** (25 P50Y + 12 P50Z + 15 P51A + 3 P51B + 14 P51C + 15 P51D + 15 P51E + 14 P51F), sur l'intégration des trois couches;
+- **125 tests unitaires** (25 P50Y + 12 P50Z + 15 P51A + 3 P51B + 14 P51C + 15 P51D + 15 P51E + 14 P51F + 12 P51H), sur l'intégration des trois couches;
 - le procès-verbal JSON volontairement vide et marqué `NO_GO`;
 - le protocole opératoire P50Y actualisé;
 - un workflow de validation P51B read-only avec tests comptés et contrôle `NO_GO_AUTOMATIQUE`. P51C ajoute une vérification stricte des fichiers **ajoutés** (statut `added`, extension `.txt`, chemin direct sous le dossier de canaris, aucun renommage ou ancien chemin), et exige que l'URL `preuve_url` désigne **la PR témoin correspondante**, pas une autre PR ni une exécution Actions arbitraire. Ces règles ne prouvent toujours pas la cause du blocage sans la recette de l'administrateur.
@@ -70,6 +70,12 @@ Référence API : [GitHub — règles effectives d'une branche](https://docs.git
 Le validateur P51E contrôlait uniquement les noms, statuts et chemins des fichiers ajoutés, laissant la possibilité de déposer du contenu arbitraire dans un `.txt` prétendument inoffensif. P51F impose désormais un **patch textuel complet et minimal**, contenant seulement `P50Y-CANARI:<scénario>`, ou cette ligne suivie de `NONCE:<8 caractères hexadécimaux>`. Il vérifie `additions`, `deletions`, `changes`, les lignes du diff, le dossier autorisé et l'absence de renommage. Un patch binaire, tronqué, très long ou comportant du contenu additionnel reste **bloquant**.
 
 Le rapport produit uniquement un booléen `canary_files_safe` ; le contenu du diff n'est **pas conservé dans les artefacts**. Cette mesure limite les risques de dépôt d'informations personnelles ou de scripts dans les PR témoins futures, sans effectuer les trois essais administratifs ni changer leur décision `NO_GO`. **14 tests ajoutés, suite totale : 113.**
+
+## 3 quinquies. P51H — une porte stricte distincte du rapport CI
+
+L'analyse du validateur consolidé a révélé un risque opérationnel : il renvoyait un **code de sortie 0 pour un dossier incomplet**, tant que ce dossier était lisible. Un outil externe aurait pu prendre ce code pour une autorisation. P51H ajoute le paramètre `--exiger-preuves-techniques` qui exige de **vraies observations `--live`**, la concordance des trois scénarios et des préconditions serveur, sans aucun obstacle. Les codes sont désormais explicites : **0 en mode rapport signifie « rapport généré »; 2 signifie « dossier illisible »; 3 en mode strict signifie « preuve incomplète ».** Un éventuel 0 strict signifie seulement **complétude technique**, jamais un GO juridique, administratif, de fusion ou de publication.
+
+La CI vérifie, à l'aide d'un procès-verbal encore vide, que la porte stricte **échoue comme attendu avec le code 3**, tout en conservant un rapport d'audit à décision `NO_GO_AUTOMATIQUE`. **12 tests supplémentaires, total 125.**
 
 ## 4. Critères de réception et prérequis non automatisables
 
