@@ -615,3 +615,32 @@ revenir à l'utilisation directe de `cover_url`. Cette défense
 protège le chargement d'images de l'interface, **sans modifier**
 la source des données, les permissions Supabase ni le statut de
 publication GitHub Pages. L'incident `legacy` #450 reste bloquant.
+
+### Identifiants des comptes : attributs HTML échappés dans les deux bibliothèques
+
+Le registre des projets, documents et playtests est la source des
+identifiants réinjectés dans l'interface membre. Les titres,
+descriptions et adresses d'images étaient échappés, mais certains
+identifiants étaient interpolés directement dans `data-*` ou `id`
+lors de la génération par `innerHTML`.
+
+La bibliothèque v24.4.61 protège maintenant l'attribut
+`data-v2461-request-tester`. La bibliothèque historique protège
+`data-request-tester`, les **deux** occurrences de
+`data-open-document`, `data-apply-playtest` et `id` des cartes de
+playtests. Tous utilisent `escapeHtml` avant l'insertion dans un
+attribut entouré de guillemets. Les valeurs de type UUID existantes
+ne changent pas, pas plus que les requêtes côté serveur.
+
+Deux tests Node exercent le **rendu HTML réel** avec des identifiants
+malformés contenant guillemets, `onclick`, `<svg>` et `onload`,
+sur les deux interfaces. Ils exigent que les guillemets soient
+encodés et qu'aucun attribut/élément injectable ne soit ajouté.
+Le contrat Python `validate_sinjira_library_status.py` interdit la
+suppression des appels `escapeHtml` et protège explicitement les
+**deux** boutons de documents.
+
+Ces protections sont une défense supplémentaire du navigateur, et
+ne confèrent jamais d'accès à un document ou à un playtest :
+les décisions d'accès sont toujours prises par Supabase/RLS et les
+fonctions Edge. La publication Pages `legacy` (#450) reste bloquante.
