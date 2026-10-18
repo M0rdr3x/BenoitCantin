@@ -18,6 +18,145 @@ UPLOAD_SHA = "98ef48e41587a300b82de4cf298aa98b57b2faae"
 # et archive tar conditionnelle. Ancien SHA de 2024 IGNORAIT ce paramètre.
 LEGACY_UPLOAD_SHA = "56afc609e74202658d3ffba0e8f6dda462b719fa"
 DEPLOY_SHA = "368f82528645a54fb793d4d04e342629a3f51346"
+JEKYLL_AUDIT_PATH = ROOT / ".github/workflows/audit-pages-jekyll.yml"
+
+
+
+def validate_jekyll_ci(source: str) -> list[str]:
+    """Prouver que l'audit Jekyll est réellement lancé sur TOUTES les PR.
+
+    Les exclusions de source Jekyll sont sans effet lorsque le job n'est pas
+    déclenché. Une liste paths omet facilement un nouveau HTML, une image ou
+    une ressource critique; un required check peut aussi manquer entièrement.
+    """
+    errors: list[str] = []
+    active = "\n".join(
+        line for line in source.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ) + "\n"
+    head, sep, jobs = active.partition("\njobs:\n")
+    if not sep or active.count("\njobs:\n") != 1:
+        return ["Structure YAML de jobs invalide"]
+    for token, description in (
+        ("on:\n  pull_request:\n    branches: [main]\n",
+         "La preuve Jekyll doit couvrir toutes les PR vers main"),
+        ("    types: [opened, synchronize, reopened, ready_for_review]\n",
+         "Les mises à jour et passages ready_for_review doivent relancer Jekyll"),
+        ("  workflow_dispatch:\n",
+         "L'audit manuel Jekyll doit rester disponible"),
+        ("permissions:\n  contents: read\n",
+         "L'audit doit avoir uniquement l'accès en lecture"),
+    ):
+        if head.count(token) != 1:
+            errors.append(description)
+    if re.search(r"(?m)^\s+paths(?:-ignore)?:", head):
+        errors.append("Interdiction des filtres paths/paths-ignore sur l'audit de sécurité")
+    if re.search(r"(?m)^  (?:push|schedule|workflow_run|repository_dispatch):", head):
+        errors.append("Déclencheurs inattendus pour la preuve Jekyll sans publication")
+    if re.search(r"(?m)^  (?:contents|pages|id-token|actions): write", head):
+        errors.append("Permissions d'écriture interdites dans l'audit")
+    job_names = re.findall(r"(?m)^  ([a-z][a-z0-9-]*):\s*$", jobs)
+    if job_names != ["jekyll-proof"]:
+        errors.append("Un seul job jekyll-proof est autorisé, sans publication")
+        return errors
+    if "    runs-on: ubuntu-24.04\n" not in jobs:
+        errors.append("Le runner Jekyll doit rester figé")
+    if "    timeout-minutes: 20\n" not in jobs:
+        errors.append("Budget Jekyll de 20 minutes absent")
+    if re.search(r"(?m)^    (?:if|permissions|continue-on-error|strategy):", jobs):
+        errors.append("Job Jekyll conditionnel, avec permissions supplémentaires ou erreurs ignorées")
+    if re.search(r"(?m)^        (?:if|continue-on-error):", jobs):
+        errors.append("Une étape du contrôle Jekyll pourrait être sautée")
+    for token, description in (
+        ("uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697",
+         "Compilation Jekyll réelle avec action épinglée"),
+        ("destination: ./_site", "Destination _site isolée"),
+        ("python3 scripts/audit_pages_jekyll.py --self-test",
+         "Autotests des exclusions de source"),
+        ("python3 scripts/audit_pages_jekyll.py --source . --built _site",
+         "Audit réel de l'artefact Jekyll"),
+        ("python3 scripts/audit_pages_secrets.py --built _site",
+         "Analyse des secrets dans le build"),
+        ("python3 scripts/validate_pages_workflows.py --self-test",
+         "Autotests de la chaîne Pages"),
+        ("python3 scripts/validate_pages_workflows.py",
+         "Garde de publication et d'audit Jekyll"),
+    ):
+        if token not in jobs:
+            errors.append("Étape Jekyll absente : " + description)
+    if jobs.count("uses: actions/jekyll-build-pages@") != 1:
+        errors.append("La compilation Jekyll doit être exécutée une seule fois")
+    if jobs.count("persist-credentials: false") != 1:
+        errors.append("Checkout Jekyll sans persistance des identifiants requis")
+    if re.search(r"(?m)^        uses: actions/checkout@(?!d23441a48e516b6c34aea4fa41551a30e30af803)", jobs):
+        errors.append("Checkout Jekyll non épinglé au SHA contrôlé")
+    for forbidden in ("upload-pages-artifact@", "deploy-pages@", "pages: write",
+                      "id-token: write", "continue-on-error: true", "|| true"):
+        if forbidden in active:
+            errors.append("Publication ou contournement interdit dans l'audit : " + forbidden)
+    return errors
+
+
+def self_test_jekyll_ci() -> None:
+    source = JEKYLL_AUDIT_PATH.read_text("utf-8")
+    assert not validate_jekyll_ci(source), validate_jekyll_ci(source)
+    mutations = {
+        "paths seulement CSS": (
+            "    types: [opened, synchronize, reopened, ready_for_review]\n",
+            "    types: [opened, synchronize, reopened, ready_for_review]\n"
+            "    paths:\n      - 'assets/css/**'\n",
+        ),
+        "paths-ignore excluant les images": (
+            "    types: [opened, synchronize, reopened, ready_for_review]\n",
+            "    types: [opened, synchronize, reopened, ready_for_review]\n"
+            "    paths-ignore:\n      - 'assets/media/**'\n",
+        ),
+        "PR supprimée": ("  pull_request:\n", "  pull_request_disabled:\n"),
+        "branche de revue détournée": ("    branches: [main]\n",
+                                     "    branches: [not-main]\n"),
+        "synchronize désactivé": (
+            "opened, synchronize, reopened, ready_for_review",
+            "opened, reopened, ready_for_review",
+        ),
+        "run manuel retiré": ("  workflow_dispatch:\n", ""),
+        "job Jekyll désactivé": ("  jekyll-proof:\n",
+                                "  jekyll-proof:\n    if: false\n"),
+        "erreurs ignorées": ("    timeout-minutes: 20\n",
+                             "    timeout-minutes: 20\n    continue-on-error: true\n"),
+        "publication ajoutée": ("  jekyll-proof:\n",
+                               "  deploy:\n    runs-on: ubuntu-24.04\n  jekyll-proof:\n"),
+        "artefact root téléversé": (
+            "          destination: ./_site\n",
+            "          destination: ./_site\n"
+            "      - name: Envoyer le dépôt entier\n"
+            "        uses: actions/upload-pages-artifact@v3\n",
+        ),
+        "permissions accrues": ("  contents: read\n",
+                                 "  contents: write\n"),
+        "audit des secrets retiré": (
+            "python3 scripts/audit_pages_secrets.py --built _site",
+            "echo SECRETS_NON_TESTES",
+        ),
+        "audit de source retiré": (
+            "python3 scripts/audit_pages_jekyll.py --source . --built _site",
+            "echo FUITES_NON_TESTEES",
+        ),
+        "compilation Jekyll retirée": (
+            "actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697",
+            "actions/jekyll-build-pages@v1",
+        ),
+        "contrat Pages retiré": (
+            "          python3 scripts/validate_pages_workflows.py\n",
+            "          echo GARDE_PAGES_IGNOREE\n",
+        ),
+    }
+    for label, (old, replacement) in mutations.items():
+        if old not in source:
+            raise AssertionError("Mutation Jekyll inapplicable : " + label)
+        candidate = source.replace(old, replacement, 1)
+        if not validate_jekyll_ci(candidate):
+            raise AssertionError("Régression Jekyll non détectée : " + label)
+    print(f"OK audit Jekyll universel : {len(mutations)} mutations de déclenchement/publication refusées")
 
 
 def job_steps(workflow: str, name: str) -> list[tuple[str, str]]:
@@ -306,6 +445,10 @@ def validate(workflow: str) -> list[str]:
     need("pages: write" in workflow and "id-token: write" in workflow,
          "Identité Pages requise pour le seul job de publication")
     errors.extend(executable_guards(workflow))
+    errors.extend(
+        "Audit Jekyll obligatoire : " + issue
+        for issue in validate_jekyll_ci(JEKYLL_AUDIT_PATH.read_text("utf-8"))
+    )
     return errors
 
 
@@ -353,6 +496,7 @@ def self_test(workflow: str) -> None:
     if errors:
         raise SystemExit("Workflow sain rejeté: " + "; ".join(errors))
     smoke_summary_bash(workflow)
+    self_test_jekyll_ci()
     mutations = {
         "Publication root": workflow.replace("path: _site", "path: .", 1),
         "Job deploy dupliqué": workflow + "\n  deploy:\n    runs-on: ubuntu-latest\n",
