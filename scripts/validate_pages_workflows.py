@@ -84,6 +84,14 @@ def validate_jekyll_ci(source: str) -> list[str]:
     ):
         if token not in jobs:
             errors.append("Étape Jekyll absente : " + description)
+    for command, times in (
+        ("python3 scripts/audit_pages_jekyll.py --source . --built _site", 2),
+        ("python3 scripts/audit_pages_secrets.py --built _site", 2),
+    ):
+        if jobs.count(command) != times:
+            errors.append(
+                "Audits Jekyll de source et secrets requis avant et après le reçu : " + command
+            )
     if jobs.count("uses: actions/jekyll-build-pages@") != 1:
         errors.append("La compilation Jekyll doit être exécutée une seule fois")
     if jobs.count("persist-credentials: false") != 1:
