@@ -1,4 +1,4 @@
-import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow} from './sinjira-supabase.js';
+import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow,safeLibraryRoute} from './sinjira-supabase.js';
 
 const status=document.querySelector('[data-library-status]');
 const rows=value=>Array.isArray(value)?value:[];
@@ -39,9 +39,7 @@ function canOpenProject(project,activeAccess,isOwner,isAdmin){
 }
 
 function safeProjectPlayPath(value){
-  const path=String(value||'').trim();
-  return path.startsWith('/')&&!path.startsWith('//')&&!path.includes('\\')
-    && !/[\u0000-\u001f\u007f]/.test(path) ? path : '';
+  return safeLibraryRoute(value);
 }
 
 function accessLabel(project,access,isOwner,isAdmin){
@@ -87,13 +85,15 @@ function renderReads(libraryRows){
     const novel=row.sinjira_novels;
     if(!novel)return '';
     const progress=Math.max(0,Math.min(100,Number(row.progress_percent||0)));
+    const demoPath=safeLibraryRoute(novel.demo_path);
+    const publicPath=safeLibraryRoute(novel.public_path)||'/projets/sinjira/romans/';
     return `<article class="reader-book-card">
       <span class="eyebrow">Lecture suivie</span>
       <h2>${escapeHtml(novel.title||'Roman SINJIRA™')}</h2>
       <p>${escapeHtml(novel.description||'')}</p>
       <div class="v19-progress-track"><span style="width:${progress}%"></span></div>
       <p>Progression : ${progress}%${row.last_page?` · page ${Number(row.last_page)}`:''}</p>
-      <div class="hero-actions">${novel.demo_path?`<a class="btn btn-primary" href="${escapeHtml(novel.demo_path)}">${progress>0?'Continuer la lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(novel.public_path||'/projets/sinjira/romans/')}">Page du roman</a></div>
+      <div class="hero-actions">${demoPath?`<a class="btn btn-primary" href="${escapeHtml(demoPath)}">${progress>0?'Continuer la lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(publicPath)}">Page du roman</a></div>
     </article>`;
   }).join('')||'<div class="notice"><strong>Aucun roman suivi.</strong><p>Les romans ajoutés à votre bibliothèque apparaîtront ici avec leur progression.</p></div>';
 }
