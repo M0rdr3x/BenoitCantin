@@ -680,6 +680,107 @@ test('soumission compte: message vide volontaire accepté et longueur plafonnée
   assert.equal(messages[1].length,1500);
 });
 
+test('base SQL: unicité testeur en attente et participation par membre préexistantes',()=>{
+  const schema=fs.readFileSync(path.join(__dirname,
+    '../supabase/migrations/20260809090000_sinjira_universal_platform.sql'),'utf8');
+  const hardened=fs.readFileSync(path.join(__dirname,
+    '../supabase/migrations/20260818042852_sinjira_v24_4_64_playtest_self_service_hardening.sql'),'utf8');
+  assert.match(schema,/create unique index if not exists access_requests_one_pending_idx\s+on public\.access_requests\(user_id,project_id,requested_level\) where status='pending'/i);
+  assert.match(schema,/create table if not exists public\.playtest_participants\s*\([\s\S]*?primary key\(playtest_id,user_id\)/i);
+  assert.match(schema,/alter table public\.access_requests enable row level security/i);
+  assert.match(schema,/alter table public\.playtest_participants enable row level security/i);
+  assert.match(hardened,/create policy playtest_participants_apply[\s\S]*?for insert[\s\S]*?to authenticated[\s\S]*?auth\.uid\(\)[\s\S]*?status = 'applied'/i);
+});
+
+test('contrainte de doublon reconnue seulement si code et index exacts',async()=>{
+  const known=['access_requests_one_pending_idx','playtest_participants_pkey'];
+  for(const constraint of known){
+    const button=fakeActionButton('requestTester','id');
+    const accepted=[],errors=[];
+    const error={code:'23505',message:'duplicate key value violates unique constraint "'+constraint+'"'};
+    const done=await submitLibraryRequest(
+      button,()=>'Bonjour',
+      ()=>Promise.resolve({error}),
+      already=>accepted.push(already),
+      e=>errors.push(e),
+      constraint
+    );
+    assert.equal(done,true,constraint);
+    assert.deepEqual(accepted,[true]);
+    assert.equal(errors.length,0);
+    assert.equal(button.disabled,true);
+  }
+  const mismatch=[
+    {code:'23505',message:'duplicate key value violates unique constraint "another_unique_index"'},
+    {code:'23505',message:'database conflict with access_requests_one_pending_idx but no quoted constraint'},
+    {code:'42501',message:'duplicate key value violates unique constraint "access_requests_one_pending_idx"'},
+    {code:'23503',message:'foreign key violation'},
+    {code:'23505',message:'duplicate key value violates unique constraint "playtest_participants_pkey"'},
+  ];
+  for(const error of mismatch){
+    const button=fakeActionButton('requestTester','id');
+    const accepted=[],errors=[];
+    const done=await submitLibraryRequest(
+      button,()=>'Bonjour',
+      ()=>Promise.resolve({error}),
+      already=>accepted.push(already),
+      e=>errors.push(e),
+      'access_requests_one_pending_idx'
+    );
+    assert.equal(done,false);
+    assert.equal(button.disabled,false);
+    assert.deepEqual(accepted,[]);
+    assert.equal(errors.length,1);
+  }
+});
+
+test('bibliothèques: doublon garanti par Postgres affiche existant sans renvoyer',async()=>{
+  const button=fakeActionButton('v2461RequestTester','p1');
+  const events=[];
+  const env={
+    document:{querySelector:()=>({}),querySelectorAll:()=>[button]},
+    submitLibraryRequest,
+    prompt:()=>'Demande',
+    setStatus:(_node,message,level)=>events.push({message,level}),
+    Date,console
+  };
+  vm.runInNewContext(code+'\nglobalThis.bindRequest=bindTesterRequestButtons;',
+    env,{filename:'sinjira-library-v24-4-61.js/duplicate'});
+  const pending=deferredResult(),calls=[];
+  env.bindRequest(fakeRequestClient('access_requests',pending,calls),{id:'reader'});
+  const task=button.click();
+  pending.resolve({error:{code:'23505',
+    message:'duplicate key value violates unique constraint "access_requests_one_pending_idx"'}});
+  await task;
+  assert.equal(calls.length,1);
+  assert.equal(button.disabled,true);
+  assert.equal(button.textContent,'Demande testeur en attente');
+  assert.equal(events.at(-1).level,'info');
+  assert.match(events.at(-1).message,/déjà en attente/);
+  await button.click();
+  assert.equal(calls.length,1);
+
+  const ctx=legacyHarness();
+  const playtest=fakeActionButton('applyPlaytest','p2');
+  const pendingPlaytest=deferredResult(),callsPlaytest=[];
+  const infos=[];
+  ctx.env.prompt=()=>'Je participe';
+  ctx.env.setStatus=(_node,message,level)=>infos.push({message,level});
+  ctx.api.bindLegacyPlaytestApplications(
+    {querySelectorAll:()=>[playtest]},
+    fakeRequestClient('playtest_participants',pendingPlaytest,callsPlaytest)
+  );
+  const playtask=playtest.click();
+  pendingPlaytest.resolve({error:{code:'23505',
+    message:'duplicate key value violates unique constraint "playtest_participants_pkey"'}});
+  await playtask;
+  assert.equal(playtest.disabled,true);
+  assert.match(playtest.outerHTML,/Participation enregistrée/);
+  assert.equal(infos.at(-1).level,'info');
+  assert.match(infos.at(-1).message,/existe déjà/);
+  assert.equal(callsPlaytest.length,1);
+});
+
 test('bibliothèque actuelle: annulation, clic unique, confirmation testeur',async()=>{
   const button=fakeActionButton('v2461RequestTester','project-v24');
   const events=[];
