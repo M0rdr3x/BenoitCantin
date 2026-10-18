@@ -8,6 +8,17 @@ const vm=require('node:vm');
 
 const file=path.join(__dirname,'../assets/js/sinjira-library-v24-4-61.js');
 const original=fs.readFileSync(file,'utf8');
+const sharedFileContent=fs.readFileSync(path.join(__dirname,'../assets/js/sinjira-supabase.js'),'utf8');
+const routeStart='// BEGIN SINJIRA_LIBRARY_ROUTE';
+const routeEnd='// END SINJIRA_LIBRARY_ROUTE';
+assert.equal(sharedFileContent.split(routeStart).length,2);
+assert.equal(sharedFileContent.split(routeEnd).length,2);
+const routeCode=sharedFileContent.split(routeStart)[1].split(routeEnd)[0]
+  .replaceAll('export function ','function ');
+const routeEnvironment={URL,location:{origin:'https://www.benoitcantin.com'}};
+vm.runInNewContext(routeCode+'\nglobalThis.validateRoute=safeLibraryRoute;',
+  routeEnvironment,{filename:'sinjira-supabase.js/library-route'});
+const safeLibraryRoute=routeEnvironment.validateRoute;
 assert.match(original,/^import\s+\{getSupabase/);
 assert.match(original,/\ninit\(\)\.catch\(/);
 const code=original.replace(/^import[^\n]*\n/,'')
@@ -21,10 +32,11 @@ const sandbox={
   document,
   escapeHtml(value){return String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');},
   projectStatusLabel(value){return String(value||'');},
-  Date,
+  Date,URL,location:{origin:'https://www.benoitcantin.com'},
+  safeLibraryRoute,
   console,
 };
-vm.runInNewContext(code+'\nglobalThis.testAPI={activeProjectAccess,canOpenProject,safeProjectPlayPath,setCount,renderProjects};',sandbox,{filename:file});
+vm.runInNewContext(code+'\nglobalThis.testAPI={activeProjectAccess,canOpenProject,safeProjectPlayPath,setCount,renderProjects,renderReads};',sandbox,{filename:file});
 const api=sandbox.testAPI;
 const publicProject={id:'pub',slug:'public',name:'Public',visibility:'public',status:'open',play_path:'/projets/sinjira/jeux/',allow_tester_requests:false};
 const memberProject={id:'member',slug:'compte',name:'Compte',visibility:'account',status:'open'};
@@ -58,6 +70,56 @@ test('URL jouer: liens internes uniquement, pas javascript ou protocole relatif'
   assert.equal(api.safeProjectPlayPath('/projets/sinjira/jeux/'),'/projets/sinjira/jeux/');
   for(const bad of ['javascript:alert(1)','https://evil.test','//evil.test/path','/\\evil.test','/foo\nbar']){
     assert.equal(api.safeProjectPlayPath(bad),'',bad);
+  }
+});
+
+test('routes du registre: seules les destinations locales canoniques restent cliquables',()=>{
+  for(const route of [
+    '/projets/sinjira/jeux/',
+    '/projets/sinjira/romans/lire-demo.html',
+    '/projets/sinjira/romans/?lang=fr#contenu',
+    '/compte/bibliotheque.html#livre-i',
+  ]){
+    assert.equal(safeLibraryRoute(route),route);
+    assert.equal(api.safeProjectPlayPath(route),route);
+  }
+  const forbidden=[
+    'javascript:alert(1)','data:text/html,<svg/onload=alert(1)>',
+    'https://evil.example/roman.pdf','//evil.example/roman.pdf',
+    '/\\evil.example/roman.pdf','/%2f%2fevil.example/roman.pdf',
+    '/%5cevil.example/roman.pdf','/projets/%2e%2e/admin/',
+    '/projets/sinjira/../admin/','/secret%00file',
+    '/projets/sinjira/romans/ ',' /projets/sinjira/romans/',
+    '/projets/sinjira/%zz','/projets/sinjira/jeux/\nnext',
+    null,[],{toString:()=>'/projets/sinjira/romans/'},
+  ];
+  for(const value of forbidden){
+    assert.equal(safeLibraryRoute(value),'','Destination inconnue interdite : '+String(value));
+    assert.equal(api.safeProjectPlayPath(value),'','Jouer non canonique : '+String(value));
+  }
+});
+
+test('lectures suivies: chemins démo/roman issus du registre ne peuvent pas rediriger hors SINJIRA',()=>{
+  const box={innerHTML:''};
+  elements.set('[data-library-reads]',box);
+  const novel={title:'La Cendre du Jugement',description:'Essai',
+    demo_path:'/projets/sinjira/romans/lire-demo.html',
+    public_path:'/projets/sinjira/romans/'};
+  api.renderReads([{sinjira_novels:novel,progress_percent:15}]);
+  assert.match(box.innerHTML,/Lire la démo|Continuer la lecture/);
+  assert.match(box.innerHTML,/href="\/projets\/sinjira\/romans\/lire-demo.html"/);
+
+  for(const malicious of [
+    'javascript:alert(1)','https://evil.example/sinjira',
+    '//evil.example/reader','/%2f%2fevil.example/a',
+    '/projets/%2e%2e/admin/', '/\\evil.example/a',
+  ]){
+    api.renderReads([{sinjira_novels:{...novel,demo_path:malicious,public_path:malicious},
+      progress_percent:12}]);
+    assert.doesNotMatch(box.innerHTML,/Continuer la lecture/);
+    assert.doesNotMatch(box.innerHTML,/>Lire la démo</);
+    assert.match(box.innerHTML,/href="\/projets\/sinjira\/romans\/">Page du roman</);
+    assert.doesNotMatch(box.innerHTML,/href="(?:javascript:|https:\/\/evil|\/\/evil|\/%2f)/i);
   }
 });
 
@@ -163,6 +225,7 @@ function legacyHarness(grants=[],roles={},extra={}){
     escapeHtml:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),
     projectStatusLabel:v=>v,
     roleLabel:v=>v,
+    safeLibraryRoute,
     setStatus:()=>{},
     URLSearchParams,Date,console,
     prompt:()=>null,
@@ -223,14 +286,16 @@ test('legacy: API droits indisponible et chemins externes ne donnent aucun accè
   await ctx.api.project();
   assert.equal(ctx.counters.documents,0);
   assert.doesNotMatch(ctx.node('[data-project-actions]').innerHTML,/>Jouer</);
-  for(const bad of ['//evil.test','https://evil.test/','javascript:alert(1)','/\\evil.test']){
+  for(const bad of ['//evil.test','https://evil.test/','javascript:alert(1)',
+    '/\\evil.test','/%2f%2fevil.test/private','/projets/%2e%2e/admin/',
+    '/projets/sinjira/../admin/']){
     assert.equal(ctx.api.internalProjectPath(bad),'',bad);
   }
 });
 
 // Valider les vraies fonctions de fenêtre exportées par le module Supabase
 // sans importer les dépendances réseau, ni ouvrir de compte de production.
-const sharedSource=fs.readFileSync(path.join(__dirname,'../assets/js/sinjira-supabase.js'),'utf8');
+const sharedSource=sharedFileContent;
 const sharedStart='// BEGIN SINJIRA_DOCUMENT_WINDOW';
 const sharedEnd='// END SINJIRA_DOCUMENT_WINDOW';
 assert.equal(sharedSource.split(sharedStart).length,2,'Contrat de fenêtre unique requis');
