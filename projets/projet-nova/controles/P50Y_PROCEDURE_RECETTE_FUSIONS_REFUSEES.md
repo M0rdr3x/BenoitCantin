@@ -22,6 +22,21 @@ Aucune des mesures ci-dessus n'a été effectuée automatiquement dans P50Y. Le 
 
 Créer **trois PR témoins distinctes** sur une branche sans donnée personnelle ni secret, sous l'autorité de l'administrateur. Elles devront être **ouvertes et prêtes pour revue** (`draft:false`), sans fusion. Les garder séparées des véritables PR du Projet Nova et de SINJIRA. Ne jamais cliquer sur « Merge ».
 
+**Contenu autorisé des fichiers de recette (durcissement P51F)** : la PR témoin ne peut ajouter que des fichiers texte courts, et leur diff GitHub doit être intégralement visible. Pour chaque fichier, il n'existe que deux formes admises, selon le cas testé :
+
+```text
+P50Y-CANARI:sans_revue
+```
+
+Ou, si un deuxième commit doit changer un essai :
+
+```text
+P50Y-CANARI:approbation_perimee
+NONCE:001122aa
+```
+
+Remplacer l'identifiant après `P50Y-CANARI:` par l'un des trois scénarios (`sans_revue`, `approbation_perimee`, `check_non_satisfait`); l'éventuelle valeur `NONCE` doit contenir exactement huit caractères hexadécimaux minuscules. **Ne jamais inscrire d'identité, d'adresse, d'URL, de mot de passe, de texte électoral ou de donnée personnelle dans le marqueur.** Le validateur contrôle les lignes ajoutées, leurs comptes, l'absence de suppression et le diff complet via l'API. Si GitHub ne fournit pas le patch, la preuve est refusée. Le rapport ne contient ni le patch ni son contenu.
+
 **Identification contrôlée du périmètre des PR témoins (durcissement P50Z)** :
 - branche source **dans le même dépôt** : `test/p50y-<identifiant>-<suffixe>`, avec exactement l'identifiant du scénario (`sans_revue`, `approbation_perimee`, `check_non_satisfait`) ;
 - titre commençant par `[P50Y-CANARI:<identifiant>]` et branche cible `main` **du même dépôt** ;
