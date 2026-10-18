@@ -1,4 +1,4 @@
-import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow,safeLibraryRoute,safeLibraryCover} from './sinjira-supabase.js';
+import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow,safeLibraryRoute,safeLibraryCover,submitLibraryRequest} from './sinjira-supabase.js';
 
 const status=document.querySelector('[data-library-status]');
 const rows=value=>Array.isArray(value)?value:[];
@@ -232,14 +232,16 @@ async function init(){
     setStatus(status,'Certaines sections privées n’ont pas pu être chargées. Les données disponibles restent protégées par les règles du compte.','error');
   }
 
-  document.querySelectorAll('[data-v2461-request-tester]').forEach(button=>button.addEventListener('click',async()=>{
-    const message=prompt('Court message pour votre demande (facultatif).')||'';
-    const {error}=await s.from('access_requests').insert({user_id:user.id,project_id:button.dataset.v2461RequestTester,requested_level:'tester',message:message.slice(0,1500)});
-    if(error){setStatus(status,'La demande n’a pas pu être transmise.','error');return;}
-    button.disabled=true;
-    button.textContent='Demande testeur en attente';
-    setStatus(status,'Demande testeur transmise.','success');
-  }));
+  document.querySelectorAll('[data-v2461-request-tester]').forEach(button=>button.addEventListener('click',()=>submitLibraryRequest(
+    button,
+    ()=>prompt('Court message pour votre demande (facultatif).'),
+    message=>s.from('access_requests').insert({user_id:user.id,project_id:button.dataset.v2461RequestTester,requested_level:'tester',message}),
+    ()=>{
+      button.textContent='Demande testeur en attente';
+      setStatus(status,'Demande testeur transmise.','success');
+    },
+    ()=>setStatus(status,'La demande n’a pas pu être transmise. Veuillez réessayer.','error')
+  )));
 }
 
 init().catch(error=>{
