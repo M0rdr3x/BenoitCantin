@@ -166,6 +166,19 @@ function renderEntitlements(entitlements,isOwner,entitlementsVerified){
   bindFullNovelButtons(box);
 }
 
+function bindTesterRequestButtons(s,currentUser){
+  document.querySelectorAll('[data-v2461-request-tester]').forEach(button=>button.addEventListener('click',()=>submitLibraryRequest(
+    button,
+    ()=>prompt('Court message pour votre demande (facultatif).'),
+    message=>s.from('access_requests').insert({user_id:currentUser.id,project_id:button.dataset.v2461RequestTester,requested_level:'tester',message}),
+    ()=>{
+      button.textContent='Demande testeur en attente';
+      setStatus(status,'Demande testeur transmise.','success');
+    },
+    ()=>setStatus(status,'La demande n’a pas pu être transmise. Veuillez réessayer.','error')
+  )));
+}
+
 async function init(){
   if(document.body.dataset.libraryPage!=='library-v24-4-61')return;
   const user=await requireUser('/compte/connexion.html');
@@ -232,16 +245,7 @@ async function init(){
     setStatus(status,'Certaines sections privées n’ont pas pu être chargées. Les données disponibles restent protégées par les règles du compte.','error');
   }
 
-  document.querySelectorAll('[data-v2461-request-tester]').forEach(button=>button.addEventListener('click',()=>submitLibraryRequest(
-    button,
-    ()=>prompt('Court message pour votre demande (facultatif).'),
-    message=>s.from('access_requests').insert({user_id:user.id,project_id:button.dataset.v2461RequestTester,requested_level:'tester',message}),
-    ()=>{
-      button.textContent='Demande testeur en attente';
-      setStatus(status,'Demande testeur transmise.','success');
-    },
-    ()=>setStatus(status,'La demande n’a pas pu être transmise. Veuillez réessayer.','error')
-  )));
+  bindTesterRequestButtons(s,user);
 }
 
 init().catch(error=>{
