@@ -12,7 +12,15 @@ export async function getCurrentUser() {if (!isSinjiraBackendConfigured()) retur
 // BEGIN SINJIRA_LIBRARY_SUBMISSION
 // La fermeture de l'invite signifie Annuler, jamais « envoyer un message vide ».
 // Verrouiller AVANT la requête empêche un double clic de créer deux demandes.
-export async function submitLibraryRequest(button,askMessage,write,accept,reject){
+function isKnownLibraryDuplicate(error,constraint){
+  // 23505 seul pourrait signaler une autre contrainte : ne jamais
+  // transformer une erreur inconnue en succès de candidature.
+  return error?.code==='23505'
+    && ['access_requests_one_pending_idx','playtest_participants_pkey'].includes(constraint)
+    && typeof error.message==='string'
+    && error.message.includes('"'+constraint+'"');
+}
+export async function submitLibraryRequest(button,askMessage,write,accept,reject,duplicateConstraint=''){
   if(!button||button.disabled)return false;
   let message;
   try{message=askMessage()}catch{return false}
@@ -22,10 +30,15 @@ export async function submitLibraryRequest(button,askMessage,write,accept,reject
   try{
     const result=await write(message.slice(0,1500));
     if(!result||result.error){
+      if(isKnownLibraryDuplicate(result?.error,duplicateConstraint)){
+        accept(true); // Déjà enregistré côté base, ne pas reproposer l'envoi.
+        accepted=true;
+        return true;
+      }
       reject(result?.error);
       return false;
     }
-    accept();
+    accept(false);
     accepted=true;
     return true;
   }catch(error){
