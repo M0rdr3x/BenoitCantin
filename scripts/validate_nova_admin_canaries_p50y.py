@@ -548,6 +548,34 @@ def analyze(document, observations=None):
         "limite": "Les GET de PR, les URLs et les attestations déclaratives ne prouvent pas seuls les raisons du blocage; validation d'administrateur requise.",
     }
 
+def strict_preflight(result, live_enabled):
+    """Machine check of completeness, never a merge/publication authorization.
+
+    A live GitHub read is compulsory. Declarations alone cannot satisfy it,
+    even when all the human attestations in the input claim True.
+    """
+    if not live_enabled:
+        return False
+    if not isinstance(result,dict):
+        return False
+    if result.get("statut_dossier") != "DECLARATIONS_COMPLETEES_A_VALIDER_EXTERNEMENT":
+        return False
+    if result.get("etat_serveur_github") != "PRECONDITIONS_TECHNIQUES_VISIBLES":
+        return False
+    if result.get("obstacles") != []:
+        return False
+    if set(result.get("cases") or {}) != set(CASES):
+        return False
+    if any(result["cases"][key] != "DECLARATION_A_CONTROLER" for key in CASES):
+        return False
+    if (result.get("decision") != "NO_GO_AUTOMATIQUE" or
+        result.get("fusion_autorisee") is not False or
+        result.get("publication_autorisee") is not False or
+        result.get("preuve_serveur_certifiee_automatiquement") is not False):
+        return False
+    return True
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--dossier", type=Path, required=True)
@@ -556,6 +584,8 @@ def main(argv=None):
                    help="Lire les trois PR temoins via API GitHub, sans mutation")
     p.add_argument("--observer-serveur", action="store_true",
                    help="Verifier main et les rulesets actifs via GET, sans PR temoin")
+    p.add_argument("--exiger-preuves-techniques", action="store_true",
+                   help="Exiger --live et toutes les preuves techniques; code 3 si incomplet. Jamais un GO juridique ou de fusion.")
     args = p.parse_args(argv)
     try:
         source = json.loads(args.dossier.read_text(encoding="utf-8"))
@@ -590,7 +620,16 @@ def main(argv=None):
         args.rapport.write_text(raw,encoding="utf-8")
     else:
         print(raw,end="")
-    return 0 if "DOSSIER_NON_LISIBLE" not in result["obstacles"] else 2
+    # Reporting mode: exit 0 means the audit could be read and emitted, NOT
+    # that branch protections are effective or that merges are authorized.
+    # Strict preflight: exit 3 means actual evidence is insufficient.
+    # Even exit 0 from strict preflight is never a merge/publication GO.
+    if "DOSSIER_NON_LISIBLE" in result["obstacles"]:
+        return 2
+    if args.exiger_preuves_techniques and not strict_preflight(result,args.live):
+        print("P51H_PREUVES_TECHNIQUES_INSUFFISANTES_NO_GO",file=sys.stderr)
+        return 3
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())
