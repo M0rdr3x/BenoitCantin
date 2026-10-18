@@ -62,8 +62,15 @@ def read_allowlist(root: Path, name: str) -> set[str]:
 
 def verify_target(page: Path, ref: str, root: Path,
                   public: set[str], generated: set[str]) -> str | None:
+    # urllib.parse supprime silencieusement certains caractères ASCII
+    # au début des URL. Refuser la valeur HTML brute avant toute analyse
+    # évite qu'un lien ambigu contourne la liste des ressources publiques.
+    if ref != ref.strip() or any(ord(char) < 32 or ord(char) == 127 for char in ref):
+        return "Espacement ou caractère de contrôle dans le lien"
+    if "\\\\" in ref:
+        return "Séparateur de chemin ambigu"
     try:
-        parts = urlsplit(ref.strip())
+        parts = urlsplit(ref)
     except ValueError:
         return "URL malformée"
     if parts.scheme and parts.scheme.lower() not in {
@@ -72,9 +79,20 @@ def verify_target(page: Path, ref: str, root: Path,
         return "Protocole exécutable ou non autorisé"
     if parts.scheme in {"mailto", "tel"}:
         return None
-    if parts.netloc and parts.netloc.lower() != HOST:
-        return None  # External websites are outside the local Pages contract.
-    if parts.scheme == "http" and parts.netloc.lower() == HOST:
+    # Un nom DNS avec un point final, un port :443 ou des identifiants
+    # désigne toujours l'hôte officiel, même si netloc != HOST. Ne jamais
+    # traiter cette variante comme un site tiers hors de l'allowlist.
+    if "%" in parts.netloc or "\\\\" in parts.netloc:
+        return "Autorité URL ambiguë"
+    if parts.username is not None or parts.password is not None:
+        return "Identifiants intégrés dans l'URL interdits"
+    hostname = (parts.hostname or "").rstrip(".").lower()
+    if hostname == HOST:
+        if parts.netloc != HOST or parts.scheme != "https":
+            return "Lien interne non canonique : HTTPS et hôte exact requis"
+    elif parts.netloc:
+        return None  # Sites tiers explicites; jamais une variante de HOST.
+    if parts.scheme == "http":
         return "Lien interne HTTP non sécurisé"
     if not parts.path and parts.fragment and not parts.query:
         return None
