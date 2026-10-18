@@ -58,6 +58,17 @@ def observations(f):
 def server_snapshot():
     checks=[{"context":name,"integration_id":m.ACTIONS_APP_ID}
             for name in m.REQUIRED_CHECKS]
+    rules=[
+        {"type":"deletion"},{"type":"non_fast_forward"},
+        {"type":"pull_request","parameters":{
+            "required_approving_review_count":1,
+            "dismiss_stale_reviews_on_push":True,
+            "require_last_push_approval":True,
+            "required_review_thread_resolution":True}},
+        {"type":"required_status_checks","parameters":{
+            "strict_required_status_checks_policy":True,
+            "required_status_checks":checks}},
+    ]
     return {
         "branch":{"commit":{"sha":m.MAIN_SHA},"protected":True},
         "summaries":[{"id":10,"enforcement":"active"}],
@@ -65,20 +76,9 @@ def server_snapshot():
             "id":10,"target":"branch","enforcement":"active",
             "bypass_actors":[],
             "conditions":{"ref_name":{"include":["refs/heads/main"],"exclude":[]}},
-            "rules":[
-                {"type":"deletion"},{"type":"non_fast_forward"},
-                {"type":"pull_request","parameters":{
-                    "required_approving_review_count":1,
-                    "dismiss_stale_reviews_on_push":True,
-                    "require_last_push_approval":True,
-                    "required_review_thread_resolution":True}},
-                {"type":"required_status_checks","parameters":{
-                    "strict_required_status_checks_policy":True,
-                    "required_status_checks":checks}},
-            ],
+            "rules":rules,
         }],
-        "effective":[{"type":name} for name in (
-            "deletion","non_fast_forward","pull_request","required_status_checks")],
+        "effective":[dict(copy.deepcopy(item),ruleset_id=10) for item in rules],
     }
 
 
@@ -499,6 +499,77 @@ class P50Y(unittest.TestCase):
             self.assertEqual(r["etat_serveur_github"],"NON_ATTESTE")
             self.assertEqual(r["statut_dossier"],"RECETTE_REQUISE")
             self.assertEqual(r["decision"],"NO_GO_AUTOMATIQUE")
+    def test_server_rejects_details_from_different_ruleset_id(self):
+        data=server_snapshot()
+        data["details"][0]["id"]=11
+        r=m.server_preflight(data)
+        self.assertIn("DETAILS_RULESETS_NON_CORRESPONDANTS",r["obstacles"])
+        self.assertEqual(r["etat"],"BLOQUANT")
+    def test_server_rejects_duplicate_active_summary_ids(self):
+        data=server_snapshot()
+        data["summaries"].append({"id":10,"enforcement":"active"})
+        data["details"].append(copy.deepcopy(data["details"][0]))
+        self.assertIn("IDENTIFIANTS_RULESETS_INVALIDES",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_rejects_malformed_summary_id(self):
+        data=server_snapshot()
+        data["summaries"][0]["id"]="10"
+        self.assertIn("IDENTIFIANTS_RULESETS_INVALIDES",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_rejects_effective_rules_without_ruleset_id(self):
+        data=server_snapshot()
+        for rule in data["effective"]:
+            del rule["ruleset_id"]
+        self.assertIn("SOURCE_REGLE_EFFECTIVE_NON_ATTESTEE",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_rejects_effective_rules_from_another_ruleset(self):
+        data=server_snapshot()
+        for rule in data["effective"]:
+            rule["ruleset_id"]=77
+        r=m.server_preflight(data)
+        self.assertIn("REGLES_EFFECTIVES_RULESET_NON_CORRESPONDANTES",
+                      r["obstacles"])
+    def test_server_does_not_mix_effective_ruleset_sources(self):
+        data=server_snapshot()
+        data["effective"][0]["ruleset_id"]=88
+        self.assertIn("REGLES_EFFECTIVES_RULESET_NON_CORRESPONDANTES",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_rejects_effective_review_count_downgrade(self):
+        data=server_snapshot()
+        data["effective"][2]["parameters"]["required_approving_review_count"]=0
+        self.assertIn("PARAMETRES_REGLES_EFFECTIVES_DIVERGENTS",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_rejects_effective_check_source_drift(self):
+        data=server_snapshot()
+        data["effective"][3]["parameters"]["required_status_checks"][0]["integration_id"]=999
+        self.assertIn("PARAMETRES_REGLES_EFFECTIVES_DIVERGENTS",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_rejects_duplicate_effective_rule_types(self):
+        data=server_snapshot()
+        data["effective"].append(copy.deepcopy(data["effective"][-1]))
+        self.assertIn("REGLE_EFFECTIVE_DOUBLON",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_rejects_hidden_bypass_on_other_active_ruleset(self):
+        data=server_snapshot()
+        data["summaries"].append({"id":20,"enforcement":"active"})
+        other=copy.deepcopy(data["details"][0]);other["id"]=20
+        del other["bypass_actors"]
+        data["details"].append(other)
+        self.assertIn("EXCEPTIONS_BYPASS_NON_VISIBLES",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_rejects_explicit_bypass_on_other_active_ruleset(self):
+        data=server_snapshot()
+        data["summaries"].append({"id":20,"enforcement":"active"})
+        other=copy.deepcopy(data["details"][0]);other["id"]=20
+        other["bypass_actors"]=[{"actor_type":"User","actor_id":123}]
+        data["details"].append(other)
+        self.assertIn("BYPASS_SERVEUR_DECLARE",
+                      m.server_preflight(data)["obstacles"])
+    def test_server_positive_requires_consistent_ruleset_id(self):
+        r=m.server_preflight(server_snapshot())
+        self.assertEqual(r["etat"],"PRECONDITIONS_TECHNIQUES_VISIBLES")
+        self.assertEqual(r["obstacles"],[])
+        self.assertEqual(r["rulesets_actifs"],1)
     def test_no_reviewer_name_in_summary(self):
         f=filled()
         r=json.dumps(m.analyze(f))
