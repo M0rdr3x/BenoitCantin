@@ -88,6 +88,11 @@ export function safeLibraryRoute(value){
     const url=new URL(value,location.origin);
     const pathname=value.split(/[?#]/,1)[0];
     if(url.origin!==location.origin||url.username||url.password||url.pathname!==pathname)return '';
+    // Les chemins encodés ne font pas partie des routes de catalogue :
+    // /%73upabase/... se résout côté serveur en /supabase/... et
+    // contournerait le refus des répertoires techniques ci-dessous.
+    // Un paramètre de requête/fragment peut rester encodé.
+    if(pathname.includes('%'))return '';
     // Un chemin de source technique n'est jamais une destination de lecture
     // ou de jeu, même si GitHub Pages legacy le sert accidentellement en 200.
     // Ne pas élargir ce filtre aux routes /compte et /projets légitimes.
