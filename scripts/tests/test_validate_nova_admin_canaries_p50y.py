@@ -273,7 +273,7 @@ class P50Y(unittest.TestCase):
         check_runs={"total_count":3,"check_runs":[
             {"name":name,"head_sha":"a"*40,"app":{"id":m.ACTIONS_APP_ID},
              "status":"completed","conclusion":"success"} for name in m.REQUIRED_CHECKS]}
-        with patch.object(m,"github",side_effect=[pr,files,[],check_runs]):
+        with patch.object(m,"github",side_effect=[pr,files,[],check_runs,pr]):
             r=m.actual_canary(801,"")
         self.assertEqual(r["changed_statuses"],["renamed"])
         self.assertEqual(r["changed_previous_paths"],["projets/projet-nova/participer.html"])
@@ -296,11 +296,69 @@ class P50Y(unittest.TestCase):
                 {"name":name,"head_sha":"a"*40,"app":{"id":m.ACTIONS_APP_ID},
                  "status":"completed","conclusion":"success"}
                 for name in m.REQUIRED_CHECKS]},
+            github_pr,
         ]) as mocked:
             result=m.actual_canary(number,"")
-        self.assertEqual(mocked.call_count,4)
+        self.assertEqual(mocked.call_count,5)
         self.assertEqual(result["base_ref"],"main")
         self.assertEqual(result["changed_paths"],[files[0]["filename"]])
+    def test_actual_canary_refuses_push_during_collection(self):
+        original={
+            "title":"[P50Y-CANARI:sans_revue] Test","user":{"id":90},
+            "changed_files":1,"state":"open","draft":False,"merged":False,
+            "head":{"sha":"a"*40,"ref":"test/p50y-sans_revue-new",
+                    "repo":{"full_name":m.REPO}},
+            "base":{"ref":"main","repo":{"full_name":m.REPO}},
+        }
+        changed=copy.deepcopy(original)
+        changed["head"]["sha"]="b"*40
+        files=[{"filename":"projets/projet-nova/controles/canaris/a.txt",
+                "status":"added"}]
+        checks={"total_count":3,"check_runs":[{
+            "name":name,"head_sha":"a"*40,"app":{"id":m.ACTIONS_APP_ID},
+            "status":"completed","conclusion":"success"
+        } for name in m.REQUIRED_CHECKS]}
+        with patch.object(m,"github",side_effect=[original,files,[],checks,changed]):
+            with self.assertRaisesRegex(ValueError,"CANARI_MODIFIE_PENDANT_LE_RELEVE"):
+                m.actual_canary(801,"")
+    def test_actual_canary_refuses_base_change_during_collection(self):
+        original={
+            "title":"[P50Y-CANARI:sans_revue] Test","user":{"id":90},
+            "changed_files":1,"state":"open","draft":False,"merged":False,
+            "head":{"sha":"a"*40,"ref":"test/p50y-sans_revue-new",
+                    "repo":{"full_name":m.REPO}},
+            "base":{"ref":"main","repo":{"full_name":m.REPO}},
+        }
+        changed=copy.deepcopy(original)
+        changed["base"]["ref"]="other-branch"
+        files=[{"filename":"projets/projet-nova/controles/canaris/a.txt",
+                "status":"added"}]
+        checks={"total_count":3,"check_runs":[{
+            "name":name,"head_sha":"a"*40,"app":{"id":m.ACTIONS_APP_ID},
+            "status":"completed","conclusion":"success"
+        } for name in m.REQUIRED_CHECKS]}
+        with patch.object(m,"github",side_effect=[original,files,[],checks,changed]):
+            with self.assertRaisesRegex(ValueError,"CANARI_MODIFIE_PENDANT_LE_RELEVE"):
+                m.actual_canary(801,"")
+    def test_actual_canary_refuses_file_count_drift(self):
+        original={
+            "title":"[P50Y-CANARI:sans_revue] Test","user":{"id":90},
+            "changed_files":1,"state":"open","draft":False,"merged":False,
+            "head":{"sha":"a"*40,"ref":"test/p50y-sans_revue-new",
+                    "repo":{"full_name":m.REPO}},
+            "base":{"ref":"main","repo":{"full_name":m.REPO}},
+        }
+        changed=copy.deepcopy(original)
+        changed["changed_files"]=2
+        files=[{"filename":"projets/projet-nova/controles/canaris/a.txt",
+                "status":"added"}]
+        checks={"total_count":3,"check_runs":[{
+            "name":name,"head_sha":"a"*40,"app":{"id":m.ACTIONS_APP_ID},
+            "status":"completed","conclusion":"success"
+        } for name in m.REQUIRED_CHECKS]}
+        with patch.object(m,"github",side_effect=[original,files,[],checks,changed]):
+            with self.assertRaisesRegex(ValueError,"CANARI_MODIFIE_PENDANT_LE_RELEVE"):
+                m.actual_canary(801,"")
     def test_actual_canary_refuses_partial_file_inventory(self):
         github_pr={"changed_files":2,"head":{},"base":{}}
         with patch.object(m,"github",side_effect=[github_pr,[{"filename":"one"}]]):
