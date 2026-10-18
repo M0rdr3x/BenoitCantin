@@ -82,6 +82,29 @@ de protection de `main` et conserver l'approbation manuelle de PUBLISH.
 - Faire valider le créneau de changement avec le responsable du site. La PR
   reste draft avant cette décision.
 
+### Couverture universelle de la preuve Jekyll (17 octobre 2026)
+
+L'ancien workflow `.github/workflows/audit-pages-jekyll.yml` appliquait
+une liste `pull_request.paths` partielle : une modification légitime de
+bannière, d'une nouvelle page, d'un document autorisé ou d'une ressource
+absente de cette liste pouvait **ne pas déclencher** le contrôle Jekyll.
+La réussite de tests précédents ne prouvait donc pas que chaque nouvelle
+PR avait été compilée et inspectée.
+
+Désormais, l'audit Jekyll est exécuté sur **toute PR vers `main`**,
+sans `paths` ni `paths-ignore`, qu'elle modifie du contenu, des images
+ou l'infrastructure. La fonction `validate_jekyll_ci` de
+`scripts/validate_pages_workflows.py` interdit la réintroduction de
+filtres, de jobs ignorés, de publication d'artefact, de droits d'écriture
+ou de retrait de la compilation et des audits. Ses **15 mutations
+négatives** protègent ce contrat; les audits des sources et secrets
+doivent avoir lieu avant **et** après l'ajout du reçu SHA/run.
+
+**Limite :** le code de contrôle CI n'est pas une règle de protection
+effective de `main`. L'administrateur doit toujours activer les required
+checks GitHub avant toute fusion. Le statut DRAFT, l'absence de PUBLISH
+et le blocage de sécurité #450 restent inchangés.
+
 ## 3. Corriger la véritable source Pages (action administrateur explicite)
 
 1. Dans GitHub, ouvrir **BenoitCantin > Settings > Pages > Build and deployment**.
