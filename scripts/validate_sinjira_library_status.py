@@ -145,7 +145,7 @@ def audit_routes(shared: str) -> list[str]:
         "export function safeLibraryRoute(value){",
         "typeof value!=='string'||!value||value!==value.trim()",
         "!value.startsWith('/')||value.startsWith('//')",
-        "/[\\\\\\u0000-\\u001f\\u007f]/.test(value)",
+        "if(/%(?![0-9a-f]{2})/i.test(value))return '';",
         "/%(?:2f|5c|2e|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value)",
         "url.origin!==location.origin",
         "url.pathname!==pathname",
