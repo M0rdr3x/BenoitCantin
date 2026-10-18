@@ -20,6 +20,9 @@ REPO = "M0rdr3x/BenoitCantin"
 MAIN_SHA = "9ed5f70cbe7022f25a679346a1288701f3b09067"
 CASES = ("sans_revue", "approbation_perimee", "check_non_satisfait")
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
+CANARY_FILE_RE = re.compile(
+    r"^projets/projet-nova/controles/canaris/[a-z0-9][a-z0-9_-]{0,63}\.txt$"
+)
 REQUIRED_CHECKS = (
     "no-committed-secrets",
     "Contrat sécurité validation site",
@@ -143,6 +146,8 @@ def actual_canary(number: int, token: str):
         "base_repo": (target.get("repo") or {}).get("full_name"),
         "title": pr.get("title"),
         "changed_paths": [item.get("filename") for item in files],
+        "changed_statuses": [item.get("status") for item in files],
+        "changed_previous_paths": [item.get("previous_filename") for item in files],
         "review_stats": review_stats,
         "check_stats": check_stats,
         "open": pr.get("state") == "open",
@@ -199,6 +204,12 @@ def analyze(document, observations=None):
         if evidence is not None and (not isinstance(evidence,str) or
                                       not EVIDENCE_URL.fullmatch(evidence)):
             problems.append("PREUVE_URL_NON_CONFORME:" + caseid)
+        # Un lien vers une AUTRE PR ou vers un workflow non rattaché à ce
+        # canari ne constitue pas une pièce probante de son refus de fusion.
+        # Le journal Actions peut être ajouté au dossier interne, mais la
+        # preuve_url publique doit désigner la PR témoin elle-même.
+        elif evidence is not None and evidence != pr_url:
+            problems.append("PREUVE_NON_RATTACHEE_AU_CANARI:" + caseid)
         if not block or not review or not evidence:
             stages[caseid] = "PREUVE_A_COMPLETER"
             problems.append("PREUVE_HUMAINE_INCOMPLETE:" + caseid)
@@ -226,10 +237,16 @@ def analyze(document, observations=None):
                     stages[caseid] = "CANARI_HORS_PERIMETRE"
                     problems.append("CANARI_IDENTITE_OU_CIBLE_INVALIDE:" + caseid)
                 elif (not isinstance(live.get("changed_paths"),list) or
+                      not isinstance(live.get("changed_statuses"),list) or
+                      not isinstance(live.get("changed_previous_paths"),list) or
                       not 1 <= len(live["changed_paths"]) <= 3 or
-                      any(not isinstance(path,str) or
-                          not path.startswith("projets/projet-nova/controles/canaris/")
-                          for path in live["changed_paths"])):
+                      len(live["changed_paths"]) != len(live["changed_statuses"]) or
+                      len(live["changed_paths"]) != len(live["changed_previous_paths"]) or
+                      any(not isinstance(path,str) or not CANARY_FILE_RE.fullmatch(path)
+                          or status != "added" or previous is not None
+                          for path,status,previous in zip(
+                              live["changed_paths"],live["changed_statuses"],
+                              live["changed_previous_paths"]))):
                     stages[caseid] = "CHANGEMENT_CANARI_DANGEREUX"
                     problems.append("CANARI_FICHIERS_HORS_REPERTOIRE:" + caseid)
                 elif (not isinstance(live.get("review_stats"),dict) or
