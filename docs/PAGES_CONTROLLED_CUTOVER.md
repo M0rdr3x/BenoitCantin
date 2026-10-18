@@ -96,13 +96,17 @@ sans `paths` ni `paths-ignore`, qu'elle modifie du contenu, des images
 ou l'infrastructure. La fonction `validate_jekyll_ci` de
 `scripts/validate_pages_workflows.py` interdit la réintroduction de
 filtres, de jobs ignorés, de publication d'artefact, de droits d'écriture
-ou de retrait de la compilation et des audits. Ses **15 mutations
-négatives** protègent ce contrat; les audits des sources et secrets
+ou de retrait de la compilation et des audits. Ses **16 mutations
+négatives** protègent ce contrat, y compris le nom stable du job
+`Construire puis auditer Pages sans déployer` utilisé comme required check; les audits des sources et secrets
 doivent avoir lieu avant **et** après l'ajout du reçu SHA/run.
 
 **Limite :** le code de contrôle CI n'est pas une règle de protection
 effective de `main`. L'administrateur doit toujours activer les required
-checks GitHub avant toute fusion. Le statut DRAFT, l'absence de PUBLISH
+checks GitHub avant toute fusion : **`Construire puis auditer Pages sans
+déployer`** et **`Garde de promotion — Source Pages conforme exigée`**.
+Le premier est désormais déclenché sur toute PR; le second s'exécute
+quand une PR n'est plus en brouillon. Le statut DRAFT, l'absence de PUBLISH
 et le blocage de sécurité #450 restent inchangés.
 
 ## 3. Corriger la véritable source Pages (action administrateur explicite)
