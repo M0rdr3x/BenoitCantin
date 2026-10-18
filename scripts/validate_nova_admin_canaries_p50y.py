@@ -167,41 +167,78 @@ def server_preflight(snapshot):
             and item.get("enforcement")=="active"]
     if not active:
         issues.append("RULESET_ACTIF_ABSENT")
+    # The list and detail endpoints must describe exactly the same active
+    # rulesets. Matching only their number can mix unrelated rulesets.
+    active_ids=[item.get("id") for item in active]
+    if (any(type(i) is not int or i<=0 for i in active_ids) or
+        len(set(active_ids))!=len(active_ids)):
+        issues.append("IDENTIFIANTS_RULESETS_INVALIDES")
     details=snapshot.get("details")
     if not isinstance(details,list) or len(details)!=len(active):
         details=[]
         issues.append("DETAILS_RULESET_MANQUANTS")
+    detail_ids=[item.get("id") for item in details if isinstance(item,dict)]
+    if (len(detail_ids)!=len(details) or
+        any(type(i) is not int or i<=0 for i in detail_ids) or
+        len(set(detail_ids))!=len(detail_ids) or
+        set(detail_ids)!=set(active_ids)):
+        issues.append("DETAILS_RULESETS_NON_CORRESPONDANTS")
+    for item in details:
+        if not isinstance(item,dict) or item.get("enforcement")!="active":
+            issues.append("DETAILS_RULESET_ETAT_INVALIDE")
+        elif "bypass_actors" not in item:
+            # The API may hide bypass_actors unless the caller has ruleset
+            # write permission. This is UNKNOWN, not proof of zero bypass.
+            issues.append("EXCEPTIONS_BYPASS_NON_VISIBLES")
+        elif item["bypass_actors"]!=[]:
+            issues.append("BYPASS_SERVEUR_DECLARE")
     effective=snapshot.get("effective")
     if not isinstance(effective,list) or len(effective)>=100:
         effective=[]
         issues.append("REGLES_EFFECTIVES_NON_LISIBLES")
     required_types={"deletion","non_fast_forward","pull_request","required_status_checks"}
-    if not required_types.issubset({x.get("type") for x in effective if isinstance(x,dict)}):
+    # GitHub's GET /rules/branches/main reports ruleset_id per effective rule.
+    # Never assemble four types from four different rulesets.
+    effective_by_id={}
+    for item in effective:
+        if not isinstance(item,dict):
+            issues.append("REGLE_EFFECTIVE_MALFORMEE")
+            continue
+        rid=item.get("ruleset_id")
+        kind=item.get("type")
+        if type(rid) is not int or rid<=0 or not isinstance(kind,str):
+            issues.append("SOURCE_REGLE_EFFECTIVE_NON_ATTESTEE")
+            continue
+        bucket=effective_by_id.setdefault(rid,{})
+        if kind in bucket:
+            issues.append("REGLE_EFFECTIVE_DOUBLON")
+        bucket[kind]=item
+    if not required_types.issubset({
+        item.get("type") for item in effective if isinstance(item,dict)
+    }):
         issues.append("REGLES_EFFECTIVES_INCOMPLETES")
     suitable=0
-    bypass_unknown=False
     for item in details:
         if not isinstance(item,dict) or item.get("enforcement")!="active":
             continue
+        if item.get("id") not in active_ids:
+            continue
         if item.get("target")!="branch":
             continue
-        condition=item.get("conditions")
-        if condition!={"ref_name":{"include":["refs/heads/main"],"exclude":[]}}:
+        if item.get("conditions")!={"ref_name":{"include":["refs/heads/main"],"exclude":[]}}:
             continue
-        if "bypass_actors" not in item:
-            bypass_unknown=True
-            continue
-        if item["bypass_actors"]!=[]:
-            issues.append("BYPASS_SERVEUR_DECLARE")
+        if item.get("bypass_actors")!=[]:
             continue
         rules=item.get("rules")
         if not isinstance(rules,list):
             continue
         bytype={v.get("type"):v for v in rules if isinstance(v,dict)}
-        if not required_types.issubset(bytype):
+        if len(bytype)!=len(rules) or not required_types.issubset(bytype):
             continue
         pr=(bytype["pull_request"].get("parameters") or {})
         checks=(bytype["required_status_checks"].get("parameters") or {})
+        if not isinstance(pr,dict) or not isinstance(checks,dict):
+            continue
         if (type(pr.get("required_approving_review_count")) is not int or
             pr["required_approving_review_count"]<1 or
             pr.get("dismiss_stale_reviews_on_push") is not True or
@@ -216,11 +253,26 @@ def server_preflight(snapshot):
                 (v.get("context"),v.get("integration_id"))
                 for v in rows if isinstance(v,dict)}):
             continue
+        real=effective_by_id.get(item["id"],{})
+        if not required_types.issubset(real):
+            issues.append("REGLES_EFFECTIVES_RULESET_NON_CORRESPONDANTES")
+            continue
+        if any(type(real[kind].get("parameters")) is not dict or any(
+                real[kind]["parameters"].get(key)!=expected.get(key)
+                for key in wanted)
+               for kind,expected,wanted in (
+                 ("pull_request",pr,("required_approving_review_count",
+                                     "dismiss_stale_reviews_on_push",
+                                     "require_last_push_approval",
+                                     "required_review_thread_resolution")),
+                 ("required_status_checks",checks,
+                    ("strict_required_status_checks_policy",
+                     "required_status_checks")))):
+            issues.append("PARAMETRES_REGLES_EFFECTIVES_DIVERGENTS")
+            continue
         suitable+=1
     if suitable!=1:
         issues.append("RULESET_CONFORME_SANS_BYPASS_NON_DEMONTRE")
-    if bypass_unknown:
-        issues.append("EXCEPTIONS_BYPASS_NON_VISIBLES")
     return {"etat":"PRECONDITIONS_TECHNIQUES_VISIBLES" if not issues else "BLOQUANT",
             "obstacles":sorted(set(issues)),
             "sha_main_observe":sha,
