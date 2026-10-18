@@ -501,3 +501,34 @@ malveillant et les erreurs réseau, sans accès à un compte réel.
 La PR #639 reste en brouillon et aucune fonction Supabase ou page
 n'est déployée. La publication GitHub Pages legacy est toujours
 bloquée par #450.
+
+## Navigation sûre des romans suivis et des projets depuis le compte
+
+Dans la bibliothèque v24.4.61, les boutons **Continuer la lecture /
+Lire la démo** et **Page du roman** utilisent des chemins provenant
+du registre de romans (`sinjira_novels.demo_path` et `public_path`).
+De même, les boutons **Jouer** et **Page publique** utilisent les chemins
+de projets du registre Supabase. L'échappement HTML protégeait les
+attributs de certains caractères, mais ne validait pas la destination
+de navigation (`href="javascript:..."`, URL externe, variante
+`//...`, séparateurs encodés, segments `.. `, etc.).
+
+Un validateur commun `safeLibraryRoute` dans
+`assets/js/sinjira-supabase.js` n'autorise maintenant que des chemins
+absolus **locaux**, conformes à l'origine réelle du site, sans caractères
+de contrôle, antislash, segments de traversée, caractères de contrôle
+encodés, ambiguïté d'encodage ni préfixe `//`. Les deux bibliothèques
+l'emploient pour les routes « Jouer » et « Page publique »; les chemins
+de roman l'utilisent **avant** de former leurs liens. Une URL de démo
+non sûre est omise; une URL publique du roman non sûre est remplacée par
+`/projets/sinjira/romans/`, sans exposer de lien tiers. Les URL des
+fichiers privés sont toujours délivrées par les fonctions Edge après
+autorisation, indépendamment de ce validateur de navigation.
+
+Les tests Node chargent la vraie fonction `safeLibraryRoute` et
+vérifient le **HTML réellement produit** par `renderReads` :
+destinations locales valides, refus des protocoles exécutables, hôtes
+externes, URL à double slash, traversée `%2e`, encodage de séparateurs
+et chemins malformés. Le contrat Python de bibliothèque impose aussi
+l'appel au validateur par les deux interfaces. Aucune base de données,
+droit d'utilisateur ou fichier de roman n'est modifié.
