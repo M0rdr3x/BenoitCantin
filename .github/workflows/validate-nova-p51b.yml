@@ -26,18 +26,18 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
-      - name: Executer et compter exactement 55 tests des trois couches
+      - name: Executer et compter exactement 69 tests des quatre couches
         run: |
           python -m py_compile scripts/validate_nova_admin_canaries_p50y.py
           python - <<'PY'
           import unittest
           loader=unittest.TestLoader()
           suite=loader.discover("scripts/tests",pattern="test_validate_nova_admin_canaries_p50y.py")
-          assert suite.countTestCases()==55, f"Suite attendue 55, obtenue {suite.countTestCases()}"
+          assert suite.countTestCases()==69, f"Suite attendue 69, obtenue {suite.countTestCases()}"
           result=unittest.TextTestRunner(verbosity=2).run(suite)
           if not result.wasSuccessful():
               raise SystemExit(1)
-          print("P51B: 55 tests des protections P50Y/P50Z/P51A + correction DISMISSED réussis")
+          print("P51C: 69 tests P50Y/P50Z/P51A/P51B + preuves GitHub et fichiers sûrs réussis")
           PY
       - name: Confirmer absence de preuve administrative et de GO
         run: |
