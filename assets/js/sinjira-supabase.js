@@ -75,6 +75,24 @@ export function navigateDocumentWindow(tab,raw){
 }
 // END SINJIRA_DOCUMENT_WINDOW
 
+// BEGIN SINJIRA_LIBRARY_ROUTE
+// Les champs de navigation issus du registre de projets/romans ne sont
+// jamais des autorisations. Le client n'affiche que des routes locales
+// non ambiguës : échapper le HTML ne valide pas un attribut href.
+export function safeLibraryRoute(value){
+  if(typeof value!=='string'||!value||value!==value.trim())return '';
+  if(!value.startsWith('/')||value.startsWith('//')||/[\\\u0000-\u001f\u007f]/.test(value))return '';
+  if(/%(?:2f|5c|2e|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value))return '';
+  if(/%(?![0-9a-f]{2})/i.test(value))return '';
+  try{
+    const url=new URL(value,location.origin);
+    const pathname=value.split(/[?#]/,1)[0];
+    if(url.origin!==location.origin||url.username||url.password||url.pathname!==pathname)return '';
+    return value;
+  }catch{return ''}
+}
+// END SINJIRA_LIBRARY_ROUTE
+
 export function safeInternalDestination(value,fallback='/compte/index.html'){
   const raw=String(value||'').trim();
   if(!raw.startsWith('/')||raw.startsWith('//')||raw.includes('\\')||/[\u0000-\u001f\u007f]/.test(raw))return fallback;
