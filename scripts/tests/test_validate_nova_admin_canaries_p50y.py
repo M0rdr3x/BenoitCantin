@@ -523,8 +523,9 @@ class P50Y(unittest.TestCase):
         data=server_snapshot();data["summaries"].append({"id":11,"enforcement":"active"})
         other=copy.deepcopy(data["details"][0]);other["id"]=11
         data["details"].append(other)
-        self.assertIn("RULESET_CONFORME_SANS_BYPASS_NON_DEMONTRE",
+        self.assertIn("REGLES_EFFECTIVES_RULESET_NON_CORRESPONDANTES",
                       m.server_preflight(data)["obstacles"])
+        self.assertEqual(m.server_preflight(data)["etat"],"BLOQUANT")
     def test_attaching_live_unprotected_state_downgrades_declared_complete(self):
         doc=filled()
         complete=m.analyze(doc,observations(doc))
