@@ -447,3 +447,26 @@ techniques exclues, sans requêtes réseau et sans lire de fichiers privés.
 Cette modification renforce **le code de contrôle de la PR**, mais
 n'assainit pas le domaine en production tant que la publication de la
 racine GitHub Pages reste active (incident #450).
+
+## Ancres de navigation et destinations réelles des catalogues
+
+Le validateur `scripts/validate_sinjira_public_links.py` contrôle
+désormais aussi les **fragments HTML locaux** des quatre portails
+SINJIRA. Les liens d'évitement `#contenu`, les raccourcis `#outils`
+et `#avenir` de Logiciels et les liens vers
+`/compte/bibliotheque.html#livre-i` ou
+`/compte/mes-achats.html#precommandes` doivent désigner une
+**ancre réellement présente et unique** dans le document public cible.
+
+L'analyse ne suit les fragments qu'après acceptation de l'URL par
+l'inventaire public Pages; elle ne lit que du HTML statique public
+sans session ni réseau. Les fragments des PDF promotionnels, comme
+`#page=1`, restent gérés par le lecteur PDF et ne sont pas
+faussement rejetés comme identifiants HTML. Les liens tiers ne sont
+pas interrogés. Des tests négatifs vérifient les ancres absentes,
+dupliquées, mal formées et une mutation réelle de `href="#outils"`
+dans la page Logiciels, en passant par la fonction d'audit complète.
+
+Cette garantie est testée dans la PR non publiée : elle ne remplace
+ni les tests multi-navigateurs, ni la preuve HTTP après bascule du
+site. Le blocage GitHub Pages `legacy` (#450) demeure.
