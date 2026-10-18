@@ -74,7 +74,7 @@ function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmi
         <h2>${escapeHtml(project.name)}</h2>
         <p>${escapeHtml(project.description||'')}</p>
         <div class="library-project-stats"><span>${isAvailable?`${docCount} document${docCount===1?'':'s'} accessible${docCount===1?'':'s'}`:'Documents sur autorisation'}</span><span>${escapeHtml(project.visibility==='restricted'?'Accès restreint':project.visibility==='account'?'Compte requis':'Page publique')}</span></div>
-        <div class="hero-actions">${isAvailable?`<a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(project.slug)}">Ouvrir l’espace</a>`:'<span class="role-chip">Autorisation nécessaire pour ouvrir le projet</span>'}${playPath?`<a class="btn btn-secondary" href="${escapeHtml(playPath)}">Jouer</a>`:''}${canRequest?`<button class="btn btn-secondary" type="button" data-v2461-request-tester="${project.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div>
+        <div class="hero-actions">${isAvailable?`<a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(project.slug)}">Ouvrir l’espace</a>`:'<span class="role-chip">Autorisation nécessaire pour ouvrir le projet</span>'}${playPath?`<a class="btn btn-secondary" href="${escapeHtml(playPath)}">Jouer</a>`:''}${canRequest?`<button class="btn btn-secondary" type="button" data-v2461-request-tester="${escapeHtml(project.id)}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div>
       </div>
     </article>`;
   }).join('')||'<div class="notice"><strong>Aucun espace disponible pour ce compte.</strong></div>';
