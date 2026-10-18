@@ -704,6 +704,83 @@ class P50Y(unittest.TestCase):
         del obs["800"]["canary_files_safe"]
         self.assertIn("CANARI_MARQUEUR_SURETE_NON_CONFIRME:sans_revue",
                       m.analyze(f,obs)["obstacles"])
+    def test_strict_preflight_requires_live_mode(self):
+        f=filled();r=m.attach_server_evidence(
+            m.analyze(f,observations(f)),m.server_preflight(server_snapshot()))
+        self.assertFalse(m.strict_preflight(r,live_enabled=False))
+    def test_strict_preflight_refuses_blank_dossier(self):
+        r=m.attach_server_evidence(m.analyze(basic()),
+                                   m.server_preflight(server_snapshot()))
+        self.assertFalse(m.strict_preflight(r,live_enabled=True))
+    def test_strict_preflight_refuses_unprotected_branch(self):
+        f=filled();server=server_snapshot();server["branch"]["protected"]=False
+        r=m.attach_server_evidence(m.analyze(f,observations(f)),
+                                   m.server_preflight(server))
+        self.assertFalse(m.strict_preflight(r,live_enabled=True))
+    def test_strict_preflight_accepts_only_technical_completeness(self):
+        f=filled()
+        r=m.attach_server_evidence(m.analyze(f,observations(f)),
+                                   m.server_preflight(server_snapshot()))
+        self.assertTrue(m.strict_preflight(r,live_enabled=True))
+        self.assertEqual(r["decision"],"NO_GO_AUTOMATIQUE")
+        self.assertFalse(r["fusion_autorisee"])
+        self.assertFalse(r["publication_autorisee"])
+    def test_strict_preflight_refuses_forged_go_flag(self):
+        f=filled()
+        r=m.attach_server_evidence(m.analyze(f,observations(f)),
+                                   m.server_preflight(server_snapshot()))
+        r["fusion_autorisee"]=True
+        self.assertFalse(m.strict_preflight(r,live_enabled=True))
+    def test_strict_preflight_refuses_unobserved_server(self):
+        f=filled();r=m.analyze(f,observations(f))
+        self.assertFalse(m.strict_preflight(r,live_enabled=True))
+    def test_strict_preflight_refuses_unresolved_obstacle(self):
+        f=filled()
+        r=m.attach_server_evidence(m.analyze(f,observations(f)),
+                                   m.server_preflight(server_snapshot()))
+        r["obstacles"].append("REVUE_INCONNUE")
+        self.assertFalse(m.strict_preflight(r,live_enabled=True))
+    def test_strict_preflight_refuses_case_without_evidence(self):
+        f=filled()
+        r=m.attach_server_evidence(m.analyze(f,observations(f)),
+                                   m.server_preflight(server_snapshot()))
+        r["cases"]["sans_revue"]="GITHUB_NON_VERIFIE"
+        self.assertFalse(m.strict_preflight(r,live_enabled=True))
+    def test_cli_strict_without_live_returns_three(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);src=root/"dossier.json";out=root/"rapport.json"
+            src.write_text(json.dumps(basic()),encoding="utf-8")
+            self.assertEqual(m.main(["--dossier",str(src),"--rapport",str(out),
+                                     "--exiger-preuves-techniques"]),3)
+            r=json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(r["decision"],"NO_GO_AUTOMATIQUE")
+    def test_cli_strict_live_blank_dossier_returns_three(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);src=root/"dossier.json"
+            src.write_text(json.dumps(basic()),encoding="utf-8")
+            with patch.object(m,"observe_server",return_value=server_snapshot()):
+                self.assertEqual(m.main(["--dossier",str(src),"--live",
+                                         "--exiger-preuves-techniques"]),3)
+    def test_cli_strict_live_complete_fixtures_only_checks_technique(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);src=root/"dossier.json";out=root/"rapport.json"
+            src.write_text(json.dumps(filled()),encoding="utf-8")
+            data=observations(filled())
+            with patch.object(m,"observe_server",return_value=server_snapshot()):
+                with patch.object(m,"actual_canary",
+                                  side_effect=lambda num,token: data[str(num)]):
+                    code=m.main(["--dossier",str(src),"--live",
+                                 "--exiger-preuves-techniques","--rapport",str(out)])
+            self.assertEqual(code,0)
+            result=json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(result["decision"],"NO_GO_AUTOMATIQUE")
+            self.assertFalse(result["fusion_autorisee"])
+            self.assertFalse(result["publication_autorisee"])
+    def test_cli_strict_missing_file_returns_two_not_three(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"absent.json"
+            self.assertEqual(m.main(["--dossier",str(path),
+                                     "--exiger-preuves-techniques"]),2)
     def test_no_reviewer_name_in_summary(self):
         f=filled()
         r=json.dumps(m.analyze(f))
