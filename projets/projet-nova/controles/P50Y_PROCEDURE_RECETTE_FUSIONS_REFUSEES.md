@@ -91,6 +91,23 @@ Le contrôle **refuse les listes paginées/incomplètes**, les checks homonymes 
 
 **Important :** le mode `--live` refuse désormais les PR qui ne ciblent pas `main`, n'ont pas l'identifiant de scénario dans le titre et la branche, modifient un fichier existant ou procèdent à un renommage, ou sortent des nouveaux fichiers `.txt` autorisés. Même un dossier rempli et un `mergeable_state:"blocked"` confirmé par API ne certifient **pas** la cause du refus. Une observation indépendante dans l'interface d'administration est obligatoire. Le programme renvoie toujours `NO_GO_AUTOMATIQUE` et n'émet jamais un GO institutionnel.
 
+## 4 bis. P51H — distinguer rapport et contrôle strict
+
+Le mode normal reste **un rapport d'observation** : un code de sortie `0` signifie seulement que le programme a lu le dossier et écrit le rapport JSON. Il ne représente **jamais** une preuve d'approbation, de protection active, de fusion autorisée ou de publication.
+
+Pour les opérateurs qui ont besoin d'un véritable garde-fou bloquant, utiliser :
+
+```bash
+python scripts/validate_nova_admin_canaries_p50y.py \
+  --dossier projets/projet-nova/controles/P50Y_PROCES_VERBAL_RECETTE_A_COMPLETER.json \
+  --live --exiger-preuves-techniques \
+  --rapport p51h_constat_technique.json
+```
+
+La nouvelle option `--exiger-preuves-techniques` impose le mode `--live`, les trois PR témoins corroborées par GitHub, les préconditions techniques serveur consultables et **aucun obstacle restant**. Résultats des commandes : `0` = **complétude technique seulement**, non une autorisation; `2` = dossier absent/illisible; `3` = preuves insuffisantes ou observation réelle manquante. Même avec un éventuel code `0` du mode strict, le rapport garde `NO_GO_AUTOMATIQUE`, `fusion_autorisee:false` et `publication_autorisee:false`. L'administrateur conserve seul la responsabilité d'examiner la cause de refus et les habilitations.
+
+**Situation courante :** les trois essais sont marqués NON EXÉCUTÉS; le contrôle strict **doit donc renvoyer 3**. La CI vérifie ce refus attendu : une CI verte n'est pas la réussite d'une recette administrateur.
+
 ## 5. Interprétation de la CI P50Y
 
 Le workflow proposé exécute **25 tests adversariaux** et confirme que la grille initiale affiche `RECETTE_REQUISE` pour chacun des trois essais. Un statut vert de ce workflow signifiera que **l'outil de recette fonctionne**, **pas** que les trois essais ont été effectués.
