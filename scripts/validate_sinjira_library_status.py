@@ -99,7 +99,7 @@ def audit(html: str, js: str) -> list[str]:
         "bindTesterRequestButtons(s,user);",
         "button,",
         "message=>s.from('access_requests').insert(",
-
+        "'access_requests_one_pending_idx'",
     )
     for marker in expectations:
         if marker not in js:
@@ -146,6 +146,8 @@ def audit_legacy(js: str) -> list[str]:
         "bindLegacyTesterRequests(box,s);",
         "bindLegacyPlaytestApplications(list,s);",
         "message=>s.from('playtest_participants').insert(",
+        "'access_requests_one_pending_idx'",
+        "'playtest_participants_pkey'",
 
         'data-request-tester="${escapeHtml(p.id)}"',
         'data-open-document="${escapeHtml(d.id)}"',
@@ -191,6 +193,12 @@ def audit_routes(shared: str) -> list[str]:
         "if(!result||result.error){",
         "if(!accepted)button.disabled=false;",
         "message.slice(0,1500)",
+        "function isKnownLibraryDuplicate(error,constraint){",
+        "error?.code==='23505'",
+        "['access_requests_one_pending_idx','playtest_participants_pkey'].includes(constraint)",
+        "error.message.includes('\"'+constraint+'\"')",
+        "if(isKnownLibraryDuplicate(result?.error,duplicateConstraint)){",
+        "accept(true);",
 
     )
     return ["Navigation locale non canonique : " + key
@@ -221,6 +229,9 @@ def self_test() -> None:
         shared.replace("if(!result||result.error){", "if(false){"),
         shared.replace("if(!accepted)button.disabled=false;", ""),
         shared.replace("message.slice(0,1500)", "message"),
+        shared.replace("error?.code==='23505'", "true"),
+        shared.replace("if(isKnownLibraryDuplicate(result?.error,duplicateConstraint)){", "if(false){"),
+        shared.replace("error.message.includes('\"'+constraint+'\"')", "true"),
 
     ):
         assert audit_routes(broken), "URL non canonique non détectée"
@@ -263,6 +274,8 @@ def self_test() -> None:
                        'data-apply-playtest="${x.id}"'),
         legacy.replace("bindLegacyTesterRequests(box,s);", ""),
         legacy.replace("bindLegacyPlaytestApplications(list,s);", ""),
+        legacy.replace("'playtest_participants_pkey'", "'another_constraint'"),
+        legacy.replace("'access_requests_one_pending_idx'", "'another_constraint'"),
 
     ):
         assert audit_legacy(broken), "Contournement droits du détail de projet accepté"
@@ -279,6 +292,7 @@ def self_test() -> None:
         js.replace('data-v2461-request-tester="${escapeHtml(project.id)}"',
                    'data-v2461-request-tester="${project.id}"'),
         js.replace("bindTesterRequestButtons(s,user);", ""),
+        js.replace("'access_requests_one_pending_idx'", "'another_constraint'"),
         js.replace("Number.isFinite(rawProgress)", "true"),
         js.replace("Number.isSafeInteger(rawPage)&&rawPage>0", "true"),
     ):
