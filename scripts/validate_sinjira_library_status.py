@@ -95,6 +95,11 @@ def audit(html: str, js: str) -> list[str]:
         "Certains droits ne peuvent pas être vérifiés pour le moment.",
         "getSupabase().functions.invoke('get-novel-file-url'",
         "const errors=[adminResult,ownerResult,projectsResult",
+        "function bindTesterRequestButtons(s,currentUser){",
+        "bindTesterRequestButtons(s,user);",
+        "button,",
+        "message=>s.from('access_requests').insert(",
+
     )
     for marker in expectations:
         if marker not in js:
@@ -136,6 +141,12 @@ def audit_legacy(js: str) -> list[str]:
         "const playPath=allowed?internalProjectPath(p.play_path):'';",
         "return safeLibraryRoute(raw);",
         "return safeLibraryCover(p.cover_url,fallback);",
+        "function bindLegacyTesterRequests(box,s){",
+        "function bindLegacyPlaytestApplications(list,s){",
+        "bindLegacyTesterRequests(box,s);",
+        "bindLegacyPlaytestApplications(list,s);",
+        "message=>s.from('playtest_participants').insert(",
+
         'data-request-tester="${escapeHtml(p.id)}"',
         'data-open-document="${escapeHtml(d.id)}"',
         'id="${escapeHtml(x.id)}"',
@@ -173,6 +184,14 @@ def audit_routes(shared: str) -> list[str]:
         "safe.startsWith('/assets/media/')",
         "!/[?#]/.test(safe)",
         "webp|png|jpe?g|avif",
+        "export async function submitLibraryRequest(button,askMessage,write,accept,reject){",
+        "if(!button||button.disabled)return false;",
+        "if(typeof message!=='string')return false;",
+        "button.disabled=true;",
+        "if(!result||result.error){",
+        "if(!accepted)button.disabled=false;",
+        "message.slice(0,1500)",
+
     )
     return ["Navigation locale non canonique : " + key
             for key in required if key not in shared]
@@ -197,6 +216,12 @@ def self_test() -> None:
         shared.replace("safe.startsWith('/assets/media/')", "true"),
         shared.replace("!/[?#]/.test(safe)", "true"),
         shared.replace("webp|png|jpe?g|avif", "svg|html|js"),
+        shared.replace("if(!button||button.disabled)return false;", "if(false)return false;"),
+        shared.replace("if(typeof message!=='string')return false;", "if(false)return false;"),
+        shared.replace("if(!result||result.error){", "if(false){"),
+        shared.replace("if(!accepted)button.disabled=false;", ""),
+        shared.replace("message.slice(0,1500)", "message"),
+
     ):
         assert audit_routes(broken), "URL non canonique non détectée"
     purchases = (ROOT / "compte/mes-achats.html").read_text("utf-8")
@@ -236,6 +261,9 @@ def self_test() -> None:
                        'id="${x.id}"'),
         legacy.replace('data-apply-playtest="${escapeHtml(x.id)}"',
                        'data-apply-playtest="${x.id}"'),
+        legacy.replace("bindLegacyTesterRequests(box,s);", ""),
+        legacy.replace("bindLegacyPlaytestApplications(list,s);", ""),
+
     ):
         assert audit_legacy(broken), "Contournement droits du détail de projet accepté"
     for broken in (
@@ -250,6 +278,7 @@ def self_test() -> None:
                    "return project.cover_url||fallback;"),
         js.replace('data-v2461-request-tester="${escapeHtml(project.id)}"',
                    'data-v2461-request-tester="${project.id}"'),
+        js.replace("bindTesterRequestButtons(s,user);", ""),
         js.replace("Number.isFinite(rawProgress)", "true"),
         js.replace("Number.isSafeInteger(rawPage)&&rawPage>0", "true"),
     ):
