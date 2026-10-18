@@ -1,4 +1,4 @@
-import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow,safeLibraryRoute} from './sinjira-supabase.js';
+import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow,safeLibraryRoute,safeLibraryCover} from './sinjira-supabase.js';
 
 const page=document.body.dataset.libraryPage||'',status=document.querySelector('[data-library-status]');
 let user=null,owner=false,admin=false;
@@ -19,7 +19,14 @@ function projectIsOpen(project,access,isOwner=owner,isAdmin=admin){
 function internalProjectPath(raw){
   return safeLibraryRoute(raw);
 }
-function cover(p){if(p.cover_url)return p.cover_url;if(p.slug==='fracture-du-reseau-mere')return '/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp';if(p.slug==='reseau-mere-resistance')return '/assets/media/sinjira-reseau-mere-resistance-officiel.webp';return '/assets/media/sinjira-emblem.webp'}
+function cover(p){
+  const fallback=p.slug==='fracture-du-reseau-mere'
+    ?'/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp'
+    :p.slug==='reseau-mere-resistance'
+      ?'/assets/media/sinjira-reseau-mere-resistance-officiel.webp'
+      :'/assets/media/sinjira-emblem.webp';
+  return safeLibraryCover(p.cover_url,fallback);
+}
 async function openDoc(id,button){
   if(button?.disabled)return;
   if(button)button.disabled=true;
