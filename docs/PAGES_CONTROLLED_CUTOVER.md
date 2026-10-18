@@ -96,7 +96,7 @@ sans `paths` ni `paths-ignore`, qu'elle modifie du contenu, des images
 ou l'infrastructure. La fonction `validate_jekyll_ci` de
 `scripts/validate_pages_workflows.py` interdit la réintroduction de
 filtres, de jobs ignorés, de publication d'artefact, de droits d'écriture
-ou de retrait de la compilation et des audits. Ses **16 mutations
+ou de retrait de la compilation et des audits. Ses **17 mutations
 négatives** protègent ce contrat, y compris le nom stable du job
 `Construire puis auditer Pages sans déployer` utilisé comme required check; les audits des sources et secrets
 doivent avoir lieu avant **et** après l'ajout du reçu SHA/run.
