@@ -25,11 +25,18 @@ class References(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.references: list[tuple[str, str]] = []
         self.base_elements = 0
+        self.fragment_ids: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         data = dict(attrs)
         if tag == "base":
             self.base_elements += 1  # Altering relative URL resolution is forbidden.
+        # Les ancres sont des contrats de navigation, y compris sur les
+        # pages de compte accessibles publiquement sans données privées.
+        if data.get("id"):
+            self.fragment_ids.append(data["id"])
+        if tag == "a" and data.get("name"):
+            self.fragment_ids.append(data["name"])
         for attr in ("href", "src", "srcset", "poster"):
             value = data.get(attr)
             if not value:
@@ -120,6 +127,50 @@ def verify_target(page: Path, ref: str, root: Path,
     return None
 
 
+
+def verify_fragment(page: Path, ref: str, root: Path,
+                    cache: dict[Path, References]) -> str | None:
+    """Vérifier les ancres HTML publiques sans ouvrir de contenu privé.
+
+    Ne concerne que les liens <a href> vers des fichiers HTML locaux dont
+    l'accès est déjà validé par verify_target(). Les fragments PDF (page=)
+    sont interprétés par le lecteur PDF, pas par un identifiant HTML.
+    """
+    parts = urlsplit(ref)
+    if not parts.fragment or parts.scheme in {"mailto", "tel"}:
+        return None
+    if parts.netloc and (parts.hostname or "").lower() != HOST:
+        return None  # Fragment externe non vérifiable sans réseau.
+    fragment = unquote(parts.fragment)
+    if not fragment or any(ord(ch) < 32 or ord(ch) == 127 for ch in fragment):
+        return "Ancre HTML contenant un caractère de contrôle"
+    path = unquote(parts.path)
+    target = root / path.lstrip("/") if path.startswith("/") else page.parent / path
+    if not path:
+        target = page
+    elif path.endswith("/"):
+        target = target / "index.html"
+    target = target.resolve()
+    try:
+        target.relative_to(root.resolve())
+    except ValueError:
+        return "Ancre pointant hors du site public"
+    if target.suffix.lower() not in {".html", ".htm"}:
+        return None
+    if not target.is_file() or target.is_symlink():
+        # verify_target() décide déjà si la route est valide ou générée.
+        return None
+    if target not in cache:
+        parsed = References()
+        parsed.feed(target.read_text("utf-8"))
+        cache[target] = parsed
+    count = cache[target].fragment_ids.count(fragment)
+    if count != 1:
+        return (f"Ancre HTML absente : #{fragment}" if count == 0
+                else f"Ancre HTML ambiguë ou dupliquée : #{fragment}")
+    return None
+
+
 def audit(root: Path) -> list[str]:
     try:
         public = read_allowlist(root, INVENTORY)
@@ -127,6 +178,7 @@ def audit(root: Path) -> list[str]:
     except OSError:
         return ["Inventaires de publication Pages introuvables"]
     errors: list[str] = []
+    fragment_cache: dict[Path, References] = {}
     for category, rel in PAGES.items():
         page = root / rel
         if not page.is_file():
@@ -136,8 +188,11 @@ def audit(root: Path) -> list[str]:
         references.feed(page.read_text("utf-8"))
         if references.base_elements:
             errors.append(f"{category}: élément HTML base non autorisé")
+        fragment_cache[page.resolve()] = references
         for tag, ref in references.references:
             issue = verify_target(page, ref, root, public, generated)
+            if not issue and tag == "a.href":
+                issue = verify_fragment(page, ref, root, fragment_cache)
             if issue:
                 errors.append(f"{category} / {tag} / {ref[:120]} : {issue}")
     return errors
@@ -192,9 +247,43 @@ def self_test(root: Path) -> None:
     parser = References()
     parser.feed('<base href="/scripts/"><a href="nimportequoi">X</a>')
     assert parser.base_elements == 1
+    # Les fragments internes et les liens vers les sections de compte
+    # doivent réellement pointer vers un id unique dans la page HTML.
+    for page_rel, destination in (
+        (PAGES["accueil"], "#contenu"),
+        (PAGES["logiciels"], "#outils"),
+        (PAGES["logiciels"], "#avenir"),
+        (PAGES["romans"], "/compte/bibliotheque.html#livre-i"),
+        (PAGES["romans"], "../../../compte/mes-achats.html#precommandes"),
+    ):
+        source = root / page_rel
+        assert verify_fragment(source, destination, root, {}) is None, destination
+    assert verify_fragment(
+        root / PAGES["romans"],
+        "../documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf#page=1",
+        root, {},
+    ) is None, "Les fragments de lecture PDF ne sont pas des id HTML"
+    for page_rel, link in (
+        (PAGES["logiciels"], "#ancre-inexistante"),
+        (PAGES["romans"], "/compte/bibliotheque.html#ancre-inexistante"),
+        (PAGES["romans"], "../../../compte/mes-achats.html#ancre-inexistante"),
+        (PAGES["logiciels"], "#outils%00interdit"),
+    ):
+        assert verify_fragment(root / page_rel, link, root, {}), (
+            "Lien à ancre cassée accepté : " + link
+        )
+    with TemporaryDirectory() as directory:
+        fixture = Path(directory) / "index.html"
+        fixture.write_text(
+            '<main id="section"><a href="#section">OK</a></main>'
+            '<aside id="section">Duplicata</aside>', "utf-8"
+        )
+        assert "dupliquée" in (verify_fragment(fixture, "#section", fixture.parent, {}) or "")
+        fixture.write_text('<main id="section">OK</main>', "utf-8")
+        assert verify_fragment(fixture, "#section", fixture.parent, {}) is None
     issues = audit(root)
     assert not issues, "\n".join(issues)
-    print("OK liens publics SINJIRA: exclusions Pages, 4 portails, srcset et liens privés refusés")
+    print("OK liens publics SINJIRA: exclusions Pages, 4 portails, ancres HTML, srcset et liens privés refusés")
 
 
 def main() -> int:
@@ -210,7 +299,7 @@ def main() -> int:
         print("ERREUR : " + error)
     if issues:
         return 1
-    print("OK: chaque lien et ressource locale des 4 portails est approuvé dans Pages")
+    print("OK: 4 portails, ressources publiques et ancres HTML locales vérifiés")
     return 0
 
 
