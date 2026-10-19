@@ -173,6 +173,93 @@ class GuardrailsP52E(unittest.TestCase):
             self.assertEqual(m.main(["--gabarit",str(GAB),"--rapport",str(target),
                                      "--exiger-non-appauvrissement-demontre"]),3)
             self.assertFalse(json.loads(target.read_text())["preuves_representativite_obtenues"])
+    def test_24_loss_when_gross_income_falls_is_not_hidden(self):
+        d=source();r=case(d);filled(r)
+        r["propose"]["revenu_brut"]="38000"
+        x=output(d)
+        self.assertEqual(x["statut"],"PERTE_AVEC_CHANGEMENT_NON_FISCAL_A_EXAMINER")
+        self.assertEqual(x["variation_monetaire_cad"],"-2000")
+        self.assertTrue(x["risque_de_perte_dans_ce_cas"])
+        self.assertFalse(x["perimetre_stable_pour_attribution_fiscale"])
+    def test_25_loss_when_quebec_benefit_falls_is_not_hidden(self):
+        d=source();r=case(d);filled(r)
+        r["propose"]["prestations_quebec_ou_etat"]="1000"
+        x=output(d)
+        self.assertEqual(x["statut"],"PERTE_AVEC_CHANGEMENT_NON_FISCAL_A_EXAMINER")
+        self.assertEqual(x["variation_monetaire_cad"],"-500")
+        self.assertEqual(m.analyse(d)["cas_a_risque_de_perte_dans_leur_propre_scenario"],1)
+    def test_26_loss_when_firm_revenue_falls_is_not_hidden(self):
+        d=source();r=case(d,kind="entreprises");filled(r,"entreprises")
+        r["propose"]["chiffre_affaires"]="99000"
+        x=output(d,kind="entreprises")
+        self.assertEqual(x["statut"],"PERTE_AVEC_CHANGEMENT_NON_FISCAL_A_EXAMINER")
+        self.assertEqual(x["variation_monetaire_cad"],"-1000")
+        self.assertTrue(x["risque_de_perte_dans_ce_cas"])
+    def test_27_loss_when_salaries_cost_more_is_not_hidden(self):
+        d=source();r=case(d,kind="entreprises");filled(r,"entreprises")
+        r["propose"]["masse_salariale"]="42000"
+        x=output(d,kind="entreprises")
+        self.assertEqual(x["statut"],"PERTE_AVEC_CHANGEMENT_NON_FISCAL_A_EXAMINER")
+        self.assertEqual(x["decomposition_comptable"]["variation_postes_non_fiscaux_cad"],"-2000")
+    def test_28_apparent_gain_exogenous_still_not_called_tax_gain(self):
+        d=source();r=case(d);filled(r)
+        r["propose"]["revenu_brut"]="42000"
+        x=output(d)
+        self.assertEqual(x["statut"],"CHANGEMENT_NON_FISCAL_A_ISOLER")
+        self.assertFalse(x["risque_de_perte_dans_ce_cas"])
+        self.assertEqual(x["decomposition_comptable"]["variation_postes_non_fiscaux_cad"],"2000")
+    def test_29_household_mixed_loss_decomposed_without_causal_claim(self):
+        d=source();r=case(d);filled(r)
+        r["propose"]["prestations_quebec_ou_etat"]="1000"
+        r["propose"]["impot_revenu_quebec_ou_etat"]="3200"
+        x=output(d)
+        self.assertEqual(x["variation_monetaire_cad"],"-700")
+        decomp=x["decomposition_comptable"]
+        self.assertEqual(decomp["variation_postes_non_fiscaux_cad"],"-500")
+        self.assertEqual(decomp["variation_autres_postes_comptables_cad"],"-200")
+        self.assertTrue(decomp["somme_verifiee"])
+        self.assertFalse(x["preuve_de_non_appauvrissement"])
+    def test_30_firm_mixed_loss_decomposed_without_causal_claim(self):
+        d=source();r=case(d,kind="entreprises");filled(r,"entreprises")
+        r["propose"]["chiffre_affaires"]="98000"
+        r["propose"]["cotisations_employeur"]="3500"
+        x=output(d,kind="entreprises")
+        self.assertEqual(x["variation_monetaire_cad"],"-2500")
+        self.assertEqual(x["decomposition_comptable"]["variation_postes_non_fiscaux_cad"],"-2000")
+        self.assertEqual(x["decomposition_comptable"]["variation_autres_postes_comptables_cad"],"-500")
+        self.assertTrue(x["decomposition_comptable"]["somme_verifiee"])
+    def test_31_fiscal_only_loss_has_zero_non_fiscal_delta(self):
+        d=source();r=case(d);filled(r)
+        r["propose"]["taxes_consommation_supportees"]="2500"
+        x=output(d)
+        self.assertEqual(x["statut"],"PERTE_HYPOTHETIQUE_A_EXAMINER")
+        self.assertEqual(x["decomposition_comptable"]["variation_postes_non_fiscaux_cad"],"0")
+        self.assertEqual(x["decomposition_comptable"]["variation_autres_postes_comptables_cad"],"-500")
+    def test_32_missing_case_has_no_fictional_decomposition(self):
+        x=output(source())
+        self.assertIsNone(x["decomposition_comptable"]["variation_postes_non_fiscaux_cad"])
+        self.assertIsNone(x["decomposition_comptable"]["variation_autres_postes_comptables_cad"])
+        self.assertFalse(x["decomposition_comptable"]["somme_verifiee"])
+    def test_33_count_exogenous_changes_even_when_loss(self):
+        d=source();r=case(d);filled(r)
+        r["propose"]["revenu_brut"]="30000"
+        out=m.analyse(d)
+        self.assertEqual(out["cas_avec_variation_non_fiscale_non_isolee"],1)
+        self.assertEqual(out["cas_avec_perte_et_variation_non_fiscale"],1)
+        self.assertEqual(out["cas_a_risque_de_perte_dans_leur_propre_scenario"],1)
+    def test_34_hypothetical_loss_with_exogenous_change_not_certified(self):
+        d=source();r=case(d,kind="entreprises");filled(r,"entreprises")
+        r["propose"]["subventions_recues"]="0"
+        x=output(d,kind="entreprises")
+        self.assertEqual(x["statut"],"PERTE_AVEC_CHANGEMENT_NON_FISCAL_A_EXAMINER")
+        self.assertFalse(x["pret_a_generaliser"])
+        self.assertFalse(x["preuve_de_non_appauvrissement"])
+    def test_35_initial_empty_gabarit_has_no_hidden_losses_or_gains(self):
+        out=m.analyse(source())
+        self.assertEqual(out["cas_avec_perte_et_variation_non_fiscale"],0)
+        self.assertEqual(out["cas_a_risque_de_perte_dans_leur_propre_scenario"],0)
+        self.assertEqual(out["montants_manquants"],720)
+        self.assertEqual(out["decision"],"NO_GO_AUTOMATIQUE")
     def test_23_cli_missing_file_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             target=Path(tmp)/"r.json"
