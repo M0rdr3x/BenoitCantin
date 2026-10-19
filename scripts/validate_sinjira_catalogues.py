@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 from shutil import copyfile
 from html.parser import HTMLParser
 from pathlib import Path
@@ -146,6 +147,34 @@ def inspect_banners(root: Path) -> list[str]:
     return errors
 
 
+
+def inspect_software_anchor_navigation(css: str) -> list[str]:
+    """Prouver deux offsets d'ancrage accessibles sous les menus sticky.
+
+    La vraie visibilité est testée séparément sur les trois navigateurs.
+    """
+    selectors = (
+        r"\.sinjira-software-page\s+#outils,\s*"
+        r"\.sinjira-software-page\s+#avenir\s*"
+        r"\{\s*scroll-margin-top:\s*(\d+)px\s*\}"
+    )
+    offsets = [int(value) for value in re.findall(selectors, css)]
+    main_offsets = [
+        int(value) for value in re.findall(
+            r"\.sinjira-software-page\s+#contenu\s*"
+            r"\{\s*scroll-margin-top:\s*(\d+)px\s*\}", css
+        )
+    ]
+    problems: list[str] = []
+    if len(offsets) != 2 or min(offsets, default=0) < 165:
+        problems.append("Ancres Logiciels : titres masqués par menus fixes")
+    if len(main_offsets) != 2 or min(main_offsets, default=0) < 78:
+        problems.append("Lien Aller au contenu : décalage du bandeau absent")
+    if "@media(max-width:650px)" not in css:
+        problems.append("Ancres Logiciels : aucun ajustement mobile")
+    return problems
+
+
 def validate(root: Path) -> list[str]:
     errors: list[str] = []
     if not root.is_dir():
@@ -221,8 +250,13 @@ def validate(root: Path) -> list[str]:
             if f'href="{route}"' not in library.read_text("utf-8"):
                 errors.append("Raccourci bibliothèque absent : " + route)
     css = root / "projets/sinjira/sinjira.css"
-    if not css.is_file() or "@media(max-width:700px)" not in css.read_text("utf-8"):
-        errors.append("Style mobile Logiciels absent")
+    if not css.is_file():
+        errors.append("Feuille de style SINJIRA absente")
+    else:
+        rules = css.read_text("utf-8")
+        if "@media(max-width:700px)" not in rules:
+            errors.append("Style mobile Logiciels absent")
+        errors.extend(inspect_software_anchor_navigation(rules))
     errors.extend(inspect_banners(root))
     return errors
 
@@ -247,6 +281,17 @@ def self_test() -> None:
             to.parent.mkdir(parents=True, exist_ok=True)
             copyfile(ROOT / entry["path"], to)
         assert not inspect_banners(root), inspect_banners(root)
+        styles = stylesheet.read_text("utf-8")
+        assert not inspect_software_anchor_navigation(styles)
+        for altered in (
+            styles.replace("scroll-margin-top:178px", "scroll-margin-top:0px"),
+            styles.replace("scroll-margin-top:170px", "scroll-margin-top:60px"),
+            styles.replace(".sinjira-software-page #avenir", ".fausse-ancre"),
+            styles.replace("scroll-margin-top:94px", "scroll-margin-top:0px"),
+        ):
+            assert inspect_software_anchor_navigation(altered), (
+                "Régression d'ancre fixe non détectée"
+            )
         banner = root / BANNERS["jeux"]["path"]
         banner.unlink()
         assert any("Bannière jeux absente" in e for e in inspect_banners(root)), (
