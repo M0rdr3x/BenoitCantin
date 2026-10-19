@@ -736,3 +736,45 @@ production.
 
 La PR #639 reste en brouillon. Le correctif de navigation ne résout
 pas la publication GitHub Pages `legacy` (#450).
+
+### CI universelle des catalogues : les modules partagés déclenchent toujours les tests
+
+L’ancien workflow `.github/workflows/validate-sinjira-catalogues.yml`
+était conditionné à une liste `pull_request.paths` et `push.paths`.
+Cette liste omettait notamment
+`assets/js/sinjira-supabase.js`, alors que ce module contient les
+contrôles partagés des liens, couvertures, autorisations d’ouverture
+et soumissions de la bibliothèque. Elle omettait aussi
+`assets/css/site.css`, qui affecte directement le positionnement,
+les menus et la navigation des catalogues. Une PR changeant
+uniquement l’un de ces fichiers risquait de ne jamais déclencher les
+vérifications spécialisées.
+
+**Nouveau contrat :** toutes les PR ciblant `main` déclenchent
+`Contrôler les trois catalogues et les routes publiques` et les
+vérifications navigateur Chromium, Firefox et WebKit, **sans filtre de
+chemins**, y compris après `synchronize`, `reopened` et
+`ready_for_review`. Tous les push sur `main` exécutent la partie
+statique et métier ; les essais visuels restent réservés aux PR,
+avec source locale et sans secret.
+
+Le nouveau `scripts/validate_sinjira_catalogues_workflow.py` impose
+les déclencheurs, les jobs, leurs noms stables, les commandes
+exécutables réellement présentes, les actions épinglées,
+le conteneur Playwright et ses trois navigateurs. Il teste **18
+mutations dangereuses**, notamment la réintroduction de `paths`,
+la suppression des tests de droits, l’arrêt des contrôles visuels
+et l’ajout d’autorisations de publication.
+
+La garde est exécutée **deux fois dans la chaîne de preuves** :
+dans le workflow spécialisé des catalogues, mais également dans
+`.github/workflows/audit-pages-jekyll.yml`, dont le déclenchement
+sur toutes les PR est lui-même contrôlé par
+`scripts/validate_pages_workflows.py`. Ce dernier refuse en
+autotest le retrait de la garde des catalogues du workflow Jekyll.
+Ainsi, un fichier partagé isolé ne peut pas contourner
+silencieusement le contrôle spécialisé.
+
+Cette mesure ne change pas la production ni les paramètres GitHub
+Pages. Le blocage `legacy` (#450) reste actif, et la PR #639 demeure
+en brouillon.
