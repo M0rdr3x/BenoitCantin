@@ -40,3 +40,54 @@ Ce dispositif constitue une **consultation volontaire de personnes ayant accès 
 - [ ] Préparer une fermeture par drapeau et un processus de destruction/anonymisation de la table de déduplication. Contrôler la diffusion de toute statistique agrégée et le seuil minimal de confidentialité.
 
 **Important :** aucun résultat ne doit être publié automatiquement pendant cette phase. Un sondage citoyen autoselectionné ne devient pas représentatif parce qu'il compte de nombreux répondants.
+
+## Consultation séparée des 40 questions fondamentales
+
+La banque fournie pour le Projet Nova a été conservée dans une
+**consultation distincte** : `consultation-40.html`, le corpus immuable
+`data/consultation-40-v1.json` et le client
+`assets/consultation-40.js`. Il n'est **pas** substitué aux 64
+questions de la Boussole ni au questionnaire exploratoire de 64
+propositions. Ces 40 propositions couvrent explicitement
+l'indépendance et le statut national, les institutions, la fiscalité,
+la santé, l'éducation, les droits, l'énergie et l'environnement.
+Certaines questions sont conditionnelles à une éventuelle
+indépendance et n'engagent aucun gouvernement.
+
+**Accès et parcours :** âge minimal autodéclaré de 18 ans et
+consentement explicite séparé; une seule question visible à la fois,
+boutons Précédent/Suivant, choix **Pour**, **Contre** ou **Sans
+opinion**, récapitulatif, aucun stockage local des opinions,
+aucun envoi tant que la collecte n'est pas autorisée. L'attestation
+ne constitue pas une preuve vérifiée de l'âge.
+
+**Préparation du serveur, non déployée :**
+`supabase/migrations/20261019190000_nova_foundations_40_survey_v1.sql`
+et `supabase/functions/nova-consultation40-submit/index.ts`.
+Ces ressources ont leur propre identifiant de sondage
+`nova-orientations-40-v1`, une clé pseudonyme HMAC de déduplication,
+une insertion SQL atomique et des agrégats par réponse. La RLS des
+deux tables interdit les lectures publiques et seules les opérations
+`service_role` peuvent enregistrer les résultats. Le secret serveur
+`NOVA40_SURVEY_PEPPER` doit être distinct, long et aléatoire; le
+drapeau `NOVA40_COLLECTION_ENABLED` doit rester absent ou
+différent de `true`.
+
+**Avant toute collecte réelle :** validation juridique des 40
+formulations, revue de confidentialité des opinions politiques,
+base légale et conservation, processus d'effacement/retrait,
+vérification d'âge adaptée, revue des risques de comptes multiples,
+appels aux contributions non partisans, revue de sécurité et tests
+SQL/Edge isolés. Il faut ensuite autoriser explicitement la
+migration, le déploiement Edge et l'ouverture synchronisée du
+drapeau serveur et du client. Ces étapes ne sont pas approuvées ici
+et l'incident Pages #450 reste bloquant.
+
+Une participation volontaire sur ce site **n'est pas un sondage
+statistiquement représentatif** du Québec. Les résultats ne doivent
+pas être présentés comme un référendum, une intention de vote
+représentative ou une marge d'erreur scientifique.
+
+Validation : `scripts/validate_nova_consultation40.py` et
+`tests/e2e/test_nova_consultation40_visual.py`, lancés sur les PR
+pour les trois moteurs navigateur et sans service externe.
