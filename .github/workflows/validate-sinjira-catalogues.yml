@@ -34,6 +34,10 @@ jobs:
         run: |
           python3 scripts/validate_sinjira_catalogues_workflow.py --self-test
           python3 scripts/validate_sinjira_catalogues_workflow.py
+      - name: Vérifier le sondage adulte Nova sans aucun envoi
+        run: |
+          python3 scripts/validate_nova_survey.py --self-test
+          python3 scripts/validate_nova_survey.py
       - name: Vérifier les scénarios négatifs
         run: python3 scripts/validate_sinjira_catalogues.py --self-test
       - name: Vérifier les liens, les pages et les permissions publiques
@@ -102,6 +106,10 @@ jobs:
         env:
           BROWSER: ${{ matrix.browser }}
         run: python tests/e2e/test_sinjira_catalogues_visual.py
+      - name: Parcours réel du sondage Nova 18+ sans collecte
+        env:
+          BROWSER: ${{ matrix.browser }}
+        run: python tests/e2e/test_nova_survey_visual.py
       - name: Arrêter le serveur de test
         if: always()
         run: |
