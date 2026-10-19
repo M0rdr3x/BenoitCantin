@@ -1,0 +1,94 @@
+name: Projet Nova P52H - Controle transversal des preuves fiscales
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52h.yml"
+      - "scripts/auditer_preparation_fiscale_nova_p52h.py"
+      - "scripts/tests/test_auditer_preparation_fiscale_nova_p52h.py"
+      - "scripts/evaluer_transition_fiscale_nova_p52b.py"
+      - "scripts/rapprocher_budget_quebec_nova_p52c.py"
+      - "scripts/comparer_incidence_fiscale_nova_p52d.py"
+      - "scripts/evaluer_garde_fous_revenu_nova_p52e.py"
+      - "projets/projet-nova/etudes/P52*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recouper-preuves-sans-microdonnees:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Lecture seule sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Compiler et executer exactement vingt tests contradictoires
+        run: |
+          python -m py_compile scripts/auditer_preparation_fiscale_nova_p52h.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_auditer_preparation_fiscale_nova_p52h.py")
+          assert suite.countTestCases()==20, suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          if not result.wasSuccessful():
+              raise SystemExit(1)
+          print("P52H : 20 tests contradictoires reussis; aucune microdonnee exportee")
+          PY
+      - name: Observer les preuves deja reunies sans les surestimer
+        run: |
+          python scripts/auditer_preparation_fiscale_nova_p52h.py \
+            --rapport p52h_resume_agrege.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("p52h_resume_agrege.json").read_text("utf-8"))
+          assert x["jalon"]=="P52H" and x["decision"]=="NO_GO_AUTOMATIQUE"
+          assert x["lignes_projection"]==60 and x["cas_incidence"]==42
+          assert x["champs_financiers_encore_inconnus"]==600
+          assert x["montants_individuels_encore_inconnus"]==720
+          assert x["preuves_fiscales_P52A_encore_non_attestees"]==20
+          assert x["cas_incidence_conditionnellement_calculables"]==0
+          assert x["statut_conclusion_pertes"]=="AUCUN_CAS_EVALUABLE_PAS_ZERO_PERTE_DEMONTREE"
+          assert x["absence_appauvrissement_population_demontree"] is False
+          assert x["publication_autorisee"] is False and x["fusion_autorisee"] is False
+          assert x["rapport_sans_donnees_par_cas"] is True
+          assert "cas" not in x and "resultats" not in x
+          print("P52H : 600 + 720 inconnues, 20 preuves absentes, NO_GO sans donnees de cas")
+          PY
+      - name: Porte stricte - refus technique attendu
+        run: |
+          set +e
+          python scripts/auditer_preparation_fiscale_nova_p52h.py \
+            --exiger-preparation --rapport p52h_refus_agrege.json
+          statut=$?
+          set -e
+          if [ "$statut" -ne 3 ]; then
+            echo "P52H: attendu 3, obtenu $statut" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("p52h_refus_agrege.json").read_text("utf-8"))
+          assert x["decision"]=="NO_GO_AUTOMATIQUE"
+          assert x["blocages"] and x["publication_autorisee"] is False
+          print("P52H : code 3, refus volontaire de GO fiscal")
+          PY
+      - name: Conserver uniquement deux rapports agreges
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52h-synthese-sans-microdonnees-no-go
+          path: |
+            p52h_resume_agrege.json
+            p52h_refus_agrege.json
+          if-no-files-found: ignore
+          retention-days: 7
