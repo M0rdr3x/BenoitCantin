@@ -142,3 +142,13 @@
   .sinjira-category-hero-grid--banner {gap:18px}
   .sinjira-portal-art {margin:12px 0}
 }
+
+/* Navigation par ancres : garder les titres visibles sous les deux menus fixes */
+.sinjira-software-page #contenu{scroll-margin-top:94px}
+.sinjira-software-page #outils,
+.sinjira-software-page #avenir{scroll-margin-top:178px}
+@media(max-width:650px){
+  .sinjira-software-page #contenu{scroll-margin-top:86px}
+  .sinjira-software-page #outils,
+  .sinjira-software-page #avenir{scroll-margin-top:170px}
+}
