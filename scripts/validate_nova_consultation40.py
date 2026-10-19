@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """Confirme le corpus exact Nova 40, âge, consentement et collecte fermée."""
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 NOVA=ROOT/"projets/projet-nova"
+# SHA du blob Git approuvé : toute modification du corpus exige une revue et une nouvelle version.
+# Ceci détecte une dérive accidentelle, sans prétendre valoir signature cryptographique indépendante.
+APPROVED_MANIFEST_GIT_SHA = "97f0d3ad2b13be728356bba7a1831b91fd047070"
+
+def manifest_git_sha(text):
+    data = text.encode("utf-8")
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
 PATHS={
 "manifest":NOVA/"data/consultation-40-v1.json",
 "page":NOVA/"consultation-40.html",
@@ -18,6 +26,8 @@ PATHS={
 
 def validate(text):
     issues=[]
+    if manifest_git_sha(text["manifest"]) != APPROVED_MANIFEST_GIT_SHA:
+        issues.append("Corpus Nova 40 modifié sans revue de version")
     required={
         "page":["sondage-age","sondage-consent","sondage-start","sondage-submit",
                 'id="sondage-next"','id="sondage-back"','40 questions','non représentative'],
@@ -94,6 +104,10 @@ def main():
             obj=json.loads(text["manifest"]);obj[field]=value
             altered=dict(text);altered["manifest"]=json.dumps(obj)
             assert validate(altered), "Régression de manifeste non détectée"
-        print("OK consultation 40 : 14 mutations de sécurité et âge refusées")
+        obj=json.loads(text["manifest"])
+        obj["questions"][19]["text"]="Question centrale modifiée sans approbation"
+        altered=dict(text);altered["manifest"]=json.dumps(obj,ensure_ascii=False)
+        assert validate(altered), "Modification intermédiaire du corpus non détectée"
+        print("OK consultation 40 : 15 mutations de sécurité, âge et corpus refusées")
     print("OK consultation Nova : 40 questions Pour/Contre, 18+, collecte désactivée, RLS")
 if __name__=="__main__":main()
