@@ -61,6 +61,9 @@ def validate(source: str) -> list[str]:
     if not visual_separator:
         errors.append("Vérifications des trois navigateurs manquantes")
         return errors
+    # partition() consomme le saut de ligne avant le prochain job.
+    # Une commande en dernière ligne du job doit garder sa frontière.
+    verify += "\n"
     if "    name: Contrôler les trois catalogues et les routes publiques\n" not in verify:
         errors.append("Nom du contrôle principal modifié")
     if verify.count("    runs-on: ubuntu-24.04\n") != 1:
@@ -110,7 +113,7 @@ def validate(source: str) -> list[str]:
         errors.append("Délai navigateur requis")
     if visual.count("        browser: [chromium, firefox, webkit]\n") != 1:
         errors.append("Les trois moteurs navigateur sont obligatoires")
-    if visual.count("        fail-fast: false\n") != 1:
+    if visual.count("      fail-fast: false\n") != 1:
         errors.append("Les trois navigateurs doivent rendre leur verdict")
     if visual.count(f"      image: {PLAYWRIGHT}\n") != 1:
         errors.append("Conteneur Playwright non épinglé au digest")
