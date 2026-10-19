@@ -267,5 +267,65 @@ class GuardrailsP52E(unittest.TestCase):
                                      "--rapport",str(target)]),2)
             self.assertEqual(json.loads(target.read_text())["decision"],"NO_GO_AUTOMATIQUE")
 
+
+    def test_36_aggregate_preserves_global_loss_counts_no_case_rows(self):
+        report=m.rapport_agrege(m.analyse(source()))
+        self.assertEqual(report["nombre_cas"],42)
+        self.assertEqual(report["montants_manquants"],720)
+        self.assertEqual(report["repartition_des_statuts"],{"DONNEES_MANQUANTES":42})
+        self.assertNotIn("cas",report)
+        self.assertTrue(report["rapport_agrege_sans_details"])
+
+    def test_37_aggregate_redacts_realistic_synthetic_loss(self):
+        d=source();item=case(d);filled(item)
+        item["propose"]["impot_revenu_quebec_ou_etat"]="10777.77"
+        detailed=m.analyse(d)
+        individual=next(x for x in detailed["cas"]["menages"]
+                        if x["regime"]=="QUEBEC_DANS_CANADA" and
+                        x["scenario"]=="central" and
+                        x["categorie"]==item["categorie"])
+        self.assertEqual(individual["variation_monetaire_cad"],"-7777.77")
+        public=m.rapport_agrege(detailed)
+        encoded=json.dumps(public,ensure_ascii=False)
+        self.assertEqual(public["cas_a_risque_de_perte_dans_leur_propre_scenario"],1)
+        for sensitive in ("-7777.77","10777.77","personne_seule_revenu_modeste",
+                          "variation_monetaire_cad","decomposition_comptable"):
+            self.assertNotIn(sensitive,encoded)
+
+    def test_38_public_export_ignores_unexpected_private_payload(self):
+        detailed=m.analyse(source())
+        detailed["injected_data"]="private-ident-test"
+        public=m.rapport_agrege(detailed)
+        self.assertNotIn("private-ident-test",json.dumps(public))
+        self.assertNotIn("injected_data",public)
+
+    def test_39_cli_aggregate_contains_only_global_counts(self):
+        with tempfile.TemporaryDirectory() as p:
+            dest=Path(p)/"summary.json"
+            code=m.main(["--gabarit",str(GAB),"--rapport",str(dest),
+                         "--rapport-agrege"])
+            self.assertEqual(code,0)
+            report=json.loads(dest.read_text(encoding="utf-8"))
+            self.assertEqual(report["nombre_cas_menages"],30)
+            self.assertEqual(report["nombre_cas_entreprises"],12)
+            self.assertNotIn("cas",report)
+
+    def test_40_cli_strict_aggregate_refuses_no_proof(self):
+        with tempfile.TemporaryDirectory() as p:
+            dest=Path(p)/"summary.json"
+            status=m.main(["--gabarit",str(GAB),"--rapport",str(dest),
+                           "--rapport-agrege","--exiger-non-appauvrissement-demontre"])
+            self.assertEqual(status,3)
+            report=json.loads(dest.read_text(encoding="utf-8"))
+            self.assertEqual(report["decision"],"NO_GO_AUTOMATIQUE")
+            self.assertFalse(report["publication_autorisee"])
+
+    def test_41_aggregate_fails_closed_on_claim_of_representativity(self):
+        report=m.analyse(source())
+        report["preuves_representativite_obtenues"]=True
+        with self.assertRaisesRegex(ValueError,"RAPPORT_PUBLIC_NON_CONFIDENTIEL_NON_ATTESTE"):
+            m.rapport_agrege(report)
+
+
 if __name__=="__main__":
     unittest.main()
