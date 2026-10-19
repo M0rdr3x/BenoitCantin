@@ -2,64 +2,11 @@ name: SINJIRA — catalogues Romans Jeux Logiciels
 
 on:
   pull_request:
-    paths:
-      - 'assets/js/sinjira-library-v24-4-61.js'
-      - 'assets/js/sinjira-library.js'
-      - 'scripts/validate_sinjira_library_status.py'
-      - 'supabase/functions/get-document-url/index.ts'
-      - 'tests/test_document_url_authorization.cjs'
-      - 'tests/test_novel_file_authorization.cjs'
-      - 'tests/test_private_book_authorization.cjs'
-      - 'supabase/functions/get-private-book-url/index.ts'
-      - 'scripts/validate_get_private_book_url_security.py'
-      - 'supabase/functions/get-novel-file-url/index.ts'
-      - 'tests/test_sinjira_library_access.cjs'
-      - 'projets/sinjira/index.html'
-      - 'projets/sinjira/romans/**'
-      - 'projets/sinjira/jeux/**'
-      - 'projets/sinjira/logiciels/**'
-      - 'projets/sinjira/sinjira.css'
-      - 'compte/bibliotheque.html'
-      - 'compte/mes-achats.html'
-      - 'compte/licences.html'
-      - 'sitemap.xml'
-      - 'scripts/validate_sinjira_catalogues.py'
-      - 'scripts/validate_sinjira_catalogues_metadata.py'
-      - 'scripts/validate_sinjira_public_links.py'
-      - 'tests/e2e/test_sinjira_catalogues_visual.py'
-      - 'scripts/pages_public_inventory.txt'
-      - 'scripts/pages_generated_inventory.txt'
-      - '.github/workflows/validate-sinjira-catalogues.yml'
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    # Aucun paths : un module JS/CSS partagé ou une image peut modifier les catalogues.
   push:
     branches: [main]
-    paths:
-      - 'assets/js/sinjira-library-v24-4-61.js'
-      - 'assets/js/sinjira-library.js'
-      - 'scripts/validate_sinjira_library_status.py'
-      - 'supabase/functions/get-document-url/index.ts'
-      - 'tests/test_document_url_authorization.cjs'
-      - 'tests/test_novel_file_authorization.cjs'
-      - 'tests/test_private_book_authorization.cjs'
-      - 'supabase/functions/get-private-book-url/index.ts'
-      - 'scripts/validate_get_private_book_url_security.py'
-      - 'supabase/functions/get-novel-file-url/index.ts'
-      - 'tests/test_sinjira_library_access.cjs'
-      - 'projets/sinjira/index.html'
-      - 'projets/sinjira/romans/**'
-      - 'projets/sinjira/jeux/**'
-      - 'projets/sinjira/logiciels/**'
-      - 'projets/sinjira/sinjira.css'
-      - 'compte/bibliotheque.html'
-      - 'compte/mes-achats.html'
-      - 'compte/licences.html'
-      - 'sitemap.xml'
-      - 'scripts/validate_sinjira_catalogues.py'
-      - 'scripts/validate_sinjira_catalogues_metadata.py'
-      - 'scripts/validate_sinjira_public_links.py'
-      - 'tests/e2e/test_sinjira_catalogues_visual.py'
-      - 'scripts/pages_public_inventory.txt'
-      - 'scripts/pages_generated_inventory.txt'
-      - '.github/workflows/validate-sinjira-catalogues.yml'
   workflow_dispatch:
 
 permissions:
@@ -83,6 +30,10 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
+      - name: Prouver que la CI des catalogues se déclenche sur tout changement PR
+        run: |
+          python3 scripts/validate_sinjira_catalogues_workflow.py --self-test
+          python3 scripts/validate_sinjira_catalogues_workflow.py
       - name: Vérifier les scénarios négatifs
         run: python3 scripts/validate_sinjira_catalogues.py --self-test
       - name: Vérifier les liens, les pages et les permissions publiques
