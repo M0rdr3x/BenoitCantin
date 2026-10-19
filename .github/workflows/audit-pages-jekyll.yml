@@ -60,6 +60,8 @@ jobs:
           python3 scripts/validate_sinjira_public_links.py --check
           python3 scripts/validate_sinjira_catalogues_metadata.py --self-test
           python3 scripts/validate_sinjira_library_status.py --self-test
+          python3 scripts/validate_sinjira_catalogues_workflow.py --self-test
+          python3 scripts/validate_sinjira_catalogues_workflow.py
           node --test tests/test_sinjira_library_access.cjs
           node --test tests/test_document_url_authorization.cjs
           node --test tests/test_novel_file_authorization.cjs
