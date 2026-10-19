@@ -39,7 +39,7 @@ Ce dispositif constitue une **consultation volontaire de personnes ayant accès 
 - [ ] Seulement après ces portes, basculer le drapeau serveur **et** `COLLECTION_OPEN` côté interface avec un commit revu. Publier la date d'ouverture. Tester réellement la confirmation `RECORDED`.
 - [ ] Préparer une fermeture par drapeau et un processus de destruction/anonymisation de la table de déduplication. Contrôler la diffusion de toute statistique agrégée et le seuil minimal de confidentialité.
 
-**Important :** aucun résultat ne doit être publié automatiquement pendant cette phase. Un sondage citoyen autoselectionné ne devient pas représentatif parce qu'il compte de nombreux répondants.
+**Important :** Aucun résultat n'est publié automatiquement pendant cette phase. Aucune donnée de participation, aucun comptage et aucune statistique Nova ne sont rendus publics avant une revue méthodologique, un contrôle des seuils de confidentialité et une approbation de publication distincte. Un sondage citoyen autoselectionné ne devient pas représentatif parce qu'il compte de nombreux répondants.
 
 ## Consultation séparée des 40 questions fondamentales
 

@@ -2,7 +2,7 @@
 """Registre fermé des JSON réellement destinés au public SINJIRA/Nova.
 
 Inventaire prouvé depuis le main Git 790b1424 (2026-10-10):
-50 chemins JSON publics; 28 chemins de développement explicitement exclus.
+52 chemins JSON publics; 28 chemins de développement explicitement exclus.
 Un JSON nouveau n'est pas publié silencieusement. Aucune donnée n'est envoyée.
 """
 from __future__ import annotations
@@ -28,6 +28,7 @@ PUBLIC_JSON = frozenset({
     "projets/projet-nova/data/boussole-preuves-2026.json",
     "projets/projet-nova/data/boussole-sources-partis-2026.json",
     "projets/projet-nova/data/comptabilite.json",
+    "projets/projet-nova/data/consultation-40-v1.json",
     "projets/projet-nova/data/documents-word-only.json",
     "projets/projet-nova/data/documents.json",
     "projets/projet-nova/data/rencontres.json",
@@ -104,7 +105,7 @@ INTERNAL_JSON = frozenset({
     "projets/sinjira/codex/livre-i-delivery-contract.json",
 })
 
-REQUIRED_PUBLIC_COUNT = 51
+REQUIRED_PUBLIC_COUNT = 52
 REQUIRED_INTERNAL_COUNT = 28
 
 

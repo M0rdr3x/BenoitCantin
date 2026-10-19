@@ -341,6 +341,7 @@ projets/projet-nova/assets/banniere-nova.jpg
 projets/projet-nova/assets/banniere-nova.webp
 projets/projet-nova/assets/boussole-electorale.css
 projets/projet-nova/assets/boussole-electorale.js
+projets/projet-nova/assets/consultation-40.js
 projets/projet-nova/assets/couverture-livre-nova-page-avant.png
 projets/projet-nova/assets/documents.js
 projets/projet-nova/assets/equipe/benoit-cantin.jpg
@@ -373,6 +374,7 @@ projets/projet-nova/comptabilite.html
 projets/projet-nova/compte.html
 projets/projet-nova/confidentialite.html
 projets/projet-nova/constitution.html
+projets/projet-nova/consultation-40.html
 projets/projet-nova/contact.html
 projets/projet-nova/data/actualites.json
 projets/projet-nova/data/boussole-electorale-v1.json
@@ -381,6 +383,7 @@ projets/projet-nova/data/boussole-partis-2026.json
 projets/projet-nova/data/boussole-preuves-2026.json
 projets/projet-nova/data/boussole-sources-partis-2026.json
 projets/projet-nova/data/comptabilite.json
+projets/projet-nova/data/consultation-40-v1.json
 projets/projet-nova/data/documents-word-only.json
 projets/projet-nova/data/documents.json
 projets/projet-nova/data/modele_comptabilite.csv
