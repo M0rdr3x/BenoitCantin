@@ -87,6 +87,10 @@ def validate_jekyll_ci(source: str) -> list[str]:
          "Autotest de la couverture universelle des catalogues"),
         ("python3 scripts/validate_sinjira_catalogues_workflow.py",
          "Garde du déclenchement universel des catalogues"),
+        ("python3 scripts/validate_nova_survey.py --self-test",
+         "Autotests des renseignements politiques et majorité Nova"),
+        ("python3 scripts/validate_nova_survey.py",
+         "Garde du sondage Nova 18+"),
     ):
         if token not in jobs:
             errors.append("Étape Jekyll absente : " + description)
@@ -103,6 +107,8 @@ def validate_jekyll_ci(source: str) -> list[str]:
         "          python3 scripts/validate_pages_workflows.py\n",
         "          python3 scripts/validate_sinjira_catalogues_workflow.py --self-test\n",
         "          python3 scripts/validate_sinjira_catalogues_workflow.py\n",
+        "          python3 scripts/validate_nova_survey.py --self-test\n",
+        "          python3 scripts/validate_nova_survey.py\n",
     ):
         if jobs.count(command) != 1:
             errors.append(
@@ -188,6 +194,14 @@ def self_test_jekyll_ci() -> None:
         "autotests CI catalogues retirés": (
             "          python3 scripts/validate_sinjira_catalogues_workflow.py --self-test\n",
             "          echo AUTOTESTS_CATALOGUES_IGNORES\n",
+        ),
+        "autotests questionnaire Nova retirés": (
+            "          python3 scripts/validate_nova_survey.py --self-test\n",
+            "          echo AUTOTESTS_NOVA_IGNORES\n",
+        ),
+        "contrôle questionnaire Nova retiré": (
+            "          python3 scripts/validate_nova_survey.py\n",
+            "          echo NOVA_SANS_VALIDATION\n",
         ),
     }
     for label, (old, replacement) in mutations.items():
