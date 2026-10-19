@@ -84,8 +84,7 @@ def main():
             ("edge","NOVA40_COLLECTION_ENABLED","ENABLE_ALL"),
             ("edge","requiredUser(req)","null"),
             ("edge","validAnswers(body.answers)","true"),
-            ("config","[functions.nova-consultation40-submit]\\nverify_jwt = true",
-             "[functions.nova-consultation40-submit]\\nverify_jwt = false")
+            ("config","verify_jwt = true","verify_jwt = false")
         ]
         for key,old,new in muts:
             altered=dict(text);altered[key]=altered[key].replace(old,new)
