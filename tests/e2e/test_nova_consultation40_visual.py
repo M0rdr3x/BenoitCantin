@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Parcours navigateur complet sans soumission au backend Nova 40."""
 import os
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 BROWSER=os.environ.get("BROWSER","chromium")
 URL="http://127.0.0.1:4173/projets/projet-nova/consultation-40.html"
 def check(ok,msg):
@@ -19,7 +19,7 @@ with sync_playwright() as p:
         page.locator("#sondage-age").check()
         check(page.locator("#sondage-start").is_disabled(),"le consentement séparé reste requis")
         page.locator("#sondage-consent").check()
-        check(page.locator("#sondage-start").is_enabled(),"participant majeur consentant bloqué")
+        expect(page.locator("#sondage-start")).to_be_enabled(timeout=10000)
         page.locator("#sondage-start").click()
         check(page.locator("#sondage-position").inner_text().startswith("Question 1 sur 40"),"début non séquentiel")
         check(page.locator("#sondage-next").is_disabled(),"question sans réponse ne doit pas passer")
