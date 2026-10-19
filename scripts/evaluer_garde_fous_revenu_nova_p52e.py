@@ -40,9 +40,12 @@ def compare_case(raw, computed, group):
     before=raw["actuel"]
     after=raw["propose"]
     stable=HOUSE_NON_TAX if group=="menages" else FIRM_NON_TAX
-    if any(before[k]!=after[k] for k in stable):
-        return "CHANGEMENT_NON_FISCAL_A_ISOLER", False
     v=Decimal(computed["variation_cad"])
+    if any(before[k]!=after[k] for k in stable):
+        # A non-tax change defeats *causal attribution* to fiscal changes,
+        # but must NEVER suppress a negative outcome for the case itself.
+        return ("PERTE_AVEC_CHANGEMENT_NON_FISCAL_A_EXAMINER" if v<0
+                else "CHANGEMENT_NON_FISCAL_A_ISOLER"), False
     if computed["presence_hypotheses"]:
         return ("PERTE_HYPOTHETIQUE_A_EXAMINER" if v<0 else
                 "ILLUSTRATION_SANS_PERTE_A_CE_NIVEAU"), True
@@ -50,6 +53,33 @@ def compare_case(raw, computed, group):
         return ("PERTE_MONETAIRE_A_CORRIGER" if group=="menages"
                 else "RISQUE_RESULTAT_ENTREPRISE"), True
     return "PAS_DE_PERTE_DANS_CE_CAS_NON_REPRESENTATIF", True
+
+
+def decomposer_variation(raw, computed, group):
+    """Additive book-keeping only, never causal effects or welfare estimates."""
+    if computed["montants_manquants"] != 0:
+        return {
+            "variation_postes_non_fiscaux_cad": None,
+            "variation_autres_postes_comptables_cad": None,
+            "somme_verifiee": False,
+        }
+    b,a=raw["actuel"],raw["propose"]
+    D=Decimal
+    if group=="menages":
+        non_fiscal=sum((D(a[k])-D(b[k]) for k in HOUSE_NON_TAX),D(0))
+    else:
+        non_fiscal=(D(a["chiffre_affaires"])-D(b["chiffre_affaires"])
+                    -D(a["couts_exploitation_hors_salaires"])
+                    +D(b["couts_exploitation_hors_salaires"])
+                    -D(a["masse_salariale"])+D(b["masse_salariale"])
+                    +D(a["subventions_recues"])-D(b["subventions_recues"]))
+    total=D(computed["variation_cad"])
+    remaining=total-non_fiscal
+    return {
+        "variation_postes_non_fiscaux_cad": str(non_fiscal),
+        "variation_autres_postes_comptables_cad": str(remaining),
+        "somme_verifiee": non_fiscal+remaining==total,
+    }
 
 
 def analyse(data):
@@ -64,6 +94,7 @@ def analyse(data):
     count_loss=0
     count_hypothetical=0
     count_exogenous=0
+    count_losses_exogenous=0
     counts={}
     for regime in model.REGIMES:
         for scenario in model.SCENARIOS:
@@ -79,16 +110,23 @@ def analyse(data):
                     label,stable=compare_case(raw,calculated,group)
                     loss=label in ("PERTE_HYPOTHETIQUE_A_EXAMINER",
                                    "PERTE_MONETAIRE_A_CORRIGER",
-                                   "RISQUE_RESULTAT_ENTREPRISE")
+                                   "RISQUE_RESULTAT_ENTREPRISE",
+                                   "PERTE_AVEC_CHANGEMENT_NON_FISCAL_A_EXAMINER")
                     count_loss+=int(loss)
                     count_hypothetical+=int(calculated["presence_hypotheses"])
-                    count_exogenous+=int(label=="CHANGEMENT_NON_FISCAL_A_ISOLER")
+                    count_exogenous+=int(
+                        calculated["montants_manquants"]==0 and not stable)
+                    count_losses_exogenous+=int(
+                        label=="PERTE_AVEC_CHANGEMENT_NON_FISCAL_A_EXAMINER")
                     counts[label]=counts.get(label,0)+1
                     by_group[group].append({
                         "regime":regime,"scenario":scenario,
                         "categorie":name,"statut":label,
                         "variation_monetaire_cad":calculated["variation_cad"],
+                        "decomposition_comptable":decomposer_variation(
+                            raw,calculated,group),
                         "perimetre_stable_pour_attribution_fiscale":stable,
+                        "risque_de_perte_dans_ce_cas":loss,
                         "pret_a_generaliser":False,
                         "preuve_de_non_appauvrissement":False,
                     })
@@ -108,6 +146,7 @@ def analyse(data):
         "cas_avec_sources_hypothetiques":count_hypothetical,
         "cas_a_risque_de_perte_dans_leur_propre_scenario":count_loss,
         "cas_avec_variation_non_fiscale_non_isolee":count_exogenous,
+        "cas_avec_perte_et_variation_non_fiscale":count_losses_exogenous,
         "repartition_des_statuts":counts,
         "cas":by_group,
         "montrable_comme_mesure_du_pouvoir_achat_du_quebec":False,
