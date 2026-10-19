@@ -15,7 +15,6 @@ with sync_playwright() as p:
         response=page.goto(URL,wait_until="domcontentloaded",timeout=30000)
         check(response is not None and response.status==200,"page de consultation absente")
         page.locator("#sondage-start").wait_for()
-        page.wait_for_function("() => !document.getElementById('sondage-start').disabled || document.querySelector('[role=alert]')")
         check(page.locator("#sondage-start").is_disabled(),"âge et consentement devraient verrouiller le début")
         page.locator("#sondage-age").check()
         check(page.locator("#sondage-start").is_disabled(),"le consentement séparé reste requis")
