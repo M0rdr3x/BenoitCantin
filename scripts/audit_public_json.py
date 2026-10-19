@@ -255,7 +255,7 @@ def self_test() -> None:
         assert any(private in msg and "non exclu" in msg for msg in audit(source, None))
         settings.write_text(original, "utf-8")
         assert not audit(source, built), audit(source, built)
-    print("OK JSON: 51 publications connues, 28 données techniques exclues, "
+    print("OK JSON: 52 publications connues, 28 données techniques exclues, "
           "pertes et transformations rejetées")
 
 
@@ -284,7 +284,7 @@ def main() -> int:
         for error in errors:
             print("ERREUR: " + error, file=sys.stderr)
         return 1
-    print("OK JSON: 51 fichiers publics vérifiés, 28 techniques exclus")
+    print("OK JSON: 52 fichiers publics vérifiés, 28 techniques exclus")
     return 0
 
 

@@ -24,7 +24,7 @@ def validate(text):
         "client":["const COLLECTION_OPEN = false","!eligible()","questions.length!==40",
                   "answers.size!==40","sondage-submit').disabled=true","age18Confirmed:true",
                   "explicitConsent:true","client.auth.getUser()",
-                  "client.functions.invoke('nova-consultation40-submit'","textContent=item.text",
+                  "client.functions.invoke('nova-consultation40-submit'","textContent = item.text",
                   "cache:'no-store'"],
         "sql":["enable row level security","revoke all on public.nova_consultation40_participants",
                "revoke all on public.nova_consultation40_aggregate_counts",
@@ -79,6 +79,7 @@ def main():
             ("client","answers.size!==40","false"),
             ("client","age18Confirmed:true","age18Confirmed:false"),
             ("client","explicitConsent:true","explicitConsent:false"),
+            ("client","textContent = item.text","innerHTML = item.text"),
             ("sql","enable row level security","disable row level security"),
             ("sql","!= 40","!= 39"),
             ("edge","NOVA40_COLLECTION_ENABLED","ENABLE_ALL"),
@@ -93,6 +94,6 @@ def main():
             obj=json.loads(text["manifest"]);obj[field]=value
             altered=dict(text);altered["manifest"]=json.dumps(obj)
             assert validate(altered), "Régression de manifeste non détectée"
-        print("OK consultation 40 : 13 mutations de sécurité et âge refusées")
+        print("OK consultation 40 : 14 mutations de sécurité et âge refusées")
     print("OK consultation Nova : 40 questions Pour/Contre, 18+, collecte désactivée, RLS")
 if __name__=="__main__":main()

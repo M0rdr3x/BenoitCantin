@@ -18,7 +18,7 @@ from pages_release_proof import MARKER, render
 
 MANIFEST = Path(__file__).with_name("pages_public_inventory.txt")
 GENERATED_MANIFEST = Path(__file__).with_name("pages_generated_inventory.txt")
-EXPECTED_COUNT = 622
+EXPECTED_COUNT = 625
 GENERATED_COUNT = 31
 
 
@@ -274,7 +274,7 @@ def self_test() -> None:
         bad_manifest = source_manifest + "assets/image-nouvelle.webp\n"
         assert any("Inventaire modifié" in e for e in audit(root, None, bad_manifest))
         assert not audit(root, built, source_manifest), audit(root, built, source_manifest)
-    print("OK inventaire public global: 622 fichiers source + 31 pages générées, "
+    print("OK inventaire public global: 625 fichiers source + 31 pages générées, "
           "ajouts, pertes, altérations et liens symboliques refusés")
 
 
