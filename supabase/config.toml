@@ -103,3 +103,7 @@ verify_jwt = false
 # Le drapeau NOVA_SURVEY_COLLECTION_ENABLED reste désactivé hors approbation.
 [functions.nova-survey-submit]
 verify_jwt = true
+
+# Consultation distincte des 40 questions fondamentales, sans collecte activée.
+[functions.nova-consultation40-submit]
+verify_jwt = true
