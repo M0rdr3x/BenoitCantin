@@ -709,3 +709,30 @@ Python protège ces vérifications contre leur suppression accidentelle.
 Il s'agit d'un changement du frontend et des tests du candidat
 GitHub, **sans modification de la base de production**. Le blocage
 GitHub Pages #450 reste actif.
+
+### Navigation par ancres Logiciels : titres visibles sous les menus fixes
+
+Sur la page `/projets/sinjira/logiciels/`, le bandeau principal
+et le sous-menu de l'univers restent fixés lors du défilement.
+Les boutons du héros **Voir les outils existants** (`#outils`) et
+**Logiciels à venir** (`#avenir`) pouvaient auparavant amener
+l'utilisateur sur une section dont le titre se retrouvait
+partiellement masqué par ces deux menus. Le lien d'évitement
+`#contenu` pouvait être masqué sous l'en-tête principal.
+
+`projets/sinjira/sinjira.css` définit maintenant un
+`scroll-margin-top` spécifique au contenu, ainsi qu'aux deux
+sections, avec ajustement sous 650 px de largeur. Cette règle
+n'affecte ni les autres pages, ni les visuels officiels.
+
+Preuves : `scripts/validate_sinjira_catalogues.py` impose les
+décalages et rejette quatre mutations (décalage supprimé, réduit,
+sélecteur changé, lien d'évitement neutralisé). Le test navigateur
+`tests/e2e/test_sinjira_catalogues_visual.py` clique réellement sur
+les deux raccourcis aux largeurs **1440 px** et **390 px**, vérifie le
+fragment d'URL et mesure les positions des sections par rapport aux
+deux menus dans Chromium, Firefox et WebKit, sans compte ni serveur de
+production.
+
+La PR #639 reste en brouillon. Le correctif de navigation ne résout
+pas la publication GitHub Pages `legacy` (#450).
