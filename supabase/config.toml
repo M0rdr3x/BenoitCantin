@@ -98,3 +98,8 @@ verify_jwt = true
 # dont seul le hash est conservé, avec expiration/révocation/limite de téléchargements.
 [functions.life-story-delivery]
 verify_jwt = false
+
+# Consultation Nova 18+ : exige un JWT utilisateur validé côté Edge.
+# Le drapeau NOVA_SURVEY_COLLECTION_ENABLED reste désactivé hors approbation.
+[functions.nova-survey-submit]
+verify_jwt = true
