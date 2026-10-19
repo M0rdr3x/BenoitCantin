@@ -361,6 +361,8 @@ projets/projet-nova/assets/nova-institutionnel.css
 projets/projet-nova/assets/nova-maturite.css
 projets/projet-nova/assets/portal-return.css
 projets/projet-nova/assets/script.js
+projets/projet-nova/assets/sondage.css
+projets/projet-nova/assets/sondage.js
 projets/projet-nova/assets/styles.css
 projets/projet-nova/avis-legal.html
 projets/projet-nova/banniere-nova.jpg
@@ -384,6 +386,7 @@ projets/projet-nova/data/documents.json
 projets/projet-nova/data/modele_comptabilite.csv
 projets/projet-nova/data/modele_rencontres.csv
 projets/projet-nova/data/rencontres.json
+projets/projet-nova/data/sondage-questions-v1.json
 projets/projet-nova/data/sources.json
 projets/projet-nova/document.html
 projets/projet-nova/documents-word-only.json
@@ -555,6 +558,7 @@ projets/projet-nova/script.js
 projets/projet-nova/sinjira.css
 projets/projet-nova/site.webmanifest
 projets/projet-nova/sitemap.xml
+projets/projet-nova/sondage.html
 projets/projet-nova/styles.css
 projets/projet-nova/transition.html
 projets/projet-nova/transparence.html
