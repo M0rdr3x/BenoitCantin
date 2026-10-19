@@ -175,6 +175,34 @@ def inspect_software_anchor_navigation(css: str) -> list[str]:
     return problems
 
 
+
+def inspect_mobile_current_category(js: str) -> list[str]:
+    """Interdire qu'un onglet SINJIRA actif reste caché sur téléphone."""
+    start = js.find("function revealCurrentUniverseCategory()")
+    end = js.find("\n  var core = doc.querySelector(", start)
+    if start < 0 or end <= start:
+        return ["Réglage horizontal de l'onglet courant absent"]
+    flow = js[start:end]
+    required = (
+        ".universe-subnav .container",
+        "window.matchMedia('(max-width: 820px)')",
+        "a[aria-current=\"page\"]",
+        "subnav.scrollWidth <= subnav.clientWidth",
+        "current.getBoundingClientRect()",
+        "subnav.scrollLeft =",
+        "revealCurrentUniverseCategory();",
+        "window.addEventListener('resize', revealCurrentUniverseCategory)",
+    )
+    errors = [
+        "Rappel mobile de la catégorie actuelle incomplet : " + item
+        for item in required if item not in flow
+    ]
+    if "scrollIntoView(" in flow or "window.scrollTo(" in flow:
+        errors.append("La révélation d'onglet ne doit pas déplacer verticalement le héros")
+    return errors
+
+
+
 def validate(root: Path) -> list[str]:
     errors: list[str] = []
     if not root.is_dir():
@@ -257,6 +285,11 @@ def validate(root: Path) -> list[str]:
         if "@media(max-width:700px)" not in rules:
             errors.append("Style mobile Logiciels absent")
         errors.extend(inspect_software_anchor_navigation(rules))
+    site_js = root / "assets/js/site.js"
+    if not site_js.is_file():
+        errors.append("Comportement du menu SINJIRA absent")
+    else:
+        errors.extend(inspect_mobile_current_category(site_js.read_text("utf-8")))
     errors.extend(inspect_banners(root))
     return errors
 
@@ -281,6 +314,22 @@ def self_test() -> None:
             to.parent.mkdir(parents=True, exist_ok=True)
             copyfile(ROOT / entry["path"], to)
         assert not inspect_banners(root), inspect_banners(root)
+        site_logic = (ROOT / "assets/js/site.js").read_text("utf-8")
+        assert not inspect_mobile_current_category(site_logic)
+        for changed in (
+            site_logic.replace("subnav.scrollLeft =", "// no horizontal navigation"),
+            site_logic.replace(
+                "window.addEventListener('resize', revealCurrentUniverseCategory)",
+                "window.addEventListener('resize', function(){})"
+            ),
+            site_logic.replace("function revealCurrentUniverseCategory()",
+                               "function doNothingInstead()"),
+            site_logic.replace("revealCurrentUniverseCategory();",
+                               "window.scrollTo(0,999);", 1),
+        ):
+            assert inspect_mobile_current_category(changed), (
+                "Catégorie active mobile masquée sans alerte"
+            )
         styles = stylesheet.read_text("utf-8")
         assert not inspect_software_anchor_navigation(styles)
         for altered in (
