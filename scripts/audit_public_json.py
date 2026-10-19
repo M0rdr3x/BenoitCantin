@@ -32,6 +32,7 @@ PUBLIC_JSON = frozenset({
     "projets/projet-nova/data/documents.json",
     "projets/projet-nova/data/rencontres.json",
     "projets/projet-nova/data/sources.json",
+    "projets/projet-nova/data/sondage-questions-v1.json",
     "projets/projet-nova/documents-word-only.json",
     "projets/projet-nova/documents.json",
     "projets/projet-nova/official/CURRENT_VERSION.json",
@@ -103,7 +104,7 @@ INTERNAL_JSON = frozenset({
     "projets/sinjira/codex/livre-i-delivery-contract.json",
 })
 
-REQUIRED_PUBLIC_COUNT = 50
+REQUIRED_PUBLIC_COUNT = 51
 REQUIRED_INTERNAL_COUNT = 28
 
 
@@ -253,7 +254,7 @@ def self_test() -> None:
         assert any(private in msg and "non exclu" in msg for msg in audit(source, None))
         settings.write_text(original, "utf-8")
         assert not audit(source, built), audit(source, built)
-    print("OK JSON: 50 publications connues, 28 données techniques exclues, "
+    print("OK JSON: 51 publications connues, 28 données techniques exclues, "
           "pertes et transformations rejetées")
 
 
@@ -282,7 +283,7 @@ def main() -> int:
         for error in errors:
             print("ERREUR: " + error, file=sys.stderr)
         return 1
-    print("OK JSON: 50 fichiers publics vérifiés, 28 techniques exclus")
+    print("OK JSON: 51 fichiers publics vérifiés, 28 techniques exclus")
     return 0
 
 
