@@ -128,8 +128,10 @@ def validate(source: str) -> list[str]:
         errors.append("Identifiants GitHub persistés par les navigateurs")
     if visual.count(f"uses: actions/setup-python@{PYTHON}") != 1:
         errors.append("Python du navigateur non épinglé")
-    if re.search(r"(?m)^        continue-on-error:", visual):
-        errors.append("Échec navigateur ignoré")
+    if re.search(r"(?m)^    (?:continue-on-error|permissions):", visual) or re.search(
+        r"(?m)^        continue-on-error:", visual
+    ):
+        errors.append("Échec navigateur ignoré ou permissions supplémentaires")
     if any(word in active for word in ("pages: write", "id-token: write",
                                        "actions/deploy-pages@", "upload-pages-artifact@")):
         errors.append("La vérification des catalogues ne doit pas publier")
