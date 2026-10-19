@@ -778,3 +778,36 @@ silencieusement le contrôle spécialisé.
 Cette mesure ne change pas la production ni les paramètres GitHub
 Pages. Le blocage `legacy` (#450) reste actif, et la PR #639 demeure
 en brouillon.
+
+### Mobile : catégorie SINJIRA active toujours visible dans le ruban
+
+Le sous-menu horizontal `universe-subnav` possède un débordement
+horizontal sur téléphone. Les onglets **Romans**, **Jeux** et surtout
+**Logiciels** peuvent se retrouver hors de la portion visible du ruban
+au chargement de leur page. L'attribut `aria-current="page"` est
+correct, mais les utilisateurs voyants ne perçoivent pas toujours
+quel catalogue est sélectionné.
+
+Le script partagé `assets/js/site.js` repositionne maintenant
+**horizontalement seulement** le ruban lorsqu'un onglet courant n'est
+pas entièrement visible à une largeur de 820 px ou moins. Il utilise
+`scrollLeft` et les rectangles de disposition, sans
+`scrollIntoView` qui déplacerait aussi verticalement la page
+jusqu'au sous-menu situé sous le héros. Il ne modifie pas un onglet
+déjà visible et recalcule après une rotation/redimensionnement.
+
+La suite Playwright des catalogues charge vraiment chacune des
+trois pages à **390 px**, confirme que le lien sélectionné est visible
+entre les bords du ruban et que le héros demeure au sommet de
+l'écran. Un second contrôle à **420 px** simule un
+redimensionnement après défilement manuel, sans saut vertical. Ces
+tests tournent sur **Chromium, Firefox et WebKit**. La validation
+Python détecte quatre régressions, dont la disparition de
+`scrollLeft`, du gestionnaire `resize` ou de la fonction.
+
+Le même script partagé dessert le portail et les autres pages :
+le correctif agit seulement si un sous-menu `universe-subnav`
+présente un lien `aria-current="page"` masqué dans une zone
+défilante. Aucune action sur les droits des membres ou sur les
+documents privés. L'incident de publication GitHub Pages
+`legacy` (#450) demeure bloquant.
