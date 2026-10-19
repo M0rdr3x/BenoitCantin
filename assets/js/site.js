@@ -128,6 +128,12 @@
   }
 
   revealCurrentUniverseCategory();
+  // Les dimensions du texte peuvent évoluer après le premier rendu
+  // (polices et feuilles chargées tardivement sur Firefox/WebKit).
+  window.addEventListener('load', revealCurrentUniverseCategory);
+  if (doc.fonts && doc.fonts.ready) {
+    doc.fonts.ready.then(revealCurrentUniverseCategory);
+  }
   window.addEventListener('resize', revealCurrentUniverseCategory);
 
   var core = doc.querySelector('[data-core-preview]');
