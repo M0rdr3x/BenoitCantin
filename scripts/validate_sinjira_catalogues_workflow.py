@@ -79,6 +79,8 @@ def validate(source: str) -> list[str]:
         "          python3 scripts/validate_sinjira_catalogues_workflow.py --self-test\n",
         "          python3 scripts/validate_sinjira_catalogues_workflow.py\n",
         "        run: python3 scripts/validate_sinjira_catalogues.py --self-test\n",
+        "          python3 scripts/validate_nova_survey.py --self-test\n",
+        "          python3 scripts/validate_nova_survey.py\n",
         "        run: python3 scripts/validate_sinjira_catalogues.py\n",
         "          python3 scripts/validate_sinjira_public_links.py --self-test\n",
         "          python3 scripts/validate_sinjira_public_links.py --check\n",
@@ -121,6 +123,8 @@ def validate(source: str) -> list[str]:
         errors.append("Paquet Playwright non figé")
     if visual.count("run: python tests/e2e/test_sinjira_catalogues_visual.py\n") != 1:
         errors.append("Vrai test des images et ancres absent")
+    if visual.count("run: python tests/e2e/test_nova_survey_visual.py\n") != 1:
+        errors.append("Vrai parcours du sondage 18+ absent")
     if "          BROWSER: \${{ matrix.browser }}\n".replace(r"\$", "$") not in visual:
         errors.append("Navigateur matriciel non transmis aux tests")
     if "python -m http.server 4173 --bind 127.0.0.1" not in visual:
@@ -202,6 +206,14 @@ def self_test(source: str) -> None:
         "test visuel remplacé": (
             "run: python tests/e2e/test_sinjira_catalogues_visual.py",
             "run: echo VISUEL_NON_TESTÉ",
+        ),
+        "contrat sondage Nova retiré": (
+            "          python3 scripts/validate_nova_survey.py\n",
+            "          echo SONDAGE_NON_TESTÉ\n",
+        ),
+        "parcours sondage Nova retiré": (
+            "run: python tests/e2e/test_nova_survey_visual.py",
+            "run: echo SONDAGE_NAVIGATEUR_IGNORÉ",
         ),
         "PR visuelle désactivée": (
             "    if: github.event_name == 'pull_request'\n",
