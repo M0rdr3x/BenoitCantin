@@ -13,7 +13,7 @@ APPROVED_MANIFEST_GIT_SHA = "97f0d3ad2b13be728356bba7a1831b91fd047070"
 
 def manifest_git_sha(text):
     data = text.encode("utf-8")
-    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
 PATHS={
 "manifest":NOVA/"data/consultation-40-v1.json",
 "page":NOVA/"consultation-40.html",
