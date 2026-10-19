@@ -70,6 +70,66 @@ def proportions(page, selector: str, category: str, viewport: int) -> None:
 
 
 
+
+def mobile_current_category_visible(page) -> None:
+    """La catégorie sélectionnée doit être visible sans sauter le héros.
+
+    Le menu horizontal peut dépasser la largeur d'un téléphone, mais la
+    page courante doit rester lisible à son chargement et après rotation.
+    """
+    for category in CATEGORIES:
+        page.set_viewport_size({"width": 390, "height": 844})
+        response = page.goto(
+            urljoin(BASE_URL, f"projets/sinjira/{category}/"),
+            wait_until="load", timeout=30_000,
+        )
+        require(response is not None and response.status == 200,
+                f"{category}: chargement impossible à 390 px")
+        current = page.locator(".universe-subnav a[aria-current='page']")
+        require(current.count() == 1,
+                f"{category}: catégorie courante introuvable")
+        def state():
+            return current.evaluate("""element => {
+                const bar = element.closest('.universe-subnav').querySelector('.container');
+                const area = bar.getBoundingClientRect();
+                const selected = element.getBoundingClientRect();
+                return {
+                    left: selected.left, right: selected.right,
+                    boundaryLeft: area.left, boundaryRight: area.right,
+                    scrollLeft: bar.scrollLeft, scrollWidth: bar.scrollWidth,
+                    width: bar.clientWidth, pageY: scrollY
+                };
+            }""")
+        initial = state()
+        require(
+            initial["left"] >= initial["boundaryLeft"] - 2
+            and initial["right"] <= initial["boundaryRight"] + 2,
+            f"{category}: onglet actif caché en mobile : {initial}",
+        )
+        require(initial["pageY"] < 3,
+                f"{category}: l'ajustement horizontal a sauté le héros : {initial}")
+        if category == "logiciels":
+            require(initial["scrollLeft"] > 2 and
+                    initial["scrollWidth"] > initial["width"],
+                    f"Logiciels : onglet courant hors champ non corrigé : {initial}")
+            # Simuler une rotation après une manipulation du ruban :
+            # seule la nouvelle largeur est responsable du recalage.
+            page.evaluate("""() => {
+                document.querySelector('.universe-subnav .container').scrollLeft = 0;
+            }""")
+            page.set_viewport_size({"width": 420, "height": 844})
+            page.wait_for_function("""() => {
+                const nav = document.querySelector('.universe-subnav .container');
+                const selected = nav.querySelector('[aria-current="page"]').getBoundingClientRect();
+                const rect = nav.getBoundingClientRect();
+                return selected.left >= rect.left - 2 && selected.right <= rect.right + 2;
+            }""", timeout=5_000)
+            rotated = state()
+            require(rotated["pageY"] < 3,
+                    f"Logiciels : rotation provoque un défilement vertical : {rotated}")
+    page.set_viewport_size({"width": 1440, "height": 960})
+
+
 def software_anchor_navigation(page) -> None:
     """Les boutons #outils/#avenir doivent laisser les titres visibles.
 
@@ -180,6 +240,7 @@ def main() -> None:
                     proportions(page, selector, category, viewport)
                 page.set_viewport_size({"width": 1440, "height": 960})
 
+            mobile_current_category_visible(page)
             software_anchor_navigation(page)
 
             response = page.goto(
@@ -205,7 +266,7 @@ def main() -> None:
                 )
             print(
                 f"OK {BROWSER}: 3 catalogues + portail, bannières "
-                "décodées, ratios naturels, 390px, navigation ARIA et ancres visibles"
+                "décodées, ratios naturels, 390px, onglet actif visible, navigation ARIA et ancres visibles"
             )
         finally:
             browser.close()
