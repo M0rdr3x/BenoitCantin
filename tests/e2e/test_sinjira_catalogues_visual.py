@@ -69,6 +69,63 @@ def proportions(page, selector: str, category: str, viewport: int) -> None:
     )
 
 
+
+def software_anchor_navigation(page) -> None:
+    """Les boutons #outils/#avenir doivent laisser les titres visibles.
+
+    La barre principale et le sous-menu SINJIRA restent sticky :
+    sur un petit écran, un fragment HTML sans scroll-margin masque le
+    titre de la section qu'il était censé ouvrir.
+    """
+    for viewport in (1440, 390):
+        page.set_viewport_size({"width": viewport, "height": 844})
+        for fragment in ("outils", "avenir"):
+            response = page.goto(
+                urljoin(BASE_URL, "projets/sinjira/logiciels/"),
+                wait_until="domcontentloaded",
+                timeout=30_000,
+            )
+            require(response is not None and response.status == 200,
+                    f"Logiciels: HTTP non 200 sur {viewport}px")
+            page.locator(
+                f'.hero-actions a[href="#{fragment}"]'
+            ).click()
+            page.wait_for_function(
+                "(value) => location.hash === value",
+                arg=f"#{fragment}",
+                timeout=5_000,
+            )
+            # Le test utilise le positionnement réel des deux barres,
+            # pas seulement une comparaison de chaînes dans le CSS.
+            geometry = page.locator(f"#{fragment}").evaluate(
+                """target => {
+                    const nav = document.querySelector('.universe-subnav');
+                    const header = document.querySelector('.site-header');
+                    const rect = target.getBoundingClientRect();
+                    return {
+                        top: rect.top,
+                        headerBottom: header.getBoundingClientRect().bottom,
+                        navBottom: nav.getBoundingClientRect().bottom,
+                        margin: parseFloat(getComputedStyle(target).scrollMarginTop),
+                        headingVisible: !!target.querySelector('h2')
+                    };
+                }"""
+            )
+            require(
+                geometry["margin"] >= 165 and geometry["headingVisible"],
+                f"Logiciels #{fragment}: décalage d'ancre absent "
+                f"({viewport}px, {geometry})",
+            )
+            require(
+                geometry["top"] >= max(
+                    geometry["headerBottom"], geometry["navBottom"]
+                ) - 2,
+                f"Logiciels #{fragment}: section masquée par les menus "
+                f"({viewport}px, {geometry})",
+            )
+    page.set_viewport_size({"width": 1440, "height": 960})
+
+
 def main() -> None:
     require(BROWSER in {"chromium", "firefox", "webkit"}, "moteur inconnu")
     with sync_playwright() as playwright:
@@ -123,6 +180,8 @@ def main() -> None:
                     proportions(page, selector, category, viewport)
                 page.set_viewport_size({"width": 1440, "height": 960})
 
+            software_anchor_navigation(page)
+
             response = page.goto(
                 urljoin(BASE_URL, "projets/sinjira/"),
                 wait_until="domcontentloaded",
@@ -146,7 +205,7 @@ def main() -> None:
                 )
             print(
                 f"OK {BROWSER}: 3 catalogues + portail, bannières "
-                "décodées, ratios naturels, 390px, navigation ARIA"
+                "décodées, ratios naturels, 390px, navigation ARIA et ancres visibles"
             )
         finally:
             browser.close()
