@@ -1,0 +1,25 @@
+/* Sondage Nova 18+ — parcours accessible, indépendant de la Boussole. */
+.nova-survey-shell{max-width:860px;margin-inline:auto}
+.nova-survey-card{margin-block:20px;padding:clamp(20px,4vw,34px)}
+.nova-survey-card[hidden]{display:none!important}
+.nova-survey-card h2{margin-top:0}
+.nova-survey-eligibility{display:grid;gap:14px;margin:24px 0}
+.nova-survey-eligibility label{display:flex;align-items:flex-start;gap:12px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#f6fafc;line-height:1.55;cursor:pointer}
+.nova-survey-eligibility input{width:20px;height:20px;flex:0 0 20px;margin-top:3px;accent-color:#157d91}
+.nova-survey-question{border:0;margin:0;padding:0;min-width:0}
+.nova-survey-question legend{font-size:clamp(1.22rem,2.6vw,1.58rem);line-height:1.45;font-weight:850;color:#122f45;padding:0;margin-bottom:15px}
+.nova-survey-hint{font-weight:700;color:#425b71}
+.nova-survey-progress{margin:0 0 28px}
+.nova-survey-progress p{margin:0 0 8px;font-weight:850}
+.nova-survey-progress progress{display:block;width:100%;height:15px;accent-color:#1384a8}
+.nova-survey-choices{display:grid;gap:10px;margin:20px 0}
+.nova-survey-choices label{display:flex;gap:12px;align-items:center;border:1px solid #bacddb;border-radius:13px;background:#f8fbfe;padding:13px 16px;font-weight:680;color:#1c354a;cursor:pointer}
+.nova-survey-choices label:has(input:checked){background:#e8f9fc;border-color:#118fa8;box-shadow:0 0 0 2px rgba(17,143,168,.15)}
+.nova-survey-choices input{width:19px;height:19px;flex:0 0 19px;accent-color:#1384a8}
+.nova-survey-choices label:focus-within,.nova-survey-eligibility label:focus-within{outline:3px solid #f6a554;outline-offset:2px}
+.nova-survey-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:24px}
+.nova-survey-actions .btn[disabled],#sondage-start[disabled]{opacity:.55;cursor:not-allowed}
+.nova-survey-status{min-height:1.5em;color:#17465f;font-weight:700}
+.nova-survey-choices label:last-child{border-style:dashed}
+@media(max-width:560px){.nova-survey-actions{flex-direction:column}.nova-survey-actions .btn{width:100%}.nova-survey-card{padding:18px}}
+@media(prefers-reduced-motion:reduce){.nova-survey-card *{scroll-behavior:auto!important}}
