@@ -1,0 +1,81 @@
+{
+  "schema_version": "P52K-1",
+  "jalon": "P52K",
+  "date_reference": "2026-10-19",
+  "objet": "Registre d'acquisition locale et attestation humaine externe des fichiers budgétaires sources, sans dépôt de PDF ni microdonnées dans GitHub",
+  "statut": "CHAINE_PREUVE_EN_ATTENTE",
+  "fichiers_source": [
+    {
+      "id": "DISC2026_T3",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_Discours.pdf",
+      "tableau": "Tableau 3",
+      "page_imprimee": "27",
+      "page_pdf_index_zero": 29,
+      "source_nature": "PDF_PUBLIC_OFFICIEL_DE_PREVISION",
+      "acquisition_document_origine": "NON_EFFECTUEE",
+      "empreinte_sha256_pdf_original": null,
+      "taille_octets_original": null,
+      "archive_integrite_verifiee": false,
+      "double_saisie_independante": false,
+      "certificat_horodatage_independant": null,
+      "attestation_externe_signee": null,
+      "journal_chaine_conservation_externe": null
+    },
+    {
+      "id": "PLAN2026_F2",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+      "tableau": "Tableau F.2",
+      "page_imprimee": "F.9",
+      "page_pdf_index_zero": 277,
+      "source_nature": "PDF_PUBLIC_OFFICIEL_DE_PREVISION",
+      "acquisition_document_origine": "NON_EFFECTUEE",
+      "empreinte_sha256_pdf_original": null,
+      "taille_octets_original": null,
+      "archive_integrite_verifiee": false,
+      "double_saisie_independante": false,
+      "certificat_horodatage_independant": null,
+      "attestation_externe_signee": null,
+      "journal_chaine_conservation_externe": null
+    }
+  ],
+  "preuves_juridiques": [
+    {
+      "id": "F09",
+      "reference": "P52A",
+      "statut": "NON_VALIDEE",
+      "expert_independant_mandate": false,
+      "conflit_interets_verifie": false,
+      "avis_date_signe": null
+    },
+    {
+      "id": "F20",
+      "reference": "P52A",
+      "statut": "NON_VALIDEE",
+      "analyse_vie_privee_externe": false,
+      "droits_acces_et_recours_verifies": false,
+      "avis_date_signe": null
+    }
+  ],
+  "chaine_certification": {
+    "PDF_originaux_recuperes_et_empreintes_comparees": false,
+    "versions_officielles_archivees_avec_droits": false,
+    "horodatage_externe_verifiable": false,
+    "revision_humaine_independante": false,
+    "verification_conflit_interets_des_reviseurs": false,
+    "confrontation_budget_actualise_et_comptes_reels": false,
+    "analyse_independante_impact_menages_et_entreprises": false,
+    "competence_et_autorisation_democratique": false
+  },
+  "modes_de_preuve": {
+    "controle_informatique_local": "Verifie seulement l'identite d'octets de deux fichiers locaux via SHA-256; un reçu auto-généré n'est pas une signature ni un horodatage de tiers.",
+    "attestation_independante": "Doit être fournie, conservée et vérifiée par un réviseur humain mandaté; interdiction de déduire un GO depuis GitHub Actions.",
+    "politique_donnees": "Jamais de PDF original, documents personnels, coordonnées de réviseur ou microdonnées dans le dépôt public."
+  },
+  "ref_p52j": "projets/projet-nova/etudes/P52J_RELECTURE_PRIMAIRE_BUDGET_2026_2027.json",
+  "ref_p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+  "ref_p52i": "projets/projet-nova/etudes/P52I_SOURCES_ET_ATTESTATIONS.json",
+  "publication_autorisee": false,
+  "fusion_autorisee": false,
+  "adoption_autorisee": false,
+  "decision": "NO_GO_AUTOMATIQUE"
+}
