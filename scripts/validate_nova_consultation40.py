@@ -84,10 +84,11 @@ def main():
             ("edge","NOVA40_COLLECTION_ENABLED","ENABLE_ALL"),
             ("edge","requiredUser(req)","null"),
             ("edge","validAnswers(body.answers)","true"),
-            ("config","verify_jwt = true","verify_jwt = false")
+            ("config","[functions.nova-consultation40-submit]\\nverify_jwt = true",
+             "[functions.nova-consultation40-submit]\\nverify_jwt = false")
         ]
         for key,old,new in muts:
-            altered=dict(text);altered[key]=altered[key].replace(old,new,1)
+            altered=dict(text);altered[key]=altered[key].replace(old,new)
             assert validate(altered), "Régression non détectée: "+old
         for field,value in [("minimumAge",16),("collectionOpen",True)]:
             obj=json.loads(text["manifest"]);obj[field]=value
