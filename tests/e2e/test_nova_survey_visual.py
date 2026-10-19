@@ -27,11 +27,6 @@ def main():
             response = page.goto(URL, wait_until="domcontentloaded", timeout=30_000)
             require(response is not None and response.status in (200, 304),
                     "page de sondage non disponible localement")
-            page.wait_for_function(
-                "() => !document.getElementById('sondage-start').disabled || "
-                "document.querySelector('#sondage-introduction [role=alert]')",
-                timeout=10_000,
-            ) if False else None
             # Les réponses ne doivent être saisissables qu'une fois le
             # manifeste chargé et les deux cases vérifiées.
             page.locator("#sondage-age").check()
