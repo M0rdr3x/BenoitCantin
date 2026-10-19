@@ -244,16 +244,53 @@ def evaluate(template):
     }
 
 
+
+def rapport_agrege(report):
+    """Whitelist-only export for GitHub CI; excludes every case and all CAD values.
+
+    Safe if future templates contain finely segmented or illustrative inputs:
+    no raw stage, reference, amount, category or per-case output is copied.
+    """
+    demand(isinstance(report,dict) and
+           report.get("decision")=="NO_GO_AUTOMATIQUE" and
+           report.get("publication_autorisee") is False and
+           report.get("aucune_projection_population") is True,
+           "RAPPORT_PUBLIC_HORS_PERIMETRE")
+    keys=(
+        "jalon", "nombre_regimes", "nombre_scenarios",
+        "cas_menages", "cas_entreprises", "nombre_cas",
+        "montants_manquants", "cas_calculables_conditionnellement",
+        "source_officielle_sur_les_menages_representatifs",
+        "aucune_projection_population", "impact_economique_causal_certifie",
+        "budget_total_finance", "fusion_autorisee",
+        "publication_autorisee", "decision",
+    )
+    result={k:report[k] for k in keys}
+    demand(type(result["nombre_cas"]) is int and
+           result["nombre_cas"]==42 and
+           all(type(result[k]) is int and result[k]>=0 for k in (
+               "montants_manquants","cas_calculables_conditionnellement")),
+           "COMPTEURS_AGREGES_INCOHERENTS")
+    result["rapport_agrege_sans_details"]=True
+    result["aucun_montant_individuel_exporte"]=True
+    result["rappel"]="Observations sans valeurs par cas; aucune representativite, causalite ou autorisation."
+    return result
+
+
 def main(argv=None):
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--gabarit",type=Path,required=True)
     ap.add_argument("--rapport",type=Path)
     ap.add_argument("--exiger-completude",action="store_true")
+    ap.add_argument("--rapport-agrege",action="store_true",
+                    help="Exporter uniquement des compteurs globaux sans montants ni cas (CI)")
     args=ap.parse_args(argv)
     try:
         data=json.loads(args.gabarit.read_text(encoding="utf-8"))
         report=evaluate(data)
         code=3 if args.exiger_completude and report["montants_manquants"] else 0
+        if args.rapport_agrege:
+            report=rapport_agrege(report)
     except (OSError,UnicodeError,ValueError,KeyError,TypeError) as exc:
         report={"jalon":"P52D","statut":"INVALIDE","erreur_type":type(exc).__name__,
                 "decision":"NO_GO_AUTOMATIQUE","publication_autorisee":False}
