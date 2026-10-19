@@ -14,7 +14,7 @@ P52E fournit une **règle de vigilance** : toute proposition susceptible de dimi
 
 **Principe P52E-2 — Prévention d'un appauvrissement caché.** Aucun responsable ne devrait présenter une économie ou un gain de revenu disponible comme acquis lorsqu'il résulte simplement d'un transfert de coûts, de la suppression implicite d'un service, d'une hausse de prix non mesurée ou d'un changement inexpliqué d'assiette ou de bénéficiaires. Les pertes ou risques doivent figurer explicitement dans le dossier de décision.
 
-**Principe P52E-3 — Mesures d'atténuation examinables.** Lorsqu'une catégorie de ménages perd du revenu disponible, les décideurs devraient examiner des mesures ciblées et chiffrées (crédits/remboursements ou prestations légalement possibles, étalement des changements, garanties transitoires). Une mesure compensatrice **ne doit pas être considérée financée** sans source budgétaire et pouvoir juridique établis.
+**Principe P52E-3 — Mesures d'atténuation examinables.** Lorsqu'une catégorie de ménages présente une perte monétaire — qu'elle soit fiscalement attribuable ou non — les décideurs devraient examiner des mesures ciblées et chiffrées (crédits/remboursements ou prestations légalement possibles, étalement des changements, garanties transitoires). Une mesure compensatrice **ne doit pas être considérée financée** sans source budgétaire et pouvoir juridique établis.
 
 **Principe P52E-4 — Pouvoirs réellement détenus.** Dans le Québec demeurant au Canada, les impôts et prestations **fédéraux** ne peuvent pas être déclarés abolis par une loi fiscale québécoise. Dans un Québec souverain hypothétique, les conditions de continuité des droits, contrats, prestations, pensions, fiscalité internationale et institutions ne doivent pas être présumées déjà réalisées.
 
@@ -30,12 +30,31 @@ Le gabarit P52D calcule une **différence monétaire annuelle par cas hypothéti
 
 Pour un **ménage**, P52E classe :
 - `DONNEES_MANQUANTES` : au moins un poste actuel ou proposé est inconnu;
-- `CHANGEMENT_NON_FISCAL_A_ISOLER` : le revenu brut ou les prestations ont changé, de sorte que la variation ne peut pas être attribuée simplement à une baisse d'impôt;
+- `CHANGEMENT_NON_FISCAL_A_ISOLER` : le revenu brut ou les prestations ont changé et la variation calculée n'est pas négative; **le gain apparent ne peut pas être attribué simplement à une baisse d'impôt**;
+- `PERTE_AVEC_CHANGEMENT_NON_FISCAL_A_EXAMINER` : le revenu brut, les prestations ou certains postes opérationnels ont changé, **et le solde total du cas est négatif**. La perte doit être signalée même si sa cause fiscale ne peut pas être isolée;
 - `PERTE_HYPOTHETIQUE_A_EXAMINER` : variation négative sur chiffres fictifs/non certifiés;
 - `PERTE_MONETAIRE_A_CORRIGER` : variation négative dans un cas entièrement renseigné par des références documentaires (à **revérifier indépendamment**, pas un dommage individuel établi);
 - `ILLUSTRATION_SANS_PERTE_A_CE_NIVEAU` et `PAS_DE_PERTE_DANS_CE_CAS_NON_REPRESENTATIF` : aucune perte dans ce **seul cas**, pas une garantie pour une région ou une population.
 
 Pour une **entreprise**, une variation négative du solde opérationnel partiel déclenche une alerte `RISQUE_RESULTAT_ENTREPRISE` si les entrées sont documentaires, ou `PERTE_HYPOTHETIQUE_A_EXAMINER` si elles sont fictives. **Aucune perte d'emploi, augmentation de prix ou baisse de salaire n'est inférée automatiquement** d'un recul du solde de l'entreprise : ces effets demandent une analyse économique distincte.
+
+## 3 bis. P52F — Ne pas masquer une perte par un changement non fiscal
+
+**Défaut de la version précédente corrigé :** quand un salaire, une prestation, le chiffre d'affaires, un coût d'exploitation ou une subvention changeait entre les phases `actuel` et `propose`, le filtre classait uniquement le cas `CHANGEMENT_NON_FISCAL_A_ISOLER`. Même avec une **variation totale négative**, cette perte n'entrait pas dans le nombre de cas à risque de perte. Une simulation aurait donc pu paraître moins défavorable qu'elle ne l'était réellement.
+
+P52F distingue deux obligations simultanées :
+
+1. **Constater la perte monétaire dans le cas** : toute variation totale négative est signalée, y compris si un paramètre extérieur à la fiscalité a changé. Un ménage dont le revenu ou une prestation diminue, ou une entreprise dont le chiffre d'affaires se contracte, ne doit pas disparaître du registre des risques.
+2. **Ne pas inventer l'attribution causale** : la variation est décomposée en **postes non fiscaux directement saisis** et **résidu des autres postes comptables**, pour chaque cas **entièrement renseigné seulement**. Le résidu n'est ni une estimation causale de la réforme ni une variation de pouvoir d'achat. Le rapport renvoie `null` pour ces éléments lorsqu'une seule donnée nécessaire manque.
+
+Pour un ménage, les postes non fiscaux sont la variation du revenu brut et des deux catégories de prestations. Pour une entreprise, il s'agit du chiffre d'affaires, des coûts d'exploitation hors salaires, de la masse salariale et des subventions. **La différence entre variation totale et variation de ces postes n'est qu'un calcul additif**, jamais un effet fiscal isolé par une méthode économétrique. Les 42 cas restent fictifs ou non représentatifs tant que leurs entrées n'ont pas été auditées.
+
+Le rapport comporte :
+- `risque_de_perte_dans_ce_cas` pour chaque ménage/entreprise;
+- `decomposition_comptable.variation_postes_non_fiscaux_cad`, `variation_autres_postes_comptables_cad` et `somme_verifiee`;
+- `cas_avec_perte_et_variation_non_fiscale` et le compteur global de cas à risque.
+
+**Aucun indicateur agrégé au Québec ne peut être calculé en additionnant ces cas** : ils n'ont aucun poids représentatif et ne couvrent pas les répercussions des politiques sur prix, logements, services, emplois ou fiscalité municipale. Aucun prélèvement, mesure compensatoire ou réduction de service n'est autorisé.
 
 ## 4. Méthode de validation technique
 
