@@ -8,6 +8,8 @@
   const answers = new Map();
   let questions = [];
   let step = 0;
+  let submitting=false;
+  let recorded=false;
   const options = [
     ['pour','Pour'],
     ['contre','Contre'],
@@ -78,7 +80,42 @@
       render();
     });
     $('sondage-form').addEventListener('submit',e=>e.preventDefault());
-    $('sondage-submit').addEventListener('click',()=>{if(COLLECTION_OPEN) return;});
+    $('sondage-submit').addEventListener('click',async()=>{
+      if(!COLLECTION_OPEN||!eligible()||answers.size!==40||submitting||recorded)return;
+      const payload={survey:'nova-orientations-40-v1',age18Confirmed:true,
+        explicitConsent:true,answers:Object.fromEntries(answers)};
+      if(Object.keys(payload.answers).length!==40||
+        !Object.values(payload.answers).every(value=>allowed.has(value)))return;
+      submitting=true;
+      $('sondage-submit').disabled=true;
+      $('sondage-submit-status').textContent='Transmission en cours…';
+      try {
+        const {getSupabase}=await import('../../../assets/js/sinjira-supabase.js');
+        const client=getSupabase();
+        const {data:auth,error:authError}=await client.auth.getUser();
+        if(authError||!auth?.user){
+          $('sondage-submit-status').textContent='Un compte connecté est nécessaire.';
+          return;
+        }
+        const {data,error}=await client.functions.invoke('nova-consultation40-submit',{body:payload});
+        if(data?.ok===true && data.code==='RECORDED'){
+          recorded=true;
+          $('sondage-submit-status').textContent='Participation enregistrée. Merci.';
+        }else{
+          let code=data?.code;
+          if(error?.context?.json){try{code=(await error.context.json()).code;}catch{}}
+          if(code==='ALREADY_SUBMITTED'){
+            recorded=true;
+            $('sondage-submit-status').textContent='Une participation existe déjà pour ce compte.';
+          }else $('sondage-submit-status').textContent='Enregistrement non confirmé. Aucun résultat affiché.';
+        }
+      }catch{
+        $('sondage-submit-status').textContent='Service temporairement indisponible.';
+      }finally{
+        submitting=false;
+        $('sondage-submit').disabled=recorded||!COLLECTION_OPEN||!eligible();
+      }
+    });
     fetch('data/consultation-40-v1.json',{cache:'no-store',credentials:'omit'})
       .then(r=>{if(!r.ok)throw Error('HTTP');return r.json();})
       .then(data=>{
