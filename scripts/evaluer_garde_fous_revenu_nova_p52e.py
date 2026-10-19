@@ -162,11 +162,64 @@ def analyse(data):
     }
 
 
+
+def rapport_agrege(report):
+    """Fail-closed explicit whitelist for CI artifacts, never a per-case export.
+
+    Even a future filled template must not leak numeric balances, case
+    categories, input sources or specific differences via GitHub artifacts.
+    """
+    guard(isinstance(report,dict) and
+          report.get("decision")=="NO_GO_AUTOMATIQUE" and
+          report.get("publication_autorisee") is False and
+          report.get("preuves_representativite_obtenues") is False,
+          "RAPPORT_PUBLIC_NON_CONFIDENTIEL_NON_ATTESTE")
+    keys=(
+        "jalon","schema_version","nombre_cas_menages",
+        "nombre_cas_entreprises","nombre_cas",
+        "cas_conditionnellement_calculables","montants_manquants",
+        "cas_avec_sources_hypothetiques",
+        "cas_a_risque_de_perte_dans_leur_propre_scenario",
+        "cas_avec_variation_non_fiscale_non_isolee",
+        "cas_avec_perte_et_variation_non_fiscale",
+        "repartition_des_statuts",
+        "montrable_comme_mesure_du_pouvoir_achat_du_quebec",
+        "preuves_representativite_obtenues",
+        "repercussion_prix_salaires_emplois_mesuree",
+        "bilan_budgetaire_equilibre_et_finance",
+        "norme_de_non_appauvrissement_adoptee",
+        "loi_entree_en_vigueur","taux_fiscal_adopte",
+        "publication_autorisee","decision",
+    )
+    export={key:report[key] for key in keys}
+    guard(type(export["nombre_cas"]) is int and export["nombre_cas"]==42,
+          "COMPTE_CAS_AGREGE_INCORRECT")
+    counters=("nombre_cas_menages","nombre_cas_entreprises",
+              "cas_conditionnellement_calculables","montants_manquants",
+              "cas_avec_sources_hypothetiques",
+              "cas_a_risque_de_perte_dans_leur_propre_scenario",
+              "cas_avec_variation_non_fiscale_non_isolee",
+              "cas_avec_perte_et_variation_non_fiscale")
+    guard(all(type(export[key]) is int and export[key]>=0 for key in counters),
+          "COMPTEURS_AGREGES_INVALIDES")
+    guard(isinstance(export["repartition_des_statuts"],dict) and
+          sum(export["repartition_des_statuts"].values())==42 and
+          all(type(count) is int and count>=0
+              for count in export["repartition_des_statuts"].values()),
+          "STATUTS_AGREGES_NON_FIABLES")
+    export["rapport_agrege_sans_details"]=True
+    export["aucun_montant_individuel_exporte"]=True
+    export["rappel"]="Alertes de cas non representatifs; aucune conclusion population ou pouvoir d'achat."
+    return export
+
+
 def main(argv=None):
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--gabarit",required=True,type=Path)
     ap.add_argument("--rapport",type=Path)
     ap.add_argument("--exiger-non-appauvrissement-demontre",action="store_true")
+    ap.add_argument("--rapport-agrege",action="store_true",
+                    help="Limiter la sortie aux compteurs globaux, sans variation par cas")
     args=ap.parse_args(argv)
     try:
         source=json.loads(args.gabarit.read_text(encoding="utf-8"))
@@ -175,6 +228,8 @@ def main(argv=None):
         # representativity and public budget funding exist, this gate cannot
         # be treated as satisfied even if every hypothetical case gains.
         code=3 if args.exiger_non_appauvrissement_demontre else 0
+        if args.rapport_agrege:
+            result=rapport_agrege(result)
     except (OSError, UnicodeError, ValueError, TypeError, KeyError) as exc:
         result={"jalon":"P52E","statut":"INVALIDE",
                 "erreur_type":type(exc).__name__,
