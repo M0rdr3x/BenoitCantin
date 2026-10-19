@@ -114,6 +114,10 @@ jobs:
         env:
           BROWSER: ${{ matrix.browser }}
         run: python tests/e2e/test_nova_survey_visual.py
+      - name: Parcours des 40 questions Nova, majeur et sans collecte
+        env:
+          BROWSER: ${{ matrix.browser }}
+        run: python tests/e2e/test_nova_consultation40_visual.py
       - name: Arrêter le serveur de test
         if: always()
         run: |
