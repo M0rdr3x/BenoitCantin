@@ -208,5 +208,66 @@ class IncidenceNova(unittest.TestCase):
             self.assertEqual(json.loads(out.read_text())["decision"],"NO_GO_AUTOMATIQUE")
 
 
+
+    def test_32_public_report_omits_all_individual_cases(self):
+        r=m.rapport_agrege(m.evaluate(data()))
+        self.assertEqual(r["nombre_cas"],42)
+        self.assertEqual(r["montants_manquants"],720)
+        self.assertNotIn("resultats",r)
+        self.assertNotIn("categorie",r)
+        self.assertTrue(r["rapport_agrege_sans_details"])
+        self.assertEqual(r["decision"],"NO_GO_AUTOMATIQUE")
+
+    def test_33_public_report_redacts_filled_case_variation(self):
+        doc=data()
+        item=one(doc)
+        fill(item)
+        item["propose"]["impot_revenu_quebec_ou_etat"]="10777.77"
+        full=m.evaluate(doc)
+        variation=next(x["variation_cad"] for x in full["resultats"]
+                       if x["categorie"]==item["categorie"] and
+                       x["regime"]=="QUEBEC_DANS_CANADA" and x["scenario"]=="central")
+        self.assertEqual(variation,"-7777.77")
+        public=m.rapport_agrege(full)
+        output=json.dumps(public,ensure_ascii=False)
+        self.assertNotIn("7777.77",output)
+        self.assertNotIn("10777.77",output)
+        self.assertNotIn("personne_seule_revenu_modeste",output)
+        self.assertNotIn("resultats",public)
+        self.assertEqual(public["cas_calculables_conditionnellement"],1)
+
+    def test_34_public_export_ignores_arbitrary_suspect_metadata(self):
+        full=m.evaluate(data())
+        full["injected_private_data"]="secret-identifier-test"
+        self.assertNotIn("secret-identifier-test",
+                         json.dumps(m.rapport_agrege(full)))
+
+    def test_35_cli_aggregate_has_no_cases(self):
+        with tempfile.TemporaryDirectory() as p:
+            dest=Path(p)/"public.json"
+            status=m.main(["--gabarit",str(GAB),"--rapport",str(dest),
+                           "--rapport-agrege"])
+            self.assertEqual(status,0)
+            obj=json.loads(dest.read_text(encoding="utf-8"))
+            self.assertEqual(obj["nombre_cas"],42)
+            self.assertNotIn("resultats",obj)
+            self.assertTrue(obj["aucun_montant_individuel_exporte"])
+
+    def test_36_cli_strict_aggregate_still_returns_three(self):
+        with tempfile.TemporaryDirectory() as p:
+            dest=Path(p)/"public.json"
+            status=m.main(["--gabarit",str(GAB),"--rapport",str(dest),
+                           "--rapport-agrege","--exiger-completude"])
+            self.assertEqual(status,3)
+            self.assertEqual(json.loads(dest.read_text())["decision"],
+                             "NO_GO_AUTOMATIQUE")
+
+    def test_37_public_report_refuses_tampered_permission(self):
+        full=m.evaluate(data())
+        full["publication_autorisee"]=True
+        with self.assertRaisesRegex(ValueError,"RAPPORT_PUBLIC_HORS_PERIMETRE"):
+            m.rapport_agrege(full)
+
+
 if __name__=="__main__":
     unittest.main()
