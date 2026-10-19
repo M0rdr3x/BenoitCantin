@@ -83,8 +83,9 @@ def mobile_current_category_visible(page) -> None:
             urljoin(BASE_URL, f"projets/sinjira/{category}/"),
             wait_until="load", timeout=30_000,
         )
-        require(response is not None and response.status == 200,
-                f"{category}: chargement impossible à 390 px")
+        require(response is not None and response.status in (200, 304),
+                f"{category}: HTTP inattendu à 390 px : "
+                f"{response.status if response else 'sans réponse'}")
         current = page.locator(".universe-subnav a[aria-current='page']")
         require(current.count() == 1,
                 f"{category}: catégorie courante introuvable")
@@ -100,6 +101,13 @@ def mobile_current_category_visible(page) -> None:
                     width: bar.clientWidth, pageY: scrollY
                 };
             }""")
+        page.wait_for_function("""() => {
+            const item = document.querySelector('.universe-subnav [aria-current="page"]');
+            const bar = item?.closest('.universe-subnav')?.querySelector('.container');
+            if (!item || !bar) return false;
+            const rect = item.getBoundingClientRect(), area = bar.getBoundingClientRect();
+            return rect.left >= area.left - 2 && rect.right <= area.right + 2;
+        }""", timeout=5_000)
         initial = state()
         require(
             initial["left"] >= initial["boundaryLeft"] - 2
