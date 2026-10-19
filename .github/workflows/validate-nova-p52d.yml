@@ -25,24 +25,24 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
-      - name: Compiler et executer exactement 31 tests
+      - name: Compiler et executer exactement 37 tests
         run: |
           python -m py_compile scripts/comparer_incidence_fiscale_nova_p52d.py
           python - <<'PY'
           import unittest
           suite=unittest.defaultTestLoader.discover(
               "scripts/tests",pattern="test_comparer_incidence_fiscale_nova_p52d.py")
-          assert suite.countTestCases()==31,suite.countTestCases()
+          assert suite.countTestCases()==37,suite.countTestCases()
           result=unittest.TextTestRunner(verbosity=2).run(suite)
           if not result.wasSuccessful():
               raise SystemExit(1)
-          print("P52D : 31/31 tests de l'incidence conditionnelle sans extrapolation")
+          print("P52G : 37/37 tests, dont confidentialité des rapports GitHub P52D")
           PY
       - name: Verifier toutes les inconnues et les deux regimes
         run: |
           python scripts/comparer_incidence_fiscale_nova_p52d.py \
             --gabarit projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json \
-            --rapport p52d_rapport_incomplet.json
+            --rapport-agrege --rapport p52d_rapport_incomplet.json
           python - <<'PY'
           import json
           from pathlib import Path
@@ -53,7 +53,9 @@ jobs:
           assert r["cas_calculables_conditionnellement"]==0,r
           assert r["aucune_projection_population"] is True,r
           assert r["decision"]=="NO_GO_AUTOMATIQUE" and not r["publication_autorisee"],r
-          assert all(c["variation_cad"] is None for c in r["resultats"]),r
+          assert "resultats" not in r,r
+          assert r["rapport_agrege_sans_details"] is True,r
+          assert r["aucun_montant_individuel_exporte"] is True,r
           print("P52D : 42 cas, 720 montants inconnus, aucun gagnant/perdant invente.")
           PY
       - name: Refuser explicitement la completude economique non justifiee
@@ -61,7 +63,7 @@ jobs:
           set +e
           python scripts/comparer_incidence_fiscale_nova_p52d.py \
             --gabarit projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json \
-            --exiger-completude --rapport p52d_porte_stricte.json
+            --rapport-agrege --exiger-completude --rapport p52d_porte_stricte.json
           status=$?
           set -e
           if [ "$status" -ne 3 ]; then
@@ -75,7 +77,7 @@ jobs:
           assert r["decision"]=="NO_GO_AUTOMATIQUE" and r["montants_manquants"]==720,r
           print("P52D : PORTE STRICTE REFUSEE, code 3 attendu, aucun GO.")
           PY
-      - name: Conserver uniquement des rapports aggrégés et fictifs
+      - name: Conserver des rapports AGRÉGÉS SANS MONTANT ni cas individuels
         if: always()
         uses: actions/upload-artifact@v4
         with:
