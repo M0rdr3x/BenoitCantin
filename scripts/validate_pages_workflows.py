@@ -83,6 +83,10 @@ def validate_jekyll_ci(source: str) -> list[str]:
          "Autotests de la chaîne Pages"),
         ("python3 scripts/validate_pages_workflows.py",
          "Garde de publication et d'audit Jekyll"),
+        ("python3 scripts/validate_sinjira_catalogues_workflow.py --self-test",
+         "Autotest de la couverture universelle des catalogues"),
+        ("python3 scripts/validate_sinjira_catalogues_workflow.py",
+         "Garde du déclenchement universel des catalogues"),
     ):
         if token not in jobs:
             errors.append("Étape Jekyll absente : " + description)
@@ -97,6 +101,8 @@ def validate_jekyll_ci(source: str) -> list[str]:
     for command in (
         "          python3 scripts/validate_pages_workflows.py --self-test\n",
         "          python3 scripts/validate_pages_workflows.py\n",
+        "          python3 scripts/validate_sinjira_catalogues_workflow.py --self-test\n",
+        "          python3 scripts/validate_sinjira_catalogues_workflow.py\n",
     ):
         if jobs.count(command) != 1:
             errors.append(
@@ -174,6 +180,14 @@ def self_test_jekyll_ci() -> None:
         "autotests de publication Pages retirés": (
             "          python3 scripts/validate_pages_workflows.py --self-test\n",
             "          echo AUTOTESTS_PAGES_IGNORES\n",
+        ),
+        "contrat CI catalogues retiré": (
+            "          python3 scripts/validate_sinjira_catalogues_workflow.py\n",
+            "          echo GARDE_CATALOGUES_IGNOREE\n",
+        ),
+        "autotests CI catalogues retirés": (
+            "          python3 scripts/validate_sinjira_catalogues_workflow.py --self-test\n",
+            "          echo AUTOTESTS_CATALOGUES_IGNORES\n",
         ),
     }
     for label, (old, replacement) in mutations.items():
