@@ -1,4 +1,4 @@
-name: Projet Nova P52E - Alerte appauvrissement, sans generalisation
+name: Projet Nova P52E-P52F - Pertes et decomposition sans generalisation
 on:
   pull_request:
     branches: [main]
@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
-      - name: Executer exactement 23 tests adversariaux P52E
+      - name: Executer exactement 35 tests adversariaux P52E-P52F
         run: |
           python -m py_compile scripts/evaluer_garde_fous_revenu_nova_p52e.py
           python -m py_compile scripts/comparer_incidence_fiscale_nova_p52d.py
@@ -35,11 +35,11 @@ jobs:
           import unittest
           suite=unittest.defaultTestLoader.discover(
               "scripts/tests",pattern="test_evaluer_garde_fous_revenu_nova_p52e.py")
-          assert suite.countTestCases()==23,suite.countTestCases()
+          assert suite.countTestCases()==35,suite.countTestCases()
           result=unittest.TextTestRunner(verbosity=2).run(suite)
           if not result.wasSuccessful():
               raise SystemExit(1)
-          print("P52E : 23 tests anti-faux-gains et NO_GO réussis")
+          print("P52F : 35 tests, pertes non fiscales non masquees, NO_GO maintenu")
           PY
       - name: Recalculer les 42 cas et l'etat non documente
         run: |
@@ -55,6 +55,10 @@ jobs:
           assert r["montants_manquants"]==720,r
           assert r["cas_conditionnellement_calculables"]==0,r
           assert r["cas_a_risque_de_perte_dans_leur_propre_scenario"]==0,r
+          assert r["cas_avec_perte_et_variation_non_fiscale"]==0,r
+          assert all(not x["risque_de_perte_dans_ce_cas"] and
+                     x["decomposition_comptable"]["somme_verifiee"] is False
+                     for group in r["cas"].values() for x in group),r
           assert r["repartition_des_statuts"]=={"DONNEES_MANQUANTES":42},r
           assert not r["preuves_representativite_obtenues"],r
           assert not r["repercussion_prix_salaires_emplois_mesuree"],r
