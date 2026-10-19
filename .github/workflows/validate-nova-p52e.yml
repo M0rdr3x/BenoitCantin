@@ -1,4 +1,4 @@
-name: Projet Nova P52E-P52F - Pertes et decomposition sans generalisation
+name: Projet Nova P52E-P52G - Pertes et rapports anonymises en CI
 on:
   pull_request:
     branches: [main]
@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
-      - name: Executer exactement 35 tests adversariaux P52E-P52F
+      - name: Executer exactement 41 tests adversariaux P52E-P52G
         run: |
           python -m py_compile scripts/evaluer_garde_fous_revenu_nova_p52e.py
           python -m py_compile scripts/comparer_incidence_fiscale_nova_p52d.py
@@ -35,17 +35,17 @@ jobs:
           import unittest
           suite=unittest.defaultTestLoader.discover(
               "scripts/tests",pattern="test_evaluer_garde_fous_revenu_nova_p52e.py")
-          assert suite.countTestCases()==35,suite.countTestCases()
+          assert suite.countTestCases()==41,suite.countTestCases()
           result=unittest.TextTestRunner(verbosity=2).run(suite)
           if not result.wasSuccessful():
               raise SystemExit(1)
-          print("P52F : 35 tests, pertes non fiscales non masquees, NO_GO maintenu")
+          print("P52G : 41 tests, pertes detectees, details individuels exclus des rapports CI")
           PY
       - name: Recalculer les 42 cas et l'etat non documente
         run: |
           python scripts/evaluer_garde_fous_revenu_nova_p52e.py \
             --gabarit projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json \
-            --rapport p52e_etat_incomplet.json
+            --rapport-agrege --rapport p52e_etat_incomplet.json
           python - <<'PY'
           import json
           from pathlib import Path
@@ -56,9 +56,9 @@ jobs:
           assert r["cas_conditionnellement_calculables"]==0,r
           assert r["cas_a_risque_de_perte_dans_leur_propre_scenario"]==0,r
           assert r["cas_avec_perte_et_variation_non_fiscale"]==0,r
-          assert all(not x["risque_de_perte_dans_ce_cas"] and
-                     x["decomposition_comptable"]["somme_verifiee"] is False
-                     for group in r["cas"].values() for x in group),r
+          assert "cas" not in r,r
+          assert r["rapport_agrege_sans_details"] is True,r
+          assert r["aucun_montant_individuel_exporte"] is True,r
           assert r["repartition_des_statuts"]=={"DONNEES_MANQUANTES":42},r
           assert not r["preuves_representativite_obtenues"],r
           assert not r["repercussion_prix_salaires_emplois_mesuree"],r
@@ -71,7 +71,7 @@ jobs:
           set +e
           python scripts/evaluer_garde_fous_revenu_nova_p52e.py \
             --gabarit projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json \
-            --exiger-non-appauvrissement-demontre --rapport p52e_porte_stricte.json
+            --rapport-agrege --exiger-non-appauvrissement-demontre --rapport p52e_porte_stricte.json
           status=$?
           set -e
           if [ "$status" -ne 3 ]; then
@@ -85,7 +85,7 @@ jobs:
           assert r["decision"]=="NO_GO_AUTOMATIQUE" and not r["norme_de_non_appauvrissement_adoptee"],r
           print("P52E : refus strict code 3 attendu; aucune adoption ou collecte")
           PY
-      - name: Archiver rapports de structure sans microdonnees
+      - name: Archiver UNIQUEMENT des agrégats sans cas individuels
         if: always()
         uses: actions/upload-artifact@v4
         with:
