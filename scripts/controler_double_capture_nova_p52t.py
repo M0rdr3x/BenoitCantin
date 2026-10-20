@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Projet Nova P52T: deux jobs, deux captures et référence P52S; jamais de GO."""
 import argparse
+from collections.abc import Mapping
 from datetime import datetime, timezone
 import json
 import os
@@ -164,7 +165,7 @@ def wrap(role,capture,env):
  need(role in ("A","B"),"ROLE_INVALIDE")
  check_capture(capture)
  fields=("NOVA_RUN_ID","NOVA_RUN_ATTEMPT","NOVA_SHA","NOVA_JOB","NOVA_RUNNER_OS")
- need(type(env) is dict and all(type(env.get(k)) is str for k in fields),
+ need(isinstance(env,Mapping) and all(type(env.get(k)) is str for k in fields),
       "VARIABLES_GITHUB_ABSENTES")
  try:runid=int(env["NOVA_RUN_ID"]);attempt=int(env["NOVA_RUN_ATTEMPT"])
  except ValueError as e:raise ValueError("RUN_ID_INVALIDE") from e
