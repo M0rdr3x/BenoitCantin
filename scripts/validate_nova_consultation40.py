@@ -31,6 +31,7 @@ def validate(text):
         issues.append("Corpus Nova 40 modifié sans revue de version")
     required={
         "page":["sondage-age","sondage-consent","sondage-start","sondage-submit",
+                'id="sondage-privacy-warning"', "Une fois une contribution agrégée",
                 'id="sondage-next"','id="sondage-back"','40 questions','non représentative'],
         "client":["const COLLECTION_OPEN = false","!eligible()","questions.length!==40",
                   "answers.size!==40","sondage-submit').disabled=true","age18Confirmed:true",
@@ -91,6 +92,7 @@ def main():
     if args.self_test:
         muts=[
             ("client","const COLLECTION_OPEN = false","const COLLECTION_OPEN = true"),
+            ("page",'id="sondage-privacy-warning"','id="avis-absent"'),
             ("client","!eligible()","false"),
             ("client","answers.size!==40","false"),
             ("client","age18Confirmed:true","age18Confirmed:false"),

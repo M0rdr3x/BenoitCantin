@@ -50,6 +50,10 @@ def check_text(payload: dict[str, str]) -> list[str]:
            "client.auth.getUser()", "client.functions.invoke('nova-survey-submit'",
            "if (!COLLECTION_OPEN || recorded || submitting || !eligible()) return",
            "if (recorded) return", "text.textContent = label")
+    demand("page", 'id="sondage-reset-question"', 'id="sondage-reset-finish"',
+           'id="sondage-privacy-warning"', "Une fois une contribution agrégée")
+    demand("client", "selections.clear()", "'sondage-consent').checked = false",
+           "window.confirm(", "'sondage-introduction').hidden = false")
     demand("index", 'href="sondage.html"', 'Sondage citoyen 18+')
     demand("sql", "create table if not exists public.nova_survey_participants",
            "create table if not exists public.nova_survey_aggregate_counts",
@@ -124,6 +128,8 @@ def self_test() -> None:
     assert not check_questions(payload["manifest"], payload["source"])
     mutations = [
         ("client", "const COLLECTION_OPEN = false;", "const COLLECTION_OPEN = true;"),
+        ("client", "selections.clear()", "/* purge neutralisée */"),
+        ("page", 'id="sondage-privacy-warning"', 'id="avis-absent"'),
         ("client", "$('sondage-age').checked", "true"),
         ("client", "$('sondage-consent').checked", "true"),
         ("client", "client.auth.getUser()", "null"),

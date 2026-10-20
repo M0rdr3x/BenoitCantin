@@ -29,6 +29,8 @@ def main():
                     "page de sondage non disponible localement")
             # Les réponses ne doivent être saisissables qu'une fois le
             # manifeste chargé et les deux cases vérifiées.
+            require("Une fois une contribution agrégée" in page.locator("#sondage-privacy-warning").inner_text(),
+                    "Avertissement de retrait des agrégats absent")
             page.locator("#sondage-age").check()
             page.locator("#sondage-consent").uncheck()
             require(page.locator("#sondage-start").is_disabled(),
@@ -81,6 +83,24 @@ def main():
                     "Dernière réponse perdue en relecture")
             require(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"),
                     "Débordement horizontal en 390 px")
+            page.once("dialog", lambda dialog: dialog.accept())
+            page.locator("#sondage-reset-question").click()
+            require(not page.locator("#sondage-introduction").is_hidden(),
+                    "Retour au consentement après effacement impossible")
+            require(not page.locator("#sondage-age").is_checked(),
+                    "Attestation 18 ans non réinitialisée")
+            require(not page.locator("#sondage-consent").is_checked(),
+                    "Consentement non réinitialisé")
+            require(page.locator("#sondage-start").is_disabled(),
+                    "Démarrage encore autorisé après retrait du consentement")
+            page.locator("#sondage-age").check()
+            page.locator("#sondage-consent").check()
+            page.locator("#sondage-start").click()
+            require(page.locator("#sondage-next").is_disabled(),
+                    "Des opinions sont restées dans la mémoire après effacement")
+            require(not page.locator("#sondage-choices input[value='1']").is_checked(),
+                    "Ancienne réponse retrouvée après purge")
+            require(sent == [], f"Des réponses ont été envoyées malgré la collecte fermée : {sent}")
             page.set_viewport_size({"width": 1440, "height": 900})
             require(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"),
                     "Débordement horizontal sur ordinateur")

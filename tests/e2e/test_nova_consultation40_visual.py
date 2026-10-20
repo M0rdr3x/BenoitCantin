@@ -21,6 +21,8 @@ with sync_playwright() as p:
         check(response is not None and response.status == 200, "page de consultation absente")
         check("non officiel" in page.locator("#sondage-introduction").inner_text(),
               "statut consultatif et non officiel absent")
+        check("Une fois une contribution agrégée" in page.locator("#sondage-privacy-warning").inner_text(),
+              "avis sur la limite de retrait absent")
         check(page.locator("#sondage-start").is_disabled(), "verrou 18+ et consentement absent")
         page.locator("#sondage-age").check()
         check(page.locator("#sondage-start").is_disabled(), "consentement distinct absent")

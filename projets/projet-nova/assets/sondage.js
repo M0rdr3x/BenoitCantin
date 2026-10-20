@@ -162,6 +162,24 @@
       $('sondage-submit').disabled = recorded || !COLLECTION_OPEN || !eligible();
     }
   }
+  function resetSurvey() {
+    // L'effacement local n'est pas un retrait des agrégats d'une soumission déjà enregistrée.
+    if (submitting) return;
+    if (!window.confirm('Effacer toutes les réponses locales et retirer votre consentement pour cette visite?')) return;
+    selections.clear();
+    step = 0;
+    $('sondage-age').checked = false;
+    $('sondage-consent').checked = false;
+    $('sondage-questionnaire').hidden = true;
+    $('sondage-finish').hidden = true;
+    $('sondage-introduction').hidden = false;
+    $('sondage-choices').replaceChildren();
+    $('sondage-next').disabled = true;
+    setStatus('');
+    setStatus('', 'sondage-submit-status');
+    refreshStart();
+    $('sondage-titre').focus();
+  }
   async function init() {
     for (const id of ['sondage-age', 'sondage-consent']) {
       $(id).addEventListener('change', refreshStart);
@@ -188,6 +206,9 @@
       renderQuestion();
     });
     $('sondage-submit').addEventListener('click', submit);
+    for (const id of ['sondage-reset-question', 'sondage-reset-finish']) {
+      $(id).addEventListener('click', resetSurvey);
+    }
     try {
       const response = await fetch('data/sondage-questions-v1.json',
         { cache: 'no-store', credentials: 'omit' });

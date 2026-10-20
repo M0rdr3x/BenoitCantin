@@ -105,3 +105,8 @@ La consultation comporte **40 questions** dans l'ordre immuable approuvé. La qu
 ## Vérification SQL isolée des 40 et 64 questions
 
 La CI inclut maintenant un job PostgreSQL local jetable qui charge exclusivement les deux migrations candidates, sans accès à Supabase en production. Le test SQL contrôle les droits anon et authenticated, la RLS, le rôle service_role, les versions et réponses refusées, les doublons et les comptages agrégés. Identifiants et réponses : fictifs. Cette vérification technique ne remplace pas la revue juridique, méthodologique et de confidentialité, ni la revue du lot des migrations de production. Aucune migration n'est approuvée ou déployée automatiquement.
+
+
+## Transparence des retraits et effacement local — 19 octobre 2026
+
+Les deux pages 18+ informent désormais clairement que le modèle d’agrégation projeté ne permet pas de soustraire ultérieurement un bulletin individuel des totaux : l’effacement de la clé pseudonyme anti-doublon ne suffirait pas. La collecte reste fermée tant qu’une décision juridique, technique et méthodologique n’aura pas résolu cette limite dans l’issue #675. La politique de confidentialité expose distinctement le questionnaire 40 (référendaire consultatif non officiel), le sondage 64 et la Boussole. Le sondage 64 offre maintenant l’effacement confirmé **des seules données en mémoire** ainsi que de l’attestation 18+ et du consentement, aux étapes intermédiaires et finales, tout comme le parcours 40. Cette commande n’est pas un processus de retrait serveur après soumission.
