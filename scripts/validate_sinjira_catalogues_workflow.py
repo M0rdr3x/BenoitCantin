@@ -52,16 +52,21 @@ def validate(source: str) -> list[str]:
     ):
         errors.append("Seul le droit contents: read est autorisé")
     if re.findall(r"(?m)^  ([a-z][a-z0-9-]*):\s*$", jobs) != [
-        "verify", "visual-browser"
+        "verify", "nova-sql-contract", "visual-browser"
     ]:
         errors.append("Les jobs verify et visual-browser doivent rester présents")
         return errors
 
-    verify, visual_separator, visual = jobs.partition("\n  visual-browser:\n")
+    verify, sql_separator, remaining = jobs.partition("\n  nova-sql-contract:\n")
+    if not sql_separator:
+        errors.append("Job SQL Nova 40/64 manquant")
+        return errors
+    sql_contract, visual_separator, visual = remaining.partition("\n  visual-browser:\n")
     if not visual_separator:
         errors.append("Vérifications des trois navigateurs manquantes")
         return errors
     # partition() consomme le saut de ligne avant le prochain job.
+    sql_contract += "\n"
     # Une commande en dernière ligne du job doit garder sa frontière.
     verify += "\n"
     if "    name: Contrôler les trois catalogues et les routes publiques\n" not in verify:
@@ -105,6 +110,34 @@ def validate(source: str) -> list[str]:
         errors.append("Python du job principal non épinglé")
     if verify.count("python-version: '3.12.14'") != 1:
         errors.append("Version Python du job principal non épinglée")
+
+    # PostgreSQL ephemeral: the SQL job is mandatory, isolated and cannot push migrations.
+    sql_required = (
+        "    runs-on: ubuntu-24.04\n",
+        "    timeout-minutes: 12\n",
+        "    services:\n      postgres:\n",
+        "        image: postgres:16-bookworm\n",
+        "          POSTGRES_DB: nova_ci\n",
+        "          --health-cmd \"pg_isready -U postgres -d nova_ci\"\n",
+        "          persist-credentials: false\n",
+        "          PGHOST: 127.0.0.1\n",
+        "          PGDATABASE: nova_ci\n",
+        "        run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/test_nova_survey_migrations.sql\n",
+    )
+    for marker in sql_required:
+        if sql_contract.count(marker) != 1:
+            errors.append("Contrat PostgreSQL Nova absent ou dupliqué: " + marker.strip())
+    if sql_contract.count(f"uses: actions/checkout@{CHECKOUT}") != 1:
+        errors.append("Checkout du test SQL non épinglé")
+    if re.search(r"(?m)^    (?:if|needs|continue-on-error|permissions):", sql_contract):
+        errors.append("Job SQL désactivable ou avec permissions supplémentaires")
+    if re.search(r"(?m)^        (?:if|continue-on-error):", sql_contract):
+        errors.append("Étape SQL conditionnelle ou échec toléré")
+    if any(value in sql_contract for value in (
+        "supabase link", "supabase db push", "supabase functions deploy",
+        "PGHOST: ${", "PGPASSWORD: ${", "postgres://", "postgresql://",
+    )):
+        errors.append("Tests SQL Nova ne doivent jamais se connecter à Supabase distant")
 
     if visual.count("    needs: verify\n") != 1:
         errors.append("Les navigateurs doivent dépendre du job verify")
@@ -215,6 +248,18 @@ def self_test(source: str) -> None:
         "parcours sondage Nova retiré": (
             "run: python tests/e2e/test_nova_survey_visual.py",
             "run: echo SONDAGE_NAVIGATEUR_IGNORÉ",
+        ),
+        "test SQL Nova neutralisé": (
+            "run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/test_nova_survey_migrations.sql",
+            "run: echo SQL_NON_TESTÉ",
+        ),
+        "job SQL désactivé": (
+            "  nova-sql-contract:\n",
+            "  nova-sql-contract:\n    if: false\n",
+        ),
+        "base SQL distante": (
+            "PGHOST: 127.0.0.1",
+            "PGHOST: database.example.org",
         ),
         "PR visuelle désactivée": (
             "    if: github.event_name == 'pull_request'\n",
