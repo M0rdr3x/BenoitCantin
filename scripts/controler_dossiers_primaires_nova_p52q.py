@@ -59,8 +59,9 @@ def verifier(doc):
             d.get("preuves_premiere_vague")==list(FIRST),
             "DOSSIER_SCHEMA_INVALIDE")
     require(d.get("references")=={
-       key:str(FILES[key].relative_to(ROOT))
-       for key in ("p52a","p52p","p52o","p52n","p52j","p52k","references")},
+       **{key:str(FILES[key].relative_to(ROOT))
+          for key in ("p52a","p52p","p52o","p52n","p52j","p52k")},
+       "sources":str(FILES["references"].relative_to(ROOT))},
        "P52Q_REFERENCES_INCOMPATIBLES")
     require(s.get("schema_version")=="P52Q-SOURCES-1" and
             s.get("jalon")=="P52Q" and
