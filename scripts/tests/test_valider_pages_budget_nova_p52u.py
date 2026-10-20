@@ -16,7 +16,7 @@ def load():
 def list_values(doc):
  return " ".join(str(int(x["valeur_mcad"])) for x in doc["valeurs_attendues"])
 def sample_text(doc):
- return doc["titre_tableau"]+" 2026-2027 Revenus "+list_values(doc)
+ return doc["titre_tableau"]+" 2026-2027 Revenus\n"+list_values(doc).replace(" ", "\n")
 class P52UPDFTests(unittest.TestCase):
  def reject(self,change):
   d=load()
