@@ -32,7 +32,7 @@ python scripts/controler_double_capture_nova_p52t.py envelopper --role A --captu
 python scripts/controler_double_capture_nova_p52t.py comparer --a recu-a.json --b recu-b.json --exiger-coherence --rapport decision.json
 ```
 
-`envelopper` exige les variables `GITHUB_RUN_ID`, `GITHUB_RUN_ATTEMPT`, `GITHUB_SHA`, `GITHUB_JOB` et `RUNNER_OS`. Elles ne prouvent pas, à elles seules, qu'un tiers indépendant a vérifié l'exécution; elles permettent surtout de détecter qu'on compare des jobs d'exécutions différentes. Les tests unitaires utilisent uniquement des échantillons synthétiques, aucun accès Internet.
+`envelopper` exige les variables `NOVA_RUN_ID`, `NOVA_RUN_ATTEMPT`, `NOVA_SHA`, `NOVA_JOB` et `NOVA_RUNNER_OS`. Elles ne prouvent pas, à elles seules, qu'un tiers indépendant a vérifié l'exécution; elles permettent surtout de détecter qu'on compare des jobs d'exécutions différentes. Les tests unitaires utilisent uniquement des échantillons synthétiques, aucun accès Internet.
 
 ## Contrôle institutionnel toujours manquant
 

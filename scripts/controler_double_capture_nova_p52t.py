@@ -163,18 +163,18 @@ def check_capture(c):
 def wrap(role,capture,env):
  need(role in ("A","B"),"ROLE_INVALIDE")
  check_capture(capture)
- fields=("GITHUB_RUN_ID","GITHUB_RUN_ATTEMPT","GITHUB_SHA","GITHUB_JOB","RUNNER_OS")
+ fields=("NOVA_RUN_ID","NOVA_RUN_ATTEMPT","NOVA_SHA","NOVA_JOB","NOVA_RUNNER_OS")
  need(type(env) is dict and all(type(env.get(k)) is str for k in fields),
       "VARIABLES_GITHUB_ABSENTES")
- try:runid=int(env["GITHUB_RUN_ID"]);attempt=int(env["GITHUB_RUN_ATTEMPT"])
+ try:runid=int(env["NOVA_RUN_ID"]);attempt=int(env["NOVA_RUN_ATTEMPT"])
  except ValueError as e:raise ValueError("RUN_ID_INVALIDE") from e
- sha=env["GITHUB_SHA"]
+ sha=env["NOVA_SHA"]
  need(runid>0 and attempt>0 and COMMIT.fullmatch(sha) and
-      env["GITHUB_JOB"]=={"A":"capture-a","B":"capture-b"}[role] and
-      env["RUNNER_OS"]=="Linux","CONTEXTE_GITHUB_INCONNU")
+      env["NOVA_JOB"]=={"A":"capture-a","B":"capture-b"}[role] and
+      env["NOVA_RUNNER_OS"]=="Linux","CONTEXTE_GITHUB_INCONNU")
  return {"schema_version":"P52T-RUN-1","role":role,
   "github_run_id":runid,"github_run_attempt":attempt,
-  "github_sha":sha,"github_job":env["GITHUB_JOB"],
+  "github_sha":sha,"github_job":env["NOVA_JOB"],
   "runner_os":"Linux","capture":capture,
   "publisher_signature_verified":False,"archive_permanent":False,
   "reviewer_human":False}

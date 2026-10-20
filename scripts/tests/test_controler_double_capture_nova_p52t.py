@@ -42,9 +42,9 @@ def captured(src=None):
   "decision":"NO_GO_AUTOMATIQUE"
  }
 def env(role="A",run="1234",sha="a"*40):
- return {"GITHUB_RUN_ID":run,"GITHUB_RUN_ATTEMPT":"1",
-         "GITHUB_SHA":sha,"GITHUB_JOB":f"capture-{role.lower()}",
-         "RUNNER_OS":"Linux"}
+ return {"NOVA_RUN_ID":run,"NOVA_RUN_ATTEMPT":"1",
+         "NOVA_SHA":sha,"NOVA_JOB":f"capture-{role.lower()}",
+         "NOVA_RUNNER_OS":"Linux"}
 def wraps():
  cap=captured()
  return m.wrap("A",cap,env("A")),m.wrap("B",cap,env("B"))
