@@ -25,6 +25,7 @@ PATHS={
 "body":ROOT/"supabase/functions/_shared/nova_survey_body.mjs",
 "config":ROOT/"supabase/config.toml",
 "index":NOVA/"index.html",
+"portal":ROOT/"index.html",
 }
 
 def validate(text):
@@ -60,7 +61,13 @@ def validate(text):
                  'src="assets/nova-sondage-icone.webp"',
                  'class="nova-survey-directory-icon-link"',
                  'aria-label="Ouvrir le sondage référendaire consultatif de 40 questions"',
-                 'aria-label="Ouvrir le sondage citoyen de 64 propositions"']
+                 'aria-label="Ouvrir le sondage citoyen de 64 propositions"'],
+        "portal":['id="sondages-nova"', 'id="home-sondage-40"',
+                  'id="home-sondage-64"',
+                  'href="/projets/projet-nova/consultation-40.html"',
+                  'href="/projets/projet-nova/sondage.html"',
+                  'src="/projets/projet-nova/assets/nova-sondage-icone.webp"',
+                  'collecte des réponses désactivée', 'non officiel et non représentatif']
     }
     for key, markers in required.items():
         for marker in markers:
@@ -102,6 +109,9 @@ def main():
         muts=[
             ("client","const COLLECTION_OPEN = false","const COLLECTION_OPEN = true"),
             ("page",'id="sondage-privacy-warning"','id="avis-absent"'),
+            ("portal",'id="sondages-nova"','id="lien-sondage-absent"'),
+            ("portal",'src="/projets/projet-nova/assets/nova-sondage-icone.webp"','src="/assets/image-inexistante.webp"'),
+            ("portal",'id="home-sondage-64"','id="accès-64-supprimé"'),
             ("index",'id="nova-survey-directory-40"','id="acces-40-absent"'),
             ("index",'id="nova-survey-directory-64"','id="acces-64-absent"'),
             ("index",'src="assets/nova-sondage-icone.webp"','src="assets/icone-manquante.webp"'),

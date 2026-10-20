@@ -177,6 +177,31 @@ def run() -> None:
         assert_true(cards.count() == 4, f"Accueil: 4 accès attendus, trouvé {cards.count()}")
         hrefs = {cards.nth(i).get_attribute("href") for i in range(cards.count())}
         assert_true(hrefs == EXPECTED_DOORS, f"Accueil: portes inattendues: {hrefs}")
+        survey_section = page.locator("#sondages-nova")
+        assert_true(survey_section.count() == 1 and survey_section.is_visible(),
+                    f"{BROWSER_NAME}: section Sondages Nova absente de l'accueil général")
+        assert_true(page.locator("#home-sondage-40").get_attribute("href") ==
+                    "/projets/projet-nova/consultation-40.html",
+                    f"{BROWSER_NAME}: lien sondage référendaire absent sur l'accueil général")
+        assert_true(page.locator("#home-sondage-64").get_attribute("href") ==
+                    "/projets/projet-nova/sondage.html",
+                    f"{BROWSER_NAME}: lien sondage citoyen absent sur l'accueil général")
+        assert_true("collecte des réponses désactivée" in survey_section.inner_text().lower(),
+                    f"{BROWSER_NAME}: collecte fermée non déclarée sur l'accueil général")
+        image = survey_section.locator('img[src="/projets/projet-nova/assets/nova-sondage-icone.webp"]')
+        assert_true(image.count() == 1,
+                    f"{BROWSER_NAME}: icône du sondage choisie absente de l'accueil général")
+        image.scroll_into_view_if_needed()
+        page.wait_for_function(
+            "(() => {const a=document.querySelector('#sondages-nova img'); return a && a.complete && a.naturalWidth===256 && a.naturalHeight===256})()",
+            timeout=15_000,
+        )
+        page.locator("#home-sondage-40").click()
+        assert_true(page.url.endswith("/projets/projet-nova/consultation-40.html"),
+                    f"{BROWSER_NAME}: accès depuis l'accueil ne mène pas au référendaire")
+        assert_true(page.locator("#sondage-introduction").is_visible(),
+                    f"{BROWSER_NAME}: questionnaire 40 inaccessible depuis l'accueil")
+        page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         orbit_nodes = page.locator(".home-cosmos a.orbit-node")
         assert_true(orbit_nodes.count() == 4, f"Accueil: 4 portes orbitales attendues, trouvé {orbit_nodes.count()}")
         compass_orbit = page.locator(".home-cosmos .node-boussole-home")
@@ -820,6 +845,17 @@ def run() -> None:
         response = mobile_page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: accueil mobile inaccessible")
 
+        mobile_surveys = mobile_page.locator("#sondages-nova")
+        assert_true(mobile_surveys.is_visible(),
+                    f"{BROWSER_NAME}: accès aux sondages masqué sur mobile")
+        assert_true(mobile_surveys.locator("a[href='/projets/projet-nova/consultation-40.html']").count() >= 2,
+                    f"{BROWSER_NAME}: sondage référendaire non accessible sur mobile")
+        mobile_surveys.locator("#home-sondage-64").tap()
+        assert_true(mobile_page.url.endswith("/projets/projet-nova/sondage.html"),
+                    f"{BROWSER_NAME}: bouton mobile des 64 propositions incorrect")
+        assert_true(mobile_page.locator("#sondage-introduction").is_visible(),
+                    f"{BROWSER_NAME}: sondage citoyen inaccessible après navigation mobile")
+        mobile_page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
         assert_true(overflow, f"{BROWSER_NAME}: débordement horizontal détecté en 390 px")
 
