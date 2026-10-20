@@ -53,7 +53,8 @@ def validate(text):
         "body":["req.body.getReader()","if (total > MAX_REQUEST_BYTES)",
                 "reader.cancel()","reader.releaseLock()","JSON.parse(raw)"],
         "config":["[functions.nova-consultation40-submit]\nverify_jwt = true"],
-        "index":['href="consultation-40.html"']
+        "index":['href="consultation-40.html"', 'id="consultations"', 'id="nova-survey-directory-40"',
+                 'id="nova-survey-directory-64"', 'collecte fermée']
     }
     for key, markers in required.items():
         for marker in markers:
@@ -93,6 +94,8 @@ def main():
         muts=[
             ("client","const COLLECTION_OPEN = false","const COLLECTION_OPEN = true"),
             ("page",'id="sondage-privacy-warning"','id="avis-absent"'),
+            ("index",'id="nova-survey-directory-40"','id="acces-40-absent"'),
+            ("index",'id="nova-survey-directory-64"','id="acces-64-absent"'),
             ("client","!eligible()","false"),
             ("client","answers.size!==40","false"),
             ("client","age18Confirmed:true","age18Confirmed:false"),
@@ -118,6 +121,6 @@ def main():
         obj["questions"][19]["text"]="Question centrale modifiée sans approbation"
         altered=dict(text);altered["manifest"]=json.dumps(obj,ensure_ascii=False)
         assert validate(altered), "Modification intermédiaire du corpus non détectée"
-        print("OK consultation 40 : 17 mutations de sécurité, âge et corpus refusées")
+        print(f"OK consultation 40 : {len(muts) + 3} mutations de sécurité, âge, corpus et accès refusées")
     print("OK consultation Nova : 40 questions Pour/Contre, 18+, collecte désactivée, RLS")
 if __name__=="__main__":main()

@@ -120,3 +120,8 @@ Les DDL des consultations Nova 40 et 64 sont stockés **sans modification** sous
 ### Protection supplémentaire des Edge Functions candidates
 
 Le workspace Supabase lié exclut maintenant les répertoires Edge `nova-survey-submit` et `nova-consultation40-submit` en plus des deux fichiers SQL candidats. Le validateur de plateforme `scripts/validate_supabase.py` accepte uniquement ces deux RPC *précisément identifiées* comme candidates si et seulement si leur DDL figé reste présent dans la zone isolée, si les appels proviennent exclusivement de leur Edge Function dédiée et si chaque fonction garde son drapeau serveur de collecte verrouillé. Toute RPC de production manquante ou tout appel supplémentaire continue de faire échouer la CI. Le déploiement des fonctions Nova nécessite encore une revue et une approbation distinctes; les validations locales ne l'autorisent pas.
+
+
+## Repérage sur l'accueil du site (branche de préparation)
+
+La section **Sondages et consultations** est affichée après la bannière visuelle de l'accueil Projet Nova, à l'ancre `index.html#consultations`. Elle comporte deux cartes indépendantes et explicites : `consultation-40.html` (consultation référendaire **non officielle**, Pour/Contre/Sans opinion) et `sondage.html` (64 propositions). Les boutons de la bannière de présentation, les accès rapides, les menus, les pieds de page et les liens croisés sont cohérents. La Boussole électorale demeure séparée. Le parcours navigateur vérifie les liens de l'accueil à 390 px avant de visiter le questionnaire. **Ces liens ne sont pas encore sur le site public : cette modification reste dans la PR #639 DRAFT.** Aucun changement de collecte ni de contrôle d'âge.

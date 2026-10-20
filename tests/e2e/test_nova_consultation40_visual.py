@@ -17,6 +17,22 @@ with sync_playwright() as p:
         calls = []
         page.on("request", lambda req: calls.append(req.url)
                 if "nova-consultation40-submit" in req.url else None)
+        homepage = page.goto("http://127.0.0.1:4173/projets/projet-nova/",
+                             wait_until="domcontentloaded", timeout=30000)
+        check(homepage is not None and homepage.status == 200,
+              "accueil Projet Nova inaccessible")
+        check(page.locator("#consultations").is_visible(),
+              "annuaire des consultations invisible depuis l'accueil")
+        check(page.locator("#nova-survey-directory-40").get_attribute("href") == "consultation-40.html",
+              "lien 40 questions incorrect")
+        check(page.locator("#nova-survey-directory-64").get_attribute("href") == "sondage.html",
+              "lien 64 propositions incorrect")
+        check("collecte fermée" in page.locator("#consultations").inner_text().lower(),
+              "état réel de la collecte non affiché")
+        check(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"),
+              "débordement horizontal sur l'accueil mobile")
+        page.locator("#nova-survey-directory-40").click()
+        page.wait_for_url("**/consultation-40.html", timeout=15000)
         response = page.goto(URL, wait_until="domcontentloaded", timeout=30000)
         check(response is not None and response.status == 200, "page de consultation absente")
         check("non officiel" in page.locator("#sondage-introduction").inner_text(),
