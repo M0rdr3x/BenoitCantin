@@ -23,6 +23,14 @@ with sync_playwright() as p:
               "accueil Projet Nova inaccessible")
         check(page.locator("#consultations").is_visible(),
               "annuaire des consultations invisible depuis l'accueil")
+        icons = page.locator(".nova-survey-directory-icon-link img")
+        check(icons.count() == 2, "Icônes des deux cartes de sondage absentes")
+        for icon in icons.all():
+            expect(icon).to_have_js_property("naturalWidth", 256, timeout=15000)
+        check(page.locator(".nova-survey-directory-icon-link").first.get_attribute("href") == "consultation-40.html",
+              "L'icône du sondage référendaire ne donne pas accès aux 40 questions")
+        check(page.locator(".nova-survey-directory-icon-link").nth(1).get_attribute("href") == "sondage.html",
+              "L'icône du sondage citoyen ne donne pas accès aux 64 propositions")
         check(page.locator("#nova-survey-directory-40").get_attribute("href") == "consultation-40.html",
               "lien 40 questions incorrect")
         check(page.locator("#nova-survey-directory-64").get_attribute("href") == "sondage.html",

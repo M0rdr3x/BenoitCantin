@@ -14,6 +14,8 @@ APPROVED_MANIFEST_GIT_SHA = "97f0d3ad2b13be728356bba7a1831b91fd047070"
 def manifest_git_sha(text):
     data = text.encode("utf-8")
     return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+ICON=NOVA/"assets/nova-sondage-icone.webp"
+ICON_SHA256="40adc5363eb4b1a76236e2755b6c73c30119dc4477d41801e720d4e6583cfeb2"
 PATHS={
 "manifest":NOVA/"data/consultation-40-v1.json",
 "page":NOVA/"consultation-40.html",
@@ -54,7 +56,11 @@ def validate(text):
                 "reader.cancel()","reader.releaseLock()","JSON.parse(raw)"],
         "config":["[functions.nova-consultation40-submit]\nverify_jwt = true"],
         "index":['href="consultation-40.html"', 'id="consultations"', 'id="nova-survey-directory-40"',
-                 'id="nova-survey-directory-64"', 'collecte fermée']
+                 'id="nova-survey-directory-64"', 'collecte fermée',
+                 'src="assets/nova-sondage-icone.webp"',
+                 'class="nova-survey-directory-icon-link"',
+                 'aria-label="Ouvrir le sondage référendaire consultatif de 40 questions"',
+                 'aria-label="Ouvrir le sondage citoyen de 64 propositions"']
     }
     for key, markers in required.items():
         for marker in markers:
@@ -89,6 +95,8 @@ def main():
     args=parser.parse_args()
     text={k:v.read_text("utf-8") for k,v in PATHS.items()}
     issues=validate(text)
+    if not ICON.is_file() or hashlib.sha256(ICON.read_bytes()).hexdigest()!=ICON_SHA256:
+        issues.append("Icône officielle des sondages absente ou modifiée sans validation")
     if issues:raise SystemExit("\n".join(issues))
     if args.self_test:
         muts=[
@@ -96,6 +104,7 @@ def main():
             ("page",'id="sondage-privacy-warning"','id="avis-absent"'),
             ("index",'id="nova-survey-directory-40"','id="acces-40-absent"'),
             ("index",'id="nova-survey-directory-64"','id="acces-64-absent"'),
+            ("index",'src="assets/nova-sondage-icone.webp"','src="assets/icone-manquante.webp"'),
             ("client","!eligible()","false"),
             ("client","answers.size!==40","false"),
             ("client","age18Confirmed:true","age18Confirmed:false"),
