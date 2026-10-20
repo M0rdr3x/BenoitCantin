@@ -168,6 +168,8 @@ def fetch_one(url,opener=None):
             digest.update(block)
             if len(header)<8:header=(header+block)[:8]
             tail=(tail+block)[-4096:]
+        if content_size:
+            must(size==int(content_size),"TAILLE_DECLAREE_ET_LUE_DIVERGENTES")
         must(size>=32 and header.startswith(b"%PDF-") and
              b"%%EOF" in tail,
              "SIGNATURE_PDF_SOMMAIRE_ABSENTE")

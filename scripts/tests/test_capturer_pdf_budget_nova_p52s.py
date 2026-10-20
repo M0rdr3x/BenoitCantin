@@ -149,5 +149,8 @@ class SourceReception(unittest.TestCase):
     def test_40_no_pdf_data_in_report(self):
         out=m.run(docs(),"sonde",FakeOpener(raise_error=OSError()))
         self.assertNotIn("%PDF",json.dumps(out))
+    def test_41_short_declared_content_length_rejected(self):
+        with self.assertRaises(ValueError):
+            m.fetch_one(m.URLS[0],FakeOpener(FakeResponse(declared="1")))
 if __name__=="__main__":
     unittest.main()
