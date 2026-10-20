@@ -1,0 +1,129 @@
+name: Projet Nova P52T - Deux captures HTTPS et comparaison contradictoire
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52t.yml"
+      - "scripts/controler_double_capture_nova_p52t.py"
+      - "scripts/tests/test_controler_double_capture_nova_p52t.py"
+      - "scripts/capturer_pdf_budget_nova_p52s.py"
+      - "projets/projet-nova/etudes/P52T_*"
+      - "projets/projet-nova/etudes/P52S_RECEPISSES_HTTPS_OBSERVES_2026_10_20.json"
+      - "projets/projet-nova/etudes/P52S_PROTOCOLE_RECUPERATION_PDF_2026_2027.json"
+      - "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture-a:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Code source lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Capturer les octets des deux PDF - tache A
+        run: |
+          python scripts/capturer_pdf_budget_nova_p52s.py --mode sonde --rapport capture-a.json
+          python scripts/controler_double_capture_nova_p52t.py envelopper --role A --capture capture-a.json --sortie receipt-a.json
+      - name: Seulement le recu A
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52t-recu-a
+          path: receipt-a.json
+          if-no-files-found: error
+          retention-days: 7
+  capture-b:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Code source lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Capturer les octets des deux PDF - tache B
+        run: |
+          python scripts/capturer_pdf_budget_nova_p52s.py --mode sonde --rapport capture-b.json
+          python scripts/controler_double_capture_nova_p52t.py envelopper --role B --capture capture-b.json --sortie receipt-b.json
+      - name: Seulement le recu B
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52t-recu-b
+          path: receipt-b.json
+          if-no-files-found: error
+          retention-days: 7
+  comparer-les-captures:
+    needs: [capture-a, capture-b]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Code source lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Cinquante tests de source, contexte et divergence
+        run: |
+          python -m py_compile scripts/controler_double_capture_nova_p52t.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_controler_double_capture_nova_p52t.py")
+          assert suite.countTestCases()==50,suite.countTestCases()
+          out=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert out.wasSuccessful()
+          PY
+      - name: Recuperer le recu A de la premiere tache
+        uses: actions/download-artifact@v4
+        with:
+          name: nova-p52t-recu-a
+          path: receipts-a
+      - name: Recuperer le recu B de la deuxieme tache
+        uses: actions/download-artifact@v4
+        with:
+          name: nova-p52t-recu-b
+          path: receipts-b
+      - name: Comparer les deux captures avec P52S
+        run: |
+          python scripts/controler_double_capture_nova_p52t.py comparer --a receipts-a/receipt-a.json --b receipts-b/receipt-b.json --exiger-coherence --rapport p52t_concordance.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path("p52t_concordance.json").read_text("utf-8"))
+          assert data["concordances_trois_references"]==2
+          assert data["incoherences_techniques"]==0
+          assert data["integrite_binaire_triple_confirmee"] is True
+          assert data["verification_independante_humaine_obtenue"] is False
+          assert data["decision"]=="NO_GO_AUTOMATIQUE"
+          print(json.dumps(data,ensure_ascii=False,indent=2))
+          PY
+      - name: Exiger le non-GO en absence d'avis humain
+        run: |
+          set +e
+          python scripts/controler_double_capture_nova_p52t.py audit --exiger-expertise --rapport p52t_absence_expertise.json
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Rapport agrege sans PDF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52t-resultat-croise-no-go
+          path: |
+            p52t_concordance.json
+            p52t_absence_expertise.json
+          if-no-files-found: ignore
+          retention-days: 7
