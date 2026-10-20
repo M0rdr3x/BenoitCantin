@@ -39,7 +39,8 @@ def check_text(payload: dict[str, str]) -> list[str]:
            'id="sondage-choices"', 'id="sondage-progress"',
            'id="sondage-back"', 'id="sondage-next"',
            'id="sondage-question-heading"', 'noindex,follow',
-           'non représentative', '64 propositions')
+           'non représentative', '64 propositions',
+           'id="sondage-review-list"', 'id="sondage-answered"')
     demand("client", "const COLLECTION_OPEN = false;",
            "function eligible()", "$('sondage-age').checked",
            "$('sondage-consent').checked",
@@ -49,7 +50,9 @@ def check_text(payload: dict[str, str]) -> list[str]:
            "value !== 'skip'", "const answers = Object.create(null)",
            "client.auth.getUser()", "client.functions.invoke('nova-survey-submit'",
            "if (!COLLECTION_OPEN || recorded || submitting || !eligible()) return",
-           "if (recorded) return", "text.textContent = label")
+           "if (recorded) return", "text.textContent = label",
+           "editingReview = true", "choiceNames.get(selections.get(question.id))",
+           "list.replaceChildren()", "step = 0;")
     demand("page", 'id="sondage-reset-question"', 'id="sondage-reset-finish"',
            'id="sondage-privacy-warning"', "Une fois une contribution agrégée")
     demand("client", "selections.clear()", "'sondage-consent').checked = false",
@@ -129,6 +132,9 @@ def self_test() -> None:
     mutations = [
         ("client", "const COLLECTION_OPEN = false;", "const COLLECTION_OPEN = true;"),
         ("client", "selections.clear()", "/* purge neutralisée */"),
+        ("page", 'id="sondage-review-list"', 'id="récapitulatif-perdu"'),
+        ("client", "editingReview = true", "editingReview = false"),
+        ("client", "choiceNames.get(selections.get(question.id))", "null"),
         ("page", 'id="sondage-privacy-warning"', 'id="avis-absent"'),
         ("client", "$('sondage-age').checked", "true"),
         ("client", "$('sondage-consent').checked", "true"),

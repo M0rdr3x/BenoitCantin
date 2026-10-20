@@ -36,7 +36,7 @@
 <button class="btn btn-primary" id="sondage-start" type="button" disabled>Commencer le sondage</button>
 </div>
 <section class="content-card nova-survey-card" id="sondage-questionnaire" aria-labelledby="sondage-question-heading" hidden>
-<div class="nova-survey-progress" aria-live="polite"><p id="sondage-position">Question 1 sur 64</p><progress id="sondage-progress" value="0" max="64">0 sur 64</progress></div>
+<div class="nova-survey-progress"><p id="sondage-position" aria-live="polite">Question 1 sur 64</p><progress id="sondage-progress" value="0" max="64" aria-label="Progression du questionnaire">0 sur 64</progress><p id="sondage-answered" class="nova-survey-progress-count">0 question avec un choix sur 64</p></div>
 <form id="sondage-form" novalidate><fieldset class="nova-survey-question">
 <legend id="sondage-question-heading">Chargement de la question…</legend>
 <p class="nova-survey-hint">Dans quelle mesure êtes-vous d’accord avec cette proposition?</p>
@@ -48,8 +48,11 @@
 </section>
 <section class="content-card nova-survey-card" id="sondage-finish" hidden aria-labelledby="sondage-finish-heading">
 <h2 id="sondage-finish-heading">Questionnaire terminé</h2><p id="sondage-recap"></p>
+<h3>Vérifiez vos 64 réponses avant une éventuelle transmission</h3>
+<p>Les choix sont uniquement affichés dans votre navigateur. Vous pouvez modifier chaque réponse; aucune réponse n'est enregistrée ou transmise pendant cette préparation.</p>
+<ol id="sondage-review-list" class="nova-survey-review-list" aria-label="Liste des 64 réponses personnelles"></ol>
 <p>Votre participation n’est pas encore enregistrée. L’envoi exige une connexion à votre compte, la confirmation d’âge et le consentement. Les réponses ne sont jamais publiées individuellement.</p>
-<div class="nova-survey-actions"><button class="btn btn-outline" id="sondage-review" type="button">Revoir mes réponses</button><button class="btn btn-primary" id="sondage-submit" type="button" disabled>Envoyer mes réponses</button></div>
+<div class="nova-survey-actions"><button class="btn btn-outline" id="sondage-review" type="button">Reprendre depuis la première question</button><button class="btn btn-primary" id="sondage-submit" type="button" disabled>Envoyer mes réponses</button></div>
 <div class="nova-survey-secondary-actions"><button class="btn btn-outline" id="sondage-reset-finish" type="button">Effacer mes choix et retirer mon consentement</button></div>
 <p class="nova-survey-privacy-reminder"><strong>Attention :</strong> effacer les choix dans ce navigateur retire les réponses locales et le consentement affiché, mais ne retire pas une éventuelle contribution déjà enregistrée dans des décomptes agrégés. <a href="confidentialite.html#nova-sondages-confidentialite">En savoir plus</a>.</p>
 <p id="sondage-submit-status" class="nova-survey-status" role="status" aria-live="polite"></p>

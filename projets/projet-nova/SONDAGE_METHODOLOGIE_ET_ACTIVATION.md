@@ -130,3 +130,8 @@ La section **Sondages et consultations** est affichée après la bannière visue
 ## Accès direct ajouté à la page d'accueil générale
 
 La page principale `/index.html` de `www.benoitcantin.com` possède en version de préparation une carte **Sondages et consultations** (`#sondages-nova`) immédiatement après la bannière et la signature personnelle, **sans transformer les quatre portes orbitantes existantes**. Le visuel WebP approuvé est cliquable et mène au sondage référendaire de 40 questions; un second bouton donne accès aux 64 propositions. Un raccourci figure aussi dans les actions de la bannière principale et le pied de page. Le texte explicite la nature non officielle et non représentative des consultations et la collecte désactivée. Les tests navigateur vérifient les liens root → 40/64, la présence du WebP 256 × 256 et le rendu mobile à 390 px. **La carte n'apparaîtra sur le domaine public qu'après la fusion et la bascule d'hébergement dûment autorisées** ; la PR #639 reste en brouillon et la collecte n'est pas activée.
+
+
+## Relecture détaillée de 64 propositions
+
+Le sondage citoyen 64 dispose désormais, comme la consultation 40, d'une liste complète des formulations et de chaque réponse (y compris Sans opinion), avec un bouton **Modifier** par question, correction puis retour au récapitulatif, reprise depuis le début, compteur de progression et purge totale des choix locaux et du consentement. Aucun contenu de question n'a changé; la collecte reste **fermée**. Tests Playwright sur les trois moteurs ajoutés.

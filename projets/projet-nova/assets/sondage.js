@@ -19,9 +19,11 @@
     ['skip', 'Sans opinion / passer cette question']
   ];
   const $ = id => document.getElementById(id);
+  const choiceNames = new Map(ANSWERS);
   const selections = new Map();
   let questions = [];
   let step = 0;
+  let editingReview = false;
   let submitting = false;
   let recorded = false;
 
@@ -48,10 +50,12 @@
     $('sondage-start').disabled = !eligible() || questions.length !== 64;
   }
   function renderQuestion() {
+    if (!eligible() || questions.length !== 64 || step < 0 || step >= 64) return;
     const question = questions[step];
     $('sondage-position').textContent = 'Question ' + (step + 1) + ' sur ' + questions.length;
-    $('sondage-progress').value = step;
+    $('sondage-progress').value = step + 1;
     $('sondage-progress').max = questions.length;
+    $('sondage-answered').textContent = selections.size + ' question(s) avec un choix sur 64';
     $('sondage-question-heading').textContent = question.text;
     const area = $('sondage-choices');
     area.replaceChildren();
@@ -65,6 +69,7 @@
       input.checked = existing === value;
       input.addEventListener('change', () => {
         selections.set(question.id, value);
+        $('sondage-answered').textContent = selections.size + ' question(s) avec un choix sur 64';
         $('sondage-next').disabled = false;
         setStatus('');
       });
@@ -73,10 +78,11 @@
       wrapper.append(input, text);
       area.append(wrapper);
     }
-    $('sondage-back').disabled = step === 0;
+    $('sondage-back').disabled = !editingReview && step === 0;
+    $('sondage-back').textContent = editingReview ? 'Retour au récapitulatif' : 'Précédent';
     $('sondage-next').disabled = !selections.has(question.id);
-    $('sondage-next').textContent =
-      step === questions.length - 1 ? 'Terminer le questionnaire' : 'Suivant';
+    $('sondage-next').textContent = editingReview ? 'Enregistrer la modification' :
+      (step === questions.length - 1 ? 'Voir le récapitulatif' : 'Suivant');
     setStatus('');
     $('sondage-question-heading').setAttribute('tabindex', '-1');
     $('sondage-question-heading').focus({ preventScroll: true });
@@ -86,12 +92,42 @@
       setStatus('Toutes les questions nécessitent une réponse ou « Sans opinion ».');
       return;
     }
+    editingReview = false;
     $('sondage-questionnaire').hidden = true;
     $('sondage-finish').hidden = false;
     const actual = [...selections.values()].filter(value => value !== 'skip').length;
     $('sondage-recap').textContent = actual + ' réponse(s) d’opinion et ' +
-      (questions.length - actual) + ' question(s) passées, sur 64.';
-    $('sondage-submit').disabled = !COLLECTION_OPEN;
+      (questions.length - actual) + ' question(s) « Sans opinion », sur 64. Aucune donnée transmise.';
+    const list = $('sondage-review-list');
+    list.replaceChildren();
+    questions.forEach((question, index) => {
+      const li = document.createElement('li');
+      const detail = document.createElement('div');
+      const heading = document.createElement('strong');
+      heading.textContent = 'Question ' + (index + 1);
+      const questionText = document.createElement('p');
+      questionText.textContent = question.text;
+      const answer = document.createElement('p');
+      answer.className = 'nova-survey-review-choice';
+      answer.textContent = 'Votre choix : ' + choiceNames.get(selections.get(question.id));
+      detail.append(heading, questionText, answer);
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className = 'btn btn-outline nova-survey-review-edit';
+      edit.textContent = 'Modifier';
+      edit.setAttribute('aria-label', 'Modifier la réponse à la question ' + (index + 1));
+      edit.addEventListener('click', () => {
+        if (recorded || !eligible()) return;
+        step = index;
+        editingReview = true;
+        $('sondage-finish').hidden = true;
+        $('sondage-questionnaire').hidden = false;
+        renderQuestion();
+      });
+      li.append(detail, edit);
+      list.append(li);
+    });
+    $('sondage-submit').disabled = !COLLECTION_OPEN || recorded;
     setStatus(COLLECTION_OPEN ?
       'Si vous souhaitez participer, confirmez l’envoi avec votre compte connecté.' :
       'Collecte non ouverte : aucune réponse n’a été envoyée. La publication attend la validation de confidentialité.',
@@ -168,6 +204,8 @@
     if (!window.confirm('Effacer toutes les réponses locales et retirer votre consentement pour cette visite?')) return;
     selections.clear();
     step = 0;
+    editingReview = false;
+    $('sondage-review-list').replaceChildren();
     $('sondage-age').checked = false;
     $('sondage-consent').checked = false;
     $('sondage-questionnaire').hidden = true;
@@ -191,16 +229,20 @@
       renderQuestion();
     });
     $('sondage-next').addEventListener('click', () => {
-      if (!selections.has(questions[step].id)) return;
-      if (step + 1 === questions.length) finish();
+      if (!eligible() || !questions[step] || !selections.has(questions[step].id)) return;
+      if (editingReview || step + 1 === questions.length) finish();
       else { step++; renderQuestion(); }
     });
     $('sondage-back').addEventListener('click', () => {
-      if (step > 0) { step--; renderQuestion(); }
+      if (editingReview) finish();
+      else if (step > 0) { step--; renderQuestion(); }
     });
     $('sondage-form').addEventListener('submit', e => e.preventDefault());
     $('sondage-review').addEventListener('click', () => {
       if (recorded) return;
+      if (!eligible()) return;
+      step = 0;
+      editingReview = false;
       $('sondage-finish').hidden = true;
       $('sondage-questionnaire').hidden = false;
       renderQuestion();

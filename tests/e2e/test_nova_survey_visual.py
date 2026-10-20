@@ -71,16 +71,39 @@ def main():
                 page.locator("#sondage-next").click()
             require(not page.locator("#sondage-finish").is_hidden(),
                     "Écran final absent après 64 questions")
+            require(page.locator("#sondage-review-list li").count() == 64,
+                    "Récapitulatif des 64 choix absent")
+            require("Votre choix : Plutôt d’accord" in
+                    page.locator("#sondage-review-list li").first.inner_text(),
+                    "Première réponse non affichée")
+            require("Sans opinion" in page.locator("#sondage-review-list li").last.inner_text(),
+                    "La réponse Sans opinion n'apparaît pas dans le récapitulatif")
             require(page.locator("#sondage-submit").is_disabled(),
                     "Envoi politique non approuvé activé par erreur")
             require("non ouverte" in page.locator("#sondage-submit-status").inner_text(),
                     "État réel de la collecte masqué")
             require(sent == [], f"Une réponse a quitté le navigateur : {sent}")
+            page.locator("#sondage-review-list li").first.locator("button").click()
+            require("Question 1 sur 64" in page.locator("#sondage-position").inner_text(),
+                    "Modification directe impossible")
+            require(page.locator("#sondage-choices input[value='1']").is_checked(),
+                    "Réponse originale perdue")
+            page.locator("#sondage-choices input[value='-2']").check()
+            page.locator("#sondage-next").click()
+            require(not page.locator("#sondage-finish").is_hidden(),
+                    "Retour au récapitulatif impossible après correction")
+            require("Votre choix : En désaccord" in
+                    page.locator("#sondage-review-list li").first.inner_text(),
+                    "Réponse corrigée non reflétée")
+            require("Sans opinion" in page.locator("#sondage-review-list li").last.inner_text(),
+                    "Dernière réponse perdue pendant la correction")
             page.locator("#sondage-review").click()
             require(not page.locator("#sondage-questionnaire").is_hidden(),
                     "Relecture des questions impossible")
-            require(page.locator("#sondage-choices input[value='skip']").is_checked(),
-                    "Dernière réponse perdue en relecture")
+            require("Question 1 sur 64" in page.locator("#sondage-position").inner_text(),
+                    "La relecture ne démarre pas à la première question")
+            require(page.locator("#sondage-choices input[value='-2']").is_checked(),
+                    "Réponse corrigée perdue")
             require(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"),
                     "Débordement horizontal en 390 px")
             page.once("dialog", lambda dialog: dialog.accept())
