@@ -154,7 +154,8 @@ def check_capture(c):
   else:
    need(x.get("statut")=="SOURCE_NON_RECUPEREE" and
         set(x)==BASIC and x.get("sha256_octets_recus") is None and
-        x.get("taille_octets") is None and x.get("categorie_echec") in FAIL_TYPES,
+        x.get("taille_octets") is None and (type(x.get("categorie_echec")) is str and
+         re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{1,63}",x["categorie_echec"])),
         "ECHEC_HTTPS_MALFORME")
    failed+=1
  need(c.get("flux_pdf_recus_non_authentifies")==ok and

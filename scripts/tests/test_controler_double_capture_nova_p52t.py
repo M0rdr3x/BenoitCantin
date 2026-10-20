@@ -207,5 +207,25 @@ class DoubleCaptureTest(unittest.TestCase):
  def test_51_fixture_independent_memory(self):
   a,b=wraps()
   self.assertIsNot(a["capture"],b["capture"])
+ def test_52_qualifier_network_subtype_no_identity(self):
+  a=captured()
+  row=a["reçus_techniques"][0]
+  for key in m.SUCCESS:row.pop(key)
+  row.update(statut="SOURCE_NON_RECUPEREE",
+             sha256_octets_recus=None,taille_octets=None,
+             categorie_echec="RemoteDisconnected")
+  a["flux_pdf_recus_non_authentifies"]=1
+  a["sources_non_recuperees"]=1
+  self.assertEqual(len(m.check_capture(a)),2)
+ def test_53_network_type_with_private_message_rejected(self):
+  a=captured()
+  row=a["reçus_techniques"][0]
+  for key in m.SUCCESS:row.pop(key)
+  row.update(statut="SOURCE_NON_RECUPEREE",
+             sha256_octets_recus=None,taille_octets=None,
+             categorie_echec="Error email=private@example.org")
+  a["flux_pdf_recus_non_authentifies"]=1
+  a["sources_non_recuperees"]=1
+  with self.assertRaises(ValueError):m.check_capture(a)
 if __name__=="__main__":
  unittest.main()

@@ -6,7 +6,7 @@
 
 P52S a effectivement reçu deux PDF budgétaires publics par HTTPS, calculé leurs empreintes SHA-256 et répété le transfert avec succès. P52T améliore cette méthode : **deux jobs GitHub Actions distincts** téléchargent les mêmes sources à partir d'URL strictement contrôlées, puis un troisième job compare les deux reçus et les deux références historiques de P52S.
 
-Les deux captures proviennent de la même plateforme, du même code et des mêmes URL. L'indépendance est **technique et partielle**, non humaine, juridique ou institutionnelle. Des jobs différents ne prouvent pas l'utilisation d'hôtes physiques distincts. Le contrôle TLS standard ne constitue pas une signature du ministère.
+Pour limiter les blocages temporaires, chaque tâche effectue au plus trois tentatives HTTPS; la tâche B commence après la tâche A. Les téléchargements incomplets n'acceptent jamais de comparaison favorable. Les deux captures proviennent de la même plateforme, du même code et des mêmes URL. L'indépendance est **technique et partielle**, non humaine, juridique ou institutionnelle. Des jobs différents ne prouvent pas l'utilisation d'hôtes physiques distincts. Le contrôle TLS standard ne constitue pas une signature du ministère.
 
 ## Décisions techniques et protocoles
 
