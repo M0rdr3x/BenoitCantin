@@ -18,7 +18,7 @@ from pages_release_proof import MARKER, render
 
 MANIFEST = Path(__file__).with_name("pages_public_inventory.txt")
 GENERATED_MANIFEST = Path(__file__).with_name("pages_generated_inventory.txt")
-EXPECTED_COUNT = 625
+EXPECTED_COUNT = 626
 GENERATED_COUNT = 31
 
 
@@ -192,12 +192,13 @@ def self_test() -> None:
         assert any(example in e and "modifié" in e
                    for e in audit(root, built, source_manifest)), "Mutation binaire non détectée"
         (built / example).write_bytes(("public:" + example).encode("utf-8"))
-        # Les quatre ajouts SINJIRA ne peuvent pas disparaître ni être remplacés.
+        # Les ressources récemment autorisées restent vérifiées octet par octet.
         for new_public in (
             "projets/sinjira/logiciels/index.html",
             "assets/media/sinjira-romans-banniere-2026.webp",
             "assets/media/sinjira-jeux-banniere-2026.webp",
             "assets/media/sinjira-logiciels-banniere-2026.webp",
+            "projets/projet-nova/assets/nova-sondage-icone.webp",
         ):
             new_target = built / new_public
             original = new_target.read_bytes()
@@ -274,7 +275,7 @@ def self_test() -> None:
         bad_manifest = source_manifest + "assets/image-nouvelle.webp\n"
         assert any("Inventaire modifié" in e for e in audit(root, None, bad_manifest))
         assert not audit(root, built, source_manifest), audit(root, built, source_manifest)
-    print("OK inventaire public global: 625 fichiers source + 31 pages générées, "
+    print("OK inventaire public global: 626 fichiers source + 31 pages générées, "
           "ajouts, pertes, altérations et liens symboliques refusés")
 
 

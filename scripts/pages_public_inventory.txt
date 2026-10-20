@@ -360,6 +360,7 @@ projets/projet-nova/assets/menu-fix.css
 projets/projet-nova/assets/nova-banner-officielle.webp
 projets/projet-nova/assets/nova-institutionnel.css
 projets/projet-nova/assets/nova-maturite.css
+projets/projet-nova/assets/nova-sondage-icone.webp
 projets/projet-nova/assets/portal-return.css
 projets/projet-nova/assets/script.js
 projets/projet-nova/assets/sondage.css
