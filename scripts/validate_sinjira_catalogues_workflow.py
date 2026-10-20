@@ -165,6 +165,16 @@ def validate(source: str) -> list[str]:
         errors.append("Serveur local de test manquant")
     if visual.count(f"uses: actions/checkout@{CHECKOUT}") != 1:
         errors.append("Checkout des navigateurs non épinglé")
+    # L'aperçu destiné à la revue ne doit jamais devenir un déploiement.
+    preview = "      - name: Capturer quatre aperçus des sondages (Chromium uniquement, sans publication)\n        if: ${{ matrix.browser == 'chromium' }}\n        run: python tests/e2e/capture_nova_sondages_preview.py --output artifacts/nova-apercu\n      - name: Déposer les seuls PNG de préproduction pour revue du propriétaire\n        if: ${{ matrix.browser == 'chromium' && success() }}\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n        with:\n          name: nova-sondages-apercu-pr-${{ github.event.pull_request.number }}-${{ github.sha }}\n          path: |\n            artifacts/nova-apercu/*.png\n            artifacts/nova-apercu/LISEZ-MOI.txt\n          if-no-files-found: error\n          retention-days: 7\n          compression-level: 6\n"
+    if visual.count(preview) != 1:
+        errors.append("Preuve visuelle non publique absente ou contrôles d'upload modifiés")
+    if visual.count(f"uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02") != 1:
+        errors.append("Version non épinglée de l'artifact de préproduction")
+    if visual.count("artifacts/nova-apercu/*.png") != 1:
+        errors.append("L'aperçu ne doit téléverser que des captures PNG filtrées")
+    if visual.count("if-no-files-found: error") != 1:
+        errors.append("Un aperçu absent doit faire échouer le job")
     if visual.count("persist-credentials: false") != 1:
         errors.append("Identifiants GitHub persistés par les navigateurs")
     if visual.count(f"uses: actions/setup-python@{PYTHON}") != 1:
@@ -264,6 +274,18 @@ def self_test(source: str) -> None:
         "PR visuelle désactivée": (
             "    if: github.event_name == 'pull_request'\n",
             "    if: false\n",
+        ),
+        "captures de revue supprimées": (
+            "      - name: Capturer quatre aperçus des sondages (Chromium uniquement, sans publication)\n",
+            "      - name: APERÇUS_CACHÉS\n",
+        ),
+        "artefact limité à des PNG élargi à la racine": (
+            "            artifacts/nova-apercu/*.png\n",
+            "            .\n",
+        ),
+        "artefact de revue rendu public": (
+            "        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n",
+            "        uses: actions/deploy-pages@ea165f8d65b6e75b540449e92b4886f43607fa02\n",
         ),
         "publication injectée": (
             "permissions:\n  contents: read\n",

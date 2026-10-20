@@ -56,3 +56,23 @@ DRY_RUN/PUBLISH; ce n'est pas une autorisation de collecte.
 **Après publication, l'issue #675 reste ouverte** avant toute activation
 d'envoi d'opinions politiques : confidentialité, droit de retrait après
 agrégation et conservation doivent être examinés et approuvés.
+
+## Prévisualiser les questionnaires sans modifier le domaine
+
+Sur la PR #639, ouvrir le dernier workflow réussi **SINJIRA — catalogues
+Romans Jeux Logiciels**, puis sa section **Artifacts** et télécharger
+`nova-sondages-apercu-pr-639-<SHA>` (conservé **7 jours**). Il contient
+quatre PNG de **préproduction locale seulement** :
+
+1. Carte avec l'icône officielle sur l'accueil général;
+2. Cartes des deux consultations sur l'accueil Projet Nova;
+3. Introduction du questionnaire référendaire de 40 questions;
+4. Introduction du sondage citoyen de 64 propositions.
+
+Le fichier `LISEZ-MOI.txt` identifie le commit exact et le run CI.
+Ces images n'indiquent **pas** que le contenu est en ligne.
+La capture fonctionne uniquement en Chromium après les tests de
+navigation réussis, n'envoie aucune opinion et ne charge aucun compte.
+Le workflow ne téléverse que les quatre PNG et le fichier d'explication,
+avec des permissions GitHub `contents: read`, et **jamais**
+l'artefact entier du dépôt, les fichiers techniques ou le site compilé.
