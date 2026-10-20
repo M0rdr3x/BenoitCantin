@@ -85,7 +85,7 @@ jobs:
         image: postgres:16-bookworm
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: ci-nova-local-only
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: nova_ci
         ports:
           - 5432:5432
@@ -110,7 +110,6 @@ jobs:
           PGHOST: 127.0.0.1
           PGPORT: '5432'
           PGUSER: postgres
-          PGPASSWORD: ci-nova-local-only
           PGDATABASE: nova_ci
         run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/test_nova_survey_migrations.sql
 
