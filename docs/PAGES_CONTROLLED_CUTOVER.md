@@ -675,3 +675,43 @@ Un déploiement réel reste soumis à `attest_pages_production.py`
 (contrôle bloquant de `build_type=workflow`, CNAME, HTTPS et SHA
 de `main`), puis aux vérifications GET strictes, à la preuve SHA/run
 et aux octets CDN après PUBLISH approuvé.
+
+
+## Prévol explicite de visibilité des sondages — 20 octobre 2026
+
+**Situation :** sur `main`, les deux pages n'existent pas et l'icône n'est pas
+présente dans l'accueil. La PR #639 est DRAFT ; ses succès CI ne modifient pas
+le site `https://www.benoitcantin.com`. Ne pas présenter les URL comme
+disponibles publiquement avant la bascule complète.
+
+L'intégration ajoute trois ressources à la **liste obligatoire de l'artefact
+Jekyll isolé** et aux tests HTTP/CDN qui s'exécutent **seulement après PUBLISH
+expressément autorisé** :
+
+- `/projets/projet-nova/consultation-40.html` : page référendaire consultative
+  **non officielle**, 40 questions et collecte désactivée ;
+- `/projets/projet-nova/sondage.html` : questionnaire citoyen de 64 propositions,
+  18+ et collecte désactivée ;
+- `/projets/projet-nova/assets/nova-sondage-icone.webp` : icône choisie par
+  le propriétaire et utilisée comme lien cliquable dans les deux cartes.
+
+Avant toute fusion, un administrateur autorisé doit examiner les protections
+de `main`, résoudre #450 et vérifier dans
+`https://github.com/M0rdr3x/BenoitCantin/settings/pages` que la publication
+utilise **Source = GitHub Actions**, HTTPS forcé et CNAME officiel. Le mode
+`legacy` / « Deploy from a branch » est incompatible avec le modèle sécurisé
+de cette PR. **Ne pas basculer ce réglage isolément sans plan de cutover
+approuvé**, car `main` ne possède pas encore le workflow sécurisé et un arrêt
+temporaire du site est possible. Ne jamais relancer l'ancien `path: .`.
+
+Après approbation explicite et fusion atomique de l'infrastructure de
+publication sûre, exécuter **DRY_RUN** sur le HEAD `main` exact, examiner
+l'artefact isolé, puis **PUBLISH** avec `ACTIONS_ONLY` et SHA complet confirmé.
+Le nouveau contrôle HTTP exige un **HTTP 200 direct**, le MIME correct et
+l'intégrité octet par octet au SHA exact pour les trois ressources Nova.
+Le contrôle technique séparé exige toujours **404 ou 410** pour tous les
+chemins de développement, y compris `/supabase/config.toml`,
+`/tests/e2e/test_public_site.py` et `/mobile-native/App.tsx`.
+
+**Ces étapes ne constituent pas une autorisation de traitement de données
+politiques :** #675 demeure bloquante avant toute activation de collecte.

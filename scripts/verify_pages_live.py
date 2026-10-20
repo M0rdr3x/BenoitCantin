@@ -19,6 +19,9 @@ PUBLIC_ROUTES = (
     "/projets/sinjira/logiciels/",
     "/projets/projet-nova/",
     "/projets/projet-nova/boussole-electorale.html",
+    "/projets/projet-nova/consultation-40.html",
+    "/projets/projet-nova/sondage.html",
+    "/projets/projet-nova/assets/nova-sondage-icone.webp",
     "/robots.txt", "/sitemap.xml",
     "/assets/js/site.js",
     "/projets/projet-nova/data/boussole-partis-2026.json",
@@ -63,6 +66,9 @@ MIME_HINTS = {
     "/assets/media/nova-boussole-electorale.webp": ("image/webp",),
     "/assets/media/nova-boussole-electorale-v2.webp": ("image/webp",),
     "/projets/projet-nova/boussole-electorale.html": ("text/html",),
+    "/projets/projet-nova/consultation-40.html": ("text/html",),
+    "/projets/projet-nova/sondage.html": ("text/html",),
+    "/projets/projet-nova/assets/nova-sondage-icone.webp": ("image/webp",),
     "/assets/media/sinjira-romans-banniere-2026.webp": ("image/webp",),
     "/assets/media/sinjira-jeux-banniere-2026.webp": ("image/webp",),
     "/assets/media/sinjira-logiciels-banniere-2026.webp": ("image/webp",),
@@ -224,6 +230,7 @@ def self_test() -> None:
             "/assets/media/sinjira-romans-banniere-2026.webp": "image/webp",
             "/assets/media/sinjira-jeux-banniere-2026.webp": "image/webp",
             "/assets/media/sinjira-logiciels-banniere-2026.webp": "image/webp",
+            "/projets/projet-nova/assets/nova-sondage-icone.webp": "image/webp",
         }.get(path, "text/plain")
         return Reply(200, content_type=mime)
     assert not verify(BASE, fixture), verify(BASE, fixture)
@@ -289,13 +296,16 @@ def self_test() -> None:
         "/assets/media/nova-boussole-electorale.webp",
         "/assets/media/nova-boussole-electorale-v2.webp",
         "/projets/projet-nova/boussole-electorale.html",
+        "/projets/projet-nova/consultation-40.html",
+        "/projets/projet-nova/sondage.html",
+        "/projets/projet-nova/assets/nova-sondage-icone.webp",
     ):
         def new_route_missing(url: str) -> Reply:
             if url == BASE + new_route:
                 return Reply(404, content_type="text/html")
             return fixture(url)
         assert any(new_route in error for error in verify(BASE, new_route_missing)), (
-            f"Nouvelle route SINJIRA non protégée: {new_route}"
+            f"Nouvelle route SINJIRA/Nova non protégée: {new_route}"
         )
     for asset in MIME_HINTS:
         def wrong_mime(url: str) -> Reply:

@@ -29,6 +29,10 @@ REQUIRED_PUBLIC = {
     'assets/media/sinjira-jeux-banniere-2026.webp',
     'assets/media/sinjira-logiciels-banniere-2026.webp',
     'assets/media/nova-boussole-electorale-v2.webp',
+    # Pages Nova doivent figurer dans l'artefact isolé avant toute publication.
+    'projets/projet-nova/consultation-40.html',
+    'projets/projet-nova/sondage.html',
+    'projets/projet-nova/assets/nova-sondage-icone.webp',
 }
 TECHNICAL_SUFFIXES = {
     '.md', '.py', '.sql', '.ts', '.tsx', '.toml', '.yml', '.yaml',
@@ -290,6 +294,21 @@ def self_test() -> None:
                    for error in audit_output(root, out)), 'Document officiel altéré non détecté'
         approved.write_text('document vérifié', 'utf-8')
         assert not audit_output(root, out), audit_output(root, out)
+        # Les nouvelles routes Nova ne peuvent pas être omises silencieusement du build.
+        for nova_public in (
+            'projets/projet-nova/consultation-40.html',
+            'projets/projet-nova/sondage.html',
+            'projets/projet-nova/assets/nova-sondage-icone.webp',
+        ):
+            generated = out / nova_public
+            backup = generated.read_bytes()
+            generated.unlink()
+            assert any(nova_public in error and 'disparu' in error
+                       for error in audit_output(root, out)), (
+                f'Ressource Nova absente non détectée : {nova_public}'
+            )
+            generated.write_bytes(backup)
+        assert not audit_output(root, out)
         (out / 'index.html').write_text('mutation', 'utf-8')
         assert audit_output(root, out), 'Transformation HTML non detectee'
         (out / 'index.html').write_text('fixture', 'utf-8')
