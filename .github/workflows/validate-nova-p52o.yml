@@ -1,0 +1,72 @@
+name: Projet Nova P52O - Acquisition des preuves et budget
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52o.yml"
+      - "scripts/auditer_acquisition_preuves_nova_p52o.py"
+      - "scripts/tests/test_auditer_acquisition_preuves_nova_p52o.py"
+      - "projets/projet-nova/etudes/P52O_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52M_MANDATS_COMITES_ET_RISQUES.json"
+      - "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  priorisation-sans-budget:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Cinquante-trois tests de contraintes et donnees
+        run: |
+          python -m py_compile scripts/auditer_acquisition_preuves_nova_p52o.py
+          python - <<'PY'
+          import unittest
+          s=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_auditer_acquisition_preuves_nova_p52o.py")
+          assert s.countTestCases()==53,s.countTestCases()
+          r=unittest.TextTestRunner(verbosity=2).run(s)
+          assert r.wasSuccessful()
+          PY
+      - name: Preuves et budget manquants clairement affiches
+        run: |
+          python scripts/auditer_acquisition_preuves_nova_p52o.py --rapport p52o_rapport_agrege.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("p52o_rapport_agrege.json").read_text("utf-8"))
+          assert x["preuves_candidat_a_prioriser"]==20
+          assert x["vagues_ordonnees"]==6
+          assert x["lots_de_competences"]==6
+          assert x["references_officielles_reperées_non_certifiées"]==10
+          assert x["offres_reelles_reçues"]==0
+          assert x["experts_independants_recrutes"]==0
+          assert x["valeurs_financieres_encore_inconnues"]==1320
+          assert x["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Refus explicite des preuves inventees
+        run: |
+          set +e
+          python scripts/auditer_acquisition_preuves_nova_p52o.py --exiger-preuves --rapport p52o_refus.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Rapport agrege non nominatif
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52o-priorite-recherche-no-go
+          path: |
+            p52o_rapport_agrege.json
+            p52o_refus.json
+          retention-days: 7
+          if-no-files-found: ignore

@@ -1,0 +1,156 @@
+{
+  "schema_version": "P52O-SOURCES-1",
+  "jalon": "P52O",
+  "date_reperage": "2026-10-19",
+  "nature": "REPERAGE_WEB_PAGES_OFFICIELLES_NON_CERTIFICATION_DES_PREUVES",
+  "references": [
+    {
+      "id": "REF01",
+      "titre": "Constitution (1867), article 92",
+      "url": "https://laws-lois.justice.gc.ca/fra/const/section-92.html?wbdisable=true",
+      "preuves_candidats": [
+        "F01",
+        "F02"
+      ],
+      "limite": "Competences provinciales, non avis sur nouvelle fiscalite",
+      "page_publique_reperée": true,
+      "contenu_premier_niveau_consulte": true,
+      "piece_archivee_avec_hash": false,
+      "attestation_expert_independant": false,
+      "conformite_juridique_attestee": false
+    },
+    {
+      "id": "REF02",
+      "titre": "Tarif des douanes du Canada, texte officiel",
+      "url": "https://www.laws-lois.justice.gc.ca/fra/lois/C-54.011/index.html",
+      "preuves_candidats": [
+        "F03",
+        "F17"
+      ],
+      "limite": "Cadre actuel fédéral, pas traité futur ni compétence obtenue",
+      "page_publique_reperée": true,
+      "contenu_premier_niveau_consulte": true,
+      "piece_archivee_avec_hash": false,
+      "attestation_expert_independant": false,
+      "conformite_juridique_attestee": false
+    },
+    {
+      "id": "REF03",
+      "titre": "Loi sur l'administration fiscale du Quebec, version du 1 avril 2026",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/A-6.002/20260401",
+      "preuves_candidats": [
+        "F07",
+        "F20"
+      ],
+      "limite": "Version datée, recours précis et actualité à vérifier par juriste",
+      "page_publique_reperée": true,
+      "contenu_premier_niveau_consulte": true,
+      "piece_archivee_avec_hash": false,
+      "attestation_expert_independant": false,
+      "conformite_juridique_attestee": false
+    },
+    {
+      "id": "REF04",
+      "titre": "Loi sur la TVQ, version du 1 décembre 2024",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/t-0.1/20241201",
+      "preuves_candidats": [
+        "F01",
+        "F07"
+      ],
+      "limite": "Version ancienne repérée, recouper impérativement avec texte courant",
+      "page_publique_reperée": true,
+      "contenu_premier_niveau_consulte": true,
+      "piece_archivee_avec_hash": false,
+      "attestation_expert_independant": false,
+      "conformite_juridique_attestee": false
+    },
+    {
+      "id": "REF05",
+      "titre": "Portail officiel Budget du Québec 2026-2027",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/index.asp",
+      "preuves_candidats": [
+        "F09",
+        "F10",
+        "F18"
+      ],
+      "limite": "Prévisions budgétaires, pas estimations fiscales Nova ni réalisé",
+      "page_publique_reperée": true,
+      "contenu_premier_niveau_consulte": true,
+      "piece_archivee_avec_hash": false,
+      "attestation_expert_independant": false,
+      "conformite_juridique_attestee": false
+    },
+    {
+      "id": "REF06",
+      "titre": "StatCan finances des administrations municipales, tableau 10-10-0020-01",
+      "url": "https://www150.statcan.gc.ca/n1/fr/catalogue/1010002001",
+      "preuves_candidats": [
+        "F04",
+        "F07"
+      ],
+      "limite": "Données et granularité à examiner, pas consolidation prête à l'emploi",
+      "page_publique_reperée": true,
+      "contenu_premier_niveau_consulte": true,
+      "piece_archivee_avec_hash": false,
+      "attestation_expert_independant": false,
+      "conformite_juridique_attestee": false
+    },
+    {
+      "id": "REF07",
+      "titre": "StatCan BD/MSPS produit, modalités licence et limites",
+      "url": "https://www.statcan.gc.ca/fr/microsimulation/bdmsps/bdmsps",
+      "preuves_candidats": [
+        "F05",
+        "F11"
+      ],
+      "limite": "Produit gratuit sous licence signée, modèle statique canadien; pas modèle de souveraineté",
+      "page_publique_reperée": true,
+      "contenu_premier_niveau_consulte": true,
+      "piece_archivee_avec_hash": false,
+      "attestation_expert_independant": false,
+      "conformite_juridique_attestee": false
+    },
+    {
+      "id": "REF08",
+      "titre": "StatCan BD/MSPS version 34.0 fondée sur BDSPS 2022",
+      "url": "https://www150.statcan.gc.ca/n1/fr/catalogue/89F0002X2026001",
+      "preuves_candidats": [
+        "F11"
+      ],
+      "limite": "Date édition 12 février 2026, données de base 2022; vérifier mise à jour et représentativité Québec",
+      "page_publique_reperée": true,
+      "contenu_premier_niveau_consulte": true,
+      "piece_archivee_avec_hash": false,
+      "attestation_expert_independant": false,
+      "conformite_juridique_attestee": false
+    },
+    {
+      "id": "REF09",
+      "titre": "Loi sur les contrats des organismes publics (C-65.1)",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/tdm/lc/c-65.1",
+      "preuves_candidats": [],
+      "limite": "Contexte marchés publics SEULEMENT si organisme effectivement assujetti; non applicable d'office au projet privé",
+      "page_publique_reperée": true,
+      "contenu_premier_niveau_consulte": true,
+      "piece_archivee_avec_hash": false,
+      "attestation_expert_independant": false,
+      "conformite_juridique_attestee": false
+    },
+    {
+      "id": "REF10",
+      "titre": "SEAO système électronique d'appel d'offres",
+      "url": "https://www.quebec.ca/gouvernement/services-organisations-publiques/services-transformation-numerique/systeme-electronique-dappel-doffres-seao",
+      "preuves_candidats": [],
+      "limite": "Règles applicables aux organismes couverts, pas obligation automatique pour initiative partisane",
+      "page_publique_reperée": true,
+      "contenu_premier_niveau_consulte": true,
+      "piece_archivee_avec_hash": false,
+      "attestation_expert_independant": false,
+      "conformite_juridique_attestee": false
+    }
+  ],
+  "source_officielle_document_archivé_certifié": false,
+  "preuve_F01_F20_obtenue": false,
+  "publication_autorisee": false,
+  "decision": "NO_GO_AUTOMATIQUE"
+}
