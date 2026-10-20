@@ -1,0 +1,70 @@
+{
+  "schema_version": "P52S-1",
+  "jalon": "P52S",
+  "date_reference": "2026-10-20",
+  "projet": "Projet Nova",
+  "statut": "PROTOCOLE_ACQUISITION_TRANSITOIRE_SANS_ARCHIVE_PERMANENTE",
+  "objet": "Tentative de récupération du flux binaire PDF par HTTPS sur GitHub Actions, empreinte SHA-256 des octets reçus si succès, sans archive publique ni attestation officielle",
+  "sources": [
+    {
+      "id": "DISC2026_T3",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_Discours.pdf",
+      "pages_attendues_source_lecture_web": 34,
+      "page_tableau_pdf_zero": 29,
+      "tableau": "Tableau 3",
+      "preuve": "F09",
+      "statut_provenance": "LIEN_OFFICIEL_CONSULTE_PAS_FICHIER_ARCHIVE",
+      "sha256_pdf_officiel_atteste": null,
+      "taille_octets_archivee": null,
+      "document_archivage_effectue": false,
+      "signature_editeur_verifiee": false,
+      "avis_expert_independant": false
+    },
+    {
+      "id": "PLAN2026_F2",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+      "pages_attendues_source_lecture_web": 426,
+      "page_tableau_pdf_zero": 277,
+      "tableau": "Tableau F.2",
+      "preuve": "F09",
+      "statut_provenance": "LIEN_OFFICIEL_CONSULTE_PAS_FICHIER_ARCHIVE",
+      "sha256_pdf_officiel_atteste": null,
+      "taille_octets_archivee": null,
+      "document_archivage_effectue": false,
+      "signature_editeur_verifiee": false,
+      "avis_expert_independant": false
+    }
+  ],
+  "references": {
+    "p52j": "projets/projet-nova/etudes/P52J_RELECTURE_PRIMAIRE_BUDGET_2026_2027.json",
+    "p52k": "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json",
+    "p52r": "projets/projet-nova/etudes/P52R_RECONCILIATION_ET_RECEPTION_ORIGINAUX.json",
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  },
+  "conditions": {
+    "telechargement_sans_redirection_externe": true,
+    "TLS_chaine_systeme_verifiee_sans_attestation_editeur": true,
+    "source_hostname_et_URL_strictement_listees": true,
+    "taille_octets_maximum": 50000000,
+    "aucun_pdf_original_enregistre_dans_git": true,
+    "aucun_pdf_original_conserve_en_artefact": true,
+    "rapport_hash_octets_et_taille_sans_certification": true,
+    "saisie_manuelle_des_horodatages_interdite": true,
+    "reponse_html_refusee": true,
+    "toute_erreur_de_reseau_ne_produit_pas_de_hash": true,
+    "statut_Actions_reussi_ne_prouve_pas_F09": true,
+    "fournir_empreintes_a_l_archive_independante_sans_adoption_automatique": true
+  },
+  "etat": {
+    "originaux_pdf_archives_avec_preuve": 0,
+    "hashes_sources_officielles_certifies": 0,
+    "attestations_F09_independantes": 0,
+    "preuves_F01_F20_validees": 0,
+    "modele_financier_Nova_certifie": false,
+    "fonds_publics_engages": false,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

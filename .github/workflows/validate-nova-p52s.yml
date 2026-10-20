@@ -1,0 +1,82 @@
+name: Projet Nova P52S - Reception HTTPS PDF sans conservation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52s.yml"
+      - "scripts/capturer_pdf_budget_nova_p52s.py"
+      - "scripts/tests/test_capturer_pdf_budget_nova_p52s.py"
+      - "projets/projet-nova/etudes/P52S_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52J_RELECTURE_PRIMAIRE_BUDGET_2026_2027.json"
+      - "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json"
+      - "projets/projet-nova/etudes/P52R_RECONCILIATION_ET_RECEPTION_ORIGINAUX.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gardes-et-probe-source-publique:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Lecture seule aucune authentification persistante
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Quarante tests adversariaux hors reseau
+        run: |
+          python -m py_compile scripts/capturer_pdf_budget_nova_p52s.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_capturer_pdf_budget_nova_p52s.py")
+          assert suite.countTestCases()==40,suite.countTestCases()
+          r=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert r.wasSuccessful()
+          PY
+      - name: Bilan local et NO_GO automatique
+        run: |
+          python scripts/capturer_pdf_budget_nova_p52s.py --mode bilan --rapport p52s_bilan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p52s_bilan.json").read_text("utf-8"))
+          assert d["flux_pdf_recus_non_authentifies"]==0
+          assert d["archives_officielles_certifiees"]==0
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Sonde HTTPS reelle sur deux sources officielles autorisees
+        run: |
+          python scripts/capturer_pdf_budget_nova_p52s.py --mode sonde --rapport p52s_reception_temporaire.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p52s_reception_temporaire.json").read_text("utf-8"))
+          assert r["sources_attendues"]==2
+          assert r["archives_officielles_certifiees"]==0
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          print("P52S source probe result:")
+          print(json.dumps(r,ensure_ascii=False,indent=2))
+          PY
+      - name: Refuser toute expertise imaginaire
+        run: |
+          set +e
+          python scripts/capturer_pdf_budget_nova_p52s.py --exiger-expertise --rapport p52s_refus_expertise.json
+          rc=$?
+          set -e
+          test "$rc" -eq 3
+      - name: Recepisses seulement, sans documents originaux
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52s-pdf-recepisses-no-go
+          path: |
+            p52s_bilan.json
+            p52s_reception_temporaire.json
+            p52s_refus_expertise.json
+          retention-days: 7
+          if-no-files-found: ignore
