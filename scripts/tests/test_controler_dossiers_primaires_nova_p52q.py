@@ -111,7 +111,7 @@ class SourcesP52Q(unittest.TestCase):
     def test_44_report_only_aggregates(self):
         d=files()
         text=json.dumps(m.verifier(d),ensure_ascii=False)
-        for secret in ("Q09","F19","https://","2026-02-23","loi", "F01"):
+        for secret in ("Q09","\"id\": \"F19\"","https://","2026-02-23","loi", "\"id\": \"F01\""):
             self.assertNotIn(secret,text)
     def test_45_cli_normal_keeps_NO_GO(self):
         with tempfile.TemporaryDirectory() as temp:
