@@ -14,7 +14,7 @@
     "p52o": "projets/projet-nova/etudes/P52O_PLAN_ACQUISITION_PREUVES.json",
     "sources_p52o": "projets/projet-nova/etudes/P52O_SOURCES_OFFICIELLES_REPEREES.json",
     "p52n": "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json",
-    "gabarit_reception": "projets/projet-nova/etudes/P52P_GABARIT_RECEPTION_PIECE.json"
+    "gabarit": "projets/projet-nova/etudes/P52P_GABARIT_RECEPTION_PIECE.json"
   },
   "exigences": [
     {
