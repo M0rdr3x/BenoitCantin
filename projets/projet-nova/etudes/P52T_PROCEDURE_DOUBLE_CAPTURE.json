@@ -1,0 +1,64 @@
+{
+  "schema_version": "P52T-1",
+  "jalon": "P52T",
+  "date_reference": "2026-10-20",
+  "statut": "DOUBLE_CAPTURE_TECHNIQUE_SANS_EXPERTISE_HUMAINE",
+  "relations": {
+    "recu_p52s": "projets/projet-nova/etudes/P52S_RECEPISSES_HTTPS_OBSERVES_2026_10_20.json",
+    "protocole_p52s": "projets/projet-nova/etudes/P52S_PROTOCOLE_RECUPERATION_PDF_2026_2027.json",
+    "registre_p52k": "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json",
+    "registre_p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  },
+  "procedures": [
+    {
+      "role": "A",
+      "github_job": "capture-a",
+      "sources": [
+        "DISC2026_T3",
+        "PLAN2026_F2"
+      ],
+      "humain_independant": false
+    },
+    {
+      "role": "B",
+      "github_job": "capture-b",
+      "sources": [
+        "DISC2026_T3",
+        "PLAN2026_F2"
+      ],
+      "humain_independant": false
+    }
+  ],
+  "controles": {
+    "deux_jobs_distincts_sans_garantie_machines_distinctes": true,
+    "github_run_id_communs": true,
+    "github_sha_commun": true,
+    "refuser_les_deux_sources_incompletes": true,
+    "comparer_chaque_empreinte_et_taille_entre_jobs": true,
+    "comparer_chaque_empreinte_et_taille_avec_p52s": true,
+    "divergence_bloque_workflow": true,
+    "aucun_pdf_conserve_dans_git_ou_artifact": true,
+    "deux_processus_ne_sont_pas_deux_experts_humains": true,
+    "absence_attestation_et_signature_officielles": true,
+    "aucune_transformation_automatique_de_F09": true,
+    "aucun_GO_automatique": true
+  },
+  "actions_humaines_a_obtenir": [
+    "Obtention et conservation licite des PDF originaux dans une archive indépendante",
+    "Authentification de la version et de l'origine du document par un professionnel",
+    "Double lecture humaine des tableaux budgétaires et traçabilité des écarts",
+    "Vérification des conflits d'intérêts et avis indépendant signé",
+    "Décision contradictoire et habilitation légale, avec possibilités de recours"
+  ],
+  "etat": {
+    "personnes_expertes_mandatees": 0,
+    "avis_signes": 0,
+    "originaux_pdf_archives": 0,
+    "preuves_F01_F20_certifiees": 0,
+    "donnees_financieres_inconnues": 1320,
+    "fusion_autorisee": false,
+    "publication_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
