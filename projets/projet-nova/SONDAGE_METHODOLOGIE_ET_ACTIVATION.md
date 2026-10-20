@@ -62,7 +62,7 @@ aucun envoi tant que la collecte n'est pas autorisée. L'attestation
 ne constitue pas une preuve vérifiée de l'âge.
 
 **Préparation du serveur, non déployée :**
-`supabase/migrations/20261019190000_nova_foundations_40_survey_v1.sql`
+`supabase/candidate-migrations/20261019190000_nova_foundations_40_survey_v1.sql`
 et `supabase/functions/nova-consultation40-submit/index.ts`.
 Ces ressources ont leur propre identifiant de sondage
 `nova-orientations-40-v1`, une clé pseudonyme HMAC de déduplication,
@@ -110,3 +110,8 @@ La CI inclut maintenant un job PostgreSQL local jetable qui charge exclusivement
 ## Transparence des retraits et effacement local — 19 octobre 2026
 
 Les deux pages 18+ informent désormais clairement que le modèle d’agrégation projeté ne permet pas de soustraire ultérieurement un bulletin individuel des totaux : l’effacement de la clé pseudonyme anti-doublon ne suffirait pas. La collecte reste fermée tant qu’une décision juridique, technique et méthodologique n’aura pas résolu cette limite dans l’issue #675. La politique de confidentialité expose distinctement le questionnaire 40 (référendaire consultatif non officiel), le sondage 64 et la Boussole. Le sondage 64 offre maintenant l’effacement confirmé **des seules données en mémoire** ainsi que de l’attestation 18+ et du consentement, aux étapes intermédiaires et finales, tout comme le parcours 40. Cette commande n’est pas un processus de retrait serveur après soumission.
+
+
+## Migrations candidates strictement isolées
+
+Les DDL des consultations Nova 40 et 64 sont stockés **sans modification** sous `supabase/candidate-migrations/` et non plus sous le répertoire normal `supabase/migrations/` utilisé pour les déploiements. Le builder production exclut expressément les fichiers candidats de son workspace. Leurs empreintes Git sont contrôlées par `scripts/validate_nova_candidate_migrations.py` (incluant le refus de leur inscription prématurée au lot de migrations production). Les tests SQL locaux appliquent les deux DDL dans une base PostgreSQL jetable ; le schéma de production reste vérifié séparément. Les questions, la collecte désactivée, les migrations historiques et le ledger ont été conservés. La promotion devra être approuvée explicitement après résolution des enjeux de confidentialité (#675) et de publication Pages (#450).

@@ -106,7 +106,7 @@ def main():
 
     if out.exists():
         shutil.rmtree(out)
-    shutil.copytree(SOURCE_SUPABASE, out, ignore=shutil.ignore_patterns('migrations', '.temp'))
+    shutil.copytree(SOURCE_SUPABASE, out, ignore=shutil.ignore_patterns('migrations', 'candidate-migrations', '.temp'))
     migout = out / 'migrations'
     migout.mkdir(parents=True, exist_ok=True)
 

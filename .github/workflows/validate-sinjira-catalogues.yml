@@ -36,6 +36,10 @@ jobs:
           python3 scripts/validate_sinjira_catalogues_workflow.py
       - name: Tester les limites des requêtes des sondages Nova, sans réseau
         run: node --test tests/test_nova_survey_body.mjs
+      - name: Vérifier les migrations Nova candidates avant les tests
+        run: |
+          python3 scripts/validate_nova_candidate_migrations.py --self-test
+          python3 scripts/validate_nova_candidate_migrations.py
       - name: Vérifier le sondage adulte Nova sans aucun envoi
         run: |
           python3 scripts/validate_nova_survey.py --self-test

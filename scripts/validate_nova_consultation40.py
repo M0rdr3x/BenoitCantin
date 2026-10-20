@@ -18,7 +18,7 @@ PATHS={
 "manifest":NOVA/"data/consultation-40-v1.json",
 "page":NOVA/"consultation-40.html",
 "client":NOVA/"assets/consultation-40.js",
-"sql":ROOT/"supabase/migrations/20261019190000_nova_foundations_40_survey_v1.sql",
+"sql":ROOT/"supabase/candidate-migrations/20261019190000_nova_foundations_40_survey_v1.sql",
 "edge":ROOT/"supabase/functions/nova-consultation40-submit/index.ts",
 "body":ROOT/"supabase/functions/_shared/nova_survey_body.mjs",
 "config":ROOT/"supabase/config.toml",

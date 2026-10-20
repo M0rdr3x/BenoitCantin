@@ -7,8 +7,8 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN; END IF;
 END
 $setup$;
-\ir ../../supabase/migrations/20261019170000_nova_adult_opinion_survey_v1.sql
-\ir ../../supabase/migrations/20261019190000_nova_foundations_40_survey_v1.sql
+\ir ../../supabase/candidate-migrations/20261019170000_nova_adult_opinion_survey_v1.sql
+\ir ../../supabase/candidate-migrations/20261019190000_nova_foundations_40_survey_v1.sql
 
 -- Les rôles web ne voient aucun résultat et ne peuvent pas invoquer les RPC.
 DO $guards$

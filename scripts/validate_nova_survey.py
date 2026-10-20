@@ -19,7 +19,7 @@ FILES = {
     "source": NOVA / "data/boussole-electorale-v2.json",
     "index": NOVA / "index.html",
     "method": NOVA / "SONDAGE_METHODOLOGIE_ET_ACTIVATION.md",
-    "sql": ROOT / "supabase/migrations/20261019170000_nova_adult_opinion_survey_v1.sql",
+    "sql": ROOT / "supabase/candidate-migrations/20261019170000_nova_adult_opinion_survey_v1.sql",
     "edge": ROOT / "supabase/functions/nova-survey-submit/index.ts",
     "body": ROOT / "supabase/functions/_shared/nova_survey_body.mjs",
     "config": ROOT / "supabase/config.toml",
