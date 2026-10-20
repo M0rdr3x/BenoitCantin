@@ -1,0 +1,71 @@
+name: Projet Nova P52N - Mandats experts et consultation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52n.yml"
+      - "scripts/auditer_mandats_consultation_nova_p52n.py"
+      - "scripts/tests/test_auditer_mandats_consultation_nova_p52n.py"
+      - "projets/projet-nova/etudes/P52N_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52L_MATRICE_REVUES_INDEPENDANTES.json"
+      - "projets/projet-nova/etudes/P52M_MANDATS_COMITES_ET_RISQUES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  protocole-sans-lancement:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Lecture seule du depot
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Cinquante-six tests de gouvernance et protection
+        run: |
+          python -m py_compile scripts/auditer_mandats_consultation_nova_p52n.py
+          python - <<'PY'
+          import unittest
+          s=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_auditer_mandats_consultation_nova_p52n.py")
+          assert s.countTestCases()==56,s.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(s)
+          assert result.wasSuccessful()
+          PY
+      - name: Rapport agregat sans mandat et sans consultation
+        run: |
+          python scripts/auditer_mandats_consultation_nova_p52n.py --rapport p52n_rapport_agrege.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p52n_rapport_agrege.json").read_text("utf-8"))
+          assert d["mandats_cadres_non_lances"]==20
+          assert d["candidatures_reelles"]==0
+          assert d["contributions_reelles"]==0
+          assert d["experts_mandates"]==0
+          assert d["contrats_signes"]==0
+          assert d["montants_budgetaires_encore_inconnus"]==1320
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Toute autorisation reste non constatee
+        run: |
+          set +e
+          python scripts/auditer_mandats_consultation_nova_p52n.py --exiger-autorisations --rapport p52n_refus.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Sorties agregees sans renseignements personnels
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52n-experts-consultation-no-go
+          path: |
+            p52n_rapport_agrege.json
+            p52n_refus.json
+          retention-days: 7
+          if-no-files-found: ignore

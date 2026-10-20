@@ -1,0 +1,711 @@
+{
+  "schema_version": "P52N-1",
+  "jalon": "P52N",
+  "date_reference": "2026-10-19",
+  "projet": "Projet Nova",
+  "statut": "PLAN_OPERATIONNEL_CANDIDAT_NON_ADOPTE",
+  "references": {
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+    "p52m": "projets/projet-nova/etudes/P52M_MANDATS_COMITES_ET_RISQUES.json",
+    "p52l": "projets/projet-nova/etudes/P52L_MATRICE_REVUES_INDEPENDANTES.json",
+    "journal": "projets/projet-nova/etudes/P52N_JOURNAL_SIMULATIONS_VIDE.json"
+  },
+  "processus_mandat": {
+    "approbation_preliminaire_des_besoins": false,
+    "budget_autorise": false,
+    "achats_ou_contrats_autorises": false,
+    "communication_externe_autorisee": false,
+    "lancement_avis_interet_autorise": false,
+    "experts_invites": 0,
+    "candidatures_reelles_recues": 0,
+    "contrats_signes": 0,
+    "etapes_proposees": [
+      "DEFINIR_PIECES",
+      "VALIDER_JURIDICTION",
+      "AUTORISER_BUDGET",
+      "PUBLIER_APPEL_NEUTRE",
+      "VERIFIER_COMPETENCES",
+      "VERIFIER_INDEPENDANCE_ET_CONFLITS",
+      "DELIBERER_AVEC_RECOURS",
+      "CONTRACTUALISER_PAR_AUTORITE_COMPETENTE",
+      "RECEVOIR_ET_VERIFIER_LIVRABLES"
+    ],
+    "note": "Aucune étape de recrutement n'a réellement commencé, aucune proposition ne vaut attribution"
+  },
+  "principes_selection": {
+    "criteres": [
+      "COMPETENCE_ET_INDEPENDANCE",
+      "METHODE_ET_REPRODUCTIBILITE",
+      "QUALITE_DES_SOURCES",
+      "TRAITEMENT_DES_RISQUES",
+      "TRANSPARENCE_ET_RECOURS"
+    ],
+    "notation_declarative": [
+      0,
+      4
+    ],
+    "evaluateurs_independants_minimum": 2,
+    "note_totale_minimum_indicative": 15,
+    "note_plancher_par_critere": 2,
+    "toute_personne_en_conflit_recusee": true,
+    "identites_mandats_diplomes_et_declarations_verifies_hors_depot": false,
+    "methode_proposee_pas_regle_contractuelle": false,
+    "couts_et_prix_non_estimes": true,
+    "choix_ou_attribution_automatique_interdits": true
+  },
+  "mandats": [
+    {
+      "id": "F01",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Compétence de modifier la TVQ et autres impôts québécois",
+      "responsable_fonctionnel": "Juriste fiscal et constitutionnel",
+      "preuve_p52a_a_obtenir": "Avis juridique provincial indépendant et tableau des lois à modifier",
+      "comite_pilote": "CJF",
+      "comites_consultes": [
+        "CDE"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Avis juridique sourcé distinguant droits et limites de la fiscalité provinciale, et inventaire des textes à modifier",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F02",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "TPS et impôt fédéral demeurent distincts",
+      "responsable_fonctionnel": "Juriste constitutionnel",
+      "preuve_p52a_a_obtenir": "Avis sur les limites de compétence provinciale et les ententes d'administration",
+      "comite_pilote": "CJF",
+      "comites_consultes": [
+        "CTE"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Note constitutionnelle des prélèvements fédéraux qui demeurent, y compris TPS et impôt fédéral",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F03",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Tarifs douaniers et contre-tarifs fédéraux",
+      "responsable_fonctionnel": "Spécialiste droit commercial",
+      "preuve_p52a_a_obtenir": "Table des décisions réservées au gouvernement fédéral; formulation honnête des engagements politiques provinciaux",
+      "comite_pilote": "CJF",
+      "comites_consultes": [
+        "CTE"
+      ],
+      "niveau_risque_provisoire": "ELEVE",
+      "livrable_minimum_candidat": "Analyse de compétence sur les tarifs, contre-tarifs et engagements commerciaux",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F04",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Fiscalité municipale et taxes scolaires et foncières",
+      "responsable_fonctionnel": "Expert finances municipales",
+      "preuve_p52a_a_obtenir": "Inventaire des taxes, transferts et services par municipalité; coût de remplacement",
+      "comite_pilote": "CFP",
+      "comites_consultes": [
+        "CSD"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Table de consolidation et de compensation des recettes et services municipaux et scolaires",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F05",
+      "regime": "TOUS",
+      "theme": "Définition du prélèvement sur les revenus",
+      "responsable_fonctionnel": "Fiscaliste et économiste",
+      "preuve_p52a_a_obtenir": "Assiettes individuelles et d'entreprises; crédits; non-imposition de subsistance; pertes reportables",
+      "comite_pilote": "CJF",
+      "comites_consultes": [
+        "CSD"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Architecture de l'assiette de revenu, seuil de subsistance, pertes et crédits",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F06",
+      "regime": "TOUS",
+      "theme": "Définition du prélèvement anti-paradis fiscaux",
+      "responsable_fonctionnel": "Fiscaliste international",
+      "preuve_p52a_a_obtenir": "Fait générateur, territorialité, droits de contestation, absence de double comptage et interactions internationales",
+      "comite_pilote": "CJF",
+      "comites_consultes": [
+        "CTE"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Définition du fait générateur anti-transfert abusif, traitement de la double imposition et recours",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F07",
+      "regime": "TOUS",
+      "theme": "Inventaire de tous les prélèvements obligatoires",
+      "responsable_fonctionnel": "Comptabilité publique",
+      "preuve_p52a_a_obtenir": "Registre exhaustif distinguant taxe, impôt, cotisation, redevance et frais réels avec compétence",
+      "comite_pilote": "CJF",
+      "comites_consultes": [
+        "CFP"
+      ],
+      "niveau_risque_provisoire": "ELEVE",
+      "livrable_minimum_candidat": "Inventaire des prélèvements de tous niveaux et de leurs fondements juridiques",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F08",
+      "regime": "TOUS",
+      "theme": "Rendement d'impôt anti-évasion",
+      "responsable_fonctionnel": "Expert fiscal indépendant",
+      "preuve_p52a_a_obtenir": "Estimation indépendante nette et défendable; scénario de base reste à zéro sans preuve",
+      "comite_pilote": "CFP",
+      "comites_consultes": [
+        "CJF"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Étude prudente du rendement net anti-évasion, coûts, contestations et intervalle d'incertitude",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F09",
+      "regime": "TOUS",
+      "theme": "Sources budgétaires et réconciliation",
+      "responsable_fonctionnel": "Comptable finances publiques",
+      "preuve_p52a_a_obtenir": "Rapprochement 2026-2027 des données du modèle Nova avec comptes budgétaires officiels",
+      "comite_pilote": "CFP",
+      "comites_consultes": [
+        "CDE"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Réconciliation documentée des postes 2026-2027, versions officielles et consolidation des périmètres",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F10",
+      "regime": "TOUS",
+      "theme": "Modèle décennal et scénarios",
+      "responsable_fonctionnel": "Économiste finances publiques",
+      "preuve_p52a_a_obtenir": "Solde, encours de dette, liquidité, intérêts, financement des services, stress 1/3/5/10 ans",
+      "comite_pilote": "CFP",
+      "comites_consultes": [
+        "CSD"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Modèle sur dix exercices pour deux statuts juridiques et scénarios défavorables avec audit des hypothèses",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F11",
+      "regime": "TOUS",
+      "theme": "Équité et pouvoir d'achat",
+      "responsable_fonctionnel": "Économiste distribution",
+      "preuve_p52a_a_obtenir": "Variation du revenu disponible par décile/quintile, famille, région; bilan des entreprises",
+      "comite_pilote": "CSD",
+      "comites_consultes": [
+        "CFP"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Étude distributive représentative avec poids, déciles, effets indirects et confidentialité",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F12",
+      "regime": "TOUS",
+      "theme": "Emploi, services et économies réelles",
+      "responsable_fonctionnel": "Audit opérationnel et travail",
+      "preuve_p52a_a_obtenir": "Audit par programme protégeant services et travailleurs; exclusion des transferts de coûts",
+      "comite_pilote": "CSD",
+      "comites_consultes": [
+        "CFP"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Audit indépendant des services, emplois, transferts de coûts et économies vérifiables",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F13",
+      "regime": "TOUS",
+      "theme": "Aides aux entreprises limitées dans le temps",
+      "responsable_fonctionnel": "Auditeur subventions",
+      "preuve_p52a_a_obtenir": "Registre des aides avec dates de fin, bénéficiaires admissibles, reddition et récupération",
+      "comite_pilote": "CFP",
+      "comites_consultes": [
+        "CSD"
+      ],
+      "niveau_risque_provisoire": "ELEVE",
+      "livrable_minimum_candidat": "Inventaire des soutiens temporaires aux entreprises, échéances, critères et remboursement",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F14",
+      "regime": "TRANSITION_CONSTITUTIONNELLE",
+      "theme": "Continuité des services et droits",
+      "responsable_fonctionnel": "Juridique et finances",
+      "preuve_p52a_a_obtenir": "Plan de trésorerie, pensions, prestations, contrats, droits, paie et transition fiscale",
+      "comite_pilote": "CSD",
+      "comites_consultes": [
+        "CTE"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Plan de continuité des salaires, pensions, prestations, contrats, trésorerie et droits",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F15",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Partage de dette et actifs",
+      "responsable_fonctionnel": "Négociateurs et économistes",
+      "preuve_p52a_a_obtenir": "Trois hypothèses documentées; aucune quote-part ou entente supposée acquise",
+      "comite_pilote": "CTE",
+      "comites_consultes": [
+        "CFP"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Trois hypothèses sourcées de partage d'actifs et de dette sans présumer une entente",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F16",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Reprise fonctions fédérales",
+      "responsable_fonctionnel": "Audit intergouvernemental",
+      "preuve_p52a_a_obtenir": "Coûts complets défense, frontières, pension, diplomatie, immigration, systèmes et recouvrement",
+      "comite_pilote": "CTE",
+      "comites_consultes": [
+        "CFP",
+        "CSD"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Coût brut et net des fonctions fédérales à reprendre, avec scénarios de transition",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F17",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Monnaie, fiscalité transfrontalière et traités",
+      "responsable_fonctionnel": "Spécialistes monétaires et juridiques",
+      "preuve_p52a_a_obtenir": "Scénarios monétaires, fiscalité internationale, administration douanière et continuité contrats",
+      "comite_pilote": "CTE",
+      "comites_consultes": [
+        "CJF"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Étude des options monétaires, douanières, traités et risques transfrontaliers",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F18",
+      "regime": "TOUS",
+      "theme": "Discipline avant abolition de prélèvements",
+      "responsable_fonctionnel": "Vérification budgétaire indépendante",
+      "preuve_p52a_a_obtenir": "Preuve du surplus/équilibre antérieur et dette nette au plus 45 % du PIB",
+      "comite_pilote": "CFP",
+      "comites_consultes": [
+        "CSD"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Vérification externe de l'équilibre/surplus antérieur et dette nette au plus 45 % du PIB",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F19",
+      "regime": "TOUS",
+      "theme": "Décision et adoption démocratiques",
+      "responsable_fonctionnel": "Gouvernance constitutionnelle",
+      "preuve_p52a_a_obtenir": "Autorité formellement compétente, consultation, version officielle signée et registre d'adoption",
+      "comite_pilote": "CDE",
+      "comites_consultes": [
+        "CJF"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Matrice des autorités compétentes, consultations, adoption et contrôle démocratique",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    },
+    {
+      "id": "F20",
+      "regime": "TOUS",
+      "theme": "Vie privée et droits de recours fiscaux",
+      "responsable_fonctionnel": "Vie privée et juriste administratif",
+      "preuve_p52a_a_obtenir": "Analyse protection des données, opposition, délai de recours et contrôle indépendant",
+      "comite_pilote": "CSD",
+      "comites_consultes": [
+        "CJF",
+        "CDE"
+      ],
+      "niveau_risque_provisoire": "CRITIQUE",
+      "livrable_minimum_candidat": "Évaluation de vie privée, droits d'opposition, recours, conservation et contrôle indépendant",
+      "annexes_obligatoires_proposees": [
+        "origine_version_date_et_perimetre_des_sources",
+        "methodologie_hypotheses_limites_et_reproductibilite",
+        "risques_droits_et_effets_defavorables",
+        "examen_contradictoire_et_reserves",
+        "examen_juridictionnel_du_regime",
+        "version_expurgee_destinee_a_consultation_si_autorisee"
+      ],
+      "statut": "MANDAT_NON_LANCE",
+      "budget_mandat_chiffre": null,
+      "cout_reel": null,
+      "expert_mandate": false,
+      "competences_verifiees": false,
+      "conflits_verifies": false,
+      "livrable_recu": false,
+      "avis_externe_signe": false,
+      "preuve_validee": false,
+      "mise_en_public_autorisee": false
+    }
+  ],
+  "consultation_citoyenne": {
+    "statut": "NON_LANCEE",
+    "ouverture_autorisee": false,
+    "collecte_autorisee": false,
+    "appel_a_contribution_non_envoye": true,
+    "observations_reelles_recues": 0,
+    "avis_mineurs_ou_donnees_personnelles_interdits_dans_git": true,
+    "moderation_regles_publiques_a_adopter": true,
+    "accessibilite_multicanale_a_prevoir": true,
+    "aide_lecture_facile_et_accommodements_a_prevoir": true,
+    "publication_des_limites_des_propositions": true,
+    "explication_distinction_quebec_dans_canada_et_souverain": true,
+    "duree_consultation_definie_et_approuvee": false,
+    "consultation_pas_sondage_representatif": true,
+    "protection_des_renseignements_a_valider": true,
+    "personnes_peu_representees_a_consulter_sans_ciblage_persuasif": true,
+    "droit_de_contestation_et_suivi_des_reponses": true
+  },
+  "controles_transversaux": {
+    "aucune_protection_main_activee": true,
+    "aucun_changement_sinjira": true,
+    "donnees_individuelles_non_commitees": true,
+    "variables_budgetaires_non_renseignees": 1320,
+    "preuves_independantes_p52a_non_obtenues": 20,
+    "comites_effectivement_constitues": 0,
+    "contrat_ou_depense_non_engage": true,
+    "publication_programmatique_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
