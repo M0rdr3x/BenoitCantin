@@ -40,10 +40,10 @@ class StatusObservation:
 
 
 def validate_public_routes(observed: Mapping[str, StatusObservation]) -> list[str]:
-    """Même 21 routes et mêmes MIME que le post-PUBLISH, sans lire de corps."""
+    """Même 24 routes et mêmes MIME que le post-PUBLISH, sans lire de corps."""
     errors: list[str] = []
     if set(observed) != set(PUBLIC_ROUTES):
-        errors.append("Inventaire quotidien incomplet des 21 routes publiques.")
+        errors.append("Inventaire quotidien incomplet des 24 routes publiques.")
     for route in PUBLIC_ROUTES:
         result = observed.get(route)
         if result is None:
@@ -120,7 +120,7 @@ def self_test() -> None:
     )
     good: dict[str, int] = {"/": 200}
     good.update({route: 404 for route in TECHNICAL_ROUTES})
-    assert len(PUBLIC_ROUTES) == len(set(PUBLIC_ROUTES)) == 21
+    assert len(PUBLIC_ROUTES) == len(set(PUBLIC_ROUTES)) == 24
     assert not set(PUBLIC_ROUTES) & set(TECHNICAL_ROUTES)
     public = {
         route: StatusObservation(
@@ -240,7 +240,7 @@ def self_test() -> None:
     assert validate_observations({**good, "/": 503}, netlify=True)
 
     # Vérification d'intégration SANS RÉSEAU du véritable chemin live().
-    # Un développeur ne doit pas pouvoir laisser les 21 vérifications
+    # Un développeur ne doit pas pouvoir laisser les 24 vérifications
     # dans une fonction morte tout en conservant des autotests verts.
     original_opener = globals()["build_opener"]
     original_probe = globals()["read_status"]
@@ -360,7 +360,7 @@ def live() -> int:
     observations: dict[str, int] = {}
     public: dict[str, StatusObservation] = {}
     is_netlify = is_pages = False
-    # 21 routes publiques + 14 chemins interdits : une seule visite par URL.
+    # 24 routes publiques + 14 chemins interdits : une seule visite par URL.
     # Les corps publics/techniques restent tous fermés sans lecture.
     for route in (*PUBLIC_ROUTES, *TECHNICAL_ROUTES):
         try:
