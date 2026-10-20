@@ -21,6 +21,7 @@ FILES = {
     "method": NOVA / "SONDAGE_METHODOLOGIE_ET_ACTIVATION.md",
     "sql": ROOT / "supabase/migrations/20261019170000_nova_adult_opinion_survey_v1.sql",
     "edge": ROOT / "supabase/functions/nova-survey-submit/index.ts",
+    "body": ROOT / "supabase/functions/_shared/nova_survey_body.mjs",
     "config": ROOT / "supabase/config.toml",
 }
 
@@ -68,7 +69,11 @@ def check_text(payload: dict[str, str]) -> list[str]:
            "explicitConsent !== true", "validAnswers(body.answers)",
            "error?.code === '23505'", "ORIGIN_NOT_ALLOWED",
            "service.rpc('nova_survey_submit_v1'",
-           "new TextEncoder().encode(raw).length > 8192")
+           "readBoundedJson(req)", "MAX_REQUEST_BYTES", "REQUEST_TOO_LARGE")
+    demand("body", "req.body.getReader()", "if (total > MAX_REQUEST_BYTES)",
+           "reader.cancel()", "reader.releaseLock()", "JSON.parse(raw)")
+    if "await req.text()" in payload["edge"]:
+        issues.append("Corps Nova lu sans limite de flux")
     demand("config", "[functions.nova-survey-submit]\nverify_jwt = true")
     demand("method", "non", "représentatif", "confidentialité",
            "18 ans", "Aucun résultat", "COLLECTION_OPEN")
@@ -128,6 +133,8 @@ def self_test() -> None:
         ("page", "non représentative", "représentative"),
         ("edge", "NOVA_SURVEY_COLLECTION_ENABLED", "SURVEY_ALWAYS_OPEN"),
         ("edge", "validAnswers(body.answers)", "true"),
+        ("edge", "readBoundedJson(req)", "req.text()"),
+        ("body", "if (total > MAX_REQUEST_BYTES)", "if (false)"),
         ("edge", "requiredUser(req)", "null"),
         ("sql", "enable row level security", "disable row level security"),
         ("sql", "jsonb_each_text(p_answers)", "jsonb_array_elements(p_answers)"),
@@ -144,7 +151,7 @@ def self_test() -> None:
     obj = json.loads(payload["manifest"])
     obj["minimumAge"] = 16
     assert check_questions(json.dumps(obj), payload["source"])
-    print("OK sondage Nova : 15 mutations de consentement, âge, droits et corpus refusées")
+    print("OK sondage Nova : 17 mutations de consentement, âge, droits et corpus refusées")
 
 
 if __name__ == "__main__":

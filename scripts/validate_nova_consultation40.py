@@ -20,6 +20,7 @@ PATHS={
 "client":NOVA/"assets/consultation-40.js",
 "sql":ROOT/"supabase/migrations/20261019190000_nova_foundations_40_survey_v1.sql",
 "edge":ROOT/"supabase/functions/nova-consultation40-submit/index.ts",
+"body":ROOT/"supabase/functions/_shared/nova_survey_body.mjs",
 "config":ROOT/"supabase/config.toml",
 "index":NOVA/"index.html",
 }
@@ -46,7 +47,10 @@ def validate(text):
                 "NOVA40_COLLECTION_ENABLED","!== 'true'","NOVA40_SURVEY_PEPPER",
                 "requiredUser(req)","age18Confirmed !== true","explicitConsent !== true",
                 "crypto.subtle.sign('HMAC'","service.rpc('nova_consultation40_submit_v1'",
-                "validAnswers(body.answers)","ORIGIN_NOT_ALLOWED","error?.code === '23505'"],
+                "validAnswers(body.answers)","ORIGIN_NOT_ALLOWED","error?.code === '23505'",
+                "readBoundedJson(req)","MAX_REQUEST_BYTES","REQUEST_TOO_LARGE"],
+        "body":["req.body.getReader()","if (total > MAX_REQUEST_BYTES)",
+                "reader.cancel()","reader.releaseLock()","JSON.parse(raw)"],
         "config":["[functions.nova-consultation40-submit]\nverify_jwt = true"],
         "index":['href="consultation-40.html"']
     }
@@ -54,6 +58,8 @@ def validate(text):
         for marker in markers:
             if marker not in text[key]:
                 issues.append(f"{key}: contrat manquant {marker}")
+    if "await req.text()" in text["edge"]:
+        issues.append("Corps Nova 40 lu sans limite de flux")
     if "localStorage.setItem" in text["client"] or "sessionStorage.setItem" in text["client"]:
         issues.append("Opinions politiques stockées localement")
     if "create policy" in text["sql"].lower():
@@ -95,6 +101,8 @@ def main():
             ("edge","NOVA40_COLLECTION_ENABLED","ENABLE_ALL"),
             ("edge","requiredUser(req)","null"),
             ("edge","validAnswers(body.answers)","true"),
+            ("edge","readBoundedJson(req)","req.text()"),
+            ("body","if (total > MAX_REQUEST_BYTES)","if (false)"),
             ("config","verify_jwt = true","verify_jwt = false")
         ]
         for key,old,new in muts:
@@ -108,6 +116,6 @@ def main():
         obj["questions"][19]["text"]="Question centrale modifiée sans approbation"
         altered=dict(text);altered["manifest"]=json.dumps(obj,ensure_ascii=False)
         assert validate(altered), "Modification intermédiaire du corpus non détectée"
-        print("OK consultation 40 : 15 mutations de sécurité, âge et corpus refusées")
+        print("OK consultation 40 : 17 mutations de sécurité, âge et corpus refusées")
     print("OK consultation Nova : 40 questions Pour/Contre, 18+, collecte désactivée, RLS")
 if __name__=="__main__":main()

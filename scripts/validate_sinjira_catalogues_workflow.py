@@ -80,6 +80,7 @@ def validate(source: str) -> list[str]:
         "          python3 scripts/validate_sinjira_catalogues_workflow.py\n",
         "        run: python3 scripts/validate_sinjira_catalogues.py --self-test\n",
         "          python3 scripts/validate_nova_survey.py --self-test\n",
+        "        run: node --test tests/test_nova_survey_body.mjs\n",
         "          python3 scripts/validate_nova_survey.py\n",
         "        run: python3 scripts/validate_sinjira_catalogues.py\n",
         "          python3 scripts/validate_sinjira_public_links.py --self-test\n",
