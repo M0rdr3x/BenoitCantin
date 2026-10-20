@@ -1,5 +1,6 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
+import { readBoundedJson, MAX_REQUEST_BYTES } from '../_shared/nova_survey_body.mjs';
 
 // Préparé, jamais activé automatiquement : exige revue confidentialité,
 // configuration du responsable du traitement et publication Edge distincte.
@@ -44,24 +45,31 @@ Deno.serve(async req => {
   if (req.headers.get('origin') !== ORIGIN) {
     return response(403, { ok: false, code: 'ORIGIN_NOT_ALLOWED' });
   }
-  const size = Number(req.headers.get('content-length') || 0);
-  if (!Number.isFinite(size) || size > 8192 ||
-      !(req.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
-    return response(400, { ok: false, code: 'INVALID_REQUEST' });
+  const declaredSize = req.headers.get('content-length');
+  if (declaredSize !== null &&
+      (!/^[0-9]+$/.test(declaredSize) || Number(declaredSize) > MAX_REQUEST_BYTES)) {
+    return response(413, { ok: false, code: 'REQUEST_TOO_LARGE' });
+  }
+  const contentType = (req.headers.get('content-type') || '').toLowerCase();
+  if (!(contentType === 'application/json' || contentType.startsWith('application/json;'))) {
+    return response(415, { ok: false, code: 'INVALID_CONTENT_TYPE' });
   }
   try {
     const user = await requiredUser(req);
     if (Deno.env.get('NOVA40_COLLECTION_ENABLED') !== 'true') {
       return response(503, { ok: false, code: 'COLLECTION_NOT_ENABLED' });
     }
-    const raw = await req.text();
-    if (new TextEncoder().encode(raw).length > 8192) {
-      return response(413, { ok: false, code: 'PAYLOAD_TOO_LARGE' });
-    }
-    let body: Record<string, unknown>;
-    try { body = JSON.parse(raw); } catch {
+    let parsed: unknown;
+    try { parsed = await readBoundedJson(req); } catch (error) {
+      if (error instanceof Error && error.message === 'REQUEST_TOO_LARGE') {
+        return response(413, { ok: false, code: 'REQUEST_TOO_LARGE' });
+      }
       return response(400, { ok: false, code: 'INVALID_JSON' });
     }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return response(400, { ok: false, code: 'INCOMPLETE_OR_INELIGIBLE' });
+    }
+    const body = parsed as Record<string, unknown>;
     if (!body || typeof body !== 'object' || Array.isArray(body) ||
         body.survey !== SURVEY_ID || body.age18Confirmed !== true ||
         body.explicitConsent !== true || !validAnswers(body.answers)) {
