@@ -26,14 +26,14 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
-      - name: Cinquante-six tests de gouvernance et protection
+      - name: Cinquante-sept tests de gouvernance et protection
         run: |
           python -m py_compile scripts/auditer_mandats_consultation_nova_p52n.py
           python - <<'PY'
           import unittest
           s=unittest.defaultTestLoader.discover(
               "scripts/tests",pattern="test_auditer_mandats_consultation_nova_p52n.py")
-          assert s.countTestCases()==56,s.countTestCases()
+          assert s.countTestCases()==57,s.countTestCases()
           result=unittest.TextTestRunner(verbosity=2).run(s)
           assert result.wasSuccessful()
           PY

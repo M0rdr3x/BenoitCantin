@@ -49,7 +49,7 @@
     "note_plancher_par_critere": 2,
     "toute_personne_en_conflit_recusee": true,
     "identites_mandats_diplomes_et_declarations_verifies_hors_depot": false,
-    "methode_proposee_pas_regle_contractuelle": false,
+    "methode_proposee_pas_regle_contractuelle": true,
     "couts_et_prix_non_estimes": true,
     "choix_ou_attribution_automatique_interdits": true
   },

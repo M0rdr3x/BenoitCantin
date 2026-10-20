@@ -185,5 +185,8 @@ class ExpertsConsultationP52N(unittest.TestCase):
    self.assertEqual(m.main(["--rapport",str(target)]),0)
    self.assertEqual(m.main(["--rapport",str(target)]),2)
 
+ def test_57_selection_methode_reste_non_contractuelle(self):
+  d,x=context()
+  self.assertTrue(d["mandats"]["principes_selection"]["methode_proposee_pas_regle_contractuelle"])
 if __name__=="__main__":
  unittest.main()

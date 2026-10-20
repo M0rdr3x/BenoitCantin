@@ -119,7 +119,7 @@ def reference(d):
         scoring.get("note_plancher_par_critere")==2 and
         scoring.get("toute_personne_en_conflit_recusee") is True and
         scoring.get("identites_mandats_diplomes_et_declarations_verifies_hors_depot") is False and
-        scoring.get("methode_proposee_pas_regle_contractuelle") is False and
+        scoring.get("methode_proposee_pas_regle_contractuelle") is True and
         scoring.get("couts_et_prix_non_estimes") is True and
         scoring.get("choix_ou_attribution_automatique_interdits") is True,
         "CRITERES_DE_SELECTION_DETOURNES")
