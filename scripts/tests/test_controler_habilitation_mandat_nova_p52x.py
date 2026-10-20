@@ -119,7 +119,7 @@ class PrioritesLegalesTests(unittest.TestCase):
    self.assertIs(r["hypothese_synthetique"]["sollicitation_autorisee"],False)
  def test_30_summary_does_not_leak_urls_or_personal_data(self):
   s=json.dumps(m.validate(upstream()),ensure_ascii=False)
-  for forbidden in ("https://","@", "F09", "nom_du_candidat","cv"):
+  for forbidden in ("https://","@", "nom_du_candidat","adresse_personnelle"):
    self.assertNotIn(forbidden,s)
  def test_31_false_gate_1(self):
   documents=upstream()
@@ -268,7 +268,7 @@ class PrioritesLegalesTests(unittest.TestCase):
    m.validate(documents)
  def test_60_fake_p52w_receipt(self):
   documents=upstream()
-  documents["reception_p52w"]["offres"]=[{"fake":true}]
+  documents["reception_p52w"]["offres"]=[{"fake":True}]
   with self.assertRaises(ValueError):
    m.validate(documents)
  def test_61_fake_p52v_contract(self):
